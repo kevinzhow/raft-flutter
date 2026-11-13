@@ -144,7 +144,7 @@ class _SetupGateHostState extends State<_SetupGateHost> {
 }
 
 /// CommunityAgreementDialog over a blank page: `props.kind` 'error' fails the join with
-/// agreement_changed, 'pending' never answers (the interaction presses "Agree & Continue").
+/// agreement_changed, 'pending' never answers (the interaction presses "Agree & continue").
 Widget _communityAgreement(ParityContext ctx) {
   final agreement = _fx(ctx)['agreement'] as Map<String, dynamic>;
   final kind = ctx.props['kind'];
@@ -175,7 +175,7 @@ Future<void> _agree(WidgetTester t, ParityContext ctx) async {
     await t.pump(const Duration(milliseconds: 50));
   }
   if (ctx.props['kind'] == 'error' || ctx.props['kind'] == 'pending') {
-    await t.tap(find.text('Agree & Continue'));
+    await t.tap(find.text('Agree & continue'));
     for (var i = 0; i < 6; i++) {
       await t.pump(const Duration(milliseconds: 50));
     }
@@ -212,7 +212,7 @@ Future<void> _inviteInteract(WidgetTester t, ParityContext ctx) async {
     await t.pump(const Duration(milliseconds: 50));
   }
   if (ctx.id.contains('.invite.accept-error.')) {
-    await t.tap(find.text('Join Server'));
+    await t.tap(find.text('Join server'));
     for (var i = 0; i < 6; i++) {
       await t.pump(const Duration(milliseconds: 50));
     }

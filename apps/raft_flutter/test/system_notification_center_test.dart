@@ -113,7 +113,7 @@ void main() {
       await t.tap(find.text('Dismiss'));
       await t.pump();
       expect(find.text('Computers need attention'), findsNothing);
-      expect(find.text('No notifications right now'), findsOneWidget);
+      expect(find.text('No notifications'), findsOneWidget);
       await t.tapAt(const Offset(12, 500));
       await t.pump(const Duration(milliseconds: 200));
       expect(find.byType(RaftNotificationCenter), findsNothing);
@@ -178,7 +178,7 @@ void main() {
       expect(find.text('Computers need attention'), findsOneWidget);
       await t.tap(find.text('Dismiss'));
       await t.pump();
-      expect(find.text('No notifications right now'), findsOneWidget);
+      expect(find.text('No notifications'), findsOneWidget);
       int reads(String path) => client.calls.where((p) => p == path).length;
       final feedback = reads('/product-feedback/tickets');
       final machines = reads('/servers/s/machines');
@@ -197,7 +197,7 @@ void main() {
       for (var frame = 0; frame < 6; frame++) {
         await t.pump(const Duration(milliseconds: 50));
         expect(find.byType(RaftNotificationCenter), findsOneWidget);
-        expect(find.text('No notifications right now'), findsOneWidget);
+        expect(find.text('No notifications'), findsOneWidget);
         expect(find.text('Computers need attention'), findsNothing);
       }
       expect(reads('/product-feedback/tickets'), feedback);
@@ -209,7 +209,7 @@ void main() {
       }
       for (var frame = 0; frame < 6; frame++) {
         await t.pump(const Duration(milliseconds: 50));
-        expect(find.text('No notifications right now'), findsOneWidget);
+        expect(find.text('No notifications'), findsOneWidget);
       }
       expect(reads('/product-feedback/tickets'), feedback);
       expect(reads('/servers/s/machines'), lessThanOrEqualTo(machines + 1));

@@ -40,7 +40,7 @@ Widget host({
                 children: [
                   RaftMessageToolbarAction(
                     key: actionKey,
-                    label: 'Reply in Thread',
+                    label: 'Reply in thread',
                     icon: const SizedBox(),
                     onPressed: action ?? () {},
                   ),

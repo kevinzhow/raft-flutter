@@ -639,9 +639,9 @@ void main() {
     /// item is an in-place action: it must not change the location.
     Finder? opens(String label) => switch (label) {
       'Create Channel' => find.byType(CreateChannelDialog),
-      'Create Joint Channel' => find.byType(CreateJointChannelDialog),
+      'Create joint channel' => find.byType(CreateJointChannelDialog),
       'New Section…' ||
-      'Edit section…' => find.byKey(const ValueKey('sidebar-section-dialog')),
+      'Edit section' => find.byKey(const ValueKey('sidebar-section-dialog')),
       'Archive' ||
       'Delete section' => find.byKey(const ValueKey('shell-dialog')),
       _ => null,
@@ -696,7 +696,7 @@ void main() {
       expect(find.byType(CreateChannelDialog), findsOneWidget);
       expect(w.location.uri, before);
       await dismiss(tester);
-      await tester.tap(find.bySemanticsLabel('Create Joint Channel'));
+      await tester.tap(find.bySemanticsLabel('Create joint channel'));
       await tester.pumpAndSettle();
       expect(find.byType(CreateJointChannelDialog), findsOneWidget);
       expect(w.location.uri, before);
@@ -712,7 +712,7 @@ void main() {
       await walkMenu(tester, () async {
         await tester.longPressAt(tester.getCenter(header('joint')));
         await tester.pumpAndSettle();
-      }, expectLabels: {'Create Joint Channel', 'New Section…'});
+      }, expectLabels: {'Create joint channel', 'New Section…'});
       await walkMenu(tester, () async {
         await tester.longPressAt(tester.getCenter(header('dms')));
         await tester.pumpAndSettle();
@@ -723,7 +723,7 @@ void main() {
     // a fresh page: the menu opens Web's dialogs in place.
     for (final label in const [
       'Create Channel',
-      'Create Joint Channel',
+      'Create joint channel',
       'New Section…',
     ]) {
       testWidgets('sidebar surface menu: $label', (tester) async {
@@ -752,9 +752,9 @@ void main() {
     ) async {
       await setup(tester);
       for (final (id, labels) in [
-        ('c1', {'Pin', 'Mark as Unread'}),
-        ('d1', {'Pin', 'Close Chat'}),
-        ('d2', {'Pin', 'Close Chat'}),
+        ('c1', {'Pin', 'Mark as unread'}),
+        ('d1', {'Pin', 'Close chat'}),
+        ('d2', {'Pin', 'Close chat'}),
       ]) {
         await walkMenu(tester, () async {
           await tester.longPress(row(id));

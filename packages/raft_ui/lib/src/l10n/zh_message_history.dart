@@ -38,7 +38,7 @@ const Map<String, String> zhCatalogMessageHistory = <String, String>{
   "Refresh messages": "刷新消息",
   // Native, account-wide device message history.
   "Messages on this device": "此设备上的消息",
-  "Message history": "历史消息",
+  "Message history": "消息历史",
   "Messages you open are kept within this limit across all servers for this account. No age limit applies. Attachments and previews use the separate cache below.":
       "此账号在所有服务器上打开过的消息会保存在此设备上，不按天数过期，受下方容量限制。附件和预览使用另设的缓存。",
   "Estimated message storage: {size}": "消息占用估算：{size}",

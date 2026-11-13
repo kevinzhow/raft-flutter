@@ -589,7 +589,7 @@ void main() {
         scrollable: find.byType(Scrollable).last,
       );
       expect(
-        find.descendant(of: button, matching: find.text('Report Issue')),
+        find.descendant(of: button, matching: find.text('Report issue')),
         findsOneWidget,
       );
       await tester.tap(button);

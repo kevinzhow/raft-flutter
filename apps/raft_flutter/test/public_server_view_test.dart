@@ -211,8 +211,8 @@ void main() {
         client.calls,
         containsAll(['GET $_base', 'GET $_base/channels/c1/messages']),
       );
-      await t.tap(find.text('Sign In'));
-      await t.tap(find.text('Create Account'));
+      await t.tap(find.text('Sign in'));
+      await t.tap(find.text('Create account'));
       expect(signIn, 1);
       expect(register, 1);
     },
@@ -303,10 +303,7 @@ void main() {
     t,
   ) async {
     await _mount(t, _PublicClient(_routes(channels: [])));
-    expect(
-      find.text('This server has no public channels right now.'),
-      findsOneWidget,
-    );
+    expect(find.text('No public channels yet'), findsOneWidget);
   });
 
   testWidgets('a thread opens read only beside the channel and closes', (
@@ -376,7 +373,7 @@ void main() {
       await _mount(t, client, account: account());
       expect(find.byKey(const ValueKey('public-join-guest')), findsNothing);
       expect(find.text('Join as Guest'), findsNothing);
-      expect(find.text('Sign In'), findsNothing);
+      expect(find.text('Sign in'), findsNothing);
       expect(
         find.textContaining(
           "is view only. You can read its public channels, but can't send messages here.",
@@ -391,8 +388,8 @@ void main() {
       'Account, the view-only copy', (t) async {
     final client = _PublicClient(_routes());
     await _mount(t, client);
-    expect(find.text('Sign In'), findsOneWidget);
-    expect(find.text('Create Account'), findsOneWidget);
+    expect(find.text('Sign in'), findsOneWidget);
+    expect(find.text('Create account'), findsOneWidget);
     expect(
       find.textContaining(
         'is view only. Create a Raft account to build a server of your own.',

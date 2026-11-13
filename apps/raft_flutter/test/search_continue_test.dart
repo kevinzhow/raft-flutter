@@ -103,7 +103,7 @@ void main() {
     expect(find.textContaining('Searched messages back to'), findsOneWidget);
     expect(find.text('No results for "topic"'), findsNothing);
     expect(find.text('Continue searching'), findsOneWidget);
-    expect(find.text('Load More'), findsNothing);
+    expect(find.text('Load more'), findsNothing);
 
     await tester.tap(find.text('Continue searching'));
     await tester.pump();
@@ -125,7 +125,7 @@ void main() {
     expect(find.textContaining('the topic is here'), findsWidgets);
     expect(find.text('No matches yet'), findsNothing);
     expect(find.text('Continue searching'), findsNothing);
-    expect(find.text('Load More'), findsNothing);
+    expect(find.text('Load more'), findsNothing);
   });
 
   testWidgets('hits and an incomplete search: note and Continue searching '
@@ -175,10 +175,10 @@ void main() {
       'nextCursor': 'walk-1',
     });
     // Not incomplete: the plain label, no note.
-    expect(find.text('Load More'), findsOneWidget);
+    expect(find.text('Load more'), findsOneWidget);
     expect(find.text('Continue searching'), findsNothing);
     expect(find.byKey(const Key('search-incomplete-note')), findsNothing);
-    await tester.tap(find.text('Load More'));
+    await tester.tap(find.text('Load more'));
     await tester.pump();
     expect(w.requests.last.query['cursor'], 'walk-1');
     expect(w.requests.last.query.containsKey('offset'), isFalse);
@@ -187,12 +187,12 @@ void main() {
       'hasMore': true,
     });
     // The server gave no cursor this time: back to an offset past what shows.
-    await tester.tap(find.text('Load More'));
+    await tester.tap(find.text('Load more'));
     await tester.pump();
     expect(w.requests.last.query.containsKey('cursor'), isFalse);
     expect(w.requests.last.query['offset'], 3);
     await answer(tester, {'results': [], 'hasMore': false});
-    expect(find.text('Load More'), findsNothing);
+    expect(find.text('Load more'), findsNothing);
   });
 
   testWidgets('a failed continuation keeps the results, warns and retries '

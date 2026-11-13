@@ -51,7 +51,7 @@ class Announcement {
 
   final String id, title;
 
-  /// Eyebrow of the dialog; null reads "Latest updates".
+  /// Eyebrow of the dialog; null reads "What's new".
   final String? label;
   final AnnouncementCta? cta;
   final AnnouncementImage? image;

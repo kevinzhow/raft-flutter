@@ -56,7 +56,7 @@ void main() {
         expect(find.textContaining('Background session'), findsNothing);
         expect(find.textContaining('Please retry'), findsNothing);
         expect(find.text('1 active · 1 unread'), findsOneWidget);
-        expect(find.text('Activity is empty'), findsNothing);
+        expect(find.text('No conversations'), findsNothing);
         await f.close(t);
       },
     );

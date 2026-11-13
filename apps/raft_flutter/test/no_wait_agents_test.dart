@@ -222,8 +222,8 @@ void main() {
         ),
       ),
     );
-    expect(find.text('Created Agents'), findsNothing);
-    expect(find.text('No created agents'), findsNothing);
+    expect(find.text('Created agents'), findsNothing);
+    expect(find.text('No agents created yet'), findsNothing);
   });
 
   testWidgets('revisits show the last accepted data with a dead network', (

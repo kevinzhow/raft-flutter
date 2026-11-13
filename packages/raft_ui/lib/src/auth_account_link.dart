@@ -32,7 +32,7 @@ class RaftAuthAccountLink {
   /// The provider account belongs to another account: nothing left to try.
   final bool conflict;
 
-  /// "Don't connect {provider}" / "Back to Sign In" (null while busy).
+  /// "Don't connect {provider}" / "Back to sign in" (null while busy).
   final VoidCallback? onCancel;
 
   /// "Continue with {provider}" after [expired].
@@ -66,7 +66,7 @@ class RaftAuthAccountLinkActions extends StatelessWidget {
         RaftAuthWideButton(
           key: const Key('account-link-cancel'),
           label: link.terminal
-              ? raftText(context, 'Back to Sign In')
+              ? raftText(context, 'Back to sign in')
               : raftFormat(context, "Don't connect {provider}", provider),
           variant: RaftControlVariant.outline,
           onPressed: link.onCancel,

@@ -35,8 +35,8 @@ void main() {
       await t.pumpWidget(const SizedBox());
       store.dispose();
     });
-    expect(find.text('Load More'), findsOneWidget);
-    await t.tap(find.text('Load More'));
+    expect(find.text('Load more'), findsOneWidget);
+    await t.tap(find.text('Load more'));
     await t.pumpAndSettle();
     expect(
       find.byKey(const ValueKey('feedback-ticket-${fixture.second}')),

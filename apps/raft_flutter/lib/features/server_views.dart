@@ -25,8 +25,8 @@ class WorkspaceActions {
     await showRaftForm<void>(
       context,
       builder: (_) => RaftFormDialog(
-        title: 'Create Server',
-        submitLabel: 'Create Server',
+        title: 'Create server',
+        submitLabel: 'Create server',
         fields: [
           const RaftFormField('name', 'Server name', required: true),
           RaftFormField(
@@ -57,7 +57,7 @@ class WorkspaceActions {
     await showRaftForm<void>(
       context,
       builder: (dialogContext) => RaftFormDialog(
-        title: 'Join Server',
+        title: 'Join server',
         submitLabel: 'Review Invitation',
         fields: [
           RaftFormField(
@@ -91,7 +91,7 @@ class WorkspaceActions {
     await showRaftForm<void>(
       context,
       builder: (_) => RaftFormDialog(
-        title: delete ? 'Delete Server' : 'Leave Server',
+        title: delete ? 'Delete server' : 'Leave server',
         description: delete
             ? raftFormat(
                 context,
@@ -117,7 +117,7 @@ class WorkspaceActions {
                   }),
           ),
         ],
-        submitLabel: delete ? 'Delete Server' : 'Leave Server',
+        submitLabel: delete ? 'Delete server' : 'Leave server',
         cancelLabel: delete ? 'Cancel' : 'Cancel',
         destructive: delete,
         onSubmit: (_) async {
@@ -264,13 +264,13 @@ class _ServerSettingsViewState extends State<ServerSettingsView> {
     final ok = await RaftConfirmDialog.show(
       context,
       RaftConfirmDialog(
-        title: 'Leave Server',
+        title: 'Leave server',
         message: raftFormat(
           context,
           "You'll lose access to {serverName} and all of its channels. You can be re-invited later.",
           {'serverName': server.name},
         ),
-        confirmLabel: 'Leave Server',
+        confirmLabel: 'Leave server',
         cancelLabel: 'Cancel',
         surfaceKey: const ValueKey('server-danger-dialog'),
         // confirmColor="bg-brutal-orange" -> warning tone.
@@ -385,7 +385,7 @@ class _ServerSettingsViewState extends State<ServerSettingsView> {
                         ? 'Saving...'
                         : saved
                         ? 'Saved'
-                        : 'Save Profile',
+                        : 'Save profile',
                     glyph: saved && !saving ? RaftGlyph.check : null,
                     glyphSize: 14,
                     variant: RaftButtonRecipeVariant.accent,
@@ -409,16 +409,16 @@ class _ServerSettingsViewState extends State<ServerSettingsView> {
         // ArchivedAgentsSection (archived agents of this server, if any).
         ArchivedAgentsSection(controller: w),
         const RaftSettingsSectionHeader(
-          label: 'Danger Zone',
+          label: 'Danger zone',
           glyph: RaftGlyph.triangleAlert,
         ),
         if (canLeave) ...[
           RaftSettingsActionCard(
-            title: 'Leave Server',
+            title: 'Leave server',
             description: "You will lose access to this server's channels and DMs. You can rejoin if invited again.",
             action: RaftSettingsRecipeButton(
               key: const Key('server-danger-leave-button'),
-              label: 'Leave Server',
+              label: 'Leave server',
               variant: RaftButtonRecipeVariant.warning,
               onPressed: confirmLeave,
             ),
@@ -429,11 +429,11 @@ class _ServerSettingsViewState extends State<ServerSettingsView> {
           RaftSettingsActionCard(
             key: const Key('server-danger-delete-card'),
             stacked: true,
-            title: 'Delete Server',
+            title: 'Delete server',
             description: 'Permanently remove this server and all its data. This cannot be undone.',
             action: RaftSettingsRecipeButton(
               key: const Key('server-danger-delete-button'),
-              label: 'Delete Server',
+              label: 'Delete server',
               glyph: RaftGlyph.trash2,
               glyphSize: 14,
               variant: RaftButtonRecipeVariant.danger,
@@ -580,7 +580,7 @@ class _MembersViewState extends State<MembersView> {
       barrierDismissible: false,
       builder: (_) => RaftFormDialog(
         title: role == 'remove'
-            ? raftText(context, 'Remove Member')
+            ? raftText(context, 'Remove member')
             : raftText(context, 'Change Role'),
         description: role == 'remove'
             ? raftFormat(
@@ -597,7 +597,7 @@ class _MembersViewState extends State<MembersView> {
                 'server': w.server!.name,
               }),
         fields: [],
-        submitLabel: role == 'remove' ? 'Remove Member' : 'Change Role',
+        submitLabel: role == 'remove' ? 'Remove member' : 'Change Role',
         cancelLabel: role == 'remove' ? 'Keep Member' : 'Cancel',
         destructive: role == 'remove',
         onSubmit: (_) async {
@@ -699,7 +699,7 @@ class _MembersViewState extends State<MembersView> {
                                   PopupMenuItem(
                                     value: 'remove',
                                     child: Text(
-                                      raftText(context, 'Remove Member'),
+                                      raftText(context, 'Remove member'),
                                     ),
                                   ),
                               ],

@@ -1,4 +1,4 @@
-// "Tasks and cost" as the owner sees it (Web ManagerOverview.tsx): values,
+// "Task and cost context" as the owner sees it (Web ManagerOverview.tsx): values,
 // partial failures, an unavailable bill and the refresh.
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -56,9 +56,9 @@ void main() {
       'shows the task snapshot, the comparison and the spend ($name)',
       (t) async {
         await _mount(t, _api(), size: size);
-        expect(find.text('Tasks and cost'), findsOneWidget);
+        expect(find.text('Task and cost context'), findsOneWidget);
         expect(
-          find.text('Database metrics · no AI scan needed'),
+          find.text('Supporting metrics · not a quality score'),
           findsOneWidget,
         );
         // Snapshot tiles.
@@ -115,7 +115,7 @@ void main() {
       find.textContaining('Current task states across accessible task sources'),
       findsNothing,
     );
-    await t.tap(find.text('Sources and limits').first);
+    await t.tap(find.text('How this is counted').first);
     await t.pump();
     expect(
       find.textContaining('Current task states across accessible task sources'),
@@ -150,11 +150,8 @@ void main() {
         return json;
       });
     await _mount(t, api);
-    expect(
-      find.text('No tasks were completed in either comparison period.'),
-      findsOneWidget,
-    );
-    expect(find.text('Completed · current / previous'), findsNothing);
+    expect(find.text('No tasks completed in either period'), findsOneWidget);
+    expect(find.text('Completed tasks'), findsNothing);
     await unmount(t);
   });
 
@@ -254,8 +251,8 @@ void main() {
 
   testWidgets('Chinese wording (Web zh-cn)', (t) async {
     await _mount(t, _api(), locale: const Locale('zh'));
-    expect(find.text('任务与费用'), findsOneWidget);
-    expect(find.text('云端 agent 运行费用 · 整个 server'), findsOneWidget);
+    expect(find.text('任务与费用参考'), findsOneWidget);
+    expect(find.text('云端 Agent 运行费用 · 整个服务器'), findsOneWidget);
     expect(find.text('读取总览'), findsOneWidget);
     await unmount(t);
   });

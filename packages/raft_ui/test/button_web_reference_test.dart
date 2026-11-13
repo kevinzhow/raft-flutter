@@ -165,8 +165,8 @@ void main() {
         RaftButtonVariant.warning,
       );
       for (final (label, variant) in [
-        ('Reset Session & Restart', RaftButtonVariant.warning),
-        ('Full Reset & Restart', RaftButtonVariant.danger),
+        ('Reset session & restart', RaftButtonVariant.warning),
+        ('Full reset & restart', RaftButtonVariant.danger),
       ]) {
         await t.tap(find.text(label).first);
         await t.pumpAndSettle();

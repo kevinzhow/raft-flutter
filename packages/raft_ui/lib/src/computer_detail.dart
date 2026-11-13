@@ -572,10 +572,10 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
 
   Future<void> deleteWorkspace(RaftComputerWorkspace ws) async {
     final ok = await _confirm(
-      title: 'Delete Workspace',
+      title: 'Delete workspace',
       message:
           'Delete workspace for "${ws.label}"? This permanently removes all workspace files (MEMORY.md, notes/, etc.) from the computer.',
-      confirmLabel: 'Delete Workspace',
+      confirmLabel: 'Delete workspace',
       cancelLabel: 'Keep Workspace',
     );
     if (ok != true) return;
@@ -633,7 +633,7 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
     final count = d.agents.length;
     if (count > 0) {
       await _confirm(
-        title: 'Cannot Delete Computer',
+        title: 'Cannot delete computer',
         message:
             'This computer has $count ${count == 1 ? 'agent' : 'agents'} assigned. Remove all agents before deleting the computer.',
         confirmLabel: 'Got It',
@@ -645,10 +645,10 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
     final computerId = d.id;
     final action = widget.actions.deleteComputer;
     await _confirm(
-      title: 'Delete Computer',
+      title: 'Delete computer',
       message:
           'Delete "${d.name}"? Its connection to this server is removed and its agents can no longer use it.',
-      confirmLabel: 'Delete Computer',
+      confirmLabel: 'Delete computer',
       cancelLabel: 'Keep Computer',
       onConfirm: () async {
         if (mounted && d.id == computerId) await action();
@@ -736,10 +736,10 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
       context,
       RaftConfirmDialog(
         surfaceKey: const ValueKey('computer-dialog'),
-        title: 'Stop Agents',
+        title: 'Stop agents',
         message:
             'Stop $count selected online ${count == 1 ? 'agent' : 'agents'}? They will stop processing messages.',
-        confirmLabel: 'Stop Agents',
+        confirmLabel: 'Stop agents',
         cancelLabel: 'Keep Working',
         confirmVariant: RaftButtonRecipeVariant.warning,
       ),
@@ -909,7 +909,7 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
                       online
                           ? 'Connected'
                           : upgrading
-                          ? 'Upgrading…'
+                          ? 'Updating…'
                           : 'Offline',
                     ),
                     appearance: RaftBadgeRecipeAppearance.soft,
@@ -1000,7 +1000,7 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
                           online
                               ? 'Connected'
                               : upgrading
-                              ? 'Upgrading…'
+                              ? 'Updating…'
                               : 'Offline',
                           style: ink.mono(14, 20, color: ink.muted(.6)),
                         ),
@@ -1243,7 +1243,7 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
           RaftKeyValueRow(label: 'OS', value: d.os!, mono: true),
         if (isComputer)
           RaftKeyValueRow.child(
-            label: 'Computer Version',
+            label: 'Computer version',
             child: versionValue(),
           ),
         // Online, not a manager, newer version exists: say who can act (the
@@ -1269,7 +1269,7 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
             rescan: widget.actions.rescanRuntimes ?? () async {},
           ),
         RaftKeyValueRow.child(
-          label: 'Detected Runtimes',
+          label: 'Detected runtimes',
           child: Wrap(
             spacing: 6,
             runSpacing: 6,
@@ -1330,7 +1330,7 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
                         ),
                       )
                     : RaftCssText(
-                        'No creator assigned',
+                        'No creator',
                         style: ink
                             .body(14, 20, color: ink.muted(.4))
                             .copyWith(fontStyle: FontStyle.italic),
@@ -1658,7 +1658,7 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
         if (manage && list.isNotEmpty) ...[
           if (selectionMode) ...[
             _smallButton(
-              allSelected ? 'Clear All' : 'Select All',
+              allSelected ? 'Clear All' : 'Select all',
               key: const ValueKey('computer-agents-select-all'),
               glyph: RaftGlyph.check,
               onPressed: () => setState(() {
@@ -1795,7 +1795,7 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
         const SizedBox(height: 12),
         if (list.isEmpty)
           RaftCssText(
-            'No agents assigned to this computer yet.',
+            'No agents on this computer yet',
             style: ink
                 .body(14, 20, color: ink.muted(.4))
                 .copyWith(fontStyle: FontStyle.italic),
@@ -1855,7 +1855,7 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
                               : null,
                         ),
                         _smallButton(
-                          'Restart / Reset',
+                          'Restart / reset',
                           key: const ValueKey('computer-bulk-restart-reset'),
                           tooltip: online ? 'Restart or reset selected agents' : 'Computer must be online to restart or reset agents',
                           glyph: RaftGlyph.rotateCcw,
@@ -1922,7 +1922,7 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         RaftSectionHeader(
-          label: 'Agent Workspaces',
+          label: 'Agent workspaces',
           icon: RaftIcon(RaftGlyph.folderOpen, size: 14, color: ink.strong),
           action: _smallButton(
             scanning
@@ -1945,7 +1945,7 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
           ),
         if (scanned && workspaces.isEmpty)
           RaftCssText(
-            'No workspace directories found.',
+            'No workspace directories yet',
             style: ink
                 .body(12, 16, color: ink.muted(.4))
                 .copyWith(fontStyle: FontStyle.italic),
@@ -2011,7 +2011,7 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         RaftCssText(
-                          'Delete Computer',
+                          'Delete computer',
                           style: _Ink(t).body(
                             14,
                             20,
@@ -2029,7 +2029,7 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
                   ),
                   const SizedBox(width: 16),
                   _actionButton(
-                    'Delete Computer',
+                    'Delete computer',
                     key: const ValueKey('computer-delete'),
                     glyph: RaftGlyph.trash2,
                     variant: RaftButtonRecipeVariant.danger,
@@ -2133,7 +2133,7 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
                   ),
                 if (kind == RaftComputerServiceKind.upgrading)
                   _actionButton(
-                    'Upgrading…',
+                    'Updating…',
                     glyph: RaftGlyph.play,
                     variant: RaftButtonRecipeVariant.accent,
                   ),
@@ -2456,7 +2456,7 @@ class _WorkspaceRow extends StatelessWidget {
               glyph: RaftGlyph.trash2,
               // The sm recipe's `& svg` 14px beats Lucide's size={12}.
               glyphSize: 14,
-              tooltip: 'Delete Workspace',
+              tooltip: 'Delete workspace',
               onPressed: onDelete,
             ),
         ],
@@ -2489,13 +2489,13 @@ class _BulkResetDialogState extends State<_BulkResetDialog> {
       ),
       (
         RaftComputerBulk.session,
-        'Reset Session & Restart',
+        'Reset session & restart',
         'Clear runtime sessions and restart the selected agents. Workspace files are preserved.',
         t.colors['warning-soft']!,
       ),
       (
         RaftComputerBulk.full,
-        'Full Reset & Restart',
+        'Full reset & restart',
         'Clear runtime sessions, delete workspace files, and restart the selected agents.',
         t.colors['danger-soft']!,
       ),

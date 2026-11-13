@@ -48,7 +48,7 @@ void main() {
                       const SizedBox(height: 6),
                       RaftComposerTaskToggle(
                         checked: false,
-                        label: 'As Task',
+                        label: 'As task',
                         onChanged: (_) => toggles++,
                       ),
                     ],

@@ -94,7 +94,7 @@ void main() {
               );
               await t.pumpAndSettle();
               await t.tap(
-                find.widgetWithText(RaftMenuItem, 'Create External Agent'),
+                find.widgetWithText(RaftMenuItem, 'Create external agent'),
               );
               await t.pumpAndSettle();
             }
@@ -126,7 +126,7 @@ void main() {
             await t.tap(
               find.widgetWithText(
                 RaftButton,
-                computer ? 'Register Computer' : 'Create External Agent',
+                computer ? 'Register Computer' : 'Create external agent',
               ),
             );
             await t.pumpAndSettle();
@@ -172,7 +172,7 @@ void main() {
         await t.tap(add);
         await t.pumpAndSettle();
         expect(
-          find.widgetWithText(RaftMenuItem, 'Create External Agent'),
+          find.widgetWithText(RaftMenuItem, 'Create external agent'),
           findsOneWidget,
         );
         w.server = RaftRecord({'id': 's', 'role': 'viewer'});
@@ -185,11 +185,11 @@ void main() {
         await t.pumpAndSettle();
         await t.tap(add);
         await t.pumpAndSettle();
-        await t.tap(find.widgetWithText(RaftMenuItem, 'Create External Agent'));
+        await t.tap(find.widgetWithText(RaftMenuItem, 'Create external agent'));
         await t.pumpAndSettle();
         await t.enterText(find.byType(TextField).first, 'Old account resource');
         w.pending = Completer<dynamic>();
-        await t.tap(find.widgetWithText(RaftButton, 'Create External Agent'));
+        await t.tap(find.widgetWithText(RaftButton, 'Create external agent'));
         await t.pump();
         c.user = RaftRecord({'id': 'bob'});
         w.notifyListeners();

@@ -634,7 +634,7 @@ class _QuickSwitcherState extends State<QuickSwitcher> {
           RaftQuickSwitcherNoResults(
             key: const Key('quick-switcher-no-results'),
             title: trimmed.isEmpty
-                ? raftText(context, 'No matching messages')
+                ? raftText(context, 'No messages match your filters')
                 : raftFormat(context, 'No results for "{query}"', {
                     'query': trimmed,
                   }),
@@ -683,11 +683,11 @@ class _QuickSwitcherState extends State<QuickSwitcher> {
     final (title, body) = switch (kind) {
       QuickSwitcherFailure.queryTooBroad => (
         'Search is too broad',
-        'Add a channel, sender, or time filter, or switch the sort to Recent.',
+        'Add a channel or sender filter, or switch the sort to Recent (a time range works with Recent).',
       ),
       QuickSwitcherFailure.searchTimeout => (
         'Search timed out',
-        'Add a channel, sender, or time filter, switch the sort to Recent, or retry.',
+        'Add a channel or sender filter, switch the sort to Recent (a time range works with Recent), or retry.',
       ),
       QuickSwitcherFailure.requestFailed => (
         'Search failed',

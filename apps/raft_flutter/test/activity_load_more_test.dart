@@ -47,13 +47,13 @@ void main() {
     expect(w.inboxQueries.last['offset'], 30);
     expect(state.rows, hasLength(60));
     expect(state.hasMore, isFalse);
-    expect(find.text('Load More'), findsNothing);
+    expect(find.text('Load more'), findsNothing);
     // A refresh of the loaded window keeps the whole list and does not bring
     // the button back.
     await state.load(keep: true);
     await t.pumpAndSettle();
     expect(state.rows, hasLength(60));
-    expect(find.text('Load More'), findsNothing);
+    expect(find.text('Load more'), findsNothing);
   });
 
   testWidgets('a list of exactly one page never shows Load more', (t) async {
@@ -61,7 +61,7 @@ void main() {
     final dynamic state = await mount(t);
     expect(state.rows, hasLength(30));
     expect(state.hasMore, isFalse);
-    expect(find.text('Load More'), findsNothing);
+    expect(find.text('Load more'), findsNothing);
   });
 
   testWidgets('reopening the page keeps the loaded window and no button', (
@@ -72,6 +72,6 @@ void main() {
     await t.pumpWidget(const SizedBox());
     final dynamic second = await mount(t);
     expect(second.rows, hasLength(60));
-    expect(find.text('Load More'), findsNothing);
+    expect(find.text('Load more'), findsNothing);
   });
 }

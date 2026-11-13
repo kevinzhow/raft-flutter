@@ -127,7 +127,7 @@ void main() {
             onDismiss: () => dismissed++,
             children: [
               RaftMenuItem(
-                label: 'Copy Link',
+                label: 'Copy link',
                 autofocus: true,
                 onPressed: () => copied++,
               ),

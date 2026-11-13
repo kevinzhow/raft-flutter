@@ -282,7 +282,7 @@ void main() {
           );
           f.w.machines = [_computer('actual')];
           await f.event(t);
-          expect(find.text('Computer Connected'), findsOneWidget);
+          expect(find.text('Computer connected'), findsOneWidget);
           expect(find.text('Waiting for computer to connect...'), findsNothing);
           expect(
             find.byKey(const ValueKey('add-computer-confirm-match')),
@@ -328,7 +328,7 @@ void main() {
       f.w.machines = [_computer('actual')];
       await t.pump(const Duration(seconds: 3));
       await t.pumpAndSettle();
-      expect(find.text('Computer Connected'), findsOneWidget);
+      expect(find.text('Computer connected'), findsOneWidget);
       expect(t.takeException(), isNull);
     },
   );
@@ -345,7 +345,7 @@ void main() {
         'machine': {'id': 'placeholder'},
       });
       await t.pumpAndSettle();
-      expect(find.text('Computer Connected'), findsOneWidget);
+      expect(find.text('Computer connected'), findsOneWidget);
       expect(t.takeException(), isNull);
     },
   );
@@ -362,7 +362,7 @@ void main() {
       'machine': {'id': 'placeholder'},
     });
     await t.pumpAndSettle();
-    expect(find.text('Computer Connected'), findsOneWidget);
+    expect(find.text('Computer connected'), findsOneWidget);
     expect(t.takeException(), isNull);
   });
 
@@ -417,7 +417,7 @@ void main() {
       await t.pump();
       f.w.machines = [_computer('late')];
       await f.event(t);
-      final advanced = find.text('Computer Connected').evaluate().isNotEmpty;
+      final advanced = find.text('Computer connected').evaluate().isNotEmpty;
       f.w.deletion!.complete();
       await t.pumpAndSettle();
       expect(
@@ -446,7 +446,7 @@ void main() {
     t.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
     await t.pump(const Duration(seconds: 3));
     await t.pumpAndSettle();
-    expect(find.text('Computer Connected'), findsOneWidget);
+    expect(find.text('Computer connected'), findsOneWidget);
     expect(t.takeException(), isNull);
   });
 
@@ -462,7 +462,7 @@ void main() {
         _computer('plain-daemon', computer: false),
       ];
       await f.event(t);
-      expect(find.text('Computer Connected'), findsNothing);
+      expect(find.text('Computer connected'), findsNothing);
       expect(find.text('Waiting for computer to connect...'), findsOneWidget);
       expect(f.w.commands.where((c) => c.$1 == 'PATCH'), isEmpty);
     },
@@ -476,7 +476,7 @@ void main() {
       await f.open(t);
       f.w.machines = [_computer('resumed')];
       await f.event(t);
-      expect(find.text('Computer Connected'), findsOneWidget);
+      expect(find.text('Computer connected'), findsOneWidget);
       final confirm = find.byKey(const ValueKey('add-computer-confirm-match'));
       expect(confirm, findsOneWidget);
       final done = find.widgetWithText(RaftRecipeButton, 'Done');

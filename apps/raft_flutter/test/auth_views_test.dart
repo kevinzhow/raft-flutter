@@ -203,7 +203,7 @@ void main() {
     await tester.ensureVisible(find.byKey(const Key('login-forgot-password')));
     await tester.tap(find.byKey(const Key('login-forgot-password')));
     await tester.pumpAndSettle();
-    expect(find.text('Send Reset Link'), findsOneWidget);
+    expect(find.text('Send reset link'), findsOneWidget);
   });
 
   // TextLink v1.21.12: no underline at rest, hover/focus shows it.
@@ -414,9 +414,9 @@ void main() {
     expect(requests, contains('POST /auth/forgot-password'));
     expect(find.text('Check your email'), findsOneWidget);
     expect(find.textContaining('alice@example.invalid'), findsOneWidget);
-    await tester.tap(find.text('Back to Sign In'));
+    await tester.tap(find.text('Back to sign in'));
     await tester.pumpAndSettle();
-    expect(find.text('Sign In'), findsWidgets);
+    expect(find.text('Sign in'), findsWidgets);
     expect(find.byKey(const Key('login-password')), findsOneWidget);
   });
 

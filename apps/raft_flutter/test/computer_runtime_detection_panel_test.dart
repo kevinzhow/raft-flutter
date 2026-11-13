@@ -385,7 +385,7 @@ void main() {
     scenario('no creator assigned is plain text', (t) async {
       await mount(t, machine());
       expect(find.byKey(const ValueKey('computer-creator-link')), findsNothing);
-      expect(find.text('No creator assigned'), findsOneWidget);
+      expect(find.text('No creator'), findsOneWidget);
     });
   });
 }

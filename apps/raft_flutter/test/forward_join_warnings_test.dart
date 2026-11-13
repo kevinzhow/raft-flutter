@@ -277,7 +277,7 @@ void main() {
     await _open(t, targets: [_joint('jc1'), _public('pub1')]);
     await _search(t, 'j');
     const warning =
-        'Joint channel destinations may expose this forwarded snapshot to people outside this server.';
+        'People outside this server may see messages forwarded to an external channel.';
     expect(find.text(warning), findsNothing);
     await t.tap(find.text('#jc1'));
     await t.pump();
@@ -326,6 +326,6 @@ void main() {
     await t.pump();
     expect(find.text('转发前请先加入 #pub1。'), findsOneWidget);
     expect(find.text('加入'), findsOneWidget);
-    expect(find.text('联合频道的目标可能会把这份转发快照暴露给本服务器之外的人。'), findsOneWidget);
+    expect(find.text('转发到外部频道的消息，可能会被本服务器以外的人看到。'), findsOneWidget);
   });
 }

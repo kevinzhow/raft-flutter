@@ -205,7 +205,7 @@ class _AccountPasswordEditorState extends State<AccountPasswordEditor> {
                   }),
             child: Semantics(
               button: true,
-              label: tr('Change Password'),
+              label: tr('Change password'),
               excludeSemantics: true,
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -216,7 +216,7 @@ class _AccountPasswordEditorState extends State<AccountPasswordEditor> {
                     color: strong.color,
                   ),
                   const SizedBox(width: RaftSpace.x2),
-                  Text(tr('Change Password'), style: strong),
+                  Text(tr('Change password'), style: strong),
                 ],
               ),
             ),
@@ -225,21 +225,21 @@ class _AccountPasswordEditorState extends State<AccountPasswordEditor> {
         if (expanded) ...[
           const SizedBox(height: RaftSpace.x3),
           field(
-            'Current Password',
+            'Current password',
             current,
             '',
             const ValueKey('account-current-password'),
           ),
           const SizedBox(height: RaftSpace.x3),
           field(
-            'New Password',
+            'New password',
             next,
             'Min 8 characters',
             const ValueKey('account-new-password'),
           ),
           const SizedBox(height: RaftSpace.x3),
           field(
-            'Confirm Password',
+            'Confirm password',
             confirmation,
             '',
             const ValueKey('account-confirm-password'),
@@ -262,7 +262,7 @@ class _AccountPasswordEditorState extends State<AccountPasswordEditor> {
             alignment: Alignment.centerLeft,
             child: RaftSettingsRecipeButton(
               key: const ValueKey('account-password-submit'),
-              label: saving ? 'Updating…' : 'Change Password',
+              label: saving ? 'Updating…' : 'Change password',
               variant: RaftButtonRecipeVariant.accent,
               size: RaftButtonRecipeSize.sm,
               onPressed: saving ? null : submit,

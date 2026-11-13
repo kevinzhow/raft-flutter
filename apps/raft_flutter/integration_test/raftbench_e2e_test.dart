@@ -61,7 +61,7 @@ void main() {
       );
       await shot(t, '01-desktop-light-en-disabled');
       expect(find.text('Enable and start analysis'), findsOneWidget);
-      expect(find.text('Workspace efficiency and cost'), findsOneWidget);
+      expect(find.text('Agent productivity'), findsOneWidget);
 
       // One channel, a start date of yesterday through the date picker.
       final general = find.text('general');

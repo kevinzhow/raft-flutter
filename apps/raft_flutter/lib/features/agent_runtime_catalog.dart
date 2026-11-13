@@ -26,7 +26,7 @@ const reasoningEfforts = <(String, String)>[
   ("low", "Low"),
   ("medium", "Medium"),
   ("high", "High"),
-  ("xhigh", "Extra High"),
+  ("xhigh", "Extra high"),
   ("max", "Max"),
   ("ultra", "Ultra"),
 ];

@@ -293,7 +293,7 @@ Future<void> verifyAdvancedTaskFilters(
           state().hasMore == true;
       page++
     ) {
-      final more = find.widgetWithText(TextButton, 'Load More');
+      final more = find.widgetWithText(TextButton, 'Load more');
       await tester.ensureVisible(more);
       await tester.tap(more);
       await loaded();
@@ -366,7 +366,7 @@ Future<void> verifyActivityThreadLifecycle(
       (row) => row['kind'] == 'thread' && row['threadChannelId'] == threadId,
     );
     for (var page = 0; page < 20 && !hasOwnRow(); page++) {
-      final more = find.widgetWithText(TextButton, 'Load More');
+      final more = find.widgetWithText(TextButton, 'Load more');
       if (more.evaluate().isEmpty) break;
       await tester.ensureVisible(more);
       await tester.pumpAndSettle();
@@ -425,7 +425,7 @@ Future<void> verifyActivityThreadLifecycle(
       if (RaftDensityScope.of(tester.element(tile)) == RaftDensity.desktop) {
         mouse = createNativeMouse(
           tester,
-          buttons: tooltip == 'Unfollow Thread' || tooltip == 'Follow Thread'
+          buttons: tooltip == 'Unfollow thread' || tooltip == 'Follow thread'
               ? kSecondaryMouseButton
               : kPrimaryMouseButton,
         );
@@ -435,7 +435,7 @@ Future<void> verifyActivityThreadLifecycle(
       }
       // Source ThreadsInbox exposes follow/unfollow in the row context menu;
       // the hover action is exclusively done/restore.
-      if (tooltip == 'Unfollow Thread' || tooltip == 'Follow Thread') {
+      if (tooltip == 'Unfollow thread' || tooltip == 'Follow thread') {
         final point = tester.getTopLeft(tile) + const Offset(16, 16);
         if (defaultTargetPlatform == TargetPlatform.linux) {
           // Reuse this owned hover device for the secondary-button press.
@@ -447,7 +447,7 @@ Future<void> verifyActivityThreadLifecycle(
         await tester.pumpAndSettle();
         final action = find.widgetWithText(
           RaftMenuItem,
-          tooltip == 'Unfollow Thread' ? 'Unfollow' : 'Follow',
+          tooltip == 'Unfollow thread' ? 'Unfollow' : 'Follow',
         );
         expect(action, findsOneWidget);
         await tester.tap(action);
@@ -509,7 +509,7 @@ Future<void> verifyActivityThreadLifecycle(
       false,
       reason: 'Enabled Source Activity needs its separate sidebar/Done flow.',
     );
-    await rowAction('Unfollow Thread');
+    await rowAction('Unfollow thread');
     await follows(false);
     await locate();
     final unfollowed = (state().rows as List).singleWhere(
@@ -517,7 +517,7 @@ Future<void> verifyActivityThreadLifecycle(
     );
     expect(unfollowed['isFollowing'], false);
     await capture('activity-classic-thread-unfollowed-all');
-    await rowAction('Follow Thread');
+    await rowAction('Follow thread');
     await follows(true);
     await locate();
     await capture('activity-classic-thread-refollowed-all');

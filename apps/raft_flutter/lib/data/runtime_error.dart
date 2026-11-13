@@ -58,7 +58,7 @@ RuntimeErrorKind? classifyTypedRuntimeError(Object? lastRuntimeError) {
 /// (`agent.runtimeError.*`).
 String runtimeErrorText(RuntimeErrorKind kind) => switch (kind) {
   RuntimeErrorKind.notLoggedIn =>
-    'This runtime is not logged in on this computer.',
+    'This runtime is not signed in on this computer.',
   RuntimeErrorKind.notInstalled =>
     'This runtime is not installed on this computer.',
   RuntimeErrorKind.authFailed => 'Runtime authentication failed.',
@@ -155,7 +155,7 @@ String? spawnFailureDetailText(
   // ("...or restart the agent") would send people the wrong way.
   if (reason == 'session_needs_reset') {
     return translate(
-      "This agent's conversation no longer fits its model, and context compaction failed several times in a row, so restarting would fail again. To start a new session, open Restart / Reset and choose Reset Session & Restart (Reset Model for members). Raft messages and workspace files, including MEMORY.md, are kept",
+      "The context is too large and shrinking it automatically didn't fix it. Reset the session and restart; if one message is itself very large, switch to a model with a larger context or split the content.",
       const {},
     );
   }

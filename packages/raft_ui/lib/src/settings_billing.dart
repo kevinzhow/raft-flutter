@@ -342,7 +342,7 @@ class RaftPlanBillingLoading extends StatelessWidget {
       ],
     );
     final stats = [
-      for (final label in const ['Seat', 'Message History', 'File uploads'])
+      for (final label in const ['Seat', 'Message history', 'File uploads'])
         Row(
           children: [
             Expanded(
@@ -436,7 +436,7 @@ class RaftPlanBillingLoading extends StatelessWidget {
             ),
           ),
           const RaftSettingsSectionHeader(
-            label: 'Manage Plan',
+            label: 'Manage plan',
             glyph: RaftGlyph.plus,
           ),
           Container(

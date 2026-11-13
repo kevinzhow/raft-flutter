@@ -1,5 +1,5 @@
 // Web utils/agentDiagnosticInfo.ts `buildAgentDiagnosticInfo`: the text of
-// "Copy Diagnostic Info" and of the runtime error banner's Copy info. An
+// "Copy diagnostic info" and of the runtime error banner's Copy info. An
 // external agent runs outside Raft (no Computer, daemon or managed status), so
 // its text carries the external facts of `GET /agents/:id/external-diagnostics`
 // instead: provisioning, presence, reported status, push webhook, cursor pulls

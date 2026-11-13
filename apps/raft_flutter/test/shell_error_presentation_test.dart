@@ -237,7 +237,7 @@ void main() {
           ),
           Exception('SocketException: Connection refused, port = 443'),
         ]) {
-          expect(authFailureText(raw, 'Login failed'), 'Login failed');
+          expect(authFailureText(raw, 'Sign-in failed'), 'Sign-in failed');
         }
       },
     );
@@ -250,7 +250,7 @@ void main() {
             status: 401,
             body: {'error': 'Invalid email or password'},
           ),
-          'Login failed',
+          'Sign-in failed',
         ),
         'Incorrect email or password.',
       );
@@ -261,7 +261,7 @@ void main() {
             status: 401,
             body: {'error': 'Nope', 'code': 'AUTH_INVALID_CREDENTIALS'},
           ),
-          'Login failed',
+          'Sign-in failed',
         ),
         'Incorrect email or password.',
       );
@@ -271,7 +271,7 @@ void main() {
       expect(
         authFailureText(
           const RaftApiException(localNetworkPermissionError),
-          'Login failed',
+          'Sign-in failed',
         ),
         localNetworkPermissionError,
       );

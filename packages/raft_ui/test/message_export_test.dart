@@ -44,7 +44,7 @@ void main() {
             ),
           ),
         );
-        await tester.tap(find.byTooltip('Select All'));
+        await tester.tap(find.byTooltip('Select all'));
         await tester.pump();
         expect(find.text('3 selected'), findsOneWidget);
         await tester.tap(find.byTooltip('More'));
@@ -57,7 +57,7 @@ void main() {
         await tester.tap(find.text('Generate Image'));
         await tester.pumpAndSettle();
         expect(find.text('Actual content'), findsOneWidget);
-        await tester.tap(find.text('Save Image'));
+        await tester.tap(find.text('Save image'));
         expect(saved, 1);
         await tester.tap(find.byTooltip('Close Preview'));
         await tester.pumpAndSettle();

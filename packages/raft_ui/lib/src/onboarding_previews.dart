@@ -344,7 +344,7 @@ class RaftServerCreatePreview extends StatelessWidget {
             last: true,
             child: rowText(channel, active: true),
           ),
-          sectionLabel(tr('Direct Messages'), 1),
+          sectionLabel(tr('Direct messages'), 1),
           row(
             last: true,
             avatar: const RaftAvatarSlot(

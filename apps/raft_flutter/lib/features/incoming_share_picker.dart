@@ -591,7 +591,7 @@ class _IncomingSharePickerState extends State<IncomingSharePicker> {
                   context,
                   query.isEmpty
                       ? 'No destinations available.'
-                      : 'No destinations match your search.',
+                      : 'No destinations match your search',
                 ),
               );
             }

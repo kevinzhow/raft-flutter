@@ -85,7 +85,7 @@ void main() {
       (t) async {
         final semantics = t.ensureSemantics();
         final c = await _mount(t, 'dashboard-disabled', size: size);
-        expect(_text('Conversation insights'), findsOneWidget);
+        expect(_text('Patterns and improvements'), findsOneWidget);
         expect(
           _text('Reads selected channels · no DM replies'),
           findsOneWidget,
@@ -224,14 +224,14 @@ void main() {
     expect(_text('Task intent: Actively pursued'), findsOneWidget);
     expect(_text('Task intent: Unknown'), findsOneWidget);
     expect(_text('1 counterexamples were considered'), findsOneWidget);
-    expect(_text('Draft improvement or shared-skill proposal'), findsOneWidget);
+    expect(_text('Suggestion'), findsOneWidget);
     expect(
       _text('Ask the agent to post the deploy link before closing the task.'),
       findsOneWidget,
     );
     expect(
       _text(
-        'Conversation evidence only. Tool outcomes and thread replies are not included. Suggestions need human review and never create or publish skills automatically.',
+        'Based on the selected channels and the thread replies you can read. Task conversations and tool results are not read yet, and very long messages are cut short. Suggestions are for you to review — nothing changes automatically.',
       ),
       findsOneWidget,
     );
@@ -397,10 +397,7 @@ void main() {
       ),
       findsOneWidget,
     );
-    expect(
-      _text('No messages exist in the selected channels.'),
-      findsOneWidget,
-    );
+    expect(_text('No messages in the selected channels'), findsOneWidget);
     await unmount(t);
   });
 
@@ -511,7 +508,7 @@ void main() {
 
   testWidgets('Chinese wording (Web zh-cn)', (t) async {
     await _mount(t, 'dashboard-ready', locale: const Locale('zh'));
-    expect(_text('对话洞察'), findsOneWidget);
+    expect(_text('行为模式与改进'), findsOneWidget);
     expect(_text('本轮分析已完成'), findsOneWidget);
     expect(_text('完成声明需要核实'), findsOneWidget);
     await unmount(t);

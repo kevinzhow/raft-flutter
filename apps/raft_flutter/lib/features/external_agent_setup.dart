@@ -301,7 +301,7 @@ class _ExternalAgentSetupState extends State<ExternalAgentSetup> {
         ].join(' && '),
       ),
       RaftExternalSetupStep(
-        title: tr('Log in this agent profile'),
+        title: tr('Sign in this agent profile'),
         command: login,
         description: tokenLogin,
       ),
@@ -319,7 +319,7 @@ class _ExternalAgentSetupState extends State<ExternalAgentSetup> {
         ),
       ),
       RaftExternalSetupStep(
-        title: tr('Log in this agent profile'),
+        title: tr('Sign in this agent profile'),
         command: login,
         description: tokenLogin,
       ),

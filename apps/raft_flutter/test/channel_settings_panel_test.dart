@@ -197,7 +197,7 @@ void main() {
       }
       // Pin, mute and collapse live in Preferences.
       for (final label in [
-        'Pin Channel',
+        'Pin channel',
         'Mute activity',
         'Collapse long messages',
       ]) {
@@ -250,7 +250,7 @@ void main() {
     expect(find.byType(RaftChannelInfoForm), findsNothing);
     expect(find.text('Actions'), findsNothing);
     expect(find.text('Preferences'), findsOneWidget);
-    expect(find.text('Pin Channel'), findsOneWidget);
+    expect(find.text('Pin channel'), findsOneWidget);
     expect(find.text('Collapse long messages'), findsOneWidget);
     expect(find.text('Mute activity'), findsNothing);
     // A DM never asks for the roster.
@@ -258,7 +258,7 @@ void main() {
       t
           .widget<RaftSwitch>(
             find.byWidgetPredicate(
-              (w) => w is RaftSwitch && w.semanticLabel == 'Pin Channel',
+              (w) => w is RaftSwitch && w.semanticLabel == 'Pin channel',
             ),
           )
           .value,
@@ -274,8 +274,8 @@ void main() {
       t.widget<RaftOverflowSheet>(find.byType(RaftOverflowSheet)).badge,
       'Private',
     );
-    expect(find.text('Make Public'), findsOneWidget);
-    expect(find.text('Make Private'), findsNothing);
+    expect(find.text('Make public'), findsOneWidget);
+    expect(find.text('Make private'), findsNothing);
     // A private channel has no guest policy.
     expect(find.text('Guest access'), findsNothing);
   });
@@ -434,7 +434,7 @@ void main() {
         find.textContaining('Members keep read access to "work"'),
         findsOneWidget,
       );
-      await confirm(t, 'Archive Channel');
+      await confirm(t, 'Archive channel');
       expect(_writes(api).map((c) => '${c.method} ${c.path}'), [
         'POST /channels/c1/archive',
       ]);
@@ -447,7 +447,7 @@ void main() {
       final (_, api) = await _open(t);
       api.routes['POST /channels/c1/archive'] = (_) => throw StateError('x');
       await press(t, 'channel-settings-archive-action');
-      await confirm(t, 'Archive Channel');
+      await confirm(t, 'Archive channel');
       expect(find.byType(RaftOverflowSheet), findsOneWidget);
       expect(_id('channel-settings-confirm-dialog'), findsNothing);
       expect(find.byType(RaftErrorBanner), findsOneWidget);
@@ -457,8 +457,8 @@ void main() {
       final (_, api) = await _open(t);
       api.routes['PATCH /channels/c1'] = (_) => _row(type: 'private');
       await press(t, 'channel-settings-visibility-action');
-      expect(find.text('Make Private'), findsNWidgets(3));
-      await confirm(t, 'Make Private');
+      expect(find.text('Make private'), findsNWidgets(3));
+      await confirm(t, 'Make private');
       final patch = _writes(api).single;
       expect(patch.path, '/channels/c1');
       expect(patch.data, {'visibility': 'private'});
@@ -473,7 +473,7 @@ void main() {
       );
       api.routes['POST /channels/c1/leave'] = (_) => {};
       await press(t, 'channel-overflow-leave');
-      await confirm(t, 'Leave Channel');
+      await confirm(t, 'Leave channel');
       expect(_writes(api).single.path, '/channels/c1/leave');
       expect(find.byType(RaftOverflowSheet), findsNothing);
     });
@@ -532,7 +532,7 @@ void main() {
         await t.pumpAndSettle();
         expect(_writes(api), isEmpty);
         await press(t, 'channel-settings-delete-action');
-        await t.tap(inDialog('Delete Channel').last);
+        await t.tap(inDialog('Delete channel').last);
         await t.pumpAndSettle(const Duration(milliseconds: 100));
         expect(_writes(api).map((c) => '${c.method} ${c.path}'), [
           'DELETE /channels/c1',
@@ -612,7 +612,7 @@ void main() {
       isNull,
     );
     expect(_id('channel-settings-archive-action'), findsOneWidget);
-    expect(find.text('Unarchive Channel'), findsOneWidget);
+    expect(find.text('Unarchive channel'), findsOneWidget);
     for (final id in [
       'channel-settings-delete-action',
       'channel-overflow-leave',
@@ -695,7 +695,7 @@ void main() {
     expect(inset(_id('add-member-open')), 12, reason: 'footer p-3');
     expect(insetEnd(_id('add-member-open')), 12);
     // Role tag of the owner row ends at the row's 12px inset.
-    expect(find.text('Channel Admin'), findsNothing);
+    expect(find.text('Channel admin'), findsNothing);
     await t.tap(_id('add-member-open'));
     await t.pumpAndSettle();
     expect(inset(_id('add-member-back')), 16);

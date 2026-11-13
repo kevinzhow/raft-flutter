@@ -396,7 +396,7 @@ void main() {
   );
 
   for (final error in [
-    const RaftApiException('rate limited', status: 429),
+    const RaftApiException('used up', status: 429),
     const RaftApiException.staleScope(),
     const RaftApiException('offline', status: 500),
   ]) {

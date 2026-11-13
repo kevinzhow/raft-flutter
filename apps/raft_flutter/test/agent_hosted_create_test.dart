@@ -327,11 +327,11 @@ void main() {
     await t.pumpAndSettle();
     expect(find.textContaining("Couldn't load the models"), findsOneWidget);
     expect(
-      find.textContaining('Try Again', findRichText: true),
+      find.textContaining('Try again', findRichText: true),
       findsOneWidget,
     );
     w.modelsGate = null;
-    await t.tapOnText(find.textRange.ofSubstring('Try Again'));
+    await t.tapOnText(find.textRange.ofSubstring('Try again'));
     await t.pumpAndSettle();
     expect(find.textContaining("Couldn't load the models"), findsNothing);
     expect(find.text('Default (Balanced)'), findsOneWidget);
@@ -405,7 +405,7 @@ void main() {
     c.flagOn = false;
     await open(t);
     expect(find.text('Connect a computer first'), findsOneWidget);
-    expect(find.text('Add Computer'), findsOneWidget);
+    expect(find.text('Add computer'), findsOneWidget);
   });
 
   testWidgets('an action card can preselect the cloud and a model', (t) async {

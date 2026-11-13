@@ -51,12 +51,12 @@ class _RaftResetAgentDialogState extends State<RaftResetAgentDialog> {
       ? const [
           (
             'restart',
-            'Restart Model',
+            'Restart model',
             'Restart the agent process while keeping its runtime session and workspace files.',
           ),
           (
             'session',
-            'Reset Model',
+            'Reset model',
             'Clear the runtime session and restart the agent. Workspace files are preserved.',
           ),
         ]
@@ -68,13 +68,13 @@ class _RaftResetAgentDialogState extends State<RaftResetAgentDialog> {
           ),
           (
             'session',
-            'Reset Session & Restart',
+            'Reset session & restart',
             'Clear the runtime session and restart. Workspace files (MEMORY.md, notes/) are preserved.',
           ),
           if (widget.canFullReset)
             (
               'full',
-              'Full Reset & Restart',
+              'Full reset & restart',
               'Clear the runtime session, delete all workspace files, and restart from scratch.',
             ),
         ];

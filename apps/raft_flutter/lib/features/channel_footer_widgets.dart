@@ -33,7 +33,7 @@ Widget? channelFooterReplacement(
     ),
     ChannelFooterKind.jointLocked => RaftChannelBannerFooter(
       message: "This Joint Channel is read-only because it has more than 2 free servers. It becomes writable again when one server's admin upgrades or a free server leaves.",
-      linkLabel: onViewBilling == null ? null : 'View Billing',
+      linkLabel: onViewBilling == null ? null : 'View billing',
       onLink: onViewBilling,
     ),
     ChannelFooterKind.guestReadOnly => const RaftChannelBannerFooter(
@@ -73,7 +73,7 @@ Widget? threadFooterReplacement(
   if (jointChannelReadOnly(parent.json, now)) {
     return RaftChannelBannerFooter(
       message: "This Joint Channel is read-only because it has more than 2 free servers. It becomes writable again when one server's admin upgrades or a free server leaves.",
-      linkLabel: onViewBilling == null ? null : 'View Billing',
+      linkLabel: onViewBilling == null ? null : 'View billing',
       onLink: onViewBilling,
     );
   }

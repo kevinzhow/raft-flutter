@@ -134,7 +134,7 @@ void main() {
         host(ChannelConversionSection(controller: w, channelId: 'c1')),
       );
       await flush(t);
-      expect(find.text('Convert to Joint Channel'), findsNothing);
+      expect(find.text('Convert to joint channel'), findsNothing);
       expect(
         a.calls.where(
           (c) => c.method == 'GET' && c.path.startsWith('/channels'),
@@ -165,7 +165,7 @@ void main() {
       );
       await flush(t);
       expect(channelConversionFlag, 'external_channels_v1');
-      expect(find.text('Convert to Joint Channel'), findsNothing);
+      expect(find.text('Convert to joint channel'), findsNothing);
       expect(find.text('Chat with members from other servers'), findsNothing);
       await t.pumpWidget(const SizedBox());
     },
@@ -205,7 +205,7 @@ void main() {
       expect(a.calls.singleWhere((c) => c.path.endsWith('/retry')).data.keys, [
         'commandId',
       ]);
-      expect(find.text('Convert to Joint Channel'), findsNothing);
+      expect(find.text('Convert to joint channel'), findsNothing);
       await t.pumpWidget(const SizedBox());
     },
   );

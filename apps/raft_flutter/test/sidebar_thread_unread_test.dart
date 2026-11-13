@@ -29,7 +29,7 @@ Map<String, dynamic> _thread(
 };
 
 /// Followed-thread unread rolls up onto the parent channel's sidebar row, and
-/// the channel menu's "Mark All as Read" reads the channel with its threads.
+/// the channel menu's "Mark all as read" reads the channel with its threads.
 /// Web 1.24 retired the two flags that gated them in v1.21.23
 /// (`thread_unread_badge_v0`, `sidebar_mark_all_read_v0`): on for everyone.
 void main() {
@@ -285,7 +285,7 @@ void main() {
           stale: true,
         );
         await rightClick(tester, row('c1'));
-        await tester.tap(find.text('Mark All as Read'));
+        await tester.tap(find.text('Mark all as read'));
         await tester.pumpAndSettle();
         await tester.runAsync(
           () => Future<void>.delayed(const Duration(milliseconds: 300)),
@@ -307,9 +307,9 @@ void main() {
         await setup(tester, enabled: both, followed: [_thread('a', 'c1')]);
         // Only the thread is unread: the plain toggle would offer Mark as Unread.
         await rightClick(tester, row('c1'));
-        expect(find.text('Mark All as Read'), findsOneWidget);
-        expect(find.text('Mark as Unread'), findsNothing);
-        await tester.tap(find.text('Mark All as Read'));
+        expect(find.text('Mark all as read'), findsOneWidget);
+        expect(find.text('Mark as unread'), findsNothing);
+        await tester.tap(find.text('Mark all as read'));
         await tester.pumpAndSettle();
         await tester.runAsync(
           () => Future<void>.delayed(const Duration(milliseconds: 300)),
@@ -330,7 +330,7 @@ void main() {
         expect(threadMark('c1'), findsNothing);
         // The list was read again: the thread now counts as read.
         await rightClick(tester, row('c1'));
-        expect(find.text('Mark as Unread'), findsOneWidget);
+        expect(find.text('Mark as unread'), findsOneWidget);
       },
     );
 
@@ -340,8 +340,8 @@ void main() {
       w.notifyListeners();
       await tester.pumpAndSettle();
       await rightClick(tester, row('c1'));
-      expect(find.text('Mark All as Read'), findsOneWidget);
-      expect(find.text('Mark as Read'), findsNothing);
+      expect(find.text('Mark all as read'), findsOneWidget);
+      expect(find.text('Mark as read'), findsNothing);
       expect(
         api.calls
             .where((c) => c.path == '/feature-flags/evaluate')
@@ -362,8 +362,8 @@ void main() {
       w.notifyListeners();
       await tester.pumpAndSettle();
       await rightClick(tester, row('c3'));
-      expect(find.text('Mark All as Read'), findsNothing);
-      expect(find.text('Mark as Read'), findsOneWidget);
+      expect(find.text('Mark all as read'), findsNothing);
+      expect(find.text('Mark as read'), findsOneWidget);
     });
   });
 }

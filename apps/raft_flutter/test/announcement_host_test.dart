@@ -142,7 +142,7 @@ void main() {
       expect(f.count('GET /announcements/active'), 1);
       expect(modal, findsOneWidget);
       expect(find.text('What is new a1'), findsOneWidget);
-      expect(find.text('Latest updates'), findsOneWidget);
+      expect(find.text("What's new"), findsOneWidget);
       // The first page only: no page title, no second page, no pager.
       expect(find.textContaining('Page 1 body'), findsOneWidget);
       expect(find.textContaining('Page 2 body'), findsNothing);

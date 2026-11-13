@@ -377,7 +377,7 @@ void main() {
                         toolbar: RaftMessageToolbar(
                           children: [
                             RaftMessageToolbarAction(
-                              label: 'Reply in Thread',
+                              label: 'Reply in thread',
                               icon: const SizedBox(),
                               onPressed: () => activations++,
                             ),

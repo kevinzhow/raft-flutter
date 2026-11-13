@@ -598,7 +598,7 @@ class RaftSlackWizardView extends StatelessWidget {
     final hint = RaftCssText(
       raftText(
         context,
-        'Invite the Raft app to a Slack channel before selecting it.',
+        "Can't find a Slack channel? In Slack, open the channel, click its name, and add the Raft app under Agents & apps or Integrations. Then return here and click Refresh. Private channels appear only if both the Raft app and the Slack account that connected Raft have joined.",
       ),
       style: _text(t, size: 12, line: 16, color: t.colors['foreground-hint']),
     );

@@ -1,7 +1,7 @@
 import 'overlays/dialog.dart' show RaftDialog;
-// Web `member/InviteHumanDialog.tsx`: the "Invite Human" DialogCard (`max-w-lg`)
+// Web `member/InviteHumanDialog.tsx`: the "Invite human" DialogCard (`max-w-lg`)
 // with the By email / By link segmented control, one row per invitee (email
-// Input + optional role Select + remove), "Add Another", the join-link field
+// Input + optional role Select + remove), "Add another", the join-link field
 // with its limits, and Cancel / Send invites. Presentation only: the app owns
 // requests, billing gates and navigation.
 import 'raft/segmented_control.dart'
@@ -167,7 +167,7 @@ class _RaftInviteHumanDialogState extends State<RaftInviteHumanDialog> {
         type: MaterialType.transparency,
         child: RaftDialog.card(
           key: const ValueKey('invite-dialog'),
-          title: 'Invite Human',
+          title: 'Invite human',
           maxWidth: 512,
           onClose: widget.onClose,
           child: Column(
@@ -185,7 +185,7 @@ class _RaftInviteHumanDialogState extends State<RaftInviteHumanDialog> {
                   descriptionTail: widget.onViewBilling == null
                       ? null
                       : (
-                          label: raftText(context, 'View Billing'),
+                          label: raftText(context, 'View billing'),
                           onPressed: widget.onViewBilling!,
                         ),
                 ),
@@ -199,7 +199,7 @@ class _RaftInviteHumanDialogState extends State<RaftInviteHumanDialog> {
                 glyph: RaftGlyph.info,
                 description: raftText(
                   context,
-                  'Members you invite can DM and give instructions to every agent in this server. Keep personal agents in a separate server of your own.',
+                  'Everyone in this server can message and work with every agent here. For agents that are just for you, use a server of your own.',
                 ),
               ),
               const SizedBox(height: 16),
@@ -287,7 +287,7 @@ class _RaftInviteHumanDialogState extends State<RaftInviteHumanDialog> {
   Widget _email(BuildContext context, RaftTokens t) => Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
-      _fieldLabel(context, t, 'Invite by Email'),
+      _fieldLabel(context, t, 'Invite by email'),
       Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -346,7 +346,7 @@ class _RaftInviteHumanDialogState extends State<RaftInviteHumanDialog> {
             alignment: Alignment.centerLeft,
             child: RaftRecipeButton(
               key: const ValueKey('invite-add'),
-              label: raftText(context, 'Add Another'),
+              label: raftText(context, 'Add another'),
               glyph: RaftGlyph.plus,
               glyphSize: 14,
               variant: RaftButtonRecipeVariant.ghost,
@@ -381,7 +381,7 @@ class _RaftInviteHumanDialogState extends State<RaftInviteHumanDialog> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _fieldLabel(context, t, 'Invite Link'),
+        _fieldLabel(context, t, 'Invite link'),
         Row(
           children: [
             Expanded(
@@ -469,7 +469,7 @@ class _RaftInviteHumanDialogState extends State<RaftInviteHumanDialog> {
                 key: const ValueKey('invite-link-revoke'),
                 onTap: widget.onRevokeLink,
                 child: Text(
-                  raftText(context, 'Revoke Link'),
+                  raftText(context, 'Revoke link'),
                   style: TextStyle(
                     fontFamily: t.headingFont,
                     fontSize: 12,

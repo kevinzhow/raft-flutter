@@ -253,7 +253,7 @@ class RaftMemberPickerContent extends StatelessWidget {
     final t = RaftTokens.of(context);
     if (!hasCandidates) {
       return Text(
-        raftText(context, 'No members available'),
+        raftText(context, 'No members to add'),
         style: raftCssTextStyle(
           family: t.monoFont,
           step: RaftTextSteps.sm,
@@ -348,7 +348,7 @@ class _MemberPicker extends StatelessWidget {
                     vertical: 16,
                   ),
                   child: Text(
-                    raftFormat(context, 'No matches for "{query}"', {
+                    raftFormat(context, 'No members match "{query}"', {
                       'query': query.trim(),
                     }),
                     textAlign: TextAlign.center,
@@ -434,7 +434,7 @@ class _RecipeMemberPicker extends StatelessWidget {
                   tokens: tokens,
                   applyText: false,
                   child: Text(
-                    raftFormat(context, 'No matches for "{query}"', {
+                    raftFormat(context, 'No members match "{query}"', {
                       'query': query.trim(),
                     }),
                     style: recipe.empty.text(

@@ -478,7 +478,7 @@ class _AgentDetailPanelState extends State<AgentDetailPanel>
     final display = _display;
     return buildAgentDiagnosticInfo(
       agent: a,
-      title: raftText(context, 'Raft Diagnostic Info'),
+      title: raftText(context, 'Raft diagnostic info'),
       serverId: widget.controller.server?.id,
       machine: machine,
       activity: display.activity,
@@ -535,18 +535,18 @@ class _AgentDetailPanelState extends State<AgentDetailPanel>
     final menu = <RaftMenuEntry>[
       if (_canMessage)
         RaftMenuEntry(
-          label: raftText(context, 'Direct Message'),
+          label: raftText(context, 'Direct message'),
           leading: const RaftDirectMessageIcon(size: 14),
           onPressed: widget.actions.onMessage,
         ),
       if (_canControlRuntime && !external) ...[
         RaftMenuEntry(
-          label: raftText(context, online ? 'Stop Agent' : 'Start Agent'),
+          label: raftText(context, online ? 'Stop agent' : 'Start agent'),
           glyph: online ? RaftGlyph.square : RaftGlyph.play,
           onPressed: widget.actions.onStartStop,
         ),
         RaftMenuEntry(
-          label: raftText(context, 'Restart / Reset'),
+          label: raftText(context, 'Restart / reset'),
           glyph: RaftGlyph.rotateCcw,
           onPressed: widget.actions.onRestartReset,
         ),
@@ -676,20 +676,20 @@ class _AgentDetailPanelState extends State<AgentDetailPanel>
       RaftPanelIconButton(
         key: const Key('agent-profile-inline-message'),
         icon: (size, color) => RaftDirectMessageIcon(size: size, color: color),
-        tooltip: raftText(context, 'Direct Message'),
+        tooltip: raftText(context, 'Direct message'),
         onPressed: widget.actions.onMessage,
       ),
     if (_canControlRuntime && !external) ...[
       RaftPanelIconButton(
         key: const Key('agent-profile-inline-start-stop'),
         glyph: online ? RaftGlyph.square : RaftGlyph.play,
-        tooltip: raftText(context, online ? 'Stop Agent' : 'Start Agent'),
+        tooltip: raftText(context, online ? 'Stop agent' : 'Start agent'),
         onPressed: widget.actions.onStartStop,
       ),
       RaftPanelIconButton(
         key: const Key('agent-profile-inline-restart-reset'),
         glyph: RaftGlyph.rotateCcw,
-        tooltip: raftText(context, 'Restart / Reset'),
+        tooltip: raftText(context, 'Restart / reset'),
         onPressed: widget.actions.onRestartReset,
       ),
     ],
@@ -798,11 +798,9 @@ class _AgentDetailPanelState extends State<AgentDetailPanel>
 
   /// components/machine MachineRunLabel descriptor.
   String runLabel(Map<String, dynamic> m) {
-    if (m['status'] != 'online') {
-      return m['isComputer'] == true ? 'computer offline' : 'legacy offline';
-    }
+    if (m['status'] != 'online') return 'Offline';
     return m['isComputer'] == true && m['computerVersion'] != null
-        ? 'computer v${m['computerVersion']}'
+        ? 'v${m['computerVersion']}'
         : 'legacy v${m['daemonVersion'] ?? '?'}';
   }
 
@@ -1006,7 +1004,7 @@ class _AgentDetailPanelState extends State<AgentDetailPanel>
       if (!external) ...[
         if (_canControlRuntime) ...[
           RaftButton(
-            label: raftText(context, online ? 'Stop Agent' : 'Start Agent'),
+            label: raftText(context, online ? 'Stop agent' : 'Start agent'),
             glyph: online ? RaftGlyph.square : RaftGlyph.play,
             tone: RaftButtonRecipeVariant.outline,
             size: RaftButtonRecipeSize.md,
@@ -1014,7 +1012,7 @@ class _AgentDetailPanelState extends State<AgentDetailPanel>
             onPressed: widget.busy ? null : widget.actions.onStartStop,
           ),
           RaftButton(
-            label: raftText(context, 'Restart / Reset'),
+            label: raftText(context, 'Restart / reset'),
             glyph: RaftGlyph.rotateCcw,
             tone: RaftButtonRecipeVariant.outline,
             size: RaftButtonRecipeSize.md,
@@ -1023,13 +1021,13 @@ class _AgentDetailPanelState extends State<AgentDetailPanel>
           ),
         ],
       ],
-      // AgentDetailPanel Actions: `CopyButton` "Copy Diagnostic Info" (outline,
+      // AgentDetailPanel Actions: `CopyButton` "Copy diagnostic info" (outline,
       // Clipboard / Check icon), between Restart / Reset and Archive.
       RaftButton(
         key: const ValueKey('agent-copy-diagnostic'),
         label: raftText(
           context,
-          diagnosticCopied ? 'Diagnostic Info Copied' : 'Copy Diagnostic Info',
+          diagnosticCopied ? 'Diagnostic info copied' : 'Copy diagnostic info',
         ),
         glyph: diagnosticCopied ? RaftGlyph.check : RaftGlyph.clipboard,
         tone: RaftButtonRecipeVariant.outline,
@@ -1041,7 +1039,7 @@ class _AgentDetailPanelState extends State<AgentDetailPanel>
       if (widget.actions.onReportIssue != null)
         RaftButton(
           key: const ValueKey('agent-report-issue'),
-          label: raftText(context, 'Report Issue'),
+          label: raftText(context, 'Report issue'),
           glyph: RaftGlyph.bug,
           tone: RaftButtonRecipeVariant.warning,
           size: RaftButtonRecipeSize.md,
@@ -1051,7 +1049,7 @@ class _AgentDetailPanelState extends State<AgentDetailPanel>
       if (widget.actions.onDelete != null)
         RaftButton(
           key: const ValueKey('agent-archive-button'),
-          label: raftText(context, 'Archive Agent'),
+          label: raftText(context, 'Archive agent'),
           glyph: RaftGlyph.archive,
           tone: RaftButtonRecipeVariant.danger,
           size: RaftButtonRecipeSize.md,
@@ -1294,7 +1292,7 @@ class _AgentDetailPanelState extends State<AgentDetailPanel>
                         ),
                       )
                     : RaftCssText(
-                        raftText(context, 'No creator assigned'),
+                        raftText(context, 'No creator'),
                         style: RaftPanelText.muted(t),
                       ),
               ),
@@ -1410,7 +1408,7 @@ class _AgentDetailPanelState extends State<AgentDetailPanel>
               if (env.isNotEmpty) RaftEnvVarsBlock(vars: env),
             ],
           ),
-        // v1.21.23: no "Created Agents" section on an agent profile (a
+        // v1.21.23: no "Created agents" section on an agent profile (a
         // person's profile keeps it).
         // Web AgentDetailPanel `{canViewPrivateAgentSurfaces && <AgentSkills
         // embedded />}`, between the profile info and Actions.

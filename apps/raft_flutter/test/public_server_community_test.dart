@@ -88,7 +88,7 @@ void main() {
   ) async {
     final run = _Run();
     await _mount(t, run);
-    await t.tap(find.text('Join Community'));
+    await t.tap(find.text('Join community'));
     await t.pumpAndSettle();
     expect(
       run.calls,
@@ -100,7 +100,7 @@ void main() {
   testWidgets('a member of the community just switches', (t) async {
     final run = _Run(alreadyMember: true);
     await _mount(t, run);
-    await t.tap(find.text('Join Community'));
+    await t.tap(find.text('Join community'));
     await t.pumpAndSettle();
     expect(run.calls, isNot(contains('POST /servers/join-community')));
     expect(run.selected, ['community']);
@@ -109,7 +109,7 @@ void main() {
   testWidgets('a failed join shows the error and switches nowhere', (t) async {
     final run = _Run(joinError: 'Failed to join community server');
     await _mount(t, run);
-    await t.tap(find.text('Join Community'));
+    await t.tap(find.text('Join community'));
     await t.pumpAndSettle();
     expect(run.selected, isEmpty);
     expect(find.text('Failed to join community server'), findsOneWidget);

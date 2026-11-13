@@ -122,13 +122,13 @@ void main() {
         expect(
           find.descendant(
             of: commitZone,
-            matching: find.textContaining('has not installed Artifact Share'),
+            matching: find.textContaining("hasn't installed Artifact Share"),
           ),
           findsOneWidget,
         );
         expect(
           find.textContaining(
-            'You are an admin of this Server. Continuing will install the App as you.',
+            'You can install it here; continuing installs it as you.',
           ),
           findsOneWidget,
         );
@@ -468,7 +468,7 @@ void main() {
       // Beta can be installed on: its commit zone and button.
       expect(find.text('Install and continue'), findsOneWidget);
       expect(
-        find.textContaining('Beta has not installed Artifact Share'),
+        find.textContaining("Beta hasn't installed Artifact Share"),
         findsOneWidget,
       );
       // Admin-needed Team C: explanation, no button.
@@ -553,7 +553,7 @@ void main() {
         find.byKey(const ValueKey('human-login-no-server-match')),
         findsOneWidget,
       );
-      expect(find.text('No Servers match your search.'), findsOneWidget);
+      expect(find.text('No Servers match your search'), findsOneWidget);
       // A search does not change the server chosen.
       expect(api.installs, isEmpty);
       expect(api.authorizations, isEmpty);
@@ -577,7 +577,7 @@ void main() {
       await frames(t);
       expect(find.text('Installing and continuing...'), findsOneWidget);
       expect(
-        find.textContaining('Beta has not installed'),
+        find.textContaining("Beta hasn't installed"),
         findsOneWidget,
         reason: 'the server being installed on stays selected',
       );
@@ -663,7 +663,7 @@ void main() {
         findsOneWidget,
       );
       expect(find.text('What is Login with Raft?'), findsOneWidget);
-      expect(find.text('How to register an App?'), findsOneWidget);
+      expect(find.text('How do I create a Raft App?'), findsOneWidget);
       expect(find.text('How can my agent use this app?'), findsOneWidget);
       await tapKey(t, find.byKey(const ValueKey('human-login-faq')));
       expect(find.byKey(const ValueKey('human-login-faq-body')), findsNothing);
@@ -676,7 +676,7 @@ void main() {
       expect(find.text('安装并继续'), findsOneWidget);
       expect(find.text('将授予：openid · profile'), findsOneWidget);
       expect(
-        find.textContaining('尚未安装 Artifact Share。你是该 Server 的管理员，继续将以你的身份安装。'),
+        find.textContaining('还没有安装 Artifact Share。你可以在这里安装，继续就会以你的身份安装。'),
         findsOneWidget,
       );
       expect(find.text('需要配置'), findsOneWidget);

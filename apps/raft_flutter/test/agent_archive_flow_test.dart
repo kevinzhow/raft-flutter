@@ -208,11 +208,11 @@ void main() {
       (tester) async {
         final (w, _) = await _open(tester);
         expect(find.text('Delete Agent'), findsNothing);
-        expect(find.text('Archive Agent'), findsOneWidget);
+        expect(find.text('Archive agent'), findsOneWidget);
 
-        await _tapText(tester, 'Archive Agent');
+        await _tapText(tester, 'Archive agent');
         expect(find.text('Archive Alpha Agent?'), findsOneWidget);
-        expect(find.text('Keep it on the Computer'), findsOneWidget);
+        expect(find.text('Keep it on the computer'), findsOneWidget);
         expect(
           find.textContaining('browse it read-only while Studio Mac is online'),
           findsOneWidget,
@@ -234,7 +234,7 @@ void main() {
       tester,
     ) async {
       final (w, _) = await _open(tester);
-      await _tapText(tester, 'Archive Agent');
+      await _tapText(tester, 'Archive agent');
       await tester.tap(
         find.byKey(const ValueKey('agent-archive-option-delete')),
       );
@@ -264,7 +264,7 @@ void main() {
             },
           ),
         );
-        await _tapText(tester, 'Archive Agent');
+        await _tapText(tester, 'Archive agent');
         await tester.tap(find.byKey(const ValueKey('agent-archive-confirm')));
         await tester.pumpAndSettle();
         expect(
@@ -285,7 +285,7 @@ void main() {
           tester,
           agent: {..._live, 'machineId': null},
         );
-        await _tapText(tester, 'Archive Agent');
+        await _tapText(tester, 'Archive agent');
         expect(
           find.byKey(const ValueKey('agent-archive-option-keep')),
           findsNothing,
@@ -304,7 +304,7 @@ void main() {
       'after archiving the profile stays as the read-only archived profile',
       (tester) async {
         final (w, _) = await _open(tester);
-        await _tapText(tester, 'Archive Agent');
+        await _tapText(tester, 'Archive agent');
         await tester.tap(find.byKey(const ValueKey('agent-archive-confirm')));
         await tester.pumpAndSettle();
 
@@ -325,7 +325,7 @@ void main() {
             reason: gone,
           );
         }
-        expect(find.text('Archive Agent'), findsNothing);
+        expect(find.text('Archive agent'), findsNothing);
         expect(
           find.byKey(const Key('agent-profile-inline-start-stop')),
           findsNothing,
@@ -417,7 +417,7 @@ void main() {
           const RaftEvent(agentArchiveUpdatedEventName, {'agentId': 'a'}),
         );
         await tester.pumpAndSettle();
-        expect(find.text('Deleted from the Computer'), findsOneWidget);
+        expect(find.text('Deleted from the computer'), findsOneWidget);
         expect(
           find.byKey(const ValueKey('agent-archive-delete-workspace-button')),
           findsNothing,

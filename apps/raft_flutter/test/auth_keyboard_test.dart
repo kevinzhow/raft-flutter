@@ -90,7 +90,7 @@ final _pages = <_Page>[
     'create-server',
     ['global-server-name', 'global-server-slug'],
     'global-server-create-submit',
-    enter: (t, f) => _tapText(t, f, '+ Create New Server'),
+    enter: (t, f) => _tapText(t, f, '+ Create new server'),
   ),
 ];
 

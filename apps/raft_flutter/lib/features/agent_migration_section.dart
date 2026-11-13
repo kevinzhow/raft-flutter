@@ -512,7 +512,7 @@ class _AgentMigrationSectionState
               Text(
                 raftText(
                   context,
-                  'Move this agent and its workspace to another computer. The agent stops while it migrates, then starts again there.',
+                  'Move this agent and its workspace to another computer.',
                 ),
                 style: RaftTypography.body(
                   t,

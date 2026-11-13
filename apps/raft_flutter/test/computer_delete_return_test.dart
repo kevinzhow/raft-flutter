@@ -77,7 +77,7 @@ class _DeleteFixture {
   Finder get confirm => find
       .descendant(
         of: find.byType(RaftConfirmDialog),
-        matching: find.text('Delete Computer'),
+        matching: find.text('Delete computer'),
       )
       .last;
 

@@ -159,7 +159,7 @@ class _AgentAppsState extends ManagementState<AgentAppAccessView> {
 
   Future<void> grant() async {
     if (apps.isEmpty) {
-      throw const RaftUserError('No apps are available on this server.');
+      throw const RaftUserError('No apps on this server yet');
     }
     Map<String, dynamic>? selected;
     final picked = await form(
@@ -308,7 +308,7 @@ class _AgentAppsState extends ManagementState<AgentAppAccessView> {
                 : null,
           ),
           if (active.isEmpty)
-            Text(raftText(context, 'No connected apps'), style: empty)
+            Text(raftText(context, 'No connected apps yet'), style: empty)
           else
             for (final item in active) _accessCard(context, item),
         ],
@@ -357,7 +357,7 @@ class _AgentAppsState extends ManagementState<AgentAppAccessView> {
               Align(
                 alignment: Alignment.centerLeft,
                 child: _small(
-                  raftText(context, 'Load More'),
+                  raftText(context, 'Load more'),
                   () => run(moreEvents, refresh: false),
                 ),
               ),

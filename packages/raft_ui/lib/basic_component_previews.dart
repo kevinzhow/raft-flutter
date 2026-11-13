@@ -362,7 +362,7 @@ class _SourceMenus extends StatelessWidget {
       defaultOpen: true,
       entries: [
         RaftMenuEntry(
-          label: 'Copy Link',
+          label: 'Copy link',
           glyph: RaftGlyph.copy,
           onPressed: () {},
         ),

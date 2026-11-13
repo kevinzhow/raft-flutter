@@ -677,7 +677,7 @@ class RaftFeedbackErrorBanner extends StatelessWidget {
     action: onRetry == null
         ? null
         : RaftRecipeButton(
-            label: 'Try Again',
+            label: 'Try again',
             variant: RaftButtonRecipeVariant.outline,
             size: RaftButtonRecipeSize.sm,
             onPressed: onRetry,

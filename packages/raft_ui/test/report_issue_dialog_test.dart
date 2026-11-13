@@ -91,7 +91,7 @@ void main() {
       },
     );
     // The dialog title and the submit button share the label.
-    expect(find.text('Report Issue'), findsNWidgets(2));
+    expect(find.text('Report issue'), findsNWidgets(2));
     expect(find.text('Product UX Designer'), findsOneWidget);
     expect(_enabled(tester, 'report-issue-submit'), isFalse);
     await tester.tap(_key('report-issue-submit'));
@@ -111,7 +111,7 @@ void main() {
     expect(sent!.includeTrajectoryLog, isTrue);
     expect(sent!.includeSessionTranscript, isTrue);
     expect(sent!.includeMachineLogTail, isFalse);
-    expect(find.text('Report Submitted'), findsOneWidget);
+    expect(find.text('Report submitted'), findsOneWidget);
     expect(
       find.text(
         'We opened a feedback ticket for this report. Replies from the Raft team will show up there.',
@@ -137,7 +137,7 @@ void main() {
       find.text('Create report upload failed: HTTP 500: boom'),
       findsOneWidget,
     );
-    expect(find.text('Report Issue'), findsNWidgets(2));
+    expect(find.text('Report issue'), findsNWidgets(2));
     expect(_enabled(tester, 'report-issue-submit'), isTrue);
   });
 
@@ -163,9 +163,7 @@ void main() {
       findsOneWidget,
     );
     expect(
-      find.text(
-        "The agent's computer is asked for its session record; it may not have one.",
-      ),
+      find.text("Taken from the agent's computer; it may not have one."),
       findsNothing,
     );
     final box = tester.widget<RaftCheckbox>(

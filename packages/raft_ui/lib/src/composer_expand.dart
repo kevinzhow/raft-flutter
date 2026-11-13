@@ -407,7 +407,7 @@ class _RaftComposerExpandedViewState extends State<RaftComposerExpandedView> {
             padding: const EdgeInsets.fromLTRB(pad, gap, pad, gap),
             child: text.isEmpty
                 ? Text(
-                    raftText(context, 'Nothing to preview yet.'),
+                    raftText(context, 'Nothing to preview yet'),
                     style: recipe.placeholder,
                   )
                 : (widget.previewBuilder?.call(context, text) ??

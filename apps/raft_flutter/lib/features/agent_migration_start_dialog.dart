@@ -116,7 +116,7 @@ class _AgentMigrationStartDialogState extends State<AgentMigrationStartDialog> {
       title: widget.hostedAvailable ? 'Move Agent' : 'Move to Another Computer',
       fields: const [],
       submitLabel: failure?.recoveryOpenComputers == true
-          ? 'Try Again'
+          ? 'Try again'
           : cloud
           ? 'Move to the Cloud'
           : 'Move to Another Computer',

@@ -271,7 +271,7 @@ class RaftInviteAcceptPage extends StatelessWidget {
             key: const ValueKey('invite-join'),
             label: accepting
                 ? tr('Joining Server…')
-                : tr(invite.hasAgreement ? 'Agree & Join' : 'Join Server'),
+                : tr(invite.hasAgreement ? 'Agree & join' : 'Join server'),
             variant: RaftControlVariant.accent,
             onPressed: accepting ? null : onJoin,
           ),
@@ -292,7 +292,7 @@ class RaftInviteAcceptPage extends StatelessWidget {
               ),
               RaftAuthWideButton(
                 key: const ValueKey('invite-sign-in'),
-                label: tr('Sign In'),
+                label: tr('Sign in'),
                 variant: RaftControlVariant.accent,
                 leading: RaftIcon(RaftGlyph.logIn, size: 16),
                 gap: 8,
@@ -301,7 +301,7 @@ class RaftInviteAcceptPage extends StatelessWidget {
               const SizedBox(height: 12),
               RaftButton(
                 key: const ValueKey('invite-create-account'),
-                label: tr('Create Account'),
+                label: tr('Create account'),
                 glyph: RaftGlyph.userPlus,
                 variant: RaftControlVariant.outline,
                 size: RaftButtonRecipeSize.sm,

@@ -49,7 +49,7 @@ class RaftAuthLegalPage extends StatelessWidget {
       // Native only: Web leaves through the browser's own navigation.
       overlayLink: RaftAuthTextLink(
         key: const Key('legal-back'),
-        label: raftText(context, 'Back to Sign In'),
+        label: raftText(context, 'Back to sign in'),
         onTap: busy ? null : onBack,
         centered: true,
       ),

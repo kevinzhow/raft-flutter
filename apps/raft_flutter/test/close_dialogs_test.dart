@@ -626,7 +626,7 @@ void registerCloseDialogTests(TestPart part) {
       // On the profile tab the button sits at the end of the body ListView
       // (agent_detail_view.dart:1012,1057), below the 900px viewport at the
       // foldable size: scroll it in, prove it is hittable, then tap.
-      final reset = find.text('Restart / Reset').first;
+      final reset = find.text('Restart / reset').first;
       await t.ensureVisible(reset);
       await frames(t, 5);
       expect(reset.hitTestable(), findsOneWidget);
@@ -782,7 +782,7 @@ void registerCloseDialogTests(TestPart part) {
     'material-alert-dialog': (t, size) => fromProviders(
       t,
       size,
-      tap: find.text('Assigned Agents'),
+      tap: find.text('Assigned agents'),
       surface: find.byWidgetPredicate(
         (w) => w is AlertDialog || w is RaftAlertDialog,
       ),
@@ -840,13 +840,13 @@ void registerCloseDialogTests(TestPart part) {
     'channel-settings-confirm': (t, size) => fromChannelSettings(
       t,
       size,
-      'Archive Channel',
+      'Archive channel',
       const ValueKey('channel-settings-confirm-dialog'),
     ),
     'sos-dialog': (t, size) => fromChannelSettings(
       t,
       size,
-      'Stop All Agents',
+      'Stop all agents',
       const ValueKey('channel-sos-dialog'),
     ),
     'add-members': (t, size) => inWorkspace(
@@ -1051,8 +1051,8 @@ Future<SurfaceProbe> openBulkReset(WidgetTester t, Size size) async {
   }
 
   await tapKey(find.text('Select'));
-  await tapKey(find.text('Select All'));
-  await tapKey(find.text('Restart / Reset'));
+  await tapKey(find.text('Select all'));
+  await tapKey(find.text('Restart / reset'));
   return SurfaceProbe(
     isOpen: () =>
         find.byKey(const ValueKey('computer-dialog')).evaluate().isNotEmpty,

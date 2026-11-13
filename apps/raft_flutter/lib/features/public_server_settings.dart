@@ -127,7 +127,7 @@ List<RaftSettingsDestination> publicSettingsDestinations({
       ),
       RaftSettingsDestination(
         'release-notes',
-        'Release Notes',
+        'Release notes',
         RaftGlyph.fileText,
         (_) => ReleaseNotesView(
           controller: w,

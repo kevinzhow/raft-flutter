@@ -69,12 +69,12 @@ void main() {
           textAlign: TextAlign.center,
           description:
               'Message history is limited to 30 days on the Free plan.',
-          descriptionTail: (label: 'View Billing', onPressed: () => taps++),
+          descriptionTail: (label: 'View billing', onPressed: () => taps++),
         ),
         const RaftAppearance(),
       ),
     );
-    await t.tap(find.text('View Billing'));
+    await t.tap(find.text('View billing'));
     expect(taps, 1);
   });
 }

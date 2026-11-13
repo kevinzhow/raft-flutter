@@ -79,13 +79,13 @@ Future<void> verifyChannelConversionFlow(
     );
     await tester.pump(const Duration(milliseconds: 300));
     if (!enabled) {
-      expect(find.text('Convert to Joint Channel'), findsNothing);
+      expect(find.text('Convert to joint channel'), findsNothing);
       await capture('channel-conversion-disabled');
     } else {
-      await _tap(tester, find.text('Convert to Joint Channel'));
+      await _tap(tester, find.text('Convert to joint channel'));
       await _tap(
         tester,
-        find.widgetWithText(RaftButton, 'Convert to Joint Channel'),
+        find.widgetWithText(RaftButton, 'Convert to joint channel'),
       );
       await _until(
         tester,

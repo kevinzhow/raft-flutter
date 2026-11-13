@@ -130,7 +130,7 @@ void main() {
     test('later states name the target', () {
       expect(
         _notice({'state': 'ready'}).message.english,
-        'The workspace is packed. Sending it to Build Box.',
+        'The workspace is uploaded. Build Box is downloading it.',
       );
       expect(
         _notice({'state': 'in_transit'}).message.english,

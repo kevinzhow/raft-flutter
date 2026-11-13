@@ -82,7 +82,7 @@ void main() {
     await tester.pump();
     expect(
       clipboard,
-      startsWith('Raft Diagnostic Info\nerrorMessage: invalid api key\n'),
+      startsWith('Raft diagnostic info\nerrorMessage: invalid api key\n'),
     );
     expect(
       clipboard,

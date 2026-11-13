@@ -213,7 +213,11 @@ class _AuthState extends State<AuthView> {
           providers = [];
           providersLoading = false;
           if (requestPermission && e is RaftApiException) {
-            error = authFailureText(e, 'Login failed', where: 'auth providers');
+            error = authFailureText(
+              e,
+              'Sign-in failed',
+              where: 'auth providers',
+            );
           }
         });
       }
@@ -501,7 +505,7 @@ class _AuthState extends State<AuthView> {
     emailError = passwordError = null;
   }
 
-  /// "Don't connect {provider}" / "Back to Sign In": drop the pending link on
+  /// "Don't connect {provider}" / "Back to sign in": drop the pending link on
   /// the server, then show the ordinary sign-in page.
   Future<void> cancelLink() async {
     final pending = link;
@@ -517,7 +521,7 @@ class _AuthState extends State<AuthView> {
       });
       if (mounted) setState(() => link = null);
     } catch (_) {
-      if (mounted) setState(() => error = 'Login failed');
+      if (mounted) setState(() => error = 'Sign-in failed');
     } finally {
       if (mounted) setState(() => busy = false);
     }
@@ -689,7 +693,7 @@ class _AuthState extends State<AuthView> {
               'register' => 'Registration failed',
               'forgot' => 'Failed to send reset email',
               'reset' => 'Password reset failed. The link may be expired.',
-              _ => 'Login failed',
+              _ => 'Sign-in failed',
             }, where: 'auth $mode');
           }
         });
@@ -855,7 +859,7 @@ class _AuthState extends State<AuthView> {
         // AuthBrandIntro `mb-5` and the `<div className="mb-6" />` that follows
         // collapse to 24px: 4px on top of the intro's own 20.
         gapBeforeButton: 4,
-        buttonLabel: tr('Back to Sign In'),
+        buttonLabel: tr('Back to sign in'),
         buttonIcon: RaftGlyph.arrowLeft,
         onButton: () => switchMode('login'),
         // Native only: Web opens the reset link in the browser; a native
@@ -871,7 +875,7 @@ class _AuthState extends State<AuthView> {
       return RaftAuthResultPage(
         title: tr('Password reset'),
         description: tr('Your password has been updated. You can now sign in.'),
-        buttonLabel: tr('Back to Sign In'),
+        buttonLabel: tr('Back to sign in'),
         buttonIcon: RaftGlyph.arrowLeft,
         onButton: () => switchMode('login'),
       );

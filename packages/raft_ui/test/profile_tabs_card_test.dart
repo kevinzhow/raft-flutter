@@ -77,7 +77,7 @@ void main() {
                     children: [
                       TextField(controller: controller),
                       RaftButton(
-                        label: 'Save changes',
+                        label: 'Save',
                         focusNode: focus,
                         onPressed: () => saved++,
                       ),
@@ -122,7 +122,7 @@ void main() {
         );
         await tester.pumpAndSettle();
         expect(saved, 3);
-        await tester.tap(find.text('Save changes'));
+        await tester.tap(find.text('Save'));
         expect(saved, 4);
         expect(tester.takeException(), isNull);
         semantics.dispose();

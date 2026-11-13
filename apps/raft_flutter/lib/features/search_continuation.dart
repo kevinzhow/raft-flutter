@@ -63,7 +63,7 @@ class SearchContinuations {
       : _byView[_key(view)] ?? SearchContinuation.none;
 
   /// Records what the answer for [view] says; true while the search is
-  /// incomplete and can continue (the list then offers it like "Load More").
+  /// incomplete and can continue (the list then offers it like "Load more").
   bool accept(String view, Object? answer) {
     final key = _key(view), next = SearchContinuation.read(answer);
     _byView.remove(key);

@@ -32,7 +32,7 @@ void main() {
                   children: [
                     RaftMessageToolbarAction(
                       key: const Key('reaction-action'),
-                      label: 'Add Reaction',
+                      label: 'Add reaction',
                       icon: const RaftMessageAddReactionGlyph(),
                       onPressed: () => activated++,
                     ),

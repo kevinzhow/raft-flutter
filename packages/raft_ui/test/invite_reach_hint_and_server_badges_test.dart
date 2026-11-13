@@ -45,7 +45,7 @@ Widget _narrow(Widget child) =>
 
 void main() {
   const hint =
-      'Members you invite can DM and give instructions to every agent in this server. Keep personal agents in a separate server of your own.';
+      'Everyone in this server can message and work with every agent here. For agents that are just for you, use a server of your own.';
 
   testWidgets('the invite dialog says every member can reach every agent', (
     t,
@@ -82,7 +82,7 @@ void main() {
       ),
     );
     expect(
-      find.text('被邀请的成员可以私信并指挥这个服务器里的所有 Agent。个人 Agent 请放在你自己单独的服务器里。'),
+      find.text('这个服务器里的每个人都能私信、使用这里的所有 Agent。只给自己用的 Agent，可以放在你自己的服务器里。'),
       findsOneWidget,
     );
   });

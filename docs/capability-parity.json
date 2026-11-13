@@ -1075,7 +1075,7 @@
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/chat_view.dart",
-     "needle": "'Copy Link'"
+     "needle": "'Copy link'"
     },
     {
      "file": "apps/raft_flutter/lib/features/share_message_link.dart",
@@ -1119,7 +1119,7 @@
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/chat_view.dart",
-     "needle": "'Follow Thread'"
+     "needle": "'Follow thread'"
     },
     {
      "file": "apps/raft_flutter/lib/features/chat_view.dart",
@@ -1187,7 +1187,7 @@
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/chat_view.dart",
-     "needle": "saved ? 'Remove from Saved' : 'Save Message'"
+     "needle": "saved ? 'Remove from Saved' : 'Save'"
     }
    ],
    "justification": "",
@@ -1207,7 +1207,7 @@
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/chat_view.dart",
-     "needle": "'Select Message'"
+     "needle": "'Select message'"
     },
     {
      "file": "apps/raft_flutter/lib/features/message_selection.dart",
@@ -1235,7 +1235,7 @@
     },
     {
      "file": "apps/raft_flutter/lib/features/message_task_actions.dart",
-     "needle": "'Convert to Task'"
+     "needle": "'Convert to task'"
     },
     {
      "file": "apps/raft_flutter/lib/features/message_task_actions.dart",
@@ -1299,7 +1299,7 @@
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/forward_warnings.dart",
-     "needle": "Joint channel destinations may expose"
+     "needle": "People outside this server may see messages forwarded"
     }
    ],
    "justification": "",
@@ -1415,7 +1415,7 @@
     },
     {
      "file": "apps/raft_flutter/lib/features/chat_view.dart",
-     "needle": "'Reply in Thread'"
+     "needle": "'Reply in thread'"
     }
    ],
    "justification": "",
@@ -1751,7 +1751,7 @@
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/message_sender_menu.dart",
-     "needle": "'Copy Handle'"
+     "needle": "'Copy handle'"
     },
     {
      "file": "apps/raft_flutter/lib/features/chat_view.dart",
@@ -2038,7 +2038,7 @@
     },
     {
      "file": "apps/raft_flutter/lib/features/thread_actions.dart",
-     "needle": "'Follow Thread'"
+     "needle": "'Follow thread'"
     }
    ],
    "justification": "",
@@ -2086,7 +2086,7 @@
     },
     {
      "file": "apps/raft_flutter/lib/features/thread_actions.dart",
-     "needle": "'Unfollow Thread'"
+     "needle": "'Unfollow thread'"
     }
    ],
    "justification": "",
@@ -2518,7 +2518,7 @@
     },
     {
      "file": "apps/raft_flutter/lib/features/sidebar_read_all.dart",
-     "needle": "'Mark as Read'"
+     "needle": "'Mark as read'"
     }
    ],
    "justification": "",
@@ -2830,7 +2830,7 @@
     },
     {
      "file": "apps/raft_flutter/lib/features/sidebar_read_all.dart",
-     "needle": "'Mark as Unread'"
+     "needle": "'Mark as unread'"
     }
    ],
    "justification": "",
@@ -3002,7 +3002,7 @@
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/workspace_view.dart",
-     "needle": "tr('Create Joint Channel')"
+     "needle": "tr('Create joint channel')"
     },
     {
      "file": "apps/raft_flutter/lib/features/workspace_view.dart",
@@ -3190,7 +3190,7 @@
     },
     {
      "file": "apps/raft_flutter/lib/features/workspace_view_sidebar_menus.dart",
-     "needle": "'Close Chat'"
+     "needle": "'Close chat'"
     }
    ],
    "justification": "",
@@ -3739,7 +3739,7 @@
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/administration_view.dart",
-     "needle": "Revoke Invite"
+     "needle": "Revoke invite"
     }
    ],
    "justification": "",
@@ -3759,7 +3759,7 @@
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/administration_view.dart",
-     "needle": "Revoke Invite Link"
+     "needle": "Revoke invite link"
     },
     {
      "file": "apps/raft_flutter/lib/features/workspace_menu_invite.dart",
@@ -4686,7 +4686,7 @@
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/workspace_view.dart",
-     "needle": "label: tr('Invite Human')"
+     "needle": "label: tr('Invite human')"
     }
    ],
    "justification": "",
@@ -4706,7 +4706,7 @@
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/workspace_view.dart",
-     "needle": "Switch or Create Server"
+     "needle": "Switch or create server"
     },
     {
      "file": "apps/raft_flutter/lib/features/global_server_selector.dart",
@@ -5719,7 +5719,7 @@
     },
     {
      "file": "apps/raft_flutter/lib/features/provider_views.dart",
-     "needle": "Verify on Computer"
+     "needle": "Verify on computer"
     }
    ],
    "justification": "",
@@ -6081,7 +6081,7 @@
     },
     {
      "file": "apps/raft_flutter/lib/features/desktop_directory_view.dart",
-     "needle": "Create External Agent"
+     "needle": "Create external agent"
     }
    ],
    "justification": "Managed create covers computer/name/description/runtime/model/effort/mode/env/capacity/onboarding/action-card, the remembered last computer/runtime/model, a suggested name with the dice button, the random pixel avatar and the dialog side of the channel Add members entry (autoJoinChannelName context line, prefilledNameNote). A cloud agent is the 'Cloud agent' choice of the Computer picker (flag antiproton_hosted_runtime + the provider probe). Gaps: the Add members entry that opens the dialog and joins the channel is not wired yet; Web's legacy (non-v2) runtime fields are not used, Flutter renders the server's v2 runtime form (saved provider, built-in provider, Pi provider, local plugins are fields of that form).",
@@ -6380,7 +6380,7 @@
     },
     {
      "file": "apps/raft_flutter/lib/features/provider_views.dart",
-     "needle": "Verify on Computer"
+     "needle": "Verify on computer"
     }
    ],
    "justification": "",
@@ -7007,7 +7007,7 @@
     },
     {
      "file": "apps/raft_flutter/lib/features/create_agent_dialog.dart",
-     "needle": "Environment Variables"
+     "needle": "Environment variables"
     }
    ],
    "justification": "Flutter renders the server v2 runtime form for every runtime, which carries the saved-provider picker (Saved providers group, Edit saved provider), the built-in and Pi provider fields and local plugins; Web's legacy fields are not used.",
@@ -7225,7 +7225,7 @@
     },
     {
      "file": "apps/raft_flutter/lib/features/agent_detail_view.dart",
-     "needle": "'Direct Message'"
+     "needle": "'Direct message'"
     }
    ],
    "justification": "",
@@ -8108,7 +8108,7 @@
     },
     {
      "file": "apps/raft_flutter/lib/features/desktop_directory_view.dart",
-     "needle": "Create External Agent"
+     "needle": "Create external agent"
     }
    ],
    "justification": "Handoff Session (take over a local coding session) is Electron-desktop-only on Web, tracked as ui:global-ui.desktop-handoff-local-session.",
@@ -8156,7 +8156,7 @@
     },
     {
      "file": "apps/raft_flutter/lib/features/connected_app_editor.dart",
-     "needle": "Enable Webhook"
+     "needle": "Enable webhook"
     }
    ],
    "justification": "",
@@ -8224,7 +8224,7 @@
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/integrations_views.dart",
-     "needle": "Uninstall app"
+     "needle": "Uninstall"
     },
     {
      "file": "apps/raft_flutter/lib/features/integrations_views.dart",
@@ -8520,7 +8520,7 @@
     },
     {
      "file": "apps/raft_flutter/lib/features/integrations_views.dart",
-     "needle": "No third-party marketplace apps match this view."
+     "needle": "No marketplace apps match this view"
     }
    ],
    "justification": "",
@@ -8723,7 +8723,7 @@
     },
     {
      "file": "apps/raft_flutter/lib/features/connected_app_editor.dart",
-     "needle": "Request Publish"
+     "needle": "Request publish"
     }
    ],
    "justification": "",
@@ -8895,7 +8895,7 @@
     },
     {
      "file": "apps/raft_flutter/lib/features/connected_app_editor.dart",
-     "needle": "Regenerate Client Secret"
+     "needle": "Regenerate client secret"
     }
    ],
    "justification": "",
@@ -10204,7 +10204,7 @@
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/resource_view.dart",
-     "needle": "Delete Task"
+     "needle": "Delete task"
     },
     {
      "file": "apps/raft_flutter/lib/features/resource_view.dart",
@@ -10423,7 +10423,7 @@
     },
     {
      "file": "apps/raft_flutter/lib/features/message_task_actions.dart",
-     "needle": "Convert to Task"
+     "needle": "Convert to task"
     }
    ],
    "justification": "",
@@ -10475,7 +10475,7 @@
     },
     {
      "file": "apps/raft_flutter/lib/features/chat_view.dart",
-     "needle": "label: raftText(context, 'As Task')"
+     "needle": "label: raftText(context, 'As task')"
     }
    ],
    "justification": "",
@@ -10635,7 +10635,7 @@
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/message_task_actions.dart",
-     "needle": "Convert to Task"
+     "needle": "Convert to task"
     },
     {
      "file": "apps/raft_flutter/lib/features/chat_view.dart",
@@ -10981,7 +10981,7 @@
     },
     {
      "file": "apps/raft_flutter/lib/features/chat_view.dart",
-     "needle": "Reopen Task"
+     "needle": "Reopen task"
     }
    ],
    "justification": "",
@@ -11595,7 +11595,7 @@
     },
     {
      "file": "apps/raft_flutter/lib/features/source_channel_files_view.dart",
-     "needle": "'Load More'"
+     "needle": "'Load more'"
     }
    ],
    "justification": "",
@@ -12046,11 +12046,11 @@
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/search_home.dart",
-     "needle": "'Search History'"
+     "needle": "'Search history'"
     },
     {
      "file": "apps/raft_flutter/lib/features/search_home.dart",
-     "needle": "'Frequently Used'"
+     "needle": "'Frequently used'"
     }
    ],
    "justification": "",
@@ -15243,7 +15243,7 @@
     },
     {
      "file": "apps/raft_flutter/lib/features/channel_settings.dart",
-     "needle": "Disconnect Joint Channel"
+     "needle": "Disconnect joint channel"
     }
    ],
    "justification": "Same gate as Web (deleteChannels, not archived); the drawer closes and the fallback channel opens.",
@@ -17020,11 +17020,11 @@
     },
     {
      "file": "apps/raft_flutter/lib/features/workspace_view.dart",
-     "needle": "tr('Switch or Create Server')"
+     "needle": "tr('Switch or create server')"
     },
     {
      "file": "apps/raft_flutter/lib/features/workspace_view.dart",
-     "needle": "tr('Join Community')"
+     "needle": "tr('Join community')"
     }
    ],
    "justification": "",
@@ -17386,7 +17386,7 @@
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/workspace_view.dart",
-     "needle": "Raft Documentation"
+     "needle": "Raft documentation"
     }
    ],
    "justification": "",

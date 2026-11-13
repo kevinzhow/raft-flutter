@@ -102,7 +102,7 @@ void main() {
       expect(find.text('2'), findsOneWidget);
       await tester.tap(trigger);
       await tester.pumpAndSettle();
-      expect(find.text('Following Agents'), findsOneWidget);
+      expect(find.text('Following agents'), findsOneWidget);
       expect(find.text('Cindy'), findsOneWidget);
       expect(find.text('Product UX'), findsOneWidget);
       // Fallback activity line from the follower status.

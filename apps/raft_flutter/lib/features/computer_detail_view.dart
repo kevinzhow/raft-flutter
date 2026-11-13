@@ -130,32 +130,28 @@ String? computerAvailableVersion(Map m, String? latest) {
   return null;
 }
 
-/// utils/machineRunLabel.ts.
+/// utils/machineRunLabel.ts (Web 1.24 wording: "Offline", "v1.2" or
+/// "legacy v1.2", "Online").
 (String, bool) computerRunLabel(Map m) {
-  final kind = m['isComputer'] == true ? 'computer' : 'legacy';
-  if (m['status'] != 'online') return ('$kind offline', true);
+  if (m['status'] != 'online') return ('Offline', true);
   final version = m['isComputer'] == true
       ? m['computerVersion']
       : m['daemonVersion'];
   if (version is String && version.isNotEmpty) {
-    return ('$kind v$version', false);
+    return (m['isComputer'] == true ? 'v$version' : 'legacy v$version', false);
   }
-  return ('$kind online', false);
+  return ('Online', false);
 }
 
 /// Sidebar `ComputerRowBody` status: offline while its upgrade restarts reads
-/// "Upgrading…" with a cyan dot (the detail page says the same), not "offline".
+/// "Updating…" with a cyan dot (the detail page says the same), not "offline".
 ({String label, bool offline, RaftComputerDot dot}) computerRowStatus(
   Map m,
   String? available,
   ComputerUpgradeReconnect reconnect,
 ) {
   if (reconnect.reconnecting) {
-    return (
-      label: 'Upgrading…',
-      offline: false,
-      dot: RaftComputerDot.upgrading,
-    );
+    return (label: 'Updating…', offline: false, dot: RaftComputerDot.upgrading);
   }
   final (label, offline) = computerRunLabel(m);
   return (
@@ -416,7 +412,7 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel> {
           if (!value.success && canManage)
             RaftAgentDialogButton(
               key: const ValueKey('bulk-model-try-again'),
-              label: raftTextZh(context, 'Try Again', '重试'),
+              label: raftTextZh(context, 'Try again', '重试'),
               size: RaftButtonRecipeSize.sm,
               onPressed: () =>
                   _changeModels(value.unfinished.keys.toList(), retry: value),

@@ -42,7 +42,7 @@ void main() {
           onActions: () => menu++,
           onAuthor: () => invoked.add('mention'),
           semanticsActions: [
-            RaftMessageSemanticsAction('Save Message', (_) {
+            RaftMessageSemanticsAction('Save', (_) {
               invoked.add('save');
             }),
           ],
@@ -60,7 +60,7 @@ void main() {
         for (final id in data.customSemanticsActionIds!)
           CustomSemanticsAction.getAction(id)!.label,
       ],
-      ['Save Message', 'Mention Alice'],
+      ['Save', 'Mention Alice'],
     );
     expect(_below(row).map((n) => n.label), ['the spec', '👍: 1']);
 

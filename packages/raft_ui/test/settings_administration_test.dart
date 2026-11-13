@@ -108,9 +108,9 @@ void main() {
               result = await RaftConfirmDialog.show(
                 context,
                 RaftConfirmDialog(
-                  title: 'Revoke Invite',
+                  title: 'Revoke invite',
                   message: 'Sure?',
-                  confirmLabel: 'Revoke Invite',
+                  confirmLabel: 'Revoke invite',
                   loadingLabel: 'Revoking…',
                   confirmKey: const ValueKey('confirm'),
                   onConfirm: () => done.future,
@@ -225,7 +225,7 @@ void main() {
     );
     expect(t.takeException(), isNull);
     expect(find.text('Saved'), findsOneWidget);
-    expect(find.text('No active invite links.'), findsOneWidget);
+    expect(find.text('No active invite links'), findsOneWidget);
     expect(find.text('06/19/2026, 08:24 PM'), findsOneWidget);
     expect(find.text('Finish setup'), findsOneWidget);
     expect(find.text('8/5000'), findsOneWidget);

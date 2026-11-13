@@ -442,7 +442,7 @@ void main() {
       final rect = t.getRect(find.byKey(const ValueKey('message-parent')));
       await t.longPressAt(Offset(rect.left + 2, rect.center.dy));
       await t.pumpAndSettle();
-      await t.tap(find.text('Select Message'));
+      await t.tap(find.text('Select message'));
       await t.pumpAndSettle();
     }
 

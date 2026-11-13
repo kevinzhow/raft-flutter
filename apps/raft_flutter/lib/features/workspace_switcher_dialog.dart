@@ -32,9 +32,9 @@ Widget workspaceSwitcherDialog({
           ),
         RaftChoiceDialogOption(
           value: 'create',
-          label: translate('Create Server'),
+          label: translate('Create server'),
         ),
-        RaftChoiceDialogOption(value: 'join', label: translate('Join Server')),
+        RaftChoiceDialogOption(value: 'join', label: translate('Join server')),
       ],
       onSelected: onSelected,
       onClose: onClose,
@@ -66,11 +66,11 @@ Widget workspaceSwitcherDialog({
         ),
       RaftFrozenChoiceDialogOption(
         onPressed: () => onSelected('create'),
-        child: Text(translate('Create Server')),
+        child: Text(translate('Create server')),
       ),
       RaftFrozenChoiceDialogOption(
         onPressed: () => onSelected('join'),
-        child: Text(translate('Join Server')),
+        child: Text(translate('Join server')),
       ),
     ],
   );

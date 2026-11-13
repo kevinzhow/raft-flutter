@@ -58,7 +58,7 @@ class HostedModelChoice extends StatelessWidget {
               context,
               "Couldn't load the models, so the agent starts on the provider's default. You can change its model later in its profile.",
             ),
-            action: raftText(context, 'Try Again'),
+            action: raftText(context, 'Try again'),
             onAction: loader.reload,
             style: RaftPanelText.warningCaption(t),
             key: const ValueKey('hosted-model-choice-error'),

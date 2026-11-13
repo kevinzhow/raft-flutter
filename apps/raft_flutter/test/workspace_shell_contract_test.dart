@@ -121,10 +121,10 @@ void main() {
         await mouse.moveTo(t.getCenter(find.byKey(const Key('rail-help'))));
         await t.pumpAndSettle();
         for (final label in [
-          'Raft Documentation',
+          'Raft documentation',
           'Mobile App',
           'Feedback',
-          'Join Community',
+          'Join community',
         ]) {
           expect(
             find.descendant(
@@ -207,7 +207,7 @@ void main() {
         await t.tap(
           find.descendant(
             of: find.byType(RaftMenuPanel),
-            matching: find.text('Join Community'),
+            matching: find.text('Join community'),
           ),
         );
         await frames(t, () {});

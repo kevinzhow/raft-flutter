@@ -77,7 +77,7 @@ void main() {
       expect(tester.getTopLeft(cards.last).dy, roundedNatural + 10);
       await tester.tap(find.text('Review the thread header strip baselines'));
       expect(opens, 1);
-      await tester.tap(find.text('In Review'));
+      await tester.tap(find.text('In review'));
       await tester.pumpAndSettle();
       expect(find.byType(RaftInlineBadgeMenu), findsOneWidget);
       expect(tester.takeException(), isNull);

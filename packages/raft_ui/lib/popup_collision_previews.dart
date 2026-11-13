@@ -28,7 +28,7 @@ class _PopupCollisionPreviewState extends State<_PopupCollisionPreview> {
           foreground: RaftTokens.of(context).strong,
           options: const [
             RaftInlineBadgeOption(id: 'To do', label: 'To do'),
-            RaftInlineBadgeOption(id: 'In Review', label: 'In Review'),
+            RaftInlineBadgeOption(id: 'In review', label: 'In review'),
             RaftInlineBadgeOption(id: 'Done', label: 'Done'),
           ],
           onSelect: (value) => setState(() => selected = value),

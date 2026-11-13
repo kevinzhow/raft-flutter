@@ -129,7 +129,7 @@ void main() {
     expect(find.text('Authenticator code'), findsOneWidget);
     expect(find.text('Use a backup code'), findsOneWidget);
     expect(find.text('Sign-in failed'), findsNothing);
-    expect(find.text('Login failed'), findsNothing);
+    expect(find.text('Sign-in failed'), findsNothing);
     expect(page.signedIn, isEmpty);
 
     await page.answer('123 456');

@@ -66,7 +66,7 @@ void main() {
           expect(entry, findsNothing);
         } else {
           expect(t.widget<RaftMenuItem>(entry).onPressed, isNotNull);
-          expect(t.widget<RaftMenuItem>(entry).label, 'Follow Thread');
+          expect(t.widget<RaftMenuItem>(entry).label, 'Follow thread');
           expect(
             t.widget<RaftMenuItem>(entry).glyph,
             RaftGlyph.messageCirclePlus,

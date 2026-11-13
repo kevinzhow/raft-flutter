@@ -48,7 +48,7 @@ class RaftAnnouncementLabels {
       RaftAnnouncementLabels(
         dismiss: raftText(context, 'Dismiss'),
         gotIt: raftText(context, 'Got it'),
-        latestUpdates: raftText(context, 'Latest updates'),
+        latestUpdates: raftText(context, "What's new"),
       );
 
   final String dismiss, gotIt, latestUpdates;
@@ -84,7 +84,7 @@ class RaftAnnouncementModal extends StatefulWidget {
   /// Markdown (GFM) of the first page.
   final String body;
 
-  /// Eyebrow beside the dot; null reads "Latest updates".
+  /// Eyebrow beside the dot; null reads "What's new".
   final String? label;
   final RaftAnnouncementImage? image;
   final String? ctaLabel;

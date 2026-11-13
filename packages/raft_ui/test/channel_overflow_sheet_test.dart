@@ -188,7 +188,7 @@ void main() {
               onPressed: () async => result = await RaftConfirmDialog.show(
                 context,
                 RaftConfirmDialog(
-                  title: 'Archive Channel',
+                  title: 'Archive channel',
                   message: 'Sure?',
                   confirmLabel: 'Archive',
                   loadingLabel: 'Archiving…',

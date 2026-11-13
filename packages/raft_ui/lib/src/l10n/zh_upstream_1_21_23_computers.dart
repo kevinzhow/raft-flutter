@@ -23,7 +23,8 @@ const Map<String, String> zhCatalogUpstream12123Computers = <String, String>{
       "重新检测请求失败。请确认计算机在线后重试。",
   "Still waiting? Check the terminal where you ran the command. If it says Raft Computer is already running, or the install failed, use \"Already have Raft Computer on this machine?\" above.": "还在等？看一下运行命令的终端。如果提示 Raft Computer 已在运行，或者安装失败，请用上面的「这台机器已经装过 Raft Computer？」。",
   "Already have Raft Computer on this machine?": "这台机器已经装过 Raft Computer？",
-  "Skip the install and only connect it to this server. If raft-computer is not found, run it as ~/.local/bin/raft-computer.": "跳过安装，只把它连接到这个 server。如果提示找不到 raft-computer，用 ~/.local/bin/raft-computer 运行。",
+  "Skip the install and only connect it to this server. If raft-computer is not found, run it as ~/.local/bin/raft-computer.":
+      "跳过安装，只把它连接到这个服务器。如果提示找不到 raft-computer，用 ~/.local/bin/raft-computer 运行。",
   "What's new in v{version}": "v{version} 更新内容",
   "Agent archived. Workspace still on this Computer.":
       "Agent 已归档。工作区仍在这台 Computer 上。",

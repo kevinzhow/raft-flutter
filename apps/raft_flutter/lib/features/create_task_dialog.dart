@@ -1,6 +1,6 @@
 // Create-task dialog: the Web CreateTaskDialog
 // (packages/web/src/components/task/CreateTaskDialog.tsx). One title per row,
-// "Add Another" appends a row, a row can be removed once there are several;
+// "Add another" appends a row, a row can be removed once there are several;
 // submit creates every non-blank title in [channelId] in one request
 // (`POST /tasks/channel/:id {tasks: [{title}]}`, taskStore.createTasks).
 import 'package:flutter/material.dart';

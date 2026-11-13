@@ -106,7 +106,7 @@ void main() {
       expect(w.inboxQueries.last['offset'], 30);
       expect(state.rows, hasLength(60));
       expect(state.hasMore, isFalse);
-      expect(find.text('Load More'), findsNothing);
+      expect(find.text('Load more'), findsNothing);
     });
   }
 
@@ -116,7 +116,7 @@ void main() {
     final dynamic state = await mount(t, size: const Size(1000, 4000));
     expect(w.inboxQueries.map((q) => q['offset']), [0, 30]);
     expect(state.rows, hasLength(60));
-    expect(find.text('Load More'), findsNothing);
+    expect(find.text('Load more'), findsNothing);
   });
 
   testWidgets('repeated end gestures cannot duplicate an in-flight page', (
@@ -127,8 +127,8 @@ void main() {
     await t.drag(getList(), const Offset(0, -6000));
     await t.pump();
     expect(w.inboxQueries.map((q) => q['offset']), [0, 30]);
-    expect(find.text('Load More'), findsOneWidget);
-    await t.tap(find.text('Load More'));
+    expect(find.text('Load more'), findsOneWidget);
+    await t.tap(find.text('Load more'));
     await t.pump();
     expect(w.inboxQueries, hasLength(2));
     await t.drag(getList(), const Offset(0, -50));
@@ -178,7 +178,7 @@ void main() {
     expect(state.error, isNull);
     expect(w.inboxQueries.map((q) => q['offset']), [0, 0, 30]);
     expect(state.rows, hasLength(60));
-    expect(find.text('Load More'), findsNothing);
+    expect(find.text('Load more'), findsNothing);
   });
 
   testWidgets('failed append stays stopped until the user retries', (t) async {
@@ -191,11 +191,11 @@ void main() {
     await t.pumpAndSettle();
     expect(w.inboxQueries, hasLength(2));
     w.failAppend = false;
-    await t.ensureVisible(find.text('Load More'));
-    await t.tap(find.text('Load More'));
+    await t.ensureVisible(find.text('Load more'));
+    await t.tap(find.text('Load more'));
     await t.pumpAndSettle();
     expect(state.rows, hasLength(60));
-    expect(find.text('Load More'), findsNothing);
+    expect(find.text('Load more'), findsNothing);
   });
 
   testWidgets('empty hasMore response cannot cause a layout request loop', (
@@ -248,7 +248,7 @@ void main() {
     await mount(t, size: const Size(1000, 4000));
     await reachEnd(t);
     expect(w.inboxQueries, hasLength(1));
-    expect(find.text('Load More'), findsNothing);
+    expect(find.text('Load more'), findsNothing);
   });
 
   testWidgets('prefetch begins within 240px, before reaching the footer', (

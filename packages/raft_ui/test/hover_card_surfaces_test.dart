@@ -359,7 +359,7 @@ void main() {
         'ok',
         '5h',
         '42% used · resets in 3 hours',
-        'Usage format unavailable',
+        'Usage unavailable',
         'Account-wide · updated 5 minutes ago',
         'Cached snapshot only',
         'Refresh',

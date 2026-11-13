@@ -186,9 +186,9 @@ void main() {
     _captureClipboard(t);
     var row = _rowNode(t, 'Act on me');
     expect(_customActions(row), [
-      'Reply in Thread',
-      'Add Reaction',
-      'Save Message',
+      'Reply in thread',
+      'Add reaction',
+      'Save',
       'Copy Markdown',
       'Message Actions',
     ]);
@@ -197,7 +197,7 @@ void main() {
     await t.pump();
     expect(_clipboard, 'Act on me');
 
-    _perform(t, row, 'Save Message');
+    _perform(t, row, 'Save');
     await t.pump();
     // Optimistic, like the toolbar: the action now offers the inverse.
     expect(SavedCountStore.of(w).isSaved('m1'), isTrue);
@@ -208,7 +208,7 @@ void main() {
     await t.pumpAndSettle();
     row = _rowNode(t, 'Act on me');
 
-    _perform(t, row, 'Add Reaction');
+    _perform(t, row, 'Add reaction');
     await t.pumpAndSettle();
     expect(find.byType(RaftQuickReactionPicker), findsOneWidget);
     await t.sendKeyEvent(LogicalKeyboardKey.escape);
@@ -253,8 +253,7 @@ void main() {
     final semantics = t.ensureSemantics();
     await _mount(t, [_row('m1', 0, 'Hover me')]);
     bool toolbarButton(SemanticsNode n) =>
-        n.label == 'Save Message' &&
-        n.getSemanticsData().flagsCollection.isButton;
+        n.label == 'Save' && n.getSemanticsData().flagsCollection.isButton;
     expect(_allNodes(t).where(toolbarButton), isEmpty);
     final mouse = await t.createGesture(kind: PointerDeviceKind.mouse);
     addTearDown(mouse.removePointer);

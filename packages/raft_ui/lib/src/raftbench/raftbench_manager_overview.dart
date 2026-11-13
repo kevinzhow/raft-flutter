@@ -1,4 +1,4 @@
-// RaftBench "Tasks and cost" (Web raftbench/ManagerOverview.tsx): the task
+// RaftBench "Task and cost context" (Web raftbench/ManagerOverview.tsx): the task
 // snapshot, the 7-day completion comparison and the server-wide cloud-agent
 // spend, read from existing database and billing aggregates.
 import 'package:flutter/material.dart';
@@ -113,10 +113,13 @@ class _Overview extends StatelessWidget {
                   children: [
                     Semantics(
                       header: true,
-                      child: Text(tr('Tasks and cost'), style: ty.headline()),
+                      child: Text(
+                        tr('Task and cost context'),
+                        style: ty.headline(),
+                      ),
                     ),
                     Text(
-                      tr('Database metrics · no AI scan needed'),
+                      tr('Supporting metrics · not a quality score'),
                       style: ty.caption(weight: FontWeight.w400),
                     ),
                   ],
@@ -218,7 +221,7 @@ class _Overview extends StatelessWidget {
             const SizedBox(height: 12),
             RaftbenchDetails(
               summaryStyle: ty.caption(weight: FontWeight.w600),
-              summary: Text(tr('Sources and limits')),
+              summary: Text(tr('How this is counted')),
               child: DefaultTextStyle.merge(
                 style: caption,
                 child: Padding(
@@ -290,15 +293,15 @@ class _Overview extends StatelessWidget {
         periods.current.completed == 0 && periods.previous.completed == 0;
     final cards = [
       (
-        tr('Completed · current / previous'),
+        tr('Completed tasks'),
         '${periods.current.completed} / ${periods.previous.completed}',
       ),
       (
-        tr('Median creation → done · current / previous'),
+        tr('Median creation → done'),
         '${_hours(context, periods.current.medianHours)} / ${_hours(context, periods.previous.medianHours)}',
       ),
       (
-        tr('Mean creation → done · current / previous'),
+        tr('Mean creation → done'),
         '${_hours(context, periods.current.meanHours)} / ${_hours(context, periods.previous.meanHours)}',
       ),
     ];
@@ -306,10 +309,7 @@ class _Overview extends StatelessWidget {
       KeyedSubtree(
         key: const ValueKey('raftbench-task-comparison'),
         child: empty
-            ? _status(
-                ty,
-                tr('No tasks were completed in either comparison period.'),
-              )
+            ? _status(ty, tr('No tasks completed in either period'))
             : _Grid(
                 columns: 3,
                 single: true,
@@ -404,7 +404,7 @@ class _Overview extends StatelessWidget {
         children: [
           RaftIcon(RaftGlyph.circleHelp, size: 16, color: t.ink),
           const SizedBox(width: 8),
-          Flexible(child: Text(tr('Sources and limits'))),
+          Flexible(child: Text(tr('How this is counted'))),
         ],
       ),
       child: DefaultTextStyle.merge(
@@ -422,11 +422,9 @@ class _Overview extends StatelessWidget {
               ),
               if (periods != null) ...[
                 Text(
-                  raftFormat(
-                    context,
-                    'Source aggregation over {count} accessible task surfaces; no task-page cap.',
-                    {'count': periods.surfaces},
-                  ),
+                  raftFormat(context, 'Channels you can access: {count}.', {
+                    'count': periods.surfaces,
+                  }),
                 ),
                 Text(
                   raftFormat(

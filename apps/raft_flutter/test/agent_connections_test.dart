@@ -171,8 +171,11 @@ void main() {
       await mount(t);
       expect(find.text('Connected as octocat'), findsOneWidget);
       expect(find.text('by @alice'), findsOneWidget);
-      expect(find.text('Scopes: public_repo, read:user'), findsOneWidget);
-      expect(find.text('Connect a new GitHub account'), findsOneWidget);
+      expect(
+        find.text('GitHub scopes: public_repo, read:user'),
+        findsOneWidget,
+      );
+      expect(find.text('Connect new account'), findsOneWidget);
       expect(find.text('Remove from this agent'), findsOneWidget);
     });
 
@@ -188,7 +191,7 @@ void main() {
       await mount(t);
       expect(find.text("Uses @bob's GitHub (octocat)"), findsOneWidget);
       expect(find.text('Connected as octocat'), findsNothing);
-      expect(find.text('Disconnect this connection'), findsOneWidget);
+      expect(find.text('Disconnect for all agents'), findsOneWidget);
     });
 
     testWidgets('disconnect is only for who may manage the connector', (
@@ -209,7 +212,7 @@ void main() {
         ],
       );
       await mount(t);
-      expect(find.text('Disconnect this connection'), findsNothing);
+      expect(find.text('Disconnect for all agents'), findsNothing);
       expect(find.text('Remove from this agent'), findsOneWidget);
     });
 

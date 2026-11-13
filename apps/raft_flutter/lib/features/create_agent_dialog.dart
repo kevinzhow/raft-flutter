@@ -657,7 +657,7 @@ class _CreateAgentDialogState extends State<CreateAgentDialog>
         children: [
           RaftAgentDialogButton(label: 'Cancel', onPressed: close),
           RaftAgentDialogButton(
-            label: 'Add Computer',
+            label: 'Add computer',
             primary: true,
             onPressed: () {
               Navigator.pop(context);
@@ -720,12 +720,12 @@ class _CreateAgentDialogState extends State<CreateAgentDialog>
           onToggle: () => setState(() => moreOpen = !moreOpen),
           children: [
             RaftStableField(
-              label: 'Environment Variables',
+              label: 'Environment variables',
               hint: 'One KEY=value per line.',
               child: RaftAgentTextInput(
                 controller: preAdmissionEnv,
                 multiline: true,
-                semanticLabel: raftText(context, 'Environment Variables'),
+                semanticLabel: raftText(context, 'Environment variables'),
               ),
             ),
           ],
@@ -742,7 +742,7 @@ class _CreateAgentDialogState extends State<CreateAgentDialog>
           status: RaftAgentBannerStatus.info,
           title: 'Connect a computer first',
           description: 'Cindy runs on your computer, and there is none connected yet. Once one is online, Raft detects the runtimes on it and this step fills itself in.',
-          action: 'Add Computer',
+          action: 'Add computer',
           onAction: widget.onConnectComputer,
         ),
         onCreate: null,
@@ -815,7 +815,7 @@ class _CreateAgentDialogState extends State<CreateAgentDialog>
           description: shownError,
           // Web isQuotaError: the server's "... limit reached" text gets an
           // inline View Plans link to Settings > Billing.
-          action: shownError.contains('limit reached') ? 'View Plans' : null,
+          action: shownError.contains('limit reached') ? 'View plans' : null,
           onAction: shownError.contains('limit reached')
               ? () {
                   if (busy) return;

@@ -15,7 +15,7 @@ import 'package:raft_ui/raft_ui.dart'
         RaftbenchTaskSnapshot,
         RaftbenchWindow;
 
-/// "Tasks and cost" (Web `ManagerOverview.tsx`): task snapshot, the period
+/// "Task and cost context" (Web `ManagerOverview.tsx`): task snapshot, the period
 /// comparison and the server-wide cloud-agent spend, three independent reads
 /// of existing database and billing aggregates (no AI, no message scan).
 ///

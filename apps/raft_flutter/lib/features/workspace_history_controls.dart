@@ -116,7 +116,7 @@ String _historyLabel(
     RaftRoute.activity => 'Activity',
     RaftRoute.tasks => 'Tasks',
     RaftRoute.saved => 'Saved',
-    RaftRoute.releaseNotes => 'Release Notes',
+    RaftRoute.releaseNotes => 'Release notes',
     RaftRoute.unknown => 'Home',
   };
   return raftText(context, label);

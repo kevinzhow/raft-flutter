@@ -65,7 +65,7 @@ class RaftPanelHeaderIconTile extends StatelessWidget {
   }
 }
 
-/// MachineDetailPanel "Detected Runtimes" chip: raft-ui Badge (solid,
+/// MachineDetailPanel "Detected runtimes" chip: raft-ui Badge (solid,
 /// default variant) with the callsite fill — detected
 /// `bg-info-soft text-info-strong theme-brutal:bg-brutal-cyan
 /// theme-brutal:text-black`, otherwise `bg-fill-muted text-foreground-muted`.
@@ -235,7 +235,7 @@ class RaftOptionCard extends StatelessWidget {
 /// justify-between px-2`, label `text-xs font-bold
 /// text-foreground-strong theme-brutal:text-black` + count
 /// `text-foreground-placeholder font-mono normal-case tracking-normal
-/// theme-brutal:text-black/40`, and the size-6 "Add Computer" icon button.
+/// theme-brutal:text-black/40`, and the size-6 "Add computer" icon button.
 class RaftComputerSidebarHeading extends StatelessWidget {
   const RaftComputerSidebarHeading({
     super.key,
@@ -243,7 +243,7 @@ class RaftComputerSidebarHeading extends StatelessWidget {
     required this.count,
     this.onAdd,
     this.addKey,
-    this.addLabel = 'Add Computer',
+    this.addLabel = 'Add computer',
   });
   final String label;
   final int count;
@@ -740,7 +740,7 @@ class RaftComputerSidebarList extends StatelessWidget {
     this.errorText,
     this.onAdd,
     this.addKey,
-    this.addLabel = 'Add Computer',
+    this.addLabel = 'Add computer',
     this.listKey,
   });
   final String label, emptyText, addLabel;

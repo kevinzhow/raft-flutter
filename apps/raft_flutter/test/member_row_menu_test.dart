@@ -135,7 +135,7 @@ void main() {
       expect(find.text('Message'), findsOneWidget);
       expect(find.text('Start'), findsNothing);
       expect(find.text('Stop'), findsNothing);
-      expect(find.text('Restart / Reset'), findsNothing);
+      expect(find.text('Restart / reset'), findsNothing);
       await t.tap(find.text('Message'));
       await t.pumpAndSettle();
       expect(opened.single.kind, DesktopContentKind.human);
@@ -151,13 +151,13 @@ void main() {
       expect(find.text('Message'), findsOneWidget);
       expect(find.text('Stop'), findsOneWidget);
       expect(find.text('Start'), findsNothing);
-      expect(find.text('Restart / Reset'), findsOneWidget);
+      expect(find.text('Restart / reset'), findsOneWidget);
       await t.tap(find.text('Stop'));
       await t.pumpAndSettle();
-      // Web: a "Stop Agent" confirmation, no request yet.
-      expect(find.text('Stop Agent'), findsWidgets);
+      // Web: a "Stop agent" confirmation, no request yet.
+      expect(find.text('Stop agent'), findsWidgets);
       expect(client.commands, isEmpty);
-      await t.tap(find.text('Stop Agent').last);
+      await t.tap(find.text('Stop agent').last);
       await t.pumpAndSettle();
       expect(client.commands, ['POST /agents/on/stop {}']);
     });
@@ -177,7 +177,7 @@ void main() {
         'posts the chosen mode', (t) async {
       final (_, client, _) = await mount(t);
       await rightClick(t, 'desktop-directory-agent-off');
-      await t.tap(find.text('Restart / Reset'));
+      await t.tap(find.text('Restart / reset'));
       await t.pumpAndSettle();
       expect(find.byType(RaftResetAgentDialog), findsOneWidget);
       expect(
@@ -187,7 +187,7 @@ void main() {
       await t.tap(find.byKey(const ValueKey('agent-reset-option-session')));
       await t.pump();
       // The confirm button now carries the chosen mode.
-      await t.tap(find.textContaining('Reset Session & Restart').last);
+      await t.tap(find.textContaining('Reset session & restart').last);
       await t.pumpAndSettle();
       expect(client.commands, ['POST /agents/off/reset {mode: session}']);
     });
@@ -199,7 +199,7 @@ void main() {
       await rightClick(t, 'desktop-directory-agent-ext');
       expect(find.text('Message'), findsOneWidget);
       expect(find.text('Start'), findsNothing);
-      expect(find.text('Restart / Reset'), findsNothing);
+      expect(find.text('Restart / reset'), findsNothing);
     });
 
     testWidgets('$family/$dark a long press opens the same menu', (t) async {
@@ -208,7 +208,7 @@ void main() {
         find.byKey(const ValueKey('desktop-directory-agent-on')),
       );
       await t.pumpAndSettle();
-      expect(find.text('Restart / Reset'), findsOneWidget);
+      expect(find.text('Restart / reset'), findsOneWidget);
     });
   }
 }

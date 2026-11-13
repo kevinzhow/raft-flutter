@@ -35,7 +35,7 @@ class _AdminsPreviewState extends State<_AdminsPreview> {
   Widget build(BuildContext context) => SingleChildScrollView(
     padding: const EdgeInsets.all(16),
     child: RaftAdminSection(
-      label: 'Owners & Admins',
+      label: 'Owners & admins',
       glyph: RaftGlyph.shield,
       count: 2,
       child: RaftAdminsCard(
@@ -68,7 +68,7 @@ class _AdminsPreviewState extends State<_AdminsPreview> {
               subtitle: 'Agent · Admin',
               avatarUrl: 'pixel:robot',
             ),
-            removeLabel: 'Remove Admin',
+            removeLabel: 'Remove admin',
             onRemove: () {},
           ),
         ],
@@ -105,7 +105,7 @@ class _FormsPreviewState extends State<_FormsPreview> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         RaftAdminSection(
-          label: 'System Channels',
+          label: 'System channels',
           glyph: RaftGlyph.eye,
           child: RaftAdminCheckboxForm(
             title: 'Hide #all channel',
@@ -127,7 +127,7 @@ class _FormsPreviewState extends State<_FormsPreview> {
           ),
         ),
         RaftAdminSection(
-          label: 'Invite Links',
+          label: 'Invite links',
           glyph: RaftGlyph.link2,
           count: 1,
           child: RaftAdminJoinLinksCard(

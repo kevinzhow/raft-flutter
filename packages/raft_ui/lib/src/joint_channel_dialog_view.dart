@@ -72,7 +72,7 @@ class RaftCreateJointChannelDialogView extends StatelessWidget {
   final ValueChanged<String> onToggle;
   final String? error;
 
-  /// The billing-gate error's inline "View Billing" link.
+  /// The billing-gate error's inline "View billing" link.
   final VoidCallback? onViewBilling;
 
   /// Extra banner under [error] (the archived-name collision).
@@ -111,7 +111,7 @@ class RaftCreateJointChannelDialogView extends StatelessWidget {
         ),
         RaftRecipeButton(
           key: const ValueKey('joint-create-submit'),
-          label: submitting ? 'Creating…' : 'Create Joint Channel',
+          label: submitting ? 'Creating…' : 'Create joint channel',
           variant: RaftButtonRecipeVariant.accent,
           size: RaftButtonRecipeSize.sm,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -123,7 +123,7 @@ class RaftCreateJointChannelDialogView extends StatelessWidget {
     );
     return RaftModalBackdrop(
       child: RaftDialog.card(
-        title: 'Create Joint Channel',
+        title: 'Create joint channel',
         titleGlyph: RaftGlyph.gitBranch,
         maxWidth: 512, // max-w-lg
         onClose: onClose,
@@ -153,7 +153,7 @@ class RaftCreateJointChannelDialogView extends StatelessWidget {
                       description: error!,
                       descriptionWeight: FontWeight.w700,
                       descriptionTail: (
-                        label: raftText(context, 'View Billing'),
+                        label: raftText(context, 'View billing'),
                         onPressed: onViewBilling!,
                       ),
                     ),

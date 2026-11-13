@@ -44,7 +44,7 @@ class _DmSettingsPreviewState extends State<_DmSettingsPreview> {
           sections: [
             RaftSheetSection('Preferences', [
               RaftSheetSwitchRow(
-                title: 'Pin Channel',
+                title: 'Pin channel',
                 description:
                     'Keep this conversation at the top of your sidebar.',
                 value: pinned,

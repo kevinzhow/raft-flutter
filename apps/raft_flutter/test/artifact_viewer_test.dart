@@ -773,7 +773,7 @@ void main() {
               of: zone,
               matching: find.textContaining(
                 canInstall
-                    ? 'Continuing will install the App as you.'
+                    ? 'continuing installs it as you.'
                     : 'Only an owner or admin of this Server can install it.',
               ),
             ),

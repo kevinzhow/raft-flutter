@@ -224,7 +224,7 @@ void main() {
       ),
     );
     await t.pumpWidget(host(const Locale('en')));
-    expect(entry!.label, 'Join Community');
+    expect(entry!.label, 'Join community');
     entry!.onPressed!();
     expect(joined, 1);
 

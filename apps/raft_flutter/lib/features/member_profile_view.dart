@@ -206,13 +206,13 @@ class _MemberProfileViewState extends ManagementState<MemberProfileView> {
     final removed = await scopedDialog<bool>(
       (_) => RaftConfirmDialog(
         surfaceKey: const ValueKey('agent-dialog'),
-        title: raftText(context, 'Remove Member'),
+        title: raftText(context, 'Remove member'),
         message: raftFormat(
           context,
           '{name} will be removed from every channel on this server. Their past messages will remain in history.',
           {'name': name},
         ),
-        confirmLabel: raftText(context, 'Remove Member'),
+        confirmLabel: raftText(context, 'Remove member'),
         cancelLabel: raftText(context, 'Keep Member'),
         loadingLabel: raftText(context, 'Removing…'),
         onConfirm: () async {
@@ -739,11 +739,11 @@ class _MemberProfileViewState extends ManagementState<MemberProfileView> {
         RaftPanelSection(
           children: [
             RaftSectionHeader(
-              label: raftText(context, 'Created Agents'),
+              label: raftText(context, 'Created agents'),
               count: created.length,
             ),
             if (created.isEmpty)
-              RaftSpanPlaceholder(raftText(context, 'No created agents'))
+              RaftSpanPlaceholder(raftText(context, 'No agents created yet'))
             else
               RaftGapColumn(
                 children: [
@@ -781,7 +781,7 @@ class _MemberProfileViewState extends ManagementState<MemberProfileView> {
             // items-center justify-center gap-2 px-4 py-2 text-sm font-bold">`.
             RaftRecipeTextButton(
               key: const ValueKey('member-remove'),
-              label: raftText(context, 'Remove Member'),
+              label: raftText(context, 'Remove member'),
               glyph: RaftGlyph.trash2,
               variant: RaftButtonRecipeVariant.danger,
               text: RaftButtonText.sm,

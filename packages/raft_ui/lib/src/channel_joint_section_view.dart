@@ -158,7 +158,7 @@ class RaftChannelJointSectionView extends StatelessWidget {
         ? 'Resending…'
         : resendDone
         ? 'Invite resent'
-        : 'Resend Invite';
+        : 'Resend invite';
     return Container(
       key: const ValueKey('channel-settings-joint-section'),
       margin: const EdgeInsets.only(top: 20),
@@ -214,7 +214,7 @@ class RaftChannelJointSectionView extends StatelessWidget {
               child: Text(
                 raftText(
                   context,
-                  'Connected server metadata is not available yet.',
+                  "Server details aren't available yet. Try again in a moment.",
                 ),
                 style: raftCssTextStyle(
                   family: t.bodyFont,
@@ -326,7 +326,7 @@ class RaftChannelJointSectionView extends StatelessWidget {
                     alignment: Alignment.centerRight,
                     child: RaftSettingsRecipeButton(
                       key: const ValueKey('channel-settings-joint-send-invite'),
-                      label: inviteBusy ? 'Inviting…' : 'Send Invite',
+                      label: inviteBusy ? 'Inviting…' : 'Send invite',
                       glyph: RaftGlyph.mail,
                       glyphSize: 16,
                       size: RaftButtonRecipeSize.sm,

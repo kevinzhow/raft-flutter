@@ -16,7 +16,7 @@ const Map<String, String> zhCatalogW23Cloud = <String, String>{
   // `agent.detail.connections.*` messages with placeholders.
   "Connected as {account}": "已连接为 {account}",
   "by @{name}": "由 @{name} 连接",
-  "Scopes: {scopes}": "权限范围：{scopes}",
+  "GitHub scopes: {scopes}": "GitHub 权限范围：{scopes}",
   "Opens GitHub to grant this agent access ({scopes}). The token stays with the agent's provider.":
       "打开 GitHub 为此 Agent 授权（{scopes}）。令牌由 Agent 的提供方保管。",
   "GitHub will ask you to grant: {scopes}. The link is single-use and expires in 10 minutes.":
@@ -26,5 +26,7 @@ const Map<String, String> zhCatalogW23Cloud = <String, String>{
   "{account} · created by @{creator}": "{account} · 由 @{creator} 创建",
   "This agent stops using GitHub as {account}. The connection stays available to other agents on this server.":
       "此 Agent 将不再以 {account} 身份使用 GitHub。该连接仍可供此服务器上的其他 Agent 使用。",
+  "{agent} stops using GitHub as {account}. The connection stays available to other agents on this server, but only {creator}, who created it, or a server admin can assign it to {agent} again.": "{agent} 将不再以 {account} 身份使用 GitHub。该连接仍可供此服务器上的其他 Agent 使用，但只有它的创建者 {creator} 或服务器管理员可以再把它分配给 {agent}。",
   "{account} is disconnected for every agent on this server that uses it, not only this one. Those agents lose GitHub access until they are switched to another connection.": "{account} 将对此服务器上所有使用它的 Agent 断开，而不仅是此 Agent。这些 Agent 在切换到其他连接之前将失去 GitHub 访问权限。",
+  "{connection} is disconnected for every agent on this server that uses it, not only {agent}. Those agents can't use GitHub until each is switched to another connection. Using it again means connecting it again.": "{connection} 将对此服务器上所有使用它的 Agent 断开，而不仅是 {agent}。这些 Agent 在换用其他连接之前无法使用 GitHub。要再次使用，需要重新连接。",
 };

@@ -6,7 +6,7 @@ import 'package:raft_ui/raft_ui.dart';
 
 import 'source_channel_files_view_test.dart' show fileRow;
 
-/// Channel Files "Load More": a tap appends the next page and the button ends
+/// Channel Files "Load more": a tap appends the next page and the button ends
 /// with the last page; a failed page keeps the files already on screen.
 
 Future<SourceChannelFilesStore> _mount(
@@ -66,11 +66,11 @@ void main() {
     );
     expect(find.byKey(const ValueKey('channel-file-a')), findsOneWidget);
     expect(find.byKey(const ValueKey('channel-file-b')), findsNothing);
-    await t.tap(find.text('Load More'));
+    await t.tap(find.text('Load more'));
     await t.pumpAndSettle();
     expect(find.byKey(const ValueKey('channel-file-a')), findsOneWidget);
     expect(find.byKey(const ValueKey('channel-file-b')), findsOneWidget);
-    expect(find.text('Load More'), findsNothing);
+    expect(find.text('Load more'), findsNothing);
   });
 
   testWidgets('a single page never offers Load more', (t) async {
@@ -81,6 +81,6 @@ void main() {
         'nextCursor': null,
       },
     );
-    expect(find.text('Load More'), findsNothing);
+    expect(find.text('Load more'), findsNothing);
   });
 }

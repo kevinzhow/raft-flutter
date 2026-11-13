@@ -11,7 +11,6 @@ const Map<String, String> zhCatalogSettingsApps = <String, String>{
       "修订版本 {revision} 正在等待 App Review。在审核完成前，当前已批准的权限仍然有效。",
   "Enabled · revision {revision}": "已启用 · 修订版本 {revision}",
   "{group} events": "{group} 事件",
-  "Active link expires {when}.": "有效链接于 {when} 过期。",
   "The existing client secret for ": "",
   " will stop working immediately. The new secret is shown once after regeneration.":
       " 现有的客户端密钥将立即失效。新密钥只会在重新生成后显示一次。",

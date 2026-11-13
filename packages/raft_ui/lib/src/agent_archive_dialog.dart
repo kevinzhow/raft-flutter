@@ -15,7 +15,7 @@ import 'theme.dart';
 /// `ConfirmDialog` (`max-w-md`, plain message) holding the description, for an
 /// agent with a workspace on a Computer a keep / delete radio group, and the
 /// red-soft warning banner once "delete" is chosen. The confirm button is the
-/// `warning` "Archive Agent" (`danger` for a workspace delete).
+/// `warning` "Archive agent" (`danger` for a workspace delete).
 class RaftAgentArchiveDialog extends StatefulWidget {
   const RaftAgentArchiveDialog({
     super.key,
@@ -58,7 +58,7 @@ class _RaftAgentArchiveDialogState extends State<RaftAgentArchiveDialog> {
       (
         false,
         'keep',
-        raftText(context, 'Keep it on the Computer'),
+        raftText(context, 'Keep it on the computer'),
         raftFormat(
           context,
           'Nothing is deleted. You can browse it read-only while {computer} is online, and delete it later.',
@@ -80,7 +80,7 @@ class _RaftAgentArchiveDialogState extends State<RaftAgentArchiveDialog> {
       surfaceKey: const ValueKey('agent-dialog'),
       title: raftFormat(context, 'Archive {name}?', {'name': widget.agentName}),
       maxWidth: 448,
-      confirmLabel: raftText(context, 'Archive Agent'),
+      confirmLabel: raftText(context, 'Archive agent'),
       loadingLabel: raftText(context, 'Archiving…'),
       confirmGlyph: RaftGlyph.archive,
       confirmKey: const ValueKey('agent-archive-confirm'),

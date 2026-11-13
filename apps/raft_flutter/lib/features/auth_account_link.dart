@@ -47,7 +47,7 @@ String accountLinkFailureText(
     'pending_link_account_mismatch' => "You signed in to a different account than {email}, so {provider} wasn't connected. Please sign in with {email}.",
     'provider_conflict' => "This {provider} account is already connected to another Raft account, so it couldn't be connected here.",
     'account_link_unconfirmed' => "We couldn't connect {provider}, so you haven't been signed in. Please try again.",
-    _ => 'Login failed',
+    _ => 'Sign-in failed',
   };
   return raftFormat(context, template, values);
 }

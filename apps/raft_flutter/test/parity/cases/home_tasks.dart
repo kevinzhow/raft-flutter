@@ -370,9 +370,9 @@ final ParityCase _searchResults = ParityCase(
   build: (ctx) => _resource(ctx, 'search'),
   interact: (t, ctx) async {
     await _typeSearch(t);
-    await t.tap(find.text('Any Time').last);
+    await t.tap(find.text('Any time').last);
     await t.pump(const Duration(milliseconds: 300));
-    await t.tap(find.text('Last 7 Days').last);
+    await t.tap(find.text('Last 7 days').last);
     await t.pump(const Duration(milliseconds: 300));
     await t.tap(find.text('Relevant').last);
     await t.pump(const Duration(milliseconds: 300));

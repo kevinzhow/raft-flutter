@@ -266,10 +266,10 @@ void main() {
                       return RaftButton(
                         key: const Key('save'),
                         busy: busy,
-                        semanticLabel: 'Save changes',
+                        semanticLabel: 'Save',
                         leading: const RaftIcon(RaftGlyph.plus, size: 16),
                         onPressed: () => count++,
-                        child: const Text('Save changes'),
+                        child: const Text('Save'),
                       );
                     },
                   ),
@@ -283,7 +283,7 @@ void main() {
           await t.pump();
           await t.pump(const Duration(milliseconds: 200));
           expect(t.getRect(action), before);
-          expect(t.getSemantics(action).label, 'Save changes');
+          expect(t.getSemantics(action).label, 'Save');
           expect(t.getSemantics(action).value, 'Loading');
           await t.tap(action);
           await t.sendKeyEvent(LogicalKeyboardKey.enter);

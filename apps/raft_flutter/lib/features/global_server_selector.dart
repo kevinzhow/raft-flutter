@@ -103,7 +103,7 @@ class _GlobalServerSelectorState extends State<GlobalServerSelector> {
       validator: (value) =>
           value == null || value.isEmpty ? tr('Required') : null,
       builder: (field) => RaftAuthField(
-        label: tr(first ? 'Server URL' : 'URL slug'),
+        label: tr(first ? 'Server URL' : 'Slug'),
         surface: false,
         helper: first
             ? tr(
@@ -118,7 +118,7 @@ class _GlobalServerSelectorState extends State<GlobalServerSelector> {
           enabled: !widget.loading,
           invalid: field.hasError,
           hintText: first ? 'alex-chen-studio' : 'my-team',
-          semanticLabel: tr(first ? 'Server URL' : 'URL slug'),
+          semanticLabel: tr(first ? 'Server URL' : 'Slug'),
           onChanged: (value) {
             slugTouched = true;
             final normalized = toSlug(value);
@@ -180,7 +180,7 @@ class _GlobalServerSelectorState extends State<GlobalServerSelector> {
                   const SizedBox(height: RaftSpace.x3),
                   RaftAuthSubmit(
                     key: const ValueKey('global-server-create-submit'),
-                    label: tr('Create Server'),
+                    label: tr('Create server'),
                     onPressed: widget.loading ? null : submit,
                   ),
                 ],
@@ -201,7 +201,7 @@ class _GlobalServerSelectorState extends State<GlobalServerSelector> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           RaftAuthIntro(
-            title: tr(create ? 'Create Server' : 'Choose server'),
+            title: tr(create ? 'Create server' : 'Choose server'),
             descriptionSpan: create
                 ? null
                 : raftAuthSignedInAsSpan(context, widget.user.string('email')),
@@ -242,7 +242,7 @@ class _GlobalServerSelectorState extends State<GlobalServerSelector> {
                       Expanded(
                         child: RaftAuthSubmit(
                           key: const ValueKey('global-server-create-submit'),
-                          label: tr('Create Server'),
+                          label: tr('Create server'),
                           onPressed: widget.loading ? null : submit,
                         ),
                       ),
@@ -290,7 +290,7 @@ class _GlobalServerSelectorState extends State<GlobalServerSelector> {
             ],
             RaftAuthSubmit(
               key: const ValueKey('global-server-create-new'),
-              label: tr('+ Create New Server'),
+              label: tr('+ Create new server'),
               onPressed: widget.loading
                   ? null
                   : () => setState(() => creating = true),
@@ -299,7 +299,7 @@ class _GlobalServerSelectorState extends State<GlobalServerSelector> {
           if (!create) ...[
             const SizedBox(height: RaftSpace.x3), // mt-3
             RaftAuthTextLink(
-              label: tr('Log out'),
+              label: tr('Sign out'),
               bold: true,
               centeredLine: true,
               onTap: widget.onLogout,

@@ -93,7 +93,7 @@ List<Widget> forwardWarningBanners(
       key: const ValueKey('forward-joint-warning'),
       status: RaftBannerRecipeStatus.warning,
       glyph: RaftGlyph.alertTriangle,
-      description: 'Joint channel destinations may expose this forwarded snapshot to people outside this server.',
+      description: 'People outside this server may see messages forwarded to an external channel.',
     ),
 ];
 

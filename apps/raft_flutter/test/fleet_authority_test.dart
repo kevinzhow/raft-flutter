@@ -237,7 +237,7 @@ void main() {
         find
             .descendant(
               of: find.byType(RaftConfirmDialog),
-              matching: find.text('Delete Computer'),
+              matching: find.text('Delete computer'),
             )
             .last,
       );

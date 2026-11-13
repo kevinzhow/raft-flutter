@@ -31,7 +31,7 @@ void main() {
     }
     expect(find.text('1.17.5'), findsOneWidget);
     expect(find.text('Or, Scan with your phone'), findsOneWidget);
-    await t.tap(find.text('Download for Android'));
+    await t.tap(find.text('Download Android APK'));
     expect(android, 1);
   });
 
@@ -199,7 +199,7 @@ void main() {
       find.text('Release notes are unavailable right now.'),
       findsOneWidget,
     );
-    await t.tap(find.text('Try Again'));
+    await t.tap(find.text('Try again'));
     expect(retried, 1);
 
     await t.pumpWidget(

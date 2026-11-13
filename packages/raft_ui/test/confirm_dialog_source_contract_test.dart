@@ -200,8 +200,8 @@ void main() {
     ) async {
       for (final choice in [
         (mode: 'restart', label: 'Restart'),
-        (mode: 'session', label: 'Reset Session & Restart'),
-        (mode: 'full', label: 'Full Reset & Restart'),
+        (mode: 'session', label: 'Reset session & restart'),
+        (mode: 'full', label: 'Full reset & restart'),
       ]) {
         final pending = Completer<void>();
         final calls = <String>[];
@@ -306,8 +306,8 @@ void main() {
       'member-runtime Reset keeps typed source actions, dark=$dark',
       (tester) async {
         for (final choice in [
-          (mode: 'restart', label: 'Restart Model'),
-          (mode: 'session', label: 'Reset Model'),
+          (mode: 'restart', label: 'Restart model'),
+          (mode: 'session', label: 'Reset model'),
         ]) {
           final calls = <String>[];
           await _open(

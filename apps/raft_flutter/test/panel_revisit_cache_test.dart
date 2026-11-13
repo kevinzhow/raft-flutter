@@ -581,7 +581,7 @@ void main() {
         expect(held, hasLength(2));
         held.last.complete({'events': <dynamic>[]});
         await settle(t);
-        expect(find.text('No history yet.'), findsOneWidget);
+        expect(find.text('No history yet'), findsOneWidget);
         await t.pumpWidget(const SizedBox());
         owners.last.dispose();
         expect(t.takeException(), isNull);

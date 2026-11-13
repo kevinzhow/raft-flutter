@@ -72,7 +72,7 @@ void main() {
     test('a managed agent lists its identity, Computer and live state', () {
       final text = buildAgentDiagnosticInfo(
         agent: {...agentPanelAgent, 'sessionId': 'sess-1', 'status': 'active'},
-        title: 'Raft Diagnostic Info',
+        title: 'Raft diagnostic info',
         serverId: 's',
         machine: {
           'id': 'm1',
@@ -91,7 +91,7 @@ void main() {
         reportedAt: _at,
       );
       expect(text.split('\n'), [
-        'Raft Diagnostic Info',
+        'Raft diagnostic info',
         'reportedAtUtc: 2026-10-24T01:02:03.000Z',
         'serverId: s',
         'agentId: a',
@@ -140,14 +140,14 @@ void main() {
     test('an external agent carries the external diagnostics', () {
       final text = buildAgentDiagnosticInfo(
         agent: _external,
-        title: 'Raft Diagnostic Info',
+        title: 'Raft diagnostic info',
         serverId: 's',
         activity: 'online',
         externalDiagnostics: _diagnostics(),
         reportedAt: _at,
       );
       expect(text.split('\n'), [
-        'Raft Diagnostic Info',
+        'Raft diagnostic info',
         'reportedAtUtc: 2026-10-24T01:02:03.000Z',
         'serverId: s',
         'agentId: ext-1',
@@ -214,7 +214,7 @@ void main() {
     });
   });
 
-  group('Copy Diagnostic Info', () {
+  group('Copy diagnostic info', () {
     String? clipboard;
     setUp(() {
       clipboard = null;
@@ -252,7 +252,7 @@ void main() {
       );
       await tester.tap(button);
       await tester.pump();
-      expect(clipboard, startsWith('Raft Diagnostic Info\nreportedAtUtc: '));
+      expect(clipboard, startsWith('Raft diagnostic info\nreportedAtUtc: '));
       expect(clipboard, contains('pushWebhook: disabled (too_many_failures)'));
       expect(clipboard, contains('githubConnection: connected (octo)'));
     });

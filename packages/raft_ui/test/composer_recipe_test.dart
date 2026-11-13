@@ -379,7 +379,7 @@ void main() {
       var images = 0, files = 0, tasks = 0, sends = 0;
       final task = TextButton(
         onPressed: () => tasks++,
-        child: const Text('As Task'),
+        child: const Text('As task'),
       );
       await tester.pumpWidget(
         host(
@@ -409,7 +409,7 @@ void main() {
       );
       await tester.tap(find.byTooltip('Attach File'));
       expect(files, 1);
-      await tester.tap(find.text('As Task'));
+      await tester.tap(find.text('As task'));
       expect(tasks, 1);
       expect(sends, 0);
       await tester.pumpWidget(

@@ -187,7 +187,7 @@ void main() {
           ),
           findsOneWidget,
         );
-        expect(find.text('Join Server'), findsOneWidget);
+        expect(find.text('Join server'), findsOneWidget);
       },
     );
 
@@ -240,7 +240,7 @@ void main() {
         find.text('Sign in or create an account to accept this invite.'),
         findsOneWidget,
       );
-      expect(find.text('Join Server'), findsNothing);
+      expect(find.text('Join server'), findsNothing);
       await t.tap(find.byKey(const ValueKey('invite-sign-in')));
       await t.tap(find.byKey(const ValueKey('invite-create-account')));
       expect((signIn, create), (1, 1));
@@ -262,7 +262,7 @@ void main() {
           );
           expect(find.text('Invite error'), findsOneWidget);
           expect(find.text(message), findsOneWidget);
-          expect(find.text('Join Server'), findsNothing);
+          expect(find.text('Join server'), findsNothing);
         }
         await t.tap(find.byKey(const ValueKey('invite-go-to-raft')));
         expect(goes, 1);
@@ -317,8 +317,8 @@ void main() {
       );
       expect(find.text('Community agreement'), findsOneWidget);
       expect(find.text('Version 3'), findsOneWidget);
-      expect(find.text('Join Server'), findsNothing);
-      await t.tap(find.text('Agree & Join'));
+      expect(find.text('Join server'), findsNothing);
+      await t.tap(find.text('Agree & join'));
       await t.pump();
       expect(accepted, ['agreement-1']);
     });
@@ -374,7 +374,7 @@ void main() {
           return const InviteJoined('s', 'Raft Design');
         },
       );
-      await t.tap(find.text('Agree & Join'));
+      await t.tap(find.text('Agree & join'));
       await t.pump();
       await t.pump();
       expect(find.text('Updated rules'), findsOneWidget);

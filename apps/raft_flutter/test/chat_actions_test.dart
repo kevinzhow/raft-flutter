@@ -45,11 +45,11 @@ void main() {
       open();
       await tester.pump(const Duration(milliseconds: 400));
       expect(tester.takeException(), isNull);
-      final last = find.text('Convert to Task');
+      final last = find.text('Convert to task');
       await tester.ensureVisible(last);
       await tester.pump(const Duration(milliseconds: 300));
       expect(last.hitTestable(), findsOneWidget);
-      expect(find.text('Select Message'), findsOneWidget);
+      expect(find.text('Select message'), findsOneWidget);
       expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox());
     },

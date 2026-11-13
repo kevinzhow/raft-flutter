@@ -1,4 +1,4 @@
-// "Tasks and cost" (Web ManagerOverview.tsx): three independent reads of
+// "Task and cost context" (Web ManagerOverview.tsx): three independent reads of
 // existing aggregates, each failing on its own, never inferring a total.
 import 'dart:async';
 

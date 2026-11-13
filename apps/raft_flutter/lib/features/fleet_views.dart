@@ -188,8 +188,8 @@ Future<void> showFleetRegistration(
     valid,
     form: true,
     (_) => RaftFormDialog(
-      title: computers ? 'Register Computer' : 'Create External Agent',
-      submitLabel: computers ? 'Register Computer' : 'Create External Agent',
+      title: computers ? 'Register Computer' : 'Create external agent',
+      submitLabel: computers ? 'Register Computer' : 'Create external agent',
       description: computers
           ? 'Register a computer, then use its one-time key to connect Raft Computer.'
           : 'An external agent runs in a client you connect yourself.',
@@ -400,7 +400,7 @@ class _FleetViewState extends State<FleetView> {
               ? 'All computers are up to date and online.'
               : 'Add a computer to run agents in this server.',
         ),
-        addLabel: raftText(context, 'Add Computer'),
+        addLabel: raftText(context, 'Add computer'),
         retryLabel: raftText(context, 'Retry'),
         onRetry: load,
         onAdd: state.loaded && w.can('registerMachines')
@@ -1207,14 +1207,14 @@ class _FleetDetailState extends State<FleetDetail> {
     }
     var removed = false;
     await confirm(
-      'Delete Computer',
+      'Delete computer',
       'Disconnect this computer from the server. Its agents can no longer use this connection.',
       () async {
         require('removeMachines');
         await w.command('DELETE', base);
         removed = true;
       },
-      submit: 'Delete Computer',
+      submit: 'Delete computer',
       cancel: 'Keep Computer',
       destructive: true,
     );
@@ -1321,15 +1321,15 @@ class _FleetDetailState extends State<FleetDetail> {
       return;
     }
     if (!widget.computers && command == 'stop') {
-      // AgentDetailPanel `ConfirmDialog` "Stop Agent" (confirm colour orange).
+      // AgentDetailPanel `ConfirmDialog` "Stop agent" (confirm colour orange).
       await webConfirm(
-        title: raftText(context, 'Stop Agent'),
+        title: raftText(context, 'Stop agent'),
         message: raftFormat(
           context,
           'Stop "{name}"? The agent will stop processing messages.',
           {'name': nonEmptyOr(row['displayName'], row['name'])},
         ),
-        confirmLabel: raftText(context, 'Stop Agent'),
+        confirmLabel: raftText(context, 'Stop agent'),
         cancelLabel: raftText(context, 'Keep Working'),
         loadingLabel: raftText(context, 'Stopping…'),
         variant: RaftButtonRecipeVariant.warning,
@@ -1974,13 +1974,13 @@ Future<void> runMemberAgentCommand(
         () => allowed('controlAgentRuntime'),
         (_) => RaftConfirmDialog(
           surfaceKey: const ValueKey('agent-dialog'),
-          title: raftText(context, 'Stop Agent'),
+          title: raftText(context, 'Stop agent'),
           message: raftFormat(
             context,
             'Are you sure you want to stop "{name}"? The agent will stop processing messages.',
             {'name': name},
           ),
-          confirmLabel: raftText(context, 'Stop Agent'),
+          confirmLabel: raftText(context, 'Stop agent'),
           loadingLabel: raftText(context, 'Stopping…'),
           confirmVariant: RaftButtonRecipeVariant.warning,
           onConfirm: () async {

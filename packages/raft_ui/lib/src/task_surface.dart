@@ -539,7 +539,7 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
           ),
         if (widget.canCleanupDelete && widget.onCleanupDelete != null)
           RaftTextButton(
-            label: 'Delete Task',
+            label: 'Delete task',
             onPressed: widget.onCleanupDelete,
           ),
       ],
@@ -882,7 +882,7 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
     ];
     if (events.isEmpty) {
       return Text(
-        raftText(context, 'No history yet.'),
+        raftText(context, 'No history yet'),
         style: RaftTypography.body(t, size: 12, line: 16, color: t.muted),
       );
     }

@@ -160,8 +160,8 @@ void main() {
         agent: localAgent(creatorId: 'alice'),
       );
       expect(find.text('Activity'), findsOneWidget);
-      expect(find.text('Copy Diagnostic Info'), findsOneWidget);
-      expect(find.text('Archive Agent'), findsOneWidget);
+      expect(find.text('Copy diagnostic info'), findsOneWidget);
+      expect(find.text('Archive agent'), findsOneWidget);
       expect(
         find.byKey(const Key('agent-profile-inline-start-stop')),
         findsOneWidget,
@@ -195,8 +195,8 @@ void main() {
         agent: localAgent(creatorId: 'bob'),
       );
       expect(find.text('Activity'), findsNothing);
-      expect(find.text('Copy Diagnostic Info'), findsNothing);
-      expect(find.text('Archive Agent'), findsNothing);
+      expect(find.text('Copy diagnostic info'), findsNothing);
+      expect(find.text('Archive agent'), findsNothing);
       expect(
         find.byKey(const Key('agent-profile-inline-start-stop')),
         findsOneWidget,
@@ -207,7 +207,7 @@ void main() {
       );
       expect(find.text('No computer assigned'), findsOneWidget);
       // v1.21.23: an agent profile has no Created Agents section.
-      expect(find.textContaining('Created Agents'), findsNothing);
+      expect(find.textContaining('Created agents'), findsNothing);
     });
 
     testWidgets(
@@ -221,15 +221,15 @@ void main() {
         expect(find.text('Activity'), findsNothing);
         expect(find.text('No computer assigned'), findsOneWidget);
         // v1.21.23: an agent profile has no Created Agents section.
-        expect(find.textContaining('Created Agents'), findsNothing);
+        expect(find.textContaining('Created agents'), findsNothing);
         expect(
           find.byKey(const Key('agent-profile-inline-start-stop')),
           findsNothing,
         );
-        expect(find.text('Stop Agent'), findsNothing);
-        expect(find.text('Start Agent'), findsNothing);
-        expect(find.text('Archive Agent'), findsNothing);
-        expect(find.text('Copy Diagnostic Info'), findsNothing);
+        expect(find.text('Stop agent'), findsNothing);
+        expect(find.text('Start agent'), findsNothing);
+        expect(find.text('Archive agent'), findsNothing);
+        expect(find.text('Copy diagnostic info'), findsNothing);
       },
     );
 
@@ -242,7 +242,7 @@ void main() {
         agent: localAgent(creatorId: 'bob'),
       );
       expect(find.text('Activity'), findsOneWidget);
-      expect(find.text('Archive Agent'), findsOneWidget);
+      expect(find.text('Archive agent'), findsOneWidget);
       expect(find.textContaining('Runtime Config'), findsOneWidget);
       expect(
         find.byKey(const Key('agent-profile-inline-start-stop')),
@@ -260,8 +260,8 @@ void main() {
         );
         api.routes['DELETE /agents/bajie'] = (_) => <String, dynamic>{};
         expect(find.text('Delete Agent'), findsNothing);
-        await tester.ensureVisible(find.text('Archive Agent'));
-        await tester.tap(find.text('Archive Agent'));
+        await tester.ensureVisible(find.text('Archive agent'));
+        await tester.tap(find.text('Archive agent'));
         await tester.pumpAndSettle();
         expect(
           find.text(
@@ -323,9 +323,9 @@ void main() {
         tester,
       ) async {
         await openMenu(tester, role: role, senderType: 'external_projection');
-        expect(find.text('Copy Link'), findsOneWidget);
-        expect(find.text('Convert to Task'), findsNothing);
-        expect(find.text('Reopen Task'), findsNothing);
+        expect(find.text('Copy link'), findsOneWidget);
+        expect(find.text('Convert to task'), findsNothing);
+        expect(find.text('Reopen task'), findsNothing);
         expect(find.text('Mark as Done'), findsNothing);
       });
 
@@ -333,7 +333,7 @@ void main() {
         tester,
       ) async {
         await openMenu(tester, role: role, senderType: 'user');
-        expect(find.text('Convert to Task'), findsOneWidget);
+        expect(find.text('Convert to task'), findsOneWidget);
       });
     }
   });
@@ -397,7 +397,7 @@ void main() {
     expect(find.text('归档 Agent'), findsNothing);
     expect(find.text('复制诊断信息'), findsNothing);
     expect(find.text('未分配计算机'), findsNothing);
-    expect(find.text('未分配创建者'), findsNothing);
+    expect(find.text('没有创建者'), findsNothing);
     expect(find.text('动态'), findsNothing);
     expect(find.text('已创建的 Agent'), findsNothing);
     if (shot != null && shot.isNotEmpty) {
@@ -505,16 +505,16 @@ void expectPublicProfile(WidgetTester tester, {required String? from}) {
     findsNothing,
   );
   expect(find.byKey(const Key('agent-profile-overflow-trigger')), findsNothing);
-  expect(find.text('Stop Agent'), findsNothing);
-  expect(find.text('Start Agent'), findsNothing);
-  expect(find.text('Restart / Reset'), findsNothing);
-  expect(find.text('Archive Agent'), findsNothing);
-  expect(find.text('Copy Diagnostic Info'), findsNothing);
-  expect(find.text('Direct Message'), findsNothing);
+  expect(find.text('Stop agent'), findsNothing);
+  expect(find.text('Start agent'), findsNothing);
+  expect(find.text('Restart / reset'), findsNothing);
+  expect(find.text('Archive agent'), findsNothing);
+  expect(find.text('Copy diagnostic info'), findsNothing);
+  expect(find.text('Direct message'), findsNothing);
   expect(find.text('No computer assigned'), findsNothing);
-  expect(find.text('No creator assigned'), findsNothing);
+  expect(find.text('No creator'), findsNothing);
   expect(find.textContaining('Runtime Config'), findsNothing);
-  expect(find.textContaining('Created Agents'), findsNothing);
+  expect(find.textContaining('Created agents'), findsNothing);
   expect(find.text('Computer'), findsNothing);
   expect(find.text('Creator'), findsNothing);
   if (from == null) {

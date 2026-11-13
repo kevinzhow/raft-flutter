@@ -388,7 +388,7 @@ class RaftRuntimeUsageSurface extends StatelessWidget {
                       Expanded(
                         child: Text(
                           window.status == 'parse_unavailable'
-                              ? raftText(context, 'Usage format unavailable')
+                              ? raftText(context, 'Usage unavailable')
                               : window.reset != null
                               ? raftFormat(
                                   context,

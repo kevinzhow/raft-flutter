@@ -111,13 +111,13 @@ class _AgentArchiveSectionState extends State<AgentArchiveSection> {
       RaftConfirmDialog(
         surfaceKey: const ValueKey('agent-archive-delete-workspace-dialog'),
         confirmKey: const ValueKey('agent-archive-delete-workspace-confirm'),
-        title: 'Delete workspace from Computer',
+        title: 'Delete workspace from computer',
         message: raftFormat(
           context,
           'The workspace is deleted from {computer}. This cannot be undone.',
           {'computer': _computer},
         ),
-        confirmLabel: 'Delete workspace from Computer',
+        confirmLabel: 'Delete workspace from computer',
         confirmVariant: RaftButtonRecipeVariant.danger,
         onConfirm: () async {
           final next = await requestArchiveWorkspaceDelete(w, id);
@@ -166,7 +166,7 @@ class _AgentArchiveSectionState extends State<AgentArchiveSection> {
             ),
             AgentArchiveWorkspaceState.deleted => raftText(
               context,
-              'Deleted from the Computer',
+              'Deleted from the computer',
             ),
             AgentArchiveWorkspaceState.unknown => raftText(context, 'Unknown'),
           };
@@ -245,7 +245,7 @@ class _AgentArchiveSectionState extends State<AgentArchiveSection> {
         if (widget.canManage && a != null && a.canDeleteWorkspace)
           RaftButton(
             key: const ValueKey('agent-archive-delete-workspace-button'),
-            label: raftText(context, 'Delete workspace from Computer'),
+            label: raftText(context, 'Delete workspace from computer'),
             tone: RaftButtonRecipeVariant.outline,
             size: RaftButtonRecipeSize.sm,
             expand: true,

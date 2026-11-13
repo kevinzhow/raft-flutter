@@ -208,7 +208,7 @@ class _TaskPreviewState extends State<_TaskPreview> {
         },
         taskAction: RaftComposerTaskToggle(
           checked: checked,
-          label: 'As Task',
+          label: 'As task',
           onChanged: (value) => setState(() => checked = value),
         ),
       ),

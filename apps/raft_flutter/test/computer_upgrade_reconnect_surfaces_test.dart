@@ -151,11 +151,11 @@ void main() {
     ) async {
       client.row = computer(upgrade: pending());
       await mount(t, sidebar());
-      expect(row(t).runLabel, 'Upgrading…');
+      expect(row(t).runLabel, 'Updating…');
       expect(row(t).offline, isFalse);
       expect(row(t).dot, RaftComputerDot.upgrading);
-      expect(find.text('Upgrading…'), findsOneWidget);
-      expect(find.text('computer offline'), findsNothing);
+      expect(find.text('Updating…'), findsOneWidget);
+      expect(find.text('Offline'), findsNothing);
     });
 
     scenario('after the 3 minute grace the row falls back to offline', (
@@ -169,7 +169,7 @@ void main() {
       expect(row(t).dot, RaftComputerDot.upgrading);
       // No refresh, no socket event: the directory ends the window itself.
       await advance(t, const Duration(minutes: 1));
-      expect(row(t).runLabel, 'computer offline');
+      expect(row(t).runLabel, 'Offline');
       expect(row(t).offline, isTrue);
       expect(row(t).dot, RaftComputerDot.offline);
     });
@@ -177,14 +177,14 @@ void main() {
     scenario('an offline Computer with no upgrade stays offline', (t) async {
       client.row = computer();
       await mount(t, sidebar());
-      expect(row(t).runLabel, 'computer offline');
+      expect(row(t).runLabel, 'Offline');
       expect(row(t).dot, RaftComputerDot.offline);
     });
 
     scenario('online keeps the version label and the online dot', (t) async {
       client.row = computer(status: 'online', upgrade: pending());
       await mount(t, sidebar());
-      expect(row(t).runLabel, 'computer v1.3.0');
+      expect(row(t).runLabel, 'v1.3.0');
       expect(row(t).dot, RaftComputerDot.online);
     });
 
@@ -223,7 +223,7 @@ void main() {
       );
       await t.pump(const Duration(seconds: 1));
       await t.pump(const Duration(seconds: 1));
-      expect(row(t).runLabel, 'Upgrading…');
+      expect(row(t).runLabel, 'Updating…');
       expect(row(t).dot, RaftComputerDot.upgrading);
     });
   });
@@ -236,7 +236,7 @@ void main() {
       t,
     ) async {
       await mount(t, detail(computer(upgrade: pending())));
-      expect(find.text('Upgrading…'), findsOneWidget);
+      expect(find.text('Updating…'), findsOneWidget);
       expect(find.text('Offline'), findsNothing);
       expect(
         find.byKey(const ValueKey('computer-upgrade-reconnecting')),
@@ -308,9 +308,9 @@ void main() {
         );
         // The refreshed row carries no pending request (a coalesced read):
         // the accepted click still holds the card.
-        expect(find.text('Upgrading…'), findsOneWidget);
+        expect(find.text('Updating…'), findsOneWidget);
         expect(find.byKey(const ValueKey('computer-upgrade')), findsNothing);
-        // The Computer drops offline for the restart: "Upgrading…" in the
+        // The Computer drops offline for the restart: "Updating…" in the
         // header, not "Offline".
         client.stream.add(
           RaftEvent('machine:status', {

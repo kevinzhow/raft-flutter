@@ -8,6 +8,7 @@ const Map<String, String> zhCatalogW23Agent = <String, String>{
       "下面共 {turns} 轮 · {steps} 步 · {problems, plural, =0 {都很顺利} other {# 步不顺}}",
   "Done, {count, plural, one {# step} other {# steps}} went wrong":
       "完成，中途有 {count} 步不顺",
+  "{count, plural, one {# step} other {# steps}} went wrong": "中途有 {count} 步不顺",
   "ran {count, plural, one {a command} other {# commands}}": "跑了 {count} 条命令",
   "read {count, plural, one {a file} other {files # times}}": "看了 {count} 次文件",
   "edited {count, plural, one {a file} other {files # times}}":
@@ -18,7 +19,7 @@ const Map<String, String> zhCatalogW23Agent = <String, String>{
   "opened {count, plural, one {a web page} other {# web pages}}":
       "打开了 {count} 个网页",
   "started {count, plural, one {a subagent} other {# subagents}}":
-      "派了 {count} 个子 agent",
+      "派了 {count} 个子 Agent",
   "used {count, plural, one {an MCP tool} other {MCP tools # times}}":
       "用了 {count} 次 MCP 工具",
   "waited {count, plural, one {once} other {# times}}": "等了 {count} 次",

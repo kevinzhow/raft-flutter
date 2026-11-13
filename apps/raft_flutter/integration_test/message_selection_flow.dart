@@ -43,8 +43,8 @@ Future<void> verifyMessageSelection(
     await capture('linux-failure-selection-context');
   }
   expect(tile, findsOneWidget, reason: 'The context target must be rendered.');
-  await openNativeMessageMenu(tester, tile, entry: find.text('Select Message'));
-  await tester.tap(find.text('Select Message'));
+  await openNativeMessageMenu(tester, tile, entry: find.text('Select message'));
+  await tester.tap(find.text('Select message'));
   await tester.pump(const Duration(milliseconds: 300));
   expect(find.byType(RaftSelectionToolbar), findsOneWidget);
   expect(find.text('1 selected'), findsOneWidget);

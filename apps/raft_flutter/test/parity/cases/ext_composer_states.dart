@@ -1,5 +1,5 @@
 // raft-flutter parity EXTENSION suite builders (tool/parity-ext): composer
-// states - the "As Task" checkbox, the pending-mention action strip and the
+// states - the "As task" checkbox, the pending-mention action strip and the
 // composer warnings (agent stopped delivery, unresolved mentions, channel
 // conversion in progress) plus the #channel popover with an archived channel.
 // NOT official cases; ids are

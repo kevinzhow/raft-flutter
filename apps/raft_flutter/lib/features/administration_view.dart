@@ -242,7 +242,7 @@ class _AdminsSectionState extends State<_AdminsSection> {
     );
     return RaftAdminSection(
       regionKey: _region('admins'),
-      label: 'Owners & Admins',
+      label: 'Owners & admins',
       glyph: RaftGlyph.shield,
       count: admins.length,
       child: RaftAdminsCard(
@@ -266,8 +266,8 @@ class _AdminsSectionState extends State<_AdminsSection> {
                 ? RaftAdminRow(
                     principal: present(admin),
                     removeLabel: admin.role == 'owner'
-                        ? 'Remove Owner'
-                        : 'Remove Admin',
+                        ? 'Remove owner'
+                        : 'Remove admin',
                     saving: savingKey == admin.key,
                     onRemove: () =>
                         change(admin, 'member', 'Failed to remove role'),
@@ -357,7 +357,7 @@ class _SystemChannelsState extends State<_SystemChannelsSection>
   @override
   Widget build(BuildContext context) => RaftAdminSection(
     regionKey: _region('system-channels'),
-    label: 'System Channels',
+    label: 'System channels',
     glyph: RaftGlyph.eye,
     child: RaftAdminCheckboxForm(
       checkboxKey: const ValueKey('admin-hide-all'),
@@ -476,7 +476,7 @@ class _InvitesState extends State<_InvitesSection>
   }
 
   /// Revalidates in place: the rows stay (and a restored empty list keeps its
-  /// "No pending invites." line); only a cold first read shows the blank state.
+  /// "No pending invites" line); only a cold first read shows the blank state.
   Future<void> reload() {
     return load(
       () => w.query('/servers/${w.server!.id}/invites'),
@@ -488,13 +488,13 @@ class _InvitesState extends State<_InvitesSection>
 
   Future<void> revoke(Map<String, dynamic> invite) => _confirm(
     context,
-    title: 'Revoke Invite',
+    title: 'Revoke invite',
     message: raftFormat(
       context,
       'Are you sure you want to revoke the invite to {email}? They will no longer be able to join using this invite link.',
       {'email': invite['invitedEmail']},
     ),
-    confirmLabel: 'Revoke Invite',
+    confirmLabel: 'Revoke invite',
     cancelLabel: 'Cancel',
     loadingLabel: 'Revoking…',
     onConfirm: () async {
@@ -515,7 +515,7 @@ class _InvitesState extends State<_InvitesSection>
     final f = agentTimeFormatter(context, w);
     return RaftAdminSection(
       regionKey: _region('invites'),
-      label: 'Pending Invites',
+      label: 'Pending invites',
       glyph: RaftGlyph.mail,
       count: invites.isEmpty ? null : invites.length,
       child: RaftAdminInvitesCard(
@@ -628,9 +628,9 @@ class _JoinLinksState extends State<_JoinLinksSection>
 
   Future<void> revoke(Map<String, dynamic> link) => _confirm(
     context,
-    title: 'Revoke Invite Link',
+    title: 'Revoke invite link',
     message: 'Revoke this invite link? Anyone who still has the URL will stop being able to join with it.',
-    confirmLabel: 'Revoke Link',
+    confirmLabel: 'Revoke link',
     cancelLabel: 'Cancel',
     loadingLabel: 'Revoking…',
     onConfirm: () async {
@@ -671,7 +671,7 @@ class _JoinLinksState extends State<_JoinLinksSection>
 
     return RaftAdminSection(
       regionKey: _region('join-links'),
-      label: 'Invite Links',
+      label: 'Invite links',
       glyph: RaftGlyph.link2,
       count: links.isEmpty ? null : links.length,
       child: RaftAdminJoinLinksCard(
@@ -832,7 +832,7 @@ class _AgreementState extends State<_AgreementSection>
     final busy = saving || loading;
     return RaftAdminSection(
       regionKey: _region('pre-join-agreement'),
-      label: 'Pre-join Agreement',
+      label: 'Pre-join agreement',
       glyph: RaftGlyph.fileText,
       child: RaftAdminAgreementCard(
         enabled: enabled,
@@ -1292,13 +1292,13 @@ class _MemberPermissionsState extends State<_MemberPermissionsSection>
     final canEdit = w.can('editServerSettings');
     return RaftAdminSection(
       regionKey: _region('member-permissions'),
-      label: 'Member Permissions',
+      label: 'Member permissions',
       glyph: RaftGlyph.users,
       child: RaftAdminCheckboxForm(
         checkboxKey: const ValueKey('admin-hide-humans'),
         saveKey: const ValueKey('admin-hide-humans-save'),
         title: 'Hide human directory and counts from members',
-        description: 'Member role users cannot see server-wide human lists, graph surfaces, or human counts.',
+        description: 'Member role users cannot see server-wide human lists or human counts.',
         checked: hidden,
         dimmed: !canEdit,
         onChanged: !canEdit || saving

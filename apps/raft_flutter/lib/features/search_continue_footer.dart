@@ -99,7 +99,7 @@ class _SearchContinuingState extends State<SearchContinuing> {
       widget.builder(context, loading, failed, press);
 }
 
-/// Web "Continue searching" / "Load More" button of the results page.
+/// Web "Continue searching" / "Load more" button of the results page.
 class SearchContinueButton extends StatelessWidget {
   const SearchContinueButton({
     super.key,
@@ -120,7 +120,7 @@ class SearchContinueButton extends StatelessWidget {
           ? 'Loading…'
           : continuing
           ? 'Continue searching'
-          : 'Load More',
+          : 'Load more',
     ),
     variant: RaftButtonRecipeVariant.outline,
     size: RaftButtonRecipeSize.sm,

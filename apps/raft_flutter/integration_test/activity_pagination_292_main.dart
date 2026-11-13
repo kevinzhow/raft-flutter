@@ -177,7 +177,7 @@ Map<String, Object?> _snapshot(_Pages pages, LabNavigationContent content) {
     }
     if (widget is Text &&
         [
-          'Load More',
+          'Load more',
           'Retry',
           'Loading…',
           'Loading...',

@@ -87,7 +87,7 @@ void main() {
         find.textContaining('Stay on topic', findRichText: true),
         findsOneWidget,
       );
-      await t.tap(find.text('Agree & Continue'));
+      await t.tap(find.text('Agree & continue'));
       await f.flush(t);
       expect(community.posts, [
         {'slug': 'community'},
@@ -219,7 +219,7 @@ void main() {
     ) async {
       final pending = Completer<void>();
       await host(t, onAgree: () => pending.future);
-      await t.tap(find.text('Agree & Continue'));
+      await t.tap(find.text('Agree & continue'));
       await t.pump();
       expect(find.text('Joining…'), findsOneWidget);
       final cancel = t.widget<RaftRecipeButton>(
@@ -228,7 +228,7 @@ void main() {
       expect(cancel.disabled, isTrue);
       pending.complete();
       await t.pump();
-      expect(find.text('Agree & Continue'), findsOneWidget);
+      expect(find.text('Agree & continue'), findsOneWidget);
     });
 
     testWidgets('a changed agreement and any other failure use their own copy', (
@@ -236,7 +236,7 @@ void main() {
     ) async {
       Object failure = const RaftApiException('agreement_changed');
       await host(t, onAgree: () async => throw failure);
-      await t.tap(find.text('Agree & Continue'));
+      await t.tap(find.text('Agree & continue'));
       await t.pump();
       expect(
         find.text(
@@ -245,7 +245,7 @@ void main() {
         findsOneWidget,
       );
       failure = const RaftApiException('boom');
-      await t.tap(find.text('Agree & Continue'));
+      await t.tap(find.text('Agree & continue'));
       await t.pump();
       expect(find.text('Failed to join community server'), findsOneWidget);
     });

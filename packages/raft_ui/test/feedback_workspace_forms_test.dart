@@ -284,7 +284,7 @@ void main() {
         expect(find.text('footer'), findsOneWidget);
         expect(find.byKey(const ValueKey('c')), findsOneWidget);
         await pump(error: 'Couldn’t load feedback. Try again.');
-        await t.tap(find.text('Try Again'));
+        await t.tap(find.text('Try again'));
         expect(retried, 1);
         await pump(loading: true);
         await pump(loadingMore: true);

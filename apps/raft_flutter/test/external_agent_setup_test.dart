@@ -199,7 +199,7 @@ void main() {
           'credentialLastUsedAt': null,
         };
       await _pump(tester, client: client);
-      expect(find.text('Waiting for login'), findsOneWidget);
+      expect(find.text('Waiting for sign-in'), findsOneWidget);
       expect(find.text('External · Setup required'), findsOneWidget);
     },
   );
@@ -213,7 +213,7 @@ void main() {
     // body-less 500 shows the fallback, never the exception text.
     expect(find.text('Failed to load external setup status'), findsOneWidget);
     expect(find.text('Status unavailable'), findsNothing);
-    expect(find.text('Waiting for login'), findsOneWidget);
+    expect(find.text('Waiting for sign-in'), findsOneWidget);
   });
 
   testWidgets(

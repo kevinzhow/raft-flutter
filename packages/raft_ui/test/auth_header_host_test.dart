@@ -19,14 +19,14 @@ void main() {
             child: RaftAuthShell(
               server: 'example.invalid',
               onServer: () => serverEdits++,
-              child: const Text('Sign In'),
+              child: const Text('Sign in'),
             ),
           ),
         ),
       );
       await tester.pumpAndSettle();
       expect(find.byType(RaftAuthTopBar), findsNothing);
-      expect(find.text('Sign In'), findsOneWidget);
+      expect(find.text('Sign in'), findsOneWidget);
       final semantics = tester.ensureSemantics();
       try {
         expect(
@@ -52,7 +52,7 @@ void main() {
           home: RaftAuthShell(
             server: 'example.invalid',
             onServer: () => serverEdits++,
-            child: const Text('Sign In'),
+            child: const Text('Sign in'),
           ),
         ),
       );

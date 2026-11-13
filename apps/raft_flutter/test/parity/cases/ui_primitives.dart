@@ -249,7 +249,7 @@ final ParityCase _card = ParityCase(
                 ),
               ),
               RaftButton(
-                label: 'Save changes',
+                label: 'Save',
                 onPressed: () {},
                 tone: RaftButtonRecipeVariant.primary,
                 size: RaftButtonRecipeSize.sm,
@@ -796,7 +796,7 @@ final ParityCase _menuItem = ParityCase(
                     ),
                   ),
                 ),
-                RaftMenuButtonItem(label: 'Mark as Read', onPressed: () {}),
+                RaftMenuButtonItem(label: 'Mark as read', onPressed: () {}),
                 const RaftMenuButtonItem(label: 'Archive unavailable'),
                 RaftMenuButtonItem(
                   label: 'Delete Message',

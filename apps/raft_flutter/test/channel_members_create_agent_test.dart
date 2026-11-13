@@ -112,7 +112,7 @@ void main() {
     api.routes['POST /channels/c1/members/batch'] = (_) => {'ok': true};
     await t.enterText(find.byType(TextField).first, '@deploy-bot');
     await t.pump();
-    expect(find.text('Create Agent “deploy-bot”'), findsOneWidget);
+    expect(find.text('Create agent “deploy-bot”'), findsOneWidget);
     await t.tap(key('add-member-create-agent-entry'));
     await t.pumpAndSettle();
     expect(names, ['deploy-bot'], reason: 'the leading @ is dropped');

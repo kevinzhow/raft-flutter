@@ -2649,7 +2649,7 @@ class _ResourceViewState extends State<ResourceView> {
                   ),
                 if (widget.section == 'tasks')
                   RaftTooltip(
-                    message: raftText(context, 'Create Task'),
+                    message: raftText(context, 'New task'),
                     child: RaftButton.iconAction(
                       onPressed: w.server?.string('role') == 'guest'
                           ? null
@@ -2993,7 +2993,7 @@ class _ResourceViewState extends State<ResourceView> {
                 ? savedSentinel()
                 : RaftButton.text(
                     onPressed: () => load(append: true),
-                    child: Text(raftText(context, 'Load More')),
+                    child: Text(raftText(context, 'Load more')),
                   )
           : KeyedSubtree(
               key: listUpdates.keyOf(rowKey(shown[index])),
@@ -4170,7 +4170,7 @@ class _ResourceViewState extends State<ResourceView> {
         onDismiss: () => closeOwnedDialog(context, scope),
         entries: [
           RaftContextMenuContentItem(
-            label: raftText(context, 'Copy Link'),
+            label: raftText(context, 'Copy link'),
             glyph: RaftGlyph.link,
             onPressed: w.server?.string('slug').isEmpty != false
                 ? null
@@ -4253,7 +4253,7 @@ class _ResourceViewState extends State<ResourceView> {
     }, rowKey: rowKey(row));
   }
 
-  /// Menu "Mark as Read" reads the row's scope. A complete unread ACK projects
+  /// Menu "Mark as read" reads the row's scope. A complete unread ACK projects
   /// through the shared owner; only an unprojectable reply needs an inbox read.
   Future<void> toggleActivityRead(
     Map<String, dynamic> row,
@@ -4343,10 +4343,10 @@ class _ResourceViewState extends State<ResourceView> {
     );
   }
 
-  /// `task.status.emptyGroup`: "No {status} tasks."
+  /// `task.status.emptyGroup`: "No {status} tasks"
   String _emptyLaneLabel(BuildContext context, String status) => raftFormat(
     context,
-    'No {status} tasks.',
+    'No {status} tasks',
     {'status': raftText(context, raftTaskStatusLabel(status))},
   );
 
@@ -4389,7 +4389,7 @@ class _ResourceViewState extends State<ResourceView> {
                   SliverToBoxAdapter(
                     child: RaftButton.text(
                       onPressed: () => load(append: true),
-                      child: Text(raftText(context, 'Load More')),
+                      child: Text(raftText(context, 'Load more')),
                     ),
                   ),
               ],
@@ -4695,16 +4695,16 @@ class _ResourceViewState extends State<ResourceView> {
               'Search Date Range',
               // ignore: raft_lints/avoid_render_index_assertion -- timeRange is validated against the four known values when restored (search_memory.dart) and only set from the dropdown.
               const {
-                'any': 'Any Time',
+                'any': 'Any time',
                 'today': 'Today',
-                '7d': 'Last 7 Days',
-                '30d': 'Last 30 Days',
+                '7d': 'Last 7 days',
+                '30d': 'Last 30 days',
               }[advanced.timeRange]!,
               const {
-                'any': 'Any Time',
+                'any': 'Any time',
                 'today': 'Today',
-                '7d': 'Last 7 Days',
-                '30d': 'Last 30 Days',
+                '7d': 'Last 7 days',
+                '30d': 'Last 30 days',
               },
               (value) {
                 advanced.timeRange = value;
@@ -4798,7 +4798,7 @@ class _ResourceViewState extends State<ResourceView> {
         if (viewFilter == null && hasMore)
           RaftButton.text(
             onPressed: () => load(append: true),
-            child: Text(raftText(context, 'Load More')),
+            child: Text(raftText(context, 'Load more')),
           ),
       ],
     );
@@ -5602,8 +5602,8 @@ class _ResourceViewState extends State<ResourceView> {
       scope,
       form: true,
       (dialogContext) => RaftFormDialog(
-        title: 'Create Task',
-        submitLabel: 'Create Task',
+        title: 'New task',
+        submitLabel: 'New task',
         fields: [
           RaftFormField(
             'channel',
@@ -5765,7 +5765,7 @@ class _ResourceViewState extends State<ResourceView> {
         scope,
         (context) => RaftAlertDialog(
           legacy: RaftLegacyAlert.material,
-          title: Text(raftText(context, 'Delete Task')),
+          title: Text(raftText(context, 'Delete task')),
           content: Text('${task['title']}'),
           actions: [
             RaftButton.text(
@@ -5773,7 +5773,7 @@ class _ResourceViewState extends State<ResourceView> {
               child: Text(raftText(context, 'Keep Task')),
             ),
             RaftButton(
-              label: 'Delete Task',
+              label: 'Delete task',
               onPressed: () => closeOwnedDialog(context, scope, true),
             ),
           ],

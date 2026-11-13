@@ -1,4 +1,4 @@
-// RaftBench "Conversation insights" (Web raftbench/HostedAnalysis.tsx):
+// RaftBench "Patterns and improvements" (Web raftbench/HostedAnalysis.tsx):
 // enable / disable, the sources and start date, the service agent, progress,
 // coverage and the accepted findings.
 import 'package:flutter/material.dart';
@@ -128,7 +128,7 @@ class _Analysis extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   tr(
-                    'The background scan continues in batches. Accepted findings stay visible while the next batch runs. Batch limits do not cap the total data range.',
+                    'New messages are read in the background. Findings so far stay visible.',
                   ),
                   style: hint,
                 ),
@@ -244,7 +244,7 @@ class _Analysis extends StatelessWidget {
                           Semantics(
                             header: true,
                             child: Text(
-                              tr('Conversation insights'),
+                              tr('Patterns and improvements'),
                               style: ty.headline(),
                             ),
                           ),
@@ -544,7 +544,7 @@ class _Analysis extends StatelessWidget {
                   ? raftFormat(context, 'Newest source message: {time}', {
                       'time': fmt.stamp(coverage.latestAt!),
                     })
-                  : tr('No messages exist in the selected channels.'),
+                  : tr('No messages in the selected channels'),
               style: hint,
             ),
             const SizedBox(height: 4),

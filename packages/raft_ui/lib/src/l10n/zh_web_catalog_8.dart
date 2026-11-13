@@ -5,7 +5,7 @@ const Map<String, String> zhCatalogWeb8 = <String, String>{
   "Unclaim": "取消认领",
   "Undo": "撤销",
   "Unfollow": "取消关注",
-  "Unfollow Thread": "取消关注消息列",
+  "Unfollow thread": "取消关注消息列",
   "Unfollowed": "已取消关注",
   "Uninstall": "卸载",
   "Uninstall from this server": "从此服务器卸载",
@@ -19,14 +19,13 @@ const Map<String, String> zhCatalogWeb8 = <String, String>{
   "Unlimited": "无限制",
   "Unlimited message history": "无限消息历史",
   "Unmute": "取消静音",
-  "Unmute activity for this DM": "为此私信取消静音活动",
-  "Unmute activity for this channel": "为此频道取消静音活动",
+  "Unmute activity for this DM": "为此私信取消静音动态",
+  "Unmute activity for this channel": "为此频道取消静音动态",
   "Unpin": "取消置顶",
-  "Unpin Channel": "取消置顶",
+  "Unpin channel": "取消置顶",
   "Unread": "未读",
   "Unread activity": "未读动态",
   "Unread messages": "未读消息",
-  "Unread messages mention you": "未读消息提到了你",
   "Unrecognized scopes:": "未识别的 scope：",
   "Unsafe demo URL override requested.": "请求了不安全的演示 URL 覆盖。",
   "Unsaved changes": "未保存的修改",
@@ -40,10 +39,8 @@ const Map<String, String> zhCatalogWeb8 = <String, String>{
   "Update Raft before changing this Kimi agent's model so its existing reasoning setting is preserved.":
       "请先更新 Raft，再更改此 Kimi Agent 的模型，以保留现有推理强度设置。",
   "Update Raft to edit this setting.": "请升级 Raft 后再编辑此项。",
-  "Update Role": "更新角色",
-  "Update identity": "更新身份",
+  "Update role": "更新角色",
   "Update identity and admin role": "更新身份和管理员角色",
-  "Update identity and role": "更新身份和角色",
   "Update Link": "更新链接",
   "Update official identity": "更新官方身份",
   "Updated task": "更新任务",
@@ -65,7 +62,6 @@ const Map<String, String> zhCatalogWeb8 = <String, String>{
   "Upgrade to reactivate the agents that were stopped.": "升级以重新启用已停止的 Agent。",
   "Upgrade to view": "升级后可查看",
   "Upgraded": "已升级",
-  "Upgrading…": "升级中…",
   "Upload": "上传",
   "Upload a square logo, or reset to the deterministic monogram.":
       "上传方形 Logo，或重置为确定性的字母图案。",
@@ -87,14 +83,13 @@ const Map<String, String> zhCatalogWeb8 = <String, String>{
   "Uploads need attention": "有附件上传需要处理",
   "Uploads still in progress": "仍有附件上传中",
   "Usage (last 7 days)": "用量（近 7 天）",
-  "Usage format unavailable": "无法解析用量格式",
+  "Usage unavailable": "无法显示用量",
   "Usage healthy": "用量正常",
   "Usage needs attention": "用量需要注意",
-  "Use Another Account": "使用其他账户",
-  "Use GitHub connection": "使用 GitHub 连接",
-  "Use Joint Channels": "使用联合频道",
-  "Use Joint Channels (each Joint Channel has 2 free-server slots)":
-      "使用联合频道（每个联合频道有连接 2 个免费版服务器的名额）",
+  "Use another account": "使用其他账户",
+  "Use external channels": "使用外部频道",
+  "Host 1 Joint Channel and join others (each Joint Channel has 2 free-server slots)":
+      "发起 1 个联合频道并加入其他联合频道（每个联合频道有连接 2 个免费版服务器的名额）",
   "Use at least 8 characters.": "至少输入 8 个字符。",
   "Use Default": "使用默认值",
   "Use target-server owner/admin handles or emails, separated by commas or new lines.":
@@ -103,7 +98,7 @@ const Map<String, String> zhCatalogWeb8 = <String, String>{
       "启用活动栏、侧栏和可拖拽的编辑器分组。",
   "Use this ID when requesting an installation token or configuring subscriptions.":
       "申请安装令牌或配置订阅时使用此 ID。",
-  "Use this Server": "使用此服务器",
+  "Use this server": "使用此服务器",
   "Use this first when the service is stuck or an upgrade is not taking effect.":
       "当服务卡住或升级没有生效时，先使用这个步骤。",
   "Use this flow for another agent runtime or custom harness.":
@@ -120,8 +115,6 @@ const Map<String, String> zhCatalogWeb8 = <String, String>{
   "Uses": "使用次数",
   "Uses existing installation credentials and APIs. No login or webhook required.":
       "使用原有安装凭据和接口，无需登录或 Webhook。",
-  "Uses web push so notifications can still arrive when the tab is in the background.":
-      "使用网页推送，即使标签页在后台也能收到通知。",
   "Uses your signed-in Raft identity. Messages, conversations, and the current page URL are never attached automatically.":
       "使用你已登录的 Raft 身份；不会自动附带消息、会话内容或当前页面网址。",
   "Using default permissions": "正在使用默认权限",
@@ -138,7 +131,7 @@ const Map<String, String> zhCatalogWeb8 = <String, String>{
   "Verify and finish setup": "验证并完成设置",
   "Verify credential persistence": "验证凭据持久化",
   "Verify from this computer's terminal": "从这台计算机的终端验证",
-  "Verify on Computer": "在 Computer 上验证",
+  "Verify on computer": "在 Computer 上验证",
   "Verify the bridge before enabling it": "启用前验证桥接",
   "Verifying history": "正在验证历史",
   "Verifying...": "验证中…",
@@ -147,9 +140,9 @@ const Map<String, String> zhCatalogWeb8 = <String, String>{
   "Version unavailable": "版本暂不可用",
   "Video preview": "视频预览",
   "View": "查看",
-  "View Billing": "查看账单",
+  "View billing": "查看账单",
   "View Plan & Billing": "查看套餐与账单",
-  "View Plans": "查看套餐",
+  "View plans": "查看套餐",
   "View All Results": "查看全部结果",
   "View avatar": "查看头像",
   "View channel rosters, create channels and add members when server role allows it, join visible public channels, and leave channels the agent is no longer using.":
@@ -166,7 +159,7 @@ const Map<String, String> zhCatalogWeb8 = <String, String>{
   "View service": "查看服务",
   "View Ticket": "查看工单",
   "Visibility": "可见性",
-  "Visible to Guests": "对访客可见",
+  "Visible to guests": "对访客可见",
   "Visible with computer edit permission or to the person who attached this computer":
       "拥有计算机编辑权限或挂载这台计算机的人可见",
   "WORKSPACE": "服务器",
@@ -174,7 +167,7 @@ const Map<String, String> zhCatalogWeb8 = <String, String>{
   "Wait for attachments to finish uploading before sending.": "请等待附件上传完成后再发送。",
   "Waiting for approval": "等待批准",
   "Waiting for computer to connect...": "正在等待计算机连接…",
-  "Waiting for login": "等待登录",
+  "Waiting for sign-in": "等待登录",
   "Waiting for you to run the command and approve it in your browser…":
       "等待你运行命令并在浏览器中批准…",
   "Warning": "警告",
@@ -190,7 +183,7 @@ const Map<String, String> zhCatalogWeb8 = <String, String>{
   "We sent a verification link to": "我们已将验证链接发送至",
   "WeChat QR code": "微信群二维码",
   "WeChat QR code for the Raft Chinese community": "Raft 中文社群微信群二维码",
-  "Web Preview": "网页预览",
+  "Web preview": "网页预览",
   "Web buttons not responding? Restart from the terminal:": "网页按钮没有响应？从终端重启：",
   "Webhook": "Webhook",
   "Webhook events": "Webhook 事件",
@@ -204,10 +197,10 @@ const Map<String, String> zhCatalogWeb8 = <String, String>{
   "What went wrong? What did you expect?": "哪里出错了？你原本期望什么？",
   "What will both servers use this channel for?": "两个服务器将用这个频道做什么？",
   "What would you like us to know?": "有什么想告诉我们的？",
-  "What's New": "更新内容",
-  "What's new": "查看更新内容",
+  "What's new": "更新内容",
+  "View what's new": "查看更新内容",
   "When an agent should reach for this app, in one line":
-      "一行内说明 agent 在什么情况下应该用这个应用",
+      "一行内说明 Agent 在什么情况下应该用这个应用",
   "When enabled, #all disappears from channel lists, search, posting, members, and agent channel surfaces. Existing history is preserved.":
       "启用后，#all 将从频道列表、搜索、发帖、成员和 Agent 频道界面中消失。现有历史记录会被保留。",
   "When enabled, a newly started agent posts a short self-introduction in #all. Existing agents are not affected.":
@@ -252,7 +245,7 @@ const Map<String, String> zhCatalogWeb8 = <String, String>{
       "你正在未登录状态下浏览公开频道。登录或创建账户即可继续使用 Raft。",
   "You are viewing this public server without joining it.": "你正在浏览此公开服务器，尚未加入。",
   "You can add members here, but creating Agents on this server needs an owner or admin. Ask one to grant the permission, or have them create the Agent so you can add it.":
-      "你可以往这个群里加成员，但在本服务器创建 Agent 需要 owner/admin 权限。请找他们开通，或让他们先建好再由你加进来。",
+      "你可以往这个群里加成员，但在本服务器创建 Agent 需要所有者或管理员权限。请找他们开通，或让他们先建好再由你加进来。",
   "You can customize the agent again after updating its identity.":
       "更新身份后，你仍可再次自定义该 Agent。",
   "You do not have access to any Raft Servers.": "你无权访问任何 Raft 服务器。",
@@ -275,7 +268,7 @@ const Map<String, String> zhCatalogWeb8 = <String, String>{
   "You're in": "加入成功",
   "You're invited": "你收到了邀请",
   "You've joined <server></server>.": "你已加入 <server></server>。",
-  "Your Computer": "你的计算机",
+  "Your own computer": "你自己的计算机",
   "Your agents keep working after you leave.": "离开后，你的 Agent 仍会继续工作。",
   "Your browser blocked the new tab": "浏览器已阻止打开新标签页",
   "Your changes haven't been saved. Discard them?": "有修改尚未保存，要放弃吗？",
@@ -310,8 +303,6 @@ const Map<String, String> zhCatalogWeb8 = <String, String>{
   "can read as": "可能被读作",
   "channel": "频道",
   "channel tasks": "个频道任务",
-  "computer offline": "计算机离线",
-  "computer online": "计算机在线",
   "connection changed during verification": "验证期间连接发生变更",
   "credential header": "凭据请求头",
   "credential rejected": "凭据被拒绝",
@@ -340,8 +331,6 @@ const Map<String, String> zhCatalogWeb8 = <String, String>{
   "is installed for": "已安装到",
   "it's very close to": "时，它与",
   "later": "稍后",
-  "legacy offline": "旧版离线",
-  "legacy online": "旧版在线",
   "linked message": "关联消息",
   "live mapping is: online → lime · thinking/working → yellow (static) · error → orange · offline → gray-400. The earlier audit had thinking on orange — that was wrong.": "的实时映射为：在线 → lime · 思考/工作中 → yellow（静态）· 错误 → orange · 离线 → gray-400。早前的审查把思考中标为 orange——那是错误的。",
   "macOS / Linux": "macOS / Linux",
@@ -365,7 +354,7 @@ const Map<String, String> zhCatalogWeb8 = <String, String>{
   "raft-computer: command not found? Install or re-run setup":
       "raft-computer: command not found？安装或重新运行 setup",
   "rate limit or quota": "限流或配额",
-  "rate limited": "已限流",
+  "used up": "已用完",
   "reauth required": "需重新登录",
   "recently": "刚刚",
   "requires resource": "需要指定资源",

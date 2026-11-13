@@ -1054,19 +1054,19 @@ void main() {
 
       await openFollowEntry();
       final initiallyFollowing =
-          tester.widget<RaftMenuItem>(followEntry).label == 'Unfollow Thread';
+          tester.widget<RaftMenuItem>(followEntry).label == 'Unfollow thread';
       await toggleFollow();
       await openFollowEntry(
-        expected: initiallyFollowing ? 'Follow Thread' : 'Unfollow Thread',
+        expected: initiallyFollowing ? 'Follow thread' : 'Unfollow thread',
       );
       await toggleFollow();
       await openFollowEntry(
-        expected: initiallyFollowing ? 'Unfollow Thread' : 'Follow Thread',
+        expected: initiallyFollowing ? 'Unfollow thread' : 'Follow thread',
       );
       // Keep this test-created parent followed for actual projection readback.
       if (!initiallyFollowing) {
         await toggleFollow();
-        await openFollowEntry(expected: 'Unfollow Thread');
+        await openFollowEntry(expected: 'Unfollow thread');
       }
       await tester.tap(find.byKey(const Key('thread-options')));
       await until(tester, () => followEntry.evaluate().isEmpty);
@@ -1372,7 +1372,7 @@ void main() {
       await tester.tap(
         find.descendant(
           of: find.byKey(const ValueKey('in_review')),
-          matching: find.text('In Review'),
+          matching: find.text('In review'),
         ),
       );
       await until(
@@ -1410,7 +1410,7 @@ void main() {
       dynamic board() => tester.state(find.byType(ResourceView));
       expect(board().error, isNull);
       final reviewHeader = find
-          .widgetWithText(RaftTaskStatus, 'In Review')
+          .widgetWithText(RaftTaskStatus, 'In review')
           .first;
       await tester.ensureVisible(reviewHeader);
       await tester.pumpAndSettle();
@@ -1672,7 +1672,7 @@ void main() {
         await tester.pumpAndSettle();
         await until(
           tester,
-          () => find.text('Pin Channel').evaluate().isNotEmpty,
+          () => find.text('Pin channel').evaluate().isNotEmpty,
         );
       }
 
@@ -1704,7 +1704,7 @@ void main() {
       }
 
       await openSettings();
-      await setting('Pin Channel');
+      await setting('Pin channel');
       await until(
         tester,
         () => (w.sidebarOrder['pinned'] as List? ?? []).any(
@@ -1749,11 +1749,11 @@ void main() {
       await tester.pumpAndSettle();
       await screenshot(tester, 'linux-channel-settings');
       await openSettings();
-      await setting('Archive Channel');
+      await setting('Archive channel');
       await tester.tap(
         find.descendant(
           of: find.byType(RaftConfirmDialog),
-          matching: find.text('Archive Channel'),
+          matching: find.text('Archive channel'),
         ),
       );
       await until(
@@ -1772,7 +1772,7 @@ void main() {
         false,
       );
       await openSettings();
-      await setting('Unarchive Channel');
+      await setting('Unarchive channel');
       await until(
         tester,
         () =>
@@ -1780,7 +1780,7 @@ void main() {
             w.channel?.archived == false,
       );
       await tester.pumpAndSettle();
-      await setting('Delete Channel');
+      await setting('Delete channel');
       await tester.tap(
         find.descendant(
           of: find.byType(RaftConfirmDialog),
@@ -1805,12 +1805,12 @@ void main() {
           : find.byKey(const Key('rail-workspace'));
       await tester.tap(switcher);
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Switch or Create Server'));
+      await tester.tap(find.text('Switch or create server'));
       await until(
         tester,
         () => find.byKey(const Key('global-server-selector')).evaluate().isNotEmpty,
       );
-      await tester.tap(find.widgetWithText(RaftAuthSubmit, '+ Create New Server'));
+      await tester.tap(find.widgetWithText(RaftAuthSubmit, '+ Create new server'));
       await tester.pumpAndSettle();
       final workspaceName =
           'native-workspace-${DateTime.now().millisecondsSinceEpoch}';
@@ -1822,7 +1822,7 @@ void main() {
       );
       await tester.enterText(selectorField('global-server-name'), workspaceName);
       await tester.enterText(selectorField('global-server-slug'), workspaceName);
-      final createServer = find.widgetWithText(RaftAuthSubmit, 'Create Server');
+      final createServer = find.widgetWithText(RaftAuthSubmit, 'Create server');
       await tester.ensureVisible(createServer);
       await tester.pumpAndSettle();
       await tester.tap(createServer);
@@ -1868,7 +1868,7 @@ void main() {
       await tester.tap(find.text('Create invitation link'));
       await tester.pumpAndSettle();
       await tester.enterText(field('Maximum uses'), '1');
-      await tester.tap(find.widgetWithText(RaftButton, 'Create Link'));
+      await tester.tap(find.widgetWithText(RaftButton, 'Create link'));
       await until(
         tester,
         () => find.text('Invitation link').evaluate().isNotEmpty,
@@ -1937,7 +1937,7 @@ void main() {
           final add = find.byKey(const ValueKey('desktop-directory-add-agent'));
           await until(tester, () => add.hitTestable().evaluate().isNotEmpty);
           await tester.tap(add);
-          final create = find.widgetWithText(RaftMenuItem, 'Create External Agent');
+          final create = find.widgetWithText(RaftMenuItem, 'Create external agent');
           await until(tester, () => create.hitTestable().evaluate().isNotEmpty);
           await tester.tap(create);
         } else if (!mobileViewport(tester)) {
@@ -1952,7 +1952,7 @@ void main() {
         await tester.pumpAndSettle();
         await tester.enterText(field('Name'), name);
         await tester.tap(
-          find.widgetWithText(RaftButton, computers ? 'Register Computer' : 'Create External Agent'),
+          find.widgetWithText(RaftButton, computers ? 'Register Computer' : 'Create external agent'),
         );
         await until(
           tester,
@@ -2135,9 +2135,9 @@ void main() {
           await tester.pumpAndSettle();
         }
         if (computers) {
-          await detailAction('Delete Computer');
+          await detailAction('Delete computer');
         } else {
-          final delete = find.widgetWithText(RaftButton, 'Archive Agent');
+          final delete = find.widgetWithText(RaftButton, 'Archive agent');
           await tester.ensureVisible(delete);
           await tester.tap(delete);
           await tester.pumpAndSettle();

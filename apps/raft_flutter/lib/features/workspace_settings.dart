@@ -457,7 +457,7 @@ class _WorkspaceSettingsState extends State<WorkspaceSettings> {
           ),
         RaftSettingsDestination(
           'release-notes',
-          'Release Notes',
+          'Release notes',
           RaftGlyph.fileText,
           (_) => ReleaseNotesView(
             controller: w,

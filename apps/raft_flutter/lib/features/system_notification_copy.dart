@@ -46,7 +46,7 @@ SystemNotificationCopy systemNotificationCopy(
             '${DateFormat.yMMMd(locale).format(reset)} ${DateFormat.jm(locale).format(reset)}',
     };
     return SystemNotificationCopy(
-      format('{provider} usage limit reached', {'provider': p['provider']}),
+      format('{provider} used up', {'provider': p['provider']}),
       format(
         reset == null
             ? (number == 1

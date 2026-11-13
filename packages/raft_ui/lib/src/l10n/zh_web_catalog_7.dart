@@ -22,7 +22,7 @@ const Map<String, String> zhCatalogWeb7 = <String, String>{
   "Staging": "预发",
   "Stale snapshot · every value below is last known": "快照已过期 · 以下数值均为最后已知值",
   "Start": "启动",
-  "Start Agent": "启动 Agent",
+  "Start agent": "启动 Agent",
   "Start Claude Code with the Raft channel": "启动带 Raft 频道的 Claude Code",
   "Start building with agents.": "开始与 Agent 一起构建。",
   "Start on new computer": "在新计算机上启动",
@@ -31,7 +31,6 @@ const Map<String, String> zhCatalogWeb7 = <String, String>{
   "Start selected offline agents": "启动选中的离线 Agent",
   "Start the agent to see its activity log.": "启动 Agent 以查看其活动日志。",
   "Start the conversation.": "开始对话吧。",
-  "Start verification": "开始验证",
   "Start with a letter, then letters, numbers, - or _": "须以字母开头，只能用字母、数字、- 和 _",
   "Start with the lightest recovery step and move down only if the problem continues.":
       "从最轻量的恢复步骤开始，只有问题仍持续时再往下执行。",
@@ -42,11 +41,11 @@ const Map<String, String> zhCatalogWeb7 = <String, String>{
   "Status": "状态",
   "Status and version": "状态与版本",
   "Stop": "停止",
-  "Stop Agent": "停止 Agent",
-  "Stop Agents": "停止 Agent",
+  "Stop agent": "停止 Agent",
+  "Stop agents": "停止 Agent",
   "Stop All Agents in This Channel": "停止此频道中的所有 Agent",
   "Stop and restart the agent process. Keeps the runtime session and workspace files.":
-      "停止并重新启动 agent 进程，保留运行时会话和工作区文件。",
+      "停止并重新启动 Agent 进程，保留运行时会话和工作区文件。",
   "Stop and restart the selected agents. Runtime sessions and workspace files are preserved.":
       "停止并重启选中的 Agent。运行时会话和工作区文件会保留。",
   "Stop receiving deliveries from a thread (slock thread unfollow).":
@@ -76,12 +75,12 @@ const Map<String, String> zhCatalogWeb7 = <String, String>{
   "Suggested computer:": "建议的计算机：",
   "Supports image input": "支持图片输入",
   "Switch model and reset session": "切换模型并重置会话",
-  "Switch or Create Server": "切换或创建服务器",
+  "Switch or create server": "切换或创建服务器",
   "Switch runtime config": "切换运行时配置",
   "Switch Server": "切换服务器",
   "Syncing changes": "正在同步修改",
   "System": "系统",
-  "System Channels": "系统频道",
+  "System channels": "系统频道",
   "System follows your device.": "跟随系统会随设备切换明暗。",
   "System updates can't be forwarded. They must stay with their original conversation.":
       "系统更新无法转发。它们必须留在原会话中。",
@@ -97,26 +96,21 @@ const Map<String, String> zhCatalogWeb7 = <String, String>{
   "Test failed": "测试失败",
   "Test message": "测试消息",
   "Test model": "测试模型",
-  "Test notification posted to the system. If no banner appeared, allow notifications for Raft Desktop in System Settings → Notifications, then try again.":
-      "测试通知已交给系统。如果没有看到横幅,请在 系统设置 → 通知 → Raft Desktop 中允许通知后再试。",
   "Test notification — desktop notifications are working.": "测试通知——桌面通知工作正常。",
-  "Test push sent. You should see a notification even if this Settings tab is focused.":
-      "测试推送已发送。即使当前聚焦在此设置标签页，你也应能看到通知。",
   "Test this server to discover tools.": "测试此服务器以发现工具。",
   "Testing…": "测试中…",
   "Text preview": "纯文本预览",
   "Thanks — got it.": "谢谢，已收到。",
-  "That code has expired. Start sign-in again from Raft Desktop.":
-      "该代码已过期。请从 Raft Desktop 重新开始登录。",
-  "That code is invalid. Check the code shown in Raft Desktop and try again.":
-      "该代码无效。请核对 Raft Desktop 中显示的代码后重试。",
+  "That code has expired. Start the login again.": "代码已过期。请重新发起登录。",
+  "That code is invalid. Check the code shown where you started this login and try again.":
+      "代码无效。请核对你发起登录的地方显示的代码后重试。",
   "That person cannot be added from this mention action. Use the channel member controls instead.":
       "无法通过此提及操作添加该用户。请改用频道成员控件。",
   "That person cannot read this conversation, so they were not notified.":
       "该用户无法阅读此会话，因此未收到通知。",
   "That ship looks risky": "那艘船看上去很危险",
-  "That sign-in request was already used. Start sign-in again from Raft Desktop if needed.":
-      "该登录请求已被使用。如有需要，请从 Raft Desktop 重新开始登录。",
+  "That login request was already approved or denied. Start the login again if needed.":
+      "这个登录请求已经被批准或拒绝过。如有需要，请重新发起登录。",
   "That target is already in the channel, so no action is needed.":
       "该目标已在频道中，无需任何操作。",
   "That target is no longer available.": "该目标已不可用。",
@@ -144,10 +138,10 @@ const Map<String, String> zhCatalogWeb7 = <String, String>{
       "Agent 已存在，但未收到可用 token。如果响应丢失，token 可能已生成。再次生成前请检查已有凭证。",
   "The agent now has a GitHub connection you did not start. If you did not expect it, open the agent and disconnect it.":
       "此 Agent 现在有一个不是由你发起的 GitHub 连接。如非预期，请打开 Agent 并断开连接。",
-  "The agent's computer is asked for its session record; it may not have one.":
-      "将向 Agent 所在的计算机请求会话记录；它可能没有可用的记录。",
-  "The agent's computer was asked for its session record. This screen can't tell whether one was found.":
-      "已向 Agent 所在的计算机请求会话记录。此处无法得知是否找到了会话记录。",
+  "Taken from the agent's computer; it may not have one.":
+      "从 Agent 所在的电脑取，可能取不到。",
+  "The agent's computer was asked for its session record. Whether one was attached shows here if it answers.":
+      "已向 Agent 所在的电脑请求会话记录。它回复后，这里会显示是否已附上。",
   "The agent's source computer is unavailable. Reconnect it and try again.":
       "该 Agent 的源计算机不可用。请重新连接后重试。",
   "The agreement was updated. Open the join action again to review the latest version.":
@@ -295,7 +289,7 @@ const Map<String, String> zhCatalogWeb7 = <String, String>{
   "This Computer reported no available options.": "此计算机未报告任何可用选项。",
   "This Computer took too long to list the options.": "此计算机列出可选项超时。",
   "This Computer's catalog does not list this model. You can still select it; compatibility will be checked when the agent starts.":
-      "此计算机的目录未列出这个模型。你仍可选择它，兼容性将在 agent 启动时检查。",
+      "此 Computer 的目录未列出这个模型。你仍可选择它，兼容性将在 Agent 启动时检查。",
   "This Computer's model catalog is unavailable. You can choose from the standard Built-in models, but saving may be refused until the catalog can be read; retry later or choose another Computer.":
       "暂时无法获取此计算机的模型目录。你仍可选择标准 Built-in 模型，但在目录可读之前保存可能会被拒绝；请稍后重试或换一台计算机。",
   "This Joint Channel already has 2 free servers. Upgrade either side to Pro, or have a free server leave, to continue (30 servers max).":
@@ -304,8 +298,7 @@ const Map<String, String> zhCatalogWeb7 = <String, String>{
       "这个联合频道还有未完成的附件上传。返回频道可让原输入框继续上传，也可以直接在这里取消上传。",
   "This Joint Channel is read-only because it has more than 2 free servers. It becomes writable again when one server's admin upgrades or a free server leaves.":
       "这个联合频道有超过 2 个免费服务器，目前只读。其中一个服务器的管理员升级，或者一个免费服务器退出后，会自动恢复可写。",
-  "This PDF cannot be previewed here because it would load from the app's own origin. Download it to view.":
-      "此 PDF 会从应用自身的源加载,出于隔离原因无法在此预览,请下载查看。",
+  "Download this PDF to view it.": "请下载此 PDF 查看。",
   "This QR code has expired. Please refresh later or contact the Raft team.":
       "这个二维码已过期。请稍后刷新，或联系 Raft 团队。",
   "This Stripe estimate expires after 5 minutes. Reopen the review if it expires.":
@@ -330,15 +323,13 @@ const Map<String, String> zhCatalogWeb7 = <String, String>{
   "This app is not registered for any Raft Server you can access.":
       "该 App 未在你可访问的任何 Raft Server 上注册。",
   "This app is published in the Marketplace. Offline approval preserves the source Server’s installation and access, but removes installations and access on other Servers.":
-      "此应用已发布到市场。下架批准后，来源 Server 的安装和访问权限会保留，其他 Server 的安装和访问权限会被撤销。",
+      "此应用已发布到市场。下架批准后，来源服务器的安装和访问权限会保留，其他服务器的安装和访问权限会被撤销。",
   "This app requests access to the agent directory in your selected Server, along with the other permissions listed below.":
       "此应用请求读取所选服务器的 Agent 列表，以及下方列出的其他权限。",
-  "This app requests new data access. Review the new data groups before approving the update.":
-      "此应用申请了新的数据访问权限。请在批准更新前查看新的数据组。",
+  "This app requests new access. Review it before approving the update; until then it keeps the access you approved.":
+      "此应用申请了新的访问权限。请在批准更新前查看；批准之前，它仍按你已批准的权限运行。",
   "This browser does not expose the Notification API, so it cannot show system notifications for Raft.":
       "此浏览器没有 Notification API,无法为 Raft 显示系统通知。",
-  "This browser does not have an active push subscription yet. Re-enable push notifications and try again.":
-      "此浏览器尚无有效的推送订阅。请重新启用推送通知后再试。",
   "This browser does not support Web Push.": "此浏览器不支持网页推送(Web Push)。",
   "This browser does not support service worker push notifications.":
       "此浏览器不支持 Service Worker 推送通知。",
@@ -389,8 +380,6 @@ const Map<String, String> zhCatalogWeb7 = <String, String>{
       "该迁移已不存在。请刷新迁移状态。",
   "This model is a catalog suggestion and has not been verified to launch with this computer's current runtime config.":
       "此模型只是目录建议，尚未验证能用这台计算机当前的运行时配置启动。",
-  "This page could not be verified. Follow the native recovery window to retry safely.":
-      "无法验证此页面。请按原生恢复窗口的指引安全重试。",
   "This page is not served over HTTPS, so the browser will not register a service worker for push notifications.":
       "当前页面不是 HTTPS,浏览器不会为推送注册 service worker。",
   "This permanently deletes the app's OAuth client, secret, and all grants. Any existing Login with Raft setup using ":
@@ -401,7 +390,7 @@ const Map<String, String> zhCatalogWeb7 = <String, String>{
   "This report may contain <strong>prompt history, file paths, and command output</strong>. Sensitive data redaction is best-effort and not guaranteed.":
       "此报告可能包含<strong>提示词历史、文件路径和命令输出</strong>。敏感数据会尽量遮蔽，但无法保证完全遮蔽。",
   "This runtime is not installed on this computer.": "该运行时未安装在此计算机上",
-  "This runtime is not logged in on this computer.": "该运行时未在此计算机上登录",
+  "This runtime is not signed in on this computer.": "该运行时未在此计算机上登录",
   "This runtime needs configuration on this Computer before it can list the options.":
       "此运行时需要先在此计算机上完成配置，才能列出可选项。",
   "This saved provider is unavailable. Select another provider.":
@@ -412,7 +401,7 @@ const Map<String, String> zhCatalogWeb7 = <String, String>{
       "此服务器尚未开放权威 Labs 设置 API。",
   "This server has no available human seats right now. Contact the server owner to add a human seat, then try this link again.":
       "此服务器当前没有可用的人类席位。请联系服务器所有者添加人类席位后，再重试此链接。",
-  "This server has no public channels right now.": "此服务器目前没有公开频道。",
+  "No public channels yet": "还没有公开频道",
   "This server or channel is no longer public.": "此服务器或频道已不再公开。",
   "This service is missing a configured return URL.": "该服务缺少已配置的返回 URL。",
   "This service is missing a registered client id.": "该服务缺少已注册的 client id。",
@@ -427,11 +416,11 @@ const Map<String, String> zhCatalogWeb7 = <String, String>{
       "这个登录请求已过期。请回到 App 重新发起登录。",
   "This sign-in request was already handled. Start sign-in again from the app if needed.":
       "这个登录请求已经处理过了。如有需要，请回到 App 重新发起登录。",
-  "This spreadsheet is empty.": "此表格为空。",
+  "This spreadsheet is empty": "这个表格没有内容",
   "This tab is running an older app build. Refresh to load the current version; unsent text or unsaved changes in this tab may be lost.":
       "此标签页运行的是较旧的应用版本。请刷新以加载当前版本；此标签页中未发送的文本或未保存的更改可能会丢失。",
-  "This task predates the channel conversion. Only the source workspace can change it.":
-      "这是频道转换前的历史任务，只能由来源工作空间修改。",
+  "This task was created before other servers connected. Only the host server can change it.":
+      "这个任务创建于其他服务器连接之前，只能由托管服务器修改。",
   "This username is already taken.": "该用户名已被占用。",
   "This video may use a codec this browser cannot preview.":
       "该视频使用的编解码器可能无法在当前浏览器中预览。",
@@ -490,13 +479,12 @@ const Map<String, String> zhCatalogWeb7 = <String, String>{
   "Try another channel or clear the channel filter.": "请选择其他频道或清除频道筛选。",
   "Try different keywords or a shorter phrase.": "试试其他关键词或更短的短语。",
   "Try Migration Again": "重试迁移",
-  "Turn on Server Labs access first.": "需先开启 Server Labs 访问权限",
+  "Turn on Server Labs access first.": "需先开启服务器 Labs 访问权限",
   "Turn on message translation for this server. When this is off, members' language and display preferences will not translate messages here.":
       "为此服务器开启消息翻译。关闭时，成员的语言和显示偏好不会在此翻译消息。",
   "Turn on notifications so you don't miss when they finish or need you.":
       "开启通知，不错过它们完成或需要你处理的时刻。",
   "Type ": "输入 ",
-  "URL slug": "URL 短名",
   "Ultra": "Ultra",
   "Unable to load history.": "无法加载历史记录",
   "Unable to open source. It may be unavailable or deleted.":
@@ -509,7 +497,7 @@ const Map<String, String> zhCatalogWeb7 = <String, String>{
   "Unarchive {name}": "取消归档 {name}",
   "Open {name}": "打开 {name}",
   "{type} · Archived {date}": "{type} · 归档于 {date}",
-  "Unarchive Channel": "取消归档频道",
+  "Unarchive channel": "取消归档频道",
   "Unarchive it to keep its history, or choose a different name.":
       "取消归档可保留其历史记录，或者改用其他名称。",
   "Unarchive this channel before converting it.": "请先取消归档，再转换此频道。",

@@ -79,7 +79,7 @@ class RaftbenchOverviewSnapshot {
   final int requestedChannels;
 }
 
-/// "Tasks and cost".
+/// "Task and cost context".
 abstract interface class RaftbenchOverviewPanel implements Listenable {
   RaftbenchLoad<RaftbenchTaskPeriods> get tasks;
   RaftbenchLoad<RaftbenchTaskSnapshot> get snapshot;
@@ -88,7 +88,7 @@ abstract interface class RaftbenchOverviewPanel implements Listenable {
   Future<void> load();
 }
 
-/// "Conversation insights".
+/// "Patterns and improvements".
 abstract interface class RaftbenchHostedPanel implements Listenable {
   RaftbenchDashboard? get data;
   bool get loading;

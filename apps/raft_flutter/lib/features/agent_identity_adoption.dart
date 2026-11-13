@@ -150,9 +150,7 @@ class _AgentOnboardingIdentityState extends State<AgentOnboardingIdentity> {
         title: preview.grantsServerAdmin
             ? 'Update identity and admin role'
             : 'Update official identity',
-        confirmLabel: preview.grantsServerAdmin
-            ? 'Update identity and role'
-            : 'Update identity',
+        confirmLabel: preview.grantsServerAdmin ? 'Update' : 'Update',
         loadingLabel: 'Updating…',
         confirmVariant: RaftButtonRecipeVariant.primary,
         maxWidth: 448,

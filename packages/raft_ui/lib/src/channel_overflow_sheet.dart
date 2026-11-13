@@ -581,7 +581,7 @@ class RaftMembersStrip extends StatelessWidget {
     required this.onOpen,
     this.loading = false,
     this.onAdd,
-    this.addLabel = 'Add Member',
+    this.addLabel = 'Add member',
   });
   static const maxRows = 3;
   static const double tile = 36, gap = 8;

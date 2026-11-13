@@ -26,7 +26,7 @@ void main() {
       reason: 'the opt-in the server needs to answer account_link_required',
     );
     expect(find.text('Connect to your existing account'), findsOneWidget);
-    expect(find.text('Sign In'), findsNothing);
+    expect(find.text('Sign in'), findsNothing);
     expect(
       find.textContaining('This email already has a Raft account'),
       findsOneWidget,
@@ -148,7 +148,7 @@ void main() {
     );
     expect(find.byKey(const Key('login-submit')), findsNothing);
     expect(find.byKey(const Key('login-password')), findsNothing);
-    expect(find.text('Back to Sign In'), findsOneWidget);
+    expect(find.text('Back to sign in'), findsOneWidget);
 
     h.server.answers['/auth/mobile/oauth/complete'] = [
       (
@@ -196,7 +196,7 @@ void main() {
       expect(h.server.to('/auth/pending-link/cancel').single.data, {
         'pendingLinkToken': pendingLinkToken,
       });
-      expect(find.text('Sign In'), findsWidgets);
+      expect(find.text('Sign in'), findsWidgets);
       expect(find.text('Connect to your existing account'), findsNothing);
       expect(find.byKey(const ValueKey('auth-social-github')), findsOneWidget);
     },
@@ -214,7 +214,7 @@ void main() {
     await h.settle();
 
     expect(find.text('Connect to your existing account'), findsOneWidget);
-    expect(find.text('Login failed'), findsOneWidget);
+    expect(find.text('Sign-in failed'), findsOneWidget);
   });
 
   testWidgets('an account with only social sign-in offers just those', (

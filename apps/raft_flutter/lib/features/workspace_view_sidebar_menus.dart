@@ -254,8 +254,8 @@ extension _SidebarContextMenus on _WorkspaceViewState {
           rowToast.show(
             tr(
               next
-                  ? 'Failed to mute Activity for this channel.'
-                  : 'Failed to unmute Activity for this channel.',
+                  ? 'Failed to mute Activity for this conversation.'
+                  : 'Failed to unmute Activity for this conversation.',
             ),
           );
         }
@@ -298,13 +298,13 @@ extension _SidebarContextMenus on _WorkspaceViewState {
     context,
     RaftConfirmDialog(
       surfaceKey: const ValueKey('shell-dialog'),
-      title: tr('Archive Channel'),
+      title: tr('Archive channel'),
       message: raftFormat(
         context,
         'Archive "{name}"? Members keep read access and history, but writes will be frozen and the channel will be hidden from sidebars. You can unarchive it later.',
         {'name': c.name},
       ),
-      confirmLabel: tr('Archive Channel'),
+      confirmLabel: tr('Archive channel'),
       cancelLabel: tr('Keep Channel'),
       loadingLabel: tr('Archiving…'),
       confirmVariant: RaftButtonRecipeVariant.warning,
@@ -484,7 +484,7 @@ extension _SidebarContextMenus on _WorkspaceViewState {
         if (canArchive) ...[
           const RaftSidebarMenuDivider(),
           _item(
-            'Archive Channel',
+            'Archive channel',
             RaftGlyph.archive,
             close,
             () => _confirmArchive(c),
@@ -517,7 +517,7 @@ extension _SidebarContextMenus on _WorkspaceViewState {
           ]),
         ),
         const RaftSidebarMenuDivider(),
-        _item('Close Chat', RaftGlyph.x, close, () => _closeDm(dm.id)),
+        _item('Close chat', RaftGlyph.x, close, () => _closeDm(dm.id)),
       ],
       submenu: _moveSubmenu('channel', dm.id),
       row: 'c:${dm.id}',
@@ -557,7 +557,7 @@ extension _SidebarContextMenus on _WorkspaceViewState {
         ),
         if (dm != null) ...[
           const RaftSidebarMenuDivider(),
-          _item('Close Chat', RaftGlyph.x, close, () => _closeDm(dm.id)),
+          _item('Close chat', RaftGlyph.x, close, () => _closeDm(dm.id)),
         ],
       ],
       submenu: _moveSubmenu(movable.$1, movable.$2),
@@ -594,7 +594,7 @@ extension _SidebarContextMenus on _WorkspaceViewState {
         ],
         if (canCreateJoint) ...[
           _item(
-            'Create Joint Channel',
+            'Create joint channel',
             RaftGlyph.gitBranch,
             close,
             createJointChannel,
@@ -655,7 +655,7 @@ extension _SidebarContextMenus on _WorkspaceViewState {
         if (custom != null)
           RaftSidebarMenuItem(
             itemKey: const ValueKey('sidebar-menu-rename-section'),
-            label: tr('Edit section…'),
+            label: tr('Edit section'),
             glyph: RaftGlyph.pencil,
             onPressed: () {
               close();
@@ -696,7 +696,7 @@ extension _SidebarContextMenus on _WorkspaceViewState {
         _item('Create Channel', RaftGlyph.plus, close, createChannel),
       if (w.can('federateChannels'))
         _item(
-          'Create Joint Channel',
+          'Create joint channel',
           RaftGlyph.gitBranch,
           close,
           createJointChannel,

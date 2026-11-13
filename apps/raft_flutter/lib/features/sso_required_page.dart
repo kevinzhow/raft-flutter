@@ -26,7 +26,7 @@ class SsoRequiredPage extends StatelessWidget {
       client.ssoRequired ?? RaftClient.ssoRequiredText,
     ),
     gapBeforeButton: RaftSpace.x1,
-    buttonLabel: raftText(context, 'Log out'),
+    buttonLabel: raftText(context, 'Sign out'),
     buttonIcon: RaftGlyph.logOut,
     buttonKey: const ValueKey('sso-required-sign-out'),
     onButton: onSignOut,
