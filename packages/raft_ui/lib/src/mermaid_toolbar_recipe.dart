@@ -26,6 +26,9 @@ class RaftMermaidToolbarRecipe {
   static const inset = EdgeInsets.symmetric(horizontal: 8, vertical: 6);
   static const compactGap = 8.0, desktopGap = 4.0;
 
+  /// The icon buttons' size: raft-ui `icon-md` since Web 1.24.
+  static const iconButton = RaftMetrics.buttonMd;
+
   double targetSize(double visual) => density == RaftDensity.touch
       ? math.max(RaftMetrics.touchTarget, visual)
       : visual;
@@ -35,11 +38,11 @@ class RaftMermaidToolbarRecipe {
       inset.horizontal +
       targetSize(diagramTabWidth) +
       targetSize(sourceTabWidth) +
-      desktopIconCount * targetSize(RaftMetrics.buttonSm) +
+      desktopIconCount * targetSize(iconButton) +
       (desktopIconCount + 1) * desktopGap;
   double get compactBudget =>
       inset.horizontal +
-      compactCount * targetSize(RaftMetrics.buttonSm) +
+      compactCount * targetSize(iconButton) +
       (compactCount - 1) * compactGap;
   bool get desktop =>
       viewportWidth >= desktopBreakpoint && availableWidth >= desktopBudget;

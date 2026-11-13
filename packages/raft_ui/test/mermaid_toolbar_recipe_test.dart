@@ -19,7 +19,8 @@ void main() {
     final mouse = recipe(412, 227.4);
     expect(mouse.desktop, false);
     expect(mouse.gap, 8);
-    expect(mouse.compactBudget, 188);
+    // Web 1.24: the icon buttons are raft-ui icon-md (32px).
+    expect(mouse.compactBudget, 208);
     expect(mouse.wrap, false);
     final touch = recipe(412, 227.4, density: RaftDensity.touch);
     expect(touch.compactBudget, 288);
@@ -43,13 +44,13 @@ void main() {
   test(
     'desktop variant needs both source breakpoint and fitted translated tabs',
     () {
-      final source = recipe(640, 332);
-      expect(source.desktopBudget, 332);
+      final source = recipe(640, 352);
+      expect(source.desktopBudget, 352);
       expect(source.desktop, true);
       expect(source.gap, 4);
       expect(source.tabVisualHeight, 24);
       expect(recipe(639.9, 800).desktop, false);
-      expect(recipe(800, 331.9).desktop, false);
+      expect(recipe(800, 351.9).desktop, false);
       expect(recipe(800, 500, density: RaftDensity.touch).desktop, true);
       expect(recipe(800, 227.4, density: RaftDensity.touch).desktop, false);
       final largeText = RaftMermaidToolbarRecipe(
