@@ -54,4 +54,6 @@ const Map<String, String> zhCatalogUpstream124 = <String, String>{
   "Revoke the link for {slug}": "撤销 {slug} 的链接",
   "Working...": "处理中…",
   "Create link": "创建链接",
+  // Task v2: create a task from a message (task.create.fromMessageHeading).
+  "Create tasks from message": "从消息创建任务",
 };

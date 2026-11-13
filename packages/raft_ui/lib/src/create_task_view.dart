@@ -16,8 +16,12 @@ import 'icons.dart';
 import 'error_presentation.dart';
 import 'localization.dart';
 import 'raft/button.dart';
+import 'raft/css_box.dart' show raftControlBorderPx;
+import 'raft/ui_tokens.dart';
+import 'tokens/tokens.dart' show RaftRadius, RaftTypeScale;
 import 'recipes/button_variants.g.dart';
 import 'recipes/recipe_runtime.dart' show RaftRecipeSet;
+import 'space.dart';
 import 'theme.dart';
 
 class RaftCreateTaskDialogView extends StatelessWidget {
@@ -31,6 +35,8 @@ class RaftCreateTaskDialogView extends StatelessWidget {
     required this.onRemoveRow,
     this.error,
     this.submitting = false,
+    this.sourceSender,
+    this.sourceText,
   });
 
   /// One controller per title row (at least one).
@@ -46,6 +52,10 @@ class RaftCreateTaskDialogView extends StatelessWidget {
   final String? error;
   final bool submitting;
 
+  /// Task v2 "Create task from message" (Web CreateTaskSourceMessage): the
+  /// message the tasks hang under, quoted above the titles.
+  final String? sourceSender, sourceText;
+
   @override
   Widget build(BuildContext context) {
     const gap = SizedBox(height: 16); // form `space-y-4`
@@ -55,12 +65,23 @@ class RaftCreateTaskDialogView extends StatelessWidget {
     return RaftModalBackdrop(
       child: RaftDialog.card(
         key: const ValueKey('create-task-dialog'),
-        title: batch ? 'Create Tasks' : 'Create Task',
+        title: sourceText != null
+            ? (batch ? 'Create tasks from message' : 'Create task from message')
+            : batch
+            ? 'Create Tasks'
+            : 'Create Task',
         onClose: onClose,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            if (sourceText != null) ...[
+              _SourceMessageQuote(
+                sender: sourceSender ?? '',
+                text: sourceText!,
+              ),
+              gap,
+            ],
             if (error != null) ...[RaftErrorBanner(error!), gap],
             Column(
               mainAxisSize: MainAxisSize.min,
@@ -181,6 +202,58 @@ class RaftCreateTaskDialogView extends StatelessWidget {
               textStep: legacy ? RaftTextSteps.sm : null,
               disabled: submitting,
               onPressed: onSubmit,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// `<blockquote className="rounded-control border border-line-hairline
+/// bg-layer-card px-3 py-2 text-footnote text-foreground-muted">`: the sender
+/// in `font-semibold text-foreground`, the text `line-clamp-3`.
+class _SourceMessageQuote extends StatelessWidget {
+  const _SourceMessageQuote({required this.sender, required this.text});
+  final String sender, text;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = RaftTokens.of(context);
+    final ui = t.ui;
+    return DecoratedBox(
+      key: const ValueKey('create-task-source-message'),
+      decoration: BoxDecoration(
+        color: ui.layerCard,
+        borderRadius: BorderRadius.circular(
+          t.size('radius.control', fallback: RaftRadius.control),
+        ),
+        border: Border.all(
+          color: ui.lineHairline,
+          width: raftControlBorderPx(context, RaftSpace.hairline),
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: RaftSpace.x3,
+          vertical: RaftSpace.x2,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              sender,
+              style: t.scale(
+                RaftTypeScale.footnote,
+                weight: FontWeight.w600,
+                color: ui.foreground,
+              ),
+            ),
+            Text(
+              text,
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+              style: t.scale(RaftTypeScale.footnote, color: ui.foregroundMuted),
             ),
           ],
         ),
