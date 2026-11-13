@@ -43843,6 +43843,12 @@
         "familyRefs": [],
         "owner": "WP-READ v1.24 alignment",
         "reason": "Existing builder at its current source identity: WP-READ (v1.24) added an import, the marked-unread dot or the stale-counts notice earlier in the file and shifted its offset; its rendering is otherwise unchanged. No style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/activity_first_unread.dart#function:activityRootHeader": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-READ v1.24 alignment",
+        "reason": "WP-READ (Web v1.24 StaleCountsNotice, task #164): the phone Activity root header (raft_ui RaftMobileRootHeader) with the notice under it; no style of its own. No style exemption or visual acceptance."
       }
     },
     "entries": {
