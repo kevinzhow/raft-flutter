@@ -1,0 +1,163 @@
+{
+  "_source": "Server v1.24.0-source.1. Rows are local v1.24 stack answers (ids and names replaced) plus the optional fields the stack did not produce, from web store/channelStore.ts (Channel, AgentLoungeSummary), hooks/useChannelMembers.ts (ChannelHuman) and store/serverStore.ts (ServerMember.roster). GET /channels (services/channelListItems.ts), GET /channels/dm, GET /channels/:id/members, GET /servers/:id/members.",
+  "channels": [
+    {
+      "id": "c1000000-0000-4000-8000-000000000001",
+      "serverId": "s0000000-0000-4000-8000-000000000001",
+      "name": "general",
+      "description": "General channel for all members",
+      "type": "channel",
+      "guestVisible": true,
+      "visitorVisible": true,
+      "threadSort": "time",
+      "announcementArtifactId": null,
+      "createdAt": "2026-11-13T13:52:29.988Z",
+      "archivedAt": null,
+      "joined": true,
+      "activityMuted": false,
+      "loungeAgentId": null,
+      "hasExternalRelation": true,
+      "channelRole": "member",
+      "channelAdminBasis": "server_role",
+      "channelCapabilities": {"manageVisitorAccess": true, "editChannelMetadata": true},
+      "channelAuthorityRevision": 1,
+      "notificationLevel": "mentions"
+    },
+    {
+      "id": "c1000000-0000-4000-8000-000000000002",
+      "serverId": "s0000000-0000-4000-8000-000000000001",
+      "name": "cindy-lounge",
+      "description": null,
+      "type": "channel",
+      "guestVisible": false,
+      "visitorVisible": false,
+      "createdAt": "2026-11-13T13:52:29.988Z",
+      "joined": false,
+      "loungeAgentId": "a1000000-0000-4000-8000-0000000000aa",
+      "canPost": false,
+      "hasExternalRelation": false,
+      "notificationLevel": null
+    },
+    {
+      "id": "c1000000-0000-4000-8000-000000000003",
+      "serverId": "s0000000-0000-4000-8000-000000000001",
+      "name": "slack-support",
+      "description": null,
+      "type": "private",
+      "visitorVisible": false,
+      "createdAt": "2026-11-13T13:52:29.988Z",
+      "joined": true,
+      "notificationLevel": "none",
+      "bridge": {
+        "provider": "slack",
+        "providerConversationId": "C0123456789",
+        "state": "paused",
+        "stateReason": "app_removed",
+        "outbound": {"status": "waiting", "reason": "invite_app", "detail": "marker_unconfirmed", "since": "2026-11-13T15:00:00.000Z"},
+        "installState": "reauth_required"
+      }
+    },
+    {
+      "id": "c1000000-0000-4000-8000-000000000004",
+      "serverId": "s0000000-0000-4000-8000-000000000001",
+      "name": "legacy-visible",
+      "description": null,
+      "type": "channel",
+      "guestVisible": true,
+      "createdAt": "2026-11-13T13:52:29.988Z",
+      "joined": true
+    }
+  ],
+  "dms": [
+    {
+      "id": "d1000000-0000-4000-8000-000000000001",
+      "name": "cindy-dm",
+      "type": "dm",
+      "createdAt": "2026-11-13T13:52:29.988Z",
+      "peerType": "agent",
+      "peerId": "a1000000-0000-4000-8000-0000000000aa",
+      "peerName": "cindy",
+      "peerDisplayName": "Cindy",
+      "peerAvatarUrl": "pixel:robot",
+      "peerGravatarHash": null,
+      "notificationLevel": "default",
+      "lounge": {"channelId": "c1000000-0000-4000-8000-000000000002", "joined": false, "unreadCount": 3, "mentionCount": 1}
+    }
+  ],
+  "channelMembers": {
+    "agents": [],
+    "humans": [
+      {
+        "id": "u1000000-0000-4000-8000-0000000000c1",
+        "serverId": "s0000000-0000-4000-8000-000000000001",
+        "serverName": "Visual Server",
+        "serverSlug": "visual",
+        "name": "alice",
+        "displayName": "Alice",
+        "description": null,
+        "avatarUrl": "/api/avatars/users/0a1b2c.webp",
+        "gravatarHash": "",
+        "role": "owner",
+        "serverRole": "owner",
+        "channelRole": "admin",
+        "effectiveChannelRole": "owner",
+        "channelAdminBasis": "server_role",
+        "canChangeChannelRole": false,
+        "canRemoveFromChannel": false,
+        "inViewerServer": true
+      },
+      {
+        "id": "u2000000-0000-4000-8000-0000000000c2",
+        "serverId": "s0000000-0000-4000-8000-000000000002",
+        "serverName": "Acme Partners",
+        "serverSlug": "acme-partners",
+        "servers": [{"serverId": "s0000000-0000-4000-8000-000000000002", "serverName": "Acme Partners", "serverSlug": "acme-partners"}],
+        "name": "pat",
+        "displayName": "Pat",
+        "description": null,
+        "avatarUrl": null,
+        "gravatarHash": "",
+        "role": null,
+        "serverRole": null,
+        "channelRole": null,
+        "effectiveChannelRole": "member",
+        "channelAdminBasis": null,
+        "canChangeChannelRole": false,
+        "canRemoveFromChannel": true,
+        "inViewerServer": false
+      }
+    ],
+    "externalMembers": []
+  },
+  "serverMembers": [
+    {
+      "userId": "u1000000-0000-4000-8000-0000000000c1",
+      "email": "alice@example.invalid",
+      "name": "alice",
+      "displayName": "Alice",
+      "description": null,
+      "avatarUrl": "/api/avatars/users/0a1b2c.webp",
+      "gravatarHash": "",
+      "role": "owner",
+      "joinedAt": "2026-11-13T13:52:29.988Z",
+      "guestChannel": null
+    },
+    {
+      "userId": "u2000000-0000-4000-8000-0000000000c2",
+      "email": null,
+      "name": "pat",
+      "displayName": "Pat",
+      "description": null,
+      "avatarUrl": null,
+      "role": "member",
+      "joinedAt": "2026-11-13T13:52:29.988Z",
+      "roster": {
+        "serverId": "s0000000-0000-4000-8000-000000000002",
+        "serverName": "Acme Partners",
+        "serverSlug": "acme-partners",
+        "servers": [{"id": "s0000000-0000-4000-8000-000000000002", "name": "Acme Partners", "slug": "acme-partners"}, {"id": "broken"}],
+        "inViewerServer": false
+      }
+    }
+  ]
+}
