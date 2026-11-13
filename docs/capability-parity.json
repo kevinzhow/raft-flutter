@@ -12706,7 +12706,7 @@
    "capability": "Followed threads with new replies roll up onto their parent channel's sidebar badge (`5 · [thread] 1`) and its @ mark",
    "background": false,
    "status": "covered",
-   "webEntry": "Sidebar.tsx ChannelRow (useParentThreadUnread, ChannelUnreadSegments); utils/threadUnreadByParent.ts",
+   "webEntry": "features/sidebar/rows/ChannelRow.tsx (useParentThreadUnread, ChannelUnreadSegments); utils/threadUnreadByParent.ts (v1.24: task conversations never count)",
    "gate": "joined channel (thread_unread_badge_v0 is retired in Web 1.24)",
    "flutterEntry": "workspace_view.dart channelItem -> SidebarThreadUnread.forChannel (features/sidebar_thread_unread.dart, data/thread_unread_by_parent.dart) -> RaftNavItem threadUnread -> RaftSidebarThreadUnreadCount",
    "flutterRefs": [
