@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import '../data/user_error.dart';
@@ -10,6 +11,7 @@ import 'management_support.dart';
 import 'account_password_editor.dart';
 import 'account_sign_in_recipe.dart';
 import 'second_factor_step_up.dart';
+import 'social_sign_in_failure.dart';
 
 class AccountConnectionsView extends StatefulWidget {
   const AccountConnectionsView({
@@ -116,6 +118,12 @@ class _AccountConnectionsState extends ManagementState<AccountConnectionsView> {
           '/auth/mobile/oauth/$provider/link/complete',
           data: {'code': handoff.code, 'codeVerifier': handoff.verifier},
         );
+      } on RaftApiException catch (e) {
+        final label =
+            '${providers.firstWhere((p) => p['id'] == provider)['label']}';
+        final text = mounted ? socialLinkFailureText(context, e, label) : null;
+        if (text == null) rethrow;
+        throw RaftUserError(text);
       } finally {
         await active.cancel();
         if (identical(broker, active)) broker = null;

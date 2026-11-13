@@ -235,6 +235,11 @@
     "$pending": true
    }
   },
+  "login-pending": {
+   "POST /auth/login": {
+    "$pending": true
+   }
+  },
   "resend-error": {
    "POST /auth/resend-verification": {
     "$status": 429,

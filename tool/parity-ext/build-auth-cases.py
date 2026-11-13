@@ -96,6 +96,7 @@ FIXTURE = {
             'error': 'Verification failed. The link may be expired.'}}},
         'survey-error': {'PATCH /auth/me': {'$status': 500, '$body': {'error': 'Internal Server Error'}}},
         'handoff-pending': {'POST /servers/visual-server/setup-handoff': {'$pending': True}},
+        'login-pending': {'POST /auth/login': {'$pending': True}},
         'resend-error': {'POST /auth/resend-verification': {'$status': 429, '$body': {
             'error': 'Too many requests. Try again later.'}}},
     },
@@ -145,6 +146,11 @@ SURFACES = [
     dict(name='login.filled', view='login', title='Login filled inputs',
          web=[fill('#login-email', EMAIL), fill('#login-password', 'visual-sign-in-secret'), wait()],
          android=[enter('login-email', EMAIL), enter('login-password', 'visual-sign-in-secret')]),
+    # Web v1.24 dropped the official screens.auth.login.signing; this keeps the signing-in state covered.
+    dict(name='login.signing', view='login', title='Login signing in (request pending)', routeSet='login-pending',
+         web=[fill('#login-email', EMAIL), fill('#login-password', 'visual-sign-in-secret'), click(SUBMIT), wait()],
+         android=[enter('login-email', EMAIL), enter('login-password', 'visual-sign-in-secret'),
+                  tap('login-submit')]),
     # social buttons group (space-y-2 list under the "or" divider)
     dict(name='social.buttons', view='login', title='Social sign-in buttons', routeSet='social',
          selector='div.space-y-2:has(> button)', key='auth-social-buttons', web=[wait(200)], android=[]),

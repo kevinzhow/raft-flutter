@@ -2110,10 +2110,17 @@ behaviour checklists (`docs/behavior-parity/`).
   `agent_message_collapse.dart`.
 * **Browser-hosted login pages are not ported.** "Login with Raft" (consent / setup, `/oauth/clients/lookup`,
   `/oauth/authorize/human`), device / CLI login approval (`/login/device`, `/auth/device/approve`) and native-app
-  login approval (`/login/app`, `/auth/app-login/requests/*`) are browser pages. The native app signs in through its
-  own native login flows (`auth_view.dart`, `oauth_broker.dart`), so these rows are intentional differences (➖) in
-  `capability-parity.json`; they were ❌ in some rows and ➖ in others before. The private-app share link page
-  (`/integration-invites/:token`) is a different surface and is still recorded as missing.
+  login approval (`/login/app`, `/auth/app-login/requests/*`) are browser pages, so these rows are intentional
+  differences (➖) in `capability-parity.json`; they were ❌ in some rows and ➖ in others before. The private-app share
+  link page (`/integration-invites/:token`) is a different surface and is still recorded as missing.
+* **Social sign-in stays on `/auth/mobile/oauth/*` (owner decision 2654e77c, 2026-11-13).** Server v1.24 moves current
+  apps to the `/auth/app-login/*` browser handoff and can switch the old native pair off with
+  `legacy_mobile_oauth_upgrade_required_v0` (426 `APP_UPDATE_REQUIRED`). The handoff needs a client id and callback
+  from the platform, so the app keeps `/auth/mobile/oauth/start` + `/complete` (`oauth_broker.dart`, PKCE, the same
+  pair Raft Desktop uses in `utils/desktopOAuth.ts`). Once ops turns the flag on, Google / GitHub / Apple sign-in in
+  the app stops working: each button shows the server's "no longer supported" sentence (in the app's language) and
+  people sign in with email and password (plus the two-step code). Linking a provider in Settings
+  (`/auth/mobile/oauth/:provider/link/*`) is not gated. No desktop passkey sign-in either (same decision).
 * **No local-session handoff.** "Take over a local session" needs the Electron desktop shell's local-session bridge;
   the app has none. Rows `ui:agents.handoff-local-session` and `ui:global-ui.desktop-handoff-local-session` are ➖.
 

@@ -253,7 +253,8 @@
           "web": "yes",
           "flutter": "yes",
           "parityCase": [
-            "screens.auth.login.signing"
+            "screens.auth.login.signing",
+            "components.auth-ext.mobile.login.signing"
           ],
           "status": "covered"
         }
@@ -6424,7 +6425,7 @@
         "owner": "Choice9 design-system alignment",
         "reason": "Reviewed production choice composition/delegation, not a thin-wrapper/no-paint claim or a visual PASS."
       },
-      "apps/raft_flutter/lib/features/auth_view.dart#local-function:CLASS:_AuthState@4513/METHOD:build@27879/FUNCTION:bars@30416": {
+      "apps/raft_flutter/lib/features/auth_view.dart#local-function:CLASS:_AuthState@4586/METHOD:build@28387/FUNCTION:bars@30924": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
@@ -20697,13 +20698,19 @@
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
+      "packages/raft_ui/lib/src/auth_page.dart#function:_legalLink": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Web v1.24 MarkdownLink + TextLinkExternalIcon for the auth legal links; real-entry/family/state mapping remains unreviewed."
+      },
       "packages/raft_ui/lib/src/auth_page.dart#function:_touchLine": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
-      "packages/raft_ui/lib/src/auth_page.dart#local-function:CLASS:RaftAuthPrompt@28637/METHOD:build@28872/FUNCTION:run@29414": {
+      "packages/raft_ui/lib/src/auth_page.dart#local-function:CLASS:RaftAuthPrompt@31018/METHOD:build@31253/FUNCTION:run@31795": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
@@ -40457,19 +40464,19 @@
         "reviewDecision": "Source reviewed at fixed Choice/P1 combination: this declaration is in an explicit frozen part/helper or a frozen Dialog class, selected only by the existing non-Raft/legacy recipe branch.",
         "reason": "Renderer selected only by an explicit Elegant/Brutal branch; this records source ownership, without claiming migration identity, exempting style findings or asserting pixel equivalence."
       },
-      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@33758/METHOD:_buildRecipe@35028/FUNCTION:addon@36488": {
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@34099/METHOD:_buildRecipe@35369/FUNCTION:addon@36829": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "P1 dialogs / canonical Choice integration",
         "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
       },
-      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@33758/METHOD:_buildRecipe@35028/FUNCTION:box@36178": {
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@34099/METHOD:_buildRecipe@35369/FUNCTION:box@36519": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "P1 dialogs / canonical Choice integration",
         "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
       },
-      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@33758/METHOD:_buildRecipe@35028/FUNCTION:resolve@35214": {
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@34099/METHOD:_buildRecipe@35369/FUNCTION:resolve@35555": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "P1 dialogs / canonical Choice integration",
@@ -50477,7 +50484,7 @@
           }
         ]
       },
-      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@33758/METHOD:_buildRecipe@35028/FUNCTION:resolve@35214|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:disabled": {
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@34099/METHOD:_buildRecipe@35369/FUNCTION:resolve@35555|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:disabled": {
         "applicability": "unknown",
         "owner": "P1 dialogs / canonical Choice integration",
         "reason": "Actual resolved state use argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:disabled; its real-entry/input/look applicability and visual acceptance remain pending.",
@@ -50489,7 +50496,7 @@
           }
         ]
       },
-      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@33758/METHOD:_buildRecipe@35028/FUNCTION:resolve@35214|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:hovered": {
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@34099/METHOD:_buildRecipe@35369/FUNCTION:resolve@35555|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:hovered": {
         "applicability": "unknown",
         "owner": "P1 dialogs / canonical Choice integration",
         "reason": "Actual resolved state use argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:hovered; its real-entry/input/look applicability and visual acceptance remain pending.",
@@ -50501,7 +50508,7 @@
           }
         ]
       },
-      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@33758/METHOD:_buildRecipe@35028/FUNCTION:resolve@35214|state:focus-within": {
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@34099/METHOD:_buildRecipe@35369/FUNCTION:resolve@35555|state:focus-within": {
         "applicability": "unknown",
         "owner": "P1 dialogs / canonical Choice integration",
         "reason": "Actual resolved state use focus-within; its real-entry/input/look applicability and visual acceptance remain pending.",
@@ -50513,7 +50520,7 @@
           }
         ]
       },
-      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@33758/METHOD:_buildRecipe@35028/FUNCTION:resolve@35214|state:has:data-slot=input-group-control+data-invalid": {
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@34099/METHOD:_buildRecipe@35369/FUNCTION:resolve@35555|state:has:data-slot=input-group-control+data-invalid": {
         "applicability": "unknown",
         "owner": "P1 dialogs / canonical Choice integration",
         "reason": "Actual resolved state use has:data-slot=input-group-control+data-invalid; its real-entry/input/look applicability and visual acceptance remain pending.",
@@ -50525,7 +50532,7 @@
           }
         ]
       },
-      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@33758/METHOD:_buildRecipe@35028/FUNCTION:resolve@35214|state:has:data-slot=input-group-control+disabled": {
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@34099/METHOD:_buildRecipe@35369/FUNCTION:resolve@35555|state:has:data-slot=input-group-control+disabled": {
         "applicability": "unknown",
         "owner": "P1 dialogs / canonical Choice integration",
         "reason": "Actual resolved state use has:data-slot=input-group-control+disabled; its real-entry/input/look applicability and visual acceptance remain pending.",

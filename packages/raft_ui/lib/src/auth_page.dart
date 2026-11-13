@@ -24,6 +24,7 @@ import 'components.dart';
 import 'css_pixel_snap.dart';
 import 'design_primitives.dart';
 import 'icons.dart';
+import 'interaction.dart';
 import 'keyboard_reveal.dart';
 import 'localization.dart';
 import 'onboarding_previews.dart';
@@ -199,6 +200,9 @@ class RaftAuthShell extends StatelessWidget {
                   label: server!,
                   onTap: onServer,
                   small: true,
+                  // Native only: the origin control keeps the underline that
+                  // says it can be changed (Web text links lost it in v1.24).
+                  inline: true,
                 ),
               ),
             ),
@@ -255,6 +259,9 @@ class RaftAuthTopBar extends StatelessWidget {
                   label: server!,
                   onTap: onServer,
                   small: true,
+                  // Native only: the origin control keeps the underline that
+                  // says it can be changed (Web text links lost it in v1.24).
+                  inline: true,
                 ),
               ),
           ],
@@ -622,18 +629,66 @@ class _RaftAuthLegalCheckboxState extends State<RaftAuthLegalCheckbox> {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    final base = RaftTypography.heading(
-      t,
-      size: 14,
-      line: 20,
-      weight: FontWeight.w400,
-    ).copyWith(color: t.muted);
+    // Web v1.24: `<label className="flex items-start gap-2 text-callout
+    // font-semibold text-foreground">`, the links MarkdownLink + ↗; the whole
+    // label toggles the box. The frozen looks keep the v1.21 checkbox
+    // (`gap-2.5 text-sm text-foreground-muted`, `mt-0.5`, bold strong links).
+    final web124 = t.textLinksUnderlined;
+    final callout = t.typeSlot('callout');
+    final base = web124
+        ? RaftTypography.heading(
+            t,
+            size: callout.fontSize,
+            line: callout.lineHeight,
+            weight: FontWeight.w600,
+          ).copyWith(color: t.semantic.foreground)
+        : RaftTypography.heading(
+            t,
+            size: 14,
+            line: 20,
+            weight: FontWeight.w400,
+          ).copyWith(color: t.muted);
     final link = base.copyWith(fontWeight: FontWeight.w700, color: t.strong);
+    final onChanged = widget.onChanged;
+    Widget copy = RaftUnderlines(
+      child: Text.rich(
+        TextSpan(
+          style: base,
+          children: raftRichText(
+            context,
+            'I agree to the <terms>Terms of Service</terms> and acknowledge the <privacy>Privacy Policy</privacy>.',
+            {
+              'terms': (text) => _legalLink(
+                context,
+                text,
+                terms,
+                base.fontSize ?? 14,
+                legacy: link,
+              ),
+              'privacy': (text) => _legalLink(
+                context,
+                text,
+                privacy,
+                base.fontSize ?? 14,
+                legacy: link,
+              ),
+            },
+          ),
+        ),
+      ),
+    );
+    if (web124 && onChanged != null) {
+      copy = GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => onChanged(!widget.checked),
+        child: copy,
+      );
+    }
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.only(top: 2), // mt-0.5
+          padding: EdgeInsets.only(top: web124 ? 0 : 2), // mt-0.5
           child: RaftCheckbox(
             key: const Key('register-legal'),
             value: widget.checked,
@@ -641,35 +696,62 @@ class _RaftAuthLegalCheckboxState extends State<RaftAuthLegalCheckbox> {
             onChanged: widget.onChanged,
           ),
         ),
-        const SizedBox(width: 10), // gap-2.5
-        Expanded(
-          child: RaftUnderlines(
-            child: Text.rich(
-              TextSpan(
-                style: base,
-                children: raftRichText(
-                  context,
-                  'I agree to the <terms>Terms of Service</terms> and acknowledge the <privacy>Privacy Policy</privacy>.',
-                  {
-                    'terms': (text) => RaftUnderlineSpan(
-                      text: text,
-                      style: link,
-                      recognizer: terms,
-                    ),
-                    'privacy': (text) => RaftUnderlineSpan(
-                      text: text,
-                      style: link,
-                      recognizer: privacy,
-                    ),
-                  },
-                ),
-              ),
-            ),
-          ),
-        ),
+        SizedBox(width: web124 ? 8 : 10), // gap-2 / gap-2.5
+        Expanded(child: copy),
       ],
     );
   }
+}
+
+/// A link to the terms or the privacy policy. Web v1.24: raft-ui MarkdownLink
+/// (`underline decoration-2 underline-offset-2 text-foreground-link
+/// decoration-foreground-link/40`) with TextLinkExternalIcon after it (the ↗,
+/// `ml-0.5`, 0.857em, in its own box so the underline stops at the text; its
+/// label "(opens in a new tab)" is read with the link). The frozen looks keep
+/// the v1.21 link in [legacy] (or the link ink).
+InlineSpan _legalLink(
+  BuildContext context,
+  String text,
+  TapGestureRecognizer recognizer,
+  double fontSize, {
+  TextStyle? legacy,
+}) {
+  final t = RaftTokens.of(context);
+  final ink = t.colors['foreground-legal-link'];
+  if (!t.textLinksUnderlined) {
+    return RaftUnderlineSpan(
+      text: text,
+      recognizer: recognizer,
+      style: legacy ?? TextStyle(color: ink),
+    );
+  }
+  return TextSpan(
+    children: [
+      RaftUnderlineSpan(
+        text: text,
+        recognizer: recognizer,
+        style: TextStyle(color: ink),
+        semanticsLabel: '$text ${raftText(context, '(opens in a new tab)')}',
+        color: ink?.withValues(alpha: .4),
+        thickness: 2,
+        offset: 2,
+      ),
+      WidgetSpan(
+        alignment: PlaceholderAlignment.middle,
+        child: Padding(
+          padding: const EdgeInsets.only(left: 2),
+          child: ExcludeSemantics(
+            child: RaftIcon(
+              RaftGlyph.arrowUpRight,
+              key: const Key('auth-legal-external'),
+              size: fontSize * .857,
+              color: ink,
+            ),
+          ),
+        ),
+      ),
+    ],
+  );
 }
 
 /// pages.login.legalAgreement (Web v1.21.12): `TextSans size="caption"
@@ -715,19 +797,8 @@ class _RaftAuthLegalNoticeState extends State<RaftAuthLegalNotice> {
             context,
             'By continuing, you agree to the <terms>Terms of Service</terms> and <privacy>Privacy Policy</privacy>.',
             {
-              // v1.21.23 LEGAL_LINK_CLASS `text-foreground-link underline
-              // decoration-2 underline-offset-2`; the pre-theme looks kept the
-              // muted text colour (`foreground-legal-link`).
-              'terms': (text) => RaftUnderlineSpan(
-                text: text,
-                recognizer: terms,
-                style: TextStyle(color: t.colors['foreground-legal-link']),
-              ),
-              'privacy': (text) => RaftUnderlineSpan(
-                text: text,
-                recognizer: privacy,
-                style: TextStyle(color: t.colors['foreground-legal-link']),
-              ),
+              'terms': (text) => _legalLink(context, text, terms, 12),
+              'privacy': (text) => _legalLink(context, text, privacy, 12),
             },
           ),
         ),
@@ -822,9 +893,9 @@ class RaftAuthTextLink extends StatelessWidget {
             child: RaftUnderlinedText(
               label,
               style: style.copyWith(color: color),
-              // v1.21.23: a permanent 1.5px underline 3px below the baseline.
-              underline:
-                  underlined || inline || state.hovered || state.focusVisible,
+              // raft-ui 0.95.3 TextLink (Web v1.24): no underline at rest,
+              // `decoration-[1.5px] underline-offset-[3px]` on hover / focus.
+              underline: inline || state.hovered || state.focusVisible,
               underlineOffset: underlined ? 3 : null,
               underlineThickness: underlined ? 1.5 : null,
             ),
@@ -1176,7 +1247,13 @@ class RaftAuthPage extends StatelessWidget {
     this.server,
     this.onServer,
     this.accountLink,
+    this.reservedProviders = 0,
   });
+
+  /// Web v1.24 SocialProviderSection `loading`: while the server's providers
+  /// are on their way, the space of this many buttons (and the "or") is kept
+  /// empty so the form does not move when they arrive. 0 reserves nothing.
+  final int reservedProviders;
 
   /// Login only: the page continues a pending "sign in and connect".
   final RaftAuthAccountLink? accountLink;
@@ -1223,6 +1300,17 @@ class RaftAuthPage extends StatelessWidget {
     // An account-link page without a usable password form is only the social
     // buttons and the way out (expired / conflict, or a provider-only account).
     final form = link == null || (!link.terminal && link.passwordSignIn);
+    // Web v1.24 forms: `stack-y-4 md:pointer-fine:stack-y-3`, 12px between
+    // the rows with a mouse on a window at least 768 wide. The frozen looks
+    // keep 16.
+    final gap =
+        RaftTokens.of(context).textLinksUnderlined &&
+            RaftInteraction.of(context).pointer &&
+            MediaQuery.sizeOf(context).width >= 768
+        ? 12.0
+        : 16.0;
+    final reserving =
+        providers.isEmpty && reservedProviders > 0 && social && link == null;
     return RaftAuthShell(
       server: server,
       onServer: onServer,
@@ -1258,6 +1346,19 @@ class RaftAuthPage extends StatelessWidget {
               padding: const EdgeInsets.only(bottom: 16),
               child: RaftAuthBanner(text: tr(notice!), info: true),
             ),
+          // Web v1.24 ResetPasswordPage: `<Banner intent="info"
+          // className="mb-4">` above the form.
+          if (mode == RaftAuthMode.reset)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: RaftAuthBanner(
+                key: const Key('reset-device-login-notice'),
+                text: tr(
+                  "Setting a new password signs you out everywhere. Computers and agent credentials set up through a device login (Raft Computer, the raft CLI) stop working too, so you'll need to log in on them again.",
+                ),
+                info: true,
+              ),
+            ),
           // <form className="space-y-4">
           if (emailField != null && form)
             RaftAuthField(
@@ -1274,8 +1375,7 @@ class RaftAuthPage extends StatelessWidget {
               child: tokenField!,
             ),
           if (passwordField != null && form) ...[
-            if (emailField != null || tokenField != null)
-              const SizedBox(height: 16),
+            if (emailField != null || tokenField != null) SizedBox(height: gap),
             RaftAuthField(
               label: tr(
                 mode == RaftAuthMode.reset ? 'New password' : 'Password',
@@ -1295,7 +1395,7 @@ class RaftAuthPage extends StatelessWidget {
             ),
           ],
           if (confirmField != null) ...[
-            const SizedBox(height: 16),
+            SizedBox(height: gap),
             RaftAuthField(
               label: tr('Confirm password'),
               surface: false,
@@ -1304,7 +1404,7 @@ class RaftAuthPage extends StatelessWidget {
             ),
           ],
           if (mode == RaftAuthMode.register) ...[
-            const SizedBox(height: 16),
+            SizedBox(height: gap),
             RaftAuthLegalCheckbox(
               checked: accepted,
               onChanged: busy ? null : onAccepted,
@@ -1313,7 +1413,7 @@ class RaftAuthPage extends StatelessWidget {
             ),
           ],
           if (form) ...[
-            const SizedBox(height: 16),
+            SizedBox(height: gap),
             RaftAuthSubmit(
               key: submitKey,
               label: link != null && !busy
@@ -1335,9 +1435,33 @@ class RaftAuthPage extends StatelessWidget {
           // directly under Continue (form `space-y-4`); it replaced the
           // v1.21 "agree to continue" hint.
           if (mode == RaftAuthMode.register) ...[
-            const SizedBox(height: 16),
+            SizedBox(height: gap),
             const RaftAuthUsageDataNotice(),
           ],
+          if (reserving)
+            // `<div aria-hidden inert className="invisible">`: the reserved
+            // space, not a control.
+            ExcludeSemantics(
+              key: const ValueKey('auth-social-reserved'),
+              child: Visibility.maintain(
+                visible: false,
+                child: IgnorePointer(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      RaftAuthOrDivider(label: tr('or')),
+                      for (var i = 0; i < reservedProviders; i++) ...[
+                        if (i > 0) const SizedBox(height: 8),
+                        const RaftAuthSocialButton(
+                          provider: 'google',
+                          label: '',
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+            ),
           if (providers.isNotEmpty && social && !(link?.terminal ?? false)) ...[
             RaftAuthOrDivider(label: tr('or')),
             Column(
@@ -1405,9 +1529,12 @@ class RaftAuthPage extends StatelessWidget {
             // theme-brutal:text-black/60"><TextLink variant="primary">Back to
             // sign in</TextLink></TextSans>`
             const SizedBox(height: 16),
+            // Web v1.24 Forgot/ResetPasswordPage: the default (muted)
+            // raft-ui TextLink; the frozen looks keep the v1.21 primary one.
             RaftAuthTextLink(
+              key: const Key('auth-back-to-sign-in'),
               label: tr('Back to Sign In'),
-              primary: true,
+              primary: !RaftTokens.of(context).textLinksUnderlined,
               sans: true,
               onTap: busy ? null : () => onMode(RaftAuthMode.login),
               centered: true,
@@ -1536,6 +1663,19 @@ class RaftAuthVerifyPage extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               Text(email, textAlign: TextAlign.center, style: mono14),
+              // Web v1.24: `mt-2 text-footnote text-foreground-muted`.
+              const SizedBox(height: 8),
+              Text(
+                tr("Can't find it? Check your spam folder."),
+                key: const Key('verify-check-spam'),
+                textAlign: TextAlign.center,
+                style: RaftTypography.heading(
+                  t,
+                  size: 13,
+                  line: 18,
+                  weight: FontWeight.w400,
+                ).copyWith(color: t.muted),
+              ),
             ],
           ),
           if (error != null)
@@ -1577,39 +1717,33 @@ class RaftAuthVerifyPage extends StatelessWidget {
             SizedBox(
               height: 24,
               child: Center(
+                // Web v1.24: raft-ui TextLink (`inline-flex items-center
+                // gap-1 text-footnote`); the link mark only while closed.
                 child: RaftInteractive(
                   key: const Key('verify-manual-toggle'),
                   onPressed: onToggleManual,
-                  semanticLabel: manualOpen
-                      ? tr('Hide manual entry')
-                      : tr('Enter code manually'),
+                  semanticLabel: manualOpen ? tr('Cancel') : tr('Paste link'),
                   builder: (context, state) {
                     final active = state.hovered || state.pressed;
-                    final color = active ? t.strong : t.muted;
-                    return RaftUnderlines(
-                      child: Text.rich(
-                        TextSpan(
-                          style: _linkStyle(t).copyWith(color: color),
-                          children: [
-                            WidgetSpan(
-                              alignment: PlaceholderAlignment.middle,
-                              child: Padding(
-                                padding: const EdgeInsets.only(right: 4),
-                                child: RaftIcon(
-                                  RaftGlyph.keyRound,
-                                  size: 12,
-                                  color: color,
-                                ),
-                              ),
-                            ),
-                            RaftUnderlineSpan(
-                              text: manualOpen
-                                  ? tr('Hide manual entry')
-                                  : tr('Enter code manually'),
-                            ),
-                          ],
+                    final color = active ? t.semantic.foreground : t.muted;
+                    return Row(
+                      mainAxisSize: MainAxisSize.min,
+                      spacing: 4,
+                      children: [
+                        if (!manualOpen)
+                          RaftIcon(RaftGlyph.link, size: 14, color: t.muted),
+                        RaftUnderlinedText(
+                          manualOpen ? tr('Cancel') : tr('Paste link'),
+                          style: _linkStyle(
+                            t,
+                            size: 13,
+                            underlined: true,
+                          ).copyWith(color: color),
+                          underline: state.hovered || state.focusVisible,
+                          underlineOffset: 3,
+                          underlineThickness: 1.5,
                         ),
-                      ),
+                      ],
                     );
                   },
                 ),
@@ -1618,6 +1752,7 @@ class RaftAuthVerifyPage extends StatelessWidget {
           ),
           if (manualOpen) ...[
             const SizedBox(height: 12),
+            // `mb-1.5 flex gap-2`.
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -1640,7 +1775,8 @@ class RaftAuthVerifyPage extends StatelessWidget {
             key: const Key('verify-logout'),
             label: tr('Log out'),
             glyph: RaftGlyph.logOut,
-            variant: RaftControlVariant.outline,
+            // Web v1.24: `variant="default"` (was ghost / outline).
+            variant: RaftControlVariant.surface,
             size: RaftButtonRecipeSize.lg,
             expand: true,
             onPressed: onLogOut,

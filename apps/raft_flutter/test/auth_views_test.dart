@@ -229,7 +229,9 @@ void main() {
     expect(underlined('Create one'), isFalse);
   }, skip: raftLookSkip(raftLookElegant));
 
-  testWidgets('current Raft auth links stay underlined at rest and on hover', (
+  // raft-ui 0.95.3 TextLink (Web v1.24): no underline at rest, the link under
+  // the pointer underlines.
+  testWidgets('current Raft auth links underline only under the pointer', (
     tester,
   ) async {
     await tester.pumpWidget(authApp());
@@ -238,8 +240,8 @@ void main() {
           find.widgetWithText(RaftUnderlinedText, label),
         )
         .underline;
-    expect(underlined('Forgot password?'), isTrue);
-    expect(underlined('Create one'), isTrue);
+    expect(underlined('Forgot password?'), isFalse);
+    expect(underlined('Create one'), isFalse);
     final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
     await mouse.addPointer(location: Offset.zero);
     addTearDown(mouse.removePointer);
@@ -248,7 +250,7 @@ void main() {
     );
     await tester.pump();
     expect(underlined('Forgot password?'), isTrue);
-    expect(underlined('Create one'), isTrue);
+    expect(underlined('Create one'), isFalse);
   });
 
   testWidgets('login prompt follows the zh Web wording without a gap', (
@@ -444,6 +446,7 @@ void main() {
       find.byKey(const Key('reset-confirm')),
       'different11',
     );
+    await tester.ensureVisible(find.byKey(const Key('login-submit')));
     await tester.tap(find.byKey(const Key('login-submit')));
     await tester.pumpAndSettle();
     expect(find.text('Passwords do not match'), findsOneWidget);
@@ -482,7 +485,13 @@ void main() {
     await tester.tap(find.byKey(const Key('verify-manual-toggle')));
     await tester.pump();
     expect(find.byKey(const Key('verification-token')), findsOneWidget);
-    expect(find.textContaining('Hide manual entry'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('verify-manual-toggle')),
+        matching: find.text('Cancel'),
+      ),
+      findsOneWidget,
+    );
     await tester.tap(find.byKey(const Key('verify-resend')));
     await tester.pump(const Duration(milliseconds: 300));
     expect(requests, contains('POST /auth/resend-verification'));

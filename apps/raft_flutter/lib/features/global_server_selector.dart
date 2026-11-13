@@ -224,7 +224,9 @@ class _GlobalServerSelectorState extends State<GlobalServerSelector> {
                     children: [
                       Expanded(
                         child: RaftAuthWideButton(
-                          variant: RaftControlVariant.outline,
+                          key: const ValueKey('global-server-create-cancel'),
+                          // Web v1.24 ServerSelector: `variant="default"`.
+                          variant: RaftControlVariant.surface,
                           onPressed: widget.loading
                               ? null
                               : () => setState(() {
