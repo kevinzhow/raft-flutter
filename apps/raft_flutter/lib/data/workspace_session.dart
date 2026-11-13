@@ -16,6 +16,7 @@ import 'workspace_session_bindings.dart';
 import 'workspace_session_context.dart';
 import 'workspace_server_directory.dart';
 import 'workspace_session_features.dart';
+import 'heartbeat_gate.dart';
 
 /// Receiver-local session, directory, connection and feature-flag policy.
 /// The composition root supplies separate typed ports; it is never retained as
@@ -95,7 +96,6 @@ class WorkspaceSession
   // ignore: raft_lints/avoid_unreleased_resource -- The composition root disposes this notifier at the original ordered disposal stage.
   final resumes = ValueNotifier<int>(0);
   late final StreamSubscription<RaftEvent> subscription;
-  bool _roomsJoinedPending = false;
   DateTime? _lastHeartbeat, _lastServerEvent;
   (int, BigInt)? _gapSyncedThrough;
   final _burstAt = BurstReads();
@@ -285,7 +285,7 @@ class WorkspaceSession
   void resetServerSelectionState() {
     directory.resetRowAuthority();
     // The new server's socket connects for the first time.
-    _roomsJoinedPending = false;
+    _heartbeats.rooms = RoomsJoin.joined;
     _gapSyncedThrough = null;
     messages.resetNewer();
   }
@@ -307,7 +307,7 @@ class WorkspaceSession
 
   void roomsJoined() {
     SourceActivityUnreadStore.activateForRooms(entities);
-    _roomsJoinedPending = false;
+    _heartbeats.rooms = RoomsJoin.joined;
     unawaited(messages.resumeHistory());
     // A reconnect and a resume can both ask within a second; the tail read a
     // moment ago already covers them.
@@ -325,20 +325,10 @@ class WorkspaceSession
 
   void heartbeat(dynamic payload) {
     _lastHeartbeat = DateTime.now();
-    // A lost `rooms:joined`: the connection's first heartbeat stands in.
-    if (_roomsJoinedPending) {
-      roomsJoined();
-      return;
-    }
-    final seq = payload is Map ? BigInt.tryParse('${payload['seq']}') : null;
-    final synced = _gapSyncedThrough;
-    if (seq == null ||
-        seq <= ledger.watermark ||
-        synced != null && synced.$1 == ledger.generation && seq <= synced.$2) {
-      return;
-    }
-    unawaited(messages.syncVisibleScopes(through: seq));
+    _heartbeats.heartbeat(this, payload);
   }
+
+  HeartbeatGate get _heartbeats => HeartbeatGate.of(this);
 
   void resumeLiveSession() {
     if (context.disposed || !ownsClient || client.serverId == null) return;
@@ -414,7 +404,7 @@ class WorkspaceSession
       // Source socketBridge reconnectSnapshot: server-level reads only. The
       // channel list, unread counts and the resume/gap sync wait for
       // `rooms:joined`, once the server has joined this socket's rooms.
-      _roomsJoinedPending = true;
+      _heartbeats.rooms = RoomsJoin.pending;
       _lastHeartbeat = _lastServerEvent;
       // A socket that flaps (a bad network reconnects every few seconds) must
       // not repeat the whole refresh burst each time: what was read less than
@@ -428,8 +418,9 @@ class WorkspaceSession
       // The shared entity directory owns reconnect revalidation for every surface.
     }
     if (event.name == 'rooms:joined') roomsJoined();
+    if (event.name == 'rooms:join_failed') _heartbeats.failed();
     if (event.name == 'heartbeat') {
-      final joining = _roomsJoinedPending;
+      final joining = _heartbeats.joining;
       heartbeat(event.payload);
       // A heartbeat only records liveness; a missed-push gap sync notifies
       // when its rows arrive.
