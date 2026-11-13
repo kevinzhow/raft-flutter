@@ -227,6 +227,7 @@ const dialogSurfaces = <CloseSurface>[
       'lib/features/management_support.dart',
       'lib/features/mcp_server_editor.dart',
       'lib/features/resource_view.dart',
+      'lib/features/second_factor_step_up.dart',
       'lib/features/server_views.dart',
       '../../packages/raft_ui/lib/src/form_dialog.dart',
       '../../packages/raft_ui/lib/src/form_presentation.dart',

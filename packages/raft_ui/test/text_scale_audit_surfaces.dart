@@ -76,6 +76,7 @@ import 'package:raft_ui/settings_catalog_previews.dart';
 import 'package:raft_ui/settings_control_previews.dart';
 import 'package:raft_ui/surface_progress_previews.dart';
 import 'package:raft_ui/switch_previews.dart';
+import 'package:raft_ui/auth_second_factor_previews.dart';
 import 'package:raft_ui/task_section_previews.dart';
 import 'package:raft_ui/task_surface_previews.dart';
 import 'package:raft_ui/text_selection_toolbar_previews.dart';
@@ -1090,6 +1091,24 @@ final auditSurfaces = <AuditSurface>[
     'Product surfaces and progress',
     surfaceProgressPreview,
     Size(380, 320),
+  ),
+  AuditSurface(
+    'authSecondFactorPreview',
+    'Page Sign-in two-step verification',
+    authSecondFactorPreview,
+    Size(390, 844),
+  ),
+  AuditSurface(
+    'authSecondFactorWrongCodePreview',
+    'Page Sign-in two-step verification wrong code',
+    authSecondFactorWrongCodePreview,
+    Size(390, 844),
+  ),
+  AuditSurface(
+    'authSecondFactorExpiredPreview',
+    'Page Sign-in two-step verification expired',
+    authSecondFactorExpiredPreview,
+    Size(390, 844),
   ),
   AuditSurface(
     'sourceSwitchesPreview',

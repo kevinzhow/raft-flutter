@@ -9,6 +9,7 @@ import '../platform/oauth_broker.dart';
 import 'management_support.dart';
 import 'account_password_editor.dart';
 import 'account_sign_in_recipe.dart';
+import 'second_factor_step_up.dart';
 
 class AccountConnectionsView extends StatefulWidget {
   const AccountConnectionsView({
@@ -104,7 +105,12 @@ class _AccountConnectionsState extends ManagementState<AccountConnectionsView> {
     broker = active;
     await run(() async {
       try {
-        final handoff = await active.begin(w.client, provider, mode: 'link');
+        final handoff = await withSecondFactorStepUp(
+          context,
+          w.client,
+          () => active.begin(w.client, provider, mode: 'link'),
+          reason: StepUpReason.signInMethod,
+        );
         if (!accepts(generation) || scope != authority) return;
         await w.client.post(
           '/auth/mobile/oauth/$provider/link/complete',
@@ -158,9 +164,18 @@ class _AccountConnectionsState extends ManagementState<AccountConnectionsView> {
       'Disconnect Account',
       'You can still sign in with your remaining account methods.',
       () async {
-        await w.client.delete(
-          '/auth/identities/${Uri.encodeComponent(provider)}',
-        );
+        try {
+          await withSecondFactorStepUp(
+            context,
+            w.client,
+            () => w.client.delete(
+              '/auth/identities/${Uri.encodeComponent(provider)}',
+            ),
+            reason: StepUpReason.signInMethod,
+          );
+        } on SecondFactorStepUpCancelled {
+          // Closed "Verify it's you": nothing changed, the list reloads.
+        }
       },
       submit: 'Disconnect Account',
       cancel: 'Cancel',

@@ -92,6 +92,16 @@ class Session {
     refreshAttemptId: attempt,
     cachedUser: cachedUser,
   );
+
+  /// A sign-in answer's session, or null when it carries no tokens (a
+  /// two-step verification challenge, or a shape this client cannot read).
+  static Session? tryFromJson(Map json) {
+    final access = json['accessToken'], refresh = json['refreshToken'];
+    if (access is! String || access.isEmpty) return null;
+    if (refresh is! String || refresh.isEmpty) return null;
+    return Session.fromJson(Map<String, dynamic>.from(json));
+  }
+
   factory Session.fromJson(Map<String, dynamic> json) => Session(
     accessToken: json['accessToken'] as String,
     refreshToken: json['refreshToken'] as String,

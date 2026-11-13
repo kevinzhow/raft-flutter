@@ -232,7 +232,7 @@
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/message_action_card.dart",
-     "needle": "await apply('execute'"
+     "needle": "() => apply('execute'"
     },
     {
      "file": "apps/raft_flutter/lib/features/message_action_card.dart",

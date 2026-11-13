@@ -12,6 +12,7 @@ import 'legal_acceptance.dart';
 import 'models.dart';
 import 'rate_limit_governor.dart';
 import 'request_meter.dart';
+import 'second_factor.dart';
 import 'server_rate_limits.dart';
 import 'proxy/transport_stub.dart'
     if (dart.library.io) 'proxy/transport_io.dart';
@@ -134,6 +135,10 @@ Map<String, dynamic> _errorDetails(Map? body) {
     // OAuth refusals (`invalid_scope`): the server's own sentence, which Web's
     // Login with Raft page shows instead of the short error code.
     'error_description',
+    // Two-step verification refusals: when a lock ends (`lockedUntil`) and
+    // which factors can answer a step-up (`methods`). No secrets.
+    'lockedUntil',
+    'methods',
   };
   dynamic freeze(dynamic value) {
     if (value is Map) {
@@ -164,8 +169,16 @@ Map<String, dynamic> _errorDetails(Map? body) {
       'expiresAt',
       'providerMessage',
       'error_description',
+      'lockedUntil',
     }.contains(key)) {
       return value is String ? value : null;
+    }
+    if (key == 'methods') {
+      return [
+        if (value is List)
+          for (final method in value)
+            if (method is String) method,
+      ];
     }
     if (key == 'signInMethods') {
       return {
@@ -796,9 +809,76 @@ class RaftClient {
         'The authentication attempt is no longer active.',
       );
     }
+    final challenge = SecondFactorChallenge.read(result);
+    if (challenge != null) {
+      throw SecondFactorRequired(challenge, email: email, link: link);
+    }
+    await _adoptSignIn(result, link);
+  }
+
+  /// The second step of a sign-in that answered [SecondFactorRequired]: an
+  /// authenticator [code] or a [backupCode]. Answers like the first step would
+  /// have without two-step verification, so the session is adopted the same
+  /// way (Web `verifySecondFactorSignIn`).
+  Future<void> verifySecondFactor(
+    SecondFactorRequired pending, {
+    String? code,
+    String? backupCode,
+  }) async {
+    if ((code == null) == (backupCode == null)) {
+      throw ArgumentError('Answer with exactly one of code or backupCode.');
+    }
+    final authGeneration = ++_authenticationGeneration;
+    final result = await request(
+      'POST',
+      '/auth/second-factor/verify',
+      data: {
+        'challenge': pending.challenge.challenge,
+        if (code != null) 'code': code,
+        if (backupCode != null) 'backupCode': backupCode,
+        if (pending.codeVerifier != null) 'codeVerifier': pending.codeVerifier,
+      },
+      authorized: false,
+    );
+    if (_closed || authGeneration != _authenticationGeneration) {
+      throw const RaftApiException(
+        'The authentication attempt is no longer active.',
+      );
+    }
+    await _adoptSignIn(result, pending.link);
+  }
+
+  /// Marks this sign-in as having passed the second step for the next ten
+  /// minutes, so a write refused with 403 `second_factor_step_up_required`
+  /// can be sent again (Web `stepUpThisSignIn`).
+  Future<void> stepUpSecondFactor({String? code, String? backupCode}) async {
+    if ((code == null) == (backupCode == null)) {
+      throw ArgumentError('Answer with exactly one of code or backupCode.');
+    }
+    await request(
+      'POST',
+      '/auth/second-factor/step-up',
+      data: {
+        if (code != null) 'code': code,
+        if (backupCode != null) 'backupCode': backupCode,
+      },
+    );
+  }
+
+  /// A sign-in answer with tokens becomes this client's session. An answer
+  /// without them (a shape this client cannot read) fails the sign-in with a
+  /// typed error instead of a cast error.
+  Future<void> _adoptSignIn(
+    dynamic result,
+    AccountLinkContinuation? link,
+  ) async {
     final unconfirmed = accountLinkNotCompleted(result, link);
     if (unconfirmed != null) throw unconfirmed;
-    _session = Session.fromJson(Map<String, dynamic>.from(result));
+    final session = result is Map ? Session.tryFromJson(result) : null;
+    if (session == null || result['user'] is! Map) {
+      throw const RaftApiException('Sign-in failed');
+    }
+    _session = session;
     user = RaftRecord(Map<String, dynamic>.from(result['user']));
     _generation++;
     await _persist(_session);
@@ -867,13 +947,15 @@ class RaftClient {
       throw const RaftApiException(
         'The authentication attempt is no longer active.',
       );
-    final unconfirmed = accountLinkNotCompleted(result, link);
-    if (unconfirmed != null) throw unconfirmed;
-    _session = Session.fromJson(Map<String, dynamic>.from(result));
-    user = RaftRecord(Map<String, dynamic>.from(result['user']));
-    _generation++;
-    await _persist(_session);
-    _reportTimezone();
+    final challenge = SecondFactorChallenge.read(result);
+    if (challenge != null) {
+      throw SecondFactorRequired(
+        challenge,
+        codeVerifier: codeVerifier,
+        link: link,
+      );
+    }
+    await _adoptSignIn(result, link);
   }
 
   /// Signs out on the user's behalf and revokes the refresh token on the
