@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_sync/raft_sync.dart';
 
+import 'mark_unread_outcome.dart';
+import 'marked_unread_flags.dart';
 import 'read_write_queue.dart';
 import 'resource_row_reconcile.dart';
 import 'source_read_all_transport.dart';
@@ -83,6 +85,8 @@ class ConversationReadRepository {
         !captured.current(client)) {
       return;
     }
+    // Source markRead: the read-all going out reads the mark.
+    if (marks.clearForRead(id)) _changed();
     final receipt = await SourceReadAllTransport.of(client)
         .readAll(id, identity: captured);
     if (_isDisposed() ||
@@ -153,6 +157,13 @@ class ConversationReadRepository {
         ? canonicalWireSeq(answer['maxReadSeq'])
         : null;
     if (count is! num || count < 0) return false;
+    // Source markUnread: nothing countable marks the conversation unread with
+    // no count, through the same version order as its socket event, so an
+    // answer later than a newer read never brings the mark back.
+    final outcome = resolveMarkUnreadOutcome(answer);
+    if (outcome == MarkUnreadOutcome.marked && version is int && version > 0) {
+      marks.accept(id, version, true);
+    }
     var projected = false;
     if (version is int && version > 0 && maxRead != null) {
       final accepted = _readState().state(
@@ -186,7 +197,7 @@ class ConversationReadRepository {
     } else {
       queue.dropReceipt(id);
     }
-    if (id == _channelId() && count > 0) {
+    if (id == _channelId() && outcome != MarkUnreadOutcome.nothing) {
       queue.rememberManualUnread(id);
     } else {
       queue.forgetManualUnread(id);
@@ -214,6 +225,8 @@ class ConversationReadRepository {
     final accepted = _readState().state(serverId, principal, id);
     final held = queue.receipt(id);
     final frontier = row['readState'];
+    // A served inbox row's union carries the marked-unread flag too.
+    marks.acceptFrontier(id, frontier);
     final servedVersion = frontier is Map ? frontier['readStateVersion'] : null;
     var projected = row;
     if (held != null &&
@@ -290,6 +303,14 @@ class ConversationReadRepository {
   /// Read-write bookkeeping of this receiver (Web messageStore module state).
   final queue = ReadWriteQueue();
 
+  /// Conversations marked unread with no count (Web markedUnreadStore).
+  final marks = MarkedUnreadFlags();
+
+  /// Folds a live `read_state:updated` fact's mark; repaints on a change.
+  void acceptMark(String scopeId, int version, bool markedUnread) {
+    if (marks.accept(scopeId, version, markedUnread)) _changed();
+  }
+
   final localReadState = ReadStateLedger();
   Map<String, int> unread = {};
   Set<String> mentions = {}, newFlags = {};
@@ -309,6 +330,7 @@ class ConversationReadRepository {
     newFlags = {};
     latestActivity.clear();
     queue.reset();
+    marks.reset();
   }
 
   void persistReadState() {
@@ -434,6 +456,7 @@ class ConversationReadRepository {
           }
           if (entry is! Map) continue;
           final frontier = entry['readState'];
+          marks.acceptFrontier(id, frontier);
           final outcome = _readState().consumeSnapshot(
             frontier,
             serverId: serverId,
@@ -564,6 +587,8 @@ class ConversationReadRepository {
         client.user?.id == read.principal &&
         client.serverId == read.serverId;
     if (!same() || _revokedChannels().contains(id)) return true;
+    // Source flushPendingRead: the read write going out reads the mark.
+    if (marks.clearForRead(id)) _changed();
     final dynamic receipt;
     try {
       receipt = await client.post(
@@ -682,6 +707,7 @@ class ConversationReadRepository {
       ..dropReceipt(scopeId)
       ..forgetPending(scopeId)
       ..forgetManualUnread(scopeId);
+    marks.clearForRead(scopeId);
     final seq = canonicalWireSeq(receipt['seq']);
     if (seq != null) queue.rememberSuppression(scopeId, seq);
     if ((unread[scopeId] ?? 0) != 0) unread = {...unread, scopeId: 0};

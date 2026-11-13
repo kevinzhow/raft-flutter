@@ -829,6 +829,7 @@ class RaftNavItem extends StatelessWidget {
     this.hasDraft = false,
     this.mention = false,
     this.quietNew = false,
+    this.markedUnread = false,
     this.threadUnread = 0,
     this.threadUnreadLabel = '',
     this.providerBadge,
@@ -881,6 +882,12 @@ class RaftNavItem extends StatelessWidget {
   /// Unread summary `hasNew` of a non-joined channel: past the cursor, no
   /// exact count. Lights only a quiet dot (Sidebar.tsx `showQuietNewDot`).
   final bool quietNew;
+
+  /// Marked unread with nothing countable (Web markedUnreadStore): unread
+  /// with no number, so the quiet dot instead of a count, and the unread
+  /// title of a joined, unmuted channel or an unmuted DM
+  /// (channelUnreadIndicator.ts `showMarkedUnreadDot`, `unreadTone`).
+  final bool markedUnread;
 
   /// Followed threads under this channel with new replies
   /// (`thread_unread_badge_v0`): a separate segment of the same badge, so a
@@ -938,6 +945,10 @@ class RaftNavItem extends StatelessWidget {
   bool get _threadSegment => threadUnread > 0 && _channel && joined;
   bool get _loudUnread =>
       (unread > 0 || _threadSegment) && (!_channel || joined && !_mutedIcon);
+  bool get _markedDot =>
+      markedUnread && unread <= 0 && !_threadSegment && !_quietNew;
+  bool get _markedTone =>
+      _markedDot && (_channel ? joined && !_mutedIcon : !activityMuted);
   bool get _dimmed => _channel && !selected && !joined;
   Color? _titleColor(BuildContext context, RaftTokens t) => _dimmed
       ? t.colors['foreground-placeholder']
@@ -1030,7 +1041,10 @@ class RaftNavItem extends StatelessWidget {
             t,
             size: 14,
             line: 17.5,
-            weight: _loudUnread || (description != null && unread > 0)
+            weight:
+                _loudUnread ||
+                    _markedTone ||
+                    (description != null && unread > 0)
                 ? FontWeight.w700
                 : FontWeight.w500,
           ).copyWith(
@@ -1065,7 +1079,7 @@ class RaftNavItem extends StatelessWidget {
         ? _title(
             t,
             (conversation?.titleStyle(
-                      loudUnread: _loudUnread,
+                      loudUnread: _loudUnread || _markedTone,
                       selected: selected,
                       viewportWidth: MediaQuery.sizeOf(context).width,
                     ) ??
@@ -1250,6 +1264,7 @@ class RaftNavItem extends StatelessWidget {
                     unread > 0 ||
                     _threadSegment ||
                     _quietNew ||
+                    _markedDot ||
                     hasDraft ||
                     metadata?.isNotEmpty == true))
               SizedBox(width: t.size('space.sidebarItemGap', fallback: 6)),
@@ -1362,6 +1377,13 @@ class RaftNavItem extends StatelessWidget {
               RaftSidebarUnreadCount(count: unread)
             else if (_quietNew)
               RaftSidebarQuietNewDot(label: raftText(context, 'New messages'))
+            else if (_markedDot)
+              KeyedSubtree(
+                key: const ValueKey('sidebar-marked-unread-dot'),
+                child: RaftSidebarQuietNewDot(
+                  label: raftText(context, 'Marked as unread'),
+                ),
+              )
             else if (hasDraft && conversationKind != null)
               wrap && !_channel
                   ? const SizedBox(
@@ -1384,6 +1406,7 @@ class RaftNavItem extends StatelessWidget {
       if (_threadSegment) '$threadUnread $threadUnreadLabel',
       if (_mutedIcon) raftText(context, 'Activity muted'),
       if (_quietNew) raftText(context, 'New messages'),
+      if (_markedDot) raftText(context, 'Marked as unread'),
       if (_channel && !joined) raftText(context, 'Not joined'),
       if (hasDraft &&
           unread <= 0 &&

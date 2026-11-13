@@ -12,10 +12,12 @@ Widget buildActivityContextMenu(
   Map<String, dynamic> row, {
   required VoidCallback onDismiss,
   required ValueChanged<ActivityContextAction> onAction,
+  bool? unread,
 }) {
   final thread = row['kind'] == 'thread';
   final following = row['isFollowing'] != false;
-  final unread = (row['unreadCount'] as num? ?? 0) > 0;
+  // InboxContextMenu `showsUnread`: a count, or the marked-unread flag.
+  unread ??= (row['unreadCount'] as num? ?? 0) > 0;
   return RaftSidebarContextMenu(
     width: 184,
     onDismiss: onDismiss,

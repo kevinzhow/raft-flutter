@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 
+import '../data/marked_unread_sync.dart';
 import '../data/thread_unread_by_parent.dart';
 import '../data/workspace_controller.dart';
 import 'activity_rollout_flags.dart';
@@ -16,6 +17,8 @@ class SidebarThreadUnread extends ChangeNotifier {
     flags.addListener(_changed);
     w.followedThreads.addListener(_threadsChanged);
     w.services.disposeWithSession(dispose);
+    // The sidebar paints the marked-unread dot from the same presentation.
+    MarkedUnreadSync.of(w);
     _ensureThreads();
     _byParent = groupThreadUnreadByParent(w.followedThreads.threads);
   }
