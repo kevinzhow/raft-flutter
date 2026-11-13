@@ -3,6 +3,13 @@
   "repository": "https://github.com/botiverse/raft-source",
   "pinned": "v1.21.23-source.1",
   "commit": "db5e399f017d584e49597e3a28757645d6807893",
+  "pending": {
+    "tag": "v1.24.0-source.1",
+    "commit": "1d689caf34442247cab70580d7feac1b8c302d60",
+    "from": "v1.21.23-source.1",
+    "since": "2026-11-13",
+    "note": "Kevin: full alignment with Web v1.24.0. The w24 work packages are in progress on cindy/integration; the pin moves with record-decision after they land."
+  },
   "history": [
     {
       "tag": "v1.21.2-source.1",
