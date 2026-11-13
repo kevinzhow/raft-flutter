@@ -1549,9 +1549,12 @@ class _MermaidToolbar extends StatelessWidget {
               glyph: icon,
               tooltip: ownTooltip ? tooltip : null,
               onPressed: action,
-              visualSize: RaftMetrics.buttonSm,
-              minimumTargetSize: toolbarRecipe.targetSize(RaftMetrics.buttonSm),
-              glyphSize: RaftMetrics.iconSm,
+              // Web 1.24 MermaidToolbar: `size="icon-md"` (was icon-sm).
+              visualSize: RaftMermaidToolbarRecipe.iconButton,
+              minimumTargetSize: toolbarRecipe.targetSize(
+                RaftMermaidToolbarRecipe.iconButton,
+              ),
+              glyphSize: RaftMetrics.iconMd,
               variant: RaftControlVariant.outline,
             );
           }
