@@ -445,17 +445,12 @@
    "area": "messages",
    "capability": "Create a public share link + image for selected messages (Share to X, shareable artifact)",
    "background": false,
-   "status": "covered",
+   "status": "na",
    "webEntry": "Select mode > More > Generate image -> SelectShareLightbox 'Share to X' button (uploads PNG, opens twitter intent with the artifact URL)",
    "gate": "not for guests (Select Message hidden for guests; server role check authoritative)",
-   "flutterEntry": "message_image_export.dart MessageImageReview 'Share to X' -> message_share_artifact.dart createMessageSelectionShareArtifact (multipart channelId + image), then the X intent in the system browser",
-   "flutterRefs": [
-    {
-     "file": "apps/raft_flutter/lib/features/message_share_artifact.dart",
-     "needle": "/share-artifacts/message-selection"
-    }
-   ],
-   "justification": "Same as Web: the button lives in the share preview only (Web's select toolbar does not call it either). The upload runs from the reviewed PNG; the preview closes and the selection ends on success.",
+   "flutterEntry": "",
+   "flutterRefs": [],
+   "justification": "Removed in server v1.24.0 (route gone; Web 1.24 dropped the feature); removed from Flutter in the v1.24 compatibility patch.",
    "impact": "",
    "size": ""
   },

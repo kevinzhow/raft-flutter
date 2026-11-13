@@ -11,7 +11,6 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../data/user_error.dart';
 import '../data/workspace_controller.dart';
@@ -21,7 +20,6 @@ import '../platform/native_sharing.dart';
 import 'attachment_view.dart';
 import 'message_presentation.dart';
 import 'message_selection.dart';
-import 'message_share_artifact.dart';
 import 'private_route_guard.dart';
 import 'screenshot_budget.dart';
 
@@ -49,7 +47,6 @@ Future<bool?> previewMessageImage(
   AttachmentFiles? files,
   NativeSharing? sharing,
   ImageClipboard? clipboard,
-  Future<bool> Function(Uri)? openExternal,
   String Function(DateTime)? clock,
   bool Function()? authorized,
   Listenable? authorityChanges,
@@ -313,10 +310,6 @@ Future<bool?> previewMessageImage(
         files: files,
         sharing: sharing,
         clipboard: clipboard,
-        openExternal: openExternal,
-        shareChannelId: thread
-            ? w.threadChannelId ?? w.channel?.id
-            : w.channel?.id,
       ),
     );
   } on TimeoutException {
@@ -343,8 +336,6 @@ class MessageImageReview extends StatefulWidget {
     this.files,
     this.sharing,
     this.clipboard,
-    this.openExternal,
-    this.shareChannelId,
   });
   final WorkspaceController controller;
   final Uint8List bytes;
@@ -354,11 +345,6 @@ class MessageImageReview extends StatefulWidget {
   final AttachmentFiles? files;
   final NativeSharing? sharing;
   final ImageClipboard? clipboard;
-  final Future<bool> Function(Uri)? openExternal;
-
-  /// The conversation the share page is created for (Web: the selection's
-  /// channel); without one "Share to X" is not offered.
-  final String? shareChannelId;
   @override
   State<MessageImageReview> createState() => _MessageImageReviewState();
 }
@@ -368,7 +354,7 @@ class _MessageImageReviewState extends State<MessageImageReview> {
   late final sharing = widget.sharing ?? NativeSharing();
   late final clipboard = widget.clipboard ?? const ImageClipboard();
   SharedFileLease? lease;
-  bool busy = false, copying = false, copied = false, sharingLink = false;
+  bool busy = false, copying = false, copied = false;
   // ignore: raft_lints/avoid_imperative_notice_state -- Export dialog error: cleared when the next save/share starts; the dialog closes on authority loss.
   String? error;
   bool get current => mounted && widget.authorized();
@@ -489,54 +475,6 @@ class _MessageImageReviewState extends State<MessageImageReview> {
     }
   }
 
-  /// Web `createShareArtifactAndNavigateToX`: upload the reviewed PNG as a
-  /// share artifact, open the X intent for its page, and leave the review
-  /// (the selection ends, like Save).
-  Future<void> shareToX() async {
-    final channelId = widget.shareChannelId;
-    if (busy || !current || channelId == null) return;
-    setState(() {
-      busy = sharingLink = true;
-      error = null;
-    });
-    try {
-      final artifact = await createMessageSelectionShareArtifact(
-        widget.controller,
-        png: widget.bytes,
-        channelId: channelId,
-      );
-      if (!mounted || !current) return;
-      final intent = shareArtifactXIntentUrl(
-        artifact.url,
-        raftText(context, 'via Raft'),
-      );
-      await (widget.openExternal?.call(intent) ??
-          launchUrl(intent, mode: LaunchMode.externalApplication));
-      if (mounted && current && ModalRoute.of(context)?.isCurrent == true) {
-        Navigator.pop(context, true);
-      }
-    } catch (e) {
-      if (mounted && current) {
-        setState(
-          () => error = raftText(
-            context,
-            userErrorText(
-              e,
-              fallback: 'Share failed',
-              where: 'share message image',
-            ),
-          ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          busy = sharingLink = false;
-        });
-      }
-    }
-  }
-
   void close() {
     if (!busy) Navigator.pop(context, false);
   }
@@ -585,12 +523,8 @@ class _MessageImageReviewState extends State<MessageImageReview> {
                       onSave: () => act(false),
                       onShare: sharing.supported ? () => act(true) : null,
                       onCopy: clipboard.supported ? copyImage : null,
-                      onShareLink: widget.shareChannelId == null
-                          ? null
-                          : shareToX,
                       copying: copying,
                       copied: copied,
-                      sharingLink: sharingLink,
                       busy: busy,
                       error: error,
                     ),
