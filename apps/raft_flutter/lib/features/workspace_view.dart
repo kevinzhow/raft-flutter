@@ -13,6 +13,7 @@ import 'package:raft_ui/raft_ui.dart';
 
 import 'announcement_host.dart';
 import 'workspace_host_scope.dart';
+import 'stale_counts_notice.dart';
 import 'workspace_browser_header.dart';
 import 'notification_activation_workspace.dart';
 import '../data/user_error.dart';
@@ -3657,6 +3658,7 @@ class _WorkspaceViewState extends State<WorkspaceView>
                 label: tr('Chat'),
                 trailing: workingSummary(),
               ),
+            StaleCountsNotice.sidebar(w),
             if (!mobileHome) const SidebarConversationFinderBox(),
             Expanded(
               child: GestureDetector(
