@@ -1,6 +1,6 @@
 // GENERATED — do not edit. Regenerate with `tool/recipes/run`.
-// Source: raft-ui 0.7.0 dist/index.mjs (sha256 83bf0bff35092e3d),
-// tailwindcss 4.2.2 with raft-ui styles.css + Web @theme overrides. Recipe `toggleGroup`.
+// Source: raft-ui 0.95.3 dist/index.mjs (sha256 63bb2df77b8bd7a2),
+// tailwindcss 4.3.3 with raft-ui styles.css + Web @theme overrides. Recipe `toggleGroup`.
 // ignore_for_file: type=lint
 
 import 'recipe_runtime.dart';
@@ -30,7 +30,7 @@ class RaftToggleGroupRecipeStyle {
   };
 }
 
-/// raft-ui recipe `toggleGroup` (`src/components/toggle-group/toggle-group.tsx`, index.mjs:6218).
+/// raft-ui recipe `toggleGroup` (`dist/components/toggle-group/toggle-group.mjs`, index.mjs:10716).
 ///
 /// Used by: ToggleGroup, ToggleGroupItem, ToggleGroupLabel.
 ///
@@ -81,51 +81,53 @@ abstract final class RaftToggleGroupRecipe {
 
   /// Distinct class lists (indices into [raftRecipeUtilities]).
   static const List<List<int>> _lists = [
-    [1305, 1424, 1319, 712, 713, 721, 722, 1020, 1702, 581, 1600],
+    [1847, 1980, 1864, 1048, 1049, 1055, 1056, 1472, 2455, 895, 2268],
     [
-      1305,
-      1188,
-      1484,
-      1740,
-      1319,
-      1324,
-      1022,
-      1933,
-      1574,
-      1578,
-      1580,
-      1881,
+      1847,
+      1661,
+      2042,
+      2116,
+      2499,
+      1864,
+      1869,
+      1465,
+      2729,
+      2244,
+      2248,
+      2250,
+      2662,
+      1365,
+      1360,
+      1181,
+      472,
+      474,
+      2463,
       941,
-      935,
-      831,
-      275,
-      277,
-      1710,
-      622,
-      641,
-      615,
-      1660,
-      1016,
-      1813,
-      1017,
-      1827,
-      265,
-      1272,
-      891,
-      890,
-      892,
-      897,
-      895,
-      896,
-      893,
-      894,
-      888,
-      996,
-      833,
-      836,
-      832,
+      963,
+      933,
+      2403,
+      1456,
+      2587,
+      1457,
+      2603,
+      460,
+      1785,
+      697,
+      1289,
+      1288,
+      1290,
+      1294,
+      1292,
+      1293,
+      1291,
+      1285,
+      1286,
+      1439,
+      1184,
+      1187,
+      1183,
     ],
-    [1897],
+    [2681],
   ];
 
   /// Per combination (mixed radix over [axes]): class list per slot.

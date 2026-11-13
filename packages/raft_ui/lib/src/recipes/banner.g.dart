@@ -13,6 +13,8 @@ export 'package:raft_theme/recipes/legacy/banner.g.dart' hide RaftBannerRecipe;
 
 /// Router for recipe `RaftBannerRecipe`: the frozen 0.5.52 class for the Elegant and Brutal
 /// looks, the current raft-ui class for the Raft look.
+///
+/// Raft set differences: Raft-only slots: close.
 abstract final class RaftBannerRecipe {
   static const String recipeName = legacy.RaftBannerRecipe.recipeName;
   static const List<String> slotNames = legacy.RaftBannerRecipe.slotNames;

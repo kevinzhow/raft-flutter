@@ -1,69 +1,63 @@
 // GENERATED — do not edit. Regenerate with `tool/recipes/run`.
-// Source: raft-ui 0.7.0 dist/index.mjs (sha256 83bf0bff35092e3d),
-// tailwindcss 4.2.2 with raft-ui styles.css + Web @theme overrides. Recipe `liveAgentActivityBar`.
+// Source: raft-ui 0.95.3 dist/index.mjs (sha256 63bb2df77b8bd7a2),
+// tailwindcss 4.3.3 with raft-ui styles.css + Web @theme overrides. Recipe `materialProgress`.
 // ignore_for_file: type=lint
 
 import 'recipe_runtime.dart';
 import 'recipe_utilities.g.dart';
 
-/// Resolved slots of [RaftLiveAgentActivityBarRecipe].
-class RaftLiveAgentActivityBarRecipeStyle {
-  const RaftLiveAgentActivityBarRecipeStyle({
+/// Resolved slots of [RaftMaterialProgressRecipe].
+class RaftMaterialProgressRecipeStyle {
+  const RaftMaterialProgressRecipeStyle({
     required this.root,
-    required this.row,
-    required this.avatar,
-    required this.content,
-    required this.status,
-    required this.text,
+    required this.determinate,
+    required this.arc,
+    required this.arrow,
+    required this.indeterminate,
   });
 
   /// Slot `root`.
   final RaftSlotStyle root;
 
-  /// Slot `row`.
-  final RaftSlotStyle row;
+  /// Slot `determinate`.
+  final RaftSlotStyle determinate;
 
-  /// Slot `avatar`.
-  final RaftSlotStyle avatar;
+  /// Slot `arc`.
+  final RaftSlotStyle arc;
 
-  /// Slot `content`.
-  final RaftSlotStyle content;
+  /// Slot `arrow`.
+  final RaftSlotStyle arrow;
 
-  /// Slot `status`.
-  final RaftSlotStyle status;
-
-  /// Slot `text`.
-  final RaftSlotStyle text;
+  /// Slot `indeterminate`.
+  final RaftSlotStyle indeterminate;
 
   Map<String, RaftSlotStyle> get slots => {
     'root': root,
-    'row': row,
-    'avatar': avatar,
-    'content': content,
-    'status': status,
-    'text': text,
+    'determinate': determinate,
+    'arc': arc,
+    'arrow': arrow,
+    'indeterminate': indeterminate,
   };
 }
 
-/// raft-ui recipe `liveAgentActivityBar` (`src/components/live-agent-activity-bar/live-agent-activity-bar.tsx`, index.mjs:14432).
+/// raft-ui recipe `materialProgress` (`dist/components/pull-to-refresh/pull-to-refresh-material-progress.mjs`, index.mjs:28620).
 ///
-/// Used by: LiveAgentActivityBar, LiveAgentActivityBarAvatar, LiveAgentActivityBarContent, LiveAgentActivityBarRow, LiveAgentActivityBarStatus, LiveAgentActivityBarText.
+/// Used by: PullToRefreshIndicator.
 ///
 /// Class lists are the exact tailwind-variants + tailwind-merge output for
 /// every variant combination; [resolve] applies the CSS cascade for [states].
-abstract final class RaftLiveAgentActivityBarRecipe {
-  static const String recipeName = 'liveAgentActivityBar';
+abstract final class RaftMaterialProgressRecipe {
+  static const String recipeName = 'materialProgress';
   static const List<String> slotNames = [
     'root',
-    'row',
-    'avatar',
-    'content',
-    'status',
-    'text',
+    'determinate',
+    'arc',
+    'arrow',
+    'indeterminate',
   ];
   static const List<RaftRecipeAxis> axes = [];
 
-  static RaftLiveAgentActivityBarRecipeStyle resolve({
+  static RaftMaterialProgressRecipeStyle resolve({
     RaftRecipeStates states = RaftRecipeStates.none,
     RaftTokenResolver? tokens,
   }) {
@@ -78,13 +72,12 @@ abstract final class RaftLiveAgentActivityBarRecipe {
       recipeName: recipeName,
       slotNames: slotNames,
     );
-    return RaftLiveAgentActivityBarRecipeStyle(
+    return RaftMaterialProgressRecipeStyle(
       root: s[0],
-      row: s[1],
-      avatar: s[2],
-      content: s[3],
-      status: s[4],
-      text: s[5],
+      determinate: s[1],
+      arc: s[2],
+      arrow: s[3],
+      indeterminate: s[4],
     );
   }
 
@@ -110,16 +103,15 @@ abstract final class RaftLiveAgentActivityBarRecipe {
 
   /// Distinct class lists (indices into [raftRecipeUtilities]).
   static const List<List<int>> _lists = [
-    [1740, 1709, 620, 633, 596, 1660, 1671, 1738],
-    [965, 1479, 1319, 1023, 125],
-    [1740, 1583, 1762],
-    [965, 1484, 966, 1319, 1022],
-    [472, 369],
-    [1484, 1897, 1016, 1821, 1017, 1822],
+    [2509, 2499, 2253, 2610],
+    [2676, 1366, 1376, 2138, 2231, 1151],
+    [1390, 2546, 688],
+    [1389],
+    [1390, 2546, 689],
   ];
 
   /// Per combination (mixed radix over [axes]): class list per slot.
   static const List<List<int>> _combos = [
-    [0, 1, 2, 3, 4, 5],
+    [0, 1, 2, 3, 4],
   ];
 }

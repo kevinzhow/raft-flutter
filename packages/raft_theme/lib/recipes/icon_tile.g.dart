@@ -1,6 +1,6 @@
 // GENERATED — do not edit. Regenerate with `tool/recipes/run`.
-// Source: raft-ui 0.7.0 dist/index.mjs (sha256 83bf0bff35092e3d),
-// tailwindcss 4.2.2 with raft-ui styles.css + Web @theme overrides. Recipe `iconTile`.
+// Source: raft-ui 0.95.3 dist/index.mjs (sha256 63bb2df77b8bd7a2),
+// tailwindcss 4.3.3 with raft-ui styles.css + Web @theme overrides. Recipe `iconTile`.
 // ignore_for_file: type=lint
 
 import 'recipe_runtime.dart';
@@ -41,7 +41,7 @@ class RaftIconTileRecipeStyle {
   Map<String, RaftSlotStyle> get slots => {'root': root};
 }
 
-/// raft-ui recipe `iconTile` (`src/components/icon-tile/icon-tile.tsx`, index.mjs:9928).
+/// raft-ui recipe `iconTile` (`dist/components/icon-tile/icon-tile.mjs`, index.mjs:15074).
 ///
 /// Used by: IconTile.
 ///
@@ -102,18 +102,18 @@ abstract final class RaftIconTileRecipe {
 
   /// Distinct class lists (indices into [raftRecipeUtilities]).
   static const List<List<int>> _lists = [
-    [1305, 1740, 1319, 1324, 1716, 277, 581, 1827, 1762, 268],
-    [1305, 1740, 1319, 1324, 1716, 277, 581, 1827, 1764, 264],
-    [1305, 1740, 1319, 1324, 1716, 277, 581, 1827, 1765, 269],
-    [1305, 1740, 1319, 1324, 1716, 277, 581, 1827, 1766, 270],
-    [1305, 1740, 1319, 1324, 1716, 277, 617, 1822, 1762, 268],
-    [1305, 1740, 1319, 1324, 1716, 277, 617, 1822, 1764, 264],
-    [1305, 1740, 1319, 1324, 1716, 277, 617, 1822, 1765, 269],
-    [1305, 1740, 1319, 1324, 1716, 277, 617, 1822, 1766, 270],
-    [1305, 1740, 1319, 1324, 1716, 277, 593, 1822, 1762, 268],
-    [1305, 1740, 1319, 1324, 1716, 277, 593, 1822, 1764, 264],
-    [1305, 1740, 1319, 1324, 1716, 277, 593, 1822, 1765, 269],
-    [1305, 1740, 1319, 1324, 1716, 277, 593, 1822, 1766, 270],
+    [1847, 2499, 1864, 1869, 2471, 474, 895, 2603, 2527, 463],
+    [1847, 2499, 1864, 1869, 474, 895, 2603, 2528, 2461, 459],
+    [1847, 2499, 1864, 1869, 474, 895, 2603, 2529, 2463, 464],
+    [1847, 2499, 1864, 1869, 474, 895, 2603, 2530, 2462, 465],
+    [1847, 2499, 1864, 1869, 2471, 474, 935, 2598, 2527, 463],
+    [1847, 2499, 1864, 1869, 474, 935, 2598, 2528, 2461, 459],
+    [1847, 2499, 1864, 1869, 474, 935, 2598, 2529, 2463, 464],
+    [1847, 2499, 1864, 1869, 474, 935, 2598, 2530, 2462, 465],
+    [1847, 2499, 1864, 1869, 2471, 474, 907, 2598, 2527, 463],
+    [1847, 2499, 1864, 1869, 474, 907, 2598, 2528, 2461, 459],
+    [1847, 2499, 1864, 1869, 474, 907, 2598, 2529, 2463, 464],
+    [1847, 2499, 1864, 1869, 474, 907, 2598, 2530, 2462, 465],
   ];
 
   /// Per combination (mixed radix over [axes]): class list per slot.

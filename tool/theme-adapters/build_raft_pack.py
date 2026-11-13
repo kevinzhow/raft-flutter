@@ -470,6 +470,10 @@ def build() -> dict:
     light_shadows = shadows(tokens, 'RaftLight')
     dark_shadows = shadows(tokens, 'RaftDark')
     fonts = read(f'{TOKENS}/token_set.dart')
+    source_numbers = doubles(tokens, 'RaftLight')
+    source_metrics = dict(re.findall(r"'([^']+)': (\w+),", re.search(
+        r'abstract final class RaftLight \{([\s\S]*?)\n\}', tokens)[1].split('Map<String, double> metrics = {')[1]))
+    GEOMETRY_RAFT.update({f'css.{name}': source_numbers[field] for name, field in source_metrics.items()})
 
     def roles(palette: dict[str, str]) -> dict[str, str]:
         out = {}
@@ -486,6 +490,11 @@ def build() -> dict:
             if token.startswith(('palette-', 'deprecated-', 'color-')):
                 continue
             out.setdefault(token, value)
+        # Historical framework roles remain stable; names were removed in
+        # 0.57, but the published migration codemod defines their meaning.
+        codemod = read('tool/design-source/raft-ui-0.95.3/token-names.mjs')
+        for old, current in re.findall(r'"((?:fill|sticker)-[^"]+)": "([^"]+)"', codemod):
+            out[old] = out[current]
         for target, source in {
             'layer-mobile-nav': 'layer-card', 'layer-mobile-nav-system': 'layer-card', 'line-mobile-nav': 'line-seam',
             'line-mobile-nav-divider': 'line-seam',
@@ -494,7 +503,8 @@ def build() -> dict:
             'foreground-mobile-nav-glyph-selected': 'sticker-ink',
             'layer-mobile-nav-selected': 'brand-400', 'line-mobile-nav-selected': 'sticker-ink',
             'line-mobile-nav-selected-ring': 'sticker-edge',
-            'layer-mobile-nav-pressed': 'fill-pressed',
+            # Upstream codemods/token-names.mjs: fill-pressed -> fill-medium.
+            'layer-mobile-nav-pressed': 'fill-medium',
         }.items():
             out[target] = out[source]
         out['line-composer'] = out['line-strong']
@@ -600,7 +610,7 @@ def build() -> dict:
         'format': PACK_FORMAT,
         'id': 'raft',
         'name': {'en': 'Raft', 'zh': 'Raft'},
-        'version': '0.7.1',
+        'version': '0.95.3',
         'builtIn': True,
         'author': 'Raft Design System',
         'fonts': {
@@ -609,7 +619,7 @@ def build() -> dict:
             'mono': {'family': 'Space Mono', 'stack': stack('raftMonoFontStack')},
         },
         'source': {
-            'tokens': 'tool/design-source/raft-ui-0.7.1/tokens.json',
+            'tokens': 'tool/design-source/raft-ui-0.95.3/tokens.json',
             'generator': 'tool/theme-adapters/build_raft_pack.py',
         },
         'modes': {

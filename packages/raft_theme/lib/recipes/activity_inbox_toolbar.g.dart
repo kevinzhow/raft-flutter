@@ -1,6 +1,6 @@
 // GENERATED — do not edit. Regenerate with `tool/recipes/run`.
-// Source: raft-ui 0.7.0 dist/index.mjs (sha256 83bf0bff35092e3d),
-// tailwindcss 4.2.2 with raft-ui styles.css + Web @theme overrides. Recipe `activityInboxToolbar`.
+// Source: raft-ui 0.95.3 dist/index.mjs (sha256 63bb2df77b8bd7a2),
+// tailwindcss 4.3.3 with raft-ui styles.css + Web @theme overrides. Recipe `activityInboxToolbar`.
 // ignore_for_file: type=lint
 
 import 'recipe_runtime.dart';
@@ -30,7 +30,7 @@ class RaftActivityInboxToolbarRecipeStyle {
   };
 }
 
-/// raft-ui recipe `activityInboxToolbar` (`src/components/activity-inbox/activity-inbox-toolbar.recipe.ts`, index.mjs:16043).
+/// raft-ui recipe `activityInboxToolbar` (`dist/components/activity-inbox/activity-inbox-toolbar.recipe.mjs`, index.mjs:23793).
 ///
 /// Used by: ActivityInboxControls, ActivityInboxSelectionCount, ActivityInboxSelectionToolbar.
 ///
@@ -89,26 +89,26 @@ abstract final class RaftActivityInboxToolbarRecipe {
 
   /// Distinct class lists (indices into [raftRecipeUtilities]).
   static const List<List<int>> _lists = [
-    [965, 1740, 969, 1319, 1023, 595, 1662, 1673],
+    [1400, 2499, 1406, 1864, 1466, 910, 2394, 2419, 2075],
     [
-      965,
-      1470,
-      1740,
-      1319,
-      1023,
-      1381,
-      1393,
-      1450,
-      1441,
-      1464,
-      623,
-      633,
-      595,
-      1662,
+      1400,
+      2100,
+      2499,
+      1408,
+      1864,
+      1466,
+      2380,
+      2279,
+      2065,
+      2058,
+      942,
+      953,
+      910,
+      2394,
+      1,
       0,
-      204,
     ],
-    [1506, 1821, 1008, 1822],
+    [2139, 2597, 1449, 2598],
   ];
 
   /// Per combination (mixed radix over [axes]): class list per slot.

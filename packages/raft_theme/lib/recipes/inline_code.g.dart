@@ -1,6 +1,6 @@
 // GENERATED — do not edit. Regenerate with `tool/recipes/run`.
-// Source: raft-ui 0.7.0 dist/index.mjs (sha256 83bf0bff35092e3d),
-// tailwindcss 4.2.2 with raft-ui styles.css + Web @theme overrides. Recipe `inlineCode`.
+// Source: raft-ui 0.95.3 dist/index.mjs (sha256 63bb2df77b8bd7a2),
+// tailwindcss 4.3.3 with raft-ui styles.css + Web @theme overrides. Recipe `inlineCode`.
 // ignore_for_file: type=lint
 
 import 'recipe_runtime.dart';
@@ -27,9 +27,9 @@ class RaftInlineCodeRecipeStyle {
   Map<String, RaftSlotStyle> get slots => {'root': root};
 }
 
-/// raft-ui recipe `inlineCode` (`src/components/inline-code/inline-code.tsx`, index.mjs:6808).
+/// raft-ui recipe `inlineCode` (`dist/components/inline-code/inline-code.mjs`, index.mjs:11514).
 ///
-/// Used by: InlineCode, MarkdownInlineCode.
+/// Used by: InlineCode.
 ///
 /// Class lists are the exact tailwind-variants + tailwind-merge output for
 /// every variant combination; [resolve] applies the CSS cascade for [states].
@@ -81,22 +81,24 @@ abstract final class RaftInlineCodeRecipe {
 
   /// Distinct class lists (indices into [raftRecipeUtilities]).
   static const List<List<int>> _lists = [
-    [1716, 1656, 1681, 1014, 1792, 1015, 1822, 1937, 581],
+    [2471, 2399, 2431, 1454, 2568, 1455, 2598, 2733, 895],
     [
-      1014,
-      1792,
-      1303,
-      621,
-      1656,
-      468,
-      416,
-      1343,
-      1015,
-      1937,
-      1716,
-      581,
-      1681,
-      1822,
+      2431,
+      1454,
+      2568,
+      1845,
+      940,
+      2399,
+      759,
+      678,
+      1888,
+      1455,
+      2733,
+      2471,
+      895,
+      2386,
+      2281,
+      2598,
     ],
   ];
 

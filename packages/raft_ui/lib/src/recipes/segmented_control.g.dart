@@ -16,7 +16,7 @@ export 'package:raft_theme/recipes/legacy/segmented_control.g.dart'
 /// Router for recipe `RaftSegmentedControlRecipe`: the frozen 0.5.52 class for the Elegant and Brutal
 /// looks, the current raft-ui class for the Raft look.
 ///
-/// Raft set differences: legacy-only axis `disabled`.
+/// Raft set differences: legacy-only axis `disabled`; Raft-only axis `variant`; Raft-only axis `iconsOnlyBelow`; Raft-only axis `inFitToolbar`; Raft-only axis `iconsOnlyMeasured`.
 abstract final class RaftSegmentedControlRecipe {
   static const String recipeName = legacy.RaftSegmentedControlRecipe.recipeName;
   static const List<String> slotNames =

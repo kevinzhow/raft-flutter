@@ -115,7 +115,8 @@ class RaftThemeRecipeTokens extends RaftTokenResolver {
         'cardTitleFontWeight' => 'type.cardTitle.weight',
         'cardTitleLineHeight' => 'type.cardTitle.line',
         _ => name,
-      }];
+      }] ??
+      values.geometry['css.${cssName(name)}'];
 
   @override
   String? fontFamily(String name) => values

@@ -41,7 +41,7 @@ const targets=[
   [reset,'Reset content','className="flex min-w-0 flex-col gap-0.5"'],
   [reset,'Reset title','className="text-subhead font-semibold text-foreground"'],
   [reset,'Reset description','className="text-footnote font-normal text-foreground-muted"'],
-  [doc,'XLSX root','className="mb-3 max-w-full overflow-x-auto pb-1"'],
+  [doc,'XLSX root','className="mb-3 min-w-0 max-w-full"'],
   [doc,'XLSX list','<TabsList'],
   [doc,'XLSX tab','<TabsTab\n'],
   [doc,'XLSX label','<TabsLabel'],

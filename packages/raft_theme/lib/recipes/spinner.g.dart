@@ -1,6 +1,6 @@
 // GENERATED — do not edit. Regenerate with `tool/recipes/run`.
-// Source: raft-ui 0.7.0 dist/index.mjs (sha256 83bf0bff35092e3d),
-// tailwindcss 4.2.2 with raft-ui styles.css + Web @theme overrides. Recipe `spinner`.
+// Source: raft-ui 0.95.3 dist/index.mjs (sha256 63bb2df77b8bd7a2),
+// tailwindcss 4.3.3 with raft-ui styles.css + Web @theme overrides. Recipe `spinner`.
 // ignore_for_file: type=lint
 
 import 'recipe_runtime.dart';
@@ -54,7 +54,7 @@ class RaftSpinnerRecipeStyle {
   };
 }
 
-/// raft-ui recipe `spinner` (`src/components/spinner/spinner.tsx`, index.mjs:96).
+/// raft-ui recipe `spinner` (`dist/components/spinner/spinner.mjs`, index.mjs:363).
 ///
 /// Used by: Spinner.
 ///
@@ -110,16 +110,16 @@ abstract final class RaftSpinnerRecipe {
 
   /// Distinct class lists (indices into [raftRecipeUtilities]).
   static const List<List<int>> _lists = [
-    [1682, 1305, 1740, 1319, 1324, 1346, 1817, 358, 355],
-    [1740, 1040, 1769, 1048, 1018],
-    [618, 1742, 1703, 578, 1560],
-    [1682, 1305, 1740, 1319, 1324, 1346, 358, 355, 1825],
-    [1682, 1305, 1740, 1319, 1324, 1346, 1817, 359, 356],
-    [1682, 1305, 1740, 1319, 1324, 1346, 359, 356, 1825],
-    [1682, 1305, 1740, 1319, 1324, 1346, 1817, 360, 356],
-    [1682, 1305, 1740, 1319, 1324, 1346, 360, 356, 1825],
-    [1682, 1305, 1740, 1319, 1324, 1346, 1817, 361, 357],
-    [1682, 1305, 1740, 1319, 1324, 1346, 361, 357, 1825],
+    [2433, 1847, 2499, 1864, 1869, 1892, 2592, 581, 578],
+    [2499, 1489, 2535, 1499, 1461],
+    [937, 2504, 2456, 891, 2230],
+    [2433, 1847, 2499, 1864, 1869, 1892, 581, 578, 2601],
+    [2433, 1847, 2499, 1864, 1869, 1892, 2592, 582, 579],
+    [2433, 1847, 2499, 1864, 1869, 1892, 582, 579, 2601],
+    [2433, 1847, 2499, 1864, 1869, 1892, 2592, 583, 579],
+    [2433, 1847, 2499, 1864, 1869, 1892, 583, 579, 2601],
+    [2433, 1847, 2499, 1864, 1869, 1892, 2592, 584, 580],
+    [2433, 1847, 2499, 1864, 1869, 1892, 584, 580, 2601],
   ];
 
   /// Per combination (mixed radix over [axes]): class list per slot.

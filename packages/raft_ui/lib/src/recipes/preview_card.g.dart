@@ -15,6 +15,8 @@ export 'package:raft_theme/recipes/legacy/preview_card.g.dart'
 
 /// Router for recipe `RaftPreviewCardRecipe`: the frozen 0.5.52 class for the Elegant and Brutal
 /// looks, the current raft-ui class for the Raft look.
+///
+/// Raft set differences: Raft-only axis `size`.
 abstract final class RaftPreviewCardRecipe {
   static const String recipeName = legacy.RaftPreviewCardRecipe.recipeName;
   static const List<String> slotNames = legacy.RaftPreviewCardRecipe.slotNames;

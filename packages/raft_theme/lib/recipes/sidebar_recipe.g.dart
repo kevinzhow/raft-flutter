@@ -1,6 +1,6 @@
 // GENERATED — do not edit. Regenerate with `tool/recipes/run`.
-// Source: raft-ui 0.7.0 dist/index.mjs (sha256 83bf0bff35092e3d),
-// tailwindcss 4.2.2 with raft-ui styles.css + Web @theme overrides. Recipe `sidebarRecipe`.
+// Source: raft-ui 0.95.3 dist/index.mjs (sha256 63bb2df77b8bd7a2),
+// tailwindcss 4.3.3 with raft-ui styles.css + Web @theme overrides. Recipe `sidebarRecipe`.
 // ignore_for_file: type=lint
 
 import 'recipe_runtime.dart';
@@ -19,8 +19,6 @@ class RaftSidebarRecipeStyle {
     required this.sidebarContent,
     required this.sidebarViewport,
     required this.sidebarContentInner,
-    required this.sidebarScrollbar,
-    required this.sidebarLiveActivity,
   });
 
   /// Slot `sidebarRoot`.
@@ -53,12 +51,6 @@ class RaftSidebarRecipeStyle {
   /// Slot `sidebarContentInner`.
   final RaftSlotStyle sidebarContentInner;
 
-  /// Slot `sidebarScrollbar`.
-  final RaftSlotStyle sidebarScrollbar;
-
-  /// Slot `sidebarLiveActivity`.
-  final RaftSlotStyle sidebarLiveActivity;
-
   Map<String, RaftSlotStyle> get slots => {
     'sidebarRoot': sidebarRoot,
     'sidebarHeader': sidebarHeader,
@@ -70,14 +62,12 @@ class RaftSidebarRecipeStyle {
     'sidebarContent': sidebarContent,
     'sidebarViewport': sidebarViewport,
     'sidebarContentInner': sidebarContentInner,
-    'sidebarScrollbar': sidebarScrollbar,
-    'sidebarLiveActivity': sidebarLiveActivity,
   };
 }
 
-/// raft-ui recipe `sidebarRecipe` (`src/components/sidebar/sidebar.recipe.ts`, index.mjs:2620).
+/// raft-ui recipe `sidebarRecipe` (`dist/components/sidebar/sidebar.recipe.mjs`, index.mjs:4379).
 ///
-/// Used by: SidebarBody, SidebarContent, SidebarGroupLabel, SidebarHeader, SidebarHeaderTitle, SidebarLiveActivity, SidebarRoot.
+/// Used by: SidebarBody, SidebarContent, SidebarGroupLabel, SidebarHeader, SidebarHeaderTitle, SidebarRoot.
 ///
 /// Class lists are the exact tailwind-variants + tailwind-merge output for
 /// every variant combination; [resolve] applies the CSS cascade for [states].
@@ -94,8 +84,6 @@ abstract final class RaftSidebarRecipe {
     'sidebarContent',
     'sidebarViewport',
     'sidebarContentInner',
-    'sidebarScrollbar',
-    'sidebarLiveActivity',
   ];
   static const List<RaftRecipeAxis> axes = [];
 
@@ -125,8 +113,6 @@ abstract final class RaftSidebarRecipe {
       sidebarContent: s[7],
       sidebarViewport: s[8],
       sidebarContentInner: s[9],
-      sidebarScrollbar: s[10],
-      sidebarLiveActivity: s[11],
     );
   }
 
@@ -152,37 +138,36 @@ abstract final class RaftSidebarRecipe {
 
   /// Distinct class lists (indices into [raftRecipeUtilities]).
   static const List<List<int>> _lists = [
-    [1682, 965, 1770, 1468, 1727, 967, 1212, 603, 1822, 1377, 634, 1439, 1452],
+    [2433, 1400, 2538, 2098, 2483, 1404, 508, 2018, 916, 2598, 1931, 954, 1997],
     [
-      965,
-      1319,
-      1168,
-      1740,
-      1023,
-      623,
-      634,
-      1663,
-      603,
-      1822,
-      1378,
-      1392,
-      1396,
-      385,
+      1400,
+      1864,
+      1639,
+      2499,
+      1466,
+      942,
+      954,
+      2394,
+      916,
+      2598,
+      1932,
+      1949,
+      265,
+      267,
+      609,
     ],
-    [1630, 422, 1314, 1862, 111, 1265],
-    [422, 1314, 1862],
-    [1897, 1008, 1016, 1833, 1822, 1396],
-    [1658, 1648, 1605, 1016, 1821, 1008, 1529, 1873, 1824],
-    [1682, 965, 1468, 966, 1583, 603, 1377],
-    [1682, 965, 1468, 1484, 966],
-    [1770, 1468, 966, 1586, 1587],
-    [1483, 1484, 1929, 1658, 1645, 1601],
-    [1942, 965, 1908, 1324, 1668, 1558, 1894, 942, 1630, 900, 899, 898],
-    [1630, 422, 1314, 1383, 643, 1943],
+    [2346, 691, 1858, 2640, 2737, 1776],
+    [691, 1858, 2640],
+    [2681, 1449, 1456, 2609, 2598, 1949],
+    [2406, 2384, 2272, 2069, 2067, 1456, 2597, 1449, 2165, 2654, 2600],
+    [2433, 1400, 2098, 1401, 2252, 916, 1931],
+    [2433, 1400, 2098, 2116, 1401],
+    [2538, 2098, 1401, 2255, 2256],
+    [2112, 2116, 2725, 2381, 2270],
   ];
 
   /// Per combination (mixed radix over [axes]): class list per slot.
   static const List<List<int>> _combos = [
-    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
   ];
 }

@@ -16,7 +16,7 @@ export 'package:raft_theme/recipes/legacy/message_action_card.g.dart'
 /// Router for recipe `RaftMessageActionCardRecipe`: the frozen 0.5.52 class for the Elegant and Brutal
 /// looks, the current raft-ui class for the Raft look.
 ///
-/// Raft set differences: Raft-only axis `tone`; Raft-only slots: headerIcon, headerTitle, headerDescription, status, collapseTrigger.
+/// Raft set differences: Raft-only axis `tone`; Raft-only slots: headerIcon, headerTitle, headerDescription, headerMeta, status, collapseTrigger.
 abstract final class RaftMessageActionCardRecipe {
   static const String recipeName =
       legacy.RaftMessageActionCardRecipe.recipeName;

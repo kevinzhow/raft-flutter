@@ -1,6 +1,6 @@
 // GENERATED — do not edit. Regenerate with `tool/recipes/run`.
-// Source: raft-ui 0.7.0 dist/index.mjs (sha256 83bf0bff35092e3d),
-// tailwindcss 4.2.2 with raft-ui styles.css + Web @theme overrides. Recipe `sidebarSectionRecipe`.
+// Source: raft-ui 0.95.3 dist/index.mjs (sha256 63bb2df77b8bd7a2),
+// tailwindcss 4.3.3 with raft-ui styles.css + Web @theme overrides. Recipe `sidebarSectionRecipe`.
 // ignore_for_file: type=lint
 
 import 'recipe_runtime.dart';
@@ -14,6 +14,8 @@ class RaftSidebarSectionRecipeStyle {
     required this.sidebarSectionEmpty,
     required this.sidebarSectionHeader,
     required this.sidebarSectionDisclosure,
+    required this.sidebarSectionChevronSlot,
+    required this.sidebarSectionEndChevron,
     required this.sidebarSectionTitle,
     required this.sidebarSectionCount,
     required this.sidebarSectionAttention,
@@ -36,6 +38,12 @@ class RaftSidebarSectionRecipeStyle {
 
   /// Slot `sidebarSectionDisclosure`.
   final RaftSlotStyle sidebarSectionDisclosure;
+
+  /// Slot `sidebarSectionChevronSlot`.
+  final RaftSlotStyle sidebarSectionChevronSlot;
+
+  /// Slot `sidebarSectionEndChevron`.
+  final RaftSlotStyle sidebarSectionEndChevron;
 
   /// Slot `sidebarSectionTitle`.
   final RaftSlotStyle sidebarSectionTitle;
@@ -61,6 +69,8 @@ class RaftSidebarSectionRecipeStyle {
     'sidebarSectionEmpty': sidebarSectionEmpty,
     'sidebarSectionHeader': sidebarSectionHeader,
     'sidebarSectionDisclosure': sidebarSectionDisclosure,
+    'sidebarSectionChevronSlot': sidebarSectionChevronSlot,
+    'sidebarSectionEndChevron': sidebarSectionEndChevron,
     'sidebarSectionTitle': sidebarSectionTitle,
     'sidebarSectionCount': sidebarSectionCount,
     'sidebarSectionAttention': sidebarSectionAttention,
@@ -70,9 +80,9 @@ class RaftSidebarSectionRecipeStyle {
   };
 }
 
-/// raft-ui recipe `sidebarSectionRecipe` (`src/components/sidebar/sidebar-section.recipe.ts`, index.mjs:3265).
+/// raft-ui recipe `sidebarSectionRecipe` (`dist/components/sidebar/sidebar-section.recipe.mjs`, index.mjs:4833).
 ///
-/// Used by: SidebarList, SidebarSection, SidebarSectionAttention, SidebarSectionControl, SidebarSectionControls, SidebarSectionCount, SidebarSectionDisclosure, SidebarSectionEmpty, SidebarSectionHeader, SidebarSectionTitle, SidebarSectionTrailing.
+/// Used by: SidebarList, SidebarSection, SidebarSectionAttention, SidebarSectionChevron, SidebarSectionControl, SidebarSectionControls, SidebarSectionCount, SidebarSectionDisclosure, SidebarSectionEmpty, SidebarSectionEndChevron, SidebarSectionHeader, SidebarSectionTitle, SidebarSectionTrailing.
 ///
 /// Class lists are the exact tailwind-variants + tailwind-merge output for
 /// every variant combination; [resolve] applies the CSS cascade for [states].
@@ -84,6 +94,8 @@ abstract final class RaftSidebarSectionRecipe {
     'sidebarSectionEmpty',
     'sidebarSectionHeader',
     'sidebarSectionDisclosure',
+    'sidebarSectionChevronSlot',
+    'sidebarSectionEndChevron',
     'sidebarSectionTitle',
     'sidebarSectionCount',
     'sidebarSectionAttention',
@@ -114,12 +126,14 @@ abstract final class RaftSidebarSectionRecipe {
       sidebarSectionEmpty: s[2],
       sidebarSectionHeader: s[3],
       sidebarSectionDisclosure: s[4],
-      sidebarSectionTitle: s[5],
-      sidebarSectionCount: s[6],
-      sidebarSectionAttention: s[7],
-      sidebarSectionTrailing: s[8],
-      sidebarSectionControls: s[9],
-      sidebarSectionControl: s[10],
+      sidebarSectionChevronSlot: s[5],
+      sidebarSectionEndChevron: s[6],
+      sidebarSectionTitle: s[7],
+      sidebarSectionCount: s[8],
+      sidebarSectionAttention: s[9],
+      sidebarSectionTrailing: s[10],
+      sidebarSectionControls: s[11],
+      sidebarSectionControl: s[12],
     );
   }
 
@@ -145,63 +159,92 @@ abstract final class RaftSidebarSectionRecipe {
 
   /// Distinct class lists (indices into [raftRecipeUtilities]).
   static const List<List<int>> _lists = [
-    [1157, 1654],
-    [],
-    [1658, 1669, 1016, 1821, 1824],
-    [965, 1319, 1323, 1158, 1509, 1429, 1196, 1023, 1658, 1648, 1605],
+    [1619, 2397],
+    [1400, 1404, 1463, 2417, 2065],
+    [2396, 2060, 2417, 1456, 2597, 2600],
     [
-      965,
-      1484,
-      966,
-      1319,
-      42,
-      202,
-      1196,
-      1022,
-      1716,
-      621,
-      1016,
-      1821,
-      1008,
-      1529,
-      1873,
-      1824,
-      1577,
-      996,
-      40,
-      41,
+      1400,
+      1864,
+      1868,
+      1620,
+      2157,
+      1673,
+      1466,
+      2384,
+      2272,
+      2303,
+      2365,
+      2051,
+      2067,
+      2059,
+      2064,
+      2211,
     ],
-    [1484, 1897],
-    [1014, 1839, 1015, 1783, 1824],
-    [1305, 1489, 1740, 1319, 1324, 1119, 1121, 1129],
-    [1682, 965, 1489, 1740, 1319, 1325],
     [
-      965,
-      1740,
-      1319,
-      1021,
-      1630,
-      422,
-      1865,
-      1686,
-      110,
-      1558,
-      1394,
-      1389,
-      1398,
-      1386,
+      1400,
+      2116,
+      1401,
+      1864,
+      69,
+      375,
+      1673,
+      1465,
+      2471,
+      940,
+      1456,
+      2597,
       1449,
-      1448,
-      1444,
-      1443,
-      1454,
-      1453,
+      2165,
+      2654,
+      2600,
+      2247,
+      1439,
+      67,
+      68,
     ],
-    [965, 1186, 1927, 1493, 1740, 1319, 1324, 1592, 100, 177, 159],
+    [1400, 2518, 2499, 1864, 1869, 2043],
+    [1776, 2037, 493, 1269],
+    [2116, 2681],
+    [1454, 2616, 1455, 2556, 2600],
+    [1847, 2120, 2499, 1864, 1869, 1568],
+    [2433, 1400, 2120, 2499, 1864, 1870],
+    [1400, 2499, 1864, 1464, 267],
+    [
+      2433,
+      1400,
+      1658,
+      2723,
+      2124,
+      2499,
+      1864,
+      1869,
+      2260,
+      178,
+      2081,
+      2041,
+      2053,
+      474,
+      459,
+      541,
+      2600,
+      1798,
+      701,
+      1441,
+      1277,
+      1284,
+      2206,
+      2208,
+      2207,
+      2347,
+      2349,
+      2348,
+      2209,
+      2210,
+    ],
   ];
 
   /// Per combination (mixed radix over [axes]): class list per slot.
   static const List<List<int>> _combos = [
-    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
   ];
 }

@@ -13,6 +13,8 @@ export 'package:raft_theme/recipes/legacy/select.g.dart' hide RaftSelectRecipe;
 
 /// Router for recipe `RaftSelectRecipe`: the frozen 0.5.52 class for the Elegant and Brutal
 /// looks, the current raft-ui class for the Raft look.
+///
+/// Raft set differences: Raft-only axis `fit`; Raft-only slots: fitFrame, sizer, sizerLabel, sizerPlaceholder, listFrame, actionItem, itemDescription.
 abstract final class RaftSelectRecipe {
   static const String recipeName = legacy.RaftSelectRecipe.recipeName;
   static const List<String> slotNames = legacy.RaftSelectRecipe.slotNames;

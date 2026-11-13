@@ -1,11 +1,16 @@
 import 'package:flutter/painting.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_theme/recipes.dart';
+import 'package:raft_theme/raft_theme.dart';
 
 // Spot values of the Raft recipe set (raft-ui 0.7.0, no `theme` axis). The
 // frozen 0.5.52 values of the Elegant and Brutal looks are pinned in
 // legacy_recipe_spot_test.dart and must not change.
 void main() {
+  final sourceTokens = RaftThemeRecipeTokens(
+    builtInRaftTheme.resolve(dark: false),
+    bindComponents: false,
+  );
   group('Button recipe', () {
     RaftSlotStyle button({
       RaftButtonRecipeVariant? variant,
@@ -56,11 +61,11 @@ void main() {
     });
   });
 
-  test('Input: 8px radius, 1.5px strong line on the card layer', () {
-    final root = RaftInputRecipe.resolve().root;
-    expect(root.borderRadius, BorderRadius.circular(8));
+  test('Input: touch control radius comes from published control-radius', () {
+    final root = RaftInputRecipe.resolve(tokens: sourceTokens).root;
+    expect(root.borderRadius, BorderRadius.circular(10));
     expect(root.borderWidth, const EdgeInsets.all(1.5));
-    expect(root.borderColor?.tokenName, 'lineStrong');
+    expect(root.borderColor?.tokenName, 'lineField');
     expect(root.backgroundColor?.tokenName, 'layerCard');
   });
 
@@ -80,7 +85,7 @@ void main() {
   });
 
   test('Switch: 50x30 track', () {
-    final root = RaftSwitchRecipe.resolve().root;
+    final root = RaftSwitchRecipe.resolve(tokens: sourceTokens).root;
     expect(root.width, 50);
     expect(root.height, 30);
   });

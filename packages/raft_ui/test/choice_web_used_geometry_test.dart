@@ -7,7 +7,7 @@ import 'package:raft_ui/src/recipes/select.g.dart';
 
 // Web db5e399 / published raft-ui0.7.0: Segment item border-[1.5px]
 // has a1px used border atDPR1 or Playwright-emulatedDPR3. The actual
-// Public/Private track is192.58×38. Select chrome=field overrides default
+// Public/Private track is193.58×38 with0.95.3's3px gap. Select chrome=field overrides default
 // pl3.5 withpx3; this must not turn the default's14px into12px.
 void main() {
   setUpAll(() async {
@@ -105,14 +105,14 @@ void main() {
             closeTo(34 + border, .01),
           );
           expect(t.getSize(a).height, 32);
-          expect(t.getRect(b).left - t.getRect(a).right, 2);
+          expect(t.getRect(b).left - t.getRect(a).right, 3);
           expect(t.getSize(find.byType(RaftSegmentedTrack)).height, 38);
           if (border == 1) {
             expect(t.getSize(a).width, closeTo(89.67, .03));
             expect(t.getSize(b).width, closeTo(94.91, .03));
             expect(
               t.getSize(find.byType(RaftSegmentedTrack)).width,
-              closeTo(192.58, .03),
+              closeTo(193.58, .03),
             );
           }
           expect(t.takeException(), isNull);

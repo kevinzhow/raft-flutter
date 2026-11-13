@@ -1,6 +1,6 @@
 // GENERATED — do not edit. Regenerate with `tool/recipes/run`.
-// Source: raft-ui 0.7.0 dist/index.mjs (sha256 83bf0bff35092e3d),
-// tailwindcss 4.2.2 with raft-ui styles.css + Web @theme overrides. Recipe `files`.
+// Source: raft-ui 0.95.3 dist/index.mjs (sha256 63bb2df77b8bd7a2),
+// tailwindcss 4.3.3 with raft-ui styles.css + Web @theme overrides. Recipe `files`.
 // ignore_for_file: type=lint
 
 import 'recipe_runtime.dart';
@@ -75,7 +75,7 @@ class RaftFilesRecipeStyle {
   };
 }
 
-/// raft-ui recipe `files` (`src/components/files/files.recipe.ts`, index.mjs:11022).
+/// raft-ui recipe `files` (`dist/components/files/files.recipe.mjs`, index.mjs:16562).
 ///
 /// Used by: FileActions, FileContent, FileImage, FileMeta, FileMetaItem, FileName, FileRow, FileRowOpen, FileThumbnail, FilesList, FilesPanel, FilesViewport.
 ///
@@ -152,55 +152,56 @@ abstract final class RaftFilesRecipe {
 
   /// Distinct class lists (indices into [raftRecipeUtilities]).
   static const List<List<int>> _lists = [
-    [965, 1468, 966, 967, 595, 1822],
-    [1468, 966, 1587],
-    [965, 967, 1023, 1663, 1673, 1392],
+    [1400, 2098, 1401, 1404, 910, 2598],
+    [2098, 1401],
+    [1400, 1404, 1466, 2396, 2419, 1945],
     [
-      1145,
-      965,
-      1929,
-      1484,
-      1025,
-      1660,
-      1893,
-      1319,
-      1709,
-      620,
-      633,
-      596,
-      1672,
-      1635,
-      1619,
+      1606,
+      1400,
+      2725,
+      2116,
+      1468,
+      2403,
+      2675,
+      1864,
+      2462,
+      939,
+      953,
+      911,
+      2418,
+      2356,
+      2299,
+      2497,
+      604,
+      1713,
+      1771,
+      1714,
+    ],
+    [1400, 2116, 1401, 1468, 2613, 1431, 1433, 1864, 2247, 1432],
+    [
+      1400,
+      2499,
+      1864,
+      1869,
+      2252,
+      479,
+      474,
       1738,
-      1225,
-      1223,
-      1224,
+      1737,
+      1736,
+      2523,
+      2461,
+      940,
+      895,
+      2603,
+      1712,
     ],
-    [965, 1484, 966, 1025, 1836, 982, 988, 1319, 1577, 986],
-    [
-      965,
-      1740,
-      1319,
-      1324,
-      1583,
-      281,
-      277,
-      1250,
-      1249,
-      1248,
-      1758,
-      1708,
-      621,
-      581,
-      1827,
-      1222,
-    ],
-    [618, 1770, 691, 692, 596],
-    [965, 1484, 966, 967, 1324, 1020],
-    [618, 1897, 1016, 1813, 1017, 1822],
-    [965, 1484, 971, 1319, 1038, 1509, 1031, 1014, 1839, 1824],
-    [1305, 1319, 1021, 278, 277],
-    [965, 1740, 1730, 1319, 1022],
+    [937, 2538, 1026, 1027, 911],
+    [1400, 2116, 1401, 1404, 1869, 1463],
+    [937, 2681, 1456, 2587, 1457, 2598],
+    [1400, 2116, 1408, 1864, 1486, 2143, 1478, 1454, 2616, 2600],
+    [1847, 1864, 1464, 476, 474],
+    [1400, 2499, 2487, 1864, 1465],
   ];
 
   /// Per combination (mixed radix over [axes]): class list per slot.

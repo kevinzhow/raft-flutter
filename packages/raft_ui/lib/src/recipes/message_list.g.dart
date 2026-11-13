@@ -15,6 +15,8 @@ export 'package:raft_theme/recipes/legacy/message_list.g.dart'
 
 /// Router for recipe `RaftMessageListRecipe`: the frozen 0.5.52 class for the Elegant and Brutal
 /// looks, the current raft-ui class for the Raft look.
+///
+/// Raft set differences: Raft-only slots: endFade.
 abstract final class RaftMessageListRecipe {
   static const String recipeName = legacy.RaftMessageListRecipe.recipeName;
   static const List<String> slotNames = legacy.RaftMessageListRecipe.slotNames;

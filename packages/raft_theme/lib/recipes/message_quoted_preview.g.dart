@@ -1,6 +1,6 @@
 // GENERATED — do not edit. Regenerate with `tool/recipes/run`.
-// Source: raft-ui 0.7.0 dist/index.mjs (sha256 83bf0bff35092e3d),
-// tailwindcss 4.2.2 with raft-ui styles.css + Web @theme overrides. Recipe `messageQuotedPreview`.
+// Source: raft-ui 0.95.3 dist/index.mjs (sha256 63bb2df77b8bd7a2),
+// tailwindcss 4.3.3 with raft-ui styles.css + Web @theme overrides. Recipe `messageQuotedPreview`.
 // ignore_for_file: type=lint
 
 import 'recipe_runtime.dart';
@@ -17,6 +17,7 @@ class RaftMessageQuotedPreviewRecipeStyle {
     required this.author,
     required this.authorName,
     required this.authorMeta,
+    required this.authorDelegatedBy,
     required this.timestamp,
     required this.text,
     required this.attachments,
@@ -49,6 +50,9 @@ class RaftMessageQuotedPreviewRecipeStyle {
   /// Slot `authorMeta`.
   final RaftSlotStyle authorMeta;
 
+  /// Slot `authorDelegatedBy`.
+  final RaftSlotStyle authorDelegatedBy;
+
   /// Slot `timestamp`.
   final RaftSlotStyle timestamp;
 
@@ -76,6 +80,7 @@ class RaftMessageQuotedPreviewRecipeStyle {
     'author': author,
     'authorName': authorName,
     'authorMeta': authorMeta,
+    'authorDelegatedBy': authorDelegatedBy,
     'timestamp': timestamp,
     'text': text,
     'attachments': attachments,
@@ -85,9 +90,9 @@ class RaftMessageQuotedPreviewRecipeStyle {
   };
 }
 
-/// raft-ui recipe `messageQuotedPreview` (`src/components/message-quoted-preview/message-quoted-preview.recipe.ts`, index.mjs:8067).
+/// raft-ui recipe `messageQuotedPreview` (`dist/components/message-quoted-preview/message-quoted-preview.recipe.mjs`, index.mjs:13184).
 ///
-/// Used by: MessageQuotedPreview, MessageQuotedPreviewAttachment, MessageQuotedPreviewAttachments, MessageQuotedPreviewAuthor, MessageQuotedPreviewAuthorMeta, MessageQuotedPreviewAuthorName, MessageQuotedPreviewChannel, MessageQuotedPreviewContent, MessageQuotedPreviewHeader, MessageQuotedPreviewLoading, MessageQuotedPreviewText, MessageQuotedPreviewThread, MessageQuotedPreviewTimestamp, MessageQuotedPreviewUnavailable.
+/// Used by: MessageQuotedPreview, MessageQuotedPreviewAttachment, MessageQuotedPreviewAttachments, MessageQuotedPreviewAuthor, MessageQuotedPreviewAuthorDelegatedBy, MessageQuotedPreviewAuthorMeta, MessageQuotedPreviewAuthorName, MessageQuotedPreviewChannel, MessageQuotedPreviewContent, MessageQuotedPreviewHeader, MessageQuotedPreviewLoading, MessageQuotedPreviewText, MessageQuotedPreviewThread, MessageQuotedPreviewTimestamp, MessageQuotedPreviewUnavailable.
 ///
 /// Class lists are the exact tailwind-variants + tailwind-merge output for
 /// every variant combination; [resolve] applies the CSS cascade for [states].
@@ -102,6 +107,7 @@ abstract final class RaftMessageQuotedPreviewRecipe {
     'author',
     'authorName',
     'authorMeta',
+    'authorDelegatedBy',
     'timestamp',
     'text',
     'attachments',
@@ -135,12 +141,13 @@ abstract final class RaftMessageQuotedPreviewRecipe {
       author: s[5],
       authorName: s[6],
       authorMeta: s[7],
-      timestamp: s[8],
-      text: s[9],
-      attachments: s[10],
-      attachment: s[11],
-      loading: s[12],
-      unavailable: s[13],
+      authorDelegatedBy: s[8],
+      timestamp: s[9],
+      text: s[10],
+      attachments: s[11],
+      attachment: s[12],
+      loading: s[13],
+      unavailable: s[14],
     );
   }
 
@@ -166,23 +173,24 @@ abstract final class RaftMessageQuotedPreviewRecipe {
 
   /// Distinct class lists (indices into [raftRecipeUtilities]).
   static const List<List<int>> _lists = [
-    [1929, 1714, 621, 631, 634, 615, 1619, 1827],
-    [1484, 1592],
-    [965, 1484, 1319, 1022, 1592, 1603],
-    [1305, 1319, 1021, 1821, 1017, 1824, 279],
-    [1305, 1484, 1319, 1022],
-    [1897, 1821, 1008, 1827],
-    [1897, 1814, 1824],
-    [1499, 1740, 1014, 1839, 1783, 1824],
-    [1353, 1813, 1827],
-    [965, 971, 1022, 1512],
-    [1305, 1319, 1191, 1021, 1708, 581, 1657, 1014, 1839, 1827, 279],
-    [1929, 473, 1714, 621, 631, 634, 615, 1619],
-    [618, 1929, 1836, 631, 634, 1619, 1813, 1824, 1577, 996],
+    [2725, 2468, 940, 951, 954, 933, 2299, 2603],
+    [2116, 2260],
+    [1400, 2116, 1864, 1759, 1465, 2260, 2273],
+    [1847, 1866, 1464, 2597, 1457, 2600, 477, 471],
+    [1847, 2116, 1864, 1465],
+    [2681, 2597, 1449, 2603],
+    [2681, 2588, 2600],
+    [2499, 2729, 2597, 2603],
+    [2132, 2499, 1454, 2616, 2556, 2600],
+    [1901, 2587, 2603],
+    [1400, 1408, 1465, 2146],
+    [1847, 1864, 1666, 1464, 2461, 895, 2400, 1454, 2616, 2603, 477],
+    [2725, 764, 2468, 940, 951, 954, 933, 2299],
+    [937, 2725, 2613, 951, 954, 2299, 2587, 2600, 2247, 1439],
   ];
 
   /// Per combination (mixed radix over [axes]): class list per slot.
   static const List<List<int>> _combos = [
-    [0, 1, 2, 3, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    [0, 1, 2, 3, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
   ];
 }

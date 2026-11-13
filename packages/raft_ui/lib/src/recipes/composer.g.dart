@@ -15,6 +15,8 @@ export 'package:raft_theme/recipes/legacy/composer.g.dart'
 
 /// Router for recipe `RaftComposerRecipe`: the frozen 0.5.52 class for the Elegant and Brutal
 /// looks, the current raft-ui class for the Raft look.
+///
+/// Raft set differences: Raft-only axis `icon`; Raft-only slots: inputFrame, submit.
 abstract final class RaftComposerRecipe {
   static const String recipeName = legacy.RaftComposerRecipe.recipeName;
   static const List<String> slotNames = legacy.RaftComposerRecipe.slotNames;

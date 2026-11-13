@@ -974,7 +974,7 @@
         "elegantLight": "#fff0bd",
         "elegantDark": "#866d1c / 0.16",
         "raftLight": "#fff0bd",
-        "raftDark": "#876f1f / 0.16",
+        "raftDark": "#876f1f / 0.20",
         "raftToken": "brand-soft"
       },
       {
@@ -1018,8 +1018,8 @@
         "brutal": "#f6cc3e",
         "elegantLight": "#f3e4b3",
         "elegantDark": "#d5b559 / 0.35",
-        "raftLight": "#e3bd3a",
-        "raftDark": "#e3bd3a",
+        "raftLight": "#e7c13b",
+        "raftDark": "#e7c13b",
         "raftToken": "brand-hover"
       },
       {
@@ -1027,8 +1027,8 @@
         "brutal": "#ecc43b",
         "elegantLight": "#ecc43c",
         "elegantDark": "#fedb7a",
-        "raftLight": "#e3bd3a",
-        "raftDark": "#e3bd3a",
+        "raftLight": "#e7c13b",
+        "raftDark": "#e7c13b",
         "raftToken": "brand-active"
       },
       {
@@ -1036,8 +1036,8 @@
         "brutal": "#f578a2",
         "elegantLight": "#f8cad8",
         "elegantDark": "#f290b0 / 0.35",
-        "raftLight": "#e389ae",
-        "raftDark": "#e389ae",
+        "raftLight": "#e78bb1",
+        "raftDark": "#e78bb1",
         "raftToken": "attention-hover"
       },
       {
@@ -1045,8 +1045,8 @@
         "brutal": "#eb739b",
         "elegantLight": "#eb749c",
         "elegantDark": "#fd9bb8",
-        "raftLight": "#e389ae",
-        "raftDark": "#e389ae",
+        "raftLight": "#e78bb1",
+        "raftDark": "#e78bb1",
         "raftToken": "attention-active"
       },
       {
@@ -1054,8 +1054,8 @@
         "brutal": "#24bde1",
         "elegantLight": "#26bde1",
         "elegantDark": "#73d4f4",
-        "raftLight": "#25b6d8",
-        "raftDark": "#25b6d8",
+        "raftLight": "#25b9dc",
+        "raftDark": "#25b9dc",
         "raftToken": "info-hover"
       },
       {
@@ -1063,8 +1063,8 @@
         "brutal": "#22b4d7",
         "elegantLight": "#25b5d7",
         "elegantDark": "#88d8f4",
-        "raftLight": "#25b6d8",
-        "raftDark": "#25b6d8",
+        "raftLight": "#25b9dc",
+        "raftDark": "#25b9dc",
         "raftToken": "info-active"
       },
       {
@@ -1072,8 +1072,8 @@
         "brutal": "#ec6100",
         "elegantLight": "#ec6104",
         "elegantDark": "#fe8e6c",
-        "raftLight": "#dd9064",
-        "raftDark": "#dd9064",
+        "raftLight": "#e19366",
+        "raftDark": "#e19366",
         "raftToken": "warning-hover"
       },
       {
@@ -1081,8 +1081,8 @@
         "brutal": "#e25c00",
         "elegantLight": "#e25d06",
         "elegantDark": "#fe9d82",
-        "raftLight": "#dd9064",
-        "raftDark": "#dd9064",
+        "raftLight": "#e19366",
+        "raftDark": "#e19366",
         "raftToken": "warning-active"
       },
       {
@@ -1090,8 +1090,8 @@
         "brutal": "#e5061d",
         "elegantLight": "#e50b1e",
         "elegantDark": "#f86e70",
-        "raftLight": "#de665a",
-        "raftDark": "#de665a",
+        "raftLight": "#e2685c",
+        "raftDark": "#e2685c",
         "raftToken": "danger-hover"
       },
       {
@@ -1099,8 +1099,8 @@
         "brutal": "#db051b",
         "elegantLight": "#db0c1e",
         "elegantDark": "#f88485",
-        "raftLight": "#de665a",
-        "raftDark": "#de665a",
+        "raftLight": "#e2685c",
+        "raftDark": "#e2685c",
         "raftToken": "danger-active"
       }
     ],
@@ -1283,8 +1283,8 @@
         "brutal": "#f6cc3e",
         "elegantLight": "#f3e4b3",
         "elegantDark": "#d5b559 / 0.35",
-        "raftLight": "#e3bd3a",
-        "raftDark": "#e3bd3a",
+        "raftLight": "#e7c13b",
+        "raftDark": "#e7c13b",
         "raftToken": "brand-hover"
       },
       {
@@ -1292,8 +1292,8 @@
         "brutal": "#f578a2",
         "elegantLight": "#f8cad8",
         "elegantDark": "#f290b0 / 0.35",
-        "raftLight": "#e389ae",
-        "raftDark": "#e389ae",
+        "raftLight": "#e78bb1",
+        "raftDark": "#e78bb1",
         "raftToken": "attention-hover"
       },
       {
@@ -1319,8 +1319,8 @@
         "brutal": "#e5061d",
         "elegantLight": "#e50b1e",
         "elegantDark": "#e63935",
-        "raftLight": "#de665a",
-        "raftDark": "#de665a",
+        "raftLight": "#e2685c",
+        "raftDark": "#e2685c",
         "raftToken": "danger-hover"
       },
       {

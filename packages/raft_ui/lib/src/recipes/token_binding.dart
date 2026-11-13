@@ -1,8 +1,10 @@
 import 'package:flutter/painting.dart';
 import 'package:raft_theme/raft_theme.dart' show RaftModeValues;
-import 'package:raft_theme/recipes.dart' show RaftThemeRecipeTokens;
+import 'package:raft_theme/recipes.dart'
+    show RaftThemeRecipeTokens, RaftRecipeSet;
 
 import '../theme.dart';
+import '../tokens/raft_tokens.g.dart' show RaftLight;
 
 /// Binds generated recipes to the generated foundation tokens of one theme.
 ///
@@ -77,7 +79,11 @@ class RaftRecipeTokens extends RaftThemeRecipeTokens {
       'cardTitleFontSize' => m.cardTitleFontSize,
       'cardTitleFontWeight' => m.cardTitleFontWeight,
       'cardTitleLineHeight' => m.cardTitleLineHeight,
-      _ => null,
+      _ =>
+        super.number(name) ??
+            (tokens.recipeSet == RaftRecipeSet.raft
+                ? RaftLight.metrics[cssName(name)]
+                : null),
     };
   }
 

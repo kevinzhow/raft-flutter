@@ -1,6 +1,6 @@
 // GENERATED — do not edit. Regenerate with `tool/recipes/run`.
-// Source: raft-ui 0.7.0 dist/index.mjs (sha256 83bf0bff35092e3d),
-// tailwindcss 4.2.2 with raft-ui styles.css + Web @theme overrides. Recipe `radioGroup`.
+// Source: raft-ui 0.95.3 dist/index.mjs (sha256 63bb2df77b8bd7a2),
+// tailwindcss 4.3.3 with raft-ui styles.css + Web @theme overrides. Recipe `radioGroup`.
 // ignore_for_file: type=lint
 
 import 'recipe_runtime.dart';
@@ -35,7 +35,7 @@ class RaftRadioGroupRecipeStyle {
   };
 }
 
-/// raft-ui recipe `radioGroup` (`src/components/radio-group/radio-group.tsx`, index.mjs:6067).
+/// raft-ui recipe `radioGroup` (`dist/components/radio-group/radio-group.mjs`, index.mjs:9010).
 ///
 /// Used by: RadioGroup, RadioGroupIndicator, RadioGroupItem.
 ///
@@ -91,33 +91,36 @@ abstract final class RaftRadioGroupRecipe {
 
   /// Distinct class lists (indices into [raftRecipeUtilities]).
   static const List<List<int>> _lists = [
-    [1040, 1929, 1023, 824, 825, 826, 1016, 149],
+    [1489, 2725, 1466, 1174, 1175, 1176, 1456, 313],
     [
-      1682,
-      1305,
-      1740,
+      2433,
+      1847,
+      2499,
+      2650,
+      1864,
       1869,
-      1319,
-      1324,
-      1712,
-      1577,
-      831,
-      442,
-      437,
-      440,
-      450,
-      1754,
-      622,
-      635,
-      596,
-      1822,
-      996,
-      830,
-      828,
-      836,
+      2466,
+      2247,
+      1181,
+      723,
+      713,
+      715,
+      729,
+      2322,
+      683,
+      682,
+      2519,
+      941,
+      955,
+      911,
+      2598,
+      1439,
+      1180,
+      1178,
+      1187,
     ],
-    [1630, 965, 1770, 1319, 1324],
-    [618, 1712, 578, 1750],
+    [2346, 1400, 2538, 1864, 1869],
+    [937, 2466, 891, 2513],
   ];
 
   /// Per combination (mixed radix over [axes]): class list per slot.

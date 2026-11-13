@@ -1,6 +1,6 @@
 // GENERATED — do not edit. Regenerate with `tool/recipes/run`.
-// Source: raft-ui 0.7.0 dist/index.mjs (sha256 83bf0bff35092e3d),
-// tailwindcss 4.2.2 with raft-ui styles.css + Web @theme overrides. Recipe `markdown`.
+// Source: raft-ui 0.95.3 dist/index.mjs (sha256 63bb2df77b8bd7a2),
+// tailwindcss 4.3.3 with raft-ui styles.css + Web @theme overrides. Recipe `markdown`.
 // ignore_for_file: type=lint
 
 import 'recipe_runtime.dart';
@@ -110,7 +110,7 @@ class RaftMarkdownRecipeStyle {
   };
 }
 
-/// raft-ui recipe `markdown` (`src/components/markdown/markdown.recipe.ts`, index.mjs:6849).
+/// raft-ui recipe `markdown` (`dist/components/markdown/markdown.recipe.mjs`, index.mjs:11548).
 ///
 /// Used by: MarkdownBlockquote, MarkdownCell, MarkdownCheckbox, MarkdownHeaderCell, MarkdownHeading, MarkdownImage, MarkdownInlineCode, MarkdownLink, MarkdownList, MarkdownListItem, MarkdownMark, MarkdownOrderedList, MarkdownParagraph, MarkdownRule, MarkdownTable, MarkdownTableRow, MarkdownTableScroll.
 ///
@@ -200,27 +200,27 @@ abstract final class RaftMarkdownRecipe {
 
   /// Distinct class lists (indices into [raftRecipeUtilities]).
   static const List<List<int>> _lists = [
-    [1347, 1008, 1822],
-    [1431, 1330],
-    [1728, 1898, 914, 1899, 1704, 1826, 1281, 1577, 996],
-    [418, 1009, 1716, 575, 1665, 650, 1844, 1310, 1313, 1695, 1699],
-    [1431, 1623, 1356],
-    [1430],
-    [1522, 631, 634, 1619, 1827, 1551],
-    [1525, 621, 639, 633],
-    [1585, 1524, 1928, 1424, 1709, 620, 633, 596],
-    [624, 621, 1813],
-    [1329],
-    [1660, 1669, 621, 623, 633, 1552, 581, 1836, 1017, 1933, 1822],
-    [1660, 1669, 621, 623, 633, 1552],
-    [1507, 469],
-    [1289, 1424, 1524, 1709, 620, 633],
-    [1303, 1345, 1937],
-    [1431, 1623, 1355],
-    [1008, 1822, 1514, 1431, 1795],
-    [1008, 1822, 1513, 1431, 1794],
-    [1008, 1822, 1513, 1431, 1793],
-    [1008, 1822, 1511, 1430, 1801],
+    [1893, 1449, 2598],
+    [1988, 1876],
+    [2485, 2682, 1337, 2683, 2457, 2602, 1797, 1340, 1793, 2247, 1439],
+    [680, 2471, 936, 2408, 2431, 976, 2621],
+    [1988, 2303, 1906],
+    [1987],
+    [2158, 951, 954, 2299, 2603, 2204],
+    [2160, 940, 960, 953],
+    [2159, 2724, 1980, 2462, 939, 953, 911],
+    [943, 940, 2587],
+    [1875],
+    [2403, 2415, 940, 942, 953, 2205, 895, 2613, 1457, 2729, 2598],
+    [2403, 2415, 940, 942, 953, 2205],
+    [2140, 761],
+    [1801, 1980, 2159, 2462, 939, 953],
+    [1845, 1890, 2733],
+    [1988, 2303, 1905],
+    [1449, 2598, 2148, 1988, 2571],
+    [1449, 2598, 2147, 1988, 2570],
+    [1449, 2598, 2147, 1988, 2569],
+    [1449, 2598, 2145, 1987, 2576],
   ];
 
   /// Per combination (mixed radix over [axes]): class list per slot.

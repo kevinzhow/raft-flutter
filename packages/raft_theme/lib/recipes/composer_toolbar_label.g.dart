@@ -1,6 +1,6 @@
 // GENERATED — do not edit. Regenerate with `tool/recipes/run`.
-// Source: raft-ui 0.7.0 dist/index.mjs (sha256 83bf0bff35092e3d),
-// tailwindcss 4.2.2 with raft-ui styles.css + Web @theme overrides. Recipe `composerToolbarLabel`.
+// Source: raft-ui 0.95.3 dist/index.mjs (sha256 63bb2df77b8bd7a2),
+// tailwindcss 4.3.3 with raft-ui styles.css + Web @theme overrides. Recipe `composerToolbarLabel`.
 // ignore_for_file: type=lint
 
 import 'recipe_runtime.dart';
@@ -16,7 +16,7 @@ class RaftComposerToolbarLabelRecipeStyle {
   Map<String, RaftSlotStyle> get slots => {'root': root};
 }
 
-/// raft-ui recipe `composerToolbarLabel` (`src/components/composer/composer-toolbar-label.tsx`, index.mjs:11989).
+/// raft-ui recipe `composerToolbarLabel` (`dist/components/composer/composer-toolbar-label.mjs`, index.mjs:16847).
 ///
 /// Used by: ComposerToolbarLabel.
 ///
@@ -67,7 +67,21 @@ abstract final class RaftComposerToolbarLabelRecipe {
 
   /// Distinct class lists (indices into [raftRecipeUtilities]).
   static const List<List<int>> _lists = [
-    [1305, 664, 1727, 1319, 1479, 1023, 1016, 1813, 1017, 1822, 1259, 1260],
+    [
+      1847,
+      997,
+      2483,
+      1864,
+      2107,
+      2050,
+      1466,
+      1456,
+      2587,
+      1457,
+      2598,
+      1763,
+      1764,
+    ],
   ];
 
   /// Per combination (mixed radix over [axes]): class list per slot.

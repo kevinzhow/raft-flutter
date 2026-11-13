@@ -1,6 +1,6 @@
 // GENERATED — do not edit. Regenerate with `tool/recipes/run`.
-// Source: raft-ui 0.7.0 dist/index.mjs (sha256 83bf0bff35092e3d),
-// tailwindcss 4.2.2 with raft-ui styles.css + Web @theme overrides. Recipe `activityInboxShell`.
+// Source: raft-ui 0.95.3 dist/index.mjs (sha256 63bb2df77b8bd7a2),
+// tailwindcss 4.3.3 with raft-ui styles.css + Web @theme overrides. Recipe `activityInboxShell`.
 // ignore_for_file: type=lint
 
 import 'recipe_runtime.dart';
@@ -10,12 +10,16 @@ import 'recipe_utilities.g.dart';
 class RaftActivityInboxShellRecipeStyle {
   const RaftActivityInboxShellRecipeStyle({
     required this.panel,
+    required this.frame,
     required this.viewport,
     required this.loadingMore,
   });
 
   /// Slot `panel`.
   final RaftSlotStyle panel;
+
+  /// Slot `frame`.
+  final RaftSlotStyle frame;
 
   /// Slot `viewport`.
   final RaftSlotStyle viewport;
@@ -25,12 +29,13 @@ class RaftActivityInboxShellRecipeStyle {
 
   Map<String, RaftSlotStyle> get slots => {
     'panel': panel,
+    'frame': frame,
     'viewport': viewport,
     'loadingMore': loadingMore,
   };
 }
 
-/// raft-ui recipe `activityInboxShell` (`src/components/activity-inbox/activity-inbox-shell.recipe.ts`, index.mjs:15968).
+/// raft-ui recipe `activityInboxShell` (`dist/components/activity-inbox/activity-inbox-shell.recipe.mjs`, index.mjs:23691).
 ///
 /// Used by: ActivityInboxLoadingMore, ActivityInboxPanel, ActivityInboxViewport.
 ///
@@ -38,7 +43,12 @@ class RaftActivityInboxShellRecipeStyle {
 /// every variant combination; [resolve] applies the CSS cascade for [states].
 abstract final class RaftActivityInboxShellRecipe {
   static const String recipeName = 'activityInboxShell';
-  static const List<String> slotNames = ['panel', 'viewport', 'loadingMore'];
+  static const List<String> slotNames = [
+    'panel',
+    'frame',
+    'viewport',
+    'loadingMore',
+  ];
   static const List<RaftRecipeAxis> axes = [];
 
   static RaftActivityInboxShellRecipeStyle resolve({
@@ -58,8 +68,9 @@ abstract final class RaftActivityInboxShellRecipe {
     );
     return RaftActivityInboxShellRecipeStyle(
       panel: s[0],
-      viewport: s[1],
-      loadingMore: s[2],
+      frame: s[1],
+      viewport: s[2],
+      loadingMore: s[3],
     );
   }
 
@@ -85,13 +96,28 @@ abstract final class RaftActivityInboxShellRecipe {
 
   /// Distinct class lists (indices into [raftRecipeUtilities]).
   static const List<List<int>> _lists = [
-    [965, 1198, 1468, 966, 967, 1583, 595, 1016, 1822],
-    [1682, 966, 1587, 595, 1592, 1612],
-    [1673, 1816, 1814, 1824],
+    [1400, 1678, 2098, 1401, 1404, 2252, 910, 1456, 2598, 508, 2018],
+    [2098, 1401],
+    [
+      2433,
+      1400,
+      2098,
+      1401,
+      1404,
+      1463,
+      163,
+      2247,
+      1439,
+      910,
+      2397,
+      2381,
+      2283,
+    ],
+    [2419, 2590, 2588, 2600],
   ];
 
   /// Per combination (mixed radix over [axes]): class list per slot.
   static const List<List<int>> _combos = [
-    [0, 1, 2],
+    [0, 1, 2, 3],
   ];
 }

@@ -13,6 +13,7 @@ import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import * as acorn from 'acorn';
 import { loadBundle } from '../lib/bundle.mjs';
+import {cascade} from '../lib/cascade.mjs';
 
 const here = fileURLToPath(new URL('.', import.meta.url));
 const tool = resolve(here, '..');
@@ -42,7 +43,7 @@ test('every tv$1 call is extracted with literal options', () => {
   assert.equal(raw.rawCallCount, calls);
   assert.equal(model.recipes.length, calls + products.length);
   for (const product of products) {
-    assert.match(product.region, /^Web src\/.+\.tsx sha256:[a-f0-9]{64}$/);
+    assert.match(product.region, /^Web src\/.+\.tsx? sha256:[a-f0-9]{64}(; src\/.+\.tsx? sha256:[a-f0-9]{64})*$/);
     assert.ok(model.recipes.some((r) => r.name === product.name), product.name);
   }
   assert.deepEqual(raw.recipes.filter((r) => r.nonLiteral.length).map((r) => r.name), []);
@@ -62,13 +63,36 @@ test('every class is resolved, descendant, a marker, or explicitly unresolved', 
 });
 
 test('condition atoms follow the documented grammar', () => {
-  const re = /^(not:)?([a-z-]+(\*|\^|\$|~|\|)?=[^ ]+|[a-z-]+|(width|height|container-width)(>=|<=|<|>)[\d.]+|is\([a-z,]+\)|has:.+|(group|peer)(\/[\w-]+)?:.+|ancestor:.+|in:.+)$/;
+  // Complex DOM predicates remain explicit state flags; family adapters must
+  // supply them from their actual ancestry. Never discard the predicate.
+  const re = /^(not:)?([a-z-]+(\*|\^|\$|~|\|)?=[^ ]+|[a-z-]+|(width|height|container-width)(>=|<=|<|>)[\d.]+|(?:is|nth-child)\(.+\)|\(.+\)|has:.+|(group|peer)(\/[\w-]+)?:.+|ancestor:.+|in:.+|container:[\w-]+ \(width (?:>=|<) [\d.]+(?:rem|px)\))$/;
   const bad = new Set();
   for (const u of model.utilities) for (const l of u.layers) for (const a of l.atoms) if (!re.test(a)) bad.add(a);
   assert.deepEqual([...bad], []);
 });
 
-test('Button spot values (raft-ui 0.7.0, no theme axis)', () => {
+test('responsive typography keeps coarse and narrow devices at the base scale', () => {
+  const index = model.utilities.findIndex(u => u.name === 'text-body');
+  for (const [width, fine, expected] of [[390, false, 16], [390, true, 16], [1280, false, 16], [1280, true, 14]]) {
+    const style = cascade(model.utilities, [index], {width, flags: new Set(fine ? ['pointer-fine'] : [])}, {
+      registered: new Map(Object.entries(model.registered)), isToken: () => false,
+    });
+    assert.equal(style.get('self').get('font-size').v, expected, `${width} fine=${fine}`);
+  }
+});
+
+test('MemberChoiceList retains its always-search scroller and fill branch', () => {
+  const recipe = model.recipes.find(r => r.name === 'webMemberPicker');
+  const scroll = recipe.combos.find(c => c.props.fill === 'false');
+  const fill = recipe.combos.find(c => c.props.fill === 'true');
+  const style = (combo, slot) => model.resolved[combo.slots[slot]].self.base;
+  assert.equal(style(scroll, 'scroller')['max-height'], 288);
+  assert.equal(style(scroll, 'scroller').padding, 4);
+  assert.equal(style(fill, 'scroller')['max-height'], undefined);
+  assert.deepEqual(style(scroll, 'rows').gap, {row: 2, column: 0});
+});
+
+test('Button spot values (published raft-ui 0.95.3)', () => {
   const r = model.recipes.find((x) => x.name === 'buttonVariants');
   assert.deepEqual(Object.keys(r.definition.variants), ['variant', 'size']);
   const combo = (props) => r.combos.find((c) => Object.entries(props).every(([k, v]) => c.props[k] === v));
@@ -84,7 +108,7 @@ test('Button spot values (raft-ui 0.7.0, no theme axis)', () => {
   // xs, sm and md share one geometry in 0.7.0; lg is the only taller button.
   for (const size of ['xs', 'sm']) assert.deepEqual(self({ variant: 'default', size }).base.height, 32);
   const lg = self({ variant: 'default', size: 'lg' });
-  assert.equal(lg.base.height, 44);
+  assert.deepEqual(lg.base.height, {token: 'controlHeight'});
   assert.equal(lg.base['font-size'], 15);
   // Disabled swaps to the muted fill; it no longer fades to 40%.
   assert.equal(md.states['aria-disabled=true']['opacity'], '100%');
@@ -93,10 +117,10 @@ test('Button spot values (raft-ui 0.7.0, no theme axis)', () => {
   const primary = r.definition.variants.variant.primary.root.join(' ');
   assert.ok(primary.includes('bg-attention-400'));
   assert.ok(primary.includes('border-sticker-ink'));
-  assert.ok(primary.includes('hover:press-overlay-sticker'));
+  assert.ok(primary.includes('hover:overlay-sticker-medium'));
   const bg = model.utilities.find((u) => u.name === 'bg-attention-400').layers[0].decls[0].value;
   assert.equal(bg.token, 'attention400');
-  const hover = model.utilities.find((u) => u.name === 'hover:press-overlay-sticker').layers[0];
+  const hover = model.utilities.find((u) => u.name === 'hover:overlay-sticker-medium').layers[0];
   assert.deepEqual(hover.atoms, ['hover']);
 });
 

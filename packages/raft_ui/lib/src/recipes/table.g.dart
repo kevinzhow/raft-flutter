@@ -13,6 +13,8 @@ export 'package:raft_theme/recipes/legacy/table.g.dart' hide RaftTableRecipe;
 
 /// Router for recipe `RaftTableRecipe`: the frozen 0.5.52 class for the Elegant and Brutal
 /// looks, the current raft-ui class for the Raft look.
+///
+/// Raft set differences: Raft-only axis `align`; Raft-only axis `sorted`; Raft-only slots: sortableHead, sortButton, headSortButton, sortArrow.
 abstract final class RaftTableRecipe {
   static const String recipeName = legacy.RaftTableRecipe.recipeName;
   static const List<String> slotNames = legacy.RaftTableRecipe.slotNames;

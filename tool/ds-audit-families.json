@@ -596,8 +596,7 @@
           "danger-secondary",
           "danger-outline",
           "ghost",
-          "on-frame",
-          "link"
+          "on-frame"
         ],
         "size": [
           "xs",
@@ -605,7 +604,6 @@
           "md",
           "lg",
           "xl",
-          "inline",
           "icon-xs",
           "icon-sm",
           "icon-md",
@@ -626,6 +624,14 @@
           "lg",
           "wide"
         ],
+        "placement": [
+          "center",
+          "top"
+        ],
+        "keyboard": [
+          "false",
+          "true"
+        ],
         "bar": [
           "false",
           "true"
@@ -633,6 +639,14 @@
         "layer": [
           "0",
           "1"
+        ],
+        "nested": [
+          "false",
+          "true"
+        ],
+        "start": [
+          "false",
+          "true"
         ]
       }
     },
@@ -658,7 +672,12 @@
       "owner": "design-system alignment",
       "reason": "Existing family linkage is a source ownership record, not a current visual acceptance.",
       "generatedFile": "packages/raft_theme/lib/recipes/alert_dialog.g.dart",
-      "axes": {}
+      "axes": {
+        "nested": [
+          "false",
+          "true"
+        ]
+      }
     },
     "panelHeader": {
       "family": null,
@@ -716,6 +735,10 @@
         "snapPoints": [
           "true",
           "false"
+        ],
+        "nested": [
+          "false",
+          "true"
         ]
       }
     },
@@ -734,6 +757,8 @@
         "variant": [
           "default",
           "primary",
+          "you",
+          "busy",
           "information",
           "muted",
           "accent",
@@ -793,6 +818,14 @@
         "interactive": [
           "true",
           "false"
+        ],
+        "attached": [
+          "true",
+          "false"
+        ],
+        "cell": [
+          "false",
+          "true"
         ],
         "wrap": [
           "true",
@@ -879,14 +912,6 @@
       "generatedFile": "packages/raft_theme/lib/recipes/checkbox.g.dart",
       "axes": {}
     },
-    "scrollArea": {
-      "family": null,
-      "decision": "unresolved",
-      "owner": "design-system alignment",
-      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-      "generatedFile": "packages/raft_theme/lib/recipes/scroll_area.g.dart",
-      "axes": {}
-    },
     "sidebarRecipe": {
       "family": null,
       "decision": "unresolved",
@@ -967,7 +992,12 @@
       "owner": "design-system alignment",
       "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
       "generatedFile": "packages/raft_theme/lib/recipes/kbd.g.dart",
-      "axes": {}
+      "axes": {
+        "size": [
+          "sm",
+          "md"
+        ]
+      }
     },
     "contextMenu": {
       "family": "menu",
@@ -991,7 +1021,12 @@
       "owner": "design-system alignment",
       "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
       "generatedFile": "packages/raft_theme/lib/recipes/lightbox.g.dart",
-      "axes": {}
+      "axes": {
+        "nested": [
+          "true",
+          "false"
+        ]
+      }
     },
     "mobileNav": {
       "family": null,
@@ -1007,7 +1042,12 @@
       "owner": "design-system alignment",
       "reason": "Existing family linkage is a source ownership record, not a current visual acceptance.",
       "generatedFile": "packages/raft_theme/lib/recipes/popover.g.dart",
-      "axes": {}
+      "axes": {
+        "size": [
+          "default",
+          "item"
+        ]
+      }
     },
     "previewCard": {
       "family": null,
@@ -1015,7 +1055,12 @@
       "owner": "design-system alignment",
       "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
       "generatedFile": "packages/raft_theme/lib/recipes/preview_card.g.dart",
-      "axes": {}
+      "axes": {
+        "size": [
+          "profile",
+          "item"
+        ]
+      }
     },
     "label": {
       "family": null,
@@ -1058,6 +1103,10 @@
       "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
       "generatedFile": "packages/raft_theme/lib/recipes/input_group.g.dart",
       "axes": {
+        "size": [
+          "md",
+          "lg"
+        ],
         "align": [
           "inline-start",
           "inline-end"
@@ -1099,6 +1148,10 @@
         "chrome": [
           "default",
           "field"
+        ],
+        "fit": [
+          "true",
+          "false"
         ]
       }
     },
@@ -1124,7 +1177,28 @@
       "owner": "design-system alignment",
       "reason": "Existing family linkage is a source ownership record, not a current visual acceptance.",
       "generatedFile": "packages/raft_theme/lib/recipes/segmented_control.g.dart",
-      "axes": {}
+      "axes": {
+        "variant": [
+          "default",
+          "on-frame"
+        ],
+        "iconsOnlyBelow": [
+          "xs",
+          "sm",
+          "md",
+          "lg",
+          "xl",
+          "2xl"
+        ],
+        "inFitToolbar": [
+          "true",
+          "false"
+        ],
+        "iconsOnlyMeasured": [
+          "true",
+          "false"
+        ]
+      }
     },
     "toggleGroup": {
       "family": null,
@@ -1172,7 +1246,8 @@
       "axes": {
         "direction": [
           "vertical",
-          "horizontal"
+          "horizontal",
+          "inline"
         ]
       }
     },
@@ -1185,7 +1260,8 @@
       "axes": {
         "type": [
           "agent",
-          "human"
+          "human",
+          "server"
         ],
         "size": [
           "xl",
@@ -1294,6 +1370,10 @@
           "link",
           "pending",
           "unavailable"
+        ],
+        "capped": [
+          "true",
+          "false"
         ]
       }
     },
@@ -1303,14 +1383,6 @@
       "owner": "design-system alignment",
       "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
       "generatedFile": "packages/raft_theme/lib/recipes/message_multi_select.g.dart",
-      "axes": {}
-    },
-    "messageTextSelectionToolbar": {
-      "family": null,
-      "decision": "unresolved",
-      "owner": "design-system alignment",
-      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-      "generatedFile": "packages/raft_theme/lib/recipes/message_text_selection_toolbar.g.dart",
       "axes": {}
     },
     "messageSystem": {
@@ -1327,7 +1399,12 @@
       "owner": "design-system alignment",
       "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
       "generatedFile": "packages/raft_theme/lib/recipes/message_embed.g.dart",
-      "axes": {}
+      "axes": {
+        "size": [
+          "item",
+          "content"
+        ]
+      }
     },
     "messageQuotedPreview": {
       "family": null,
@@ -1559,7 +1636,8 @@
           "large",
           "body",
           "small",
-          "caption"
+          "caption",
+          "group"
         ],
         "variant": [
           "default",
@@ -1584,7 +1662,6 @@
         "size": [
           "code",
           "meta",
-          "eyebrow",
           "tabular"
         ],
         "variant": [
@@ -1606,7 +1683,16 @@
       "owner": "design-system alignment",
       "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
       "generatedFile": "packages/raft_theme/lib/recipes/table.g.dart",
-      "axes": {}
+      "axes": {
+        "align": [
+          "left",
+          "right"
+        ],
+        "sorted": [
+          "true",
+          "false"
+        ]
+      }
     },
     "filePreview": {
       "family": null,
@@ -1635,7 +1721,12 @@
       "owner": "design-system alignment",
       "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
       "generatedFile": "packages/raft_theme/lib/recipes/composer.g.dart",
-      "axes": {}
+      "axes": {
+        "icon": [
+          "true",
+          "false"
+        ]
+      }
     },
     "composerAttachment": {
       "family": null,
@@ -1904,14 +1995,6 @@
       "generatedFile": "packages/raft_theme/lib/recipes/thread_panel.g.dart",
       "axes": {}
     },
-    "liveAgentActivityBar": {
-      "family": null,
-      "decision": "unresolved",
-      "owner": "design-system alignment",
-      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-      "generatedFile": "packages/raft_theme/lib/recipes/live_agent_activity_bar.g.dart",
-      "axes": {}
-    },
     "taskBoardColumn": {
       "family": null,
       "decision": "unresolved",
@@ -1928,6 +2011,7 @@
       "generatedFile": "packages/raft_theme/lib/recipes/task_status_soft.g.dart",
       "axes": {
         "status": [
+          "backlog",
           "todo",
           "in-progress",
           "in-review",
@@ -1944,6 +2028,7 @@
       "generatedFile": "packages/raft_theme/lib/recipes/task_status_strong.g.dart",
       "axes": {
         "status": [
+          "backlog",
           "todo",
           "in-progress",
           "in-review",
@@ -2008,6 +2093,7 @@
       "generatedFile": "packages/raft_theme/lib/recipes/task_chip.g.dart",
       "axes": {
         "status": [
+          "backlog",
           "todo",
           "in-progress",
           "in-review",
@@ -2021,19 +2107,6 @@
         "size": [
           "default",
           "sm"
-        ]
-      }
-    },
-    "legacyTaskPanel": {
-      "family": null,
-      "decision": "unresolved",
-      "owner": "design-system alignment",
-      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
-      "generatedFile": "packages/raft_theme/lib/recipes/legacy_task_panel.g.dart",
-      "axes": {
-        "framed": [
-          "true",
-          "false"
         ]
       }
     },
@@ -2067,7 +2140,14 @@
       "owner": "design-system alignment",
       "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
       "generatedFile": "packages/raft_theme/lib/recipes/inbox_item.g.dart",
-      "axes": {}
+      "axes": {
+        "density": [
+          "compact"
+        ],
+        "reveal": [
+          "hover"
+        ]
+      }
     },
     "search": {
       "family": null,
@@ -2115,7 +2195,12 @@
       "owner": "task289 menu source ownership",
       "reason": "Exact generated source/semantic role is assigned to the shared menu parts and role adapter; this is source registration, not a visual pass.",
       "generatedFile": "packages/raft_theme/lib/recipes/web_selection_panel.g.dart",
-      "axes": {}
+      "axes": {
+        "width": [
+          "content",
+          "trigger"
+        ]
+      }
     },
     "webMenuAction": {
       "family": "menu",
@@ -2152,7 +2237,16 @@
       "owner": "P1 dialog alignment (task256)",
       "reason": "Pinned Web DialogCard product recipe consumed by the canonical Dialog card composition; current visual acceptance remains pending.",
       "generatedFile": "packages/raft_theme/lib/recipes/web_dialog_card.g.dart",
-      "axes": {}
+      "axes": {
+        "presentation": [
+          "centered",
+          "sheet"
+        ],
+        "description": [
+          "true",
+          "false"
+        ]
+      }
     },
     "webMemberPicker": {
       "family": null,
@@ -2160,7 +2254,12 @@
       "owner": "P1 member picker alignment (task256)",
       "reason": "Pinned Web member-picker product composition is registered; canonical family ownership and current visual acceptance remain pending.",
       "generatedFile": "packages/raft_theme/lib/recipes/web_member_picker.g.dart",
-      "axes": {}
+      "axes": {
+        "fill": [
+          "false",
+          "true"
+        ]
+      }
     },
     "webAgentResetOptions": {
       "family": "radio_group",
@@ -2224,6 +2323,400 @@
       "reason": "Exact generated source/semantic role is assigned to the shared menu parts and role adapter; this is source registration, not a visual pass.",
       "generatedFile": "packages/raft_theme/lib/recipes/web_sidebar_sort_menu.g.dart",
       "axes": {}
+    },
+    "dialogSheet": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "WP-DS2 overlays",
+      "reason": "Published raft-ui0.95.3 source recipe; downstream canonical API and visual acceptance remain pending. This registration is source ownership only.",
+      "generatedFile": "packages/raft_theme/lib/recipes/dialog_sheet.g.dart",
+      "axes": {}
+    },
+    "textLinkVariants": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "WP-DS5 text/content/scrolling",
+      "reason": "Published raft-ui0.95.3 source recipe; downstream canonical API and visual acceptance remain pending. This registration is source ownership only.",
+      "generatedFile": "packages/raft_theme/lib/recipes/text_link_variants.g.dart",
+      "axes": {
+        "variant": [
+          "muted",
+          "strong"
+        ]
+      }
+    },
+    "textSelectionToolbar": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "WP-DS2 overlays",
+      "reason": "Published raft-ui0.95.3 source recipe; downstream canonical API and visual acceptance remain pending. This registration is source ownership only.",
+      "generatedFile": "packages/raft_theme/lib/recipes/text_selection_toolbar.g.dart",
+      "axes": {}
+    },
+    "messageCard": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "WP-DS3 messages/composer; ART2 comments where applicable",
+      "reason": "Published raft-ui0.95.3 source recipe; downstream canonical API and visual acceptance remain pending. This registration is source ownership only.",
+      "generatedFile": "packages/raft_theme/lib/recipes/message_card.g.dart",
+      "axes": {}
+    },
+    "buttonSplit": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "WP-DS1 controls",
+      "reason": "Published raft-ui0.95.3 source recipe; downstream canonical API and visual acceptance remain pending. This registration is source ownership only.",
+      "generatedFile": "packages/raft_theme/lib/recipes/button_split.g.dart",
+      "axes": {}
+    },
+    "buttonSplitMain": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "WP-DS1 controls",
+      "reason": "Published raft-ui0.95.3 source recipe; downstream canonical API and visual acceptance remain pending. This registration is source ownership only.",
+      "generatedFile": "packages/raft_theme/lib/recipes/button_split_main.g.dart",
+      "axes": {}
+    },
+    "buttonSplitMenu": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "WP-DS1 controls",
+      "reason": "Published raft-ui0.95.3 source recipe; downstream canonical API and visual acceptance remain pending. This registration is source ownership only.",
+      "generatedFile": "packages/raft_theme/lib/recipes/button_split_menu.g.dart",
+      "axes": {
+        "variant": [
+          "primary",
+          "warning",
+          "danger",
+          "default"
+        ],
+        "size": [
+          "md",
+          "lg"
+        ]
+      }
+    },
+    "fitToolbar": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "WP-DS5 text/content/scrolling",
+      "reason": "Published raft-ui0.95.3 source recipe; downstream canonical API and visual acceptance remain pending. This registration is source ownership only.",
+      "generatedFile": "packages/raft_theme/lib/recipes/fit_toolbar.g.dart",
+      "axes": {
+        "count": [
+          "true",
+          "false"
+        ],
+        "scroll": [
+          "true",
+          "false"
+        ],
+        "pinned": [
+          "true",
+          "false"
+        ]
+      }
+    },
+    "messageListJump": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "WP-DS3 messages/composer; ART2 comments where applicable",
+      "reason": "Published raft-ui0.95.3 source recipe; downstream canonical API and visual acceptance remain pending. This registration is source ownership only.",
+      "generatedFile": "packages/raft_theme/lib/recipes/message_list_jump.g.dart",
+      "axes": {
+        "side": [
+          "bottom",
+          "top"
+        ]
+      }
+    },
+    "drag": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "WP-DS5 text/content/scrolling",
+      "reason": "Published raft-ui0.95.3 source recipe; downstream canonical API and visual acceptance remain pending. This registration is source ownership only.",
+      "generatedFile": "packages/raft_theme/lib/recipes/drag.g.dart",
+      "axes": {
+        "opaque": [
+          "true",
+          "false"
+        ]
+      }
+    },
+    "inboxItemSkeleton": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "WP-DS3 messages/composer; ART2 comments where applicable",
+      "reason": "Published raft-ui0.95.3 source recipe; downstream canonical API and visual acceptance remain pending. This registration is source ownership only.",
+      "generatedFile": "packages/raft_theme/lib/recipes/inbox_item_skeleton.g.dart",
+      "axes": {}
+    },
+    "listRowSkeleton": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "WP-DS1 controls",
+      "reason": "Published raft-ui0.95.3 source recipe; downstream canonical API and visual acceptance remain pending. This registration is source ownership only.",
+      "generatedFile": "packages/raft_theme/lib/recipes/list_row_skeleton.g.dart",
+      "axes": {}
+    },
+    "mobileNavServer": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "WP-DS4 shell/navigation",
+      "reason": "Published raft-ui0.95.3 source recipe; downstream canonical API and visual acceptance remain pending. This registration is source ownership only.",
+      "generatedFile": "packages/raft_theme/lib/recipes/mobile_nav_server.g.dart",
+      "axes": {}
+    },
+    "appLinkCard": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "WP-DS5 text/content/scrolling",
+      "reason": "Published raft-ui0.95.3 source recipe; downstream canonical API and visual acceptance remain pending. This registration is source ownership only.",
+      "generatedFile": "packages/raft_theme/lib/recipes/app_link_card.g.dart",
+      "axes": {}
+    },
+    "panelSplitAction": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "WP-DS4 shell/navigation",
+      "reason": "Published raft-ui0.95.3 source recipe; downstream canonical API and visual acceptance remain pending. This registration is source ownership only.",
+      "generatedFile": "packages/raft_theme/lib/recipes/panel_split_action.g.dart",
+      "axes": {}
+    },
+    "panelSplitActionMain": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "WP-DS4 shell/navigation",
+      "reason": "Published raft-ui0.95.3 source recipe; downstream canonical API and visual acceptance remain pending. This registration is source ownership only.",
+      "generatedFile": "packages/raft_theme/lib/recipes/panel_split_action_main.g.dart",
+      "axes": {}
+    },
+    "panelSplitActionToggle": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "WP-DS4 shell/navigation",
+      "reason": "Published raft-ui0.95.3 source recipe; downstream canonical API and visual acceptance remain pending. This registration is source ownership only.",
+      "generatedFile": "packages/raft_theme/lib/recipes/panel_split_action_toggle.g.dart",
+      "axes": {}
+    },
+    "panelSplitActionMenu": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "WP-DS4 shell/navigation",
+      "reason": "Published raft-ui0.95.3 source recipe; downstream canonical API and visual acceptance remain pending. This registration is source ownership only.",
+      "generatedFile": "packages/raft_theme/lib/recipes/panel_split_action_menu.g.dart",
+      "axes": {}
+    },
+    "announcement": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "WP-DS2 overlays",
+      "reason": "Published raft-ui0.95.3 source recipe; downstream canonical API and visual acceptance remain pending. This registration is source ownership only.",
+      "generatedFile": "packages/raft_theme/lib/recipes/announcement.g.dart",
+      "axes": {}
+    },
+    "comment": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "WP-DS3 messages/composer; ART2 comments where applicable",
+      "reason": "Published raft-ui0.95.3 source recipe; downstream canonical API and visual acceptance remain pending. This registration is source ownership only.",
+      "generatedFile": "packages/raft_theme/lib/recipes/comment.g.dart",
+      "axes": {
+        "clamp": [
+          "true",
+          "false"
+        ]
+      }
+    },
+    "selectionToolbar": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "WP-DS2 overlays",
+      "reason": "Published raft-ui0.95.3 source recipe; downstream canonical API and visual acceptance remain pending. This registration is source ownership only.",
+      "generatedFile": "packages/raft_theme/lib/recipes/selection_toolbar.g.dart",
+      "axes": {
+        "menu": [
+          "true",
+          "false"
+        ]
+      }
+    },
+    "ellipsis": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "WP-DS5 text/content/scrolling",
+      "reason": "Published raft-ui0.95.3 source recipe; downstream canonical API and visual acceptance remain pending. This registration is source ownership only.",
+      "generatedFile": "packages/raft_theme/lib/recipes/ellipsis.g.dart",
+      "axes": {
+        "multiline": [
+          "true",
+          "false"
+        ],
+        "expanded": [
+          "true",
+          "false"
+        ],
+        "clickable": [
+          "true",
+          "false"
+        ]
+      }
+    },
+    "kbdShortcut": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "WP-DS4 shell/navigation",
+      "reason": "Published raft-ui0.95.3 source recipe; downstream canonical API and visual acceptance remain pending. This registration is source ownership only.",
+      "generatedFile": "packages/raft_theme/lib/recipes/kbd_shortcut.g.dart",
+      "axes": {
+        "size": [
+          "sm",
+          "md"
+        ]
+      }
+    },
+    "meter": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "WP-DS5 text/content/scrolling",
+      "reason": "Published raft-ui0.95.3 source recipe; downstream canonical API and visual acceptance remain pending. This registration is source ownership only.",
+      "generatedFile": "packages/raft_theme/lib/recipes/meter.g.dart",
+      "axes": {
+        "warning": [
+          "true",
+          "false"
+        ],
+        "size": [
+          "sm",
+          "md"
+        ]
+      }
+    },
+    "filterChip": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "WP-DS1 controls",
+      "reason": "Published raft-ui0.95.3 source recipe; downstream canonical API and visual acceptance remain pending. This registration is source ownership only.",
+      "generatedFile": "packages/raft_theme/lib/recipes/filter_chip.g.dart",
+      "axes": {}
+    },
+    "materialProgress": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "WP-DS5 text/content/scrolling",
+      "reason": "Published raft-ui0.95.3 source recipe; downstream canonical API and visual acceptance remain pending. This registration is source ownership only.",
+      "generatedFile": "packages/raft_theme/lib/recipes/material_progress.g.dart",
+      "axes": {}
+    },
+    "pullToRefreshIndicator": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "WP-DS5 text/content/scrolling",
+      "reason": "Published raft-ui0.95.3 source recipe; downstream canonical API and visual acceptance remain pending. This registration is source ownership only.",
+      "generatedFile": "packages/raft_theme/lib/recipes/pull_to_refresh_indicator.g.dart",
+      "axes": {
+        "platform": [
+          "default",
+          "android"
+        ]
+      }
+    },
+    "choiceList": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "WP-DS1 controls",
+      "reason": "Published raft-ui0.95.3 source recipe; downstream canonical API and visual acceptance remain pending. This registration is source ownership only.",
+      "generatedFile": "packages/raft_theme/lib/recipes/choice_list.g.dart",
+      "axes": {
+        "scroll": [
+          "true",
+          "false"
+        ],
+        "fill": [
+          "true",
+          "false"
+        ],
+        "hasAction": [
+          "true",
+          "false"
+        ]
+      }
+    },
+    "saveStatus": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "WP-DS5 text/content/scrolling",
+      "reason": "Published raft-ui0.95.3 source recipe; downstream canonical API and visual acceptance remain pending. This registration is source ownership only.",
+      "generatedFile": "packages/raft_theme/lib/recipes/save_status.g.dart",
+      "axes": {}
+    },
+    "taskCompletionControl": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "WP-DS1 controls",
+      "reason": "Published raft-ui0.95.3 source recipe; downstream canonical API and visual acceptance remain pending. This registration is source ownership only.",
+      "generatedFile": "packages/raft_theme/lib/recipes/task_completion_control.g.dart",
+      "axes": {
+        "preview": [
+          "true",
+          "false"
+        ]
+      }
+    },
+    "kbdButton": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "WP-DS4 shell/navigation",
+      "reason": "Published raft-ui0.95.3 source recipe; downstream canonical API and visual acceptance remain pending. This registration is source ownership only.",
+      "generatedFile": "packages/raft_theme/lib/recipes/kbd_button.g.dart",
+      "axes": {}
+    },
+    "webTopBar": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "WP-DS4 shell/navigation",
+      "reason": "Published raft-ui0.95.3 source recipe; downstream canonical API and visual acceptance remain pending. This registration is source ownership only.",
+      "generatedFile": "packages/raft_theme/lib/recipes/web_top_bar.g.dart",
+      "axes": {}
+    }
+  },
+  "retiredRecipes": {
+    "scrollArea": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "WP-DS5 scroll area",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation. Retired from current raft-ui0.95.3; frozen0.5.52 source remains here. Current consumer migration is not established by this record.",
+      "generatedFile": "packages/raft_theme/lib/recipes/legacy/scroll_area.g.dart",
+      "axes": {}
+    },
+    "messageTextSelectionToolbar": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "WP-DS2/DS3 text selection toolbar",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation. Retired from current raft-ui0.95.3; frozen0.5.52 source remains here. Current consumer migration is not established by this record.",
+      "generatedFile": "packages/raft_theme/lib/recipes/legacy/message_text_selection_toolbar.g.dart",
+      "axes": {}
+    },
+    "liveAgentActivityBar": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "WP-DS3 message activity",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation. Retired from current raft-ui0.95.3; frozen0.5.52 source remains here. Current consumer migration is not established by this record.",
+      "generatedFile": "packages/raft_theme/lib/recipes/legacy/live_agent_activity_bar.g.dart",
+      "axes": {}
+    },
+    "legacyTaskPanel": {
+      "family": null,
+      "decision": "unresolved",
+      "owner": "WP-DS4 task shell",
+      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation. Retired from current raft-ui0.95.3; frozen0.5.52 source remains here. Current consumer migration is not established by this record.",
+      "generatedFile": "packages/raft_theme/lib/recipes/legacy/legacy_task_panel.g.dart",
+      "axes": {
+        "framed": [
+          "true",
+          "false"
+        ]
+      }
     }
   }
 }
