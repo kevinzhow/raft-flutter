@@ -3,6 +3,10 @@ import 'package:raft_ui/raft_ui.dart';
 
 import 'previews.dart';
 
+// Settings › Notifications v2 (Web v1.24.0 components/settings/notifications):
+// the settings rows (a switch or a fitted select at the row's end, under the
+// text below 32rem), the This device card with its test result banner.
+
 @RaftPreviews('Source notification settings (desktop)', size: Size(390, 460))
 Widget sourceDesktopNotificationSettingsPreview() =>
     const _Preview(phone: false);
@@ -18,42 +22,106 @@ class _Preview extends StatefulWidget {
 }
 
 class _State extends State<_Preview> {
-  bool muted = false, saved = false, enabled = false, sent = false;
+  bool sound = true, quiet = false, sent = false;
+  String preview = 'full';
+
   @override
   Widget build(BuildContext context) => SingleChildScrollView(
     child: Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       child: widget.phone
-          ? RaftNotificationSettingsCard(
-              title: 'Phone notifications',
-              description: 'While Raft is connected, new DMs, direct mentions and replies in followed threads show a system notification. In the background Raft checks for new messages periodically, so some may arrive later.',
-              status: enabled ? 'Enabled' : 'Not enabled',
-              hint: 'Whether notifications appear is decided by the system: on Android, Settings → Apps → Raft → Notifications. With Do Not Disturb or a Focus mode on, the system may delay or silence notifications.',
-              actionLabel: enabled
-                  ? 'Send Test Notification'
-                  : 'Enable Notifications',
-              actionTone: enabled
-                  ? RaftButtonRecipeVariant.success
-                  : RaftButtonRecipeVariant.accent,
-              onAction: () => setState(() => enabled = true),
-              muted: muted,
-              onMutedChanged: (v) => setState(() => muted = v),
-              muteDescription: 'Stops notifications from Preview for your account. Other servers are unchanged.',
-              onSave: muted == saved
-                  ? null
-                  : () => setState(() => saved = muted),
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const RaftSettingsSectionHeader(
+                  label: 'All devices',
+                  glyph: RaftGlyph.eye,
+                ),
+                RaftSettingsRowGroup(
+                  rows: [
+                    RaftSettingsRowSpec(
+                      title: 'Notification preview',
+                      control: RaftSettingsSelect<String>(
+                        value: preview,
+                        items: const [
+                          RaftSelectItem(
+                            value: 'full',
+                            label: 'Sender and message',
+                          ),
+                          RaftSelectItem(
+                            value: 'sender_only',
+                            label: 'Sender only',
+                          ),
+                          RaftSelectItem(value: 'hidden', label: 'Hidden'),
+                        ],
+                        onChanged: (v) => setState(() => preview = v ?? 'full'),
+                      ),
+                    ),
+                    RaftSettingsRowSpec(
+                      title: 'Sound',
+                      wrapNarrow: false,
+                      control: RaftSwitch(
+                        value: sound,
+                        onChanged: (v) => setState(() => sound = v),
+                      ),
+                    ),
+                    RaftSettingsRowSpec(
+                      title: 'Quiet hours',
+                      description: 'Every day between these times, nothing alerts on any of your devices; badges still update. Time zone: Europe/Berlin.',
+                      wrapNarrow: false,
+                      control: RaftSwitch(
+                        value: quiet,
+                        onChanged: (v) => setState(() => quiet = v),
+                      ),
+                    ),
+                    if (quiet)
+                      const RaftSettingsRowSpec(
+                        attached: true,
+                        description: '22:00 – 08:00',
+                      ),
+                  ],
+                ),
+              ],
             )
-          : RaftNotificationSettingsCard(
-              title: 'Desktop notifications',
-              description: 'Raft Desktop shows system notifications for new DMs, direct mentions, and followed thread replies while the window is in the background. Web push is not used on desktop.',
-              status: 'Managed by the system',
-              hint: 'Whether these notifications appear is decided by the system, not by Raft: macOS → System Settings → Notifications → Raft. The system may ask for permission the first time a notification is posted. A Focus mode or Do Not Disturb may delay or silence banners.',
-              message: sent
-                  ? 'Test notification posted to the system. If no banner appeared, allow notifications for Raft in System Settings → Notifications, then try again.'
-                  : null,
-              actionLabel: 'Send a test notification',
-              onAction: () => setState(() => sent = true),
-              muted: false,
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const RaftSettingsSectionHeader(
+                  label: 'This device',
+                  glyph: RaftGlyph.bell,
+                ),
+                RaftSettingsRowGroup(
+                  rows: [
+                    RaftSettingsRowSpec(
+                      title: 'Desktop notifications',
+                      titleTrailing: const RaftBadge(
+                        label: 'Managed by the system',
+                        appearance: RaftBadgeRecipeAppearance.soft,
+                      ),
+                      body: [
+                        const RaftListRowDescription(
+                          'Whether these notifications appear is decided by the system: Settings → System → Notifications on Windows, or your desktop’s notification settings on Linux. Do Not Disturb may hold banners back.',
+                          wrap: true,
+                        ),
+                        if (sent)
+                          const RaftTestNotificationBanner(
+                            result: RaftTestNotificationResult.shown,
+                            message: 'Test notification shown on this device.',
+                          ),
+                        Align(
+                          alignment: AlignmentDirectional.centerStart,
+                          child: RaftButton(
+                            label: 'Send test notification',
+                            tone: RaftButtonRecipeVariant.outline,
+                            size: RaftButtonRecipeSize.md,
+                            onPressed: () => setState(() => sent = true),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ],
             ),
     ),
   );

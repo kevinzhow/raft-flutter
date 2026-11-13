@@ -4,11 +4,12 @@ Two Linux-only behaviours. Neither touches other platforms.
 
 ## Message notifications
 
-Linux follows the macOS desktop rules (`DesktopInboxNotifications`): DMs,
-mentions and followed-thread replies from the same accepted Activity inbox,
-filtered by the member's server notification mode (`all` / `mentions` /
-muted). Nothing is shown while the window is focused (`AppLifecycleState.resumed`);
-an unfocused window gets the alert. The notification daemon owns Do Not Disturb
+Linux follows the macOS desktop rules (`DesktopServerNotifications`, Web
+v1.24): the server's `notification:desktop` stream is the only source; the
+server decides who is notified from the levels, mutes, pause and quiet hours.
+Nothing is shown while the window is focused (`AppLifecycleState.resumed`);
+an unfocused window gets the alert, and a delivered alert is acked so the
+server keeps the phone quiet. The notification daemon owns Do Not Disturb
 and per-app settings (the Settings card says "Managed by the system"; there is
 no app-owned switch).
 
