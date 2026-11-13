@@ -2,6 +2,7 @@ library;
 
 export 'src/account_link.dart';
 export 'src/client.dart';
+export 'src/client_config.dart';
 export 'src/legal_acceptance.dart';
 export 'src/models.dart';
 export 'src/permissions.dart';
@@ -11,6 +12,7 @@ export 'src/runtime_form.dart';
 export 'src/second_factor.dart';
 export 'src/server_rate_limits.dart';
 export 'src/session_policy.dart';
+export 'src/wire_fields.dart';
 
 export 'src/provider_probe.dart';
 

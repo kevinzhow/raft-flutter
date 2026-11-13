@@ -1,0 +1,64 @@
+{
+  "_source": "Server v1.24.0-source.1. GET /auth/me, GET /servers, GET /billing/subscription and GET /public/client-config as the local v1.24 stack answers them (ids, names, emails and hosts replaced), plus the optional fields from web store/authStore.ts (User), store/serverStore.ts (Server.theme), shared index.ts (BillingEntitlementProjection) and routes/publicClientConfig.ts.",
+  "user": {
+    "id": "u1000000-0000-4000-8000-0000000000c1",
+    "email": "alice@example.invalid",
+    "name": "alice",
+    "displayName": "Alice",
+    "avatarUrl": null,
+    "gravatarHash": "",
+    "emailVerified": true,
+    "composerSendKey": "mod_enter",
+    "railTabOrder": ["home", "activity", "tasks"],
+    "shortcutOverrides": {"search.open": [{"key": "K", "mod": true}, {"key": "/", "shift": true}, {"mod": true}]},
+    "assistantOtterShortcut": "Mod+Shift+O",
+    "assistantOtterVisible": true,
+    "usedDesktopAppRecently": false
+  },
+  "servers": [
+    {
+      "id": "s0000000-0000-4000-8000-000000000001",
+      "name": "Visual Server",
+      "slug": "visual",
+      "avatarUrl": null,
+      "ownerId": "u1000000-0000-4000-8000-0000000000c1",
+      "plan": "free",
+      "role": "owner",
+      "notificationLevel": "all",
+      "serverPushMuted": false,
+      "publicPageLive": false,
+      "theme": null,
+      "themeDecor": true,
+      "createdAt": "2026-11-13T13:52:29.988Z"
+    },
+    {
+      "id": "s0000000-0000-4000-8000-000000000002",
+      "name": "Acme Partners",
+      "slug": "acme-partners",
+      "plan": "pro",
+      "role": "member",
+      "theme": "space",
+      "themeDecor": false
+    },
+    {
+      "id": "s0000000-0000-4000-8000-000000000003",
+      "name": "Future Server",
+      "slug": "future",
+      "plan": "pro",
+      "role": "member",
+      "theme": "theme-from-a-newer-server"
+    }
+  ],
+  "billing": {
+    "plan": "pro",
+    "serverPlan": "pro",
+    "source": "prepaid",
+    "appsumo": {"tier": "tier2", "lifetime": true},
+    "prepaid": {"endsAt": "2027-02-01T00:00:00.000Z", "graceEndsAt": "2027-02-15T00:00:00.000Z", "inGrace": false, "seatQuantity": 5},
+    "subscription": null
+  },
+  "clientConfig": {
+    "appHosts": ["app.raft.build", "localhost", "App.Example", "host:8080", "app.raft.build", "a/b", 7],
+    "artifactsEmbedOrigin": "http://artifacts.localhost:18787"
+  }
+}

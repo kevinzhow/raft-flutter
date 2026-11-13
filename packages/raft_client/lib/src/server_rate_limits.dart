@@ -1,6 +1,7 @@
 /// The Raft server's per-route rate limits, mirrored from
-/// `packages/server/src/app.ts` (express-rate-limit, in-memory store, so each
-/// server replica counts on its own).
+/// `packages/server/src/app.ts` at v1.24.0-source.1 (express-rate-limit; most
+/// use the in-memory store, so each server replica counts on its own, the
+/// message limiter is counted across replicas).
 ///
 /// The client uses this table to (a) pace its own background requests below a
 /// limit with headroom, (b) classify a 429 into the bucket it came from and
@@ -47,17 +48,19 @@ abstract final class ServerRateLimits {
     note: 'downloadLimiter, all /api/attachments requests',
   );
 
-  /// `messageLimiter`: non-GET `/api/messages`, `/api/v2/messages` and
-  /// `POST /api/attachments/:id/comments`.
+  /// `messageLimiter`: non-GET `/api/messages`, `/api/v2/messages`,
+  /// `/api/tasks`, `POST /api/channels/:id/threads` and
+  /// `POST /api/attachments/:id/comments`. 120 a minute since v1.24 (60
+  /// before), counted across replicas.
   static const messages = ServerRateLimit(
     'messages',
-    max: 60,
+    max: 120,
     window: Duration(minutes: 1),
-    key: 'user',
-    note: 'messageLimiter, writes only (GET skipped)',
+    key: 'user-or-ip',
+    note: 'messageLimiter, writes only (GET skipped), across replicas',
   );
 
-  /// `uploadLimiter`: non-GET `/api/attachments` writes and share artifacts.
+  /// `uploadLimiter`: non-GET `/api/attachments` writes.
   static const uploads = ServerRateLimit(
     'uploads',
     max: 10,
@@ -75,9 +78,13 @@ abstract final class ServerRateLimits {
     note: 'directUploadLimiter',
   );
 
-  /// `authLimiter`: `/api/auth/*` (login, refresh, me, logout, device, ...),
-  /// `/api/public`, `/api/app-installation`, `/api/release-notes`,
-  /// `/api/mobile-download`, `/api/computer`, `/api/oauth`.
+  /// `authLimiter`: `/api/auth/*` (login, refresh, me, logout, device,
+  /// second-factor, ...; not invite-info / accept-invite), `/api/public`,
+  /// `/api/app-installation`, `/api/release-notes`, `/api/mobile-download`,
+  /// `/api/desktop-download`, `/api/computer`, `/api/oauth`, `/api/invites`,
+  /// `/api/external-invites`, `/api/server-connect-requests`,
+  /// `/api/me/account/deletion`, `/api/mcp/oauth`, `/api/connections`,
+  /// `/api/appsumo`.
   static const auth = ServerRateLimit(
     'auth',
     max: 200,
@@ -107,7 +114,50 @@ abstract final class ServerRateLimits {
     max: 5,
     window: Duration(minutes: 1),
     key: 'ip',
-    note: 'billingLimiter, writes only',
+    note: 'billingLimiter, writes only, not the seat previews',
+  );
+
+  /// `billingPreviewLimiter`: `POST /api/billing/(seat-)pack-quantity/preview`
+  /// (v1.24; the previews counted against [billing] before).
+  static const billingPreview = ServerRateLimit(
+    'billing-preview',
+    max: 30,
+    window: Duration(minutes: 1),
+    key: 'ip',
+    note: 'billingPreviewLimiter, seat-quantity previews',
+  );
+
+  /// `inviteFlowLimiter`: invite preview / accept and the invite routers.
+  static const inviteFlow = ServerRateLimit(
+    'invite-flow',
+    max: 120,
+    window: Duration(minutes: 1),
+    key: 'ip',
+    note: 'inviteFlowLimiter',
+  );
+
+  /// `searchLimiter` (`/api/search`), `objectSummariesLimiter`
+  /// (`/api/objects`) and `mentionAudienceLimiter` (`/api/mentions`), v1.24.
+  static const search = ServerRateLimit(
+    'search',
+    max: 300,
+    window: Duration(minutes: 1),
+    key: 'user-or-ip',
+    note: 'searchLimiter, /api/search',
+  );
+  static const objectSummaries = ServerRateLimit(
+    'object-summaries',
+    max: 300,
+    window: Duration(minutes: 1),
+    key: 'user-or-ip',
+    note: 'objectSummariesLimiter, /api/objects',
+  );
+  static const mentionAudience = ServerRateLimit(
+    'mention-audience',
+    max: 300,
+    window: Duration(minutes: 1),
+    key: 'user-or-ip',
+    note: 'mentionAudienceLimiter, /api/mentions',
   );
 
   static const feedback = ServerRateLimit(
@@ -126,14 +176,6 @@ abstract final class ServerRateLimits {
     note: 'forgotPasswordLimiter',
   );
 
-  static const notificationEnrollment = ServerRateLimit(
-    'notification-enrollment',
-    max: 60,
-    window: Duration(minutes: 1),
-    key: 'ip',
-    note: 'enrollmentGrantLimiter / enrollmentExchangeLimiter',
-  );
-
   static const all = <ServerRateLimit>[
     attachments,
     messages,
@@ -143,9 +185,13 @@ abstract final class ServerRateLimits {
     translation,
     productEvents,
     billing,
+    billingPreview,
+    inviteFlow,
+    search,
+    objectSummaries,
+    mentionAudience,
     feedback,
     forgotPassword,
-    notificationEnrollment,
   ];
 
   static ServerRateLimit? byId(String id) {
@@ -177,23 +223,45 @@ abstract final class ServerRateLimits {
           uploadSessions,
       ];
     }
-    if (under('/messages') || under('/v2/messages')) {
+    if (under('/messages') || under('/v2/messages') || under('/tasks')) {
       return [if (write) messages];
+    }
+    if (m == 'POST' && RegExp(r'^/channels/[^/]+/threads/?$').hasMatch(p)) {
+      return [messages];
     }
     if (p.startsWith('/message-translations')) return [translation];
     if (under('/product-events')) return [productEvents];
-    if (under('/billing')) return [if (write) billing];
+    if (under('/billing')) {
+      final preview = RegExp(r'^/billing/(?:seat-)?pack-quantity/preview/?$')
+          .hasMatch(p);
+      return [if (write) preview ? billingPreview : billing];
+    }
+    if (under('/search')) return [search];
+    if (under('/objects')) return [objectSummaries];
+    if (under('/mentions')) return [mentionAudience];
+    if (p == '/auth/invite-info' || p == '/auth/accept-invite') {
+      return [inviteFlow];
+    }
+    if (under('/invites') ||
+        under('/external-invites') ||
+        under('/server-connect-requests')) {
+      return [inviteFlow, auth];
+    }
     if (under('/product-feedback')) return [if (write) feedback];
-    if (under('/share-artifacts')) return [uploads];
-    if (p == '/auth/forgot-password') return [forgotPassword];
-    if (under('/notifications')) return [notificationEnrollment];
+    // v1.24: the retired share-artifacts create route (410) has no limiter.
+    if (p == '/auth/forgot-password') return [forgotPassword, auth];
     if (under('/auth') ||
         under('/public') ||
         under('/app-installation') ||
         under('/release-notes') ||
         under('/mobile-download') ||
+        under('/desktop-download') ||
         under('/oauth') ||
-        under('/computer')) {
+        under('/computer') ||
+        under('/me/account/deletion') ||
+        under('/mcp/oauth') ||
+        under('/connections') ||
+        under('/appsumo')) {
       return [auth];
     }
     return const [];
@@ -207,7 +275,8 @@ String routeTemplate(String path) {
   final segments = withoutApi.split('/');
   return segments
       .map(
-        (s) => RegExp(
+        (s) =>
+            RegExp(
               r'^(?:[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}|[0-9a-fA-F]{16,}|\d+|[A-Za-z0-9_-]{22,})$',
             ).hasMatch(s)
             ? ':id'

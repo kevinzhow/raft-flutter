@@ -8,6 +8,7 @@ import 'package:socket_io_client/socket_io_client.dart' as io;
 import 'package:uuid/uuid.dart';
 
 import 'account_link.dart';
+import 'client_config.dart';
 import 'legal_acceptance.dart';
 import 'models.dart';
 import 'rate_limit_governor.dart';
@@ -84,9 +85,20 @@ class RaftApiException implements Exception {
   final Map<String, dynamic> details;
   final String message;
   final int? status;
+
+  /// The server's machine-readable `code`, when it sent a string one (Web
+  /// `getApiErrorResponse`).
+  String? get code => switch (details['code']) {
+    final String code when code.isNotEmpty => code,
+    _ => null,
+  };
   @override
   String toString() => message;
 }
+
+/// A 401 whose body says the password sent with the request was wrong.
+bool _passwordIncorrect(Object? body) =>
+    body is Map && body['code'] == 'password_incorrect';
 
 Map<String, dynamic> _errorDetails(Map? body) {
   const keys = {
@@ -1609,6 +1621,10 @@ class RaftClient {
       if (e.response?.statusCode == 401 &&
           authorized &&
           !retried &&
+          // A wrong password sent inline (POST /me/account/deletion) is a 401
+          // about that password, not this sign-in: refreshing and resending
+          // it would count the attempt twice (Web api/client.ts).
+          !_passwordIncorrect(e.response?.data) &&
           (!path.startsWith('/auth/') || path == '/auth/me') &&
           _session != null) {
         if (requestGeneration != generation() ||
@@ -2018,6 +2034,26 @@ class RaftClient {
   /// Web ThreadPanel: a closed thread leaves its room.
   void leaveChannel(String channelId) =>
       _socket?.emit('leave:channel', channelId);
+
+  /// This deployment's client config ([RaftClientConfig]). Read without
+  /// credentials or a server; any failure (an older server's 404, a timeout,
+  /// an odd answer) is [RaftClientConfig.fallback], never an error.
+  Future<RaftClientConfig> clientConfig() async {
+    try {
+      return RaftClientConfig.fromJson(
+        await _request(
+          'GET',
+          '/public/client-config',
+          authorized: false,
+          workspaceScoped: false,
+          receiveTimeout: RaftClientConfig.timeout,
+        ).timeout(RaftClientConfig.timeout),
+      );
+    } catch (_) {
+      return RaftClientConfig.fallback;
+    }
+  }
+
   Future<List<RaftRecord>> servers() async => (await get('/servers') as List)
       .map((e) => RaftRecord(Map<String, dynamic>.from(e)))
       .toList();
