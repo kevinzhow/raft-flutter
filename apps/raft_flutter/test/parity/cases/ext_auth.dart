@@ -273,6 +273,7 @@ final Map<String, ParityCase> _surfaces = {
     'login.missing-password',
     'login.error',
     'login.filled',
+    'login.signing',
     'social.buttons',
     'social.hover',
   ])

@@ -239,12 +239,22 @@ class RaftField extends StatelessWidget {
             ],
           )
         else
+          // The action sits at the far end (`justify-between`): a loose
+          // label next to a Spacer would split the free space with it and
+          // leave the action in the middle of the row.
           Row(
             spacing: _tw,
             children: [
-              Flexible(child: labelText),
-              ?labelAccessory,
-              if (labelAction != null) ...[const Spacer(), labelAction!],
+              Expanded(
+                child: Row(
+                  spacing: _tw,
+                  children: [
+                    Flexible(child: labelText),
+                    ?labelAccessory,
+                  ],
+                ),
+              ),
+              ?labelAction,
             ],
           ),
         child,

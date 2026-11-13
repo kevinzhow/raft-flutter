@@ -17943,9 +17943,9 @@
    "capability": "Drop a pending social-login link when the user declines to connect",
    "background": false,
    "status": "covered",
-   "webEntry": "hooks/useAccountLinkSignIn.ts (Do not connect / Back to Sign In)",
+   "webEntry": "hooks/useAccountLinkSignIn.ts (Do not connect / Back to Sign In; v1.24.0: unchanged path, the link completes after the two-step code)",
    "gate": "none",
-   "flutterEntry": "AuthView cancelLink() posts it, then shows the ordinary sign-in page",
+   "flutterEntry": "AuthView cancelLink() posts it, then shows the ordinary sign-in page; a two-step account verifies the code first and the link is adopted with the session (RaftClient.verifySecondFactor)",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/auth_view.dart",

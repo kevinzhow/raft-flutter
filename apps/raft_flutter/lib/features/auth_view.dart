@@ -15,7 +15,9 @@ import '../data/server_error_code.dart';
 import '../data/source_time_formatter.dart';
 import '../data/user_error.dart';
 import 'auth_account_link.dart';
+import 'auth_provider_count.dart';
 import 'management_support.dart';
+import 'social_sign_in_failure.dart';
 
 bool isValidAuthEmail(String value) =>
     RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$').hasMatch(value.trim());
@@ -130,6 +132,9 @@ class _AuthState extends State<AuthView> {
   // ignore: raft_lints/avoid_imperative_notice_state -- Each clears when its field is edited, on submit revalidation and on mode switch.
   String? emailError, passwordError, confirmError, tokenError;
   List<Map<String, dynamic>> providers = [];
+
+  /// `/auth/providers` is on its way: the page keeps the buttons' space.
+  bool providersLoading = false;
   NativeOAuthBroker? broker;
 
   /// The pending "sign in and connect" this page continues, and why its last
@@ -169,9 +174,15 @@ class _AuthState extends State<AuthView> {
   Future<void> loadProviders({bool requestPermission = false}) async {
     final request = ++providerRequest;
     if (!hasOAuth || authOriginError(base.text) != null) {
-      if (mounted) setState(() => providers = []);
+      if (mounted) {
+        setState(() {
+          providers = [];
+          providersLoading = false;
+        });
+      }
       return;
     }
+    providersLoading = true;
     final client =
         widget.anonymousClientFactory?.call(base.text.trim()) ??
         RaftClient(
@@ -188,17 +199,19 @@ class _AuthState extends State<AuthView> {
         authorized: false,
       );
       if (mounted && request == providerRequest) {
-        setState(
-          () =>
-              providers = managementRows(data['providers'])
-                  .where((p) => p['enabled'] == true)
-                  .toList(),
-        );
+        setState(() {
+          providers = managementRows(data['providers'])
+              .where((p) => p['enabled'] == true)
+              .toList();
+          providersLoading = false;
+          rememberAuthProviders(base.text.trim(), providers.length);
+        });
       }
     } catch (e) {
       if (mounted && request == providerRequest) {
         setState(() {
           providers = [];
+          providersLoading = false;
           if (requestPermission && e is RaftApiException) {
             error = authFailureText(e, 'Login failed', where: 'auth providers');
           }
@@ -302,11 +315,13 @@ class _AuthState extends State<AuthView> {
     } else if (link != null && isAccountLinkFailure(e)) {
       linkFailure = serverErrorCode(e);
     } else {
-      error = authFailureText(
-        e,
-        'Failed to finish sign-in',
-        where: 'social sign-in',
-      );
+      error =
+          socialSignInFailureText(context, e, socialProviderLabel(provider)) ??
+          authFailureText(
+            e,
+            'Failed to finish sign-in',
+            where: 'social sign-in',
+          );
     }
   }
 
@@ -972,6 +987,9 @@ class _AuthState extends State<AuthView> {
             if (pending == null || pending.providers.contains(p['id']))
               RaftAuthProviderEntry('${p['id']}', '${p['label']}'),
         ],
+        reservedProviders: providersLoading
+            ? expectedAuthProviders(base.text.trim())
+            : 0,
         onProvider: (id) => social(id),
         onCancelBrowser: broker == null ? null : () => broker!.cancel(),
         // "Browser didn't open?": the launcher failed or nothing came back

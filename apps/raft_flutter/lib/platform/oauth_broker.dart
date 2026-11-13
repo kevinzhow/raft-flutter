@@ -13,6 +13,19 @@ import 'package:url_launcher/url_launcher.dart';
 import 'app_window.dart';
 import 'oauth_return_page.dart';
 
+/// The browser came back with the server's `error` instead of a code
+/// (`completeMobileOAuthProviderCallback`: `expired`, `request_not_pending`,
+/// `provider_cancelled`, `account_conflict`, `registration_disabled`,
+/// `provider_exchange_failed`, or the provider's own `error`). [code] is
+/// untrusted: lower-cased and kept only when it is a plain token.
+class OAuthCallbackFailure extends RaftApiException {
+  OAuthCallbackFailure(String? code)
+    : code = _token.hasMatch(code ?? '') ? code!.toLowerCase() : null,
+      super('Authentication was not completed. Return to Raft and try again.');
+  static final _token = RegExp(r'^[A-Za-z0-9_.-]{1,64}$');
+  final String? code;
+}
+
 class OAuthHandoff {
   const OAuthHandoff(this.code, this.verifier);
   final String code, verifier;
@@ -209,7 +222,7 @@ class NativeOAuthBroker {
     if (_completion == null || _completion!.isCompleted) return;
     if (params['provider'] != _provider || params['mode'] != mode) return;
     if (params['error'] != null) {
-      _fail('Authentication was not completed. Return to Raft and try again.');
+      _completion!.completeError(OAuthCallbackFailure(params['error']));
       return;
     }
     final code = params['code'];

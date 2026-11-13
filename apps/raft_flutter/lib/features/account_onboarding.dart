@@ -372,13 +372,18 @@ class _OnboardingState extends State<AccountOnboardingView>
         tokenField: RaftTextInput(
           key: const Key('verification-token'),
           controller: token,
-          hintText: tr('Paste verification token'),
+          hintText: tr('Paste the verification link'),
           semanticLabel: tr('Verification link or code'),
           onChanged: (_) => setState(() {}),
           onSubmitted: (_) => verifyManual(),
         ),
         onResend: resend,
-        onToggleManual: () => setState(() => manualOpen = !manualOpen),
+        // Web v1.24: Paste link opens the box; Cancel closes it and drops
+        // what was typed.
+        onToggleManual: () => setState(() {
+          manualOpen = !manualOpen;
+          token.clear();
+        }),
         onVerify: verifyManual,
         onLogOut: () => unawaited(widget.onSignOut()),
       );
