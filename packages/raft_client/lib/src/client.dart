@@ -891,6 +891,7 @@ class RaftClient {
     String password, {
     required bool acceptTerms,
     String legalAcceptanceSource = 'signup',
+    LegalVersions legal = LegalVersions.current,
   }) async {
     if (!acceptTerms)
       throw const RaftApiException(
@@ -905,8 +906,8 @@ class RaftClient {
         'email': email,
         'password': password,
         'acceptTerms': true,
-        'termsVersion': '2026-05-12',
-        'privacyVersion': '2026-05-12',
+        'termsVersion': legal.termsVersion,
+        'privacyVersion': legal.privacyVersion,
         'legalAcceptanceSource': legalAcceptanceSource,
       },
     );

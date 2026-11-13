@@ -3631,6 +3631,18 @@
     "canonicalRegistry": "tool/ds-audit-families.json",
     "about": "Ownership registration only. The resolved scanner checks completeness. UNKNOWN/pending/history never count as current visual PASS. Existing lifecycle covered records retain their original scope.",
     "declarations": {
+      "packages/raft_ui/lib/src/auth_page.dart#class:RaftAuthUsageDataNotice": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/auth_page.dart#method:RaftAuthUsageDataNotice.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
       "apps/raft_flutter/lib/features/message_task_actions.dart#function:messageTaskMenuItem": {
         "role": "unresolved",
         "familyRefs": [],
@@ -6434,7 +6446,7 @@
         "owner": "Choice9 design-system alignment",
         "reason": "Reviewed production choice composition/delegation, not a thin-wrapper/no-paint claim or a visual PASS."
       },
-      "apps/raft_flutter/lib/features/auth_view.dart#local-function:CLASS:_AuthState@3694/METHOD:build@26017/FUNCTION:bars@28554": {
+      "apps/raft_flutter/lib/features/auth_view.dart#local-function:CLASS:_AuthState@3694/METHOD:build@27060/FUNCTION:bars@29597": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
@@ -20761,7 +20773,7 @@
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
-      "packages/raft_ui/lib/src/auth_page.dart#local-function:CLASS:RaftAuthPrompt@28320/METHOD:build@28555/FUNCTION:run@29097": {
+      "packages/raft_ui/lib/src/auth_page.dart#local-function:CLASS:RaftAuthPrompt@28637/METHOD:build@28872/FUNCTION:run@29414": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",

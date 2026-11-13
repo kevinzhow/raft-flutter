@@ -126,6 +126,11 @@ class _AuthState extends State<AuthView> {
   /// The sign-in code waits for an explicit acceptance of the terms.
   SocialLegalStep? legal;
   bool legalChecked = false;
+
+  /// The terms the server named when an email sign-up was refused with
+  /// `TERMS_CHANGED` (this build predates them): the next explicit
+  /// acceptance names these, like the social legal step.
+  LegalVersions? registerLegal;
   // ignore: raft_lints/avoid_imperative_notice_state -- Clears on submit, social sign-in start, cancel, restart and when a new link starts.
   String? linkFailure;
   Timer? providerDebounce;
@@ -595,12 +600,25 @@ class _AuthState extends State<AuthView> {
             );
           }
         case 'register':
-          await widget.onRegister(
-            base.text.trim(),
-            email.text.trim(),
-            password.text,
-            accepted,
-          );
+          final versions = registerLegal, run = widget.authenticate;
+          if (versions != null && run != null) {
+            await run(
+              base.text.trim(),
+              (c) => c.register(
+                email.text.trim(),
+                password.text,
+                acceptTerms: accepted,
+                legal: versions,
+              ),
+            );
+          } else {
+            await widget.onRegister(
+              base.text.trim(),
+              email.text.trim(),
+              password.text,
+              accepted,
+            );
+          }
         case 'forgot':
           await anonymous('/auth/forgot-password', {
             'email': email.text.trim(),
@@ -627,6 +645,13 @@ class _AuthState extends State<AuthView> {
         setState(() {
           if (mode == 'login' && e is SecondFactorRequired) {
             startSecondFactor(e);
+          } else if (mode == 'register' &&
+              isLegalAcceptanceRejection(e) &&
+              LegalVersions.fromError(e) != null) {
+            // Review the changed terms and agree again before retrying.
+            registerLegal = LegalVersions.fromError(e);
+            accepted = false;
+            error = 'The Terms of Service or Privacy Policy changed. Review and continue.';
           } else if (mode == 'login' &&
               link != null &&
               isAccountLinkFailure(e)) {

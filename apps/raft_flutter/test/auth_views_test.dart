@@ -321,28 +321,41 @@ void main() {
     });
   }
 
-  // RegisterPage (task #724): a disabled Continue says why.
-  testWidgets('register: the disabled Continue states the legal reason', (
+  // Web v1.24 RegisterPage: LegalAcceptanceUsageDataNotice sits under
+  // Continue whether or not the box is checked (privacy 2026-10-14); the
+  // v1.21 "agree to continue" hint is gone.
+  testWidgets('register: the usage-data notice sits under Continue', (
     tester,
   ) async {
     await tester.pumpWidget(authApp(mode: 'register'));
-    const hint =
-        'Agree to the Terms of Service and acknowledge the Privacy Policy to continue.';
-    expect(find.text(hint), findsOneWidget);
+    const notice =
+        'Raft collects usage data to improve the product. You can turn it off anytime in Settings.';
+    expect(find.text(notice), findsOneWidget);
+    expect(
+      find.text(
+        'Agree to the Terms of Service and acknowledge the Privacy Policy to continue.',
+      ),
+      findsNothing,
+    );
     await tester.ensureVisible(find.byKey(const Key('register-legal')));
     await tester.tap(find.byKey(const Key('register-legal')));
     await tester.pumpAndSettle();
-    expect(find.text(hint), findsNothing);
-    await tester.tap(find.byKey(const Key('register-legal')));
-    await tester.pumpAndSettle();
-    expect(find.text(hint), findsOneWidget);
+    expect(find.text(notice), findsOneWidget);
+    expect(
+      tester.getTopLeft(find.text(notice)).dy,
+      greaterThan(
+        tester.getBottomLeft(find.byKey(const Key('login-submit'))).dy,
+      ),
+    );
   });
 
-  testWidgets('register: the legal reason is localized to zh', (tester) async {
+  testWidgets('register: the usage-data notice is localized to zh', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       authApp(mode: 'register', locale: const Locale('zh')),
     );
-    expect(find.text('请先同意服务条款并确认隐私政策，再继续。'), findsOneWidget);
+    expect(find.text('Raft 会收集使用数据来改进产品，你可以随时在设置中关闭。'), findsOneWidget);
     expect(find.text('已有账号？'), findsOneWidget);
   });
 

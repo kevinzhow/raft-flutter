@@ -80,6 +80,10 @@ class RaftAuthLegalPage extends StatelessWidget {
             variant: RaftControlVariant.accent,
             onPressed: accepted && !busy ? onContinue : null,
           ),
+          // Web v1.24 SocialAuthCallbackPage: the usage-data notice under
+          // Continue.
+          const SizedBox(height: 16),
+          const RaftAuthUsageDataNotice(),
         ],
       ),
     );
