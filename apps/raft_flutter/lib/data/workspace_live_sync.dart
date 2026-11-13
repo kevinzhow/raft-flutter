@@ -142,7 +142,12 @@ class WorkspaceLiveSync {
         if (ok) {
           sync.resnapshotAll(SyncFetchReason.reconnect);
         } else {
-          _reloadAll(s);
+          // No cursor (e.g. `sync_changes_api` off): the two reads this
+          // reconnect skipped run as before; the rest already did.
+          if (s.due('sidebar')) s.directory.loadSidebar();
+          if (s.due('channels')) {
+            unawaited(s.directory.refreshChannels(quietErrors: true));
+          }
         }
       }),
     );
@@ -167,7 +172,7 @@ class WorkspaceLiveSync {
     });
   }
 
-  /// Web onCursorDropped / a failed start: read every list again.
+  /// Web onCursorDropped: read every list again.
   void _reloadAll(WorkspaceSession s) {
     s.directory.loadSidebar();
     unawaited(s.directory.refreshChannels(quietErrors: true));

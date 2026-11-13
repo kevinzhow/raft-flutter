@@ -57,7 +57,6 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
   /// (activity, last seen) do not change them.
   WorkspaceEntitySelection? entities;
   Timer? coalesce, closeDelay, jointInvitesPing;
-  bool roomsJoinedBefore = false;
   RaftForegroundPeriodic? poll;
   final resumeRefresh = Freshness(const Duration(seconds: 20));
   OverlayEntry? popup;
@@ -126,15 +125,12 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
         coalesce = Timer(const Duration(milliseconds: 150), store.refresh);
       }
       // Web v1.24 listChangedSocket: `joint-invites:changed` re-reads the
-      // pending joint invites (pings within 100 ms read once); a reconnect's
-      // `rooms:joined` asks once, since pings sent while away are lost.
+      // pending joint invites (pings within 100 ms read once). Pings lost
+      // while away are covered by the resume read and the 60 s poll above.
       final ping = LiveEvent.read(e.name, e.payload);
-      final reconnected = e.name == 'rooms:joined' && roomsJoinedBefore;
-      if (e.name == 'rooms:joined') roomsJoinedBefore = true;
-      if (reconnected ||
-          ping is ListChangedEvent &&
-              ping.event == ListChangedEvent.jointInvites &&
-              ping.serverId == w.client.serverId) {
+      if (ping is ListChangedEvent &&
+          ping.event == ListChangedEvent.jointInvites &&
+          ping.serverId == w.client.serverId) {
         jointInvitesPing?.cancel();
         jointInvitesPing = Timer(
           const Duration(milliseconds: 100),
