@@ -29,6 +29,9 @@ not a decision.
 { "pinned": "v1.21.2-source.1", "commit": "26f77ef...", "history": [ { "tag": ..., "from": ..., "decision": ..., "date": ..., "note": ..., "report": ..., "deferred": [] } ] }
 ```
 
+While the work for a newer release is under way, `pending` names it (`{ "tag", "commit", "from", "since", "note" }`);
+`status` prints it and `record-decision` for that tag removes it. It never moves the pin.
+
 `pinned` is the newest upstream release whose differences we have *decided on* (adopted, partly adopted, skipped or
 deferred on purpose). It is the baseline of the next report. It is not the same as "everything in it is implemented":
 rows answered `partial` or `discuss` and left open are recorded in `deferred` so they are not forgotten.
@@ -46,7 +49,7 @@ edited by the tool:
 
 1. **Check.** `python3 tool/upstream_sync.py status` fetches tags into our own mirror and prints pinned vs latest. It also compares the raft-ui version the Web depends on with the one our recipes were generated from (`docs/component-recipes.md`) and prints a drift line when they differ: the Web can change design-system releases without a source change we would otherwise notice; regenerate with `tool/recipes/run`.
    Nothing newer: stop.
-2. **Report.** `python3 tool/upstream_sync.py report` (writes `/tmp/upstream-sync/report.md` + `report.json`; `--from/--to`
+2. **Report.** `python3 tool/upstream_sync.py report` (writes `/tmp/upstream-sync/report.md` + `report.json` + `path-map.md`; `--from/--to`
    pick other tags; `--out DIR`). Takes a few seconds; read-only network, no credentials.
 3. **Review.** Cindy skims the highlights and decision table, fixes proposals that are plainly wrong, and commits the
    report as `docs/upstream-reports/<from>-to-<to>.md` (version numbers without `-source.N`, e.g. `v1.21.2-to-v1.21.12.md`).
@@ -112,8 +115,13 @@ are re-taken. A drop on a case whose Web component changed means a visual follow
 
 - Everything is regex- and name-based. Missing counterparts may be missing *mappings*; add a `// Source: Foo.tsx` comment
   or a capability entry and the next run finds it.
-- The capability extractor only knows the `api`/`client` receivers and listed wrappers. When upstream adds a wrapper, endpoints
-  appear removed/added; fix the extractor (as done for `getWithRwOverloadRetry`) before judging.
+- The capability extractor only knows the `api`/`client`/`deps` receivers, the listed GET wrappers (`getWithRwOverloadRetry`,
+  `getRwRead` with the path as its second argument) and path-builder objects (`artifactWebPaths.viewer(id)`, read through local
+  wrappers like `send("POST", path)`). When upstream adds a wrapper, endpoints appear removed/added; fix the extractor before
+  judging. Path constants resolve in their own file or the file they are imported from, never from another file's same-named
+  constant.
+- Moved and split Web files are followed by top-level names and copy ids (`path-map.md` next to the report: old -> new path and the
+  Dart files whose `// Source:` still cite the old one). One shared helper name is not enough to call a file moved.
 - Server behaviour and field sections point at places to look; they do not prove a divergence.
 - Snapshot tags carry no per-change notes. Product release notes are served by the Web server, not stored in the tree.
 

@@ -48,6 +48,7 @@ STATE_FILE = "docs/upstream-sync.json"
 TAG_RE = re.compile(r"^v(\d+)\.(\d+)\.(\d+)-source\.(\d+)$")
 DECISIONS = ("follow", "partial", "skip", "discuss")
 EXTRACT_PATHS = ("packages/web/src",)
+EXTRACT_PATHS_OLD = ("packages/web/src", "packages/shared/src")  # shared: the path builders Web calls go through
 EXTRACT_PATHS_NEW = ("packages/web/src", "packages/sync-core", "packages/shared/src")  # + what tool/behavior-parity reads
 
 
@@ -296,6 +297,8 @@ _DART_STR_RE = re.compile(
     r"""'((?:[^'\\\n]|\\.)*)'|"((?:[^"\\\n]|\\.)*)\"""")
 _QUOTED_TOKEN_RE = re.compile(r"""['"]([A-Za-z_][A-Za-z0-9_:\-.]{2,})['"]""")
 _TSX_REF_RE = re.compile(r"\b([A-Za-z][A-Za-z0-9]+)\.(tsx?)\b")
+# The same with the directories written before it (`raftbench/model.ts`), to tell same-named files apart.
+_TSX_PATH_REF_RE = re.compile(r"((?:[A-Za-z0-9_.\-]+/)*)\b([A-Za-z][A-Za-z0-9]+)\.(tsx?)\b")
 
 
 def camel_to_snake(name: str) -> str:
@@ -354,6 +357,8 @@ class OurIndex:
     catalog_norm: dict = field(default_factory=dict)    # normalized English -> zh
     tokens: dict = field(default_factory=dict)          # quoted token -> [files] (capped)
     lib_mentions: dict = field(default_factory=dict)    # "Foo" -> {files that cite Foo.tsx}
+    web_stem_clash: set = field(default_factory=set)    # Web file stems that more than one file of either tree has
+    lib_mention_dirs: dict = field(default_factory=dict)  # ("Foo", dart file) -> {"dir/sub/" prefixes it writes, "" when bare}
     doc_mentions: dict = field(default_factory=dict)    # "Foo" -> {docs that cite Foo.tsx}
     cap_by_file: dict = field(default_factory=dict)     # "Foo" -> [(cap id, status, [flutter files])]
     cap_entries: list = field(default_factory=list)
@@ -399,8 +404,9 @@ def build_our_index(repo: Path) -> OurIndex:
             text = p.read_text(encoding="utf-8", errors="replace")
             for t in set(_QUOTED_TOKEN_RE.findall(text)):
                 add_token(t, rel)
-            for name, _ext in _TSX_REF_RE.findall(text):
+            for prefix, name, _ext in _TSX_PATH_REF_RE.findall(text):
                 ix.lib_mentions.setdefault(name, set()).add(rel)
+                ix.lib_mention_dirs.setdefault((name, rel), set()).add(prefix)
     fx = repo / "apps/raft_flutter/test/fixtures"
     if fx.is_dir():
         for p in _walk_files(fx, (".json", ".dart")):
@@ -449,6 +455,10 @@ def find_counterpart(ix: OurIndex, web_path: str) -> dict:
     base = Path(web_path).stem
     files, via = [], []
     for f in sorted(ix.lib_mentions.get(base, ())):
+        dirs = ix.lib_mention_dirs.get((base, f), {""})
+        # Two Web files share the name (`raftbench/model.ts`, `agentMigration/log/model.ts`): a cited directory must match.
+        if base in ix.web_stem_clash and "" not in dirs and not any(("/" + web_path).endswith("/" + d + Path(web_path).name) for d in dirs):
+            continue
         files.append(f)
         via.append("source comment")
     caps = ix.cap_by_file.get(base, [])
@@ -466,7 +476,12 @@ def find_counterpart(ix: OurIndex, web_path: str) -> dict:
     toks = [t for t in snake.split("_") if t]
     core = [t for t in toks if t not in {"panel", "dialog", "view", "page", "section", "tab", "row", "item", "modal",
                                          "content", "list", "card", "menu", "button", "form"}] or toks
-    cands = [s for s in ix.stems if all(t in s.split("_") for t in core)] if core and len("".join(core)) >= 4 else []
+    # Catalogs (zh_*.dart) and generated recipes (*.g) carry every surface's words; they are nobody's counterpart.
+    cands = [s for s in ix.stems if all(t in s.split("_") for t in core) and not s.startswith("zh_") and not s.endswith(".g")] \
+        if core and len("".join(core)) >= 4 else []
+    if len(core) == 1:
+        # One word (`UpgradeDialog` -> upgrade) names a file that starts or ends with it, not computer_upgrade_in_flight.
+        cands = [s for s in cands if core[0] in (s.split("_")[0], s.split("_")[-1])]
     if cands and len(cands) <= 3:
         return {"confidence": "heuristic", "files": [ix.stems[c][0] for c in cands], "via": ["name tokens " + "_".join(core)],
                 "capabilities": [], "docs": sorted(ix.doc_mentions.get(base, ()))[:3]}
@@ -784,6 +799,145 @@ def collect_api(ta: Path, tb: Path, ix: OurIndex, changed: dict[str, FileChange]
     return {"added": added, "removed": removed, "changed_path_expr": changed_calls,
             "call_site_files_edited": {k: v for k, v in list(touched.items())[:200]},
             "totals": {"a": len(ka), "b": len(kb)}}
+
+
+# ------------------------------------------------------------ moves and splits
+
+# Top-level declarations (column 0), the names a moved or split file takes along.
+_TOP_DECL_RE = re.compile(
+    r"^(?:export\s+)?(?:default\s+)?(?:declare\s+)?(?:async\s+)?(?:function\*?|const|let|class|interface|type|enum)\s+([A-Za-z_$][\w$]*)",
+    re.M)
+_I18N_USE_RE = re.compile(r"""["'`]([a-z][A-Za-z0-9]*(?:\.[A-Za-z0-9_]+)+)["'`]""")
+# Names too common to say where code went.
+_GENERIC_DECLS = {"Props", "State", "Options", "Result", "props", "state", "styles", "default", "logger", "config",
+                  "Item", "Row", "Entry", "Value", "Input", "Output", "Context", "Status", "Mode", "Kind", "Action"}
+MOVE_SHRINK_MIN = 150  # a changed file counts as split when it lost at least this many lines (and twice what it gained)
+
+
+def _web_sources(tree: Path) -> dict[str, str]:
+    base = tree / "packages/web/src"
+    out = {}
+    if not base.is_dir():
+        return out
+    for p in _walk_files(base, (".ts", ".tsx")):
+        rel = "packages/web/src/" + p.relative_to(base).as_posix()
+        if classify(rel)[0] != "web_ui":
+            continue
+        out[rel] = p.read_text(encoding="utf-8", errors="replace")
+    return out
+
+
+def _decls(text: str) -> set[str]:
+    """Distinctive top-level names: camelCase / PascalCase / CONSTANT_CASE of some length (not `host`, `origin`, `Point`)."""
+    return {n for n in _TOP_DECL_RE.findall(text)
+            if n not in _GENERIC_DECLS and len(n) >= 6 and (any(c.isupper() for c in n[1:]) or "_" in n or len(n) >= 10)}
+
+
+def _ids_used(text: str, catalog: set[str]) -> set[str]:
+    return {i for i in _I18N_USE_RE.findall(text) if i in catalog}
+
+
+def collect_moves(ta: Path, tb: Path, files: list[FileChange], ix: OurIndex) -> list[dict]:
+    """Old -> new Web paths by exported symbol and copy id, not by git rename.
+
+    Web 1.24 moved components/* into features/* and split large files; git sees a
+    delete and an add (or a much smaller file). A file that was deleted, or lost
+    MOVE_SHRINK_MIN lines, is followed to the files of the new tree that now
+    declare its top-level names (each name declared in at most two other files)
+    or use its copy ids (each used by at most two files). One target: moved;
+    several: split; a file that still exists: split-out.
+    """
+    src_a, src_b = _web_sources(ta), _web_sources(tb)
+    cat_path = "packages/web/src/i18n/messages/en.ts"
+    cat_a = set(parse_i18n_catalog((ta / cat_path).read_text(encoding="utf-8")) if (ta / cat_path).exists() else {})
+    cat_b = set(parse_i18n_catalog((tb / cat_path).read_text(encoding="utf-8")) if (tb / cat_path).exists() else {})
+    cat = cat_a | cat_b
+    decl_b: dict[str, set[str]] = collections.defaultdict(set)
+    ids_b: dict[str, set[str]] = collections.defaultdict(set)
+    decls_of_b, ids_of_b = {}, {}
+    for path, text in src_b.items():
+        decls_of_b[path] = _decls(text)
+        ids_of_b[path] = _ids_used(text, cat)
+        for n in decls_of_b[path]:
+            decl_b[n].add(path)
+        for i in ids_of_b[path]:
+            ids_b[i].add(path)
+    out = []
+    for fc in files:
+        if fc.category == "web_ui" and fc.old_path and fc.old_path != fc.path:
+            out.append({"old": fc.old_path, "kind": "renamed", "targets": [{"path": fc.path, "symbols": [], "ids": 0}],
+                        "symbols_followed": "-", "ours": sorted(ix.lib_mentions.get(Path(fc.old_path).stem, ()))[:6],
+                        "lines_changed": fc.lines})
+            continue
+        if fc.category != "web_ui" or fc.path not in src_a:
+            continue
+        if fc.status == "D":
+            kind_base = "moved"
+        elif fc.status == "M" and fc.removed >= MOVE_SHRINK_MIN and fc.removed >= 2 * fc.added:
+            kind_base = "split-out"
+        else:
+            continue
+        old_text = src_a[fc.path]
+        lost = _decls(old_text) - decls_of_b.get(fc.path, set())
+        lost_ids = _ids_used(old_text, cat) - ids_of_b.get(fc.path, set())
+        credit: dict[str, dict] = {}
+        for n in sorted(lost):
+            where = decl_b.get(n, set()) - {fc.path}
+            if 1 <= len(where) <= 2:
+                for w in where:
+                    credit.setdefault(w, {"symbols": [], "ids": 0})["symbols"].append(n)
+        for i in lost_ids:
+            where = ids_b.get(i, set()) - {fc.path}
+            if 1 <= len(where) <= 2:
+                for w in where:
+                    credit.setdefault(w, {"symbols": [], "ids": 0})["ids"] += 1
+        targets = [{"path": w, "symbols": c["symbols"], "ids": c["ids"]} for w, c in credit.items()
+                   if c["symbols"] or c["ids"] >= 3]
+        targets.sort(key=lambda t: (-len(t["symbols"]), -t["ids"], t["path"]))
+        # A file that only re-declares a name another target took (a lazy import) is not where the code went.
+        kept = []
+        for t in targets:
+            if t["ids"] < 3 and any(set(t["symbols"]) < set(o["symbols"]) for o in targets if o is not t):
+                continue
+            kept.append(t)
+        targets = kept
+        found = {n for t in targets for n in t["symbols"]}
+        # One shared helper name is a coincidence, not a move: follow at least two names, or half of them.
+        if not found or (len(found) < 2 and len(found) * 2 < len(lost)):
+            continue
+        kind = kind_base if kind_base == "split-out" else ("moved" if len(targets) == 1 else "split")
+        stem = Path(fc.path).stem
+        row = {"old": fc.path, "kind": kind, "targets": targets[:6],
+               "symbols_followed": f"{len(found)}/{len(lost)}" if lost else "0/0",
+               "ours": sorted(ix.lib_mentions.get(stem, ()))[:6]}
+        if kind == "moved":
+            new_text = src_b.get(targets[0]["path"], "")
+            import difflib
+            row["lines_changed"] = sum(1 for ln in difflib.unified_diff(old_text.splitlines(), new_text.splitlines(), n=0, lineterm="")
+                                       if ln[:1] in "+-" and not ln.startswith(("+++", "---")))
+        out.append(row)
+    out.sort(key=lambda r: r["old"])
+    return out
+
+
+def apply_moves(ui_items: list[dict], moves: list[dict]) -> None:
+    """A moved / split file is not removed, and its new files inherit its counterpart."""
+    by_path = {it["path"]: it for it in ui_items}
+    for mv in moves:
+        old = by_path.get(mv["old"])
+        if old is None:
+            continue  # a git rename: one item already, under its new path
+        old["moved_to"] = [t["path"] for t in mv["targets"]]
+        old["move_kind"] = mv["kind"]
+        for t in mv["targets"]:
+            new = by_path.get(t["path"])
+            if new is None:
+                continue
+            new.setdefault("moved_from", []).append(mv["old"])
+            if old["cp"]["confidence"] in ("documented", "heuristic") and new["cp"]["confidence"] not in ("documented",):
+                cp_ = dict(old["cp"])
+                cp_["via"] = [f"moved from {Path(mv['old']).name}"] + list(cp_.get("via", []))[:2]
+                new["cp"] = cp_
 
 
 def collect_capabilities(ix: OurIndex, changed_web: dict[str, FileChange]) -> list[dict]:
@@ -1352,11 +1506,11 @@ def build_decisions(report: dict) -> list[dict]:
             area_rows.append({"kind": "area", "area": area, "title": f"{area} (web-only surface)", "files": items, "mapped": [], "small": items,
                               "removed": [], "feature_files": []})
             continue
-        removed = [i for i in items if i["status"] == "D"]
+        removed = [i for i in items if i["status"] == "D" and not i.get("moved_to")]
         big_new = [i for i in items if i["status"] == "A" and i["lines"] >= 100 and i["cp"]["confidence"] not in ("documented",)]
         big_unmapped = [i for i in items if i["status"] == "M" and i["lines"] >= 150 and i["cp"]["confidence"] in ("none", "doc-only")]
         feats = big_new + big_unmapped
-        rest = [i for i in items if i not in feats and i not in removed]
+        rest = [i for i in items if i not in feats and i not in removed and not (i["status"] == "D" and i.get("moved_to"))]
         mapped = [i for i in rest if i["cp"]["confidence"] in ("documented", "heuristic")]
         area_rows.append({"kind": "area", "area": area, "title": area, "files": rest, "mapped": mapped,
                           "small": [i for i in rest if i not in mapped], "removed": removed, "feature_files": feats})
@@ -1435,8 +1589,14 @@ def build_decisions(report: dict) -> list[dict]:
         if caps:
             state += "; capabilities touched: " + ", ".join(f"{v} {k}" for k, v in sorted(caps.items()))
         leaf = r["area"].split("/")[-1]
+        all_files = r["files"] + r["feature_files"]
+        new_files = [i for i in all_files if i["status"] == "A"]
         if leaf in WEB_ONLY_AREAS:
             action, reason = "skip", "web-only surface (analytics / devtools / embed / feedback SDK / PWA); nothing to mirror"
+        elif not r["mapped"] and r["feature_files"] and len(new_files) * 5 >= len(all_files) * 4:
+            # Web 1.24's assistant/ was 34 new files and read "skip: nothing mirrored changed here".
+            action, reason = "discuss", (f"new Web feature area ({len(new_files)} of {len(all_files)} files new, "
+                                         f"{sum(i['lines'] for i in new_files)} lines) the app has none of; decide it as one feature (see its feature rows)")
         elif not r["mapped"] and not (at["endpoints"] or at["removed_endpoints"] or at["fields"] or at["i18n_added"] or at["i18n_changed"] or at["visual"]):
             if small_lines <= 150 and not r["feature_files"] and not r["removed"]:
                 action, reason = "skip", "small changes, no counterpart in the app"
@@ -1532,6 +1692,10 @@ def build_decisions(report: dict) -> list[dict]:
 def generate_report(mirror: Path, repo: Path, a: str, b: str, work: Path, keep_trees: bool = False) -> dict:
     info_a, info_b = tag_info(mirror, a), tag_info(mirror, b)
     ix = build_our_index(repo)
+    for tag in (a, b):
+        stems = collections.Counter(Path(p).stem for p in list_tree(mirror, tag, "packages/web/src")
+                                    if p.endswith((".ts", ".tsx")) and classify(p)[0] == "web_ui")
+        ix.web_stem_clash |= {st for st, n in stems.items() if n > 1}
     files = changed_files(mirror, a, b)
     cat_counts = collections.Counter(f.category for f in files)
     cat_lines = collections.Counter()
@@ -1560,11 +1724,12 @@ def generate_report(mirror: Path, repo: Path, a: str, b: str, work: Path, keep_t
         it["id"] = f"UI-{i:03d}"
     web_changed = {f.path: f for f in files if f.category == "web_ui"}
     ta, tb = Path(work) / a, Path(work) / b
-    extract_tree(mirror, a, ta)
+    extract_tree(mirror, a, ta, EXTRACT_PATHS_OLD)
     extract_tree(mirror, b, tb, EXTRACT_PATHS_NEW)
     try:
         api = collect_api(ta, tb, ix, by_path)
         drift = collect_behavior_drift(repo, tb)
+        moves = collect_moves(ta, tb, files, ix)
     finally:
         if not keep_trees:
             shutil.rmtree(ta, ignore_errors=True)
@@ -1611,6 +1776,8 @@ def generate_report(mirror: Path, repo: Path, a: str, b: str, work: Path, keep_t
         shared_b = {c["id"]: c for c in json.loads(show(mirror, b, "packages/visual-testing/shared/sharedCases.json") or "{}").get("cases", [])}
     except ValueError:
         pass
+    report["moves"] = moves
+    apply_moves(ui_items, moves)
     report["behaviour"] = collect_behaviour(mirror, a, b, files, ix)
     report["behavior_drift"] = drift
     report["visual_layer"] = collect_visual_layer(repo, ix, ui_items, visual, shared_b)
@@ -1931,6 +2098,7 @@ def render_markdown(r: dict, limit_ui: int = 80) -> str:
     L.append("")
     L.append(", ".join(f"`{x['path'].split('packages/web/src/')[-1]}` ({x['lines']})" for x in unmapped_big[:60]) or "none")
     L.append("")
+    L.extend(render_moves(r.get("moves", [])))
     # ---- i18n
     L.append("## 文案对照 (i18n: en / zh-cn)")
     L.append("")
@@ -2041,11 +2209,36 @@ def render_markdown(r: dict, limit_ui: int = 80) -> str:
     return "\n".join(l for l in L)
 
 
+def render_moves(moves: list[dict], heading: str = "###") -> list[str]:
+    """The old -> new path table (also written alone as path-map.md)."""
+    def short(path):
+        return path.split("packages/web/src/")[-1]
+    L = [f"{heading} Moved and split Web files: old -> new path ({len(moves)})", "",
+         "`renamed`: git matched the file (>= 50% similar). The others are found by top-level names and copy ids (git sees a delete "
+         "and an add): `moved`: one new file; `split`: several; `split-out`: the old file stays but lost code to the listed files. Symbols = names the new file now "
+         "declares (followed/lost). Use it to update `// Source:` comments (the files in the last column cite the old name).", ""]
+    rows = []
+    for mv in moves:
+        tg = "; ".join(f"`{short(t['path'])}`" + (f" ({', '.join(t['symbols'][:4])}{' ...' if len(t['symbols']) > 4 else ''})" if t["symbols"] else f" ({t['ids']} copy ids)")
+                       for t in mv["targets"])
+        extra = f", {mv['lines_changed']} lines differ" if "lines_changed" in mv else ""
+        rows.append([f"`{short(mv['old'])}`", mv["kind"] + extra, tg, mv["symbols_followed"],
+                     ", ".join(Path(f).name for f in mv["ours"]) or "-"])
+    L.append(_tbl(["Old path (v-from)", "Kind", "New path(s) (symbols)", "Symbols followed", "Our files citing it"], rows) if rows else "none")
+    L.append("")
+    return L
+
+
 def write_report(report: dict, out: Path) -> tuple[Path, Path]:
     out.mkdir(parents=True, exist_ok=True)
     pj, pm = out / "report.json", out / "report.md"
     pj.write_text(json.dumps(report, indent=1, ensure_ascii=False, default=list) + "\n", encoding="utf-8")
     pm.write_text(render_markdown(report) + "\n", encoding="utf-8")
+    moves = report.get("moves", [])
+    (out / "path-map.json").write_text(json.dumps({"from": report["from"]["tag"], "to": report["to"]["tag"], "moves": moves},
+                                                  indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
+    (out / "path-map.md").write_text(f"# Web path map {report['from']['tag']} -> {report['to']['tag']}\n\n"
+                                     + "\n".join(render_moves(moves, "##")) + "\n", encoding="utf-8")
     return pm, pj
 
 
@@ -2069,6 +2262,9 @@ def record_decision(repo: Path, to_tag: str, decision: str, note: str = "", repo
              "report": report_path, "deferred": deferred or []}
     state.setdefault("history", []).append(entry)
     state["pinned"] = to_tag
+    pending_key = tag_key(state.get("pending", {}).get("tag", ""))
+    if pending_key and pending_key <= tag_key(to_tag):
+        state.pop("pending")  # the release being worked on is decided now
     if commit:
         state["commit"] = commit
     (Path(repo) / STATE_FILE).write_text(json.dumps(state, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
@@ -2181,6 +2377,9 @@ def main(argv=None) -> int:
             tags = list_tags(mirror)
             newer = [t for t in tags if tag_key(t) > tag_key(st["pinned"])]
             print(f"pinned: {st['pinned']}\nlatest: {tags[-1]}\nnewer tags: {', '.join(newer) or 'none'}")
+            if st.get("pending"):
+                pd = st["pending"]
+                print(f"pending: {pd.get('tag', '?')} (in progress since {pd.get('since', '?')}; the pin moves after the decision): {pd.get('note', '')}")
             drift = design_system_drift(mirror, repo, tags[-1])
             print(drift or f"design system: recipes match Web raft-ui {recipes_raft_ui_version(repo) or '?'}")
             for h in st.get("history", [])[-5:]:

@@ -69,9 +69,10 @@ class ExtractTests(unittest.TestCase):
     def test_constants_and_helper_functions_resolve_through_the_index(self):
         _root, calls = self.extract({
             'p.ts': (
-                'const BASE = "/slack-bridge/provisioning";\n'
+                'export const BASE = "/slack-bridge/provisioning";\n'
                 'export function itemPath(id: string): string {\n  return `/items/${id}`;\n}\n'),
             'c.ts': (
+                'import { BASE, itemPath } from "./p";\n'
                 'client.post(`${BASE}/connect`);\n'
                 'api.get(itemPath(x));\n')})
         self.assertEqual(cp.keys(calls), ['GET /items/:id', 'POST /slack-bridge/provisioning/connect'])
