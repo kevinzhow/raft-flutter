@@ -1,7 +1,8 @@
 import 'package:flutter/foundation.dart';
 
-/// Web `utils/threadUnreadByParent.ts`: followed-thread unread folded onto one
-/// parent channel. Never part of the channel's own unread count.
+/// Web `utils/threadUnreadByParent.ts` (v1.24.0-source.1): followed-thread
+/// unread folded onto one parent channel. Never part of the channel's own
+/// unread count.
 @immutable
 class ParentThreadUnread {
   const ParentThreadUnread(this.count, this.hasMention);
@@ -29,6 +30,11 @@ num _unread(Map<String, dynamic> row) {
   return value is num ? value : 0;
 }
 
+/// A task conversation (task v2) shows its unread in Activity only: the
+/// channel can neither lead to it nor mark it read, so it never counts here.
+bool _counts(Map<String, dynamic> thread) =>
+    _unread(thread) > 0 && thread['conversationKind'] != 'task';
+
 /// Followed-thread unread of every parent channel, in one pass over [threads].
 Map<String, ParentThreadUnread> groupThreadUnreadByParent(
   Iterable<Map<String, dynamic>> threads,
@@ -36,7 +42,7 @@ Map<String, ParentThreadUnread> groupThreadUnreadByParent(
   final byParent = <String, ParentThreadUnread>{};
   for (final thread in threads) {
     final parent = thread['parentChannelId'];
-    if (parent is! String || _unread(thread) <= 0) continue;
+    if (parent is! String || !_counts(thread)) continue;
     final current = byParent[parent];
     byParent[parent] = ParentThreadUnread(
       (current?.count ?? 0) + 1,
@@ -67,7 +73,7 @@ List<Map<String, dynamic>> orderParentUnreadThreadsForJump(
 ) {
   final matching = [
     for (final thread in threads)
-      if (thread['parentChannelId'] == parentChannelId && _unread(thread) > 0)
+      if (thread['parentChannelId'] == parentChannelId && _counts(thread))
         thread,
   ];
   // Stable for equal times: Dart's sort is not, so index breaks ties.
