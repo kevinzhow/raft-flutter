@@ -3,6 +3,7 @@
 
 Usage: tool/raft-stack [--config PATH] start|stop|status|ports|sync
        tool/raft-stack [--config PATH] flags [on|off KEY...]
+       tool/raft-stack [--config PATH] restart web|content-worker
 
 Each config (default .local/stack.json) describes one source checkout and one
 raftdev environment, so several Raft versions can run side by side from one
@@ -44,6 +45,22 @@ the antiproton-local-<version> patch the hosted-agent path works locally (RaftBe
 analysis, Cloud agents): RAFTBENCH_LOCAL_SERVER_ID is the fixture server, the provider
 token comes from `tool/antiproton-local mint-token`, and add antiproton_hosted_runtime
 to featureFlags.
+  artifacts       optional {"contentDomain": "artifacts.localhost:<port>", "workerPort": <port>}
+                  (workerPort defaults to the domain's port): workspace Artifacts on the
+                  local stack. The server env file gets ARTIFACTS_CONTENT_DOMAIN, generated
+                  ARTIFACTS_CONTENT_WORKER_TOKEN / ARTIFACTS_CONTENT_RAFT_TOKENS and
+                  APP_STORAGE_R2_* for the environment's RustFS; the Web dev server gets
+                  VITE_ARTIFACTS_CONTENT_DOMAIN through a managed <sourceDir>/packages/web/.env.local
+                  (Vite reads it; tmux windows inherit no environment); the source's content
+                  Worker (packages/content-worker, built once with its `build` script) runs in
+                  Miniflare (tool/raft-content-worker.mjs) on 127.0.0.1:<workerPort> with
+                  bindings in the private .local/<config stem>-content-worker.env. start starts
+                  it after raftdev, stop stops it first, status reports it. Its PID and start
+                  time are recorded in .local/<config stem>-content-worker.pid; only that
+                  process (and its process group) is ever stopped
+restart web restarts only the Web dev server (tmux respawn of the raftdev `web` window with
+its original command, after refreshing .env.local); restart content-worker restarts only the
+content Worker. Neither touches the database, the server or the other windows.
 A patch manifest may say {"upstream": "<why>"} instead of listing files: the source
 version already does what the patch did, so nothing is applied for that name.
 Logs are private files .local/<config stem>-<action>.log (stack-<action>.log for
@@ -65,10 +82,15 @@ ROOT = Path(__file__).resolve().parents[1]
 LOCAL = ROOT / '.local'
 PATCH_DIR = ROOT / 'tool/reference-patches'
 ACTIONS = {'start', 'stop', 'status', 'ports', 'flags', 'sync'}
+RESTARTABLE = ('web', 'content-worker')
+WORKER_SCRIPT = ROOT / 'tool/raft-content-worker.mjs'
+WEB_ENV_MARKER = '# Managed by tool/raft-stack (artifacts.contentDomain); rewritten on start/sync/restart.'
+
 DEFAULT_PATCHES = ('seed-history', 'risingwave-memory')
 DEFAULT_IMAGE = 'mirror.gcr.io/risingwavelabs/risingwave@sha256:ba5915a5e85c938a3ec62d76c63c6e4cb37d4f4e3c5c30886f0d2eff61b70073'
 USAGE = ('Usage: tool/raft-stack [--config PATH] start|stop|status|ports|sync\n'
-         '       tool/raft-stack [--config PATH] flags [on|off KEY...]')
+         '       tool/raft-stack [--config PATH] flags [on|off KEY...]\n'
+         '       tool/raft-stack [--config PATH] restart web|content-worker')
 
 
 def parse_args(argv):
@@ -80,6 +102,8 @@ def parse_args(argv):
         args = args[2:]
     if args[:1] == ['flags'] and len(args) >= 3 and args[1] in ('on', 'off'):
         return config, 'flags', (args[1], args[2:])
+    if args[:1] == ['restart'] and len(args) == 2 and args[1] in RESTARTABLE:
+        return config, 'restart', args[1]
     if len(args) != 1 or args[0] not in ACTIONS:
         raise SystemExit(USAGE)
     return config, args[0]
@@ -296,7 +320,239 @@ def server_env_values(config, existing, server_id):
     for key in ('SLOCK_PROVIDER_CREDENTIAL_KEY', 'RAFT_APP_WEBHOOK_ENCRYPTION_KEY',
                 'RAFT_TOTP_SECRET_ENCRYPTION_KEY'):
         values.setdefault(key, random_b64())
+    artifacts = config.get('artifacts')
+    if artifacts:
+        values['ARTIFACTS_CONTENT_DOMAIN'] = content_domain(config)
+        # Two different tokens (the server refuses a Worker token that is also a Raft token).
+        values.setdefault('ARTIFACTS_CONTENT_WORKER_TOKEN', random_b64())
+        values.setdefault('ARTIFACTS_CONTENT_RAFT_TOKENS', random_b64())
+        bucket = bucket_component(config['environment'])
+        values.setdefault('APP_STORAGE_R2_ENDPOINT', f"http://localhost:{19000 + compute_offset(config['environment'])}")
+        values.setdefault('APP_STORAGE_R2_REGION', 'auto')
+        values.setdefault('APP_STORAGE_R2_ACCESS_KEY_ID', 'slockdev')
+        values.setdefault('APP_STORAGE_R2_SECRET_ACCESS_KEY', f'slockdev-secret-{bucket}')
+        values.setdefault('APP_STORAGE_R2_BUCKET', f'slock-dev-{bucket}-attachments')
     return values
+
+
+def compute_offset(name):
+    """raftdev's port offset for an environment name (scripts/dev/raftdev.ts computeOffset)."""
+    value = 0
+    for ch in name:
+        byte = ch.encode('utf-8')[0]
+        value = (value * 31 + (byte - 256 if byte > 127 else byte)) % 100
+    return value
+
+
+def bucket_component(name):
+    """raftdev's sanitizeBucketComponent: the RustFS bucket and secret are derived from it."""
+    value = re.sub(r'-+', '-', re.sub(r'[^a-z0-9-]+', '-', name.lower()).strip('-'))
+    return value or 'env'
+
+
+DOMAIN_RE = re.compile(r'^[a-z0-9.-]+\.localhost(:[0-9]{1,5})?$')
+
+
+def content_domain(config):
+    domain = str((config.get('artifacts') or {}).get('contentDomain', '')).strip().lower()
+    if not DOMAIN_RE.match(domain):
+        raise SystemExit('artifacts.contentDomain must be a <name>.localhost[:port] host.')
+    return domain
+
+
+def worker_port(config):
+    artifacts = config.get('artifacts') or {}
+    port = artifacts.get('workerPort') or content_domain(config).partition(':')[2]
+    if not str(port).isdigit():
+        raise SystemExit('artifacts.workerPort is required when contentDomain has no port.')
+    return int(port)
+
+
+def content_worker_bindings(config, server_values, existing):
+    """The content Worker's bindings, crossed with the server's tokens; PORTHOLE_SECRET stays stable."""
+    values = dict(existing)
+    values.update(
+        CONTENT_DOMAIN=content_domain(config),
+        APP_ORIGIN=config['webUrl'].rstrip('/'),
+        RAFT_API_URL=config['apiUrl'].rstrip('/'),
+        # The Worker's token to Raft is one Raft lists; Raft's token to the Worker signs tickets.
+        RAFT_API_TOKEN=server_values['ARTIFACTS_CONTENT_RAFT_TOKENS'].split(',')[0].strip(),
+        RAFT_TOKENS=server_values['ARTIFACTS_CONTENT_WORKER_TOKEN'],
+        R2_ENDPOINT=server_values['APP_STORAGE_R2_ENDPOINT'],
+        R2_BUCKET=server_values['APP_STORAGE_R2_BUCKET'],
+        R2_READ_ACCESS_KEY_ID=server_values['APP_STORAGE_R2_ACCESS_KEY_ID'],
+        R2_READ_SECRET_ACCESS_KEY=server_values['APP_STORAGE_R2_SECRET_ACCESS_KEY'],
+    )
+    values.setdefault('PORTHOLE_SECRET', random_b64())
+    return values
+
+
+def web_env_text(config):
+    return f'{WEB_ENV_MARKER}\nVITE_ARTIFACTS_CONTENT_DOMAIN={content_domain(config)}\n'
+
+
+def prepare_web_env(config, source):
+    """Write the managed packages/web/.env.local; returns True when it changed. A foreign file is kept."""
+    if not config.get('artifacts'):
+        return False
+    path = source / 'packages/web/.env.local'
+    text = web_env_text(config)
+    if path.exists():
+        current = path.read_text()
+        if not current.startswith(WEB_ENV_MARKER):
+            raise SystemExit(f'{path} exists and is not managed by tool/raft-stack; move it away first.')
+        if current == text:
+            return False
+    path.write_text(text)
+    return True
+
+
+def worker_files(stem):
+    return LOCAL / f'{stem}-content-worker.env', LOCAL / f'{stem}-content-worker.pid', LOCAL / f'{stem}-content-worker.log'
+
+
+def prepare_content_worker(config, stem):
+    """Write the Worker's private bindings from the server env file; returns True when they changed."""
+    bindings_file = worker_files(stem)[0]
+    server_values = read_env_file(Path(config['serverEnvFile']).expanduser())
+    missing = [k for k in ('ARTIFACTS_CONTENT_RAFT_TOKENS', 'ARTIFACTS_CONTENT_WORKER_TOKEN', 'APP_STORAGE_R2_BUCKET')
+               if not server_values.get(k)]
+    if missing:
+        raise SystemExit('The server env file lacks ' + ', '.join(missing) + ': run start or sync first.')
+    existing = read_env_file(bindings_file)
+    values = content_worker_bindings(config, server_values, existing)
+    if values != existing or not bindings_file.exists():
+        write_env_file(bindings_file, values)
+        return True
+    return False
+
+
+def process_start_time(pid):
+    """Field 22 of /proc/<pid>/stat (clock ticks since boot): tells a PID apart from a reused one."""
+    try:
+        stat = Path(f'/proc/{pid}/stat').read_text()
+    except OSError:
+        return None
+    return stat.rsplit(')', 1)[1].split()[19]
+
+
+def recorded_worker_pid(stem):
+    """The recorded Worker PID if that very process (same start time, our script) still runs, else None."""
+    pid_file = worker_files(stem)[1]
+    try:
+        pid_text, start = pid_file.read_text().split()
+        pid = int(pid_text)
+    except (OSError, ValueError):
+        return None
+    if process_start_time(pid) != start:
+        return None
+    try:
+        cmdline = Path(f'/proc/{pid}/cmdline').read_bytes().split(b'\0')
+    except OSError:
+        return None
+    return pid if str(WORKER_SCRIPT).encode() in cmdline else None
+
+
+def port_open(port):
+    import socket
+    with socket.socket() as sock:
+        sock.settimeout(1)
+        return sock.connect_ex(('127.0.0.1', port)) == 0
+
+
+def build_content_worker(source, env):
+    worker_dir = source / 'packages/content-worker'
+    if (worker_dir / 'dist/raftContent.js').exists():
+        return
+    print('building the content Worker (wrangler deploy --dry-run)...')
+    subprocess.run(['pnpm', 'run', 'build'], cwd=worker_dir, check=True,
+                   env=dict(env, WRANGLER_SEND_METRICS='false'), stdout=subprocess.DEVNULL)
+
+
+def start_content_worker(config, source, stem, env):
+    import time
+    if not config.get('artifacts'):
+        return None
+    pid = recorded_worker_pid(stem)
+    if pid:
+        print(f'content Worker already running (pid {pid})')
+        return pid
+    port = worker_port(config)
+    if port_open(port):
+        raise SystemExit(f'Port {port} is taken by a process this tool did not start; stop that owner first.')
+    prepare_content_worker(config, stem)
+    build_content_worker(source, env)
+    bindings_file, pid_file, log_file = worker_files(stem)
+    fd = os.open(log_file, os.O_WRONLY | os.O_CREAT | os.O_APPEND, 0o600)
+    with os.fdopen(fd, 'a') as log:
+        proc = subprocess.Popen(
+            [str(toolchain_bin(config) / 'node'), str(WORKER_SCRIPT), str(source / 'packages/content-worker'),
+             str(bindings_file), str(port)],
+            cwd=source / 'packages/content-worker', env=env, stdin=subprocess.DEVNULL,
+            stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
+    pid_file.write_text(f'{proc.pid} {process_start_time(proc.pid)}\n')
+    pid_file.chmod(0o600)
+    for _ in range(120):
+        if proc.poll() is not None:
+            raise SystemExit(f'content Worker exited ({proc.returncode}); see {log_file}')
+        if port_open(port):
+            print(f'content Worker on 127.0.0.1:{port} (pid {proc.pid}); private log: {log_file}')
+            return proc.pid
+        time.sleep(0.5)
+    raise SystemExit(f'content Worker did not open port {port}; see {log_file}')
+
+
+def stop_content_worker(stem):
+    """Stop only the recorded Worker process (and the process group it leads)."""
+    import signal
+    import time
+    pid = recorded_worker_pid(stem)
+    pid_file = worker_files(stem)[1]
+    if not pid:
+        pid_file.unlink(missing_ok=True)
+        return False
+    os.kill(pid, signal.SIGTERM)
+    for _ in range(30):
+        if recorded_worker_pid(stem) is None:
+            break
+        time.sleep(0.5)
+    else:
+        if os.getpgid(pid) == pid:
+            os.killpg(pid, signal.SIGKILL)
+    pid_file.unlink(missing_ok=True)
+    print(f'content Worker stopped (pid {pid})')
+    return True
+
+
+def worker_status(config, stem):
+    if not config.get('artifacts'):
+        return
+    pid = recorded_worker_pid(stem)
+    port = worker_port(config)
+    state = f'running (pid {pid})' if pid else 'not running'
+    print(f'content Worker: {state}; 127.0.0.1:{port} {"open" if port_open(port) else "closed"}')
+
+
+def restart_web(config, source):
+    """Respawn only the raftdev `web` tmux window with its original command."""
+    import time
+    import urllib.request
+    target = f"slock-{config['environment']}:web"
+    if subprocess.run(['tmux', 'has-session', '-t', f"slock-{config['environment']}"],
+                      stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode != 0:
+        raise SystemExit('The stack is not running (no tmux session); use start.')
+    prepare_web_env(config, source)
+    subprocess.run(['tmux', 'respawn-window', '-k', '-t', target], check=True)
+    for _ in range(120):
+        time.sleep(1)
+        try:
+            with urllib.request.urlopen(config['webUrl'], timeout=5) as response:
+                if response.status == 200:
+                    print('Web dev server restarted: ' + config['webUrl'])
+                    return 0
+        except OSError:
+            pass
+    raise SystemExit('Web dev server did not answer after the restart; see `./raftdev logs`.')
 
 
 def prepare_server_env(config, source):
@@ -380,7 +636,7 @@ def main(argv):
     if not config_path.exists():
         raise SystemExit(f'Create {config_path} using docs/local-test-stack.md first.')
     config = json.loads(config_path.read_text())
-    if len(parsed) == 3:
+    if len(parsed) == 3 and action == 'flags':
         config = toggle_config_flags(config, *parsed[2])
         write_private_json(config_path, config)
     source = Path(config['sourceDir']).expanduser()
@@ -394,6 +650,18 @@ def main(argv):
         # budget; the pinned Source launcher patch survives stack recreation.
         apply_patches(source, select_patches(config))
         prepare_server_env(config, source)
+        prepare_web_env(config, source)
+    if action == 'restart':
+        if parsed[2] == 'web':
+            return restart_web(config, source)
+        if not config.get('artifacts'):
+            raise SystemExit('No artifacts block in the config: there is no content Worker.')
+        # The server keeps running: restart it only if the env file had to change.
+        if prepare_server_env(config, source):
+            restart_server_watch(source)
+        stop_content_worker(stem)
+        start_content_worker(config, source, stem, env)
+        return 0
     if action == 'sync':
         applied = apply_patches(source, select_patches(config))
         # Always restart the server (node --watch): it reads the env file only at launch,
@@ -401,8 +669,15 @@ def main(argv):
         if prepare_server_env(config, source) or config.get('serverEnvFile'):
             restart_server_watch(source)
         apply_feature_flags(config, source)
+        if prepare_web_env(config, source):
+            print('Web env changed: run `restart web`.')
+        if config.get('artifacts') and (prepare_content_worker(config, stem) or not recorded_worker_pid(stem)):
+            stop_content_worker(stem)
+            start_content_worker(config, source, stem, env)
         print('synced: patches applied now: ' + (', '.join(applied) or 'none'))
         return 0
+    if action == 'stop':
+        stop_content_worker(stem)
     if action == 'flags':
         apply_feature_flags(config, source)
         return 0
@@ -421,6 +696,9 @@ def main(argv):
         # The fixture server id exists only now; the freshly started server needs it.
         if prepare_server_env(config, source):
             restart_server_watch(source)
+        start_content_worker(config, source, stem, env)
+    if action == 'status':
+        worker_status(config, stem)
     if result.returncode == 0 and action in {'start', 'status', 'ports'}:
         print('Web: ' + config['webUrl'])
         print('API: ' + config['apiUrl'])

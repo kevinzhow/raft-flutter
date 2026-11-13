@@ -32,9 +32,14 @@ class ArgsTest(unittest.TestCase):
                          (pathlib.Path('c.json'), 'flags', ('on', ['a_v0', 'b_v0'])))
         self.assertEqual(stack.parse_args(['flags', 'off', 'a_v0'])[2], ('off', ['a_v0']))
 
+    def test_restart_takes_one_service(self):
+        self.assertEqual(stack.parse_args(['restart', 'web'])[1:], ('restart', 'web'))
+        self.assertEqual(stack.parse_args(['restart', 'content-worker'])[2], 'content-worker')
+
     def test_bad_usage_exits(self):
         for argv in ([], ['restart'], ['--config'], ['--config', 'a.json'], ['start', 'stop'],
-                     ['flags', 'on'], ['flags', 'toggle', 'a_v0'], ['start', 'on', 'a_v0']):
+                     ['flags', 'on'], ['flags', 'toggle', 'a_v0'], ['start', 'on', 'a_v0'],
+                     ['restart', 'server'], ['restart', 'web', 'web']):
             with self.assertRaises(SystemExit):
                 stack.parse_args(argv)
 
@@ -190,6 +195,71 @@ class ServerEnvTest(unittest.TestCase):
         self.assertNotIn('RAFTBENCH_LOCAL_SERVER_ID', values)
         self.assertIn('RAFT_TOTP_SECRET_ENCRYPTION_KEY', values)
         self.assertFalse(stack.prepare_server_env({'environment': 'e'}, pathlib.Path('/nonexistent')))
+
+
+class ArtifactsTest(unittest.TestCase):
+    CONFIG = {'environment': 'cindy-w24', 'webUrl': 'http://localhost:15194/', 'apiUrl': 'http://localhost:13022',
+              'artifacts': {'contentDomain': 'Artifacts.localhost:18787'}}
+
+    def test_raftdev_derivations(self):
+        self.assertEqual(stack.compute_offset('cindy-w23'), 20)
+        self.assertEqual(stack.compute_offset('cindy-w24'), 21)
+        self.assertEqual(stack.bucket_component('Cindy_W24..x'), 'cindy-w24-x')
+        self.assertEqual(stack.bucket_component('__'), 'env')
+
+    def test_server_values_and_crossed_worker_bindings(self):
+        server = stack.server_env_values(self.CONFIG, {}, None)
+        self.assertEqual(server['ARTIFACTS_CONTENT_DOMAIN'], 'artifacts.localhost:18787')
+        self.assertNotEqual(server['ARTIFACTS_CONTENT_WORKER_TOKEN'], server['ARTIFACTS_CONTENT_RAFT_TOKENS'])
+        self.assertEqual(server['APP_STORAGE_R2_ENDPOINT'], 'http://localhost:19021')
+        self.assertEqual(server['APP_STORAGE_R2_BUCKET'], 'slock-dev-cindy-w24-attachments')
+        kept = stack.server_env_values(self.CONFIG, dict(server, APP_STORAGE_R2_BUCKET='other'), None)
+        self.assertEqual(kept['APP_STORAGE_R2_BUCKET'], 'other')
+        bindings = stack.content_worker_bindings(self.CONFIG, server, {})
+        self.assertEqual(bindings['RAFT_API_TOKEN'], server['ARTIFACTS_CONTENT_RAFT_TOKENS'])
+        self.assertEqual(bindings['RAFT_TOKENS'], server['ARTIFACTS_CONTENT_WORKER_TOKEN'])
+        self.assertEqual((bindings['APP_ORIGIN'], bindings['RAFT_API_URL']), ('http://localhost:15194', 'http://localhost:13022'))
+        self.assertEqual(stack.content_worker_bindings(self.CONFIG, server, bindings)['PORTHOLE_SECRET'], bindings['PORTHOLE_SECRET'])
+        self.assertEqual(stack.worker_port(self.CONFIG), 18787)
+        self.assertNotIn('ARTIFACTS_CONTENT_DOMAIN', stack.server_env_values({'environment': 'e'}, {}, None))
+
+    def test_content_domain_is_validated(self):
+        for bad in ('https://x.localhost', 'example.com', 'a.localhost/x', ''):
+            with self.assertRaises(SystemExit):
+                stack.content_domain({'artifacts': {'contentDomain': bad}})
+        with self.assertRaises(SystemExit):
+            stack.worker_port({'artifacts': {'contentDomain': 'a.localhost'}})
+
+    def test_web_env_file_is_managed_and_a_foreign_one_is_kept(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            source = pathlib.Path(tmp)
+            (source / 'packages/web').mkdir(parents=True)
+            self.assertTrue(stack.prepare_web_env(self.CONFIG, source))
+            text = (source / 'packages/web/.env.local').read_text()
+            self.assertIn('VITE_ARTIFACTS_CONTENT_DOMAIN=artifacts.localhost:18787', text)
+            self.assertFalse(stack.prepare_web_env(self.CONFIG, source))
+            (source / 'packages/web/.env.local').write_text('VITE_OTHER=1\n')
+            with self.assertRaises(SystemExit):
+                stack.prepare_web_env(self.CONFIG, source)
+            self.assertEqual((source / 'packages/web/.env.local').read_text(), 'VITE_OTHER=1\n')
+            self.assertFalse(stack.prepare_web_env({}, source))
+
+    def test_recorded_pid_must_be_the_same_process_running_our_script(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            old_local = stack.LOCAL
+            stack.LOCAL = pathlib.Path(tmp)
+            try:
+                pid_file = stack.worker_files('s')[1]
+                self.assertIsNone(stack.recorded_worker_pid('s'))
+                # This test process runs, but not the Worker script: never treated as ours.
+                pid_file.write_text(f'{os.getpid()} {stack.process_start_time(os.getpid())}\n')
+                self.assertIsNone(stack.recorded_worker_pid('s'))
+                pid_file.write_text(f'{os.getpid()} 1\n')
+                self.assertIsNone(stack.recorded_worker_pid('s'))
+                self.assertFalse(stack.stop_content_worker('s'))
+                self.assertFalse(pid_file.exists())
+            finally:
+                stack.LOCAL = old_local
 
 
 class EnvTest(unittest.TestCase):

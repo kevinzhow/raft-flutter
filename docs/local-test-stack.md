@@ -216,3 +216,14 @@ v1.24.0 有 TOTP 两步验证（`/api/auth/second-factor/*`：`reauth/password` 
 - 服务器范围的接口（`/api/channels`、`/api/channels/inbox`、`/api/messages/channel/<id>` 等）不带 `X-Server-Id` 请求头时返回 400，带上后 owner/admin/member 均为 200。
 - seed 多了一个 `viewer` 成员账户（不在 seed 输出的 fixture JSON 里）。
 - `GET /api/version` 在开发栈上仍是 503 `build_identity_unavailable`。
+
+### Artifacts（工作区 Artifact 的内容 Worker）
+
+配置加 `"artifacts": {"contentDomain": "artifacts.localhost:18787", "workerPort": 18787}` 后：
+
+- 服务端环境文件写入 `ARTIFACTS_CONTENT_DOMAIN`，生成两个不同的 `ARTIFACTS_CONTENT_WORKER_TOKEN` / `ARTIFACTS_CONTENT_RAFT_TOKENS`，`APP_STORAGE_R2_*` 指向本环境的 RustFS（端点、桶名、密钥按 raftdev 的环境名规则推导；已有的值保留）。服务端据此把 `workspace_artifacts_v0` 答为开。
+- Web 开发服务器需要构建期的 `VITE_ARTIFACTS_CONTENT_DOMAIN`，否则 Artifact 页面显示 “The preview isn't available right now”。tmux 窗口不继承环境变量，所以工具写一个带标记行的 `<sourceDir>/packages/web/.env.local`（Vite 自己读取）；已有不带标记的文件则拒绝覆盖。
+- 内容 Worker 是源码里的 `packages/content-worker`：缺 `dist/` 时用它自己的 `build` 脚本（`wrangler deploy --dry-run`）构建一次，再由 `tool/raft-content-worker.mjs` 在 Miniflare 里运行，监听 `127.0.0.1:<workerPort>`，ticket 用内存 D1（重启即清空，打开中的页面重新取 ticket 即可）。绑定写在私有的 `.local/<配置名>-content-worker.env`（与服务端令牌交叉：Worker 的 `RAFT_API_TOKEN` 是服务端 `ARTIFACTS_CONTENT_RAFT_TOKENS` 之一，Worker 的 `RAFT_TOKENS` 是服务端的 `ARTIFACTS_CONTENT_WORKER_TOKEN`），日志里的 ticket 被遮住。
+- `start` 在 raftdev 之后启动 Worker，`stop` 先停 Worker，`status` 报告它。PID 和进程启动时间记在 `.local/<配置名>-content-worker.pid`；只停止记录的那个进程（启动时间与命令行都要对上），必要时连同它领头的进程组（Miniflare 的 workerd 子进程）。端口已被别的进程占用时拒绝启动。
+- `restart web`：只重启 Web 开发服务器（先刷新 `.env.local`，再 `tmux respawn-window -k` raftdev 的 `web` 窗口，沿用原命令），等 Web URL 回 200。`restart content-worker`：只重启 Worker（服务端环境文件需要改动时才重启服务端）。二者都不动数据库、服务端和其他窗口；`stop` 会删除数据库，别人正在用这套环境时用 `restart`。
+- 本地是 http：浏览器把 `*.localhost` 解析到本机；Android WebView 需要 debug 构建的网络安全配置允许 `*.artifacts.localhost` 的明文 http。

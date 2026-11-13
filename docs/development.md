@@ -26,7 +26,7 @@ cd apps/raft_flutter
 
 Linux setup and runtime package names are listed in [Linux system runtime](linux-media-runtime.md).
 
-The app talks to the official API `https://api.raft.build` by default; pass `--dart-define=RAFT_ORIGIN=http://localhost:13041` for a local server (or any other origin), or edit the origin on the login screen (see [Self-deploy](deployment.md)). For a local server see [local server stack](local-test-stack.md): `tool/raft-stack [--config PATH] start|stop|status|ports|sync|flags [on|off KEY...]` wraps the raft-source `raftdev` launcher and needs a git-ignored `.local/stack.json` (or another config passed with `--config`, to run several Raft versions side by side).
+The app talks to the official API `https://api.raft.build` by default; pass `--dart-define=RAFT_ORIGIN=http://localhost:13041` for a local server (or any other origin), or edit the origin on the login screen (see [Self-deploy](deployment.md)). For a local server see [local server stack](local-test-stack.md): `tool/raft-stack [--config PATH] start|stop|status|ports|sync|flags [on|off KEY...]|restart web|content-worker` wraps the raft-source `raftdev` launcher and needs a git-ignored `.local/stack.json` (or another config passed with `--config`, to run several Raft versions side by side).
 
 Never use `flutter run/drive/test/install` on a device that holds the real (formal) app; Flutter may uninstall and reinstall it. Use `tool/android-install` (see [AGENTS.md](../AGENTS.md) and [Android installation](android-installation.md)).
 
