@@ -702,6 +702,18 @@ class MessagePresentation extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // RFC 077: a retracted message keeps its place; its body is the muted
+    // placeholder, never body text.
+    if (message.retracted) {
+      final t = RaftTokens.of(context);
+      return Text(
+        raftText(context, 'This message was retracted.'),
+        key: ValueKey('message-retracted-${message.id}'),
+        style: DefaultTextStyle.of(
+          context,
+        ).style.copyWith(color: t.ui.foregroundHint),
+      );
+    }
     if (message.json['actionMetadata'] is Map &&
         message.json['actionMetadata']['kind'] == 'action-card') {
       return MessageActionCard(
