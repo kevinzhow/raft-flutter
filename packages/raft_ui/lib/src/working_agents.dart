@@ -51,8 +51,11 @@ const _faceExtent = 19.0, _faceOverlap = 5.0;
 /// after the first frame slides in and fades over about 200ms (it just appears
 /// with reduced motion); nothing else moves while the work goes on.
 class RaftWorkingFaces extends StatefulWidget {
-  const RaftWorkingFaces({super.key, required this.agents});
+  const RaftWorkingFaces({super.key, required this.agents, this.still = false});
   final List<RaftWorkingAgent> agents;
+
+  /// No entrance either (Web `WorkingFaces still`: the agent typing line).
+  final bool still;
 
   @override
   State<RaftWorkingFaces> createState() => _RaftWorkingFacesState();
@@ -101,7 +104,8 @@ class _RaftWorkingFacesState extends State<RaftWorkingFaces> {
                 left: i * (_faceExtent - _faceOverlap),
                 top: 0,
                 child: _FaceIn(
-                  animate: !reduced && joined.contains(faces[i].id),
+                  animate:
+                      !widget.still && !reduced && joined.contains(faces[i].id),
                   child: DecoratedBox(
                     // A panel-colour ring separates the overlapping circles.
                     decoration: BoxDecoration(
