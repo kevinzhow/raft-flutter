@@ -1882,29 +1882,6 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
           onLogout: logout,
         ),
         onUnavailable: () => dismissPublic(rediscover: true),
-        onJoined: () async {
-          if (!await w.loadServerDirectory()) {
-            throw const RaftApiException('The server list is unavailable.');
-          }
-          final joined = w.servers
-              .where((s) => s.string('slug') == nonmember.slug)
-              .firstOrNull;
-          if (joined == null) {
-            throw const RaftApiException(
-              'Joined server was not returned by the server list',
-            );
-          }
-          publicNonmember = null;
-          await chooseServer(
-            joined,
-            location: nonmember.channelId == null
-                ? Uri(path: '/s/${joined.string('slug')}')
-                : Uri(
-                    path:
-                        '/s/${joined.string('slug')}/channel/${Uri.encodeComponent(nonmember.channelId!)}',
-                  ),
-          );
-        },
       );
     }
     if (showServerSelector &&

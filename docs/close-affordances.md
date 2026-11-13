@@ -74,7 +74,6 @@ in `apps/raft_flutter`.
 | `directory-human-detail` | page | back sysback | sysback | sysback | HumanDetailPanel.tsx: Back md:hidden, no desktop close (route page) | fixed | phone Back was missing |
 | `search-agent-slot` | panel | back sysback | back esc sysback | back esc sysback | MainLayout.tsx renderContentSlot: AgentById onBack=closeSlot, backButtonVisibility=always | fixed | FleetDetail.backAlways |
 | `search-human-slot` | panel | back sysback | back esc sysback | back esc sysback | MainLayout.tsx renderContentSlot: HumanById onBack=closeSlot, backButtonVisibility=always | fixed | MemberProfileView.onBack in a Search / Activity slot |
-| `member-graph-page` | page | back sysback | sysback | sysback | MemberGraphSection.tsx MemberGraphRoute (/members/graph): PanelHeader mobileBackProps Back md:hidden, no desktop close (route page) | ok |  |
 | `chinese-community-page` | page | back sysback | back esc sysback | back esc sysback | pages/ChineseCommunityPage.tsx (/community/chinese): a route page, left with the browser Back | no-web | a native page needs its own Back (the browser has one) |
 | `history-lower-limit-confirm` | dialog | x esc sysback | x esc sysback | x esc sysback | Flutter-only history action; ConfirmDialog.tsx:138-165: X + Esc, no pointer dismissal | no-web |  |
 | `confirm-dialog` | dialog | x esc sysback | x esc sysback | x esc sysback | ConfirmDialog.tsx:138-165 Dialog disablePointerDismissal: X + Esc, no scrim, all gated on loading | fixed | RaftDialogRoute binds Escape; Esc / Back / X blocked while loading |

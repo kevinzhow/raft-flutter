@@ -1,6 +1,7 @@
 // The Public server page (Web pages/PublicServerPage.tsx): the read-only
 // preview of a public server reached from `/s/<slug>` by someone who is not a
-// member, signed out (sign in / create account) or signed in (Join as Guest).
+// member, signed out (sign in / create account) or signed in (view only: the
+// public Guest join was retired in server v1.24.0).
 // Data lifecycle follows the Web reducer: the server readback loads on mount
 // (404 means unavailable), the first public channel (or the linked one) is
 // selected, its latest 50 messages load on selection and older pages on
@@ -16,11 +17,9 @@ import '../data/display_language_preferences.dart';
 import '../data/source_time_formatter.dart';
 import '../data/workspace_controller.dart';
 import '../platform/content_links.dart';
-import '../data/server_error_code.dart';
 import '../data/user_error.dart';
 import 'chinese_community.dart';
-import 'community_join.dart'
-    show communityAgreementError, communityServerSlug, joinCommunity;
+import 'community_join.dart' show communityServerSlug, joinCommunity;
 import 'custom_protocol_link.dart';
 import 'management_support.dart';
 import 'public_attachments.dart';
@@ -205,7 +204,6 @@ class PublicServerView extends StatefulWidget {
     this.appearance,
     this.onAppearance,
     this.displayLanguage,
-    this.onJoined,
     this.appVersion = const String.fromEnvironment('RAFT_APP_VERSION'),
     this.documentationUrl = 'https://docs.raft.build',
   });
@@ -216,7 +214,7 @@ class PublicServerView extends StatefulWidget {
   final String? initialChannelId;
   final VoidCallback onSignIn, onRegister, onUnavailable;
 
-  /// Set when signed in: Join as Guest replaces Sign in / Create account.
+  /// Set when signed in: the view-only note replaces Sign in / Create account.
   final PublicServerAccount? account;
 
   /// App-root device choices, available before signing in.
@@ -224,9 +222,6 @@ class PublicServerView extends StatefulWidget {
   final ValueChanged<RaftAppearance>? onAppearance;
   final DisplayLanguagePreferences? displayLanguage;
 
-  /// After a guest join: reload the server list and open the server. A
-  /// failure here never reads as a failed join (membership is durable).
-  final Future<void> Function()? onJoined;
   final String? appVersion;
   final String documentationUrl;
   @override
@@ -241,7 +236,6 @@ class _PublicServerViewState extends State<PublicServerView> {
       (localDisplayLanguage ??= DisplayLanguagePreferences());
   Map<String, dynamic>? server;
   List<Map<String, dynamic>> channels = [];
-  bool canJoin = false;
   String? selectedId;
   List<PublicServerMessage> messages = [];
   bool loadingMessages = false, hasOlder = false;
@@ -283,9 +277,7 @@ class _PublicServerViewState extends State<PublicServerView> {
   String threadError = '';
   int threadRequest = 0;
 
-  // Join flow.
-  bool joining = false;
-  // ignore: raft_lints/avoid_imperative_notice_state -- Join failure banner: cleared when a join starts and when the server (slug/client) reloads; kept after cancelling the dialog as in Web.
+  // ignore: raft_lints/avoid_imperative_notice_state -- Community-join failure banner: cleared when a join starts and when the server (slug/client) reloads.
   String joinError = '';
 
   String get base => '/public/servers/${Uri.encodeComponent(widget.slug)}';
@@ -397,7 +389,6 @@ class _PublicServerViewState extends State<PublicServerView> {
         : null;
     server = managementMap(data['server']);
     channels = list;
-    canJoin = data['canJoinAsGuest'] == true;
     bindTranslation(data);
     final next = keep ?? '${(linked ?? list.firstOrNull)?['id'] ?? ''}';
     selectedId = next.isEmpty ? null : next;
@@ -648,114 +639,6 @@ class _PublicServerViewState extends State<PublicServerView> {
       phoneChannel = false;
       threadChannelId = null;
     });
-  }
-
-  /// `joinAsGuest`: the confirm and agreement dialogs both end here. Returns
-  /// the agreement the server asks to accept first (`agreement_required` /
-  /// `agreement_changed`), null once joined; a failure rethrows.
-  Future<Map<String, dynamic>?> joinAsGuest([String? agreementId]) async {
-    setState(() {
-      joining = true;
-      joinError = '';
-    });
-    try {
-      await widget.client.post(
-        '$base/join-as-guest',
-        data: {'agreementId': agreementId},
-      );
-    } on RaftApiException catch (e) {
-      final body = e.details['agreement'];
-      if (mounted) {
-        final asked =
-            (serverErrorIs(e, 'agreement_required') ||
-                serverErrorIs(e, 'agreement_changed') ||
-                serverErrorCode(e) == 'agreement_required' ||
-                serverErrorCode(e) == 'agreement_changed') &&
-            body is Map;
-        setState(() {
-          joining = false;
-          if (!asked) {
-            joinError = tr(
-              userErrorText(
-                e,
-                fallback: 'Failed to join this public server',
-                where: 'public join',
-              ),
-            );
-          }
-        });
-        if (asked) return Map<String, dynamic>.from(body);
-      }
-      rethrow;
-    }
-    try {
-      await widget.onJoined?.call();
-    } catch (_) {
-      // Membership is already durable: never invite an unsafe retry because
-      // the local refresh or route transition failed.
-      if (mounted) {
-        setState(
-          () => joinError = tr(
-            'You joined this server. Refresh the page to open it.',
-          ),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => joining = false);
-    }
-    return null;
-  }
-
-  /// The Join as Guest confirm; an agreement answer continues in its dialog.
-  Future<void> startJoin() async {
-    Map<String, dynamic>? asked;
-    await RaftConfirmDialog.show(
-      context,
-      RaftConfirmDialog(
-        title: tr('Join this server?'),
-        message: raftFormat(
-          context,
-          'You will join {server} as a Guest. You can keep reading without joining by cancelling.',
-          {'server': '${server?['name'] ?? widget.slug}'},
-        ),
-        confirmLabel: tr('Join as Guest'),
-        loadingLabel: tr('Joining…'),
-        confirmVariant: RaftButtonRecipeVariant.accent,
-        confirmKey: const ValueKey('public-join-confirm'),
-        onConfirm: () async => asked = await joinAsGuest(),
-      ),
-    );
-    if (asked != null && mounted) await showAgreement(asked!);
-  }
-
-  /// The shared community agreement dialog (CommunityAgreementDialog.tsx).
-  /// Agreeing joins with the agreement id; a changed agreement
-  /// (`agreement_changed`) replaces the one shown, any other failure keeps the
-  /// dialog open with its error line.
-  Future<void> showAgreement(Map<String, dynamic> first) async {
-    var current = first;
-    await showRaftDialog<void>(
-      context: context,
-      modal: true,
-      builder: (modal) => StatefulBuilder(
-        builder: (modal, update) => RaftCommunityAgreementDialog(
-          title: '${current['title']}',
-          version: (current['version'] as num?)?.toInt() ?? 1,
-          bodyMarkdown: '${current['bodyMarkdown'] ?? ''}',
-          errorMessage: communityAgreementError,
-          onClose: () => Navigator.of(modal).pop(),
-          onAgree: () async {
-            final next = await joinAsGuest('${current['id']}');
-            if (!modal.mounted) return;
-            if (next == null) {
-              Navigator.of(modal).pop();
-            } else {
-              update(() => current = next);
-            }
-          },
-        ),
-      ),
-    );
   }
 
   // ---------------------------------------------------------------- build
@@ -1324,34 +1207,22 @@ class _PublicServerViewState extends State<PublicServerView> {
     final band = raftBreakpointWidth(context);
     final thread = settings ? null : threadPanel;
     final message = authenticated
-        ? canJoin
-              ? 'Join {server} as a Guest to be part of the discussion.'
-              : "{server} is view only. You can read its public channels, but can't send messages here."
-        : canJoin
-        ? 'Sign in to join {server} and be part of the discussion.'
+        ? "{server} is view only. You can read its public channels, but can't send messages here."
         : '{server} is view only. Create a Raft account to build a server of your own.';
+    // Web 1.24: a signed-in visitor who is not a member only reads.
     final actions = authenticated
-        ? [
-            if (canJoin)
-              RaftPublicActionButton(
-                key: const ValueKey('public-join-guest'),
-                label: tr('Join as Guest'),
-                glyph: RaftGlyph.userPlus,
-                accent: true,
-                onPressed: joining ? null : startJoin,
-              ),
-          ]
+        ? const <Widget>[]
         : [
             RaftPublicActionButton(
               label: tr('Sign In'),
               glyph: RaftGlyph.logIn,
-              accent: canJoin,
+              accent: false,
               onPressed: widget.onSignIn,
             ),
             RaftPublicActionButton(
               label: tr('Create Account'),
               glyph: RaftGlyph.userPlus,
-              accent: !canJoin,
+              accent: true,
               onPressed: widget.onRegister,
             ),
           ];

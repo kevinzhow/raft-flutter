@@ -2256,10 +2256,6 @@ class _RaftComposerState extends State<RaftComposer> {
       ? 0
       : s.type == 'external'
       ? 1
-      : s.type == 'computer'
-      ? 3
-      : s.type == 'app'
-      ? 4
       : s.inChannel
       ? 0
       : 2;
@@ -3402,8 +3398,6 @@ class _RaftComposerSuggestionRowState
                       RaftIcon(
                         switch (s.type) {
                           'channel' => RaftGlyph.hash,
-                          'computer' => RaftGlyph.monitor,
-                          'app' => RaftGlyph.globe,
                           'agent' => RaftGlyph.bot,
                           _ => RaftGlyph.user,
                         },

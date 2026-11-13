@@ -192,8 +192,6 @@ const Map<String, String> zhCatalogUpstream12112 = <String, String>{
   "Permission update pending review": "权限更新待审核",
   "Requested data groups": "申请的数据组",
   "Requested notification events": "申请的通知事件",
-  "A marketplace reviewer can approve this permission update.": "Marketplace 审核员可批准此权限更新。",
-  "Failed to approve permission update": "批准权限更新失败",
   "{count} / {limit} characters": "{count} / {limit} 字",
   "Use no more than {limit} characters before saving.": "请缩短至 {limit} 字以内再保存。",
   "Slack authorization was cancelled or declined in Slack. Nothing was changed; you can try again.":

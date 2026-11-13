@@ -217,7 +217,6 @@ void main() {
               publiclyVisible: true,
               onPublic: null,
               publicUrl: 'https://raft.test/s/x',
-              guestJoin: false,
               channels: [RaftPublicChannel(name: 'general')],
             ),
           ],

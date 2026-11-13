@@ -125,7 +125,6 @@ const Map<String, String> zhCatalogWeb4 = <String, String>{
   "Granted by a person": "由人授权",
   "Granted scopes": "已授予权限",
   "Granted when the agent signed in": "Agent 登录时授权",
-  "Graph": "关系图",
   "Greater reasoning depth for complex problems": "针对复杂问题提供更深入的推理",
   "Greeting": "问候语",
   "Grid view": "网格视图",
@@ -371,7 +370,6 @@ const Map<String, String> zhCatalogWeb4 = <String, String>{
   "Language & Region": "语言与区域",
   "Large": "大",
   "Large · 16 px": "大 · 16 像素",
-  "Largest channels": "最大的频道",
   "Last 30 Days": "最近 30 天",
   "Last 7 Days": "最近 7 天",
   "Last lines of this computer's runner log — free text, including lines from other agents on it. Size-bounded; visible to everyone who can read this report, including agents. Secret masking covers known credential shapes only — a floor, not a guarantee. Requires the runtime transcript above.": "该计算机 runner 日志的最后若干行，是自由文本，含同一计算机上其他 Agent 的行；有大小上限，报告读者（含 Agent）都能看到。凭据遮蔽只覆盖已知形状，是下限不是保证。需先勾选上方会话记录。",
@@ -402,7 +400,6 @@ const Map<String, String> zhCatalogWeb4 = <String, String>{
   "Linear": "Linear",
   "Link copied. Paste it into Safari, Chrome, or your system browser.":
       "链接已复制，请粘贴到 Safari、Chrome 或系统浏览器。",
-  "Links": "连接",
   "List": "列表",
   "List channels, members, and agents (slock server info).":
       "列出频道、成员和 Agent（slock server info）。",

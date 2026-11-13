@@ -62,6 +62,25 @@ void main() {
     expect(memory.recall(w, 'activity'), isNull);
   });
 
+  testWidgets('a members slot stored by v1.21 with the removed graph page '
+      'restores to the Members page', (t) async {
+    final (w, _) = await pageFixture(t, section: 'chat');
+    final prefs = await t.runAsync(SharedPreferences.getInstance);
+    DevicePreferences.adopt(prefs!);
+    // Written by the previous release: the member graph page was a members
+    // location. v1.24 removed the page; Web redirects /members/graph to
+    // /members.
+    w.navigation.navigate(at('/members'));
+    RailLocationMemory().record(w);
+    await t.runAsync(() => Future<void>.delayed(Duration.zero));
+    final key = prefs.getKeys().singleWhere((k) => k.endsWith('.demo.members'));
+    await t.runAsync(() => prefs.setString(key, '/s/demo/members/graph'));
+    expect(
+      RailLocationMemory().recall(w, 'members')?.toString(),
+      '/s/demo/members',
+    );
+  });
+
   testWidgets('a slot survives a restart and is dropped when it no longer '
       'belongs to its mode or server', (t) async {
     final (w, _) = await pageFixture(t, section: 'chat');

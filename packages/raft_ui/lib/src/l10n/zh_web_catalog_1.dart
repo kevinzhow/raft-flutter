@@ -188,7 +188,6 @@ const Map<String, String> zhCatalogWeb1 = <String, String>{
   "Oldest First": "最早优先",
   "Newest First": "最新优先",
   "Not in this conversation": "不在此会话中",
-  "The referenced resource is unavailable.": "引用的资源不可用。",
 
   "Forwarded messages unavailable.": "转发的消息不可用。",
   "Forwarded · {count} messages": "已转发 · {count} 条消息",

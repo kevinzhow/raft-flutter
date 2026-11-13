@@ -3295,21 +3295,12 @@
    "area": "members-roles",
    "capability": "View the server member graph (humans, agents, channel links, ranked lists)",
    "background": false,
-   "status": "covered",
+   "status": "na",
    "webEntry": "Members rail > 'Graph' sidebar item (classic layout) / route /members/graph > MemberGraphSection (Refresh, zoom/pan, Humans/Agents/Links tiles, Most connected, Largest channels)",
    "gate": "any member who can view the members area",
-   "flutterEntry": "Members tab > 'Graph' row (desktop_directory_view.dart) > MemberGraphView (Refresh, zoom/pan, tiles, ranked lists)",
-   "flutterRefs": [
-    {
-     "file": "apps/raft_flutter/lib/features/member_graph_view.dart",
-     "needle": "/servers/${server.id}/member-graph"
-    },
-    {
-     "file": "apps/raft_flutter/lib/features/desktop_directory_view.dart",
-     "needle": "desktop-directory-graph"
-    }
-   ],
-   "justification": "",
+   "flutterEntry": "",
+   "flutterRefs": [],
+   "justification": "Removed in server v1.24.0 (route gone; Web 1.24 dropped the feature); removed from Flutter in the v1.24 compatibility patch.",
    "impact": "",
    "size": ""
   },
@@ -3551,17 +3542,12 @@
    "area": "members-roles",
    "capability": "Member graph: Refresh, zoom/pan canvas, Humans/Agents/Links tiles, 'Most connected' and 'Largest channels' ranked lists",
    "background": false,
-   "status": "covered",
+   "status": "na",
    "webEntry": "MemberGraphSection.tsx",
    "gate": "",
-   "flutterEntry": "member_graph_view.dart + raft_ui member_graph.dart",
-   "flutterRefs": [
-    {
-     "file": "packages/raft_ui/lib/src/member_graph.dart",
-     "needle": "RawGestureDetector"
-    }
-   ],
-   "justification": "",
+   "flutterEntry": "",
+   "flutterRefs": [],
+   "justification": "Removed in server v1.24.0 (route gone; Web 1.24 dropped the feature); removed from Flutter in the v1.24 compatibility patch.",
    "impact": "",
    "size": ""
   },
@@ -3643,17 +3629,12 @@
    "area": "members-roles",
    "capability": "'Graph' item at the top of the Members rail opens the member graph",
    "background": false,
-   "status": "covered",
+   "status": "na",
    "webEntry": "Sidebar.tsx people tab GitBranch item (classic layout)",
    "gate": "",
-   "flutterEntry": "desktop_directory_view.dart 'Graph' RaftNavItem",
-   "flutterRefs": [
-    {
-     "file": "apps/raft_flutter/lib/features/desktop_directory_view.dart",
-     "needle": "desktop-directory-graph"
-    }
-   ],
-   "justification": "",
+   "flutterEntry": "",
+   "flutterRefs": [],
+   "justification": "Removed in server v1.24.0 (route gone; Web 1.24 dropped the feature); removed from Flutter in the v1.24 compatibility patch.",
    "impact": "",
    "size": ""
   },
@@ -4151,17 +4132,12 @@
    "area": "server-settings-admin",
    "capability": "Allow or disallow guests to join a public server",
    "background": false,
-   "status": "covered",
+   "status": "na",
    "webEntry": "Server Profile > Public access > 'Allow guest join' switch",
    "gate": "owner only, flags public_server_v0 + server_guest_v0, only while public",
-   "flutterEntry": "public_visibility_view.dart guest switch",
-   "flutterRefs": [
-    {
-     "file": "apps/raft_flutter/lib/features/public_visibility_view.dart",
-     "needle": "/public-guest-join"
-    }
-   ],
-   "justification": "",
+   "flutterEntry": "",
+   "flutterRefs": [],
+   "justification": "Removed in server v1.24.0 (route gone; Web 1.24 dropped the feature); removed from Flutter in the v1.24 compatibility patch.",
    "impact": "",
    "size": ""
   },
@@ -8673,21 +8649,12 @@
    "area": "integrations-apps-mcp",
    "capability": "Fetch installed apps for composer @ autocomplete and app: resource link resolution",
    "background": true,
-   "status": "covered",
+   "status": "na",
    "webEntry": "MessageInput @-mention popover lazily loads installed apps when flag composer_resource_references_v0 is on",
    "gate": "Feature flag composer_resource_references_v0",
-   "flutterEntry": "composer_directory.dart prefetch + message_presentation.dart app: link open (flag-gated)",
-   "flutterRefs": [
-    {
-     "file": "apps/raft_flutter/lib/features/composer_directory.dart",
-     "needle": "/apps"
-    },
-    {
-     "file": "apps/raft_flutter/lib/features/composer_directory.dart",
-     "needle": "composer_resource_references_v0"
-    }
-   ],
-   "justification": "Background lookup: Web fetches when the @ popover opens, Flutter prefetches when the composer loads; same flag gate.",
+   "flutterEntry": "",
+   "flutterRefs": [],
+   "justification": "Removed in server v1.24.0 (route gone; Web 1.24 dropped the feature); removed from Flutter in the v1.24 compatibility patch.",
    "impact": "",
    "size": ""
   },
@@ -15807,21 +15774,12 @@
    "area": "public-guest",
    "capability": "Join a public server as a Guest (with agreement step)",
    "background": false,
-   "status": "covered",
+   "status": "na",
    "webEntry": "PublicServerPage 'Join as Guest' + confirm (data-testid public-server-join-guest)",
    "gate": "server_guest_v0 + public guest join enabled; signed in",
-   "flutterEntry": "public_server_view.dart 'Join as Guest' (public-join-guest) and confirm",
-   "flutterRefs": [
-    {
-     "file": "apps/raft_flutter/lib/features/public_server_view.dart",
-     "needle": "$base/join-as-guest"
-    },
-    {
-     "file": "apps/raft_flutter/lib/features/public_server_view.dart",
-     "needle": "public-join-guest"
-    }
-   ],
-   "justification": "",
+   "flutterEntry": "",
+   "flutterRefs": [],
+   "justification": "Removed in server v1.24.0 (route gone; Web 1.24 dropped the feature); removed from Flutter in the v1.24 compatibility patch.",
    "impact": "",
    "size": ""
   },
@@ -15877,17 +15835,13 @@
    "kind": "ui",
    "id": "ui:public.sign-in-register-join",
    "area": "public-guest",
-   "capability": "Public server banner/buttons: Sign in, Create account (Join), Join as Guest, selection notice",
+   "capability": "Public server banner/buttons: Sign in, Create account (Join), selection notice (Join as Guest removed in server v1.24.0)",
    "background": false,
    "status": "covered",
    "webEntry": "PublicServerPage bottom banner and header actions",
-   "gate": "public_server_v0; guest join per server",
-   "flutterEntry": "public_server_view.dart 'Sign in' / 'Create account' / 'Join as Guest'",
+   "gate": "public_server_v0",
+   "flutterEntry": "public_server_view.dart 'Sign in' / 'Create account'; a signed-in non-member sees the view-only note (no Join as Guest, as Web 1.24)",
    "flutterRefs": [
-    {
-     "file": "apps/raft_flutter/lib/features/public_server_view.dart",
-     "needle": "public-join-guest"
-    },
     {
      "file": "apps/raft_flutter/lib/features/public_server_view.dart",
      "needle": "public-server-selection-notice"
@@ -16984,7 +16938,7 @@
    "status": "covered",
    "webEntry": "components/layout/MainLayout.tsx <Routes> (lines ~2440-2463) and components/layout/rightPanelUrlSync.ts",
    "gate": "",
-   "flutterEntry": "data/raft_location.dart RaftRoute {home, channel, dm, agent, computer, human, members, memberGraph, computers, search, settings, activity, tasks, saved, releaseNotes, unknown} with the same query contract; workspace_navigation.dart maps settings slugs/aliases. Legacy aliases /machine/:id, /inbox, /threads are not distinct routes (not user-reachable links in Flutter)",
+   "flutterEntry": "data/raft_location.dart RaftRoute {home, channel, dm, agent, computer, human, members, computers, search, settings, activity, tasks, saved, releaseNotes, unknown} with the same query contract; workspace_navigation.dart maps settings slugs/aliases. Legacy aliases /machine/:id, /inbox, /threads are not distinct routes (not user-reachable links in Flutter)",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/data/raft_location.dart",
@@ -17578,17 +17532,12 @@
    "area": "integrations-apps-mcp",
    "capability": "Approve a marketplace app's pending permission update (marketplace reviewers)",
    "background": false,
-   "status": "covered",
+   "status": "na",
    "webEntry": "Marketplace app detail > App permissions > 'Approve update' (canReviewAppNotifications)",
    "gate": "Visible to all; changing needs manageIntegrations (reviewers only for review)",
-   "flutterEntry": "app_permission_review.dart appPermissionReviewPath() via IntegrationsView.approvePermissionUpdate()",
-   "flutterRefs": [
-    {
-     "file": "apps/raft_flutter/lib/features/app_permission_review.dart",
-     "needle": "permissions/review"
-    }
-   ],
-   "justification": "",
+   "flutterEntry": "",
+   "flutterRefs": [],
+   "justification": "Removed in server v1.24.0 (route gone; Web 1.24 dropped the feature); removed from Flutter in the v1.24 compatibility patch.",
    "impact": "",
    "size": ""
   },

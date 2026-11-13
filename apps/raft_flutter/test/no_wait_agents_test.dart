@@ -8,7 +8,6 @@ import 'package:raft_flutter/features/agent_apps_view.dart';
 import 'package:raft_flutter/features/agent_detail_view.dart';
 import 'package:raft_flutter/features/external_agent_setup.dart';
 import 'package:raft_flutter/features/fleet_views.dart';
-import 'package:raft_flutter/features/member_graph_view.dart';
 import 'package:raft_flutter/features/member_profile_view.dart';
 import 'package:raft_flutter/features/server_views.dart';
 import 'package:raft_flutter/features/workspace_view.dart';
@@ -231,33 +230,6 @@ void main() {
     t,
   ) async {
     final (w, api) = await mount(t);
-    api.routes['GET /servers/s1/member-graph'] = (_) => {
-      'humans': [
-        {
-          'type': 'human',
-          'id': 'h1',
-          'name': 'ann',
-          'displayName': 'Annabel',
-          'avatarUrl': null,
-          'gravatarHash': '',
-          'role': 'member',
-          'channelIds': ['g1'],
-        },
-      ],
-      'agents': [],
-      'channels': [
-        {
-          'id': 'g1',
-          'name': 'design',
-          'type': 'channel',
-          'archivedAt': null,
-          'humanCount': 1,
-          'agentCount': 0,
-          'memberCount': 1,
-        },
-      ],
-      'edges': [],
-    };
     api.routes['GET /agents/ext1/credentials'] = (_) => {
       'agentId': 'ext1',
       'credentials': [
@@ -277,7 +249,6 @@ void main() {
     api.routes['GET /agents/ext1'] = (_) => externalAgent;
     final context = t.element(find.byType(WorkspaceView));
     final pages = <(String, Widget, Finder)>[
-      ('member graph', MemberGraphPage(controller: w), find.text('Annabel')),
       (
         'external agent setup',
         SingleChildScrollView(

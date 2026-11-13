@@ -66,6 +66,20 @@ void main() {
     });
   });
 
+  group('retired computer: and app: refs (Web 1.24 isRetiredResourceRef)', () {
+    const id = '00000000-0000-4000-8000-000000000000';
+    test('read as exactly what was typed: no link, chip or mention', () {
+      expect(run('<app:system.test> hi'), '<app:system.test> hi');
+      expect(run('<computer:$id>'), '<computer:$id>');
+      expect(run('<APP:Not.Valid>'), '<APP:Not.Valid>');
+      expect(
+        run('[@Test app](<app:system.test>) @Yes'),
+        '[@Test app](<app:system.test>) $yes',
+      );
+      expect(run('[@Box](<computer:$id>)'), '[@Box](<computer:$id>)');
+    });
+  });
+
   group('<target> refs', () {
     test('an angle ref is one chip labelled with the target', () {
       expect(run('<@Dave> hi'), '[@Dave](<raft-ref://mention/user/dave>) hi');

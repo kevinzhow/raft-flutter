@@ -349,34 +349,6 @@ void main() {
       await t.pumpAndSettle();
       expect(find.byKey(notice), findsNothing);
     });
-
-    testWidgets(
-      'a join failure does not follow the visitor to another server',
-      (t) async {
-        wide(t);
-        final client = _PublicClient(
-          {...routes('raft-design'), ...routes('other')},
-          user: {'id': 'u1'},
-        );
-        final account = PublicServerAccount(
-          servers: const [],
-          onSelect: (_) {},
-        );
-        await t.pumpWidget(view(client, account: account));
-        await t.pumpAndSettle();
-        await t.tap(find.byKey(const ValueKey('public-join-guest')));
-        await t.pumpAndSettle();
-        await t.tap(find.byKey(const ValueKey('public-join-confirm')));
-        await t.pumpAndSettle();
-        await t.tap(find.text('Cancel'));
-        await t.pumpAndSettle();
-        const error = ValueKey('public-server-join-error');
-        expect(find.byKey(error), findsOneWidget);
-        await t.pumpWidget(view(client, slug: 'other', account: account));
-        await t.pumpAndSettle();
-        expect(find.byKey(error), findsNothing);
-      },
-    );
   });
 
   testWidgets('action card failure ends when the card moves on', (t) async {

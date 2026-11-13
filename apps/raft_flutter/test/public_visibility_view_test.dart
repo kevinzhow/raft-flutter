@@ -57,7 +57,6 @@ class _Client extends RaftClient {
 }) {
   var current = {
     'publiclyVisible': visible,
-    'publicGuestJoinEnabled': false,
     'slug': 'fixture',
     'exposedChannels': [
       {'name': 'general', 'description': 'Everything'},
@@ -74,10 +73,6 @@ class _Client extends RaftClient {
     'PATCH /servers/s1/public-visibility': (data) => current = {
       ...current,
       'publiclyVisible': (data as Map)['publiclyVisible'],
-    },
-    'PATCH /servers/s1/public-guest-join': (data) => current = {
-      ...current,
-      'publicGuestJoinEnabled': (data as Map)['publicGuestJoinEnabled'],
     },
   });
   final w = WorkspaceController(client);
@@ -153,19 +148,13 @@ void main() {
     );
     expect(
       find.byKey(const ValueKey('public-guest-join-switch')),
-      findsOneWidget,
+      findsNothing,
     );
   });
 
-  testWidgets('guest joining and turning public off', (t) async {
+  testWidgets('turning public off', (t) async {
     final (w, client) = _workspace(visible: true);
     await _pump(t, w);
-    await t.tap(find.byKey(const ValueKey('public-guest-join-switch')));
-    await t.pumpAndSettle();
-    expect(client.sent('PATCH /servers/s1/public-guest-join'), [
-      {'publicGuestJoinEnabled': true},
-    ]);
-
     await t.tap(find.byKey(const ValueKey('public-visibility-switch')));
     await t.pumpAndSettle();
     expect(client.sent('PATCH /servers/s1/public-visibility'), [
@@ -174,13 +163,22 @@ void main() {
     expect(find.textContaining('/s/fixture'), findsNothing);
   });
 
-  testWidgets('the guest switch needs server_guest_v0', (t) async {
-    final (w, _) = _workspace(visible: true, guestFlag: false);
-    await _pump(t, w);
-    expect(find.byKey(section), findsOneWidget);
-    expect(
-      find.byKey(const ValueKey('public-guest-join-switch')),
-      findsNothing,
-    );
-  });
+  // Server v1.24.0 removed PATCH /servers/:id/public-guest-join and Web 1.24
+  // no longer offers the Guest-join row, whatever server_guest_v0 says.
+  for (final guestFlag in [true, false]) {
+    testWidgets('no Guest-join switch (server_guest_v0 $guestFlag)', (t) async {
+      final (w, client) = _workspace(visible: true, guestFlag: guestFlag);
+      await _pump(t, w);
+      expect(find.byKey(section), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('public-guest-join-setting')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const ValueKey('public-guest-join-switch')),
+        findsNothing,
+      );
+      expect(client.sent('PATCH /servers/s1/public-guest-join'), isEmpty);
+    });
+  }
 }

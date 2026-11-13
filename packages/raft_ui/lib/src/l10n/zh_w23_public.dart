@@ -4,8 +4,6 @@
 // the public-page marks added since v1.21.12-source.1.
 const Map<String, String> zhCatalogW23Public = <String, String>{
   // settings.publicVisibility.*
-  "Signed-in visitors can join the server as read-only Guests, follow channels open to Guests, and be invited into other channels.":
-      "已登录的用户可以以只读访客身份加入服务器，关注对访客开放的频道，也可以被邀请进其他频道。",
   "Allow search engines": "允许搜索引擎收录",
   "Search engines can show the channels visible to anyone, and their threads, in search results. Turning it off stops this, though results already listed can take a while to drop out. The channels stay public.":
       "搜索引擎可以在搜索结果中展示任何人可见的频道及其消息列。关闭后会停止收录，已出现的搜索结果可能需要一段时间才会消失；频道仍然公开。",

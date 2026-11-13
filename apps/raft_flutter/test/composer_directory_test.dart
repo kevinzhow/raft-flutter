@@ -181,12 +181,15 @@ void main() {
     expect(directory.people, isEmpty);
     expect(a.calls.any((r) => r.path == '/servers/s1/members'), isFalse);
   });
-  test('enabled resource references insert canonical targets without notifying a person', () async {
+  test('computer and app references are retired (Web 1.24): no flag, apps or '
+      'machines read and no such suggestion', () async {
     final (w, a) = await fixture('owner');
     addTearDown(w.dispose);
     a.routes['GET /channels/c1/members'] = (_) => {'humans': [], 'agents': []};
     a.routes['GET /agents'] = (_) => [];
     a.routes['GET /servers/s1/members'] = (_) => [];
+    // Even a server that still answers the old flag and apps routes must not
+    // make them suggestions.
     a.routes['POST /feature-flags/evaluate'] = (_) => {
       'evaluations': [
         {'key': 'composer_resource_references_v0', 'enabled': true},
@@ -204,15 +207,16 @@ void main() {
     addTearDown(directory.dispose);
     directory.request('@');
     await settled();
+    expect(directory.people.where((p) => !p.isMention), isEmpty);
     expect(
-      directory.people.where((p) => p.type == 'computer').single.insertion,
-      r'[@Computer \[A\]](<computer:machine-id>)',
+      a.calls.any(
+        (r) =>
+            r.path == '/feature-flags/evaluate' ||
+            r.path.endsWith('/apps') ||
+            r.path.endsWith('/machines'),
+      ),
+      isFalse,
     );
-    expect(
-      directory.people.where((p) => p.type == 'app').single.insertion,
-      '[@Test app](<app:system.test>)',
-    );
-    expect(directory.people.every((p) => !p.isMention), isTrue);
   });
 
   group('surface scope (Web MessageInput mentionChannelId)', () {

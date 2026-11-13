@@ -18,10 +18,11 @@ import 'management_support.dart'
         writePageSnapshot;
 
 /// Settings > Server Profile: SettingsPanel.tsx PublicVisibilitySection.
-/// Owner only, behind `public_server_v0`; the Guest-join switch also needs
-/// `server_guest_v0`. GET/PATCH /servers/:id/public-visibility and PATCH
-/// /servers/:id/public-guest-join and /servers/:id/public-search (Allow search
-/// engines); turning public on asks for confirmation with the exposed channel
+/// Owner only, behind `public_server_v0`. GET/PATCH
+/// /servers/:id/public-visibility and PATCH /servers/:id/public-search (Allow
+/// search engines). The Guest-join switch is gone: server v1.24.0 removed
+/// PATCH /servers/:id/public-guest-join and Web 1.24 no longer offers it.
+/// Turning public on asks for confirmation with the exposed channel
 /// list. The server list carries `publicPageLive` (the globe after the server
 /// name and on public channels), so it is reloaded after the visibility
 /// changes: the owner who just flipped it should not wait.
@@ -41,11 +42,10 @@ class PublicVisibilitySection extends StatefulWidget {
 }
 
 class _PublicVisibilitySectionState extends State<PublicVisibilitySection> {
-  static const publicFlag = 'public_server_v0', guestFlag = 'server_guest_v0';
+  static const publicFlag = 'public_server_v0';
   static const snapshotKey = 'server:public-visibility';
   WorkspaceController get w => widget.controller;
   late bool publicEnabled = cachedServerFlag(w, publicFlag) ?? false;
-  late bool guestEnabled = cachedServerFlag(w, guestFlag) ?? false;
   Map<String, dynamic>? readback;
   bool loading = false, saving = false, copied = false;
   // ignore: raft_lints/avoid_imperative_notice_state -- Clears when the read starts or a change starts (Web setError('') at submit); the page is remounted on server/account change.
@@ -79,7 +79,7 @@ class _PublicVisibilitySectionState extends State<PublicVisibilitySection> {
         await w.client.post(
           '/feature-flags/evaluate',
           data: featureFlagEvaluateBody(
-            keys: [publicFlag, guestFlag],
+            keys: [publicFlag],
             serverId: w.server?.id,
           ),
         ),
@@ -87,13 +87,11 @@ class _PublicVisibilitySectionState extends State<PublicVisibilitySection> {
       bool on(String key) =>
           managementRows(result['evaluations'])
               .any((f) => f['key'] == key && f['enabled'] == true);
-      final public = on(publicFlag), guest = on(guestFlag);
+      final public = on(publicFlag);
       rememberServerFlag(w, publicFlag, public, identity);
-      rememberServerFlag(w, guestFlag, guest, identity);
       if (!mounted || identity != pageIdentity(w)) return;
       setState(() {
         publicEnabled = public;
-        guestEnabled = guest;
       });
     } catch (_) {
       // An unresolved flag keeps the section hidden.
@@ -229,12 +227,6 @@ class _PublicVisibilitySectionState extends State<PublicVisibilitySection> {
         publicUrl: url,
         copied: copied,
         onCopy: url == null ? null : () => copy(url),
-        guestJoin: guestEnabled ? (r?['publicGuestJoinEnabled'] == true) : null,
-        onGuestJoin: idle && visible
-            ? (on) => patch('$base/public-guest-join', {
-                'publicGuestJoinEnabled': on,
-              }, 'Failed to update Guest joining').catchError((_) {})
-            : null,
         searchEngines: r?['publicSearchEnabled'] == true,
         onSearchEngines: idle && visible
             ? (on) => patch('$base/public-search', {

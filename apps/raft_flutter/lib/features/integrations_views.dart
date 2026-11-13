@@ -10,7 +10,7 @@ import '../data/web_error.dart';
 import '../data/workspace_controller.dart';
 import 'management_support.dart';
 import 'app_notifications_catalog.dart';
-import 'app_permission_review.dart';
+import 'app_permission_request_summary.dart';
 import 'app_setup.dart';
 import 'connected_app_editor.dart';
 
@@ -374,21 +374,6 @@ class _IntegrationsState extends ManagementState<IntegrationsView> {
     return true;
   }
 
-  /// Approves the pending permission update the reviewer is looking at
-  /// (Web handleApproveSelectedAppPermissionUpdate). Returns the English error
-  /// text to show, or null on success / when the change was dropped.
-  Future<String?> approvePermissionUpdate(Map<String, dynamic> listing) {
-    final id = '${listing['id']}';
-    return _mutate(
-      id,
-      () => w.client.post(
-        appPermissionReviewPath(id),
-        data: appPermissionReviewBody(listing),
-      ),
-      fallback: 'Failed to approve permission update',
-    );
-  }
-
   Future<void> openListing(Map<String, dynamic> opened) async {
     final source = authority;
     // ignore: raft_lints/avoid_imperative_notice_state -- Cleared when the install retry starts; the local variable dies with the app detail modal.
@@ -415,15 +400,6 @@ class _IntegrationsState extends ManagementState<IntegrationsView> {
           final developer =
               '${listing['publisherServerName'] ?? listing['publisherName'] ?? tr('Third-party developer')}';
           final homepage = listing['homepageUrl'] as String?;
-          Future<void> approveUpdate() async {
-            setModal(() => modalError = null);
-            final run = approvePermissionUpdate(listing);
-            setModal(() {});
-            final failure = await run;
-            if (!modal.mounted) return;
-            setModal(() => modalError = failure ?? error);
-          }
-
           Future<void> install() async {
             setModal(() => modalError = null);
             final failure = await _mutate(
@@ -534,8 +510,6 @@ class _IntegrationsState extends ManagementState<IntegrationsView> {
                   child: AppPermissionRequestSummary(
                     listing: listing,
                     groupLabel: (g) => _groupLabel(modal, g),
-                    reviewing: saving,
-                    onApprove: approveUpdate,
                   ),
                 ),
                 RaftConnectedAppDetailSection(

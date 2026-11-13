@@ -110,7 +110,6 @@ String _historyLabel(
     RaftRoute.human => 'Member',
     RaftRoute.computer => 'Computer',
     RaftRoute.members => 'Members',
-    RaftRoute.memberGraph => 'Member Graph',
     RaftRoute.computers => 'Computers',
     RaftRoute.search => 'Search',
     RaftRoute.settings => 'Settings',
