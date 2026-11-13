@@ -1,3 +1,4 @@
+import 'external_sender.dart';
 import 'public_avatar_url.dart';
 
 /// Permitted presentation fields only. URLs are transient discovery data,
@@ -66,7 +67,7 @@ SenderAvatarProjection projectSenderAvatar({
       kind: 'app',
       uploadedUrl: raftPublicAvatarUrl(
         origin,
-        externalAuthor?['avatarUrl'] as String?,
+        externalSenderPresentation(externalAuthor).avatarUrl,
       ),
     );
   }
