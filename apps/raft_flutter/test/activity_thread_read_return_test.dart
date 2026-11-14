@@ -263,6 +263,8 @@ void main() {
                 );
               }
             } finally {
+              // The store's throttled read and retries are the store's own timers.
+              w.activityUnreadIfBound?.dispose();
               await tester.pumpWidget(const SizedBox());
               await tester.pumpAndSettle();
             }
@@ -308,6 +310,8 @@ void main() {
         await tester.pumpWidget(page());
         await tester.pumpAndSettle();
         expect(find.text('1 new'), findsOneWidget);
+        // The store's throttled read and retries are the store's own timers.
+        w.activityUnreadIfBound?.dispose();
         await tester.pumpWidget(const SizedBox());
         await tester.pumpAndSettle();
         final write = w.conversationReads.markAllRead('thread-1');
@@ -322,6 +326,8 @@ void main() {
         expect(state.rows.single['unreadCount'], 0);
         expect(state.totalUnreadCount, 0);
       } finally {
+        // The store's throttled read and retries are the store's own timers.
+        w.activityUnreadIfBound?.dispose();
         await tester.pumpWidget(const SizedBox());
         await tester.pumpAndSettle();
       }
