@@ -90,9 +90,14 @@ const themeCtx = {
   isToken,
   partial: true,
 };
-const fold = (text, overrides = null) => evaluate(parseValue(text), overrides ? {
+// A colour-scheme context (`dark`) redeclares foundation tokens with their dark values. Those tokens stay symbolic:
+// the generated token classes carry a value per mode and the runtime resolves `{t:"var"}` for the active one, so
+// inlining the dark literal would freeze the colour (no per-server theme, no mode switch, 8-bit instead of token
+// alpha). Only non-token variables (Tailwind @theme constants) and metric contexts (desktop density) are folded.
+const fold = (text, overrides = null, atoms = []) => evaluate(parseValue(text), overrides ? {
   ...themeCtx,
-  lookupVar: (name) => overrides.has(name) ? parseValue(overrides.get(name)) : themeCtx.lookupVar(name),
+  lookupVar: (name) => overrides.has(name) && !(isToken(name) && atoms.includes('dark'))
+    ? parseValue(overrides.get(name)) : themeCtx.lookupVar(name),
 } : themeCtx);
 
 const registered = new Map();
@@ -111,8 +116,8 @@ for (const name of sortedClasses) {
       for (const context of [{atoms: [], vars: null}, ...conditionalThemeVars]) {
       const decls = [];
       for (const d of layer.decls) {
-        const value = fold(d.value, context.vars);
-        if (context.vars && JSON.stringify(value) === JSON.stringify(fold(d.value, context.inheritedVars))) continue;
+        const value = fold(d.value, context.vars, context.atoms);
+        if (context.vars && JSON.stringify(value) === JSON.stringify(fold(d.value, context.inheritedVars, context.atoms))) continue;
         if (d.prop.startsWith('--')) decls.push({ prop: d.prop, value, important: d.important });
         else for (const [prop, v] of expand(d.prop, value)) decls.push({ prop, value: v, important: d.important });
       }

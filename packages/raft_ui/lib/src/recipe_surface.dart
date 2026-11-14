@@ -385,6 +385,10 @@ class RaftRecipeBox extends StatelessWidget {
       cssGeometry: cssGeometry,
       color: background == null || overlay == null
           ? overlay ?? background
+          // Chromium composites the hover/press wash with its 8-bit alpha onto an opaque fill (measured in
+          // chrome-headless-shell: ink 10% over attention-400 paints 231,139,177; float source-over gives 232).
+          : background.a == 1
+          ? raftChromeBlend(overlay, background)
           : Color.alphaBlend(overlay, background),
       border: originalBorder,
       borderRadius: style.borderRadius,
@@ -637,7 +641,7 @@ class RaftRecipeBox extends StatelessWidget {
   }
 }
 
-/// The published `press-overlay` utilities use a linear gradient whose two
+/// The published `overlay-*` utilities use a linear gradient whose two
 /// stops are the same token. Keep it above the resting background and below
 /// the border and content, as CSS does. Hover and active share this one image;
 /// the cascade decides its value before paint, so they never double the wash.
@@ -647,8 +651,10 @@ Color? _uniformBackgroundImage(
   RaftTokenResolver tokens,
   Color? currentColor,
 ) {
-  if (image case CssFunction(name: 'linear-gradient', :final args)
-      when args.length == 2) {
+  if (image case CssFunction(
+    name: 'linear-gradient',
+    :final args,
+  ) when args.length == 2) {
     final first = RaftColorRef.fromCss(args[0]);
     final second = RaftColorRef.fromCss(args[1]);
     if (first == null || second == null) return null;

@@ -179,7 +179,7 @@ class _RaftCardState extends State<RaftCard> {
       final base = widget.selected
           ? (widget.selectedBackground ?? ui['info-soft'])
           : (widget.background ?? ui.layerCard);
-      // `hover:press-overlay`: the pressed wash laid over the resting fill.
+      // `hover:overlay-medium` (raft-ui 0.95.3 styles.css; renamed from press-overlay): the wash laid over the resting fill.
       final fill = hover && !widget.selected
           ? Color.alphaBlend(ui.fillPressed, base)
           : base;
@@ -231,7 +231,7 @@ class _RaftCardState extends State<RaftCard> {
                     (name != 'bg-layer-card' && name != 'border-line-hairline'),
               ),
               if (widget.selected) ...['bg-info-soft', 'border-line-hairline'],
-              if (interactive && !widget.selected) 'hover:press-overlay',
+              if (interactive && !widget.selected) 'hover:overlay-medium',
             ]
           : [
               ...card.classes.where(

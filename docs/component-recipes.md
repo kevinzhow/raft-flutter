@@ -233,7 +233,7 @@ Dart: `RaftSpinnerRecipe` · source: `dist/components/spinner/spinner.mjs` (inde
 | size=xs | root | (classes differ, same result) |
 | size=md | root | (classes differ, same result) |
 | size=lg | root | (classes differ, same result) |
-| variant=inverse | root | color: token(foregroundInverse); [dark] color: oklch(0.2213 0.0038 106.71) [#FF1B1B19] |
+| variant=inverse | root | color: token(foregroundInverse) |
 
 ## buttonVariants
 
@@ -280,14 +280,8 @@ Dart: `RaftButtonRecipe` · source: `dist/components/button/button.mjs` (index.m
 | root | self | user-select | none |
 | root | self | **active** | background-image: linear-gradient(token(fillMedium), token(fillMedium)) |
 | root | self | **active+aria-disabled=true** | color: token(foregroundDisabled); background-color: token(fillMuted); border-color: token(lineHairline); box-shadow: 0 0 0 0 currentcolor; background-image: no… |
-| root | self | **active+dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.2596 0.0037 106.65) [#FF242422]; border-color: oklch(0.9211 0.004 106.48) [#FFE5E5E2];… |
 | root | self | **aria-disabled=true** | color: token(foregroundDisabled); background-color: token(fillMuted); border-color: token(lineHairline); box-shadow: 0 0 0 0 currentcolor; background-image: no… |
-| root | self | **aria-disabled=true+dark** | color: oklch(0.4987 0.0047 106.57) [#FF636360]; background-color: oklch(0.3161 0.0052 106.7) [#FF32322F]; border-color: oklch(0.9843 0.004 106.47 / 0.102) [#1A… |
 | root | self | **aria-disabled=true+hover** | color: token(foregroundDisabled); background-color: token(fillMuted); border-color: token(lineHairline); box-shadow: 0 0 0 0 currentcolor; background-image: no… |
-| root | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.2596 0.0037 106.65) [#FF242422]; border-color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| root | self | **dark+disabled** | color: oklch(0.4987 0.0047 106.57) [#FF636360]; background-color: oklch(0.3161 0.0052 106.7) [#FF32322F]; border-color: oklch(0.9843 0.004 106.47 / 0.102) [#1A… |
-| root | self | **dark+focus-visible** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.2596 0.0037 106.65) [#FF242422]; border-color: oklch(0.9211 0.004 106.48) [#FFE5E5E2];… |
-| root | self | **dark+hover** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.2596 0.0037 106.65) [#FF242422]; border-color: oklch(0.9211 0.004 106.48) [#FFE5E5E2];… |
 | root | self | **data-loading=true** | opacity: 100%; cursor: wait |
 | root | self | **disabled** | color: token(foregroundDisabled); background-color: token(fillMuted); border-color: token(lineHairline); box-shadow: 0 0 0 0 currentcolor; background-image: no… |
 | root | self | **focus-visible** | box-shadow: token(focusRing) |
@@ -330,9 +324,9 @@ Dart: `RaftButtonRecipe` · source: `dist/components/button/button.mjs` (index.m
 | variant=accent | root | color: token(stickerInk); background-color: token(attention400); border-color: token(stickerInk); box-shadow: 0 0 0 1.5 token(stickerEdge); ring: width:1.5 col… |
 | variant=warning | root | color: token(stickerInk); background-color: token(warning); border-color: token(stickerInk); box-shadow: 0 0 0 1.5 token(stickerEdge); ring: width:1.5 color:to… |
 | variant=danger | root | color: token(stickerInk); background-color: token(danger); border-color: token(stickerInk); box-shadow: 0 0 0 1.5 token(stickerEdge); ring: width:1.5 color:tok… |
-| variant=danger-secondary | root | color: token(dangerStrong); [active+dark] color: oklch(0.7996 0.1009 24.79) [#FFF8A49D], background-color: oklch(0.2596 0.0037 106.65) [#FF242422], border-colo… |
-| variant=danger-outline | root | color: token(dangerStrong); [active+dark] color: oklch(0.7996 0.1009 24.79) [#FFF8A49D], background-color: oklch(0.2596 0.0037 106.65) [#FF242422], border-colo… |
-| variant=ghost | root | background-color: transparent [#00000000]; border-color: transparent [#00000000]; [active] background-color: token(fillMedium); [active+dark] color: oklch(0.92… |
+| variant=danger-secondary | root | color: token(dangerStrong) |
+| variant=danger-outline | root | color: token(dangerStrong) |
+| variant=ghost | root | background-color: transparent [#00000000]; border-color: transparent [#00000000]; [active] background-color: token(fillMedium); [hover] background-color: token… |
 | variant=on-frame | root | height: token(frameItemHeight); padding: top:0 right:10 bottom:0 left:10; font-size: 15; line-height: 20; color: token(foregroundOnFrame); background-color: tr… |
 | size=lg | root | height: token(controlHeight); padding: top:0 right:16 bottom:0 left:16; font-size: 15; line-height: 20; border-radius: token(controlRadius); [has:data-icon=inl… |
 | size=xl | root | height: token(controlHeightCta); padding: top:0 right:20 bottom:0 left:20; font-size: 16; line-height: 24; [has:data-icon=inline-end] (none); [has:data-icon=in… |
@@ -380,7 +374,6 @@ Dart: `RaftDialogSheetRecipe` · source: `dist/components/dialog/dialog-sheet-co
 | header | self | border-color | token(lineSeam) |
 | header | self | flex-shrink | 0 |
 | header | self | align-items | center |
-| header | self | **dark** | border-color: oklch(0.9843 0.004 106.47 / 0.259) [#42FAFAF7] |
 | title | self | min-width | 0 |
 | title | self | overflow-x | hidden |
 | title | self | overflow-y | hidden |
@@ -402,7 +395,6 @@ Dart: `RaftDialogSheetRecipe` · source: `dist/components/dialog/dialog-sheet-co
 | bodyEnd | self | line-height | 18 |
 | bodyEnd | self | color | token(foregroundMuted) |
 | bodyEnd | self | text-align | start |
-| bodyEnd | self | **dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
 | bodyEnd | self | **empty** | display: none |
 | bodyEnd | self | **pointer-fine+width>=768** | font-size: 12 |
 | bodyEnd | :is(& > *)[data-slot="text-link"] | font-size | 13 |
@@ -426,7 +418,6 @@ Dart: `RaftAlertDialogRecipe` · source: `dist/components/alert-dialog/alert-dia
 | overlay | self | inset | 0 |
 | overlay | self | background-color | token(layerBackdrop) |
 | overlay | self | z-index | 50 |
-| overlay | self | **dark** | background-color: oklch(0 0 0 / 0.6) [#99000000] |
 | content | self | display | grid |
 | content | self | position | fixed |
 | content | self | width | calc((100% - 32px)) |
@@ -442,7 +433,6 @@ Dart: `RaftAlertDialogRecipe` · source: `dist/components/alert-dialog/alert-dia
 | content | self | overflow-x | clip |
 | content | self | overflow-y | clip |
 | content | self | z-index | 50 |
-| content | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.2802 0.0036 106.63) [#FF292927]; box-shadow: 0 0 0 1 oklch(0.9843 0.004 106.47 / 0.259… |
 | header | self | display | grid |
 | header | self | min-width | 0 |
 | header | self | padding | top:20 right:20 left:20 |
@@ -458,7 +448,6 @@ Dart: `RaftAlertDialogRecipe` · source: `dist/components/alert-dialog/alert-dia
 | body | self | font-size | 15 |
 | body | self | line-height | 20 |
 | body | self | color | token(foregroundMuted) |
-| body | self | **dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
 | body | self | **first-child** | padding: 20 |
 | body | self | **first-child+pointer-fine+width>=768** | padding: 16; font-size: 14; line-height: 22 |
 | body | self | **pointer-fine+width>=768** | padding: top:6 right:16 bottom:16 left:16; font-size: 14; line-height: 22 |
@@ -484,21 +473,19 @@ Dart: `RaftAlertDialogRecipe` · source: `dist/components/alert-dialog/alert-dia
 | title | self | font-weight | 700 |
 | title | self | line-height | 22 |
 | title | self | color | token(foreground) |
-| title | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 | title | self | **pointer-fine+width>=768** | font-size: 16; line-height: 24 |
 | description | self | margin | 0 |
 | description | self | font-family | token(sansFont, system-ui, sans-serif) |
 | description | self | font-size | 15 |
 | description | self | line-height | 20 |
 | description | self | color | token(foregroundMuted) |
-| description | self | **dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
 | description | self | **pointer-fine+width>=768** | font-size: 14; line-height: 22 |
 
 ### Variant deltas (one axis changed from the default)
 
 | variant | slot | value |
 |---|---|---|
-| nested=true | overlay | background-color: token(layerBackdropNested); [dark] background-color: oklch(0 0 0 / 0.4) [#66000000] |
+| nested=true | overlay | background-color: token(layerBackdropNested) |
 
 ## textLinkVariants
 
@@ -519,10 +506,6 @@ Dart: `RaftTextLinkRecipe` · source: `dist/components/text-link/text-link.mjs` 
 | base | self | outline-style | none |
 | base | self | text-decoration-thickness | 1.5 |
 | base | self | text-underline-offset | 3 |
-| base | self | **dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
-| base | self | **dark+disabled** | color: oklch(0.4987 0.0047 106.57) [#FF636360]; cursor: not-allowed |
-| base | self | **dark+focus-visible** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1]; box-shadow: 0 0 0 2 oklch(0.2213 0.0038 106.71) [#FF1B1B19], 0 0 0 4 oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| base | self | **dark+hover** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; text-decoration-line: underline |
 | base | self | **disabled** | color: token(foregroundDisabled); cursor: not-allowed |
 | base | self | **focus-visible** | box-shadow: token(focusRing) |
 | base | self | **hover** | color: token(foreground); text-decoration-line: underline |
@@ -531,7 +514,7 @@ Dart: `RaftTextLinkRecipe` · source: `dist/components/text-link/text-link.mjs` 
 
 | variant | slot | value |
 |---|---|---|
-| variant=strong | base | font-weight: 600; color: token(foreground); [dark] color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; [dark+focus-visible] color: oklch(0.9211 0.004 106.48) [#FFE5… |
+| variant=strong | base | font-weight: 600; color: token(foreground); [hover] text-decoration-line: underline |
 
 ## panelActionBase
 
@@ -569,10 +552,6 @@ Dart: `RaftPanelActionBaseRecipe` · source: `dist/components/panel/panel-action
 | base | self | -webkit-user-select | none |
 | base | self | user-select | none |
 | base | self | **active** | background-color: token(fillMedium) |
-| base | self | **active+dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.9843 0.004 106.47 / 0.065) [#11FAFAF7] |
-| base | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| base | self | **dark+focus-visible** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; box-shadow: 0 0 0 2 oklch(0.2213 0.0038 106.71) [#FF1B1B19], 0 0 0 4 oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| base | self | **dark+hover** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.9843 0.004 106.47 / 0.065) [#11FAFAF7] |
 | base | self | **focus-visible** | box-shadow: token(focusRing) |
 | base | self | **hover** | background-color: token(fillMedium) |
 | base | self | **pointer-fine+width>=768** | height: 28; min-width: 28; padding: top:0 right:3.5 bottom:0 left:3.5; border-radius: 6 |
@@ -627,13 +606,7 @@ Dart: `RaftPanelActionRecipe` · source: `dist/components/panel/panel-action.rec
 | base | self | user-select | none |
 | base | self | **active** | background-color: token(fillMedium) |
 | base | self | **active+aria-pressed=true** | color: token(stickerInk); background-color: token(selected); border-color: token(stickerInk); background-image: linear-gradient(token(stickerMedium), token(sti… |
-| base | self | **active+dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.9843 0.004 106.47 / 0.065) [#11FAFAF7] |
 | base | self | **aria-pressed=true** | color: token(stickerInk); background-color: token(selected); border-color: token(stickerInk); box-shadow: 0 0 0 1.5 token(stickerEdge); ring: width:1.5 color:t… |
-| base | self | **aria-pressed=true+dark** | color: token(stickerInk); background-color: token(selected); border-color: token(stickerInk); box-shadow: 0 0 0 1.5 oklch(0.9843 0.004 106.47 / 0.349) [#59FAFA… |
-| base | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| base | self | **dark+disabled** | color: oklch(0.4987 0.0047 106.57) [#FF636360]; opacity: 100%; transform: none; pointer-events: none |
-| base | self | **dark+focus-visible** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; box-shadow: 0 0 0 2 oklch(0.2213 0.0038 106.71) [#FF1B1B19], 0 0 0 4 oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| base | self | **dark+hover** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.9843 0.004 106.47 / 0.065) [#11FAFAF7] |
 | base | self | **disabled** | color: token(foregroundDisabled); opacity: 100%; transform: none; pointer-events: none |
 | base | self | **focus-visible** | box-shadow: token(focusRing) |
 | base | self | **hover** | background-color: token(fillMedium) |
@@ -687,13 +660,7 @@ Dart: `RaftPanelToggleActionRecipe` · source: `dist/components/panel/panel-acti
 | base | self | -webkit-user-select | none |
 | base | self | user-select | none |
 | base | self | **active** | background-color: token(fillMedium) |
-| base | self | **active+dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.9843 0.004 106.47 / 0.065) [#11FAFAF7] |
 | base | self | **active+data-pressed** | color: token(stickerInk); background-color: token(selected); border-color: token(stickerInk); background-image: linear-gradient(token(stickerMedium), token(sti… |
-| base | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| base | self | **dark+data-disabled** | color: oklch(0.4987 0.0047 106.57) [#FF636360]; opacity: 100%; transform: none; pointer-events: none |
-| base | self | **dark+data-pressed** | color: token(stickerInk); background-color: token(selected); border-color: token(stickerInk); box-shadow: 0 0 0 1.5 oklch(0.9843 0.004 106.47 / 0.349) [#59FAFA… |
-| base | self | **dark+focus-visible** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; box-shadow: 0 0 0 2 oklch(0.2213 0.0038 106.71) [#FF1B1B19], 0 0 0 4 oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| base | self | **dark+hover** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.9843 0.004 106.47 / 0.065) [#11FAFAF7] |
 | base | self | **data-disabled** | color: token(foregroundDisabled); opacity: 100%; transform: none; pointer-events: none |
 | base | self | **data-pressed** | color: token(stickerInk); background-color: token(selected); border-color: token(stickerInk); box-shadow: 0 0 0 1.5 token(stickerEdge); ring: width:1.5 color:t… |
 | base | self | **focus-visible** | box-shadow: token(focusRing) |
@@ -732,7 +699,6 @@ Dart: `RaftDialogRecipe` · source: `dist/components/dialog/dialog.mjs` (index.m
 | overlay | self | inset | 0 |
 | overlay | self | background-color | token(layerBackdrop) |
 | overlay | self | z-index | 50 |
-| overlay | self | **dark** | background-color: oklch(0 0 0 / 0.6) [#99000000] |
 | content | self | display | flex |
 | content | self | position | fixed |
 | content | self | width | calc((100% - 32px)) |
@@ -750,7 +716,6 @@ Dart: `RaftDialogRecipe` · source: `dist/components/dialog/dialog.mjs` (index.m
 | content | self | overflow-y | clip |
 | content | self | z-index | 50 |
 | content | self | flex-direction | column |
-| content | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.2802 0.0036 106.63) [#FF292927]; box-shadow: 0 0 0 1 oklch(0.9843 0.004 106.47 / 0.259… |
 | header | self | display | grid |
 | header | self | min-width | 0 |
 | header | self | padding | top:20 right:20 left:20 |
@@ -769,7 +734,6 @@ Dart: `RaftDialogRecipe` · source: `dist/components/dialog/dialog.mjs` (index.m
 | body | self | color | token(foregroundMuted) |
 | body | self | overflow-y | auto |
 | body | self | flex | 1 |
-| body | self | **dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
 | body | self | **first-child** | padding: 20 |
 | body | self | **first-child+pointer-fine+width>=768** | padding: 16; font-size: 14; line-height: 22 |
 | body | self | **pointer-fine+width>=768** | padding: top:6 right:16 bottom:16 left:16; font-size: 14; line-height: 22 |
@@ -800,7 +764,6 @@ Dart: `RaftDialogRecipe` · source: `dist/components/dialog/dialog.mjs` (index.m
 | footerNote | self | color | token(foregroundMuted) |
 | footerNote | self | text-align | start |
 | footerNote | self | text-wrap | pretty |
-| footerNote | self | **dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
 | footerNote | self | **pointer-fine+width>=768** | margin: top:0 right:8 bottom:0 left:0; font-size: 12; flex: 1; white-space: nowrap |
 | footerNote | self | **width>=768** | margin: top:0 right:8 bottom:0 left:0; flex: 1; white-space: nowrap |
 | footerActions | self | display | flex |
@@ -820,14 +783,12 @@ Dart: `RaftDialogRecipe` · source: `dist/components/dialog/dialog.mjs` (index.m
 | title | self | font-weight | 700 |
 | title | self | line-height | 22 |
 | title | self | color | token(foreground) |
-| title | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 | title | self | **pointer-fine+width>=768** | font-size: 16; line-height: 24 |
 | description | self | margin | 0 |
 | description | self | font-family | token(sansFont, system-ui, sans-serif) |
 | description | self | font-size | 15 |
 | description | self | line-height | 20 |
 | description | self | color | token(foregroundMuted) |
-| description | self | **dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
 | description | self | **pointer-fine+width>=768** | font-size: 14; line-height: 22 |
 
 ### Variant deltas (one axis changed from the default)
@@ -840,11 +801,11 @@ Dart: `RaftDialogRecipe` · source: `dist/components/dialog/dialog.mjs` (index.m
 | placement=top | content | [width>=768] max-height: calc(((100dvh - 8vh) - 16px)), inset: top:8vh left:50%, translate: -50% 0px |
 | keyboard=true | content | [data-soft-keyboard] max-height: calc((((unset - env(safe-area-inset-top, 0px)) - token(headerHeight)) - 16px)), inset: top:calc(((unset + env(safe-area-inset-… |
 | bar=true | header | display: flex; padding: top:0 right:20 bottom:0 left:20; height: token(headerHeight); border-width: bottom:1; border-style: bottom:solid; border-color: token(l… |
-| bar=true | body | padding: 0; color: token(foreground); overflow-y: hidden; display: flex; min-height: 0; overflow-x: hidden; [dark] color: oklch(0.9211 0.004 106.48) [#FFE5E5E2… |
+| bar=true | body | padding: 0; color: token(foreground); overflow-y: hidden; display: flex; min-height: 0; overflow-x: hidden; [first-child] (none); [first-child+pointer-fine+wid… |
 | bar=true | footer | padding: top:12 right:20 bottom:12 left:20; border-width: top:1; border-style: top:solid; border-color: token(lineSeam); [ancestor:data-slot=dialog-header] (no… |
 | layer=1 | overlay | z-index: 60 |
 | layer=1 | content | z-index: 60 |
-| nested=true | overlay | background-color: token(layerBackdropNested); [dark] background-color: oklch(0 0 0 / 0.4) [#66000000] |
+| nested=true | overlay | background-color: token(layerBackdropNested) |
 | start=true | footer | justify-content: space-between; flex-wrap: wrap |
 
 ## dialogSurface
@@ -867,7 +828,6 @@ Dart: `RaftDialogSurfaceRecipe` · source: `dist/components/dialog/dialog.mjs` (
 | root | self | overflow-x | clip |
 | root | self | overflow-y | clip |
 | root | self | flex-direction | column |
-| root | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.2802 0.0036 106.63) [#FF292927]; box-shadow: 0 0 0 1 oklch(0.9843 0.004 106.47 / 0.259… |
 
 ## dialogNav
 
@@ -884,7 +844,6 @@ Dart: `RaftDialogNavRecipe` · source: `dist/components/dialog/dialog.mjs` (inde
 | root | self | border-style | right:solid |
 | root | self | border-color | token(lineSeam) |
 | root | self | flex-shrink | 0 |
-| root | self | **dark** | border-color: oklch(0.9843 0.004 106.47 / 0.259) [#42FAFAF7] |
 | root | self | **width<768** | display: none |
 | content | self | display | flex |
 | content | self | gap | 2 |
@@ -914,7 +873,6 @@ Dart: `RaftPanelHeaderRecipe` · source: `dist/components/panel/panel-header.rec
 | header | self | border-color | token(lineSeam) |
 | header | self | flex-shrink | 0 |
 | header | self | align-items | center |
-| header | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.2213 0.0038 106.71) [#FF1B1B19]; border-color: oklch(0.9843 0.004 106.47 / 0.259) [#42… |
 | header | self | **width<768** | gap: 8; position: sticky; inset: top:0; z-index: 35 |
 | header | self | **width>=768** | padding: right:20 left:20 |
 | header | & > [data-icon-inset]:nth-child(1 of :not([data-base-ui-focus-guard], [aria-owns])) | margin | left:0 |
@@ -930,23 +888,15 @@ Dart: `RaftPanelHeaderRecipe` · source: `dist/components/panel/panel-header.rec
 | sectionHeader | self | border-color | token(lineSeam) |
 | sectionHeader | self | flex-shrink | 0 |
 | sectionHeader | self | align-items | center |
-| sectionHeader | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.2213 0.0038 106.71) [#FF1B1B19]; border-color: oklch(0.9843 0.004 106.47 / 0.259) [#42… |
-| sectionHeader | self | **dark+width<768** | gap: 8; color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.1582 0.0041 106.86) [#FF0D0D0B]; border-color: oklch(0.9843 0.004 106.47 / 0.2… |
 | sectionHeader | self | **width<768** | gap: 8; color: token(foregroundOnFrame); background-color: token(layerFrame); position: sticky; inset: top:0; z-index: 35 |
 | sectionHeader | self | **width>=768** | padding: right:20 left:20 |
 | sectionHeader | & > [data-icon-inset]:nth-child(1 of :not([data-base-ui-focus-guard], [aria-owns])) | margin | left:0 |
 | sectionHeader | & > [data-icon-inset]:nth-last-child(1 of :not([data-base-ui-focus-guard], [aria-owns])) | margin | right:0 |
-| sectionHeader | :is(& > *)[data-slot="panel-header-icon"] | **dark+width<768** | display: none |
 | sectionHeader | :is(& > *)[data-slot="panel-header-icon"] | **width<768** | display: none |
-| sectionHeader | :is(& *)[data-slot="panel-title"] | **dark+width<768** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 | sectionHeader | :is(& *)[data-slot="panel-title"] | **width<768** | color: token(foregroundOnFrame) |
-| sectionHeader | :is(& *)[data-slot="panel-meta"] | **dark+width<768** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | sectionHeader | :is(& *)[data-slot="panel-meta"] | **width<768** | color: token(foregroundOnFrameMuted) |
-| sectionHeader | :is(& *)[data-slot="panel-action"] | **dark+width<768** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 | sectionHeader | :is(& *)[data-slot="panel-action"] | **width<768** | color: token(foregroundOnFrame) |
-| sectionHeader | :is(& *)[data-slot="panel-action"]:hover | **dark+width<768** | background-color: oklch(0.9843 0.004 106.47 / 0.06) [#0FFAFAF7] |
 | sectionHeader | :is(& *)[data-slot="panel-action"]:hover | **width<768** | background-color: token(fillFrameMedium) |
-| sectionHeader | :is(& *)[data-slot="panel-action"]:active | **dark+width<768** | background-color: oklch(0.9843 0.004 106.47 / 0.06) [#0FFAFAF7] |
 | sectionHeader | :is(& *)[data-slot="panel-action"]:active | **width<768** | background-color: token(fillFrameMedium) |
 | headerIcon | self | display | flex |
 | headerIcon | self | width | 27 |
@@ -962,7 +912,6 @@ Dart: `RaftPanelHeaderRecipe` · source: `dist/components/panel/panel-header.rec
 | headerIcon | self | flex-shrink | 0 |
 | headerIcon | self | align-items | center |
 | headerIcon | self | justify-content | center |
-| headerIcon | self | **dark** | box-shadow: 0 0 0 1.5 oklch(0.9843 0.004 106.47 / 0.349) [#59FAFAF7]; ring: width:1.5 color:oklch(0.9843 0.004 106.47 / 0.349) [#59FAFAF7] offsetWidth:— offset… |
 | headerIcon | self | **data-icon-kind=avatar** | width: auto; height: auto; background-color: transparent [#00000000]; border-color: transparent [#00000000] |
 | headerIcon | self | **pointer-fine+width>=768** | width: 28; height: 28; border-radius: 6 |
 | headerIcon | & svg | width | 14 |
@@ -987,7 +936,6 @@ Dart: `RaftPanelHeaderRecipe` · source: `dist/components/panel/panel-header.rec
 | title | self | overflow-y | hidden |
 | title | self | text-overflow | ellipsis |
 | title | self | white-space | nowrap |
-| title | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 | title | self | **pointer-fine+width>=768** | font-size: 16; line-height: 24 |
 | meta | self | min-width | 0 |
 | meta | self | font-family | token(sansFont, system-ui, sans-serif) |
@@ -999,7 +947,6 @@ Dart: `RaftPanelHeaderRecipe` · source: `dist/components/panel/panel-header.rec
 | meta | self | overflow-y | hidden |
 | meta | self | text-overflow | ellipsis |
 | meta | self | white-space | nowrap |
-| meta | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | meta | self | **pointer-fine+width>=768** | line-height: 18; flex: 1; flex-shrink: 1000 |
 | meta | self | **width>=768** | flex: 1; flex-shrink: 1000 |
 | status | self | display | inline-flex |
@@ -1016,7 +963,6 @@ Dart: `RaftPanelHeaderRecipe` · source: `dist/components/panel/panel-header.rec
 | status | self | flex-shrink | 0 |
 | status | self | align-items | center |
 | status | self | text-transform | none |
-| status | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | status | self | **pointer-fine+width>=768** | line-height: 18 |
 | status | & svg | width | 14 |
 | status | & svg | height | 14 |
@@ -1030,7 +976,6 @@ Dart: `RaftPanelHeaderRecipe` · source: `dist/components/panel/panel-header.rec
 | activity | self | color | token(foregroundHint) |
 | activity | self | flex-shrink | 0 |
 | activity | self | align-items | center |
-| activity | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | activity | self | **pointer-fine+width>=768** | line-height: 18 |
 | activity | & svg | width | 14 |
 | activity | & svg | height | 14 |
@@ -1138,7 +1083,6 @@ Dart: `RaftDrawerRecipe` · source: `dist/components/drawer/drawer.recipe.mjs` (
 | overlay | self | z-index | 50 |
 | overlay | self | -webkit-user-select | none |
 | overlay | self | user-select | none |
-| overlay | self | **dark** | background-color: oklch(0 0 0 / 0.6) [#99000000] |
 | overlay | self | **data-ending-style** | opacity: 0%; transition-duration: 150ms; pointer-events: none |
 | overlay | self | **data-starting-style** | opacity: 0% |
 | overlay | self | **motion-reduce** | transition-property: none |
@@ -1160,7 +1104,6 @@ Dart: `RaftDrawerRecipe` · source: `dist/components/drawer/drawer.recipe.mjs` (
 | popup | self | pointer-events | auto |
 | popup | self | flex-direction | column |
 | popup | self | will-change | transform |
-| popup | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.2802 0.0036 106.63) [#FF292927]; box-shadow: 0 0 0 1 oklch(0.9843 0.004 106.47 / 0.259… |
 | popup | self | **data-ending-style** | opacity: 0%; transform: translate3d(0px, 0px, 0); transition-duration: 180ms; filter: blur(2px) |
 | popup | self | **data-nested-drawer-open** | overflow-x: hidden; overflow-y: hidden |
 | popup | self | **data-nested-drawer-swiping** | transition-duration: 0ms |
@@ -1198,7 +1141,6 @@ Dart: `RaftDrawerRecipe` · source: `dist/components/drawer/drawer.recipe.mjs` (
 | swipeHandle | ::before | background-color | token(lineSeam) |
 | swipeHandle | ::before | border-radius | infinity |
 | swipeHandle | ::before | content | "" |
-| swipeHandle | ::before | **dark** | background-color: oklch(0.9843 0.004 106.47 / 0.259) [#42FAFAF7] |
 | viewport | self | position | fixed |
 | viewport | self | inset | 0 |
 | viewport | self | z-index | 50 |
@@ -1245,7 +1187,6 @@ Dart: `RaftDrawerRecipe` · source: `dist/components/drawer/drawer.recipe.mjs` (
 | title | self | color | token(foreground) |
 | title | self | text-align | left |
 | title | self | text-wrap | pretty |
-| title | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 | title | self | **pointer-fine+width>=768** | font-size: 16; line-height: 24 |
 | description | self | max-width | none |
 | description | self | font-family | token(sansFont, system-ui, sans-serif) |
@@ -1254,7 +1195,6 @@ Dart: `RaftDrawerRecipe` · source: `dist/components/drawer/drawer.recipe.mjs` (
 | description | self | color | token(foregroundMuted) |
 | description | self | text-align | left |
 | description | self | text-wrap | pretty |
-| description | self | **dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
 | description | self | **pointer-fine+width>=768** | line-height: 22 |
 
 ### Variant deltas (one axis changed from the default)
@@ -1274,14 +1214,14 @@ Dart: `RaftDrawerRecipe` · source: `dist/components/drawer/drawer.recipe.mjs` (
 | axis=x | swipeHandle | width: 44; height: 64; margin: top:auto bottom:auto; ::before width: 4; ::before height: 36; ::before inset: top:50%; ::before translate: 0 -50% |
 | axis=x | header | padding: top:0 right:16 bottom:0 left:16; gap: 8; flex-direction: row; align-items: center; min-height: token(headerHeight); border-width: bottom:1; border-sty… |
 | axis=x | body | padding: top:token(pageTop) right:20 bottom:token(pageInset) left:20; min-height: 0; overflow-y: auto; [pointer-fine+width>=768] padding: top:12 right:16 botto… |
-| axis=x | footer | padding: top:12 right:20 bottom:12 left:20; border-width: top:1; border-style: top:solid; border-color: token(lineSeam); [dark] border-color: oklch(0.9843 0.00… |
+| axis=x | footer | padding: top:12 right:20 bottom:12 left:20; border-width: top:1; border-style: top:solid; border-color: token(lineSeam); [pointer-fine+width>=768] padding: top… |
 | axis=x | actions | flex-direction: row; flex-wrap: wrap; justify-content: flex-end; :is(& *)[data-slot="button"] width: auto |
 | axis=x | title | min-width: 0; flex: 1 |
 | axis=x | description | (classes differ, same result) |
 | axis=y | popup | transform: translate3d(0px, calc(((0px + unset) + 0px)), 0) scale(clamp(0, calc((max(0, calc((1 - (unset * 0.05)))) + (0.05 * clamp(0, calc(unset), 1)))), 1));… |
 | axis=y | swipeHandle | width: 64; height: 16; margin: right:auto left:auto; ::before width: 36; ::before height: 4; ::before inset: top:6 left:50%; ::before translate: -50% 0 |
 | snapPoints=true | overlay | opacity: max(0.5, calc((1 - unset))) |
-| nested=true | overlay | background-color: token(layerBackdropNested); [dark] background-color: oklch(0 0 0 / 0.4) [#66000000] |
+| nested=true | overlay | background-color: token(layerBackdropNested) |
 
 ## badge
 
@@ -1326,8 +1266,6 @@ Dart: `RaftBadgeRecipe` · source: `dist/components/badge/badge.mjs` (index.mjs:
 | root | self | text-transform | none |
 | root | self | font-variant-numeric | tabular-nums |
 | root | self | **active+enabled** | background-image: linear-gradient(token(stickerMedium), token(stickerMedium)) |
-| root | self | **dark** | box-shadow: inset 0 0 0 1.5 token(stickerInk), 0 0 0 1.5 oklch(0.9843 0.004 106.47 / 0.349) [#59FAFAF7]; ring: width:1.5 color:oklch(0.9843 0.004 106.47 / 0.34… |
-| root | self | **dark+disabled** | color: oklch(0.4987 0.0047 106.57) [#FF636360]; background-color: oklch(0.3161 0.0052 106.7) [#FF32322F]; box-shadow: inset 0 0 0 0 token(stickerInk), 0 0 0 1.… |
 | root | self | **disabled** | color: token(foregroundDisabled); background-color: token(fillMuted); box-shadow: inset 0 0 0 0 token(stickerInk), 0 0 0 1.5 token(stickerEdge); opacity: 100%;… |
 | root | self | **enabled+hover** | background-image: linear-gradient(token(stickerMedium), token(stickerMedium)) |
 | root | self | **enabled+pointer-coarse** | anchor-name: --badge; anchor-scope: --badge |
@@ -1376,7 +1314,6 @@ Dart: `RaftFormSectionRecipe` · source: `dist/components/form-section/form-sect
 | root | self | gap | token(fieldGap) |
 | root | self | flex-direction | column |
 | root | self | **ancestor:data-slot=form-section** | border-width: top:1; border-style: top:solid; border-color: token(lineHairline) |
-| root | self | **ancestor:data-slot=form-section+dark** | border-width: top:1; border-style: top:solid; border-color: oklch(0.9843 0.004 106.47 / 0.102) [#1AFAFAF7] |
 | root | self | **first-child** | padding: top:0 bottom:calc((token(sectionGap) / 2)) |
 | root | self | **pointer-fine+width>=768** | padding: top:calc(((2 * token(fieldGap)) / 2)) bottom:calc(((2 * token(fieldGap)) / 2)) |
 | head | self | display | flex |
@@ -1395,14 +1332,12 @@ Dart: `RaftFormSectionRecipe` · source: `dist/components/form-section/form-sect
 | title | self | line-height | 18 |
 | title | self | color | token(foregroundMuted) |
 | title | self | flex | 1 |
-| title | self | **dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
 | title | self | **pointer-fine+width>=768** | font-size: 12 |
 | description | self | margin | 0 |
 | description | self | font-family | token(sansFont, system-ui, sans-serif) |
 | description | self | font-size | 13 |
 | description | self | line-height | 18 |
 | description | self | color | token(foregroundHint) |
-| description | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | description | self | **pointer-fine+width>=768** | font-size: 12 |
 
 ## textSelectionToolbar
@@ -1430,7 +1365,6 @@ Dart: `RaftTextSelectionToolbarRecipe` · source: `dist/components/text-selectio
 | toolbar | self | align-items | center |
 | toolbar | self | -webkit-user-select | none |
 | toolbar | self | user-select | none |
-| toolbar | self | **dark** | background-color: oklch(0.2802 0.0036 106.63) [#FF292927]; box-shadow: inset 0 0 0 1 oklch(0.9843 0.004 106.47 / 0.259) [#42FAFAF7], 0 0 0 1 oklch(0.9843 0.004… |
 | toolbar | self | **pointer-fine+width>=768** | font-size: 14; line-height: 22 |
 | button | self | display | flex |
 | button | self | height | 28 |
@@ -1446,10 +1380,6 @@ Dart: `RaftTextSelectionToolbarRecipe` · source: `dist/components/text-selectio
 | button | self | align-items | center |
 | button | self | white-space | nowrap |
 | button | self | **active** | background-color: token(fillMedium) |
-| button | self | **active+dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.9843 0.004 106.47 / 0.065) [#11FAFAF7] |
-| button | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| button | self | **dark+focus-visible** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; box-shadow: 0 0 0 2 oklch(0.2213 0.0038 106.71) [#FF1B1B19], 0 0 0 4 oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| button | self | **dark+hover** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.9843 0.004 106.47 / 0.065) [#11FAFAF7] |
 | button | self | **focus-visible** | box-shadow: token(focusRing) |
 | button | self | **hover** | background-color: token(fillMedium) |
 | button | self | **pointer-fine+width>=768** | height: 34; border-radius: 8 |
@@ -1457,15 +1387,10 @@ Dart: `RaftTextSelectionToolbarRecipe` · source: `dist/components/text-selectio
 | button | & svg | height | 16 |
 | button | & svg | color | token(foregroundMuted) |
 | button | & svg | flex-shrink | 0 |
-| button | & svg | **active+dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
-| button | & svg | **dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
-| button | & svg | **dark+focus-visible** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
-| button | & svg | **dark+hover** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
 | separator | self | width | 1 |
 | separator | self | height | 20 |
 | separator | self | background-color | token(lineHairline) |
 | separator | self | flex-shrink | 0 |
-| separator | self | **dark** | background-color: oklch(0.9843 0.004 106.47 / 0.102) [#1AFAFAF7] |
 
 ## card
 
@@ -1492,7 +1417,6 @@ Dart: `RaftCardRecipe` · source: `dist/components/card/card.recipe.mjs` (index.
 | root | self | overflow-x | hidden |
 | root | self | overflow-y | hidden |
 | root | self | flex-direction | column |
-| root | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.2596 0.0037 106.65) [#FF242422]; border-color: oklch(0.9843 0.004 106.47 / 0.102) [#1A… |
 | header | self | display | grid |
 | header | self | min-width | 0 |
 | header | self | padding | 16 |
@@ -1512,7 +1436,6 @@ Dart: `RaftCardRecipe` · source: `dist/components/card/card.recipe.mjs` (index.
 | title | self | color | token(foreground) |
 | title | self | grid-column-start | 1 |
 | title | self | grid-row-start | 1 |
-| title | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 | title | self | **pointer-fine+width>=768** | font-size: 14; line-height: 22 |
 | leading | self | display | flex |
 | leading | self | min-height | token(cardTitleLineHeight) |
@@ -1534,7 +1457,6 @@ Dart: `RaftCardRecipe` · source: `dist/components/card/card.recipe.mjs` (index.
 | description | self | grid-column-start | 1 |
 | description | self | grid-row-start | 2 |
 | description | self | text-wrap | pretty |
-| description | self | **dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
 | description | self | **pointer-fine+width>=768** | line-height: 22 |
 | trailing | self | display | flex |
 | trailing | self | grid-column-start | 2 |
@@ -1559,7 +1481,6 @@ Dart: `RaftCardRecipe` · source: `dist/components/card/card.recipe.mjs` (index.
 | footer | self | border-color | token(lineHairline) |
 | footer | self | flex-wrap | nowrap |
 | footer | self | align-items | center |
-| footer | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B]; border-color: oklch(0.9843 0.004 106.47 / 0.102) [#1AFAFAF7] |
 | footer | self | **pointer-fine+width>=768** | line-height: 18 |
 | footer | & > svg | width | 14 |
 | footer | & > svg | height | 14 |
@@ -1570,14 +1491,14 @@ Dart: `RaftCardRecipe` · source: `dist/components/card/card.recipe.mjs` (index.
 
 | variant | slot | value |
 |---|---|---|
-| variant=option | root | border-width: 1.5; border-color: token(lineField); border-radius: 8; [dark] color: oklch(0.9211 0.004 106.48) [#FFE5E5E2], background-color: oklch(0.2596 0.003… |
+| variant=option | root | border-width: 1.5; border-color: token(lineField); border-radius: 8 |
 | variant=option | header | padding: 12; gap: row:4 column:12; [has:+data-slot=card-content] (none) |
 | variant=option | title | font-size: 14; font-weight: 600; line-height: 20; [pointer-fine+width>=768] line-height: 22 |
 | variant=option | description | font-size: 13; line-height: 18; [pointer-fine+width>=768] font-size: 12 |
 | variant=option | content | padding: right:12 bottom:12 left:12 |
-| variant=option | footer | padding: —; border-width: —; border-style: —; border-color: —; [dark] color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
+| variant=option | footer | padding: —; border-width: —; border-style: —; border-color: — |
 | variant=inset | header | padding: top:12 right:16 bottom:12 left:16; [has:+data-slot=card-content] (none) |
-| variant=inset | content | border-width: top:1; border-style: top:solid; border-color: token(lineHairline); [dark] border-color: oklch(0.9843 0.004 106.47 / 0.102) [#1AFAFAF7]; [first-ch… |
+| variant=inset | content | border-width: top:1; border-style: top:solid; border-color: token(lineHairline); [first-child] border-width: top:0 |
 
 ## listRow
 
@@ -1607,7 +1528,6 @@ Dart: `RaftListRowRecipe` · source: `dist/components/list-row/list-row.recipe.m
 | group | self | overflow-x | hidden |
 | group | self | overflow-y | hidden |
 | group | self | flex-direction | column |
-| group | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.2596 0.0037 106.65) [#FF242422]; border-color: oklch(0.9843 0.004 106.47 / 0.102) [#1A… |
 | root | self | display | flex |
 | root | self | position | relative |
 | root | self | width | 100% |
@@ -1625,20 +1545,7 @@ Dart: `RaftListRowRecipe` · source: `dist/components/list-row/list-row.recipe.m
 | root | self | text-align | left |
 | root | self | text-decoration-line | none |
 | root | self | **active** | background-image: linear-gradient(token(fillMedium), token(fillMedium)) |
-| root | self | **active+dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-image: linear-gradient(oklch(0.9843 0.004 106.47 / 0.065), oklch(0.9843 0.004 106.47 / 0.065)) |
 | root | self | **aria-disabled=true** | color: token(foregroundDisabled); cursor: not-allowed |
-| root | self | **aria-disabled=true+dark** | color: oklch(0.4987 0.0047 106.57) [#FF636360]; cursor: not-allowed |
-| root | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| root | self | **dark+data-popup-open** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-image: linear-gradient(oklch(0.9843 0.004 106.47 / 0.03), oklch(0.9843 0.004 106.47 / 0.03)) |
-| root | self | **dark+data-selected** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.452 0.0862 225.67 / 0.18) [#2E005F7A] |
-| root | self | **dark+data-tone=away** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
-| root | self | **dark+data-tone=danger** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| root | self | **dark+data-tone=muted** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
-| root | self | **dark+data-tone=unread** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| root | self | **dark+data-tone=warning** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| root | self | **dark+disabled** | color: oklch(0.4987 0.0047 106.57) [#FF636360]; cursor: not-allowed |
-| root | self | **dark+focus-visible** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; box-shadow: inset 0 0 0 2 oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| root | self | **dark+hover** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-image: linear-gradient(oklch(0.9843 0.004 106.47 / 0.03), oklch(0.9843 0.004 106.47 / 0.03)) |
 | root | self | **data-popup-open** | background-image: linear-gradient(token(fillSubtle), token(fillSubtle)) |
 | root | self | **data-selected** | background-color: token(infoSoft) |
 | root | self | **data-tone=away** | color: token(foregroundHint) |
@@ -1655,21 +1562,8 @@ Dart: `RaftListRowRecipe` · source: `dist/components/list-row/list-row.recipe.m
 | root | ::before | border-color | token(lineHairline) |
 | root | ::before | content | "" |
 | root | ::before | pointer-events | none |
-| root | ::before | **active+dark** | border-color: oklch(0.9843 0.004 106.47 / 0.102) [#1AFAFAF7] |
 | root | ::before | **ancestor:data-slot=list-row** | display: block |
 | root | ::before | **ancestor:li** | display: block |
-| root | ::before | **aria-disabled=true+dark** | border-color: oklch(0.9843 0.004 106.47 / 0.102) [#1AFAFAF7] |
-| root | ::before | **dark** | border-color: oklch(0.9843 0.004 106.47 / 0.102) [#1AFAFAF7] |
-| root | ::before | **dark+data-popup-open** | border-color: oklch(0.9843 0.004 106.47 / 0.102) [#1AFAFAF7] |
-| root | ::before | **dark+data-selected** | border-color: oklch(0.9843 0.004 106.47 / 0.102) [#1AFAFAF7] |
-| root | ::before | **dark+data-tone=away** | border-color: oklch(0.9843 0.004 106.47 / 0.102) [#1AFAFAF7] |
-| root | ::before | **dark+data-tone=danger** | border-color: oklch(0.9843 0.004 106.47 / 0.102) [#1AFAFAF7] |
-| root | ::before | **dark+data-tone=muted** | border-color: oklch(0.9843 0.004 106.47 / 0.102) [#1AFAFAF7] |
-| root | ::before | **dark+data-tone=unread** | border-color: oklch(0.9843 0.004 106.47 / 0.102) [#1AFAFAF7] |
-| root | ::before | **dark+data-tone=warning** | border-color: oklch(0.9843 0.004 106.47 / 0.102) [#1AFAFAF7] |
-| root | ::before | **dark+disabled** | border-color: oklch(0.9843 0.004 106.47 / 0.102) [#1AFAFAF7] |
-| root | ::before | **dark+focus-visible** | border-color: oklch(0.9843 0.004 106.47 / 0.102) [#1AFAFAF7] |
-| root | ::before | **dark+hover** | border-color: oklch(0.9843 0.004 106.47 / 0.102) [#1AFAFAF7] |
 | icon | self | display | flex |
 | icon | self | color | — |
 | icon | self | flex-shrink | 0 |
@@ -1757,7 +1651,7 @@ Dart: `RaftListRowRecipe` · source: `dist/components/list-row/list-row.recipe.m
 |---|---|---|
 | variant=plain | root | min-height: —; padding: top:token(settingsRowInset) right:16 bottom:token(settingsRowInset) left:16; [pointer-coarse] (none); ::before inset: top:0 right:0 lef… |
 | variant=entry | root | min-height: —; [pointer-coarse] (none); ::before display: —; ::before position: —; ::before inset: —; ::before border-width: —; ::before border-style: —; ::bef… |
-| interactive=false | root | [active] (none); [active+dark] (none); [dark+data-popup-open] (none); [dark+data-tone=danger] (none); [dark+data-tone=warning] (none); [dark+hover] (none); [da… |
+| interactive=false | root | [active] (none); [data-popup-open] (none); [hover] (none) |
 | attached=true | root | ::before display: —; ::before position: —; ::before inset: —; ::before border-width: —; ::before border-style: —; ::before border-color: —; ::before content: —… |
 | cell=true | root | padding: top:12 right:20 bottom:12 left:20; transition-property: —; transition-duration: —; transition-timing-function: —; background-color: transparent [#0000… |
 | wrap=true | description | white-space: normal; text-wrap: pretty |
@@ -1823,7 +1717,6 @@ Dart: `RaftAppRailRecipe` · source: `dist/components/app-rail/app-rail.recipe.m
 | root | self | align-items | center |
 | root | self | -webkit-user-select | none |
 | root | self | user-select | none |
-| root | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.1582 0.0041 106.86) [#FF0D0D0B]; border-color: oklch(0.9843 0.004 106.47 / 0.259) [#42… |
 | root | self | **height<=600** | width: token(railWidthShort) |
 | root | self | **pointer-fine+width>=768** | width: token(railWidthShort) |
 | header | self | display | flex |
@@ -1836,7 +1729,6 @@ Dart: `RaftAppRailRecipe` · source: `dist/components/app-rail/app-rail.recipe.m
 | header | self | flex-shrink | 0 |
 | header | self | align-items | center |
 | header | self | justify-content | center |
-| header | self | **dark** | border-color: oklch(0.9843 0.004 106.47 / 0.259) [#42FAFAF7] |
 | header | self | **height<=600** | height: token(headerHeightShort) |
 | header | self | **height<=600+pointer-fine+width>=768** | height: calc((28px + (2 * token(controlAir)))) |
 | nav | self | display | flex |
@@ -1885,11 +1777,6 @@ Dart: `RaftAppRailRecipe` · source: `dist/components/app-rail/app-rail.recipe.m
 | item | self | align-items | center |
 | item | self | justify-content | center |
 | item | self | **active** | background-color: token(fillFrameMedium) |
-| item | self | **active+dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.9843 0.004 106.47 / 0.06) [#0FFAFAF7] |
-| item | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| item | self | **dark+data-selected=true** | color: token(foregroundOnFrameActive); border-color: token(lineFrameActive); background-color: oklch(0.8829 0.1623 91.9) [#FFFFD440]; box-shadow: 0 0 0 1.5 okl… |
-| item | self | **dark+focus-visible** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; box-shadow: 0 0 0 2 oklch(0.2213 0.0038 106.71) [#FF1B1B19], 0 0 0 4 oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| item | self | **dark+hover** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.9843 0.004 106.47 / 0.06) [#0FFAFAF7] |
 | item | self | **data-selected=true** | color: token(foregroundOnFrameActive); border-color: token(lineFrameActive); background-color: token(layerFrameActive); box-shadow: 0 0 0 1.5 token(stickerEdge… |
 | item | self | **disabled** | opacity: 45%; pointer-events: none |
 | item | self | **focus-visible** | box-shadow: token(focusRing) |
@@ -1931,7 +1818,6 @@ Dart: `RaftAppRailRecipe` · source: `dist/components/app-rail/app-rail.recipe.m
 | itemBadge | self | align-items | center |
 | itemBadge | self | justify-content | center |
 | itemBadge | self | font-variant-numeric | tabular-nums |
-| itemBadge | self | **dark** | box-shadow: inset 0 0 0 1.5 token(stickerInk), 0 0 0 1.5 oklch(0.9843 0.004 106.47 / 0.349) [#59FAFAF7]; ring: width:1.5 color:oklch(0.9843 0.004 106.47 / 0.34… |
 | itemIndicator | self | position | absolute |
 | itemIndicator | self | inset | top:-4 right:-4 |
 | itemIndicator | self | pointer-events | none |
@@ -1967,7 +1853,6 @@ Dart: `RaftCopyableCodeRecipe` · source: `dist/components/copyable-code/copyabl
 | code | self | border-color | token(lineHairline) |
 | code | self | border-radius | 8 |
 | code | self | flex | 1 |
-| code | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.154 0.0092 264.28) [#FF0A0C10]; border-color: oklch(0.9843 0.004 106.47 / 0.102) [#1AF… |
 | codeInner | self | display | block |
 | codeInner | self | width | 100% |
 | codeInner | self | min-width | 0 |
@@ -2035,7 +1920,6 @@ Dart: `RaftCheckboxIndicatorRecipe` · source: `dist/components/checkbox/checkbo
 | root | self | flex-shrink | 0 |
 | root | self | align-items | center |
 | root | self | justify-content | center |
-| root | self | **dark** | background-color: oklch(0.2596 0.0037 106.65) [#FF242422]; border-color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 | root | & svg | flex-shrink | 0 |
 | root | & svg | stroke-width | 2 |
 | root | & svg:not([class*='size-']) | width | 14 |
@@ -2046,9 +1930,9 @@ Dart: `RaftCheckboxIndicatorRecipe` · source: `dist/components/checkbox/checkbo
 | variant | slot | value |
 |---|---|---|
 | shape=circle | root | border-radius: infinity |
-| checked=true | root | color: token(foregroundInverse); background-color: token(foreground); border-color: token(foreground); [dark] color: oklch(0.2213 0.0038 106.71) [#FF1B1B19], b… |
-| disabled=true | root | background-color: token(fillMuted); border-color: token(foregroundDisabled); [dark] background-color: oklch(0.3161 0.0052 106.7) [#FF32322F], border-color: okl… |
-| previewOnHover=true | root | [dark+group:hover] color: color-mix(in oklab, oklch(0.9211 0.004 106.48) 20%, transparent) [#33E5E5E2], background-color: oklch(0.2596 0.0037 106.65) [#FF24242… |
+| checked=true | root | color: token(foregroundInverse); background-color: token(foreground); border-color: token(foreground) |
+| disabled=true | root | background-color: token(fillMuted); border-color: token(foregroundDisabled) |
+| previewOnHover=true | root | [group:hover] color: color-mix(in oklab, token(foreground) 20%, transparent) |
 
 ## checkbox
 
@@ -2070,7 +1954,6 @@ Dart: `RaftCheckboxRecipe` · source: `dist/components/checkbox/checkbox.mjs` (i
 | root | self | align-items | center |
 | root | self | justify-content | center |
 | root | self | **ancestor:label** | margin: top:max(0px, calc(((1lh - 20px) / 2))) bottom:max(0px, calc(((1lh - 20px) / 2))) |
-| root | self | **dark+focus-visible** | box-shadow: 0 0 0 2 oklch(0.2213 0.0038 106.71) [#FF1B1B19], 0 0 0 4 oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 | root | self | **data-disabled** | cursor: not-allowed |
 | root | self | **focus-visible** | box-shadow: token(focusRing) |
 | root | ::after | position | absolute |
@@ -2100,8 +1983,6 @@ Dart: `RaftSidebarRecipe` · source: `dist/components/sidebar/sidebar.recipe.mjs
 | sidebarRoot | self | flex-direction | column |
 | sidebarRoot | self | -webkit-user-select | none |
 | sidebarRoot | self | user-select | none |
-| sidebarRoot | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.1582 0.0041 106.86) [#FF0D0D0B]; border-color: oklch(0.9843 0.004 106.47 / 0.259) [#42… |
-| sidebarRoot | self | **dark+width<768** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.2213 0.0038 106.71) [#FF1B1B19]; border-color: oklch(0.9843 0.004 106.47 / 0.259) [#42… |
 | sidebarRoot | self | **pointer-fine+width>=768** | border-width: right:1; border-style: right:solid |
 | sidebarRoot | self | **width<768** | background-color: token(layerCanvas) |
 | sidebarRoot | self | **width>=768** | border-width: right:1; border-style: right:solid |
@@ -2116,8 +1997,6 @@ Dart: `RaftSidebarRecipe` · source: `dist/components/sidebar/sidebar.recipe.mjs
 | sidebarHeader | self | border-color | token(lineSeam) |
 | sidebarHeader | self | flex-shrink | 0 |
 | sidebarHeader | self | align-items | center |
-| sidebarHeader | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.1582 0.0041 106.86) [#FF0D0D0B]; border-color: oklch(0.9843 0.004 106.47 / 0.259) [#42… |
-| sidebarHeader | self | **dark+width<768** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.1582 0.0041 106.86) [#FF0D0D0B]; border-color: oklch(0.9843 0.004 106.47 / 0.259) [#42… |
 | sidebarHeader | self | **height<=600** | height: token(headerHeightShort) |
 | sidebarHeader | self | **height<=600+pointer-fine+width>=768** | height: calc((28px + (2 * token(controlAir)))) |
 | sidebarHeader | self | **width<768** | color: token(foregroundOnFrame); background-color: token(layerFrame) |
@@ -2140,8 +2019,6 @@ Dart: `RaftSidebarRecipe` · source: `dist/components/sidebar/sidebar.recipe.mjs
 | sidebarHeaderTitle | self | overflow-y | hidden |
 | sidebarHeaderTitle | self | text-overflow | ellipsis |
 | sidebarHeaderTitle | self | white-space | nowrap |
-| sidebarHeaderTitle | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| sidebarHeaderTitle | self | **dark+width<768** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 | sidebarHeaderTitle | self | **pointer-fine+width>=768** | font-size: 16; line-height: 24 |
 | sidebarHeaderTitle | self | **width<768** | color: token(foregroundOnFrame) |
 | sidebarGroupLabel | self | padding | top:16 right:20 bottom:0 left:20 |
@@ -2152,7 +2029,6 @@ Dart: `RaftSidebarRecipe` · source: `dist/components/sidebar/sidebar.recipe.mjs
 | sidebarGroupLabel | self | letter-spacing | 0em |
 | sidebarGroupLabel | self | color | token(foregroundHint) |
 | sidebarGroupLabel | self | text-transform | none |
-| sidebarGroupLabel | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | sidebarGroupLabel | self | **pointer-fine+width>=768** | padding: top:8 right:16 bottom:0 left:16; font-size: 12 |
 | sidebarBody | self | display | flex |
 | sidebarBody | self | position | relative |
@@ -2161,8 +2037,6 @@ Dart: `RaftSidebarRecipe` · source: `dist/components/sidebar/sidebar.recipe.mjs
 | sidebarBody | self | overflow-x | hidden |
 | sidebarBody | self | overflow-y | hidden |
 | sidebarBody | self | flex | 1 |
-| sidebarBody | self | **dark** | background-color: oklch(0.1582 0.0041 106.86) [#FF0D0D0B] |
-| sidebarBody | self | **dark+width<768** | background-color: oklch(0.2213 0.0038 106.71) [#FF1B1B19] |
 | sidebarBody | self | **width<768** | background-color: token(layerCanvas) |
 | sidebarContent | self | display | flex |
 | sidebarContent | self | position | relative |
@@ -2218,18 +2092,7 @@ Dart: `RaftSidebarItemRecipe` · source: `dist/components/sidebar/sidebar-item.r
 | sidebarItem | self | contain-intrinsic-block-size | auto 1lh |
 | sidebarItem | self | overflow-clip-margin | 2 |
 | sidebarItem | self | content-visibility | auto |
-| sidebarItem | self | **active+dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 | sidebarItem | self | **active+data-active** | font-weight: 700; color: token(stickerInk) |
-| sidebarItem | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| sidebarItem | self | **dark+data-active** | font-weight: 700; color: token(stickerInk) |
-| sidebarItem | self | **dark+data-active+focus-visible** | font-weight: 700; color: token(stickerInk) |
-| sidebarItem | self | **dark+data-located** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| sidebarItem | self | **dark+data-popup-open** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| sidebarItem | self | **dark+data-tone=away** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
-| sidebarItem | self | **dark+data-tone=muted** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
-| sidebarItem | self | **dark+focus-visible** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| sidebarItem | self | **dark+has:data-popup-open** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| sidebarItem | self | **dark+hover** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 | sidebarItem | self | **data-active** | font-weight: 700; color: token(stickerInk) |
 | sidebarItem | self | **data-active+focus-visible** | font-weight: 700; color: token(stickerInk) |
 | sidebarItem | self | **data-tone=away** | color: token(foregroundHint) |
@@ -2250,15 +2113,7 @@ Dart: `RaftSidebarItemRecipe` · source: `dist/components/sidebar/sidebar-item.r
 | sidebarItem | ::before | content | "" |
 | sidebarItem | ::before | pointer-events | none |
 | sidebarItem | ::before | **active** | transition-property: none; background-color: token(fillCellPress) |
-| sidebarItem | ::before | **active+dark** | transition-property: none; background-color: oklch(0.9843 0.004 106.47 / 0.12) [#1FFAFAF7] |
 | sidebarItem | ::before | **active+data-active** | transition-property: none; background-color: token(selected); background-image: linear-gradient(token(stickerMedium), token(stickerMedium)); box-shadow: inset … |
-| sidebarItem | ::before | **dark+data-active** | background-color: token(selected); box-shadow: inset 0 0 0 1.5 token(stickerInk), 0 0 0 1.5 oklch(0.9843 0.004 106.47 / 0.349) [#59FAFAF7]; ring: width:1.5 col… |
-| sidebarItem | ::before | **dark+data-active+focus-visible** | background-color: token(selected); box-shadow: inset 0 0 0 1.5 token(stickerInk), 0 0 0 1.5 oklch(0.9843 0.004 106.47 / 0.349) [#59FAFAF7], inset 0 0 0 3.5 okl… |
-| sidebarItem | ::before | **dark+data-located** | background-image: linear-gradient(transparent, transparent); animation: raft-located 2000ms linear |
-| sidebarItem | ::before | **dark+data-popup-open** | background-color: oklch(0.9843 0.004 106.47 / 0.075) [#13FAFAF7] |
-| sidebarItem | ::before | **dark+focus-visible** | box-shadow: inset 0 0 0 2 oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| sidebarItem | ::before | **dark+has:data-popup-open** | background-color: oklch(0.9843 0.004 106.47 / 0.075) [#13FAFAF7] |
-| sidebarItem | ::before | **dark+hover** | background-color: oklch(0.9843 0.004 106.47 / 0.075) [#13FAFAF7] |
 | sidebarItem | ::before | **data-active** | background-color: token(selected); box-shadow: inset 0 0 0 1.5 token(stickerInk), 0 0 0 1.5 token(stickerEdge); ring: width:1.5 color:token(stickerEdge) offset… |
 | sidebarItem | ::before | **data-active+focus-visible** | background-color: token(selected); box-shadow: inset 0 0 0 1.5 token(stickerInk), 0 0 0 1.5 token(stickerEdge), inset 0 0 0 3.5 token(foreground); ring: width:… |
 | sidebarItem | ::before | **data-located** | background-image: linear-gradient(transparent, transparent); animation: raft-located 2000ms linear |
@@ -2275,7 +2130,6 @@ Dart: `RaftSidebarItemRecipe` · source: `dist/components/sidebar/sidebar-item.r
 | sidebarItemIcon | self | flex-shrink | 0 |
 | sidebarItemIcon | self | align-items | center |
 | sidebarItemIcon | self | justify-content | center |
-| sidebarItemIcon | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | sidebarItemIcon | self | **group/sidebar-item:data-active** | color: token(stickerInk) |
 | sidebarItemIcon | self | **pointer-fine+width>=768** | width: 16; height: 16 |
 | sidebarItemIcon | & > svg | width | 16 |
@@ -2289,7 +2143,6 @@ Dart: `RaftSidebarItemRecipe` · source: `dist/components/sidebar/sidebar-item.r
 | sidebarItemChannelIcon | self | flex-shrink | 0 |
 | sidebarItemChannelIcon | self | align-items | center |
 | sidebarItemChannelIcon | self | justify-content | center |
-| sidebarItemChannelIcon | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | sidebarItemChannelIcon | self | **group/sidebar-item:data-active** | color: token(stickerInk) |
 | sidebarItemChannelIcon | self | **pointer-fine+width>=768** | width: 16; height: 16 |
 | sidebarItemChannelIcon | & svg | width | 16 |
@@ -2323,7 +2176,6 @@ Dart: `RaftSidebarItemRecipe` · source: `dist/components/sidebar/sidebar-item.r
 | sidebarItemSubtitle | self | flex-shrink | 1000 |
 | sidebarItemSubtitle | self | text-overflow | ellipsis |
 | sidebarItemSubtitle | self | white-space | nowrap |
-| sidebarItemSubtitle | self | **dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
 | sidebarItemSubtitle | self | **group/sidebar-item:data-active** | color: token(stickerInk) |
 | sidebarItemSubtitle | self | **pointer-fine+width>=768** | font-size: 12 |
 | sidebarItemMeta | self | margin | left:auto |
@@ -2334,7 +2186,6 @@ Dart: `RaftSidebarItemRecipe` · source: `dist/components/sidebar/sidebar-item.r
 | sidebarItemMeta | self | color | token(foregroundHint) |
 | sidebarItemMeta | self | flex-shrink | 0 |
 | sidebarItemMeta | self | font-variant-numeric | tabular-nums |
-| sidebarItemMeta | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | sidebarItemMeta | self | **group/sidebar-item:data-active** | color: token(stickerInk) |
 | sidebarItemMeta | self | **pointer-fine+width>=768** | line-height: 18 |
 | sidebarItemStatus | self | display | inline-flex |
@@ -2355,7 +2206,6 @@ Dart: `RaftSidebarItemRecipe` · source: `dist/components/sidebar/sidebar-item.r
 | sidebarItemIndicator | self | flex-shrink | 0 |
 | sidebarItemIndicator | self | align-items | center |
 | sidebarItemIndicator | self | justify-content | center |
-| sidebarItemIndicator | self | **dark** | box-shadow: inset 0 0 0 1.5 token(stickerInk), 0 0 0 1.5 oklch(0.9843 0.004 106.47 / 0.349) [#59FAFAF7]; ring: width:1.5 color:oklch(0.9843 0.004 106.47 / 0.34… |
 | sidebarItemIndicator | & svg | width | 13 |
 | sidebarItemIndicator | & svg | height | 13 |
 | sidebarItemIndicator | & svg | translate | 0 0px |
@@ -2368,7 +2218,6 @@ Dart: `RaftSidebarItemRecipe` · source: `dist/components/sidebar/sidebar-item.r
 | sidebarItemMetaIcon | self | flex-shrink | 0 |
 | sidebarItemMetaIcon | self | align-items | center |
 | sidebarItemMetaIcon | self | justify-content | center |
-| sidebarItemMetaIcon | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | sidebarItemMetaIcon | self | **group/sidebar-item:data-active** | color: token(stickerInk) |
 | sidebarItemMetaIcon | & svg | width | 14 |
 | sidebarItemMetaIcon | & svg | height | 14 |
@@ -2397,7 +2246,6 @@ Dart: `RaftSidebarItemRecipe` · source: `dist/components/sidebar/sidebar-item.r
 | sidebarItemCount | self | align-items | center |
 | sidebarItemCount | self | justify-content | center |
 | sidebarItemCount | self | font-variant-numeric | tabular-nums |
-| sidebarItemCount | self | **dark** | box-shadow: inset 0 0 0 1.5 token(stickerInk), 0 0 0 1.5 oklch(0.9843 0.004 106.47 / 0.349) [#59FAFAF7]; ring: width:1.5 color:oklch(0.9843 0.004 106.47 / 0.34… |
 | sidebarItemCount | self | **pointer-fine+width>=768** | line-height: 18 |
 | sidebarItemCountSeparator | self | margin | right:2 left:2 |
 | sidebarItemCountSeparator | self | opacity | 60% |
@@ -2413,7 +2261,7 @@ Dart: `RaftSidebarItemRecipe` · source: `dist/components/sidebar/sidebar-item.r
 
 | variant | slot | value |
 |---|---|---|
-| interactive=false | sidebarItem | cursor: default; [active+dark] (none); [active+data-active] (none); [dark+data-active+focus-visible] (none); [dark+data-popup-open] (none); [dark+focus-visible… |
+| interactive=false | sidebarItem | cursor: default; [active+data-active] (none); [data-active+focus-visible] (none); ::before [active] (none); ::before [active+data-active] (none); ::before [dat… |
 | wrap=true | sidebarItem | height: auto; padding: top:calc(((token(rowHeight) - 20px) / 2)) right:20 bottom:calc(((token(rowHeight) - 20px) / 2)) left:20; align-items: flex-start; min-he… |
 | stacked=true | sidebarItemContent | display: —; gap: —; align-items: — |
 
@@ -2437,7 +2285,6 @@ Dart: `RaftSidebarSectionRecipe` · source: `dist/components/sidebar/sidebar-sec
 | sidebarSectionEmpty | self | font-size | 13 |
 | sidebarSectionEmpty | self | line-height | 18 |
 | sidebarSectionEmpty | self | color | token(foregroundHint) |
-| sidebarSectionEmpty | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | sidebarSectionEmpty | self | **pointer-fine+width>=768** | padding: top:8 right:16 bottom:8 left:40; font-size: 12 |
 | sidebarSectionHeader | self | display | flex |
 | sidebarSectionHeader | self | height | auto |
@@ -2464,8 +2311,6 @@ Dart: `RaftSidebarSectionRecipe` · source: `dist/components/sidebar/sidebar-sec
 | sidebarSectionDisclosure | self | flex | 1 |
 | sidebarSectionDisclosure | self | align-items | center |
 | sidebarSectionDisclosure | self | text-transform | none |
-| sidebarSectionDisclosure | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
-| sidebarSectionDisclosure | self | **dark+focus-visible** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B]; box-shadow: 0 0 0 2 oklch(0.2213 0.0038 106.71) [#FF1B1B19], 0 0 0 4 oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 | sidebarSectionDisclosure | self | **focus-visible** | box-shadow: token(focusRing) |
 | sidebarSectionDisclosure | self | **pointer-fine+width>=768** | font-size: 12 |
 | sidebarSectionDisclosure | :is(& *)[data-slot="sidebar-section-chevron"] | width | 14 |
@@ -2499,7 +2344,6 @@ Dart: `RaftSidebarSectionRecipe` · source: `dist/components/sidebar/sidebar-sec
 | sidebarSectionCount | self | line-height | 16 |
 | sidebarSectionCount | self | color | token(foregroundHint) |
 | sidebarSectionCount | self | font-variant-numeric | tabular-nums |
-| sidebarSectionCount | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | sidebarSectionCount | self | **pointer-fine+width>=768** | line-height: 18 |
 | sidebarSectionAttention | self | display | inline-flex |
 | sidebarSectionAttention | self | min-width | 18 |
@@ -2530,11 +2374,6 @@ Dart: `RaftSidebarSectionRecipe` · source: `dist/components/sidebar/sidebar-sec
 | sidebarSectionControl | self | align-items | center |
 | sidebarSectionControl | self | justify-content | center |
 | sidebarSectionControl | self | **active** | color: token(foreground) |
-| sidebarSectionControl | self | **active+dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| sidebarSectionControl | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
-| sidebarSectionControl | self | **dark+data-popup-open** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.9843 0.004 106.47 / 0.065) [#11FAFAF7] |
-| sidebarSectionControl | self | **dark+focus-visible** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| sidebarSectionControl | self | **dark+hover** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 | sidebarSectionControl | self | **data-popup-open** | color: token(foreground); background-color: token(fillMedium) |
 | sidebarSectionControl | self | **focus-visible** | color: token(foreground) |
 | sidebarSectionControl | self | **hover** | color: token(foreground) |
@@ -2572,10 +2411,6 @@ Dart: `RaftSidebarMenuRecipe` · source: `dist/components/sidebar/sidebar-menu.r
 | sidebarMenu | self | align-items | center |
 | sidebarMenu | self | text-transform | none |
 | sidebarMenu | self | **aria-current=page** | color: token(foreground) |
-| sidebarMenu | self | **aria-current=page+dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| sidebarMenu | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
-| sidebarMenu | self | **dark+focus-visible** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B]; box-shadow: 0 0 0 2 oklch(0.2213 0.0038 106.71) [#FF1B1B19], 0 0 0 4 oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| sidebarMenu | self | **dark+hover** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 | sidebarMenu | self | **focus-visible** | box-shadow: token(focusRing) |
 | sidebarMenu | self | **hover** | color: token(foreground) |
 | sidebarMenu | self | **pointer-fine+width>=768** | font-size: 12 |
@@ -2607,7 +2442,6 @@ Dart: `RaftSidebarMenuRecipe` · source: `dist/components/sidebar/sidebar-menu.r
 | sidebarMenuCount | self | line-height | 16 |
 | sidebarMenuCount | self | color | token(foregroundHint) |
 | sidebarMenuCount | self | font-variant-numeric | tabular-nums |
-| sidebarMenuCount | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | sidebarMenuCount | self | **pointer-fine+width>=768** | line-height: 18 |
 
 ## panel
@@ -2625,7 +2459,6 @@ Dart: `RaftPanelRecipe` · source: `dist/components/panel/panel.recipe.mjs` (ind
 |---|---|---|---|
 | root | self | color | token(foreground) |
 | root | self | background-color | token(layerCanvas) |
-| root | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.2213 0.0038 106.71) [#FF1B1B19] |
 | header | self | **height<=600** | height: token(headerHeightShort) |
 | header | self | **height<=600+pointer-fine+width>=768** | height: calc((28px + (2 * token(controlAir)))) |
 | body | self | position | relative |
@@ -2647,7 +2480,6 @@ Dart: `RaftPanelRecipe` · source: `dist/components/panel/panel.recipe.mjs` (ind
 | section | self | border-width | top:1 |
 | section | self | border-style | top:solid |
 | section | self | border-color | token(lineHairline) |
-| section | self | **dark** | border-color: oklch(0.9843 0.004 106.47 / 0.102) [#1AFAFAF7] |
 | section | self | **pointer-fine+width>=768** | padding: 16 |
 | footer | self | display | flex |
 | footer | self | position | relative |
@@ -2655,7 +2487,6 @@ Dart: `RaftPanelRecipe` · source: `dist/components/panel/panel.recipe.mjs` (ind
 | footer | self | background-color | token(layerCanvas) |
 | footer | self | flex-shrink | 0 |
 | footer | self | align-items | center |
-| footer | self | **dark** | background-color: oklch(0.2213 0.0038 106.71) [#FF1B1B19] |
 | footer | self | **width<768** | padding: top:12 right:16 bottom:calc((env(safe-area-inset-bottom) + 8px)) left:16 |
 | footer | self | **width>=768** | padding: top:12 right:20 bottom:calc((env(safe-area-inset-bottom) + 16px)) left:20 |
 
@@ -2664,7 +2495,7 @@ Dart: `RaftPanelRecipe` · source: `dist/components/panel/panel.recipe.mjs` (ind
 | variant | slot | value |
 |---|---|---|
 | edge=inset | root | (classes differ, same result) |
-| edge=attached | root | border-width: left:1; border-style: left:solid; border-color: token(lineSeam); [dark] color: oklch(0.9211 0.004 106.48) [#FFE5E5E2], background-color: oklch(0.… |
+| edge=attached | root | border-width: left:1; border-style: left:solid; border-color: token(lineSeam); [width<768] border-width: left:0 |
 
 ## conversationPanel
 
@@ -2684,20 +2515,17 @@ Dart: `RaftConversationPanelRecipe` · source: `dist/components/conversation-pan
 | root | self | background-color | token(layerCanvas) |
 | root | self | flex | 1 |
 | root | self | flex-direction | column |
-| root | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.2213 0.0038 106.71) [#FF1B1B19] |
 | content | self | display | flex |
 | content | self | min-width | 0 |
 | content | self | min-height | 0 |
 | content | self | background-color | token(layerCanvas) |
 | content | self | flex | 1 |
 | content | self | flex-direction | column |
-| content | self | **dark** | background-color: oklch(0.2213 0.0038 106.71) [#FF1B1B19] |
 | tabs | self | background-color | token(layerCanvas) |
 | tabs | self | border-width | bottom:1 |
 | tabs | self | border-style | bottom:solid |
 | tabs | self | border-color | token(lineSeam) |
 | tabs | self | flex-shrink | 0 |
-| tabs | self | **dark** | background-color: oklch(0.2213 0.0038 106.71) [#FF1B1B19]; border-color: oklch(0.9843 0.004 106.47 / 0.259) [#42FAFAF7] |
 | tabs | :is(& > *)[data-slot="tabs-list"] | width | 100% |
 | tabs | :is(& > *)[data-slot="tabs-list"] | padding | right:20 left:20 |
 | tabs | :is(& > *)[data-slot="tabs-list"] | **pointer-fine+width>=768** | padding: right:16 left:16 |
@@ -2706,7 +2534,6 @@ Dart: `RaftConversationPanelRecipe` · source: `dist/components/conversation-pan
 | tabs | :is(& > *)[data-slot="tabs-list"][data-variant="default"] | **pointer-fine+width>=768** | padding: top:calc((((token(headerHeight) - 1px) - 34px) / 2)) bottom:calc((((token(headerHeight) - 1px) - 34px) / 2)) |
 | footer | self | padding | top:0 |
 | footer | self | background-color | token(layerCanvas) |
-| footer | self | **dark** | background-color: oklch(0.2213 0.0038 106.71) [#FF1B1B19] |
 
 ## conversationPanelEmptyState
 
@@ -2734,7 +2561,6 @@ Dart: `RaftConversationPanelEmptyStateRecipe` · source: `dist/components/conver
 | root | self | justify-content | center |
 | root | self | text-align | center |
 | root | self | text-transform | none |
-| root | self | **dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
 | root | self | **pointer-fine+width>=768** | padding: top:24 right:16 bottom:24 left:16; font-size: 16; line-height: 24 |
 | brand | self | display | inline-flex |
 | brand | self | padding | 0 |
@@ -2742,7 +2568,6 @@ Dart: `RaftConversationPanelEmptyStateRecipe` · source: `dist/components/conver
 | brand | self | color | token(foregroundHint) |
 | brand | self | border-radius | 0 |
 | brand | self | flex-shrink | 0 |
-| brand | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | brandMark | self | display | flex |
 | brandMark | self | position | relative |
 | brandMark | self | width | 36 |
@@ -2791,8 +2616,6 @@ Dart: `RaftKbdRecipe` · source: `dist/components/kbd/kbd.mjs` (index.mjs:5544)
 | root | self | -webkit-user-select | none |
 | root | self | user-select | none |
 | root | self | **ancestor:data-slot=tooltip-content** | color: color-mix(in oklab, token(foregroundOnHud) 70%, transparent); box-shadow: inset 0 0 0 1 token(lineHairline), inset 0 0 0 1 color-mix(in oklch, token(for… |
-| root | self | **ancestor:data-slot=tooltip-content+dark** | color: color-mix(in oklab, oklch(0.9211 0.004 106.48) 70%, transparent) [#B3E5E5E2]; box-shadow: inset 0 0 0 1 oklch(0.9843 0.004 106.47 / 0.102) [#1AFAFAF7], … |
-| root | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B]; box-shadow: inset 0 0 0 1 oklch(0.9843 0.004 106.47 / 0.102) [#1AFAFAF7] |
 | root | self | **pointer-fine+width>=768** | line-height: 18 |
 | root | & svg | pointer-events | none |
 | root | & svg:not([class*='size-']) | width | 12 |
@@ -2835,7 +2658,6 @@ Dart: `RaftContextMenuRecipe` · source: `dist/components/context-menu/context-m
 | content | self | overflow-x | hidden |
 | content | self | overflow-y | hidden |
 | content | self | flex-direction | column |
-| content | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.2802 0.0036 106.63) [#FF292927]; box-shadow: 0 0 0 1 oklch(0.9843 0.004 106.47 / 0.259… |
 | item | self | display | flex |
 | item | self | width | 100% |
 | item | self | min-height | token(optionHeight) |
@@ -2856,10 +2678,6 @@ Dart: `RaftContextMenuRecipe` · source: `dist/components/context-menu/context-m
 | item | self | text-align | left |
 | item | self | -webkit-user-select | none |
 | item | self | user-select | none |
-| item | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| item | self | **dark+data-disabled** | color: oklch(0.4987 0.0047 106.57) [#FF636360]; pointer-events: none |
-| item | self | **dark+data-highlighted** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.5501 0.0999 91.5 / 0.2) [#33876F1F] |
-| item | self | **dark+hover** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.5501 0.0999 91.5 / 0.2) [#33876F1F] |
 | item | self | **data-checked** | font-weight: 700 |
 | item | self | **data-disabled** | color: token(foregroundDisabled); pointer-events: none |
 | item | self | **data-highlighted** | background-color: token(brandSoft) |
@@ -2870,10 +2688,6 @@ Dart: `RaftContextMenuRecipe` · source: `dist/components/context-menu/context-m
 | item | & > svg:not([class*='size-']) | width | 16 |
 | item | & > svg:not([class*='size-']) | height | 16 |
 | item | & > svg | color | token(foregroundMuted) |
-| item | & > svg | **dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
-| item | & > svg | **dark+data-disabled** | color: oklch(0.4987 0.0047 106.57) [#FF636360] |
-| item | & > svg | **dark+data-highlighted** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
-| item | & > svg | **dark+hover** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
 | item | & > svg | **data-disabled** | color: token(foregroundDisabled) |
 | radioItem | self | display | flex |
 | radioItem | self | width | 100% |
@@ -2895,10 +2709,6 @@ Dart: `RaftContextMenuRecipe` · source: `dist/components/context-menu/context-m
 | radioItem | self | text-align | left |
 | radioItem | self | -webkit-user-select | none |
 | radioItem | self | user-select | none |
-| radioItem | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| radioItem | self | **dark+data-disabled** | color: oklch(0.4987 0.0047 106.57) [#FF636360]; pointer-events: none |
-| radioItem | self | **dark+data-highlighted** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.5501 0.0999 91.5 / 0.2) [#33876F1F] |
-| radioItem | self | **dark+hover** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.5501 0.0999 91.5 / 0.2) [#33876F1F] |
 | radioItem | self | **data-checked** | font-weight: 700 |
 | radioItem | self | **data-disabled** | color: token(foregroundDisabled); pointer-events: none |
 | radioItem | self | **data-highlighted** | background-color: token(brandSoft) |
@@ -2909,10 +2719,6 @@ Dart: `RaftContextMenuRecipe` · source: `dist/components/context-menu/context-m
 | radioItem | & > svg:not([class*='size-']) | width | 16 |
 | radioItem | & > svg:not([class*='size-']) | height | 16 |
 | radioItem | & > svg | color | token(foregroundMuted) |
-| radioItem | & > svg | **dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
-| radioItem | & > svg | **dark+data-disabled** | color: oklch(0.4987 0.0047 106.57) [#FF636360] |
-| radioItem | & > svg | **dark+data-highlighted** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
-| radioItem | & > svg | **dark+hover** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
 | radioItem | & > svg | **data-disabled** | color: token(foregroundDisabled) |
 | submenuTrigger | self | display | flex |
 | submenuTrigger | self | width | 100% |
@@ -2934,11 +2740,6 @@ Dart: `RaftContextMenuRecipe` · source: `dist/components/context-menu/context-m
 | submenuTrigger | self | text-align | left |
 | submenuTrigger | self | -webkit-user-select | none |
 | submenuTrigger | self | user-select | none |
-| submenuTrigger | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| submenuTrigger | self | **dark+data-disabled** | color: oklch(0.4987 0.0047 106.57) [#FF636360]; pointer-events: none |
-| submenuTrigger | self | **dark+data-highlighted** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.5501 0.0999 91.5 / 0.2) [#33876F1F] |
-| submenuTrigger | self | **dark+data-popup-open** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.5501 0.0999 91.5 / 0.2) [#33876F1F] |
-| submenuTrigger | self | **dark+hover** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.5501 0.0999 91.5 / 0.2) [#33876F1F] |
 | submenuTrigger | self | **data-disabled** | color: token(foregroundDisabled); pointer-events: none |
 | submenuTrigger | self | **data-highlighted** | background-color: token(brandSoft) |
 | submenuTrigger | self | **data-popup-open** | background-color: token(brandSoft) |
@@ -2949,11 +2750,6 @@ Dart: `RaftContextMenuRecipe` · source: `dist/components/context-menu/context-m
 | submenuTrigger | & > svg:not([class*='size-']) | width | 16 |
 | submenuTrigger | & > svg:not([class*='size-']) | height | 16 |
 | submenuTrigger | & > svg | color | token(foregroundMuted) |
-| submenuTrigger | & > svg | **dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
-| submenuTrigger | & > svg | **dark+data-disabled** | color: oklch(0.4987 0.0047 106.57) [#FF636360] |
-| submenuTrigger | & > svg | **dark+data-highlighted** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
-| submenuTrigger | & > svg | **dark+data-popup-open** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
-| submenuTrigger | & > svg | **dark+hover** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
 | submenuTrigger | & > svg | **data-disabled** | color: token(foregroundDisabled) |
 | itemLabel | self | min-width | 0 |
 | itemLabel | self | overflow-x | hidden |
@@ -2967,14 +2763,12 @@ Dart: `RaftContextMenuRecipe` · source: `dist/components/context-menu/context-m
 | footer | self | line-height | 1.3333 |
 | footer | self | color | token(foregroundMuted) |
 | footer | self | font-variant-numeric | tabular-nums |
-| footer | self | **dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
 | label | self | padding | top:8 right:10 bottom:4 left:10 |
 | label | self | font-family | token(sansFont, system-ui, sans-serif) |
 | label | self | font-size | 12 |
 | label | self | font-weight | 700 |
 | label | self | line-height | 16 |
 | label | self | color | token(foregroundHint) |
-| label | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | label | self | **pointer-fine+width>=768** | line-height: 18 |
 | shortcut | self | height | auto |
 | shortcut | self | min-width | 0 |
@@ -2988,14 +2782,12 @@ Dart: `RaftContextMenuRecipe` · source: `dist/components/context-menu/context-m
 | shortcut | self | background-color | transparent [#00000000] |
 | shortcut | self | border-radius | 0 |
 | shortcut | self | box-shadow | inset 0 0 0 0 currentcolor |
-| shortcut | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | shortcut | self | **pointer-fine+width>=768** | line-height: 18 |
 | separator | self | height | 1 |
 | separator | self | margin | top:4 right:-4 bottom:4 left:-4 |
 | separator | self | background-color | token(lineHairline) |
 | separator | self | border-width | 0 |
 | separator | self | border-style | solid |
-| separator | self | **dark** | background-color: oklch(0.9843 0.004 106.47 / 0.102) [#1AFAFAF7] |
 | indicator | self | display | flex |
 | indicator | self | width | 16 |
 | indicator | self | height | 16 |
@@ -3005,7 +2797,6 @@ Dart: `RaftContextMenuRecipe` · source: `dist/components/context-menu/context-m
 | indicator | self | flex-shrink | 0 |
 | indicator | self | align-items | center |
 | indicator | self | justify-content | center |
-| indicator | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 | indicator | & svg | width | 16 |
 | indicator | & svg | height | 16 |
 
@@ -3037,7 +2828,6 @@ Dart: `RaftDropdownMenuRecipe` · source: `dist/components/dropdown-menu/dropdow
 | content | self | overflow-x | hidden |
 | content | self | overflow-y | hidden |
 | content | self | flex-direction | column |
-| content | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.2802 0.0036 106.63) [#FF292927]; box-shadow: 0 0 0 1 oklch(0.9843 0.004 106.47 / 0.259… |
 | item | self | display | flex |
 | item | self | width | 100% |
 | item | self | min-height | token(optionHeight) |
@@ -3058,10 +2848,6 @@ Dart: `RaftDropdownMenuRecipe` · source: `dist/components/dropdown-menu/dropdow
 | item | self | text-align | left |
 | item | self | -webkit-user-select | none |
 | item | self | user-select | none |
-| item | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| item | self | **dark+data-disabled** | color: oklch(0.4987 0.0047 106.57) [#FF636360]; pointer-events: none |
-| item | self | **dark+data-highlighted** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.5501 0.0999 91.5 / 0.2) [#33876F1F] |
-| item | self | **dark+hover** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.5501 0.0999 91.5 / 0.2) [#33876F1F] |
 | item | self | **data-checked** | font-weight: 700 |
 | item | self | **data-disabled** | color: token(foregroundDisabled); pointer-events: none |
 | item | self | **data-emphasis=strong** | font-weight: 700 |
@@ -3074,10 +2860,6 @@ Dart: `RaftDropdownMenuRecipe` · source: `dist/components/dropdown-menu/dropdow
 | item | & > svg:not([class*='size-']) | width | 16 |
 | item | & > svg:not([class*='size-']) | height | 16 |
 | item | & > svg | color | token(foregroundMuted) |
-| item | & > svg | **dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
-| item | & > svg | **dark+data-disabled** | color: oklch(0.4987 0.0047 106.57) [#FF636360] |
-| item | & > svg | **dark+data-highlighted** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
-| item | & > svg | **dark+hover** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
 | item | & > svg | **data-disabled** | color: token(foregroundDisabled) |
 | radioItem | self | display | flex |
 | radioItem | self | width | 100% |
@@ -3099,10 +2881,6 @@ Dart: `RaftDropdownMenuRecipe` · source: `dist/components/dropdown-menu/dropdow
 | radioItem | self | text-align | left |
 | radioItem | self | -webkit-user-select | none |
 | radioItem | self | user-select | none |
-| radioItem | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| radioItem | self | **dark+data-disabled** | color: oklch(0.4987 0.0047 106.57) [#FF636360]; pointer-events: none |
-| radioItem | self | **dark+data-highlighted** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.5501 0.0999 91.5 / 0.2) [#33876F1F] |
-| radioItem | self | **dark+hover** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.5501 0.0999 91.5 / 0.2) [#33876F1F] |
 | radioItem | self | **data-checked** | font-weight: 700 |
 | radioItem | self | **data-disabled** | color: token(foregroundDisabled); pointer-events: none |
 | radioItem | self | **data-highlighted** | background-color: token(brandSoft) |
@@ -3113,10 +2891,6 @@ Dart: `RaftDropdownMenuRecipe` · source: `dist/components/dropdown-menu/dropdow
 | radioItem | & > svg:not([class*='size-']) | width | 16 |
 | radioItem | & > svg:not([class*='size-']) | height | 16 |
 | radioItem | & > svg | color | token(foregroundMuted) |
-| radioItem | & > svg | **dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
-| radioItem | & > svg | **dark+data-disabled** | color: oklch(0.4987 0.0047 106.57) [#FF636360] |
-| radioItem | & > svg | **dark+data-highlighted** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
-| radioItem | & > svg | **dark+hover** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
 | radioItem | & > svg | **data-disabled** | color: token(foregroundDisabled) |
 | submenuTrigger | self | display | flex |
 | submenuTrigger | self | width | 100% |
@@ -3138,11 +2912,6 @@ Dart: `RaftDropdownMenuRecipe` · source: `dist/components/dropdown-menu/dropdow
 | submenuTrigger | self | text-align | left |
 | submenuTrigger | self | -webkit-user-select | none |
 | submenuTrigger | self | user-select | none |
-| submenuTrigger | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| submenuTrigger | self | **dark+data-disabled** | color: oklch(0.4987 0.0047 106.57) [#FF636360]; pointer-events: none |
-| submenuTrigger | self | **dark+data-highlighted** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.5501 0.0999 91.5 / 0.2) [#33876F1F] |
-| submenuTrigger | self | **dark+data-popup-open** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.5501 0.0999 91.5 / 0.2) [#33876F1F] |
-| submenuTrigger | self | **dark+hover** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.5501 0.0999 91.5 / 0.2) [#33876F1F] |
 | submenuTrigger | self | **data-disabled** | color: token(foregroundDisabled); pointer-events: none |
 | submenuTrigger | self | **data-highlighted** | background-color: token(brandSoft) |
 | submenuTrigger | self | **data-popup-open** | background-color: token(brandSoft) |
@@ -3153,11 +2922,6 @@ Dart: `RaftDropdownMenuRecipe` · source: `dist/components/dropdown-menu/dropdow
 | submenuTrigger | & > svg:not([class*='size-']) | width | 16 |
 | submenuTrigger | & > svg:not([class*='size-']) | height | 16 |
 | submenuTrigger | & > svg | color | token(foregroundMuted) |
-| submenuTrigger | & > svg | **dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
-| submenuTrigger | & > svg | **dark+data-disabled** | color: oklch(0.4987 0.0047 106.57) [#FF636360] |
-| submenuTrigger | & > svg | **dark+data-highlighted** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
-| submenuTrigger | & > svg | **dark+data-popup-open** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
-| submenuTrigger | & > svg | **dark+hover** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
 | submenuTrigger | & > svg | **data-disabled** | color: token(foregroundDisabled) |
 | itemLabel | self | min-width | 0 |
 | itemLabel | self | overflow-x | hidden |
@@ -3171,14 +2935,12 @@ Dart: `RaftDropdownMenuRecipe` · source: `dist/components/dropdown-menu/dropdow
 | footer | self | line-height | 1.3333 |
 | footer | self | color | token(foregroundMuted) |
 | footer | self | font-variant-numeric | tabular-nums |
-| footer | self | **dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
 | label | self | padding | top:8 right:10 bottom:4 left:10 |
 | label | self | font-family | token(sansFont, system-ui, sans-serif) |
 | label | self | font-size | 12 |
 | label | self | font-weight | 700 |
 | label | self | line-height | 16 |
 | label | self | color | token(foregroundHint) |
-| label | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | label | self | **pointer-fine+width>=768** | line-height: 18 |
 | shortcut | self | height | auto |
 | shortcut | self | min-width | 0 |
@@ -3192,7 +2954,6 @@ Dart: `RaftDropdownMenuRecipe` · source: `dist/components/dropdown-menu/dropdow
 | shortcut | self | background-color | transparent [#00000000] |
 | shortcut | self | border-radius | 0 |
 | shortcut | self | box-shadow | inset 0 0 0 0 currentcolor |
-| shortcut | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | shortcut | self | **pointer-fine+width>=768** | line-height: 18 |
 | itemCount | self | display | inline-flex |
 | itemCount | self | min-width | 20 |
@@ -3206,7 +2967,6 @@ Dart: `RaftDropdownMenuRecipe` · source: `dist/components/dropdown-menu/dropdow
 | separator | self | background-color | token(lineHairline) |
 | separator | self | border-width | 0 |
 | separator | self | border-style | solid |
-| separator | self | **dark** | background-color: oklch(0.9843 0.004 106.47 / 0.102) [#1AFAFAF7] |
 | indicator | self | display | flex |
 | indicator | self | width | 16 |
 | indicator | self | height | 16 |
@@ -3216,7 +2976,6 @@ Dart: `RaftDropdownMenuRecipe` · source: `dist/components/dropdown-menu/dropdow
 | indicator | self | flex-shrink | 0 |
 | indicator | self | align-items | center |
 | indicator | self | justify-content | center |
-| indicator | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 | indicator | & svg | width | 16 |
 | indicator | & svg | height | 16 |
 | radioLabel | self | min-width | 0 |
@@ -3245,7 +3004,6 @@ Dart: `RaftLightboxRecipe` · source: `dist/components/lightbox/lightbox.mjs` (i
 | backdrop | self | position | fixed |
 | backdrop | self | inset | 0 |
 | backdrop | self | background-color | token(layerBackdrop) |
-| backdrop | self | **dark** | background-color: oklch(0 0 0 / 0.6) [#99000000] |
 | backdrop | self | **data-closed** | display: none |
 | content | self | display | flex |
 | content | self | position | fixed |
@@ -3279,7 +3037,6 @@ Dart: `RaftLightboxRecipe` · source: `dist/components/lightbox/lightbox.mjs` (i
 | toolbar | self | pointer-events | auto |
 | toolbar | self | flex-shrink | 0 |
 | toolbar | self | align-items | center |
-| toolbar | self | **dark** | background-color: oklch(0.2213 0.0038 106.71) [#FF1B1B19]; border-color: oklch(0.9843 0.004 106.47 / 0.259) [#42FAFAF7] |
 | toolbar | :is(& *)[data-lightbox-close] | position | static |
 | toolbar | :is(& *)[data-lightbox-close] | inset | auto |
 | toolbar | & > [data-icon-inset]:nth-child(1 of :not([data-base-ui-focus-guard], [aria-owns])) | margin | left:0 |
@@ -3303,7 +3060,6 @@ Dart: `RaftLightboxRecipe` · source: `dist/components/lightbox/lightbox.mjs` (i
 | headerLabel | self | flex-shrink | 0 |
 | headerLabel | self | align-items | center |
 | headerLabel | self | text-transform | none |
-| headerLabel | self | **dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1]; background-color: oklch(0.3161 0.0052 106.7) [#FF32322F] |
 | headerLabel | self | **pointer-fine+width>=768** | line-height: 18 |
 | title | self | min-width | 0 |
 | title | self | padding | top:0 bottom:0 |
@@ -3317,7 +3073,6 @@ Dart: `RaftLightboxRecipe` · source: `dist/components/lightbox/lightbox.mjs` (i
 | title | self | flex | 1 |
 | title | self | text-overflow | ellipsis |
 | title | self | white-space | nowrap |
-| title | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 | title | self | **pointer-fine+width>=768** | font-size: 16; line-height: 24 |
 | actions | self | display | flex |
 | actions | self | gap | 4 |
@@ -3329,8 +3084,6 @@ Dart: `RaftLightboxRecipe` · source: `dist/components/lightbox/lightbox.mjs` (i
 | body | self | pointer-events | auto |
 | body | self | flex | 1 |
 | body | self | overscroll-behavior | contain |
-| body | self | **dark** | background-color: oklch(0.2213 0.0038 106.71) [#FF1B1B19] |
-| body | self | **dark+focus-visible** | background-color: oklch(0.2213 0.0038 106.71) [#FF1B1B19]; box-shadow: none; outline-width: 2; outline-style: solid; outline-color: oklch(0.9211 0.004 106.48) … |
 | body | self | **focus-visible** | box-shadow: none; outline-width: 2; outline-style: solid; outline-color: token(foreground); outline-offset: -2 |
 | bodyContent | self | padding | right:env(safe-area-inset-right, 0px) bottom:env(safe-area-inset-bottom, 0px) left:env(safe-area-inset-left, 0px) |
 | stage | self | display | flex |
@@ -3372,10 +3125,6 @@ Dart: `RaftLightboxRecipe` · source: `dist/components/lightbox/lightbox.mjs` (i
 | navigationButton | self | align-items | center |
 | navigationButton | self | justify-content | center |
 | navigationButton | self | **active** | background-image: linear-gradient(token(fillMedium), token(fillMedium)) |
-| navigationButton | self | **active+dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.2596 0.0037 106.65) [#FF242422]; border-color: oklch(0.9211 0.004 106.48) [#FFE5E5E2];… |
-| navigationButton | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.2596 0.0037 106.65) [#FF242422]; border-color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| navigationButton | self | **dark+focus-visible** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.2596 0.0037 106.65) [#FF242422]; border-color: oklch(0.9211 0.004 106.48) [#FFE5E5E2];… |
-| navigationButton | self | **dark+hover** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.2596 0.0037 106.65) [#FF242422]; border-color: oklch(0.9211 0.004 106.48) [#FFE5E5E2];… |
 | navigationButton | self | **data-disabled=true** | cursor: default |
 | navigationButton | self | **focus-visible** | box-shadow: token(focusRing) |
 | navigationButton | self | **hover** | background-image: linear-gradient(token(fillMedium), token(fillMedium)) |
@@ -3402,7 +3151,6 @@ Dart: `RaftLightboxRecipe` · source: `dist/components/lightbox/lightbox.mjs` (i
 | infoBar | self | ring | width:1 color:token(lineSeam) offsetWidth:— offsetColor:— |
 | infoBar | self | pointer-events | auto |
 | infoBar | self | align-items | center |
-| infoBar | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.2802 0.0036 106.63) [#FF292927]; box-shadow: 0 0 0 1 oklch(0.9843 0.004 106.47 / 0.259… |
 | infoTitle | self | min-width | 0 |
 | infoTitle | self | font-family | token(sansFont, system-ui, sans-serif) |
 | infoTitle | self | font-size | 13 |
@@ -3414,7 +3162,6 @@ Dart: `RaftLightboxRecipe` · source: `dist/components/lightbox/lightbox.mjs` (i
 | infoTitle | self | flex | 1 |
 | infoTitle | self | text-overflow | ellipsis |
 | infoTitle | self | white-space | nowrap |
-| infoTitle | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 | infoTitle | self | **pointer-fine+width>=768** | font-size: 12 |
 | infoActions | self | display | flex |
 | infoActions | self | gap | 4 |
@@ -3468,8 +3215,6 @@ Dart: `RaftLightboxRecipe` · source: `dist/components/lightbox/lightbox.mjs` (i
 | thumbnailOverlay | self | transition-duration | 150ms |
 | thumbnailOverlay | self | transition-timing-function | cubic-bezier(0.4, 0, 0.2, 1) |
 | thumbnailOverlay | self | pointer-events | none |
-| thumbnailOverlay | self | **dark** | background-color: oklch(0 0 0 / 0.4) [#66000000] |
-| thumbnailOverlay | self | **dark+group/lightbox-thumb:hover** | background-color: color-mix(in oklab, oklch(0 0 0 / 0.4) 70%, transparent) [#47000000] |
 | thumbnailOverlay | self | **group/lightbox-thumb:data-active** | background-color: transparent [#00000000] |
 | thumbnailOverlay | self | **group/lightbox-thumb:hover** | background-color: color-mix(in oklab, token(layerBackdropNested) 70%, transparent) |
 | close | self | pointer-events | auto |
@@ -3478,7 +3223,7 @@ Dart: `RaftLightboxRecipe` · source: `dist/components/lightbox/lightbox.mjs` (i
 
 | variant | slot | value |
 |---|---|---|
-| nested=true | backdrop | background-color: token(layerBackdropNested); [dark] background-color: oklch(0 0 0 / 0.4) [#66000000] |
+| nested=true | backdrop | background-color: token(layerBackdropNested) |
 
 ## mobileNav
 
@@ -3502,7 +3247,6 @@ Dart: `RaftMobileNavRecipe` · source: `dist/components/mobile-nav/mobile-nav.mj
 | root | self | grid-auto-columns | minmax(0, 1fr) |
 | root | self | grid-auto-flow | column |
 | root | self | align-items | flex-start |
-| root | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B]; background-color: oklch(0.2596 0.0037 106.65) [#FF242422]; border-color: oklch(0.9843 0.004 106.47 / 0.259) [#4… |
 | item | self | display | inline-flex |
 | item | self | position | relative |
 | item | self | min-width | 0 |
@@ -3522,11 +3266,7 @@ Dart: `RaftMobileNavRecipe` · source: `dist/components/mobile-nav/mobile-nav.mj
 | item | self | flex-direction | column |
 | item | self | align-items | center |
 | item | self | justify-content | flex-start |
-| item | self | **active+dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | item | self | **active+data-selected=true** | font-weight: 700; color: token(foreground) |
-| item | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
-| item | self | **dark+data-selected=true** | font-weight: 700; color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| item | self | **dark+focus-visible** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B]; box-shadow: 0 0 0 2 oklch(0.2213 0.0038 106.71) [#FF1B1B19], 0 0 0 4 oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 | item | self | **data-selected=true** | font-weight: 700; color: token(foreground) |
 | item | self | **disabled** | opacity: 45%; pointer-events: none |
 | item | self | **focus-visible** | box-shadow: token(focusRing) |
@@ -3535,7 +3275,6 @@ Dart: `RaftMobileNavRecipe` · source: `dist/components/mobile-nav/mobile-nav.mj
 | item | & svg | flex-shrink | 0 |
 | item | & svg | stroke-width | 2 |
 | item | & svg | **active+data-selected=true** | color: token(stickerInk) |
-| item | & svg | **dark+data-selected=true** | color: token(stickerInk) |
 | item | & svg | **data-selected=true** | color: token(stickerInk) |
 | item | :is(& > *) | position | relative |
 | item | :is(& > *) | z-index | 1 |
@@ -3552,9 +3291,7 @@ Dart: `RaftMobileNavRecipe` · source: `dist/components/mobile-nav/mobile-nav.mj
 | item | ::before | content | "" |
 | item | ::before | pointer-events | none |
 | item | ::before | **active** | background-color: token(fillMedium) |
-| item | ::before | **active+dark** | background-color: oklch(0.9843 0.004 106.47 / 0.065) [#11FAFAF7] |
 | item | ::before | **active+data-selected=true** | border-color: token(stickerInk); background-color: token(selected); background-image: linear-gradient(token(stickerMedium), token(stickerMedium)); box-shadow: … |
-| item | ::before | **dark+data-selected=true** | border-color: token(stickerInk); background-color: token(selected); box-shadow: 0 0 0 1.5 oklch(0.9843 0.004 106.47 / 0.349) [#59FAFAF7]; ring: width:1.5 color… |
 | item | ::before | **data-selected=true** | border-color: token(stickerInk); background-color: token(selected); box-shadow: 0 0 0 1.5 token(stickerEdge); ring: width:1.5 color:token(stickerEdge) offsetWi… |
 | itemLabel | self | min-width | 0 |
 | itemLabel | self | max-width | 100% |
@@ -3599,7 +3336,6 @@ Dart: `RaftTooltipRecipe` · source: `dist/components/tooltip/tooltip.mjs` (inde
 | content | self | transition-duration | 150ms |
 | content | self | transition-timing-function | cubic-bezier(0.22, 1, 0.36, 1) |
 | content | self | pointer-events | none |
-| content | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.2802 0.0036 106.63) [#FF292927]; box-shadow: 0 0 0 1 oklch(0.9843 0.004 106.47 / 0.078… |
 | content | self | **data-ending-style** | opacity: 0%; scale: 0.99 |
 | content | self | **data-instant** | transition-property: none |
 | content | self | **data-starting-style** | opacity: 0%; scale: 0.97 |
@@ -3669,11 +3405,7 @@ Dart: `RaftMessageEmbedRecipe` · source: `dist/components/message-embed/message
 | root | self | border-radius | 10 |
 | root | self | outline-style | none |
 | root | self | text-align | left |
-| root | self | **active+dark+data-interactive=true** | background-color: oklch(0.2596 0.0037 106.65) [#FF242422]; border-color: oklch(0.9843 0.004 106.47 / 0.102) [#1AFAFAF7]; background-image: linear-gradient(oklc… |
 | root | self | **active+data-interactive=true** | background-image: linear-gradient(token(fillMedium), token(fillMedium)) |
-| root | self | **dark** | background-color: oklch(0.2596 0.0037 106.65) [#FF242422]; border-color: oklch(0.9843 0.004 106.47 / 0.102) [#1AFAFAF7] |
-| root | self | **dark+data-interactive=true+hover** | background-color: oklch(0.2596 0.0037 106.65) [#FF242422]; border-color: oklch(0.9843 0.004 106.47 / 0.102) [#1AFAFAF7]; background-image: linear-gradient(oklc… |
-| root | self | **dark+focus-visible** | background-color: oklch(0.2596 0.0037 106.65) [#FF242422]; border-color: oklch(0.9843 0.004 106.47 / 0.102) [#1AFAFAF7]; box-shadow: 0 0 0 2 oklch(0.2213 0.003… |
 | root | self | **data-interactive=true+hover** | background-image: linear-gradient(token(fillSubtle), token(fillSubtle)) |
 | root | self | **focus-visible** | box-shadow: token(focusRing) |
 | root | :is(& > *)[data-slot="message-embed-content"]:first-child | border-radius | top-left:9 top-right:9 |
@@ -3682,7 +3414,6 @@ Dart: `RaftMessageEmbedRecipe` · source: `dist/components/message-embed/message
 | root | :is(& > *)[data-slot="message-embed-content"]:last-child | border-radius | bottom-right:9 bottom-left:9 |
 | root | :is(& > *)[data-slot="message-embed-content"]:last-child | overflow-x | clip |
 | root | :is(& > *)[data-slot="message-embed-content"]:last-child | overflow-y | clip |
-| root | & .r-code-copy | **dark+data-interactive=true+hover** | opacity: 0.55 |
 | root | & .r-code-copy | **data-interactive=true+hover** | opacity: 0.55 |
 | root | & .r-code-copy | **hover** | opacity: 0.55 |
 | header | self | min-width | 0 |
@@ -3720,7 +3451,6 @@ Dart: `RaftMessageCardRecipe` · source: `dist/components/message-embed/message-
 | source | self | border-style | bottom:solid |
 | source | self | border-color | token(lineHairline) |
 | source | self | align-items | center |
-| source | self | **dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1]; border-color: oklch(0.9843 0.004 106.47 / 0.102) [#1AFAFAF7] |
 | source | self | **pointer-fine+width>=768** | line-height: 18 |
 | sourceIcon | self | display | inline-flex |
 | sourceIcon | self | width | 16 |
@@ -3740,7 +3470,6 @@ Dart: `RaftMessageCardRecipe` · source: `dist/components/message-embed/message-
 | sourceName | self | overflow-y | hidden |
 | sourceName | self | text-overflow | ellipsis |
 | sourceName | self | white-space | nowrap |
-| sourceName | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 | sourceHost | self | display | flex |
 | sourceHost | self | min-width | 0 |
 | sourceHost | self | align-items | baseline |
@@ -3766,7 +3495,6 @@ Dart: `RaftMessageCardRecipe` · source: `dist/components/message-embed/message-
 | sourceFooter | self | overflow-y | hidden |
 | sourceFooter | self | text-overflow | ellipsis |
 | sourceFooter | self | white-space | nowrap |
-| sourceFooter | self | **dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1]; border-color: oklch(0.9843 0.004 106.47 / 0.102) [#1AFAFAF7] |
 | sourceFooter | self | **pointer-fine+width>=768** | line-height: 18 |
 | body | self | display | flex |
 | body | self | min-width | 0 |
@@ -3782,7 +3510,6 @@ Dart: `RaftMessageCardRecipe` · source: `dist/components/message-embed/message-
 | eyebrow | self | overflow-y | hidden |
 | eyebrow | self | text-overflow | ellipsis |
 | eyebrow | self | white-space | nowrap |
-| eyebrow | self | **dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
 | eyebrow | self | **pointer-fine+width>=768** | line-height: 18 |
 | title | self | display | -webkit-box |
 | title | self | margin | 0 |
@@ -3795,7 +3522,6 @@ Dart: `RaftMessageCardRecipe` · source: `dist/components/message-embed/message-
 | title | self | overflow-y | hidden |
 | title | self | -webkit-box-orient | vertical |
 | title | self | -webkit-line-clamp | 2 |
-| title | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 | title | self | **pointer-fine+width>=768** | font-size: 14; line-height: 22 |
 | title | & a | border-radius | 2 |
 | title | & a | outline-style | none |
@@ -3803,13 +3529,11 @@ Dart: `RaftMessageCardRecipe` · source: `dist/components/message-embed/message-
 | title | & a | text-underline-offset | 3 |
 | title | & a:hover | text-decoration-line | underline |
 | title | & a:focus-visible | box-shadow | token(focusRing) |
-| title | & a:focus-visible | **dark** | box-shadow: 0 0 0 2 oklch(0.2213 0.0038 106.71) [#FF1B1B19], 0 0 0 4 oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 | heading | self | font-family | token(sansFont, system-ui, sans-serif) |
 | heading | self | font-size | 15 |
 | heading | self | font-weight | 700 |
 | heading | self | line-height | 20 |
 | heading | self | color | token(foreground) |
-| heading | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 | heading | self | **pointer-fine+width>=768** | font-size: 14; line-height: 22 |
 | meta | self | display | flex |
 | meta | self | min-width | 0 |
@@ -3821,7 +3545,6 @@ Dart: `RaftMessageCardRecipe` · source: `dist/components/message-embed/message-
 | meta | self | color | token(foregroundMuted) |
 | meta | self | flex-wrap | wrap |
 | meta | self | align-items | center |
-| meta | self | **dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
 | meta | self | **pointer-fine+width>=768** | line-height: 22 |
 | actions | self | display | flex |
 | actions | self | padding | right:12 bottom:12 left:12 |
@@ -3874,7 +3597,6 @@ Dart: `RaftPopoverRecipe` · source: `dist/components/popover/popover.mjs` (inde
 | content | self | outline-style | none |
 | content | self | overflow-x | hidden |
 | content | self | overflow-y | hidden |
-| content | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.2802 0.0036 106.63) [#FF292927]; box-shadow: 0 0 0 1 oklch(0.9843 0.004 106.47 / 0.259… |
 | header | self | display | flex |
 | header | self | min-height | 44 |
 | header | self | padding | top:6 right:6 bottom:6 left:16 |
@@ -3897,21 +3619,18 @@ Dart: `RaftPopoverRecipe` · source: `dist/components/popover/popover.mjs` (inde
 | separator | self | border-width | top:1 |
 | separator | self | border-style | top:solid |
 | separator | self | border-color | token(lineHairline) |
-| separator | self | **dark** | border-color: oklch(0.9843 0.004 106.47 / 0.102) [#1AFAFAF7] |
 | title | self | margin | 0 |
 | title | self | font-family | token(sansFont, system-ui, sans-serif) |
 | title | self | font-size | 17 |
 | title | self | font-weight | 700 |
 | title | self | line-height | 22 |
 | title | self | color | token(foreground) |
-| title | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 | title | self | **pointer-fine+width>=768** | font-size: 16; line-height: 24 |
 | description | self | margin | 0 |
 | description | self | font-family | token(sansFont, system-ui, sans-serif) |
 | description | self | font-size | 13 |
 | description | self | line-height | 18 |
 | description | self | color | token(foregroundMuted) |
-| description | self | **dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
 | description | self | **pointer-fine+width>=768** | font-size: 12 |
 | close | self | display | inline-flex |
 | close | self | height | 32 |
@@ -3930,10 +3649,6 @@ Dart: `RaftPopoverRecipe` · source: `dist/components/popover/popover.mjs` (inde
 | close | self | align-items | center |
 | close | self | justify-content | center |
 | close | self | **active** | background-color: token(fillMedium) |
-| close | self | **active+dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.9843 0.004 106.47 / 0.065) [#11FAFAF7] |
-| close | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| close | self | **dark+focus-visible** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; box-shadow: 0 0 0 2 oklch(0.2213 0.0038 106.71) [#FF1B1B19], 0 0 0 4 oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| close | self | **dark+hover** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.9843 0.004 106.47 / 0.065) [#11FAFAF7] |
 | close | self | **focus-visible** | box-shadow: token(focusRing) |
 | close | self | **hover** | background-color: token(fillMedium) |
 | close | self | **pointer-fine+width>=768** | font-size: 12 |
@@ -3946,7 +3661,6 @@ Dart: `RaftPopoverRecipe` · source: `dist/components/popover/popover.mjs` (inde
 | arrow | self | border-style | top:solid left:solid |
 | arrow | self | border-color | token(lineSeam) |
 | arrow | self | rotate | 45deg |
-| arrow | self | **dark** | background-color: oklch(0.2802 0.0036 106.63) [#FF292927]; border-color: oklch(0.9843 0.004 106.47 / 0.259) [#42FAFAF7] |
 | backdrop | self | position | fixed |
 | backdrop | self | inset | 0 |
 | backdrop | self | background-color | transparent [#00000000] |
@@ -3992,7 +3706,6 @@ Dart: `RaftPreviewCardRecipe` · source: `dist/components/preview-card/preview-c
 | popup | self | overflow-x | hidden |
 | popup | self | overflow-y | hidden |
 | popup | self | will-change | transform, opacity |
-| popup | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.2802 0.0036 106.63) [#FF292927]; box-shadow: 0 0 0 1 oklch(0.9843 0.004 106.47 / 0.259… |
 | popup | self | **data-ending-style** | opacity: 0%; transition-duration: 150ms; scale: 0.99 |
 | popup | self | **data-instant** | transition-property: none |
 | popup | self | **data-starting-style** | opacity: 0%; scale: 0.97 |
@@ -4005,7 +3718,6 @@ Dart: `RaftPreviewCardRecipe` · source: `dist/components/preview-card/preview-c
 | separator | self | border-width | top:1 |
 | separator | self | border-style | top:solid |
 | separator | self | border-color | token(lineHairline) |
-| separator | self | **dark** | border-color: oklch(0.9843 0.004 106.47 / 0.102) [#1AFAFAF7] |
 | title | self | margin | 0 |
 | title | self | font-family | token(sansFont, system-ui, sans-serif) |
 | title | self | font-size | 17 |
@@ -4016,7 +3728,6 @@ Dart: `RaftPreviewCardRecipe` · source: `dist/components/preview-card/preview-c
 | title | self | overflow-y | hidden |
 | title | self | text-overflow | ellipsis |
 | title | self | white-space | nowrap |
-| title | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 | title | self | **pointer-fine+width>=768** | font-size: 16; line-height: 24 |
 | description | self | padding | top:12 right:16 bottom:12 left:16 |
 | description | self | margin | 0 |
@@ -4028,7 +3739,6 @@ Dart: `RaftPreviewCardRecipe` · source: `dist/components/preview-card/preview-c
 | description | self | overflow-y | hidden |
 | description | self | text-overflow | ellipsis |
 | description | self | white-space | nowrap |
-| description | self | **dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
 | description | self | **last-child** | padding: top:12 right:16 bottom:16 left:16 |
 | description | self | **pointer-fine+width>=768** | line-height: 22 |
 | arrow | self | width | 8 |
@@ -4038,7 +3748,6 @@ Dart: `RaftPreviewCardRecipe` · source: `dist/components/preview-card/preview-c
 | arrow | self | border-style | top:solid left:solid |
 | arrow | self | border-color | token(lineSeam) |
 | arrow | self | rotate | 45deg |
-| arrow | self | **dark** | background-color: oklch(0.2802 0.0036 106.63) [#FF292927]; border-color: oklch(0.9843 0.004 106.47 / 0.259) [#42FAFAF7] |
 
 ### Variant deltas (one axis changed from the default)
 
@@ -4071,20 +3780,14 @@ Dart: `RaftLabelRecipe` · source: `dist/components/label/label.mjs` (index.mjs:
 | root | self | align-items | center |
 | root | self | -webkit-user-select | none |
 | root | self | user-select | none |
-| root | self | **dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
-| root | self | **dark+data-disabled** | color: oklch(0.4987 0.0047 106.57) [#FF636360]; cursor: not-allowed |
 | root | self | **data-disabled** | color: token(foregroundDisabled); cursor: not-allowed |
 | root | self | **pointer-fine+width>=768** | font-size: 12 |
 | asterisk | self | color | token(foregroundHint) |
-| asterisk | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
-| asterisk | self | **dark+group/label:data-disabled** | color: oklch(0.4987 0.0047 106.57) [#FF636360] |
 | asterisk | self | **group/label:data-disabled** | color: token(foregroundDisabled) |
 | sub | self | font-weight | 400 |
 | sub | self | letter-spacing | 0em |
 | sub | self | color | token(foregroundHint) |
 | sub | self | text-transform | none |
-| sub | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
-| sub | self | **dark+group/label:data-disabled** | color: oklch(0.4987 0.0047 106.57) [#FF636360] |
 | sub | self | **group/label:data-disabled** | color: token(foregroundDisabled) |
 
 ### Variant deltas (one axis changed from the default)
@@ -4120,19 +3823,11 @@ Dart: `RaftInputRecipe` · source: `dist/components/input/input.recipe.mjs` (ind
 | root | self | transition-property | box-shadow |
 | root | self | transition-duration | 90ms |
 | root | self | transition-timing-function | cubic-bezier(0, 0, 0.2, 1) |
-| root | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.2596 0.0037 106.65) [#FF242422] |
-| root | self | **dark+data-invalid** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.2596 0.0037 106.65) [#FF242422]; border-color: oklch(0.7996 0.1009 24.79) [#FFF8A49D] |
-| root | self | **dark+disabled** | color: oklch(0.4987 0.0047 106.57) [#FF636360]; background-color: oklch(0.3161 0.0052 106.7) [#FF32322F]; border-color: oklch(0.9843 0.004 106.47 / 0.102) [#1A… |
-| root | self | **dark+focus-visible** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.2596 0.0037 106.65) [#FF242422]; box-shadow: 0 0 0 2 oklch(0.2213 0.0038 106.71) [#FF1… |
 | root | self | **data-invalid** | border-color: token(dangerStrong) |
 | root | self | **disabled** | color: token(foregroundDisabled); background-color: token(fillMuted); border-color: token(lineHairline); cursor: not-allowed |
 | root | self | **focus-visible** | box-shadow: token(focusRing) |
 | root | self | **pointer-fine+width>=768** | height: 34; font-size: 14; line-height: 22; border-radius: 8 |
 | root | ::placeholder | color | token(foregroundHint) |
-| root | ::placeholder | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
-| root | ::placeholder | **dark+data-invalid** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
-| root | ::placeholder | **dark+disabled** | color: oklch(0.4987 0.0047 106.57) [#FF636360] |
-| root | ::placeholder | **dark+focus-visible** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | root | ::placeholder | **disabled** | color: token(foregroundDisabled) |
 
 ## field
@@ -4169,8 +3864,6 @@ Dart: `RaftFieldRecipe` · source: `dist/components/field/field.mjs` (index.mjs:
 | label | self | line-height | 18 |
 | label | self | color | token(foregroundMuted) |
 | label | self | overflow-wrap | anywhere |
-| label | self | **dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
-| label | self | **dark+group/field:data-disabled** | color: oklch(0.4987 0.0047 106.57) [#FF636360] |
 | label | self | **group/field:data-disabled** | color: token(foregroundDisabled) |
 | label | self | **pointer-fine+width>=768** | font-size: 12 |
 | description | self | font-size | 12 |
@@ -4178,8 +3871,6 @@ Dart: `RaftFieldRecipe` · source: `dist/components/field/field.mjs` (index.mjs:
 | description | self | line-height | 16 |
 | description | self | color | token(foregroundHint) |
 | description | self | overflow-wrap | anywhere |
-| description | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
-| description | self | **dark+group/field:data-disabled** | color: oklch(0.4987 0.0047 106.57) [#FF636360] |
 | description | self | **group/field:data-disabled** | color: token(foregroundDisabled) |
 | description | self | **pointer-fine+width>=768** | line-height: 18 |
 | error | self | font-size | 12 |
@@ -4187,8 +3878,6 @@ Dart: `RaftFieldRecipe` · source: `dist/components/field/field.mjs` (index.mjs:
 | error | self | line-height | 16 |
 | error | self | color | token(dangerStrong) |
 | error | self | overflow-wrap | anywhere |
-| error | self | **dark** | color: oklch(0.7996 0.1009 24.79) [#FFF8A49D] |
-| error | self | **dark+group/field:data-disabled** | color: oklch(0.4987 0.0047 106.57) [#FF636360] |
 | error | self | **group/field:data-disabled** | color: token(foregroundDisabled) |
 | error | self | **pointer-fine+width>=768** | line-height: 18 |
 
@@ -4232,10 +3921,6 @@ Dart: `RaftInputGroupRecipe` · source: `dist/components/input-group/input-group
 | root | self | overflow-x | hidden |
 | root | self | overflow-y | hidden |
 | root | self | align-items | center |
-| root | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.2596 0.0037 106.65) [#FF242422] |
-| root | self | **dark+has:data-slot=input-group-control+data-invalid** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.2596 0.0037 106.65) [#FF242422]; border-color: oklch(0.7996 0.1009 24.79) [#FFF8A49D] |
-| root | self | **dark+has:data-slot=input-group-control+disabled** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.3161 0.0052 106.7) [#FF32322F]; border-color: oklch(0.9843 0.004 106.47 / 0.102) [#1AF… |
-| root | self | **dark+has:focus-visible** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.2596 0.0037 106.65) [#FF242422]; box-shadow: 0 0 0 2 oklch(0.2213 0.0038 106.71) [#FF1… |
 | root | self | **has:data-slot=input-group-control+data-invalid** | border-color: token(dangerStrong) |
 | root | self | **has:data-slot=input-group-control+disabled** | background-color: token(fillMuted); border-color: token(lineHairline); cursor: not-allowed |
 | root | self | **has:focus-visible** | box-shadow: token(focusRing) |
@@ -4250,7 +3935,6 @@ Dart: `RaftInputGroupRecipe` · source: `dist/components/input-group/input-group
 | addon | self | justify-content | center |
 | addon | self | -webkit-user-select | none |
 | addon | self | user-select | none |
-| addon | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | addon | & > svg:not([class*='size-']) | width | 18 |
 | addon | & > svg:not([class*='size-']) | height | 18 |
 | addon | & ~ [data-slot=input-group-control] | padding | left:0 |
@@ -4267,7 +3951,6 @@ Dart: `RaftInputGroupRecipe` · source: `dist/components/input-group/input-group
 | text | self | align-items | center |
 | text | self | -webkit-user-select | none |
 | text | self | user-select | none |
-| text | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | text | & ~ [data-slot=input-group-control] | padding | left:0 |
 | textInner | self | min-width | 0 |
 | textInner | self | overflow-x | hidden |
@@ -4285,13 +3968,9 @@ Dart: `RaftInputGroupRecipe` · source: `dist/components/input-group/input-group
 | control | self | background-color | transparent [#00000000] |
 | control | self | outline-style | none |
 | control | self | flex | 1 |
-| control | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| control | self | **dark+disabled** | color: oklch(0.4987 0.0047 106.57) [#FF636360]; cursor: not-allowed |
 | control | self | **disabled** | color: token(foregroundDisabled); cursor: not-allowed |
 | control | self | **pointer-fine+width>=768** | font-size: 14; line-height: 22 |
 | control | ::placeholder | color | token(foregroundHint) |
-| control | ::placeholder | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
-| control | ::placeholder | **dark+disabled** | color: oklch(0.4987 0.0047 106.57) [#FF636360] |
 | control | ::placeholder | **disabled** | color: token(foregroundDisabled) |
 
 ### Variant deltas (one axis changed from the default)
@@ -4338,10 +4017,6 @@ Dart: `RaftComboboxRecipe` · source: `dist/components/combobox/combobox.mjs` (i
 | trigger | self | -webkit-user-select | none |
 | trigger | self | user-select | none |
 | trigger | self | **aria-disabled=true** | box-shadow: inset 0 0 0 0 token(lineSeam) |
-| trigger | self | **dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1]; box-shadow: inset 0 0 0 1 oklch(0.9843 0.004 106.47 / 0.259) [#42FAFAF7] |
-| trigger | self | **dark+data-has-value** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.452 0.0862 225.67 / 0.18) [#2E005F7A]; box-shadow: inset 0 0 0 0 oklch(0.9843 0.004 10… |
-| trigger | self | **dark+data-has-value+hover** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.452 0.0862 225.67 / 0.18) [#2E005F7A]; box-shadow: inset 0 0 0 0 oklch(0.9843 0.004 10… |
-| trigger | self | **dark+focus-visible** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1]; box-shadow: inset 0 0 0 1 oklch(0.9843 0.004 106.47 / 0.259) [#42FAFAF7], 0 0 0 2 oklch(0.2213 0.0038 106.71) [… |
 | trigger | self | **data-has-value** | color: token(foreground); background-color: token(infoSoft); box-shadow: inset 0 0 0 0 token(lineSeam) |
 | trigger | self | **data-has-value+hover** | color: token(foreground); background-color: token(infoSoft); box-shadow: inset 0 0 0 0 token(lineSeam) |
 | trigger | self | **disabled** | box-shadow: inset 0 0 0 0 token(lineSeam) |
@@ -4378,7 +4053,6 @@ Dart: `RaftComboboxRecipe` · source: `dist/components/combobox/combobox.mjs` (i
 | triggerIndicator | self | flex-shrink | 0 |
 | triggerIndicator | self | align-items | center |
 | triggerIndicator | self | justify-content | center |
-| triggerIndicator | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | triggerIndicator | & > svg | width | 14 |
 | triggerIndicator | & > svg | height | 14 |
 | triggerIndicator | & > svg | flex-shrink | 0 |
@@ -4403,15 +4077,11 @@ Dart: `RaftComboboxRecipe` · source: `dist/components/combobox/combobox.mjs` (i
 | control | self | transition-duration | 90ms |
 | control | self | transition-timing-function | cubic-bezier(0, 0, 0.2, 1) |
 | control | self | align-items | center |
-| control | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.2596 0.0037 106.65) [#FF242422] |
-| control | self | **dark+has:focus-visible** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.2596 0.0037 106.65) [#FF242422]; box-shadow: 0 0 0 2 oklch(0.2213 0.0038 106.71) [#FF1… |
 | control | self | **has:focus-visible** | box-shadow: token(focusRing) |
 | control | self | **pointer-fine+width>=768** | min-height: 34; font-size: 14; line-height: 22; border-radius: 8 |
 | control | & > svg | color | token(foregroundHint) |
 | control | & > svg | pointer-events | none |
 | control | & > svg | flex-shrink | 0 |
-| control | & > svg | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
-| control | & > svg | **dark+has:focus-visible** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | control | :is(& *)[data-slot='combobox-clear'] | width | token(controlEmbeddedSize) |
 | control | :is(& *)[data-slot='combobox-clear'] | height | token(controlEmbeddedSize) |
 | control | :is(& *)[data-slot='combobox-clear'] | flex-shrink | 0 |
@@ -4438,8 +4108,6 @@ Dart: `RaftComboboxRecipe` · source: `dist/components/combobox/combobox.mjs` (i
 | inputGroup | self | border-style | bottom:solid |
 | inputGroup | self | border-color | token(lineHairline) |
 | inputGroup | self | align-items | center |
-| inputGroup | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B]; border-color: oklch(0.9843 0.004 106.47 / 0.102) [#1AFAFAF7] |
-| inputGroup | self | **dark+has:focus-visible** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B]; border-color: oklch(0.9843 0.004 106.47 / 0.102) [#1AFAFAF7]; box-shadow: inset 0 0 0 2 oklch(0.9211 0.004 106.… |
 | inputGroup | self | **first-child** | border-radius: top-left:10 top-right:10 |
 | inputGroup | self | **has:focus-visible** | box-shadow: inset 0 0 0 2 token(foreground) |
 | inputGroup | self | **pointer-fine+width>=768** | height: 34; line-height: 22 |
@@ -4463,7 +4131,6 @@ Dart: `RaftComboboxRecipe` · source: `dist/components/combobox/combobox.mjs` (i
 | content | self | outline-style | none |
 | content | self | overflow-x | hidden |
 | content | self | overflow-y | hidden |
-| content | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.2802 0.0036 106.63) [#FF292927]; box-shadow: 0 0 0 1 oklch(0.9843 0.004 106.47 / 0.259… |
 | header | self | display | flex |
 | header | self | padding | top:6 right:6 bottom:6 left:16 |
 | header | self | gap | 8 |
@@ -4474,7 +4141,6 @@ Dart: `RaftComboboxRecipe` · source: `dist/components/combobox/combobox.mjs` (i
 | separator | self | border-width | 0 |
 | separator | self | border-style | solid |
 | separator | self | flex-shrink | 0 |
-| separator | self | **dark** | background-color: oklch(0.9843 0.004 106.47 / 0.102) [#1AFAFAF7] |
 | listFrame | self | min-height | 0 |
 | list | self | display | flex |
 | list | self | min-height | 0 |
@@ -4509,10 +4175,6 @@ Dart: `RaftComboboxRecipe` · source: `dist/components/combobox/combobox.mjs` (i
 | item | self | overflow-wrap | anywhere |
 | item | self | -webkit-user-select | none |
 | item | self | user-select | none |
-| item | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| item | self | **dark+data-disabled** | color: oklch(0.4987 0.0047 106.57) [#FF636360]; pointer-events: none |
-| item | self | **dark+data-highlighted** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.5501 0.0999 91.5 / 0.2) [#33876F1F] |
-| item | self | **dark+hover** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.5501 0.0999 91.5 / 0.2) [#33876F1F] |
 | item | self | **data-disabled** | color: token(foregroundDisabled); pointer-events: none |
 | item | self | **data-highlighted** | background-color: token(brandSoft) |
 | item | self | **data-selected** | font-weight: 700 |
@@ -4530,7 +4192,6 @@ Dart: `RaftComboboxRecipe` · source: `dist/components/combobox/combobox.mjs` (i
 | itemIndicator | self | flex-shrink | 0 |
 | itemIndicator | self | align-items | center |
 | itemIndicator | self | justify-content | center |
-| itemIndicator | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 | itemIndicator | & > svg | width | 16 |
 | itemIndicator | & > svg | height | 16 |
 | itemIndicator | & > svg | flex-shrink | 0 |
@@ -4542,7 +4203,6 @@ Dart: `RaftComboboxRecipe` · source: `dist/components/combobox/combobox.mjs` (i
 | label | self | font-weight | 700 |
 | label | self | line-height | 16 |
 | label | self | color | token(foregroundHint) |
-| label | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | label | self | **pointer-fine+width>=768** | line-height: 18 |
 | clear | self | display | inline-flex |
 | clear | self | height | 28 |
@@ -4563,10 +4223,6 @@ Dart: `RaftComboboxRecipe` · source: `dist/components/combobox/combobox.mjs` (i
 | clear | self | align-items | center |
 | clear | self | justify-content | center |
 | clear | self | **active** | background-color: token(fillMedium) |
-| clear | self | **active+dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1]; background-color: oklch(0.9843 0.004 106.47 / 0.065) [#11FAFAF7] |
-| clear | self | **dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
-| clear | self | **dark+focus-visible** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1]; box-shadow: 0 0 0 2 oklch(0.2213 0.0038 106.71) [#FF1B1B19], 0 0 0 4 oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| clear | self | **dark+hover** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.9843 0.004 106.47 / 0.065) [#11FAFAF7] |
 | clear | self | **data-visible** | opacity: 100%; pointer-events: auto |
 | clear | self | **focus-visible** | box-shadow: token(focusRing) |
 | clear | self | **hover** | color: token(foreground); background-color: token(fillMedium) |
@@ -4580,14 +4236,12 @@ Dart: `RaftComboboxRecipe` · source: `dist/components/combobox/combobox.mjs` (i
 | empty | self | line-height | 20 |
 | empty | self | color | token(foregroundHint) |
 | empty | self | text-align | left |
-| empty | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | empty | self | **pointer-fine+width>=768** | line-height: 22 |
 | groupLabel | self | padding | top:8 right:10 bottom:4 left:10 |
 | groupLabel | self | font-size | 12 |
 | groupLabel | self | font-weight | 700 |
 | groupLabel | self | line-height | 16 |
 | groupLabel | self | color | token(foregroundHint) |
-| groupLabel | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | groupLabel | self | **pointer-fine+width>=768** | line-height: 18 |
 | chips | self | display | flex |
 | chips | self | min-height | token(controlHeight) |
@@ -4603,8 +4257,6 @@ Dart: `RaftComboboxRecipe` · source: `dist/components/combobox/combobox.mjs` (i
 | chips | self | transition-timing-function | cubic-bezier(0, 0, 0.2, 1) |
 | chips | self | flex-wrap | wrap |
 | chips | self | align-items | center |
-| chips | self | **dark** | background-color: oklch(0.2596 0.0037 106.65) [#FF242422] |
-| chips | self | **dark+has:focus-visible** | background-color: oklch(0.2596 0.0037 106.65) [#FF242422]; box-shadow: 0 0 0 2 oklch(0.2213 0.0038 106.71) [#FF1B1B19], 0 0 0 4 oklch(0.9211 0.004 106.48) [#FF… |
 | chips | self | **has:focus-visible** | box-shadow: token(focusRing) |
 | chips | self | **pointer-fine+width>=768** | min-height: 34; border-radius: 8 |
 | chips | :is(& > *)[data-slot="combobox-input"] | height | token(controlEmbeddedSize) |
@@ -4624,7 +4276,6 @@ Dart: `RaftComboboxRecipe` · source: `dist/components/combobox/combobox.mjs` (i
 | chip | self | overflow-x | hidden |
 | chip | self | overflow-y | hidden |
 | chip | self | align-items | center |
-| chip | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.3161 0.0052 106.7) [#FF32322F] |
 | chip | self | **pointer-fine+width>=768** | height: 22; font-size: 12 |
 | chip | & > :not([data-slot=combobox-chip-remove]) | min-width | 0 |
 | chip | & > :not([data-slot=combobox-chip-remove]) | overflow-x | hidden |
@@ -4644,10 +4295,6 @@ Dart: `RaftComboboxRecipe` · source: `dist/components/combobox/combobox.mjs` (i
 | chipRemove | self | align-items | center |
 | chipRemove | self | justify-content | center |
 | chipRemove | self | **active** | background-color: token(fillMedium) |
-| chipRemove | self | **active+dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B]; background-color: oklch(0.9843 0.004 106.47 / 0.065) [#11FAFAF7] |
-| chipRemove | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
-| chipRemove | self | **dark+focus-visible** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B]; box-shadow: inset 0 0 0 2 oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| chipRemove | self | **dark+hover** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B]; background-color: oklch(0.9843 0.004 106.47 / 0.065) [#11FAFAF7] |
 | chipRemove | self | **focus-visible** | box-shadow: inset 0 0 0 2 token(foreground) |
 | chipRemove | self | **hover** | background-color: token(fillMedium) |
 | chipRemove | self | **pointer-fine+width>=768** | width: 18; height: 18 |
@@ -4699,17 +4346,7 @@ Dart: `RaftPickerTriggerButtonRecipe` · source: `dist/components/picker-trigger
 | base | self | -webkit-user-select | none |
 | base | self | user-select | none |
 | base | self | **active** | background-color: token(fillMedium) |
-| base | self | **active+dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1]; background-color: oklch(0.9843 0.004 106.47 / 0.065) [#11FAFAF7]; box-shadow: inset 0 0 0 1 oklch(0.9843 0.004 … |
-| base | self | **active+dark+data-has-value** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.452 0.0862 225.67 / 0.18) [#2E005F7A]; box-shadow: inset 0 0 0 0 oklch(0.9843 0.004 10… |
 | base | self | **active+data-has-value** | color: token(foreground); background-color: token(infoSoft); box-shadow: inset 0 0 0 0 token(lineSeam); background-image: linear-gradient(token(fillMedium), to… |
-| base | self | **dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1]; box-shadow: inset 0 0 0 1 oklch(0.9843 0.004 106.47 / 0.259) [#42FAFAF7] |
-| base | self | **dark+data-disabled** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1]; box-shadow: inset 0 0 0 1 oklch(0.9843 0.004 106.47 / 0.259) [#42FAFAF7] |
-| base | self | **dark+data-has-value** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.452 0.0862 225.67 / 0.18) [#2E005F7A]; box-shadow: inset 0 0 0 0 oklch(0.9843 0.004 10… |
-| base | self | **dark+data-has-value+hover** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.452 0.0862 225.67 / 0.18) [#2E005F7A]; box-shadow: inset 0 0 0 0 oklch(0.9843 0.004 10… |
-| base | self | **dark+data-invalid** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1]; box-shadow: inset 0 0 0 1 oklch(0.7996 0.1009 24.79) [#FFF8A49D] |
-| base | self | **dark+disabled** | color: oklch(0.4987 0.0047 106.57) [#FF636360]; background-color: oklch(0.3161 0.0052 106.7) [#FF32322F]; box-shadow: inset 0 0 0 0 oklch(0.9843 0.004 106.47 /… |
-| base | self | **dark+focus-visible** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1]; box-shadow: inset 0 0 0 1 oklch(0.9843 0.004 106.47 / 0.259) [#42FAFAF7], 0 0 0 2 oklch(0.2213 0.0038 106.71) [… |
-| base | self | **dark+hover** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1]; background-color: oklch(0.9843 0.004 106.47 / 0.065) [#11FAFAF7]; box-shadow: inset 0 0 0 1 oklch(0.9843 0.004 … |
 | base | self | **data-has-value** | color: token(foreground); background-color: token(infoSoft); box-shadow: inset 0 0 0 0 token(lineSeam) |
 | base | self | **data-has-value+hover** | color: token(foreground); background-color: token(infoSoft); box-shadow: inset 0 0 0 0 token(lineSeam); background-image: linear-gradient(token(fillMedium), to… |
 | base | self | **data-invalid** | box-shadow: inset 0 0 0 1 token(dangerStrong) |
@@ -4730,16 +4367,6 @@ Dart: `RaftPickerTriggerButtonRecipe` · source: `dist/components/picker-trigger
 | base | & svg:not([class*='stroke-']) | stroke-width | 2 |
 | base | :is(& *)[data-picker-trigger-indicator] | color | token(foregroundHint) |
 | base | :is(& *)[data-picker-trigger-indicator] | opacity | 100% |
-| base | :is(& *)[data-picker-trigger-indicator] | **active+dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
-| base | :is(& *)[data-picker-trigger-indicator] | **active+dark+data-has-value** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
-| base | :is(& *)[data-picker-trigger-indicator] | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
-| base | :is(& *)[data-picker-trigger-indicator] | **dark+data-disabled** | color: oklch(0.4987 0.0047 106.57) [#FF636360] |
-| base | :is(& *)[data-picker-trigger-indicator] | **dark+data-has-value** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
-| base | :is(& *)[data-picker-trigger-indicator] | **dark+data-has-value+hover** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
-| base | :is(& *)[data-picker-trigger-indicator] | **dark+data-invalid** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
-| base | :is(& *)[data-picker-trigger-indicator] | **dark+disabled** | color: oklch(0.4987 0.0047 106.57) [#FF636360] |
-| base | :is(& *)[data-picker-trigger-indicator] | **dark+focus-visible** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
-| base | :is(& *)[data-picker-trigger-indicator] | **dark+hover** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | base | :is(& *)[data-picker-trigger-indicator] | **data-disabled** | color: token(foregroundDisabled) |
 | base | :is(& *)[data-picker-trigger-indicator] | **disabled** | color: token(foregroundDisabled) |
 | base | & [data-picker-trigger-indicator] > svg | width | 14 |
@@ -4782,15 +4409,6 @@ Dart: `RaftSelectRecipe` · source: `dist/components/select/select.mjs` (index.m
 | trigger | self | justify-content | space-between |
 | trigger | self | -webkit-user-select | none |
 | trigger | self | user-select | none |
-| trigger | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| trigger | self | **dark+data-disabled** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| trigger | self | **dark+data-disabled+data-placeholder** | font-weight: 500; color: oklch(0.4987 0.0047 106.57) [#FF636360] |
-| trigger | self | **dark+data-invalid** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; border-color: oklch(0.7996 0.1009 24.79) [#FFF8A49D] |
-| trigger | self | **dark+data-invalid+focus-visible** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; border-color: oklch(0.7996 0.1009 24.79) [#FFF8A49D]; box-shadow: 0 0 0 0 color-mix(in oklch, token(danger) 60%,… |
-| trigger | self | **dark+data-invalid+hover** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; border-color: oklch(0.7996 0.1009 24.79) [#FFF8A49D]; background-image: none |
-| trigger | self | **dark+data-placeholder** | font-weight: 500; color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
-| trigger | self | **dark+data-placeholder+disabled** | font-weight: 500; color: oklch(0.4987 0.0047 106.57) [#FF636360] |
-| trigger | self | **dark+disabled** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 | trigger | self | **data-disabled+data-placeholder** | font-weight: 500; color: token(foregroundDisabled) |
 | trigger | self | **data-invalid** | border-color: token(dangerStrong) |
 | trigger | self | **data-invalid+focus-visible** | border-color: token(dangerStrong); box-shadow: 0 0 0 0 color-mix(in oklch, token(danger) 60%, transparent); ring: color-mix(in oklch, token(danger) 60%, transp… |
@@ -4807,10 +4425,6 @@ Dart: `RaftSelectRecipe` · source: `dist/components/select/select.mjs` (index.m
 | trigger | & [data-slot='select-trigger-content'] svg:not([class*='size-']) | width | 16 |
 | trigger | & [data-slot='select-trigger-content'] svg:not([class*='size-']) | height | 16 |
 | trigger | & [data-slot='select-trigger-content'] svg:not([class*='stroke-']) | stroke-width | 2 |
-| trigger | :is(& *)[data-slot='select-icon'] | **dark+data-disabled** | color: oklch(0.4987 0.0047 106.57) [#FF636360] |
-| trigger | :is(& *)[data-slot='select-icon'] | **dark+data-disabled+data-placeholder** | color: oklch(0.4987 0.0047 106.57) [#FF636360] |
-| trigger | :is(& *)[data-slot='select-icon'] | **dark+data-placeholder+disabled** | color: oklch(0.4987 0.0047 106.57) [#FF636360] |
-| trigger | :is(& *)[data-slot='select-icon'] | **dark+disabled** | color: oklch(0.4987 0.0047 106.57) [#FF636360] |
 | trigger | :is(& *)[data-slot='select-icon'] | **data-disabled** | color: token(foregroundDisabled) |
 | trigger | :is(& *)[data-slot='select-icon'] | **data-disabled+data-placeholder** | color: token(foregroundDisabled) |
 | trigger | :is(& *)[data-slot='select-icon'] | **data-placeholder+disabled** | color: token(foregroundDisabled) |
@@ -4825,7 +4439,6 @@ Dart: `RaftSelectRecipe` · source: `dist/components/select/select.mjs` (index.m
 | icon | self | flex-shrink | 0 |
 | icon | self | align-items | center |
 | icon | self | justify-content | center |
-| icon | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | icon | & > svg | width | 16 |
 | icon | & > svg | height | 16 |
 | icon | & > svg | flex-shrink | 0 |
@@ -4874,7 +4487,6 @@ Dart: `RaftSelectRecipe` · source: `dist/components/select/select.mjs` (index.m
 | content | self | outline-style | none |
 | content | self | overflow-x | hidden |
 | content | self | overflow-y | hidden |
-| content | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.2802 0.0036 106.63) [#FF292927]; box-shadow: 0 0 0 1 oklch(0.9843 0.004 106.47 / 0.259… |
 | listFrame | self | min-height | 0 |
 | listFrame | self | margin | right:-4 left:-4 |
 | list | self | display | flex |
@@ -4909,10 +4521,6 @@ Dart: `RaftSelectRecipe` · source: `dist/components/select/select.mjs` (index.m
 | item | self | text-align | left |
 | item | self | -webkit-user-select | none |
 | item | self | user-select | none |
-| item | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| item | self | **dark+data-disabled** | color: oklch(0.4987 0.0047 106.57) [#FF636360]; pointer-events: none |
-| item | self | **dark+data-highlighted** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.5501 0.0999 91.5 / 0.2) [#33876F1F] |
-| item | self | **dark+hover** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.5501 0.0999 91.5 / 0.2) [#33876F1F] |
 | item | self | **data-disabled** | color: token(foregroundDisabled); pointer-events: none |
 | item | self | **data-highlighted** | background-color: token(brandSoft) |
 | item | self | **data-selected** | font-weight: 700 |
@@ -4921,10 +4529,6 @@ Dart: `RaftSelectRecipe` · source: `dist/components/select/select.mjs` (index.m
 | item | & > svg | color | token(foregroundMuted) |
 | item | & > svg | pointer-events | none |
 | item | & > svg | flex-shrink | 0 |
-| item | & > svg | **dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
-| item | & > svg | **dark+data-disabled** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
-| item | & > svg | **dark+data-highlighted** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
-| item | & > svg | **dark+hover** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
 | item | & > svg:not([class*='size-']) | width | 16 |
 | item | & > svg:not([class*='size-']) | height | 16 |
 | item | & > svg:not([class*='stroke-']) | stroke-width | 2 |
@@ -4952,10 +4556,6 @@ Dart: `RaftSelectRecipe` · source: `dist/components/select/select.mjs` (index.m
 | actionItem | self | text-align | left |
 | actionItem | self | -webkit-user-select | none |
 | actionItem | self | user-select | none |
-| actionItem | self | **dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
-| actionItem | self | **dark+data-disabled** | color: oklch(0.4987 0.0047 106.57) [#FF636360]; pointer-events: none |
-| actionItem | self | **dark+data-highlighted** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1]; background-color: oklch(0.5501 0.0999 91.5 / 0.2) [#33876F1F] |
-| actionItem | self | **dark+hover** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1]; background-color: oklch(0.5501 0.0999 91.5 / 0.2) [#33876F1F] |
 | actionItem | self | **data-disabled** | color: token(foregroundDisabled); pointer-events: none |
 | actionItem | self | **data-highlighted** | background-color: token(brandSoft) |
 | actionItem | self | **hover** | background-color: token(brandSoft) |
@@ -4972,7 +4572,6 @@ Dart: `RaftSelectRecipe` · source: `dist/components/select/select.mjs` (index.m
 | itemLeading | self | flex-shrink | 0 |
 | itemLeading | self | align-items | center |
 | itemLeading | self | justify-content | center |
-| itemLeading | self | **dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
 | itemLeading | & svg | pointer-events | none |
 | itemLeading | & svg | flex-shrink | 0 |
 | itemLeading | & > svg | pointer-events | none |
@@ -4987,7 +4586,6 @@ Dart: `RaftSelectRecipe` · source: `dist/components/select/select.mjs` (index.m
 | itemIndicator | self | flex-shrink | 0 |
 | itemIndicator | self | align-items | center |
 | itemIndicator | self | justify-content | center |
-| itemIndicator | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 | itemIndicator | & > svg | width | 16 |
 | itemIndicator | & > svg | height | 16 |
 | itemIndicator | & > svg | flex-shrink | 0 |
@@ -5011,7 +4609,6 @@ Dart: `RaftSelectRecipe` · source: `dist/components/select/select.mjs` (index.m
 | itemDescription | self | flex-basis | 100% |
 | itemDescription | self | overflow-wrap | anywhere |
 | itemDescription | self | **ancestor:data-slot=select-item-leading** | padding: left:26 |
-| itemDescription | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | itemDescription | self | **pointer-fine+width>=768** | line-height: 18 |
 | label | self | margin | 0 |
 | label | self | font-family | token(sansFont, system-ui, sans-serif) |
@@ -5019,7 +4616,6 @@ Dart: `RaftSelectRecipe` · source: `dist/components/select/select.mjs` (index.m
 | label | self | font-weight | 600 |
 | label | self | line-height | 18 |
 | label | self | color | token(foregroundMuted) |
-| label | self | **dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
 | label | self | **pointer-fine+width>=768** | font-size: 12 |
 | group | self | display | flex |
 | group | self | flex-direction | column |
@@ -5028,7 +4624,6 @@ Dart: `RaftSelectRecipe` · source: `dist/components/select/select.mjs` (index.m
 | groupLabel | self | font-weight | 700 |
 | groupLabel | self | line-height | 16 |
 | groupLabel | self | color | token(foregroundHint) |
-| groupLabel | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | groupLabel | self | **pointer-fine+width>=768** | line-height: 18 |
 | separator | self | height | 1 |
 | separator | self | margin | top:4 right:-4 bottom:4 left:-4 |
@@ -5036,7 +4631,6 @@ Dart: `RaftSelectRecipe` · source: `dist/components/select/select.mjs` (index.m
 | separator | self | border-width | 0 |
 | separator | self | border-style | solid |
 | separator | self | flex-shrink | 0 |
-| separator | self | **dark** | background-color: oklch(0.9843 0.004 106.47 / 0.102) [#1AFAFAF7] |
 | scrollArrow | self | display | flex |
 | scrollArrow | self | position | absolute |
 | scrollArrow | self | width | 100% |
@@ -5052,7 +4646,6 @@ Dart: `RaftSelectRecipe` · source: `dist/components/select/select.mjs` (index.m
 | scrollArrow | self | z-index | 1 |
 | scrollArrow | self | align-items | center |
 | scrollArrow | self | justify-content | center |
-| scrollArrow | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B]; background-color: oklch(0.2802 0.0036 106.63) [#FF292927] |
 | scrollArrow | self | **data-direction=down** | inset: right:0 bottom:0 left:0 |
 | scrollArrow | self | **data-direction=up** | inset: top:0 right:0 left:0 |
 | scrollArrow | & svg | pointer-events | none |
@@ -5062,14 +4655,13 @@ Dart: `RaftSelectRecipe` · source: `dist/components/select/select.mjs` (index.m
 | empty | self | line-height | 20 |
 | empty | self | color | token(foregroundHint) |
 | empty | self | text-align | left |
-| empty | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | empty | self | **pointer-fine+width>=768** | line-height: 22 |
 
 ### Variant deltas (one axis changed from the default)
 
 | variant | slot | value |
 |---|---|---|
-| chrome=field | trigger | padding: top:0 right:12 bottom:0 left:12; font-size: token(fieldFontSize); font-weight: token(fieldFontWeight); line-height: token(fieldLineHeight); [dark+data… |
+| chrome=field | trigger | padding: top:0 right:12 bottom:0 left:12; font-size: token(fieldFontSize); font-weight: token(fieldFontWeight); line-height: token(fieldLineHeight); [data-disa… |
 | chrome=field | sizerLabel | font-weight: token(fieldFontWeight) |
 | chrome=field | sizerPlaceholder | font-weight: token(fieldFontWeight) |
 | chrome=field | item | font-size: token(fieldFontSize); font-weight: token(fieldFontWeight); line-height: token(fieldLineHeight); [pointer-fine+width>=768] min-height: 34, padding: t… |
@@ -5090,9 +4682,7 @@ Dart: `RaftRadioGroupRecipe` · source: `dist/components/radio-group/radio-group
 | root | self | gap | 8 |
 | root | self | font-family | token(sansFont, system-ui, sans-serif) |
 | root | & > label | font-weight | 600 |
-| root | & > label | **dark+data-disabled** | color: oklch(0.4987 0.0047 106.57) [#FF636360]; cursor: not-allowed |
 | root | & > label | **data-disabled** | color: token(foregroundDisabled); cursor: not-allowed |
-| root | & > label * | **dark+data-disabled** | color: oklch(0.4987 0.0047 106.57) [#FF636360] |
 | root | & > label * | **data-disabled** | color: token(foregroundDisabled) |
 | item | self | display | inline-flex |
 | item | self | position | relative |
@@ -5110,9 +4700,6 @@ Dart: `RaftRadioGroupRecipe` · source: `dist/components/radio-group/radio-group
 | item | self | align-items | center |
 | item | self | justify-content | center |
 | item | self | **ancestor:label** | margin: top:max(0px, calc(((1lh - 20px) / 2))) bottom:max(0px, calc(((1lh - 20px) / 2))) |
-| item | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.2596 0.0037 106.65) [#FF242422]; border-color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| item | self | **dark+data-disabled** | color: oklch(0.4987 0.0047 106.57) [#FF636360]; background-color: oklch(0.3161 0.0052 106.7) [#FF32322F]; border-color: oklch(0.4987 0.0047 106.57) [#FF636360]… |
-| item | self | **dark+focus-visible** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.2596 0.0037 106.65) [#FF242422]; border-color: oklch(0.9211 0.004 106.48) [#FFE5E5E2];… |
 | item | self | **data-disabled** | color: token(foregroundDisabled); background-color: token(fillMuted); border-color: token(foregroundDisabled); cursor: not-allowed |
 | item | self | **focus-visible** | box-shadow: token(focusRing) |
 | item | ::after | position | absolute |
@@ -5159,11 +4746,6 @@ Dart: `RaftSwitchRecipe` · source: `dist/components/switch/switch.mjs` (index.m
 | root | self | flex-shrink | 0 |
 | root | self | touch-action | manipulation |
 | root | self | align-items | center |
-| root | self | **dark** | background-color: oklch(0.3161 0.0052 106.7) [#FF32322F]; border-color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| root | self | **dark+data-checked** | background-color: token(selected); border-color: token(stickerInk); box-shadow: 0 0 0 1.5 oklch(0.9843 0.004 106.47 / 0.349) [#59FAFAF7]; ring: width:1.5 color… |
-| root | self | **dark+data-checked+data-disabled** | background-color: oklch(0.3161 0.0052 106.7) [#FF32322F]; border-color: oklch(0.4987 0.0047 106.57) [#FF636360]; cursor: not-allowed; box-shadow: 0 0 0 1.5 okl… |
-| root | self | **dark+data-disabled** | background-color: oklch(0.3161 0.0052 106.7) [#FF32322F]; border-color: oklch(0.4987 0.0047 106.57) [#FF636360]; cursor: not-allowed |
-| root | self | **dark+focus-visible** | background-color: oklch(0.3161 0.0052 106.7) [#FF32322F]; border-color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; box-shadow: 0 0 0 0 oklch(0.1582 0.0041 106.86)… |
 | root | self | **data-checked** | background-color: token(selected); border-color: token(stickerInk); box-shadow: 0 0 0 1.5 token(stickerEdge); ring: width:1.5 color:token(stickerEdge) offsetWi… |
 | root | self | **data-checked+data-disabled** | border-color: token(foregroundDisabled); cursor: not-allowed; box-shadow: 0 0 0 1.5 token(stickerEdge); ring: width:1.5 color:token(stickerEdge) offsetWidth:— … |
 | root | self | **data-disabled** | border-color: token(foregroundDisabled); cursor: not-allowed |
@@ -5184,9 +4766,6 @@ Dart: `RaftSwitchRecipe` · source: `dist/components/switch/switch.mjs` (index.m
 | thumb | self | transition-duration | 220ms |
 | thumb | self | transition-timing-function | cubic-bezier(0.32, 0.72, 0, 1) |
 | thumb | self | pointer-events | none |
-| thumb | self | **dark** | background-color: oklch(0.2596 0.0037 106.65) [#FF242422]; box-shadow: 0 0 0 1.5 oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| thumb | self | **dark+data-checked+data-disabled** | background-color: oklch(0.3161 0.0052 106.7) [#FF32322F]; box-shadow: 0 0 0 1.5 oklch(0.4987 0.0047 106.57) [#FF636360]; translate: calc((token(switchWidth) - … |
-| thumb | self | **dark+data-disabled** | background-color: oklch(0.3161 0.0052 106.7) [#FF32322F]; box-shadow: 0 0 0 1.5 oklch(0.4987 0.0047 106.57) [#FF636360] |
 | thumb | self | **data-checked** | background-color: token(stickerPaper); box-shadow: 0 0 0 1.5 token(stickerInk); translate: calc((token(switchWidth) - token(switchHeight))) 0 |
 | thumb | self | **data-checked+data-disabled** | background-color: token(fillMuted); box-shadow: 0 0 0 1.5 token(foregroundDisabled); translate: calc((token(switchWidth) - token(switchHeight))) 0 |
 | thumb | self | **data-checked+pointer-fine+width>=768** | width: 14; height: 14; background-color: token(stickerPaper); box-shadow: 0 0 0 1.5 token(stickerInk); translate: 16px 0 |
@@ -5248,7 +4827,6 @@ Dart: `RaftButtonSplitMenuRecipe` · source: `dist/components/button/button-spli
 | base | self | border-radius | top-left:0 bottom-left:0 |
 | base | self | box-shadow | 0 0 0 0 currentcolor |
 | base | self | ring | currentcolor |
-| base | self | **dark+data-popup-open** | background-image: linear-gradient(oklch(0.9843 0.004 106.47 / 0.065), oklch(0.9843 0.004 106.47 / 0.065)) |
 | base | self | **data-popup-open** | background-image: linear-gradient(token(fillMedium), token(fillMedium)) |
 | base | self | **focus-visible** | z-index: 1 |
 | base | ::after | inset | right:-17.5 left:0 |
@@ -5258,9 +4836,9 @@ Dart: `RaftButtonSplitMenuRecipe` · source: `dist/components/button/button-spli
 
 | variant | slot | value |
 |---|---|---|
-| variant=primary | base | [dark+data-popup-open] (none); [data-popup-open] background-image: linear-gradient(token(stickerMedium), token(stickerMedium)) |
-| variant=warning | base | [dark+data-popup-open] (none); [data-popup-open] background-image: linear-gradient(token(stickerMedium), token(stickerMedium)) |
-| variant=danger | base | [dark+data-popup-open] (none); [data-popup-open] background-image: linear-gradient(token(stickerMedium), token(stickerMedium)) |
+| variant=primary | base | [data-popup-open] background-image: linear-gradient(token(stickerMedium), token(stickerMedium)) |
+| variant=warning | base | [data-popup-open] background-image: linear-gradient(token(stickerMedium), token(stickerMedium)) |
+| variant=danger | base | [data-popup-open] background-image: linear-gradient(token(stickerMedium), token(stickerMedium)) |
 | size=lg | base | width: 36; [pointer-fine+width>=768] width: 28; ::after inset: right:-9.5 left:0; ::after [pointer-fine+width>=768] inset: right:-17.5 left:0 |
 
 ## fitToolbar
@@ -5390,7 +4968,6 @@ Dart: `RaftSegmentedControlRecipe` · source: `dist/components/segmented-control
 | root | self | border-radius | 11 |
 | root | self | flex-wrap | nowrap |
 | root | self | align-items | center |
-| root | self | **dark** | background-color: oklch(0.3161 0.0052 106.7) [#FF32322F] |
 | root | self | **data-overflowing** | overflow-x: auto; overflow-y: hidden; scrollbar-width: none; overscroll-behavior-x: contain |
 | item | self | display | inline-flex |
 | item | self | position | relative |
@@ -5413,13 +4990,7 @@ Dart: `RaftSegmentedControlRecipe` · source: `dist/components/segmented-control
 | item | self | align-items | center |
 | item | self | justify-content | center |
 | item | self | **active** | background-color: token(fillMedium) |
-| item | self | **active+dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1]; background-color: oklch(0.9843 0.004 106.47 / 0.065) [#11FAFAF7] |
 | item | self | **active+data-checked** | font-weight: 700; color: token(stickerInk); background-color: token(selected); border-color: token(stickerInk); background-image: linear-gradient(token(sticker… |
-| item | self | **dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
-| item | self | **dark+data-checked** | font-weight: 700; color: token(stickerInk); background-color: token(selected); border-color: token(stickerInk); box-shadow: 0 0 0 1.5 oklch(0.9843 0.004 106.47… |
-| item | self | **dark+data-disabled** | color: oklch(0.4987 0.0047 106.57) [#FF636360]; cursor: not-allowed |
-| item | self | **dark+focus-visible** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1]; box-shadow: 0 0 0 2 oklch(0.2213 0.0038 106.71) [#FF1B1B19], 0 0 0 4 oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| item | self | **dark+hover** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1]; background-color: oklch(0.9843 0.004 106.47 / 0.065) [#11FAFAF7] |
 | item | self | **data-checked** | font-weight: 700; color: token(stickerInk); background-color: token(selected); border-color: token(stickerInk); box-shadow: 0 0 0 1.5 token(stickerEdge); ring:… |
 | item | self | **data-checked+hover** | font-weight: 700; color: token(stickerInk); background-color: token(selected); border-color: token(stickerInk); box-shadow: 0 0 0 1.5 token(stickerEdge); ring:… |
 | item | self | **data-disabled** | color: token(foregroundDisabled); cursor: not-allowed |
@@ -5450,7 +5021,7 @@ Dart: `RaftSegmentedControlRecipe` · source: `dist/components/segmented-control
 
 | variant | slot | value |
 |---|---|---|
-| variant=on-frame | root | background-color: token(fillFrameMedium); [dark] background-color: oklch(0.9843 0.004 106.47 / 0.06) [#0FFAFAF7]; :is(& *)[data-slot="segmented-control-item"] … |
+| variant=on-frame | root | background-color: token(fillFrameMedium); :is(& *)[data-slot="segmented-control-item"] color: token(foregroundOnFrameMuted); :is(& *)[data-slot="segmented-cont… |
 | iconsOnlyBelow=xs | root | :is(& *)[data-slot="segmented-control-item"] [container-width<320] position: relative, width: 32, padding: right:0 left:0; :is(& *)[data-slot="segmented-contro… |
 | iconsOnlyBelow=sm | root | :is(& *)[data-slot="segmented-control-item"] [container-width<384] position: relative, width: 32, padding: right:0 left:0; :is(& *)[data-slot="segmented-contro… |
 | iconsOnlyBelow=md | root | :is(& *)[data-slot="segmented-control-item"] [container-width<448] position: relative, width: 32, padding: right:0 left:0; :is(& *)[data-slot="segmented-contro… |
@@ -5476,7 +5047,6 @@ Dart: `RaftToggleGroupRecipe` · source: `dist/components/toggle-group/toggle-gr
 | root | self | background-color | token(fillMuted) |
 | root | self | border-radius | 11 |
 | root | self | align-items | center |
-| root | self | **dark** | background-color: oklch(0.3161 0.0052 106.7) [#FF32322F] |
 | root | self | **data-orientation=horizontal** | flex-direction: row; flex-wrap: wrap |
 | root | self | **data-orientation=vertical** | align-items: stretch; flex-direction: column |
 | item | self | display | inline-flex |
@@ -5506,13 +5076,7 @@ Dart: `RaftToggleGroupRecipe` · source: `dist/components/toggle-group/toggle-gr
 | item | self | justify-content | center |
 | item | self | white-space | nowrap |
 | item | self | **active** | background-color: token(fillMedium) |
-| item | self | **active+dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1]; background-color: oklch(0.9843 0.004 106.47 / 0.065) [#11FAFAF7] |
 | item | self | **active+data-pressed** | font-weight: 700; color: token(stickerInk); background-color: token(selected); border-color: token(stickerInk); background-image: linear-gradient(token(sticker… |
-| item | self | **dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
-| item | self | **dark+data-disabled** | color: oklch(0.4987 0.0047 106.57) [#FF636360]; opacity: 100%; cursor: not-allowed |
-| item | self | **dark+data-pressed** | font-weight: 700; color: token(stickerInk); background-color: token(selected); border-color: token(stickerInk); box-shadow: 0 0 0 1.5 oklch(0.9843 0.004 106.47… |
-| item | self | **dark+focus-visible** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1]; box-shadow: 0 0 0 2 oklch(0.2213 0.0038 106.71) [#FF1B1B19], 0 0 0 4 oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| item | self | **dark+hover** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1]; background-color: oklch(0.9843 0.004 106.47 / 0.065) [#11FAFAF7] |
 | item | self | **data-disabled** | color: token(foregroundDisabled); opacity: 100%; cursor: not-allowed |
 | item | self | **data-disabled+hover** | color: token(foregroundDisabled); opacity: 100%; cursor: not-allowed |
 | item | self | **data-pressed** | font-weight: 700; color: token(stickerInk); background-color: token(selected); border-color: token(stickerInk); box-shadow: 0 0 0 1.5 token(stickerEdge); ring:… |
@@ -5560,19 +5124,11 @@ Dart: `RaftTextareaRecipe` · source: `dist/components/textarea/textarea.mjs` (i
 | root | self | transition-timing-function | cubic-bezier(0, 0, 0.2, 1) |
 | root | self | resize | vertical |
 | root | self | scroll-padding-bottom | 0 |
-| root | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.2596 0.0037 106.65) [#FF242422] |
-| root | self | **dark+data-invalid** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.2596 0.0037 106.65) [#FF242422]; border-color: oklch(0.7996 0.1009 24.79) [#FFF8A49D] |
-| root | self | **dark+disabled** | color: oklch(0.4987 0.0047 106.57) [#FF636360]; background-color: oklch(0.3161 0.0052 106.7) [#FF32322F]; border-color: oklch(0.9843 0.004 106.47 / 0.102) [#1A… |
-| root | self | **dark+focus-visible** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.2596 0.0037 106.65) [#FF242422]; box-shadow: 0 0 0 2 oklch(0.2213 0.0038 106.71) [#FF1… |
 | root | self | **data-invalid** | border-color: token(dangerStrong) |
 | root | self | **disabled** | color: token(foregroundDisabled); background-color: token(fillMuted); border-color: token(lineHairline); resize: none; cursor: not-allowed |
 | root | self | **focus-visible** | box-shadow: token(focusRing) |
 | root | self | **pointer-fine+width>=768** | min-height: 90; font-size: 14; line-height: 22; border-radius: 8 |
 | root | ::placeholder | color | token(foregroundHint) |
-| root | ::placeholder | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
-| root | ::placeholder | **dark+data-invalid** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
-| root | ::placeholder | **dark+disabled** | color: oklch(0.4987 0.0047 106.57) [#FF636360] |
-| root | ::placeholder | **dark+focus-visible** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | root | ::placeholder | **disabled** | color: token(foregroundDisabled) |
 
 ## textareaGroup
@@ -5608,8 +5164,6 @@ Dart: `RaftTextareaCounterRecipe` · source: `dist/components/textarea/textarea.
 | root | self | line-height | 16 |
 | root | self | color | token(foregroundHint) |
 | root | self | font-variant-numeric | tabular-nums |
-| root | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
-| root | self | **dark+group/field:data-invalid** | color: oklch(0.7996 0.1009 24.79) [#FFF8A49D]; font-weight: 700 |
 | root | self | **group/field:data-invalid** | color: token(dangerStrong); font-weight: 700 |
 | root | self | **pointer-fine+width>=768** | line-height: 18 |
 
@@ -5617,7 +5171,7 @@ Dart: `RaftTextareaCounterRecipe` · source: `dist/components/textarea/textarea.
 
 | variant | slot | value |
 |---|---|---|
-| overLimit=true | root | color: token(dangerStrong); font-weight: 700; [dark] color: oklch(0.7996 0.1009 24.79) [#FFF8A49D]; [dark+group/field:data-invalid] color: oklch(0.7996 0.1009 … |
+| overLimit=true | root | color: token(dangerStrong); font-weight: 700; [group/field:data-invalid] (none) |
 
 ## descriptionList
 
@@ -5643,7 +5197,6 @@ Dart: `RaftDescriptionListRecipe` · source: `dist/components/description-list/d
 | term | self | line-height | 18 |
 | term | self | color | token(foregroundHint) |
 | term | self | align-items | center |
-| term | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | term | self | **pointer-fine+width>=768** | font-size: 12 |
 | term | :is(& > *)[data-slot="button"] | margin | left:-5 |
 | details | self | display | flex |
@@ -5657,7 +5210,6 @@ Dart: `RaftDescriptionListRecipe` · source: `dist/components/description-list/d
 | details | self | color | token(foreground) |
 | details | self | flex-wrap | wrap |
 | details | self | align-items | center |
-| details | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 | details | self | **pointer-fine+width>=768** | line-height: 22 |
 
 ### Variant deltas (one axis changed from the default)
@@ -5694,7 +5246,6 @@ Dart: `RaftAvatarRecipe` · source: `dist/components/avatar/avatar.mjs` (index.m
 | root | self | justify-content | center |
 | root | self | -webkit-user-select | none |
 | root | self | user-select | none |
-| root | self | **dark** | box-shadow: 0 0 0 1.5 oklch(0.9843 0.004 106.47 / 0.349) [#59FAFAF7] |
 | image | self | width | 100% |
 | image | self | height | 100% |
 | image | self | border-radius | 2 |
@@ -5733,7 +5284,6 @@ Dart: `RaftAvatarRecipe` · source: `dist/components/avatar/avatar.mjs` (index.m
 | badge | self | z-index | 1 |
 | badge | self | -webkit-user-select | none |
 | badge | self | user-select | none |
-| badge | self | **dark** | outline-color: oklch(0.2213 0.0038 106.71) [#FF1B1B19] |
 | badge | self | **group/avatar:data-size=2xs** | width: 7; height: 7; inset: right:-2 bottom:-2 |
 | badge | self | **group/avatar:data-size=3xs** | width: 6; height: 6; inset: right:-2 bottom:-2 |
 | badge | self | **group/avatar:data-size=lg** | width: 14; height: 14; inset: right:-5 bottom:-5 |
@@ -5752,7 +5302,6 @@ Dart: `RaftAvatarRecipe` · source: `dist/components/avatar/avatar.mjs` (index.m
 | dot | self | outline-color | token(layerCanvas) |
 | dot | self | align-items | center |
 | dot | self | justify-content | center |
-| dot | self | **dark** | outline-color: oklch(0.2213 0.0038 106.71) [#FF1B1B19] |
 | dot | self | **group/avatar:data-size=2xs** | border-width: 1; outline-width: 1 |
 | dot | self | **group/avatar:data-size=3xs** | border-width: 1; outline-width: 1 |
 | dot | self | **group/avatar:data-size=xl** | border-width: 2 |
@@ -5778,10 +5327,7 @@ Dart: `RaftAvatarRecipe` · source: `dist/components/avatar/avatar.mjs` (index.m
 | groupButton | self | cursor | pointer |
 | groupButton | self | flex-shrink | 0 |
 | groupButton | self | align-items | center |
-| groupButton | self | **active+dark+enabled** | background-color: oklch(0.9843 0.004 106.47 / 0.065) [#11FAFAF7] |
 | groupButton | self | **active+enabled** | background-color: token(fillMedium) |
-| groupButton | self | **dark+enabled+hover** | background-color: oklch(0.9843 0.004 106.47 / 0.065) [#11FAFAF7] |
-| groupButton | self | **dark+focus-visible** | box-shadow: 0 0 0 2 oklch(0.2213 0.0038 106.71) [#FF1B1B19], 0 0 0 4 oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 | groupButton | self | **disabled** | cursor: default |
 | groupButton | self | **enabled+hover** | background-color: token(fillMedium) |
 | groupButton | self | **focus-visible** | box-shadow: token(focusRing) |
@@ -5794,7 +5340,7 @@ Dart: `RaftAvatarRecipe` · source: `dist/components/avatar/avatar.mjs` (index.m
 | type=agent | root | background-color: token(inactive) |
 | type=human | root | background-color: token(paletteLavender400) |
 | type=server | root | background-color: token(stickerInk) |
-| size=xl | root | box-shadow: 0 0 0 1.5 token(stickerEdge), token(elevationSticker); width: 99; height: 99; [dark] box-shadow: 0 0 0 1.5 oklch(0.9843 0.004 106.47 / 0.349) [#59F… |
+| size=xl | root | box-shadow: 0 0 0 1.5 token(stickerEdge), token(elevationSticker); width: 99; height: 99 |
 | size=lg | root | width: 51; height: 51 |
 | size=md | root | width: 35; height: 35 |
 | size=sm | root | width: 27; height: 27 |
@@ -5823,7 +5369,6 @@ Dart: `RaftCodeBlockRecipe` · source: `dist/components/code-block/code-block.re
 | root | self | border-radius | 10 |
 | root | self | overflow-x | clip |
 | root | self | overflow-y | clip |
-| root | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.154 0.0092 264.28) [#FF0A0C10]; border-color: oklch(0.9843 0.004 106.47 / 0.102) [#1AF… |
 | header | self | display | flex |
 | header | self | height | — |
 | header | self | padding | right:calc((token(controlEmbeddedInset) - 1px)) left:12 |
@@ -5836,7 +5381,6 @@ Dart: `RaftCodeBlockRecipe` · source: `dist/components/code-block/code-block.re
 | header | self | border-style | bottom:solid |
 | header | self | border-color | token(lineHairline) |
 | header | self | align-items | center |
-| header | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B]; border-color: oklch(0.9843 0.004 106.47 / 0.102) [#1AFAFAF7] |
 | header | self | **pointer-fine+width>=768** | line-height: 18 |
 | title | self | min-width | 0 |
 | title | self | font-family | token(monoFont, ui-monospace, monospace) |
@@ -5873,12 +5417,10 @@ Dart: `RaftCodeBlockRecipe` · source: `dist/components/code-block/code-block.re
 | body | self | color | token(foreground) |
 | body | self | grid-template-columns | minmax(0, 1fr) auto |
 | body | self | align-items | flex-start |
-| body | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 | body | :is(& > *) | grid-column-start | 1 |
 | body | & pre | outline-style | none |
 | body | & pre | overflow-x | auto |
 | body | & pre:focus-visible:not(:where(:root[data-input-modality="pointer"] *)) | box-shadow | inset 0 0 0 2 token(foreground) |
-| body | & pre:focus-visible:not(:where(:root[data-input-modality="pointer"] *)) | **dark** | box-shadow: inset 0 0 0 2 oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 | body | & pre span | color | currentcolor |
 | action | self | display | inline-flex |
 | action | self | width | 32 |
@@ -5892,10 +5434,6 @@ Dart: `RaftCodeBlockRecipe` · source: `dist/components/code-block/code-block.re
 | action | self | align-items | center |
 | action | self | justify-content | center |
 | action | self | **active** | background-color: token(fillMedium) |
-| action | self | **active+dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.9843 0.004 106.47 / 0.065) [#11FAFAF7] |
-| action | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| action | self | **dark+focus-visible** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; box-shadow: 0 0 0 0 currentcolor, 0 0 0 2 oklch(0.2213 0.0038 106.71) [#FF1B1B19], 0 0 0 4 oklch(0.9211 0.004 10… |
-| action | self | **dark+hover** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.9843 0.004 106.47 / 0.065) [#11FAFAF7] |
 | action | self | **focus-visible** | box-shadow: 0 0 0 0 currentcolor, token(focusRing); ring: currentcolor; outline-style: none |
 | action | self | **hover** | background-color: token(fillMedium) |
 | action | self | **pointer-fine+width>=768** | width: 34; height: 34; border-radius: 8 |
@@ -5923,7 +5461,6 @@ Dart: `RaftInlineCodeRecipe` · source: `dist/components/inline-code/inline-code
 | root | self | background-color | token(fillMuted) |
 | root | self | border-radius | 4 |
 | root | self | overflow-wrap | anywhere |
-| root | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.3161 0.0052 106.7) [#FF32322F] |
 
 ### Variant deltas (one axis changed from the default)
 
@@ -5948,7 +5485,6 @@ Dart: `RaftMarkdownRecipe` · source: `dist/components/markdown/markdown.recipe.
 | heading | self | font-weight | 700 |
 | heading | self | line-height | 1.25 |
 | heading | self | color | token(foreground) |
-| heading | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 | paragraph | self | margin | bottom:4 |
 | paragraph | self | **last-child** | margin: bottom:0 |
 | link | self | color | token(foregroundLink) |
@@ -5960,9 +5496,6 @@ Dart: `RaftMarkdownRecipe` · source: `dist/components/markdown/markdown.recipe.
 | link | self | text-underline-offset | 2 |
 | link | self | -webkit-user-select | text |
 | link | self | user-select | text |
-| link | self | **dark** | color: oklch(0.717 0.1183 253.58) [#FF6DA7EC]; text-decoration-color: color-mix(in oklab, oklch(0.717 0.1183 253.58) 40%, transparent) [#666DA7EC] |
-| link | self | **dark+focus-visible** | color: oklch(0.717 0.1183 253.58) [#FF6DA7EC]; text-decoration-color: color-mix(in oklab, oklch(0.717 0.1183 253.58) 40%, transparent) [#666DA7EC]; box-shadow:… |
-| link | self | **dark+hover** | color: color-mix(in oklab, oklch(0.717 0.1183 253.58) 80%, oklch(0.9211 0.004 106.48)) [#FF86B4EB]; text-decoration-color: currentcolor |
 | link | self | **focus-visible** | box-shadow: token(focusRing) |
 | link | self | **hover** | color: color-mix(in oklab, token(foregroundLink) 80%, token(foreground)); text-decoration-color: currentcolor |
 | mark | self | padding | top:1 right:2 bottom:1 left:2 |
@@ -5983,12 +5516,10 @@ Dart: `RaftMarkdownRecipe` · source: `dist/components/markdown/markdown.recipe.
 | blockquote | self | border-style | left:solid |
 | blockquote | self | border-color | token(lineSeam) |
 | blockquote | self | font-style | normal |
-| blockquote | self | **dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1]; border-color: oklch(0.9843 0.004 106.47 / 0.259) [#42FAFAF7] |
 | rule | self | margin | top:12 bottom:12 |
 | rule | self | border-width | top:1 right:0 bottom:0 left:0 |
 | rule | self | border-style | solid |
 | rule | self | border-color | token(lineHairline) |
-| rule | self | **dark** | border-color: oklch(0.9843 0.004 106.47 / 0.102) [#1AFAFAF7] |
 | tableScroll | self | width | fit-content |
 | tableScroll | self | max-width | 100% |
 | tableScroll | self | margin | top:8 bottom:8 |
@@ -5997,7 +5528,6 @@ Dart: `RaftMarkdownRecipe` · source: `dist/components/markdown/markdown.recipe.
 | tableScroll | self | border-style | solid |
 | tableScroll | self | border-color | token(lineHairline) |
 | tableScroll | self | border-radius | 10 |
-| tableScroll | self | **dark** | background-color: oklch(0.2596 0.0037 106.65) [#FF242422]; border-color: oklch(0.9843 0.004 106.47 / 0.102) [#1AFAFAF7] |
 | table | self | font-size | 14 |
 | table | self | line-height | 20 |
 | table | self | border-width | 0 |
@@ -6014,12 +5544,10 @@ Dart: `RaftMarkdownRecipe` · source: `dist/components/markdown/markdown.recipe.
 | headerCell | self | border-color | token(lineHairline) |
 | headerCell | self | text-align | left |
 | headerCell | self | white-space | nowrap |
-| headerCell | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.3161 0.0052 106.7) [#FF32322F]; border-color: oklch(0.9843 0.004 106.47 / 0.102) [#1AF… |
 | cell | self | padding | top:6 right:12 bottom:6 left:12 |
 | cell | self | border-width | top:0 right:1 bottom:1 left:0 |
 | cell | self | border-style | solid |
 | cell | self | border-color | token(lineHairline) |
-| cell | self | **dark** | border-color: oklch(0.9843 0.004 106.47 / 0.102) [#1AFAFAF7] |
 | checkbox | self | margin | right:6 |
 | checkbox | self | vertical-align | middle |
 | image | self | max-width | 100% |
@@ -6032,7 +5560,6 @@ Dart: `RaftMarkdownRecipe` · source: `dist/components/markdown/markdown.recipe.
 | image | self | border-radius | 10 |
 | image | self | background-position | 0 0, 0 8px, 8px -8px, -8px 0 |
 | image | self | background-size | 16px 16px |
-| image | self | **dark** | border-color: oklch(0.9843 0.004 106.47 / 0.102) [#1AFAFAF7] |
 | inlineCode | self | display | inline |
 | inlineCode | self | line-height | inherit |
 | inlineCode | self | overflow-wrap | anywhere |
@@ -6085,10 +5612,6 @@ Dart: `RaftMessageReferenceRecipe` · source: `dist/components/message-item/mess
 | root | self | -webkit-user-select | text |
 | root | self | user-select | text |
 | root | self | **active** | background-image: linear-gradient(token(fillMedium), token(fillMedium)) |
-| root | self | **active+dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.3161 0.0052 106.7) [#FF32322F]; background-image: linear-gradient(oklch(0.9843 0.004 1… |
-| root | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.3161 0.0052 106.7) [#FF32322F] |
-| root | self | **dark+focus-visible** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.3161 0.0052 106.7) [#FF32322F]; box-shadow: 0 0 0 2 oklch(0.2213 0.0038 106.71) [#FF1B… |
-| root | self | **dark+hover** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.3161 0.0052 106.7) [#FF32322F]; background-image: linear-gradient(oklch(0.9843 0.004 1… |
 | root | self | **focus-visible** | box-shadow: token(focusRing) |
 | root | self | **has:>data-slot=message-reference-indicator>data-slot=message-reference-read-mark** | display: inline-block; overflow-x: visible; overflow-y: visible; position: relative; margin: right:10 |
 | root | self | **has:>svg>data-slot=spinner>data-slot=message-reference-icon** | padding: top:0 right:4.5 bottom:0 left:4.5 |
@@ -6099,10 +5622,6 @@ Dart: `RaftMessageReferenceRecipe` · source: `dist/components/message-item/mess
 | root | & svg | color | token(foregroundMuted) |
 | root | & svg | flex-shrink | 0 |
 | root | & svg | align-self | center |
-| root | & svg | **active+dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
-| root | & svg | **dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
-| root | & svg | **dark+focus-visible** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
-| root | & svg | **dark+hover** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
 | root | :is(& > *)[data-slot="spinner"] | align-self | center |
 | chipLabel | self | min-width | 0 |
 | chipLabel | self | overflow-x | hidden |
@@ -6117,7 +5636,6 @@ Dart: `RaftMessageReferenceRecipe` · source: `dist/components/message-item/mess
 | suffix | self | line-height | 1 |
 | suffix | self | color | token(foregroundHint) |
 | suffix | self | flex-shrink | 0 |
-| suffix | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | icon | self | display | inline-flex |
 | icon | self | width | 14 |
 | icon | self | height | 14 |
@@ -6153,7 +5671,6 @@ Dart: `RaftMessageReferenceRecipe` · source: `dist/components/message-item/mess
 | readMark | & > svg | width | 10 |
 | readMark | & > svg | height | 10 |
 | readMark | & > svg | color | token(readMark) |
-| readMark | & > svg | **dark** | color: token(presenceOnline) |
 
 ### Variant deltas (one axis changed from the default)
 
@@ -6161,11 +5678,11 @@ Dart: `RaftMessageReferenceRecipe` · source: `dist/components/message-item/mess
 |---|---|---|
 | variant=primary | root | color: token(stickerInk); background-color: token(you); box-shadow: inset 0 0 0 1.5 token(stickerInk); [active] background-image: linear-gradient(token(sticker… |
 | variant=secondary | root | display: inline; padding: top:0 bottom:0; font-size: inherit; font-weight: 700; line-height: 1.2em; background-color: —; border-radius: —; text-decoration-colo… |
-| variant=accent | root | background-color: token(attentionSoft); [active+dark] color: oklch(0.9211 0.004 106.48) [#FFE5E5E2], background-color: oklch(0.5997 0.1805 359.83 / 0.161) [#29… |
-| variant=info | root | background-color: token(infoSoft); [active+dark] color: oklch(0.9211 0.004 106.48) [#FFE5E5E2], background-color: oklch(0.452 0.0862 225.67 / 0.18) [#2E005F7A]… |
-| variant=link | root | background-color: token(infoSoft); [active+dark] color: oklch(0.9211 0.004 106.48) [#FFE5E5E2], background-color: oklch(0.452 0.0862 225.67 / 0.18) [#2E005F7A]… |
-| variant=pending | root | color: token(foregroundMuted); cursor: wait; [active] (none); [active+dark] (none); [dark] color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1], background-color: ok… |
-| variant=unavailable | root | color: token(foregroundHint); cursor: default; [active] (none); [active+dark] (none); [dark] color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B], background-color: … |
+| variant=accent | root | background-color: token(attentionSoft) |
+| variant=info | root | background-color: token(infoSoft) |
+| variant=link | root | background-color: token(infoSoft) |
+| variant=pending | root | color: token(foregroundMuted); cursor: wait; [active] (none); [hover] (none) |
+| variant=unavailable | root | color: token(foregroundHint); cursor: default; [active] (none); [hover] (none) |
 | capped=true | root | max-width: min(100%, 24em) |
 
 ## messageItem
@@ -6193,14 +5710,6 @@ Dart: `RaftMessageItemRecipe` · source: `dist/components/message-item/message-i
 | root | self | border-color | transparent [#00000000] |
 | root | self | outline-style | none |
 | root | self | background-clip | padding-box |
-| root | self | **dark+data-popup-open** | background-color: oklch(0.9843 0.004 106.47 / 0.03) [#08FAFAF7] |
-| root | self | **dark+focus-visible** | box-shadow: inset 0 0 0 2 oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| root | self | **dark+has:data-popup-open** | background-color: oklch(0.9843 0.004 106.47 / 0.03) [#08FAFAF7] |
-| root | self | **dark+has:data-slot=message-item-search-match** | background-color: oklch(0.452 0.0862 225.67 / 0.18) [#2E005F7A] |
-| root | self | **dark+has:data-slot=message-item-search-match+hover** | background-color: oklch(0.452 0.0862 225.67 / 0.18) [#2E005F7A] |
-| root | self | **dark+has:data-slot=message-multi-select-checkbox+data-checked** | background-color: oklch(0.452 0.0862 225.67 / 0.18) [#2E005F7A] |
-| root | self | **dark+has:data-slot=message-multi-select-checkbox+data-checked+hover** | background-color: oklch(0.452 0.0862 225.67 / 0.18) [#2E005F7A] |
-| root | self | **dark+hover** | background-color: oklch(0.9843 0.004 106.47 / 0.03) [#08FAFAF7] |
 | root | self | **data-popup-open** | background-color: token(fillSubtle) |
 | root | self | **focus-visible** | box-shadow: inset 0 0 0 2 token(foreground) |
 | root | self | **has:data-popup-open** | background-color: token(fillSubtle) |
@@ -6237,7 +5746,6 @@ Dart: `RaftMessageItemRecipe` · source: `dist/components/message-item/message-i
 | content | self | line-height | 24 |
 | content | self | color | token(foreground) |
 | content | self | flex | 1 |
-| content | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 | content | self | **pointer-fine+width>=768** | font-size: 14; line-height: 22 |
 | header | self | display | flex |
 | header | self | min-width | 0 |
@@ -6272,8 +5780,6 @@ Dart: `RaftMessageItemRecipe` · source: `dist/components/message-item/message-i
 | sender | self | overflow-y | hidden |
 | sender | self | text-overflow | ellipsis |
 | sender | self | white-space | nowrap |
-| sender | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| sender | self | **dark+focus-visible** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; box-shadow: 0 0 0 2 oklch(0.2213 0.0038 106.71) [#FF1B1B19], 0 0 0 4 oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 | sender | self | **focus-visible** | box-shadow: token(focusRing) |
 | sender | self | **pointer-fine+width>=768** | font-size: 14; line-height: 22 |
 | senderButton | self | min-width | 0 |
@@ -6290,8 +5796,6 @@ Dart: `RaftMessageItemRecipe` · source: `dist/components/message-item/message-i
 | senderButton | self | white-space | nowrap |
 | senderButton | self | text-decoration-thickness | 1.5 |
 | senderButton | self | text-underline-offset | 3 |
-| senderButton | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| senderButton | self | **dark+focus-visible** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; box-shadow: 0 0 0 2 oklch(0.2213 0.0038 106.71) [#FF1B1B19], 0 0 0 4 oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 | senderButton | self | **focus-visible** | box-shadow: token(focusRing) |
 | senderButton | self | **hover** | text-decoration-line: underline |
 | senderButton | self | **pointer-fine+width>=768** | font-size: 14; line-height: 22 |
@@ -6308,7 +5812,6 @@ Dart: `RaftMessageItemRecipe` · source: `dist/components/message-item/message-i
 | meta | self | overflow-y | hidden |
 | meta | self | text-overflow | ellipsis |
 | meta | self | white-space | nowrap |
-| meta | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | meta | self | **pointer-fine+width>=768** | line-height: 18 |
 | time | self | font-family | token(monoFont, ui-monospace, monospace) |
 | time | self | font-size | 12 |
@@ -6317,14 +5820,12 @@ Dart: `RaftMessageItemRecipe` · source: `dist/components/message-item/message-i
 | time | self | flex-shrink | 0 |
 | time | self | white-space | nowrap |
 | time | self | font-variant-numeric | tabular-nums |
-| time | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | time | self | **pointer-fine+width>=768** | line-height: 18 |
 | inlineStatus | self | font-size | 12 |
 | inlineStatus | self | font-weight | 500 |
 | inlineStatus | self | line-height | 16 |
 | inlineStatus | self | color | token(foregroundHint) |
 | inlineStatus | self | flex-shrink | 0 |
-| inlineStatus | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | inlineStatus | self | **pointer-fine+width>=768** | line-height: 18 |
 | delegatedBy | self | display | inline-grid |
 | delegatedBy | self | min-width | min-content |
@@ -6336,7 +5837,6 @@ Dart: `RaftMessageItemRecipe` · source: `dist/components/message-item/message-i
 | delegatedBy | self | grid-auto-flow | column |
 | delegatedBy | self | align-items | baseline |
 | delegatedBy | self | white-space | pre-wrap |
-| delegatedBy | self | **dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
 | delegatedBy | self | **has:data-slot=message-item-delegated-by-button** | white-space: pre; max-width: 45% |
 | delegatedBy | self | **has:data-slot=message-item-delegated-by-name** | white-space: pre; max-width: 45% |
 | delegatedBy | self | **pointer-fine+width>=768** | line-height: 18 |
@@ -6355,7 +5855,6 @@ Dart: `RaftMessageItemRecipe` · source: `dist/components/message-item/message-i
 | delegatedByButton | self | white-space | nowrap |
 | delegatedByButton | self | text-decoration-thickness | 1 |
 | delegatedByButton | self | text-underline-offset | 3 |
-| delegatedByButton | self | **dark+focus-visible** | box-shadow: 0 0 0 2 oklch(0.2213 0.0038 106.71) [#FF1B1B19], 0 0 0 4 oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 | delegatedByButton | self | **focus-visible** | box-shadow: token(focusRing) |
 | delegatedByButton | self | **hover** | text-decoration-line: underline |
 | delegatedAvatar | self | width | 19 |
@@ -6365,7 +5864,7 @@ Dart: `RaftMessageItemRecipe` · source: `dist/components/message-item/message-i
 | delegatedAvatar | self | border-radius | 4 |
 | delegatedAvatar | self | box-shadow | 0 0 0 1.5 transparent [#00000000], 0 0 0 1.5 token(layerCanvas) |
 | delegatedAvatar | self | outline-style | none |
-| delegatedAvatar | self | **dark** | background-color: oklch(0.2213 0.0038 106.71) [#FF1B1B19]; box-shadow: 0 0 0 3 transparent [#00000000], 0 0 0 3 oklch(0.2213 0.0038 106.71) [#FF1B1B19] |
+| delegatedAvatar | self | **dark** | box-shadow: 0 0 0 3 transparent [#00000000], 0 0 0 3 token(layerCanvas) |
 | delegatedAvatar | :is(& > *)[data-slot="avatar"] | **data-deleted** | opacity: token(opacityDimmed); filter: grayscale(100%) |
 | edited | self | margin | left:4 |
 | edited | self | font-size | 12 |
@@ -6373,7 +5872,6 @@ Dart: `RaftMessageItemRecipe` · source: `dist/components/message-item/message-i
 | edited | self | line-height | 16 |
 | edited | self | color | token(foregroundHint) |
 | edited | self | white-space | nowrap |
-| edited | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | edited | self | **pointer-fine+width>=768** | line-height: 18 |
 | trailing | self | display | flex |
 | trailing | self | position | absolute |
@@ -6391,14 +5889,11 @@ Dart: `RaftMessageItemRecipe` · source: `dist/components/message-item/message-i
 | body | self | overflow-wrap | break-word |
 | body | self | -webkit-user-select | text |
 | body | self | user-select | text |
-| body | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 | body | self | **pointer-fine+width>=768** | font-size: 14; line-height: 22 |
 | body | :is(& *) | -webkit-user-select | text |
 | body | :is(& *) | user-select | text |
 | body | & ::selection | background-color | token(selection) |
-| body | & ::selection | **dark** | background-color: token(brand400) |
 | body | ::selection | background-color | token(selection) |
-| body | ::selection | **dark** | background-color: token(brand400) |
 | searchMatch | self | padding | top:1 right:2 bottom:1 left:2 |
 | searchMatch | self | color | token(stickerInk) |
 | searchMatch | self | background-color | token(you) |
@@ -6430,7 +5925,6 @@ Dart: `RaftMessageItemRecipe` · source: `dist/components/message-item/message-i
 | toolbar | self | z-index | 10 |
 | toolbar | self | pointer-events | none |
 | toolbar | self | align-items | center |
-| toolbar | self | **dark** | background-color: oklch(0.2802 0.0036 106.63) [#FF292927]; box-shadow: inset 0 0 0 1 oklch(0.9843 0.004 106.47 / 0.259) [#42FAFAF7], 0 0 0 1 oklch(0.9843 0.004… |
 | toolbar | self | **pointer-fine+width>=768** | inset: top:-21 right:12 |
 | toolbarButton | self | display | inline-flex |
 | toolbarButton | self | width | 28 |
@@ -6446,12 +5940,6 @@ Dart: `RaftMessageItemRecipe` · source: `dist/components/message-item/message-i
 | toolbarButton | self | align-items | center |
 | toolbarButton | self | justify-content | center |
 | toolbarButton | self | **active** | background-color: token(fillMedium) |
-| toolbarButton | self | **active+dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1]; background-color: oklch(0.9843 0.004 106.47 / 0.065) [#11FAFAF7] |
-| toolbarButton | self | **dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
-| toolbarButton | self | **dark+data-active** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| toolbarButton | self | **dark+data-popup-open** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1]; background-color: oklch(0.9843 0.004 106.47 / 0.065) [#11FAFAF7] |
-| toolbarButton | self | **dark+focus-visible** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1]; box-shadow: 0 0 0 2 oklch(0.2213 0.0038 106.71) [#FF1B1B19], 0 0 0 4 oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| toolbarButton | self | **dark+hover** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1]; background-color: oklch(0.9843 0.004 106.47 / 0.065) [#11FAFAF7] |
 | toolbarButton | self | **data-active** | color: token(foreground) |
 | toolbarButton | self | **data-popup-open** | background-color: token(fillMedium) |
 | toolbarButton | self | **focus-visible** | box-shadow: token(focusRing) |
@@ -6501,10 +5989,6 @@ Dart: `RaftMessageFooterRecipe` · source: `dist/components/message-item/message
 | savedIndicator | self | -webkit-user-select | none |
 | savedIndicator | self | user-select | none |
 | savedIndicator | self | **active** | background-image: linear-gradient(token(fillMedium), token(fillMedium)) |
-| savedIndicator | self | **active+dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1]; background-color: oklch(0.3161 0.0052 106.7) [#FF32322F]; background-image: linear-gradient(oklch(0.9843 0.004 … |
-| savedIndicator | self | **dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1]; background-color: oklch(0.3161 0.0052 106.7) [#FF32322F] |
-| savedIndicator | self | **dark+focus-visible** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1]; background-color: oklch(0.3161 0.0052 106.7) [#FF32322F]; box-shadow: 0 0 0 2 oklch(0.2213 0.0038 106.71) [#FF1… |
-| savedIndicator | self | **dark+hover** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1]; background-color: oklch(0.3161 0.0052 106.7) [#FF32322F]; background-image: linear-gradient(oklch(0.9843 0.004 … |
 | savedIndicator | self | **focus-visible** | box-shadow: token(focusRing) |
 | savedIndicator | self | **hover** | background-image: linear-gradient(token(fillMedium), token(fillMedium)) |
 | savedIndicator | self | **pointer-fine+width>=768** | font-size: 12 |
@@ -6512,10 +5996,6 @@ Dart: `RaftMessageFooterRecipe` · source: `dist/components/message-item/message
 | savedIndicator | & svg | height | 14 |
 | savedIndicator | & svg | color | token(foreground) |
 | savedIndicator | & svg | flex-shrink | 0 |
-| savedIndicator | & svg | **active+dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| savedIndicator | & svg | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| savedIndicator | & svg | **dark+focus-visible** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| savedIndicator | & svg | **dark+hover** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 | readReceipt | self | display | inline-flex |
 | readReceipt | self | height | 22 |
 | readReceipt | self | margin | left:auto |
@@ -6527,7 +6007,6 @@ Dart: `RaftMessageFooterRecipe` · source: `dist/components/message-item/message
 | readReceipt | self | flex-shrink | 0 |
 | readReceipt | self | align-items | center |
 | readReceipt | self | white-space | nowrap |
-| readReceipt | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | readReceipt | self | **pointer-fine+width>=768** | line-height: 18 |
 | readReceipt | & svg | width | 12 |
 | readReceipt | & svg | height | 12 |
@@ -6557,23 +6036,19 @@ Dart: `RaftMessageFooterRecipe` · source: `dist/components/message-item/message
 | badge | self | -webkit-user-select | none |
 | badge | self | user-select | none |
 | badge | self | **active** | background-image: linear-gradient(token(fillMedium), token(fillMedium)) |
-| badge | self | **active+dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1]; background-color: oklch(0.3161 0.0052 106.7) [#FF32322F]; background-image: linear-gradient(oklch(0.9843 0.004 … |
-| badge | self | **dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1]; background-color: oklch(0.3161 0.0052 106.7) [#FF32322F] |
-| badge | self | **dark+hover** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1]; background-color: oklch(0.3161 0.0052 106.7) [#FF32322F]; background-image: linear-gradient(oklch(0.9843 0.004 … |
 | badge | self | **hover** | background-image: linear-gradient(token(fillMedium), token(fillMedium)) |
 | badge | self | **pointer-fine+width>=768** | font-size: 12 |
 | badge | & svg | width | 14 |
 | badge | & svg | height | 14 |
 | badge | & svg | flex-shrink | 0 |
 | badgeSeparator | self | color | color-mix(in oklab, token(foreground) 45%, transparent) |
-| badgeSeparator | self | **dark** | color: color-mix(in oklab, oklch(0.9211 0.004 106.48) 45%, transparent) [#73E5E5E2] |
 
 ### Variant deltas (one axis changed from the default)
 
 | variant | slot | value |
 |---|---|---|
-| badgeStatus=unread | badge | color: token(foreground); [active+dark] color: oklch(0.9211 0.004 106.48) [#FFE5E5E2], background-color: oklch(0.3161 0.0052 106.7) [#FF32322F], background-ima… |
-| iconOnly=true | savedIndicator | height: 32; padding: 0; background-color: transparent [#00000000]; border-radius: 8; width: 32; justify-content: center; [active+dark] color: oklch(0.8195 0.00… |
+| badgeStatus=unread | badge | color: token(foreground) |
+| iconOnly=true | savedIndicator | height: 32; padding: 0; background-color: transparent [#00000000]; border-radius: 8; width: 32; justify-content: center; & svg width: 18; & svg height: 18; & s… |
 
 ## messageMultiSelect
 
@@ -6604,7 +6079,6 @@ Dart: `RaftMessageMultiSelectRecipe` · source: `dist/components/message-item/me
 | toolbar | self | box-shadow | 0 0 0 1 token(lineSeam), token(elevationFloat) |
 | toolbar | self | ring | width:1 color:token(lineSeam) offsetWidth:— offsetColor:— |
 | toolbar | self | align-items | center |
-| toolbar | self | **dark** | background-color: oklch(0.2802 0.0036 106.63) [#FF292927]; box-shadow: 0 0 0 1 oklch(0.9843 0.004 106.47 / 0.259) [#42FAFAF7], 0 0 0 1 oklch(0.9843 0.004 106.4… |
 | toolbar | :is(& *)[data-slot="button"] | width | auto |
 | toolbar | :is(& *)[data-slot="button"] | height | 28 |
 | toolbar | :is(& *)[data-slot="button"] | min-width | 28 |
@@ -6653,12 +6127,6 @@ Dart: `RaftMessageReactionRecipe` · source: `dist/components/message-item/messa
 | chip | self | align-items | center |
 | chip | self | white-space | nowrap |
 | chip | self | **active** | background-image: linear-gradient(token(fillMedium), token(fillMedium)) |
-| chip | self | **active+dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.3161 0.0052 106.7) [#FF32322F]; background-image: linear-gradient(oklch(0.9843 0.004 1… |
-| chip | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.3161 0.0052 106.7) [#FF32322F] |
-| chip | self | **dark+data-pressed** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.5997 0.1805 359.83 / 0.161) [#29D0457C] |
-| chip | self | **dark+focus-visible** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.3161 0.0052 106.7) [#FF32322F]; box-shadow: 0 0 0 2 oklch(0.2213 0.0038 106.71) [#FF1B… |
-| chip | self | **dark+has:data-slot=message-reaction-error-indicator** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.5204 0.1197 50.16 / 0.18) [#2E9E511E] |
-| chip | self | **dark+hover** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.3161 0.0052 106.7) [#FF32322F]; background-image: linear-gradient(oklch(0.9843 0.004 1… |
 | chip | self | **data-pressed** | background-color: token(attentionSoft) |
 | chip | self | **focus-visible** | box-shadow: token(focusRing) |
 | chip | self | **has:data-slot=message-reaction-error-indicator** | background-color: token(warningSoft) |
@@ -6705,10 +6173,6 @@ Dart: `RaftMessageReactionRecipe` · source: `dist/components/message-item/messa
 | addButton | self | align-items | center |
 | addButton | self | justify-content | center |
 | addButton | self | **active** | background-image: linear-gradient(token(fillMedium), token(fillMedium)) |
-| addButton | self | **active+dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1]; background-color: oklch(0.3161 0.0052 106.7) [#FF32322F]; background-image: linear-gradient(oklch(0.9843 0.004 … |
-| addButton | self | **dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1]; background-color: oklch(0.3161 0.0052 106.7) [#FF32322F] |
-| addButton | self | **dark+focus-visible** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1]; background-color: oklch(0.3161 0.0052 106.7) [#FF32322F]; box-shadow: 0 0 0 2 oklch(0.2213 0.0038 106.71) [#FF1… |
-| addButton | self | **dark+hover** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1]; background-color: oklch(0.3161 0.0052 106.7) [#FF32322F]; background-image: linear-gradient(oklch(0.9843 0.004 … |
 | addButton | self | **focus-visible** | box-shadow: token(focusRing) |
 | addButton | self | **hover** | background-image: linear-gradient(token(fillMedium), token(fillMedium)) |
 | addButton | & svg | width | 16 |
@@ -6721,7 +6185,6 @@ Dart: `RaftMessageReactionRecipe` · source: `dist/components/message-item/messa
 | quickRow | self | flex-shrink | 0 |
 | quickRow | self | align-items | center |
 | quickRow | self | justify-content | flex-start |
-| quickRow | self | **dark** | background-color: oklch(0.2802 0.0036 106.63) [#FF292927] |
 | quickRow | & > [role=menuitem] | width | 36 |
 | quickRow | & > [role=menuitem] | height | 36 |
 | quickRow | & > [role=menuitem] | padding | 0 |
@@ -6743,11 +6206,6 @@ Dart: `RaftMessageReactionRecipe` · source: `dist/components/message-item/messa
 | quickButton | self | align-items | center |
 | quickButton | self | justify-content | center |
 | quickButton | self | **active** | background-color: token(brandSoft) |
-| quickButton | self | **active+dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1]; background-color: oklch(0.5501 0.0999 91.5 / 0.2) [#33876F1F] |
-| quickButton | self | **dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
-| quickButton | self | **dark+data-highlighted** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1]; background-color: oklch(0.5501 0.0999 91.5 / 0.2) [#33876F1F] |
-| quickButton | self | **dark+focus-visible** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1]; box-shadow: 0 0 0 2 oklch(0.2213 0.0038 106.71) [#FF1B1B19], 0 0 0 4 oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| quickButton | self | **dark+hover** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1]; background-color: oklch(0.5501 0.0999 91.5 / 0.2) [#33876F1F] |
 | quickButton | self | **data-highlighted** | background-color: token(brandSoft) |
 | quickButton | self | **focus-visible** | box-shadow: token(focusRing) |
 | quickButton | self | **hover** | background-color: token(brandSoft) |
@@ -6773,7 +6231,6 @@ Dart: `RaftMessageReactionRecipe` · source: `dist/components/message-item/messa
 | pickerStatic | self | outline-style | none |
 | pickerStatic | self | flex-direction | row |
 | pickerStatic | self | align-items | center |
-| pickerStatic | self | **dark** | background-color: oklch(0.2802 0.0036 106.63) [#FF292927]; box-shadow: 0 0 0 1 oklch(0.9843 0.004 106.47 / 0.259) [#42FAFAF7], 0 0 0 1 oklch(0.9843 0.004 106.4… |
 | tooltip | self | display | inline-block |
 | tooltip | self | max-width | 280 |
 | tooltip | self | padding | top:4 right:10 bottom:4 left:10 |
@@ -6797,10 +6254,8 @@ Dart: `RaftMessageReactionRecipe` · source: `dist/components/message-item/messa
 | tooltipNameText | self | white-space | nowrap |
 | tooltipSeparator | self | color | color-mix(in oklab, token(foregroundOnHud) 70%, transparent) |
 | tooltipSeparator | self | flex-shrink | 0 |
-| tooltipSeparator | self | **dark** | color: color-mix(in oklab, oklch(0.9211 0.004 106.48) 70%, transparent) [#B3E5E5E2] |
 | tooltipMeta | self | line-height | 20 |
 | tooltipMeta | self | color | color-mix(in oklab, token(foregroundOnHud) 70%, transparent) |
-| tooltipMeta | self | **dark** | color: color-mix(in oklab, oklch(0.9211 0.004 106.48) 70%, transparent) [#B3E5E5E2] |
 
 ## messageSystem
 
@@ -6822,7 +6277,6 @@ Dart: `RaftMessageSystemRecipe` · source: `dist/components/system-message/syste
 | systemRoot | self | align-items | center |
 | systemRoot | self | justify-content | center |
 | systemRoot | self | **ancestor:data-slot=system-message-group-panel** | padding: top:6 right:16 bottom:6 left:16 |
-| systemRoot | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | systemRoot | self | **pointer-fine+width>=768** | line-height: 18 |
 | systemRoot | ::before | min-width | 12 |
 | systemRoot | ::before | border-width | top:1 |
@@ -6830,21 +6284,18 @@ Dart: `RaftMessageSystemRecipe` · source: `dist/components/system-message/syste
 | systemRoot | ::before | border-color | token(lineHairline) |
 | systemRoot | ::before | content | "" |
 | systemRoot | ::before | flex | 1 |
-| systemRoot | ::before | **dark** | border-color: oklch(0.9843 0.004 106.47 / 0.102) [#1AFAFAF7] |
 | systemRoot | ::after | min-width | 12 |
 | systemRoot | ::after | border-width | top:1 |
 | systemRoot | ::after | border-style | top:solid |
 | systemRoot | ::after | border-color | token(lineHairline) |
 | systemRoot | ::after | content | "" |
 | systemRoot | ::after | flex | 1 |
-| systemRoot | ::after | **dark** | border-color: oklch(0.9843 0.004 106.47 / 0.102) [#1AFAFAF7] |
 | systemTime | self | font-family | token(monoFont, ui-monospace, monospace) |
 | systemTime | self | font-size | 12 |
 | systemTime | self | line-height | 16 |
 | systemTime | self | color | token(foregroundHint) |
 | systemTime | self | flex-shrink | 0 |
 | systemTime | self | white-space | nowrap |
-| systemTime | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | systemTime | self | **pointer-fine+width>=768** | line-height: 18 |
 | systemContent | self | min-width | 0 |
 | systemContent | self | color | token(foregroundHint) |
@@ -6852,7 +6303,6 @@ Dart: `RaftMessageSystemRecipe` · source: `dist/components/system-message/syste
 | systemContent | self | overflow-y | hidden |
 | systemContent | self | text-overflow | ellipsis |
 | systemContent | self | white-space | nowrap |
-| systemContent | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | systemGroupHeader | self | display | flex |
 | systemGroupHeader | self | padding | top:calc(((token(timelineGapMessage) - token(timelineRowInset)) - 6px)) right:16 left:16 |
 | systemGroupHeader | self | margin | bottom:calc((token(timelineRowInset) - 6px)) |
@@ -6867,14 +6317,12 @@ Dart: `RaftMessageSystemRecipe` · source: `dist/components/system-message/syste
 | systemGroupHeader | ::before | border-color | token(lineHairline) |
 | systemGroupHeader | ::before | content | "" |
 | systemGroupHeader | ::before | flex | 1 |
-| systemGroupHeader | ::before | **dark** | border-color: oklch(0.9843 0.004 106.47 / 0.102) [#1AFAFAF7] |
 | systemGroupHeader | ::after | min-width | 12 |
 | systemGroupHeader | ::after | border-width | top:1 |
 | systemGroupHeader | ::after | border-style | top:solid |
 | systemGroupHeader | ::after | border-color | token(lineHairline) |
 | systemGroupHeader | ::after | content | "" |
 | systemGroupHeader | ::after | flex | 1 |
-| systemGroupHeader | ::after | **dark** | border-color: oklch(0.9843 0.004 106.47 / 0.102) [#1AFAFAF7] |
 | systemGroupDisclosure | self | display | flex |
 | systemGroupDisclosure | self | position | relative |
 | systemGroupDisclosure | self | height | 28 |
@@ -6889,16 +6337,11 @@ Dart: `RaftMessageSystemRecipe` · source: `dist/components/system-message/syste
 | systemGroupDisclosure | self | outline-style | none |
 | systemGroupDisclosure | self | align-items | center |
 | systemGroupDisclosure | self | **active** | background-color: token(fillMedium) |
-| systemGroupDisclosure | self | **active+dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B]; background-color: oklch(0.9843 0.004 106.47 / 0.065) [#11FAFAF7] |
-| systemGroupDisclosure | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
-| systemGroupDisclosure | self | **dark+focus-visible** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B]; box-shadow: 0 0 0 2 oklch(0.2213 0.0038 106.71) [#FF1B1B19], 0 0 0 4 oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| systemGroupDisclosure | self | **dark+hover** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.9843 0.004 106.47 / 0.065) [#11FAFAF7] |
 | systemGroupDisclosure | self | **focus-visible** | box-shadow: token(focusRing) |
 | systemGroupDisclosure | self | **hover** | color: token(foreground); background-color: token(fillMedium) |
 | systemGroupDisclosure | self | **pointer-fine+width>=768** | line-height: 18 |
-| systemGroupDisclosure | & .r-code-copy | **dark+hover** | opacity: 0.55 |
-| systemGroupDisclosure | & .r-code-copy | **hover** | opacity: 0.55 |
 | systemGroupDisclosure | & [data-slot=system-message-group-chevron] | **data-panel-open** | rotate: -90deg |
+| systemGroupDisclosure | & .r-code-copy | **hover** | opacity: 0.55 |
 | systemGroupSummary | self | overflow-x | hidden |
 | systemGroupSummary | self | overflow-y | hidden |
 | systemGroupSummary | self | text-overflow | ellipsis |
@@ -6911,7 +6354,6 @@ Dart: `RaftMessageSystemRecipe` · source: `dist/components/system-message/syste
 | systemGroupChevron | self | transition-duration | 150ms |
 | systemGroupChevron | self | transition-timing-function | cubic-bezier(0.4, 0, 0.2, 1) |
 | systemGroupChevron | self | flex-shrink | 0 |
-| systemGroupChevron | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 
 ## messageQuotedPreview
 
@@ -6930,7 +6372,6 @@ Dart: `RaftMessageQuotedPreviewRecipe` · source: `dist/components/message-quote
 | root | self | border-style | solid |
 | root | self | border-color | token(lineSeam) |
 | root | self | border-radius | 0 |
-| root | self | **dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1]; border-color: oklch(0.9843 0.004 106.47 / 0.259) [#42FAFAF7] |
 | content | self | min-width | 0 |
 | content | self | padding | 0 |
 | header | self | display | flex |
@@ -6946,7 +6387,6 @@ Dart: `RaftMessageQuotedPreviewRecipe` · source: `dist/components/message-quote
 | channel | self | line-height | 18 |
 | channel | self | color | token(foregroundHint) |
 | channel | self | align-items | flex-start |
-| channel | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | channel | self | **pointer-fine+width>=768** | font-size: 12 |
 | channel | & svg | width | 14 |
 | channel | & svg | height | 14 |
@@ -6960,7 +6400,6 @@ Dart: `RaftMessageQuotedPreviewRecipe` · source: `dist/components/message-quote
 | thread | self | line-height | 18 |
 | thread | self | color | token(foregroundHint) |
 | thread | self | align-items | flex-start |
-| thread | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | thread | self | **pointer-fine+width>=768** | font-size: 12 |
 | thread | & svg | width | 14 |
 | thread | & svg | height | 14 |
@@ -6979,7 +6418,6 @@ Dart: `RaftMessageQuotedPreviewRecipe` · source: `dist/components/message-quote
 | authorName | self | overflow-y | hidden |
 | authorName | self | text-overflow | ellipsis |
 | authorName | self | white-space | nowrap |
-| authorName | self | **dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
 | authorName | self | **pointer-fine+width>=768** | font-size: 12 |
 | authorMeta | self | font-size | 12 |
 | authorMeta | self | font-weight | 500 |
@@ -6989,14 +6427,12 @@ Dart: `RaftMessageQuotedPreviewRecipe` · source: `dist/components/message-quote
 | authorMeta | self | overflow-y | hidden |
 | authorMeta | self | text-overflow | ellipsis |
 | authorMeta | self | white-space | nowrap |
-| authorMeta | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | authorMeta | self | **pointer-fine+width>=768** | line-height: 18 |
 | authorDelegatedBy | self | font-size | 13 |
 | authorDelegatedBy | self | line-height | 18 |
 | authorDelegatedBy | self | color | token(foregroundMuted) |
 | authorDelegatedBy | self | flex-shrink | 0 |
 | authorDelegatedBy | self | white-space | nowrap |
-| authorDelegatedBy | self | **dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
 | authorDelegatedBy | self | **pointer-fine+width>=768** | font-size: 12 |
 | timestamp | self | margin | left:auto |
 | timestamp | self | font-family | token(monoFont, ui-monospace, monospace) |
@@ -7005,7 +6441,6 @@ Dart: `RaftMessageQuotedPreviewRecipe` · source: `dist/components/message-quote
 | timestamp | self | color | token(foregroundHint) |
 | timestamp | self | flex-shrink | 0 |
 | timestamp | self | font-variant-numeric | tabular-nums |
-| timestamp | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | timestamp | self | **pointer-fine+width>=768** | line-height: 18 |
 | text | self | display | -webkit-box |
 | text | self | font-size | 14 |
@@ -7015,7 +6450,6 @@ Dart: `RaftMessageQuotedPreviewRecipe` · source: `dist/components/message-quote
 | text | self | overflow-y | hidden |
 | text | self | -webkit-box-orient | vertical |
 | text | self | -webkit-line-clamp | 2 |
-| text | self | **dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
 | text | self | **pointer-fine+width>=768** | line-height: 22 |
 | attachments | self | display | flex |
 | attachments | self | margin | top:6 |
@@ -7032,7 +6466,6 @@ Dart: `RaftMessageQuotedPreviewRecipe` · source: `dist/components/message-quote
 | attachment | self | background-color | token(fillMuted) |
 | attachment | self | border-radius | 6 |
 | attachment | self | align-items | center |
-| attachment | self | **dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1]; background-color: oklch(0.3161 0.0052 106.7) [#FF32322F] |
 | attachment | self | **pointer-fine+width>=768** | line-height: 18 |
 | attachment | & svg | width | 14 |
 | attachment | & svg | height | 14 |
@@ -7044,7 +6477,6 @@ Dart: `RaftMessageQuotedPreviewRecipe` · source: `dist/components/message-quote
 | loading | self | border-color | token(lineSeam) |
 | loading | self | border-radius | 0 |
 | loading | self | animation | pulse 2000ms cubic-bezier(0.4, 0, 0.6, 1) infinite |
-| loading | self | **dark** | border-color: oklch(0.9843 0.004 106.47 / 0.259) [#42FAFAF7] |
 | unavailable | self | display | block |
 | unavailable | self | width | 100% |
 | unavailable | self | padding | left:10 |
@@ -7056,8 +6488,6 @@ Dart: `RaftMessageQuotedPreviewRecipe` · source: `dist/components/message-quote
 | unavailable | self | border-color | token(lineSeam) |
 | unavailable | self | outline-style | none |
 | unavailable | self | text-align | left |
-| unavailable | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B]; border-color: oklch(0.9843 0.004 106.47 / 0.259) [#42FAFAF7] |
-| unavailable | self | **dark+focus-visible** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B]; border-color: oklch(0.9843 0.004 106.47 / 0.259) [#42FAFAF7]; box-shadow: 0 0 0 2 oklch(0.2213 0.0038 106.71) [… |
 | unavailable | self | **focus-visible** | box-shadow: token(focusRing) |
 | unavailable | self | **pointer-fine+width>=768** | line-height: 22 |
 
@@ -7086,10 +6516,6 @@ Dart: `RaftMessageRepliesRecipe` · source: `dist/components/message-replies/mes
 | root | self | flex-direction | column |
 | root | self | text-align | left |
 | root | self | **active** | background-image: linear-gradient(token(fillMedium), token(fillMedium)) |
-| root | self | **active+dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1]; background-color: oklch(0.3161 0.0052 106.7) [#FF32322F]; background-image: linear-gradient(oklch(0.9843 0.004 … |
-| root | self | **dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1]; background-color: oklch(0.3161 0.0052 106.7) [#FF32322F] |
-| root | self | **dark+focus-visible** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1]; background-color: oklch(0.3161 0.0052 106.7) [#FF32322F]; box-shadow: 0 0 0 2 oklch(0.2213 0.0038 106.71) [#FF1… |
-| root | self | **dark+hover** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1]; background-color: oklch(0.3161 0.0052 106.7) [#FF32322F]; background-image: linear-gradient(oklch(0.9843 0.004 … |
 | root | self | **focus-visible** | box-shadow: token(focusRing); outline-width: 1; outline-style: none; outline-color: token(lineStrong) |
 | root | self | **hover** | background-image: linear-gradient(token(fillSubtle), token(fillSubtle)) |
 | summary | self | display | flex |
@@ -7104,8 +6530,6 @@ Dart: `RaftMessageRepliesRecipe` · source: `dist/components/message-replies/mes
 | summary | self | flex-shrink | 0 |
 | summary | self | flex-wrap | wrap |
 | summary | self | align-items | center |
-| summary | self | **dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
-| summary | self | **dark+has:strong** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 | summary | self | **has:strong** | color: token(foreground) |
 | summary | self | **pointer-fine+width>=768** | font-size: 12 |
 | summary | & strong | display | inline-flex |
@@ -7123,8 +6547,6 @@ Dart: `RaftMessageRepliesRecipe` · source: `dist/components/message-replies/mes
 | summary | & strong | ring | width:1.5 color:token(stickerEdge) offsetWidth:— offsetColor:— |
 | summary | & strong | align-items | center |
 | summary | & strong | justify-content | center |
-| summary | & strong | **dark** | box-shadow: inset 0 0 0 1.5 token(stickerInk), 0 0 0 1.5 oklch(0.9843 0.004 106.47 / 0.349) [#59FAFAF7]; ring: width:1.5 color:oklch(0.9843 0.004 106.47 / 0.34… |
-| summary | & strong | **dark+has:strong** | box-shadow: inset 0 0 0 1.5 token(stickerInk), 0 0 0 1.5 oklch(0.9843 0.004 106.47 / 0.349) [#59FAFAF7]; ring: width:1.5 color:oklch(0.9843 0.004 106.47 / 0.34… |
 | summary | & strong | **pointer-fine+width>=768** | line-height: 18 |
 | summaryItem | self | display | inline-flex |
 | summaryItem | self | gap | 2 |
@@ -7147,7 +6569,6 @@ Dart: `RaftMessageRepliesRecipe` · source: `dist/components/message-replies/mes
 | sender | self | flex-shrink | 1 |
 | sender | self | text-overflow | ellipsis |
 | sender | self | white-space | nowrap |
-| sender | self | **dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
 | content | self | min-width | 0 |
 | content | self | color | token(foregroundHint) |
 | content | self | overflow-x | hidden |
@@ -7155,7 +6576,6 @@ Dart: `RaftMessageRepliesRecipe` · source: `dist/components/message-replies/mes
 | content | self | flex | 1 |
 | content | self | text-overflow | ellipsis |
 | content | self | white-space | nowrap |
-| content | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | time | self | margin | left:auto |
 | time | self | font-family | token(monoFont, ui-monospace, monospace) |
 | time | self | font-size | 12 |
@@ -7163,7 +6583,6 @@ Dart: `RaftMessageRepliesRecipe` · source: `dist/components/message-replies/mes
 | time | self | color | token(foregroundHint) |
 | time | self | flex-shrink | 0 |
 | time | self | font-variant-numeric | tabular-nums |
-| time | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | time | self | **pointer-fine+width>=768** | line-height: 18 |
 
 ## messageActionCard
@@ -7194,7 +6613,6 @@ Dart: `RaftMessageActionCardRecipe` · source: `dist/components/message-action-c
 | headerIcon | self | flex-shrink | 0 |
 | headerIcon | self | align-items | center |
 | headerIcon | self | justify-content | center |
-| headerIcon | self | **dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1]; background-color: oklch(0.3161 0.0052 106.7) [#FF32322F] |
 | headerIcon | & > svg | width | 14 |
 | headerIcon | & > svg | height | 14 |
 | headerIcon | & > svg | flex-shrink | 0 |
@@ -7207,7 +6625,6 @@ Dart: `RaftMessageActionCardRecipe` · source: `dist/components/message-action-c
 | headerDescription | self | font-weight | 400 |
 | headerDescription | self | line-height | 18 |
 | headerDescription | self | color | token(foregroundMuted) |
-| headerDescription | self | **dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
 | headerDescription | self | **pointer-fine+width>=768** | font-size: 12 |
 | headerMeta | self | display | block |
 | headerMeta | self | margin | top:2 |
@@ -7218,7 +6635,6 @@ Dart: `RaftMessageActionCardRecipe` · source: `dist/components/message-action-c
 | headerMeta | self | color | token(foregroundHint) |
 | headerMeta | self | font-variant-numeric | tabular-nums |
 | headerMeta | self | **ancestor:data-slot=message-action-card-header-description** | display: inline; margin: top:0 |
-| headerMeta | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | headerMeta | self | **pointer-fine+width>=768** | line-height: 18 |
 | headerStatus | self | margin | top:calc(((27px - 1lh) / 2)) left:auto |
 | headerStatus | self | font-size | 12 |
@@ -7226,7 +6642,6 @@ Dart: `RaftMessageActionCardRecipe` · source: `dist/components/message-action-c
 | headerStatus | self | line-height | 16 |
 | headerStatus | self | color | token(foregroundMuted) |
 | headerStatus | self | flex-shrink | 0 |
-| headerStatus | self | **dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
 | headerStatus | self | **pointer-fine+width>=768** | line-height: 18 |
 | status | self | display | inline-flex |
 | status | self | height | auto |
@@ -7242,7 +6657,6 @@ Dart: `RaftMessageActionCardRecipe` · source: `dist/components/message-action-c
 | status | self | border-radius | 0 |
 | status | self | box-shadow | none |
 | status | self | align-items | center |
-| status | self | **dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
 | status | self | **pointer-fine+width>=768** | line-height: 18 |
 | status | ::before | width | 10 |
 | status | ::before | height | 10 |
@@ -7263,10 +6677,6 @@ Dart: `RaftMessageActionCardRecipe` · source: `dist/components/message-action-c
 | collapseTrigger | self | align-items | center |
 | collapseTrigger | self | justify-content | center |
 | collapseTrigger | self | **active** | background-color: token(fillMedium) |
-| collapseTrigger | self | **active+dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1]; background-color: oklch(0.9843 0.004 106.47 / 0.065) [#11FAFAF7] |
-| collapseTrigger | self | **dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
-| collapseTrigger | self | **dark+focus-visible** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1]; box-shadow: 0 0 0 2 oklch(0.2213 0.0038 106.71) [#FF1B1B19], 0 0 0 4 oklch(0.9211 0.004 106.48) [#FFE5E5E2]; ou… |
-| collapseTrigger | self | **dark+hover** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.9843 0.004 106.47 / 0.065) [#11FAFAF7] |
 | collapseTrigger | self | **focus-visible** | box-shadow: token(focusRing); outline-width: 2; outline-style: none; outline-offset: 1 |
 | collapseTrigger | self | **hover** | color: token(foreground); background-color: token(fillMedium) |
 | collapseTrigger | & > svg | width | 16 |
@@ -7326,7 +6736,6 @@ Dart: `RaftMessageActionCardContentRecipe` · source: `dist/components/message-a
 | propertyLabel | self | color | token(foregroundHint) |
 | propertyLabel | self | overflow-wrap | break-word |
 | propertyLabel | self | **ancestor:data-slot=message-action-card-property+ancestor:data-stacked** | margin: top:8 |
-| propertyLabel | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | propertyLabel | self | **pointer-fine+width>=768** | font-size: 12 |
 | propertyValue | self | min-width | 0 |
 | propertyValue | self | min-height | 32 |
@@ -7337,7 +6746,6 @@ Dart: `RaftMessageActionCardContentRecipe` · source: `dist/components/message-a
 | propertyValue | self | color | token(foreground) |
 | propertyValue | self | overflow-wrap | break-word |
 | propertyValue | self | **ancestor:data-slot=message-action-card-property+ancestor:data-stacked** | min-height: 0; padding: top:0 bottom:0 |
-| propertyValue | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 | propertyValue | self | **pointer-fine+width>=768** | line-height: 22 |
 | scopeList | self | margin | top:0 |
 | scopeList | :where(& > * + *) | margin | top:6 |
@@ -7348,7 +6756,6 @@ Dart: `RaftMessageActionCardContentRecipe` · source: `dist/components/message-a
 | scopeListLabel | self | font-weight | 500 |
 | scopeListLabel | self | line-height | 18 |
 | scopeListLabel | self | color | token(foregroundHint) |
-| scopeListLabel | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | scopeListLabel | self | **pointer-fine+width>=768** | font-size: 12 |
 | scope | self | min-width | 0 |
 | scope | self | padding | top:8 right:10 bottom:8 left:10 |
@@ -7357,27 +6764,23 @@ Dart: `RaftMessageActionCardContentRecipe` · source: `dist/components/message-a
 | scope | self | border-style | solid |
 | scope | self | border-color | token(lineHairline) |
 | scope | self | border-radius | 8 |
-| scope | self | **dark** | background-color: oklch(0.2596 0.0037 106.65) [#FF242422]; border-color: oklch(0.9843 0.004 106.47 / 0.102) [#1AFAFAF7] |
 | scopeName | self | font-family | token(monoFont, ui-monospace, monospace) |
 | scopeName | self | font-size | 12 |
 | scopeName | self | font-weight | 400 |
 | scopeName | self | line-height | 16 |
 | scopeName | self | color | token(foreground) |
 | scopeName | self | word-break | break-all |
-| scopeName | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 | scopeName | self | **pointer-fine+width>=768** | line-height: 18 |
 | scopeDescription | self | margin | top:2 |
 | scopeDescription | self | font-size | 13 |
 | scopeDescription | self | line-height | 18 |
 | scopeDescription | self | color | token(foregroundMuted) |
 | scopeDescription | self | text-wrap | pretty |
-| scopeDescription | self | **dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
 | scopeDescription | self | **pointer-fine+width>=768** | font-size: 12 |
 | hintLabel | self | font-size | 13 |
 | hintLabel | self | font-weight | 500 |
 | hintLabel | self | line-height | 18 |
 | hintLabel | self | color | token(foregroundHint) |
-| hintLabel | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | hintLabel | self | **pointer-fine+width>=768** | font-size: 12 |
 | hint | self | padding | left:10 |
 | hint | self | font-size | 13 |
@@ -7387,7 +6790,6 @@ Dart: `RaftMessageActionCardContentRecipe` · source: `dist/components/message-a
 | hint | self | border-style | left:solid |
 | hint | self | border-color | token(lineSeam) |
 | hint | self | **ancestor:data-slot=message-action-card-hint-label** | margin: top:-4 |
-| hint | self | **dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1]; border-color: oklch(0.9843 0.004 106.47 / 0.259) [#42FAFAF7] |
 | hint | self | **pointer-fine+width>=768** | font-size: 12 |
 | notice | self | display | flex |
 | notice | self | padding | top:8 right:10 bottom:8 left:10 |
@@ -7399,34 +6801,29 @@ Dart: `RaftMessageActionCardContentRecipe` · source: `dist/components/message-a
 | notice | self | background-color | token(fillMuted) |
 | notice | self | border-radius | 8 |
 | notice | self | align-items | flex-start |
-| notice | self | **dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1]; background-color: oklch(0.3161 0.0052 106.7) [#FF32322F] |
 | notice | self | **pointer-fine+width>=768** | font-size: 12 |
 | notice | & > svg | width | 14 |
 | notice | & > svg | height | 14 |
 | notice | & > svg | margin | top:calc(((1lh - 14px) / 2)) |
 | notice | & > svg | color | token(foregroundMuted) |
 | notice | & > svg | flex-shrink | 0 |
-| notice | & > svg | **dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
 | completion | self | display | inline-flex |
 | completion | self | gap | 6 |
 | completion | self | font-size | 13 |
 | completion | self | line-height | 18 |
 | completion | self | color | token(foregroundMuted) |
 | completion | self | align-items | center |
-| completion | self | **dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
 | completion | self | **pointer-fine+width>=768** | font-size: 12 |
 | completion | & > svg | width | 16 |
 | completion | & > svg | height | 16 |
 | completion | & > svg | color | token(foreground) |
 | completion | & > svg | flex-shrink | 0 |
-| completion | & > svg | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 | actions | self | margin | top:4 |
 | actionsNote | self | min-width | 0 |
 | actionsNote | self | font-size | 13 |
 | actionsNote | self | line-height | 18 |
 | actionsNote | self | color | token(foregroundMuted) |
 | actionsNote | self | flex-basis | 100% |
-| actionsNote | self | **dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
 | actionsNote | self | **pointer-fine+width>=768** | font-size: 12 |
 
 ## messageAttachment
@@ -7463,10 +6860,6 @@ Dart: `RaftMessageAttachmentRecipe` · source: `dist/components/message-attachme
 | card | self | flex-direction | column |
 | card | self | text-align | left |
 | card | self | **active** | background-image: linear-gradient(token(fillMedium), token(fillMedium)) |
-| card | self | **active+dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.2596 0.0037 106.65) [#FF242422]; border-color: oklch(0.9843 0.004 106.47 / 0.102) [#1A… |
-| card | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.2596 0.0037 106.65) [#FF242422]; border-color: oklch(0.9843 0.004 106.47 / 0.102) [#1A… |
-| card | self | **dark+focus-visible** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.2596 0.0037 106.65) [#FF242422]; border-color: oklch(0.9843 0.004 106.47 / 0.102) [#1A… |
-| card | self | **dark+hover** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.2596 0.0037 106.65) [#FF242422]; border-color: oklch(0.9843 0.004 106.47 / 0.102) [#1A… |
 | card | self | **focus-visible** | box-shadow: token(focusRing) |
 | card | self | **hover** | background-image: linear-gradient(token(fillSubtle), token(fillSubtle)) |
 | card | & [data-slot=message-attachment-action] svg | width | 16 |
@@ -7485,7 +6878,6 @@ Dart: `RaftMessageAttachmentRecipe` · source: `dist/components/message-attachme
 | title | self | flex-shrink | 0 |
 | title | self | text-overflow | ellipsis |
 | title | self | white-space | nowrap |
-| title | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 | title | self | **pointer-fine+width>=768** | line-height: 22 |
 | meta | self | display | flex |
 | meta | self | width | 100% |
@@ -7499,7 +6891,6 @@ Dart: `RaftMessageAttachmentRecipe` · source: `dist/components/message-attachme
 | meta | self | color | token(foregroundHint) |
 | meta | self | align-items | center |
 | meta | self | justify-content | space-between |
-| meta | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | meta | self | **pointer-fine+width>=768** | line-height: 18 |
 | metaStart | self | min-width | 0 |
 | metaStart | self | overflow-x | hidden |
@@ -7526,7 +6917,6 @@ Dart: `RaftMessageAttachmentRecipe` · source: `dist/components/message-attachme
 | summary | self | flex-shrink | 0 |
 | summary | self | align-items | center |
 | summary | self | white-space | nowrap |
-| summary | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | summary | self | **pointer-fine+width>=768** | line-height: 18 |
 | summary | & svg | width | 14 |
 | summary | & svg | height | 14 |
@@ -7534,9 +6924,7 @@ Dart: `RaftMessageAttachmentRecipe` · source: `dist/components/message-attachme
 | commentSummary | self | gap | 2.5 |
 | diffSummary | self | gap | 6 |
 | diffAddition | self | color | token(successStrong) |
-| diffAddition | self | **dark** | color: oklch(0.86 0.12 130) [#FFB7E18C] |
 | diffDeletion | self | color | token(dangerStrong) |
-| diffDeletion | self | **dark** | color: oklch(0.7996 0.1009 24.79) [#FFF8A49D] |
 | action | self | display | flex |
 | action | self | position | relative |
 | action | self | width | 24 |
@@ -7549,10 +6937,6 @@ Dart: `RaftMessageAttachmentRecipe` · source: `dist/components/message-attachme
 | action | self | justify-content | center |
 | action | self | align-self | flex-end |
 | action | self | **active** | background-color: token(fillMedium) |
-| action | self | **active+dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.9843 0.004 106.47 / 0.065) [#11FAFAF7] |
-| action | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| action | self | **dark+focus-visible** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; box-shadow: 0 0 0 2 oklch(0.2213 0.0038 106.71) [#FF1B1B19], 0 0 0 4 oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| action | self | **dark+hover** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.9843 0.004 106.47 / 0.065) [#11FAFAF7] |
 | action | self | **focus-visible** | box-shadow: token(focusRing) |
 | action | self | **hover** | background-color: token(fillMedium) |
 | action | ::before | position | absolute |
@@ -7594,7 +6978,6 @@ Dart: `RaftMessageImageGalleryRecipe` · source: `dist/components/message-attach
 | item | self | overflow-x | hidden |
 | item | self | overflow-y | hidden |
 | item | self | text-align | left |
-| item | self | **dark** | background-color: oklch(0.3161 0.0052 106.7) [#FF32322F]; border-color: oklch(0.9843 0.004 106.47 / 0.102) [#1AFAFAF7] |
 | media | self | display | block |
 | media | self | width | 100% |
 | media | self | height | 100% |
@@ -7604,15 +6987,12 @@ Dart: `RaftMessageImageGalleryRecipe` · source: `dist/components/message-attach
 | overlay | self | background-color | token(layerVeil) |
 | overlay | self | align-items | center |
 | overlay | self | justify-content | center |
-| overlay | self | **dark** | background-color: oklch(0.2213 0.0038 106.71 / 0.8) [#CC1B1B19] |
 | preview | self | position | absolute |
 | preview | self | inset | 0 |
 | preview | self | outline-style | none |
 | preview | self | transition-property | color, background-color, border-color, outline-color, text-decoration-color, fill, stroke, --tw-gradient-from, --tw-gradient-via, --tw-gradient-to |
 | preview | self | transition-duration | 75ms |
 | preview | self | transition-timing-function | cubic-bezier(0.4, 0, 0.2, 1) |
-| preview | self | **dark+focus-visible** | box-shadow: inset 0 0 0 2 oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| preview | self | **dark+hover** | background-color: oklch(0.9843 0.004 106.47 / 0.08) [#14FAFAF7] |
 | preview | self | **focus-visible** | box-shadow: inset 0 0 0 2 token(foreground) |
 | preview | self | **hover** | background-color: token(ink8) |
 | action | self | display | none |
@@ -7631,10 +7011,6 @@ Dart: `RaftMessageImageGalleryRecipe` · source: `dist/components/message-attach
 | action | self | align-items | center |
 | action | self | justify-content | center |
 | action | self | **active** | background-image: linear-gradient(token(fillMedium), token(fillMedium)) |
-| action | self | **active+dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.2596 0.0037 106.65) [#FF242422]; border-color: oklch(0.9211 0.004 106.48) [#FFE5E5E2];… |
-| action | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.2596 0.0037 106.65) [#FF242422]; border-color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| action | self | **dark+focus-visible** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.2596 0.0037 106.65) [#FF242422]; border-color: oklch(0.9211 0.004 106.48) [#FFE5E5E2];… |
-| action | self | **dark+hover** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.2596 0.0037 106.65) [#FF242422]; border-color: oklch(0.9211 0.004 106.48) [#FFE5E5E2];… |
 | action | self | **focus** | display: flex |
 | action | self | **focus-visible** | box-shadow: token(focusRing) |
 | action | self | **group/img:hover** | display: flex |
@@ -7686,7 +7062,6 @@ Dart: `RaftMessageForwardedBundleRecipe` · source: `dist/components/message-for
 | headerLabel | self | color | token(foregroundMuted) |
 | headerLabel | self | flex-shrink | 0 |
 | headerLabel | self | align-items | center |
-| headerLabel | self | **dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
 | headerLabel | self | **pointer-fine+width>=768** | font-size: 12 |
 | headerLabel | & svg | width | 14 |
 | headerLabel | & svg | height | 14 |
@@ -7695,7 +7070,6 @@ Dart: `RaftMessageForwardedBundleRecipe` · source: `dist/components/message-for
 | headerCount | self | line-height | 16 |
 | headerCount | self | color | token(foregroundHint) |
 | headerCount | self | flex-shrink | 0 |
-| headerCount | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | headerCount | self | **pointer-fine+width>=768** | line-height: 18 |
 | source | self | display | inline-flex |
 | source | self | min-width | 0 |
@@ -7713,9 +7087,6 @@ Dart: `RaftMessageForwardedBundleRecipe` · source: `dist/components/message-for
 | source | self | white-space | nowrap |
 | source | self | text-decoration-thickness | 1.5 |
 | source | self | text-underline-offset | 3 |
-| source | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
-| source | self | **dark+focus-visible** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B]; box-shadow: 0 0 0 2 oklch(0.2213 0.0038 106.71) [#FF1B1B19], 0 0 0 4 oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| source | self | **dark+hover** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; text-decoration-line: underline |
 | source | self | **focus-visible** | box-shadow: token(focusRing) |
 | source | self | **hover** | color: token(foreground); text-decoration-line: underline |
 | source | self | **pointer-fine+width>=768** | line-height: 18 |
@@ -7733,7 +7104,6 @@ Dart: `RaftMessageForwardedBundleRecipe` · source: `dist/components/message-for
 | sourceLabel | self | align-items | center |
 | sourceLabel | self | text-overflow | ellipsis |
 | sourceLabel | self | white-space | nowrap |
-| sourceLabel | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | sourceLabel | self | **pointer-fine+width>=768** | line-height: 18 |
 | sourceLabel | & svg | width | 14 |
 | sourceLabel | & svg | height | 14 |
@@ -7749,8 +7119,6 @@ Dart: `RaftMessageForwardedBundleRecipe` · source: `dist/components/message-for
 | footerAction | self | align-items | center |
 | footerAction | self | text-decoration-thickness | 1.5 |
 | footerAction | self | text-underline-offset | 3 |
-| footerAction | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| footerAction | self | **dark+focus-visible** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; box-shadow: 0 0 0 2 oklch(0.2213 0.0038 106.71) [#FF1B1B19], 0 0 0 4 oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 | footerAction | self | **focus-visible** | box-shadow: token(focusRing) |
 | footerAction | self | **hover** | text-decoration-line: underline |
 | footerAction | self | **pointer-fine+width>=768** | font-size: 12 |
@@ -7779,7 +7147,6 @@ Dart: `RaftMessageForwardedBundleItemRecipe` · source: `dist/components/message
 | root | self | font-size | 16 |
 | root | self | line-height | 24 |
 | root | self | color | token(foreground) |
-| root | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 | root | self | **pointer-fine+width>=768** | font-size: 14; line-height: 22 |
 | meta | self | display | flex |
 | meta | self | min-width | 0 |
@@ -7792,14 +7159,12 @@ Dart: `RaftMessageForwardedBundleItemRecipe` · source: `dist/components/message
 | meta | self | flex-wrap | wrap |
 | meta | self | align-items | center |
 | meta | self | font-variant-numeric | tabular-nums |
-| meta | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | meta | self | **pointer-fine+width>=768** | line-height: 18 |
 | author | self | font-family | token(sansFont, system-ui, sans-serif) |
 | author | self | font-size | 13 |
 | author | self | font-weight | 700 |
 | author | self | line-height | 18 |
 | author | self | color | token(foreground) |
-| author | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 | author | self | **pointer-fine+width>=768** | font-size: 12 |
 | itemContent | self | min-width | 0 |
 | itemContent | self | max-width | 100% |
@@ -7820,7 +7185,6 @@ Dart: `RaftMessageForwardedBundleItemRecipe` · source: `dist/components/message
 | attachment | self | background-color | token(fillMuted) |
 | attachment | self | border-radius | 6 |
 | attachment | self | align-items | center |
-| attachment | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.3161 0.0052 106.7) [#FF32322F] |
 | attachment | self | **pointer-fine+width>=768** | line-height: 18 |
 | attachment | & svg | width | 14 |
 | attachment | & svg | height | 14 |
@@ -7833,13 +7197,12 @@ Dart: `RaftMessageForwardedBundleItemRecipe` · source: `dist/components/message
 | attachmentMeta | self | font-weight | 400 |
 | attachmentMeta | self | color | token(foregroundHint) |
 | attachmentMeta | self | flex-shrink | 0 |
-| attachmentMeta | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 
 ### Variant deltas (one axis changed from the default)
 
 | variant | slot | value |
 |---|---|---|
-| action=interactive | attachment | cursor: pointer; [active] background-image: linear-gradient(token(fillMedium), token(fillMedium)); [active+dark] color: oklch(0.9211 0.004 106.48) [#FFE5E5E2],… |
+| action=interactive | attachment | cursor: pointer; [active] background-image: linear-gradient(token(fillMedium), token(fillMedium)); [focus-visible] box-shadow: token(focusRing), outline-width:… |
 
 ## messageForwardedBundleGallery
 
@@ -7895,7 +7258,6 @@ Dart: `RaftMessageVideoPreviewRecipe` · source: `dist/components/message-attach
 | root | self | aspect-ratio | 16 / 9 |
 | root | self | background-clip | padding-box |
 | root | self | text-align | left |
-| root | self | **dark** | border-color: oklch(0.9843 0.004 106.47 / 0.102) [#1AFAFAF7] |
 | media | self | display | block |
 | media | self | width | 100% |
 | media | self | height | 100% |
@@ -7964,11 +7326,6 @@ Dart: `RaftMessageVideoPreviewRecipe` · source: `dist/components/message-attach
 | action | self | align-items | center |
 | action | self | justify-content | center |
 | action | self | **active** | background-image: linear-gradient(token(fillMedium), token(fillMedium)) |
-| action | self | **active+dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.2596 0.0037 106.65) [#FF242422]; border-color: oklch(0.9211 0.004 106.48) [#FFE5E5E2];… |
-| action | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.2596 0.0037 106.65) [#FF242422]; border-color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| action | self | **dark+disabled** | color: oklch(0.4987 0.0047 106.57) [#FF636360]; background-color: oklch(0.3161 0.0052 106.7) [#FF32322F]; border-color: oklch(0.9843 0.004 106.47 / 0.102) [#1A… |
-| action | self | **dark+focus-visible** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.2596 0.0037 106.65) [#FF242422]; border-color: oklch(0.9211 0.004 106.48) [#FFE5E5E2];… |
-| action | self | **dark+hover** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.2596 0.0037 106.65) [#FF242422]; border-color: oklch(0.9211 0.004 106.48) [#FFE5E5E2];… |
 | action | self | **disabled** | color: token(foregroundDisabled); background-color: token(fillMuted); border-color: token(lineHairline); background-image: none; cursor: default |
 | action | self | **focus-visible** | outline-color: token(foreground); box-shadow: token(focusRing) |
 | action | self | **hover** | background-image: linear-gradient(token(fillMedium), token(fillMedium)) |
@@ -8009,7 +7366,6 @@ Dart: `RaftProgressRecipe` · source: `dist/components/progress/progress.mjs` (i
 | label | self | overflow-y | hidden |
 | label | self | text-overflow | ellipsis |
 | label | self | white-space | nowrap |
-| label | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 | label | self | **pointer-fine+width>=768** | font-size: 12 |
 | value | self | font-family | token(monoFont, ui-monospace, monospace) |
 | value | self | font-size | 12 |
@@ -8017,7 +7373,6 @@ Dart: `RaftProgressRecipe` · source: `dist/components/progress/progress.mjs` (i
 | value | self | color | token(foregroundHint) |
 | value | self | flex-shrink | 0 |
 | value | self | font-variant-numeric | tabular-nums |
-| value | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | value | self | **pointer-fine+width>=768** | line-height: 18 |
 | track | self | position | relative |
 | track | self | width | 100% |
@@ -8062,7 +7417,6 @@ Dart: `RaftMessageTranslationRecipe` · source: `dist/components/message-transla
 | translationOriginalLabel | self | font-size | 12 |
 | translationOriginalLabel | self | line-height | 16 |
 | translationOriginalLabel | self | color | token(foregroundHint) |
-| translationOriginalLabel | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | translationOriginalLabel | self | **pointer-fine+width>=768** | line-height: 18 |
 | translationStatus | self | display | inline-flex |
 | translationStatus | self | margin | top:4 |
@@ -8072,7 +7426,6 @@ Dart: `RaftMessageTranslationRecipe` · source: `dist/components/message-transla
 | translationStatus | self | line-height | 16 |
 | translationStatus | self | color | token(foregroundHint) |
 | translationStatus | self | align-items | center |
-| translationStatus | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | translationStatus | self | **pointer-fine+width>=768** | line-height: 18 |
 | translationStatus | & svg | width | 12 |
 | translationStatus | & svg | height | 12 |
@@ -8084,7 +7437,6 @@ Dart: `RaftMessageTranslationRecipe` · source: `dist/components/message-transla
 | translationFailedStatus | self | line-height | 16 |
 | translationFailedStatus | self | color | token(warningStrong) |
 | translationFailedStatus | self | align-items | center |
-| translationFailedStatus | self | **dark** | color: oklch(0.82 0.12 55) [#FFFFAF76] |
 | translationFailedStatus | self | **pointer-fine+width>=768** | line-height: 18 |
 | translationFailedStatus | & svg | width | 12 |
 | translationFailedStatus | & svg | height | 12 |
@@ -8101,8 +7453,6 @@ Dart: `RaftMessageTranslationRecipe` · source: `dist/components/message-transla
 | translationAction | self | align-items | center |
 | translationAction | self | text-decoration-thickness | 1.5 |
 | translationAction | self | text-underline-offset | 3 |
-| translationAction | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| translationAction | self | **dark+focus-visible** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; box-shadow: 0 0 0 2 oklch(0.2213 0.0038 106.71) [#FF1B1B19], 0 0 0 4 oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 | translationAction | self | **focus-visible** | box-shadow: token(focusRing) |
 | translationAction | self | **hover** | text-decoration-line: underline |
 | translationAction | self | **pointer-fine+width>=768** | line-height: 18 |
@@ -8118,8 +7468,6 @@ Dart: `RaftMessageTranslationRecipe` · source: `dist/components/message-transla
 | translationRetryAction | self | align-items | center |
 | translationRetryAction | self | text-decoration-thickness | 1.5 |
 | translationRetryAction | self | text-underline-offset | 3 |
-| translationRetryAction | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| translationRetryAction | self | **dark+focus-visible** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; box-shadow: 0 0 0 2 oklch(0.2213 0.0038 106.71) [#FF1B1B19], 0 0 0 4 oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 | translationRetryAction | self | **focus-visible** | box-shadow: token(focusRing) |
 | translationRetryAction | self | **hover** | text-decoration-line: underline |
 | translationRetryAction | self | **pointer-fine+width>=768** | line-height: 18 |
@@ -8162,7 +7510,6 @@ Dart: `RaftMessageListRecipe` · source: `dist/components/message-list/message-l
 | dateDividerRule | self | border-style | top:solid |
 | dateDividerRule | self | border-color | token(lineHairline) |
 | dateDividerRule | self | flex | 1 |
-| dateDividerRule | self | **dark** | border-color: oklch(0.9843 0.004 106.47 / 0.102) [#1AFAFAF7] |
 | dateDividerChip | self | display | inline-flex |
 | dateDividerChip | self | font-family | token(monoFont, ui-monospace, monospace) |
 | dateDividerChip | self | font-size | 12 |
@@ -8170,7 +7517,6 @@ Dart: `RaftMessageListRecipe` · source: `dist/components/message-list/message-l
 | dateDividerChip | self | color | token(foregroundHint) |
 | dateDividerChip | self | align-items | center |
 | dateDividerChip | self | white-space | nowrap |
-| dateDividerChip | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | dateDividerChip | self | **pointer-fine+width>=768** | line-height: 18 |
 | endFade | self | position | absolute |
 | endFade | self | height | token(timelineGapSection) |
@@ -8178,14 +7524,12 @@ Dart: `RaftMessageListRecipe` · source: `dist/components/message-list/message-l
 | endFade | self | background-image | linear-gradient(to top in oklab, token(layerCanvas) 0%, transparent 100%) |
 | endFade | self | z-index | 1 |
 | endFade | self | pointer-events | none |
-| endFade | self | **dark** | background-image: linear-gradient(to top in oklab, oklch(0.2213 0.0038 106.71) 0%, transparent 100%) |
 | notice | self | padding | top:calc((token(timelineGapMessage) - token(timelineRowInset))) bottom:token(timelineRowInset) |
 | notice | self | font-family | token(monoFont, ui-monospace, monospace) |
 | notice | self | font-size | 12 |
 | notice | self | line-height | 16 |
 | notice | self | color | token(foregroundHint) |
 | notice | self | text-align | center |
-| notice | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | notice | self | **pointer-fine+width>=768** | line-height: 18 |
 | historyLimited | self | display | inline-flex |
 | historyLimited | self | height | 22 |
@@ -8198,7 +7542,6 @@ Dart: `RaftMessageListRecipe` · source: `dist/components/message-list/message-l
 | historyLimited | self | border-radius | 6 |
 | historyLimited | self | box-shadow | inset 0 0 0 1 token(lineHairline) |
 | historyLimited | self | align-items | center |
-| historyLimited | self | **dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1]; box-shadow: inset 0 0 0 1 oklch(0.9843 0.004 106.47 / 0.102) [#1AFAFAF7] |
 | historyLimited | self | **pointer-fine+width>=768** | line-height: 18 |
 | historyLimited | & svg | width | 12 |
 | historyLimited | & svg | height | 12 |
@@ -8207,7 +7550,7 @@ Dart: `RaftMessageListRecipe` · source: `dist/components/message-list/message-l
 
 | variant | slot | value |
 |---|---|---|
-| tone=muted | notice | color: token(foregroundMuted); [dark] color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
+| tone=muted | notice | color: token(foregroundMuted) |
 
 ## messageListJump
 
@@ -8241,8 +7584,6 @@ Dart: `RaftMessageListJumpRecipe` · source: `dist/components/message-list/messa
 | dismiss | self | border-width | left:0 |
 | dismiss | self | border-style | left:solid |
 | dismiss | self | border-radius | top-left:0 bottom-left:0 |
-| dismiss | self | **dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
-| dismiss | self | **dark+hover** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 | dismiss | self | **hover** | color: token(foreground) |
 | dismiss | & svg:not([class*='size-']) | width | 16 |
 | dismiss | & svg:not([class*='size-']) | height | 16 |
@@ -8279,7 +7620,6 @@ Dart: `RaftIconTileRecipe` · source: `dist/components/icon-tile/icon-tile.mjs` 
 | root | self | flex-shrink | 0 |
 | root | self | align-items | center |
 | root | self | justify-content | center |
-| root | self | **dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1]; background-color: oklch(0.3161 0.0052 106.7) [#FF32322F] |
 | root | & svg | flex-shrink | 0 |
 | root | & svg:not([class*='size-']) | width | 18 |
 | root | & svg:not([class*='size-']) | height | 18 |
@@ -8288,8 +7628,8 @@ Dart: `RaftIconTileRecipe` · source: `dist/components/icon-tile/icon-tile.mjs` 
 
 | variant | slot | value |
 |---|---|---|
-| variant=warning | root | color: token(foreground); background-color: token(warningSoft); [dark] color: oklch(0.9211 0.004 106.48) [#FFE5E5E2], background-color: oklch(0.5204 0.1197 50.… |
-| variant=information | root | color: token(foreground); background-color: token(infoSoft); [dark] color: oklch(0.9211 0.004 106.48) [#FFE5E5E2], background-color: oklch(0.452 0.0862 225.67 … |
+| variant=warning | root | color: token(foreground); background-color: token(warningSoft) |
+| variant=information | root | color: token(foreground); background-color: token(infoSoft) |
 | size=xs | root | width: 19; height: 19; border-radius: 4; & svg:not([class*='size-']) width: 11; & svg:not([class*='size-']) height: 11 |
 | size=sm | root | width: 27; height: 27; border-radius: 6; & svg:not([class*='size-']) width: 14; & svg:not([class*='size-']) height: 14 |
 | size=lg | root | width: 51; height: 51; border-radius: 10; & svg:not([class*='size-']) width: 22; & svg:not([class*='size-']) height: 22 |
@@ -8315,7 +7655,6 @@ Dart: `RaftHeadingRecipe` · source: `dist/components/text/text.mjs` (index.mjs:
 | base | self | line-height | 64 |
 | base | self | letter-spacing | -0.01em |
 | base | self | color | token(foreground) |
-| base | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 
 ### Variant deltas (one axis changed from the default)
 
@@ -8327,14 +7666,14 @@ Dart: `RaftHeadingRecipe` · source: `dist/components/text/text.mjs` (index.mjs:
 | level=5 | base | font-size: 24; line-height: 32; letter-spacing: — |
 | level=6 | base | font-size: 20; line-height: 28; letter-spacing: — |
 | variant=default | base | (classes differ, same result) |
-| variant=primary | base | color: token(brandStrong); [dark] color: oklch(0.8829 0.1623 91.9) [#FFFFD440] |
-| variant=information | base | color: token(infoStrong); [dark] color: oklch(0.8 0.1 220) [#FF6CCDEA] |
-| variant=muted | base | color: token(foregroundMuted); [dark] color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
-| variant=placeholder | base | color: token(foregroundHint); [dark] color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
-| variant=accent | base | color: token(attention700); [dark] (none) |
-| variant=success | base | color: token(success); [dark] (none) |
-| variant=warning | base | color: token(warning); [dark] (none) |
-| variant=danger | base | color: token(danger); [dark] (none) |
+| variant=primary | base | color: token(brandStrong) |
+| variant=information | base | color: token(infoStrong) |
+| variant=muted | base | color: token(foregroundMuted) |
+| variant=placeholder | base | color: token(foregroundHint) |
+| variant=accent | base | color: token(attention700) |
+| variant=success | base | color: token(success) |
+| variant=warning | base | color: token(warning) |
+| variant=danger | base | color: token(danger) |
 
 ## sans
 
@@ -8356,24 +7695,23 @@ Dart: `RaftSansRecipe` · source: `dist/components/text/text.mjs` (index.mjs:151
 | base | self | font-weight | 400 |
 | base | self | line-height | 24 |
 | base | self | color | token(foreground) |
-| base | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 
 ### Variant deltas (one axis changed from the default)
 
 | variant | slot | value |
 |---|---|---|
 | size=large | base | font-size: 18; line-height: 28 |
-| size=small | base | font-size: 14; line-height: 20; color: token(foregroundMuted); [dark] color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
-| size=caption | base | font-size: 12; line-height: 16; color: token(foregroundMuted); [dark] color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
-| size=group | base | font-size: 13; font-weight: 700; line-height: 18; color: token(foregroundHint); [dark] color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B]; [pointer-fine+width>=768… |
-| variant=primary | base | color: token(brandStrong); [dark] color: oklch(0.8829 0.1623 91.9) [#FFFFD440] |
-| variant=information | base | color: token(infoStrong); [dark] color: oklch(0.8 0.1 220) [#FF6CCDEA] |
-| variant=muted | base | color: token(foregroundMuted); [dark] color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
-| variant=placeholder | base | color: token(foregroundHint); [dark] color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
-| variant=accent | base | color: token(attention700); [dark] (none) |
-| variant=success | base | color: token(success); [dark] (none) |
-| variant=warning | base | color: token(warning); [dark] (none) |
-| variant=danger | base | color: token(danger); [dark] (none) |
+| size=small | base | font-size: 14; line-height: 20; color: token(foregroundMuted) |
+| size=caption | base | font-size: 12; line-height: 16; color: token(foregroundMuted) |
+| size=group | base | font-size: 13; font-weight: 700; line-height: 18; color: token(foregroundHint); [pointer-fine+width>=768] font-size: 12 |
+| variant=primary | base | color: token(brandStrong) |
+| variant=information | base | color: token(infoStrong) |
+| variant=muted | base | color: token(foregroundMuted) |
+| variant=placeholder | base | color: token(foregroundHint) |
+| variant=accent | base | color: token(attention700) |
+| variant=success | base | color: token(success) |
+| variant=warning | base | color: token(warning) |
+| variant=danger | base | color: token(danger) |
 
 ## mono
 
@@ -8395,22 +7733,21 @@ Dart: `RaftMonoRecipe` · source: `dist/components/text/text.mjs` (index.mjs:151
 | base | self | font-weight | 400 |
 | base | self | line-height | 20 |
 | base | self | color | token(foreground) |
-| base | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 
 ### Variant deltas (one axis changed from the default)
 
 | variant | slot | value |
 |---|---|---|
-| size=meta | base | font-size: 12; line-height: 16; color: token(foregroundMuted); [dark] color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
+| size=meta | base | font-size: 12; line-height: 16; color: token(foregroundMuted) |
 | size=tabular | base | font-variant-numeric: tabular-nums |
-| variant=primary | base | color: token(brandStrong); [dark] color: oklch(0.8829 0.1623 91.9) [#FFFFD440] |
-| variant=information | base | color: token(infoStrong); [dark] color: oklch(0.8 0.1 220) [#FF6CCDEA] |
-| variant=muted | base | color: token(foregroundMuted); [dark] color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
-| variant=placeholder | base | color: token(foregroundHint); [dark] color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
-| variant=accent | base | color: token(attention700); [dark] (none) |
-| variant=success | base | color: token(success); [dark] (none) |
-| variant=warning | base | color: token(warning); [dark] (none) |
-| variant=danger | base | color: token(danger); [dark] (none) |
+| variant=primary | base | color: token(brandStrong) |
+| variant=information | base | color: token(infoStrong) |
+| variant=muted | base | color: token(foregroundMuted) |
+| variant=placeholder | base | color: token(foregroundHint) |
+| variant=accent | base | color: token(attention700) |
+| variant=success | base | color: token(success) |
+| variant=warning | base | color: token(warning) |
+| variant=danger | base | color: token(danger) |
 
 ## table
 
@@ -8433,28 +7770,17 @@ Dart: `RaftTableRecipe` · source: `dist/components/table/table.recipe.mjs` (ind
 | root | self | color | token(foreground) |
 | root | self | caption-side | bottom |
 | root | self | border-collapse | collapse |
-| root | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 | root | self | **pointer-fine+width>=768** | line-height: 22 |
 | body | & > tr:last-child > td | border-width | bottom:0 |
 | body | & > tr:last-child > td | border-style | bottom:solid |
 | body | & > tr:last-child > th | border-width | bottom:0 |
 | body | & > tr:last-child > th | border-style | bottom:solid |
 | body | & > tr:hover | background-color | token(fillSubtle) |
-| body | & > tr:hover | **dark** | background-color: oklch(0.9843 0.004 106.47 / 0.03) [#08FAFAF7] |
 | body | & > tr:active | background-color | token(fillMedium) |
-| body | & > tr:active | **dark** | background-color: oklch(0.9843 0.004 106.47 / 0.065) [#11FAFAF7] |
 | row | self | **active+aria-selected=true** | background-color: token(infoSoft) |
-| row | self | **active+aria-selected=true+dark** | background-color: oklch(0.452 0.0862 225.67 / 0.18) [#2E005F7A] |
-| row | self | **active+dark+data-selected=true** | background-color: oklch(0.452 0.0862 225.67 / 0.18) [#2E005F7A] |
 | row | self | **active+data-selected=true** | background-color: token(infoSoft) |
 | row | self | **aria-selected=true** | background-color: token(infoSoft) |
-| row | self | **aria-selected=true+dark** | background-color: oklch(0.452 0.0862 225.67 / 0.18) [#2E005F7A] |
-| row | self | **aria-selected=true+dark+hover** | background-color: oklch(0.452 0.0862 225.67 / 0.18) [#2E005F7A] |
 | row | self | **aria-selected=true+hover** | background-color: token(infoSoft) |
-| row | self | **dark+data-popup-open** | background-color: oklch(0.9843 0.004 106.47 / 0.03) [#08FAFAF7] |
-| row | self | **dark+data-selected=true** | background-color: oklch(0.452 0.0862 225.67 / 0.18) [#2E005F7A] |
-| row | self | **dark+data-selected=true+hover** | background-color: oklch(0.452 0.0862 225.67 / 0.18) [#2E005F7A] |
-| row | self | **dark+has:data-popup-open** | background-color: oklch(0.9843 0.004 106.47 / 0.03) [#08FAFAF7] |
 | row | self | **data-popup-open** | background-color: token(fillSubtle) |
 | row | self | **data-selected=true** | background-color: token(infoSoft) |
 | row | self | **data-selected=true+hover** | background-color: token(infoSoft) |
@@ -8471,7 +7797,6 @@ Dart: `RaftTableRecipe` · source: `dist/components/table/table.recipe.mjs` (ind
 | head | self | text-align | left |
 | head | self | white-space | nowrap |
 | head | self | text-transform | none |
-| head | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B]; border-color: oklch(0.9843 0.004 106.47 / 0.102) [#1AFAFAF7] |
 | head | self | **pointer-fine+width>=768** | font-size: 12 |
 | cell | self | padding | top:8 right:12 bottom:8 left:12 |
 | cell | self | border-width | bottom:1 |
@@ -8479,13 +7804,11 @@ Dart: `RaftTableRecipe` · source: `dist/components/table/table.recipe.mjs` (ind
 | cell | self | border-color | token(lineHairline) |
 | cell | self | vertical-align | top |
 | cell | self | overflow-wrap | anywhere |
-| cell | self | **dark** | border-color: oklch(0.9843 0.004 106.47 / 0.102) [#1AFAFAF7] |
 | caption | self | padding | top:8 |
 | caption | self | font-size | 12 |
 | caption | self | font-weight | 500 |
 | caption | self | line-height | 16 |
 | caption | self | color | token(foregroundHint) |
-| caption | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | caption | self | **pointer-fine+width>=768** | line-height: 18 |
 | sortableHead | self | padding | 0 |
 | sortButton | self | display | flex |
@@ -8502,9 +7825,6 @@ Dart: `RaftTableRecipe` · source: `dist/components/table/table.recipe.mjs` (ind
 | sortButton | self | cursor | pointer |
 | sortButton | self | align-items | center |
 | sortButton | self | font | inherit |
-| sortButton | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
-| sortButton | self | **dark+focus-visible** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B]; box-shadow: 0 0 0 2 oklch(0.2213 0.0038 106.71) [#FF1B1B19], 0 0 0 4 oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| sortButton | self | **dark+hover** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 | sortButton | self | **focus-visible** | box-shadow: token(focusRing) |
 | sortButton | self | **hover** | color: token(foreground) |
 | sortButton | ::after | **pointer-coarse** | position: absolute; inset: top:calc(((44px - 100%) * -1)) right:0 bottom:0 left:0; content: "" |
@@ -8522,9 +7842,6 @@ Dart: `RaftTableRecipe` · source: `dist/components/table/table.recipe.mjs` (ind
 | headSortButton | self | cursor | pointer |
 | headSortButton | self | align-items | center |
 | headSortButton | self | font | inherit |
-| headSortButton | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
-| headSortButton | self | **dark+focus-visible** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B]; box-shadow: 0 0 0 2 oklch(0.2213 0.0038 106.71) [#FF1B1B19], 0 0 0 4 oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| headSortButton | self | **dark+hover** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 | headSortButton | self | **focus-visible** | box-shadow: token(focusRing) |
 | headSortButton | self | **hover** | color: token(foreground) |
 | headSortButton | ::after | **pointer-coarse** | position: absolute; inset: top:calc(((44px - 100%) * -1)) right:0 bottom:0 left:0; content: "" |
@@ -8540,8 +7857,8 @@ Dart: `RaftTableRecipe` · source: `dist/components/table/table.recipe.mjs` (ind
 | align=right | cell | text-align: right |
 | align=right | sortButton | justify-content: flex-end |
 | align=right | headSortButton | justify-content: flex-end |
-| sorted=true | sortButton | color: token(foreground); [dark] color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; [dark+focus-visible] color: oklch(0.9211 0.004 106.48) [#FFE5E5E2], box-shadow:… |
-| sorted=true | headSortButton | color: token(foreground); [dark] color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; [dark+focus-visible] color: oklch(0.9211 0.004 106.48) [#FFE5E5E2], box-shadow:… |
+| sorted=true | sortButton | color: token(foreground); [hover] (none) |
+| sorted=true | headSortButton | color: token(foreground); [hover] (none) |
 
 ## filePreview
 
@@ -8571,7 +7888,6 @@ Dart: `RaftFilePreviewRecipe` · source: `dist/components/file-preview/file-prev
 | document | self | border-radius | top-left:6 top-right:15% bottom-right:6 bottom-left:6 |
 | document | self | box-shadow | 0 0 0 1 token(lineHairline) |
 | document | self | ring | width:1 color:token(lineHairline) offsetWidth:— offsetColor:— |
-| document | self | **dark** | background-color: oklch(0.2596 0.0037 106.65) [#FF242422]; box-shadow: 0 0 0 1 oklch(0.9843 0.004 106.47 / 0.102) [#1AFAFAF7]; ring: width:1 color:oklch(0.9843… |
 | document | :where(& > * + *) | margin | top:6 |
 | file | self | display | flex |
 | file | self | position | relative |
@@ -8583,7 +7899,6 @@ Dart: `RaftFilePreviewRecipe` · source: `dist/components/file-preview/file-prev
 | file | self | ring | width:1 color:token(lineHairline) offsetWidth:— offsetColor:— |
 | file | self | align-items | center |
 | file | self | justify-content | center |
-| file | self | **dark** | background-color: oklch(0.2596 0.0037 106.65) [#FF242422]; box-shadow: 0 0 0 1 oklch(0.9843 0.004 106.47 / 0.102) [#1AFAFAF7]; ring: width:1 color:oklch(0.9843… |
 | code | self | display | flex |
 | code | self | position | relative |
 | code | self | width | 32 |
@@ -8594,7 +7909,6 @@ Dart: `RaftFilePreviewRecipe` · source: `dist/components/file-preview/file-prev
 | code | self | ring | width:1 color:token(lineHairline) offsetWidth:— offsetColor:— |
 | code | self | align-items | center |
 | code | self | justify-content | center |
-| code | self | **dark** | background-color: oklch(0.2596 0.0037 106.65) [#FF242422]; box-shadow: 0 0 0 1 oklch(0.9843 0.004 106.47 / 0.102) [#1AFAFAF7]; ring: width:1 color:oklch(0.9843… |
 | fileZip | self | display | flex |
 | fileZip | self | height | 28 |
 | fileZip | self | align-items | center |
@@ -8612,11 +7926,9 @@ Dart: `RaftFilePreviewRecipe` · source: `dist/components/file-preview/file-prev
 | fileZipDark | self | width | 2 |
 | fileZipDark | self | height | 2 |
 | fileZipDark | self | background-color | color-mix(in oklab, token(foreground) 40%, transparent) |
-| fileZipDark | self | **dark** | background-color: color-mix(in oklab, oklch(0.9211 0.004 106.48) 40%, transparent) [#66E5E5E2] |
 | fileZipLight | self | width | 2 |
 | fileZipLight | self | height | 2 |
 | fileZipLight | self | background-color | color-mix(in oklab, token(foreground) 15%, transparent) |
-| fileZipLight | self | **dark** | background-color: color-mix(in oklab, oklch(0.9211 0.004 106.48) 15%, transparent) [#26E5E5E2] |
 | fileZipPull | self | width | 10 |
 | fileZipPull | self | height | 4 |
 | fileZipPull | self | margin | top:2 |
@@ -8625,7 +7937,6 @@ Dart: `RaftFilePreviewRecipe` · source: `dist/components/file-preview/file-prev
 | fileZipPull | self | border-style | solid |
 | fileZipPull | self | border-color | color-mix(in oklab, token(foreground) 40%, transparent) |
 | fileZipPull | self | border-radius | 4 |
-| fileZipPull | self | **dark** | background-color: color-mix(in oklab, oklch(0.9211 0.004 106.48) 10%, transparent) [#1AE5E5E2]; border-color: color-mix(in oklab, oklch(0.9211 0.004 106.48) 40… |
 | codeStack | self | translate | 0 -2px |
 | codeStack | :where(& > * + *) | margin | top:1 |
 | codeRow | self | display | flex |
@@ -8643,27 +7954,22 @@ Dart: `RaftFilePreviewRecipe` · source: `dist/components/file-preview/file-prev
 | codeGlyph | self | font-size | 4 |
 | codeGlyph | self | line-height | 1 |
 | codeGlyph | self | color | color-mix(in oklab, token(foreground) 30%, transparent) |
-| codeGlyph | self | **dark** | color: color-mix(in oklab, oklch(0.9211 0.004 106.48) 30%, transparent) [#4DE5E5E2] |
 | codeTagLine | self | width | 12 |
 | codeTagLine | self | height | 2 |
 | codeTagLine | self | background-color | color-mix(in oklab, token(foreground) 40%, transparent) |
 | codeTagLine | self | border-radius | infinity |
-| codeTagLine | self | **dark** | background-color: color-mix(in oklab, oklch(0.9211 0.004 106.48) 40%, transparent) [#66E5E5E2] |
 | codeAttributeLine | self | width | 10 |
 | codeAttributeLine | self | height | 2 |
 | codeAttributeLine | self | background-color | color-mix(in oklab, token(foreground) 25%, transparent) |
 | codeAttributeLine | self | border-radius | infinity |
-| codeAttributeLine | self | **dark** | background-color: color-mix(in oklab, oklch(0.9211 0.004 106.48) 25%, transparent) [#40E5E5E2] |
 | codeTextLine | self | width | 24 |
 | codeTextLine | self | height | 2 |
 | codeTextLine | self | background-color | color-mix(in oklab, token(foreground) 10%, transparent) |
 | codeTextLine | self | border-radius | infinity |
-| codeTextLine | self | **dark** | background-color: color-mix(in oklab, oklch(0.9211 0.004 106.48) 10%, transparent) [#1AE5E5E2] |
 | codeSelfClosingLine | self | width | 8 |
 | codeSelfClosingLine | self | height | 2 |
 | codeSelfClosingLine | self | background-color | color-mix(in oklab, token(foreground) 40%, transparent) |
 | codeSelfClosingLine | self | border-radius | infinity |
-| codeSelfClosingLine | self | **dark** | background-color: color-mix(in oklab, oklch(0.9211 0.004 106.48) 40%, transparent) [#66E5E5E2] |
 | badge | self | position | absolute |
 | badge | self | width | fit-content |
 | badge | self | padding | top:2 right:4 bottom:2 left:4 |
@@ -8679,7 +7985,6 @@ Dart: `RaftFilePreviewRecipe` · source: `dist/components/file-preview/file-prev
 | badge | self | ring | width:1 color:token(lineHairline) offsetWidth:— offsetColor:— |
 | badge | self | z-index | 1 |
 | badge | self | white-space | nowrap |
-| badge | self | **dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1]; background-color: oklch(0.3161 0.0052 106.7) [#FF32322F]; box-shadow: 0 0 0 1 oklch(0.9843 0.004 106.47 / 0.102… |
 | media | self | position | relative |
 | media | self | width | 32 |
 | media | self | height | 40 |
@@ -8689,7 +7994,6 @@ Dart: `RaftFilePreviewRecipe` · source: `dist/components/file-preview/file-prev
 | media | self | ring | width:1 color:token(lineHairline) offsetWidth:— offsetColor:— |
 | media | self | overflow-x | hidden |
 | media | self | overflow-y | hidden |
-| media | self | **dark** | background-color: oklch(0.3161 0.0052 106.7) [#FF32322F]; box-shadow: 0 0 0 1 oklch(0.9843 0.004 106.47 / 0.102) [#1AFAFAF7]; ring: width:1 color:oklch(0.9843 … |
 
 ### Variant deltas (one axis changed from the default)
 
@@ -8722,8 +8026,6 @@ Dart: `RaftComposerRecipe` · source: `dist/components/composer/composer.recipe.
 | root | self | border-radius | 10 |
 | root | self | box-shadow | none |
 | root | self | flex-direction | column |
-| root | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.2596 0.0037 106.65) [#FF242422] |
-| root | self | **dark+has:focus-visible** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.2596 0.0037 106.65) [#FF242422]; box-shadow: 0 0 0 2 oklch(0.2213 0.0038 106.71) [#FF1… |
 | root | self | **has:focus-visible** | box-shadow: token(focusRing) |
 | inputFrame | self | width | 100% |
 | inputFrame | self | min-width | 0 |
@@ -8740,10 +8042,8 @@ Dart: `RaftComposerRecipe` · source: `dist/components/composer/composer.recipe.
 | input | self | outline-style | none |
 | input | self | field-sizing | content |
 | input | self | resize | none |
-| input | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 | input | self | **pointer-fine+width>=768** | font-size: 14; line-height: 22 |
 | input | ::placeholder | color | token(foregroundHint) |
-| input | ::placeholder | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | toolbar | self | display | flex |
 | toolbar | self | margin | right:calc(((token(controlEmbeddedInset) - 12px) - 1px)) left:calc(((token(controlEmbeddedInset) - 12px) - 1px)) |
 | toolbar | self | gap | token(controlEmbeddedInset) |
@@ -8761,7 +8061,6 @@ Dart: `RaftComposerRecipe` · source: `dist/components/composer/composer.recipe.
 | iconButton | self | color | token(foregroundMuted) |
 | iconButton | self | border-radius | 6 |
 | iconButton | self | **aria-disabled=true** | background-color: transparent [#00000000]; border-color: transparent [#00000000] |
-| iconButton | self | **dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
 | iconButton | self | **disabled** | background-color: transparent [#00000000]; border-color: transparent [#00000000] |
 | iconButton | self | **pointer-fine+width>=768** | width: 28; height: 28 |
 | iconButton | & svg:not([class*='size-']) | width | 18 |
@@ -8826,12 +8125,10 @@ Dart: `RaftComposerAttachmentRecipe` · source: `dist/components/composer/compos
 | attachmentFile | self | border-color | token(lineHairline) |
 | attachmentFile | self | border-radius | 8 |
 | attachmentFile | self | align-items | center |
-| attachmentFile | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.3161 0.0052 106.7) [#FF32322F]; border-color: oklch(0.9843 0.004 106.47 / 0.102) [#1AF… |
 | attachmentFile | & svg | width | 16 |
 | attachmentFile | & svg | height | 16 |
 | attachmentFile | & svg | color | token(foregroundMuted) |
 | attachmentFile | & svg | flex-shrink | 0 |
-| attachmentFile | & svg | **dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
 | attachmentImage | self | display | block |
 | attachmentImage | self | position | relative |
 | attachmentImage | self | width | 64 |
@@ -8844,7 +8141,6 @@ Dart: `RaftComposerAttachmentRecipe` · source: `dist/components/composer/compos
 | attachmentImage | self | overflow-x | hidden |
 | attachmentImage | self | overflow-y | hidden |
 | attachmentImage | self | flex-shrink | 0 |
-| attachmentImage | self | **dark** | background-color: oklch(0.3161 0.0052 106.7) [#FF32322F]; border-color: oklch(0.9843 0.004 106.47 / 0.102) [#1AFAFAF7] |
 | attachmentImage | :is(& *)[data-slot="file-preview"] | width | 100% |
 | attachmentImage | :is(& *)[data-slot="file-preview"] | height | 100% |
 | attachmentImage | :is(& *)[data-slot="file-preview-media"] | width | 100% |
@@ -8870,7 +8166,6 @@ Dart: `RaftComposerAttachmentRecipe` · source: `dist/components/composer/compos
 | attachmentTitle | self | overflow-y | hidden |
 | attachmentTitle | self | text-overflow | ellipsis |
 | attachmentTitle | self | white-space | nowrap |
-| attachmentTitle | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 | attachmentTitle | self | **pointer-fine+width>=768** | font-size: 12 |
 | attachmentMeta | self | display | block |
 | attachmentMeta | self | width | 100% |
@@ -8883,7 +8178,6 @@ Dart: `RaftComposerAttachmentRecipe` · source: `dist/components/composer/compos
 | attachmentMeta | self | text-overflow | ellipsis |
 | attachmentMeta | self | white-space | nowrap |
 | attachmentMeta | self | text-align | left |
-| attachmentMeta | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | attachmentMeta | self | **pointer-fine+width>=768** | line-height: 18 |
 | attachmentUploadingOverlay | self | display | flex |
 | attachmentUploadingOverlay | self | position | absolute |
@@ -8901,7 +8195,6 @@ Dart: `RaftComposerAttachmentRecipe` · source: `dist/components/composer/compos
 | attachmentUploadingOverlay | self | align-items | center |
 | attachmentUploadingOverlay | self | justify-content | center |
 | attachmentUploadingOverlay | self | text-align | center |
-| attachmentUploadingOverlay | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.2213 0.0038 106.71 / 0.8) [#CC1B1B19] |
 | attachmentUploadingOverlay | self | **pointer-fine+width>=768** | line-height: 18 |
 | attachmentUploadProgressBar | self | position | absolute |
 | attachmentUploadProgressBar | self | width | auto |
@@ -8912,7 +8205,6 @@ Dart: `RaftComposerAttachmentRecipe` · source: `dist/components/composer/compos
 | attachmentUploadProgressBar | self | overflow-x | hidden |
 | attachmentUploadProgressBar | self | overflow-y | hidden |
 | attachmentUploadProgressBar | self | z-index | 1 |
-| attachmentUploadProgressBar | self | **dark** | background-color: oklch(0.2596 0.0037 106.65) [#FF242422] |
 | attachmentUploadProgressBarIndicator | self | display | block |
 | attachmentUploadProgressBarIndicator | self | height | 100% |
 | attachmentUploadProgressBarIndicator | self | background-color | token(info) |
@@ -8935,7 +8227,6 @@ Dart: `RaftComposerAttachmentRecipe` · source: `dist/components/composer/compos
 | attachmentFailedOverlay | self | align-items | center |
 | attachmentFailedOverlay | self | justify-content | center |
 | attachmentFailedOverlay | self | text-align | center |
-| attachmentFailedOverlay | self | **dark** | color: oklch(0.7996 0.1009 24.79) [#FFF8A49D]; background-color: oklch(0.2213 0.0038 106.71 / 0.8) [#CC1B1B19]; border-color: oklch(0.7996 0.1009 24.79) [#FFF8… |
 | attachmentFailedOverlay | self | **pointer-fine+width>=768** | line-height: 18 |
 | attachmentRemove | self | display | flex |
 | attachmentRemove | self | position | absolute |
@@ -8957,11 +8248,6 @@ Dart: `RaftComposerAttachmentRecipe` · source: `dist/components/composer/compos
 | attachmentRemove | self | align-items | center |
 | attachmentRemove | self | justify-content | center |
 | attachmentRemove | self | **active** | background-image: linear-gradient(token(fillMedium), token(fillMedium)) |
-| attachmentRemove | self | **active+dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.2596 0.0037 106.65) [#FF242422]; border-color: oklch(0.9211 0.004 106.48) [#FFE5E5E2];… |
-| attachmentRemove | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.2596 0.0037 106.65) [#FF242422]; border-color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| attachmentRemove | self | **dark+disabled** | color: oklch(0.4987 0.0047 106.57) [#FF636360]; background-color: oklch(0.3161 0.0052 106.7) [#FF32322F]; border-color: oklch(0.9843 0.004 106.47 / 0.102) [#1A… |
-| attachmentRemove | self | **dark+focus-visible** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.2596 0.0037 106.65) [#FF242422]; border-color: oklch(0.9211 0.004 106.48) [#FFE5E5E2];… |
-| attachmentRemove | self | **dark+hover** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.2596 0.0037 106.65) [#FF242422]; border-color: oklch(0.9211 0.004 106.48) [#FFE5E5E2];… |
 | attachmentRemove | self | **disabled** | color: token(foregroundDisabled); background-color: token(fillMuted); border-color: token(lineHairline); cursor: not-allowed |
 | attachmentRemove | self | **focus-visible** | box-shadow: token(focusRing) |
 | attachmentRemove | self | **hover** | background-image: linear-gradient(token(fillMedium), token(fillMedium)) |
@@ -9000,7 +8286,6 @@ Dart: `RaftComposerDropOverlayRecipe` · source: `dist/components/composer/compo
 | dropOverlay | self | z-index | 30 |
 | dropOverlay | self | align-items | center |
 | dropOverlay | self | justify-content | center |
-| dropOverlay | self | **dark** | background-color: oklch(0.2596 0.0037 106.65) [#FF242422]; background-image: linear-gradient(oklch(0.452 0.0862 225.67 / 0.18), oklch(0.452 0.0862 225.67 / 0.1… |
 | dropOverlayLabel | self | display | flex |
 | dropOverlayLabel | self | padding | 0 |
 | dropOverlayLabel | self | gap | 12 |
@@ -9014,7 +8299,6 @@ Dart: `RaftComposerDropOverlayRecipe` · source: `dist/components/composer/compo
 | dropOverlayLabel | self | flex-direction | column |
 | dropOverlayLabel | self | align-items | center |
 | dropOverlayLabel | self | text-align | center |
-| dropOverlayLabel | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 | dropOverlayLabel | self | **pointer-fine+width>=768** | line-height: 22 |
 | dropOverlayIconCluster | self | display | flex |
 | dropOverlayIconCluster | self | position | relative |
@@ -9027,7 +8311,6 @@ Dart: `RaftComposerDropOverlayRecipe` · source: `dist/components/composer/compo
 | dropOverlayIcon | self | border-radius | 8 |
 | dropOverlayIcon | self | box-shadow | 0 0 0 1 token(lineHairline) |
 | dropOverlayIcon | self | ring | width:1 color:token(lineHairline) offsetWidth:— offsetColor:— |
-| dropOverlayIcon | self | **dark** | background-color: oklch(0.2596 0.0037 106.65) [#FF242422]; box-shadow: 0 0 0 1 oklch(0.9843 0.004 106.47 / 0.102) [#1AFAFAF7]; ring: width:1 color:oklch(0.9843… |
 | dropOverlayIcon | & svg | width | 16 |
 | dropOverlayIcon | & svg | height | 16 |
 
@@ -9046,7 +8329,6 @@ Dart: `RaftFilesRecipe` · source: `dist/components/files/files.recipe.mjs` (ind
 | panel | self | background-color | token(layerCanvas) |
 | panel | self | flex | 1 |
 | panel | self | flex-direction | column |
-| panel | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.2213 0.0038 106.71) [#FF1B1B19] |
 | viewport | self | min-height | 0 |
 | viewport | self | flex | 1 |
 | list | self | display | flex |
@@ -9070,11 +8352,6 @@ Dart: `RaftFilesRecipe` · source: `dist/components/files/files.recipe.mjs` (ind
 | row | self | transition-duration | 150ms |
 | row | self | transition-timing-function | cubic-bezier(0.4, 0, 0.2, 1) |
 | row | self | align-items | center |
-| row | self | **dark** | background-color: oklch(0.2596 0.0037 106.65) [#FF242422]; border-color: oklch(0.9843 0.004 106.47 / 0.102) [#1AFAFAF7] |
-| row | self | **dark+has:data-popup-open** | background-color: oklch(0.2596 0.0037 106.65) [#FF242422]; border-color: oklch(0.9843 0.004 106.47 / 0.102) [#1AFAFAF7]; background-image: linear-gradient(oklc… |
-| row | self | **dark+has:data-slot=file-row-open+active** | background-color: oklch(0.2596 0.0037 106.65) [#FF242422]; border-color: oklch(0.9843 0.004 106.47 / 0.102) [#1AFAFAF7]; background-image: linear-gradient(oklc… |
-| row | self | **dark+has:data-slot=file-row-open+focus-visible** | background-color: oklch(0.2596 0.0037 106.65) [#FF242422]; border-color: oklch(0.9843 0.004 106.47 / 0.102) [#1AFAFAF7]; box-shadow: 0 0 0 2 oklch(0.2213 0.003… |
-| row | self | **dark+has:data-slot=file-row-open+hover** | background-color: oklch(0.2596 0.0037 106.65) [#FF242422]; border-color: oklch(0.9843 0.004 106.47 / 0.102) [#1AFAFAF7]; background-image: linear-gradient(oklc… |
 | row | self | **has:data-popup-open** | background-image: linear-gradient(token(fillSubtle), token(fillSubtle)) |
 | row | self | **has:data-slot=file-row-open+active** | background-image: linear-gradient(token(fillMedium), token(fillMedium)) |
 | row | self | **has:data-slot=file-row-open+focus-visible** | box-shadow: token(focusRing) |
@@ -9100,7 +8377,6 @@ Dart: `RaftFilesRecipe` · source: `dist/components/files/files.recipe.mjs` (ind
 | thumbnail | self | flex-shrink | 0 |
 | thumbnail | self | align-items | center |
 | thumbnail | self | justify-content | center |
-| thumbnail | self | **dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1]; background-color: oklch(0.3161 0.0052 106.7) [#FF32322F] |
 | thumbnail | self | **has:data-slot=file-preview** | background-color: transparent [#00000000]; overflow-x: visible; overflow-y: visible |
 | thumbnail | & svg | width | 18 |
 | thumbnail | & svg | height | 18 |
@@ -9109,7 +8385,6 @@ Dart: `RaftFilesRecipe` · source: `dist/components/files/files.recipe.mjs` (ind
 | image | self | width | 100% |
 | image | self | height | 100% |
 | image | self | background-color | token(layerCard) |
-| image | self | **dark** | background-color: oklch(0.2596 0.0037 106.65) [#FF242422] |
 | image | self | **data-fit=contain** | object-fit: contain |
 | image | self | **data-fit=cover** | object-fit: cover |
 | content | self | display | flex |
@@ -9128,7 +8403,6 @@ Dart: `RaftFilesRecipe` · source: `dist/components/files/files.recipe.mjs` (ind
 | name | self | overflow-y | hidden |
 | name | self | text-overflow | ellipsis |
 | name | self | white-space | nowrap |
-| name | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 | name | self | **pointer-fine+width>=768** | line-height: 22 |
 | meta | self | display | flex |
 | meta | self | min-width | 0 |
@@ -9140,7 +8414,6 @@ Dart: `RaftFilesRecipe` · source: `dist/components/files/files.recipe.mjs` (ind
 | meta | self | color | token(foregroundHint) |
 | meta | self | flex-wrap | wrap |
 | meta | self | align-items | center |
-| meta | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | meta | self | **pointer-fine+width>=768** | line-height: 18 |
 | metaItem | self | display | inline-flex |
 | metaItem | self | gap | 4 |
@@ -9196,7 +8469,6 @@ Dart: `RaftComposerSuggestionListRecipe` · source: `dist/components/composer/co
 | root | self | box-shadow | 0 0 0 1 token(lineSeam), token(elevationFloat) |
 | root | self | ring | width:1 color:token(lineSeam) offsetWidth:— offsetColor:— |
 | root | self | overflow-x | hidden |
-| root | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.2802 0.0036 106.63) [#FF292927]; box-shadow: 0 0 0 1 oklch(0.9843 0.004 106.47 / 0.259… |
 | group | self | display | flex |
 | group | self | flex-direction | column |
 | groupLabel | self | padding | top:8 right:10 bottom:4 left:10 |
@@ -9205,7 +8477,6 @@ Dart: `RaftComposerSuggestionListRecipe` · source: `dist/components/composer/co
 | groupLabel | self | font-weight | 700 |
 | groupLabel | self | line-height | 16 |
 | groupLabel | self | color | token(foregroundHint) |
-| groupLabel | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | groupLabel | self | **pointer-fine+width>=768** | line-height: 18 |
 | item | self | display | flex |
 | item | self | width | 100% |
@@ -9221,10 +8492,6 @@ Dart: `RaftComposerSuggestionListRecipe` · source: `dist/components/composer/co
 | item | self | cursor | pointer |
 | item | self | align-items | center |
 | item | self | text-align | left |
-| item | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| item | self | **dark+data-disabled=true** | color: oklch(0.4987 0.0047 106.57) [#FF636360]; cursor: default |
-| item | self | **dark+data-highlighted=true** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.5501 0.0999 91.5 / 0.2) [#33876F1F] |
-| item | self | **dark+hover** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.5501 0.0999 91.5 / 0.2) [#33876F1F] |
 | item | self | **data-disabled=true** | color: token(foregroundDisabled); cursor: default |
 | item | self | **data-disabled=true+hover** | color: token(foregroundDisabled); cursor: default; background-color: transparent [#00000000] |
 | item | self | **data-highlighted=true** | background-color: token(brandSoft) |
@@ -9260,17 +8527,16 @@ Dart: `RaftComposerSuggestionListRecipe` · source: `dist/components/composer/co
 | meta | self | flex-basis | 0 |
 | meta | self | text-overflow | ellipsis |
 | meta | self | white-space | nowrap |
-| meta | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | meta | self | **pointer-fine+width>=768** | line-height: 18 |
 
 ### Variant deltas (one axis changed from the default)
 
 | variant | slot | value |
 |---|---|---|
-| separated=true | group | padding: top:4 right:4 left:4; margin: top:4 right:-4 left:-4; border-width: top:1; border-style: top:solid; border-color: token(lineHairline); [dark] border-c… |
+| separated=true | group | padding: top:4 right:4 left:4; margin: top:4 right:-4 left:-4; border-width: top:1; border-style: top:solid; border-color: token(lineHairline) |
 | iconVariant=framed | icon | display: flex; width: 19; height: 19; color: token(foregroundMuted); background-color: token(fillMuted); border-radius: 4; align-items: center; justify-content… |
-| iconVariant=auxiliary | icon | width: 12; height: 12; margin: left:-4; color: token(foregroundHint); [dark] color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
-| iconVariant=inline | icon | display: flex; width: 14; height: 14; color: token(foregroundHint); align-items: center; justify-content: center; [dark] color: oklch(0.6984 0.0043 106.51) [#F… |
+| iconVariant=auxiliary | icon | width: 12; height: 12; margin: left:-4; color: token(foregroundHint) |
+| iconVariant=inline | icon | display: flex; width: 14; height: 14; color: token(foregroundHint); align-items: center; justify-content: center; & svg width: 14; & svg height: 14 |
 | metaVariant=code | meta | font-weight: —; flex: —; flex-basis: —; font-family: token(monoFont, ui-monospace, monospace) |
 
 ## composerToolbarLabel
@@ -9294,8 +8560,6 @@ Dart: `RaftComposerToolbarLabelRecipe` · source: `dist/components/composer/comp
 | root | self | align-items | center |
 | root | self | -webkit-user-select | none |
 | root | self | user-select | none |
-| root | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| root | self | **dark+has:data-disabled** | color: oklch(0.4987 0.0047 106.57) [#FF636360]; cursor: not-allowed |
 | root | self | **has:data-disabled** | color: token(foregroundDisabled); cursor: not-allowed |
 | root | self | **pointer-fine+width>=768** | min-height: 28; line-height: 22 |
 
@@ -9319,7 +8583,6 @@ Dart: `RaftDragRecipe` · source: `dist/components/drag/drag.recipe.mjs` (index.
 | lift | self | box-shadow | 0 0 0 1 token(lineSeam), token(elevationFloat) |
 | lift | self | ring | width:1 color:token(lineSeam) offsetWidth:— offsetColor:— |
 | lift | self | pointer-events | none |
-| lift | self | **dark** | background-color: oklch(0.2802 0.0036 106.63) [#FF292927]; box-shadow: 0 0 0 1 oklch(0.9843 0.004 106.47 / 0.259) [#42FAFAF7], 0 0 0 1 oklch(0.9843 0.004 106.4… |
 | placeholder | self | background-color | token(fillSubtle) |
 | placeholder | self | border-width | 1.5 |
 | placeholder | self | border-style | dashed |
@@ -9327,7 +8590,6 @@ Dart: `RaftDragRecipe` · source: `dist/components/drag/drag.recipe.mjs` (index.
 | placeholder | self | border-radius | 8 |
 | placeholder | self | pointer-events | none |
 | placeholder | self | box-sizing | border-box |
-| placeholder | self | **dark** | background-color: oklch(0.9843 0.004 106.47 / 0.03) [#08FAFAF7]; border-color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 | hint | self | position | fixed |
 | hint | self | max-width | 320 |
 | hint | self | padding | top:4 right:8 bottom:4 left:8 |
@@ -9343,14 +8605,13 @@ Dart: `RaftDragRecipe` · source: `dist/components/drag/drag.recipe.mjs` (index.
 | hint | self | ring | width:1 color:token(lineSeam) offsetWidth:— offsetColor:— |
 | hint | self | z-index | 999 |
 | hint | self | pointer-events | none |
-| hint | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.2802 0.0036 106.63) [#FF292927]; box-shadow: 0 0 0 1 oklch(0.9843 0.004 106.47 / 0.259… |
 | hint | self | **pointer-fine+width>=768** | line-height: 18 |
 
 ### Variant deltas (one axis changed from the default)
 
 | variant | slot | value |
 |---|---|---|
-| opaque=true | placeholder | background-color: token(layerCanvas); background-image: linear-gradient(token(fillSubtle), token(fillSubtle)); [dark] background-color: oklch(0.2213 0.0038 106… |
+| opaque=true | placeholder | background-color: token(layerCanvas); background-image: linear-gradient(token(fillSubtle), token(fillSubtle)) |
 
 ## skeleton
 
@@ -9367,8 +8628,6 @@ Dart: `RaftSkeletonRecipe` · source: `dist/components/skeleton/skeleton.mjs` (i
 |---|---|---|---|
 | root | self | pointer-events | none |
 | root | self | animation | pulse 2000ms cubic-bezier(0.4, 0, 0.6, 1) infinite |
-| root | self | **dark+data-variant=block** | background-color: oklch(0.3161 0.0052 106.7) [#FF32322F]; border-radius: 4 |
-| root | self | **dark+data-variant=line** | background-color: oklch(0.3161 0.0052 106.7) [#FF32322F]; border-radius: 4 |
 | root | self | **data-variant=block** | background-color: token(fillMuted); border-radius: 4 |
 | root | self | **data-variant=line** | background-color: token(fillMuted); border-radius: 4 |
 | root | self | **motion-reduce** | animation: none |
@@ -9378,7 +8637,7 @@ Dart: `RaftSkeletonRecipe` · source: `dist/components/skeleton/skeleton.mjs` (i
 | variant | slot | value |
 |---|---|---|
 | variant=line | root | height: 12 |
-| variant=circle | root | background-color: token(fillMuted); border-radius: 4; [dark+data-variant=block] background-color: oklch(0.3161 0.0052 106.7) [#FF32322F]; [dark+data-variant=li… |
+| variant=circle | root | background-color: token(fillMuted); border-radius: 4; [data-variant=block] (none); [data-variant=line] (none) |
 
 ## banner
 
@@ -9410,7 +8669,6 @@ Dart: `RaftBannerRecipe` · source: `dist/components/banner/banner.mjs` (index.m
 | root | self | container-type | inline-size |
 | root | self | grid-template-columns | minmax(0, 1fr) |
 | root | self | align-items | flex-start |
-| root | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; box-shadow: inset 0 0 0 1 oklch(0.9843 0.004 106.47 / 0.102) [#1AFAFAF7]; ring: width:1 color:oklch(0.9843 0.004… |
 | root | self | **has:>data-slot=spinner** | grid-template-columns: 20px minmax(0, 1fr) |
 | root | self | **has:>svg** | grid-template-columns: 20px minmax(0, 1fr) |
 | root | self | **pointer-fine+width>=768** | line-height: 22 |
@@ -9421,7 +8679,6 @@ Dart: `RaftBannerRecipe` · source: `dist/components/banner/banner.mjs` (index.m
 | root | & > svg | grid-column-start | 1 |
 | root | & > svg | grid-row-start | 1 |
 | root | & > svg | flex-shrink | 0 |
-| root | & > svg | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 | root | :is(& > *)[data-slot="spinner"] | height | 1lh |
 | root | :is(& > *)[data-slot="spinner"] | line-height | inherit |
 | root | :is(& > *)[data-slot="spinner"] | grid-column-start | 1 |
@@ -9435,14 +8692,12 @@ Dart: `RaftBannerRecipe` · source: `dist/components/banner/banner.mjs` (index.m
 | title | self | grid-row-start | 1 |
 | title | self | overflow-wrap | break-word |
 | title | self | **container-width>=452+has:~data-slot=banner-description~data-slot=banner-action+not:data-wrap** | grid-column-end: span 2 |
-| title | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 | description | self | min-width | 0 |
 | description | self | font-weight | 400 |
 | description | self | color | token(foreground) |
 | description | self | grid-column-start | 1 |
 | description | self | grid-row-start | 1 |
 | description | self | overflow-wrap | break-word |
-| description | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 | action | self | display | flex |
 | action | self | margin | top:8 |
 | action | self | gap | 8 |
@@ -9463,11 +8718,11 @@ Dart: `RaftBannerRecipe` · source: `dist/components/banner/banner.mjs` (index.m
 
 | variant | slot | value |
 |---|---|---|
-| status=default | root | background-color: token(fillMuted); [dark] color: oklch(0.9211 0.004 106.48) [#FFE5E5E2], background-color: oklch(0.3161 0.0052 106.7) [#FF32322F], box-shadow:… |
-| status=destructive | root | background-color: token(dangerSoft); [dark] color: oklch(0.9211 0.004 106.48) [#FFE5E5E2], background-color: oklch(0.5509 0.1903 29.01 / 0.18) [#2EC93126], box… |
-| status=warning | root | background-color: token(warningSoft); [dark] color: oklch(0.9211 0.004 106.48) [#FFE5E5E2], background-color: oklch(0.5204 0.1197 50.16 / 0.18) [#2E9E511E], bo… |
-| status=info | root | background-color: token(infoSoft); [dark] color: oklch(0.9211 0.004 106.48) [#FFE5E5E2], background-color: oklch(0.452 0.0862 225.67 / 0.18) [#2E005F7A], box-s… |
-| status=success | root | background-color: token(successSoft); [dark] color: oklch(0.9211 0.004 106.48) [#FFE5E5E2], background-color: oklch(0.4997 0.1193 153.22 / 0.18) [#2E167641], b… |
+| status=default | root | background-color: token(fillMuted) |
+| status=destructive | root | background-color: token(dangerSoft) |
+| status=warning | root | background-color: token(warningSoft) |
+| status=info | root | background-color: token(infoSoft) |
+| status=success | root | background-color: token(successSoft) |
 | size=sm | root | padding: top:8 right:12 bottom:8 left:12; gap: row:0 column:8; [has:>data-slot=spinner] grid-template-columns: 16px minmax(0, 1fr); [has:>svg] grid-template-co… |
 | size=lg | root | padding: top:14 right:16 bottom:14 left:16 |
 
@@ -9504,7 +8759,6 @@ Dart: `RaftEmptyStateRecipe` · source: `dist/components/empty-state/empty-state
 | icon | self | color | token(foregroundHint) |
 | icon | self | align-items | center |
 | icon | self | justify-content | center |
-| icon | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | icon | & svg | width | 36 |
 | icon | & svg | height | 36 |
 | icon | & svg | flex-shrink | 0 |
@@ -9518,7 +8772,6 @@ Dart: `RaftEmptyStateRecipe` · source: `dist/components/empty-state/empty-state
 | title | self | color | token(foregroundMuted) |
 | title | self | text-align | center |
 | title | self | text-wrap | balance |
-| title | self | **dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
 | title | self | **pointer-fine+width>=768** | font-size: 16; line-height: 24 |
 | description | self | width | 100% |
 | description | self | max-width | 300 |
@@ -9528,14 +8781,12 @@ Dart: `RaftEmptyStateRecipe` · source: `dist/components/empty-state/empty-state
 | description | self | color | token(foregroundHint) |
 | description | self | text-align | center |
 | description | self | text-wrap | pretty |
-| description | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | description | self | **pointer-fine+width>=768** | line-height: 22 |
 | description | & > a | font-weight | 600 |
 | description | & > a | text-decoration-thickness | 1.5 |
 | description | & > a | text-underline-offset | 3 |
 | description | & > a:hover | color | token(foreground) |
 | description | & > a:hover | text-decoration-line | underline |
-| description | & > a:hover | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 | actions | self | margin | top:20 |
 
 ## notificationCenter
@@ -9573,11 +8824,6 @@ Dart: `RaftNotificationCenterRecipe` · source: `dist/components/notification-ce
 | trigger | self | -webkit-user-select | none |
 | trigger | self | user-select | none |
 | trigger | self | **active** | background-color: token(fillFrameMedium) |
-| trigger | self | **active+dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.9843 0.004 106.47 / 0.06) [#0FFAFAF7] |
-| trigger | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| trigger | self | **dark+data-popup-open** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.9843 0.004 106.47 / 0.06) [#0FFAFAF7] |
-| trigger | self | **dark+focus-visible** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; box-shadow: 0 0 0 2 oklch(0.2213 0.0038 106.71) [#FF1B1B19], 0 0 0 4 oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| trigger | self | **dark+hover** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.9843 0.004 106.47 / 0.06) [#0FFAFAF7] |
 | trigger | self | **data-popup-open** | background-color: token(fillFrameMedium) |
 | trigger | self | **focus-visible** | box-shadow: token(focusRing) |
 | trigger | self | **hover** | background-color: token(fillFrameMedium) |
@@ -9608,7 +8854,6 @@ Dart: `RaftNotificationCenterRecipe` · source: `dist/components/notification-ce
 | popup | self | overflow-x | hidden |
 | popup | self | overflow-y | hidden |
 | popup | self | flex-direction | column |
-| popup | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.2802 0.0036 106.63) [#FF292927]; box-shadow: 0 0 0 1 oklch(0.9843 0.004 106.47 / 0.259… |
 | header | self | display | flex |
 | header | self | min-height | 52 |
 | header | self | padding | top:0 right:16 bottom:0 left:16 |
@@ -9617,7 +8862,6 @@ Dart: `RaftNotificationCenterRecipe` · source: `dist/components/notification-ce
 | header | self | border-style | bottom:solid |
 | header | self | border-color | token(lineSeam) |
 | header | self | align-items | center |
-| header | self | **dark** | border-color: oklch(0.9843 0.004 106.47 / 0.259) [#42FAFAF7] |
 | header | & > [data-icon-inset]:nth-child(1 of :not([data-base-ui-focus-guard], [aria-owns])) | margin | left:0 |
 | header | & > [data-icon-inset]:nth-last-child(1 of :not([data-base-ui-focus-guard], [aria-owns])) | margin | right:0 |
 | title | self | font-family | token(sansFont, system-ui, sans-serif) |
@@ -9625,14 +8869,12 @@ Dart: `RaftNotificationCenterRecipe` · source: `dist/components/notification-ce
 | title | self | font-weight | 700 |
 | title | self | line-height | 22 |
 | title | self | color | token(foreground) |
-| title | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 | title | self | **pointer-fine+width>=768** | font-size: 16; line-height: 24 |
 | count | self | margin | left:auto |
 | count | self | font-family | token(monoFont, ui-monospace, monospace) |
 | count | self | font-size | 12 |
 | count | self | line-height | 16 |
 | count | self | color | token(foregroundHint) |
-| count | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | count | self | **pointer-fine+width>=768** | line-height: 18 |
 | scroller | self | min-height | 0 |
 | scroller | self | flex | 1 |
@@ -9646,7 +8888,6 @@ Dart: `RaftNotificationCenterRecipe` · source: `dist/components/notification-ce
 | item | ::before | border-color | token(lineHairline) |
 | item | ::before | content | "" |
 | item | ::before | pointer-events | none |
-| item | ::before | **dark** | border-color: oklch(0.9843 0.004 106.47 / 0.102) [#1AFAFAF7] |
 | item | ::before | **has:data-slot=notification-center-item-icon** | inset: top:0 right:0 left:63 |
 | item | ::after | position | absolute |
 | item | ::after | width | 10 |
@@ -9673,7 +8914,6 @@ Dart: `RaftNotificationCenterRecipe` · source: `dist/components/notification-ce
 | itemIcon | self | flex-shrink | 0 |
 | itemIcon | self | align-items | center |
 | itemIcon | self | justify-content | center |
-| itemIcon | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.452 0.0862 225.67 / 0.18) [#2E005F7A] |
 | itemIcon | & svg | width | 18 |
 | itemIcon | & svg | height | 18 |
 | itemContent | self | min-width | 0 |
@@ -9684,8 +8924,6 @@ Dart: `RaftNotificationCenterRecipe` · source: `dist/components/notification-ce
 | itemTitle | self | line-height | 20 |
 | itemTitle | self | color | token(foreground) |
 | itemTitle | self | overflow-wrap | break-word |
-| itemTitle | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| itemTitle | self | **dark+group/notification-center-item:data-read** | font-weight: 600; color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
 | itemTitle | self | **group/notification-center-item:data-read** | font-weight: 600; color: token(foregroundMuted) |
 | itemTitle | self | **pointer-fine+width>=768** | font-size: 14; line-height: 22 |
 | itemBody | self | display | -webkit-box |
@@ -9699,7 +8937,6 @@ Dart: `RaftNotificationCenterRecipe` · source: `dist/components/notification-ce
 | itemBody | self | -webkit-box-orient | vertical |
 | itemBody | self | -webkit-line-clamp | 2 |
 | itemBody | self | overflow-wrap | break-word |
-| itemBody | self | **dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
 | itemBody | self | **pointer-fine+width>=768** | line-height: 22 |
 | itemActions | self | display | flex |
 | itemActions | self | margin | top:8 left:0 |
@@ -9716,9 +8953,9 @@ Dart: `RaftNotificationCenterRecipe` · source: `dist/components/notification-ce
 | size=sm | popup | height: 224 |
 | size=lg | popup | height: 384 |
 | read=true | item | padding: top:12 right:16 bottom:12 left:16; opacity: 100%; ::after position: —; ::after width: —; ::after height: —; ::after inset: —; ::after background-color… |
-| status=error | itemIcon | background-color: token(warningSoft); [dark] color: oklch(0.9211 0.004 106.48) [#FFE5E5E2], background-color: oklch(0.5204 0.1197 50.16 / 0.18) [#2E9E511E] |
-| status=warning | itemIcon | background-color: token(warningSoft); [dark] color: oklch(0.9211 0.004 106.48) [#FFE5E5E2], background-color: oklch(0.5204 0.1197 50.16 / 0.18) [#2E9E511E] |
-| status=success | itemIcon | color: token(foregroundMuted); background-color: token(fillMuted); [dark] color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1], background-color: oklch(0.3161 0.0052… |
+| status=error | itemIcon | background-color: token(warningSoft) |
+| status=warning | itemIcon | background-color: token(warningSoft) |
+| status=success | itemIcon | color: token(foregroundMuted); background-color: token(fillMuted) |
 
 ## toastStyles
 
@@ -9773,8 +9010,6 @@ Dart: `RaftToastRecipe` · source: `dist/components/toast/toast.mjs` (index.mjs:
 | root | self | **ancestor:data-toast-placement^=top+data-ending-style** | inset: top:0 right:0 bottom:auto left:0; transform: translatey(-120%) scale(0.98); transform-origin: top; opacity: 0% |
 | root | self | **ancestor:data-toast-placement^=top+data-starting-style** | inset: top:0 right:0 bottom:auto left:0; transform: translatey(-120%) scale(0.98); transform-origin: top; opacity: 0% |
 | root | self | **ancestor:data-toast-placement$=right** | margin: right:0 left:0; inset: right:0 bottom:0 left:auto |
-| root | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.2802 0.0036 106.63) [#FF292927]; box-shadow: 0 0 0 1 oklch(0.9843 0.004 106.47 / 0.078… |
-| root | self | **dark+focus-visible** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.2802 0.0036 106.63) [#FF292927]; box-shadow: 0 0 0 1 oklch(0.9843 0.004 106.47 / 0.078… |
 | root | self | **data-ending-style** | transform: translatey(120%) scale(0.98); opacity: 0% |
 | root | self | **data-ending-style+data-swipe-direction=down** | transform: translatey(120%) scale(0.98); opacity: 0% |
 | root | self | **data-ending-style+data-swipe-direction=left** | transform: translatey(120%) scale(0.98); opacity: 0% |
@@ -9839,13 +9074,11 @@ Dart: `RaftToastRecipe` · source: `dist/components/toast/toast.mjs` (index.mjs:
 | title | self | overflow-y | hidden |
 | title | self | text-overflow | ellipsis |
 | title | self | white-space | nowrap |
-| title | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 | title | self | **pointer-fine+width>=768** | line-height: 22 |
 | description | self | margin | 0 |
 | description | self | font-size | 14 |
 | description | self | line-height | 20 |
 | description | self | color | color-mix(in oklab, token(foregroundOnHud) 70%, transparent) |
-| description | self | **dark** | color: color-mix(in oklab, oklch(0.9211 0.004 106.48) 70%, transparent) [#B3E5E5E2] |
 | description | self | **pointer-fine+width>=768** | line-height: 22 |
 | actions | self | display | flex |
 | actions | self | gap | 16 |
@@ -9859,7 +9092,6 @@ Dart: `RaftToastRecipe` · source: `dist/components/toast/toast.mjs` (index.mjs:
 | progress | self | transform-origin | 0 |
 | progress | self | pointer-events | none |
 | progress | self | animation | — |
-| progress | self | **dark** | background-color: color-mix(in oklab, oklch(0.9211 0.004 106.48) 40%, transparent) [#66E5E5E2] |
 | progress | self | **group/toast:focus-within** | animation-play-state: paused |
 | progress | self | **group/toast:hover** | animation-play-state: paused |
 | progress | self | **motion-reduce** | animation: none; scale: 100% 1 |
@@ -9892,9 +9124,6 @@ Dart: `RaftToastRecipe` · source: `dist/components/toast/toast.mjs` (index.mjs:
 | close | self | white-space | nowrap |
 | close | self | text-decoration-thickness | 1.5 |
 | close | self | text-underline-offset | 3 |
-| close | self | **active+dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| close | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| close | self | **dark+focus-visible** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; outline-width: 2; outline-color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 | close | self | **disabled** | opacity: 40%; pointer-events: none |
 | close | self | **focus-visible** | outline-width: 2; outline-color: token(foregroundOnHud) |
 | close | self | **hover** | text-decoration-line: underline |
@@ -9904,7 +9133,6 @@ Dart: `RaftToastRecipe` · source: `dist/components/toast/toast.mjs` (index.mjs:
 | close | ::after | border-radius | 8 |
 | close | ::after | content | "" |
 | close | ::after | **active** | background-color: color-mix(in oklab, token(foregroundOnHud) 15%, transparent) |
-| close | ::after | **active+dark** | background-color: color-mix(in oklab, oklch(0.9211 0.004 106.48) 15%, transparent) [#26E5E5E2] |
 | close | & svg | width | 16 |
 | close | & svg | height | 16 |
 | arrow | self | display | flex |
@@ -9960,10 +9188,7 @@ Dart: `RaftToastActionRecipe` · source: `dist/components/toast/toast.mjs` (inde
 | root | self | text-underline-offset | 3 |
 | root | self | -webkit-user-select | none |
 | root | self | user-select | none |
-| root | self | **active+dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 | root | self | **aria-disabled=true** | opacity: 40%; cursor: not-allowed |
-| root | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| root | self | **dark+focus-visible** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; outline-width: 2; outline-color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 | root | self | **data-loading=true** | opacity: 100%; cursor: wait |
 | root | self | **disabled** | opacity: 40%; pointer-events: none |
 | root | self | **focus-visible** | outline-width: 2; outline-color: token(foregroundOnHud) |
@@ -9974,7 +9199,6 @@ Dart: `RaftToastActionRecipe` · source: `dist/components/toast/toast.mjs` (inde
 | root | ::after | border-radius | 8 |
 | root | ::after | content | "" |
 | root | ::after | **active** | background-color: color-mix(in oklab, token(foregroundOnHud) 15%, transparent) |
-| root | ::after | **active+dark** | background-color: color-mix(in oklab, oklch(0.9211 0.004 106.48) 15%, transparent) [#26E5E5E2] |
 | root | & svg | pointer-events | none |
 | root | & svg | flex-shrink | 0 |
 | root | :is(& *)[data-icon] | width | 1em |
@@ -10058,13 +9282,7 @@ Dart: `RaftTabsRecipe` · source: `dist/components/tabs/tabs.mjs` (index.mjs:192
 | tab | self | user-select | none |
 | tab | self | -webkit-touch-callout | none |
 | tab | self | **active** | background-color: token(fillMedium) |
-| tab | self | **active+dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1]; background-color: oklch(0.9843 0.004 106.47 / 0.065) [#11FAFAF7] |
 | tab | self | **active+data-active** | font-weight: 700; color: token(stickerInk); border-color: token(stickerInk); background-color: token(selected); background-image: linear-gradient(token(sticker… |
-| tab | self | **dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
-| tab | self | **dark+data-active** | font-weight: 700; color: token(stickerInk); border-color: token(stickerInk); background-color: token(selected); box-shadow: 0 0 0 1.5 oklch(0.9843 0.004 106.47… |
-| tab | self | **dark+data-disabled** | color: oklch(0.4987 0.0047 106.57) [#FF636360]; background-color: transparent [#00000000]; pointer-events: none |
-| tab | self | **dark+focus-visible** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1]; box-shadow: 0 0 0 2 oklch(0.2213 0.0038 106.71) [#FF1B1B19], 0 0 0 4 oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| tab | self | **dark+hover** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1]; background-color: oklch(0.9843 0.004 106.47 / 0.065) [#11FAFAF7] |
 | tab | self | **data-active** | font-weight: 700; color: token(stickerInk); border-color: token(stickerInk); background-color: token(selected); box-shadow: 0 0 0 1.5 token(stickerEdge); ring:… |
 | tab | self | **data-disabled** | color: token(foregroundDisabled); background-color: transparent [#00000000]; pointer-events: none |
 | tab | self | **data-dragging-source=true** | cursor: grabbing |
@@ -10115,7 +9333,6 @@ Dart: `RaftSeparatorRecipe` · source: `dist/components/separator/separator.mjs`
 |---|---|---|---|
 | root | self | background-color | token(lineHairline) |
 | root | self | flex-shrink | 0 |
-| root | self | **dark** | background-color: oklch(0.9843 0.004 106.47 / 0.102) [#1AFAFAF7] |
 | root | self | **data-orientation=horizontal** | width: 100%; height: 1 |
 | root | self | **data-orientation=vertical** | width: 1; align-self: stretch |
 | labeledRoot | self | display | grid |
@@ -10127,14 +9344,12 @@ Dart: `RaftSeparatorRecipe` · source: `dist/components/separator/separator.mjs`
 | labeledLine | self | height | 1 |
 | labeledLine | self | background-color | token(lineHairline) |
 | labeledLine | self | flex-shrink | 0 |
-| labeledLine | self | **dark** | background-color: oklch(0.9843 0.004 106.47 / 0.102) [#1AFAFAF7] |
 | labeledContent | self | min-width | 0 |
 | labeledContent | self | font-family | token(sansFont, system-ui, sans-serif) |
 | labeledContent | self | font-size | 13 |
 | labeledContent | self | font-weight | 600 |
 | labeledContent | self | line-height | 18 |
 | labeledContent | self | color | token(foregroundHint) |
-| labeledContent | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | labeledContent | self | **pointer-fine+width>=768** | font-size: 12 |
 
 ## appShell
@@ -10158,7 +9373,6 @@ Dart: `RaftAppShellRecipe` · source: `dist/components/app-shell/app-shell.mjs` 
 | root | self | background-color | token(layerCanvas) |
 | root | self | overflow-x | visible |
 | root | self | overflow-y | visible |
-| root | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.2213 0.0038 106.71) [#FF1B1B19] |
 | root | self | **height<=600+pointer-fine+width>=768** | overflow-x: clip; overflow-y: clip |
 | root | self | **width<768** | padding: top:env(safe-area-inset-top, 0px); flex-direction: column |
 | root | self | **width>=768** | overflow-x: clip; overflow-y: clip |
@@ -10226,7 +9440,6 @@ Dart: `RaftResizableRecipe` · source: `dist/components/resizable/resizable.reci
 | handle | self | justify-content | center |
 | handle | self | -webkit-user-select | none |
 | handle | self | user-select | none |
-| handle | self | **dark+focus-visible** | outline-style: none |
 | handle | self | **data-orientation=horizontal** | width: 100%; margin: right:0 bottom:-12; cursor: ns-resize; height: 12 |
 | handle | self | **data-orientation=horizontal+focus-visible** | width: 100%; margin: right:0 bottom:-12; cursor: ns-resize; height: 12; outline-style: none |
 | handle | self | **data-orientation=horizontal+pointer-coarse** | width: 100%; margin: right:0 bottom:-24; cursor: ns-resize; height: 24 |
@@ -10244,9 +9457,6 @@ Dart: `RaftResizableRecipe` · source: `dist/components/resizable/resizable.reci
 | handle | ::before | transition-timing-function | cubic-bezier(0.4, 0, 0.2, 1) |
 | handle | ::before | content | "" |
 | handle | ::before | pointer-events | none |
-| handle | ::before | **dark+data-separator=active** | background-color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
-| handle | ::before | **dark+focus-visible** | width: 2; background-color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; outline-width: 2; outline-style: none; outline-color: oklch(0.9211 0.004 106.48) [#FFE5E5E2… |
-| handle | ::before | **dark+hover** | background-color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
 | handle | ::before | **data-orientation=horizontal** | width: 100%; height: 1; inset: top:-1 left:0 |
 | handle | ::before | **data-orientation=horizontal+focus-visible** | width: 2; height: 2; inset: top:-1 left:0; background-color: token(foreground); outline-width: 2; outline-style: none; outline-color: token(foreground); outlin… |
 | handle | ::before | **data-orientation=horizontal+pointer-coarse** | width: 100%; height: 1; inset: top:-1 left:0 |
@@ -10282,7 +9492,6 @@ Dart: `RaftPanelNoticeRecipe` · source: `dist/components/panel/panel-notice.mjs
 | root | self | border-color | token(lineSeam) |
 | root | self | flex-shrink | 0 |
 | root | self | align-items | flex-start |
-| root | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.5204 0.1197 50.16 / 0.18) [#2E9E511E]; border-color: oklch(0.9843 0.004 106.47 / 0.259… |
 | root | self | **pointer-fine+width>=768** | line-height: 22 |
 | root | self | **width>=768** | padding: top:10 right:20 bottom:10 left:20 |
 | root | & > svg | translate | 0 calc((0.5lh - 50%)) |
@@ -10305,10 +9514,10 @@ Dart: `RaftPanelNoticeRecipe` · source: `dist/components/panel/panel-notice.mjs
 
 | variant | slot | value |
 |---|---|---|
-| status=default | root | background-color: token(fillMuted); [dark] color: oklch(0.9211 0.004 106.48) [#FFE5E5E2], background-color: oklch(0.3161 0.0052 106.7) [#FF32322F], border-colo… |
-| status=destructive | root | background-color: token(dangerSoft); [dark] color: oklch(0.9211 0.004 106.48) [#FFE5E5E2], background-color: oklch(0.5509 0.1903 29.01 / 0.18) [#2EC93126], bor… |
-| status=info | root | background-color: token(infoSoft); [dark] color: oklch(0.9211 0.004 106.48) [#FFE5E5E2], background-color: oklch(0.452 0.0862 225.67 / 0.18) [#2E005F7A], borde… |
-| status=success | root | background-color: token(successSoft); [dark] color: oklch(0.9211 0.004 106.48) [#FFE5E5E2], background-color: oklch(0.4997 0.1193 153.22 / 0.18) [#2E167641], b… |
+| status=default | root | background-color: token(fillMuted) |
+| status=destructive | root | background-color: token(dangerSoft) |
+| status=info | root | background-color: token(infoSoft) |
+| status=success | root | background-color: token(successSoft) |
 
 ## profilePanel
 
@@ -10329,12 +9538,10 @@ Dart: `RaftProfilePanelRecipe` · source: `dist/components/profile-panel/profile
 | root | self | background-color | token(layerCanvas) |
 | root | self | flex | 1 |
 | root | self | flex-direction | column |
-| root | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.2213 0.0038 106.71) [#FF1B1B19] |
 | headerContent | self | gap | 0 |
 | headerContent | self | align-items | stretch |
 | section | self | padding | top:16 right:20 bottom:16 left:20 |
 | section | self | border-color | token(lineHairline) |
-| section | self | **dark** | border-color: oklch(0.9843 0.004 106.47 / 0.102) [#1AFAFAF7] |
 | section | self | **pointer-fine+width>=768** | padding: 16 |
 
 ## threadPanel
@@ -10356,7 +9563,6 @@ Dart: `RaftThreadPanelRecipe` · source: `dist/components/thread-panel/thread-pa
 | root | self | background-color | token(layerCanvas) |
 | root | self | isolation | isolate |
 | root | self | flex-direction | column |
-| root | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.2213 0.0038 106.71) [#FF1B1B19] |
 | header | self | display | flex |
 | header | self | height | token(headerHeight) |
 | header | self | padding | right:16 left:16 |
@@ -10367,7 +9573,6 @@ Dart: `RaftThreadPanelRecipe` · source: `dist/components/thread-panel/thread-pa
 | header | self | border-color | token(lineSeam) |
 | header | self | flex-shrink | 0 |
 | header | self | align-items | center |
-| header | self | **dark** | background-color: oklch(0.2213 0.0038 106.71) [#FF1B1B19]; border-color: oklch(0.9843 0.004 106.47 / 0.259) [#42FAFAF7] |
 | header | self | **width<768** | gap: 8 |
 | header | self | **width>=768** | padding: right:20 left:20 |
 | header | & > [data-icon-inset]:nth-child(1 of :not([data-base-ui-focus-guard], [aria-owns])) | margin | left:0 |
@@ -10379,7 +9584,6 @@ Dart: `RaftThreadPanelRecipe` · source: `dist/components/thread-panel/thread-pa
 | content | self | background-color | token(layerCanvas) |
 | content | self | flex | 1 |
 | content | self | flex-direction | column |
-| content | self | **dark** | background-color: oklch(0.2213 0.0038 106.71) [#FF1B1B19] |
 | title | self | min-width | 0 |
 | title | self | margin | 0 |
 | title | self | font-family | token(sansFont, system-ui, sans-serif) |
@@ -10392,11 +9596,9 @@ Dart: `RaftThreadPanelRecipe` · source: `dist/components/thread-panel/thread-pa
 | title | self | flex | 1 |
 | title | self | text-overflow | ellipsis |
 | title | self | white-space | nowrap |
-| title | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 | title | self | **pointer-fine+width>=768** | font-size: 16; line-height: 24 |
 | titleMeta | self | font-weight | 400 |
 | titleMeta | self | color | token(foregroundHint) |
-| titleMeta | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | actions | self | display | flex |
 | actions | self | gap | 2 |
 | actions | self | flex-shrink | 0 |
@@ -10413,7 +9615,6 @@ Dart: `RaftThreadPanelRecipe` · source: `dist/components/thread-panel/thread-pa
 | search | self | z-index | 35 |
 | search | self | flex-shrink | 0 |
 | search | self | align-items | center |
-| search | self | **dark** | background-color: oklch(0.2213 0.0038 106.71) [#FF1B1B19]; border-color: oklch(0.9843 0.004 106.47 / 0.102) [#1AFAFAF7] |
 | search | self | **pointer-fine+width>=768** | padding: top:8 right:16 bottom:8 left:16 |
 | search | & > [data-slot=input-group] | min-width | 0 |
 | search | :is(& > *)[data-slot="input-group"] | flex | 1 |
@@ -10429,7 +9630,6 @@ Dart: `RaftThreadPanelRecipe` · source: `dist/components/thread-panel/thread-pa
 | searchCount | self | flex-shrink | 0 |
 | searchCount | self | white-space | nowrap |
 | searchCount | self | font-variant-numeric | tabular-nums |
-| searchCount | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | searchCount | self | **pointer-fine+width>=768** | line-height: 18 |
 | originalMessage | self | position | relative |
 | originalMessage | self | padding | bottom:calc((token(timelineGapSection) - token(timelineRowInset))) |
@@ -10438,7 +9638,6 @@ Dart: `RaftThreadPanelRecipe` · source: `dist/components/thread-panel/thread-pa
 | originalMessage | self | border-style | bottom:solid |
 | originalMessage | self | border-color | token(lineHairline) |
 | originalMessage | self | flex-shrink | 0 |
-| originalMessage | self | **dark** | border-color: oklch(0.9843 0.004 106.47 / 0.102) [#1AFAFAF7] |
 | originalMessage | :is(& *)[data-message-item] | background-color | transparent [#00000000] |
 | replySummary | self | padding | top:calc(((token(timelineGapSection) - token(timelineGapMessage)) + token(timelineRowInset))) right:20 left:20 |
 | replySummary | self | **pointer-fine+width>=768** | padding: top:calc(((token(timelineGapSection) - token(timelineGapMessage)) + token(timelineRowInset))) right:16 left:16 |
@@ -10452,14 +9651,12 @@ Dart: `RaftThreadPanelRecipe` · source: `dist/components/thread-panel/thread-pa
 | replyCount | self | border-style | bottom:solid |
 | replyCount | self | border-color | token(lineHairline) |
 | replyCount | self | text-align | center |
-| replyCount | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B]; border-color: oklch(0.9843 0.004 106.47 / 0.102) [#1AFAFAF7] |
 | replyCount | self | **pointer-fine+width>=768** | line-height: 18 |
 | footer | self | padding | top:0 |
 | footer | self | font-size | 12 |
 | footer | self | font-weight | 500 |
 | footer | self | line-height | 16 |
 | footer | self | color | token(foregroundHint) |
-| footer | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | footer | self | **pointer-fine+width>=768** | line-height: 18 |
 
 ## taskBoardColumn
@@ -10479,7 +9676,6 @@ Dart: `RaftTaskBoardColumnRecipe` · source: `dist/components/task-board/task-bo
 | root | self | flex-grow | 1 |
 | root | self | flex-direction | column |
 | root | self | align-self | flex-start |
-| root | self | **dark+data-drop-collapsed=true+data-drop-state=allowed** | outline-width: 1.5; outline-style: dashed; outline-color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; outline-offset: 4 |
 | root | self | **data-drop-collapsed=true+data-drop-state=allowed** | outline-width: 1.5; outline-style: dashed; outline-color: token(lineStrong); outline-offset: 4 |
 | root | & .r-code-copy | **hover** | opacity: 0.55 |
 | trigger | self | display | flex |
@@ -10497,8 +9693,6 @@ Dart: `RaftTaskBoardColumnRecipe` · source: `dist/components/task-board/task-bo
 | trigger | self | align-items | center |
 | trigger | self | justify-content | space-between |
 | trigger | self | text-align | left |
-| trigger | self | **dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
-| trigger | self | **dark+focus-visible** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1]; box-shadow: 0 0 0 2 oklch(0.2213 0.0038 106.71) [#FF1B1B19], 0 0 0 4 oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 | trigger | self | **data-panel-open** | margin: bottom:8 |
 | trigger | self | **focus-visible** | box-shadow: token(focusRing) |
 | trigger | self | **pointer-fine+width>=768** | min-height: 34; font-size: 12 |
@@ -10516,7 +9710,6 @@ Dart: `RaftTaskBoardColumnRecipe` · source: `dist/components/task-board/task-bo
 | badge | self | line-height | 18 |
 | badge | self | color | token(foregroundMuted) |
 | badge | self | align-items | center |
-| badge | self | **dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
 | badge | self | **pointer-fine+width>=768** | font-size: 12 |
 | badge | & > svg | flex-shrink | 0 |
 | count | self | font-family | token(monoFont, ui-monospace, monospace) |
@@ -10524,7 +9717,6 @@ Dart: `RaftTaskBoardColumnRecipe` · source: `dist/components/task-board/task-bo
 | count | self | font-weight | 400 |
 | count | self | line-height | 16 |
 | count | self | color | token(foregroundHint) |
-| count | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | count | self | **pointer-fine+width>=768** | line-height: 18 |
 | chevron | self | display | inline-flex |
 | chevron | self | color | token(foregroundHint) |
@@ -10534,8 +9726,6 @@ Dart: `RaftTaskBoardColumnRecipe` · source: `dist/components/task-board/task-bo
 | chevron | self | transition-timing-function | cubic-bezier(0.4, 0, 0.2, 1) |
 | chevron | self | flex-shrink | 0 |
 | chevron | self | align-items | center |
-| chevron | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
-| chevron | self | **dark+group:hover** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 | chevron | self | **group:data-panel-open** | rotate: 0deg |
 | chevron | self | **group:hover** | color: token(foreground) |
 | chevron | self | **motion-reduce** | transition-property: none |
@@ -10558,8 +9748,6 @@ Dart: `RaftTaskBoardColumnRecipe` · source: `dist/components/task-board/task-bo
 | empty | self | align-items | center |
 | empty | self | justify-content | center |
 | empty | self | text-align | center |
-| empty | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B]; border-color: oklch(0.9843 0.004 106.47 / 0.259) [#42FAFAF7] |
-| empty | self | **dark+group:data-drop-state=blocked** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1]; border-color: oklch(0.9843 0.004 106.47 / 0.259) [#42FAFAF7] |
 | empty | self | **group:data-drop-state=allowed** | display: none |
 | empty | self | **group:data-drop-state=blocked** | color: token(foregroundMuted) |
 | empty | self | **pointer-fine+width>=768** | font-size: 12 |
@@ -10588,12 +9776,12 @@ Dart: `RaftTaskStatusSoftRecipe` · source: `dist/components/tasks/task-status.r
 
 | variant | slot | value |
 |---|---|---|
-| status=backlog | base | background-color: transparent [#00000000]; box-shadow: inset 0 0 0 1 token(lineHairline); [dark] box-shadow: inset 0 0 0 1 oklch(0.9843 0.004 106.47 / 0.102) [… |
-| status=todo | base | background-color: token(taskStatusTodoSoft); [dark] background-color: oklch(0.5204 0.1197 50.16 / 0.18) [#2E9E511E] |
-| status=in-progress | base | background-color: token(taskStatusInProgressSoft); [dark] background-color: oklch(0.452 0.0862 225.67 / 0.18) [#2E005F7A] |
-| status=in-review | base | background-color: token(taskStatusInReviewSoft); [dark] background-color: oklch(0.4995 0.1202 294.19 / 0.239) [#3D6853A0] |
-| status=done | base | background-color: token(taskStatusDoneSoft); [dark] background-color: oklch(0.4997 0.1193 153.22 / 0.18) [#2E167641] |
-| status=closed | base | background-color: token(taskStatusClosedSoft); [dark] background-color: oklch(0.3161 0.0052 106.7) [#FF32322F] |
+| status=backlog | base | background-color: transparent [#00000000]; box-shadow: inset 0 0 0 1 token(lineHairline) |
+| status=todo | base | background-color: token(taskStatusTodoSoft) |
+| status=in-progress | base | background-color: token(taskStatusInProgressSoft) |
+| status=in-review | base | background-color: token(taskStatusInReviewSoft) |
+| status=done | base | background-color: token(taskStatusDoneSoft) |
+| status=closed | base | background-color: token(taskStatusClosedSoft) |
 
 ## taskStatusStrong
 
@@ -10612,12 +9800,12 @@ Dart: `RaftTaskStatusStrongRecipe` · source: `dist/components/tasks/task-status
 
 | variant | slot | value |
 |---|---|---|
-| status=backlog | base | color: token(foreground); [dark] color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| status=todo | base | color: token(taskStatusTodoStrong); [dark] color: oklch(0.82 0.12 55) [#FFFFAF76] |
-| status=in-progress | base | color: token(taskStatusInProgressStrong); [dark] color: oklch(0.8 0.1 220) [#FF6CCDEA] |
-| status=in-review | base | color: token(taskStatusInReviewStrong); [dark] color: token(paletteLavender300) |
-| status=done | base | color: token(taskStatusDoneStrong); [dark] color: oklch(0.8 0.14 153) [#FF6ED892] |
-| status=closed | base | color: token(taskStatusClosedStrong); [dark] color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
+| status=backlog | base | color: token(foreground) |
+| status=todo | base | color: token(taskStatusTodoStrong) |
+| status=in-progress | base | color: token(taskStatusInProgressStrong) |
+| status=in-review | base | color: token(taskStatusInReviewStrong) |
+| status=done | base | color: token(taskStatusDoneStrong) |
+| status=closed | base | color: token(taskStatusClosedStrong) |
 
 ## taskCardStatus
 
@@ -10648,13 +9836,9 @@ Dart: `RaftTaskCardStatusRecipe` · source: `dist/components/task-card/task-card
 | base | self | flex-shrink | 0 |
 | base | self | touch-action | manipulation |
 | base | self | align-items | center |
-| base | self | **active+button+dark+enabled** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-image: linear-gradient(oklch(0.9843 0.004 106.47 / 0.065), oklch(0.9843 0.004 106.47 / 0.065)); curso… |
 | base | self | **active+button+enabled** | background-image: linear-gradient(token(fillMedium), token(fillMedium)); cursor: pointer |
 | base | self | **button** | cursor: pointer |
-| base | self | **button+dark+enabled+hover** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-image: linear-gradient(oklch(0.9843 0.004 106.47 / 0.065), oklch(0.9843 0.004 106.47 / 0.065)); curso… |
 | base | self | **button+enabled+hover** | background-image: linear-gradient(token(fillMedium), token(fillMedium)); cursor: pointer |
-| base | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| base | self | **dark+focus-visible** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; box-shadow: 0 0 0 2 oklch(0.2213 0.0038 106.71) [#FF1B1B19], 0 0 0 4 oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 | base | self | **data-busy=true** | opacity: token(opacityDimmed); cursor: wait; pointer-events: none |
 | base | self | **data-busy=true+disabled** | opacity: 100%; cursor: wait; pointer-events: none |
 | base | self | **disabled** | opacity: 100%; cursor: default |
@@ -10693,12 +9877,7 @@ Dart: `RaftTaskCardRecipe` · source: `dist/components/task-card/task-card.recip
 | root | self | transition-duration | 100ms |
 | root | self | transition-timing-function | cubic-bezier(0.4, 0, 0.2, 1) |
 | root | self | text-align | left |
-| root | self | **active+dark+data-interactive=true** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.2596 0.0037 106.65) [#FF242422]; border-color: oklch(0.9843 0.004 106.47 / 0.102) [#1A… |
 | root | self | **active+data-interactive=true** | background-image: linear-gradient(token(fillMedium), token(fillMedium)); cursor: pointer |
-| root | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.2596 0.0037 106.65) [#FF242422]; border-color: oklch(0.9843 0.004 106.47 / 0.102) [#1A… |
-| root | self | **dark+data-disabled=true** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.3161 0.0052 106.7) [#FF32322F]; border-color: oklch(0.9843 0.004 106.47 / 0.102) [#1AF… |
-| root | self | **dark+data-interactive=true+hover** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.2596 0.0037 106.65) [#FF242422]; border-color: oklch(0.9843 0.004 106.47 / 0.102) [#1A… |
-| root | self | **dark+group/task-draggable:data-dragging=true** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.2596 0.0037 106.65) [#FF242422]; border-color: oklch(0.9843 0.004 106.47 / 0.102) [#1A… |
 | root | self | **data-disabled=true** | background-color: token(fillMuted); opacity: 100%; transform: none; pointer-events: none |
 | root | self | **data-interactive=true** | cursor: pointer |
 | root | self | **data-interactive=true+hover** | background-image: linear-gradient(token(fillSubtle), token(fillSubtle)); cursor: pointer |
@@ -10726,7 +9905,6 @@ Dart: `RaftTaskCardRecipe` · source: `dist/components/task-card/task-card.recip
 | channel | self | overflow-y | hidden |
 | channel | self | text-overflow | ellipsis |
 | channel | self | white-space | nowrap |
-| channel | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | channel | self | **pointer-fine+width>=768** | line-height: 18 |
 | number | self | font-family | token(monoFont, ui-monospace, monospace) |
 | number | self | font-size | 12 |
@@ -10734,7 +9912,6 @@ Dart: `RaftTaskCardRecipe` · source: `dist/components/task-card/task-card.recip
 | number | self | line-height | 16 |
 | number | self | color | token(foregroundHint) |
 | number | self | flex-shrink | 0 |
-| number | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | number | self | **pointer-fine+width>=768** | line-height: 18 |
 | legacy | self | display | inline-flex |
 | legacy | self | height | 22 |
@@ -10748,7 +9925,6 @@ Dart: `RaftTaskCardRecipe` · source: `dist/components/task-card/task-card.recip
 | legacy | self | box-shadow | inset 0 0 0 1 token(lineHairline) |
 | legacy | self | flex-shrink | 0 |
 | legacy | self | align-items | center |
-| legacy | self | **dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1]; box-shadow: inset 0 0 0 1 oklch(0.9843 0.004 106.47 / 0.102) [#1AFAFAF7] |
 | legacy | self | **pointer-fine+width>=768** | line-height: 18 |
 | title | self | display | -webkit-box |
 | title | self | font-size | 16 |
@@ -10761,8 +9937,6 @@ Dart: `RaftTaskCardRecipe` · source: `dist/components/task-card/task-card.recip
 | title | self | -webkit-line-clamp | 3 |
 | title | self | overflow-wrap | break-word |
 | title | self | **ancestor:data-disabled=true** | color: token(foregroundDisabled) |
-| title | self | **ancestor:data-disabled=true+dark** | color: oklch(0.4987 0.0047 106.57) [#FF636360] |
-| title | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 | title | self | **pointer-fine+width>=768** | font-size: 14; line-height: 22 |
 | description | self | display | -webkit-box |
 | description | self | margin | top:4 |
@@ -10775,8 +9949,6 @@ Dart: `RaftTaskCardRecipe` · source: `dist/components/task-card/task-card.recip
 | description | self | -webkit-line-clamp | 2 |
 | description | self | overflow-wrap | break-word |
 | description | self | **ancestor:data-disabled=true** | color: token(foregroundDisabled) |
-| description | self | **ancestor:data-disabled=true+dark** | color: oklch(0.4987 0.0047 106.57) [#FF636360] |
-| description | self | **dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
 | description | self | **pointer-fine+width>=768** | line-height: 22 |
 
 ## taskDnd
@@ -10798,7 +9970,6 @@ Dart: `RaftTaskDndRecipe` · source: `dist/components/task-dnd/task-dnd.recipe.m
 | draggable | self | user-select | none |
 | draggable | self | -webkit-touch-callout | none |
 | draggable | self | **active** | cursor: grabbing |
-| draggable | self | **dark+focus-visible** | box-shadow: 0 0 0 2 oklch(0.2213 0.0038 106.71) [#FF1B1B19], 0 0 0 4 oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 | draggable | self | **data-disabled=true** | cursor: default; touch-action: auto |
 | draggable | self | **data-dragging=true** | z-index: 1; will-change: transform |
 | draggable | self | **focus-visible** | box-shadow: token(focusRing) |
@@ -10838,8 +10009,6 @@ Dart: `RaftTaskListSectionRecipe` · source: `dist/components/task-list/task-lis
 | trigger | self | align-items | center |
 | trigger | self | justify-content | flex-start |
 | trigger | self | text-align | left |
-| trigger | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
-| trigger | self | **dark+focus-visible** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B]; box-shadow: 0 0 0 2 oklch(0.2213 0.0038 106.71) [#FF1B1B19], 0 0 0 4 oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 | trigger | self | **disabled** | cursor: default |
 | trigger | self | **focus-visible** | box-shadow: token(focusRing) |
 | trigger | self | **pointer-fine+width>=768** | min-height: 34; font-size: 12 |
@@ -10857,7 +10026,6 @@ Dart: `RaftTaskListSectionRecipe` · source: `dist/components/task-list/task-lis
 | badge | self | line-height | 18 |
 | badge | self | color | token(foregroundHint) |
 | badge | self | align-items | center |
-| badge | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | badge | self | **pointer-fine+width>=768** | font-size: 12 |
 | badge | & > svg | flex-shrink | 0 |
 | count | self | font-family | token(monoFont, ui-monospace, monospace) |
@@ -10865,7 +10033,6 @@ Dart: `RaftTaskListSectionRecipe` · source: `dist/components/task-list/task-lis
 | count | self | font-weight | 400 |
 | count | self | line-height | 16 |
 | count | self | color | token(foregroundHint) |
-| count | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | count | self | **pointer-fine+width>=768** | line-height: 18 |
 | chevron | self | display | inline-flex |
 | chevron | self | color | token(foregroundHint) |
@@ -10876,8 +10043,6 @@ Dart: `RaftTaskListSectionRecipe` · source: `dist/components/task-list/task-lis
 | chevron | self | order | -1 |
 | chevron | self | flex-shrink | 0 |
 | chevron | self | align-items | center |
-| chevron | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
-| chevron | self | **dark+group:hover** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 | chevron | self | **group:data-panel-open** | rotate: 0deg |
 | chevron | self | **group:hover** | color: token(foreground) |
 | chevron | self | **motion-reduce** | transition-property: none |
@@ -10898,7 +10063,6 @@ Dart: `RaftTaskListSectionRecipe` · source: `dist/components/task-list/task-lis
 | empty | self | align-items | center |
 | empty | self | justify-content | center |
 | empty | self | text-align | center |
-| empty | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B]; border-color: oklch(0.9843 0.004 106.47 / 0.259) [#42FAFAF7] |
 | empty | self | **pointer-fine+width>=768** | font-size: 12 |
 
 ## tasksPanel
@@ -10919,7 +10083,6 @@ Dart: `RaftTasksPanelRecipe` · source: `dist/components/tasks/tasks-panel.recip
 | root | self | container-name | tasks |
 | root | self | flex | 1 |
 | root | self | flex-direction | column |
-| root | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.2213 0.0038 106.71) [#FF1B1B19] |
 | toolbar | self | display | grid |
 | toolbar | self | min-height | token(headerHeight) |
 | toolbar | self | padding | top:12 right:20 bottom:12 left:20 |
@@ -10934,7 +10097,6 @@ Dart: `RaftTasksPanelRecipe` · source: `dist/components/tasks/tasks-panel.recip
 | toolbar | self | **container:tasks (width < 28rem)** | padding: top:12 right:16 bottom:12 left:16 |
 | toolbar | self | **container:tasks (width >= 28rem)** | display: flex; flex-wrap: wrap; justify-content: space-between |
 | toolbar | self | **container:tasks (width >= 40rem)+pointer-fine+width>=768** | padding: top:0 right:16 bottom:0 left:16 |
-| toolbar | self | **dark** | background-color: oklch(0.2213 0.0038 106.71) [#FF1B1B19]; border-color: oklch(0.9843 0.004 106.47 / 0.259) [#42FAFAF7] |
 | toolbar | self | **pointer-fine+width>=768** | padding: top:12 right:16 bottom:12 left:16 |
 | toolbarGroup | self | display | flex |
 | toolbarGroup | self | gap | 8 |
@@ -10977,7 +10139,6 @@ Dart: `RaftTasksPanelRecipe` · source: `dist/components/tasks/tasks-panel.recip
 | toolbarLabel | self | box-shadow | inset 0 0 0 1 token(lineSeam) |
 | toolbarLabel | self | align-items | center |
 | toolbarLabel | self | white-space | nowrap |
-| toolbarLabel | self | **dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1]; box-shadow: inset 0 0 0 1 oklch(0.9843 0.004 106.47 / 0.259) [#42FAFAF7] |
 | toolbarLabel | self | **pointer-fine+width>=768** | height: 34; font-size: 12 |
 | toolbarLabel | & svg | width | 14 |
 | toolbarLabel | & svg | height | 14 |
@@ -10989,7 +10150,6 @@ Dart: `RaftTasksPanelRecipe` · source: `dist/components/tasks/tasks-panel.recip
 | viewport | self | background-color | token(layerCanvas) |
 | viewport | self | flex | 1 |
 | viewport | self | **container:tasks (width < 28rem)** | padding: top:16 right:16 bottom:calc((16px + env(safe-area-inset-bottom, 0px))) left:16 |
-| viewport | self | **dark** | background-color: oklch(0.2213 0.0038 106.71) [#FF1B1B19] |
 | viewport | self | **pointer-fine+width>=768** | padding: top:16 right:16 bottom:calc((16px + env(safe-area-inset-bottom, 0px))) left:16 |
 | empty | self | display | flex |
 | empty | self | height | 100% |
@@ -11020,7 +10180,6 @@ Dart: `RaftTaskLoadingRecipe` · source: `dist/components/tasks/task-loading.rec
 | row | self | border-radius | 10 |
 | row | self | box-shadow | none |
 | row | self | flex-direction | column |
-| row | self | **dark** | background-color: oklch(0.2596 0.0037 106.65) [#FF242422]; border-color: oklch(0.9843 0.004 106.47 / 0.102) [#1AFAFAF7] |
 
 ## taskChip
 
@@ -11062,11 +10221,7 @@ Dart: `RaftTaskChipRecipe` · source: `dist/components/tasks/task-chip.mjs` (ind
 | root | self | text-decoration-line | none |
 | root | self | -webkit-user-select | text |
 | root | self | user-select | text |
-| root | self | **active+dark+is(a, button)** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-image: linear-gradient(oklch(0.9843 0.004 106.47 / 0.065), oklch(0.9843 0.004 106.47 / 0.065)); curso… |
 | root | self | **active+is(a, button)** | background-image: linear-gradient(token(fillMedium), token(fillMedium)); cursor: pointer |
-| root | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| root | self | **dark+focus-visible** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; box-shadow: 0 0 0 2 oklch(0.2213 0.0038 106.71) [#FF1B1B19], 0 0 0 4 oklch(0.9211 0.004 106.48) [#FFE5E5E2]; out… |
-| root | self | **dark+hover+is(a, button)** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-image: linear-gradient(oklch(0.9843 0.004 106.47 / 0.065), oklch(0.9843 0.004 106.47 / 0.065)); curso… |
 | root | self | **focus-visible** | box-shadow: token(focusRing); outline-width: 2; outline-style: none; outline-color: token(lineStrong); outline-offset: 2 |
 | root | self | **hover+is(a, button)** | background-image: linear-gradient(token(fillMedium), token(fillMedium)); cursor: pointer |
 | root | self | **is(a, button)** | cursor: pointer |
@@ -11082,12 +10237,12 @@ Dart: `RaftTaskChipRecipe` · source: `dist/components/tasks/task-chip.mjs` (ind
 
 | variant | slot | value |
 |---|---|---|
-| status=backlog | root | background-color: transparent [#00000000]; box-shadow: inset 0 0 0 1 token(lineHairline); [active+dark+is(a, button)] color: oklch(0.9211 0.004 106.48) [#FFE5E… |
-| status=todo | root | background-color: token(taskStatusTodoSoft); [active+dark+is(a, button)] color: oklch(0.9211 0.004 106.48) [#FFE5E5E2], background-color: oklch(0.5204 0.1197 5… |
-| status=in-progress | root | background-color: token(taskStatusInProgressSoft); [active+dark+is(a, button)] color: oklch(0.9211 0.004 106.48) [#FFE5E5E2], background-color: oklch(0.452 0.0… |
-| status=in-review | root | background-color: token(taskStatusInReviewSoft); [active+dark+is(a, button)] color: oklch(0.9211 0.004 106.48) [#FFE5E5E2], background-color: oklch(0.4995 0.12… |
-| status=done | root | background-color: token(taskStatusDoneSoft); [active+dark+is(a, button)] color: oklch(0.9211 0.004 106.48) [#FFE5E5E2], background-color: oklch(0.4997 0.1193 1… |
-| status=closed | root | background-color: token(taskStatusClosedSoft); [active+dark+is(a, button)] color: oklch(0.9211 0.004 106.48) [#FFE5E5E2], background-color: oklch(0.3161 0.0052… |
+| status=backlog | root | background-color: transparent [#00000000]; box-shadow: inset 0 0 0 1 token(lineHairline); [focus-visible] box-shadow: inset 0 0 0 1 token(lineHairline), token(… |
+| status=todo | root | background-color: token(taskStatusTodoSoft) |
+| status=in-progress | root | background-color: token(taskStatusInProgressSoft) |
+| status=in-review | root | background-color: token(taskStatusInReviewSoft) |
+| status=done | root | background-color: token(taskStatusDoneSoft) |
+| status=closed | root | background-color: token(taskStatusClosedSoft) |
 | variant=inline | root | height: —; padding: top:0 right:8 bottom:0 left:8; font-size: inherit; line-height: 1.4; border-radius: —; align-items: center; & > svg align-self: — |
 | size=sm | root | height: 20; padding: top:2 right:5 bottom:2 left:5; gap: 4 |
 
@@ -11110,7 +10265,6 @@ Dart: `RaftActivityInboxShellRecipe` · source: `dist/components/activity-inbox/
 | panel | self | overflow-y | hidden |
 | panel | self | flex | 1 |
 | panel | self | flex-direction | column |
-| panel | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.2213 0.0038 106.71) [#FF1B1B19] |
 | frame | self | min-height | 0 |
 | frame | self | flex | 1 |
 | viewport | self | display | flex |
@@ -11122,8 +10276,6 @@ Dart: `RaftActivityInboxShellRecipe` · source: `dist/components/activity-inbox/
 | viewport | self | outline-style | none |
 | viewport | self | flex | 1 |
 | viewport | self | flex-direction | column |
-| viewport | self | **dark** | background-color: oklch(0.2213 0.0038 106.71) [#FF1B1B19] |
-| viewport | self | **dark+focus-visible** | background-color: oklch(0.2213 0.0038 106.71) [#FF1B1B19]; box-shadow: 0 0 0 2 oklch(0.2213 0.0038 106.71) [#FF1B1B19], 0 0 0 4 oklch(0.9211 0.004 106.48) [#FF… |
 | viewport | self | **focus-visible** | box-shadow: token(focusRing) |
 | viewport | :is(& > *) | flex-shrink | 0 |
 | loadingMore | self | padding | top:12 bottom:12 |
@@ -11132,7 +10284,6 @@ Dart: `RaftActivityInboxShellRecipe` · source: `dist/components/activity-inbox/
 | loadingMore | self | line-height | 16 |
 | loadingMore | self | color | token(foregroundHint) |
 | loadingMore | self | text-align | center |
-| loadingMore | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | loadingMore | self | **pointer-fine+width>=768** | line-height: 18 |
 
 ## activityInboxSidebar
@@ -11150,11 +10301,9 @@ Dart: `RaftActivityInboxSidebarRecipe` · source: `dist/components/activity-inbo
 | sidebar | self | border-style | right:solid |
 | sidebar | self | border-color | token(lineSeam) |
 | sidebar | self | flex-shrink | 0 |
-| sidebar | self | **dark** | background-color: oklch(0.2213 0.0038 106.71) [#FF1B1B19]; border-color: oklch(0.9843 0.004 106.47 / 0.259) [#42FAFAF7] |
 | sidebar | self | **width<768** | display: none |
 | sidebar | self | **width>=768** | display: flex |
 | sidebarBody | self | background-color | token(layerCanvas) |
-| sidebarBody | self | **dark** | background-color: oklch(0.2213 0.0038 106.71) [#FF1B1B19] |
 | sidebarContent | self | padding | top:0 bottom:0 |
 | sidebarContent | & [data-slot=sidebar-group-label] | padding | top:0 right:20 bottom:0 left:20 |
 | sidebarContent | & [data-slot=sidebar-group-label] | margin | top:12 bottom:0 |
@@ -11169,7 +10318,6 @@ Dart: `RaftActivityInboxSidebarRecipe` · source: `dist/components/activity-inbo
 | sidebarContent | :is(& *)[data-slot="sidebar-group-label"] | color | token(foregroundHint) |
 | sidebarContent | :is(& *)[data-slot="sidebar-group-label"] | align-items | center |
 | sidebarContent | :is(& *)[data-slot="sidebar-group-label"] | text-transform | none |
-| sidebarContent | :is(& *)[data-slot="sidebar-group-label"] | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | sidebarContent | :is(& *)[data-slot="sidebar-group-label"] | **pointer-fine+width>=768** | font-size: 12 |
 | sidebarContent | :is(& *)[data-activity-inbox-show-all] | white-space | nowrap |
 
@@ -11189,7 +10337,6 @@ Dart: `RaftActivityInboxToolbarRecipe` · source: `dist/components/activity-inbo
 | controls | self | flex-shrink | 0 |
 | controls | self | flex-wrap | nowrap |
 | controls | self | align-items | center |
-| controls | self | **dark** | background-color: oklch(0.2213 0.0038 106.71) [#FF1B1B19] |
 | controls | self | **pointer-fine+width>=768** | padding: top:calc(((token(headerHeight) - 34px) / 2)) right:16 bottom:calc(((token(headerHeight) - 34px) / 2)) left:16 |
 | controls | self | **width>=768** | padding: top:12 right:20 bottom:12 left:20 |
 | selectionToolbar | self | display | flex |
@@ -11203,19 +10350,15 @@ Dart: `RaftActivityInboxToolbarRecipe` · source: `dist/components/activity-inbo
 | selectionToolbar | self | flex-shrink | 0 |
 | selectionToolbar | self | flex-wrap | wrap |
 | selectionToolbar | self | align-items | center |
-| selectionToolbar | self | **dark** | background-color: oklch(0.2213 0.0038 106.71) [#FF1B1B19]; border-color: oklch(0.9843 0.004 106.47 / 0.102) [#1AFAFAF7] |
 | selectionToolbar | self | **pointer-fine+width>=768** | padding: top:4 right:16 bottom:5 left:16 |
 | selectionToolbar | self | **width>=768** | padding: top:6 right:20 bottom:5 left:20 |
 | selectionToolbar | :is(& *)[data-activity-inbox-action="sort"] | color | token(foregroundMuted) |
-| selectionToolbar | :is(& *)[data-activity-inbox-action="sort"] | **dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
 | selectionToolbar | :is(& *)[data-activity-inbox-action="sort"]:hover | color | token(foreground) |
-| selectionToolbar | :is(& *)[data-activity-inbox-action="sort"]:hover | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 | selectionCount | self | margin | right:4 |
 | selectionCount | self | font-size | 13 |
 | selectionCount | self | font-weight | 700 |
 | selectionCount | self | line-height | 18 |
 | selectionCount | self | color | token(foreground) |
-| selectionCount | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 | selectionCount | self | **pointer-fine+width>=768** | font-size: 12 |
 
 ## inboxItem
@@ -11266,13 +10409,6 @@ Dart: `RaftInboxItemRecipe` · source: `dist/components/inbox-item/inbox-item.re
 | item | ::before | content | "" |
 | item | ::before | pointer-events | none |
 | item | ::before | **active** | transition-property: none; background-color: token(fillCellPress) |
-| item | ::before | **active+dark** | transition-property: none; background-color: oklch(0.9843 0.004 106.47 / 0.12) [#1FFAFAF7] |
-| item | ::before | **dark+data-active=true** | background-color: oklch(0.452 0.0862 225.67 / 0.38) [#61005F7A] |
-| item | ::before | **dark+data-located** | background-image: linear-gradient(transparent, transparent); animation: raft-located 2000ms linear |
-| item | ::before | **dark+data-popup-open** | background-color: oklch(0.9843 0.004 106.47 / 0.075) [#13FAFAF7] |
-| item | ::before | **dark+has:data-popup-open** | background-color: oklch(0.9843 0.004 106.47 / 0.075) [#13FAFAF7] |
-| item | ::before | **dark+has:data-slot=inbox-item-open+focus-visible** | box-shadow: inset 0 0 0 2 oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| item | ::before | **dark+hover** | background-color: oklch(0.9843 0.004 106.47 / 0.075) [#13FAFAF7] |
 | item | ::before | **data-active=true** | background-color: token(fillCellSelected) |
 | item | ::before | **data-located** | background-image: linear-gradient(transparent, transparent); animation: raft-located 2000ms linear |
 | item | ::before | **data-popup-open** | background-color: token(fillCellHover) |
@@ -11310,7 +10446,6 @@ Dart: `RaftInboxItemRecipe` · source: `dist/components/inbox-item/inbox-item.re
 | itemLeadingBadge | self | z-index | 1 |
 | itemLeadingBadge | self | align-items | center |
 | itemLeadingBadge | self | justify-content | center |
-| itemLeadingBadge | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.2213 0.0038 106.71) [#FF1B1B19]; background-image: linear-gradient(oklch(0.452 0.0862 … |
 | itemLeadingBadge | & svg | width | 10 |
 | itemLeadingBadge | & svg | height | 10 |
 | itemLeadingBadge | & svg | flex-shrink | 0 |
@@ -11344,7 +10479,6 @@ Dart: `RaftInboxItemRecipe` · source: `dist/components/inbox-item/inbox-item.re
 | itemContext | self | color | token(foregroundHint) |
 | itemContext | self | grid-column | 1 / -1 |
 | itemContext | self | align-items | center |
-| itemContext | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | itemContext | self | **nth-child(-n+2)** | grid-column: 1 / 2 |
 | itemContext | self | **pointer-fine+width>=768** | line-height: 18 |
 | itemSubtitle | self | min-width | 0 |
@@ -11355,7 +10489,6 @@ Dart: `RaftInboxItemRecipe` · source: `dist/components/inbox-item/inbox-item.re
 | itemSubtitle | self | line-height | 16 |
 | itemSubtitle | self | color | token(foregroundHint) |
 | itemSubtitle | self | grid-column | 1 / -1 |
-| itemSubtitle | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | itemSubtitle | self | **nth-child(-n+2)** | grid-column: 1 / 2 |
 | itemSubtitle | self | **pointer-fine+width>=768** | line-height: 18 |
 | itemHeading | self | display | flex |
@@ -11379,8 +10512,6 @@ Dart: `RaftInboxItemRecipe` · source: `dist/components/inbox-item/inbox-item.re
 | itemTitle | self | -webkit-box-orient | vertical |
 | itemTitle | self | -webkit-line-clamp | 2 |
 | itemTitle | self | flex | 1 |
-| itemTitle | self | **dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
-| itemTitle | self | **dark+group/inbox-item:data-unread=true** | font-weight: 700; color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 | itemTitle | self | **group/inbox-item:data-unread=true** | font-weight: 700; color: token(foreground) |
 | itemTitle | self | **pointer-fine+width>=768** | font-size: 14; line-height: 22 |
 | itemTitle | & > svg | position | absolute |
@@ -11388,8 +10519,6 @@ Dart: `RaftInboxItemRecipe` · source: `dist/components/inbox-item/inbox-item.re
 | itemTitle | & > svg | height | 14 |
 | itemTitle | & > svg | inset | top:calc(((1lh - 14px) / 2)) left:0 |
 | itemTitle | & > svg | color | token(foregroundHint) |
-| itemTitle | & > svg | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
-| itemTitle | & > svg | **dark+group/inbox-item:data-unread=true** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | itemTrailing | self | display | flex |
 | itemTrailing | self | position | relative |
 | itemTrailing | self | padding | top:1 |
@@ -11442,7 +10571,6 @@ Dart: `RaftInboxItemRecipe` · source: `dist/components/inbox-item/inbox-item.re
 | itemListHeading | self | font-weight | 700 |
 | itemListHeading | self | line-height | 18 |
 | itemListHeading | self | color | token(foregroundHint) |
-| itemListHeading | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | itemListHeading | self | **pointer-fine+width>=768** | padding: top:4 right:16 bottom:4 left:16; font-size: 12 |
 | itemMarks | self | display | flex |
 | itemMarks | self | height | 20 |
@@ -11451,7 +10579,6 @@ Dart: `RaftInboxItemRecipe` · source: `dist/components/inbox-item/inbox-item.re
 | itemMarks | self | flex-shrink | 0 |
 | itemMarks | self | align-items | center |
 | itemMarks | self | justify-content | flex-end |
-| itemMarks | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | itemHoverTarget | self | pointer-events | auto |
 | itemTimestamp | self | font-family | token(monoFont, ui-monospace, monospace) |
 | itemTimestamp | self | font-size | 12 |
@@ -11461,7 +10588,6 @@ Dart: `RaftInboxItemRecipe` · source: `dist/components/inbox-item/inbox-item.re
 | itemTimestamp | self | text-align | right |
 | itemTimestamp | self | white-space | nowrap |
 | itemTimestamp | self | font-variant-numeric | tabular-nums |
-| itemTimestamp | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | itemTimestamp | self | **pointer-fine+width>=768** | line-height: 18 |
 | itemLine | self | display | flex |
 | itemLine | self | height | 20 |
@@ -11482,7 +10608,6 @@ Dart: `RaftInboxItemRecipe` · source: `dist/components/inbox-item/inbox-item.re
 | itemBody | self | grid-column | 1 / -1 |
 | itemBody | self | -webkit-box-orient | vertical |
 | itemBody | self | -webkit-line-clamp | 2 |
-| itemBody | self | **dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
 | itemBody | self | **nth-child(-n+2)** | grid-column: 1 / 2 |
 | itemBody | self | **pointer-fine+width>=768** | line-height: 22 |
 | itemMessage | self | display | -webkit-box |
@@ -11496,12 +10621,10 @@ Dart: `RaftInboxItemRecipe` · source: `dist/components/inbox-item/inbox-item.re
 | itemMessage | self | grid-column | 1 / -1 |
 | itemMessage | self | -webkit-box-orient | vertical |
 | itemMessage | self | -webkit-line-clamp | 2 |
-| itemMessage | self | **dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
 | itemMessage | self | **nth-child(-n+2)** | grid-column: 1 / 2 |
 | itemMessage | self | **pointer-fine+width>=768** | line-height: 22 |
 | itemSender | self | font-weight | 600 |
 | itemSender | self | color | token(foreground) |
-| itemSender | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 | itemMetadata | self | display | flex |
 | itemMetadata | self | min-height | 20 |
 | itemMetadata | self | margin | top:8 |
@@ -11528,11 +10651,8 @@ Dart: `RaftInboxItemRecipe` · source: `dist/components/inbox-item/inbox-item.re
 | itemActions | & > [data-slot=panel-toggle-action][data-pressed] | color | token(foreground) |
 | itemActions | & > [data-slot=panel-toggle-action][data-pressed] | background-color | transparent [#00000000] |
 | itemActions | & > [data-slot=panel-toggle-action][data-pressed] | border-color | transparent [#00000000] |
-| itemActions | & > [data-slot=panel-toggle-action][data-pressed] | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 | itemActions | & > [data-slot=panel-toggle-action][data-pressed]:hover | background-color | token(fillMedium) |
-| itemActions | & > [data-slot=panel-toggle-action][data-pressed]:hover | **dark** | background-color: oklch(0.9843 0.004 106.47 / 0.065) [#11FAFAF7] |
 | itemActions | & > [data-slot=panel-toggle-action][data-pressed]:active | background-color | token(fillMedium) |
-| itemActions | & > [data-slot=panel-toggle-action][data-pressed]:active | **dark** | background-color: oklch(0.9843 0.004 106.47 / 0.065) [#11FAFAF7] |
 | itemActions | :is(& > *)[data-slot="panel-action"]::after | **pointer-coarse** | position: absolute; inset: -6; content: "" |
 | itemActions | :is(& > *)[data-slot="panel-toggle-action"]::after | **pointer-coarse** | position: absolute; inset: -6; content: "" |
 
@@ -11567,21 +10687,18 @@ Dart: `RaftSearchRecipe` · source: `dist/components/search/search.recipe.mjs` (
 | frame | self | background-color | token(layerCanvas) |
 | frame | self | flex | 1 |
 | frame | self | flex-direction | column |
-| frame | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.2213 0.0038 106.71) [#FF1B1B19] |
 | filtersRow | self | padding | top:12 right:16 bottom:12 left:16 |
 | filtersRow | self | background-color | token(layerCanvas) |
 | filtersRow | self | border-width | bottom:1 |
 | filtersRow | self | border-style | bottom:solid |
 | filtersRow | self | border-color | token(lineSeam) |
 | filtersRow | self | flex-shrink | 0 |
-| filtersRow | self | **dark** | background-color: oklch(0.2213 0.0038 106.71) [#FF1B1B19]; border-color: oklch(0.9843 0.004 106.47 / 0.259) [#42FAFAF7] |
 | filtersRow | self | **pointer-fine+width>=768** | padding: top:calc((((token(headerHeight) - 1px) - 34px) / 2)) right:16 bottom:calc((((token(headerHeight) - 1px) - 34px) / 2)) left:16 |
 | filtersRow | self | **width>=768** | padding: top:12 right:20 bottom:12 left:20 |
 | viewport | self | min-height | 0 |
 | viewport | self | padding | top:0 right:0 bottom:16 left:0 |
 | viewport | self | background-color | token(layerCanvas) |
 | viewport | self | flex | 1 |
-| viewport | self | **dark** | background-color: oklch(0.2213 0.0038 106.71) [#FF1B1B19] |
 | summary | self | display | block |
 | summary | self | padding | top:8 right:20 left:20 |
 | summary | self | margin | bottom:0 |
@@ -11589,7 +10706,6 @@ Dart: `RaftSearchRecipe` · source: `dist/components/search/search.recipe.mjs` (
 | summary | self | font-size | 13 |
 | summary | self | line-height | 18 |
 | summary | self | color | token(foregroundHint) |
-| summary | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | summary | self | **pointer-fine+width>=768** | padding: top:8 right:16 left:16; font-size: 12 |
 | section | self | margin | bottom:0 |
 | sectionHeading | self | display | flex |
@@ -11601,7 +10717,6 @@ Dart: `RaftSearchRecipe` · source: `dist/components/search/search.recipe.mjs` (
 | sectionHeading | self | line-height | 18 |
 | sectionHeading | self | color | token(foregroundHint) |
 | sectionHeading | self | align-items | center |
-| sectionHeading | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | sectionHeading | self | **pointer-fine+width>=768** | padding: top:12 right:16 bottom:0 left:16; font-size: 12 |
 | list | self | display | flex |
 | list | self | padding | top:8 bottom:8 |
@@ -11633,14 +10748,6 @@ Dart: `RaftSearchEntityRecipe` · source: `dist/components/search/search-entity.
 | entity | self | isolation | isolate |
 | entity | self | align-items | center |
 | entity | self | text-align | left |
-| entity | self | **active+dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| entity | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| entity | self | **dark+data-located** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| entity | self | **dark+data-popup-open** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| entity | self | **dark+data-selected=true** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| entity | self | **dark+focus-visible** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| entity | self | **dark+has:data-popup-open** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| entity | self | **dark+hover** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 | entity | self | **disabled** | cursor: default |
 | entity | self | **pointer-coarse** | padding: top:8 right:20 bottom:8 left:20; min-height: 56 |
 | entity | self | **pointer-fine+width>=768** | padding: top:8 right:16 bottom:8 left:16 |
@@ -11657,13 +10764,6 @@ Dart: `RaftSearchEntityRecipe` · source: `dist/components/search/search-entity.
 | entity | ::before | content | "" |
 | entity | ::before | pointer-events | none |
 | entity | ::before | **active** | transition-property: none; background-color: token(fillCellPress) |
-| entity | ::before | **active+dark** | transition-property: none; background-color: oklch(0.9843 0.004 106.47 / 0.12) [#1FFAFAF7] |
-| entity | ::before | **dark+data-located** | background-image: linear-gradient(transparent, transparent); animation: raft-located 2000ms linear |
-| entity | ::before | **dark+data-popup-open** | background-color: oklch(0.9843 0.004 106.47 / 0.075) [#13FAFAF7] |
-| entity | ::before | **dark+data-selected=true** | background-color: oklch(0.5501 0.0999 91.5 / 0.2) [#33876F1F] |
-| entity | ::before | **dark+focus-visible** | box-shadow: inset 0 0 0 2 oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| entity | ::before | **dark+has:data-popup-open** | background-color: oklch(0.9843 0.004 106.47 / 0.075) [#13FAFAF7] |
-| entity | ::before | **dark+hover** | background-color: oklch(0.9843 0.004 106.47 / 0.075) [#13FAFAF7] |
 | entity | ::before | **data-located** | background-image: linear-gradient(transparent, transparent); animation: raft-located 2000ms linear |
 | entity | ::before | **data-popup-open** | background-color: token(fillCellHover) |
 | entity | ::before | **data-selected=true** | background-color: token(brandSoft) |
@@ -11683,7 +10783,6 @@ Dart: `RaftSearchEntityRecipe` · source: `dist/components/search/search-entity.
 | entityIcon | self | overflow-y | hidden |
 | entityIcon | self | align-items | center |
 | entityIcon | self | justify-content | center |
-| entityIcon | self | **dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1]; background-color: oklch(0.3161 0.0052 106.7) [#FF32322F] |
 | entityIcon | & svg | width | 14 |
 | entityIcon | & svg | height | 14 |
 | entityActivity | self | display | inline-block |
@@ -11698,7 +10797,6 @@ Dart: `RaftSearchEntityRecipe` · source: `dist/components/search/search-entity.
 | entityActivity | self | border-radius | 2 |
 | entityActivity | self | box-shadow | 0 0 0 2 token(layerCanvas) |
 | entityActivity | self | flex-shrink | 0 |
-| entityActivity | self | **dark** | box-shadow: 0 0 0 2 oklch(0.2213 0.0038 106.71) [#FF1B1B19] |
 | entityContent | self | display | flex |
 | entityContent | self | min-width | 0 |
 | entityContent | self | gap | 2 |
@@ -11717,8 +10815,6 @@ Dart: `RaftSearchEntityRecipe` · source: `dist/components/search/search-entity.
 | entityTitle | self | overflow-y | hidden |
 | entityTitle | self | text-overflow | ellipsis |
 | entityTitle | self | white-space | nowrap |
-| entityTitle | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| entityTitle | self | **dark+data-muted** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | entityTitle | self | **data-muted** | color: token(foregroundHint) |
 | entityTitle | self | **pointer-fine+width>=768** | font-size: 14; line-height: 22 |
 | entityDescription | self | display | block |
@@ -11729,8 +10825,6 @@ Dart: `RaftSearchEntityRecipe` · source: `dist/components/search/search-entity.
 | entityDescription | self | overflow-y | hidden |
 | entityDescription | self | text-overflow | ellipsis |
 | entityDescription | self | white-space | nowrap |
-| entityDescription | self | **dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
-| entityDescription | self | **dark+data-muted** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | entityDescription | self | **data-muted** | color: token(foregroundHint) |
 | entityDescription | self | **pointer-fine+width>=768** | line-height: 22 |
 
@@ -11756,14 +10850,6 @@ Dart: `RaftSearchMessageRecipe` · source: `dist/components/search/search-messag
 | message | self | outline-style | none |
 | message | self | isolation | isolate |
 | message | self | text-align | left |
-| message | self | **active+dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| message | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| message | self | **dark+data-located** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| message | self | **dark+data-popup-open** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| message | self | **dark+data-selected=true** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| message | self | **dark+focus-visible** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| message | self | **dark+has:data-popup-open** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| message | self | **dark+hover** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 | message | self | **disabled** | cursor: default |
 | message | self | **pointer-fine+width>=768** | padding: top:8 right:16 bottom:8 left:16 |
 | message | ::before | display | block |
@@ -11779,13 +10865,6 @@ Dart: `RaftSearchMessageRecipe` · source: `dist/components/search/search-messag
 | message | ::before | content | "" |
 | message | ::before | pointer-events | none |
 | message | ::before | **active** | transition-property: none; background-color: token(fillCellPress) |
-| message | ::before | **active+dark** | transition-property: none; background-color: oklch(0.9843 0.004 106.47 / 0.12) [#1FFAFAF7] |
-| message | ::before | **dark+data-located** | background-image: linear-gradient(transparent, transparent); animation: raft-located 2000ms linear |
-| message | ::before | **dark+data-popup-open** | background-color: oklch(0.9843 0.004 106.47 / 0.075) [#13FAFAF7] |
-| message | ::before | **dark+data-selected=true** | background-color: oklch(0.5501 0.0999 91.5 / 0.2) [#33876F1F] |
-| message | ::before | **dark+focus-visible** | box-shadow: inset 0 0 0 2 oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| message | ::before | **dark+has:data-popup-open** | background-color: oklch(0.9843 0.004 106.47 / 0.075) [#13FAFAF7] |
-| message | ::before | **dark+hover** | background-color: oklch(0.9843 0.004 106.47 / 0.075) [#13FAFAF7] |
 | message | ::before | **data-located** | background-image: linear-gradient(transparent, transparent); animation: raft-located 2000ms linear |
 | message | ::before | **data-popup-open** | background-color: token(fillCellHover) |
 | message | ::before | **data-selected=true** | background-color: token(brandSoft) |
@@ -11801,7 +10880,6 @@ Dart: `RaftSearchMessageRecipe` · source: `dist/components/search/search-messag
 | messageHeader | self | color | token(foregroundHint) |
 | messageHeader | self | flex-wrap | nowrap |
 | messageHeader | self | align-items | center |
-| messageHeader | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | messageHeader | self | **pointer-fine+width>=768** | line-height: 18 |
 | messageBody | self | display | -webkit-box |
 | messageBody | self | min-width | 0 |
@@ -11814,7 +10892,6 @@ Dart: `RaftSearchMessageRecipe` · source: `dist/components/search/search-messag
 | messageBody | self | overflow-y | hidden |
 | messageBody | self | -webkit-box-orient | vertical |
 | messageBody | self | -webkit-line-clamp | 2 |
-| messageBody | self | **dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
 | messageBody | self | **pointer-fine+width>=768** | line-height: 22 |
 | messageMeta | self | min-width | 0 |
 | messageMeta | self | overflow-x | hidden |
@@ -11839,7 +10916,6 @@ Dart: `RaftSearchMessageRecipe` · source: `dist/components/search/search-messag
 | messageSender | self | flex-shrink | 0 |
 | messageSender | self | align-items | center |
 | messageSender | self | white-space | nowrap |
-| messageSender | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 | messageSender | self | **pointer-fine+width>=768** | line-height: 22 |
 | messageTimestamp | self | min-width | 0 |
 | messageTimestamp | self | margin | left:auto |
@@ -11873,7 +10949,6 @@ Dart: `RaftSearchThreadRecipe` · source: `dist/components/search/search-thread.
 | thread | self | box-shadow | none |
 | thread | self | overflow-x | hidden |
 | thread | self | overflow-y | hidden |
-| thread | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 | threadHeader | self | padding | top:12 right:20 bottom:0 left:20 |
 | threadHeader | self | **pointer-fine+width>=768** | padding: top:12 right:16 bottom:0 left:16 |
 | threadMeta | self | display | flex |
@@ -11886,7 +10961,6 @@ Dart: `RaftSearchThreadRecipe` · source: `dist/components/search/search-thread.
 | threadMeta | self | color | token(foregroundHint) |
 | threadMeta | self | flex-wrap | wrap |
 | threadMeta | self | align-items | center |
-| threadMeta | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | threadMeta | self | **pointer-fine+width>=768** | line-height: 18 |
 | threadTimestamp | self | margin | left:auto |
 | threadTimestamp | self | text-transform | none |
@@ -11895,7 +10969,6 @@ Dart: `RaftSearchThreadRecipe` · source: `dist/components/search/search-thread.
 | threadTitle | self | font-weight | 600 |
 | threadTitle | self | line-height | 20 |
 | threadTitle | self | color | token(foreground) |
-| threadTitle | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 | threadTitle | self | **pointer-fine+width>=768** | line-height: 22 |
 | threadMessages | self | display | flex |
 | threadMessages | self | padding | top:8 bottom:8 |
@@ -11942,12 +11015,7 @@ Dart: `RaftSearchTriggerRecipe` · source: `dist/components/search/search-trigge
 | root | self | -webkit-user-select | none |
 | root | self | user-select | none |
 | root | self | **active** | background-image: linear-gradient(token(fillMedium), token(fillMedium)) |
-| root | self | **active+dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B]; background-color: oklch(0.2596 0.0037 106.65) [#FF242422]; background-image: linear-gradient(oklch(0.9843 0.004… |
 | root | self | **aria-disabled=true** | color: token(foregroundDisabled); background-color: token(fillMuted); border-color: token(lineHairline); background-image: none; cursor: not-allowed |
-| root | self | **aria-disabled=true+dark** | color: oklch(0.4987 0.0047 106.57) [#FF636360]; background-color: oklch(0.3161 0.0052 106.7) [#FF32322F]; border-color: oklch(0.9843 0.004 106.47 / 0.102) [#1A… |
-| root | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B]; background-color: oklch(0.2596 0.0037 106.65) [#FF242422] |
-| root | self | **dark+disabled** | color: oklch(0.4987 0.0047 106.57) [#FF636360]; background-color: oklch(0.3161 0.0052 106.7) [#FF32322F]; border-color: oklch(0.9843 0.004 106.47 / 0.102) [#1A… |
-| root | self | **dark+focus-visible** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B]; background-color: oklch(0.2596 0.0037 106.65) [#FF242422]; box-shadow: 0 0 0 2 oklch(0.2213 0.0038 106.71) [#FF… |
 | root | self | **disabled** | color: token(foregroundDisabled); background-color: token(fillMuted); border-color: token(lineHairline); background-image: none; cursor: not-allowed |
 | root | self | **focus-visible** | box-shadow: token(focusRing) |
 | root | self | **pointer-fine+width>=768** | height: 34; font-size: 14; line-height: 22 |
@@ -12028,7 +11096,6 @@ Dart: `RaftMobileNavServerRecipe` · source: `dist/components/mobile-nav/mobile-
 | item | self | -webkit-touch-callout | none |
 | item | :is(& > *)[data-slot="avatar"] | width | 22 |
 | item | :is(& > *)[data-slot="avatar"] | height | 22 |
-| item | ::before | **dark+data-popup-open** | background-color: oklch(0.9843 0.004 106.47 / 0.065) [#11FAFAF7]; content: "" |
 | item | ::before | **data-popup-open** | background-color: token(fillMedium); content: "" |
 | content | self | display | flex |
 | content | self | width | calc((unset - 16px)) |
@@ -12070,11 +11137,7 @@ Dart: `RaftMobileNavServerRecipe` · source: `dist/components/mobile-nav/mobile-
 | row | self | -webkit-user-select | none |
 | row | self | user-select | none |
 | row | self | **active** | background-color: token(brandSoft) |
-| row | self | **active+dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.5501 0.0999 91.5 / 0.2) [#33876F1F] |
 | row | self | **aria-current=true** | font-weight: 700 |
-| row | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| row | self | **dark+focus-visible** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.5501 0.0999 91.5 / 0.2) [#33876F1F] |
-| row | self | **dark+hover** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.5501 0.0999 91.5 / 0.2) [#33876F1F] |
 | row | self | **focus-visible** | background-color: token(brandSoft) |
 | row | self | **hover** | background-color: token(brandSoft) |
 | row | self | **pointer-fine+width>=768** | min-height: 34; padding: top:calc(((34px - 1lh) / 2)) right:10 bottom:calc(((34px - 1lh) / 2)) left:10; line-height: 22 |
@@ -12083,10 +11146,6 @@ Dart: `RaftMobileNavServerRecipe` · source: `dist/components/mobile-nav/mobile-
 | row | & > svg:not([class*='size-']) | width | 16 |
 | row | & > svg:not([class*='size-']) | height | 16 |
 | row | & > svg | color | token(foregroundMuted) |
-| row | & > svg | **active+dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
-| row | & > svg | **dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
-| row | & > svg | **dark+focus-visible** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
-| row | & > svg | **dark+hover** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
 | row | :is(& > *)[data-slot="avatar"] | width | 20 |
 | row | :is(& > *)[data-slot="avatar"] | height | 20 |
 | row | :is(& > *)[data-slot="avatar"] | flex-shrink | 0 |
@@ -12110,7 +11169,6 @@ Dart: `RaftMobileNavServerRecipe` · source: `dist/components/mobile-nav/mobile-
 | rowDescription | self | overflow-y | hidden |
 | rowDescription | self | text-overflow | ellipsis |
 | rowDescription | self | white-space | nowrap |
-| rowDescription | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | rowDescription | self | **pointer-fine+width>=768** | line-height: 18 |
 | destinations | self | display | grid |
 | destinations | self | padding | 4 |
@@ -12141,10 +11199,6 @@ Dart: `RaftMobileNavServerRecipe` · source: `dist/components/mobile-nav/mobile-
 | destination | self | -webkit-user-select | none |
 | destination | self | user-select | none |
 | destination | self | **active** | background-color: token(brandSoft) |
-| destination | self | **active+dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.5501 0.0999 91.5 / 0.2) [#33876F1F] |
-| destination | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| destination | self | **dark+focus-visible** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.5501 0.0999 91.5 / 0.2) [#33876F1F] |
-| destination | self | **dark+hover** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.5501 0.0999 91.5 / 0.2) [#33876F1F] |
 | destination | self | **focus-visible** | background-color: token(brandSoft) |
 | destination | self | **hover** | background-color: token(brandSoft) |
 | destination | self | **pointer-fine+width>=768** | font-size: 12 |
@@ -12153,10 +11207,6 @@ Dart: `RaftMobileNavServerRecipe` · source: `dist/components/mobile-nav/mobile-
 | destination | & svg | color | token(foregroundMuted) |
 | destination | & svg | pointer-events | none |
 | destination | & svg | flex-shrink | 0 |
-| destination | & svg | **active+dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
-| destination | & svg | **dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
-| destination | & svg | **dark+focus-visible** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
-| destination | & svg | **dark+hover** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
 | destination | & > span | max-width | 100% |
 | destination | & > span | overflow-x | hidden |
 | destination | & > span | overflow-y | hidden |
@@ -12245,14 +11295,7 @@ Dart: `RaftPanelSplitActionMainRecipe` · source: `dist/components/panel/panel-s
 | base | self | user-select | none |
 | base | self | **active** | background-color: token(fillMedium) |
 | base | self | **active+aria-pressed=true** | color: token(stickerInk); background-color: token(selected); border-color: token(stickerInk); background-image: linear-gradient(token(stickerMedium), token(sti… |
-| base | self | **active+dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.9843 0.004 106.47 / 0.065) [#11FAFAF7] |
 | base | self | **aria-pressed=true** | color: token(stickerInk); background-color: token(selected); border-color: token(stickerInk); box-shadow: 0 0 0 1.5 token(stickerEdge); ring: width:1.5 color:t… |
-| base | self | **aria-pressed=true+dark** | color: token(stickerInk); background-color: token(selected); border-color: token(stickerInk); box-shadow: 0 0 0 1.5 oklch(0.9843 0.004 106.47 / 0.349) [#59FAFA… |
-| base | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| base | self | **dark+disabled** | color: oklch(0.4987 0.0047 106.57) [#FF636360]; pointer-events: none; opacity: 100%; transform: none |
-| base | self | **dark+focus-visible** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; box-shadow: 0 0 0 2 oklch(0.2213 0.0038 106.71) [#FF1B1B19], 0 0 0 4 oklch(0.9211 0.004 106.48) [#FFE5E5E2]; z-i… |
-| base | self | **dark+group/split-action:hover** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.9843 0.004 106.47 / 0.03) [#08FAFAF7] |
-| base | self | **dark+hover** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.9843 0.004 106.47 / 0.065) [#11FAFAF7] |
 | base | self | **data-pressed** | z-index: 1 |
 | base | self | **disabled** | color: token(foregroundDisabled); pointer-events: none; opacity: 100%; transform: none |
 | base | self | **focus-visible** | box-shadow: token(focusRing); z-index: 1 |
@@ -12309,15 +11352,8 @@ Dart: `RaftPanelSplitActionToggleRecipe` · source: `dist/components/panel/panel
 | base | self | -webkit-user-select | none |
 | base | self | user-select | none |
 | base | self | **active** | background-color: token(fillMedium) |
-| base | self | **active+dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.9843 0.004 106.47 / 0.065) [#11FAFAF7] |
 | base | self | **active+data-pressed** | color: token(stickerInk); background-color: token(selected); border-color: token(stickerInk); background-image: linear-gradient(token(stickerMedium), token(sti… |
 | base | self | **aria-pressed=true** | z-index: 1 |
-| base | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| base | self | **dark+data-disabled** | color: oklch(0.4987 0.0047 106.57) [#FF636360]; pointer-events: none; opacity: 100%; transform: none |
-| base | self | **dark+data-pressed** | color: token(stickerInk); background-color: token(selected); border-color: token(stickerInk); box-shadow: 0 0 0 1.5 oklch(0.9843 0.004 106.47 / 0.349) [#59FAFA… |
-| base | self | **dark+focus-visible** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; box-shadow: 0 0 0 2 oklch(0.2213 0.0038 106.71) [#FF1B1B19], 0 0 0 4 oklch(0.9211 0.004 106.48) [#FFE5E5E2]; z-i… |
-| base | self | **dark+group/split-action:hover** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.9843 0.004 106.47 / 0.03) [#08FAFAF7] |
-| base | self | **dark+hover** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.9843 0.004 106.47 / 0.065) [#11FAFAF7] |
 | base | self | **data-disabled** | color: token(foregroundDisabled); pointer-events: none; opacity: 100%; transform: none |
 | base | self | **data-pressed** | color: token(stickerInk); background-color: token(selected); border-color: token(stickerInk); box-shadow: 0 0 0 1.5 token(stickerEdge); ring: width:1.5 color:t… |
 | base | self | **focus-visible** | box-shadow: token(focusRing); z-index: 1 |
@@ -12377,19 +11413,9 @@ Dart: `RaftPanelSplitActionMenuRecipe` · source: `dist/components/panel/panel-s
 | base | self | user-select | none |
 | base | self | **active** | background-color: token(fillMedium) |
 | base | self | **active+aria-pressed=true** | color: token(stickerInk); background-color: token(selected); border-color: token(stickerInk); background-image: linear-gradient(token(stickerMedium), token(sti… |
-| base | self | **active+dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.9843 0.004 106.47 / 0.065) [#11FAFAF7] |
 | base | self | **ancestor:data-split-action-main+aria-pressed=true** | background-color: token(fillSubtle) |
-| base | self | **ancestor:data-split-action-main+aria-pressed=true+dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.9843 0.004 106.47 / 0.03) [#08FAFAF7] |
 | base | self | **ancestor:data-split-action-main+data-pressed** | background-color: token(fillSubtle) |
-| base | self | **ancestor:data-split-action-main+data-pressed+dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.9843 0.004 106.47 / 0.03) [#08FAFAF7] |
 | base | self | **aria-pressed=true** | color: token(stickerInk); background-color: token(selected); border-color: token(stickerInk); box-shadow: 0 0 0 1.5 token(stickerEdge); ring: width:1.5 color:t… |
-| base | self | **aria-pressed=true+dark** | color: token(stickerInk); background-color: token(selected); border-color: token(stickerInk); box-shadow: 0 0 0 1.5 oklch(0.9843 0.004 106.47 / 0.349) [#59FAFA… |
-| base | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| base | self | **dark+data-popup-open** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.9843 0.004 106.47 / 0.065) [#11FAFAF7] |
-| base | self | **dark+disabled** | color: oklch(0.4987 0.0047 106.57) [#FF636360]; pointer-events: none; opacity: 100%; transform: none |
-| base | self | **dark+focus-visible** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; box-shadow: 0 0 0 2 oklch(0.2213 0.0038 106.71) [#FF1B1B19], 0 0 0 4 oklch(0.9211 0.004 106.48) [#FFE5E5E2]; z-i… |
-| base | self | **dark+group/split-action:hover** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.9843 0.004 106.47 / 0.03) [#08FAFAF7] |
-| base | self | **dark+hover** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.9843 0.004 106.47 / 0.065) [#11FAFAF7] |
 | base | self | **data-popup-open** | background-color: token(fillMedium) |
 | base | self | **disabled** | color: token(foregroundDisabled); pointer-events: none; opacity: 100%; transform: none |
 | base | self | **focus-visible** | box-shadow: token(focusRing); z-index: 1 |
@@ -12440,7 +11466,6 @@ Dart: `RaftAnnouncementRecipe` · source: `dist/components/announcement-dialog/a
 | label | self | color | token(foregroundMuted) |
 | label | self | align-items | center |
 | label | self | overflow-wrap | break-word |
-| label | self | **dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
 | label | self | **pointer-fine+width>=768** | line-height: 18 |
 | dot | self | width | 10 |
 | dot | self | height | 10 |
@@ -12468,7 +11493,6 @@ Dart: `RaftAnnouncementRecipe` · source: `dist/components/announcement-dialog/a
 | picture | self | border-radius | 10 |
 | picture | self | overflow-x | hidden |
 | picture | self | overflow-y | hidden |
-| picture | self | **dark** | background-color: oklch(0.3161 0.0052 106.7) [#FF32322F]; border-color: oklch(0.9843 0.004 106.47 / 0.102) [#1AFAFAF7] |
 | picture | & img | width | 100% |
 | picture | & img | height | 100% |
 | picture | & img | object-fit | contain |
@@ -12478,7 +11502,6 @@ Dart: `RaftAnnouncementRecipe` · source: `dist/components/announcement-dialog/a
 | text | self | line-height | 20 |
 | text | self | color | token(foregroundMuted) |
 | text | self | overflow-wrap | break-word |
-| text | self | **dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
 | text | self | **pointer-fine+width>=768** | font-size: 14; line-height: 22 |
 | text | & p + p | margin | top:12 |
 | text | & ul | padding | left:20 |
@@ -12507,7 +11530,6 @@ Dart: `RaftAnnouncementRecipe` · source: `dist/components/announcement-dialog/a
 | footer | self | align-items | center |
 | footer | self | justify-content | space-between |
 | footer | self | **container:announcement (width < 28rem)** | flex-direction: column |
-| footer | self | **dark** | border-color: oklch(0.9843 0.004 106.47 / 0.102) [#1AFAFAF7] |
 | footer | self | **pointer-fine+width>=768** | padding: top:0 right:16 bottom:16 left:16 |
 | action | self | height | auto |
 | action | self | min-width | 0 |
@@ -12558,8 +11580,6 @@ Dart: `RaftCommentRecipe` · source: `dist/components/comment/comment.recipe.mjs
 | card | self | box-shadow | none |
 | card | self | outline-style | none |
 | card | self | flex-direction | column |
-| card | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.2596 0.0037 106.65) [#FF242422]; border-color: oklch(0.9843 0.004 106.47 / 0.102) [#1A… |
-| card | self | **dark+data-active** | padding: 11.5; color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.2596 0.0037 106.65) [#FF242422]; border-width: 1.5; border-color: oklch… |
 | card | self | **data-active** | padding: 11.5; border-width: 1.5; border-color: token(lineStrong); box-shadow: token(elevationFloat) |
 | cardTrigger | self | position | absolute |
 | cardTrigger | self | padding | 0 |
@@ -12572,9 +11592,6 @@ Dart: `RaftCommentRecipe` · source: `dist/components/comment/comment.recipe.mjs
 | cardTrigger | self | cursor | pointer |
 | cardTrigger | self | z-index | 1 |
 | cardTrigger | self | **active** | background-color: token(fillMedium) |
-| cardTrigger | self | **active+dark** | background-color: oklch(0.9843 0.004 106.47 / 0.065) [#11FAFAF7] |
-| cardTrigger | self | **dark+focus-visible** | box-shadow: 0 0 0 2 oklch(0.2213 0.0038 106.71) [#FF1B1B19], 0 0 0 4 oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| cardTrigger | self | **dark+hover** | background-color: oklch(0.9843 0.004 106.47 / 0.03) [#08FAFAF7] |
 | cardTrigger | self | **focus-visible** | box-shadow: token(focusRing) |
 | cardTrigger | self | **hover** | background-color: token(fillSubtle) |
 | cardQuote | self | position | absolute |
@@ -12597,11 +11614,9 @@ Dart: `RaftCommentRecipe` · source: `dist/components/comment/comment.recipe.mjs
 | cardMeta | self | color | token(foregroundHint) |
 | cardMeta | self | align-items | center |
 | cardMeta | self | **button** | padding: 0; background-color: transparent [#00000000]; border-width: 0; border-style: solid; border-radius: 6; outline-style: none; text-align: start; text-dec… |
-| cardMeta | self | **button+dark+focus-visible** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B]; padding: 0; background-color: transparent [#00000000]; border-width: 0; border-style: solid; border-radius: 6; … |
 | cardMeta | self | **button+enabled** | padding: 0; background-color: transparent [#00000000]; border-width: 0; border-style: solid; border-radius: 6; outline-style: none; cursor: pointer; text-align… |
 | cardMeta | self | **button+enabled+hover** | padding: 0; background-color: transparent [#00000000]; border-width: 0; border-style: solid; border-radius: 6; outline-style: none; cursor: pointer; text-align… |
 | cardMeta | self | **button+focus-visible** | padding: 0; background-color: transparent [#00000000]; border-width: 0; border-style: solid; border-radius: 6; box-shadow: token(focusRing); outline-style: non… |
-| cardMeta | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | cardMeta | self | **pointer-fine+width>=768** | line-height: 18 |
 | cardMeta | & svg | width | 14 |
 | cardMeta | & svg | height | 14 |
@@ -12625,7 +11640,6 @@ Dart: `RaftCommentRecipe` · source: `dist/components/comment/comment.recipe.mjs
 | entryAuthor | self | overflow-y | hidden |
 | entryAuthor | self | text-overflow | ellipsis |
 | entryAuthor | self | white-space | nowrap |
-| entryAuthor | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 | entryAuthor | self | **pointer-fine+width>=768** | font-size: 14; line-height: 22 |
 | entryTime | self | font-family | token(monoFont, ui-monospace, monospace) |
 | entryTime | self | font-size | 12 |
@@ -12634,7 +11648,6 @@ Dart: `RaftCommentRecipe` · source: `dist/components/comment/comment.recipe.mjs
 | entryTime | self | flex-shrink | 0 |
 | entryTime | self | white-space | nowrap |
 | entryTime | self | font-variant-numeric | tabular-nums |
-| entryTime | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | entryTime | self | **pointer-fine+width>=768** | line-height: 18 |
 | entryBody | self | font-size | 14 |
 | entryBody | self | line-height | 20 |
@@ -12642,12 +11655,9 @@ Dart: `RaftCommentRecipe` · source: `dist/components/comment/comment.recipe.mjs
 | entryBody | self | overflow-wrap | break-word |
 | entryBody | self | -webkit-user-select | text |
 | entryBody | self | user-select | text |
-| entryBody | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 | entryBody | self | **pointer-fine+width>=768** | line-height: 22 |
 | entryBody | & ::selection | background-color | token(selection) |
-| entryBody | & ::selection | **dark** | background-color: token(brand400) |
 | entryBody | ::selection | background-color | token(selection) |
-| entryBody | ::selection | **dark** | background-color: token(brand400) |
 | marker | self | display | inline-flex |
 | marker | self | position | relative |
 | marker | self | height | 24 |
@@ -12671,12 +11681,6 @@ Dart: `RaftCommentRecipe` · source: `dist/components/comment/comment.recipe.mjs
 | marker | self | white-space | nowrap |
 | marker | self | font-variant-numeric | tabular-nums |
 | marker | self | **active** | background-image: linear-gradient(token(fillMedium), token(fillMedium)) |
-| marker | self | **active+dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.2596 0.0037 106.65) [#FF242422]; border-color: oklch(0.9843 0.004 106.47 / 0.102) [#1A… |
-| marker | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.2596 0.0037 106.65) [#FF242422]; border-color: oklch(0.9843 0.004 106.47 / 0.102) [#1A… |
-| marker | self | **dark+data-active** | padding: top:0 right:5.5 bottom:0 left:2.5; color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.5501 0.0999 91.5 / 0.2) [#33876F1F]; borde… |
-| marker | self | **dark+data-popup-open** | padding: top:0 right:5.5 bottom:0 left:2.5; color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.5501 0.0999 91.5 / 0.2) [#33876F1F]; borde… |
-| marker | self | **dark+focus-visible** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.2596 0.0037 106.65) [#FF242422]; border-color: oklch(0.9843 0.004 106.47 / 0.102) [#1A… |
-| marker | self | **dark+hover** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.2596 0.0037 106.65) [#FF242422]; border-color: oklch(0.9843 0.004 106.47 / 0.102) [#1A… |
 | marker | self | **data-active** | padding: top:0 right:5.5 bottom:0 left:2.5; background-color: token(brandSoft); border-width: 1.5; border-color: token(lineStrong) |
 | marker | self | **data-popup-open** | padding: top:0 right:5.5 bottom:0 left:2.5; background-color: token(brandSoft); border-width: 1.5; border-color: token(lineStrong) |
 | marker | self | **focus-visible** | box-shadow: token(focusRing) |
@@ -12721,7 +11725,6 @@ Dart: `RaftSelectionToolbarRecipe` · source: `dist/components/selection-toolbar
 | root | self | border-radius | 10 |
 | root | self | box-shadow | 0 0 0 1 token(lineSeam), token(elevationFloat) |
 | root | self | ring | width:1 color:token(lineSeam) offsetWidth:— offsetColor:— |
-| root | self | **dark** | background-color: oklch(0.2802 0.0036 106.63) [#FF292927]; box-shadow: 0 0 0 1 oklch(0.9843 0.004 106.47 / 0.259) [#42FAFAF7], 0 0 0 1 oklch(0.9843 0.004 106.4… |
 | root | self | **pointer-fine+width>=768** | padding: top:0 right:5 bottom:0 left:5; gap: 4 |
 | root | :is(& *)[data-slot="button"]::after | inset | right:-1.5 left:-1.5 |
 | root | :is(& *)[data-slot="button"]::after | content | "" |
@@ -12740,7 +11743,6 @@ Dart: `RaftSelectionToolbarRecipe` · source: `dist/components/selection-toolbar
 | count | self | flex-shrink | 0 |
 | count | self | white-space | nowrap |
 | count | self | font-variant-numeric | tabular-nums |
-| count | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 | count | self | **pointer-fine+width>=768** | padding: right:8 left:8; line-height: 22 |
 | countValue | self | font-family | token(monoFont, ui-monospace, monospace) |
 | hint | self | padding | right:4 |
@@ -12750,7 +11752,6 @@ Dart: `RaftSelectionToolbarRecipe` · source: `dist/components/selection-toolbar
 | hint | self | color | token(foregroundHint) |
 | hint | self | flex-shrink | 0 |
 | hint | self | white-space | nowrap |
-| hint | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | hint | self | **data-fit-label** | padding: 0; position: absolute; width: 1; height: 1; margin: -1; border-width: 0; overflow-x: hidden; overflow-y: hidden; clip-path: inset(50%) |
 | hint | self | **pointer-fine+width>=768** | line-height: 18 |
 | actions | self | gap | 0 |
@@ -12927,7 +11928,6 @@ Dart: `RaftMeterRecipe` · source: `dist/components/meter/meter.mjs` (index.mjs:
 | label | self | overflow-y | hidden |
 | label | self | text-overflow | ellipsis |
 | label | self | white-space | nowrap |
-| label | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 | label | self | **pointer-fine+width>=768** | font-size: 12 |
 | value | self | font-size | 13 |
 | value | self | line-height | 18 |
@@ -12943,7 +11943,6 @@ Dart: `RaftMeterRecipe` · source: `dist/components/meter/meter.mjs` (index.mjs:
 | track | self | border-radius | 4 |
 | track | self | overflow-x | hidden |
 | track | self | overflow-y | hidden |
-| track | self | **dark** | background-color: oklch(0.3161 0.0052 106.7) [#FF32322F] |
 | track | self | **group/meter:data-size=sm** | height: 6 |
 | indicator | self | display | block |
 | indicator | self | height | 100% |
@@ -12983,7 +11982,6 @@ Dart: `RaftFilterChipRecipe` · source: `dist/components/filter-chip/filter-chip
 | root | self | border-radius | 8 |
 | root | self | flex-shrink | 1 |
 | root | self | align-items | center |
-| root | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.452 0.0862 225.67 / 0.18) [#2E005F7A] |
 | root | self | **pointer-fine+width>=768** | height: 34; font-size: 14; line-height: 22 |
 | root | & > svg | pointer-events | none |
 | root | & > svg | flex-shrink | 0 |
@@ -13009,10 +12007,6 @@ Dart: `RaftFilterChipRecipe` · source: `dist/components/filter-chip/filter-chip
 | remove | self | align-items | center |
 | remove | self | justify-content | center |
 | remove | self | **active** | background-color: token(fillMedium) |
-| remove | self | **active+dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B]; background-color: oklch(0.9843 0.004 106.47 / 0.065) [#11FAFAF7] |
-| remove | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
-| remove | self | **dark+focus-visible** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B]; box-shadow: inset 0 0 0 2 oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| remove | self | **dark+hover** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B]; background-color: oklch(0.9843 0.004 106.47 / 0.065) [#11FAFAF7] |
 | remove | self | **focus-visible** | box-shadow: inset 0 0 0 2 token(foreground) |
 | remove | self | **hover** | background-color: token(fillMedium) |
 | remove | & > svg | width | 14 |
@@ -13036,7 +12030,6 @@ Dart: `RaftMaterialProgressRecipe` · source: `dist/components/pull-to-refresh/p
 | root | self | overflow-x | visible |
 | root | self | overflow-y | visible |
 | root | self | flex-shrink | 0 |
-| root | self | **dark** | color: oklch(0.8 0.1 220) [#FF6CCDEA] |
 | determinate | self | opacity | 30% |
 | determinate | self | transition-property | opacity |
 | determinate | self | transition-duration | 150ms |
@@ -13076,7 +12069,6 @@ Dart: `RaftPullToRefreshIndicatorRecipe` · source: `dist/components/pull-to-ref
 | root | self | flex-shrink | 0 |
 | root | self | align-items | center |
 | root | self | justify-content | center |
-| root | self | **dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
 | root | self | **data-state=pulling** | transition-property: none |
 | root | self | **motion-reduce** | transition-property: none |
 | surface | self | display | flex |
@@ -13137,7 +12129,6 @@ Dart: `RaftChoiceListRecipe` · source: `dist/components/choice-list/choice-list
 | frame | self | overflow-x | hidden |
 | frame | self | overflow-y | hidden |
 | frame | self | flex-direction | column |
-| frame | self | **dark** | background-color: oklch(0.2596 0.0037 106.65) [#FF242422]; border-color: oklch(0.9843 0.004 106.47 / 0.102) [#1AFAFAF7] |
 | scroller | self | min-width | 0 |
 | scroller | self | min-height | 0 |
 | scroller | self | padding | 4 |
@@ -13162,7 +12153,6 @@ Dart: `RaftChoiceListRecipe` · source: `dist/components/choice-list/choice-list
 | heading | self | line-height | 16 |
 | heading | self | color | token(foregroundHint) |
 | heading | self | grid-column | span 2 / span 2 |
-| heading | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | heading | self | **pointer-fine+width>=768** | line-height: 18 |
 | item | self | display | flex |
 | item | self | min-width | 0 |
@@ -13177,8 +12167,6 @@ Dart: `RaftChoiceListRecipe` · source: `dist/components/choice-list/choice-list
 | item | self | align-items | flex-start |
 | item | self | text-align | left |
 | item | self | **active** | background-image: linear-gradient(token(fillMedium), token(fillMedium)) |
-| item | self | **active+dark** | background-image: linear-gradient(oklch(0.9843 0.004 106.47 / 0.065), oklch(0.9843 0.004 106.47 / 0.065)) |
-| item | self | **dark+hover** | background-color: oklch(0.5501 0.0999 91.5 / 0.2) [#33876F1F] |
 | item | self | **data-disabled** | cursor: not-allowed |
 | item | self | **hover** | background-color: token(brandSoft) |
 | item | self | **pointer-coarse** | min-height: 44; padding: top:calc(((44px - 1lh) / 2)) right:10 bottom:calc(((44px - 1lh) / 2)) left:10 |
@@ -13198,8 +12186,6 @@ Dart: `RaftChoiceListRecipe` · source: `dist/components/choice-list/choice-list
 | label | self | text-overflow | ellipsis |
 | label | self | white-space | nowrap |
 | label | self | **ancestor:data-disabled** | color: token(foregroundDisabled) |
-| label | self | **ancestor:data-disabled+dark** | color: oklch(0.4987 0.0047 106.57) [#FF636360] |
-| label | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 | description | self | display | block |
 | description | self | font-family | token(sansFont, system-ui, sans-serif) |
 | description | self | font-size | 13 |
@@ -13211,8 +12197,6 @@ Dart: `RaftChoiceListRecipe` · source: `dist/components/choice-list/choice-list
 | description | self | text-overflow | ellipsis |
 | description | self | white-space | nowrap |
 | description | self | **ancestor:data-disabled** | color: token(foregroundDisabled) |
-| description | self | **ancestor:data-disabled+dark** | color: oklch(0.4987 0.0047 106.57) [#FF636360] |
-| description | self | **dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
 | description | self | **pointer-fine+width>=768** | font-size: 12 |
 | meta | self | display | block |
 | meta | self | font-family | token(sansFont, system-ui, sans-serif) |
@@ -13225,8 +12209,6 @@ Dart: `RaftChoiceListRecipe` · source: `dist/components/choice-list/choice-list
 | meta | self | text-overflow | ellipsis |
 | meta | self | white-space | nowrap |
 | meta | self | **ancestor:data-disabled** | color: token(foregroundDisabled) |
-| meta | self | **ancestor:data-disabled+dark** | color: oklch(0.4987 0.0047 106.57) [#FF636360] |
-| meta | self | **dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
 | meta | self | **pointer-fine+width>=768** | font-size: 12 |
 | action | self | display | flex |
 | action | self | position | relative |
@@ -13247,14 +12229,12 @@ Dart: `RaftChoiceListRecipe` · source: `dist/components/choice-list/choice-list
 | note | self | font-size | 14 |
 | note | self | line-height | 20 |
 | note | self | color | token(foregroundHint) |
-| note | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | note | self | **pointer-fine+width>=768** | line-height: 22 |
 | footer | self | padding | 4 |
 | footer | self | border-width | top:1 |
 | footer | self | border-style | top:solid |
 | footer | self | border-color | token(lineSeam) |
 | footer | self | flex-shrink | 0 |
-| footer | self | **dark** | border-color: oklch(0.9843 0.004 106.47 / 0.259) [#42FAFAF7] |
 
 ### Variant deltas (one axis changed from the default)
 
@@ -13289,7 +12269,6 @@ Dart: `RaftSaveStatusRecipe` · source: `dist/components/save-status/save-status
 | error | self | display | block |
 | error | self | color | token(dangerStrong) |
 | error | self | overflow-wrap | anywhere |
-| error | self | **dark** | color: oklch(0.7996 0.1009 24.79) [#FFF8A49D] |
 
 ## taskCompletionControl
 
@@ -13315,7 +12294,6 @@ Dart: `RaftTaskCompletionControlRecipe` · source: `dist/components/task-complet
 | root | self | touch-action | manipulation |
 | root | self | align-items | center |
 | root | self | justify-content | center |
-| root | self | **dark+focus-visible** | box-shadow: 0 0 0 2 oklch(0.2213 0.0038 106.71) [#FF1B1B19], 0 0 0 4 oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 | root | self | **data-disabled** | cursor: not-allowed |
 | root | self | **focus-visible** | box-shadow: token(focusRing) |
 | root | ::after | position | absolute |
@@ -13328,7 +12306,7 @@ Dart: `RaftTaskCompletionControlRecipe` · source: `dist/components/task-complet
 
 | variant | slot | value |
 |---|---|---|
-| preview=true | root | :is(& > *)[data-slot="checkbox-indicator-graphic"] [dark+hover] color: color-mix(in oklab, oklch(0.9211 0.004 106.48) 20%, transparent) [#33E5E5E2]; :is(& > *)… |
+| preview=true | root | :is(& > *)[data-slot="checkbox-indicator-graphic"] [hover] color: color-mix(in oklab, token(foreground) 20%, transparent) |
 | preview=true | indicator | [group:hover] color: transparent [#00000000] |
 
 ## kbdButton
@@ -13356,10 +12334,6 @@ Dart: `RaftKbdButtonRecipe` · source: `dist/components/kbd-button/kbd-button.mj
 | root | self | vertical-align | middle |
 | root | self | -webkit-user-select | none |
 | root | self | user-select | none |
-| root | self | **dark+data-invalid+data-recording** | padding: top:0 right:6.5 bottom:0 left:6.5; margin: top:calc(((24px - token(controlHeight)) / 2)) right:0 bottom:calc(((24px - token(controlHeight)) / 2)) left… |
-| root | self | **dark+data-recording** | padding: top:0 right:6.5 bottom:0 left:6.5; margin: top:calc(((24px - token(controlHeight)) / 2)) right:0 bottom:calc(((24px - token(controlHeight)) / 2)) left… |
-| root | self | **dark+focus-visible** | box-shadow: 0 0 0 2 oklch(0.2213 0.0038 106.71) [#FF1B1B19], 0 0 0 4 oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| root | self | **dark+hover** | background-image: linear-gradient(oklch(0.9843 0.004 106.47 / 0.065), oklch(0.9843 0.004 106.47 / 0.065)); box-shadow: inset 0 0 0 1 oklch(0.9843 0.004 106.47 … |
 | root | self | **data-invalid+data-recording** | padding: top:0 right:6.5 bottom:0 left:6.5; margin: top:calc(((24px - token(controlHeight)) / 2)) right:0 bottom:calc(((24px - token(controlHeight)) / 2)) left… |
 | root | self | **data-recording** | padding: top:0 right:6.5 bottom:0 left:6.5; margin: top:calc(((24px - token(controlHeight)) / 2)) right:0 bottom:calc(((24px - token(controlHeight)) / 2)) left… |
 | root | self | **data-recording+pointer-fine+width>=768** | padding: top:0 right:6.5 bottom:0 left:6.5; margin: top:-5 right:0 bottom:-5 left:0; border-radius: 8; height: 34; background-color: token(layerCard); border-w… |
@@ -13368,8 +12342,6 @@ Dart: `RaftKbdButtonRecipe` · source: `dist/components/kbd-button/kbd-button.mj
 | root | ::after | position | absolute |
 | root | ::after | inset | min(0px, calc(((100% - 44px) / 2))) |
 | root | ::after | content | "" |
-| root | :is(& *)[data-slot="kbd"] | **dark+data-invalid** | color: oklch(0.7996 0.1009 24.79) [#FFF8A49D]; background-color: oklch(0.5509 0.1903 29.01 / 0.18) [#2EC93126] |
-| root | :is(& *)[data-slot="kbd"] | **dark+data-invalid+data-recording** | color: oklch(0.7996 0.1009 24.79) [#FFF8A49D]; background-color: oklch(0.5509 0.1903 29.01 / 0.18) [#2EC93126] |
 | root | :is(& *)[data-slot="kbd"] | **data-invalid** | color: token(dangerStrong); background-color: token(dangerSoft) |
 | root | :is(& *)[data-slot="kbd"] | **data-invalid+data-recording** | color: token(dangerStrong); background-color: token(dangerSoft) |
 | placeholder | self | padding | right:2 left:2 |
@@ -13378,14 +12350,12 @@ Dart: `RaftKbdButtonRecipe` · source: `dist/components/kbd-button/kbd-button.mj
 | placeholder | self | line-height | 20 |
 | placeholder | self | color | token(foregroundHint) |
 | placeholder | self | white-space | nowrap |
-| placeholder | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | placeholder | self | **pointer-fine+width>=768** | line-height: 22 |
 | caret | self | display | block |
 | caret | self | width | 1.5 |
 | caret | self | height | 18 |
 | caret | self | background-color | token(foreground) |
 | caret | self | flex-shrink | 0 |
-| caret | self | **dark** | background-color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 
 ## webTopBar
 
@@ -13408,7 +12378,6 @@ Dart: `RaftWebTopBarRecipe` · source: `dist/components/web-top-bar/web-top-bar.
 | root | self | align-items | center |
 | root | self | background-repeat | no-repeat |
 | root | self | background-position | right 72px center |
-| root | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.1582 0.0041 106.86) [#FF0D0D0B]; border-color: oklch(0.9843 0.004 106.47 / 0.259) [#42… |
 | root | self | **pointer-fine+width>=768** | height: 44 |
 | root | self | **width>=1024** | background-image: none |
 | start | self | display | flex |
@@ -13454,7 +12423,6 @@ Dart: `RaftWebSelectionPanelRecipe` · source: `Web src/components/ui/SelectionP
 | root | self | overflow-x | hidden |
 | root | self | overflow-y | hidden |
 | root | self | flex-direction | column |
-| root | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.2802 0.0036 106.63) [#FF292927]; box-shadow: 0 0 0 1 oklch(0.9843 0.004 106.47 / 0.259… |
 | header | self | display | flex |
 | header | self | padding | top:10 right:16 bottom:4 left:16 |
 | header | self | gap | 8 |
@@ -13468,13 +12436,11 @@ Dart: `RaftWebSelectionPanelRecipe` · source: `Web src/components/ui/SelectionP
 | empty | self | font-size | 14 |
 | empty | self | line-height | 20 |
 | empty | self | color | token(foregroundHint) |
-| empty | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | empty | self | **pointer-fine+width>=768** | line-height: 22 |
 | title | self | font-size | 12 |
 | title | self | font-weight | 700 |
 | title | self | line-height | 16 |
 | title | self | color | token(foregroundHint) |
-| title | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | title | self | **pointer-fine+width>=768** | line-height: 18 |
 | clear | self | font-size | 12 |
 | clear | self | font-weight | 500 |
@@ -13484,10 +12450,6 @@ Dart: `RaftWebSelectionPanelRecipe` · source: `Web src/components/ui/SelectionP
 | clear | self | outline-style | none |
 | clear | self | text-decoration-thickness | 1.5 |
 | clear | self | text-underline-offset | 3 |
-| clear | self | **dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
-| clear | self | **dark+disabled** | color: oklch(0.4987 0.0047 106.57) [#FF636360]; cursor: not-allowed |
-| clear | self | **dark+focus-visible** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1]; box-shadow: 0 0 0 2 oklch(0.2213 0.0038 106.71) [#FF1B1B19], 0 0 0 4 oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| clear | self | **dark+hover** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; text-decoration-line: underline |
 | clear | self | **disabled** | color: token(foregroundDisabled); cursor: not-allowed |
 | clear | self | **focus-visible** | box-shadow: token(focusRing) |
 | clear | self | **hover** | color: token(foreground); text-decoration-line: underline |
@@ -13502,8 +12464,6 @@ Dart: `RaftWebSelectionPanelRecipe` · source: `Web src/components/ui/SelectionP
 | search | self | border-color | token(lineHairline) |
 | search | self | flex-shrink | 0 |
 | search | self | align-items | center |
-| search | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B]; border-color: oklch(0.9843 0.004 106.47 / 0.102) [#1AFAFAF7] |
-| search | self | **dark+has:focus-visible** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B]; border-color: oklch(0.9843 0.004 106.47 / 0.102) [#1AFAFAF7]; box-shadow: inset 0 0 0 2 oklch(0.9211 0.004 106.… |
 | search | self | **has:focus-visible** | box-shadow: inset 0 0 0 2 token(foreground) |
 | search | self | **pointer-fine+width>=768** | height: 34 |
 | input | self | height | 100% |
@@ -13514,10 +12474,8 @@ Dart: `RaftWebSelectionPanelRecipe` · source: `Web src/components/ui/SelectionP
 | input | self | background-color | transparent [#00000000] |
 | input | self | outline-style | none |
 | input | self | flex | 1 |
-| input | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 | input | self | **pointer-fine+width>=768** | line-height: 22 |
 | input | ::placeholder | color | token(foregroundHint) |
-| input | ::placeholder | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | searchIcon | self | width | 16 |
 | searchIcon | self | height | 16 |
 | searchIcon | self | flex-shrink | 0 |
@@ -13559,9 +12517,6 @@ Dart: `RaftWebSelectionRowRecipe` · source: `Web src/components/ui/SelectionPop
 | root | self | align-items | center |
 | root | self | justify-content | space-between |
 | root | self | text-align | left |
-| root | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| root | self | **dark+focus-visible** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.5501 0.0999 91.5 / 0.2) [#33876F1F] |
-| root | self | **dark+hover** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.5501 0.0999 91.5 / 0.2) [#33876F1F] |
 | root | self | **focus-visible** | background-color: token(brandSoft) |
 | root | self | **hover** | background-color: token(brandSoft) |
 | root | self | **pointer-fine+width>=768** | height: 34; line-height: 22 |
@@ -13579,15 +12534,14 @@ Dart: `RaftWebSelectionRowRecipe` · source: `Web src/components/ui/SelectionPop
 | indicator | self | height | 16 |
 | indicator | self | color | token(foreground) |
 | indicator | self | flex-shrink | 0 |
-| indicator | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 
 ### Variant deltas (one axis changed from the default)
 
 | variant | slot | value |
 |---|---|---|
 | checked=true | root | font-weight: 700 |
-| disabled=true | root | font-weight: —; color: token(foregroundDisabled); cursor: not-allowed; [dark] color: oklch(0.4987 0.0047 106.57) [#FF636360]; [dark+focus-visible] (none); [dar… |
-| italic=true | label | overflow-x: —; overflow-y: —; text-overflow: —; color: token(foregroundMuted); [dark] color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
+| disabled=true | root | font-weight: —; color: token(foregroundDisabled); cursor: not-allowed; [focus-visible] (none); [hover] (none) |
+| italic=true | label | overflow-x: —; overflow-y: —; text-overflow: —; color: token(foregroundMuted) |
 
 ## webMenuAction
 
@@ -13615,10 +12569,6 @@ Dart: `RaftWebMenuActionRecipe` · source: `Web src/components/ui/MenuItem.tsx s
 | root | self | transition-timing-function | cubic-bezier(0.4, 0, 0.2, 1) |
 | root | self | align-items | center |
 | root | self | text-align | left |
-| root | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
-| root | self | **dark+disabled** | color: oklch(0.4987 0.0047 106.57) [#FF636360]; cursor: not-allowed |
-| root | self | **dark+enabled+focus-visible** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.5501 0.0999 91.5 / 0.2) [#33876F1F] |
-| root | self | **dark+enabled+hover** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.5501 0.0999 91.5 / 0.2) [#33876F1F] |
 | root | self | **disabled** | color: token(foregroundDisabled); cursor: not-allowed |
 | root | self | **enabled+focus-visible** | background-color: token(brandSoft) |
 | root | self | **enabled+hover** | background-color: token(brandSoft) |
@@ -13628,10 +12578,6 @@ Dart: `RaftWebMenuActionRecipe` · source: `Web src/components/ui/MenuItem.tsx s
 | root | & > svg:first-child | width | 16 |
 | root | & > svg:first-child | height | 16 |
 | root | & > svg:first-child | color | token(foregroundMuted) |
-| root | & > svg:first-child | **dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
-| root | & > svg:first-child | **dark+disabled** | color: oklch(0.4987 0.0047 106.57) [#FF636360] |
-| root | & > svg:first-child | **dark+enabled+focus-visible** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
-| root | & > svg:first-child | **dark+enabled+hover** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
 | root | & > svg:first-child | **disabled** | color: token(foregroundDisabled) |
 
 ## webHelpMenu
@@ -13653,7 +12599,6 @@ Dart: `RaftWebHelpMenuRecipe` · source: `Web src/components/layout/HelpMenu.tsx
 | header | self | border-style | bottom:solid |
 | header | self | border-color | token(lineHairline) |
 | header | self | align-items | center |
-| header | self | **dark** | border-color: oklch(0.9843 0.004 106.47 / 0.102) [#1AFAFAF7] |
 
 ## webSidebarSortMenu
 
@@ -13678,7 +12623,6 @@ Dart: `RaftWebSidebarSortMenuRecipe` · source: `Web src/components/ui/Selection
 | root | self | overflow-x | hidden |
 | root | self | overflow-y | hidden |
 | root | self | flex-direction | column |
-| root | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.2802 0.0036 106.63) [#FF292927]; box-shadow: 0 0 0 1 oklch(0.9843 0.004 106.47 / 0.259… |
 
 ## webDialogCard
 
@@ -13711,7 +12655,6 @@ Dart: `RaftWebDialogCardRecipe` · source: `Web src/components/ui/DialogCard.tsx
 | root | self | overflow-y | clip |
 | root | self | z-index | 50 |
 | root | self | flex-direction | column |
-| root | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2]; background-color: oklch(0.2802 0.0036 106.63) [#FF292927]; box-shadow: 0 0 0 1 oklch(0.9843 0.004 106.47 / 0.259… |
 | header | self | display | flex |
 | header | self | margin | bottom:16 |
 | header | self | gap | 8 |
@@ -13731,7 +12674,6 @@ Dart: `RaftWebDialogCardRecipe` · source: `Web src/components/ui/DialogCard.tsx
 | title | self | font-weight | 700 |
 | title | self | line-height | 22 |
 | title | self | color | token(foreground) |
-| title | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 | title | self | **pointer-fine+width>=768** | font-size: 16; line-height: 24 |
 | close | self | margin | top:-6 right:-7 bottom:-6 |
 | close | self | flex-shrink | 0 |
@@ -13748,7 +12690,7 @@ Dart: `RaftWebDialogCardRecipe` · source: `Web src/components/ui/DialogCard.tsx
 | presentation=sheet | header | margin: —; gap: 12; align-items: center; justify-content: —; height: token(headerHeight); padding: right:16 left:16; color: token(foreground); background-color… |
 | presentation=sheet | body | display: —; min-width: —; padding: top:16 right:16 bottom:max(16px, calc(env(safe-area-inset-bottom, 0px))) left:16; flex-direction: —; [pointer-fine+width>=76… |
 | description=true | header | margin: — |
-| description=true | description | margin: top:4 right:0 bottom:16 left:0; font-family: token(sansFont, system-ui, sans-serif); font-size: 15; line-height: 20; color: token(foregroundMuted); [da… |
+| description=true | description | margin: top:4 right:0 bottom:16 left:0; font-family: token(sansFont, system-ui, sans-serif); font-size: 15; line-height: 20; color: token(foregroundMuted); [po… |
 
 ## webMemberPicker
 
@@ -13773,7 +12715,6 @@ Dart: `RaftWebMemberPickerRecipe` · source: `Web src/components/channel/MemberC
 | root | self | overflow-x | hidden |
 | root | self | overflow-y | hidden |
 | root | self | flex-direction | column |
-| root | self | **dark** | background-color: oklch(0.2596 0.0037 106.65) [#FF242422]; border-color: oklch(0.9843 0.004 106.47 / 0.102) [#1AFAFAF7] |
 | group | self | padding | top:8 right:10 bottom:4 left:10 |
 | group | self | font-family | token(sansFont, system-ui, sans-serif) |
 | group | self | font-size | 12 |
@@ -13781,7 +12722,6 @@ Dart: `RaftWebMemberPickerRecipe` · source: `Web src/components/channel/MemberC
 | group | self | line-height | 16 |
 | group | self | color | token(foregroundHint) |
 | group | self | grid-column | span 2 / span 2 |
-| group | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | group | self | **pointer-fine+width>=768** | line-height: 18 |
 | row | self | display | flex |
 | row | self | min-width | 0 |
@@ -13796,8 +12736,6 @@ Dart: `RaftWebMemberPickerRecipe` · source: `Web src/components/channel/MemberC
 | row | self | align-items | flex-start |
 | row | self | text-align | left |
 | row | self | **active** | background-image: linear-gradient(token(fillMedium), token(fillMedium)) |
-| row | self | **active+dark** | background-image: linear-gradient(oklch(0.9843 0.004 106.47 / 0.065), oklch(0.9843 0.004 106.47 / 0.065)) |
-| row | self | **dark+hover** | background-color: oklch(0.5501 0.0999 91.5 / 0.2) [#33876F1F] |
 | row | self | **data-disabled** | cursor: not-allowed |
 | row | self | **hover** | background-color: token(brandSoft) |
 | row | self | **pointer-coarse** | min-height: 44; padding: top:calc(((44px - 1lh) / 2)) right:10 bottom:calc(((44px - 1lh) / 2)) left:10 |
@@ -13810,14 +12748,11 @@ Dart: `RaftWebMemberPickerRecipe` · source: `Web src/components/channel/MemberC
 | label | self | text-overflow | ellipsis |
 | label | self | white-space | nowrap |
 | label | self | **ancestor:data-disabled** | color: token(foregroundDisabled) |
-| label | self | **ancestor:data-disabled+dark** | color: oklch(0.4987 0.0047 106.57) [#FF636360] |
-| label | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 | empty | self | padding | top:8 right:10 bottom:8 left:10 |
 | empty | self | font-family | token(sansFont, system-ui, sans-serif) |
 | empty | self | font-size | 14 |
 | empty | self | line-height | 20 |
 | empty | self | color | token(foregroundHint) |
-| empty | self | **dark** | color: oklch(0.6984 0.0043 106.51) [#FF9E9E9B] |
 | empty | self | **pointer-fine+width>=768** | line-height: 22 |
 | badge | self | display | flex |
 | badge | self | min-width | 0 |
@@ -13862,13 +12797,11 @@ Dart: `RaftWebAgentResetOptionsRecipe` · source: `Web src/components/agent/Rese
 | title | self | font-weight | 600 |
 | title | self | line-height | 20 |
 | title | self | color | token(foreground) |
-| title | self | **dark** | color: oklch(0.9211 0.004 106.48) [#FFE5E5E2] |
 | title | self | **pointer-fine+width>=768** | font-size: 14; line-height: 22 |
 | description | self | font-size | 13 |
 | description | self | font-weight | 400 |
 | description | self | line-height | 18 |
 | description | self | color | token(foregroundMuted) |
-| description | self | **dark** | color: oklch(0.8195 0.0041 106.49) [#FFC4C4C1] |
 | description | self | **pointer-fine+width>=768** | font-size: 12 |
 
 ## webXlsxTabsLayout
