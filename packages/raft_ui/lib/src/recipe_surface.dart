@@ -651,10 +651,8 @@ Color? _uniformBackgroundImage(
   RaftTokenResolver tokens,
   Color? currentColor,
 ) {
-  if (image case CssFunction(
-    name: 'linear-gradient',
-    :final args,
-  ) when args.length == 2) {
+  if (image case CssFunction(name: 'linear-gradient', :final args)
+      when args.length == 2) {
     final first = RaftColorRef.fromCss(args[0]);
     final second = RaftColorRef.fromCss(args[1]);
     if (first == null || second == null) return null;

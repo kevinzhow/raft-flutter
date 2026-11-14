@@ -76,8 +76,7 @@ void main() {
       expect(
         tester.getTopLeft(text).dx - tester.getTopLeft(_menu('Row options')).dx,
         14,
-        reason:
-            'raft-ui 0.95.3 context-menu.mjs: p-1 (4px) popup padding plus px-2.5 (10px) label padding',
+        reason: 'raft-ui 0.95.3 context-menu.mjs: p-1 (4px) popup padding plus px-2.5 (10px) label padding',
       );
     });
 
