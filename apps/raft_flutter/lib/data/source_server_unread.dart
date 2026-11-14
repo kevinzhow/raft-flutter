@@ -7,6 +7,7 @@ import 'package:raft_sync/raft_sync.dart' show readNotificationPrefsUpdate;
 import 'package:raft_ui/raft_ui.dart' show RaftForegroundPeriodic;
 
 import 'rw_freshness.dart';
+import 'server_summary_read_refresh.dart';
 import 'workspace_controller.dart';
 
 @immutable
@@ -55,6 +56,7 @@ class SourceServerUnreadStore extends ChangeNotifier {
   static const sweepInterval = Duration(minutes: 2);
   RaftForegroundPeriodic? _sweep;
   StreamSubscription<RaftEvent>? _prefsEvents;
+  late final _afterRead = ServerSummaryReadRefresh(() => unawaited(refresh()));
 
   /// Armed by the first read, which the shell starts once the member and
   /// servers are known (Sidebar.tsx's effect needs both): the interval sweep
@@ -73,6 +75,13 @@ class SourceServerUnreadStore extends ChangeNotifier {
       // Web v1.24 socketBridge `activity:changed`: object rows of a server
       // changed for this person; the cross-server summary reads again.
       if (event.name == 'activity:changed') return unawaited(refresh());
+      // Web serverUnreadSummaryRefresh: a read frame reads the summary 300 ms
+      // later, a burst as one request.
+      if (event.name == 'read_state:updated' &&
+              ServerSummaryReadRefresh.acceptsSingle(event.payload) ||
+          event.name == 'read_state:updated_bulk') {
+        return _afterRead.afterRead();
+      }
       if (event.name != 'notification_prefs:updated') return;
       final update = readNotificationPrefsUpdate(event.payload);
       if (update != null && update['type'] == 'server') unawaited(refresh());
@@ -162,6 +171,7 @@ class SourceServerUnreadStore extends ChangeNotifier {
     ++_request;
     _sweep?.dispose();
     unawaited(_prefsEvents?.cancel());
+    _afterRead.dispose();
     super.dispose();
   }
 }
