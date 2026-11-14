@@ -5225,20 +5225,20 @@
    "kind": "endpoint",
    "id": "DELETE /servers/:id/machines/:id",
    "area": "agents-computers-runtimes",
-   "capability": "Delete a computer ('Delete Computer', blocked while agents are assigned) and cancel an unfinished Add-computer registration",
+   "capability": "Delete a computer ('Delete Computer', blocked while the viewer's agents are on it; own computer: key revoked first; others' agents: force-unbind confirmation)",
    "background": false,
    "status": "covered",
-   "webEntry": "MachineDetailPanel > Actions > 'Delete Computer' (ConfirmDialog; 'Cannot Delete Computer' when agents exist) | AddMachineDialog Cancel",
+   "webEntry": "MachineDetailPanel > Actions > 'Delete Computer' | rack row menu > 'Delete computer' (DeleteComputerDialog, ForceUnbindAgentsDialog)",
    "gate": "canManageMachines",
-   "flutterEntry": "computer_detail_view.dart _delete(); add_computer_dialog.dart cancel()",
+   "flutterEntry": "computer_detail_view.dart _confirmDelete(); computers_rack_actions.dart RackRowMenu; computer_delete_dialog.dart showDeleteComputerDialog()",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/computer_detail_view.dart",
-     "needle": "deleteComputer: _delete"
+     "needle": "confirmDelete: _confirmDelete"
     },
     {
-     "file": "apps/raft_flutter/lib/features/add_computer_dialog.dart",
-     "needle": "await _removePlaceholder(placeholder, serverId, bestEffort: false)"
+     "file": "apps/raft_flutter/lib/features/computer_delete_dialog.dart",
+     "needle": "showDeleteComputerDialog("
     }
    ],
    "justification": "",
@@ -6572,21 +6572,12 @@
    "area": "agents-computers-runtimes",
    "capability": "Rotate a computer's API key",
    "background": false,
-   "status": "covered",
+   "status": "na",
    "webEntry": "No reachable Web UI: machineStore.rotateApiKey is defined but never called from any component",
    "gate": "rotateMachineKeys capability (server)",
-   "flutterEntry": "fleet_views.dart credential() 'Rotate computer key?' (extra Flutter-only entry)",
-   "flutterRefs": [
-    {
-     "file": "apps/raft_flutter/lib/features/fleet_views.dart",
-     "needle": "/rotate-key"
-    },
-    {
-     "file": "apps/raft_flutter/lib/features/fleet_views.dart",
-     "needle": "Rotate Computer Key"
-    }
-   ],
-   "justification": "Marked covered because Flutter is a superset: Web has no user-facing rotate-key action (dead store method).",
+   "flutterEntry": "",
+   "flutterRefs": [],
+   "justification": "Web has no user-facing rotate-key action (machineStore.rotateApiKey is never called). The Flutter-only 'Rotate computer key?' entry (and the bootstrap-token minting beside it, which had no caller) was removed in the v1.24 alignment (WP-COMP1).",
    "impact": "",
    "size": ""
   },

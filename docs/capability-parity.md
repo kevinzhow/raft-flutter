@@ -11,10 +11,10 @@ Total capabilities: 821 (384 endpoint/network keys, 437 client-side).
 
 | Status | Count |
 | --- | ---: |
-| ✅ covered | 707 |
+| ✅ covered | 706 |
 | ⚠️ partial | 25 |
 | ❌ missing | 2 |
-| ➖ na | 87 |
+| ➖ na | 88 |
 
 | Area | ✅ | ⚠️ | ❌ | ➖ |
 | --- | ---: | ---: | ---: | ---: |
@@ -25,7 +25,7 @@ Total capabilities: 821 (384 endpoint/network keys, 437 client-side).
 | Members and roles | 20 | 0 | 0 | 3 |
 | Server settings and admin | 56 | 0 | 0 | 2 |
 | Billing | 8 | 0 | 0 | 0 |
-| Agents, computers, runtimes | 129 | 2 | 1 | 8 |
+| Agents, computers, runtimes | 128 | 2 | 1 | 9 |
 | Integrations, apps, MCP | 78 | 6 | 0 | 7 |
 | Tasks | 35 | 0 | 0 | 5 |
 | Files and attachments | 25 | 3 | 0 | 2 |
@@ -327,7 +327,7 @@ Legend: ✅ covered (endpoint called and a reachable entry point with equivalent
 | ✅ | Revoke an external agent login token (Revoke > warning > Confirm revoke / Cancel) | `DELETE /agents/:id/credentials/:id` | ExternalAgentToken 'Revoke' button with inline confirm[gate: same as GET credentials] | external_agent_setup.dart onConfirmRevoke/onCancelRevoke |  |
 | ✅ | Delete a provider connection (blocked while agents assigned) | `DELETE /provider-connections/:id` | Settings > 'Provider connections' (ProviderConnectionsSettings.tsx) > row trash 'Delete connection' (confirm)[gate: manageExternalAuth capability for add/edit/test/verify/enable/delete] | provider_views.dart 'Delete connection' confirm |  |
 | ✅ | Detach a deleted agent from a provider connection (Assigned agents panel) | `DELETE /provider-connections/:id/agents/:id` | Settings > 'Provider connections' (ProviderConnectionsSettings.tsx) > row > assigned agents expander > deleted agent 'Detach'[gate: manageExternalAuth capability for add/edit/test/verify/enable/delete] | provider_views.dart assigned() > 'Detach deleted agent' |  |
-| ✅ | Delete a computer ('Delete Computer', blocked while agents are assigned) and cancel an unfinished Add-computer registration | `DELETE /servers/:id/machines/:id` | MachineDetailPanel > Actions > 'Delete Computer' (ConfirmDialog; 'Cannot Delete Computer' when agents exist) \| AddMachineDialog Cancel[gate: canManageMachines] | computer_detail_view.dart _delete(); add_computer_dialog.dart cancel() |  |
+| ✅ | Delete a computer ('Delete Computer', blocked while the viewer's agents are on it; own computer: key revoked first; others' agents: force-unbind confirmation) | `DELETE /servers/:id/machines/:id` | MachineDetailPanel > Actions > 'Delete Computer' \| rack row menu > 'Delete computer' (DeleteComputerDialog, ForceUnbindAgentsDialog)[gate: canManageMachines] | computer_detail_view.dart _confirmDelete(); computers_rack_actions.dart RackRowMenu; computer_delete_dialog.dart showDeleteComputerDialog() |  |
 | ✅ | Delete an agent workspace directory from a computer | `DELETE /servers/:id/machines/:id/workspaces/:id` | Agent Workspaces row trash 'Delete workspace' > ConfirmDialog 'Delete Workspace'[gate: canManageMachines] | computer_detail_view.dart deleteWorkspace |  |
 | ✅ | Check whether the hosted runtime provider (antiproton) is available for creating external agents (bg) | `GET /agent-runtime-providers/:id` | CreateAgentDialog (external mode) > 'Run on antiproton' checkbox availability (useAgentRuntimeProvider)[gate: external create flow + feature available] | agent_hosted_provider.dart HostedRuntimeAvailability.load() (flag, then the probe; create dialog and migration start) |  |
 | ✅ | List the models a hosted (cloud) agent runtime provider offers | `GET /agent-runtime-providers/:id/models` | useAgentRuntimeProvider / create-agent "Cloud agent" option (picker=false hides the selector, locked fixes the model)[gate: none] | agent_hosted_provider.dart HostedModelsLoader (create form, retry after a refused model, migration start) |  |
@@ -390,7 +390,7 @@ Legend: ✅ covered (endpoint called and a reachable entry point with equivalent
 | ✅ | Submit the runtime transcript for a Report Issue feedback report | `POST /servers/:id/machines/:id/agents/:id/feedback/:id/transcript` | AgentDetailPanel > Profile > Actions > 'Report Issue' (dialog: describe, include recent messages / live activity / activity history / runtime transcript)[gate: canManageAgent and VITE_FEEDBACK_EXPORT_URL configured (FEEDBACK_EXPORT_ENABLED)] | report_issue.dart + agent Actions 'Report Issue' (gate: allowed('editAgents') and reportIssueEnabled(build URL)) |  |
 | ✅ | Restart the Raft Computer remotely ('Restart' with progress and timeout) | `POST /servers/:id/machines/:id/computer/restart` | MachineDetailPanel > Actions > Computer card > 'Restart'[gate: machine.isComputer, online, canManageMachines] | computer_detail_view.dart _restart() |  |
 | ✅ | One-click upgrade the Raft Computer to the latest version ('Upgrade to vX.Y.Z') | `POST /servers/:id/machines/:id/computer/upgrade` | MachineDetailPanel > Actions > Computer card > 'Upgrade to v..' button (+ release notes link, refusal fallbacks to copyable commands)[gate: machine.isComputer, online, canManageMachines] | computer_detail_view.dart _upgrade() > RaftComputerDetailView service card |  |
-| ✅ | Rotate a computer's API key | `POST /servers/:id/machines/:id/rotate-key` | No reachable Web UI: machineStore.rotateApiKey is defined but never called from any component[gate: rotateMachineKeys capability (server)] | fleet_views.dart credential() 'Rotate computer key?' (extra Flutter-only entry) | Marked covered because Flutter is a superset: Web has no user-facing rotate-key action (dead store method). |
+| ➖ | Rotate a computer's API key | `POST /servers/:id/machines/:id/rotate-key` | No reachable Web UI: machineStore.rotateApiKey is defined but never called from any component[gate: rotateMachineKeys capability (server)] |  | N/A: Web has no user-facing rotate-key action (machineStore.rotateApiKey is never called). The Flutter-only 'Rotate computer key?' entry (and the bootstrap-token minting beside it, which had no caller) was removed in the v1.24 alignment (WP-COMP1). |
 | ✅ | Ask the computer to refresh a runtime's usage ('Refresh' with cooldown/countdown) | `POST /servers/:id/machines/:id/runtime-account-usage/:id/refresh` | RuntimeAccountUsageChip popover 'Refresh'[gate: same as above] | runtime_usage_chip.dart backgroundRefresh/refreshState; data/runtime_account_usage.dart refresh |  |
 | ✅ | Ask a computer to rescan installed runtimes (refresh icon beside Runtime in Create Agent) | `POST /servers/:id/machines/:id/runtimes/rescan` | CreateAgentDialog > Runtime field refresh icon (agent.runtimeConfig.rescanRuntimesTitle)[gate: createAgents; computer selected] | create_agent_dialog.dart rescanRuntimes() |  |
 | ✅ | Assign an existing GitHub connector to the agent ('Use GitHub connection' select) | `PUT /agents/:id/connections/:id` | AgentDetailPanel > Profile tab > External setup section > 'Connected accounts' (AgentConnections.tsx; only for hosted external agents whose hosted runtime state is active)[gate: external agent + canManageAgent (editAgents capability or agent creator) + hostedRuntime.state=active; section hides itself on 4xx; connector.canManage per option] | agent_connections_section.dart _assign() |  |
