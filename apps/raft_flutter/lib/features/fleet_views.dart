@@ -29,6 +29,7 @@ import 'report_issue.dart';
 import 'agent_runtime_editor.dart';
 import 'agent_avatar_dialog.dart';
 import 'computer_detail_view.dart';
+import 'computers_rack/computers_rack_view.dart';
 import 'second_factor_step_up.dart';
 import 'add_computer_dialog.dart';
 import 'management_support.dart'
@@ -131,7 +132,8 @@ Future<void> showCredential(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              detail ?? 'This credential is shown once. Store it securely before closing.',
+              detail ??
+                  'This credential is shown once. Store it securely before closing.',
             ),
             const SizedBox(height: 16),
             RaftSecretView(
@@ -382,6 +384,19 @@ class _FleetViewState extends State<FleetView> {
                 where: 'fleet directory',
               ));
     if (widget.computers &&
+        !widget.attentionOnly &&
+        MediaQuery.sizeOf(context).width <
+            RaftLayoutMetrics.desktopBreakpoint) {
+      // Web MobileComputersPanel: the rack's toolbar and list, narrow; only
+      // the `?filter=attention` list keeps the plain rows below.
+      return ComputersRackView(
+        key: const PageStorageKey('fleet-computers'),
+        controller: w,
+        phone: true,
+        onOpenComputer: openComputer,
+      );
+    }
+    if (widget.computers &&
         MediaQuery.sizeOf(context).width <
             RaftLayoutMetrics.desktopBreakpoint) {
       final captured = scope;
@@ -436,31 +451,7 @@ class _FleetViewState extends State<FleetView> {
               ),
               diskLow: computerDiskLow(row) != null,
               dot: _status(row).dot,
-              onTap: () {
-                if (!current(captured)) return;
-                if (widget.onOpenDetail != null) {
-                  widget.onOpenDetail!(Map.of(row));
-                } else {
-                  Navigator.of(context, rootNavigator: true).push(
-                    MaterialPageRoute<void>(
-                      // ds-allow: Standalone native route supplies the Material host and system insets; workspace routes already own them.
-                      builder: (context) => Scaffold(
-                        body: RaftSystemBarSurface(
-                          statusBarFallback: RaftTokens.of(context).panel,
-                          child: SafeArea(
-                            bottom: false,
-                            child: FleetDetail(
-                              controller: w,
-                              computers: true,
-                              initial: row,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  );
-                }
-              },
+              onTap: () => openComputer(row),
             ),
         ],
       );
@@ -469,6 +460,35 @@ class _FleetViewState extends State<FleetView> {
       key: PageStorageKey('fleet-${widget.computers ? 'computers' : 'agents'}'),
       child: fleetList(context, rows, loading, error),
     );
+  }
+
+  /// A computer row opens its page: the workspace's URI-owned detail, or a
+  /// standalone route.
+  void openComputer(Map<String, dynamic> row) {
+    final captured = scope;
+    if (!current(captured)) return;
+    if (widget.onOpenDetail != null) {
+      widget.onOpenDetail!(Map.of(row));
+    } else {
+      Navigator.of(context, rootNavigator: true).push(
+        MaterialPageRoute<void>(
+          // ds-allow: Standalone native route supplies the Material host and system insets; workspace routes already own them.
+          builder: (context) => Scaffold(
+            body: RaftSystemBarSurface(
+              statusBarFallback: RaftTokens.of(context).panel,
+              child: SafeArea(
+                bottom: false,
+                child: FleetDetail(
+                  controller: w,
+                  computers: true,
+                  initial: row,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
   }
 
   ({String label, bool offline, RaftComputerDot dot}) _status(

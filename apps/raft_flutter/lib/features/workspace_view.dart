@@ -12,6 +12,7 @@ import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import 'announcement_host.dart';
+import 'computers_rack/computers_rack_page.dart';
 import 'workspace_host_scope.dart';
 import 'stale_counts_notice.dart';
 import 'workspace_browser_header.dart';
@@ -1498,12 +1499,19 @@ class _WorkspaceViewState extends State<WorkspaceView>
               onOpenDm: messageDesktopProfile,
             )
           : route == 'agents' || route == 'computers'
-          ? wide
+          ? wide && route == 'computers'
+                ? ComputersRackDesktopPage(
+                    key: ValueKey('computers-rack-$mobileAuthority'),
+                    controller: w,
+                    target: desktopNavigation.target,
+                    onSelected: selectDesktopDirectoryTarget,
+                    detail: desktopContentDetail(),
+                  )
+                : wide
                 ? DesktopDirectoryView(
                     key: ValueKey('directory-$mobileAuthority-$route'),
                     controller: w,
                     activities: liveActivities,
-                    computers: route == 'computers',
                     selected: desktopNavigation.target,
                     onSelected: selectDesktopDirectoryTarget,
                     onOpenDm: messageDesktopProfile,
@@ -1670,7 +1678,7 @@ class _WorkspaceViewState extends State<WorkspaceView>
                 },
               ),
             );
-      if (['members', 'agents', 'computers'].contains(route)) {
+      if (['members', 'agents', if (!wide) 'computers'].contains(route)) {
         final detail = desktopContentDetail();
         content = widget.mobileRoutePage && detail != null
             ? detail
@@ -2015,8 +2023,9 @@ class _WorkspaceViewState extends State<WorkspaceView>
                     t,
                     MediaQuery.sizeOf(context).height,
                   ) +
-                  (DesktopNavigationPolicy.forSection(route)
-                          .usesConversationSidebar
+                  (DesktopNavigationPolicy.forSection(
+                        route,
+                      ).usesConversationSidebar
                       ? sidebarWidth
                       : 0)
             : 0,
@@ -3371,8 +3380,9 @@ class _WorkspaceViewState extends State<WorkspaceView>
     bool reorderable = false,
   }) {
     final sectionScoped =
-        RaftTokens.of(context)
-            .option('sidebarItem.sectionContent', or: 'sectionScoped') ==
+        RaftTokens.of(
+          context,
+        ).option('sidebarItem.sectionContent', or: 'sectionScoped') ==
         'sectionScoped';
     final agent = entry.agent;
     if (agent == null) {
@@ -3553,8 +3563,9 @@ class _WorkspaceViewState extends State<WorkspaceView>
     final peer = dmPeer(c);
     final agent = peer.agent, name = peer.name;
     final sectionScoped =
-        RaftTokens.of(context)
-            .option('sidebarItem.sectionContent', or: 'sectionScoped') ==
+        RaftTokens.of(
+          context,
+        ).option('sidebarItem.sectionContent', or: 'sectionScoped') ==
         'sectionScoped';
     final description = sectionScoped && (custom || (pinned && agent))
         ? ''
@@ -3692,8 +3703,9 @@ class _WorkspaceViewState extends State<WorkspaceView>
                                 child: RaftNavItem(
                                   key: const Key('nav-search'),
                                   role: RaftNavItemRole.search,
-                                  viewportHeight: MediaQuery.sizeOf(context)
-                                      .height,
+                                  viewportHeight: MediaQuery.sizeOf(
+                                    context,
+                                  ).height,
                                   label: tr('Search'),
                                   glyph: RaftGlyph.search,
                                   selected: w.section == 'search',
@@ -3708,8 +3720,9 @@ class _WorkspaceViewState extends State<WorkspaceView>
                                   key: const Key('nav-activity'),
                                   role: RaftNavItemRole.activity,
                                   precededByEntry: true,
-                                  viewportHeight: MediaQuery.sizeOf(context)
-                                      .height,
+                                  viewportHeight: MediaQuery.sizeOf(
+                                    context,
+                                  ).height,
                                   label: tr('Activity'),
                                   glyph: RaftGlyph.activity,
                                   selected: w.section == 'activity',
