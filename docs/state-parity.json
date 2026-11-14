@@ -44607,6 +44607,30 @@
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/components.dart#local-function:CLASS:RaftNavItem@27700/METHOD:_build@34705/FUNCTION:row@41636": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/components.dart#local-function:CLASS:RaftNavItem@27700/METHOD:_build@34705/FUNCTION:titleContent@37810": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/components.dart#local-function:CLASS:RaftNavItem@27700/METHOD:_build@34705/FUNCTION:titleWithIndicators@40866": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/components.dart#local-function:CLASS:RaftNavItem@27700/METHOD:_build@34705/FUNCTION:wrappedTitle@36669": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       }
     },
     "entries": {
