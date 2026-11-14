@@ -176,7 +176,9 @@ void main() {
       );
       await t.pumpWidget(host(child(), s));
       await turn(t);
-      await t.tap(find.byType(RaftCloseButton));
+      await t.tap(
+        find.byKey(const ValueKey('notification-activation-dismiss')),
+      );
       await t.pump();
       expect(
         find.textContaining(

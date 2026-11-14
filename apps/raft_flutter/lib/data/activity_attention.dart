@@ -61,13 +61,19 @@ Map<String, int?>? activitySummaryCounts(dynamic value) {
 }
 
 /// OS badges must not turn an unavailable member count into a smaller total.
+///
+/// Servers whose notification level is `none` ([silencedServerIds]) do not
+/// count (Web v1.24 `notificationBadgeCount`: "Activity unread summed over
+/// every server whose level is not none"); their unknown count never blocks
+/// the total either.
 int? knownActivityBadgeTotal({
   required String? currentServerId,
   required int? currentTotal,
   required Iterable<String> memberServerIds,
   required Map<String, int?> summary,
+  Set<String> silencedServerIds = const {},
 }) {
-  final members = memberServerIds.toSet();
+  final members = memberServerIds.toSet().difference(silencedServerIds);
   if (members.any(
     (id) =>
         (id == currentServerId ? currentTotal ?? summary[id] : summary[id]) ==

@@ -16,7 +16,7 @@ Numbers are the items of the v1.21.23 plan, section 3.
 
 | # | Question | What the answer needs | Rows it settles |
 | --- | --- | --- | --- |
-| 3 | Native push (FCM / APNs) | The server needs a native push channel first; until then record it as a server-capability gap and do not schedule it | `ui:notifications.push-subscription`, `ui:notifications.web-push-controls` |
+| 3 | Native push (FCM / APNs) | The server needs a native push channel first; until then record it as a server-capability gap and do not schedule it. Since Web v1.24 the gap includes delayed phone alerts: with "Phone alerts" at 1, 2, 5 or 10 minutes the server holds a phone's alert and later sends it through FCM / APNs only (`mobileDeferral.ts`), so this app, which posts the socket's `notification:push` itself, never gets a held alert; with the default ("Only when I'm not active on a computer") and "Always" it alerts as Web's apps do (WP-NOTIF, coordinator decision 2026-11-14: record it, do not build native push) | `ui:notifications.push-subscription`, `ui:notifications.web-push-controls`, `ui:notifications.content-settings` |
 | 5 | Web removed the Activity Done, Saved and DMs views (flag `activity_sidebar_inbox_v0`); the app still has them and the server still serves them | Keep and record as an intended difference (recommended), or remove to match Web | `BP-READ-080` (differs), `BP-READ-038` note, `GET /channels/inbox/done`, `POST /channels/inbox/undone` |
 | 6 | Open Raft https links in the app | The platform owner must host `assetlinks.json` and `apple-app-site-association` on the Raft domain; the app side is built and switched off (`RAFT_APP_LINKS`) | `ui:global-ui.routes-external-https-links` |
 | 7 | Product analytics (`POST /product-events/batch`) and the "Share usage data" switch | Record as an intended difference and remove the switch (recommended: today it does nothing), or decide to send events (a separate privacy decision) | `RAW analytics/track.ts`, `ui:global-ui.product-analytics-events` |
@@ -1173,13 +1173,18 @@ for "unavailable", no `Notification` API. Flutter
 (`cases/ext_notifications.dart`) mounts `NotificationSettingsView` with a
 macOS desktop service (Web's hint names macOS). Capture: section header + card.
 
-Flutter now follows Web on desktop (macOS / Linux / Windows): Bell header,
-"Desktop notifications", system-managed pill, per-platform OS path hint,
-one success "Send a test notification" button, no server read and no mute
-form. Phones (Android / iOS) keep the same card with phone copy, an Enable
-notifications action (opens system settings once the OS stops asking) and the
-member mute form. The official `settings.notifications.page` compares Web's
-browser Web Push card against the phone card and stays an intended difference.
+Web v1.24 (WP-NOTIF) replaced `SettingsPanel.tsx`'s card with
+`components/settings/notifications/` (ThisDeviceCard, PauseAndScheduleCard,
+ContentCard, ServersCard). Flutter follows it: "This device" (desktop: "Desktop
+notifications", "Managed by the system", the per-platform hint, Open System
+Settings on macOS / Windows, "Send test notification" through
+`POST /notifications/test` with the shown / not shown / failed banner), then
+Pause and schedule, All devices, Servers and "Notifications on {server}". Phones
+keep a native "Phone notifications" row (permission status, Enable, a local
+test, battery notice) where Web shows a browser's Web Push card; the per-server
+mute form is gone (a server's level replaces it). The ext builder still renders
+the v1.21.23 `SettingsPanel` card until the parity pin moves to v1.24 (WP-PIN /
+WP-DOCS); against that reference these cases are expected to drop.
 
 | case | pixel-perfect |
 | --- | --- |
@@ -1614,9 +1619,8 @@ Facts the cases pin (all measured on the Web host):
   translucent brutal fills composite as `round(c*a/255) + round(b*(255-a)/255)`
   with the alpha quantised half-down (0.3 -> 76); Elegant fills match Flutter's
   blend, except the measured `unverified` tone constants.
-* The unread notice phone mute row copy now reads "Stops notifications from
-  {serverName} for your account. Other servers are unchanged." / zh "停止接收来自
-  {serverName} 的通知，其他服务器不受影响。".
+* (Retired by Web v1.24 / WP-NOTIF: the phone mute row is replaced by the
+  server's notification level in Settings › Notifications › Servers.)
 
 Not covered / not matched: the About feedback attachment lightbox (the case
 host cannot serve a binary image body), the Web mobile feedback inbox whose
@@ -2123,6 +2127,18 @@ behaviour checklists (`docs/behavior-parity/`).
   (`/auth/mobile/oauth/:provider/link/*`) is not gated. No desktop passkey sign-in either (same decision).
 * **No local-session handoff.** "Take over a local session" needs the Electron desktop shell's local-session bridge;
   the app has none. Rows `ui:agents.handoff-local-session` and `ui:global-ui.desktop-handoff-local-session` are ➖.
+
+## Notifications vs Web v1.24.0 (WP-NOTIF): differences that stay
+
+Settings › Notifications, the level menus, the server stream and presence follow Web v1.24; these remain different, each for the reason given.
+
+* **Delayed phone alerts:** see owner decision 3 at the top (held alerts travel only by FCM / APNs).
+* **Desktop presence is input in the Raft window.** Raft Desktop's shell reports system-wide input and the screen lock; a Flutter desktop sees only its own window, so someone working in another app counts as away 3 minutes after their last input in Raft (the approximation Web documents for a browser tab). It only ever lets a phone alert through. `locked` is always false.
+* **A desktop alert from another server opens the app, not the conversation.** The server sends every server's alerts to each desktop socket; the app's workspace is bound to one server and content links never switch it (existing rule), so the click raises the window only.
+* **"Nothing" shows the Bell icon.** Web's BellMinus is not in the pinned glyph set (lucide imports of v1.21.12) until the glyph pin moves.
+* **Phones test locally.** `POST /notifications/test` reaches a phone only through its FCM / APNs registration, which the app has none of; the phone's "Send test notification" posts a local notification (the desktop test goes through the server).
+* **Not shown:** the browser Web Push card, the PWA install card and the Brave hint (browser only); "Assistant setting changes" (personal assistant, flag off, WP-ASSIST); the "Muted" trailing text on Settings › On {server} › Notifications (the settings nav has no trailing text slot); `layout.notifications.centerSecurityAria` (the bell has no security notices until WP-SEC).
+* **A silent (sound off) alert is posted quietly** (no heads-up, no sound) because local notifications cannot drop only the sound per alert.
 
 ## Public server page vs Web v1.21.23 (cindy/w23-pub): open differences
 

@@ -195,10 +195,11 @@ void main() {
       for (final id in order.take(3)) {
         expect(variant(id), RaftButtonRecipeVariant.outline, reason: id);
       }
-      // Pin, mute and collapse live in Preferences.
+      // Pin, the Notifications level (Mute is its third choice, v1.24
+      // ChannelPreferencesSection) and collapse live in Preferences.
       for (final label in [
         'Pin channel',
-        'Mute activity',
+        'Notifications',
         'Collapse long messages',
       ]) {
         expect(find.text(label), findsOneWidget);
@@ -253,6 +254,7 @@ void main() {
     expect(find.text('Pin channel'), findsOneWidget);
     expect(find.text('Collapse long messages'), findsOneWidget);
     expect(find.text('Mute activity'), findsNothing);
+    expect(find.text('Notifications'), findsNothing);
     // A DM never asks for the roster.
     expect(
       t

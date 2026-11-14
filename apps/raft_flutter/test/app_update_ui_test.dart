@@ -350,6 +350,12 @@ void main() {
       final update = android();
       addTearDown(update.dispose);
       final f = await openSettings(t, update);
+      // The phone list is longer than the screen (v1.24 adds On {server} ›
+      // Notifications): scroll the row in like a person would.
+      await t.ensureVisible(
+        find.byKey(const ValueKey('workspace-settings-nav-release-notes')),
+      );
+      await t.pump();
       await t.tap(
         find.byKey(const ValueKey('workspace-settings-nav-release-notes')),
       );

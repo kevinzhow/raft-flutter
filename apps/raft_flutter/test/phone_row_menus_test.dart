@@ -190,7 +190,8 @@ void main() {
       'Move to Section',
       'Mark all as read',
       'Pin',
-      'Mute',
+      // v1.24: Notifications ▸ (the levels, Mute among them) replaces Mute.
+      'Notifications',
       'Archive channel',
     ];
     for (final label in labels) {
@@ -390,6 +391,17 @@ void main() {
     expect(reads, greaterThanOrEqualTo(0));
   });
 
+  /// The row menu's Notifications ▸ and one of its levels.
+  Future<void> chooseLevel(WidgetTester tester, String choice) async {
+    await tester.tap(
+      find.byKey(const ValueKey('sidebar-ctx-notification-level')),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(ValueKey('sidebar-ctx-notification-level-$choice')),
+    );
+  }
+
   testWidgets('Mute is optimistic; Unmute toggles back', (tester) async {
     final gate = Completer<void>();
     await setup(tester);
@@ -399,7 +411,7 @@ void main() {
       return {'activityMuted': true, 'muteFromSeq': '9', 'prefsVersion': 2};
     };
     await longPress(tester, row('c1'));
-    await tester.tap(find.text('Mute'));
+    await chooseLevel(tester, 'mute');
     await tester.pump(const Duration(milliseconds: 50));
     expect(w.channelById('c1')!.flag('activityMuted'), isTrue);
     expect(posts.single['data'], {'activityMuted': true});
@@ -407,7 +419,14 @@ void main() {
     await tester.pumpAndSettle();
     expect(w.channelById('c1')!.json['muteFromSeq'], '9');
     await longPress(tester, row('c1'));
-    expect(find.text('Unmute'), findsOneWidget);
+    await tester.tap(
+      find.byKey(const ValueKey('sidebar-ctx-notification-level')),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      find.text('Muted: nothing here notifies you, not even @mentions.'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('a failed Mute restores the row and shows the Web toast', (
@@ -415,7 +434,7 @@ void main() {
   ) async {
     await setup(tester);
     await longPress(tester, row('c1'));
-    await tester.tap(find.text('Mute'));
+    await chooseLevel(tester, 'mute');
     await tester.pumpAndSettle();
     expect(w.channelById('c1')!.flag('activityMuted'), isFalse);
     expect(

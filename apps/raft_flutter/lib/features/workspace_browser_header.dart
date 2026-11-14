@@ -5,6 +5,7 @@ import '../data/workspace_controller.dart';
 import '../platform/desktop_title_bar.dart';
 import 'workspace_host_scope.dart';
 import 'workspace_history_controls.dart';
+import 'paused_notifications_indicator.dart';
 import 'system_notification_center.dart';
 
 /// Shared browser/native workspace header composition; the workspace supplies navigation actions and
@@ -42,6 +43,7 @@ class WorkspaceBrowserHeader extends StatelessWidget {
       workspace: workspace,
       onSearch: onSearch,
       trailing: [
+        PausedNotificationsIndicator(controller: controller),
         working,
         SystemNotificationBell(
           key: const Key('topbar-notifications'),

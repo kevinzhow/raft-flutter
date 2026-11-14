@@ -7,8 +7,11 @@ the manifest from scratch); idempotent: every `components.notifications.*` case
 is replaced, all other cases are kept, and new ids are appended after them.
 
 Derivation (raft-source packages/web/src):
-  components/settings/SettingsPanel.tsx  NotificationsSection ->
+  v1.21.23: components/settings/SettingsPanel.tsx  NotificationsSection ->
     DesktopNativeNotificationsCard (data-testid desktop-notifications-card)
+  v1.24.0: components/settings/notifications/ThisDeviceCard.tsx
+    <div id="push-notifications"> SectionHeader + DesktopDeviceCard (same testid),
+    so the selector holds for both; Flutter keys the same block push-notifications
   utils/notificationChannel.ts / desktopNativeNotifications.ts
     (available = Electron shell + Notification API)
   i18n/messages/en.ts settings.notifications.desktop.*
@@ -46,7 +49,7 @@ for kind, available in [('available', True), ('unavailable', False)]:
             'locale': 'en',
             'variants': [{'id': 'default', 'name': 'Default', 'props': props}],
             'capture': {'selector': SELECTOR, 'crop': 'element', 'contract': 'component-bounds',
-                        'androidKey': 'notification-settings-card', 'interactions': [],
+                        'androidKey': 'push-notifications', 'interactions': [],
                         'androidInteractions': []},
             'reactPathHint': HINT,
             'androidCaseHint': f"apps/raft_flutter/test/parity/cases/ext_notifications.dart 'desktop.{kind}'",

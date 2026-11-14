@@ -5,6 +5,9 @@ import '../data/rail_side_preference.dart';
 import '../platform/native_notifications.dart';
 import 'notification_activation_banner.dart';
 
+// The sidebar row menu's "Notifications ▸" (workspace_view_sidebar_menus.dart).
+export 'notification_level_menu.dart' show channelNotificationSubmenu;
+
 /// Shares the native opt-in service with both responsive workspace branches.
 /// The existing rail-side ownership stays outside individual chat composers.
 class NotificationActivationWorkspace extends StatelessWidget {

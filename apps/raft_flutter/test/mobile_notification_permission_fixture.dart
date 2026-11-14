@@ -10,7 +10,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'native_notifications_test.dart'
     show MacPermissionFixture, NotificationPluginFixture;
-import 'notification_settings_view_test.dart' show Service, fixture, host, card;
+
+import 'package:raft_ui/raft_ui.dart';
+
+import 'notification_settings_view_test.dart' show Service, fixture, host;
 
 class IOSPermission extends IOSFlutterLocalNotificationsPlugin {
   IOSPermission(this.permission);
@@ -175,31 +178,31 @@ void mobilePermissionTests(TargetPlatform platform) {
   testWidgets(
     '$platform denied status has an explicit system-settings action and clears after grant',
     (t) async {
-      final (w, _, unused) = (await t.runAsync(fixture))!;
-      final s = Service(platform: platform)..initialized = true;
-      addTearDown(w.dispose);
-      addTearDown(unused.dispose);
-      addTearDown(s.dispose);
+      final (w, _) = await fixture(t);
+      final s = Service(platform: platform)..permitted = false;
       addTearDown(() async {
         await t.pumpWidget(const SizedBox());
         await t.pumpAndSettle();
       });
+      String status() => t
+          .widget<RaftBadge>(
+            find.byKey(const ValueKey('phone-notifications-status')),
+          )
+          .label;
       await t.pumpWidget(host(w, s, locale: const Locale('zh')));
       await t.pumpAndSettle();
-      expect(card(t).status, 'Off in system settings');
-      expect(find.text('系统里没开'), findsOneWidget);
+      expect(status(), '系统里没开');
       final button = find.text('打开通知设置');
       expect(button, findsOneWidget);
       await t.ensureVisible(button);
       await t.tap(button);
       await t.pumpAndSettle();
-      expect(s.settings, 1);
+      expect(s.settingsOpened, 1);
       expect(s.enables, 0);
       await s.requestEnable(true);
       await t.pumpAndSettle();
-      expect(card(t).status, '已开启');
+      expect(status(), '已开启');
       expect(find.text('系统里没开'), findsNothing);
-      expect(card(t).error, isNull);
     },
   );
 }
