@@ -44193,6 +44193,24 @@
         "familyRefs": [],
         "owner": "WP-READ v1.24 alignment",
         "reason": "WP-READ (Web v1.24 StaleCountsNotice, task #164): the phone Activity root header (raft_ui RaftMobileRootHeader) with the notice under it; no style of its own. No style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/activity_mark_unread_toast.dart#function:showNothingUnreadToast": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-READ v1.24 alignment",
+        "reason": "WP-READ part 2 (Web v1.24 inboxRowActions.ts \"nothing unread\" toast): resolved surface_factory showing the existing app toast; real-entry/family/state mapping remains unreviewed. No style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/resource_view.dart#local-function:CLASS:_ResourceViewState@6614/METHOD:scopedDialog@46101/FUNCTION:buildOwned@46328": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-READ v1.24 alignment",
+        "reason": "Existing builder at its current source identity: WP-READ part 2 changed imports and Activity menu wiring earlier in resource_view.dart and shifted its offset; rendering unchanged. No style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/resource_view.dart#local-function:CLASS:_ResourceViewState@6614/METHOD:scopedMenu@47149/FUNCTION:buildOwned@47356": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-READ v1.24 alignment",
+        "reason": "Existing builder at its current source identity: WP-READ part 2 changed imports and Activity menu wiring earlier in resource_view.dart and shifted its offset; rendering unchanged. No style exemption or visual acceptance."
       }
     },
     "entries": {
@@ -46806,6 +46824,15 @@
         ],
         "mountStatus": "unresolved",
         "reason": "Resolved function owns a surface call; actual target, route and state are not yet observed."
+      },
+      "surface:apps/raft_flutter/lib/features/activity_mark_unread_toast.dart#function:showNothingUnreadToast": {
+        "owner": "WP-READ v1.24 alignment",
+        "kind": "surface_factory_candidate",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/activity_mark_unread_toast.dart#function:showNothingUnreadToast"
+        ],
+        "mountStatus": "unresolved",
+        "reason": "Resolved function owns a surface call (Activity Mark as Unread answered nothing); actual target, route and state are not yet observed."
       }
     },
     "requirements": {
