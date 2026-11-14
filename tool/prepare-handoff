@@ -26,6 +26,8 @@ Usage: tool/prepare-handoff [--base origin/cindy/integration] [--no-check] [--sk
 
 Default gate tests the Raft look only; the legacy looks are tool/theme-suite (run it when the diff touches the
 theme engine: the gate prints a notice). --all-themes (or RAFT_TEST_ALL_THEMES=1) runs every look and variant.
+check-project inherits RAFT_TEST_TIER: `RAFT_TEST_TIER=impact tool/prepare-handoff` runs the merge-check tier
+(every static check, the tests the diff touches plus the guards); the result line names the tier that passed.
 """
 import argparse
 import datetime
@@ -280,7 +282,7 @@ def main():
         passed = False
     run_info = json.loads((root / '.local/engineering-run.json').read_text())
     line = (f'handoff: {branch} {head} (contains {args.base} {base}); '
-            f'check-project {"PASSED" if passed else "FAILED"} (themes: {run_info.get("themes", "?")}); sourceHash {run_info.get("sourceHash", "?")[:12]}')
+            f'check-project {"PASSED" if passed else "FAILED"} (themes: {run_info.get("themes", "?")}, tier: {run_info.get("tier", "?")}); sourceHash {run_info.get("sourceHash", "?")[:12]}')
     print(line)
     if passed and args.pr:
         publish_pr(branch, args.pr_body, line, args.pr_title)
