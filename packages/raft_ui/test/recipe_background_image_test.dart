@@ -155,9 +155,8 @@ void main() {
                 format: ui.ImageByteFormat.png,
               ))!;
               final dir = Directory(out)..createSync(recursive: true);
-              File(
-                '${dir.path}/$id-$dark-$hover.png',
-              ).writeAsBytesSync(data.buffer.asUint8List());
+              File('${dir.path}/$id-$dark-$hover.png')
+                  .writeAsBytesSync(data.buffer.asUint8List());
             } finally {
               image.dispose();
             }
