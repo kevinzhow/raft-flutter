@@ -51,6 +51,7 @@ dependencies:
   dbus: ^0.7.11
   workmanager: ^0.10.10
   crypto: ^3.0.7
+  qr: ^3.0.2
   drift: ^2.35.1
   sqlite3: ^3.5.2
   path_provider: ^2.1.6

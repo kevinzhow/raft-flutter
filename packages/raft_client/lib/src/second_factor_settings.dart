@@ -9,7 +9,6 @@
 // backup codes and removing a passkey take a second-factor answer in the same
 // request (403 `step_up_required` with `methods` without one).
 import 'client.dart';
-import 'second_factor.dart';
 
 /// `GET /auth/second-factor/status`.
 class SecondFactorStatus {
@@ -145,7 +144,7 @@ class SecondFactorRecovery {
 
 const _base = '/auth/second-factor';
 
-extension SecondFactorSettings on RaftClient {
+extension SecondFactorManagement on RaftClient {
   Future<SecondFactorStatus> secondFactorStatus() async =>
       SecondFactorStatus.parse(await get('$_base/status'));
 
@@ -178,25 +177,6 @@ extension SecondFactorSettings on RaftClient {
   /// 204: this sign-in counts as re-authenticated for 10 minutes.
   Future<void> reauthenticateWithPassword(String password) =>
       post('$_base/reauth/password', data: {'password': password});
-
-  /// Before approving an app login: the methods to step up with when two-step
-  /// verification is on and this sign-in has not passed it, otherwise null
-  /// (also when the status cannot be read: the approval then goes as before,
-  /// with its 403 as the fallback). Web `stepUpBeforeApproval`.
-  Future<List<SecondFactorMethod>?> stepUpBeforeApproval() async {
-    final SecondFactorStatus status;
-    try {
-      status = await secondFactorStatus();
-    } catch (_) {
-      return null;
-    }
-    if (!status.enabled || status.sessionVerified != false) return null;
-    return [
-      if (status.totp) SecondFactorMethod.totp,
-      if (status.passkeys > 0) SecondFactorMethod.passkey,
-      if (status.backupCodesRemaining > 0) SecondFactorMethod.backupCode,
-    ];
-  }
 
   Future<List<PasskeySummary>> listPasskeys() async {
     final data = await get('$_base/passkeys');

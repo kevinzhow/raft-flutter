@@ -1,11 +1,12 @@
 // Web v1.24.0 step-up for sensitive actions (components/settings/
 // secondFactorStepUp.ts, SecondFactorStepUpHost.tsx, VerifyItsYouDialog.tsx):
 // with two-step verification on, the server refuses changing the password,
-// connecting or disconnecting a sign-in method, executing an action card
-// whose kind needs a second factor (and more) with 403
-// `second_factor_step_up_required` and the methods, unless this sign-in passed
-// the second step in the last 10 minutes. [withSecondFactorStepUp] runs the
-// request; on that refusal it opens "Verify it's you", and once POST
+// connecting or disconnecting a sign-in method, creating an agent key or a
+// machine key, a new app secret, giving an app access, executing an action
+// card whose kind needs a second factor (and more) with 403
+// `second_factor_step_up_required` and the methods, unless this sign-in
+// passed the second step in the last 10 minutes. [withSecondFactorStepUp]
+// runs the request; on that refusal it opens "Verify it's you", and once POST
 // /auth/second-factor/step-up passed it sends the request once more.
 import 'dart:async';
 
@@ -13,12 +14,25 @@ import 'package:flutter/widgets.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
-import '../data/source_time_formatter.dart';
+import 'account_security_answer.dart';
 
-/// What the dialog says the step-up is for (Web `StepUpReason`).
+/// What the dialog says the step-up is for (Web `StepUpReason`,
+/// SecondFactorStepUpHost `DESCRIPTION_IDS`).
 enum StepUpReason {
   signInMethod(
     'Changing how you sign in needs a fresh second step. It lasts 10 minutes.',
+  ),
+  agentKey(
+    'Generating a login token needs a fresh second step. It lasts 10 minutes.',
+  ),
+  appAccess(
+    'Giving an app access to your account needs a sign-in that passed the second step.',
+  ),
+  agentAccess(
+    'Letting an app act as an agent needs a sign-in that passed the second step.',
+  ),
+  secret(
+    'Creating a new secret needs a fresh second step. It lasts 10 minutes.',
   ),
   actionCard('This action needs your second step first.'),
   other('This needs a fresh second step. It lasts 10 minutes.');
@@ -54,7 +68,7 @@ Future<T> withSecondFactorStepUp<T>(
   } catch (error) {
     final methods = stepUpRequiredMethods(error);
     if (methods == null || !context.mounted) rethrow;
-    await (_inFlight ??= _verifyItsYou(
+    await (_inFlight ??= _stepUp(
       context,
       client,
       methods,
@@ -64,12 +78,50 @@ Future<T> withSecondFactorStepUp<T>(
   }
 }
 
-Future<void> _verifyItsYou(
+/// SecondFactorStepUpHost: POST /step-up with the answer; turned off
+/// meanwhile, the request goes as it is. "Sign in again" (403
+/// `session_family_required`) closes the dialog and signs out.
+Future<void> _stepUp(
   BuildContext context,
   RaftClient client,
   List<SecondFactorMethod> listed,
   StepUpReason reason,
 ) async {
+  final verified = await showVerifyItsYou(
+    context,
+    client,
+    methods: listed,
+    description: reason.description,
+    onSignInAgain: () => unawaited(client.logout()),
+    onAnswer: (answer) async {
+      try {
+        await client.stepUpSecondFactor(
+          code: answer.code,
+          backupCode: answer.backupCode,
+        );
+      } catch (error) {
+        if (SecondFactorFailure.of(error).code != 'second_factor_not_enabled') {
+          rethrow;
+        }
+      }
+    },
+  );
+  if (!verified) throw const SecondFactorStepUpCancelled();
+}
+
+/// Web VerifyItsYouDialog: a code or a backup code among the `methods` the
+/// server listed (this client has no passkeys: a listed passkey alone says
+/// so), the others as links. [onAnswer] sends it; what it refuses stays in
+/// the dialog. True once [onAnswer] passed, false when closed.
+Future<bool> showVerifyItsYou(
+  BuildContext context,
+  RaftClient client, {
+  required List<SecondFactorMethod> methods,
+  required String description,
+  required Future<void> Function(StepUpAnswer answer) onAnswer,
+  VoidCallback? onSignInAgain,
+}) async {
+  var signInAgain = false;
   final verified = await showRaftForm<bool>(
     context,
     label: raftText(context, "Verify it's you"),
@@ -77,93 +129,85 @@ Future<void> _verifyItsYou(
     guardUnsaved: false,
     builder: (_) => _VerifyItsYouDialog(
       client: client,
-      methods: usableSecondFactorMethods(listed),
-      reason: reason,
+      methods: usableSecondFactorMethods(methods).methods,
+      description: description,
+      onAnswer: onAnswer,
+      onSignInAgain: onSignInAgain == null ? null : () => signInAgain = true,
     ),
   );
-  if (verified != true) throw const SecondFactorStepUpCancelled();
+  if (signInAgain) onSignInAgain?.call();
+  return verified == true;
 }
 
 class _VerifyItsYouDialog extends StatefulWidget {
   const _VerifyItsYouDialog({
     required this.client,
     required this.methods,
-    required this.reason,
+    required this.description,
+    required this.onAnswer,
+    this.onSignInAgain,
   });
   final RaftClient client;
-  final ({List<SecondFactorMethod> methods, bool passkeyUnsupported}) methods;
-  final StepUpReason reason;
+  final List<SecondFactorMethod> methods;
+  final String description;
+  final Future<void> Function(StepUpAnswer answer) onAnswer;
+  final VoidCallback? onSignInAgain;
 
   @override
   State<_VerifyItsYouDialog> createState() => _VerifyItsYouDialogState();
 }
 
 class _VerifyItsYouDialogState extends State<_VerifyItsYouDialog> {
-  late SecondFactorMethod? method = widget.methods.methods.firstOrNull;
+  late SecondFactorMethod? method = widget.methods.firstOrNull;
+
+  /// 403 `session_family_required`: the banner offers Sign in again.
+  bool signInAgain = false;
 
   Future<void> answer(Map<String, String> values) async {
     final current = method;
     if (current == null) return;
     final entered = normalizeSecondFactorCode(values[current.wire] ?? '');
     final backup = current == SecondFactorMethod.backupCode;
+    if (signInAgain) setState(() => signInAgain = false);
     try {
-      await widget.client.stepUpSecondFactor(
-        code: backup ? null : entered,
-        backupCode: backup ? entered : null,
+      await widget.onAnswer(
+        backup ? StepUpAnswer.backupCode(entered) : StepUpAnswer.code(entered),
       );
     } catch (error) {
-      final failure = SecondFactorFailure.of(error);
-      // Turned off meanwhile: nothing to step up, the request goes as it is.
-      if (failure.code == 'second_factor_not_enabled') return;
       if (!mounted) rethrow;
-      throw RaftUserError(switch (failure.code) {
-        'second_factor_code_invalid' =>
-          backup ? "That backup code didn't work. Check it and try again." : "That code didn't work. Check the time on your phone is set automatically, then try the newest code.",
-        'backup_code_used' => 'That backup code was already used. Each code works once, so try another one.',
-        'second_factor_locked' => raftFormat(
+      final code = SecondFactorFailure.of(error).code;
+      if (widget.onSignInAgain != null && code == 'session_family_required') {
+        setState(() => signInAgain = true);
+        throw RaftUserError(
+          raftText(
+            context,
+            "This sign-in can't be verified. Sign in again, then try once more.",
+          ),
+        );
+      }
+      throw RaftUserError(
+        secondFactorFailureText(
           context,
-          'Too many wrong codes. Try again after {time}.',
-          {
-            'time': failure.lockedUntil == null
-                ? ''
-                : _clock(failure.lockedUntil!),
-          },
+          widget.client,
+          error,
+          backup
+              ? SecondFactorAnswerKind.backupCode
+              : SecondFactorAnswerKind.totp,
         ),
-        'second_factor_unavailable' =>
-          "Two-step verification isn't available right now. Try again later.",
-        'session_family_required' =>
-          "This sign-in can't be verified. Sign in again, then try once more.",
-        _ => 'Something went wrong',
-      });
+      );
     }
-  }
-
-  /// Web `formatClock` with the account's time preferences.
-  String _clock(DateTime value) {
-    final user = widget.client.user;
-    return SourceTimeFormatter(
-      locale: Localizations.localeOf(context).toLanguageTag(),
-      preferredTimezone:
-          user?.string('preferredTimezone') ?? user?.string('timezone'),
-      preferredTimeFormat: sourceTimeFormatPreference(
-        user?.string('preferredTimeFormat') ?? user?.string('timeFormat'),
-      ),
-      systemTimeFormat: MediaQuery.alwaysUse24HourFormatOf(context)
-          ? SourceTimeFormat.twentyFourHour
-          : null,
-    ).clock(value);
   }
 
   @override
   Widget build(BuildContext context) {
     final current = method;
     final others = [
-      for (final other in widget.methods.methods)
+      for (final other in widget.methods)
         if (other != current) other,
     ];
     return RaftFormDialog(
       title: "Verify it's you",
-      description: widget.reason.description,
+      description: widget.description,
       submitLabel: 'Verify',
       submitEnabled: current != null,
       fields: [
@@ -176,17 +220,20 @@ class _VerifyItsYouDialogState extends State<_VerifyItsYouDialog> {
             required: true,
           ),
       ],
-      extra: current == null && others.isEmpty
-          ? RaftBanner(
+      extra: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (current == null)
+            RaftBanner(
               status: RaftBannerRecipeStatus.warning,
               description: raftText(
                 context,
                 "This browser can't use passkeys. Use another way, or open Raft in a browser that has your passkey.",
               ),
-            )
-          : others.isEmpty
-          ? null
-          : Wrap(
+            ),
+          if (others.isNotEmpty)
+            Wrap(
               // Web `flex flex-wrap gap-x-4 gap-y-1`.
               spacing: RaftSpace.x4,
               runSpacing: RaftSpace.x1,
@@ -200,10 +247,30 @@ class _VerifyItsYouDialogState extends State<_VerifyItsYouDialog> {
                           ? 'Use a backup code'
                           : 'Use authenticator code',
                     ),
-                    onTap: () => setState(() => method = other),
+                    onTap: () => setState(() {
+                      method = other;
+                      signInAgain = false;
+                    }),
                   ),
               ],
             ),
+          if (signInAgain) ...[
+            const SizedBox(height: RaftSpace.x3),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: RaftButton(
+                key: const ValueKey('step-up-sign-in-again'),
+                label: raftText(context, 'Sign in again'),
+                secondary: true,
+                onPressed: () {
+                  widget.onSignInAgain?.call();
+                  Navigator.of(context).pop(false);
+                },
+              ),
+            ),
+          ],
+        ],
+      ),
       onSubmit: answer,
     );
   }

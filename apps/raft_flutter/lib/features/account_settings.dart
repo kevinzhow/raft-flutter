@@ -7,6 +7,8 @@ import '../data/workspace_controller.dart';
 import '../data/personal_presentation.dart';
 import 'account_onboarding.dart';
 import 'account_connections_view.dart';
+import 'account_security_passkeys.dart';
+import 'account_security_two_step.dart';
 import 'management_support.dart';
 import 'public_avatar_url.dart';
 import 'usage_data_card.dart';
@@ -508,6 +510,11 @@ class _AccountSettingsState extends ManagementState<AccountSettings> {
         ),
         card,
         const SizedBox(height: RaftSpace.x6),
+        AccountSecuritySections(
+          key: ValueKey('account-security-$authority'),
+          controller: controller,
+          passkeys: (s) => PasskeysSection(controller: controller, settings: s),
+        ),
         const RaftSettingsSectionHeader(
           label: 'Session',
           glyph: RaftGlyph.logOut,
