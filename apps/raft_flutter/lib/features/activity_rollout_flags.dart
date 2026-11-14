@@ -6,10 +6,12 @@ import 'package:raft_client/raft_client.dart';
 
 import '../data/device_preferences.dart';
 import '../data/feature_flag_client_facts.dart';
+import '../data/inbox_in_place_unread.dart' show inboxReadInplaceFlagKey;
 import '../data/workspace_controller.dart';
 
-/// The Web v1.21.23 flag that gates the Activity conversation list
-/// (`serverFeatureFlags.ts`). It defaults off until evaluated. A missing or
+/// The Web flags that gate Activity (`serverFeatureFlags.ts`): the Activity
+/// conversation list and (v1.24) `inbox_read_inplace_v1`, the in-place
+/// persisted read. Both default off until evaluated. A missing or
 /// invalid evaluation keeps the last accepted value instead of turning it off.
 ///
 /// Web 1.24 no longer reads the other two this class evaluated:
@@ -45,7 +47,8 @@ class ActivityRolloutFlags extends ChangeNotifier {
   static ActivityRolloutFlags? peek(WorkspaceController w) => _owners[w];
 
   static const activityConversationListKey = 'activity_conversation_list_v0';
-  static const keys = [activityConversationListKey];
+  static const inboxReadInplaceKey = inboxReadInplaceFlagKey;
+  static const keys = [activityConversationListKey, inboxReadInplaceKey];
 
   final WorkspaceController w;
   StreamSubscription<RaftEvent>? _events;
@@ -56,6 +59,10 @@ class ActivityRolloutFlags extends ChangeNotifier {
 
   bool get activityConversationList =>
       _enabled[activityConversationListKey] ?? false;
+
+  /// Web step 3a (#244): a persisted read of a listed row that already shows
+  /// the read sends no Activity re-read. Server-scoped, default off.
+  bool get inboxReadInplace => _enabled[inboxReadInplaceKey] ?? false;
 
   String get _authority => jsonEncode([
     w.client.origin,

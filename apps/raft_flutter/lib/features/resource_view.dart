@@ -1569,19 +1569,10 @@ class _ResourceViewState extends State<ResourceView> {
         payload['latestReply'] is Map) {
       advanceActivity(payload['latestReply'] as Map);
     } else if (event.name.startsWith('read_state:')) {
-      final server = w.client.serverId, user = w.client.user?.id;
       patchKnownActivityReads(
         facts: activityReadFacts(
           payload,
-          knownVersions: {
-            if (server != null && user != null)
-              for (final row in rows)
-                if (activityScopeId(row) case final String scope)
-                  if (w.readState.state(server, user, scope) case {
-                    'readStateVersion': final int version,
-                  })
-                    scope: version,
-          },
+          knownVersions: activityKnownVersions(rows, w.readState, w.client),
         ),
       );
     }
@@ -1641,6 +1632,7 @@ class _ResourceViewState extends State<ResourceView> {
       message,
       muted: activityMuted,
       newestFirst: advanced.direction != 'asc',
+      live: sharedInbox?.liveUnreadOf(message),
     );
     if (next == null) return;
     final key = next.key, frontier = activityFrontier(next.row);
@@ -1648,6 +1640,9 @@ class _ResourceViewState extends State<ResourceView> {
       activityLocalFrontiers[key] = frontier;
     }
     setState(() {
+      totalUnreadCount = totalUnreadCount == null
+          ? null
+          : totalUnreadCount! + next.delta;
       rows = next.window;
       acceptedActivityItems = ActivityRowWindow.from(acceptedActivityItems)
           .replaceKey(key, next.row);

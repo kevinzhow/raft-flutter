@@ -1,5 +1,6 @@
+import 'package:raft_client/raft_client.dart' show RaftClient;
 import 'package:raft_sync/raft_sync.dart'
-    show canonicalUint64, canonicalWireSeq;
+    show canonicalUint64, canonicalWireSeq, ReadStateLedger;
 
 /// Source inboxStore getInboxItemKey: one row per conversation scope.
 String? activityItemKey(Map row) {
@@ -192,6 +193,21 @@ Map<String, int> activityReadFacts(
             update['readStateVersion'] is int &&
                 update['readStateVersion'] > knownVersions[update['scopeId']]!))
       update['scopeId'] as String: update['maxReadSeq'] as int,
+};
+
+/// The accepted read-state version of each listed row's scope.
+Map<String, int> activityKnownVersions(
+  Iterable<Map<String, dynamic>> rows,
+  ReadStateLedger ledger,
+  RaftClient client,
+) => {
+  if (client.serverId case final server?)
+    for (final row in rows)
+      if (activityScopeId(row) case final String scope)
+        if (ledger.state(server, client.user?.id ?? '', scope) case {
+          'readStateVersion': final int version,
+        })
+          scope: version,
 };
 
 /// Source applyReadStateProjection for a fully read scope: a read frontier at
