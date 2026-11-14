@@ -10,6 +10,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:leak_tracker_flutter_testing/leak_tracker_flutter_testing.dart';
 import 'package:raft_ui/raft_ui.dart' show RaftHotImages, RaftImageBytes;
 
+import '../../../tool/testing/impact_probe.dart';
 import '../../../tool/testing/matrix_leaks.dart';
 
 /// Wraps the codecs `PaintingBinding.instantiateImageCodecWithSize` hands to
@@ -166,6 +167,8 @@ void leakDebt(List<String> classes) {
 }
 
 Future<void> testExecutable(FutureOr<void> Function() testMain) async {
+  // Off unless RAFT_TEST_IMPACT_DIR is set (tool/test-impact).
+  recordTestImpact();
   _enableLeakTracking();
   trackMatrixLeaksOnce();
   final binding = RaftTestBinding();
