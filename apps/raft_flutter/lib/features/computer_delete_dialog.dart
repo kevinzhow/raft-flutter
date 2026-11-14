@@ -87,8 +87,13 @@ Future<bool> showDeleteComputerDialog(
   required Map<String, dynamic> machine,
   required List<Map<String, dynamic>> agents,
   bool Function()? authorized,
+  Listenable? changes,
 }) async {
-  bool valid() => context.mounted && (authorized?.call() ?? true);
+  bool valid() =>
+      context.mounted &&
+      (authorized?.call() ?? true) &&
+      // A computer another admin deleted first cannot be deleted again.
+      w.services.entityDirectory.computer('${machine['id']}') != null;
   if (!valid()) return false;
   final me = w.client.user?.id;
   final mine = computerAttachedByMe(machine, me);
@@ -156,7 +161,7 @@ Future<bool> showDeleteComputerDialog(
       await w.command('DELETE', base);
     } catch (error) {
       if (!revoked) rethrow;
-      throw RaftApiException(
+      throw RaftComputerActionError(
         fmt(
           "This computer's key is revoked and it's offline now, but it couldn't be removed from the list: {reason} Trying again is safe.",
           {'reason': tr(_refusal(error))},
@@ -172,28 +177,35 @@ Future<bool> showDeleteComputerDialog(
   await showRaftDialog<void>(
     context: context,
     barrierDismissible: false,
-    builder: (dialog) => RaftConfirmDialog(
-      surfaceKey: const ValueKey('computer-delete-confirm'),
-      title: raftText(dialog, 'Delete computer'),
-      message: raftFormat(dialog, 'Are you sure you want to delete "{name}"?', {
-        'name': name,
-      }),
-      confirmLabel: raftText(dialog, 'Delete computer'),
-      loadingLabel: raftText(dialog, 'Deleting…'),
-      confirmVariant: RaftButtonRecipeVariant.danger,
-      onConfirm: () async {
-        try {
-          others = await remove(const []);
-        } catch (error) {
-          throw RaftApiException(
-            userErrorText(
-              error,
-              fallback: raftGenericErrorText,
-              where: 'delete computer',
-            ),
-          );
-        }
-      },
+    builder: (dialog) => _CloseWhenGone(
+      changes: changes,
+      gone: () => !valid(),
+      child: RaftConfirmDialog(
+        surfaceKey: const ValueKey('computer-delete-confirm'),
+        title: raftText(dialog, 'Delete computer'),
+        message: raftFormat(
+          dialog,
+          'Are you sure you want to delete "{name}"?',
+          {'name': name},
+        ),
+        confirmLabel: raftText(dialog, 'Delete computer'),
+        loadingLabel: raftText(dialog, 'Deleting…'),
+        confirmVariant: RaftButtonRecipeVariant.danger,
+        onConfirm: () async {
+          if (!valid()) return;
+          try {
+            others = await remove(const []);
+          } catch (error) {
+            throw RaftComputerActionError(
+              userErrorText(
+                error,
+                fallback: raftGenericErrorText,
+                where: 'delete computer',
+              ),
+            );
+          }
+        },
+      ),
     ),
   );
   while (others != null && !deleted && valid()) {
@@ -208,7 +220,7 @@ Future<bool> showDeleteComputerDialog(
         final again = await remove([for (final a in listed) a.id]);
         if (again != null) {
           others = again;
-          throw RaftApiException(
+          throw RaftComputerActionError(
             tr(
               'More agents were added to this computer, so nothing was unbound. Check the list and confirm again.',
             ),
@@ -269,3 +281,43 @@ Future<void> showForceUnbindAgentsDialog(
     onConfirm: onConfirm,
   ),
 );
+
+/// Closes its own dialog route (and only it) once [gone] says the computer
+/// or the authority it was opened for no longer exists: Web's dialog lives in
+/// the Computer page, which unmounts with it.
+class _CloseWhenGone extends StatefulWidget {
+  const _CloseWhenGone({
+    required this.changes,
+    required this.gone,
+    required this.child,
+  });
+  final Listenable? changes;
+  final bool Function() gone;
+  final Widget child;
+
+  @override
+  State<_CloseWhenGone> createState() => _CloseWhenGoneState();
+}
+
+class _CloseWhenGoneState extends State<_CloseWhenGone> {
+  @override
+  void initState() {
+    super.initState();
+    widget.changes?.addListener(_check);
+  }
+
+  @override
+  void dispose() {
+    widget.changes?.removeListener(_check);
+    super.dispose();
+  }
+
+  void _check() {
+    if (!mounted || !widget.gone()) return;
+    final route = ModalRoute.of(context);
+    if (route?.isActive == true) route!.navigator?.removeRoute(route);
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
+}

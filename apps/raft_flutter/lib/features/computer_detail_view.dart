@@ -16,6 +16,7 @@ import '../data/workspace_controller.dart';
 import '../data/workspace_entity_directory.dart';
 import 'agent_runtime_labels.dart' show runtimeLabelWithStatus;
 import 'agent_metadata_projection.dart';
+import 'computer_delete_dialog.dart';
 import 'computer_runtime_detection.dart';
 import 'computer_setup_commands.dart';
 import 'model_label_catalog.dart';
@@ -819,6 +820,26 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel> {
     };
   }
 
+  Future<void> _confirmDelete() async {
+    final controller = w, authority = pageIdentity(w), machineId = id;
+    bool current() =>
+        mounted &&
+        identical(w, controller) &&
+        pageIdentity(controller) == authority &&
+        id == machineId;
+    final deleted = await showDeleteComputerDialog(
+      context,
+      w,
+      machine: m,
+      agents: agents,
+      authorized: current,
+      changes: w.services.entityDirectory,
+    );
+    if (!deleted || !current()) return;
+    await _refreshComputers();
+    if (current()) widget.onClose?.call();
+  }
+
   Future<int> _bulk(RaftComputerBulk mode, List<String> ids) async {
     var failed = 0;
     final lifecycle =
@@ -866,6 +887,7 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel> {
       restart: _restart,
       upgrade: _upgrade,
       deleteComputer: _deleteAction(),
+      confirmDelete: _confirmDelete,
       bulk: _bulk,
       openAgent: widget.onOpenAgent,
       createAgent: widget.onCreateAgent,

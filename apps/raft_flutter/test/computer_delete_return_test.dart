@@ -21,6 +21,13 @@ class _DeleteFixture {
         {...remaining, 'id': 'beta-computer', 'name': 'Beta computer'},
       ],
     };
+    // Web v1.24: deleting one's own Computer revokes its key first.
+    f.overrides['POST /servers/a/machines/computer-a/revoke-computer-key'] = (
+      _,
+    ) async {
+      revokes++;
+      return <String, dynamic>{};
+    };
     f.overrides['DELETE /servers/a/machines/computer-a'] = (_) async {
       deletes++;
       if (pending != null) await pending!.future;
@@ -42,7 +49,7 @@ class _DeleteFixture {
     'name': 'Remaining computer',
   };
   bool deleted = false;
-  int deletes = 0, failures = 0;
+  int deletes = 0, failures = 0, revokes = 0;
   Completer<void>? pending;
 
   Future<void> open(WidgetTester t, {String theme = 'light'}) async {
@@ -249,11 +256,11 @@ void main() {
     expect(h.deleted, isFalse);
     expect(h.f.workspace(t).location.entityId, 'computer-a');
     expect(find.byType(RaftConfirmDialog), findsOneWidget);
-    expect(find.text('Computer removal failed'), findsOneWidget);
+    expect(find.textContaining('Trying again is safe'), findsOneWidget);
     expect(h.confirm.hitTestable(), findsOneWidget);
     await h.submit(t);
     expect(h.deletes, 2);
-    expect(find.text('Computer removal failed'), findsNothing);
+    expect(find.textContaining('Trying again is safe'), findsNothing);
     await h.expectUsableList(t);
   });
 
@@ -262,7 +269,7 @@ void main() {
   ) async {
     final h = _DeleteFixture();
     await h.open(t);
-    await t.tap(find.text('Keep Computer'));
+    await t.tap(find.text('Cancel'));
     await h.f.flush(t);
     expect(h.deletes, 0);
     expect(h.deleted, isFalse);

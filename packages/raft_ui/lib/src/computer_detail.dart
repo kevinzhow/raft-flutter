@@ -205,7 +205,12 @@ class RaftComputerDetailActions {
     this.changeModel,
     this.rescanRuntimes,
     this.openCreator,
+    this.confirmDelete,
   });
+
+  /// Replaces the built-in Delete Computer confirmation (the app's
+  /// DeleteComputerDialog: own-computer key revocation and force unbind).
+  final Future<void> Function()? confirmDelete;
   final Future<void> Function(String name) rename;
   final Future<void> Function(String? description) describe;
   final Future<List<RaftComputerWorkspace>> Function() scanWorkspaces;
@@ -630,6 +635,10 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
       widget.actions.upgrade?.call(target);
 
   Future<void> deleteComputer() async {
+    if (widget.actions.confirmDelete case final confirmDelete?) {
+      await confirmDelete();
+      return;
+    }
     final count = d.agents.length;
     if (count > 0) {
       await _confirm(
