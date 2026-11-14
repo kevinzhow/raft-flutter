@@ -11,6 +11,7 @@ import 'mounted_avatar_recipe.dart';
 import 'popover_surface.dart';
 import 'text_scaling.dart' show RaftChrome;
 import 'theme.dart';
+import 'tokens/tokens.dart' show RaftRadius;
 
 /// Raft Design System "Working agents" (decision 0006): working agents are
 /// shown where they appear. These parts are presentation only; the caller owns
@@ -162,8 +163,15 @@ class RaftWorkingSummary extends StatefulWidget {
     required this.agents,
     this.onOpenAgent,
     this.onFrame = false,
+    this.sentence,
   });
   final bool onFrame;
+
+  /// The agent typing line's form (Web 1.24 AgentTypingLine in a channel):
+  /// still faces and this sentence ("3 agents working here", "Niko is
+  /// typing… · 2 others working") as the trigger, Working now opening
+  /// upward from the line, aligned to its start.
+  final String? sentence;
 
   /// Working agents in the order they started.
   final List<RaftWorkingAgent> agents;
@@ -230,7 +238,10 @@ class _RaftWorkingSummaryState extends State<RaftWorkingSummary> {
           return RaftBackDismiss(
             onDismiss: () => setOpen(false),
             child: CustomSingleChildLayout(
-              delegate: _WorkingNowPlacement(rect),
+              delegate: _WorkingNowPlacement(
+                rect,
+                above: widget.sentence != null,
+              ),
               child: TapRegion(
                 groupId: this,
                 child: Focus(
@@ -255,38 +266,124 @@ class _RaftWorkingSummaryState extends State<RaftWorkingSummary> {
             ),
           );
         },
-        child: RaftTouchTargetExpander(
-          minSize: Size.square(compact ? 44 : 0),
-          child: KeyedSubtree(
-            key: anchor,
-            child: agents.isEmpty
-                ? const SizedBox(height: 32)
-                : _SummaryButton(
-                    label: label,
-                    onFrame: widget.onFrame,
-                    selected: open,
-                    onPressed: () => setOpen(!open),
-                    // The count is fixed chrome: bounded at 1.35x like badges.
-                    child: RaftChrome(
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          RaftWorkingFaces(agents: agents),
-                          const SizedBox(width: 6),
-                          Text(
-                            '${agents.length}',
-                            key: const Key('working-agent-count'),
-                            style: RaftTypography.mono(
-                              t,
-                              size: 12,
-                              line: 16,
-                              color: t.strong,
+        // The typing line sits 16px in from the conversation's edges (Web
+        // `inset-x-5` with the trigger's `-mx-1`).
+        child: Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: widget.sentence != null ? 16 : 0,
+          ),
+          child: RaftTouchTargetExpander(
+            minSize: Size.square(compact ? 44 : 0),
+            child: KeyedSubtree(
+              key: anchor,
+              child: agents.isEmpty
+                  ? const SizedBox(height: 32)
+                  : widget.sentence != null
+                  ? _LineButton(
+                      agents: agents,
+                      sentence: widget.sentence!,
+                      selected: open,
+                      onPressed: () => setOpen(!open),
+                    )
+                  : _SummaryButton(
+                      label: label,
+                      onFrame: widget.onFrame,
+                      selected: open,
+                      onPressed: () => setOpen(!open),
+                      // The count is fixed chrome: bounded at 1.35x like badges.
+                      child: RaftChrome(
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            RaftWorkingFaces(agents: agents),
+                            const SizedBox(width: 6),
+                            Text(
+                              '${agents.length}',
+                              key: const Key('working-agent-count'),
+                              style: RaftTypography.mono(
+                                t,
+                                size: 12,
+                                line: 16,
+                                color: t.strong,
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
-                  ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The typing line's trigger: still faces and the sentence, underlined on
+/// hover (Web `group-hover:underline`), `text-footnote text-foreground-muted`.
+class _LineButton extends StatelessWidget {
+  const _LineButton({
+    required this.agents,
+    required this.sentence,
+    required this.onPressed,
+    this.selected = false,
+  });
+  final List<RaftWorkingAgent> agents;
+  final String sentence;
+  final VoidCallback onPressed;
+  final bool selected;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = RaftTokens.of(context);
+    return Semantics(
+      button: true,
+      label: sentence,
+      expanded: selected,
+      excludeSemantics: true,
+      onTap: onPressed,
+      child: RaftInteractive(
+        key: const Key('agent-typing-trigger'),
+        onPressed: onPressed,
+        button: false,
+        builder: (context, state) => Container(
+          height: 24,
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(
+              t.size('radius.chip', fallback: RaftRadius.chip),
+            ),
+            border: state.focusVisible ? Border.all(color: t.strong) : null,
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              RaftWorkingFaces(
+                agents: agents.take(raftWorkingFaceLimit).toList(),
+                still: true,
+              ),
+              const SizedBox(width: 6),
+              Flexible(
+                child: Text(
+                  sentence,
+                  maxLines: 1,
+                  softWrap: false,
+                  overflow: TextOverflow.ellipsis,
+                  style:
+                      RaftTypography.body(
+                        t,
+                        size: 13,
+                        line: 18,
+                        color: t.muted,
+                      ).copyWith(
+                        decoration: state.hovered
+                            ? TextDecoration.underline
+                            : TextDecoration.none,
+                        decorationThickness: 1.5,
+                      ),
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -342,17 +439,29 @@ class _SummaryButton extends StatelessWidget {
 }
 
 class _WorkingNowPlacement extends SingleChildLayoutDelegate {
-  const _WorkingNowPlacement(this.anchor);
+  const _WorkingNowPlacement(this.anchor, {this.above = false});
   final Rect anchor;
+
+  /// Upward from [anchor], aligned to its start (the typing line).
+  final bool above;
   @override
   BoxConstraints getConstraintsForChild(BoxConstraints constraints) =>
       BoxConstraints(
         maxWidth: math.min(300, math.max(0, constraints.maxWidth - 16)),
-        maxHeight: math.max(0, constraints.maxHeight - anchor.bottom - 12),
+        maxHeight: math.max(
+          0,
+          (above ? anchor.top : constraints.maxHeight - anchor.bottom) - 12,
+        ),
       );
 
   @override
   Offset getPositionForChild(Size size, Size childSize) {
+    if (above) {
+      final left = anchor.left
+          .clamp(8.0, math.max(8.0, size.width - childSize.width - 8))
+          .toDouble();
+      return Offset(left, anchor.top - 4 - childSize.height);
+    }
     // Aligned to the end of the summary, kept 8px inside the window.
     final left = (anchor.right - childSize.width)
         .clamp(8.0, math.max(8.0, size.width - childSize.width - 8))
@@ -361,7 +470,8 @@ class _WorkingNowPlacement extends SingleChildLayoutDelegate {
   }
 
   @override
-  bool shouldRelayout(_WorkingNowPlacement old) => old.anchor != anchor;
+  bool shouldRelayout(_WorkingNowPlacement old) =>
+      old.anchor != anchor || old.above != above;
 }
 
 /// The Working now popover: a 300px list with one row per working agent.

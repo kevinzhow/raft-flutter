@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/agent_typing_store.dart';
+import 'package:raft_flutter/data/workspace_entity_directory.dart'
+    show WorkspaceEntityKind;
 import 'package:raft_flutter/features/agent_typing_line_host.dart';
 import 'package:raft_flutter/features/chat_view.dart';
 import 'package:raft_ui/raft_ui.dart';
@@ -229,5 +231,56 @@ void main() {
     );
     await t.pump();
     expect(find.byKey(const Key('agent-typing-line')), findsNothing);
+  });
+
+  testWidgets('in a channel the line says who works here, typing included', (
+    t,
+  ) async {
+    final (w, transport) = (await t.runAsync(() => fixture('member')))!;
+    addTearDown(w.dispose);
+    transport.routes['GET /agents'] = (_) => [
+      {'id': 'a1', 'name': 'niko', 'displayName': 'Niko', 'status': 'active'},
+    ];
+    transport.routes['GET /servers/s1/members'] = (_) => [];
+    await t.runAsync(
+      () => w.services.entityDirectory.refresh(
+        WorkspaceEntityKind.agents,
+        force: true,
+      ),
+    );
+    final store = AgentTypingStore.of(w.client);
+    void listener() {}
+    store.addListener(listener);
+    addTearDown(() => store.removeListener(listener));
+    const kirby = RaftWorkingAgent(
+      id: 'a2',
+      name: 'Kirby',
+      text: 'Editing Flow.tsx',
+      avatar: SizedBox(),
+    );
+    late BuildContext context;
+    await t.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (c) {
+            context = c;
+            return const SizedBox();
+          },
+        ),
+      ),
+    );
+    var state = agentTypingLineState(context, w, false, [kirby]);
+    expect(state.sentence, '1 agent working here');
+    expect(state.faces.map((a) => a.id), ['a2']);
+    store.receive(RaftEvent('agent:typing', typing('a1', 'x')));
+    state = agentTypingLineState(context, w, false, [kirby]);
+    expect(state.faces.map((a) => a.id), ['a2', 'a1']);
+    expect(state.sentence, 'Niko is typing… · 1 other working');
+    expect(state.rows.last.text, 'Typing…');
+    // Only the typers in a DM or a thread.
+    state = agentTypingLineState(context, w, false, null);
+    expect(state.inChannel, isFalse);
+    expect(state.sentence, 'Niko is typing…');
+    store.receive(RaftEvent('agent:typing', typing('a1', 'x', state: 'end')));
   });
 }
