@@ -2,8 +2,11 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
+import 'package:raft_client/raft_client.dart'
+    show RaftApiException, SecondFactorRecovery;
 
 import 'joint_invite_notices.dart';
+import 'second_factor_recovery_notice.dart';
 import 'search_memory.dart';
 import 'system_notification_projection.dart';
 import 'usage_limit_attention.dart';
@@ -79,6 +82,8 @@ class SystemNotificationStore extends ChangeNotifier {
   List<PendingJointInvite> _jointInvites = const [];
   int _jointRevision = 0;
   List<PendingJointInvite> get jointInvites => _jointInvites;
+  SecondFactorRecovery? _recovery;
+  int _recoveryRevision = 0;
   final dismissed = <String>{};
   List<Map<String, dynamic>> _machines = [], _agents = [];
   List<Map<String, dynamic>> get machines =>
@@ -128,6 +133,7 @@ class SystemNotificationStore extends ChangeNotifier {
     if (c == null) return const [];
     final shared = entities?.call();
     return [
+          ?secondFactorRecoveryNotice(_recovery),
           if (c.server != null) ...jointInviteNotices(_jointInvites),
           if (c.server != null) ...usageLimitNotices(_usage),
           ...projectSystemNotifications(
@@ -170,6 +176,8 @@ class SystemNotificationStore extends ChangeNotifier {
     ++_usageRevision;
     _jointInvites = const [];
     ++_jointRevision;
+    _recovery = null;
+    ++_recoveryRevision;
     feedbackUnread = 0;
     failed = false;
     loading = false;
@@ -207,6 +215,7 @@ class SystemNotificationStore extends ChangeNotifier {
   Future<void> refresh() async {
     final c = context;
     if (closed || c?.server == null) return;
+    unawaited(refreshSecondFactorRecovery());
     final current = c!;
     final ticket = ++revision, readTicket = feedbackRevision;
     loading = true;
@@ -329,6 +338,38 @@ class SystemNotificationStore extends ChangeNotifier {
     } catch (_) {
       if (_acceptsUsage(scope, ticket)) _setUsage(null);
     }
+  }
+
+  /// This person's request to reset two-step verification (account-wide):
+  /// read with every refresh (open, resume, the 60 s poll). A failed read
+  /// keeps what is shown.
+  Future<void> refreshSecondFactorRecovery() async {
+    final c = context;
+    if (closed || c == null) return;
+    final scope = c.scope, ticket = ++_recoveryRevision;
+    try {
+      final raw = await get('/auth/second-factor/recovery');
+      if (closed || context?.scope != scope || ticket != _recoveryRevision) {
+        return;
+      }
+      _recovery = parseSecondFactorRecoveryRead(raw);
+      _publish();
+    } on Object catch (error) {
+      // 404 while the feature is off: nothing to show.
+      if (error is RaftApiException && error.status == 404 && !closed) {
+        _recovery = null;
+        _publish();
+      }
+    }
+  }
+
+  /// Cancel reset passed: the entry goes at once (a read in flight is
+  /// outdated).
+  void secondFactorRecoveryCancelled(String scope) {
+    if (closed || context?.scope != scope) return;
+    ++_recoveryRevision;
+    _recovery = null;
+    _publish();
   }
 
   /// RFC 075 section 4.5: the pending joint invites addressed to this user on

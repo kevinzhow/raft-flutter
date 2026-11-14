@@ -16,6 +16,9 @@ import 'package:flutter/widgets.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
+import '../data/system_notification_projection.dart';
+import '../data/system_notification_store.dart';
+import 'account_security_answer.dart';
 import 'auth_view.dart' show isValidAuthEmail;
 
 /// Which recovery screen takes the second step's page.
@@ -169,46 +172,61 @@ class _RecoveryState extends State<SecondFactorRecoveryScreen> {
   }
 }
 
-/// "Reset requested" / "Reset ready" in every signed-in session (Web
-/// useSecondFactorRecoveryNotification): read when the notification center
-/// loads and whenever it refreshes; Cancel reset ends it in one step.
-class SecondFactorRecoveryNotice {
-  const SecondFactorRecoveryNotice(this.recovery);
-  final SecondFactorRecovery recovery;
+/// "Reset requested" / "Reset ready" in the notification center (Web
+/// useSecondFactorRecoveryNotification): no Dismiss, it stays until the
+/// request is gone; Cancel reset ends it in one step, with no step-up and no
+/// confirm (cancelling is the safe direction).
+RaftNotificationEntry secondFactorRecoveryEntry(
+  BuildContext context,
+  RaftClient client,
+  SystemNotice notice,
+  SystemNotificationStore store,
+  String scope,
+) {
+  final p = notice.parameters;
+  final ready = p['ready'] == true;
+  String when(String key) {
+    final time = DateTime.tryParse('${p[key] ?? ''}');
+    return time == null ? '' : secondFactorDateTime(context, client, time);
+  }
 
-  String title(BuildContext context) => raftText(
-    context,
-    recovery.ready ? 'Reset ready' : 'Reset requested',
-  );
-
-  String body(BuildContext context, String Function(DateTime) when) => [
-    recovery.ready
+  final body = [
+    ready
         ? raftFormat(
             context,
             'Someone asked to reset two-step verification on your account, and the next sign-in can finish it without the second step, until {time}. Not you? Cancel the reset and change your password.',
-            {'time': when(recovery.expiresAt)},
+            {'time': when('expiresAt')},
           )
         : raftFormat(
             context,
             'Someone asked to reset two-step verification on your account. Signing in can finish it after {time}. Not you? Cancel the reset.',
-            {'time': when(recovery.eligibleAt)},
+            {'time': when('eligibleAt')},
           ),
-    if (recovery.setPasswordFirst)
+    if (p['setPasswordFirst'] == true)
       raftText(
         context,
         'This account has no password yet: set one with Forgot Password on the sign-in page, then sign in to finish it.',
       ),
   ].join(' ');
-}
-
-/// Reads this person's reset; null when there is none or it can't be read
-/// (a 404 while the feature is off reads as nothing to show).
-Future<SecondFactorRecovery?> readSecondFactorRecovery(RaftClient client) async {
-  try {
-    return await client.secondFactorRecovery();
-  } catch (_) {
-    return null;
-  }
+  return RaftNotificationEntry(
+    id: notice.id,
+    kind: RaftNotificationKind.warning,
+    iconForeground: RaftTokens.of(context).colors['foreground'],
+    title: raftText(context, ready ? 'Reset ready' : 'Reset requested'),
+    body: body,
+    glyph: RaftGlyph.shieldAlert,
+    actions: [
+      RaftNotificationAction(
+        label: raftText(context, 'Cancel reset'),
+        primary: true,
+        onPressed: () async {
+          if (await cancelSecondFactorRecoveryWithToast(context, client)) {
+            store.secondFactorRecoveryCancelled(scope);
+          }
+        },
+      ),
+    ],
+  );
 }
 
 /// Cancels it and says so in a toast (Web `handleCancel`).

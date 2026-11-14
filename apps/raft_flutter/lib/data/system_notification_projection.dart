@@ -10,6 +10,9 @@ enum SystemNoticeDestination {
   computers,
   feedback,
   jointInvite,
+
+  /// Web useSecondFactorRecoveryNotification: its action is Cancel reset.
+  secondFactorRecovery,
 }
 
 class SystemNotice {
