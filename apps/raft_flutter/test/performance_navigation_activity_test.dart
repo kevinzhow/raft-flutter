@@ -47,6 +47,8 @@ void main() {
       api.routes['GET /channels/joint-invites'] = (_) => {'invites': []};
       // The usage-limit feed is read for everyone since Web 1.24
       // (`usage_limit_attention_v0` is retired).
+      // The notification store also reads the two-step reset request (WP-SEC).
+      api.routes['GET /auth/second-factor/recovery'] = (_) => {'recovery': null};
       api.routes['GET /servers/s1/system-notifications-v2'] = (_) => {
         'contractVersion': 'server-system-attention-v1',
         'incidents': [],

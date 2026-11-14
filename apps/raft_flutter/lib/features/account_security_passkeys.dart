@@ -332,6 +332,7 @@ class _PasskeyRow extends StatelessWidget {
           width: 160,
           triggerBuilder: (context, focus, open) => Focus(
             focusNode: focus,
+            // ds-allow: the Web row menu trigger is an icon button inside the menu; RaftIconButton is the trigger glyph here
             child: RaftIconButton(
               key: ValueKey('passkey-actions-${passkey.id}'),
               glyph: RaftGlyph.ellipsisVertical,
