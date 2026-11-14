@@ -367,6 +367,15 @@ class SelectTests(unittest.TestCase):
         self.assertIn('recorded file access', reasons)
         self.assertIn('loader.dart:2', reasons)
 
+    def test_a_comment_that_names_a_path_selects_nothing(self):
+        # Every test runs tool/testing/impact_probe.dart, whose doc comment names docs/development.md. The mention's
+        # line number is the branch's; on the map's commit that line can be code (here `return a + b;`).
+        self.repo.branch()
+        self.repo.write('apps/raft_flutter/lib/calc.dart', CALC.replace('  return a + b;', '  // reads nothing from assets/data.json\n  return a + b;'))
+        self.repo.write('apps/raft_flutter/assets/data.json', '{"a": 1}\n')
+        self.repo.commit('a comment names the fixture; the fixture changes')
+        self.assertEqual(chosen(self.repo.select()), {'loader_test.dart'})
+
     def test_unmapped_tests_fall_back_to_imports(self):
         self.repo.branch()
         self.repo.write('apps/raft_flutter/lib/loader.dart', LOADER.replace('data.json', 'other.json'))

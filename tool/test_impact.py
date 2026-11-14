@@ -23,7 +23,7 @@ picks, with a reason for each:
     code, plus the import closure (`--absent import-graph`, the default `callers` relies on the changed
     call sites in existing files instead; see `absent_tests`);
   - non-Dart inputs (assets, fixtures, JSON, docs): tests that mention the path, and tests that execute
-    library lines that mention it; build inputs (pubspec, analysis options, dart_test.yaml) select all;
+    library lines that mention it (outside `//` comments); build inputs (pubspec, analysis options, dart_test.yaml) select all;
   - generator inputs (tool/flutter regenerates the git-ignored *.g.dart files): tests that executed the
     generated file;
   - test files the map does not know (new, or the probe did not report) that import a changed file.
@@ -1033,8 +1033,8 @@ class Selector:
         for raw in done.stdout.splitlines():
             ref_path, _, rest = raw.partition(':')
             number, _, text = rest.partition(':')
-            if not number.isdigit() or ref_path == path:
-                continue
+            if not number.isdigit() or ref_path == path or text.lstrip().startswith('//'):
+                continue  # a comment that names the path does not read it (every test runs impact_probe.dart, whose doc names docs/)
             label = f'mentions {path} ({ref_path}:{number})'
             if affected_tests.is_test_file(ref_path):
                 self.selection.add([ref_path], label)
