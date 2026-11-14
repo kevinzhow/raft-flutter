@@ -175,18 +175,22 @@ void main() {
       },
     );
     await _openMenu(t, w);
-    // Opening a menu sends nothing; the action reads the flag first and, on a
-    // task v2 server, creates from the message without converting.
-    expect(a.calls.where((c) => c.path == '/feature-flags/evaluate'), isEmpty);
-    await t.tap(find.text('Convert to task'));
+    // The chat reads the server's flag once when it shows the channel (Web
+    // useServerFeatureFlag); building the menu itself sends nothing. On a
+    // task v2 server the menu creates from the message and never converts.
+    expect(
+      a.calls.where((c) => c.path == '/feature-flags/evaluate'),
+      hasLength(1),
+    );
+    expect(find.text('Convert to task'), findsNothing);
+    await t.tap(find.text('Create task from message'));
     await _settle(t);
     await _createFromDialog(t, a);
     expect(a.calls.where((c) => c.path == '/tasks/convert-message'), isEmpty);
-    // Known now: the next menu offers it by its task v2 name.
-    t.widget<RaftMessageTile>(find.byType(RaftMessageTile)).onActions!();
-    await t.pump(const Duration(milliseconds: 400));
-    expect(find.text('Convert to task'), findsNothing);
-    expect(find.text('Create task from message'), findsOneWidget);
+    expect(
+      a.calls.where((c) => c.path == '/feature-flags/evaluate'),
+      hasLength(1),
+    );
     await t.pumpWidget(const SizedBox());
   });
 }

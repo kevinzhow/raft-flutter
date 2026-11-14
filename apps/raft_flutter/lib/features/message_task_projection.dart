@@ -6,7 +6,9 @@ import 'package:raft_client/raft_client.dart';
 
 import '../data/message_task_cache.dart';
 import '../data/workspace_controller.dart';
+import 'message_task_actions.dart' show TaskV2ConversationsFlag;
 import 'private_route_guard.dart' show channelAuthorityReduced;
+import 'task_v2_mode.dart';
 
 /// How a message's footer task chip is presented.
 enum MessageTaskPresence {
@@ -49,13 +51,20 @@ Map<String, dynamic>? provisionalMessageTask(RaftMessage message) {
 /// chips on the first frame; a stale channel is revalidated in the
 /// background. This is presentation data, never an authorization.
 class MessageTaskProjection extends ChangeNotifier {
-  MessageTaskProjection(this.w) : cache = MessageTaskCache.of(w.client) {
+  MessageTaskProjection(this.w)
+    : cache = MessageTaskCache.of(w.client),
+      taskV2 = TaskV2ConversationsFlag.of(w) {
     w.addListener(changed);
     cache.addListener(cacheChanged);
+    taskV2.addListener(cacheChanged);
     changed();
   }
   final WorkspaceController w;
   final MessageTaskCache cache;
+
+  /// `task_v2_conversations_v0` of the selected server: with it on every
+  /// message's tasks hang under it as a list (Web TaskChipList).
+  final TaskV2ConversationsFlag taskV2;
   String? scope;
   RaftChannel? channelRecord;
   bool ended = false;
@@ -105,6 +114,7 @@ class MessageTaskProjection extends ChangeNotifier {
       cache.markStale(channel.id);
     }
     revalidateIfStale();
+    if (permitted) unawaited(taskV2.ensure());
     notifyListeners();
   }
 
@@ -136,6 +146,38 @@ class MessageTaskProjection extends ChangeNotifier {
     return null;
   }
 
+  Map<String, Map<String, dynamic>>? _listedFrom;
+  bool? _listedFlag;
+  Map<String, List<Map<String, dynamic>>> _lists = const {};
+
+  /// Web ChatPanel `taskListsByMessageId`: the tasks hanging under each
+  /// message (its source, or a pre-v2 task's host), by task number. With the
+  /// flag on every message's tasks are listed; off, only where a task made
+  /// the v2 way hangs, so a pre-v2 task keeps its single footer chip.
+  Map<String, List<Map<String, dynamic>>> get taskLists {
+    final rows = byMessage, flag = taskV2.enabled;
+    if (identical(rows, _listedFrom) && flag == _listedFlag) return _lists;
+    final lists = <String, List<Map<String, dynamic>>>{};
+    for (final task in rows.values) {
+      final anchor = taskAnchorMessageId(task, flag);
+      if (anchor != null) (lists[anchor] ??= []).add(task);
+    }
+    lists.removeWhere((_, list) => !flag && !list.any(isTaskV2Task));
+    for (final list in lists.values) {
+      list.sort(
+        (a, b) => (a['taskNumber'] as int).compareTo(b['taskNumber'] as int),
+      );
+    }
+    _listedFrom = rows;
+    _listedFlag = flag;
+    return _lists = lists;
+  }
+
+  /// The task list under [message] (task v2), or null when it has none and
+  /// keeps the single footer chip.
+  List<Map<String, dynamic>>? taskListFor(RaftMessage message) =>
+      owns(message) ? taskLists[message.id] : null;
+
   bool owns(RaftMessage message) =>
       permitted &&
       (message.channelId == w.channel!.id ||
@@ -158,6 +200,8 @@ class MessageTaskProjection extends ChangeNotifier {
     final loaded = tasks != null;
     final accepted = tasks?[message.id];
     if (accepted != null) {
+      // The footer chip gives way to the task list under the message.
+      if (taskLists.containsKey(message.id)) return null;
       return (presence: MessageTaskPresence.accepted, task: accepted);
     }
     if (loaded && !cache.needsRevalidation(w, channelId)) return null;
@@ -183,6 +227,7 @@ class MessageTaskProjection extends ChangeNotifier {
     ended = true;
     w.removeListener(changed);
     cache.removeListener(cacheChanged);
+    taskV2.removeListener(cacheChanged);
     super.dispose();
   }
 }

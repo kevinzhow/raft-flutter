@@ -167,10 +167,23 @@ const dialogSurfaces = <CloseSurface>[
     desktop: {_x, _esc, _scrim, _sys},
     files: [
       'lib/features/create_task_dialog.dart',
+      'lib/features/create_task_message_dialog.dart',
       '../../packages/raft_ui/lib/src/create_task_view.dart',
     ],
     status: 'approved',
     fix: _sheetOnPhone,
+  ),
+  CloseSurface(
+    'task-delete-confirm',
+    kind: SurfaceKind.dialog,
+    web: 'task/TaskDeleteConfirmDialog.tsx ConfirmDialog: X + Esc, no scrim close, gated while deleting',
+    phone: {_x, _esc, _sys},
+    fold: {_x, _esc, _sys},
+    desktop: {_x, _esc, _sys},
+    files: [
+      'lib/features/task_conversation_surface.dart',
+      '../../packages/raft_ui/lib/src/task_v2_dialogs.dart',
+    ],
   ),
   CloseSurface(
     'create-joint-channel',

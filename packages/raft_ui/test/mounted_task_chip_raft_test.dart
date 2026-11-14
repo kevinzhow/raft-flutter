@@ -90,6 +90,7 @@ void main() {
             RaftMessageTaskStatusIcon.glyphOf(s),
         ],
         [
+          RaftGlyph.circle, // backlog (drawn as the hollow pixel)
           RaftGlyph.circle,
           RaftGlyph.play,
           RaftGlyph.eye,

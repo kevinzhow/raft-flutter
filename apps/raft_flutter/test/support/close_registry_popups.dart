@@ -190,6 +190,15 @@ const popupSurfaces = <CloseSurface>[
     files: ['../../packages/raft_ui/lib/src/inline_badge_editor.dart'],
   ),
   CloseSurface(
+    'task-reason-popover',
+    kind: SurfaceKind.popup,
+    web: 'task/TaskBacklogReasonPopover.tsx Popover (Base UI): Esc, outside press, Cancel; busy while the write runs',
+    phone: {_esc, _scrim, _sys},
+    fold: {_esc, _scrim, _sys},
+    desktop: {_esc, _scrim, _sys},
+    files: ['../../packages/raft_ui/lib/src/task_reason_popover.dart'],
+  ),
+  CloseSurface(
     'agent-overflow-menu',
     kind: SurfaceKind.popup,
     web: 'agent/AgentProfileOverflowMenu.tsx:108 DropdownMenu (Base UI): Esc, outside press',

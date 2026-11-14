@@ -1594,6 +1594,7 @@ class RaftMessageTile extends StatelessWidget {
     this.threadPreview,
     this.readStatus,
     this.taskReference,
+    this.taskList,
     this.savedIndicator,
     this.threadRepliesBadge,
     this.badge,
@@ -1675,6 +1676,10 @@ class RaftMessageTile extends StatelessWidget {
   /// Business adapters may supply a richer body without replacing message
   /// actions, thread controls, attachments, or reactions.
   final Widget? body, threadPreview, taskReference;
+
+  /// Web v1.24 `TaskChipList`: the tasks created from this message (task
+  /// v2), a block under the content, above the footer row.
+  final Widget? taskList;
 
   /// A separate status line after the footer and inline replies, not a badge.
   final Widget? readStatus;
@@ -1958,6 +1963,7 @@ class RaftMessageTile extends StatelessWidget {
       readStatus: readStatus,
       footer:
           taskReference == null &&
+              taskList == null &&
               savedIndicator == null &&
               threadRepliesBadge == null &&
               reactions.isEmpty &&
@@ -1968,6 +1974,7 @@ class RaftMessageTile extends StatelessWidget {
           : Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                ?taskList,
                 if (taskReference != null ||
                     savedIndicator != null ||
                     threadRepliesBadge != null ||

@@ -15,7 +15,16 @@ import 'raft/ui_tokens.dart';
 import 'tokens/tokens.dart';
 import '../recipes.dart';
 
+/// The board lanes of a pre-v2 task list (Web v1.21.23 STATUS_ORDER).
 const raftTaskStatuses = ['todo', 'in_progress', 'in_review', 'done', 'closed'];
+
+/// Every status a task can have (shared TASK_STATUSES, Web v1.24): task v2
+/// adds `backlog` ("not now"), which a pre-v2 list never offers but must
+/// still show when a task is in it.
+const raftTaskStatusVocabulary = ['backlog', ...raftTaskStatuses];
+
+/// The statuses a new task can start in (shared TASK_CREATE_STATUSES).
+const raftTaskCreateStatuses = ['backlog', 'todo', 'in_progress'];
 const raftTaskTransitions = <String, List<String>>{
   'todo': ['in_progress', 'closed'],
   'in_progress': ['in_review', 'done', 'closed'],
@@ -24,6 +33,7 @@ const raftTaskTransitions = <String, List<String>>{
   'closed': ['todo', 'in_progress'],
 };
 String raftTaskStatusLabel(String status) => switch (status) {
+  'backlog' => 'Backlog',
   'todo' => 'Todo',
   'in_progress' => 'In progress',
   'in_review' => 'In review',

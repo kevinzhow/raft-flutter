@@ -103,6 +103,7 @@ import '../data/feature_flag_client_facts.dart';
 import 'chinese_community.dart';
 import 'public_avatar_url.dart';
 import 'public_page_live.dart';
+import 'message_task_actions.dart' show taskSurfaceItemFor;
 
 export 'workspace_host_scope.dart' show WorkspaceHostScope;
 part 'workspace_view_sidebar_menus.dart';
@@ -260,7 +261,7 @@ class _WorkspaceViewState extends State<WorkspaceView>
       return;
     }
     final channelId = row['channelId'];
-    final itemId = row['isLegacy'] == true ? row['id'] : row['messageId'];
+    final itemId = taskSurfaceItemFor(w, row);
     if (channelId is! String || itemId is! String || itemId.isEmpty) return;
     taskSeed = TaskSurfaceSeed(
       {...row},

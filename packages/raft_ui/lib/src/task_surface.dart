@@ -32,8 +32,12 @@ import 'localization.dart';
 import 'css_recipe_decoration.dart';
 import 'recipe_surface.dart';
 import 'mounted_task_chip.dart' show RaftMessageTaskStatus;
+import 'raft/button.dart';
 import 'task.dart';
+import 'task_conversation_parts.dart';
+import 'task_head_editor.dart';
 import 'task_status_badge.dart';
+import 'task_reason_popover.dart';
 import 'task_timeline.dart';
 import 'page_tokens.dart';
 import 'theme.dart';
@@ -81,7 +85,15 @@ class RaftTaskSurface extends StatefulWidget {
     this.page = false,
     this.displayNameFor,
     this.onViewInThread,
+    this.conversation,
+    this.onUpdateWithReason,
+    this.viewerId,
   });
+
+  /// Task v2: the task's own conversation (Web TaskConversationDialog). The
+  /// bar names the task by its ref with the More menu, the head is editable
+  /// and the properties add Source, Created at and Earlier discussion.
+  final RaftTaskConversation? conversation;
 
   /// Leaves the task for the ordinary thread of its message (Web TaskModalBar
   /// "View in thread"); null when the task has no thread to show (legacy tasks,
@@ -104,6 +116,15 @@ class RaftTaskSurface extends StatefulWidget {
   final bool page;
   final Future<void> Function() onRetry, onLoadAssignees;
   final Future<void> Function(String, dynamic) onUpdate;
+
+  /// Task v2 reasons (Web TaskBacklogReasonPopover / TaskHandoffReasonPanel):
+  /// moving into Backlog asks what would bring the task back in a popover
+  /// under the status chip; choosing someone other than [viewerId] in the
+  /// assignee picker asks what the task waits on them for inside the picker.
+  /// Resolves false when the write failed. Null: no reason step.
+  final Future<bool> Function(String field, dynamic value, String reason)?
+  onUpdateWithReason;
+  final String? viewerId;
   final String Function(dynamic) formatTime;
   final Widget Function(Widget parentSlot)? discussionBuilder;
   final VoidCallback? onCleanupDelete;
@@ -113,7 +134,21 @@ class RaftTaskSurface extends StatefulWidget {
 
 class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
   bool historyOpen = false, descriptionExpanded = false;
+
+  /// The head field being edited (task v2), keyed by task.
+  ({Object? taskId, RaftTaskHeadField field})? editing;
+  RaftTaskHeadField? get editingField =>
+      editing != null && editing!.taskId == widget.task['id']
+      ? editing!.field
+      : null;
   final popover = MenuController();
+  final statusKey = GlobalKey(),
+      reasonPanelKey = GlobalKey<RaftTaskReasonPanelState>();
+  bool askBacklog = false;
+
+  /// Someone other than the viewer chosen in the picker: the reason step
+  /// shows in the picker before the write.
+  ({Map<String, String> value, String name})? handoff;
   final assigneeSearch = TextEditingController();
   String needle = '';
   @override
@@ -275,6 +310,16 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
                   !mobile ||
               side && MediaQuery.sizeOf(context).width >= 1024
         : !mobile;
+    final conversation = widget.conversation;
+    if (conversation != null && !widget.legacy) {
+      final phone = mobile || widget.page;
+      return RaftTaskConversationBar(
+        conversation: conversation,
+        taskNumber: task['taskNumber'],
+        mobile: phone,
+        onClose: phone ? widget.onBack ?? widget.onClose : widget.onClose,
+      );
+    }
     if (widget.unresolvedBody != null) {
       return RaftThreadHeader(
         presentation: mobile
@@ -443,63 +488,97 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
       children: [
         Padding(
           padding: const EdgeInsets.only(bottom: 8),
-          child: Text(
+          child: headText(
+            RaftTaskHeadField.title,
             '${task['title'] ?? ''}',
-            key: const ValueKey('task-modal-title'),
-            maxLines: 3,
-            overflow: TextOverflow.ellipsis,
-            // v1.21.23 PanelHeading is a bare flex slot: the title inherits the
-            // body text (16/24 regular); a57b9dab drew it 18px bold.
-            style: _webHead(t)
-                ? RaftTypography.body(
-                    t,
-                    size: 16,
-                    line: 24,
-                    color: t.colors['foreground'],
-                  ).copyWith(fontFamily: t.headingFont)
-                : RaftTypography.heading(t, size: 18, line: 24.75),
+            Text(
+              '${task['title'] ?? ''}',
+              key: const ValueKey('task-modal-title'),
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+              // v1.21.23 PanelHeading is a bare flex slot: the title inherits the
+              // body text (16/24 regular); a57b9dab drew it 18px bold.
+              style: _webHead(t)
+                  ? RaftTypography.body(
+                      t,
+                      size: 16,
+                      line: 24,
+                      color: t.colors['foreground'],
+                    ).copyWith(fontFamily: t.headingFont)
+                  : RaftTypography.heading(t, size: 18, line: 24.75),
+            ),
           ),
         ),
-        if (description.isNotEmpty)
+        if (editingField == RaftTaskHeadField.description)
           Padding(
             padding: const EdgeInsets.only(bottom: 12),
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                final style = RaftTypography.heading(
-                  t,
-                  size: 14,
-                  line: 20,
-                  weight: FontWeight.w400,
-                ).copyWith(color: t.muted);
-                final measure = TextPainter(
-                  text: TextSpan(text: description, style: style),
-                  textDirection: Directionality.of(context),
-                  textScaler: MediaQuery.textScalerOf(context),
-                )..layout(maxWidth: constraints.maxWidth);
-                final long = measure.height > 61;
-                measure.dispose();
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      description,
-                      key: const ValueKey('task-modal-description'),
-                      maxLines: long && !descriptionExpanded ? 3 : null,
-                      overflow: long && !descriptionExpanded
-                          ? TextOverflow.ellipsis
-                          : TextOverflow.clip,
-                      style: style,
-                    ),
-                    if (long)
-                      RaftTextButton(
-                        label: descriptionExpanded ? 'Collapse' : 'Show More',
-                        onPressed: () => setState(
-                          () => descriptionExpanded = !descriptionExpanded,
-                        ),
+            child: headText(RaftTaskHeadField.description, description, null),
+          )
+        else if (description.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: headText(
+              RaftTaskHeadField.description,
+              description,
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final style = RaftTypography.heading(
+                    t,
+                    size: 14,
+                    line: 20,
+                    weight: FontWeight.w400,
+                  ).copyWith(color: t.muted);
+                  final measure = TextPainter(
+                    text: TextSpan(text: description, style: style),
+                    textDirection: Directionality.of(context),
+                    textScaler: MediaQuery.textScalerOf(context),
+                  )..layout(maxWidth: constraints.maxWidth);
+                  final long = measure.height > 61;
+                  measure.dispose();
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        description,
+                        key: const ValueKey('task-modal-description'),
+                        maxLines: long && !descriptionExpanded ? 3 : null,
+                        overflow: long && !descriptionExpanded
+                            ? TextOverflow.ellipsis
+                            : TextOverflow.clip,
+                        style: style,
                       ),
-                  ],
-                );
-              },
+                      if (long)
+                        RaftTextButton(
+                          label: descriptionExpanded ? 'Collapse' : 'Show More',
+                          onPressed: () => setState(
+                            () => descriptionExpanded = !descriptionExpanded,
+                          ),
+                        ),
+                    ],
+                  );
+                },
+              ),
+            ),
+          )
+        else if (widget.conversation?.onAmend != null &&
+            (task.containsKey('description') ||
+                task['hasDescription'] == false))
+          Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: RaftButton(
+                key: const ValueKey('task-modal-add-description'),
+                uiVariant: RaftButtonVariant.ghost,
+                uiSize: RaftButtonSize.sm,
+                label: 'Add a description',
+                onPressed: () => setState(
+                  () => editing = (
+                    taskId: task['id'],
+                    field: RaftTaskHeadField.description,
+                  ),
+                ),
+              ),
             ),
           ),
         // v1.21.23 TaskProperties: the facts row first, History folds under it
@@ -513,11 +592,35 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
           children: [
             property(context, 'Status', status(context)),
             property(context, 'Assignee', assignee(context)),
+            if (widget.conversation?.source case final source?)
+              property(context, 'Source', source),
             property(
               context,
               'Created by',
               Text(createdBy(context), style: detailsStyle(t)),
             ),
+            if (widget.conversation?.createdAt case final createdAt?)
+              property(
+                context,
+                'Created at',
+                Text(
+                  createdAt,
+                  key: const ValueKey('task-modal-created-at'),
+                  style: detailsStyle(t),
+                ),
+              ),
+            if (widget.conversation?.earlierDiscussion case final earlier?)
+              property(
+                context,
+                'Earlier discussion',
+                RaftTaskPropertyLink(
+                  key: const ValueKey('task-modal-earlier-discussion-open'),
+                  semanticLabel:
+                      "Open the earlier discussion in its message's thread",
+                  onPressed: earlier.onOpen,
+                  children: [Text(earlier.label, style: detailsStyle(t))],
+                ),
+              ),
           ],
         ),
         if (_webHead(t)) historyBlock(context),
@@ -556,6 +659,21 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
           child: SizedBox(height: t.border),
         ),
       ],
+    );
+  }
+
+  /// A head field with its pencil (task v2), or its editor while edited.
+  Widget headText(RaftTaskHeadField field, String value, Widget? display) {
+    final amend = widget.conversation?.onAmend;
+    final id = widget.task['id'];
+    return RaftTaskHeadText(
+      field: field,
+      value: value,
+      display: display ?? const SizedBox.shrink(),
+      editing: editingField == field,
+      onEdit: () => setState(() => editing = (taskId: id, field: field)),
+      onClose: () => setState(() => editing = null),
+      onSave: amend == null ? null : (text) => amend(field, text),
     );
   }
 
@@ -682,7 +800,7 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
 
   Widget status(BuildContext context) {
     final value = '${widget.task['status']}';
-    if (!raftTaskStatuses.contains(value)) return Text(value);
+    if (!raftTaskStatusVocabulary.contains(value)) return Text(value);
     final label = raftText(context, raftTaskStatusLabel(value));
     // Web: editor when the viewer may edit (or the row is read-only with a
     // reason, shown disabled); otherwise the plain StatusBadge.
@@ -692,7 +810,7 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
         status: value,
       );
     }
-    return RaftInlineBadgeEditor(
+    final editor = RaftInlineBadgeEditor(
       key: const ValueKey('task-properties-status'),
       // Web `badgeStatus`: the trigger is the TaskStatusBadge, so `uppercase`
       // does not apply.
@@ -717,8 +835,34 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
               context,
               'This task predates the channel conversion. Only the source server can change it.',
             ),
-      onSelect: (next) => unawaited(widget.onUpdate('status', next)),
+      onSelect: (next) {
+        if (next == 'backlog' &&
+            value != 'backlog' &&
+            widget.onUpdateWithReason != null) {
+          setState(() => askBacklog = true);
+        } else {
+          unawaited(widget.onUpdate('status', next));
+        }
+      },
       taskStatus: raftTaskStatusOf(value),
+    );
+    if (widget.onUpdateWithReason == null) return editor;
+    return RaftTaskReasonPopover(
+      // Someone else may park the task meanwhile: nothing left to ask.
+      open: askBacklog && value != 'backlog',
+      anchorKey: statusKey,
+      panelKey: reasonPanelKey,
+      onSubmit: (reason) async {
+        final ok = await widget.onUpdateWithReason!(
+          'status',
+          'backlog',
+          reason,
+        );
+        if (ok && mounted) setState(() => askBacklog = false);
+        return ok;
+      },
+      onDismiss: () => setState(() => askBacklog = false),
+      child: KeyedSubtree(key: statusKey, child: editor),
     );
   }
 
@@ -738,7 +882,9 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
               '@${task['claimedByName'] ?? raftTextZh(context, 'Unknown', '未知')}'
         : unassigned;
     final done = task['status'] == 'done';
-    final enabled = widget.canAssign && !done && !widget.busy;
+    // A hand-off's write keeps its picker open (the reason step shows a failure).
+    final enabled =
+        widget.canAssign && !done && (!widget.busy || handoff != null);
     return RaftInlineBadgeEditor(
       key: const ValueKey('task-properties-assignee'),
       label: label,
@@ -762,17 +908,38 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
       foreground: t.strong,
       onSelect: (_) {},
       onOpenChanged: (open) {
-        if (!open) return;
+        if (!open) {
+          handoff = null;
+          return;
+        }
         assigneeSearch.clear();
         needle = '';
         // The member list is read on first open (Web reads it with the
         // surface); the panel rebuilds when it lands.
         unawaited(widget.onLoadAssignees().catchError((_) {}));
       },
-      panelBuilder: (context, close) => AnimatedBuilder(
-        animation: assigneeSearch,
-        builder: (context, _) => assigneePanel(context, close),
-      ),
+      panelBuilder: (context, close) => handoff != null
+          ? RaftTaskReasonSurface(
+              child: RaftTaskReasonPanel(
+                key: ValueKey('handoff-${handoff!.value['id']}'),
+                kind: RaftTaskReasonKind.handoff,
+                name: handoff!.name,
+                onCancel: () => setState(() => handoff = null),
+                onSubmit: (reason) async {
+                  final ok = await widget.onUpdateWithReason!(
+                    'assignee',
+                    handoff!.value,
+                    reason,
+                  );
+                  if (ok && mounted) close();
+                  return ok;
+                },
+              ),
+            )
+          : AnimatedBuilder(
+              animation: assigneeSearch,
+              builder: (context, _) => assigneePanel(context, close),
+            ),
     );
   }
 
@@ -838,16 +1005,20 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
             reserveLeadingSlot: true,
             onTap: () {
               if (!widget.canAssign || widget.busy) return;
-              close();
               final id = '${person['userId'] ?? person['id']}';
-              if (selected != '${person['actorType']}:$id') {
-                unawaited(
-                  widget.onUpdate('assignee', {
-                    'type': person['actorType'],
-                    'id': id,
-                  }),
+              if (selected == '${person['actorType']}:$id') return close();
+              final value = {'type': '${person['actorType']}', 'id': id};
+              if (widget.onUpdateWithReason != null &&
+                  !(value['type'] == 'user' && id == widget.viewerId)) {
+                return setState(
+                  () => handoff = (
+                    value: value,
+                    name: '${person['displayName'] ?? person['name']}',
+                  ),
                 );
               }
+              close();
+              unawaited(widget.onUpdate('assignee', value));
             },
           ),
       ],
@@ -920,7 +1091,7 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
         : const {};
     final status =
         [payload['to'], payload['status'], payload['from']].firstWhere(
-          (v) => v is String && raftTaskStatuses.contains(v),
+          (v) => v is String && raftTaskStatusVocabulary.contains(v),
           orElse: () => null,
         ) ??
         switch (event['eventType']) {
@@ -947,12 +1118,24 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
         label: label(status),
       );
 
-      return Row(
+      final transition = Row(
         spacing: 4,
         children: [
           badge(p['from']),
           Text('→', style: style),
           badge(p['to']),
+        ],
+      );
+      // What would bring it back: only on a move into Backlog.
+      final reason = p['reason'];
+      if (p['to'] != 'backlog' || reason is! String || reason.isEmpty) {
+        return transition;
+      }
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          transition,
+          RaftTimelineText(reason, style: style),
         ],
       );
     }
@@ -1006,6 +1189,20 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
       ].join(' · ');
     }
     if (text.isEmpty) return null;
+    // A hand-off: what the task waits on the new assignee for.
+    final handoff = p['reason'];
+    if (type == 'assignee_changed' &&
+        p['assigneeId'] != null &&
+        handoff is String &&
+        handoff.isNotEmpty) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          RaftTimelineText(text, style: style),
+          RaftTimelineText(handoff, style: style),
+        ],
+      );
+    }
     return RaftTimelineText(text, style: style);
   }
 
@@ -1118,7 +1315,6 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
 /// `w-[240px] border border-line-muted bg-layer-popover text-foreground-strong
 /// shadow-raft-md` (theme-brutal: `border-2 border-black bg-white text-black
 /// shadow-brutal`) over the Card recipe.
-@visibleForTesting
 RaftSlotStyle taskAssigneeSurface(RaftTokens t) {
   final card = RaftCardRecipe.resolve(
     theme: t.recipeTheme,

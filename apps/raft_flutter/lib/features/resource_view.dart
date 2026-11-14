@@ -5573,7 +5573,7 @@ class _ResourceViewState extends State<ResourceView> {
       // picker or description).
       await scopedDialog<void>(
         scope,
-        (dialogContext) => CreateTaskDialog(
+        (dialogContext) => CreateTaskDialog.forChannel(
           controller: w,
           channelId: channelId,
           onCreated: () async {

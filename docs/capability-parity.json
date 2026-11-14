@@ -2026,10 +2026,10 @@
    "status": "covered",
    "webEntry": "ThreadPanel first reply (ensureOpenThreadChannel) from hover toolbar 'Reply in thread' / context menu 'Open Thread'",
    "gate": "channel post access",
-   "flutterEntry": "workspace_message_commands.dart ensureThread / createThread",
+   "flutterEntry": "task_conversation_thread.dart createThread (via workspace_message_commands.dart ensureThread)",
    "flutterRefs": [
     {
-     "file": "apps/raft_flutter/lib/data/workspace_message_commands.dart",
+     "file": "apps/raft_flutter/lib/data/task_conversation_thread.dart",
      "needle": "'/channels/$parentChannelId/threads'"
     }
    ],
@@ -18555,6 +18555,174 @@
    "justification": "A Flutter desktop sees only input in its own window, not system-wide input as Raft Desktop's shell does, so a person working in another app counts as away after 3 minutes (the approximation Web documents for a browser tab); this only ever lets a phone alert through.",
    "impact": "Desktop users working in other apps may get phone alerts Raft Desktop would have held back.",
    "size": "M"
+  },
+  {
+   "kind": "endpoint",
+   "id": "POST /tasks/:id/conversation",
+   "area": "tasks",
+   "capability": "Task v2: create (or resolve the local) task conversation on the first send, Follow or Unfollow",
+   "background": false,
+   "status": "covered",
+   "webEntry": "TaskConversationDialog / threadStore.ensureTaskModalThreadChannel",
+   "gate": "task_v2_conversations_v0, or a task made the v2 way",
+   "flutterEntry": "data/task_conversation_thread.dart createTaskConversation; task_surface_controller.dart openConversation (joint channel)",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/data/task_conversation_thread.dart",
+     "needle": "/conversation'"
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/task_surface_controller.dart",
+     "needle": "/conversation'"
+    }
+   ],
+   "justification": "",
+   "impact": "",
+   "size": ""
+  },
+  {
+   "kind": "endpoint",
+   "id": "PATCH /tasks/:id",
+   "area": "tasks",
+   "capability": "Edit a task's title and description in its head, with the someone-else-changed-this warning (expectedRevision, 409 currentRevision)",
+   "background": false,
+   "status": "covered",
+   "webEntry": "TaskModalHead TaskHeadFieldEditor (taskStore.amendTask)",
+   "gate": "Not read-only (authorizeTaskAction amend); server decides",
+   "flutterEntry": "task_surface_controller.dart amend; raft_ui task_head_editor.dart RaftTaskHeadFieldEditor",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/features/task_surface_controller.dart",
+     "needle": "'expectedRevision': ?expected"
+    },
+    {
+     "file": "packages/raft_ui/lib/src/task_head_editor.dart",
+     "needle": "class RaftTaskHeadFieldEditor"
+    }
+   ],
+   "justification": "",
+   "impact": "",
+   "size": ""
+  },
+  {
+   "kind": "ui",
+   "id": "ui:tasks.conversation-dialog",
+   "area": "tasks",
+   "capability": "Task v2 dialog on the task's own conversation: ref bar, More menu (Search in task, View in channel, Follow/Unfollow task, Delete task), Source / Created at / Earlier discussion, empty state",
+   "background": false,
+   "status": "covered",
+   "webEntry": "components/task/TaskConversationDialog.tsx",
+   "gate": "task_v2_conversations_v0, or a task made the v2 way; task=<channel>:task:<id> links",
+   "flutterEntry": "task_surface.dart + task_conversation_surface.dart -> RaftTaskSurface(conversation:) / RaftTaskConversationBar",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/features/task_conversation_surface.dart",
+     "needle": "RaftTaskConversation taskConversation("
+    },
+    {
+     "file": "packages/raft_ui/lib/src/task_conversation_parts.dart",
+     "needle": "class RaftTaskConversationBar"
+    }
+   ],
+   "justification": "",
+   "impact": "",
+   "size": ""
+  },
+  {
+   "kind": "ui",
+   "id": "ui:tasks.message-task-list",
+   "area": "tasks",
+   "capability": "Task v2: every task created from a message listed under it (number, title, reply count with unread pixel, assignee, status)",
+   "background": false,
+   "status": "covered",
+   "webEntry": "components/task/TaskChipList.tsx via MessageItem linkedTasks",
+   "gate": "task_v2_conversations_v0 (with it off, only where a task made the v2 way hangs)",
+   "flutterEntry": "chat_view.dart taskList -> message_task_list.dart -> raft_ui RaftTaskChipList",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/features/message_task_list.dart",
+     "needle": "RaftTaskChipList("
+    },
+    {
+     "file": "packages/raft_ui/lib/src/task_chip_list.dart",
+     "needle": "class RaftTaskChipList"
+    }
+   ],
+   "justification": "",
+   "impact": "",
+   "size": ""
+  },
+  {
+   "kind": "ui",
+   "id": "ui:tasks.reason-steps",
+   "area": "tasks",
+   "capability": "Moving a task into Backlog asks what would bring it back; handing it to someone else asks what it waits on them for; Delete task asks first",
+   "background": false,
+   "status": "covered",
+   "webEntry": "TaskBacklogReasonPopover, TaskHandoffReasonPanel, TaskDeleteConfirmDialog",
+   "gate": "Status / assignee editors; creator or deleteAnyTask for delete",
+   "flutterEntry": "raft_ui task_surface.dart onUpdateWithReason -> task_reason_popover.dart (popover under the status chip / inside the assignee picker); task_conversation_surface.dart confirmTaskDelete -> task_v2_dialogs.dart",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/features/task_conversation_surface.dart",
+     "needle": "Future<bool> updateWithReason("
+    },
+    {
+     "file": "packages/raft_ui/lib/src/task_reason_popover.dart",
+     "needle": "class RaftTaskReasonPopover"
+    }
+   ],
+   "justification": "",
+   "impact": "",
+   "size": ""
+  },
+  {
+   "kind": "ui",
+   "id": "ui:tasks.handoff-card",
+   "area": "tasks",
+   "capability": "A task handed to someone with a reason shows in its conversation as a card (from to, time, the reason); it fades and says who took it back once it returned to whoever handed it off",
+   "background": false,
+   "status": "covered",
+   "webEntry": "TaskHandoffCard, taskHandoffNotice.ts",
+   "gate": "Assignment line with actionMetadata.kind task-assignment and a reason",
+   "flutterEntry": "task_handoff_notice.dart systemTile -> raft_ui task_handoff_card.dart",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/features/task_handoff_notice.dart",
+     "needle": "Widget systemTile("
+    },
+    {
+     "file": "packages/raft_ui/lib/src/task_handoff_card.dart",
+     "needle": "class RaftTaskHandoffCard"
+    }
+   ],
+   "justification": "",
+   "impact": "",
+   "size": ""
+  },
+  {
+   "kind": "ui",
+   "id": "ui:tasks.create-message",
+   "area": "tasks",
+   "capability": "Task v2 New task without a source message is one message (first line title, rest description), with a start status",
+   "background": false,
+   "status": "covered",
+   "webEntry": "components/task/CreateTaskMessageDialog.tsx",
+   "gate": "task_v2_conversations_v0",
+   "flutterEntry": "create_task_message_dialog.dart -> raft_ui RaftCreateTaskMessageDialogView",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/features/create_task_message_dialog.dart",
+     "needle": "'sourceRandomId': randomId"
+    },
+    {
+     "file": "packages/raft_ui/lib/src/create_task_view.dart",
+     "needle": "class RaftCreateTaskMessageDialogView"
+    }
+   ],
+   "justification": "",
+   "impact": "",
+   "size": ""
   }
  ]
 }

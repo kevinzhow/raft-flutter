@@ -456,6 +456,29 @@ void main() {
         scrim: farPoint(size),
       );
     },
+    'task-reason-popover': (t, size) async {
+      final anchor = GlobalKey(), panel = GlobalKey<RaftTaskReasonPanelState>();
+      var open = true;
+      await mountHost(
+        t,
+        size,
+        (_) => StatefulBuilder(
+          builder: (context, setState) => RaftTaskReasonPopover(
+            open: open,
+            anchorKey: anchor,
+            panelKey: panel,
+            onSubmit: (_) async => true,
+            onDismiss: () => setState(() => open = false),
+            child: KeyedSubtree(key: anchor, child: const Text('Status chip')),
+          ),
+        ),
+      );
+      await frames(t, 15);
+      return SurfaceProbe(
+        isOpen: openWhile(find.byKey(const ValueKey('task-backlog-reason'))),
+        scrim: farPoint(size),
+      );
+    },
     'agent-overflow-menu': (t, size) async {
       await mountHost(
         t,

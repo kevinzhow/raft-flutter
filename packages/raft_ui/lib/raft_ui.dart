@@ -227,6 +227,12 @@ export 'src/video_viewer.dart';
 export 'src/attachment_tokens.dart';
 
 export 'src/mounted_task_chip.dart';
+export 'src/task_chip_list.dart';
+export 'src/task_handoff_card.dart';
+export 'src/task_reason_popover.dart';
+export 'src/task_v2_dialogs.dart';
+export 'src/task_head_editor.dart';
+export 'src/task_conversation_parts.dart';
 
 export 'src/popover_surface.dart';
 export 'src/conversation_finder.dart';

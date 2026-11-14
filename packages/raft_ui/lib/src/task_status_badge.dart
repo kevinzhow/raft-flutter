@@ -9,6 +9,7 @@ import 'theme.dart';
 /// Unknown values fall back to todo, as the previous pill did; callers that
 /// must not invent a state check `raftTaskStatuses` first.
 RaftMessageTaskStatus raftTaskStatusOf(String status) => switch (status) {
+  'backlog' => RaftMessageTaskStatus.backlog,
   'in_progress' => RaftMessageTaskStatus.inProgress,
   'in_review' => RaftMessageTaskStatus.inReview,
   'done' => RaftMessageTaskStatus.done,

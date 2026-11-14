@@ -5,9 +5,13 @@ import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import '../data/panel_caches.dart';
+import '../data/task_conversation_thread.dart';
 import '../data/task_discussion_read.dart';
+import '../data/user_error.dart';
 import '../data/workspace_controller.dart';
+import 'message_task_actions.dart' show TaskV2ConversationsFlag;
 import 'task_status_request.dart';
+import 'task_v2_mode.dart';
 
 /// Source taskModal owns a separate discussion identity, never the main or
 /// side-thread window. Its borrowed controller cannot tear down the session.
@@ -20,6 +24,7 @@ class TaskSurfaceController extends ChangeNotifier {
     this.onMutationAccepted,
     this.resolveTask,
     this.hydrateParent = false,
+    this.taskKeyed = false,
   }) : task = {...row} {
     seedKnown();
     events = parent.client.events.listen((event) {
@@ -43,6 +48,16 @@ class TaskSurfaceController extends ChangeNotifier {
           unawaited(start());
         }
       }
+      if (current &&
+          event.name == 'task:deleted' &&
+          data is Map &&
+          (data['taskId'] ?? data['id']) == task['id']) {
+        // Its conversation is gone server-side: the dialog closes
+        // (threadStore.dropDeletedTaskConversation).
+        deleted = true;
+        changed();
+        return;
+      }
       if (!legacy &&
           hydrated &&
           parentReady &&
@@ -61,6 +76,20 @@ class TaskSurfaceController extends ChangeNotifier {
   final void Function(Object)? onFailure;
   final Future<void> Function()? onMutationAccepted;
   final Future<Map<String, dynamic>?> Function(RaftChannel?)? resolveTask;
+
+  /// Opened by a task-keyed URL (`task=<channel>:task:<id>`): the task's own
+  /// conversation, whatever the flag says.
+  final bool taskKeyed;
+
+  /// The task was deleted (here or elsewhere): the host closes the dialog.
+  bool deleted = false;
+
+  /// A follow / unfollow done here wins until the next read of the task.
+  bool? followOverride;
+  bool followBusy = false;
+
+  /// After a lost edit race, the revision the server reported.
+  int? retryRevision;
 
   /// Cold task URLs may name an authorized channel absent from the directory.
   /// A private accepted metadata projection must precede borrowed discussion.
@@ -102,6 +131,35 @@ class TaskSurfaceController extends ChangeNotifier {
   }
 
   bool get legacy => task['isLegacy'] == true;
+
+  TaskV2ConversationsFlag get taskV2 => TaskV2ConversationsFlag.of(parent);
+
+  /// Task v2: the task opens on its own conversation (Web
+  /// opensAsTaskConversation), not its host message's thread.
+  bool get conversation =>
+      !legacy && (taskKeyed || opensAsTaskConversation(task, taskV2.enabled));
+
+  /// Whether the reader follows the task's conversation.
+  bool get followed => followOverride ?? task['conversationFollowed'] == true;
+
+  /// Web authorizeTaskAction `amend`: the head is editable unless the task is
+  /// read-only here; the server stays the authority.
+  bool get canAmend =>
+      current &&
+      conversation &&
+      hydrated &&
+      task['readOnlyReason'] == null &&
+      parent.server?.string('role') != 'guest';
+
+  /// Web useCanDeleteTask: its creator, or someone holding deleteAnyTask.
+  bool get canDelete =>
+      current &&
+      hydrated &&
+      !legacy &&
+      task['readOnlyReason'] == null &&
+      (task['createdByType'] == 'user' &&
+              task['createdById'] == parent.client.user?.id ||
+          parent.can('deleteAnyTask'));
   bool get hydrated => task['id'] is String;
   bool get joined =>
       parentChannel != null &&
@@ -148,11 +206,11 @@ class TaskSurfaceController extends ChangeNotifier {
       !historyLoading &&
       historyError == null &&
       error == null;
-  List<String> get statusOptions => cleanup
-      ? ['done', 'closed']
-      : parent.can('deleteAnyTask')
-      ? raftTaskStatuses
-      : ['${task['status']}', ...?raftTaskTransitions[task['status']]];
+
+  /// Web v1.24 getTaskStatusOptions: every status from any status, for
+  /// members and admins alike (the server has no transition table).
+  List<String> get statusOptions =>
+      cleanup ? ['done', 'closed'] : taskV2StatusOptions(task, taskV2.enabled);
   void changed() {
     if (current) notifyListeners();
   }
@@ -276,12 +334,10 @@ class TaskSurfaceController extends ChangeNotifier {
   }
 
   void openDiscussion() {
-    if (!current ||
-        discussion != null ||
-        legacy ||
-        task['messageId'] is! String ||
-        '${task['messageId']}'.isEmpty ||
-        !canViewParent) {
+    if (!current || discussion != null || legacy || !canViewParent) return;
+    if (conversation
+        ? task['id'] is! String
+        : task['messageId'] is! String || '${task['messageId']}'.isEmpty) {
       return;
     }
     final c = WorkspaceController(
@@ -319,15 +375,60 @@ class TaskSurfaceController extends ChangeNotifier {
     );
     admitTaskDiscussion(c);
     discussion = c;
+    if (conversation) {
+      openConversation(c, directTaskConversationChannelId(task));
+    } else {
+      unawaited(
+        c.openThreadIdentity(
+          parentChannelId: '${task['channelId']}',
+          parentMessageId: task['messageId'],
+          initialThreadChannelId: task['threadChannelId'] as String?,
+          navigate: false,
+        ),
+      );
+    }
+    changed();
+  }
+
+  /// Task v2: the discussion is the task's own conversation. A joint
+  /// channel's local conversation is answered by the (idempotent) ensure
+  /// endpoint, run only for a task that already has one: opening never
+  /// creates a conversation.
+  void openConversation(WorkspaceController c, String? channelId) {
+    final id = '${task['id']}';
     unawaited(
-      c.openThreadIdentity(
-        parentChannelId: '${task['channelId']}',
-        parentMessageId: task['messageId'],
-        initialThreadChannelId: task['threadChannelId'] as String?,
+      c.messageDomain.windowReceiver.threads.openThreadLocal(
+        '${task['channelId']}',
+        taskConversationKey(id),
+        initialThreadChannelId: channelId,
         navigate: false,
+        taskId: id,
       ),
     );
-    changed();
+    final canonical = task['conversationChannelId'];
+    if (channelId == null && canonical is String && canonical.isNotEmpty) {
+      unawaited(() async {
+        try {
+          final data = await parent.client.post(
+            '/tasks/${Uri.encodeComponent(id)}/conversation',
+          );
+          final local = data is Map ? data['conversationChannelId'] : null;
+          if (local is String && local.isNotEmpty) bindConversation(local);
+        } catch (_) {
+          // The conversation stays empty; a send creates or resolves it.
+        }
+      }());
+    }
+  }
+
+  /// One created elsewhere (an agent's reply, a lifecycle line) arrives on
+  /// the task (`task:updated`): the open dialog moves onto it.
+  void bindConversation(String channelId) {
+    final c = discussion;
+    if (!current || c == null || !conversation) return;
+    if (c.threadChannelId == channelId) return;
+    if (c.threadChannelId != null) return;
+    openConversation(c, channelId);
   }
 
   Future<void> refresh() async {
@@ -355,7 +456,13 @@ class TaskSurfaceController extends ChangeNotifier {
       }
       if (!accepts()) return;
       loading = false;
+      followOverride = null;
       openDiscussion();
+      if (conversation) {
+        if (directTaskConversationChannelId(task) case final id?) {
+          bindConversation(id);
+        }
+      }
       changed();
       await loadHistory();
     } catch (e) {
@@ -420,7 +527,7 @@ class TaskSurfaceController extends ChangeNotifier {
     changed();
   }
 
-  Future<void> update(String field, dynamic value) async {
+  Future<void> update(String field, dynamic value, {String? reason}) async {
     if (!['status', 'assignee'].contains(field) ||
         busy ||
         (field == 'status' ? !canStatus : !canAssign)) {
@@ -433,14 +540,17 @@ class TaskSurfaceController extends ChangeNotifier {
     error = null;
     changed();
     try {
+      final note = reason?.trim() ?? '';
       final move = field == 'status'
-          ? taskStatusRequest(task, value)
+          ? taskStatusRequest(task, value, reason: note)
           : (
               path: '/tasks/${task['id']}/assignee',
               data: <String, dynamic>{
                 'assignee': value,
                 if (task['revision'] is num)
                   'expectedRevision': task['revision'],
+                // A hand-off's "what it waits on them for" (blank: none).
+                if (note.isNotEmpty) 'reason': note,
               },
             );
       final data = await parent.client.request(
@@ -457,6 +567,8 @@ class TaskSurfaceController extends ChangeNotifier {
       }
       if (current) await onMutationAccepted?.call();
     } catch (e) {
+      // A step that asked for a reason shows its own failure and stays.
+      if (reason != null) rethrow;
       if (accepts()) {
         error = e;
         onFailure?.call(e);
@@ -467,6 +579,111 @@ class TaskSurfaceController extends ChangeNotifier {
         changed();
       }
     }
+  }
+
+  /// Web taskStore.amendTask (PATCH /tasks/:id): the title, or the
+  /// description (blank removes it). A 409 carrying `currentRevision` is a
+  /// lost race: the editor says so and keeps the draft.
+  Future<RaftTaskAmendOutcome> amend(
+    RaftTaskHeadField field,
+    String value,
+  ) async {
+    if (!canAmend) return const RaftTaskAmendFailed();
+    final retry = retryRevision;
+    final revision = task['revision'] is num
+        ? (task['revision'] as num).toInt()
+        : null;
+    final expected = retry != null && (revision == null || retry > revision)
+        ? retry
+        : revision;
+    try {
+      final data = await parent.client.request(
+        'PATCH',
+        '/tasks/${task['id']}',
+        data: {
+          if (field == RaftTaskHeadField.title) 'title': value,
+          if (field == RaftTaskHeadField.description && value.isNotEmpty)
+            'description': value,
+          if (field == RaftTaskHeadField.description && value.isEmpty)
+            'clearDescription': true,
+          'expectedRevision': ?expected,
+        },
+      );
+      if (!current) return const RaftTaskAmendSaved();
+      retryRevision = null;
+      if (data is Map && data['task'] is Map) {
+        task = Map<String, dynamic>.from(data['task']);
+        changed();
+        unawaited(loadHistory());
+      } else {
+        unawaited(refresh());
+      }
+      unawaited(onMutationAccepted?.call());
+      return const RaftTaskAmendSaved();
+    } on RaftApiException catch (e) {
+      if (e.status == 409 && e.details.containsKey('currentRevision')) {
+        final current = e.details['currentRevision'];
+        retryRevision = current is num ? current.toInt() : null;
+        return const RaftTaskAmendStale();
+      }
+      final shown = userErrorText(e, fallback: '', where: 'task amend');
+      return RaftTaskAmendFailed(shown.isEmpty ? null : shown);
+    } catch (_) {
+      return const RaftTaskAmendFailed();
+    }
+  }
+
+  /// Web useTaskConversationFollow: follow the task's conversation as one
+  /// follows a thread. Following or unfollowing creates the conversation
+  /// first (POST /tasks/:id/conversation, as the first send does).
+  Future<void> toggleFollow() async {
+    final c = discussion;
+    if (!current || followBusy || c == null || !conversation) return;
+    followBusy = true;
+    changed();
+    try {
+      final channelId =
+          c.threadChannelId ?? await c.messageDomain.threads.ensureThread();
+      if (!current || channelId == null) return;
+      final following = followed;
+      await parent.client.post(
+        following ? '/channels/threads/unfollow' : '/channels/threads/follow',
+        data: {'threadChannelId': channelId},
+      );
+      if (!current) return;
+      followOverride = !following;
+      unawaited(parent.services.followedThreads.refresh());
+    } catch (e) {
+      onFailure?.call(e);
+    } finally {
+      if (current) {
+        followBusy = false;
+        changed();
+      }
+    }
+  }
+
+  /// DELETE /tasks/:id. Null once deleted (the dialog closes), else the
+  /// sentence the confirmation shows.
+  Future<String?> delete() async {
+    if (!canDelete) return "Couldn't delete the task. Try again.";
+    try {
+      await parent.client.request('DELETE', '/tasks/${task['id']}');
+    } on RaftApiException catch (e) {
+      return userErrorText(
+        e,
+        fallback: "Couldn't delete the task. Try again.",
+        where: 'task delete',
+      );
+    } catch (_) {
+      return "Couldn't delete the task. Try again.";
+    }
+    if (current) {
+      deleted = true;
+      changed();
+      unawaited(onMutationAccepted?.call());
+    }
+    return null;
   }
 
   @override

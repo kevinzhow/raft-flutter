@@ -4,13 +4,14 @@ import 'package:flutter/material.dart';
 
 import 'design_primitives.dart';
 import 'icons.dart';
+import 'space.dart';
 import 'panel_layout.dart' show RaftCssText;
 import 'theme.dart';
 import 'raft/ui_tokens.dart';
 
 /// The status vocabulary is intentionally closed. The app must omit unknown
 /// projections rather than render an invented Todo state.
-enum RaftMessageTaskStatus { todo, inProgress, inReview, done, closed }
+enum RaftMessageTaskStatus { backlog, todo, inProgress, inReview, done, closed }
 
 /// MessageItem's mounted default TaskChip, NOT the parked TaskChipList or the
 /// independent editable TaskStatus badge. RUI 19273-19414; MessageItem 4857-4901.
@@ -49,6 +50,8 @@ class RaftMessageTaskChipRecipe extends RaftControlRecipe {
   /// surface reads a status colour from: the chip, the status badge, the
   /// editor trigger and the history marker all resolve this token.
   static String tokenOf(RaftMessageTaskStatus status) => switch (status) {
+    // Backlog has no hue (raft-ui 0.95.3): it never reads this token.
+    RaftMessageTaskStatus.backlog => 'task-status-todo',
     RaftMessageTaskStatus.todo => 'task-status-todo',
     RaftMessageTaskStatus.inProgress => 'task-status-in-progress',
     RaftMessageTaskStatus.inReview => 'task-status-in-review',
@@ -59,12 +62,18 @@ class RaftMessageTaskChipRecipe extends RaftControlRecipe {
   /// Brutal: the solid `taskStatus` fill. Elegant: the status' soft wash
   /// (raft-ui 0.5.30+: colours come from the `--task-status-*` tokens).
   @override
-  Color get background => tokens.colors['$_token-soft']!;
+  Color get background =>
+      backlog ? Colors.transparent : tokens.colors['$_token-soft']!;
+
+  /// raft-ui 0.95.3 backlog: `bg-transparent inset-ring
+  /// inset-ring-line-hairline text-foreground`, no status hue.
+  bool get backlog => status == RaftMessageTaskStatus.backlog;
 
   /// Brutal `text-black`; elegant the status' strong ink.
   @override
-  Color get foreground =>
-      squareStatus ? tokens.ui.foreground : tokens.colors['$_token-strong']!;
+  Color get foreground => squareStatus || backlog
+      ? tokens.ui.foreground
+      : tokens.colors['$_token-strong']!;
 
   /// `TaskStatusIcon`: the strong token (elegant); brutal paints `currentColor`.
   Color get iconForeground => foreground;
@@ -80,7 +89,12 @@ class RaftMessageTaskChipRecipe extends RaftControlRecipe {
 
   /// Brutal `border-black`; elegant the strong token at 35% (`color-mix`).
   @override
-  BorderSide side({bool hovered = false}) => squareStatus
+  BorderSide side({bool hovered = false}) => backlog
+      ? BorderSide(
+          width: RaftSpace.hairline,
+          color: tokens.colors['line-hairline']!,
+        )
+      : squareStatus
       ? BorderSide.none
       : BorderSide(
           width: borderWidth,
@@ -264,6 +278,7 @@ class RaftMessageTaskStatusIcon extends StatelessWidget {
   final double size;
 
   static RaftGlyph glyphOf(RaftMessageTaskStatus status) => switch (status) {
+    RaftMessageTaskStatus.backlog => RaftGlyph.circle,
     RaftMessageTaskStatus.todo => RaftGlyph.circle,
     RaftMessageTaskStatus.inProgress => RaftGlyph.play,
     RaftMessageTaskStatus.inReview => RaftGlyph.eye,
@@ -275,17 +290,25 @@ class RaftMessageTaskStatusIcon extends StatelessWidget {
   Widget build(BuildContext context) => ExcludeSemantics(
     child: SizedBox.square(
       dimension: size,
+      // Backlog (raft-ui 0.95.3 TaskBacklogIcon) is the status pixel, hollow,
+      // with a `line-strong` edge (sticker-ink would vanish on a dark canvas).
       child:
-          RaftTokens.of(context).option('task.status', or: 'symbol') == 'square'
+          status == RaftMessageTaskStatus.backlog ||
+              RaftTokens.of(context).option('task.status', or: 'symbol') ==
+                  'square'
           ? Center(
               child: Container(
                 width: 9,
                 height: 9,
                 decoration: BoxDecoration(
-                  color: RaftTokens.of(context)
-                      .colors[RaftMessageTaskChipRecipe.tokenOf(status)],
+                  color: status == RaftMessageTaskStatus.backlog
+                      ? null
+                      : RaftTokens.of(context)
+                            .colors[RaftMessageTaskChipRecipe.tokenOf(status)],
                   border: Border.all(
-                    color: RaftTokens.of(context).ui.stickerInk,
+                    color: status == RaftMessageTaskStatus.backlog
+                        ? RaftTokens.of(context).colors['line-strong']!
+                        : RaftTokens.of(context).ui.stickerInk,
                     width: 1.5,
                   ),
                   borderRadius: BorderRadius.circular(2),

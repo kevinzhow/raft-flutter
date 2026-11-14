@@ -58,6 +58,7 @@ import 'share_message_link.dart';
 import 'private_route_guard.dart';
 import 'message_selection.dart';
 import 'system_message_grouping.dart';
+import 'task_handoff_notice.dart';
 import 'copy_selection_links.dart';
 import 'custom_protocol_link.dart';
 import 'message_grouping.dart';
@@ -76,6 +77,7 @@ import 'agent_metadata_projection.dart';
 import 'agent_avatar_projection.dart';
 import 'profile_preview.dart';
 import 'quoted_message_preview.dart';
+import 'message_task_list.dart';
 import 'message_task_projection.dart';
 import 'saved_sidebar_entry.dart';
 import 'attachment_comment_ref.dart';
@@ -2328,6 +2330,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
     if (presented == null) return null;
     final task = presented.task;
     RaftMessageTaskStatus? statusOf(Object? value) => switch (value) {
+      'backlog' => RaftMessageTaskStatus.backlog,
       'todo' => RaftMessageTaskStatus.todo,
       'in_progress' => RaftMessageTaskStatus.inProgress,
       'in_review' => RaftMessageTaskStatus.inReview,
@@ -2630,11 +2633,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
     m = withoutRetractedParts(m);
     final pending = WorkspaceMessages.isPendingSend(m) || m.retracted;
     if (m.string('messageType') == 'system') {
-      return RaftSystemMessage(
-        key: ValueKey('message-$key'),
-        content: m.content,
-        timestamp: m.createdAt == null ? '' : clock(m.createdAt!),
-      );
+      return systemTile(context, m, rows, referenceDirectory, clock, key);
     }
     final times = timeFormatter;
     final fontSize = messagePreferenceDisplaySize(
@@ -2741,6 +2740,13 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
       threadPreview: inlineThreadReplies(m, parentTile: parent),
       readStatus: dmRead ? const RaftMessageReadStatus() : null,
       taskReference: taskReference(m),
+      taskList: messageTaskList(
+        w,
+        taskProjection,
+        m,
+        onTask: widget.onTask,
+        active: () => presentationActive,
+      ),
       threadRepliesBadge: threadRepliesBadge(m, parentTile: parent),
       threadLabel: _messages.threadSummaries[m.id] is Map
           ? raftFormat(context, '{count} Replies', {
@@ -3057,7 +3063,8 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
 
   bool standalone(RaftMessage m) =>
       _messages.threadSummaries[m.id] != null ||
-      taskProjection.presentFor(m) != null;
+      taskProjection.presentFor(m) != null ||
+      taskProjection.taskListFor(m) != null;
 
   bool continuesGroup(RaftMessage? previous, RaftMessage message) =>
       messageContinuesGroup(

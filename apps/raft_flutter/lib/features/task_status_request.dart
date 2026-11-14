@@ -5,10 +5,14 @@
 /// task moving to `in_progress` through `/status`, because that would leave
 /// ownerless active work; the admin force-status path is not used to bypass it.
 /// Every other change is `PATCH /tasks/:id/status`.
+///
+/// [reason] goes with a move into Backlog (what would bring it back); blank
+/// is no reason.
 ({String path, Map<String, dynamic>? data}) taskStatusRequest(
   Map<String, dynamic> task,
-  String status,
-) {
+  String status, {
+  String reason = '',
+}) {
   final id = task['id'];
   final unclaimed = switch (task['claimedById']) {
     null => true,
@@ -18,7 +22,13 @@
   if (status == 'in_progress' && task['status'] == 'todo' && unclaimed) {
     return (path: '/tasks/$id/claim', data: null);
   }
-  return (path: '/tasks/$id/status', data: {'status': status});
+  return (
+    path: '/tasks/$id/status',
+    data: {
+      'status': status,
+      if (reason.trim().isNotEmpty) 'reason': reason.trim(),
+    },
+  );
 }
 
 /// Sends the request of [taskStatusRequest] through a page's `command`.

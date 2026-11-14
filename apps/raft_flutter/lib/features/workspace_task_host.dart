@@ -17,6 +17,7 @@ import 'chat_view.dart' show ChatTaskOpener;
 import 'route_transition_gate.dart';
 import 'task_surface.dart';
 import 'task_surface_controller.dart';
+import 'task_v2_mode.dart';
 import 'task_view_in_thread.dart';
 import 'mobile_workspace_pages.dart';
 
@@ -166,6 +167,13 @@ class _WorkspaceTaskHostState extends State<WorkspaceTaskHost> {
     if (next == null) return;
     final anchor = w.location.task ?? w.location.legacyTask!;
     legacy = w.location.task == null;
+    // `task=<channel>:task:<id>`: keyed by the task (its own conversation).
+    final taskId = legacy ? null : taskIdOfTaskItem(anchor.itemId);
+    bool matches(Map row) => legacy
+        ? row['id'] == anchor.itemId && row['isLegacy'] == true
+        : taskId != null
+        ? row['id'] == taskId && row['isLegacy'] != true
+        : row['messageId'] == anchor.itemId && row['isLegacy'] != true;
     final sourceScope = taskSurfaceAuthority(w, anchor.channelId);
     final knownChannel = [
       ...w.channels,
@@ -179,33 +187,36 @@ class _WorkspaceTaskHostState extends State<WorkspaceTaskHost> {
     final seeded =
         seed?.authority == sourceScope &&
         seed?.row['channelId'] == anchor.channelId &&
-        (legacy
-            ? seed?.row['id'] == anchor.itemId && seed?.row['isLegacy'] == true
-            : seed?.row['messageId'] == anchor.itemId &&
-                  seed?.row['isLegacy'] != true);
+        matches(seed!.row);
     // A task URL for a task whose message chip is already known (the channel's
     // accepted task bucket) shows it at the first frame like a seeded row; the
     // full read then revalidates it in place.
-    final known = seeded || legacy || knownChannel == null
+    final bucket = seeded || legacy || knownChannel == null
         ? null
-        : MessageTaskCache.of(w.client)
-              .tasks(w, anchor.channelId)?[anchor.itemId];
+        : MessageTaskCache.of(w.client).tasks(w, anchor.channelId);
+    final known = taskId == null
+        ? (bucket?[anchor.itemId])
+        : bucket?.values.where(matches).firstOrNull;
     final accepted = seeded
-        ? seed!.row
+        ? seed.row
         : known == null
         ? null
         : <String, dynamic>{...known};
     owner = TaskSurfaceController(
       parent: w,
       hydrateParent: !legacy && knownChannel == null,
+      taskKeyed: taskId != null,
       row:
           accepted ??
           {
             'channelId': anchor.channelId,
-            if (legacy) 'isLegacy': true else 'messageId': anchor.itemId,
+            if (legacy)
+              'isLegacy': true
+            else if (taskId == null)
+              'messageId': anchor.itemId,
           },
       valid: () => mounted && next == currentIdentity,
-      onMutationAccepted: seeded ? seed?.onMutationAccepted : null,
+      onMutationAccepted: seeded ? seed.onMutationAccepted : null,
       resolveTask: accepted != null
           ? null
           : (realParent) async {
@@ -223,15 +234,10 @@ class _WorkspaceTaskHostState extends State<WorkspaceTaskHost> {
                     '${row['id']}'.isEmpty ||
                     row['title'] is! String ||
                     row['taskNumber'] is! int ||
-                    !raftTaskStatuses.contains(row['status'])) {
+                    !raftTaskStatusVocabulary.contains(row['status'])) {
                   continue;
                 }
-                if (legacy
-                    ? row['id'] == anchor.itemId && row['isLegacy'] == true
-                    : row['messageId'] == anchor.itemId &&
-                          row['isLegacy'] != true) {
-                  return Map<String, dynamic>.from(row);
-                }
+                if (matches(row)) return Map<String, dynamic>.from(row);
               }
               return null;
             },
@@ -250,7 +256,12 @@ class _WorkspaceTaskHostState extends State<WorkspaceTaskHost> {
 
   /// Web TaskModalBar "View in thread" (null while the task has no thread).
   VoidCallback? viewInThread(TaskSurfaceController? task) {
-    if (task == null || legacy || !taskHasThreadToView(w, task.task)) {
+    // Web MainLayout `canViewInThread`: not for a task on its own
+    // conversation (its `messageId` is only its id).
+    if (task == null ||
+        legacy ||
+        task.conversation ||
+        !taskHasThreadToView(w, task.task)) {
       return null;
     }
     return () {
@@ -339,6 +350,7 @@ class _WorkspaceTaskHostState extends State<WorkspaceTaskHost> {
                     key: ValueKey(identity),
                     owner: task,
                     page: true,
+                    compact: true,
                     onClose: back,
                     onTask: widget.onTask,
                     onViewBilling: widget.onViewBilling,

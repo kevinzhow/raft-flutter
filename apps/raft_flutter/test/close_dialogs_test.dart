@@ -872,10 +872,15 @@ void registerCloseDialogTests(TestPart part) {
       (context, w) => unawaited(showWorkspaceMenuInvite(context, w)),
     ),
   };
-  // The release-notes dialog has its own file (close_release_notes_test.dart).
+  // The release-notes dialog has its own file (close_release_notes_test.dart),
+  // the task delete confirmation too (close_task_dialogs_test.dart): the six
+  // parts keep their deal.
   final surfaces = [
     for (final surface in dialogSurfaces)
-      if (surface.id != 'computer-release-notes' && part.claim()) surface,
+      if (surface.id != 'computer-release-notes' &&
+          surface.id != 'task-delete-confirm' &&
+          part.claim())
+        surface,
   ];
   registerCloseTests(surfaces, harness);
   registerNoScrimTests(surfaces, harness);

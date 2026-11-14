@@ -10,9 +10,15 @@ class WorkspaceThreadIdentity {
     required this.parentChannelId,
     required this.parentMessageId,
     this.focusedMessageId,
+    this.taskId,
   });
   final String parentChannelId, parentMessageId;
   final String? focusedMessageId;
+
+  /// Task v2: a task's own conversation (`channels.type = 'task'`), which has
+  /// no parent message; [parentMessageId] is then its key, `task:<taskId>`
+  /// (Web AuthenticatedThreadPanel `conversationKey`).
+  final String? taskId;
 }
 
 /// Thread presentation and context navigation needed by in-thread search.

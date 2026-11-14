@@ -10,6 +10,7 @@ import 'task_board_reconcile.dart' show mergeTaskFields;
 import 'workspace_message_host.dart';
 
 const messageTaskStatuses = [
+  'backlog',
   'todo',
   'in_progress',
   'in_review',

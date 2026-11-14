@@ -8,6 +8,7 @@ import 'overlays/dialog.dart' show RaftDialog;
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'form_presentation.dart';
 
@@ -17,7 +18,10 @@ import 'error_presentation.dart';
 import 'localization.dart';
 import 'raft/button.dart';
 import 'raft/css_box.dart' show raftControlBorderPx;
+import 'form_controls.dart' show RaftField, RaftTextarea;
 import 'raft/ui_tokens.dart';
+import 'select_field.dart';
+import 'task.dart' show raftTaskStatusLabel;
 import 'tokens/tokens.dart' show RaftRadius, RaftTypeScale;
 import 'recipes/button_variants.g.dart';
 import 'recipes/recipe_runtime.dart' show RaftRecipeSet;
@@ -37,7 +41,14 @@ class RaftCreateTaskDialogView extends StatelessWidget {
     this.submitting = false,
     this.sourceSender,
     this.sourceText,
+    this.status,
+    this.onStatusChanged,
   });
+
+  /// Task v2: the status the new tasks start in (Web CreateTaskStatusField);
+  /// null hides the field (before task v2).
+  final String? status;
+  final ValueChanged<String>? onStatusChanged;
 
   /// One controller per title row (at least one).
   final List<TextEditingController> titles;
@@ -68,8 +79,8 @@ class RaftCreateTaskDialogView extends StatelessWidget {
         title: sourceText != null
             ? (batch ? 'Create tasks from message' : 'Create task from message')
             : batch
-            ? 'Create Tasks'
-            : 'New task',
+            ? 'Create tasks'
+            : 'Create task',
         onClose: onClose,
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -166,6 +177,20 @@ class RaftCreateTaskDialogView extends StatelessWidget {
                 ),
               ],
             ),
+            if (status != null) ...[
+              gap,
+              RaftCreateTaskStatusField(
+                status: status!,
+                onChanged: submitting ? null : onStatusChanged,
+                hint: filledCount > 1
+                    ? raftFormat(
+                        context,
+                        'Status applies to all {count} tasks.',
+                        {'count': filledCount},
+                      )
+                    : null,
+              ),
+            ],
           ],
         ),
         // Preserve the usual gap while allowing large labels to flow onto
@@ -192,8 +217,8 @@ class RaftCreateTaskDialogView extends StatelessWidget {
               label: submitting
                   ? 'Creating…'
                   : (batch ? filledCount : 1) == 1
-                  ? 'New task'
-                  : raftFormat(context, 'Create {count} Tasks', {
+                  ? 'Create'
+                  : raftFormat(context, 'Create {count} tasks', {
                       'count': filledCount,
                     }),
               variant: RaftButtonRecipeVariant.accent,
@@ -254,6 +279,189 @@ class _SourceMessageQuote extends StatelessWidget {
               maxLines: 3,
               overflow: TextOverflow.ellipsis,
               style: t.scale(RaftTypeScale.footnote, color: ui.foregroundMuted),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Web v1.24 `CreateTaskStatusField`: the status a new task starts in, one of
+/// Backlog, Todo or In progress (shared TASK_CREATE_STATUSES).
+class RaftCreateTaskStatusField extends StatelessWidget {
+  const RaftCreateTaskStatusField({
+    super.key,
+    required this.status,
+    required this.onChanged,
+    this.hint,
+  });
+  final String status;
+  final ValueChanged<String>? onChanged;
+  final String? hint;
+
+  @override
+  Widget build(BuildContext context) {
+    final label = raftText(context, 'Status');
+    return RaftField(
+      key: const ValueKey('create-task-status-field'),
+      label: label,
+      hint: hint,
+      child: RaftSelectField<String>(
+        key: const ValueKey('create-task-status'),
+        label: label,
+        value: status,
+        items: [
+          for (final value in const ['backlog', 'todo', 'in_progress'])
+            RaftSelectItem(
+              value: value,
+              label: raftText(context, raftTaskStatusLabel(value)),
+              labelKey: ValueKey('create-task-status-$value'),
+            ),
+        ],
+        onChanged: onChanged == null
+            ? null
+            : (value) {
+                if (value != null) onChanged!(value);
+              },
+      ),
+    );
+  }
+}
+
+/// Web v1.24 `CreateTaskMessageDialog`: task v2's New task without a source
+/// message is a message the person sends; its first line is the task's
+/// title, the rest its description (Web `taskFromMessage`).
+class RaftCreateTaskMessageDialogView extends StatelessWidget {
+  const RaftCreateTaskMessageDialogView({
+    super.key,
+    required this.text,
+    required this.status,
+    required this.onStatusChanged,
+    required this.onClose,
+    required this.onSubmit,
+    required this.canSubmit,
+    this.channelLabel,
+    this.channelField,
+    this.error,
+    this.submitting = false,
+  });
+  final TextEditingController text;
+  final String status;
+  final ValueChanged<String> onStatusChanged;
+  final VoidCallback onClose;
+  final FutureOr<void> Function() onSubmit;
+
+  /// A title is written (the send button is enabled).
+  final bool canSubmit;
+
+  /// `#name` (or `@peer`) of a fixed channel, said under the title.
+  final String? channelLabel;
+
+  /// The Post in picker when the channel is not fixed (the Tasks page).
+  final Widget? channelField;
+  final String? error;
+  final bool submitting;
+
+  @override
+  Widget build(BuildContext context) {
+    const gap = SizedBox(height: 16);
+    final t = RaftTokens.of(context);
+    final placeholder = raftText(context, 'What needs to be done?');
+    return RaftModalBackdrop(
+      child: RaftDialog.card(
+        key: const ValueKey('create-task-message-dialog'),
+        title: 'Create task',
+        onClose: onClose,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (channelLabel != null) ...[
+              Text(
+                raftFormat(context, 'In {channel}', {'channel': channelLabel}),
+                key: const ValueKey('create-task-posts-in'),
+                style: t.scale(
+                  RaftTypeScale.footnote,
+                  color: t.ui.foregroundMuted,
+                ),
+              ),
+              gap,
+            ],
+            if (error != null) ...[RaftErrorBanner(error!), gap],
+            if (channelField != null) ...[channelField!, gap],
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              spacing: 6,
+              children: [
+                CallbackShortcuts(
+                  // Enter is a new line (the rest is the description);
+                  // Ctrl/Cmd+Enter sends.
+                  bindings: {
+                    const SingleActivator(
+                      LogicalKeyboardKey.enter,
+                      control: true,
+                    ): () {
+                      if (canSubmit && !submitting) onSubmit();
+                    },
+                    const SingleActivator(
+                      LogicalKeyboardKey.enter,
+                      meta: true,
+                    ): () {
+                      if (canSubmit && !submitting) onSubmit();
+                    },
+                  },
+                  child: RaftTextarea(
+                    controller: text,
+                    fieldKey: const ValueKey('create-task-message'),
+                    hintText: placeholder,
+                    semanticLabel: placeholder,
+                    rows: 4,
+                    autofocus: true,
+                    enabled: !submitting,
+                    growsWithScale: true,
+                  ),
+                ),
+                Text(
+                  raftText(
+                    context,
+                    "The first line is the task's title; the rest is its description.",
+                  ),
+                  key: const ValueKey('create-task-message-hint'),
+                  style: t.scale(
+                    RaftTypeScale.footnote,
+                    color: t.ui.foregroundMuted,
+                  ),
+                ),
+              ],
+            ),
+            gap,
+            RaftCreateTaskStatusField(
+              status: status,
+              onChanged: submitting ? null : onStatusChanged,
+            ),
+          ],
+        ),
+        footer: Wrap(
+          alignment: WrapAlignment.end,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            RaftButton(
+              key: const ValueKey('create-task-cancel'),
+              label: 'Cancel',
+              uiVariant: RaftButtonVariant.ghost,
+              uiSize: RaftButtonSize.lg,
+              onPressed: raftExplicitClose(context, onClose),
+            ),
+            RaftButton(
+              key: const ValueKey('create-task-submit'),
+              label: submitting ? 'Sending...' : 'Send and create task',
+              uiVariant: RaftButtonVariant.accent,
+              uiSize: RaftButtonSize.lg,
+              disabled: submitting || !canSubmit,
+              onPressed: onSubmit,
             ),
           ],
         ),

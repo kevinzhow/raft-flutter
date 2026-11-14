@@ -14,14 +14,34 @@ import '../data/feature_flag_client_facts.dart';
 import '../data/server_error_code.dart';
 import '../data/workspace_controller.dart';
 import 'create_task_dialog.dart';
+import 'task_v2_mode.dart';
 
 const taskV2ConversationsFlag = 'task_v2_conversations_v0';
 
 /// Web `useServerFeatureFlag(TASK_V2_CONVERSATIONS_FLAG_KEY)` for the
 /// selected server: off until evaluated, off on failure (a missing row
-/// evaluates off), re-read when the account or server changes.
-class TaskV2ConversationsFlag {
+/// evaluates off), re-read when the account or server changes. Listeners
+/// hear when an evaluation changes [enabled] (the chips under a message, the
+/// task dialog).
+///
+/// Lives as long as its workspace (an Expando entry), so it is a plain
+/// [Listenable], not a ChangeNotifier that would need disposing.
+class TaskV2ConversationsFlag implements Listenable {
   TaskV2ConversationsFlag._(this.w);
+  final _listeners = <VoidCallback>[];
+
+  @override
+  void addListener(VoidCallback listener) => _listeners.add(listener);
+
+  @override
+  void removeListener(VoidCallback listener) => _listeners.remove(listener);
+
+  void notifyListeners() {
+    for (final listener in [..._listeners]) {
+      listener();
+    }
+  }
+
   static final _flags = Expando<TaskV2ConversationsFlag>('task v2 flag');
   static TaskV2ConversationsFlag of(WorkspaceController w) {
     final source = w.presentationSource ?? w;
@@ -45,17 +65,22 @@ class TaskV2ConversationsFlag {
   Future<bool> ensure() async {
     final scope = _current;
     if (_scope != scope) {
+      final before = enabled;
       _enabled = false;
       await _evaluate(scope);
+      if (_current != scope) return enabled;
       _scope = scope;
+      if (enabled != before) notifyListeners();
     }
     return enabled;
   }
 
   /// The server answered `task_v2_use_create`: the flag is on here.
   void markEnabled() {
+    final before = enabled;
     _scope = _current;
     _enabled = true;
+    if (!before) notifyListeners();
   }
 
   Future<void> _evaluate(String scope) async {
@@ -83,6 +108,11 @@ class TaskV2ConversationsFlag {
     }
   }
 }
+
+/// The URL item a task opens with on [w]'s server: task-keyed when it opens
+/// as its own conversation (task v2), else its message (Web useOpenTask).
+String? taskSurfaceItemFor(WorkspaceController w, Map<String, dynamic> row) =>
+    taskSurfaceItemId(row, TaskV2ConversationsFlag.of(w).enabled);
 
 /// The menu entry for a message without a task: "Create task from message"
 /// with task v2, else "Convert to task".

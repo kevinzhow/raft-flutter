@@ -5,6 +5,7 @@ import 'package:raft_client/raft_client.dart';
 import 'message_window_snapshot.dart';
 import 'message_history_pages.dart';
 import 'message_history_positions.dart';
+import 'task_conversation_thread.dart';
 import 'thread_rooms.dart';
 import 'thread_search.dart';
 import 'thread_visit.dart';
@@ -36,30 +37,9 @@ class WorkspaceThreadCommands {
     return m.messageWindows.createThread(createThread);
   }
 
-  Future<String?> createThread() async {
-    final parentId = m.threadParentMessageId,
-        parentChannelId = m.threadParentChannelId;
-    if (parentId == null || parentChannelId == null) return null;
-    final request = m.windowRequest(
-      parentChannelId,
-      thread: true,
-      checkNavigation: true,
-      allowed: () =>
-          parentId == m.threadParentMessageId &&
-          parentChannelId == m.threadParentChannelId,
-    );
-    final value = await m.transport.client.post(
-      '/channels/$parentChannelId/threads',
-      data: {'parentMessageId': parentId},
-    );
-    if (!request.current) {
-      throw const RaftApiException('The thread changed. Try again.');
-    }
-    m.state.threadChannelId = value['threadChannelId'];
-    ThreadRooms.join(m);
-    m.context.changed();
-    return m.state.threadChannelId;
-  }
+  /// The thread's channel, created on the first durable send (a task's own
+  /// conversation through its task).
+  Future<String?> createThread() => createThreadChannel(m);
 
   Future<void> openThread(
     RaftMessage parent, {
@@ -97,6 +77,7 @@ class WorkspaceThreadCommands {
     String? initialThreadChannelId,
     bool navigate = true,
     RaftMessage? acceptedParent,
+    String? taskId,
   }) async {
     if (parentChannelId.trim().isEmpty || parentMessageId.trim().isEmpty) {
       return;
@@ -131,6 +112,7 @@ class WorkspaceThreadCommands {
       parentChannelId: parentChannelId,
       parentMessageId: parentMessageId,
       focusedMessageId: focusedMessageId,
+      taskId: taskId,
     );
     m.state.threadVisit = request;
     final held = m.messageWindows.matchingThread(
@@ -154,6 +136,7 @@ class WorkspaceThreadCommands {
     m.state.threadLoading = cached == null;
     m.state.threadResolutionLoading = m.state.threadChannelId == null;
     m.state.threadParentLoading = m.state.threadParent == null;
+    if (taskId != null) taskConversationOpened(m);
     m.state.threadResolutionError = null;
     m.state.threadHasMore = cached?.hasMore ?? false;
     m.state.threadHistoryLimited = cached?.historyLimited ?? false;
@@ -169,7 +152,7 @@ class WorkspaceThreadCommands {
     unawaited(restoreCurrentDraft());
 
     Future<void> resolveParent() async {
-      if (acceptedParent != null) return;
+      if (acceptedParent != null || taskId != null) return;
       try {
         final page = await m.transport.client.get(
           '/messages/context/$parentMessageId',
@@ -210,6 +193,8 @@ class WorkspaceThreadCommands {
     Future<void> resolveReplies() async {
       try {
         if (m.state.threadChannelId == null) {
+          // A task conversation not created yet opens empty (no lookup).
+          if (taskId != null) return;
           dynamic info;
           try {
             info = await m.transport.client.get(
@@ -238,25 +223,14 @@ class WorkspaceThreadCommands {
         var focused = focusedMessageId != null || readingPage != null;
         Map<String, dynamic>? page = readingPage;
         if (page == null && focusedMessageId != null) {
-          try {
-            page = await MessageHistoryPages.context(
-              m,
-              request,
-              m.state.threadChannelId!,
-              focusedMessageId,
-              thread: true,
-            );
-          } on RaftApiException catch (e) {
-            // A 404 here means the focused reply is missing (deleted, or not
-            // readable yet), not the thread: open the thread's latest replies,
-            // as the channel path does. Revoking the thread for it locked the
-            // thread until the next server selection (Activity rows that showed
-            // the previous conversation or nothing until restart, #294).
-            if (e.status != 404) rethrow;
-            if (!request.current) return;
-            focused = false;
-            m.state.highlightedMessageId = null;
-          }
+          final reply = await focusedThreadReplyPage(
+            m,
+            request,
+            focusedMessageId,
+          );
+          if (!request.current) return;
+          page = reply;
+          focused = reply != null;
         }
         page ??= await MessageHistoryPages.read(
           m,

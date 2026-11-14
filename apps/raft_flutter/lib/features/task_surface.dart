@@ -5,6 +5,8 @@ import 'package:raft_client/raft_client.dart';
 import '../data/source_time_formatter.dart';
 import '../data/workspace_entity_directory.dart';
 import 'chat_view.dart';
+import 'task_conversation_facts.dart';
+import 'task_conversation_surface.dart';
 import 'task_surface_controller.dart';
 
 /// App adapter: the shared task surface receives facts and callbacks, never
@@ -21,8 +23,12 @@ class SourceTaskSurface extends StatefulWidget {
     this.onViewInThread,
     this.legacyPresentation = RaftLegacyTaskPresentation.modal,
     this.page = false,
+    this.compact = false,
   });
   final TaskSurfaceController owner;
+
+  /// A phone page (leaving for the channel replaces the task's entry).
+  final bool compact;
   final VoidCallback onClose;
 
   /// Opens another task from an in-body `#N` reference of the discussion (Web
@@ -44,6 +50,11 @@ class SourceTaskSurface extends StatefulWidget {
 
 class _SourceTaskSurfaceState extends State<SourceTaskSurface> {
   TaskSurfaceController get o => widget.owner;
+  late final facts = TaskConversationFacts(o.parent)..addListener(_facts);
+  void _facts() {
+    if (mounted) setState(() {});
+  }
+
   @override
   void initState() {
     super.initState();
@@ -64,6 +75,7 @@ class _SourceTaskSurfaceState extends State<SourceTaskSurface> {
 
   @override
   void dispose() {
+    facts.dispose();
     o.parent.foregroundChanges.removeListener(presentationChanged);
     // Route removal may complete the owner's Future before widget disposal.
     // The owner has already retired/disposed its borrowed controller then.
@@ -97,10 +109,11 @@ class _SourceTaskSurfaceState extends State<SourceTaskSurface> {
   Widget build(BuildContext context) => AnimatedBuilder(
     animation: o,
     builder: (context, _) {
-      if (o.parentReady &&
-          o.hydrated &&
-          o.error is RaftApiException &&
-          (o.error as RaftApiException).status == 404) {
+      if (o.deleted ||
+          o.parentReady &&
+              o.hydrated &&
+              o.error is RaftApiException &&
+              (o.error as RaftApiException).status == 404) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted && o.current) widget.onClose();
         });
@@ -120,7 +133,18 @@ class _SourceTaskSurfaceState extends State<SourceTaskSurface> {
             ? SourceTimeFormat.twentyFourHour
             : null,
       );
+      final v2 = o.conversation && o.hydrated
+          ? taskConversation(
+              context,
+              o,
+              facts,
+              formatter,
+              compact: widget.compact || widget.page,
+              onLeave: widget.onClose,
+            )
+          : null;
       return RaftTaskSurface(
+        conversation: v2,
         page: widget.page,
         task: o.task,
         history: o.history,
@@ -143,6 +167,9 @@ class _SourceTaskSurfaceState extends State<SourceTaskSurface> {
         onRetry: o.parentReady ? o.refresh : o.start,
         onLoadAssignees: o.loadAssignees,
         onUpdate: o.update,
+        onUpdateWithReason: (field, value, reason) =>
+            updateWithReason(o, field, value, reason),
+        viewerId: o.parent.client.user?.id,
         onCleanupDelete: widget.onCleanupDelete,
         formatTime: (value) => value == null
             ? raftText(context, 'Unknown')
@@ -174,7 +201,9 @@ class _SourceTaskSurfaceState extends State<SourceTaskSurface> {
                 controller: o.discussion!,
                 thread: true,
                 hideThreadParent: true,
-                threadParentSlot: head,
+                threadParentSlot: v2 == null
+                    ? head
+                    : taskConversationHead(context, o, head),
                 onTask: widget.onTask,
                 onViewBilling: widget.onViewBilling,
               ),

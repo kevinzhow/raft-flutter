@@ -151,6 +151,9 @@ Map<String, dynamic> _errorDetails(Map? body) {
     // which factors can answer a step-up (`methods`). No secrets.
     'lockedUntil',
     'methods',
+    // A lost task edit race (PATCH /tasks/:id 409): the revision to save
+    // against next (Web TaskHeadEditor `staleRevisionOf`).
+    'currentRevision',
   };
   dynamic freeze(dynamic value) {
     if (value is Map) {

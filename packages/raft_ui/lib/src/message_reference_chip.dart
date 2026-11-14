@@ -265,6 +265,9 @@ class RaftReferenceChip extends StatelessWidget {
           'theme': _theme(t).name,
           'variant': 'inline',
           'status': switch (status) {
+            // The 0.7.0 recipe has no backlog row; its colours come from
+            // RaftMessageTaskChipRecipe below either way.
+            RaftMessageTaskStatus.backlog => 'todo',
             RaftMessageTaskStatus.todo => 'todo',
             RaftMessageTaskStatus.inProgress => 'in-progress',
             RaftMessageTaskStatus.inReview => 'in-review',

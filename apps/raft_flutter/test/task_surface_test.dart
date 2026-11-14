@@ -231,6 +231,10 @@ void main() {
         expect(find.text('Unassigned'), findsWidgets);
         await t.tap(find.text('Agent owner'));
         await flush(t);
+        // Web v1.24: handing it to someone else asks first what it waits on
+        // them for (optional); a blank reason sends none.
+        await t.tap(find.byKey(const ValueKey('task-handoff-reason-confirm')));
+        await flush(t);
         expect(find.text('@Agent owner'), findsOneWidget);
         expect(
           t
