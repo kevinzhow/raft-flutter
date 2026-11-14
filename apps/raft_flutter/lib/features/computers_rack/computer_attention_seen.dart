@@ -11,6 +11,8 @@
 import 'dart:convert';
 
 import '../../data/device_preferences.dart';
+import '../../data/workspace_controller.dart';
+import '../../data/workspace_entity_directory.dart';
 import 'computers_rack_model.dart';
 
 const _pairSeparator = '\u0000';
@@ -120,4 +122,19 @@ void markComputerAttentionSeen({
   final next = computerAttentionPairs(machines);
   if (_same(_seen(key), next)) return;
   _setSeen(key, next);
+}
+
+/// The rail's (and the phone server tab's) Computers dot for [w]'s viewer
+/// on its server, from the entity directory's computers.
+bool computerAttentionDotFor(WorkspaceController w) {
+  final directory = w.services.entityDirectory;
+  return computerAttentionDot(
+    userId: w.client.user?.id,
+    serverId: w.server?.id,
+    guest: w.server?.string('role') == 'guest',
+    loaded:
+        directory.state(WorkspaceEntityKind.computers).loaded &&
+        directory.settled(WorkspaceEntityKind.computers),
+    machines: directory.rows(WorkspaceEntityKind.computers),
+  );
 }

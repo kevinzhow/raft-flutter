@@ -18,9 +18,22 @@ const computersRackSortStorageKey = 'raft_computers_rack_sort';
 const computersRackViewStorageKey = 'raft_computers_rack_view';
 
 /// The rack's choices; one per app (the Web stores are module-level).
-class ComputersRackPreferences extends ChangeNotifier {
+class ComputersRackPreferences implements Listenable {
   ComputersRackPreferences._();
   static final instance = ComputersRackPreferences._();
+
+  // An app-lifetime singleton (never disposed), so a plain listener list
+  // rather than a ChangeNotifier.
+  final _listeners = <VoidCallback>[];
+  @override
+  void addListener(VoidCallback listener) => _listeners.add(listener);
+  @override
+  void removeListener(VoidCallback listener) => _listeners.remove(listener);
+  void notifyListeners() {
+    for (final l in List.of(_listeners)) {
+      if (_listeners.contains(l)) l();
+    }
+  }
 
   String _query = '';
   RackStatusFilter _status = RackStatusFilter.all;

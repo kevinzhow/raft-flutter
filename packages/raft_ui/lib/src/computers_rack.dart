@@ -336,7 +336,7 @@ class RaftRackListHeader extends StatelessWidget {
     final style = _type(t, RaftTypeScale.caption, color: _hint(t));
     Widget heading(String label, String? key, double? width) {
       final sorted = key != null && key == sortedKey;
-      Widget text = Row(
+      final Widget headingLabel = Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Flexible(
@@ -357,14 +357,14 @@ class RaftRackListHeader extends StatelessWidget {
           ],
         ],
       );
-      if (key != null && onSort != null) {
-        text = RaftInteractive(
-          key: ValueKey('rack-sort-$key'),
-          onPressed: () => onSort!(key),
-          semanticLabel: label,
-          builder: (_, _) => text,
-        );
-      }
+      final text = key != null && onSort != null
+          ? RaftInteractive(
+              key: ValueKey('rack-sort-$key'),
+              onPressed: () => onSort!(key),
+              semanticLabel: label,
+              builder: (_, _) => headingLabel,
+            )
+          : headingLabel;
       return width == null
           ? Expanded(child: text)
           : SizedBox(width: width, child: text);
@@ -821,10 +821,26 @@ class RaftRackToolbar extends StatelessWidget {
             ];
             final wide = box.maxWidth >= 900;
             if (wide) {
+              // The search keeps at least half the line; controls that do
+              // not fit scroll sideways rather than squeeze it.
               return Row(
                 children: [
                   Expanded(child: search),
-                  for (final c in controls) ...[const SizedBox(width: 8), c],
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      reverse: true,
+                      child: Row(
+                        children: [
+                          for (var i = 0; i < controls.length; i++) ...[
+                            if (i > 0) const SizedBox(width: 8),
+                            controls[i],
+                          ],
+                        ],
+                      ),
+                    ),
+                  ),
                   if (add != null) ...[const SizedBox(width: 8), add!],
                 ],
               );

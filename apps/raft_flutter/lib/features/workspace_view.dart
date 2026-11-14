@@ -12,6 +12,7 @@ import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import 'announcement_host.dart';
+import 'computers_rack/computer_attention_seen.dart';
 import 'computers_rack/computers_rack_page.dart';
 import 'workspace_host_scope.dart';
 import 'stale_counts_notice.dart';
@@ -2780,6 +2781,7 @@ class _WorkspaceViewState extends State<WorkspaceView>
         label: tr('Computers'),
         glyph: RaftGlyph.monitor,
         iconWidget: railIcon(RaftGlyph.monitor),
+        attention: computerAttentionDotFor(w),
       ),
   ];
 

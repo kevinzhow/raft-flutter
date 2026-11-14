@@ -1,3 +1,50 @@
+/// Web utils/computerSetupCommand.ts (v1.24): every environment installs from
+/// the production CDN; staging adds `--channel alpha` unless a version is
+/// pinned (the installer rejects the two together).
+const computerCdnBase = 'https://cdn.raft.build/computer';
+const stagingComputerChannel = 'alpha';
+
+/// COMPUTER_INSTALL_DOCS_URL: the "Install guide" link.
+const computerInstallDocsUrl =
+    'https://docs.raft.build/features/server/computers/#connecting-a-computer';
+
+String? _versionPin(String? version) {
+  final pin = version?.trim();
+  return pin != null &&
+          RegExp(r'^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$').hasMatch(pin)
+      ? pin
+      : null;
+}
+
+List<String> _channelArgs(String deployment, String? pin) =>
+    deployment == 'staging' && pin == null
+    ? const ['--channel', stagingComputerChannel]
+    : const [];
+
+/// computerInstallShellCommand: `curl … | sh`, with the installer's own
+/// arguments (`-s -- --channel alpha --setup …`) in one list.
+String computerInstallShellCommand(
+  String deployment,
+  String? version, [
+  List<String> extraArgs = const [],
+]) {
+  final pin = _versionPin(version);
+  final env = pin != null ? 'RAFT_COMPUTER_VERSION=$pin ' : '';
+  final args = [..._channelArgs(deployment, pin), ...extraArgs];
+  return 'curl -fsSL $computerCdnBase/install.sh | ${env}sh'
+      '${args.isNotEmpty ? ' -s -- ${args.join(' ')}' : ''}';
+}
+
+/// windowsComputerInstallCommand.
+String windowsComputerInstallCommand(String deployment, String? version) {
+  final pin = _versionPin(version);
+  final env = pin != null ? '\$env:RAFT_COMPUTER_VERSION = "$pin"; ' : '';
+  final args = _channelArgs(deployment, pin);
+  return args.isNotEmpty
+      ? '$env& ([scriptblock]::Create((irm $computerCdnBase/install.ps1))) ${args.join(' ')}'
+      : '${env}irm $computerCdnBase/install.ps1 | iex';
+}
+
 /// Native instructions for the pinned Web Computer install/setup contract.
 /// This configuration contains no credentials; commands are copy-only.
 class ComputerSetupCommands {
@@ -24,15 +71,6 @@ class ComputerSetupCommands {
     }
     final staging = deployment == 'staging';
     final isolated = staging || deployment == 'slockdev';
-    final base = staging
-        ? 'https://slock-cdn-staging.botiverse.dev/computer/staging'
-        : 'https://cdn.raft.build/computer';
-    final pin = version?.trim();
-    final validPin =
-        pin != null &&
-            RegExp(r'^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$').hasMatch(pin)
-        ? pin
-        : null;
     final destination = staging
         ? 'https://api-aws-staging.botiverse.dev'
         : serverUrl.trim().replaceFirst(RegExp(r'/+$'), '');
@@ -44,13 +82,7 @@ class ComputerSetupCommands {
     final args =
         'setup /$normalized${includeServer ? ' --server-url ${windows ? _powerShellQuote(destination) : _shellQuote(destination)}' : ''}';
     if (windows) {
-      final env = [
-        if (staging) '\$env:RAFT_COMPUTER_RELEASE_BASE = "$base"',
-        if (staging) '\$env:RAFT_COMPUTER_INSTALL_CHANNEL = "alpha"',
-        if (validPin != null) '\$env:RAFT_COMPUTER_VERSION = "$validPin"',
-      ];
-      final install =
-          '${env.isNotEmpty ? '${env.join('; ')}; ' : ''}irm ${staging ? '"\$env:RAFT_COMPUTER_RELEASE_BASE/install.ps1"' : '$base/install.ps1'} | iex';
+      final install = windowsComputerInstallCommand(deployment, version);
       if (!isolated) {
         return ComputerSetupCommands(install, 'raft-computer $args');
       }
@@ -61,18 +93,12 @@ class ComputerSetupCommands {
         '$environment & "\$env:RAFT_COMPUTER_INSTALL_DIR\\raft-computer.exe" $args',
       );
     }
-    final env = [
-      if (staging) 'RAFT_COMPUTER_RELEASE_BASE=$base',
-      if (staging) 'RAFT_COMPUTER_INSTALL_CHANNEL=alpha',
-      if (validPin != null) 'RAFT_COMPUTER_VERSION=$validPin',
-    ];
-    final install =
-        'curl -fsSL $base/install.sh | ${env.isNotEmpty ? '${env.join(' ')} ' : ''}sh';
+    final install = computerInstallShellCommand(deployment, version);
     if (!isolated) {
       return ComputerSetupCommands(
         install,
         'raft-computer $args',
-        '$install -s -- --$args',
+        computerInstallShellCommand(deployment, version, ['--$args']),
       );
     }
     final home = '\$HOME/.raft-computer-$normalized';
@@ -97,6 +123,7 @@ class ComputerCommands {
     required this.setup,
     required this.status,
     required this.doctor,
+    required this.upgrade,
     required this.restartService,
     required this.restart,
     required this.stop,
@@ -104,6 +131,9 @@ class ComputerCommands {
     this.installAndSetup,
   });
   final String install, setup, status, doctor, restartService, restart;
+
+  /// `raft-computer upgrade` (an old Computer's no-response hint).
+  final String upgrade;
   final String stop, start;
 
   /// mac/Linux production only: install, then run setup with the installed
@@ -143,35 +173,9 @@ class ComputerCommands {
         '${commandServerUrl != null ? ' --server-url $commandServerUrl' : ''}'
         '${machineId != null ? ' --machine $machineId' : ''}';
     final staging = deployment == 'staging';
-    final base = staging
-        ? 'https://slock-cdn-staging.botiverse.dev/computer/staging'
-        : 'https://cdn.raft.build/computer';
-    final pin = version?.trim();
-    final validPin =
-        pin != null &&
-            RegExp(r'^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$').hasMatch(pin)
-        ? pin
-        : null;
-    String unixInstall() {
-      final env = [
-        if (staging) 'RAFT_COMPUTER_RELEASE_BASE=$base',
-        if (staging) 'RAFT_COMPUTER_INSTALL_CHANNEL=alpha',
-        if (validPin != null) 'RAFT_COMPUTER_VERSION=$validPin',
-      ];
-      return 'curl -fsSL $base/install.sh | ${env.isNotEmpty ? '${env.join(' ')} ' : ''}sh';
-    }
-
-    String windowsInstall() {
-      final env = [
-        if (staging) '\$env:RAFT_COMPUTER_RELEASE_BASE = "$base"',
-        if (staging) '\$env:RAFT_COMPUTER_INSTALL_CHANNEL = "alpha"',
-        if (validPin != null) '\$env:RAFT_COMPUTER_VERSION = "$validPin"',
-      ];
-      final url = staging
-          ? '"\$env:RAFT_COMPUTER_RELEASE_BASE/install.ps1"'
-          : '$base/install.ps1';
-      return '${env.isNotEmpty ? '${env.join('; ')}; ' : ''}irm $url | iex';
-    }
+    String unixInstall() => computerInstallShellCommand(deployment, version);
+    String windowsInstall() =>
+        windowsComputerInstallCommand(deployment, version);
 
     if (staging || deployment == 'slockdev') {
       if (windows) {
@@ -184,6 +188,7 @@ class ComputerCommands {
           setup: '$environment $binary setup /$s$setupArgs',
           status: '$environment $binary status',
           doctor: '$environment $binary doctor',
+          upgrade: '$environment $binary upgrade',
           restartService: '$environment $binary restart',
           restart: '$environment $binary restart /$s',
           stop: '$environment $binary stop',
@@ -199,6 +204,7 @@ class ComputerCommands {
         setup: '$environment $binary setup /$s$setupArgs',
         status: '$environment $binary status',
         doctor: '$environment $binary doctor',
+        upgrade: '$environment $binary upgrade',
         restartService: '$environment $binary restart',
         restart: '$environment $binary restart /$s',
         stop: '$environment $binary stop',
@@ -210,9 +216,12 @@ class ComputerCommands {
       setup: 'raft-computer setup /$s$setupArgs',
       installAndSetup: windows
           ? null
-          : '${unixInstall()} -s -- --setup /$s$setupArgs',
+          : computerInstallShellCommand(deployment, version, [
+              '--setup /$s$setupArgs',
+            ]),
       status: 'raft-computer status',
       doctor: 'raft-computer doctor',
+      upgrade: 'raft-computer upgrade',
       restartService: 'raft-computer restart',
       restart: 'raft-computer restart /$s',
       stop: 'raft-computer stop',
