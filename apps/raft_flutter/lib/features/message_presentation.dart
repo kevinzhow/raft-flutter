@@ -613,7 +613,7 @@ class MessagePresentation extends StatelessWidget {
                   raftFormat(ctx, 'Status: {status}', {
                     'status': raftText(
                       ctx,
-                      raftTaskStatuses.contains(data['status'])
+                      raftTaskStatusVocabulary.contains(data['status'])
                           ? raftTaskStatusLabel(data['status'])
                           : data['status'],
                     ),
@@ -970,6 +970,8 @@ class MessagePresentation extends StatelessWidget {
       case 'task' when parts.length == 1:
         final task = taskByNumber?.call(int.tryParse(parts[0]) ?? 0);
         final status = switch (task?['status']) {
+          // Web v1.24 taskStatusUi: backlog is a status of its own.
+          'backlog' => RaftMessageTaskStatus.backlog,
           'todo' => RaftMessageTaskStatus.todo,
           'in_progress' => RaftMessageTaskStatus.inProgress,
           'in_review' => RaftMessageTaskStatus.inReview,
