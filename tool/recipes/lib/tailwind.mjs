@@ -38,6 +38,19 @@ export function twVersion() {
   return JSON.parse(readFileSync(join(twRoot, 'package.json'), 'utf8')).version;
 }
 
+// Foundation uses :where(:root) to keep its default scope's specificity low.
+// Only wrappers whose complete alternatives are root/host subjects qualify;
+// a utility's ancestry expression (:root * and light islands) does not.
+function themeRoot(simple) {
+  if (simple.kind !== 'pseudo-class') return false;
+  if (['root', 'host'].includes(simple.name) && simple.args === null) return true;
+  return ['where', 'is'].includes(simple.name) && simple.args !== null &&
+    splitTopLevel(simple.args).every(selector => {
+      const parts = parseComplex(selector);
+      return parts.length === 1 && parts[0].simples.length === 1 && themeRoot(parts[0].simples[0]);
+    });
+}
+
 // Returns {css, utilities: Map(candidate -> {order, selfSelector, layers}),
 //          themeVars: Map(name -> value), registered: Map(name -> initial|null),
 //          keyframes: Map(name -> css)}
@@ -65,16 +78,30 @@ export function splitOutput(css, candidates = null) {
     }
   });
   root.walkRules((rule) => {
-    if (!/:root\b/.test(rule.selector)) return;
-    const atoms = [];
-    if (rule.selector.trim() === ':root.dark') atoms.push('dark');
+    // A root mentioned inside a utility's :where(...) describes its ancestry,
+    // not the element receiving its local custom properties. Only a direct
+    // root/host subject can provide inherited theme variables.
+    const roots = splitTopLevel(rule.selector).map(parseComplex).filter(parts =>
+      parts.length === 1 && parts[0].simples.some(themeRoot));
+    const decls = (rule.nodes ?? []).filter(d => d.type === 'decl' && d.prop.startsWith('--'));
+    if (!roots.length || !decls.length) return;
+    const media = [], ctx = {unknown: []};
     for (let p = rule.parent; p; p = p.parent) if (p.type === 'atrule' && p.name === 'media')
-      atoms.push(...atRuleAtoms(p.name, p.params, {unknown: []}));
-    if (!atoms.some(a => /^(width|height|pointer-|dark)/.test(a))) return;
-    const key = [...new Set(atoms)].sort().join('|');
-    if (!conditionalThemeVars.has(key)) conditionalThemeVars.set(key, {atoms: key.split('|'), vars: new Map()});
-    for (const d of rule.nodes ?? []) if (d.type === 'decl' && d.prop.startsWith('--'))
-      conditionalThemeVars.get(key).vars.set(d.prop, d.value);
+      media.push(...atRuleAtoms(p.name, p.params, ctx));
+    if (ctx.unknown.length) throw new Error(`unsupported conditional theme media: ${ctx.unknown.join(', ')}`);
+    for (const [compound] of roots) {
+      const atoms = [...media];
+      for (const s of compound.simples) if (s.kind === 'class' && s.name === 'dark') atoms.push('dark');
+      if (!atoms.length) continue;
+      const supported = compound.simples.every(s =>
+        themeRoot(s) ||
+        s.kind === 'class' && s.name === 'dark' ||
+        s.kind === 'pseudo-class' && s.name === 'not' && ['.light', '.dark'].includes(s.args));
+      if (!supported) throw new Error(`unsupported conditional theme selector: ${rule.selector}`);
+      const key = [...new Set(atoms)].sort().join('|');
+      if (!conditionalThemeVars.has(key)) conditionalThemeVars.set(key, {atoms: key.split('|'), vars: new Map()});
+      for (const d of decls) conditionalThemeVars.get(key).vars.set(d.prop, d.value);
+    }
   });
   root.each((node) => {
     if (node.type !== 'atrule' || node.name !== 'layer' || node.params.trim() !== 'utilities') return;

@@ -6,8 +6,9 @@ import 'package:raft_ui/test_themes.dart';
 
 import 'control_transition_paint_test.dart' show paintHost, pixel;
 
-// raft-ui 0.7.0 `Button`: sizes 32 / 44 / 52, icon squares, sticker / outline / ghost / on-frame fills, the
-// disabled and loading style (fill-muted, not opacity) and the keyboard focus ring.
+// raft-ui 0.95.3 `Button` at the default density: sizes 32 / 44 / 52, icon
+// squares, sticker / outline / ghost / on-frame fills, disabled/loading style
+// (fill-muted, not opacity) and the keyboard focus ring.
 Widget _app(bool dark, Widget child) => MaterialApp(
   theme: raftTheme(dark: dark),
   home: Scaffold(
@@ -142,7 +143,10 @@ void main() {
         expect(d.color, ui.fillMuted);
         // CSS keeps the hairline translucent; the box painter composites
         // it over the fill rather than baking the fill into the border.
-        expect((d.border! as Border).top.color, ui.lineHairline);
+        expect(
+          (d.border! as Border).top.color.toARGB32(),
+          ui.lineHairline.toARGB32(),
+        );
         expect(
           find.byWidgetPredicate((w) => w is Opacity && w.opacity < 1),
           findsNothing,
@@ -187,7 +191,7 @@ void main() {
       expect((d.border! as Border).top.color, const Color(0x00000000));
     });
 
-    testWidgets('$mode hover lays the pressed overlay over the resting fill', (
+    testWidgets('$mode hover lays fill-medium over the resting fill', (
       tester,
     ) async {
       await tester.pumpWidget(
@@ -208,7 +212,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(
         await pixel(tester, const Offset(24, 24)),
-        Color(Color.alphaBlend(ui.fillPressed, ui.layerCard).toARGB32()),
+        Color(Color.alphaBlend(ui['fill-medium'], ui.layerCard).toARGB32()),
       );
     });
   }

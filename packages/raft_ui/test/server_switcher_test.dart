@@ -5,8 +5,47 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_ui/test_themes.dart';
 
-// Source ServerSwitcherMenu.tsx120–185/242–307/363–448. Actual browser
-// geometry/input receipts are in .local/k08-server-menu-v1, not inferred here.
+// Earlier browser geometry/input receipts remain in .local/k08-server-menu-v1;
+// the current source-derived composition contract follows below.
+// Web v1.24 / raft-ui 0.95.3, default/coarse environment, no error banner:
+// p-1 + one h-12 server + my-1/h-px divider + three option-height actions.
+const _defaultMenuHeight = 4 + 48 + (4 + 1 + 4) + 3 * 36 + 4;
+
+void _expectMenuInsets(WidgetTester tester) {
+  final popup = find.byKey(const Key('server-switcher-menu'));
+  final menu = tester.getRect(popup);
+  final surface = tester.widget<RaftRecipeBox>(popup);
+  final tokens = RaftTokens.of(tester.element(popup));
+  expect(surface.style.borderWidth, EdgeInsets.zero);
+  expect(
+    surface.style.backgroundColor!.resolve(tokens.recipeTokens),
+    tokens.colors['layer-popover'],
+  );
+  final row = tester.getRect(
+    find.byKey(const ValueKey('server-menu-row-visual')),
+  );
+  expect(row.top - menu.top, 4, reason: 'caller p-1');
+  expect(row.left - menu.left, 4, reason: 'ring adds no layout border');
+  expect(menu.right - row.right, 4, reason: 'caller p-1');
+  final separator = find.descendant(
+    of: find.byKey(const Key('server-switcher-menu')),
+    matching: find.byWidgetPredicate(
+      (widget) => widget is RaftRecipeBox && widget.style.height == 1,
+    ),
+  );
+  expect(separator, findsOneWidget);
+  final line = tester.getRect(separator);
+  expect(line.left, menu.left, reason: '-mx-1 bleeds through the p-1 inset');
+  expect(line.right, menu.right);
+  expect(line.height, 1);
+  expect(line.top - row.bottom, 4, reason: 'divider my-1');
+  Finder action(String label) => find.byWidgetPredicate(
+    (widget) => widget is RaftInteractive && widget.semanticLabel == label,
+  );
+  expect(tester.getRect(action('Join Community')).top - line.bottom, 4);
+  expect(menu.bottom - tester.getRect(action('Invite Human')).bottom, 4);
+}
+
 void main() {
   for (final dark in raftThemeMatrix([false, true])) {
     testWidgets(
@@ -59,8 +98,9 @@ void main() {
         await t.pumpAndSettle();
         expect(
           t.getRect(find.byKey(const Key('server-switcher-menu'))),
-          Rect.fromLTWH(8, 59, 374, 171),
+          Rect.fromLTWH(8, 59, 374, _defaultMenuHeight.toDouble()),
         );
+        _expectMenuInsets(t);
         expect(FocusManager.instance.primaryFocus!.skipTraversal, isTrue);
         await t.sendKeyEvent(LogicalKeyboardKey.tab);
         await t.sendKeyEvent(LogicalKeyboardKey.enter);
@@ -218,7 +258,11 @@ void main() {
         await t.tap(find.byKey(const Key('rail-workspace')));
         await t.pumpAndSettle();
         final menu = find.byKey(const Key('server-switcher-menu'));
-        expect(t.getRect(menu), Rect.fromLTWH(64, 4, 256, 171));
+        expect(
+          t.getRect(menu),
+          Rect.fromLTWH(64, 4, 256, _defaultMenuHeight.toDouble()),
+        );
+        _expectMenuInsets(t);
         expect(find.text('88'), findsNothing);
         expect(FocusManager.instance.primaryFocus!.skipTraversal, isTrue);
         final invite = find.byWidgetPredicate(

@@ -82,7 +82,7 @@ void main() {
             final proposed = side == RaftDropdownSide.right
                 ? Offset(anchor.right + 4, anchor.bottom - popup.height)
                 : Offset(anchor.right - popup.width, anchor.bottom + 4);
-            // The actual pinned Web Files popup places its 240x84 surface at
+            // The current Web Files popup places its 240x80 surface at
             // integer coordinates, including its 3x capture. The current
             // placement must retain that source alignment; frozen looks keep
             // their prior fractional placement unchanged.
@@ -94,7 +94,8 @@ void main() {
                 : proposed;
             expect(popup.topLeft, expected);
             if (look == raftLookRaft) {
-              expect(popup.size, const Size(240, 84));
+              // p-1 + two min-h-option (36px) rows, without a list gap.
+              expect(popup.size, const Size(240, 80));
             }
             await tester.tap(find.text('Download file'));
             await tester.pumpAndSettle();

@@ -3,8 +3,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_ui/test_themes.dart';
 
-// raft-ui 0.7.0 `Input`: 44px, `px-3`, 16/24 field text, `rounded-control border-[1.5px] border-line-strong
-// bg-layer-card`, invalid `border-danger-strong`, `focus:shadow-focus`, disabled `fill-muted` / `line-hairline`.
+// raft-ui 0.95.3 `Input` at the default density: 44px, px-3, 16/24 field text,
+// border-line-field, shadow-none, focus-visible:shadow-focus, disabled
+// fill-muted / line-hairline. Paint colours compare exact 8-bit ARGB, so
+// parsed theme floats and generated literals have the same colour contract.
 Widget _app(bool dark, Widget child, {double width = 358}) => MaterialApp(
   theme: raftTheme(dark: dark),
   home: Scaffold(
@@ -126,7 +128,10 @@ void main() {
         );
         final box = _decoration(tester);
         expect(box.color, ui.fillMuted);
-        expect((box.border! as Border).top.color, ui.lineHairline);
+        expect(
+          (box.border! as Border).top.color.toARGB32(),
+          ui.lineHairline.toARGB32(),
+        );
         final ink = ui.foregroundDisabled;
         expect(
           tester.widget<TextField>(find.byType(TextField)).style!.color,

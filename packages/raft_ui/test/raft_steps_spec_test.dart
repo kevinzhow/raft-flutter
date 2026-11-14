@@ -3,14 +3,17 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_ui/test_themes.dart';
 
-// raft-ui 0.7.0 `Steps`: 20px sticker-cornered markers (outline ahead, brand sticker current, solid ink with a check
+// raft-ui 0.95.3 `Steps`: 20px sticker-cornered markers (outline ahead, selected sticker current, solid ink with a check
 // finished, orange sticker failed) joined by 16px seam connectors; finished steps carry the check, not a number.
 Widget _app(bool dark, Widget child, {double width = 900}) => MaterialApp(
   theme: raftTheme(dark: dark),
   home: MediaQuery(
     data: MediaQueryData(size: Size(width, 600)),
     child: Scaffold(
-      body: Align(alignment: Alignment.topLeft, child: child),
+      body: Align(
+        alignment: Alignment.topLeft,
+        child: SizedBox(width: width, child: child),
+      ),
     ),
   ),
 );

@@ -5,7 +5,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_ui/test_themes.dart';
 
-// Published raft-ui 0.7.0 `ListRow`: variants default / plain / entry, unread tone, selected, interactive false, parts.
+// Published raft-ui 0.95.3 ListRow (cell=false): default / plain / entry,
+// unread tone, info-soft selection, subtle hover and medium press. Exact ARGB
+// compares parsed theme floats and generated CSS literals at paint precision.
 Widget _app(bool dark, Widget child) => MaterialApp(
   theme: raftTheme(dark: dark),
   home: Scaffold(
@@ -117,7 +119,10 @@ void main() {
             ),
           ),
         );
-        expect(_fill(tester, find.byKey(const ValueKey('r'))), ui['info-soft']);
+        expect(
+          _fill(tester, find.byKey(const ValueKey('r')))!.toARGB32(),
+          ui['info-soft'].toARGB32(),
+        );
         expect(_style(tester, 'Wug').fontWeight, FontWeight.w700);
         expect(_style(tester, 'Wug').color, ui.foreground);
         expect(
@@ -159,7 +164,7 @@ void main() {
     });
 
     testWidgets(
-      '$mode tap and Enter activate; hover lays fill-pressed unless selected',
+      '$mode tap and Enter activate; hover lays fill-subtle unless selected',
       (tester) async {
         var taps = 0;
         await tester.pumpWidget(
@@ -176,7 +181,10 @@ void main() {
         await mouse.addPointer(location: Offset.zero);
         await mouse.moveTo(tester.getCenter(find.byKey(const ValueKey('r'))));
         await tester.pump();
-        expect(_fill(tester, find.byKey(const ValueKey('r'))), ui.fillPressed);
+        expect(
+          _fill(tester, find.byKey(const ValueKey('r')))!.toARGB32(),
+          ui['fill-subtle'].toARGB32(),
+        );
         await tester.pumpWidget(
           _app(
             dark,
@@ -188,7 +196,10 @@ void main() {
           ),
         );
         await tester.pump();
-        expect(_fill(tester, find.byKey(const ValueKey('r'))), ui['info-soft']);
+        expect(
+          _fill(tester, find.byKey(const ValueKey('r')))!.toARGB32(),
+          ui['info-soft'].toARGB32(),
+        );
         await mouse.removePointer();
       },
     );
@@ -262,7 +273,9 @@ void main() {
           const Size(356, 48),
         );
         final rule = find.byWidgetPredicate(
-          (w) => w is ColoredBox && w.color == ui.lineHairline,
+          (w) =>
+              w is ColoredBox &&
+              w.color.toARGB32() == ui.lineHairline.toARGB32(),
         );
         expect(rule, findsOneWidget);
         final b = tester.getRect(find.byKey(const ValueKey('b')));
@@ -288,7 +301,9 @@ void main() {
           ),
         );
         final rule = find.byWidgetPredicate(
-          (w) => w is ColoredBox && w.color == ui.lineHairline,
+          (w) =>
+              w is ColoredBox &&
+              w.color.toARGB32() == ui.lineHairline.toARGB32(),
         );
         expect(rule, findsOneWidget);
         expect(

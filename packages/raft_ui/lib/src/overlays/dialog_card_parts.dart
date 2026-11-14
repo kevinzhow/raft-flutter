@@ -22,6 +22,7 @@ class _CardDialogPartsState extends State<_CardDialogParts> {
       tokens: tokens,
     );
     final root = product.root;
+    final contentInset = product.body.padding;
     final header = product.header;
     final title = product.title;
     final body = KeyedSubtree(key: _body, child: d.child!);
@@ -134,40 +135,80 @@ class _CardDialogPartsState extends State<_CardDialogParts> {
               surfaceStyle: combined,
               child: Material(
                 type: MaterialType.transparency,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    if (scaled) ...[
-                      if (actions == null) heading,
-                      Flexible(
-                        child: SingleChildScrollView(
-                          // Desktop scrollbars overlay the content. Leave room
-                          // for their track (including safe-area inset) so
-                          // scaled actions remain clickable while scrolling.
-                          padding: desktopScrollbar
-                              ? EdgeInsetsDirectional.only(end: scrollbarGutter)
-                              : null,
-                          child: scrollingContent(
-                            includeHeading: actions != null,
-                            includeFooter: !d.pinFooterAtLargeText,
+                // Web pads the ScrollArea content, not the surface. At large
+                // text sizes split that same inset across the pinned parts
+                // and the scrolling content so close/actions stay reachable.
+                child: Padding(
+                  padding: scaled ? EdgeInsets.zero : contentInset,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      if (scaled) ...[
+                        if (actions == null)
+                          Padding(
+                            padding: contentInset.copyWith(bottom: 0),
+                            child: heading,
+                          ),
+                        Flexible(
+                          child: SingleChildScrollView(
+                            // Desktop scrollbars overlay the content. Leave room
+                            // for their track (including safe-area inset) so
+                            // scaled actions remain clickable while scrolling.
+                            padding:
+                                EdgeInsets.fromLTRB(
+                                  contentInset.left,
+                                  actions != null ? contentInset.top : 0,
+                                  contentInset.right,
+                                  actions == null &&
+                                          !(d.pinFooterAtLargeText &&
+                                              footer != null)
+                                      ? contentInset.bottom
+                                      : 0,
+                                ).add(
+                                  desktopScrollbar
+                                      ? EdgeInsetsDirectional.only(
+                                          end: scrollbarGutter,
+                                        )
+                                      : EdgeInsets.zero,
+                                ),
+                            child: scrollingContent(
+                              includeHeading: actions != null,
+                              includeFooter: !d.pinFooterAtLargeText,
+                            ),
                           ),
                         ),
-                      ),
-                      if (d.pinFooterAtLargeText && footer != null) ...[
-                        SizedBox(height: d.footerGap ?? header.margin.bottom),
-                        footer,
+                        if (d.pinFooterAtLargeText && footer != null)
+                          Padding(
+                            padding: contentInset.copyWith(top: 0),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                SizedBox(
+                                  height: d.footerGap ?? header.margin.bottom,
+                                ),
+                                footer,
+                              ],
+                            ),
+                          ),
+                      ] else ...[
+                        heading,
+                        body,
+                        if (footer != null) ...[
+                          SizedBox(height: d.footerGap ?? header.margin.bottom),
+                          footer,
+                        ],
                       ],
-                    ] else ...[
-                      heading,
-                      body,
-                      if (footer != null) ...[
-                        SizedBox(height: d.footerGap ?? header.margin.bottom),
-                        footer,
-                      ],
+                      if (actions != null)
+                        Padding(
+                          padding: scaled
+                              ? contentInset.copyWith(top: 0)
+                              : EdgeInsets.zero,
+                          child: actions,
+                        ),
                     ],
-                    ?actions,
-                  ],
+                  ),
                 ),
               ),
             ),
