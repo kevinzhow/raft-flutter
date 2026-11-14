@@ -192,7 +192,7 @@ v1.21.2 快照的 verifier 导入已经移除的 `__testRisingWaveInboxFailSoft`
 ### 兼容补丁
 
 - `seed-history-v1.24.0`：v1.24.0 的 seed 已经把频道加入时间提前（`SEED_JOINED_AT`），并且自带“同一频道按 seq 的 created_at 不得倒退”的检查，所以前两条 SQL 在这里预计不改任何行；旧版任务行仍没有消息上的任务徽标，最后一条 SQL 仍然需要。补丁位置移到 seed 自带检查之前，内容与旧版相同，并保留 primary #all 的参照消息。
-- `risingwave-memory-v1.24.0`：v1.24.0 的 raftdev 已自带 RisingWave 内存上限（预算 2 GiB，`RAFTDEV_RW_MEMORY_BYTES` 可调高、不能调低；容器上限比预算多 1 GiB，不加 swap；compactor 上限由挂载的配置文件设定），旧补丁的 2 GiB 容器 / 1.5 GiB 预算低于上游下限，不再移植。本地仍需要的一点：把临时的 state store（`raftdev stop` 本来就会删）放进 2 GiB tmpfs，并把这 2 GiB 加进容器上限。原因：在多人共用、写入繁忙的数据盘上，checkpoint 的 fsync 让 54 步 MV bootstrap 每一步都比上一步慢几分钟（第 25、26 步分别约 215 s、437 s，第 27 步超过 15 分钟仍未完成）；放进 tmpfs 后每步约 0.3 s，整个启动约 7 分钟。
+- `risingwave-memory-v1.24.0`：v1.24.0 的 raftdev 已自带 RisingWave 内存上限（预算 2 GiB，`RAFTDEV_RW_MEMORY_BYTES` 可调高、不能调低；容器上限比预算多 1 GiB；compactor 上限由挂载的配置文件设定），旧补丁的 2 GiB 容器 / 1.5 GiB 预算低于上游下限，不再移植。本补丁只改那个配置文件：`[system] checkpoint_frequency = 5`、`time_travel_retention_ms = 0`，state store 与上游一样留在容器自己的磁盘上。原因：每个 barrier 一次 checkpoint 时，54 个对象的图每次 checkpoint 要写约 100 个 SST 文件（每个都 fsync），在多人共用、写入繁忙的数据盘上 bootstrap 每一步都比上一步慢几分钟（第 25、26 步约 159 s、398 s）；每 5 个 barrier 一次后每步 1–5 s，整个 `restart risingwave` 约 110 s。代价：RW 读到的是已 checkpoint 的数据，比 Postgres 多落后最多约 5 s（实测新消息 3 s 后出现在未读数里）。时间旅行在这里没人用（服务端没有 `AS OF` 查询）；默认 10 分钟保留期让 meta 存储每 30 s 删写约 2.2 万行 `hummock_epoch_to_version`。这个补丁的第一版把整个 state store 放进 2 GiB tmpfs（启动快，但 2.5 h 内从 0.46 GB 涨到 1.5 GB，主机内存紧张时容器有 4.3 GB 被换出到 swap；`--memory-swap` 并没有限制住 swap，cgroup 的 `memory.swap.max` 是 `max`）。清单里的 `supersededAfterSHA256` 让工具先把第一版还原成固定 commit 的内容再打新版。
 - `antiproton-local` 没有移植（v1.24.0 中有两个文件变了，补丁对不上；本地 antiproton 会调用付费模型）。不列出这个补丁的配置照常启动。
 - 补丁清单新增一种写法：`{"upstream": "<原因>"}`，表示该版本源码已经做了补丁做的事，什么也不应用。
 
@@ -227,3 +227,17 @@ v1.24.0 有 TOTP 两步验证（`/api/auth/second-factor/*`：`reauth/password` 
 - `start` 在 raftdev 之后启动 Worker，`stop` 先停 Worker，`status` 报告它。PID 和进程启动时间记在 `.local/<配置名>-content-worker.pid`；只停止记录的那个进程（启动时间与命令行都要对上），必要时连同它领头的进程组（Miniflare 的 workerd 子进程）。端口已被别的进程占用时拒绝启动。
 - `restart web`：只重启 Web 开发服务器（先刷新 `.env.local`，再 `tmux respawn-window -k` raftdev 的 `web` 窗口，沿用原命令），等 Web URL 回 200。`restart content-worker`：只重启 Worker（服务端环境文件需要改动时才重启服务端）。二者都不动数据库、服务端和其他窗口；`stop` 会删除数据库，别人正在用这套环境时用 `restart`。
 - 本地是 http：浏览器把 `*.localhost` 解析到本机；Android WebView 需要 debug 构建的网络安全配置允许 `*.artifacts.localhost` 的明文 http。
+
+### RisingWave 卡死（2026-11-13）与 `restart risingwave`
+
+现象：容器 13:51Z 启动，16:17:56Z 之后 meta 不再写 SQLite 元数据库，frontend/compute/compactor 每 3 s 记一条 `Failed to send_heartbeat: timeout`，compute 的 `wait_for_epoch` 一直等同一个 epoch，容器约占一个核。frontend 仍能回答 `SELECT 1` 和物化视图的读（读到的是 16:17 冻结的数据），所以 Activity 不报错，只是不再更新；容器停掉后 `/api/channels/unread` 等 Activity 接口返回 503（这些接口没有 Postgres 回退）。
+
+已核实：卡死前没有任何错误、`No space`、OOM（cgroup `memory.events` 的 `max`/`oom` 都是 0），tmpfs 用了 1.5 G / 2.0 G。占满一个核的是 meta 的一个 tokio 工作线程（`rw-standalone-m`，用户态，11 小时累计约 10.8 h CPU）；用 gdb 取样三次，程序计数器都在 sqlx 连接池 `sqlx-core/src/pool/inner.rs:185`（`try_acquire`）。推测，未验证：meta 的 SQLite 元数据库连接池（10 个连接）进入了忙等，所有要用元数据库的操作（心跳、提交 epoch）都在等连接；时间旅行每 30 s 的大批删除和主机 swap 造成的缺页让元数据库操作变慢，可能是诱因。tmpfs 本身不是直接原因，但它在增长，迟早会满。
+
+`tool/raft-stack --config … restart risingwave`：只重建 RisingWave 容器（`tool/raft-risingwave.ts` 从源码的 `scripts/dev/raftdev.ts` 导入容器参数和配置，所以参考补丁照样生效），再用源码自己的 `scripts/bootstrap-risingwave-local.ts` 从 Postgres 建 CDC source 和 54 个对象（与 `start` 相同；它只删掉本环境已不活跃的复制槽并重建 publication）。Postgres 数据、Redis、RustFS、服务端、Web、内容 Worker 都不动；重建期间（约 2 分钟）Activity 接口返回 503。只替换本 checkout 的 raftdev 创建的容器（owner 标签核对）。
+
+`status` 多一行 RisingWave 健康：容器状态、最近 1 分钟 meta 心跳失败次数、15 s 内已提交 epoch（`rw_hummock_snapshot`）是否前进、RW 里最新消息比 Postgres 落后多少秒。epoch 不动、没有回答或落后超过 60 s 是 `UNHEALTHY`，用 `restart risingwave`，不要 `stop`（会删数据库）；epoch 在动但有心跳超时是 `DEGRADED`（meta 短暂停顿后恢复；新容器在繁忙的磁盘上偶尔有，2026-11-14 实测 10 分钟内一次约 5 s）。
+
+判断服务端真的在读 RW：Activity 接口（如 `/api/channels/unread`）没有 Postgres 回退，RW 不可用时是 503，有缓存时带 `X-Raft-Stale` 响应头；所以 200 且无该头、并且另一个账户发的新消息几秒内出现在未读数里，就是 RW 读路径在工作。
+
+私有状态（日志、PID 文件、toolchain 包装脚本）现在放在配置文件所在目录，另一个 worktree 的 `tool/raft-stack --config <同一个配置>` 也能管理同一套正在运行的环境。

@@ -3,7 +3,7 @@
 
 Usage: tool/raft-stack [--config PATH] start|stop|status|ports|sync
        tool/raft-stack [--config PATH] flags [on|off KEY...]
-       tool/raft-stack [--config PATH] restart web|content-worker
+       tool/raft-stack [--config PATH] restart web|content-worker|risingwave
 
 Each config (default .local/stack.json) describes one source checkout and one
 raftdev environment, so several Raft versions can run side by side from one
@@ -61,6 +61,14 @@ to featureFlags.
 restart web restarts only the Web dev server (tmux respawn of the raftdev `web` window with
 its original command, after refreshing .env.local); restart content-worker restarts only the
 content Worker. Neither touches the database, the server or the other windows.
+restart risingwave recreates only the managed RisingWave container with the source's own
+container arguments and config (tool/raft-risingwave.ts imports them from scripts/dev/raftdev.ts,
+so the reference patches apply) and provisions its CDC source and views from Postgres with the
+source's bootstrap script, as start does. Postgres data, Redis, RustFS and the server stay up;
+Activity reads answer 503 until the views are back.
+status adds a RisingWave health line: container state, meta heartbeat failures in the last
+minute, whether the committed epoch moves, and how far the RW copy of messages lags Postgres.
+Private state (logs, PID files, the toolchain wrapper) lives next to the config file.
 A patch manifest may say {"upstream": "<why>"} instead of listing files: the source
 version already does what the patch did, so nothing is applied for that name.
 Logs are private files .local/<config stem>-<action>.log (stack-<action>.log for
@@ -82,7 +90,8 @@ ROOT = Path(__file__).resolve().parents[1]
 LOCAL = ROOT / '.local'
 PATCH_DIR = ROOT / 'tool/reference-patches'
 ACTIONS = {'start', 'stop', 'status', 'ports', 'flags', 'sync'}
-RESTARTABLE = ('web', 'content-worker')
+RESTARTABLE = ('web', 'content-worker', 'risingwave')
+RISINGWAVE_HELPER = ROOT / 'tool/raft-risingwave.ts'
 WORKER_SCRIPT = ROOT / 'tool/raft-content-worker.mjs'
 WEB_ENV_MARKER = '# Managed by tool/raft-stack (artifacts.contentDomain); rewritten on start/sync/restart.'
 
@@ -90,7 +99,7 @@ DEFAULT_PATCHES = ('seed-history', 'risingwave-memory')
 DEFAULT_IMAGE = 'mirror.gcr.io/risingwavelabs/risingwave@sha256:ba5915a5e85c938a3ec62d76c63c6e4cb37d4f4e3c5c30886f0d2eff61b70073'
 USAGE = ('Usage: tool/raft-stack [--config PATH] start|stop|status|ports|sync\n'
          '       tool/raft-stack [--config PATH] flags [on|off KEY...]\n'
-         '       tool/raft-stack [--config PATH] restart web|content-worker')
+         '       tool/raft-stack [--config PATH] restart web|content-worker|risingwave')
 
 
 def parse_args(argv):
@@ -126,6 +135,8 @@ def apply_patches(source, names, patch_dir=PATCH_DIR):
     A manifest is either one file ({path, beforeSHA256, afterSHA256}) or several
     ({files: [...]}). All files must be in the same state: all before (apply), all
     after (already applied) or the patch is refused. Returns the names applied now.
+    A file whose hash is one of the item's supersededAfterSHA256 (an earlier reviewed
+    version of the same patch) is first restored to the pinned commit's content.
     """
     applied = []
     for name in names:
@@ -133,6 +144,10 @@ def apply_patches(source, names, patch_dir=PATCH_DIR):
         if repair.get('upstream'):
             continue
         files = repair.get('files') or [repair]
+        for item in files:
+            digest = hashlib.sha256((source / item['path']).read_bytes()).hexdigest()
+            if digest in item.get('supersededAfterSHA256', []):
+                subprocess.run(['git', 'checkout', '--', item['path']], cwd=source, check=True)
         digests = [hashlib.sha256((source / item['path']).read_bytes()).hexdigest() for item in files]
         patch = patch_dir / (name + '.patch')
         if all(digest == item['beforeSHA256'] for digest, item in zip(digests, files)):
@@ -450,7 +465,9 @@ def recorded_worker_pid(stem):
         cmdline = Path(f'/proc/{pid}/cmdline').read_bytes().split(b'\0')
     except OSError:
         return None
-    return pid if str(WORKER_SCRIPT).encode() in cmdline else None
+    # Any worktree's copy of the script (the PID file sits next to the shared config); the
+    # start time above already rules out a reused PID.
+    return pid if any(arg.endswith(b'/tool/' + WORKER_SCRIPT.name.encode()) for arg in cmdline) else None
 
 
 def port_open(port):
@@ -629,10 +646,95 @@ def build_env(config, base_env, wrapper_dir=None):
     return env
 
 
+def rw_names(config):
+    env = config['environment']
+    return f'slock-dev-{env}-risingwave', f'slock-dev-{env}-pg'
+
+
+def rw_query(config, sql, timeout=8):
+    """One RisingWave query through the environment's Postgres container (it is on the RW network)."""
+    rw, pg = rw_names(config)
+    try:
+        result = subprocess.run(
+            ['docker', 'exec', '-i', pg, 'psql', '-h', rw, '-p', '4566', '-U', 'root', '-d', 'dev', '-At',
+             '-v', 'ON_ERROR_STOP=1', '-c', f"SET statement_timeout = '{timeout - 2}s'", '-c', sql],
+            capture_output=True, text=True, timeout=timeout)
+    except subprocess.TimeoutExpired:
+        return None
+    return result.stdout.strip().splitlines()[-1] if result.returncode == 0 and result.stdout.strip() else None
+
+
+def heartbeat_failures(log_text):
+    return sum(1 for line in log_text.splitlines() if 'Failed to send_heartbeat' in line)
+
+
+def rw_health(config):
+    """(ok, summary) for the environment's RisingWave; never raises."""
+    import time
+    rw, pg = rw_names(config)
+    state = subprocess.run(['docker', 'inspect', '-f', '{{.State.Status}}', rw], capture_output=True, text=True)
+    if state.returncode != 0:
+        return False, 'no container'
+    if state.stdout.strip() != 'running':
+        return False, 'container ' + state.stdout.strip()
+    logs = subprocess.run(['docker', 'logs', '--since', '60s', rw], capture_output=True, text=True)
+    failures = heartbeat_failures(logs.stdout + logs.stderr)
+    # Checkpoints come every checkpoint_frequency barriers (5 s with the fixture config), so wait
+    # up to 15 s for the committed epoch to move. A wedged meta answers nothing or never moves.
+    epoch_sql = 'SELECT max(committed_epoch) FROM rw_catalog.rw_hummock_snapshot'
+    first = rw_query(config, epoch_sql)
+    latest = first
+    deadline = time.monotonic() + 15
+    while first is not None and latest == first and time.monotonic() < deadline:
+        time.sleep(2)
+        latest = rw_query(config, epoch_sql)
+    if first is None or latest is None:
+        epoch = 'epoch: no answer (meta not responding?)'
+    elif latest == first:
+        epoch = f'epoch: stuck at {latest} for 15 s'
+    else:
+        epoch = 'epoch: moving'
+    pg_latest = subprocess.run(['docker', 'exec', pg, 'psql', '-U', 'postgres', '-d', 'slock', '-At', '-c',
+                                'SELECT extract(epoch FROM max(created_at))::bigint FROM messages'],
+                               capture_output=True, text=True).stdout.strip()
+    rw_latest = rw_query(config, 'SELECT extract(epoch FROM max(created_at))::bigint FROM rw_messages')
+    lag_s = None
+    if pg_latest.isdigit() and rw_latest and rw_latest.isdigit():
+        lag_s = int(pg_latest) - int(rw_latest)
+    lag = 'messages lag unknown' if lag_s is None else f'messages lag {lag_s} s'
+    # The epoch decides: a wedged meta stops it. Heartbeat timeouts while it still moves are a
+    # meta stall that recovered (DEGRADED); a lag only means something while messages arrive.
+    moving = epoch == 'epoch: moving' and (lag_s is None or lag_s <= 60)
+    label = ('OK' if failures == 0 else 'DEGRADED') if moving else 'UNHEALTHY'
+    return moving, f'{label}: meta heartbeat failures in the last minute {failures}; {epoch}; {lag}'
+
+
+def restart_risingwave(config, source, stem, env):
+    """Recreate only the RW container and re-provision it (tool/raft-risingwave.ts)."""
+    import time
+    apply_patches(source, select_patches(config))
+    log = LOCAL / f'{stem}-restart-risingwave.log'
+    started = time.monotonic()
+    fd = os.open(log, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    with os.fdopen(fd, 'w') as output:
+        result = subprocess.run(
+            ['pnpm', 'exec', 'node', '--import', '@oxc-node/core/register', str(RISINGWAVE_HELPER),
+             str(source), config['environment']],
+            cwd=source / 'packages/server', env=env, stdout=output, stderr=subprocess.STDOUT)
+    print(f'restart risingwave: exit {result.returncode} after {time.monotonic() - started:.0f} s; private log: {log}')
+    if result.returncode == 0:
+        print('RisingWave: ' + rw_health(config)[1])
+    return result.returncode
+
+
 def main(argv):
-    LOCAL.mkdir(mode=0o700, exist_ok=True)
+    global LOCAL
     parsed = parse_args(argv)
     config_path, action = parsed[:2]
+    # Logs, PID files and the toolchain wrapper live next to the config, so another worktree's
+    # tool/raft-stack can manage the same running stack.
+    LOCAL = config_path.resolve().parent
+    LOCAL.mkdir(mode=0o700, exist_ok=True)
     if not config_path.exists():
         raise SystemExit(f'Create {config_path} using docs/local-test-stack.md first.')
     config = json.loads(config_path.read_text())
@@ -654,6 +756,8 @@ def main(argv):
     if action == 'restart':
         if parsed[2] == 'web':
             return restart_web(config, source)
+        if parsed[2] == 'risingwave':
+            return restart_risingwave(config, source, stem, env)
         if not config.get('artifacts'):
             raise SystemExit('No artifacts block in the config: there is no content Worker.')
         # The server keeps running: restart it only if the env file had to change.
@@ -699,6 +803,7 @@ def main(argv):
         start_content_worker(config, source, stem, env)
     if action == 'status':
         worker_status(config, stem)
+        print('RisingWave: ' + rw_health(config)[1])
     if result.returncode == 0 and action in {'start', 'status', 'ports'}:
         print('Web: ' + config['webUrl'])
         print('API: ' + config['apiUrl'])
