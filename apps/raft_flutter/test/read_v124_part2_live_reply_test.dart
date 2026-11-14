@@ -5,7 +5,6 @@ import 'dart:typed_data';
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
-import 'package:raft_flutter/data/followed_threads_store.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
 
 // Source: packages/web/src/store/visibleConversations.ts at v1.24.0-source.1
@@ -99,12 +98,6 @@ Map<String, dynamic> _thread(String id, {int unread = 0, String? latest}) => {
   'unreadCount': unread,
   'latestActivitySeq': ?latest,
 };
-
-Future<void> _settle() async {
-  for (var i = 0; i < 6; i++) {
-    await Future<void>.delayed(Duration.zero);
-  }
-}
 
 void main() {
   Map<String, dynamic> reply(String id, {String sender = 'bob'}) => {

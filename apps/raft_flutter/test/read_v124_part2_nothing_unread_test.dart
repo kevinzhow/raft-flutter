@@ -87,12 +87,6 @@ Future<(WorkspaceController, _Adapter, _Client)> _fixture() async {
   return (w, a, client);
 }
 
-Future<void> _settle() async {
-  for (var i = 0; i < 8; i++) {
-    await Future<void>.delayed(Duration.zero);
-  }
-}
-
 void main() {
   test('[BP-READ-036] a nothing answer to Mark as unread is reported once; a counted one is not', () async {
     final (w, a, _) = await _fixture();

@@ -324,6 +324,10 @@ class ConversationReadRepository {
 
   /// Web `clearAllMarkedUnreadForRead`: Mark all read is going out, so every
   /// mark is read now, not when the frames or the snapshot arrive.
+  void writeGoingOut(String path) {
+    if (path == '/channels/inbox/read-all') clearAllMarksForRead();
+  }
+
   void clearAllMarksForRead() {
     if (marks.clearAllForRead()) _changed();
   }
