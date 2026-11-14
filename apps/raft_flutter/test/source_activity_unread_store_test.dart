@@ -6,6 +6,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
+import 'package:raft_flutter/data/source_activity_unread_store.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/features/workspace_view.dart';
 import 'package:raft_ui/raft_ui.dart';
@@ -100,12 +101,20 @@ Future<void> _dispatch(WidgetTester tester) async {
   }
 }
 
+/// The throttle (Web requestInboxBackgroundRefresh) measures from the last
+/// read on the store's clock: pump fake time on it.
+void _fakeTime(WidgetTester tester) {
+  SourceActivityUnreadStore.clock = tester.binding.clock.now;
+  addTearDown(() => SourceActivityUnreadStore.clock = DateTime.now);
+}
+
 void main() {
   for (final dark in raftThemeMatrix([false, true])) {
     testWidgets(
       '[K09f] ${dark ? 'dark' : 'light'} actual Chat preloads accepted Activity and reconciles while Activity is unopened',
       (tester) async {
         SharedPreferences.setMockInitialValues({});
+        _fakeTime(tester);
         tester.view.physicalSize = const Size(1440, 900);
         tester.view.devicePixelRatio = 1;
         addTearDown(tester.view.reset);
@@ -155,6 +164,7 @@ void main() {
         expect(find.byType(RaftRailUnreadCount), findsNothing);
         expect(w.section, 'chat');
 
+        await tester.pump(const Duration(seconds: 3));
         final live = Completer<Map<String, dynamic>>();
         api.routes['GET /channels/inbox'] = (_) => live.future;
         client.ingress.add(
@@ -167,9 +177,7 @@ void main() {
             'seq': 1,
           }),
         );
-        await tester.pump(const Duration(milliseconds: 149));
-        expect(api.inbox, hasLength(1));
-        await tester.pump(const Duration(milliseconds: 1));
+        // A quiet window: the leading read goes out at once.
         await _dispatch(tester);
         expect(api.inbox, hasLength(2));
         for (var frame = 0; frame < 6; frame++) {
@@ -189,7 +197,7 @@ void main() {
 
         api.routes['GET /channels/inbox'] = (_) => _window(9);
         client.ingress.add(const RaftEvent('dm:new', {'channelId': 'dm-new'}));
-        await tester.pump(const Duration(milliseconds: 150));
+        await tester.pump(const Duration(milliseconds: 2500));
         await tester.pumpAndSettle();
         expect(attention(), findsOneWidget);
         api.statuses['GET /channels/inbox'] = 500;
@@ -200,7 +208,7 @@ void main() {
             'replyCount': 1,
           }),
         );
-        await tester.pump(const Duration(milliseconds: 150));
+        await tester.pump(const Duration(milliseconds: 2500));
         await tester.pumpAndSettle();
         expect(
           attention(),
@@ -453,6 +461,7 @@ void main() {
   testWidgets(
     'Source mute policy ignores muted ingress but refreshes mentions, pre-mute history and thread context',
     (tester) async {
+      _fakeTime(tester);
       final (w, api, client) = (await tester.runAsync(_fixture))!;
       addTearDown(w.dispose);
       w.channels = [
@@ -513,7 +522,7 @@ void main() {
             ...payload,
           }),
         );
-        await tester.pump(const Duration(milliseconds: 150));
+        await tester.pump(const Duration(milliseconds: 2500));
         await tester.pumpAndSettle();
       }
       expect(api.inbox, hasLength(3));
@@ -606,8 +615,7 @@ void main() {
       expect(
         api.inbox,
         hasLength(1),
-        reason:
-            'the old principal read acknowledgement has no new-scope side effects',
+        reason: 'the old principal read acknowledgement has no new-scope side effects',
       );
       expect(store.totalUnreadCount, 0);
       store.dispose();

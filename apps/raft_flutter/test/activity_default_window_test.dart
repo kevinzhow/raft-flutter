@@ -157,6 +157,9 @@ void main() {
     addTearDown(workspace.dispose);
     workspace.inbox = [channelRow(3, unread: 2)];
     final store = workspace.activityUnread..start();
+    // The realtime read is throttled from the last read on the store's clock.
+    SourceActivityUnreadStore.clock = tester.binding.clock.now;
+    addTearDown(() => SourceActivityUnreadStore.clock = DateTime.now);
     await tester.pumpWidget(
       MaterialApp(
         theme: raftTheme(),
@@ -181,6 +184,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.pump(const Duration(seconds: 2));
     await tester.pumpAndSettle();
+    await tester.pump(const Duration(seconds: 3));
     var acceptances = 0;
     store.addListener(() => acceptances++);
     final before = workspace.inboxQueries.length;
