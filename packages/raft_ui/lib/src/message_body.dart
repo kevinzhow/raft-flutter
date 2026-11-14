@@ -1,9 +1,12 @@
 import 'markdown_comment_anchors.dart';
+import 'markdown_math.dart';
+import 'math_formula.dart';
 import 'interaction.dart';
 import 'idle_work.dart';
 import 'hover_region.dart';
 import 'mermaid_toolbar_recipe.dart';
 import 'message_markdown.dart';
+import 'message_touch_taps.dart';
 import 'markdown_scrollbar.dart';
 import 'message_tokens.dart';
 import 'message_reference_chip.dart';
@@ -570,6 +573,7 @@ class RaftMessageBody extends StatelessWidget {
         permalinkAppearance: permalinkAppearance,
       ),
       'code': _MessageInlineCodeBuilder(highlight: highlight),
+      raftMathDisplayTag: _DisplayMathBuilder(recipe.body),
       if (highlight.isNotEmpty) 'mark': _SearchMarkBuilder(t),
     };
     final bulletStyle = recipe.body;
@@ -631,22 +635,26 @@ class RaftMessageBody extends StatelessWidget {
           // and export controls out of the selection.
           chunk.mermaid
               ? selectable(
-                  RaftMermaidBlock(
-                    source: chunk.text,
-                    onCopy: onCopyCode,
-                    onExport: onExportDiagram,
-                    exportMode: exportMode,
+                  raftMessageTapControlRegion(
+                    RaftMermaidBlock(
+                      source: chunk.text,
+                      onCopy: onCopyCode,
+                      onExport: onExportDiagram,
+                      exportMode: exportMode,
+                    ),
                   ),
                 )
               : anchoredOther(
                   chunk.text,
-                  RaftCodeBlock(
-                    code: chunk.text,
-                    language: chunk.language,
-                    onCopy: onCopyCode,
-                    exportMode: exportMode,
-                    fontSize: fontSize,
-                    joinsSelection: proseSelection,
+                  raftMessageTapControlRegion(
+                    RaftCodeBlock(
+                      code: chunk.text,
+                      language: chunk.language,
+                      onCopy: onCopyCode,
+                      exportMode: exportMode,
+                      fontSize: fontSize,
+                      joinsSelection: proseSelection,
+                    ),
                   ),
                 ),
     ];
@@ -1541,9 +1549,12 @@ class _MermaidToolbar extends StatelessWidget {
               glyph: icon,
               tooltip: ownTooltip ? tooltip : null,
               onPressed: action,
-              visualSize: RaftMetrics.buttonSm,
-              minimumTargetSize: toolbarRecipe.targetSize(RaftMetrics.buttonSm),
-              glyphSize: RaftMetrics.iconSm,
+              // Web 1.24 MermaidToolbar: `size="icon-md"` (was icon-sm).
+              visualSize: RaftMermaidToolbarRecipe.iconButton,
+              minimumTargetSize: toolbarRecipe.targetSize(
+                RaftMermaidToolbarRecipe.iconButton,
+              ),
+              glyphSize: RaftMetrics.iconMd,
               variant: RaftControlVariant.outline,
             );
           }
@@ -1689,6 +1700,15 @@ class _MessageInlineCodeBuilder extends MarkdownElementBuilder {
     TextStyle? preferredStyle,
     TextStyle? parentStyle,
   ) {
+    if (element is md.Element && raftIsInlineMath(element)) {
+      // Web InlineMath: the formula sits in the prose, not in code style.
+      return Text.rich(
+        raftInlineMathSpan(
+          element.textContent,
+          parentStyle ?? DefaultTextStyle.of(context).style,
+        ),
+      );
+    }
     final style = (parentStyle ?? DefaultTextStyle.of(context).style).merge(
       preferredStyle,
     );
@@ -1733,6 +1753,25 @@ class _MessageInlineCodeBuilder extends MarkdownElementBuilder {
       ),
     );
   }
+}
+
+/// Web DisplayMath for `$$` on its own lines (raftMathDisplayTag).
+class _DisplayMathBuilder extends MarkdownElementBuilder {
+  _DisplayMathBuilder(this.style);
+  final TextStyle style;
+
+  @override
+  bool isBlockElement() => true;
+
+  @override
+  Widget? visitElementAfterWithContext(
+    BuildContext context,
+    md.Element element,
+    TextStyle? preferredStyle,
+    TextStyle? parentStyle,
+  ) => raftMessageTapControlRegion(
+    RaftDisplayMath(source: element.textContent, style: style),
+  );
 }
 
 /// Inline Markdown links need an explicit focus/action widget. The upstream

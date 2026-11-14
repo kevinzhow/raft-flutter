@@ -4,12 +4,21 @@ import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:raft_client/raft_client.dart';
 
 // Web `components/message/attachmentPreviewSummaryCache.ts`: the summary line
-// of a document or diff card comes from `GET /attachments/:id/preview`. The
-// answer for an attachment never changes, so it is cached for the session and
-// concurrent askers share one request (a channel full of documents would
-// otherwise scale requests with attachments and trip the download limiter).
+// of a document or diff card comes from the card read,
+// `GET /attachments/:id/preview?view=summary` (kind and stats only, never the
+// document body, up to 512 KB of Markdown). The answer for an attachment never
+// changes, so it is cached for the session and concurrent askers share one
+// request (a channel full of documents would otherwise scale requests with
+// attachments and trip the download limiter). A server older than the view
+// ignores it and answers the full payload; both read the same here.
 
-/// What a card shows of `GET /attachments/:id/preview` (`status: ok`).
+/// Reads [path] with [query] parameters (`WorkspaceController.query`).
+typedef PreviewQuery = Future<dynamic> Function(
+  String path, {
+  Map<String, dynamic>? query,
+});
+
+/// What a card shows of the preview summary (`status: ok`).
 class AttachmentPreviewSummary {
   const AttachmentPreviewSummary({
     required this.kind,
@@ -58,7 +67,13 @@ class AttachmentPreviewSummary {
       case 'csv':
         return AttachmentPreviewSummary(
           kind: 'csv',
-          rows: data['rows'] is List ? (data['rows'] as List).length : 0,
+          // The summary carries `rowsShown`; a full payload (an older
+          // server) its `rows`.
+          rows: data['rowsShown'] is num
+              ? count(data['rowsShown'])
+              : data['rows'] is List
+              ? (data['rows'] as List).length
+              : 0,
           columns: count(data['columnCount']),
           truncated: response['truncated'] == true,
         );
@@ -79,19 +94,16 @@ class AttachmentPreviewSummaries {
   static final _all = Expando<AttachmentPreviewSummaries>('preview summaries');
 
   /// The summaries of the session [owner] (the workspace controller) holds;
-  /// [query] reads a path through it.
-  static AttachmentPreviewSummaries of(
-    Object owner,
-    Future<dynamic> Function(String path) query,
-  ) => _all[owner] ??= AttachmentPreviewSummaries._(query);
+  /// [query] reads a path (with its query parameters) through it.
+  static AttachmentPreviewSummaries of(Object owner, PreviewQuery query) =>
+      _all[owner] ??= AttachmentPreviewSummaries._(query);
 
   /// Summaries over a scripted [query].
   @visibleForTesting
-  static AttachmentPreviewSummaries testing(
-    Future<dynamic> Function(String path) query,
-  ) => AttachmentPreviewSummaries._(query);
+  static AttachmentPreviewSummaries testing(PreviewQuery query) =>
+      AttachmentPreviewSummaries._(query);
 
-  final Future<dynamic> Function(String path) _query;
+  final PreviewQuery _query;
   // A null value is a settled answer without a summary (a refusal or a payload
   // this client cannot read); it is cached like a summary.
   final _cache = <String, AttachmentPreviewSummary?>{};
@@ -115,7 +127,10 @@ class AttachmentPreviewSummaries {
 
   Future<AttachmentPreviewSummary?> _load(String attachmentId) async {
     try {
-      final response = await _query('/attachments/$attachmentId/preview');
+      final response = await _query(
+        '/attachments/$attachmentId/preview',
+        query: const {'view': 'summary'},
+      );
       final summary = AttachmentPreviewSummary.parse(response);
       final transient =
           response is Map &&

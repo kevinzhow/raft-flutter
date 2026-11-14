@@ -11,6 +11,9 @@ import '../data/user_error.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
+import 'message_card_read.dart';
+import 'resource_cards.dart' show resourceRelativeTime;
+
 import '../data/workspace_controller.dart';
 import '../platform/attachment_files.dart';
 import '../platform/content_links.dart';
@@ -702,6 +705,19 @@ class MessagePresentation extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // RFC 077: a retracted message keeps its place; its body is the muted
+    // placeholder, never body text.
+    if (message.retracted) {
+      final t = RaftTokens.of(context);
+      return Text(
+        raftText(context, 'This message was retracted.'),
+        key: ValueKey('message-retracted-${message.id}'),
+        style: DefaultTextStyle.of(context).style
+            .copyWith(color: t.ui.foregroundHint),
+      );
+    }
+    final card = readMessageCard(message.json['actionMetadata']);
+    if (card != null) return messageCard(context, card);
     if (message.json['actionMetadata'] is Map &&
         message.json['actionMetadata']['kind'] == 'action-card') {
       return MessageActionCard(
@@ -749,6 +765,42 @@ class MessagePresentation extends StatelessWidget {
       );
     }
     return body(context);
+  }
+
+  /// A card message (RFC 082): the card instead of its fallback text.
+  Widget messageCard(BuildContext context, ReadMessageCard card) {
+    final chinese = Localizations.localeOf(context).languageCode == 'zh';
+    String relative(DateTime at) =>
+        resourceRelativeTime(at.toIso8601String(), chinese: chinese);
+    final updatedAt = card.updatedAt;
+    return RaftMessageCard(
+      key: ValueKey('message-card-${message.id}'),
+      header: card.header,
+      root: card.root,
+      updated: card.revision > 1 && updatedAt != null
+          ? raftFormat(context, 'Updated {time}', {'time': relative(updatedAt)})
+          : null,
+      relativeTime: relative,
+      duration: (start, end) {
+        final seconds = ((end ?? DateTime.now()).difference(start).inSeconds)
+            .clamp(0, 1 << 31);
+        final minutes = seconds ~/ 60;
+        if (seconds < 60) {
+          return raftFormat(context, '{seconds}s', {'seconds': seconds});
+        }
+        if (minutes < 60) {
+          return raftFormat(context, '{minutes}m {seconds}s', {
+            'minutes': minutes,
+            'seconds': seconds % 60,
+          });
+        }
+        return raftFormat(context, '{hours}h {minutes}m', {
+          'hours': minutes ~/ 60,
+          'minutes': minutes % 60,
+        });
+      },
+      onOpen: exportMode ? null : (href) => open(context, href),
+    );
   }
 
   Widget body(BuildContext context, {String? content}) {

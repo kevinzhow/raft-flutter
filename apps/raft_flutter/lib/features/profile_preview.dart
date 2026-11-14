@@ -518,9 +518,15 @@ class ExternalIdentityHoverCard extends StatelessWidget {
     this.provider,
     this.workspaceName,
     this.actorKind,
+    this.appName,
+    this.postedAs,
   });
   final String displayName;
   final String? provider, workspaceName, actorKind;
+
+  /// Web 1.24: the App that owns an external bot, and the name the message
+  /// was posted under when the bot's current profile name differs.
+  final String? appName, postedAs;
   final Widget avatar, child;
 
   @override
@@ -532,6 +538,8 @@ class ExternalIdentityHoverCard extends StatelessWidget {
       provider: provider,
       workspaceName: workspaceName,
       actorKind: actorKind,
+      appName: appName,
+      postedAs: postedAs,
     ),
     child: child,
   );
@@ -545,22 +553,43 @@ Widget externalIdentityPreviewBody(
   String? provider,
   String? workspaceName,
   String? actorKind,
+  String? appName,
+  String? postedAs,
 }) {
   final kind = raftText(context, switch (actorKind) {
     'human' => 'Human',
     'guest' => 'Guest',
     'remote' => 'Remote participant',
-    'bot' => 'Bot',
+    // Web 1.24 `message.externalIdentity.kind.app`.
+    'bot' => 'App',
     _ => 'External participant',
   });
+  final trimmed = provider?.trim();
+  final providerLabel = trimmed == null || trimmed.isEmpty
+      ? null
+      : trimmed.toLowerCase() == 'slack'
+      ? 'Slack'
+      : trimmed;
+  final app = actorKind == 'bot' && appName != null && appName.isNotEmpty;
   return RaftProfilePreviewCard(
     key: const ValueKey('external-identity-preview'),
     avatar: avatar,
     name: displayName,
-    subtitle: provider == 'slack' ? 'Slack · $kind' : kind,
+    subtitle: app || providerLabel == null
+        ? kind
+        : raftFormat(context, '{provider} · {kind}', {
+            'provider': providerLabel,
+            'kind': kind,
+          }),
     notes: [
-      if (workspaceName != null && workspaceName.isNotEmpty)
+      if (app && providerLabel != null)
+        raftFormat(context, 'From {workspace}', {
+          'workspace': '$providerLabel · $appName',
+        })
+      else if (workspaceName != null && workspaceName.isNotEmpty)
         raftFormat(context, 'From {workspace}', {'workspace': workspaceName}),
+      if (postedAs != null && postedAs != displayName)
+        raftFormat(context, 'Posted as {name}', {'name': postedAs}),
       raftText(context, 'External identity'),
     ],
   );
@@ -583,11 +612,18 @@ Widget senderProfileHoverCard({
     final author = message.json['externalAuthor'] is Map
         ? message.json['externalAuthor'] as Map
         : const {};
+    final fields = RaftExternalAuthorFields(Map<String, dynamic>.from(author));
+    final bot = author['actorKind'] == 'bot';
+    final profileName = bot ? fields.profileDisplayName : null;
     return ExternalIdentityHoverCard(
-      displayName: message.author,
+      displayName: profileName ?? message.author,
       provider: author['provider'] as String?,
       workspaceName: author['workspaceName'] as String?,
       actorKind: author['actorKind'] as String?,
+      appName: fields.appName,
+      postedAs: profileName != null && profileName != message.author
+          ? message.author
+          : null,
       // AvatarSlot type="app": initials on the soft-signal fill (Brutal).
       avatar: RaftAvatarSlot(
         name: message.author,

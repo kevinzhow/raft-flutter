@@ -419,7 +419,7 @@
      "needle": "'/message-translations:batch'"
     },
     {
-     "file": "apps/raft_flutter/lib/features/chat_view.dart",
+     "file": "apps/raft_flutter/lib/features/message_context_menu_sections.dart",
      "needle": "message-menu-translate"
     }
    ],
@@ -1138,7 +1138,7 @@
    "flutterEntry": "chat_view.dart actions() item 'copy-link' -> shareMessageLink(copy: true)",
    "flutterRefs": [
     {
-     "file": "apps/raft_flutter/lib/features/chat_view.dart",
+     "file": "apps/raft_flutter/lib/features/message_context_menu_sections.dart",
      "needle": "'Copy link'"
     },
     {
@@ -1182,12 +1182,12 @@
    "flutterEntry": "chat_view.dart actions() follow/unfollow items; on the thread-panel root row too (parentTile)",
    "flutterRefs": [
     {
-     "file": "apps/raft_flutter/lib/features/chat_view.dart",
+     "file": "apps/raft_flutter/lib/features/message_context_menu_sections.dart",
      "needle": "'Follow thread'"
     },
     {
      "file": "apps/raft_flutter/lib/features/chat_view.dart",
-     "needle": "final follow = canFollow && hasThreadConversation"
+     "needle": "follow: canFollow && hasThreadConversation ? followed : null"
     }
    ],
    "justification": "The thread panel's root row offers Follow / Unfollow like Web (showThreadFollowAction); its replies do not.",
@@ -1206,7 +1206,7 @@
    "flutterEntry": "chat_view.dart actions() 'Open Thread'",
    "flutterRefs": [
     {
-     "file": "apps/raft_flutter/lib/features/chat_view.dart",
+     "file": "apps/raft_flutter/lib/features/message_context_menu_sections.dart",
      "needle": "'Open Thread'"
     }
    ],
@@ -1230,7 +1230,7 @@
      "needle": "onReact: canReact"
     },
     {
-     "file": "apps/raft_flutter/lib/features/chat_view.dart",
+     "file": "apps/raft_flutter/lib/features/message_context_menu_sections.dart",
      "needle": "'React with {emoji}'"
     }
    ],
@@ -1270,7 +1270,7 @@
    "flutterEntry": "chat_view.dart actions() 'Select Message' (guest hidden; system rows never open the menu)",
    "flutterRefs": [
     {
-     "file": "apps/raft_flutter/lib/features/chat_view.dart",
+     "file": "apps/raft_flutter/lib/features/message_context_menu_sections.dart",
      "needle": "'Select message'"
     },
     {
@@ -1294,7 +1294,7 @@
    "flutterEntry": "chat_view.dart actions() taskItems -> messageTaskMenuItem (Convert to Task, or Create task from message with task v2) -> POST /tasks/convert-message; PATCH /tasks/:id/status. Server v1.24 task v2 (task_v2_conversations_v0): \"Create task from message\" -> CreateTaskDialog with sourceMessageId; a 409 task_v2_use_create from convert opens the same dialog (message_task_actions.dart).",
    "flutterRefs": [
     {
-     "file": "apps/raft_flutter/lib/features/chat_view.dart",
+     "file": "apps/raft_flutter/lib/features/message_context_menu_sections.dart",
      "needle": "messageTaskMenuItem(w, item)"
     },
     {
@@ -1322,7 +1322,7 @@
    "flutterEntry": "chat_view.dart actions() 'message-menu-translate' when translation.manualAction",
    "flutterRefs": [
     {
-     "file": "apps/raft_flutter/lib/features/chat_view.dart",
+     "file": "apps/raft_flutter/lib/features/message_context_menu_sections.dart",
      "needle": "message-menu-translate"
     }
    ],
@@ -2688,7 +2688,7 @@
    "capability": "Channel footer states replacing the composer: archived notice with Unarchive link, joint read-only (View Billing), joint grace banner, guest read-only, Join channel CTA",
    "background": false,
    "status": "covered",
-   "webEntry": "ChatPanel.tsx footer chain (the read-only-by-quota branch is unreachable on Web too: every plan has maxChannels -1)",
+   "webEntry": "features/channel/ChatPanel.tsx footer chain (the read-only-by-quota branch is unreachable on Web too: every plan has maxChannels -1)",
    "gate": "",
    "flutterEntry": "channel_footer_states.dart + chat_view.dart footers",
    "flutterRefs": [
@@ -2728,7 +2728,7 @@
    "capability": "Reorder the Chat / Tasks / Files tabs by drag (order stored as channelPanelTabOrder)",
    "background": false,
    "status": "covered",
-   "webEntry": "ChatPanel.tsx SortableTabsList onReorder -> reorderTabs",
+   "webEntry": "features/channel/ChatPanel.tsx SortableTabsList onReorder -> reorderTabs",
    "gate": "",
    "flutterEntry": "conversation_tab_reorder.dart: RaftConversationTabs.reorderWrapper from conversation_panel.dart; a pointer drags at once, a finger after a long press; the whole new order is saved as sidebarOrder.channelPanelTabOrder",
    "flutterRefs": [
@@ -2796,7 +2796,7 @@
    "capability": "'Activity muted' bell badge in the header of a muted channel",
    "background": false,
    "status": "covered",
-   "webEntry": "ChatPanel.tsx regularTitleSuffix ActivityMutedBadge (channels) and DM titleSlot",
+   "webEntry": "features/channel/ChatPanel.tsx regularTitleSuffix ActivityMutedBadge (channels) and DM titleSlot",
    "gate": "",
    "flutterEntry": "channel_header.dart mutedLabel: the bell-off after the title (and the Archived badge) of a channel whose activityMuted is set; workspace_channel_header.dart",
    "flutterRefs": [
@@ -3176,7 +3176,7 @@
    "capability": "Tap the peer's avatar in a DM header to open their profile (agent or human)",
    "background": false,
    "status": "covered",
-   "webEntry": "ChatPanel.tsx DM titleSlot avatar button -> useProfileStore.openProfile(agent|human, peerId)",
+   "webEntry": "features/channel/ChatPanel.tsx DM titleSlot avatar button -> useProfileStore.openProfile(agent|human, peerId)",
    "gate": "",
    "flutterEntry": "RaftDmHeader onAvatarTap -> WorkspaceController.openProfile",
    "flutterRefs": [
@@ -11040,11 +11040,11 @@
    "flutterEntry": "chat_view.dart menu items",
    "flutterRefs": [
     {
-     "file": "apps/raft_flutter/lib/features/chat_view.dart",
+     "file": "apps/raft_flutter/lib/features/message_context_menu_sections.dart",
      "needle": "Mark as Done"
     },
     {
-     "file": "apps/raft_flutter/lib/features/chat_view.dart",
+     "file": "apps/raft_flutter/lib/features/message_context_menu_sections.dart",
      "needle": "Reopen task"
     }
    ],
@@ -12754,7 +12754,7 @@
    "capability": "Channel-top 'Earliest unread thread (N)' / 'Next unread thread (N)' pill that scrolls to the parent of an unread followed thread and flashes it (dismissable)",
    "background": false,
    "status": "covered",
-   "webEntry": "components/message/ThreadUnreadJumpPill.tsx rendered by ChatPanel.tsx (channels only)",
+   "webEntry": "components/message/ThreadUnreadJumpPill.tsx rendered by features/channel/ChatPanel.tsx (channels only)",
    "gate": "a channel, not a DM or thread (thread_unread_badge_v0 is retired in Web 1.24)",
    "flutterEntry": "chat_view.dart ChatBottomControls (features/thread_unread_jump.dart): the built rows are measured against their viewport, RaftThreadUnreadJumpPill beside Back to bottom (below) or at the top (above); a click calls jumpToMessage",
    "flutterRefs": [

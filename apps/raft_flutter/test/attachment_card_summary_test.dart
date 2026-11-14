@@ -97,7 +97,7 @@ void main() {
     test('askers share one request and the answer is cached', () async {
       var asked = 0;
       final gate = Completer<dynamic>();
-      final summaries = AttachmentPreviewSummaries.testing((path) {
+      final summaries = AttachmentPreviewSummaries.testing((path, {query}) {
         asked++;
         return gate.future;
       });
@@ -113,7 +113,10 @@ void main() {
 
     test('a settled refusal is cached like a summary (Web)', () async {
       var asked = 0;
-      final summaries = AttachmentPreviewSummaries.testing((path) async {
+      final summaries = AttachmentPreviewSummaries.testing((
+        path, {
+        query,
+      }) async {
         asked++;
         return {'status': 'unsupported', 'reason': 'too_large'};
       });
@@ -124,7 +127,10 @@ void main() {
 
     test('a failure or a transient refusal is not cached: the next card asks again', () async {
       var asked = 0;
-      final summaries = AttachmentPreviewSummaries.testing((path) async {
+      final summaries = AttachmentPreviewSummaries.testing((
+        path, {
+        query,
+      }) async {
         asked++;
         if (asked == 1) {
           throw const RaftApiException('boom');

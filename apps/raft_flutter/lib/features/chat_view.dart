@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
@@ -42,6 +43,12 @@ import 'media_items.dart';
 import 'attachment_shape.dart';
 import 'message_presentation.dart';
 import 'message_saved_action.dart';
+import 'message_hover_toolbar.dart';
+import 'external_sender.dart';
+import 'delegated_message.dart';
+import 'agent_typing_line_host.dart';
+import 'message_context_menu_sections.dart';
+import '../data/reaction_favorite.dart';
 import 'message_task_actions.dart';
 import 'message_sender_menu.dart';
 import 'message_preparation.dart';
@@ -1547,113 +1554,24 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
     await showRaftMessageContextMenu<void>(
       context: context,
       anchor: origin,
-      builder: (menuContext) {
-        RaftMessageContextMenuItem item(
-          String value,
-          String label,
-          Widget icon,
-        ) => RaftMessageContextMenuItem(
-          key: ValueKey('message-menu-$value'),
-          label: raftText(menuContext, label),
-          icon: icon,
-          onPressed: () => pick(menuContext, value),
-        );
-        final follow = canFollow && hasThreadConversation;
-        final taskItems = [
-          if (!threadReply && supportsTasks)
-            task == null
-                ? messageTaskMenuItem(w, item)
-                : task['status'] == 'done'
-                ? item(
-                    'task-reopen',
-                    'Reopen task',
-                    raftMessageMenuIcon(RaftGlyph.rotateCcw),
-                  )
-                : item(
-                    'task-done',
-                    'Mark as Done',
-                    raftMessageMenuIcon(RaftGlyph.checkCircle),
-                  ),
-        ];
-        return RaftMessageContextMenu(
-          onDismiss: () => Navigator.of(menuContext).pop(),
-          reactionLabel: (emoji) =>
-              raftFormat(menuContext, 'React with {emoji}', {'emoji': emoji}),
-          onReact: canReact
-              ? (emoji) {
-                  result = 'react:$emoji';
-                  Navigator.of(menuContext).pop();
-                }
-              : null,
-          sections: [
-            [
-              item(
-                'copy-link',
-                'Copy link',
-                raftMessageMenuIcon(RaftGlyph.link),
-              ),
-              item(
-                'copy-markdown',
-                'Copy Markdown',
-                raftMessageMenuIcon(RaftGlyph.copy),
-              ),
-              // Web: manual mode offers Translate (Translating… while the
-              // request is pending) after Copy Markdown.
-              if (translation.manualAction)
-                RaftMessageContextMenuItem(
-                  key: const ValueKey('message-menu-translate'),
-                  label: raftText(
-                    menuContext,
-                    translation.manualPending ? 'Translating…' : 'Translate',
-                  ),
-                  icon: raftMessageMenuIcon(RaftGlyph.languages),
-                  onPressed: translation.manualPending
-                      ? null
-                      : () => pick(menuContext, 'translate'),
-                ),
-              if (!guest)
-                item(
-                  'select',
-                  'Select message',
-                  raftMessageMenuIcon(RaftGlyph.checkCircle),
-                ),
-            ],
-            [
-              if (!hideThreadActions)
-                item(
-                  'thread',
-                  'Open Thread',
-                  Builder(
-                    builder: (c) => RaftMessageThreadGlyph(
-                      size: 14,
-                      color: DefaultTextStyle.of(c).style.color,
-                    ),
-                  ),
-                ),
-              item(
-                'save',
-                saved ? 'Remove from Saved' : 'Save',
-                raftMessageMenuIcon(RaftGlyph.bookmark),
-              ),
-              if (follow)
-                followed
-                    ? item(
-                        'unfollow',
-                        'Unfollow thread',
-                        raftMessageMenuIcon(RaftGlyph.messageCircleOff),
-                      )
-                    : item(
-                        'follow',
-                        'Follow thread',
-                        raftMessageMenuIcon(RaftGlyph.messageCirclePlus),
-                      ),
-              // Without the follow divider the task row joins this group.
-              if (!follow) ...taskItems,
-            ],
-            if (follow) taskItems,
-          ],
-        );
-      },
+      builder: (menuContext) => messageContextMenu(
+        menuContext,
+        w,
+        pick: (value) => pick(menuContext, value),
+        onReact: canReact
+            ? (emoji) {
+                result = 'react:$emoji';
+                Navigator.of(menuContext).pop();
+              }
+            : null,
+        taskItems: !threadReply && supportsTasks,
+        task: task,
+        translate: translation.manualAction ? translation.manualPending : null,
+        select: !guest,
+        thread: !hideThreadActions,
+        saved: saved,
+        follow: canFollow && hasThreadConversation ? followed : null,
+      ),
     );
     if (mounted) setState(() => menuMessageId = null);
     final choice = result;
@@ -1723,8 +1641,13 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
         mounted &&
         revision == bindingRevision &&
         authority == workspaceAuthority(w);
+    final adding = !ownReactions(m).contains(emoji);
     try {
       await w.toggleReaction(m, emoji);
+      // Every reaction added counts toward the toolbar button's emoji.
+      if (adding) {
+        recordReactionUsage(w.client.origin, w.client.user?.id, emoji);
+      }
       if (current() && reactionFailures[m.id] == emoji) {
         reactionFailureTimers.remove(m.id)?.cancel();
         setState(() => reactionFailures.remove(m.id));
@@ -2091,28 +2014,42 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
     if (rebuild && mounted) setState(() {});
   }
 
-  void openReactionPicker(RaftMessage message, BuildContext anchor) {
+  /// Opens the reaction bar at [anchor]; with [at] (a double tap's global
+  /// point), at the finger instead (Web positionReactionPickerAtTap).
+  void openReactionPicker(
+    RaftMessage message,
+    BuildContext? anchor, {
+    Offset? at,
+  }) {
     if (!canReact) return;
     if (pickerMessageId == message.id) {
       closeReactionPicker();
       return;
     }
     closeReactionPicker(rebuild: false);
-    final box = anchor.findRenderObject() as RenderBox?;
+    final box = anchor?.findRenderObject() as RenderBox?;
     final overlay = Overlay.of(context);
     final overlayBox = overlay.context.findRenderObject() as RenderBox?;
-    if (box == null || overlayBox == null) return;
-    final bounds =
-        box.localToGlobal(Offset.zero, ancestor: overlayBox) & box.size;
+    if ((box == null && at == null) || overlayBox == null) return;
     final size = overlayBox.size;
-    final x = (bounds.right - 224).clamp(
-      8.0,
-      (size.width - 232).clamp(8.0, double.infinity),
-    );
-    final below = bounds.bottom + 4;
-    final y = below + 42 > size.height - 8 && bounds.top > 54
-        ? bounds.top - 46
-        : below.clamp(8.0, (size.height - 50).clamp(8.0, double.infinity));
+    final maxX = (size.width - 232).clamp(8.0, double.infinity);
+    final double x, y;
+    if (box == null) {
+      final point = overlayBox.globalToLocal(at!);
+      x = (point.dx - 112).clamp(8.0, maxX);
+      final above = point.dy - 24 - 42, below = point.dy + 24;
+      y = above >= 8 || below + 42 > size.height - 8
+          ? math.max(above, 8)
+          : below;
+    } else {
+      final bounds =
+          box.localToGlobal(Offset.zero, ancestor: overlayBox) & box.size;
+      x = (bounds.right - 224).clamp(8.0, maxX);
+      final below = bounds.bottom + 4;
+      y = below + 42 > size.height - 8 && bounds.top > 54
+          ? bounds.top - 46
+          : below.clamp(8.0, (size.height - 50).clamp(8.0, double.infinity));
+    }
     pickerMessageId = message.id;
     pickerAuthority = workspaceAuthority(w);
     reactionPicker = OverlayEntry(
@@ -2149,39 +2086,49 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
     setState(() {});
   }
 
-  Widget messageToolbar(RaftMessage message, {required bool parent}) {
-    final saved = SavedCountStore.of(w).isSaved(message.id);
-    return RaftMessageToolbar(
-      children: [
-        if (!parent && !widget.thread)
-          RaftMessageToolbarAction(
-            key: ValueKey('message-thread-${message.id}'),
-            label: raftText(context, 'Reply in thread'),
-            icon: const RaftMessageThreadGlyph(),
-            onPressed: presentationActive
-                ? () => _messages.threads.openThread(message)
-                : null,
-          ),
-        if (canReact)
-          Builder(
-            builder: (anchor) => RaftMessageToolbarAction(
-              key: ValueKey('message-react-${message.id}'),
-              label: raftText(context, 'Add reaction'),
-              icon: const RaftMessageAddReactionGlyph(),
-              popupOpen: pickerMessageId == message.id,
-              onPressed: () => openReactionPicker(message, anchor),
-            ),
-          ),
-        RaftMessageToolbarAction(
-          key: ValueKey('message-save-${message.id}'),
-          label: raftText(context, saved ? 'Remove from Saved' : 'Save'),
-          icon: const RaftIcon(RaftGlyph.bookmark, size: 13),
-          active: saved,
-          onPressed: presentationActive ? () => saveMessage(message) : null,
-        ),
-      ],
-    );
-  }
+  Widget messageToolbar(RaftMessage message, {required bool parent}) =>
+      MessageHoverToolbar(
+        messageId: message.id,
+        saved: SavedCountStore.of(w).isSaved(message.id),
+        favorite: () =>
+            currentFavoriteReaction(w.client.origin, w.client.user?.id),
+        reacted: (emoji) => ownReactions(message).contains(emoji),
+        reactionOpen: pickerMessageId == message.id,
+        moreOpen: menuMessageId == message.id,
+        onThread: !parent && !widget.thread && presentationActive
+            ? () => _messages.threads.openThread(message)
+            : null,
+        onReact: canReact ? (emoji) => react(message, emoji) : null,
+        onReactionPicker: canReact
+            ? (anchor) => openReactionPicker(message, anchor)
+            : null,
+        onForward: presentationActive && messageForwardable(message)
+            ? () => forwardMessages(context, w, [message])
+            : null,
+        onSave: presentationActive ? () => saveMessage(message) : null,
+        onMore: selection.active
+            ? null
+            : (anchor) {
+                final box = anchor.findRenderObject();
+                actions(
+                  message,
+                  anchor: box is RenderBox && box.hasSize
+                      ? box.localToGlobal(box.size.bottomLeft(Offset.zero))
+                      : null,
+                  parentTile: parent,
+                );
+              },
+      );
+
+  /// The viewer's own reactions on [m], with toggles in flight applied.
+  Set<String> ownReactions(RaftMessage m) => withPendingReactions(
+    projectedOwnReactions(
+      principal: w.client.user?.id,
+      reactions: m.json['reactions'] as List? ?? const [],
+      completeViewer: w.reactionViewer.reacted(m.id),
+    ),
+    w.pendingReactionTargets(m.id),
+  );
 
   /// Screen-reader row actions: the hover toolbar's actions (same conditions),
   /// copy, and the message menu that holds every other action.
@@ -2680,7 +2627,8 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
     // Optimistic rows share the final row's key and widget shape; only the
     // actions that need a server message id stay inert until it arrives.
     final key = _messages.messageKey(m);
-    final pending = WorkspaceMessages.isPendingSend(m);
+    m = withoutRetractedParts(m);
+    final pending = WorkspaceMessages.isPendingSend(m) || m.retracted;
     if (m.string('messageType') == 'system') {
       return RaftSystemMessage(
         key: ValueKey('message-$key'),
@@ -2719,7 +2667,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
       continuation: continuation,
       followedBy: followedBy,
       followsSystem: followsSystem,
-      author: m.author,
+      author: messageSenderName(context, m),
       avatar: senderAvatar(m),
       selectionLeading: selectionLeading,
       content: translation.translatedContent ?? m.content,
@@ -2728,16 +2676,19 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
       translation: translationStatus(m, translation),
       modelLabel: currentAgentModel(m),
       subtitle: senderSubtitle(m),
+      delegatedLabel: delegatedByLabel(context, m, continuation: continuation),
       onAuthor: senderMention(m),
       onAuthorMenu: senderMenuOf(context, referenceDirectory, m),
       savedIndicator: savedIndicatorOf(w, m, saveMessage),
-      hoverToolbar: IgnorePointer(
-        ignoring: pending,
-        child: ExcludeFocus(
-          excluding: pending,
-          child: messageToolbar(m, parent: parent),
-        ),
-      ),
+      hoverToolbar: m.retracted
+          ? null
+          : IgnorePointer(
+              ignoring: pending,
+              child: ExcludeFocus(
+                excluding: pending,
+                child: messageToolbar(m, parent: parent),
+              ),
+            ),
       compactSemantics: true,
       semanticsContent:
           m.json['actionMetadata'] is Map &&
@@ -2779,6 +2730,14 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
           : () {
               if (!pending) _messages.threads.openThread(m);
             },
+      // Web 1.24 touch taps: a tap opens the thread, a double tap the
+      // reaction bar at the finger; not in select mode or on a pending row.
+      onTouchTap: parent || widget.thread || pending || selection.active
+          ? null
+          : () => _messages.threads.openThread(m),
+      onTouchDoubleTap: canReact && !pending && !selection.active
+          ? (at) => openReactionPicker(m, null, at: at)
+          : null,
       threadPreview: inlineThreadReplies(m, parentTile: parent),
       readStatus: dmRead ? const RaftMessageReadStatus() : null,
       taskReference: taskReference(m),
@@ -2809,14 +2768,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
           .whereType<Map>()
           .map((e) => Map<String, dynamic>.from(e))
           .toList(),
-      reactedEmojis: withPendingReactions(
-        projectedOwnReactions(
-          principal: w.client.user?.id,
-          reactions: m.json['reactions'] as List? ?? const [],
-          completeViewer: w.reactionViewer.reacted(m.id),
-        ),
-        w.pendingReactionTargets(m.id),
-      ),
+      reactedEmojis: ownReactions(m),
       failedReactionEmojis: reactionFailures[m.id] == null
           ? const {}
           // ignore: raft_lints/avoid_render_index_assertion -- Guarded by `reactionFailures[m.id] == null ? const {} : ...` on the line above.
@@ -3348,7 +3300,10 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
                 header: header,
                 history: history,
                 forward: forward,
-                footer: const RaftTimelineFooter(),
+                footer: AgentTypingListEnd(
+                  controller: w,
+                  thread: widget.thread,
+                ),
               ),
               hasOlder: widget.thread
                   ? w.threadHasMore
@@ -3557,15 +3512,21 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
                   child: currentTimeline,
                 ),
                 MessageHistoryGapMonitor(controller: w, thread: widget.thread),
-                ChatBottomControls(
+                AgentTypingLineHost(controller: w, thread: thread),
+                AgentTypingInset(
                   controller: w,
                   thread: thread,
-                  rows: rows,
-                  hasNewer: historyWindow,
-                  scroll: viewport,
-                  showBottom: historyWindow || !atBottom || newMessageCount > 0,
-                  bottomCount: bottomCount,
-                  onBottom: returnToBottom,
+                  child: ChatBottomControls(
+                    controller: w,
+                    thread: thread,
+                    rows: rows,
+                    hasNewer: historyWindow,
+                    scroll: viewport,
+                    showBottom:
+                        historyWindow || !atBottom || newMessageCount > 0,
+                    bottomCount: bottomCount,
+                    onBottom: returnToBottom,
+                  ),
                 ),
               ],
             ),
