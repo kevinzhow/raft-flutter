@@ -34,7 +34,9 @@ import argparse
 import bisect
 import collections
 import datetime
+import functools
 import gzip
+import itertools
 import json
 import os
 import pathlib
@@ -114,6 +116,10 @@ def assemble(reports, root, package_roots, commit, package_dir, meta=None):
     Line sets that recur (every line of a function the same tests ran) are stored once in `sets`;
     `lines[file]` is `[[line, set index], ...]` and `coverable[file]` the executable lines as ranges.
     """
+    latest = {}
+    for report in reports:  # oldest first: a rerun of a file replaces its earlier report
+        latest[repo_relative(report.get('test', ''), root)] = report
+    reports = list(latest.values())
     tests, errors = [], {}
     hits = collections.defaultdict(lambda: collections.defaultdict(set))
     coverable = collections.defaultdict(set)
@@ -123,8 +129,6 @@ def assemble(reports, root, package_roots, commit, package_dir, meta=None):
         if report.get('error') is not None:
             errors[test] = report['error']
             continue
-        if test in tests:
-            continue  # a file reported twice (a rerun): the first report stands
         index = len(tests)
         tests.append(test)
         for key in ('hits', 'misses'):
@@ -204,7 +208,7 @@ def write_map(data, path):
 
 def read_reports(raw_dir):
     reports = []
-    for file in sorted(pathlib.Path(raw_dir).glob('*.json')):
+    for file in sorted(pathlib.Path(raw_dir).glob('*.json'), key=lambda f: (f.stat().st_mtime, f.name)):
         try:
             reports.append(json.loads(file.read_text(encoding='utf-8')))
         except (OSError, ValueError) as error:
@@ -232,6 +236,16 @@ def suite_files(events_path, root):
         elif kind == 'testDone' and event.get('result') not in ('success', None) and not event.get('skipped'):
             failed.add(suites.get(tests.get(event.get('testID')), ''))
     return set(suites.values()) - {''}, failed - {''}
+
+
+def package_test_files(root, package_dir):
+    """Repo-relative test files of a package that the Raft run executes (legacy-look files are tool/theme-suite's)."""
+    import theme_looks
+    root = pathlib.Path(root)
+    found = sorted(p.relative_to(root).as_posix() for p in (root / package_dir / 'test').rglob('*_test.dart'))
+    if package_name(package_dir) == 'raft_theme':
+        return found
+    return [f for f in found if theme_looks.runs_by_default(str(root / f))]
 
 
 def impact_filters(root, package_roots):
@@ -276,8 +290,14 @@ def remove_temp_config(config):
         config.unlink()
 
 
-def build(root, packages, jobs, tier, raw_root, cache=CACHE, commit=None, log=print, extra_args=()):
-    """Run each package's suite with the probe on and write its map. Returns `[(package, map path, summary)]`."""
+def build(root, packages, jobs, tier, raw_root, cache=CACHE, commit=None, log=print, extra_args=(), rerun_failed=False, resume=False):
+    """Run each package's suite with the probe on and write its map. Returns `[(package, map path, summary)]`.
+
+    `rerun_failed` runs only the files the existing map lists as failed, adds their new reports to the
+    kept probe reports of the first run, and writes the map again (a timed-out test under load leaves
+    its file's lines incomplete; the selector distrusts such files until then). `resume` keeps the reports
+    of an interrupted build and runs only the test files that have none yet.
+    """
     import theme_looks
     root = pathlib.Path(root).resolve()
     package_roots = affected_tests.workspace_packages(root)
@@ -287,9 +307,33 @@ def build(root, packages, jobs, tier, raw_root, cache=CACHE, commit=None, log=pr
     for package_dir in packages:
         package_path = root / package_dir
         raw = pathlib.Path(raw_root) / package_name(package_dir)
-        shutil.rmtree(raw, ignore_errors=True)
-        raw.mkdir(parents=True)
         events = raw.parent / f'{package_name(package_dir)}.events.json'
+        files = ['test/']
+        if rerun_failed:
+            previous = ImpactMap.load(map_path(package_dir, cache)).data
+            files = [os.path.relpath(root / f, package_path) for f in previous.get('failed', []) + previous.get('unreported', [])]
+            if not files or not raw.is_dir():
+                log(f'test-impact: {package_dir}: nothing to rerun' + ('' if raw.is_dir() else f' (no reports in {raw})'))
+                continue
+            events = raw.parent / f'{package_name(package_dir)}.rerun.events.json'
+            commit = previous['commit']
+        elif resume and raw.is_dir():
+            done = {repo_relative(r.get('test', ''), root) for r in read_reports(raw)}
+            files = [os.path.relpath(root / f, package_path) for f in package_test_files(root, package_dir) if f not in done]
+            log(f'test-impact: {package_dir}: resuming, {len(done)} files reported, {len(files)} to run')
+            if not files:
+                continue
+            for n in itertools.count(1):  # keep the interrupted run's events for its failures
+                kept = raw.parent / f'{package_name(package_dir)}.events.{n}.json'
+                if not kept.exists():
+                    if events.exists():
+                        events.rename(kept)
+                    break
+        else:
+            shutil.rmtree(raw, ignore_errors=True)
+            raw.mkdir(parents=True)
+            for old in raw.parent.glob(f'{package_name(package_dir)}.events.*.json'):
+                old.unlink()
         events.unlink(missing_ok=True)
         env = impact_env(os.environ, raw, root, package_roots)
         env['RAFT_TEST_LOOKS'] = 'raft'
@@ -302,7 +346,7 @@ def build(root, packages, jobs, tier, raw_root, cache=CACHE, commit=None, log=pr
         if package_name(package_dir) != 'raft_theme':  # the engine package runs whole (as in the nightly)
             for look in theme_looks.LEGACY_LOOKS:
                 cmd += ['-x', theme_looks.tag_look(look)]
-        cmd.append('test/')
+        cmd += files
         temp = ensure_probe_config(package_path, root)
         started = time.monotonic()
         log(f'test-impact: {package_dir}: {" ".join(cmd[1:])}')
@@ -311,24 +355,39 @@ def build(root, packages, jobs, tier, raw_root, cache=CACHE, commit=None, log=pr
                 code = subprocess.run(cmd, cwd=package_path, env=env, stdout=out, stderr=subprocess.STDOUT).returncode
         finally:
             remove_temp_config(temp)
-        summary = assemble_run(root, package_dir, raw, events, commit, tier, time.monotonic() - started, cache,
-                               extra={'jobs': jobs, 'exit_code': code, 'dirty': dirty})
+        if rerun_failed:
+            loaded, still = suite_files(events, root)
+            first = previous
+            summary = assemble_run(root, package_dir, raw, None, commit, tier, (first.get('seconds') or 0) + time.monotonic() - started, cache,
+                                   extra={'jobs': jobs, 'exit_code': code, 'dirty': first.get('dirty', []), 'built': first.get('built'),
+                                          'reran': sorted(loaded)}, failed=still, unreported=set(first.get('unreported', [])) - loaded)
+        else:
+            earlier = sorted(raw.parent.glob(f'{package_name(package_dir)}.events.*.json'))
+            summary = assemble_run(root, package_dir, raw, [*earlier, events], commit, tier, time.monotonic() - started, cache,
+                                   extra={'jobs': jobs, 'exit_code': code, 'dirty': dirty, 'resumed': len(earlier) or None})
         log(f'test-impact: {package_dir}: {summary}')
         results.append((package_dir, map_path(package_dir, cache), summary))
     return results
 
 
-def assemble_run(root, package_dir, raw, events, commit=None, tier='full', seconds=None, cache=CACHE, extra=None):
+def assemble_run(root, package_dir, raw, events, commit=None, tier='full', seconds=None, cache=CACHE, extra=None,
+                 failed=None, unreported=None):
     """Write the map of one finished run (probe reports in `raw`) and return a one-line summary."""
     root = pathlib.Path(root).resolve()
     package_roots = affected_tests.workspace_packages(root)
     commit = commit or git(['rev-parse', 'HEAD'], cwd=root).strip()
-    loaded, failed = suite_files(events, root) if events else (set(), set())
-    data = assemble(read_reports(raw), root, package_roots, commit, package_dir, meta={
-        'built': datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'),
-        'seconds': None if seconds is None else round(seconds), 'tier': tier or 'default', **(extra or {})})
+    loaded, found_failed = set(), set()
+    for stream in ([events] if isinstance(events, (str, os.PathLike)) else events or []):
+        more_loaded, more_failed = suite_files(stream, root)
+        found_failed = (found_failed - more_loaded) | more_failed  # a later run of a file decides
+        loaded |= more_loaded
+    meta = {'built': datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'),
+            'seconds': None if seconds is None else round(seconds), 'tier': tier or 'default'}
+    meta.update({k: v for k, v in (extra or {}).items() if v is not None})
+    data = assemble(read_reports(raw), root, package_roots, commit, package_dir, meta=meta)
+    failed = found_failed if failed is None else failed
     data['failed'] = sorted(failed)
-    data['unreported'] = sorted(loaded - set(data['tests']) - set(data['errors']))
+    data['unreported'] = sorted(unreported) if unreported is not None else sorted(loaded - set(data['tests']) - set(data['errors']))
     path = map_path(package_dir, cache)
     write_map(data, path)
     return (f"{len(data['tests'])} test files mapped, {len(data['errors'])} probe errors, {len(data['unreported'])} unreported, "
@@ -353,6 +412,8 @@ class ImpactMap:
         self.coverable = {path: [n for start, end in ranges for n in range(start, end + 1)]
                           for path, ranges in data.get('coverable', {}).items()}
         self.paths = data.get('paths', {})
+        # A file with a failing or timed-out test may have stopped early: its lines are a lower bound.
+        self.failed = set(data.get('failed', ()))
         self._file_tests = {}
 
     @classmethod
@@ -604,7 +665,7 @@ def declared_names(text):
         match = pattern.match(stripped)
         if match:
             names.append(match.group(1))
-    return [n for n in dict.fromkeys(names) if n not in DART_KEYWORDS and len(n.lstrip('_')) > 1]
+    return [n for n in dict.fromkeys(names) if n not in DART_KEYWORDS and n != 'main' and len(n.lstrip('_')) > 1]
 
 
 # ------------------------------------------------------------------ selection
@@ -646,7 +707,8 @@ class Selector:
         self._graph = None
         self._translators = {}
         self._package_roots = None
-        self.map_tests = set(t for m in maps for t in m.tests)
+        # Files the maps know completely; the rest go through the import graph (unmapped_tests).
+        self.map_tests = set(t for m in maps for t in m.tests if t not in m.failed)
 
     # git helpers
     def diff(self):
@@ -676,6 +738,7 @@ class Selector:
             self._show[key] = text.splitlines() if text is not None else []
         return self._show[key]
 
+    @functools.lru_cache(maxsize=None)
     def tracked(self, path):
         return subprocess.run(['git', 'ls-files', '--error-unmatch', path], cwd=self.root, capture_output=True).returncode == 0
 
@@ -779,13 +842,20 @@ class Selector:
             self.declaration_tests(imap, path, name, reason, depth)
 
     def declaration_tests(self, imap, path, name, reason, depth):
-        refs = [r for r in self.references(imap.commit, name)]
+        refs = [r for r in self.references(imap.commit, name) if is_code(r[2]) and not is_directive(r[2])]
         if len(refs) > REF_LIMIT:
-            self.selection.add(imap.file_tests(path), f'{reason} (`{name}` has {len(refs)} references; tests that ran {path})')
+            # Too many to follow line by line. The tests that ran the declaring file stand in for its users;
+            # a file nothing executes (constants only) hands over to the tests that ran the files using the name.
+            tests = set().union(*(m.file_tests(path) for m in self.maps))
+            label = f'{reason} (`{name}` has {len(refs)} references; tests that ran {path})'
+            if not tests:
+                users = {ref_path for ref_path, _, _ in refs if ref_path != path}
+                tests = set().union(set(), *(m.file_tests(u) for m in self.maps for u in users))
+                tests |= {u for u in users if affected_tests.is_test_file(u)}
+                label = f'{reason} (`{name}` has {len(refs)} references; tests that ran the {len(users)} files using it)'
+            self.selection.add(tests, label)
             return
         for ref_path, number, text in refs:
-            if not is_code(text) or is_directive(text):
-                continue
             label = f'{reason} (`{name}` used at {ref_path}:{number})'
             if affected_tests.is_test_file(ref_path):
                 self.selection.add([ref_path], label)
@@ -845,6 +915,11 @@ class Selector:
     # file-level rules
     def absent_tests(self, file_diff, path):
         """A Dart file no map has lines of: new, or no test ever executed it."""
+        if affected_tests.is_test_file(path):
+            return  # a changed test file is selected itself
+        if file_diff.status == 'M' and not any(code_lines(h[4]) or code_lines(h[5]) for h in file_diff.hunks):
+            self.selection.notes.append(f'{path}: only import/export lines or comments changed (compile effects are `flutter analyze`\'s)')
+            return
         if file_diff.status != 'A':
             # existing, never executed: its declarations may still be used (constants, catalogs)
             commit = self.maps[0].commit if self.maps else self.merge_base
@@ -901,7 +976,7 @@ class Selector:
                     sel.select_all = f'{path} is an input of every test file'
                 continue
             if path.endswith('.dart'):
-                if file_diff.status != 'M' or any(is_code(t) for h in file_diff.hunks for t in h[4] + h[5]):
+                if file_diff.status != 'M' or any(code_lines(h[4]) or code_lines(h[5]) for h in file_diff.hunks):
                     changed_dart.add(path)
                 if path.startswith('tool/') and not path.startswith('tool/testing/'):
                     sel.notes.append(f'{path}: tool code, not part of the flutter suites')
@@ -930,7 +1005,10 @@ class Selector:
     def unmapped_tests(self, changed_dart):
         """Test files the maps do not know (probe failed, package without a map) that import a changed file."""
         import theme_looks
-        existing = {f for f in self.graph() if affected_tests.is_test_file(f)}
+        existing = set(all_test_files(self.root))
+        if self.worktree:
+            existing |= {f for f in git(['ls-files', '--others', '--exclude-standard', '--', '*_test.dart'], cwd=self.root).splitlines()
+                         if affected_tests.is_test_file(f)}
         unknown = existing - self.map_tests
         legacy = {f for f in unknown if not theme_looks.runs_by_default(str(self.root / f))}
         unknown -= legacy
@@ -939,7 +1017,9 @@ class Selector:
         reach = self.importers(changed_dart) & unknown
         self.selection.add(reach, 'not in the map; reaches a changed file by imports')
         if unknown:
-            self.selection.notes.append(f'{len(unknown)} test files are not in any map (import-graph fallback for them)'
+            failed = sum(1 for f in unknown if any(f in m.failed for m in self.maps))
+            self.selection.notes.append(f'{len(unknown)} test files are not in any map or failed while it was built'
+                                        f' ({failed} failed; import-graph fallback for them)'
                                         + (f'; {len(legacy)} legacy-look files left to tool/theme-suite' if legacy else ''))
 
     def check_maps(self):
@@ -1032,6 +1112,8 @@ def main(argv=None):
     b.add_argument('--raw-dir', default=None, help='probe reports (default $TMPDIR/test-impact-raw)')
     b.add_argument('--cache', default=str(CACHE))
     b.add_argument('--commit', default=None, help='commit to stamp (default HEAD of --root)')
+    b.add_argument('--rerun-failed', action='store_true', help="rerun only the map's failed / unreported files and rewrite the map")
+    b.add_argument('--resume', action='store_true', help='keep the reports of an interrupted build; run only the files without one')
     a = sub.add_parser('assemble', help='write a map from probe reports of a run that already happened (the nightly)')
     a.add_argument('--root', default=str(REPO))
     a.add_argument('--package', required=True, metavar='DIR')
@@ -1073,7 +1155,8 @@ def main(argv=None):
         return 0
     if args.command == 'build':
         raw = args.raw_dir or os.path.join(os.environ.get('TMPDIR') or '/tmp', 'test-impact-raw')
-        build(args.root, args.packages or list(DEFAULT_PACKAGES), args.jobs, args.tier, raw, args.cache, args.commit)
+        build(args.root, args.packages or list(DEFAULT_PACKAGES), args.jobs, args.tier, raw, args.cache, args.commit,
+              rerun_failed=args.rerun_failed, resume=args.resume)
         return 0
     return 2
 

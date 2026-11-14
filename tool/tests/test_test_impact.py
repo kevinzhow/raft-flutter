@@ -124,6 +124,13 @@ class AssembleTests(unittest.TestCase):
         self.assertIsNone(ti.opened_path('/elsewhere/x', '/r', roots))
         self.assertEqual(ti.opened_path('/r/apps/raft_flutter/test/../lib/a.dart', '/r', roots), 'apps/raft_flutter/lib/a.dart')
 
+    def test_a_rerun_report_replaces_the_first(self):
+        first = {'test': '/r/a_test.dart', 'hits': {'package:p/a.dart': [1]}, 'misses': {}}
+        second = {'test': '/r/a_test.dart', 'hits': {'package:p/a.dart': [2]}, 'misses': {}}
+        data = ti.assemble([first, second], '/r', {'p': 'p'}, 'c', 'p')
+        self.assertEqual(data['tests'], ['a_test.dart'])
+        self.assertEqual(data['lines'], {'p/lib/a.dart': [[2, 0]]})
+
     def test_a_failed_probe_is_an_error_not_a_test(self):
         data = ti.assemble([{'test': '/r/a_test.dart', 'error': 'boom'}], '/r', {}, 'c', 'apps/x')
         self.assertEqual(data['tests'], [])
@@ -273,6 +280,21 @@ class SelectTests(unittest.TestCase):
         self.assertEqual(chosen(selection), set())
         self.assertEqual(selection.unexecuted, {'apps/raft_flutter/lib/calc.dart:12'})
 
+    def test_widely_used_names_fall_back_to_files(self):
+        self.repo.write('apps/raft_flutter/lib/consts.dart', 'const kLimit = 3;\n')
+        self.repo.write('apps/raft_flutter/test/limit_test.dart', "import 'package:raft_flutter/consts.dart';\nfinal x = kLimit;\n")
+        self.repo.commit('constants nobody executes')
+        self.repo.branch()
+        self.repo.write('apps/raft_flutter/lib/consts.dart', 'const kLimit = 4;\n')
+        self.repo.write('apps/raft_flutter/lib/calc.dart', CALC.replace('kStep = 2', 'kStep = 3'))
+        self.repo.commit('change both')
+        limit = ti.REF_LIMIT
+        ti.REF_LIMIT = 0
+        self.addCleanup(setattr, ti, 'REF_LIMIT', limit)
+        selection = self.repo.select()
+        # kStep: the tests that ran calc.dart; kLimit (its file never ran): the files that use it
+        self.assertEqual(chosen(selection), {'add_test.dart', 'twice_test.dart', 'limit_test.dart'})
+
     def test_an_insertion_selects_the_tests_around_it(self):
         self.repo.branch()
         self.repo.write('apps/raft_flutter/lib/calc.dart', CALC.replace('  return a + b;\n', '  return a + b;\n  // unreachable\n  print(a);\n'))
@@ -313,6 +335,28 @@ class SelectTests(unittest.TestCase):
         self.repo.write('apps/raft_flutter/lib/loader.dart', LOADER.replace('data.json', 'other.json'))
         self.repo.commit('loader')
         self.assertEqual(chosen(self.repo.select()), {'loader_test.dart', 'unmapped_test.dart'})
+
+    def test_a_file_that_failed_during_the_build_falls_back_to_imports(self):
+        imap = self.repo.map(self.repo.git('rev-parse', 'main'))
+        imap.failed = {'apps/raft_flutter/test/twice_test.dart'}  # e.g. timed out: its lines are incomplete
+        self.repo.branch()
+        self.repo.write('apps/raft_flutter/lib/calc.dart', CALC.replace('return a + b;', 'return b + a;'))
+        self.repo.commit('change add')
+        selection = self.repo.select(maps=[imap])
+        self.assertEqual(chosen(selection), {'add_test.dart', 'twice_test.dart'})
+        self.assertIn('not in the map', selection.tests['apps/raft_flutter/test/twice_test.dart'][0])
+
+    def test_a_barrel_that_only_adds_an_export_selects_nothing(self):
+        self.repo.write('packages/raft_ui/lib/raft_ui.dart', "export 'src/a.dart';\n")
+        self.repo.write('packages/raft_ui/test/barrel_test.dart', "import 'package:raft_ui/raft_ui.dart';\nvoid main() {}\n")
+        self.repo.commit('barrel')
+        self.repo.branch()
+        self.repo.write('packages/raft_ui/lib/raft_ui.dart', "export 'src/a.dart';\nexport 'src/b.dart';\n")
+        self.repo.write('apps/raft_flutter/test/unmapped_test.dart', FILES['apps/raft_flutter/test/unmapped_test.dart'] + 'void main() {}\n')
+        self.repo.commit('export b; touch an unmapped test')
+        selection = self.repo.select()
+        self.assertEqual(chosen(selection), {'unmapped_test.dart'})
+        self.assertTrue(any('only import/export' in note for note in selection.notes))
 
     def test_a_build_input_selects_everything(self):
         self.repo.branch()
