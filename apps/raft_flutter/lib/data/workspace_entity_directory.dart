@@ -1077,6 +1077,11 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
             'os',
             'daemonVersion',
             'computerVersion',
+            // Web v1.24 applyCapabilities: the host facts and the floor verdict.
+            'hostProvider',
+            'osRelease',
+            'deviceClass',
+            'versionGate',
           ])
             if (payload.containsKey(key)) key: _copyValue(payload[key]),
         };

@@ -868,7 +868,9 @@ class _ComputersRackViewState extends State<ComputersRackView> {
           ? tr('Public (no owner)')
           : fmt('Owner: {name}', {'name': ownerName}),
       diskLowLabel: disk == null ? null : tr('Low disk'),
-      diskLowTitle: disk?.$1,
+      diskLowTitle: disk == null
+          ? null
+          : fmt('{free} free of {total}', {'free': disk.$1, 'total': disk.$2}),
       disk: meter(tr('Disk'), diskStatus, warn: disk != null),
       memory: meter(tr('Memory'), memoryStatus),
       agentCount: on.length,

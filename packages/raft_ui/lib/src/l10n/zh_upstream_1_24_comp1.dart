@@ -4,6 +4,8 @@
 // counts and needs-attention summary, readiness copy, Delete Computer and force unbind, the row's
 // Restart / Upgrade confirmations). ICU plurals and selects are separate English keys here.
 const Map<String, String> zhCatalogUpstream124Comp1 = <String, String>{
+  "Low disk space: {free} free of {total}": "磁盘空间不足：剩余 {free}，共 {total}",
+  "{free} free of {total}": "剩 {free}，共 {total}",
   "Upgrade soon": "请尽快升级",
   "Upgrade soon: from {date}, agents on this computer stop running": "请尽快升级：从 {date} 起，这台计算机上的 Agent 将停止运行",
   "This version needs a reinstall": "这个版本需要重新安装",

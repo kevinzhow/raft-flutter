@@ -181,9 +181,22 @@ String computerFileSize(num bytes) {
   return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(1)} GB';
 }
 
+/// utils/fileSizePresentation.ts formatDiskSizeBytes: decimal units, as the
+/// disks are sold (1 KB = 1000 B).
+String computerDiskSize(num bytes) {
+  if (!bytes.isFinite || bytes <= 0) return '0 B';
+  if (bytes < 1000) return '${bytes.toInt()} B';
+  if (bytes < 1000 * 1000) return '${(bytes / 1000).toStringAsFixed(1)} KB';
+  if (bytes < 1000 * 1000 * 1000) {
+    return '${(bytes / (1000 * 1000)).toStringAsFixed(1)} MB';
+  }
+  return '${(bytes / (1000 * 1000 * 1000)).toStringAsFixed(1)} GB';
+}
+
 /// machineDiskLowPresentation: online and < 10% (and < the shared byte cap)
-/// free. Returns (free, freePercent) or null.
-(String, double)? computerDiskLow(Map m) {
+/// free. Returns (free, total) said with the whole ("4.2 GB", "460.0 GB") or
+/// null.
+(String, String)? computerDiskLow(Map m) {
   final disk = m['diskStatus'];
   if (m['status'] != 'online' || disk is! Map) return null;
   final available = disk['availableBytes'], total = disk['totalBytes'];
@@ -191,11 +204,8 @@ String computerFileSize(num bytes) {
   final percent = available / total * 100;
   // shared MACHINE_DISK_LOW_FREE_PERCENT 10, MAX_AVAILABLE_BYTES 20 GiB.
   if (percent >= 10 || available >= 20 * 1024 * 1024 * 1024) return null;
-  return (computerFileSize(available), (percent * 10).floor() / 10);
+  return (computerDiskSize(available), computerDiskSize(total));
 }
-
-String _pct(double v) =>
-    v == v.roundToDouble() ? v.toInt().toString() : v.toString();
 
 /// The Web agent row status text (utils/activity.ts formatActivityText via
 /// resolveAgentDisplayState): [agentActivityText] over the row's ambient
@@ -643,7 +653,10 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel> {
           : null,
       diskLowTitle: disk == null
           ? null
-          : 'Low disk space: ${disk.$1} free (${_pct(disk.$2)}%)',
+          : raftFormat(context, 'Low disk space: {free} free of {total}', {
+              'free': disk.$1,
+              'total': disk.$2,
+            }),
       agents: [
         for (final a in agents)
           RaftComputerAgent(
