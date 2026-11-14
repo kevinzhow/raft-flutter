@@ -684,7 +684,13 @@ class SourceActivityUnreadStore extends ChangeNotifier {
       return true;
     }
     final context = message['conversationContext'];
-    if (context is Map && context['channelType'] == 'thread') return true;
+    // Web isMessageInMutedActivityRange: a thread, and a task conversation
+    // (task v2), follow the thread rule: following decides, not the mute.
+    if (context is Map &&
+        (context['channelType'] == 'thread' ||
+            context['channelType'] == 'task')) {
+      return true;
+    }
     final candidates = [...workspace.channels, ...workspace.dms];
     final channel = candidates.where((c) => c.id == id).firstOrNull;
     if (channel?.json['activityMuted'] != true) return true;
