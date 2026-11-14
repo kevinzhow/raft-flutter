@@ -289,7 +289,11 @@ void main() {
       expect(shown.single['unreadCount'], 3);
       final behind = state.keepAhead([_channel('c1', 5, 2)], shown, now: now);
       expect(behind.rows.single['unreadCount'], 3, reason: 'no flicker back');
-      expect(behind.rows.single['latestActivitySeq'], '5', reason: 'served');
+      expect(
+        behind.rows.single['latestActivitySeq'],
+        '6',
+        reason: 'as the live message left it',
+      );
       expect(behind.delta, 1);
       final reached = state.keepAhead([_channel('c1', 6, 3)], shown, now: now);
       expect(reached.rows.single['unreadCount'], 3);
