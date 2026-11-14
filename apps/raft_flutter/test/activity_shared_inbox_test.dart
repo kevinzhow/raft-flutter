@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:raft_flutter/data/source_activity_unread_store.dart';
 import 'package:raft_flutter/features/resource_view.dart';
 import 'package:raft_ui/raft_ui.dart';
 
@@ -24,6 +25,9 @@ void main() {
       client.selectServer('s1');
       final store = w.activityUnread..start();
       addTearDown(store.dispose);
+      // The realtime read is throttled from the last read on the store's clock.
+      SourceActivityUnreadStore.clock = tester.binding.clock.now;
+      addTearDown(() => SourceActivityUnreadStore.clock = DateTime.now);
       await tester.pumpWidget(
         MaterialApp(
           theme: raftTheme(),
@@ -49,6 +53,7 @@ void main() {
       // Let the badge's offline boot fallback settle first.
       await tester.pump(const Duration(seconds: 3));
       await tester.pumpAndSettle();
+      await tester.pump(const Duration(seconds: 3));
       expect(store.totalUnreadCount, 2);
       final before = w.inboxQueries.length;
       w.hold = Completer<void>();

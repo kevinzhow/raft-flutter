@@ -317,16 +317,25 @@ void main() {
         }
 
         await to(160);
-        expect(_inbox(api).length, before + 1, reason: 'the 150 ms read');
-        expect(store.totalUnreadCount, 2, reason: 'stale: no m7 yet');
+        expect(
+          _inbox(api).length,
+          before,
+          reason: 'the last read was just now: the throttle holds the next',
+        );
+        expect(
+          store.totalUnreadCount,
+          3,
+          reason: 'm7 patched in place at once',
+        );
         await to(1000);
         serverHasIt = true;
         await to(1450);
-        expect(store.totalUnreadCount, 2, reason: 'the 0.7 s read was stale');
+        expect(store.totalUnreadCount, 3, reason: 'the 0.7 s read was stale');
         await to(1700);
         expect(store.totalUnreadCount, 3, reason: 'the 1.5 s read converged');
+        await to(2700);
         final reads = _inbox(api).length;
-        expect(reads, before + 3, reason: '150 ms, 0.7 s, 1.5 s');
+        expect(reads, before + 3, reason: '0.7 s, 1.5 s, trailing 2.5 s');
         await to(20000);
         expect(_inbox(api).length, reads, reason: 'converged: no more reads');
         store.dispose();
@@ -603,7 +612,7 @@ void main() {
       await to(1000);
       serverHasIt = true;
       expect(n.sent, isEmpty, reason: 'the window predates the message');
-      expect(store.totalUnreadCount, 2);
+      expect(store.totalUnreadCount, 3, reason: 'patched in place already');
       await to(1450);
       expect(n.sent, isEmpty);
       await to(1550);
