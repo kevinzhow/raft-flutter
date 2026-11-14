@@ -5,6 +5,9 @@
 import 'package:flutter/widgets.dart';
 
 import 'auth_page.dart';
+import 'raft/button.dart';
+import 'recipes/button_variants.g.dart';
+import 'banner.dart';
 import 'design_primitives.dart';
 import 'theme.dart';
 import 'icons.dart';
@@ -36,7 +39,19 @@ class RaftAuthSecondFactorPage extends StatelessWidget {
     this.canVerify = false,
     this.onVerify,
     this.switches = const [],
+    this.recoveryReady = false,
+    this.onFinishRecovery,
+    this.onCantVerify,
   });
+
+  /// The challenge lists `recovery`: an email reset is past its wait, so
+  /// "Your reset is ready" offers Finish reset above whatever the step shows.
+  final bool recoveryReady;
+  final VoidCallback? onFinishRecovery;
+
+  /// "Can't use any of these?" (the email reset); hidden once the reset is
+  /// ready.
+  final VoidCallback? onCantVerify;
 
   /// `a***@example.com`, shown in bold.
   final String maskedEmail;
@@ -83,6 +98,7 @@ class RaftAuthSecondFactorPage extends StatelessWidget {
               title: title,
               descriptionSpan: _emailSpan(context, 'Signing in as {email}.'),
             ),
+            if (ended == null) ?_recoveryReady(context),
             Padding(
               padding: const EdgeInsets.only(bottom: 16),
               child: RaftAuthBanner(text: over),
@@ -93,6 +109,7 @@ class RaftAuthSecondFactorPage extends StatelessWidget {
               variant: RaftControlVariant.accent,
               onPressed: onBack,
             ),
+            ?_lostLink(context),
           ],
         ),
       );
@@ -113,6 +130,7 @@ class RaftAuthSecondFactorPage extends StatelessWidget {
                     time: expiresAt,
                   ),
           ),
+          ?_recoveryReady(context),
           if (passkeyUnsupported)
             Padding(
               padding: const EdgeInsets.only(bottom: 16),
@@ -163,6 +181,7 @@ class RaftAuthSecondFactorPage extends StatelessWidget {
               ),
             ],
           ],
+          ?_lostLink(context),
           const SizedBox(height: 16),
           RaftAuthTextLink(
             key: const Key('second-factor-back'),
@@ -172,6 +191,45 @@ class RaftAuthSecondFactorPage extends StatelessWidget {
             centered: true,
           ),
         ],
+      ),
+    );
+  }
+
+  Widget? _recoveryReady(BuildContext context) {
+    if (!recoveryReady) return null;
+    return Padding(
+      key: const Key('second-factor-recovery-ready'),
+      padding: const EdgeInsets.only(bottom: 16),
+      child: RaftBanner(
+        status: RaftBannerRecipeStatus.info,
+        live: false,
+        title: raftText(context, 'Your reset is ready'),
+        description: raftText(
+          context,
+          'The two-step verification reset you asked for by email can finish now, without your second step.',
+        ),
+        actions: [
+          RaftButton(
+            key: const Key('second-factor-recovery-ready-finish'),
+            label: raftText(context, 'Finish reset'),
+            size: RaftButtonRecipeSize.md,
+            onPressed: busy ? null : onFinishRecovery,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget? _lostLink(BuildContext context) {
+    if (recoveryReady || onCantVerify == null) return null;
+    return Padding(
+      padding: const EdgeInsets.only(top: 16),
+      child: RaftAuthTextLink(
+        key: const Key('second-factor-cant-verify'),
+        label: raftText(context, "Can't use any of these?"),
+        onTap: busy ? null : onCantVerify,
+        bold: true,
+        centered: true,
       ),
     );
   }

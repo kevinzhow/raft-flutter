@@ -14,6 +14,7 @@ import 'package:raft_ui/raft_ui.dart';
 import '../data/server_error_code.dart';
 import '../data/source_time_formatter.dart';
 import '../data/user_error.dart';
+import 'account_security_recovery.dart';
 import 'auth_account_link.dart';
 import 'auth_provider_count.dart';
 import 'management_support.dart';
@@ -162,6 +163,9 @@ class _AuthState extends State<AuthView> {
   Timer? secondFactorExpiry;
   // ignore: raft_lints/avoid_imperative_notice_state -- Each clears when the code is edited, on submit, on a method switch and when the step starts or ends.
   String? secondFactorFieldError, secondFactorBanner, secondFactorEnded;
+
+  /// "Can't use any of these?" and Finish reset take the second step's page.
+  SecondFactorRecoveryView? recoveryView;
 
   @override
   void initState() {
@@ -362,6 +366,7 @@ class _AuthState extends State<AuthView> {
         : _codeMethod(usable.methods.first);
     secondFactorCode.clear();
     secondFactorFieldError = secondFactorBanner = secondFactorEnded = null;
+    recoveryView = null;
     error = null;
     final remaining = pending.challenge.expiresAt.difference(DateTime.now());
     secondFactorExpiry = Timer(
@@ -389,6 +394,7 @@ class _AuthState extends State<AuthView> {
     secondFactorMethod = null;
     secondFactorCode.clear();
     secondFactorFieldError = secondFactorBanner = secondFactorEnded = null;
+    recoveryView = null;
   }
 
   void switchSecondFactor(RaftSecondFactorCodeMethod next) {
@@ -774,6 +780,45 @@ class _AuthState extends State<AuthView> {
   Widget secondFactorPage(BuildContext context, SecondFactorRequired pending) {
     String tr(String s) => raftText(context, s);
     final usable = usableSecondFactorMethods(pending.challenge.methods);
+    final view = recoveryView;
+    if (view != null &&
+        (view == SecondFactorRecoveryView.lost || secondFactorEnded == null)) {
+      final backup =
+          secondFactorEnded == null &&
+          usable.methods.contains(SecondFactorMethod.backupCode);
+      return SecondFactorRecoveryScreen(
+        key: ValueKey('recovery-${view.name}'),
+        view: view,
+        pending: pending,
+        request: (email) =>
+            anonymous('/auth/second-factor/recovery', {'email': email}),
+        finish: () async {
+          final run = widget.authenticate;
+          if (run == null) throw const RaftApiException('Sign-in failed');
+          await run(
+            base.text.trim(),
+            (c) => c.verifySecondFactor(pending, recovery: true),
+          );
+          if (mounted && identical(secondFactor, pending)) {
+            setState(endSecondFactor);
+          }
+        },
+        onBack: () => setState(() => recoveryView = null),
+        onBackToSignIn: () => setState(endSecondFactor),
+        onExpired: () => setState(() {
+          secondFactorEnded = 'This sign-in has expired. Sign in again.';
+          recoveryView = null;
+        }),
+        onUseBackupCode: backup
+            ? () => setState(() {
+                recoveryView = null;
+                secondFactorMethod = RaftSecondFactorCodeMethod.backupCode;
+                secondFactorCode.clear();
+                secondFactorFieldError = secondFactorBanner = null;
+              })
+            : null,
+      );
+    }
     final method = secondFactorMethod;
     final totp = method == RaftSecondFactorCodeMethod.totp;
     return RaftAuthSecondFactorPage(
@@ -789,6 +834,11 @@ class _AuthState extends State<AuthView> {
       busy: busy,
       canVerify: normalizeSecondFactorCode(secondFactorCode.text).isNotEmpty,
       onVerify: verifySecondFactor,
+      recoveryReady: pending.challenge.recoveryReady,
+      onFinishRecovery: () =>
+          setState(() => recoveryView = SecondFactorRecoveryView.finish),
+      onCantVerify: () =>
+          setState(() => recoveryView = SecondFactorRecoveryView.lost),
       onBack: () {
         if (busy) return;
         setState(endSecondFactor);

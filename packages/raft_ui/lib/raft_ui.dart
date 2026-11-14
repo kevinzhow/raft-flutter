@@ -105,6 +105,7 @@ export 'src/brand.dart';
 export 'src/auth_account_link.dart';
 export 'src/auth_legal_page.dart';
 export 'src/auth_second_factor_page.dart';
+export 'src/auth_second_factor_recovery_page.dart';
 export 'src/auth_page.dart';
 export 'src/keyboard_reveal.dart';
 export 'src/root_error_fallback.dart';
