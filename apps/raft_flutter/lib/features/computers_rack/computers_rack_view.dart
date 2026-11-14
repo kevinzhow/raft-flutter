@@ -163,14 +163,23 @@ class _ComputersRackViewState extends State<ComputersRackView> {
     final options = runtimeFilterOptions(columns);
     final runtimes = effectiveRuntimeFilter(prefs.runtimes, options);
     final sort = effectiveRackSort(prefs.sort, columns);
-    final header = RaftPageHeader(
-      title: tr('Computers'),
-      subtitle: machines.isEmpty ? null : countsText,
-      height: raftPageHeaderHeight(context),
-      mobile: widget.phone,
-      onBack: widget.onBack,
-      backKey: const Key('computers-rack-back'),
-    );
+    // The phone's page header is the workspace shell's (title and Back); the
+    // counts Web puts beside the title sit on their own line under it.
+    final header = widget.phone
+        ? (machines.isEmpty
+              ? const SizedBox.shrink()
+              : Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                  child: RaftRackCounts(countsText),
+                ))
+        : RaftPageHeader(
+            title: tr('Computers'),
+            subtitle: machines.isEmpty ? null : countsText,
+            height: raftPageHeaderHeight(context),
+            mobile: widget.phone,
+            onBack: widget.onBack,
+            backKey: const Key('computers-rack-back'),
+          );
     final body = failed
         ? RaftEmptyState(
             title: tr("Couldn't load computers"),

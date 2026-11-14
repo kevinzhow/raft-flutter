@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_flutter/data/raft_location.dart';
 import 'package:raft_flutter/data/workspace_entity_directory.dart';
+import 'package:raft_flutter/features/computers_rack/computers_rack_view.dart';
 import 'package:raft_flutter/features/fleet_views.dart';
 import 'package:raft_ui/raft_ui.dart';
 
@@ -54,7 +55,7 @@ class _DeleteFixture {
     await t.ensureVisible(find.text('Computers'));
     await t.tap(find.text('Computers'));
     await f.flush(t);
-    final first = find.byKey(const ValueKey('fleet-computer-a'));
+    final first = find.byKey(const ValueKey('rack-row-computer-a'));
     await finishPageAnimation(t, first);
     // This is the production inner page Navigator plus the root Navigator
     // that will own the confirmation, not a callback-only detail harness.
@@ -90,9 +91,9 @@ class _DeleteFixture {
     await t.pumpAndSettle();
     expect(f.workspace(t).location.route, RaftRoute.computers);
     expect(find.byType(RaftConfirmDialog), findsNothing);
-    expect(find.byType(RaftMobileComputerList), findsOneWidget);
-    expect(find.byKey(const ValueKey('fleet-computer-a')), findsNothing);
-    final next = find.byKey(const ValueKey('fleet-computer-b'));
+    expect(find.byType(ComputersRackView), findsOneWidget);
+    expect(find.byKey(const ValueKey('rack-row-computer-a')), findsNothing);
+    final next = find.byKey(const ValueKey('rack-row-computer-b'));
     expect(next.hitTestable(), findsOneWidget);
     await t.tap(next);
     await f.flush(t);
@@ -114,7 +115,7 @@ void main() {
     });
     final w = h.f.workspace(t);
     final navigator = Navigator.of(
-      t.element(find.byType(RaftMobileComputerList)),
+      t.element(find.byType(ComputersRackView)),
       rootNavigator: true,
     );
     unawaited(
@@ -129,7 +130,7 @@ void main() {
       ),
     );
     await h.f.flush(t);
-    final first = find.byKey(const ValueKey('fleet-computer-a')).last;
+    final first = find.byKey(const ValueKey('rack-row-computer-a')).last;
     await finishPageAnimation(t, first);
     await t.tap(first);
     await h.f.flush(t);
@@ -169,7 +170,7 @@ void main() {
     await h.f.flush(t);
     await t.pump(const Duration(milliseconds: 500));
     expect(
-      find.byKey(const ValueKey('fleet-computer-b')).hitTestable(),
+      find.byKey(const ValueKey('rack-row-computer-b')).hitTestable(),
       findsOneWidget,
     );
     expect(t.takeException(), isNull);
@@ -270,7 +271,7 @@ void main() {
     await t.tap(find.byKey(const Key('computer-mobile-back')));
     await h.f.flush(t);
     expect(h.f.workspace(t).location.route, RaftRoute.computers);
-    expect(find.byKey(const ValueKey('fleet-computer-a')), findsOneWidget);
+    expect(find.byKey(const ValueKey('rack-row-computer-a')), findsOneWidget);
     expect(t.takeException(), isNull);
   });
 
@@ -345,7 +346,7 @@ void main() {
         expect(h.f.workspace(t).location.route, RaftRoute.computers);
         expect(h.f.workspace(t).location.serverSlug, 'beta');
         expect(
-          find.byKey(const ValueKey('fleet-beta-computer')).hitTestable(),
+          find.byKey(const ValueKey('rack-row-beta-computer')).hitTestable(),
           findsOneWidget,
         );
         expect(t.takeException(), isNull);

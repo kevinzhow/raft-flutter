@@ -21,6 +21,11 @@ List<CloseSurface> get allCloseSurfaces => [
 /// Files that contain a surface API call but are not a surface themselves.
 /// Each entry says why; a new entry needs a reviewer's agreement.
 const closeScanExempt = <String, String>{
+  'lib/features/computers_rack/computers_rack_view.dart':
+      'the Computers overview is a top-level section page like Tasks or '
+      'Activity (Web ComputersRackOverview has no Back or X); on a phone the '
+      'shell\'s mobile page header owns Back, and its dialogs go through '
+      'confirmComputer* / showDeleteComputerDialog (the listed confirm surfaces)',
   '../../packages/raft_ui/lib/src/raft_selection_area.dart':
       'the Quote / Copy pair beside a mouse selection is a non-modal toolbar '
       '(Web MessageSelectionShortcut): it closes with the next press, Escape '

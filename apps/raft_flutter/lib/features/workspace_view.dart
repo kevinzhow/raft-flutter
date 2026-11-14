@@ -2024,9 +2024,8 @@ class _WorkspaceViewState extends State<WorkspaceView>
                     t,
                     MediaQuery.sizeOf(context).height,
                   ) +
-                  (DesktopNavigationPolicy.forSection(
-                        route,
-                      ).usesConversationSidebar
+                  (DesktopNavigationPolicy.forSection(route)
+                          .usesConversationSidebar
                       ? sidebarWidth
                       : 0)
             : 0,
@@ -3382,9 +3381,8 @@ class _WorkspaceViewState extends State<WorkspaceView>
     bool reorderable = false,
   }) {
     final sectionScoped =
-        RaftTokens.of(
-          context,
-        ).option('sidebarItem.sectionContent', or: 'sectionScoped') ==
+        RaftTokens.of(context)
+            .option('sidebarItem.sectionContent', or: 'sectionScoped') ==
         'sectionScoped';
     final agent = entry.agent;
     if (agent == null) {
@@ -3565,9 +3563,8 @@ class _WorkspaceViewState extends State<WorkspaceView>
     final peer = dmPeer(c);
     final agent = peer.agent, name = peer.name;
     final sectionScoped =
-        RaftTokens.of(
-          context,
-        ).option('sidebarItem.sectionContent', or: 'sectionScoped') ==
+        RaftTokens.of(context)
+            .option('sidebarItem.sectionContent', or: 'sectionScoped') ==
         'sectionScoped';
     final description = sectionScoped && (custom || (pinned && agent))
         ? ''
@@ -3705,9 +3702,8 @@ class _WorkspaceViewState extends State<WorkspaceView>
                                 child: RaftNavItem(
                                   key: const Key('nav-search'),
                                   role: RaftNavItemRole.search,
-                                  viewportHeight: MediaQuery.sizeOf(
-                                    context,
-                                  ).height,
+                                  viewportHeight: MediaQuery.sizeOf(context)
+                                      .height,
                                   label: tr('Search'),
                                   glyph: RaftGlyph.search,
                                   selected: w.section == 'search',
@@ -3722,9 +3718,8 @@ class _WorkspaceViewState extends State<WorkspaceView>
                                   key: const Key('nav-activity'),
                                   role: RaftNavItemRole.activity,
                                   precededByEntry: true,
-                                  viewportHeight: MediaQuery.sizeOf(
-                                    context,
-                                  ).height,
+                                  viewportHeight: MediaQuery.sizeOf(context)
+                                      .height,
                                   label: tr('Activity'),
                                   glyph: RaftGlyph.activity,
                                   selected: w.section == 'activity',

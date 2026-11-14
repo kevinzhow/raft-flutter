@@ -6,6 +6,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_flutter/data/raft_location.dart';
+import 'package:raft_flutter/features/computers_rack/computers_rack_view.dart';
 import 'package:raft_flutter/features/mobile_workspace_pages.dart';
 import 'package:raft_flutter/features/workspace_view.dart';
 import 'package:raft_ui/raft_ui.dart';
@@ -175,7 +176,7 @@ void main() {
         await capturePage(t, theme, 'list');
         expect(w.location.route, RaftRoute.computers);
         expect(w.location.toString(), '/s/alpha/computers');
-        expect(find.byType(RaftMobileComputerList), findsOneWidget);
+        expect(find.byType(ComputersRackView), findsOneWidget);
         expect(find.byType(ListTile), findsNothing);
         expect(find.text('Computers'), findsOneWidget);
         expect(
@@ -189,7 +190,7 @@ void main() {
             .where((o) => o.path == '/announcements/active')
             .length;
         expect(announcementReads, 1);
-        final card = find.byKey(const ValueKey('fleet-computer-a'));
+        final card = find.byKey(const ValueKey('rack-row-computer-a'));
         await finishPageAnimation(t, card);
         await t.tap(card);
         await f.flush(t);
