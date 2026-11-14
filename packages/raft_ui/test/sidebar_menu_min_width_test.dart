@@ -5,7 +5,7 @@ import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_ui/test_themes.dart';
 
 // Web db5e399f Sidebar.tsx mounts w-60 ContextMenuPopup for both the row
-// menu and Move to section submenu. The published raft-ui 0.7.0 content
+// menu and Move to section submenu. The published raft-ui 0.95.3 content
 // independently declares min-w-60; a narrower legacy width cannot override it.
 Finder _menu(String label) => find.byWidgetPredicate(
   (widget) =>
@@ -75,8 +75,9 @@ void main() {
       expect(tester.getSize(text).height, 16);
       expect(
         tester.getTopLeft(text).dx - tester.getTopLeft(_menu('Row options')).dx,
-        16,
-        reason: '6px popup padding plus 10px generated label padding',
+        14,
+        reason:
+            'raft-ui 0.95.3 context-menu.mjs: p-1 (4px) popup padding plus px-2.5 (10px) label padding',
       );
     });
 

@@ -42,8 +42,8 @@ void _expectMenuInsets(WidgetTester tester) {
   Finder action(String label) => find.byWidgetPredicate(
     (widget) => widget is RaftInteractive && widget.semanticLabel == label,
   );
-  expect(tester.getRect(action('Join Community')).top - line.bottom, 4);
-  expect(menu.bottom - tester.getRect(action('Invite Human')).bottom, 4);
+  expect(tester.getRect(action('Join community')).top - line.bottom, 4);
+  expect(menu.bottom - tester.getRect(action('Invite human')).bottom, 4);
 }
 
 void main() {

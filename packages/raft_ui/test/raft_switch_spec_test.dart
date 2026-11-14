@@ -8,7 +8,7 @@ import 'package:raft_ui/src/recipes/recipe_runtime.dart' show RaftSlotStyle;
 import 'package:raft_ui/src/recipes/switch_recipe.g.dart';
 import 'package:raft_ui/test_themes.dart';
 
-// raft-ui 0.7.0 `Switch` (recipe `switchRecipe`): every expectation below is read from the generated recipe, resolved
+// raft-ui 0.95.3 `Switch` (recipe `switchRecipe`): every expectation below is read from the generated recipe, resolved
 // for the state the control is in, and compared with what the mounted switch paints. The anchors at the end pin the
 // recipe itself to the raft-ui source class list, so a regeneration that drifts shows up here.
 Widget _app(bool dark, Widget child) => MaterialApp(
@@ -245,17 +245,18 @@ void main() {
       ]);
     });
 
-    test('$mode the recipe is the raft-ui 0.7.0 switch', () {
+    test('$mode the recipe is the raft-ui 0.95.3 switch', () {
+      // dist/components/switch/switch.mjs: size comes from --switch-width/--switch-height (foundation.css 50x30).
       final r = _recipe(dark, on: true);
       expect(
         r.root.classes,
         containsAll([
-          'h-[30px]',
-          'w-[50px]',
+          'h-(--switch-height)',
+          'w-(--switch-width)',
           'p-[2.5px]',
           'border-[1.5px]',
           'rounded-full',
-          'data-checked:bg-brand',
+          'data-checked:bg-selected',
           'data-checked:border-sticker-ink',
           'data-checked:ring-sticker-edge',
           'focus-visible:shadow-focus',
@@ -265,8 +266,8 @@ void main() {
       expect(
         r.thumb.classes,
         containsAll([
-          'size-[22px]',
-          'data-[checked]:translate-x-5',
+          'size-[calc(var(--switch-height)-8px)]',
+          'data-checked:translate-x-[calc(var(--switch-width)-var(--switch-height))]',
           'data-checked:bg-sticker-paper',
           'duration-220',
           'ease-slide',

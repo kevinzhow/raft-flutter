@@ -7,8 +7,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
 
-// Published raft-ui 0.7.0 SearchTrigger: bg-layer-card with one
-// hover/active:press-overlay. Exercise the public toolbar search entry.
+// Published raft-ui 0.95.3 SearchTrigger (dist/components/search/search-trigger.mjs): bg-layer-card with one
+// `active:overlay-medium` and no hover wash. Exercise the public toolbar search entry.
 void main() {
   for (final dark in [false, true]) {
     testWidgets('search $dark keeps its paper fill under hover and press', (
@@ -70,9 +70,9 @@ void main() {
       }
 
       final paper = tokens.colors['layer-card']!;
-      final wash = Color(
-        Color.alphaBlend(tokens.colors['fill-pressed']!, paper).toARGB32(),
-      );
+      // Chromium composites with the 8-bit alpha (chrome-headless-shell 1234: dark fill-medium over layer-card
+      // paints 50,50,47), not Dart's float Color.alphaBlend (50,50,48).
+      final wash = raftChromeBlend(tokens.colors['fill-medium']!, paper);
       expect(await fill(), paper);
       final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
       await mouse.addPointer(location: const Offset(700, 500));
@@ -81,15 +81,16 @@ void main() {
       await tester.pumpAndSettle();
       expect(
         await fill(),
-        wash,
-        reason: 'The source overlays the fill, retaining readable ink.',
+        paper,
+        reason: 'The 0.95.3 source has no hover wash on the search box.',
       );
       await mouse.down(tester.getCenter(find.byKey(paint)));
       await tester.pumpAndSettle();
       expect(
         await fill(),
         wash,
-        reason: 'Press does not stack a second hover wash.',
+        reason:
+            'The source overlays the fill on press, retaining readable ink.',
       );
       await mouse.up();
       await tester.pumpAndSettle();
@@ -111,7 +112,7 @@ void main() {
         );
       }
       await tester.pumpAndSettle();
-      expect(await fill(), wash);
+      expect(await fill(), paper);
       expect(tester.getSize(find.byKey(paint)).height, 36);
       expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox());

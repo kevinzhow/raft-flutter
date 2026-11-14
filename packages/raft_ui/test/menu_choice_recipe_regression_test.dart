@@ -14,8 +14,9 @@ Widget _host(Widget child, {bool dark = false, double scale = 1}) =>
     MaterialApp(
       theme: raftTheme(dark: dark).copyWith(platform: TargetPlatform.linux),
       builder: (context, child) => MediaQuery(
-        data: MediaQuery.of(context)
-            .copyWith(textScaler: TextScaler.linear(scale)),
+        data: MediaQuery.of(
+          context,
+        ).copyWith(textScaler: TextScaler.linear(scale)),
         child: child!,
       ),
       home: Scaffold(
@@ -46,40 +47,41 @@ Future<void> _retire(WidgetTester tester) async {
 
 void main() {
   for (final dark in raftThemeMatrix([false, true])) {
-    testWidgets(
-      'Selection ring reserves no row or surface layout; dark=$dark',
-      (tester) async {
-        try {
-          await tester.pumpWidget(
-            _host(
-              RaftSelectionPopover(
-                title: 'Channels',
-                width: 310,
-                showHeader: false,
-                options: [
-                  RaftSelectionOption(
-                    rowKey: _choice,
-                    label: 'Design',
-                    checked: false,
-                    onTap: () {},
-                  ),
-                ],
-              ),
-              dark: dark,
+    testWidgets('Selection ring reserves no row or surface layout; dark=$dark', (
+      tester,
+    ) async {
+      try {
+        await tester.pumpWidget(
+          _host(
+            RaftSelectionPopover(
+              title: 'Channels',
+              width: 310,
+              showHeader: false,
+              options: [
+                RaftSelectionOption(
+                  rowKey: _choice,
+                  label: 'Design',
+                  checked: false,
+                  onTap: () {},
+                ),
+              ],
             ),
-          );
-          await tester.pump();
-          final surface = tester.getRect(find.byType(RaftSelectionPopover));
-          final row = tester.getRect(find.byKey(_choice));
-          expect(surface.size, const Size(310, 48));
-          expect(row.topLeft - surface.topLeft, const Offset(6, 6));
-          expect(row.size, const Size(298, 36));
-          expect(tester.takeException(), isNull);
-        } finally {
-          await _retire(tester);
-        }
-      },
-    );
+            dark: dark,
+          ),
+        );
+        await tester.pump();
+        final surface = tester.getRect(find.byType(RaftSelectionPopover));
+        final row = tester.getRect(find.byKey(_choice));
+        // Web v1.24 SelectionPopover.tsx: no surface padding; the ScrollArea content is p-1 (4px) around an
+        // h-(--option-height) (36px) row.
+        expect(surface.size, const Size(310, 44));
+        expect(row.topLeft - surface.topLeft, const Offset(4, 4));
+        expect(row.size, const Size(302, 36));
+        expect(tester.takeException(), isNull);
+      } finally {
+        await _retire(tester);
+      }
+    });
 
     testWidgets(
       'Selection disabled checked and italic slots stay distinct; dark=$dark',
