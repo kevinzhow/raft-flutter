@@ -1,8 +1,10 @@
 import 'package:flutter/foundation.dart';
+import 'package:raft_client/raft_client.dart' show RaftChannel;
 
 import '../data/thread_unread_by_parent.dart';
 import '../data/workspace_controller.dart';
 import 'activity_rollout_flags.dart';
+import 'marked_unread_sync.dart';
 
 /// What a sidebar channel row asks about followed-thread unread: the roll-up of
 /// the followed-thread list behind the `thread_unread_badge_v0` gate
@@ -16,6 +18,8 @@ class SidebarThreadUnread extends ChangeNotifier {
     flags.addListener(_changed);
     w.followedThreads.addListener(_threadsChanged);
     w.services.disposeWithSession(dispose);
+    // The sidebar paints the marked-unread dot from the same presentation.
+    MarkedUnreadSync.of(w);
     _ensureThreads();
     _byParent = groupThreadUnreadByParent(w.followedThreads.threads);
   }
@@ -67,5 +71,35 @@ class SidebarThreadUnread extends ChangeNotifier {
     flags.removeListener(_changed);
     w.followedThreads.removeListener(_threadsChanged);
     super.dispose();
+  }
+}
+
+/// What a sidebar channel or DM row shows of its read state: its own count,
+/// the @ mark (its own unread mention or a followed thread's), the quiet new
+/// dot, the marked-unread dot and the followed-thread segment
+/// (ChannelRow.tsx / DmRow.tsx).
+typedef SidebarRowReadState = ({
+  int unread,
+  bool mention,
+  bool quietNew,
+  bool marked,
+  ParentThreadUnread threads,
+});
+
+abstract final class SidebarRowReads {
+  static SidebarRowReadState of(WorkspaceController w, RaftChannel c) {
+    final reads = w.conversationReads;
+    final threads = SidebarThreadUnread.of(w)
+        .forChannel(c.id, joined: c.joined);
+    final unread = reads.unread[c.id] ?? 0;
+    return (
+      unread: unread,
+      mention:
+          c.type != 'dm' &&
+          (reads.mentions.contains(c.id) && unread > 0 || threads.hasMention),
+      quietNew: reads.newFlags.contains(c.id),
+      marked: reads.marks.contains(c.id),
+      threads: threads,
+    );
   }
 }

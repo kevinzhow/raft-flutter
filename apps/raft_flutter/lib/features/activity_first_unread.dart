@@ -6,6 +6,7 @@ import 'package:raft_ui/raft_ui.dart';
 import '../data/workspace_controller.dart';
 import 'desktop_navigation_policy.dart';
 import 'resource_list_updates.dart';
+import 'stale_counts_notice.dart';
 
 /// Web `focusFirstUnreadActivity` / `focusFirstUnreadInboxItem`: a double-click
 /// on the Activity entry lands in the Activity surface and marks the first
@@ -132,13 +133,27 @@ Widget activityHeaderJump(
   Widget header,
 ) => section != 'activity'
     ? header
-    : RaftTooltip(
-        message: raftText(
-          context,
-          'Double-click to jump to the next unread item',
-        ),
-        child: RaftMouseDoubleClick(
-          onDoubleClick: () => ActivityFirstUnread.of(w).requestNext(w),
-          child: header,
+    : activityStaleNotice(
+        w,
+        RaftTooltip(
+          message: raftText(
+            context,
+            'Double-click to jump to the next unread item',
+          ),
+          child: RaftMouseDoubleClick(
+            onDoubleClick: () => ActivityFirstUnread.of(w).requestNext(w),
+            child: header,
+          ),
         ),
       );
+
+/// The phone Activity tab root's header, with the task #164 notice under it.
+Widget activityRootHeader(WorkspaceController w) =>
+    activityStaleNotice(w, const RaftMobileRootHeader(title: 'Activity'));
+
+/// ThreadsInbox: the Activity notice of task #164 sits under the head.
+Widget activityStaleNotice(WorkspaceController w, Widget header) => Column(
+  mainAxisSize: MainAxisSize.min,
+  crossAxisAlignment: CrossAxisAlignment.stretch,
+  children: [header, StaleCountsNotice.activity(w)],
+);

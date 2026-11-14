@@ -6,6 +6,7 @@ import 'package:raft_client/raft_client.dart' show RaftEvent;
 import 'package:raft_sync/raft_sync.dart' show readNotificationPrefsUpdate;
 import 'package:raft_ui/raft_ui.dart' show RaftForegroundPeriodic;
 
+import 'rw_freshness.dart';
 import 'workspace_controller.dart';
 
 @immutable
@@ -18,8 +19,12 @@ class SourceServerUnread {
 /// ServerUnreadSummary.ts: only the proven Activity count may paint a menu row.
 /// This owner is independent of the current server's accepted inbox total.
 class SourceServerUnreadStore extends ChangeNotifier {
-  SourceServerUnreadStore(this.workspace);
+  SourceServerUnreadStore(this.workspace) {
+    // The summary is a RisingWave read: a stale answer re-reads through here.
+    _freshness.register(RwSurface.summary, refresh);
+  }
   final WorkspaceController workspace;
+  late final _freshness = RwFreshnessStore.acquire(workspace.client);
   String? _scope;
   int _request = 0;
   bool _disposed = false;
@@ -148,6 +153,9 @@ class SourceServerUnreadStore extends ChangeNotifier {
   @override
   void dispose() {
     _disposed = true;
+    _freshness
+      ..unregister(RwSurface.summary, refresh)
+      ..release();
     ++_request;
     _sweep?.dispose();
     unawaited(_prefsEvents?.cancel());
