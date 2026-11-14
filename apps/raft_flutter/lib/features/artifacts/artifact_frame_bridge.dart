@@ -1,4 +1,4 @@
-// WP-ART0 spike: the Dart side of Raft Web v1.24's Artifact frame (Porthole) in an app WebView.
+// The Dart side of Raft Web v1.24's Artifact frame (Porthole) in an app WebView.
 //
 // Source: packages/web/src/apps/artifacts/ArtifactFrame.tsx (v1.24.0) for the frame location
 // check, `openLink` and the sandbox; Porthole 0.16.0's `createHost` for the host. The host script
@@ -159,7 +159,7 @@ class ArtifactBridgeGate {
   final String nonce;
   final int maxMessageBytes;
 
-  /// Messages refused (no nonce, a wrong one, malformed): what the spike reports.
+  /// Messages refused (no nonce, a wrong one, malformed).
   int refused = 0;
   final refusedSamples = <String>[];
 
@@ -275,11 +275,42 @@ abstract final class ArtifactHostCalls {
 /// Linux and Windows don't (this app ships none there), so they open it in the browser.
 enum ArtifactFrameSupport { webView, browser }
 
-ArtifactFrameSupport artifactFrameSupportFor(String operatingSystem) =>
-    switch (operatingSystem) {
-      'android' || 'ios' || 'macos' => ArtifactFrameSupport.webView,
-      _ => ArtifactFrameSupport.browser,
-    };
+/// [semantics]: the platform accessibility tree is on (VoiceOver, a screen reader, or a test
+/// that turned it on). On macOS, Flutter's AccessibilityBridge crashed (SIGSEGV in
+/// `CreateRemoveReparentedNodesUpdate`) while a WKWebView platform view was mounted with
+/// semantics on (CodexMac, 2026-11-15). Until that is reproduced and fixed, macOS opens the
+/// Artifact in the browser whenever semantics are on, as Linux and Windows always do.
+ArtifactFrameSupport artifactFrameSupportFor(
+  String operatingSystem, {
+  bool semantics = false,
+}) => switch (operatingSystem) {
+  'macos' when semantics => ArtifactFrameSupport.browser,
+  'android' || 'ios' || 'macos' => ArtifactFrameSupport.webView,
+  _ => ArtifactFrameSupport.browser,
+};
+
+/// WebKit reports `loadHtmlString`'s base URL as a main-frame navigation (CodexMac, macOS and
+/// iOS, 2026-11-14): the wrapper's own first document must pass, and nothing after it. True only
+/// for that one load: before the host script ran, exactly the app origin's root (http(s), a host,
+/// path empty or `/`, no query, fragment or credentials).
+bool artifactInitialWrapperNavigation(
+  String url, {
+  required Uri appOrigin,
+  required bool alreadyAllowed,
+  required bool injected,
+}) {
+  if (alreadyAllowed || injected) return false;
+  final target = Uri.tryParse(url);
+  return target != null &&
+      (target.scheme == 'http' || target.scheme == 'https') &&
+      target.hasAuthority &&
+      target.host.isNotEmpty &&
+      target.origin == appOrigin.origin &&
+      (target.path.isEmpty || target.path == '/') &&
+      !target.hasQuery &&
+      !target.hasFragment &&
+      target.userInfo.isEmpty;
+}
 
 /// The Raft tokens a Markdown Artifact's page draws with (shared `ARTIFACT_PAGE_COLORS`, v1.24.0),
 /// each sent as `--raft-<token>`. Web reads them from its own CSS (useArtifactPageTheme); the app
