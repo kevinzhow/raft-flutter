@@ -98,7 +98,8 @@ void main() {
       'Move to Section',
       'Mark as unread',
       'Pin',
-      'Mute',
+      // v1.24: Notifications ▸ (levels, Mute among them) replaces Mute.
+      'Notifications',
       'Archive channel',
     ]) {
       expect(find.text(label), findsOneWidget, reason: label);
