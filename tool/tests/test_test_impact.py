@@ -196,6 +196,9 @@ Binary files a/g.png and /dev/null differ
         self.assertEqual(ti.declared_names('const Map<String, String> zhCatalogX = <String, String>{'), ['zhCatalogX'])
         self.assertEqual(ti.declared_names('    final local = 1;'), [])
         self.assertEqual(ti.declared_names('  @override'), [])
+        self.assertEqual(ti.declared_names('  Duration grace = stagingFreshWindow,'), [])  # a parameter
+        self.assertEqual(ti.declared_names('  required this.title,'), [])
+        self.assertEqual(ti.declared_names('  light,'), ['light'])  # an enum value
 
     def test_function_declarations(self):
         def fn(*lines):
