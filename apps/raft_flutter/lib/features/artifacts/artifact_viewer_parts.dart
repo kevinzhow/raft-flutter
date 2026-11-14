@@ -147,6 +147,7 @@ class ArtifactLoadingSplash extends StatelessWidget {
       starting ? 'Starting the page' : 'Getting the page',
     );
     return Semantics(
+      container: true,
       liveRegion: true,
       label: label,
       child: ColoredBox(
@@ -212,6 +213,7 @@ class ArtifactVersionNotice extends StatelessWidget {
     if (failedLatest || failedVersion != null) {
       return RaftBanner(
         key: const ValueKey('artifact-viewer-version-failed'),
+        live: false,
         status: RaftBannerRecipeStatus.warning,
         description: failedLatest
             ? tr(
@@ -240,6 +242,7 @@ class ArtifactVersionNotice extends StatelessWidget {
     if (!card.pinned) return const SizedBox.shrink();
     return RaftBanner(
       key: const ValueKey('artifact-viewer-pinned'),
+      live: false,
       status: RaftBannerRecipeStatus.default_,
       glyph: RaftGlyph.clock,
       description: raftFormat(context, 'Viewing v{version}', {
@@ -266,6 +269,7 @@ class ArtifactNewVersionNotice extends StatelessWidget {
   @override
   Widget build(BuildContext context) => RaftBanner(
     key: const ValueKey('artifact-new-version'),
+    live: false,
     status: RaftBannerRecipeStatus.info,
     glyph: RaftGlyph.arrowUp,
     description: publisher == null

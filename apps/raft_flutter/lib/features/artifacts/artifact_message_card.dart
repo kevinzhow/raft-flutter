@@ -36,13 +36,16 @@ class _CardBox extends StatelessWidget {
   Widget build(BuildContext context) {
     // Web MessageEmbed size `item`: the card surface, hairline, container
     // radius; pressing it opens the Artifact.
-    Widget box = RaftCard(
-      padding: EdgeInsets.zero,
-      clip: true,
-      onTap: onTap,
-      semanticLabel: semanticLabel,
-      child: child,
-    );
+    Widget box = onTap == null
+        ? RaftCard(padding: EdgeInsets.zero, clip: true, child: child)
+        : Semantics(
+            label: semanticLabel,
+            child: RaftCard.item(
+              padding: EdgeInsets.zero,
+              onTap: onTap,
+              child: child,
+            ),
+          );
     if (dimmed) box = Opacity(opacity: .6, child: box);
     return Padding(
       padding: const EdgeInsets.only(top: RaftSpace.x2),
