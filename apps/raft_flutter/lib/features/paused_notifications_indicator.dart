@@ -110,9 +110,11 @@ class _PausedNotificationsIndicatorState
       'Notifications paused until {until}. Click to resume.',
       {'until': when},
     );
-    return RaftIconButton(
+    // Web `<Button variant="on-frame" size="icon-md">` with a Tooltip.
+    return RaftButton(
       key: const ValueKey('paused-notifications-indicator'),
       uiVariant: RaftButtonVariant.onFrame,
+      uiSize: RaftButtonSize.iconMd,
       glyph: RaftGlyph.moon,
       tooltip: label,
       semanticLabel: label,

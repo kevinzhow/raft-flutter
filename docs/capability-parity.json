@@ -12526,9 +12526,9 @@
    "capability": "Mute / unmute Activity notifications for one channel (per user)",
    "background": false,
    "status": "covered",
-   "webEntry": "Sidebar channel row context menu 'Mute'/'Unmute' | Channel settings drawer > Preferences > 'Mute activity' switch (ChatPanel handleToggleActivityMute)",
+   "webEntry": "Sidebar channel row 'Notifications ▸' Mute and Channel settings › Your preferences › Notifications select (v1.24 NotificationLevelMenu mute control; ChatPanel handleToggleActivityMute)",
    "gate": "joined channel/private/joint only (canToggleActivityMute); never DM/thread",
-   "flutterEntry": "workspace_view_sidebar_menus.dart _toggleMute (row menu Mute/Unmute) | channel_settings.dart 'Mute activity' switch (channel-overflow-mute-switch)",
+   "flutterEntry": "workspace_view_sidebar_menus.dart _toggleMute through notification_level_menu.dart channelNotificationSubmenu (Mute) | channel_settings.dart notificationLevelRow (Mute choice of the Notifications select)",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/workspace_view_sidebar_menus.dart",
@@ -12536,7 +12536,7 @@
     },
     {
      "file": "apps/raft_flutter/lib/features/channel_settings.dart",
-     "needle": "channel-overflow-mute-switch"
+     "needle": "NotificationMuteControl("
     }
    ],
    "justification": "",
@@ -13390,21 +13390,17 @@
    "area": "account-profile",
    "capability": "Read whether push notifications from this server are muted",
    "background": false,
-   "status": "covered",
+   "status": "na",
    "webEntry": "Settings > Notifications > Web Push card 'Mute notifications from this server' (refreshState)",
    "gate": "web push channel only",
-   "flutterEntry": "notification_settings_view.dart phone card member mute form",
+   "flutterEntry": "background_inbox.dart BackgroundNotificationPolicy.read: fallback for a server older than v1.24 only",
    "flutterRefs": [
     {
-     "file": "apps/raft_flutter/lib/features/notification_settings_view.dart",
-     "needle": "/notification-settings"
-    },
-    {
-     "file": "apps/raft_flutter/lib/features/notification_settings_view.dart",
-     "needle": "Phone notifications"
+     "file": "apps/raft_flutter/lib/platform/background_inbox.dart",
+     "needle": "'/servers/${server.id}/notification-settings'"
     }
    ],
-   "justification": "",
+   "justification": "Web v1.24 no longer calls it (ledger API-15 / API-18): Settings › Notifications reads /me/notification-settings and /notification-levels and writes PUT /notification-levels (WP-NOTIF). The server still serves it.",
    "impact": "",
    "size": ""
   },
@@ -13442,21 +13438,12 @@
    "area": "account-profile",
    "capability": "Mute or unmute push notifications from this server",
    "background": false,
-   "status": "covered",
+   "status": "na",
    "webEntry": "Settings > Notifications > 'Mute notifications from this server' checkbox + Save",
    "gate": "web push channel only (desktop-native card has no mute on Web either)",
-   "flutterEntry": "notification_settings_view.dart phone card mute form save()",
-   "flutterRefs": [
-    {
-     "file": "apps/raft_flutter/lib/features/notification_settings_view.dart",
-     "needle": "serverPushMuted"
-    },
-    {
-     "file": "apps/raft_flutter/lib/features/notification_settings_view.dart",
-     "needle": "Phone notifications"
-    }
-   ],
-   "justification": "Mute form is on the phone card only; Web's desktop-native card has no mute control either, so desktop parity holds (docs/parity.md ~L1040-1050).",
+   "flutterEntry": "none: a server's level is written with PUT /notification-levels",
+   "flutterRefs": [],
+   "justification": "Web v1.24 no longer calls it (ledger API-15 / API-18): Settings › Notifications reads /me/notification-settings and /notification-levels and writes PUT /notification-levels (WP-NOTIF). The server still serves it.",
    "impact": "",
    "size": ""
   },
