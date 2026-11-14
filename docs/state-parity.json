@@ -2555,6 +2555,71 @@
       ]
     },
     {
+      "id": "settings.account.two-step",
+      "title": "Settings: Account › Two-step verification",
+      "webEntry": "packages/web/src/components/settings/TwoStepVerificationSection.tsx",
+      "flutterEntry": "apps/raft_flutter/lib/features/account_security_two_step.dart",
+      "states": [
+        {
+          "state": "loading",
+          "web": "no",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "na",
+          "justification": "Web renders nothing until the status read answers (status undefined) and Flutter does the same; a 404 keeps the section away on both."
+        },
+        {
+          "state": "error",
+          "variant": "first status read failed",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "gap",
+          "justification": "\"Couldn't load two-step verification. Reload the page to try again.\" (settings.twoStep.loadFailed) in a warning banner under the header on both; no parity case drives the failed read yet (WP-SEC, test/account_security_two_step_test.dart covers the widget).",
+          "size": "S",
+          "gapKind": "case-missing"
+        }
+      ]
+    },
+    {
+      "id": "settings.account.passkeys",
+      "title": "Settings: Account › Passkeys",
+      "webEntry": "packages/web/src/components/settings/PasskeysSection.tsx",
+      "flutterEntry": "apps/raft_flutter/lib/features/account_security_passkeys.dart",
+      "states": [
+        {
+          "state": "loading",
+          "web": "no",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "na",
+          "justification": "Web renders nothing until the passkeys and status reads answer; Flutter does the same; a 404 keeps the section away on both."
+        },
+        {
+          "state": "empty",
+          "variant": "no passkeys",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "gap",
+          "justification": "\"No passkeys yet\" (settings.passkeys.empty) under the Passkeys row on both; no parity case renders the section yet.",
+          "size": "S",
+          "gapKind": "case-missing"
+        },
+        {
+          "state": "error",
+          "variant": "first read failed",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "gap",
+          "justification": "\"Couldn't load your passkeys. Reload the page to try again.\" (settings.passkeys.loadFailed) in a warning banner on both; no parity case drives the failed read yet.",
+          "size": "S",
+          "gapKind": "case-missing"
+        }
+      ]
+    },
+    {
       "id": "settings.language",
       "title": "Settings: Language & Region",
       "webEntry": "packages/web/src/components/settings/SettingsPanel.tsx (LanguageRegionSection)",
@@ -45381,6 +45446,22 @@
         "owner": "design-system alignment",
         "kind": "route_or_panel_candidate",
         "lifecycleScreenId": "settings.account",
+        "declarationRefs": [],
+        "mountStatus": "unresolved",
+        "reason": "Existing lifecycle screen record; exact builder/family composition and current mounted state are not yet established."
+      },
+      "screen:settings.account.two-step": {
+        "owner": "design-system alignment",
+        "kind": "route_or_panel_candidate",
+        "lifecycleScreenId": "settings.account.two-step",
+        "declarationRefs": [],
+        "mountStatus": "unresolved",
+        "reason": "Existing lifecycle screen record; exact builder/family composition and current mounted state are not yet established."
+      },
+      "screen:settings.account.passkeys": {
+        "owner": "design-system alignment",
+        "kind": "route_or_panel_candidate",
+        "lifecycleScreenId": "settings.account.passkeys",
         "declarationRefs": [],
         "mountStatus": "unresolved",
         "reason": "Existing lifecycle screen record; exact builder/family composition and current mounted state are not yet established."
