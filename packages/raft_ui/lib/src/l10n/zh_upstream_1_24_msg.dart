@@ -2,12 +2,12 @@
 // English source text is the key. Part of `raftChinese` (merged by the generated zh_index.g.dart).
 // Web v1.24.0-source.1 en.ts / zh-cn.ts wording verbatim: WP-MSG (message rows).
 const Map<String, String> zhCatalogUpstream124Msg = <String, String>{
-  // Hover toolbar (message.messageItem.quickReaction.*, moreActions).
+  // Hover toolbar (message.messageItem.quickReaction.*; moreActions is in
+  // zh_upstream_1_24_pin.dart).
   "Like": "点赞",
   "Remove like": "取消点赞",
   "Remove {emoji}": "取消 {emoji}",
   "{action} · hover for more reactions": "{action} · 悬停选择其他表情",
-  "More actions": "更多操作",
   // Agent typing line (message.agentTyping.typing.*). The Web "many" form
   // counts every agent in Chinese, the others past two in English: the
   // caller passes the whole count as {others} in Chinese.
