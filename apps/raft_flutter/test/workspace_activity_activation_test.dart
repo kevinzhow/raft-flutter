@@ -261,8 +261,6 @@ void main() {
           for (var frame = 0; frame < 5; ++frame) {
             await tester.pump(const Duration(milliseconds: 16));
           }
-          // The store's throttled read and retries are the store's own timers.
-          w.activityUnreadIfBound?.dispose();
           await tester.pumpWidget(const SizedBox());
           await tester.pump();
           expect(tester.takeException(), isNull);
@@ -405,8 +403,6 @@ void main() {
           }
           expect(w.navigation.entries.length, before + 1);
           expect(w.location.content, isNull);
-          // The store's throttled read and retries are the store's own timers.
-          w.activityUnreadIfBound?.dispose();
           await tester.pumpWidget(const SizedBox());
           await tester.pump();
           expect(tester.takeException(), isNull);

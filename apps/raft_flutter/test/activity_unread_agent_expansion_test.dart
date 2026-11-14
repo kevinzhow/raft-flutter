@@ -213,8 +213,6 @@ void main() {
                 if (!history.isCompleted) {
                   history.complete({'messages': <dynamic>[]});
                 }
-                // The store's throttled read and retries are the store's own timers.
-                w.activityUnreadIfBound?.dispose();
                 await tester.pumpWidget(const SizedBox.shrink());
                 await drain(tester);
               }
