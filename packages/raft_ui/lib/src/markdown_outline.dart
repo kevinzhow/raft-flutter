@@ -5,7 +5,11 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:markdown/markdown.dart' as md;
 import 'package:unorm_dart/unorm_dart.dart' as unorm;
+
+import 'markdown_cjk_emphasis.dart';
+import 'markdown_math.dart';
 
 import 'localization.dart';
 import 'theme.dart';
@@ -42,49 +46,115 @@ class RaftMarkdownOutlineItem {
   String toString() => '$id/$level@$sourceLine: $title';
 }
 
-final _fence = RegExp(r'^\s*(```|~~~)');
-final _atxHeading = RegExp(r'^(#{1,3})\s+(.+?)\s*$');
-final _trailingHashes = RegExp(r'\s+#+\s*$');
+final _fenceOpen = RegExp(r'^ {0,3}(`{3,}|~{3,})');
+final _atxHeading = RegExp(r'^ {0,3}(#{1,6})(?:[ \t]+(.*?))?[ \t]*$');
+final _closingHashes = RegExp(r'(?:^|[ \t]+)#+[ \t]*$');
+final _setextUnderline = RegExp(r'^ {0,3}(=+|-+)[ \t]*$');
+final _notParagraph = RegExp(
+  r'^ {0,3}(?:[>#]|[-*+][ \t]|\d{1,9}[.)][ \t]|(?:[-*_][ \t]*){3,}$|`{3,}|~{3,}|\$\$)',
+);
 
-/// Web `extractMarkdownOutline`.
+/// Web 1.24 `markdownHeadings` (shared markdownOutline.ts): the headings as
+/// the Markdown parser reads them, ATX (`## Title`) and setext (`Title` over
+/// `===` / `---`) alike, depth 1-3, each with the 1-based line it starts on
+/// and its plain text (code and formulas as written, link and image text, no
+/// markup or HTML tags).
 List<RaftMarkdownOutlineItem> raftExtractMarkdownOutline(String markdown) {
   final seen = <String, int>{};
   final outline = <RaftMarkdownOutlineItem>[];
-  var inFence = false;
-  final lines = markdown.split(RegExp(r'\r?\n'));
-  for (var index = 0; index < lines.length; index++) {
-    final line = lines[index];
-    if (_fence.hasMatch(line)) {
-      inFence = !inFence;
-      continue;
-    }
-    if (inFence || line.startsWith('    ')) continue;
-    final match = _atxHeading.firstMatch(line);
-    if (match == null) continue;
-    final title = _cleanHeadingText(match.group(2)!);
-    if (title.isEmpty) continue;
+  void add(int level, int line, String raw) {
+    if (level > 3) return;
+    final title = _plainHeadingText(raw);
+    if (title.isEmpty) return;
     final base = _slugifyHeading(title);
     final count = seen[base] ?? 0;
     seen[base] = count + 1;
     outline.add(
       RaftMarkdownOutlineItem(
         id: count == 0 ? base : '$base-${count + 1}',
-        level: match.group(1)!.length,
-        sourceLine: index + 1,
+        level: level,
+        sourceLine: line,
         title: title,
       ),
     );
   }
+
+  final lines = markdown.split(RegExp(r'\r?\n'));
+  String? fence;
+  int? paragraphStart;
+  for (var index = 0; index < lines.length; index++) {
+    final line = lines[index];
+    if (fence != null) {
+      final close = RegExp(
+        '^ {0,3}${RegExp.escape(fence[0])}{${fence.length},}[ \\t]*\$',
+      );
+      if (close.hasMatch(line)) fence = null;
+      continue;
+    }
+    final open = _fenceOpen.firstMatch(line);
+    if (open != null) {
+      fence = open.group(1);
+      paragraphStart = null;
+      continue;
+    }
+    if (line.trim().isEmpty) {
+      paragraphStart = null;
+      continue;
+    }
+    if (paragraphStart != null) {
+      final underline = _setextUnderline.firstMatch(line);
+      if (underline != null) {
+        add(
+          underline.group(1)!.startsWith('=') ? 1 : 2,
+          paragraphStart + 1,
+          lines.sublist(paragraphStart, index).join(' '),
+        );
+        paragraphStart = null;
+        continue;
+      }
+    }
+    final atx = _atxHeading.firstMatch(line);
+    if (atx != null) {
+      add(
+        atx.group(1)!.length,
+        index + 1,
+        (atx.group(2) ?? '').replaceAll(_closingHashes, ''),
+      );
+      paragraphStart = null;
+      continue;
+    }
+    // An indented line starts no paragraph (indented code) but continues one.
+    if (paragraphStart == null &&
+        (line.startsWith('    ') || line.startsWith('\t'))) {
+      continue;
+    }
+    if (_notParagraph.hasMatch(line)) {
+      paragraphStart = null;
+      continue;
+    }
+    paragraphStart ??= index;
+  }
   return outline;
 }
 
-String _cleanHeadingText(String raw) => raw
-    .replaceAll(_trailingHashes, '')
-    .replaceAllMapped(RegExp(r'!\[([^\]]*)\]\([^)]+\)'), (m) => m.group(1)!)
-    .replaceAllMapped(RegExp(r'\[([^\]]+)\]\([^)]+\)'), (m) => m.group(1)!)
-    .replaceAll(RegExp(r'<[^>]+>'), '')
-    .replaceAll(RegExp(r'[`*_~]'), '')
-    .trim();
+String _plainHeadingText(String raw) {
+  final nodes = md.Document(
+    extensionSet: md.ExtensionSet.gitHubFlavored,
+    inlineSyntaxes: [RaftMathTextSyntax(), ...raftCjkEmphasisSyntaxes()],
+    encodeHtml: false,
+  ).parseInline(raw);
+  String text(List<md.Node> nodes) => [
+    for (final node in nodes)
+      switch (node) {
+        md.Element(tag: 'img') => node.attributes['alt'] ?? '',
+        md.Element(tag: 'code') => node.textContent,
+        md.Element(:final children) => text(children ?? const []),
+        md.Text(:final text) => text.replaceAll(RegExp(r'<[^>]*>'), ''),
+        _ => '',
+      },
+  ].join();
+  return text(nodes).replaceAll(RegExp(r'\s+'), ' ').trim();
+}
 
 // The exact Web sequence: lowercase, NFKD, replace every non-letter/number
 // run with a hyphen, then trim. Combining marks become separators, not
@@ -231,7 +301,8 @@ int raftHeadingOccurrence(
 bool raftScrollToParagraph(
   ScrollPosition position,
   RenderParagraph paragraph, {
-  double margin = 16,
+  // Web 1.24 heading `scroll-mt-6`.
+  double margin = 24,
   Duration duration = const Duration(milliseconds: 250),
 }) {
   final viewport = RenderAbstractViewport.maybeOf(paragraph);

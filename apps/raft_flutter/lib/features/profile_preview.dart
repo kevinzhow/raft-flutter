@@ -126,7 +126,11 @@ List<RaftProfilePreviewActivity> recentActivityRows(
       if (row['entry'] is Map &&
           !((row['entry'] as Map)['kind'] == 'tool_start' &&
               _toolSemantic('${(row['entry'] as Map)['toolName']}') ==
-                  'send_message'))
+                  'send_message') &&
+          // Web 1.24: a freshness hold arrives as a status row and an action
+          // entry with the same label; show it once.
+          !((row['entry'] as Map)['kind'] == 'status' &&
+              (row['entry'] as Map)['detailKind'] == 'freshness_hold'))
         row,
   ];
   return [
@@ -170,12 +174,30 @@ List<RaftProfilePreviewActivity> recentActivityRows(
                   ? raftText(context, display.primary)
                   : display.secondary;
             }(),
+            'slock_action' =>
+              switch (_freshnessHoldLabels['${entry['title'] ?? ''}'.trim()]) {
+                final String label => raftText(context, label),
+                null => '${entry['title'] ?? ''}',
+              },
             _ => '${entry['title'] ?? ''}',
           }.replaceAll('\n', ' '),
         );
       }(),
   ];
 }
+
+/// Web 1.24 utils/activity.ts FRESHNESS_HOLD_LABELS: the daemon's titles for
+/// an action held until the agent reads newer messages, said as what the
+/// agent is doing.
+const _freshnessHoldLabels = {
+  'Send held by freshness check': 'Reading new messages before sending',
+  'Task claim held by freshness check':
+      'Reading new messages before claiming the task',
+  'Task amendment held by freshness check':
+      'Reading new messages before changing the task',
+  'Task update held by freshness check':
+      'Reading new messages before updating the task',
+};
 
 class _HoverActivity {
   List<Map<String, dynamic>> entries = [];
