@@ -8,8 +8,10 @@ import 'package:flutter/services.dart';
 class RaftUserActivity {
   RaftUserActivity._();
 
-  /// Source LIVE_APPEND_AUTO_READ_ACTIVITY_WINDOW_MS.
-  static const window = Duration(seconds: 1);
+  /// Web `ACTIVE_INPUT_WINDOW_MS` (messageStore.ts:881-890, v1.24: input within
+  /// 3 minutes; it was the last second before): the server's own test for
+  /// holding the phone's alert.
+  static const window = Duration(minutes: 3);
 
   static bool _installed = false;
   static DateTime? _last;
