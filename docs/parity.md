@@ -2137,8 +2137,18 @@ Settings › Notifications, the level menus, the server stream and presence foll
 * **A desktop alert from another server opens the app, not the conversation.** The server sends every server's alerts to each desktop socket; the app's workspace is bound to one server and content links never switch it (existing rule), so the click raises the window only.
 * **"Nothing" shows the Bell icon.** Web's BellMinus is not in the pinned glyph set (lucide imports of v1.21.12) until the glyph pin moves.
 * **Phones test locally.** `POST /notifications/test` reaches a phone only through its FCM / APNs registration, which the app has none of; the phone's "Send test notification" posts a local notification (the desktop test goes through the server).
-* **Not shown:** the browser Web Push card, the PWA install card and the Brave hint (browser only); "Assistant setting changes" (personal assistant, flag off, WP-ASSIST); the "Muted" trailing text on Settings › On {server} › Notifications (the settings nav has no trailing text slot); `layout.notifications.centerSecurityAria` (the bell has no security notices until WP-SEC).
+* **Not shown:** the browser Web Push card, the PWA install card and the Brave hint (browser only); "Assistant setting changes" (personal assistant, flag off, WP-ASSIST); the "Muted" trailing text on Settings › On {server} › Notifications (the settings nav has no trailing text slot).
 * **A silent (sound off) alert is posted quietly** (no heads-up, no sound) because local notifications cannot drop only the sound per alert.
+
+## Two-step verification, recovery and passkeys vs Web v1.24.0 (WP-SEC): differences that stay
+
+Settings › Account (Passkeys, Two-step verification), "Verify it's you", the sign-in reset by email and the notification center's "Reset requested" entry follow Web v1.24; these remain different, each for the reason given.
+
+* **No passkeys in this client (2654e77c).** Adding a passkey, a passkey as the sign-in second step, "Use a passkey" in Verify it's you / Turn off / Regenerate and turning two-step verification on with a passkey need a native passkey provider and an app origin the server trusts. Web in a browser without WebAuthn looks the same: Add passkey is disabled with "This browser can't create passkeys…", and a listed passkey only adds the "can't use passkeys" note. Passkeys added on the Web are listed, renamed and deleted here. WP-PASSKEY (self-hosted servers, 70db1dd8) connects them.
+* **The emailed reset links open the Web page.** `?second_factor_recovery=` / `?cancel_second_factor_recovery=` are links to the Web origin and this client has no app links for it (decision 6), so the browser's SecondFactorRecoveryLinkPage confirms or cancels. Signed in, the app cancels with the notification center's Cancel reset.
+* **A wrong code shows in the dialog's banner in Verify it's you.** That dialog is the shared form dialog (its error sits above the buttons); the Two-step and Passkeys step dialogs put a wrong code or password under the field as Web does.
+* **The last way used is not remembered.** Web opens the second step and Verify it's you on the method this browser used last (`rememberSecondFactorMethod`, local storage); here they open on the authenticator code, then the backup code.
+* **Turn on, its password step and the backup codes are three dialogs in a row**, not one dialog that changes its content; each has Web's title, body and buttons.
 
 ## Public server page vs Web v1.21.23 (cindy/w23-pub): open differences
 

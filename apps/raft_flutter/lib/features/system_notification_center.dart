@@ -595,6 +595,12 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
   /// relative to the glyph. The rail bell's dot is the rail composite.
   static const attentionInset = (32.0 - 16.0) / 2 - 4;
 
+  /// `absolute -top-2 -end-2` of the 16px glyph inside the bell's box.
+  double get securityInset => ((widget.mobile ? 32.0 : 40.0) - 16.0) / 2 - 8;
+
+  bool get securityAlert =>
+      store.entries.any((n) => n.id == secondFactorRecoveryNoticeId);
+
   @override
   Widget build(BuildContext context) => Listener(
     onPointerDown: (_) => keyboardInput = false,
@@ -626,7 +632,13 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
             children: [
               RaftMobileNotificationButton(
                 open: popup != null,
-                semanticLabel: store.unreadCount == 0
+                semanticLabel: securityAlert
+                    ? raftFormat(
+                        context,
+                        'Notification center ({count} active), security alert',
+                        {'count': store.unreadCount},
+                      )
+                    : store.unreadCount == 0
                     ? raftText(context, 'Notification Center')
                     : raftFormat(
                         context,
@@ -641,7 +653,8 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
                 rail: !widget.mobile && !widget.topBar,
                 onFrame: widget.topBar,
                 mobileHeader: widget.mobile,
-                attention: !widget.mobile && store.unreadCount > 0,
+                attention:
+                    !widget.mobile && !securityAlert && store.unreadCount > 0,
                 onPressed: () => popup == null
                     ? show(
                         keyboard:
@@ -653,7 +666,23 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
                       )
                     : close(),
               ),
-              if (widget.mobile && store.unreadCount > 0)
+              // Web NotificationTrigger: a security entry (the two-step
+              // reset) wears a shield on a warning IconTile at the Bell's
+              // corner instead of the unread dot.
+              if (securityAlert)
+                Positioned(
+                  key: const ValueKey('notification-security-alert'),
+                  right: securityInset,
+                  top: securityInset,
+                  child: const IgnorePointer(
+                    child: RaftIconTile(
+                      glyph: RaftGlyph.shieldAlert,
+                      size: RaftIconTileSize.xs,
+                      variant: RaftIconTileVariant.warning,
+                    ),
+                  ),
+                )
+              else if (widget.mobile && store.unreadCount > 0)
                 Positioned(
                   right: attentionInset,
                   top: attentionInset,

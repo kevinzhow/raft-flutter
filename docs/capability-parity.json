@@ -18017,6 +18017,370 @@
   },
   {
    "kind": "endpoint",
+   "id": "POST /auth/second-factor/verify",
+   "area": "onboarding-auth",
+   "capability": "Answer the sign-in second step with an authenticator or backup code, or finish a ready email reset (Web v1.24)",
+   "background": false,
+   "status": "covered",
+   "webEntry": "SecondFactorSignInStep (secondFactorSignIn.ts verifySecondFactorSignIn); Finish reset answers {recovery: true}",
+   "gate": "a sign-in challenge",
+   "flutterEntry": "RaftClient.verifySecondFactor from auth_view.dart (code / backup code) and account_security_recovery.dart (recovery)",
+   "flutterRefs": [
+    {
+     "file": "packages/raft_client/lib/src/client.dart",
+     "needle": "'/auth/second-factor/verify'"
+    }
+   ],
+   "justification": "",
+   "impact": "",
+   "size": ""
+  },
+  {
+   "kind": "endpoint",
+   "id": "POST /auth/second-factor/step-up",
+   "area": "account-profile",
+   "capability": "\"Verify it's you\" before a sensitive action, then the refused request once more (Web v1.24)",
+   "background": false,
+   "status": "covered",
+   "webEntry": "SecondFactorStepUpHost + withSecondFactorStepUp (password, sign-in methods, agent keys, app secrets and access, action cards)",
+   "gate": "two-step verification (server: own setting)",
+   "flutterEntry": "second_factor_step_up.dart withSecondFactorStepUp / RaftClient.stepUpSecondFactor",
+   "flutterRefs": [
+    {
+     "file": "packages/raft_client/lib/src/client.dart",
+     "needle": "'/auth/second-factor/step-up'"
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/second_factor_step_up.dart",
+     "needle": "withSecondFactorStepUp<T>("
+    }
+   ],
+   "justification": "",
+   "impact": "",
+   "size": ""
+  },
+  {
+   "kind": "endpoint",
+   "id": "GET /auth/second-factor/status",
+   "area": "account-profile",
+   "capability": "Two-step verification state and methods (Settings › Account; Web v1.24)",
+   "background": false,
+   "status": "covered",
+   "webEntry": "TwoStepVerificationSection / PasskeysSection fetchSecondFactorStatus",
+   "gate": "none",
+   "flutterEntry": "account_security_two_step.dart TwoStepVerificationSection, account_security_passkeys.dart",
+   "flutterRefs": [
+    {
+     "file": "packages/raft_client/lib/src/second_factor_settings.dart",
+     "needle": "'$_base/status'"
+    }
+   ],
+   "justification": "",
+   "impact": "",
+   "size": ""
+  },
+  {
+   "kind": "endpoint",
+   "id": "POST /auth/second-factor/totp/setup",
+   "area": "account-profile",
+   "capability": "Start setting up an authenticator app (QR code and key; Web v1.24)",
+   "background": false,
+   "status": "covered",
+   "webEntry": "TwoStepVerificationSection Turn on (startTotpSetup; 403 reauth_required asks for the password first)",
+   "gate": "none",
+   "flutterEntry": "account_security_two_step.dart turnOn / reauthThenSetup",
+   "flutterRefs": [
+    {
+     "file": "packages/raft_client/lib/src/second_factor_settings.dart",
+     "needle": "'$_base/totp/setup'"
+    }
+   ],
+   "justification": "",
+   "impact": "",
+   "size": ""
+  },
+  {
+   "kind": "endpoint",
+   "id": "POST /auth/second-factor/reauth/password",
+   "area": "account-profile",
+   "capability": "Re-authenticate with the password before turning two-step verification on (Web v1.24)",
+   "background": false,
+   "status": "covered",
+   "webEntry": "TwoStepVerificationSection password step / PasskeysSection ReauthDialog",
+   "gate": "none",
+   "flutterEntry": "account_security_two_step.dart reauthThenSetup",
+   "flutterRefs": [
+    {
+     "file": "packages/raft_client/lib/src/second_factor_settings.dart",
+     "needle": "'$_base/reauth/password'"
+    }
+   ],
+   "justification": "",
+   "impact": "",
+   "size": ""
+  },
+  {
+   "kind": "endpoint",
+   "id": "POST /auth/second-factor/enable",
+   "area": "account-profile",
+   "capability": "Turn two-step verification on with one authenticator code; shows the backup codes once (Web v1.24)",
+   "background": false,
+   "status": "covered",
+   "webEntry": "TwoStepVerificationSection TurnOnDialog (enableSecondFactor {code})",
+   "gate": "none",
+   "flutterEntry": "account_security_two_step.dart enable, account_security_dialogs.dart showBackupCodes",
+   "flutterRefs": [
+    {
+     "file": "packages/raft_client/lib/src/second_factor_settings.dart",
+     "needle": "'$_base/enable'"
+    }
+   ],
+   "justification": "",
+   "impact": "",
+   "size": ""
+  },
+  {
+   "kind": "endpoint",
+   "id": "POST /auth/second-factor/disable",
+   "area": "account-profile",
+   "capability": "Turn two-step verification off with a code or a backup code (Web v1.24)",
+   "background": false,
+   "status": "covered",
+   "webEntry": "TwoStepVerificationSection TurnOffDialog",
+   "gate": "two-step verification (server: own setting)",
+   "flutterEntry": "account_security_two_step.dart turnOff",
+   "flutterRefs": [
+    {
+     "file": "packages/raft_client/lib/src/second_factor_settings.dart",
+     "needle": "'$_base/disable'"
+    }
+   ],
+   "justification": "",
+   "impact": "",
+   "size": ""
+  },
+  {
+   "kind": "endpoint",
+   "id": "POST /auth/second-factor/backup-codes/regenerate",
+   "area": "account-profile",
+   "capability": "Regenerate the backup codes with an authenticator code (Web v1.24)",
+   "background": false,
+   "status": "covered",
+   "webEntry": "TwoStepVerificationSection RegenerateDialog",
+   "gate": "two-step verification (server: own setting)",
+   "flutterEntry": "account_security_two_step.dart regenerate",
+   "flutterRefs": [
+    {
+     "file": "packages/raft_client/lib/src/second_factor_settings.dart",
+     "needle": "'$_base/backup-codes/regenerate'"
+    }
+   ],
+   "justification": "",
+   "impact": "",
+   "size": ""
+  },
+  {
+   "kind": "endpoint",
+   "id": "GET /auth/second-factor/passkeys",
+   "area": "account-profile",
+   "capability": "List the person's passkeys (Web v1.24)",
+   "background": false,
+   "status": "covered",
+   "webEntry": "PasskeysSection listPasskeys",
+   "gate": "none",
+   "flutterEntry": "account_security_passkeys.dart PasskeysSection",
+   "flutterRefs": [
+    {
+     "file": "packages/raft_client/lib/src/second_factor_settings.dart",
+     "needle": "'$_base/passkeys'"
+    }
+   ],
+   "justification": "",
+   "impact": "",
+   "size": ""
+  },
+  {
+   "kind": "endpoint",
+   "id": "PATCH /auth/second-factor/passkeys/:id",
+   "area": "account-profile",
+   "capability": "Rename a passkey (Web v1.24)",
+   "background": false,
+   "status": "covered",
+   "webEntry": "PasskeysSection RenameDialog",
+   "gate": "none",
+   "flutterEntry": "account_security_passkeys.dart _RenameDialog",
+   "flutterRefs": [
+    {
+     "file": "packages/raft_client/lib/src/second_factor_settings.dart",
+     "needle": "'$_base/passkeys/${Uri.encodeComponent(id)}'"
+    }
+   ],
+   "justification": "",
+   "impact": "",
+   "size": ""
+  },
+  {
+   "kind": "endpoint",
+   "id": "DELETE /auth/second-factor/passkeys/:id",
+   "area": "account-profile",
+   "capability": "Delete a passkey (with two-step verification on, a step-up answer in the same request; never the last factor; Web v1.24)",
+   "background": false,
+   "status": "covered",
+   "webEntry": "PasskeysSection DeleteDialog then VerifyItsYouDialog",
+   "gate": "none",
+   "flutterEntry": "account_security_passkeys.dart delete",
+   "flutterRefs": [
+    {
+     "file": "packages/raft_client/lib/src/second_factor_settings.dart",
+     "needle": "removePasskey("
+    }
+   ],
+   "justification": "",
+   "impact": "",
+   "size": ""
+  },
+  {
+   "kind": "endpoint",
+   "id": "POST /auth/second-factor/passkeys/registration/options",
+   "area": "account-profile",
+   "capability": "Start adding a passkey (Web v1.24)",
+   "background": false,
+   "status": "na",
+   "webEntry": "PasskeysSection Add passkey",
+   "gate": "none",
+   "flutterEntry": "account_security_passkeys.dart: Add passkey disabled with Web's \"can't create passkeys\" line",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/features/account_security_passkeys.dart",
+     "needle": "passkeys-add"
+    }
+   ],
+   "justification": "Needs a native passkey provider and an app origin the server trusts; 2654e77c: no platform files yet, adding passkeys moves to WP-PASSKEY (self-hosted servers, 70db1dd8).",
+   "impact": "",
+   "size": ""
+  },
+  {
+   "kind": "endpoint",
+   "id": "POST /auth/second-factor/passkeys/registration/verify",
+   "area": "account-profile",
+   "capability": "Store a new passkey (Web v1.24)",
+   "background": false,
+   "status": "na",
+   "webEntry": "PasskeysSection createAndStore",
+   "gate": "none",
+   "flutterEntry": "none",
+   "flutterRefs": [],
+   "justification": "Follows registration/options: WP-PASSKEY (2654e77c, 70db1dd8).",
+   "impact": "",
+   "size": ""
+  },
+  {
+   "kind": "endpoint",
+   "id": "POST /auth/second-factor/passkeys/assertion/options",
+   "area": "account-profile",
+   "capability": "Answer a step-up, Turn on/off or Regenerate with a passkey (Web v1.24)",
+   "background": false,
+   "status": "na",
+   "webEntry": "VerifyItsYouDialog / TwoStepVerificationSection Use a passkey",
+   "gate": "none",
+   "flutterEntry": "none (passkey options are not offered: Web canUsePasskeys() false here)",
+   "flutterRefs": [],
+   "justification": "Using a passkey needs a native passkey provider: WP-PASSKEY (2654e77c, 70db1dd8).",
+   "impact": "",
+   "size": ""
+  },
+  {
+   "kind": "endpoint",
+   "id": "POST /auth/second-factor/recovery",
+   "area": "onboarding-auth",
+   "capability": "Ask for the emailed two-step reset from the sign-in second step (Web v1.24)",
+   "background": false,
+   "status": "covered",
+   "webEntry": "RecoveryRequestScreen (Can't use any of these?)",
+   "gate": "a sign-in challenge",
+   "flutterEntry": "account_security_recovery.dart SecondFactorRecoveryScreen (signed out)",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/features/auth_view.dart",
+     "needle": "'/auth/second-factor/recovery'"
+    }
+   ],
+   "justification": "",
+   "impact": "",
+   "size": ""
+  },
+  {
+   "kind": "endpoint",
+   "id": "GET /auth/second-factor/recovery",
+   "area": "account-profile",
+   "capability": "Read a pending two-step reset for the notification center (Web v1.24)",
+   "background": false,
+   "status": "covered",
+   "webEntry": "useSecondFactorRecoveryNotification",
+   "gate": "none",
+   "flutterEntry": "system_notification_store.dart refreshSecondFactorRecovery (first entry, no Dismiss)",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/data/system_notification_store.dart",
+     "needle": "'/auth/second-factor/recovery'"
+    }
+   ],
+   "justification": "",
+   "impact": "",
+   "size": ""
+  },
+  {
+   "kind": "endpoint",
+   "id": "DELETE /auth/second-factor/recovery",
+   "area": "account-profile",
+   "capability": "Cancel a pending two-step reset from a signed-in session (Web v1.24)",
+   "background": false,
+   "status": "covered",
+   "webEntry": "useSecondFactorRecoveryNotification Cancel reset",
+   "gate": "none",
+   "flutterEntry": "account_security_recovery.dart secondFactorRecoveryEntry (Cancel reset)",
+   "flutterRefs": [
+    {
+     "file": "packages/raft_client/lib/src/second_factor_settings.dart",
+     "needle": "cancelSecondFactorRecovery()"
+    }
+   ],
+   "justification": "",
+   "impact": "",
+   "size": ""
+  },
+  {
+   "kind": "endpoint",
+   "id": "POST /auth/second-factor/recovery/confirm",
+   "area": "onboarding-auth",
+   "capability": "Start the 72-hour wait from the emailed link (Web v1.24)",
+   "background": false,
+   "status": "na",
+   "webEntry": "SecondFactorRecoveryLinkPage (?second_factor_recovery=)",
+   "gate": "none",
+   "flutterEntry": "none: the emailed link opens the Web page",
+   "flutterRefs": [],
+   "justification": "The email links open the Web origin, and this client has no app links for it (2654e77c: no assetlinks / apple-app-site-association), so the Web page handles them.",
+   "impact": "",
+   "size": ""
+  },
+  {
+   "kind": "endpoint",
+   "id": "POST /auth/second-factor/recovery/cancel",
+   "area": "onboarding-auth",
+   "capability": "Cancel a two-step reset from the emailed link (Web v1.24)",
+   "background": false,
+   "status": "na",
+   "webEntry": "SecondFactorRecoveryLinkPage (?cancel_second_factor_recovery=)",
+   "gate": "none",
+   "flutterEntry": "none: the emailed link opens the Web page; signed in, Cancel reset uses DELETE /auth/second-factor/recovery",
+   "flutterRefs": [],
+   "justification": "The email links open the Web origin, and this client has no app links for it (2654e77c), so the Web page handles them.",
+   "impact": "",
+   "size": ""
+  },
+  {
+   "kind": "endpoint",
    "id": "POST /channels/:id/conversation-read-all",
    "area": "messages",
    "capability": "Sidebar \"Mark All as Read\" over the channel and its threads",

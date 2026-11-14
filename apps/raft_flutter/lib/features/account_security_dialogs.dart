@@ -63,9 +63,9 @@ Future<T?> showSecondFactorStep<T>(
 }) => showRaftForm<T>(
   context,
   label: raftText(context, label),
-  // A typed code is not a draft: closing never asks first.
+  // A typed code is not a draft: closing never asks first. The form window's
+  // closes are the approved `form-dialog` set (close registry).
   guardUnsaved: false,
-  dismissible: false,
   builder: builder,
 );
 
