@@ -188,6 +188,8 @@ RaftBareUrl? raftBareUrlAt(String source, int index) {
     break;
   }
   if (end <= schemeEnd) return null;
+  end = _closeEmphasisInside(source, index, schemeEnd, end);
+  end = _restoreTrailingMarks(source, index, end);
 
   final text = source.substring(index, end);
   if (www && !_wwwHost.hasMatch(text)) return null;
@@ -197,6 +199,71 @@ RaftBareUrl? raftBareUrlAt(String source, int index) {
     text: text,
     href: _destination(www ? 'http://$text' : text),
   );
+}
+
+/// Web 1.24 `closeEmphasisInsideBareUrls`: in `**https://x.com**说明` a
+/// mark that closes one opened before the URL ends the URL there, so the
+/// bold closes. With no opener the mark stays in the address. `_` is not a
+/// candidate: it is common in addresses.
+int _closeEmphasisInside(String source, int index, int schemeEnd, int end) {
+  for (final mark in const ['**', '~~', '*']) {
+    if (!_opensBefore(source, index, mark)) continue;
+    var at = source.indexOf(mark, schemeEnd);
+    while (at >= 0 && at < end) {
+      final next = at + mark.length < source.length
+          ? source.codeUnitAt(at + mark.length)
+          : null;
+      final closes =
+          at > schemeEnd &&
+          (next == null || !_isAddressWordChar(next)) &&
+          (mark != '*' || (source.codeUnitAt(at - 1) != 0x2a && next != 0x2a));
+      if (closes) return at;
+      at = source.indexOf(mark, at + 1);
+    }
+  }
+  return end;
+}
+
+bool _isAddressWordChar(int c) => _isAsciiAlnum(c) || c == 0x5f;
+
+/// Whether an emphasis [mark] opened before [index] is still open: its last
+/// occurrence is preceded by nothing, whitespace, CJK text or punctuation
+/// other than `_`, and is not followed by whitespace.
+bool _opensBefore(String source, int index, String mark) {
+  final at = source.lastIndexOf(mark, index - 1);
+  if (at < 0 || at + mark.length > index) return false;
+  final next = at + mark.length < source.length
+      ? source.codeUnitAt(at + mark.length)
+      : null;
+  if (next != null && _isSpace(next)) return false;
+  if (mark == '*' &&
+      (next == 0x2a || (at > 0 && source.codeUnitAt(at - 1) == 0x2a))) {
+    return false;
+  }
+  if (at == 0) return true;
+  final before = source.codeUnitAt(at - 1);
+  if (_cjkTextOrSpaceAt(source, at - 1)) return true;
+  if (before == 0x5f) return false;
+  return _punctuationOrSymbol.hasMatch(String.fromCharCode(before));
+}
+
+final _punctuationOrSymbol = RegExp(r'[\p{P}\p{S}]', unicode: true);
+
+/// Web 1.24 `restoreTrailingUrlMarks`: a trailing `_` or `~` that closes no
+/// emphasis (no such mark opened before the URL) belongs to the address
+/// (login links often end in a token such as `state=Ab_`).
+int _restoreTrailingMarks(String source, int index, int end) {
+  var marks = end;
+  while (marks < source.length &&
+      (source.codeUnitAt(marks) == 0x5f || source.codeUnitAt(marks) == 0x7e)) {
+    marks++;
+  }
+  if (marks == end) return end;
+  final before = source.substring(0, index);
+  for (var i = end; i < marks; i++) {
+    if (before.contains(String.fromCharCode(source.codeUnitAt(i)))) return end;
+  }
+  return marks;
 }
 
 /// Percent-encodes what a URL cannot carry (CJK, spaces, quotes) and keeps

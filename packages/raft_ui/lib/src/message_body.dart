@@ -1202,8 +1202,14 @@ class RaftMermaidBlock extends StatefulWidget {
   State<RaftMermaidBlock> createState() => _RaftMermaidBlockState();
 }
 
+/// Web 1.24 `mermaidViewMemory.ts`: a diagram shown as Code stays Code when
+/// its row is rebuilt (scrolled away and back), for the session; only the
+/// non-default view is kept, the 500 most recent.
+final _mermaidCodeView = <String>{};
+
 class _RaftMermaidBlockState extends State<RaftMermaidBlock> {
-  bool showSource = false, copied = false;
+  late bool showSource = _mermaidCodeView.contains(widget.source);
+  bool copied = false;
   // ignore: raft_lints/avoid_imperative_notice_state -- Mermaid toolbar message: cleared by a successful copy, at the start of every export and when the source changes.
   String? copyError;
   double zoom = 1;
@@ -1426,7 +1432,16 @@ class _RaftMermaidBlockState extends State<RaftMermaidBlock> {
                   showSource: showSource,
                   copied: copied,
                   valid: scene != null,
-                  onSource: (value) => setState(() => showSource = value),
+                  onSource: (value) => setState(() {
+                    showSource = value;
+                    _mermaidCodeView.remove(widget.source);
+                    if (value) {
+                      _mermaidCodeView.add(widget.source);
+                      if (_mermaidCodeView.length > 500) {
+                        _mermaidCodeView.remove(_mermaidCodeView.first);
+                      }
+                    }
+                  }),
                   onCopy: copy,
                   onExpand: expand,
                   onZoom: (factor) =>

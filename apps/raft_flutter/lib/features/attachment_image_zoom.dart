@@ -355,9 +355,46 @@ class ImageZoomSurfaceState extends State<ImageZoomSurface>
     }
   }
 
+  /// Web `imageDimensionsToActualSizeScale`: the natural-pixel size (at
+  /// least 2x, at most the dynamic maximum); any zoom or pan returns to fit.
+  void toggleActualSizeAt(Offset focal) {
+    final current = imageZoomStateOf(widget.controller.value);
+    if ((current.scale - imageMinScale).abs() > 0.001 ||
+        current.tx != 0 ||
+        current.ty != 0) {
+      _animateTo((scale: 1, tx: 0, ty: 0));
+      return;
+    }
+    final natural = widget.natural, fitted = _fitted;
+    final ratio =
+        natural == null ||
+            fitted.width <= 0 ||
+            fitted.height <= 0 ||
+            natural.width <= 0 ||
+            natural.height <= 0
+        ? imageDoubleTapScale
+        : math.max(
+            natural.width / fitted.width,
+            natural.height / fitted.height,
+          );
+    final scale = math
+        .max(imageDoubleTapScale, ratio)
+        .clamp(imageMinScale, math.min(_maxScale, imageDynamicMaxScale));
+    widget.onZoomGesture?.call();
+    _animateTo(zoomImageAround(current, scale.toDouble(), focal));
+  }
+
   // Tap recognition: a tap outside the painted image closes; two taps within
   // the Web double-tap window and radius toggle the zoom instead.
   void _tapUp(TapUpDetails details) {
+    // Web 1.24 ImageZoom `onClick`: a mouse click on the picture toggles fit
+    // <-> actual size around the pointer; touch keeps its double tap.
+    if (details.kind == PointerDeviceKind.mouse &&
+        imageContains(details.localPosition)) {
+      _forgetTap();
+      toggleActualSizeAt(details.localPosition);
+      return;
+    }
     final last = _lastTap;
     if (last != null &&
         (details.localPosition - last).distance < imageDoubleTapRadius) {

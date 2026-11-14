@@ -36,7 +36,10 @@ String _stripLeadingStatusGlyph(String content) {
 }
 
 final _taskEvents = [
-  RegExp(r'^(.+?) converted a message to task #(\d+)\s+"([^"]*)"', unicode: true),
+  RegExp(
+    r'^(.+?) converted a message to task #(\d+)\s+"([^"]*)"',
+    unicode: true,
+  ),
   RegExp(r'^(.+?) claimed #(\d+)\s+"([^"]*)"', unicode: true),
   RegExp(r'^(.+?) released #(\d+)\s+"([^"]*)"', unicode: true),
   RegExp(r'^(.+?) moved #(\d+)\s+"([^"]*)" to (.+)$', unicode: true),
@@ -55,6 +58,8 @@ final _reminder = RegExp(
 
 _Category? _classify(RaftMessage message) {
   if (message.string('messageType') != 'system') return null;
+  // Web 1.24: these are cards of their own, never folded into a summary.
+  if (_ownCard(message)) return null;
   final content = _stripLeadingStatusGlyph(message.content);
   if (_taskEvents.any((p) => p.hasMatch(content))) return _Category.taskUpdate;
   if (_taskWords.hasMatch(content)) return _Category.taskUpdate;
@@ -128,7 +133,9 @@ List<SystemGroupState?> buildSystemGroupStates(
       final groupId = 'system-group:${messages[i].id}:${messages[end - 1].id}';
       states[i] = SystemGroupSummary(
         groupId,
-        summary: _summary([for (var j = i; j < end; j++) categories[j]!], format),
+        summary: _summary([
+          for (var j = i; j < end; j++) categories[j]!,
+        ], format),
         messageIndexes: [for (var j = i; j < end; j++) j],
       );
       for (var j = i + 1; j < end; j++) {
@@ -138,4 +145,39 @@ List<SystemGroupState?> buildSystemGroupStates(
     i = end - 1;
   }
   return states;
+}
+
+/// Web 1.24 systemMessageGrouping `classifySystemMessage`: an RFC 077
+/// delegated receipt (its Retract), the WeChat connected notice (its
+/// Disconnect WeChat) and a task hand-off with a reason stay their own row.
+bool _ownCard(RaftMessage message) {
+  final metadata = message.json['actionMetadata'];
+  if (metadata is Map && metadata['kind'] == 'delegated-receipt') return true;
+  final randomId = message.json['randomId'];
+  if (randomId is String && randomId.startsWith('wechat-connected:')) {
+    return true;
+  }
+  return metadata is Map && _isHandoffWithReason(metadata);
+}
+
+/// Shared `readTaskAssignmentNotice` + `isTaskHandoffWithReason`.
+bool _isHandoffWithReason(Map<dynamic, dynamic> metadata) {
+  if (metadata['kind'] != 'task-assignment' || metadata['taskNumber'] is! num) {
+    return false;
+  }
+  (String, String)? party(Object? value) =>
+      value is Map &&
+          (value['type'] == 'user' || value['type'] == 'agent') &&
+          value['id'] is String &&
+          (value['id'] as String).isNotEmpty
+      ? (value['type'] as String, value['id'] as String)
+      : null;
+  final actor = party(metadata['actor']);
+  final assignee = party(metadata['assignee']);
+  final reason = metadata['reason'];
+  return actor != null &&
+      assignee != null &&
+      reason is String &&
+      reason.trim().isNotEmpty &&
+      assignee != actor;
 }
