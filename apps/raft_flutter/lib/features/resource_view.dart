@@ -40,6 +40,7 @@ import '../data/task_view_mode_preference.dart';
 import 'activity_card_row.dart';
 import 'activity_first_unread.dart';
 import 'activity_list_row.dart';
+import 'activity_mark_unread_toast.dart';
 import 'activity_pagination.dart';
 import 'activity_task_rows.dart';
 import 'activity_rollout_flags.dart';
@@ -2389,6 +2390,8 @@ class _ResourceViewState extends State<ResourceView> {
   }) async {
     final scope = sourceScope ?? authority;
     if (!accepts(scope)) return;
+    if (path == '/channels/inbox/read-all')
+      w.conversationReads.clearAllMarksForRead();
     try {
       final result = await w.client.request(method, path, data: data);
       if (!accepts(scope)) return;
@@ -4256,17 +4259,14 @@ class _ResourceViewState extends State<ResourceView> {
     String scope,
     bool unread,
   ) async {
-    if (unread) {
-      markActivityRead(row, scope);
-      return;
-    }
+    if (unread) return markActivityRead(row, scope);
     final id = row[row['kind'] == 'thread' ? 'threadChannelId' : 'channelId'];
     if (id is! String) return;
-    final controller = w;
     var projected = false;
     try {
-      projected = await controller.conversationReads.markUnreadWithProjection(
+      projected = await w.conversationReads.markUnreadWithProjection(
         id,
+        onNothingUnread: () => showNothingUnreadToast(this),
       );
     } catch (_) {}
     if (!mounted || !accepts(scope)) return;
