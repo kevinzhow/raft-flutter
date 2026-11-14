@@ -62,17 +62,17 @@ void main() {
             final bodyBefore = t.getRect(
               find.text('Historical public message 1'),
             );
-            final shortClock = format == '24h' ? '10:31' : '10:31 AM';
+            // Web v1.24 MessageItem shows formatGutterClock in the
+            // continuation gutter: the 12h/24h clock without the day period
+            // ("10:31"; v1.21.23 showed formatClock, "10:31 AM").
             expect(
-              find.descendant(of: row, matching: find.text(shortClock)),
+              find.descendant(of: row, matching: find.text('10:31')),
               findsOneWidget,
             );
             // Full date and preferred-zone time remain in the row's accessible
             // label; only the small visual gutter uses the clock.
-            expect(
-              t.widget<RaftMessageTile>(row).timestamp,
-              '06/22 $shortClock',
-            );
+            final clock = format == '24h' ? '10:31' : '10:31 AM';
+            expect(t.widget<RaftMessageTile>(row).timestamp, '06/22 $clock');
             await mouse.moveTo(const Offset(2, 2));
             await t.pump();
             expect(
@@ -88,7 +88,10 @@ void main() {
             await t.pumpAndSettle();
             final changedClock = format == '24h' ? '22:31' : '10:31 PM';
             expect(
-              find.descendant(of: row, matching: find.text(changedClock)),
+              find.descendant(
+                of: row,
+                matching: find.text(format == '24h' ? '22:31' : '10:31'),
+              ),
               findsOneWidget,
             );
             expect(
