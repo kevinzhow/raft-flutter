@@ -7,19 +7,27 @@ const Map<String, String> zhCatalogUpstream124Comp1 = <String, String>{
   "Low disk space: {free} free of {total}": "磁盘空间不足：剩余 {free}，共 {total}",
   "{free} free of {total}": "剩 {free}，共 {total}",
   "Upgrade soon": "请尽快升级",
-  "Upgrade soon: from {date}, agents on this computer stop running": "请尽快升级：从 {date} 起，这台计算机上的 Agent 将停止运行",
+  "Upgrade soon: from {date}, agents on this computer stop running":
+      "请尽快升级：从 {date} 起，这台计算机上的 Agent 将停止运行",
   "This version needs a reinstall": "这个版本需要重新安装",
-  "Reinstall soon: from {date}, agents on this computer stop running": "请尽快重新安装：从 {date} 起，这台计算机上的 Agent 将停止运行",
-  "Agents on this computer aren't running: the version is too old": "这台计算机上的 Agent 没有在运行：版本太旧",
-  "v{version} is out of date. Please upgrade to v{floor} or later.": "v{version} 已过时，请升级到 v{floor} 或更高版本。",
-  "v{version} is too old to upgrade from here. Run this on that machine to reinstall Raft Computer:": "v{version} 太旧，无法从这里升级。在那台机器上运行下面的命令重新安装 Raft Computer：",
-  "Agents on this computer aren't running: it doesn't report its version": "这台计算机上的 Agent 没有在运行：它未上报版本",
+  "Reinstall soon: from {date}, agents on this computer stop running":
+      "请尽快重新安装：从 {date} 起，这台计算机上的 Agent 将停止运行",
+  "Agents on this computer aren't running: the version is too old":
+      "这台计算机上的 Agent 没有在运行：版本太旧",
+  "v{version} is out of date. Please upgrade to v{floor} or later.":
+      "v{version} 已过时，请升级到 v{floor} 或更高版本。",
+  "v{version} is too old to upgrade from here. Run this on that machine to reinstall Raft Computer:":
+      "v{version} 太旧，无法从这里升级。在那台机器上运行下面的命令重新安装 Raft Computer：",
+  "Agents on this computer aren't running: it doesn't report its version":
+      "这台计算机上的 Agent 没有在运行：它未上报版本",
   "This computer doesn't report its version": "这台计算机未上报版本",
-  "This computer doesn't report its version, so it's too old for Raft. Reinstall it to keep its agents running. Run this on that machine:": "这台计算机未上报版本，所以对 Raft 来说太旧了。重新安装才能让它上面的 Agent 继续运行。在那台机器上运行：",
+  "This computer doesn't report its version, so it's too old for Raft. Reinstall it to keep its agents running. Run this on that machine:":
+      "这台计算机未上报版本，所以对 Raft 来说太旧了。重新安装才能让它上面的 Agent 继续运行。在那台机器上运行：",
   "Ask an admin to upgrade it.": "请管理员升级。",
   "Ask an admin to reinstall it.": "请管理员重新安装。",
   "Install guide": "安装指南",
-  "A laptop, a desktop or a cloud server (VPS): run this command on it.": "笔记本、台式机或云服务器（VPS）都可以：在它上面运行下面这条命令。",
+  "A laptop, a desktop or a cloud server (VPS): run this command on it.":
+      "笔记本、台式机或云服务器（VPS）都可以：在它上面运行下面这条命令。",
   "A server admin can fix it": "服务器管理员可以处理",
   "A server admin can fix it.": "需要服务器管理员处理。",
   "A server admin can sign in": "服务器管理员可以登录",
@@ -89,8 +97,7 @@ const Map<String, String> zhCatalogUpstream124Comp1 = <String, String>{
   "The computer's owner can update this computer":
       "Computer 的所有者可以更新这台 Computer",
   "The computer's owner can verify the account": "Computer 的所有者可以验证账户",
-  "The {runtime} account signed in here can't receive replies until it is verified. The account holder must finish the step in the Anthropic Verification Portal, then choose Retry. Messages are kept and will be delivered.":
-      "这里登录的 {runtime} 账户在完成验证前无法收到回复。账户持有人需要在 Anthropic 验证门户完成验证，然后选择“重试”。消息会保留，之后送达。",
+  "The {runtime} account signed in here can't receive replies until it is verified. The account holder must finish the step in the Anthropic Verification Portal, then choose Retry. Messages are kept and will be delivered.": "这里登录的 {runtime} 账户在完成验证前无法收到回复。账户持有人需要在 Anthropic 验证门户完成验证，然后选择“重试”。消息会保留，之后送达。",
   "Their workspaces on your computers are lost. The agents themselves stay, with their messages and settings, and their owners can keep using them on another computer. Each owner gets a system notice.":
       "这些 Agent 在你的计算机上的工作区会丢失；Agent 本身保留，消息和设置都还在，主人可以换一台计算机继续用。主人会收到系统通知。",
   "This Computer is installing an update and will be back in a few minutes. Messages are kept and will be delivered when it is back.":

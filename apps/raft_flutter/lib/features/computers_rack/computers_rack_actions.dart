@@ -324,9 +324,12 @@ class RackRowMenu extends StatelessWidget {
       glyph: RaftGlyph.ellipsisVertical,
       triggerStyle: RaftDropdownTriggerStyle.button,
       align: RaftDropdownAlign.end,
-      triggerBuilder: (context, focusNode, onPressed) => RaftPanelIconButton(
+      triggerBuilder: (context, focusNode, onPressed) => RaftButton(
         glyph: RaftGlyph.ellipsisVertical,
         tooltip: label,
+        semanticLabel: label,
+        tone: RaftButtonRecipeVariant.ghost,
+        size: RaftButtonRecipeSize.iconMd,
         focusNode: focusNode,
         onPressed: onPressed,
       ),

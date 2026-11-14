@@ -169,7 +169,11 @@ class _ComputersRackViewState extends State<ComputersRackView> {
         ? (machines.isEmpty
               ? const SizedBox.shrink()
               : Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                  padding: const EdgeInsets.only(
+                    left: RaftSpace.x4,
+                    right: RaftSpace.x4,
+                    top: RaftSpace.x2,
+                  ),
                   child: RaftRackCounts(countsText),
                 ))
         : RaftPageHeader(
@@ -341,10 +345,11 @@ class _ComputersRackViewState extends State<ComputersRackView> {
           ],
         ),
       if (filtered)
-        RaftTextButton(
+        RaftButton(
           key: const ValueKey('computers-rack-clear'),
           label: tr('Clear all'),
-          visualHeight: RaftMetrics.buttonSm,
+          tone: RaftButtonRecipeVariant.ghost,
+          size: RaftButtonRecipeSize.sm,
           onPressed: prefs.clearFilters,
         ),
     ];

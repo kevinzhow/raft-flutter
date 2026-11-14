@@ -40371,29 +40371,6 @@
         "owner": "P1 dialogs / canonical Choice integration",
         "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
       },
-      "packages/raft_ui/lib/src/computer_detail.dart#local-function:CLASS:_RaftComputerDetailViewState@13618/METHOD:_agentsSection@55884/FUNCTION:row@57953": {
-        "role": "internal_wrapper",
-        "familyRefs": [
-          "checkbox"
-        ],
-        "owner": "P1 dialogs / canonical Choice integration",
-        "delegatesTo": [
-          "packages/raft_ui/lib/src/raft/checkbox.dart#class:RaftCheckboxIndicator"
-        ],
-        "reason": "Resolved constructor/function calls delegate to the registered canonical owner(s); this declaration owns no scanner-detected paint. This is source delegation, not runtime mount or visual evidence."
-      },
-      "packages/raft_ui/lib/src/computer_detail.dart#local-function:CLASS:_RaftComputerDetailViewState@13618/METHOD:_infoSection@39458/FUNCTION:versionValue@39595": {
-        "role": "entry_composition",
-        "familyRefs": [],
-        "owner": "P1 dialogs / canonical Choice integration",
-        "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
-      },
-      "packages/raft_ui/lib/src/computer_detail.dart#local-function:CLASS:_RaftComputerDetailViewState@13618/METHOD:_recoveryGuide@77632/FUNCTION:step@77927": {
-        "role": "entry_composition",
-        "familyRefs": [],
-        "owner": "P1 dialogs / canonical Choice integration",
-        "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
-      },
       "packages/raft_ui/lib/src/create_channel_view.dart#class:_RecipeMemberPicker": {
         "role": "entry_composition",
         "familyRefs": [
@@ -45252,6 +45229,437 @@
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/computer_detail.dart#local-function:CLASS:_RaftComputerDetailViewState@14443/METHOD:_agentsSection@57648/FUNCTION:row@59717": {
+        "role": "internal_wrapper",
+        "familyRefs": [
+          "checkbox"
+        ],
+        "owner": "P1 dialogs / canonical Choice integration",
+        "delegatesTo": [
+          "packages/raft_ui/lib/src/raft/checkbox.dart#class:RaftCheckboxIndicator"
+        ],
+        "reason": "Resolved constructor/function calls delegate to the registered canonical owner(s); this declaration owns no scanner-detected paint. This is source delegation, not runtime mount or visual evidence."
+      },
+      "packages/raft_ui/lib/src/computer_detail.dart#local-function:CLASS:_RaftComputerDetailViewState@14443/METHOD:_infoSection@41222/FUNCTION:versionValue@41359": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "P1 dialogs / canonical Choice integration",
+        "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+      },
+      "packages/raft_ui/lib/src/computer_detail.dart#local-function:CLASS:_RaftComputerDetailViewState@14443/METHOD:_recoveryGuide@79396/FUNCTION:step@79691": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "P1 dialogs / canonical Choice integration",
+        "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+      },
+      "apps/raft_flutter/lib/features/computer_delete_dialog.dart#class:_CloseWhenGone": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 Computers rack / Computer page); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computer_delete_dialog.dart#class:_CloseWhenGoneState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 Computers rack / Computer page); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computer_delete_dialog.dart#function:showDeleteComputerDialog": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 Computers rack / Computer page); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computer_delete_dialog.dart#function:showForceUnbindAgentsDialog": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 Computers rack / Computer page); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computer_delete_dialog.dart#method:_CloseWhenGone.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 Computers rack / Computer page); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computer_delete_dialog.dart#method:_CloseWhenGoneState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 Computers rack / Computer page); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computers_rack/computers_rack_actions.dart#class:RackRowAction": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 Computers rack / Computer page); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computers_rack/computers_rack_actions.dart#class:RackRowMenu": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 Computers rack / Computer page); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computers_rack/computers_rack_actions.dart#function:askComputerRestart": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 Computers rack / Computer page); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computers_rack/computers_rack_actions.dart#function:askComputerUpgrade": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 Computers rack / Computer page); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computers_rack/computers_rack_actions.dart#function:confirmComputerRestart": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 Computers rack / Computer page); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computers_rack/computers_rack_actions.dart#function:confirmComputerUpgrade": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 Computers rack / Computer page); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computers_rack/computers_rack_actions.dart#method:RackRowAction.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 Computers rack / Computer page); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computers_rack/computers_rack_actions.dart#method:RackRowMenu.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 Computers rack / Computer page); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computers_rack/computers_rack_page.dart#class:ComputersRackDesktopPage": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 Computers rack / Computer page); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computers_rack/computers_rack_page.dart#method:ComputersRackDesktopPage.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 Computers rack / Computer page); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computers_rack/computers_rack_view.dart#class:ComputersRackView": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 Computers rack / Computer page); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computers_rack/computers_rack_view.dart#class:_ComputersRackViewState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 Computers rack / Computer page); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computers_rack/computers_rack_view.dart#local-function:CLASS:_ComputersRackViewState@1755/METHOD:_list@20235/FUNCTION:row@23521": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 Computers rack / Computer page); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computers_rack/computers_rack_view.dart#local-function:CLASS:_ComputersRackViewState@1755/METHOD:_list@20235/FUNCTION:title@23597": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 Computers rack / Computer page); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computers_rack/computers_rack_view.dart#method:ComputersRackView.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 Computers rack / Computer page); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computers_rack/computers_rack_view.dart#method:_ComputersRackViewState._list": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 Computers rack / Computer page); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computers_rack/computers_rack_view.dart#method:_ComputersRackViewState._row": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 Computers rack / Computer page); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computers_rack/computers_rack_view.dart#method:_ComputersRackViewState._scroll": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 Computers rack / Computer page); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computers_rack/computers_rack_view.dart#method:_ComputersRackViewState._slot": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 Computers rack / Computer page); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computers_rack/computers_rack_view.dart#method:_ComputersRackViewState._summary": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 Computers rack / Computer page); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computers_rack/computers_rack_view.dart#method:_ComputersRackViewState._toolbar": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 Computers rack / Computer page); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computers_rack/computers_rack_view.dart#method:_ComputersRackViewState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 Computers rack / Computer page); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computers_rack/computers_rack_view.dart#method:_ComputersRackViewState.didUpdateWidget": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 Computers rack / Computer page); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/fleet_views.dart#local-function:FUNCTION:showCredential@3825/FUNCTION:builder@4110": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 Computers rack / Computer page); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/fleet_views.dart#method:_FleetViewState.openComputer": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 Computers rack / Computer page); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5497/METHOD:buildWorkspace@47665/FUNCTION:<anonymous>@47903/FUNCTION:conversation@51017": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 Computers rack / Computer page); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5497/METHOD:buildWorkspace@47665/FUNCTION:<anonymous>@47903/FUNCTION:workspace@63954": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 Computers rack / Computer page); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5497/METHOD:settingsRailAction@108979/FUNCTION:action@109013": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 Computers rack / Computer page); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/computer_version_notice.dart#class:RaftComputerVersionNotice": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 Computers rack / Computer page); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/computer_version_notice.dart#method:RaftComputerVersionNotice.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 Computers rack / Computer page); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/computers_rack.dart#class:RaftForceUnbindAgentList": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 Computers rack / Computer page); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/computers_rack.dart#class:RaftRackAttentionSummary": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 Computers rack / Computer page); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/computers_rack.dart#class:RaftRackAttentionSummarySkeleton": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 Computers rack / Computer page); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/computers_rack.dart#class:RaftRackCounts": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 Computers rack / Computer page); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/computers_rack.dart#class:RaftRackDeviceIcon": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 Computers rack / Computer page); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/computers_rack.dart#class:RaftRackGroupTitle": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 Computers rack / Computer page); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/computers_rack.dart#class:RaftRackListHeader": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 Computers rack / Computer page); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/computers_rack.dart#class:RaftRackMenuSpace": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 Computers rack / Computer page); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/computers_rack.dart#class:RaftRackRecovery": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 Computers rack / Computer page); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/computers_rack.dart#class:RaftRackResource": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 Computers rack / Computer page); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/computers_rack.dart#class:RaftRackRow": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 Computers rack / Computer page); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/computers_rack.dart#class:RaftRackRowSkeleton": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 Computers rack / Computer page); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/computers_rack.dart#class:RaftRackScroller": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 Computers rack / Computer page); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/computers_rack.dart#class:RaftRackSidePanelLayout": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 Computers rack / Computer page); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/computers_rack.dart#class:RaftRackToolbar": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 Computers rack / Computer page); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/computers_rack.dart#local-function:CLASS:RaftRackListHeader@9459/METHOD:build@10006/FUNCTION:heading@10153": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 Computers rack / Computer page); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/computers_rack.dart#local-function:CLASS:RaftRackRow@12461/METHOD:build@13038/FUNCTION:slots@15014": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 Computers rack / Computer page); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/computers_rack.dart#method:RaftForceUnbindAgentList.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 Computers rack / Computer page); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/computers_rack.dart#method:RaftRackAttentionSummary.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 Computers rack / Computer page); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/computers_rack.dart#method:RaftRackAttentionSummarySkeleton.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 Computers rack / Computer page); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/computers_rack.dart#method:RaftRackCounts.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 Computers rack / Computer page); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/computers_rack.dart#method:RaftRackDeviceIcon.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 Computers rack / Computer page); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/computers_rack.dart#method:RaftRackGroupTitle.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 Computers rack / Computer page); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/computers_rack.dart#method:RaftRackListHeader.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 Computers rack / Computer page); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/computers_rack.dart#method:RaftRackMenuSpace.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 Computers rack / Computer page); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/computers_rack.dart#method:RaftRackRecovery.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 Computers rack / Computer page); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/computers_rack.dart#method:RaftRackResource.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 Computers rack / Computer page); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/computers_rack.dart#method:RaftRackRow.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 Computers rack / Computer page); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/computers_rack.dart#method:RaftRackRowSkeleton.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 Computers rack / Computer page); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/computers_rack.dart#method:RaftRackScroller.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 Computers rack / Computer page); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/computers_rack.dart#method:RaftRackSidePanelLayout.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 Computers rack / Computer page); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/computers_rack.dart#method:RaftRackToolbar.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 Computers rack / Computer page); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       }
     },
     "entries": {
@@ -47926,6 +48334,69 @@
         ],
         "mountStatus": "unresolved",
         "reason": "Resolved function owns a surface call; actual target, route and state are not yet observed."
+      },
+      "surface:showDeleteComputerDialog": {
+        "owner": "WP-COMP1 v1.24 alignment",
+        "kind": "dialog",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/computer_delete_dialog.dart#function:showDeleteComputerDialog"
+        ],
+        "mountStatus": "unresolved",
+        "reason": "New confirmation entry function (WP-COMP1); no real-entry capture acceptance is inferred."
+      },
+      "surface:showForceUnbindAgentsDialog": {
+        "owner": "WP-COMP1 v1.24 alignment",
+        "kind": "dialog",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/computer_delete_dialog.dart#function:showForceUnbindAgentsDialog"
+        ],
+        "mountStatus": "unresolved",
+        "reason": "New confirmation entry function (WP-COMP1); no real-entry capture acceptance is inferred."
+      },
+      "surface:askComputerRestart": {
+        "owner": "WP-COMP1 v1.24 alignment",
+        "kind": "dialog",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/computers_rack/computers_rack_actions.dart#function:askComputerRestart"
+        ],
+        "mountStatus": "unresolved",
+        "reason": "New confirmation entry function (WP-COMP1); no real-entry capture acceptance is inferred."
+      },
+      "surface:askComputerUpgrade": {
+        "owner": "WP-COMP1 v1.24 alignment",
+        "kind": "dialog",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/computers_rack/computers_rack_actions.dart#function:askComputerUpgrade"
+        ],
+        "mountStatus": "unresolved",
+        "reason": "New confirmation entry function (WP-COMP1); no real-entry capture acceptance is inferred."
+      },
+      "surface:confirmComputerRestart": {
+        "owner": "WP-COMP1 v1.24 alignment",
+        "kind": "dialog",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/computers_rack/computers_rack_actions.dart#function:confirmComputerRestart"
+        ],
+        "mountStatus": "unresolved",
+        "reason": "New confirmation entry function (WP-COMP1); no real-entry capture acceptance is inferred."
+      },
+      "surface:confirmComputerUpgrade": {
+        "owner": "WP-COMP1 v1.24 alignment",
+        "kind": "dialog",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/computers_rack/computers_rack_actions.dart#function:confirmComputerUpgrade"
+        ],
+        "mountStatus": "unresolved",
+        "reason": "New confirmation entry function (WP-COMP1); no real-entry capture acceptance is inferred."
+      },
+      "surface:_FleetViewState.openComputer": {
+        "owner": "WP-COMP1 v1.24 alignment",
+        "kind": "dialog",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/fleet_views.dart#method:_FleetViewState.openComputer"
+        ],
+        "mountStatus": "unresolved",
+        "reason": "New confirmation entry function (WP-COMP1); no real-entry capture acceptance is inferred."
       }
     },
     "requirements": {

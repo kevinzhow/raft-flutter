@@ -132,8 +132,7 @@ Future<void> showCredential(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              detail ??
-                  'This credential is shown once. Store it securely before closing.',
+              detail ?? 'This credential is shown once. Store it securely before closing.',
             ),
             const SizedBox(height: 16),
             RaftSecretView(

@@ -564,9 +564,8 @@ Object? rackSortValue(RackMachine m, String key, RackRemaining? remaining) {
   }
   final provider = parseRemainingSortKey(key);
   if (provider == null ||
-      !rackMachineRuntimes(
-        m,
-      ).any((r) => usageProviderForRuntime(r) == provider)) {
+      !rackMachineRuntimes(m)
+          .any((r) => usageProviderForRuntime(r) == provider)) {
     return null;
   }
   return remaining?.call(m, provider);

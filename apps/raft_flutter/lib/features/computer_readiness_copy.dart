@@ -158,11 +158,15 @@ ReadinessCopy formatReadiness(
     return ReadinessCopy(
       title: reset == null
           ? tr("Can't reply right now")
-          : raftFormat(context, switch (reset.unit) {
-              'm' => 'Back in {count}m',
-              'h' => 'Back in {count}h',
-              _ => 'Back in {count}d',
-            }, {'count': reset.count}),
+          : raftFormat(
+              context,
+              switch (reset.unit) {
+                'm' => 'Back in {count}m',
+                'h' => 'Back in {count}h',
+                _ => 'Back in {count}d',
+              },
+              {'count': reset.count},
+            ),
       detail: tr(
         "This agent can't reply right now. Its messages are kept and will be delivered.",
       ),
@@ -351,11 +355,15 @@ String? formatWaitBackIn(BuildContext context, int? untilMs, int nowMs) {
   final reset = rackReset(untilMs, nowMs);
   return reset == null
       ? null
-      : raftFormat(context, switch (reset.unit) {
-          'm' => 'back in {count}m',
-          'h' => 'back in {count}h',
-          _ => 'back in {count}d',
-        }, {'count': reset.count});
+      : raftFormat(
+          context,
+          switch (reset.unit) {
+            'm' => 'back in {count}m',
+            'h' => 'back in {count}h',
+            _ => 'back in {count}d',
+          },
+          {'count': reset.count},
+        );
 }
 
 /// "{count} computer(s)" in the rack's machine type, ICU one/other.

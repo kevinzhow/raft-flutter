@@ -22,12 +22,11 @@ class _DeleteFixture {
       ],
     };
     // Web v1.24: deleting one's own Computer revokes its key first.
-    f.overrides['POST /servers/a/machines/computer-a/revoke-computer-key'] = (
-      _,
-    ) async {
-      revokes++;
-      return <String, dynamic>{};
-    };
+    f.overrides['POST /servers/a/machines/computer-a/revoke-computer-key'] =
+        (_) async {
+          revokes++;
+          return <String, dynamic>{};
+        };
     f.overrides['DELETE /servers/a/machines/computer-a'] = (_) async {
       deletes++;
       if (pending != null) await pending!.future;

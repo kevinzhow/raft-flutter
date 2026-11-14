@@ -39,8 +39,9 @@ class _Workspace extends WorkspaceController {
     if (path.endsWith('/machines')) {
       return {'machines': machines.map(Map<String, dynamic>.from).toList()};
     }
-    if (path == '/agents')
+    if (path == '/agents') {
       return agents.map(Map<String, dynamic>.from).toList();
+    }
     return <dynamic>[];
   }
 
@@ -263,30 +264,31 @@ void main() {
     },
   );
 
-  testWidgets('Delete computer from the row menu says the agents must go first', (
-    t,
-  ) async {
-    w.machines = [computer('busy')];
-    w.agents = [
-      {'id': 'a1', 'name': 'one', 'machineId': 'busy'},
-    ];
-    ComputersRackPreferences.instance.setView(RackView.list);
-    await open(t);
-    await t.tap(find.byKey(const ValueKey('rack-row-menu-busy')));
-    await t.pumpAndSettle();
-    await t.tap(find.text('Delete computer'));
-    await t.pumpAndSettle();
-    expect(find.text('Cannot delete computer'), findsOneWidget);
-    expect(
-      find.text(
-        'This computer has 1 agent assigned. Remove all agents before deleting the computer.',
-      ),
-      findsOneWidget,
-    );
-    await t.tap(find.text('OK'));
-    await t.pumpAndSettle();
-    expect(w.commands.where((c) => c.$1 == 'DELETE'), isEmpty);
-  });
+  testWidgets(
+    'Delete computer from the row menu says the agents must go first',
+    (t) async {
+      w.machines = [computer('busy')];
+      w.agents = [
+        {'id': 'a1', 'name': 'one', 'machineId': 'busy'},
+      ];
+      ComputersRackPreferences.instance.setView(RackView.list);
+      await open(t);
+      await t.tap(find.byKey(const ValueKey('rack-row-menu-busy')));
+      await t.pumpAndSettle();
+      await t.tap(find.text('Delete computer'));
+      await t.pumpAndSettle();
+      expect(find.text('Cannot delete computer'), findsOneWidget);
+      expect(
+        find.text(
+          'This computer has 1 agent assigned. Remove all agents before deleting the computer.',
+        ),
+        findsOneWidget,
+      );
+      await t.tap(find.text('OK'));
+      await t.pumpAndSettle();
+      expect(w.commands.where((c) => c.$1 == 'DELETE'), isEmpty);
+    },
+  );
 
   testWidgets(
     'Delete computer confirms, then DELETEs; the own computer revokes its key first',

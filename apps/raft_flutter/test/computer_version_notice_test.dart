@@ -172,7 +172,10 @@ void main() {
   ) async {
     await mount(t, machine(version: '1.0.30', upgradable: false));
     expect(find.text('This version needs a reinstall'), findsOneWidget);
-    expect(find.byKey(const ValueKey('computer-version-notice-upgrade')), findsNothing);
+    expect(
+      find.byKey(const ValueKey('computer-version-notice-upgrade')),
+      findsNothing,
+    );
     expect(
       find.byKey(const ValueKey('computer-version-notice-reinstall')),
       findsOneWidget,
@@ -201,19 +204,23 @@ void main() {
     await leave(t);
   });
 
-  testWidgets('online without a version waits 20 s, then asks for a reinstall', (
-    t,
-  ) async {
-    await mount(t, machine(version: null, upgradable: false));
-    expect(notice, findsNothing);
-    await t.pump(unreportedVersionGrace - const Duration(seconds: 1));
-    expect(notice, findsNothing);
-    await t.pump(const Duration(seconds: 1));
-    await t.pump(const Duration(milliseconds: 100));
-    expect(notice, findsOneWidget);
-    expect(find.text("This computer doesn't report its version"), findsOneWidget);
-    await leave(t);
-  });
+  testWidgets(
+    'online without a version waits 20 s, then asks for a reinstall',
+    (t) async {
+      await mount(t, machine(version: null, upgradable: false));
+      expect(notice, findsNothing);
+      await t.pump(unreportedVersionGrace - const Duration(seconds: 1));
+      expect(notice, findsNothing);
+      await t.pump(const Duration(seconds: 1));
+      await t.pump(const Duration(milliseconds: 100));
+      expect(notice, findsOneWidget);
+      expect(
+        find.text("This computer doesn't report its version"),
+        findsOneWidget,
+      );
+      await leave(t);
+    },
+  );
 
   testWidgets('Restart asks first and posts only once confirmed', (t) async {
     await mount(t, machine(gate: null, version: '1.0.47', upgradable: false));
