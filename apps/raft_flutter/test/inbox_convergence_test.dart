@@ -292,6 +292,7 @@ void main() {
           serverHasIt ? _row('c1', 'm7', 7, 3) : _row('c1', 'm6', 6, 2),
         ]);
         final store = w.activityUnread..start();
+        store.addListener(() {}); // a mounted surface
         client.ingress.add(const RaftEvent('rooms:joined', null));
         await _drain(tester);
         expect(store.totalUnreadCount, 2);
@@ -351,6 +352,7 @@ void main() {
       api.routes['GET /channels/inbox'] = (_) =>
           _window([_row('c1', 'm6', 6, 2)]);
       final store = w.activityUnread..start();
+      store.addListener(() {}); // a mounted surface
       client.ingress.add(const RaftEvent('rooms:joined', null));
       await _drain(tester);
       final before = _inbox(api).length;

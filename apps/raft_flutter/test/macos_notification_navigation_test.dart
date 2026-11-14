@@ -235,7 +235,8 @@ void main() {
                   (uri) => Uri.parse(uri).path == '/s/demo/channel/c2',
                 ),
                 everyElement(contains('thread=c2%3Aparent')),
-                reason: 'A notification never publishes an intermediate channel page.',
+                reason:
+                    'A notification never publishes an intermediate channel page.',
               );
             } else {
               expect(w.location.thread, isNull);
@@ -249,8 +250,6 @@ void main() {
             await _until(t, () => closed);
             await closing;
             notifications.dispose();
-            // The store's throttled read and retries are the store's own timers.
-            w.activityUnreadIfBound?.dispose();
             await t.pumpWidget(const SizedBox());
             await t.pumpAndSettle();
             expect(t.takeException(), isNull);

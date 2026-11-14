@@ -101,12 +101,14 @@ class SourceActivityUnreadStore extends ChangeNotifier {
   late final _background = InboxBackgroundRefresh(
     read: () => unawaited(refresh()),
     now: () => clock(),
+    watched: () => hasListeners,
   );
   String? _scope;
   bool _started = false, _everBound = false, _disposed = false, _denied = false;
   int _revision = 0, _request = 0, _authorityEpoch = 0;
   // Web's catch-up retries (1.5 s, 3 s) also read nothing while hidden; ours
-  // keep their own 0.7/1.5/3 s schedule and budget.
+  // keep their own 0.7/1.5/3 s schedule and budget. Like the throttle they run
+  // only while a surface listens (see [addListener]).
   late final _convergence = InboxConvergence(
     retry: () {
       if (!_background.deferWhileHidden()) unawaited(refresh());
@@ -343,7 +345,7 @@ class SourceActivityUnreadStore extends ChangeNotifier {
     }
     _readThrough(event);
     if (!_refreshes(event)) return;
-    _expect(event.name, payload);
+    if (hasListeners) _expect(event.name, payload);
     _patchInPlace(event);
     _background.request();
   }
@@ -456,7 +458,7 @@ class SourceActivityUnreadStore extends ChangeNotifier {
     final scope = RegExp(r'^/channels/([^/]+)/read(?:-all)?$')
         .firstMatch(request.path)
         ?.group(1);
-    if (scope == null || scope == 'inbox') {
+    if (scope == null || scope == 'inbox' || !hasListeners) {
       _background.request();
       return;
     }
@@ -577,6 +579,45 @@ class SourceActivityUnreadStore extends ChangeNotifier {
       _windowSerial = ++_serials;
     }
     notifyListeners();
+  }
+
+  // The surfaces that show Activity data (Activity page, rail and sidebar
+  // entry, tab badge, notification owners) listen to this store. Timers are
+  // armed only while one does; the last one leaving drops them and owes the
+  // read, which the next listener (or refresh) pays.
+  bool _watched = false;
+
+  @override
+  void addListener(VoidCallback listener) {
+    super.addListener(listener);
+    _watchChanged();
+  }
+
+  @override
+  void removeListener(VoidCallback listener) {
+    super.removeListener(listener);
+    if (!_disposed) _watchChanged();
+  }
+
+  void _watchChanged() {
+    if (_watched == hasListeners) return;
+    _watched = hasListeners;
+    if (_watched) {
+      if (_started &&
+          _scope != null &&
+          !_denied &&
+          !_background.hidden() &&
+          _background.takeOwed()) {
+        unawaited(refresh());
+      }
+      return;
+    }
+    _background.suspend();
+    _convergence.reset();
+    for (final timer in _settling.values) {
+      timer.cancel();
+    }
+    _settling.clear();
   }
 
   /// Read the inbox until it lists [messageId] of [channelId] (an OS

@@ -17,7 +17,10 @@ class InboxBackgroundRefresh {
     required this.read,
     required this.now,
     bool Function()? hidden,
+    this.watched = _always,
   }) : hidden = hidden ?? appHidden;
+
+  static bool _always() => true;
 
   static const interval = Duration(milliseconds: 2500);
 
@@ -25,6 +28,10 @@ class InboxBackgroundRefresh {
   final void Function() read;
   final DateTime Function() now;
   final bool Function() hidden;
+
+  /// Whether a surface that shows Activity data is mounted. Only then is a
+  /// trailing timer armed; otherwise the read is owed until one is.
+  final bool Function() watched;
 
   DateTime? _lastResetStartedAt;
   Timer? _timer;
@@ -56,6 +63,10 @@ class InboxBackgroundRefresh {
         ? Duration.zero
         : last.add(interval).difference(now());
     if (wait <= Duration.zero) return _run();
+    if (!watched()) {
+      _owed = true;
+      return;
+    }
     _timer = Timer(wait, () {
       _timer = null;
       _run();
@@ -86,6 +97,14 @@ class InboxBackgroundRefresh {
     _timer?.cancel();
     _timer = null;
     return owed;
+  }
+
+  /// The last surface left: drop the trailing timer, owing its read.
+  void suspend() {
+    if (_timer == null) return;
+    _timer!.cancel();
+    _timer = null;
+    _owed = true;
   }
 
   void cancel() {

@@ -101,6 +101,7 @@ typedef _Fixture = ({
   _Client client,
   SourceActivityUnreadStore store,
   List<Map<String, dynamic>> served,
+  VoidCallback surface,
 });
 
 /// A started store whose first window is accepted; the window it serves next
@@ -156,10 +157,20 @@ Future<_Fixture> _started(
     return _window(served);
   };
   final store = w.activityUnread..start();
+  // A mounted surface listens: only then are the throttle's timers armed.
+  void surface() {}
+  store.addListener(surface);
   client.ingress.add(const RaftEvent('rooms:joined', null));
   await _drain(tester);
   expect(store.hasAcceptedWindow, isTrue);
-  return (w: w, api: api, client: client, store: store, served: served);
+  return (
+    w: w,
+    api: api,
+    client: client,
+    store: store,
+    served: served,
+    surface: surface,
+  );
 }
 
 Map<String, dynamic> _shown(_Fixture f, String channel) =>
@@ -346,6 +357,32 @@ void main() {
       unawaited(f.store.refreshOnResume());
       await _drain(tester);
       expect(_inbox(f.api).length, before + 1);
+      f.store.dispose();
+    });
+  });
+
+  group('timers follow the surfaces', () {
+    testWidgets('[BP-READ-046] with no surface listening no timer is armed; '
+        'the next surface pays the owed read', (tester) async {
+      final f = await _started(tester);
+      await _elapse(tester, const Duration(seconds: 4));
+      // Last surface leaves: nothing may stay pending.
+      f.store.removeListener(f.surface);
+      final before = _inbox(f.api).length;
+      f.client.ingress.add(const RaftEvent('notification_prefs:updated', {}));
+      await _drain(tester); // quiet window: the leading read needs no timer
+      expect(_inbox(f.api).length, before + 1);
+      f.client.ingress.add(const RaftEvent('notification_prefs:updated', {}));
+      f.client.ingress.add(RaftEvent('message:new', _message(7)));
+      expect(tester.binding.hasScheduledFrame, isFalse);
+      await tester.pump();
+      // No pending timer: advancing time reads nothing.
+      await _elapse(tester, const Duration(seconds: 10));
+      expect(_inbox(f.api).length, before + 1, reason: 'owed, not scheduled');
+      expect(f.store.totalUnreadCount, 3, reason: 'still patched in place');
+      f.store.addListener(f.surface);
+      await _drain(tester);
+      expect(_inbox(f.api).length, before + 2, reason: 'a surface pays it');
       f.store.dispose();
     });
   });
