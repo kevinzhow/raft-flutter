@@ -18,6 +18,19 @@ import 'artifact_text.dart';
 /// Web MessageEmbed size `item`: at most 400 px wide off a phone.
 const artifactCardMaxWidth = 400.0;
 
+/// Web FilePreview (`size-8`) and the excerpt's frame height before it fades.
+const _tileSize = 32.0;
+const _excerptMaxHeight = 120.0;
+
+/// Web `px-3 py-2.5` / `gap-2.5`.
+const _inset = EdgeInsets.fromLTRB(
+  RaftSpace.x3,
+  RaftSpace.x2 + RaftSpace.half,
+  RaftSpace.x3,
+  RaftSpace.x2 + RaftSpace.half,
+);
+const _gap = RaftSpace.x2 + RaftSpace.half;
+
 class _CardBox extends StatelessWidget {
   const _CardBox({
     super.key,
@@ -53,7 +66,7 @@ class _CardBox extends StatelessWidget {
         alignment: AlignmentDirectional.centerStart,
         child: ConstrainedBox(
           constraints: BoxConstraints(
-            maxWidth: MediaQuery.sizeOf(context).width < 768
+            maxWidth: RaftAdaptiveWorkspace.compactOf(context)
                 ? double.infinity
                 : artifactCardMaxWidth,
           ),
@@ -73,25 +86,31 @@ class ArtifactKindTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     final badge = artifactKindBadge(kind);
-    return SizedBox(
-      width: 32,
-      height: 32,
+    return SizedBox.square(
+      dimension: _tileSize,
       child: DecoratedBox(
         decoration: BoxDecoration(
           color: t.ui.fillMuted,
-          borderRadius: BorderRadius.circular(t.size('radius.control', fallback: 6)),
+          borderRadius: RaftShapes.attachment(t),
         ),
         child: Stack(
           alignment: Alignment.center,
           children: [
-            RaftIcon(artifactKindGlyph(kind), size: 16, color: t.ui.foregroundMuted),
+            RaftIcon(
+              artifactKindGlyph(kind),
+              size: 16,
+              color: t.ui.foregroundMuted,
+            ),
             if (badge != null)
               Positioned(
                 bottom: 1,
                 child: Text(
                   badge,
-                  style: RaftTypography.mono(t, size: 7, line: 8)
-                      .copyWith(color: t.ui.foregroundMuted),
+                  style: RaftTypography.mono(
+                    t,
+                    size: 7,
+                    line: 8,
+                  ).copyWith(color: t.ui.foregroundMuted),
                 ),
               ),
           ],
@@ -114,18 +133,24 @@ class ArtifactBadge extends StatelessWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         color: accent ? t.colors['info-soft'] : null,
-        borderRadius: BorderRadius.circular(t.size('radius.control', fallback: 6)),
+        borderRadius: RaftShapes.attachment(t),
         border: accent ? null : Border.all(color: ui.lineHairline),
       ),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+        padding: const EdgeInsets.symmetric(
+          horizontal: RaftSpace.x1_5,
+          vertical: RaftSpace.half,
+        ),
         child: Text(
           text,
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
-          style: RaftTypography.body(t, size: 11, line: 16).copyWith(
+          style: RaftTypography.body(
+            t,
+            size: 11,
+            line: 16,
+            weight: FontWeight.w500,
             color: accent ? t.colors['info-strong'] : ui.foregroundMuted,
-            fontWeight: FontWeight.w500,
           ),
         ),
       ),
@@ -178,11 +203,16 @@ class ArtifactMessageCard extends StatelessWidget {
     ].join('; ');
     final excerpt = card.preview.kind == 'excerpt' ? card.preview.text : null;
     final meta = artifactUpdatedLine(context, card);
-    final hint = RaftTypography.mono(t, size: 11, line: 16)
-        .copyWith(color: ui.foregroundHint);
+    final hint = RaftTypography.mono(
+      t,
+      size: 11,
+      line: 16,
+    ).copyWith(color: ui.foregroundHint);
     final openLabel = raftText(context, 'Open in browser');
     return _CardBox(
-      key: ValueKey('artifact-card-${card.id}@${card.pinned ? card.version : 'latest'}'),
+      key: ValueKey(
+        'artifact-card-${card.id}@${card.pinned ? card.version : 'latest'}',
+      ),
       onTap: onOpen,
       semanticLabel: card.title,
       child: Column(
@@ -195,47 +225,59 @@ class ArtifactMessageCard extends StatelessWidget {
                 border: Border(bottom: BorderSide(color: ui.lineHairline)),
               ),
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+                padding: _inset,
                 child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxHeight: 120),
+                  constraints: const BoxConstraints(
+                    maxHeight: _excerptMaxHeight,
+                  ),
                   child: ClipRect(
                     child: Text(
                       excerpt,
                       key: const ValueKey('artifact-card-excerpt'),
                       maxLines: 6,
                       overflow: TextOverflow.fade,
-                      style: RaftTypography.body(t, size: 13, line: 18)
-                          .copyWith(color: ui.foregroundMuted),
+                      style: RaftTypography.body(
+                        t,
+                        size: 13,
+                        line: 18,
+                      ).copyWith(color: ui.foregroundMuted),
                     ),
                   ),
                 ),
               ),
             ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(12, 10, 6, 6),
+            padding: const EdgeInsets.fromLTRB(
+              RaftSpace.x3,
+              _gap,
+              RaftSpace.x1_5,
+              RaftSpace.x1_5,
+            ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
-              spacing: 10,
+              spacing: _gap,
               children: [
                 ArtifactKindTile(kind: card.kind),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    spacing: 2,
+                    spacing: RaftSpace.half,
                     children: [
                       Wrap(
-                        spacing: 6,
-                        runSpacing: 4,
+                        spacing: RaftSpace.x1_5,
+                        runSpacing: RaftSpace.x1,
                         crossAxisAlignment: WrapCrossAlignment.center,
                         children: [
                           Text(
                             card.title,
                             key: const ValueKey('artifact-card-title'),
-                            style: RaftTypography.body(t, size: 14, line: 20)
-                                .copyWith(
-                                  color: ui.foreground,
-                                  fontWeight: FontWeight.w600,
-                                ),
+                            style: RaftTypography.body(
+                              t,
+                              size: 14,
+                              line: 20,
+                              weight: FontWeight.w600,
+                              color: ui.foreground,
+                            ),
                           ),
                           ArtifactBadge(
                             artifactVersionLabel(
@@ -269,8 +311,11 @@ class ArtifactMessageCard extends StatelessWidget {
                           description,
                           maxLines: facts == null ? 2 : 1,
                           overflow: TextOverflow.ellipsis,
-                          style: RaftTypography.body(t, size: 13, line: 18)
-                              .copyWith(color: ui.foregroundMuted),
+                          style: RaftTypography.body(
+                            t,
+                            size: 13,
+                            line: 18,
+                          ).copyWith(color: ui.foregroundMuted),
                         ),
                     ],
                   ),
@@ -289,15 +334,19 @@ class ArtifactMessageCard extends StatelessWidget {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
+            padding: const EdgeInsets.only(
+              left: RaftSpace.x3,
+              right: RaftSpace.x3,
+              bottom: _gap,
+            ),
             child: Wrap(
-              spacing: 10,
-              runSpacing: 4,
+              spacing: _gap,
+              runSpacing: RaftSpace.x1,
               crossAxisAlignment: WrapCrossAlignment.center,
               children: [
                 Row(
                   mainAxisSize: MainAxisSize.min,
-                  spacing: 4,
+                  spacing: RaftSpace.x1,
                   children: [
                     RaftIcon(
                       artifactScopeGlyph(card.home),
@@ -312,12 +361,19 @@ class ArtifactMessageCard extends StatelessWidget {
                         serverName: serverName,
                       ),
                       key: const ValueKey('artifact-card-scope'),
-                      style: RaftTypography.body(t, size: 12, line: 16)
-                          .copyWith(color: ui.foregroundMuted),
+                      style: RaftTypography.body(
+                        t,
+                        size: 12,
+                        line: 16,
+                      ).copyWith(color: ui.foregroundMuted),
                     ),
                   ],
                 ),
-                Text(meta, key: const ValueKey('artifact-card-meta'), style: hint),
+                Text(
+                  meta,
+                  key: const ValueKey('artifact-card-meta'),
+                  style: hint,
+                ),
                 if (card.commentCount > 0)
                   Semantics(
                     label: icuText(
@@ -328,7 +384,7 @@ class ArtifactMessageCard extends StatelessWidget {
                     child: ExcludeSemantics(
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
-                        spacing: 3,
+                        spacing: RaftSpace.x1,
                         children: [
                           RaftIcon(
                             RaftGlyph.messageSquare,
@@ -365,26 +421,33 @@ class ArtifactDeletedCard extends StatelessWidget {
       key: const ValueKey('artifact-card-deleted'),
       dimmed: true,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+        padding: _inset,
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
-          spacing: 10,
+          spacing: _gap,
           children: [
             const ArtifactKindTile(kind: ArtifactKind.other),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                spacing: 2,
+                spacing: RaftSpace.half,
                 children: [
                   Text(
                     deleted.title,
-                    style: RaftTypography.body(t, size: 14, line: 20)
-                        .copyWith(fontWeight: FontWeight.w600),
+                    style: RaftTypography.body(
+                      t,
+                      size: 14,
+                      line: 20,
+                      weight: FontWeight.w600,
+                    ),
                   ),
                   Text(
                     artifactDeletedLine(context, deleted),
-                    style: RaftTypography.mono(t, size: 11, line: 16)
-                        .copyWith(color: t.ui.foregroundHint),
+                    style: RaftTypography.mono(
+                      t,
+                      size: 11,
+                      line: 16,
+                    ).copyWith(color: t.ui.foregroundHint),
                   ),
                 ],
               ),
@@ -406,10 +469,7 @@ class ArtifactMessageCardLoading extends StatelessWidget {
     label: raftText(context, 'Loading Artifact'),
     child: const _CardBox(
       key: ValueKey('artifact-card-loading'),
-      child: Padding(
-        padding: EdgeInsets.fromLTRB(12, 10, 12, 10),
-        child: RaftSkeletonRow(),
-      ),
+      child: Padding(padding: _inset, child: RaftSkeletonRow()),
     ),
   );
 }

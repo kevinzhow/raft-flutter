@@ -9,7 +9,10 @@ import 'package:raft_client/raft_client.dart';
 /// recorded as `METHOD path`.
 class ArtifactFakeClient extends RaftClient {
   ArtifactFakeClient({this.enabled = true})
-    : super(origin: 'https://api.raft.build', sessionStore: MemorySessionStore()) {
+    : super(
+        origin: 'https://api.raft.build',
+        sessionStore: MemorySessionStore(),
+      ) {
     user = RaftRecord({'id': 'u1', 'name': 'dev', 'displayName': 'Developer'});
     selectServer('s1');
   }
@@ -29,9 +32,8 @@ class ArtifactFakeClient extends RaftClient {
   bool get signedIn => true;
 
   @override
-  Future<RaftClientConfig> clientConfig() async => const RaftClientConfig(
-    appHosts: ['app.raft.build'],
-  );
+  Future<RaftClientConfig> clientConfig() async =>
+      const RaftClientConfig(appHosts: ['app.raft.build']);
 
   @override
   Future<dynamic> request(
@@ -151,7 +153,12 @@ Map<String, Object?> artifactViewerJson({
   'files':
       files ??
       [
-        {'path': 'probe.html', 'kind': 'html', 'sizeBytes': 3780, 'entry': true},
+        {
+          'path': 'probe.html',
+          'kind': 'html',
+          'sizeBytes': 3780,
+          'entry': true,
+        },
       ],
   'versions': [
     for (final n in versions.reversed)

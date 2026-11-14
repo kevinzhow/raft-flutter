@@ -1,6 +1,9 @@
-// WP-ART0 spike: where the app has no WebView (Linux, Windows), an Artifact's page opens in the
-// browser: Raft Web's own page for it (`/artifacts/<short id>`, shared artifactPagePath), where
-// the reader signs in as on the Web and gets every capability (comments, find, files).
+// Where the app frames no Artifact (Linux and Windows always, macOS while
+// semantics are on, a server whose content domain the app doesn't know), an
+// Artifact's page opens in the browser: Raft Web's own page for it
+// (`/artifacts/<short id>`, shared artifactPagePath), where the reader signs
+// in as on the Web and gets every capability (comments, find, files). Web
+// `artifacts.page.hostOpenInBrowser`.
 import 'package:flutter/widgets.dart';
 import 'package:raft_ui/raft_ui.dart';
 
@@ -21,16 +24,22 @@ class ArtifactOpenInBrowser extends StatelessWidget {
   @override
   Widget build(BuildContext context) => ColoredBox(
     color: RaftTokens.of(context).panel,
-    child: RaftEmptyState(
-      glyph: RaftGlyph.arrowUpRight,
-      title: title,
-      // Spike wording; ART1 takes Web's strings (`artifacts.frame.needsTab*`,
-      // `artifacts.page.hostOpenInBrowser`).
-      detail: 'This device opens Artifact pages in your browser.',
-      action: RaftButton(
-        key: const ValueKey('artifact-open-in-browser'),
-        label: 'Open in browser',
-        onPressed: () => open(pageUrl),
+    child: Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(RaftSpace.x6),
+        child: RaftEmptyState(
+          glyph: RaftGlyph.arrowUpRight,
+          title: title,
+          detail: '',
+          action: RaftButton(
+            key: const ValueKey('artifact-open-in-browser'),
+            label: raftText(context, 'Open in browser'),
+            glyph: RaftGlyph.arrowUpRight,
+            tone: RaftButtonRecipeVariant.outline,
+            size: RaftButtonRecipeSize.md,
+            onPressed: () => open(pageUrl),
+          ),
+        ),
       ),
     ),
   );

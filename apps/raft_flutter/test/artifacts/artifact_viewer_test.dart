@@ -83,14 +83,20 @@ void main() {
     await open(tester);
     expect(find.text('probe'), findsOneWidget);
     expect(find.text('general'), findsOneWidget, reason: 'where it lives');
-    expect(find.byKey(const ValueKey('artifact-version-badge')), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('artifact-version-badge')),
+      findsOneWidget,
+    );
     expect(FakeArtifactWebView.baseUrl, 'https://app.raft.build');
     expect(
       client.requests.where((r) => r.contains('/frame')),
       isEmpty,
       reason: 'the viewer answer\'s ticket is spent first',
     );
-    expect(find.byKey(const ValueKey('artifact-splash-starting')), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('artifact-splash-starting')),
+      findsOneWidget,
+    );
   });
 
   testWidgets('an Artifact this reader can\'t see is the one "can\'t open" '
@@ -117,7 +123,9 @@ void main() {
     expect(FakeArtifactWebView.html, isNull);
     await tester.tap(find.byKey(const ValueKey('artifact-open-in-browser')));
     await tester.pump();
-    expect(opened, [Uri.parse('https://app.raft.build/artifacts/$artifactShort')]);
+    expect(opened, [
+      Uri.parse('https://app.raft.build/artifacts/$artifactShort'),
+    ]);
   });
 
   testWidgets('macOS with semantics on falls back to the browser', (
@@ -126,13 +134,21 @@ void main() {
     answerViewer(artifactViewerJson());
     await open(tester, os: 'macos', semantics: true);
     expect(FakeArtifactWebView.html, isNull);
-    expect(find.byKey(const ValueKey('artifact-open-in-browser')), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('artifact-open-in-browser')),
+      findsOneWidget,
+    );
   });
 
   testWidgets('version history: a pinned version, then Back to latest', (
     tester,
   ) async {
-    answerViewer(artifactViewerJson(card: artifactCardJson(version: 2, latest: 2), versions: [1, 2]));
+    answerViewer(
+      artifactViewerJson(
+        card: artifactCardJson(version: 2, latest: 2),
+        versions: [1, 2],
+      ),
+    );
     answerViewer(
       artifactViewerJson(
         card: artifactCardJson(version: 1, latest: 2, pinned: true),
@@ -143,7 +159,10 @@ void main() {
     await open(tester);
     await tester.tap(find.byKey(const ValueKey('artifact-version-badge')));
     await tester.pump();
-    expect(find.byKey(const ValueKey('artifact-version-sheet')), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('artifact-version-sheet')),
+      findsOneWidget,
+    );
     expect(find.text('v2 · Latest'), findsOneWidget);
     await tester.tap(find.byKey(const ValueKey('artifact-version-row-1')));
     for (var i = 0; i < 4; i++) {
@@ -151,7 +170,9 @@ void main() {
     }
     expect(client.requests, contains('GET /artifacts/$artifactId?version=1'));
     expect(find.text('Viewing v1'), findsOneWidget);
-    await tester.tap(find.byKey(const ValueKey('artifact-viewer-back-to-latest')));
+    await tester.tap(
+      find.byKey(const ValueKey('artifact-viewer-back-to-latest')),
+    );
     for (var i = 0; i < 4; i++) {
       await tester.pump();
     }
@@ -168,8 +189,18 @@ void main() {
     answerViewer(
       artifactViewerJson(
         files: [
-          {'path': 'index.html', 'kind': 'html', 'sizeBytes': 10, 'entry': true},
-          {'path': 'data/rows.csv', 'kind': 'csv', 'sizeBytes': 20, 'entry': false},
+          {
+            'path': 'index.html',
+            'kind': 'html',
+            'sizeBytes': 10,
+            'entry': true,
+          },
+          {
+            'path': 'data/rows.csv',
+            'kind': 'csv',
+            'sizeBytes': 20,
+            'entry': false,
+          },
         ],
       ),
     );
@@ -179,17 +210,26 @@ void main() {
       'following': true,
     };
     await open(tester);
-    await tester.tap(find.byKey(const ValueKey('artifact-viewer-menu-trigger')));
+    await tester.tap(
+      find.byKey(const ValueKey('artifact-viewer-menu-trigger')),
+    );
     await tester.pumpAndSettle();
     await tester.tap(find.text('Download all'));
     await tester.pumpAndSettle();
     expect(saved, [('probe v1.zip', 'application/zip', 4)]);
-    await tester.tap(find.byKey(const ValueKey('artifact-viewer-menu-trigger')));
+    await tester.tap(
+      find.byKey(const ValueKey('artifact-viewer-menu-trigger')),
+    );
     await tester.pumpAndSettle();
     await tester.tap(find.text('Follow'));
     await tester.pumpAndSettle();
-    expect(client.requests, contains('PUT /artifacts/$artifactId/subscription'));
-    await tester.tap(find.byKey(const ValueKey('artifact-viewer-menu-trigger')));
+    expect(
+      client.requests,
+      contains('PUT /artifacts/$artifactId/subscription'),
+    );
+    await tester.tap(
+      find.byKey(const ValueKey('artifact-viewer-menu-trigger')),
+    );
     await tester.pumpAndSettle();
     expect(find.text('Unfollow'), findsOneWidget);
   });
@@ -200,21 +240,35 @@ void main() {
     answerViewer(
       artifactViewerJson(
         files: [
-          {'path': 'index.html', 'kind': 'html', 'sizeBytes': 10, 'entry': true},
-          {'path': 'data/rows.csv', 'kind': 'csv', 'sizeBytes': 20, 'entry': false},
+          {
+            'path': 'index.html',
+            'kind': 'html',
+            'sizeBytes': 10,
+            'entry': true,
+          },
+          {
+            'path': 'data/rows.csv',
+            'kind': 'csv',
+            'sizeBytes': 20,
+            'entry': false,
+          },
         ],
       ),
     );
     client.answers['GET /artifacts/$artifactId/files/data%2Frows.csv?version=1'] =
         (_) => 'name,count\nalpha,1\nbeta,2\n';
     await open(tester);
-    await tester.tap(find.byKey(const ValueKey('artifact-viewer-menu-trigger')));
+    await tester.tap(
+      find.byKey(const ValueKey('artifact-viewer-menu-trigger')),
+    );
     await tester.pumpAndSettle();
     await tester.tap(find.text('Files'));
     await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey('artifact-files-panel')), findsOneWidget);
     expect(find.text('2 files · 30 B'), findsOneWidget);
-    await tester.tap(find.byKey(const ValueKey('artifact-files-row-data/rows.csv')));
+    await tester.tap(
+      find.byKey(const ValueKey('artifact-files-row-data/rows.csv')),
+    );
     for (var i = 0; i < 4; i++) {
       await tester.pump();
     }
@@ -232,8 +286,9 @@ void main() {
         frame: false,
       ),
     );
-    client.answers['GET /artifacts/$artifactId/files/notes.txt?version=1'] =
-        (_) => 'line one\nline two\n';
+    client.answers['GET /artifacts/$artifactId/files/notes.txt?version=1'] = (
+      _,
+    ) => 'line one\nline two\n';
     await open(tester);
     expect(FakeArtifactWebView.html, isNull);
     expect(find.text('line one\nline two'), findsOneWidget);

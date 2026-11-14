@@ -77,13 +77,18 @@ void main() {
     await tester.pump();
   }
 
-  String nonce() => RegExp(
-    r'data-bridge-nonce="([^"]+)"',
-  ).firstMatch(FakeArtifactWebView.html!)!.group(1)!;
+  String nonce() =>
+      RegExp(r'data-bridge-nonce="([^"]+)"')
+          .firstMatch(FakeArtifactWebView.html!)!
+          .group(1)!;
 
   void send(String type, Object? detail, {String? withNonce}) =>
       FakeArtifactWebView.post(
-        jsonEncode({'nonce': withNonce ?? nonce(), 'type': type, 'detail': detail}),
+        jsonEncode({
+          'nonce': withNonce ?? nonce(),
+          'type': type,
+          'detail': detail,
+        }),
       );
 
   testWidgets('the viewer route\'s frame mounts first; the wrapper loads on '
@@ -113,7 +118,10 @@ void main() {
       isFalse,
       reason: 'only one initial document',
     );
-    expect(await FakeArtifactWebView.navigate('https://evil.example/'), isFalse);
+    expect(
+      await FakeArtifactWebView.navigate('https://evil.example/'),
+      isFalse,
+    );
     expect(
       await FakeArtifactWebView.navigate('$content/x', mainFrame: false),
       isTrue,
@@ -121,26 +129,29 @@ void main() {
     );
   });
 
-  test('the initial navigation check takes only the app origin\'s bare root', () {
-    bool allowed(String url, {bool injected = false, bool already = false}) =>
-        artifactInitialWrapperNavigation(
-          url,
-          appOrigin: app,
-          alreadyAllowed: already,
-          injected: injected,
-        );
-    expect(allowed('http://localhost:15194'), isTrue);
-    expect(allowed('http://localhost:15194/'), isTrue);
-    expect(allowed('http://localhost:15194/x'), isFalse);
-    expect(allowed('http://localhost:15194/?q=1'), isFalse);
-    expect(allowed('http://localhost:15194/#f'), isFalse);
-    expect(allowed('http://u:p@localhost:15194/'), isFalse);
-    expect(allowed('https://localhost:15194/'), isFalse);
-    expect(allowed('http://localhost:15195/'), isFalse);
-    expect(allowed('about:blank'), isFalse);
-    expect(allowed('http://localhost:15194/', injected: true), isFalse);
-    expect(allowed('http://localhost:15194/', already: true), isFalse);
-  });
+  test(
+    'the initial navigation check takes only the app origin\'s bare root',
+    () {
+      bool allowed(String url, {bool injected = false, bool already = false}) =>
+          artifactInitialWrapperNavigation(
+            url,
+            appOrigin: app,
+            alreadyAllowed: already,
+            injected: injected,
+          );
+      expect(allowed('http://localhost:15194'), isTrue);
+      expect(allowed('http://localhost:15194/'), isTrue);
+      expect(allowed('http://localhost:15194/x'), isFalse);
+      expect(allowed('http://localhost:15194/?q=1'), isFalse);
+      expect(allowed('http://localhost:15194/#f'), isFalse);
+      expect(allowed('http://u:p@localhost:15194/'), isFalse);
+      expect(allowed('https://localhost:15194/'), isFalse);
+      expect(allowed('http://localhost:15195/'), isFalse);
+      expect(allowed('about:blank'), isFalse);
+      expect(allowed('http://localhost:15194/', injected: true), isFalse);
+      expect(allowed('http://localhost:15194/', already: true), isFalse);
+    },
+  );
 
   testWidgets('a message without the page\'s nonce is dropped: a content frame '
       'that finds the channel can\'t open a link', (tester) async {
@@ -151,18 +162,20 @@ void main() {
         'detail': {'id': 7, 'url': 'https://evil.example/'},
       }),
     );
-    send(
-      'openLink',
-      {'id': 8, 'url': 'https://evil.example/'},
-      withNonce: 'guess',
-    );
+    send('openLink', {
+      'id': 8,
+      'url': 'https://evil.example/',
+    }, withNonce: 'guess');
     await tester.pump();
     expect(opened, isEmpty);
     expect(frame.refused, 2);
     send('openLink', {'id': 9, 'url': 'https://example.com/a'});
     await tester.pump();
     expect(opened, [Uri.parse('https://example.com/a')]);
-    expect(FakeArtifactWebView.scripts.last, 'RaftArtifactHost.answer(9, true, true)');
+    expect(
+      FakeArtifactWebView.scripts.last,
+      'RaftArtifactHost.answer(9, true, true)',
+    );
   });
 
   testWidgets('an expired view reloads once with new tickets; a second expiry '
@@ -204,7 +217,9 @@ void main() {
       first: {
         'url': 'http://w-00000000-0000-0000-0000-000000000000.$domain/x',
         'origin': 'http://w-00000000-0000-0000-0000-000000000000.$domain',
-        'door': {'url': 'http://w-00000000-0000-0000-0000-000000000000.$domain/d'},
+        'door': {
+          'url': 'http://w-00000000-0000-0000-0000-000000000000.$domain/d',
+        },
       },
     );
     expect(FakeArtifactWebView.html, isNull);

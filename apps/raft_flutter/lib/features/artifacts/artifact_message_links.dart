@@ -20,7 +20,9 @@ import 'artifact_viewer_page.dart';
 final _fence = RegExp(r'(^|\n)(```|~~~)[\s\S]*?(\n\2|$)');
 final _inlineCode = RegExp(r'`[^`\n]*`');
 final _image = RegExp(r'!\[[^\]]*\]\([^)]*\)');
-final _markdownLink = RegExp(r'\[[^\]]*\]\((https?://[^)\s]+)(?:\s+"[^"]*")?\)');
+final _markdownLink = RegExp(
+  r'\[[^\]]*\]\((https?://[^)\s]+)(?:\s+"[^"]*")?\)',
+);
 final _autolink = RegExp(r'<(https?://[^>\s]+)>');
 final _bare = RegExp(r'https?://[^\s<>()\[\]"`]+', caseSensitive: false);
 
@@ -40,7 +42,10 @@ List<String> artifactVisibleLinks(String content) {
   }
   // A bare address outside the links already read.
   final taken = [
-    for (final m in [..._markdownLink.allMatches(text), ..._autolink.allMatches(text)])
+    for (final m in [
+      ..._markdownLink.allMatches(text),
+      ..._autolink.allMatches(text),
+    ])
       (m.start, m.end),
   ];
   for (final m in _bare.allMatches(text)) {
@@ -117,7 +122,9 @@ class _ArtifactLinkCardsState extends State<ArtifactLinkCards> {
         ?session.linkTarget(href),
     ];
     if (targets.isEmpty) return const SizedBox.shrink();
-    final states = [for (final target in targets) session.summaries.stateOf(target)];
+    final states = [
+      for (final target in targets) session.summaries.stateOf(target),
+    ];
     final w = widget.controller;
     return ArtifactMessageRefs(
       links: states,

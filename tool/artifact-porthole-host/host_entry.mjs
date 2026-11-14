@@ -1,4 +1,4 @@
-// WP-ART0 spike: Porthole's framework-agnostic host (`createHost`) inside an app WebView.
+// Porthole's framework-agnostic host (`createHost`) inside an app WebView.
 //
 // The app loads a wrapper page whose origin is one the content Worker lets frame pages (the Raft
 // app's origin, APP_ORIGIN, or an EXTRA_APP_ORIGINS entry). This script runs in that page: it
@@ -81,7 +81,7 @@ function mount(options) {
     },
     confirm: (request) => ask("confirm", { capability: request.capability, args: request.args, title: request.display.title }),
     theme: () => theme,
-    hostInfo: { name: "raft-flutter", version: "art0-spike" },
+    hostInfo: { name: "raft-flutter", version: "1.24" },
     locator: {
       async locate() {
         if (first) {

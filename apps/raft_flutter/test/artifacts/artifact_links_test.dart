@@ -22,47 +22,53 @@ void main() {
     expect(artifactPagePath(artifactId, 3), '/artifacts/$artifactShort/v/3');
   });
 
-  test('links name an Artifact only on the app hosts (shared parseArtifactRef)', () {
-    const hosts = ['app.raft.build', 'localhost'];
-    ArtifactLinkTarget? at(String url) => artifactLinkTarget(url, hosts);
-    expect(
-      at('https://app.raft.build/artifacts/$artifactShort'),
-      const ArtifactLinkTarget(artifactId),
-    );
-    expect(
-      at('https://app.raft.build/artifacts/$artifactShort/v/2'),
-      const ArtifactLinkTarget(artifactId, 2),
-    );
-    expect(
-      at('http://localhost:15194/s/dev/artifacts/$artifactId'),
-      const ArtifactLinkTarget(artifactId),
-    );
-    expect(
-      at('https://a-pt-$artifactUuid.raftusercontent.com/x'),
-      const ArtifactLinkTarget(artifactId),
-    );
-    expect(at('https://evil.example/artifacts/$artifactShort'), isNull);
-    expect(at('https://app.raft.build/artifacts/$artifactShort/v/0'), isNull);
-    expect(
-      at('https://raft-artifacts.com/p/acme/report'),
-      isNull,
-      reason: 'legacy links keep the old viewer',
-    );
-    expect(at('https://app.raft.build/s/dev/channel/c1'), isNull);
-  });
+  test(
+    'links name an Artifact only on the app hosts (shared parseArtifactRef)',
+    () {
+      const hosts = ['app.raft.build', 'localhost'];
+      ArtifactLinkTarget? at(String url) => artifactLinkTarget(url, hosts);
+      expect(
+        at('https://app.raft.build/artifacts/$artifactShort'),
+        const ArtifactLinkTarget(artifactId),
+      );
+      expect(
+        at('https://app.raft.build/artifacts/$artifactShort/v/2'),
+        const ArtifactLinkTarget(artifactId, 2),
+      );
+      expect(
+        at('http://localhost:15194/s/dev/artifacts/$artifactId'),
+        const ArtifactLinkTarget(artifactId),
+      );
+      expect(
+        at('https://a-pt-$artifactUuid.raftusercontent.com/x'),
+        const ArtifactLinkTarget(artifactId),
+      );
+      expect(at('https://evil.example/artifacts/$artifactShort'), isNull);
+      expect(at('https://app.raft.build/artifacts/$artifactShort/v/0'), isNull);
+      expect(
+        at('https://raft-artifacts.com/p/acme/report'),
+        isNull,
+        reason: 'legacy links keep the old viewer',
+      );
+      expect(at('https://app.raft.build/s/dev/channel/c1'), isNull);
+    },
+  );
 
-  test('visible links: bare and with words, once each, never code or images', () {
-    const short = 'https://app.raft.build/artifacts/$artifactShort';
-    expect(
-      artifactVisibleLinks(
-        'See [the page]($short/v/2) and $short. '
-        '`$short/v/9` ![x]($short/v/8)\n```\n$short/v/7\n```\n<$short>',
-      ),
-      ['$short/v/2', short],
-    );
-    expect(mayLinkArtifacts('no link'), isFalse);
-    expect(mayLinkArtifacts(short), isTrue);
-  });
+  test(
+    'visible links: bare and with words, once each, never code or images',
+    () {
+      const short = 'https://app.raft.build/artifacts/$artifactShort';
+      expect(
+        artifactVisibleLinks(
+          'See [the page]($short/v/2) and $short. '
+          '`$short/v/9` ![x]($short/v/8)\n```\n$short/v/7\n```\n<$short>',
+        ),
+        ['$short/v/2', short],
+      );
+      expect(mayLinkArtifacts('no link'), isFalse);
+      expect(mayLinkArtifacts(short), isTrue);
+    },
+  );
 
   test('the official deployment frames from w.raftusercontent.com; a '
       'self-hosted one knows no content domain', () {
@@ -102,7 +108,11 @@ void main() {
           return [
             for (final ref in refs)
               ref.version == 9
-                  ? {'ref': {'id': ref.id, 'version': 9}, 'ok': false, 'reason': 'unavailable'}
+                  ? {
+                      'ref': {'id': ref.id, 'version': 9},
+                      'ok': false,
+                      'reason': 'unavailable',
+                    }
                   : {
                       'ref': {'id': ref.id, 'version': ?ref.version},
                       'ok': true,
@@ -111,7 +121,8 @@ void main() {
           ];
         },
       );
-      const a = ArtifactLinkTarget(artifactId), b = ArtifactLinkTarget(artifactId, 9);
+      const a = ArtifactLinkTarget(artifactId),
+          b = ArtifactLinkTarget(artifactId, 9);
       expect(loader.stateOf(a), isA<ArtifactLinkLoading>());
       expect(loader.stateOf(b), isA<ArtifactLinkLoading>());
       async.elapse(const Duration(milliseconds: 20));

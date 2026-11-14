@@ -141,8 +141,10 @@ class ArtifactFrameController extends ChangeNotifier {
 }
 
 /// The platform WebView for [controller]. Tests replace it.
-typedef ArtifactFrameWebViewBuilder =
-    Widget Function(BuildContext context, WebViewController controller);
+typedef ArtifactFrameWebViewBuilder = Widget Function(
+  BuildContext context,
+  WebViewController controller,
+);
 
 Widget _platformWebView(BuildContext context, WebViewController controller) =>
     WebViewWidget(controller: controller);
@@ -237,7 +239,9 @@ class _ArtifactFrameViewState extends State<ArtifactFrameView> {
   void dispose() {
     final web = this.web;
     if (web != null) {
-      unawaited(web.runJavaScript(ArtifactHostCalls.destroy).catchError((_) {}));
+      unawaited(
+        web.runJavaScript(ArtifactHostCalls.destroy).catchError((_) {}),
+      );
     }
     if (frame._web == web) frame._web = null;
     super.dispose();
@@ -336,7 +340,9 @@ class _ArtifactFrameViewState extends State<ArtifactFrameView> {
   }
 
   Future<void> _answer(int id, {required bool ok, Object? value}) async {
-    await web?.runJavaScript(ArtifactHostCalls.answer(id, ok: ok, value: value));
+    await web?.runJavaScript(
+      ArtifactHostCalls.answer(id, ok: ok, value: value),
+    );
   }
 
   Future<void> _onMessage(String raw) async {
@@ -418,11 +424,7 @@ class _ArtifactFrameViewState extends State<ArtifactFrameView> {
         final capability = detail['capability'];
         final yes =
             capability is String &&
-            await widget.host.confirm(
-              capability,
-              detail['args'],
-              widget.title,
-            );
+            await widget.host.confirm(capability, detail['args'], widget.title);
         await _answer(id, ok: true, value: yes);
       case ArtifactBridgeMessageType.findResult:
         final result = detail['result'];

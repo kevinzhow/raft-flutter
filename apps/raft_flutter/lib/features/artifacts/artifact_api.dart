@@ -29,8 +29,7 @@ abstract final class ArtifactPaths {
       '/artifacts/${_id(id)}/files/${Uri.encodeComponent(path)}${_version(version)}';
   static String downloadZip(String id, [int? version]) =>
       '/artifacts/${_id(id)}/download.zip${_version(version)}';
-  static String subscription(String id) =>
-      '/artifacts/${_id(id)}/subscription';
+  static String subscription(String id) => '/artifacts/${_id(id)}/subscription';
   static const saveAttachment = '/artifacts/save-attachment';
   static String attachmentSaves(List<String> ids) =>
       '/artifacts/attachment-saves?attachmentIds=${Uri.encodeComponent(ids.join(','))}';
@@ -223,7 +222,8 @@ class ArtifactDeployment {
     String boundApi = _boundApi,
   }) {
     final web = ContentLinks.originFor(coordinator);
-    final bound = Uri.tryParse(boundApi)?.origin == Uri.tryParse(coordinator)?.origin;
+    final bound =
+        Uri.tryParse(boundApi)?.origin == Uri.tryParse(coordinator)?.origin;
     final domain = define.isNotEmpty && bound
         ? artifactContentDomainOf(define)
         : officialContentDomains[web.origin];

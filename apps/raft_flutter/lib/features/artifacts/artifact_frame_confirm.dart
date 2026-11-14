@@ -9,8 +9,11 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:raft_ui/raft_ui.dart';
+
+/// The detail box's height before it scrolls (Web: a ScrollArea, max-h-48).
+const _detailMaxHeight = 192.0;
 
 /// Porthole `ARM_DELAY_MS`.
 const artifactConfirmArmDelay = Duration(milliseconds: 500);
@@ -50,7 +53,9 @@ const artifactConfirmArmDelay = Duration(milliseconds: 500);
   }
 }
 
-/// Asks the reader; true only for their explicit yes.
+/// Asks the reader; true only for their explicit yes. Raft's confirmation
+/// dialog (X, Escape, Cancel; no outside press), Accept armed after
+/// [artifactConfirmArmDelay].
 Future<bool> confirmArtifactFrameRequest(
   BuildContext context, {
   required String capability,
@@ -58,96 +63,47 @@ Future<bool> confirmArtifactFrameRequest(
   required String pageTitle,
 }) async {
   final words = artifactConfirmWords(context, capability, args);
-  final yes = await showRaftDialog<bool>(
-    context: context,
-    barrierDismissible: false,
-    builder: (context) => _ArtifactFrameConfirmDialog(
-      words: words,
-      pageTitle: pageTitle,
-      capability: capability,
-    ),
-  );
-  return yes == true;
-}
-
-class _ArtifactFrameConfirmDialog extends StatefulWidget {
-  const _ArtifactFrameConfirmDialog({
-    required this.words,
-    required this.pageTitle,
-    required this.capability,
-  });
-
-  final ({String title, String accept, String detail}) words;
-  final String pageTitle, capability;
-
-  @override
-  State<_ArtifactFrameConfirmDialog> createState() =>
-      _ArtifactFrameConfirmDialogState();
-}
-
-class _ArtifactFrameConfirmDialogState
-    extends State<_ArtifactFrameConfirmDialog> {
-  bool armed = false;
-  Timer? arm;
-
-  @override
-  void initState() {
-    super.initState();
-    arm = Timer(artifactConfirmArmDelay, () {
-      if (mounted) setState(() => armed = true);
-    });
-  }
-
-  @override
-  void dispose() {
-    arm?.cancel();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
-    final words = widget.words;
-    return RaftAlertDialog(
-      key: ValueKey('artifact-frame-confirm-${widget.capability}'),
-      title: words.title,
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        spacing: RaftSpace.x2,
-        children: [
-          RaftDialogDescription(
-            raftFormat(context, 'From “{title}”', {'title': widget.pageTitle}),
-          ),
-          if (words.detail.isNotEmpty)
-            ConstrainedBox(
-              constraints: const BoxConstraints(maxHeight: 200),
-              child: SingleChildScrollView(
-                child: SelectableText(
-                  words.detail,
-                  key: const ValueKey('artifact-frame-confirm-detail'),
-                  style: RaftTypography.mono(t, size: 13, line: 20),
+  final armed = ValueNotifier(false);
+  final arm = Timer(artifactConfirmArmDelay, () => armed.value = true);
+  final t = RaftTokens.of(context);
+  try {
+    final yes = await RaftConfirmDialog.show(
+      context,
+      RaftConfirmDialog(
+        surfaceKey: ValueKey('artifact-frame-confirm-$capability'),
+        title: words.title,
+        confirmLabel: words.accept,
+        cancelLabel: raftText(context, 'Cancel'),
+        confirmVariant: RaftButtonRecipeVariant.accent,
+        confirmKey: const ValueKey('artifact-frame-confirm-accept'),
+        confirmEnabled: armed,
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          spacing: RaftSpace.x2,
+          children: [
+            Text(
+              raftFormat(context, 'From “{title}”', {'title': pageTitle}),
+              style: RaftConfirmDialog.messageStyle(t),
+            ),
+            if (words.detail.isNotEmpty)
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxHeight: _detailMaxHeight),
+                child: SingleChildScrollView(
+                  child: Text(
+                    words.detail,
+                    key: const ValueKey('artifact-frame-confirm-detail'),
+                    style: RaftTypography.mono(t, size: 13, line: 20),
+                  ),
                 ),
               ),
-            ),
-        ],
+          ],
+        ),
       ),
-      actions: [
-        RaftButton(
-          key: const ValueKey('artifact-frame-confirm-cancel'),
-          label: raftText(context, 'Cancel'),
-          tone: RaftButtonRecipeVariant.outline,
-          size: RaftButtonRecipeSize.md,
-          onPressed: () => Navigator.of(context).pop(false),
-        ),
-        RaftButton(
-          key: const ValueKey('artifact-frame-confirm-accept'),
-          label: words.accept,
-          tone: RaftButtonRecipeVariant.accent,
-          size: RaftButtonRecipeSize.md,
-          onPressed: armed ? () => Navigator.of(context).pop(true) : null,
-        ),
-      ],
     );
+    return yes == true;
+  } finally {
+    arm.cancel();
+    armed.dispose();
   }
 }

@@ -74,6 +74,9 @@ Future<void> openWorkspaceArtifact(
 
 enum _Panel { none, files, versions }
 
+/// The files / versions panel beside the content on wide windows.
+const _sidePanelWidth = 320.0;
+
 class ArtifactWorkspaceViewer extends StatefulWidget {
   const ArtifactWorkspaceViewer({
     super.key,
@@ -318,7 +321,8 @@ class _ArtifactWorkspaceViewerState extends State<ArtifactWorkspaceViewer> {
         }
         return true;
       } catch (_) {
-        if (mounted) showRaftToast(context, raftText(context, 'Couldn\'t copy'));
+        if (mounted)
+          showRaftToast(context, raftText(context, 'Couldn\'t copy'));
         return false;
       }
     },
@@ -348,11 +352,13 @@ class _ArtifactWorkspaceViewerState extends State<ArtifactWorkspaceViewer> {
       );
     }
     final t = RaftTokens.of(context);
-    final dark = Theme.of(context).brightness == Brightness.dark;
+    final dark = t.dark;
     final use = shownPath == null ? firstFrame : null;
     final path = shownPath;
     final view = ArtifactFrameView(
-      key: ValueKey('artifact-frame-${card.id}@${card.version}:$path#$frameAttempt'),
+      key: ValueKey(
+        'artifact-frame-${card.id}@${card.version}:$path#$frameAttempt',
+      ),
       artifactId: card.id,
       version: card.version,
       title: path ?? card.title,
@@ -559,7 +565,8 @@ class _ArtifactWorkspaceViewerState extends State<ArtifactWorkspaceViewer> {
         }),
         onClose: () => setState(() => panel = _Panel.none),
         onDownload: own
-            ? (file) => unawaited(actions.downloadFile(context, data.card, file))
+            ? (file) =>
+                  unawaited(actions.downloadFile(context, data.card, file))
             : null,
         onDownloadAll: own && data.files.length > 1
             ? () => unawaited(_download())
@@ -638,7 +645,7 @@ class _ArtifactWorkspaceViewerState extends State<ArtifactWorkspaceViewer> {
           decoration: BoxDecoration(
             border: Border(left: BorderSide(color: t.ui.lineHairline)),
           ),
-          child: SizedBox(width: 320, child: side),
+          child: SizedBox(width: _sidePanelWidth, child: side),
         ),
       ],
     );
@@ -681,6 +688,8 @@ class _ArtifactWorkspaceViewerState extends State<ArtifactWorkspaceViewer> {
     );
     final safe = SafeArea(bottom: false, child: scoped);
     // ds-allow: full-bleed viewer shell, the same Dialog.fullscreen the attachment preview shell uses (raft_ui)
-    return widget.page ? safe : Dialog.fullscreen(backgroundColor: t.panel, child: safe);
+    return widget.page
+        ? safe
+        : Dialog.fullscreen(backgroundColor: t.panel, child: safe);
   }
 }

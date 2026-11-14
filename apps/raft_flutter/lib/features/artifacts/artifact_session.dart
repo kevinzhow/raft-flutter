@@ -192,8 +192,9 @@ class ArtifactSession extends ChangeNotifier {
 }
 
 /// One answer of the object summaries for one reference.
-typedef ObjectSummaryPost =
-    Future<List<Object?>> Function(List<ArtifactLinkTarget> refs);
+typedef ObjectSummaryPost = Future<List<Object?>> Function(
+  List<ArtifactLinkTarget> refs,
+);
 
 /// Batches the Artifact references every visible message asks about into one
 /// `POST /api/objects/summaries` per 10 ms (at most 50 a request), keeps
@@ -216,7 +217,8 @@ class ObjectSummaryLoader {
   final int maxEntries;
   final DateTime Function() _now;
 
-  final _kept = <ArtifactLinkTarget, ({ArtifactLinkState state, DateTime until})>{};
+  final _kept =
+      <ArtifactLinkTarget, ({ArtifactLinkState state, DateTime until})>{};
   final _waiting = <ArtifactLinkTarget>{};
   final _inFlight = <ArtifactLinkTarget>{};
   Timer? _timer;

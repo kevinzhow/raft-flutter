@@ -110,7 +110,10 @@ class ArtifactFilesPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final files = data.files;
-    final rows = [...files.where((f) => f.entry), ...files.where((f) => !f.entry)];
+    final rows = [
+      ...files.where((f) => f.entry),
+      ...files.where((f) => !f.entry),
+    ];
     final total = files.fold<int>(0, (sum, f) => sum + f.sizeBytes);
     final summary = icuText(
       context,
@@ -178,7 +181,9 @@ class _FileRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final download = raftFormat(context, 'Download {name}', {'name': file.name});
+    final download = raftFormat(context, 'Download {name}', {
+      'name': file.name,
+    });
     return RaftListRow(
       key: ValueKey('artifact-files-row-${file.path}'),
       variant: RaftListRowVariant.plain,

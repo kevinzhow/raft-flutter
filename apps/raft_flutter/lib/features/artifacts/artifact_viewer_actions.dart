@@ -27,10 +27,8 @@ String artifactZipName(String title, int version) {
 
 /// Why a zip wasn't made, in Web's words (`zipRefusal`).
 String artifactZipRefusal(String? code) => switch (code) {
-  'DOWNLOAD_TOO_LARGE' =>
-    'These files are too large to download as one zip. Download them one by one from Files.',
-  'BUSY' || 'RATE_LIMITED' =>
-    'Too many downloads are being prepared right now. Wait a few seconds, then try again.',
+  'DOWNLOAD_TOO_LARGE' => 'These files are too large to download as one zip. Download them one by one from Files.',
+  'BUSY' || 'RATE_LIMITED' => 'Too many downloads are being prepared right now. Wait a few seconds, then try again.',
   _ => 'Couldn\'t download the files. Try again.',
 };
 
@@ -57,8 +55,11 @@ String artifactMimeType(String name) {
 }
 
 /// Saves bytes where the person picks. Tests replace it.
-typedef ArtifactSaveBytes =
-    Future<String?> Function(Uint8List bytes, String filename, String mime);
+typedef ArtifactSaveBytes = Future<String?> Function(
+  Uint8List bytes,
+  String filename,
+  String mime,
+);
 
 Future<String?> _platformSave(Uint8List bytes, String filename, String mime) =>
     AttachmentFiles().saveBytes(

@@ -75,14 +75,20 @@ void main() {
       },
     ]);
     await show(tester, 'Here it is: $link');
-    expect(client.requests.where((r) => r == 'POST /objects/summaries').length, 1);
+    expect(
+      client.requests.where((r) => r == 'POST /objects/summaries').length,
+      1,
+    );
     expect(find.byKey(const ValueKey('artifact-card-title')), findsOneWidget);
     expect(find.text('Q3 numbers'), findsOneWidget);
     expect(find.text('v3'), findsOneWidget);
     expect(find.text('5 rows × 4 columns'), findsOneWidget);
     expect(find.text('general'), findsOneWidget);
     expect(find.text('Updated · 2 new comments'), findsOneWidget);
-    expect(find.byKey(const ValueKey('artifact-card-comments')), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('artifact-card-comments')),
+      findsOneWidget,
+    );
   });
 
   testWidgets('a deleted Artifact is the gray card; one this reader can\'t '

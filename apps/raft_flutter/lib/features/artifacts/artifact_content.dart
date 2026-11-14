@@ -58,6 +58,13 @@ class ArtifactDrawnContent extends StatefulWidget {
 class _ArtifactDrawnContentState extends State<ArtifactDrawnContent> {
   Uint8List? bytes;
   bool failed = false;
+  @override
+  void dispose() {
+    final shown = bytes;
+    // ignore: raft_lints/avoid_raw_image_decode -- Only the cache key of the image this viewer drew, to evict it; nothing is decoded.
+    if (shown != null) unawaited(MemoryImage(shown).evict());
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -91,6 +98,7 @@ class _ArtifactDrawnContentState extends State<ArtifactDrawnContent> {
         child: InteractiveViewer(
           key: const ValueKey('artifact-viewer-image'),
           child: Center(
+            // ignore: raft_lints/avoid_raw_image_decode -- The Artifact's own file at full size for its zoomable viewer; evicted from the ImageCache when the viewer closes (dispose).
             child: Image.memory(
               bytes,
               fit: BoxFit.contain,
@@ -106,7 +114,10 @@ class _ArtifactDrawnContentState extends State<ArtifactDrawnContent> {
       final rows = artifactCsvRows(text);
       if (rows.isEmpty) return noPreview();
       final head = rows.first, body = rows.skip(1).toList();
-      final columns = rows.fold<int>(0, (n, row) => row.length > n ? row.length : n);
+      final columns = rows.fold<int>(
+        0,
+        (n, row) => row.length > n ? row.length : n,
+      );
       TableRow row(List<String> cells, {bool header = false}) => TableRow(
         children: [
           for (var i = 0; i < columns; i++)
@@ -119,8 +130,12 @@ class _ArtifactDrawnContentState extends State<ArtifactDrawnContent> {
                 i < cells.length ? cells[i] : '',
                 softWrap: false,
                 style: header
-                    ? RaftTypography.body(t, size: 13, line: 20)
-                          .copyWith(fontWeight: FontWeight.w600)
+                    ? RaftTypography.body(
+                        t,
+                        size: 13,
+                        line: 20,
+                        weight: FontWeight.w600,
+                      )
                     : i == 0
                     ? RaftTypography.body(t, size: 13, line: 20)
                     : mono,
