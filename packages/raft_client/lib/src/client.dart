@@ -948,16 +948,21 @@ class RaftClient {
   }
 
   /// The second step of a sign-in that answered [SecondFactorRequired]: an
-  /// authenticator [code] or a [backupCode]. Answers like the first step would
-  /// have without two-step verification, so the session is adopted the same
-  /// way (Web `verifySecondFactorSignIn`).
+  /// authenticator [code] or a [backupCode], or [recovery] to finish a ready
+  /// email reset (the challenge lists `recovery`). Answers like the first step
+  /// would have without two-step verification, so the session is adopted the
+  /// same way (Web `verifySecondFactorSignIn`).
   Future<void> verifySecondFactor(
     SecondFactorRequired pending, {
     String? code,
     String? backupCode,
+    bool recovery = false,
   }) async {
-    if ((code == null) == (backupCode == null)) {
-      throw ArgumentError('Answer with exactly one of code or backupCode.');
+    if ([code != null, backupCode != null, recovery].where((a) => a).length !=
+        1) {
+      throw ArgumentError(
+        'Answer with exactly one of code, backupCode, recovery.',
+      );
     }
     final authGeneration = ++_authenticationGeneration;
     final result = await request(
@@ -967,6 +972,7 @@ class RaftClient {
         'challenge': pending.challenge.challenge,
         if (code != null) 'code': code,
         if (backupCode != null) 'backupCode': backupCode,
+        if (recovery) 'recovery': true,
         if (pending.codeVerifier != null) 'codeVerifier': pending.codeVerifier,
       },
       authorized: false,
@@ -2182,10 +2188,14 @@ class RaftClient {
   Future<dynamic> accountUnreadSummary() =>
       _accountRequest('GET', '/servers/unread-summary');
 
-  Future<List<RaftChannel>> channels({bool dm = false}) async => (await get(
-    dm ? '/channels/dm' : '/channels',
-    query: dm ? null : {'archived': 'include'},
-  ) as List).map((e) => RaftChannel(Map<String, dynamic>.from(e))).toList();
+  Future<List<RaftChannel>> channels({bool dm = false}) async =>
+      (await get(
+                dm ? '/channels/dm' : '/channels',
+                query: dm ? null : {'archived': 'include'},
+              )
+              as List)
+          .map((e) => RaftChannel(Map<String, dynamic>.from(e)))
+          .toList();
   Future<Map<String, dynamic>> messagePage(
     String id, {
     BigInt? before,
