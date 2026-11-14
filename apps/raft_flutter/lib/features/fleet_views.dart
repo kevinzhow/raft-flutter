@@ -29,6 +29,7 @@ import 'report_issue.dart';
 import 'agent_runtime_editor.dart';
 import 'agent_avatar_dialog.dart';
 import 'computer_detail_view.dart';
+import 'second_factor_step_up.dart';
 import 'add_computer_dialog.dart';
 import 'management_support.dart'
     show pageIdentity, readPageSnapshot, writePageSnapshot;
@@ -200,11 +201,23 @@ Future<void> showFleetRegistration(
       ],
       onSubmit: (values) async {
         if (!valid()) throw const RaftApiException('Fleet access changed.');
-        final result = await w.command(
+        Future<dynamic> post() => w.command(
           'POST',
           endpoint,
           data: {...values, if (!computers) 'external': true},
         );
+        final dynamic result;
+        if (computers) {
+          // Web machineStore.registerMachine: behind two-step verification's
+          // "Verify it's you"; closing it registers nothing.
+          try {
+            result = await withSecondFactorStepUp(context, w.client, post);
+          } on SecondFactorStepUpCancelled {
+            return;
+          }
+        } else {
+          result = await post();
+        }
         if (!valid()) return;
         if (computers) credential = result['apiKey'];
         await onCreated?.call();
@@ -1219,49 +1232,6 @@ class _FleetDetailState extends State<FleetDetail> {
       destructive: true,
     );
     if (removed) closeProfile();
-  }
-
-  Future<void> credential() async {
-    final cap = widget.computers
-        ? 'rotateMachineKeys'
-        : 'issueAgentCredentials';
-    require(cap);
-    if (widget.computers) {
-      await confirm(
-        'Rotate Computer Key',
-        'The old key will stop working. Reconnect this computer using the new key.',
-        () async {
-          require(cap);
-          final result = await w.command('POST', '$base/rotate-key');
-          if (mounted && allowed(cap)) {
-            await showCredential(
-              context,
-              result['apiKey'],
-              controller: w,
-              authorized: () => allowed(cap),
-            );
-          }
-        },
-        submit: 'Rotate Key',
-        cancel: 'Keep Key',
-      );
-    } else {
-      final result = await w.command(
-        'POST',
-        '$base/bootstrap-tokens',
-        data: {},
-      );
-      if (mounted && allowed(cap)) {
-        await showCredential(
-          context,
-          result['bootstrapToken'],
-          controller: w,
-          authorized: () => allowed(cap),
-          detail:
-              'Use this short-lived bootstrap token to connect your external agent. Expires ${result['ttlExpiresAt']}.',
-        );
-      }
-    }
   }
 
   Future<void> inspect(String kind) async {
