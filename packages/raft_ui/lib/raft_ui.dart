@@ -191,6 +191,7 @@ export 'src/sized_image.dart';
 
 export 'src/message_row_recipe.dart';
 export 'src/message_touch_taps.dart';
+export 'src/timeline_time_reveal.dart';
 export 'src/message_saved_indicator.dart';
 export 'src/message_read_status.dart';
 export 'src/selected_text_quote.dart';

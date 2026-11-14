@@ -4,8 +4,11 @@ import 'package:raft_ui/raft_ui.dart';
 
 import '../data/agent_typing_store.dart';
 import '../data/personal_presentation.dart';
+import '../data/raft_location.dart' show RaftProfileKind;
 import '../data/workspace_controller.dart';
+import 'chat_agent_presentation.dart';
 import 'sender_avatar_projection.dart';
+import 'working_agents.dart';
 
 /// Web `formatAgentTypingSentence` (`typing`): "Niko is typing…", "Niko and
 /// Kirby are typing…", "Niko, Kirby and Tenny are typing…", "Niko, Kirby and 3
@@ -158,10 +161,135 @@ class _AgentTypingListenerState extends State<AgentTypingListener> {
   Widget build(BuildContext context) => widget.builder(context);
 }
 
+/// What the line shows for one conversation: the faces (the channel's
+/// working agents in the order they started, then any typer not among them;
+/// in a DM or a thread only the typers), the Working now rows (a typer's
+/// reads "Typing…") and the sentence. Empty faces: nothing shows.
+typedef AgentTypingLineState = ({
+  List<RaftWorkingAgent> faces,
+  List<RaftWorkingAgent> rows,
+  String sentence,
+  bool inChannel,
+});
+
+(String?, String?) _scopeOf(WorkspaceController w, bool thread) {
+  final parent = thread ? w.presentedThreadParent : null;
+  if (thread && parent == null) return (null, null);
+  return (parent?.channelId ?? w.channel?.id, parent?.id);
+}
+
+/// Builds [builder] with the channel's working agents (Web
+/// `workingAgentIdKey`): only in a channel itself, not a DM or a thread, and
+/// only while Live agent activity is on; null elsewhere.
+Widget _withChannelWork(
+  BuildContext context,
+  WorkspaceController w,
+  bool thread,
+  Widget Function(BuildContext, List<RaftWorkingAgent>?) builder,
+) {
+  final channel = w.channel;
+  final activities = ChatAgentPresentation.shownFor(w);
+  final presentation = PersonalPresentationScope.maybeOf(context);
+  if (thread ||
+      channel == null ||
+      channel.type != 'channel' ||
+      activities == null ||
+      presentation == null) {
+    return builder(context, null);
+  }
+  return NativeChannelWorkingAgents(
+    controller: w,
+    channelId: channel.id,
+    activities: activities,
+    presentation: presentation,
+    builder: builder,
+  );
+}
+
+AgentTypingLineState agentTypingLineState(
+  BuildContext context,
+  WorkspaceController w,
+  bool thread,
+  List<RaftWorkingAgent>? working,
+) {
+  final (channelId, parentId) = _scopeOf(w, thread);
+  final typing = typingAgents(context, w, channelId, parentId);
+  final typingSentence = agentTypingSentence(context, [
+    for (final agent in typing) agent.name,
+  ]);
+  if (working == null) {
+    return (
+      faces: typing,
+      rows: typing,
+      sentence: typingSentence,
+      inChannel: false,
+    );
+  }
+  final typingIds = {for (final agent in typing) agent.id};
+  final workingIds = {for (final agent in working) agent.id};
+  final faces = [
+    ...working,
+    for (final agent in typing)
+      if (!workingIds.contains(agent.id)) agent,
+  ];
+  final typingRow = raftText(context, 'Typing…');
+  final others = working.where((a) => !typingIds.contains(a.id)).length;
+  final sentence = typing.isNotEmpty && others == 0
+      ? typingSentence
+      : typing.isEmpty
+      ? raftFormat(
+          context,
+          faces.length == 1
+              ? '{count} agent working here'
+              : '{count} agents working here',
+          {'count': faces.length},
+        )
+      : raftFormat(
+          context,
+          others == 1
+              ? '{typing} · {others} other working'
+              : '{typing} · {others} others working',
+          {'typing': typingSentence, 'others': others},
+        );
+  return (
+    faces: faces,
+    rows: [
+      for (final agent in faces)
+        typingIds.contains(agent.id)
+            ? RaftWorkingAgent(
+                id: agent.id,
+                name: agent.name,
+                text: typingRow,
+                avatar: agent.avatar,
+              )
+            : agent,
+    ],
+    sentence: sentence,
+    inChannel: true,
+  );
+}
+
+/// Builds [builder] with whether the line shows for this conversation.
+Widget _whileShown(
+  BuildContext context,
+  WorkspaceController w,
+  bool thread,
+  Widget Function(BuildContext, bool shown) builder,
+) => _withChannelWork(
+  context,
+  w,
+  thread,
+  (context, working) => builder(
+    context,
+    agentTypingLineState(context, w, thread, working).faces.isNotEmpty,
+  ),
+);
+
 /// The typing line of the conversation this chat view shows: the channel or
 /// DM itself, or the open thread (its parent's channel and root message). It
 /// floats over the bottom of the list, above the composer; nothing while
-/// nobody types.
+/// nobody types (and, in a channel, nobody works here). In a channel it says
+/// who works here, typing included, and opens Working now upward.
 class AgentTypingLineHost extends StatelessWidget {
   const AgentTypingLineHost({
     super.key,
@@ -176,39 +304,44 @@ class AgentTypingLineHost extends StatelessWidget {
     controller: controller,
     scope: () => _scopeOf(controller, thread),
     builder: (context) {
-      final w = controller;
-      final parent = thread ? w.presentedThreadParent : null;
-      if (thread && parent == null) return const SizedBox.shrink();
-      final agents = typingAgents(
-        context,
-        w,
-        parent?.channelId ?? w.channel?.id,
-        parent?.id,
-      );
-      return Align(
-        alignment: Alignment.bottomCenter,
-        child: IgnorePointer(
-          child: RaftAgentTypingLine(
-            agents: agents,
-            sentence: agentTypingSentence(context, [
-              for (final agent in agents) agent.name,
-            ]),
+      final (channelId, _) = _scopeOf(controller, thread);
+      if (channelId == null) return const SizedBox.shrink();
+      return _withChannelWork(context, controller, thread, (context, working) {
+        final state = agentTypingLineState(
+          context,
+          controller,
+          thread,
+          working,
+        );
+        // Out of a channel, and in one while nobody works there: the typing
+        // line itself (it shows nothing while nobody types).
+        if (state.faces.isEmpty || !state.inChannel) {
+          return Align(
+            alignment: Alignment.bottomCenter,
+            child: IgnorePointer(
+              child: RaftAgentTypingLine(
+                agents: state.faces,
+                sentence: state.sentence,
+              ),
+            ),
+          );
+        }
+        return Align(
+          alignment: Alignment.bottomLeft,
+          child: SizedBox(
+            key: const Key('agent-typing-line'),
+            height: raftAgentTypingLineHeight,
+            child: RaftWorkingSummary(
+              agents: state.rows,
+              sentence: state.sentence,
+              onOpenAgent: (id) =>
+                  controller.openProfile(RaftProfileKind.agent, id),
+            ),
           ),
-        ),
-      );
+        );
+      });
     },
   );
-}
-
-(String?, String?) _scopeOf(WorkspaceController w, bool thread) {
-  final parent = thread ? w.presentedThreadParent : null;
-  if (thread && parent == null) return (null, null);
-  return (parent?.channelId ?? w.channel?.id, parent?.id);
-}
-
-bool _shown(BuildContext context, WorkspaceController w, bool thread) {
-  final (channelId, parentId) = _scopeOf(w, thread);
-  return typingAgents(context, w, channelId, parentId).isNotEmpty;
 }
 
 /// The list's extra end while the typing line shows (Web
@@ -234,31 +367,35 @@ class _AgentTypingListEndState extends State<AgentTypingListEnd> {
   Widget build(BuildContext context) => AgentTypingListener(
     controller: widget.controller,
     scope: () => _scopeOf(widget.controller, widget.thread),
-    builder: (context) {
-      final shown = _shown(context, widget.controller, widget.thread);
-      if (shown && !was) {
-        final position = Scrollable.maybeOf(context)?.position;
-        final atEnd =
-            position != null &&
-            position.hasContentDimensions &&
-            position.pixels >= position.maxScrollExtent - 1;
-        if (atEnd) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted && position.hasContentDimensions) {
-              position.jumpTo(position.maxScrollExtent);
-            }
-          });
+    builder: (context) => _whileShown(
+      context,
+      widget.controller,
+      widget.thread,
+      (context, shown) {
+        if (shown && !was) {
+          final position = Scrollable.maybeOf(context)?.position;
+          final atEnd =
+              position != null &&
+              position.hasContentDimensions &&
+              position.pixels >= position.maxScrollExtent - 1;
+          if (atEnd) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted && position.hasContentDimensions) {
+                position.jumpTo(position.maxScrollExtent);
+              }
+            });
+          }
         }
-      }
-      was = shown;
-      return Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const RaftTimelineFooter(),
-          if (shown) const SizedBox(height: raftAgentTypingListEnd),
-        ],
-      );
-    },
+        was = shown;
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const RaftTimelineFooter(),
+            if (shown) const SizedBox(height: raftAgentTypingListEnd),
+          ],
+        );
+      },
+    ),
   );
 }
 
@@ -285,14 +422,17 @@ class AgentTypingInset extends StatelessWidget {
   Widget build(BuildContext context) => AgentTypingListener(
     controller: controller,
     scope: () => _scopeOf(controller, thread),
-    builder: (context) => Positioned.fill(
-      bottom: _shown(context, controller, thread)
-          ? raftAgentTypingLineHeight
-          : 0,
-      child: Stack(
-        key: agentTypingInsetKey,
-        fit: StackFit.expand,
-        children: [child],
+    builder: (context) => _whileShown(
+      context,
+      controller,
+      thread,
+      (context, shown) => Positioned.fill(
+        bottom: shown ? raftAgentTypingLineHeight : 0,
+        child: Stack(
+          key: agentTypingInsetKey,
+          fit: StackFit.expand,
+          children: [child],
+        ),
       ),
     ),
   );

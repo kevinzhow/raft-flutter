@@ -14,6 +14,7 @@ import 'indicators.dart';
 import 'message_row_recipe.dart' show RaftBodyTrailingBleed;
 import 'localization.dart';
 import 'theme.dart';
+import 'tokens/tokens.dart' show RaftRadius;
 
 /// `InlineMarkdownPreview`: every markdown construct flattened inline (links
 /// coloured and underlined, code monospaced, line breaks and list items
@@ -105,6 +106,8 @@ class RaftQuotedMessageCard extends StatefulWidget {
     this.isThread = false,
     this.isArchived = false,
     this.authorSubtitle,
+    this.authorDelegatedBy,
+    this.unavailableText,
     this.attachmentLabel,
     this.onTap,
   });
@@ -112,6 +115,13 @@ class RaftQuotedMessageCard extends StatefulWidget {
   final Widget avatar;
   final bool isDm, isThread, isArchived;
   final String? authorSubtitle, attachmentLabel;
+
+  /// RFC 077 "(sent by Friday)" after the quoted author's name.
+  final String? authorDelegatedBy;
+
+  /// The quote is one muted line instead (Web `unavailable`: a retracted
+  /// message is never quoted with its old words).
+  final String? unavailableText;
   final VoidCallback? onTap;
 
   @override
@@ -231,6 +241,16 @@ class _RaftQuotedMessageCardState extends State<RaftQuotedMessageCard> {
                     overflow: TextOverflow.ellipsis,
                     style: name,
                   ),
+                  if (widget.authorDelegatedBy != null)
+                    Text(
+                      widget.authorDelegatedBy!,
+                      key: const ValueKey('quoted-message-delegated-by'),
+                      maxLines: 1,
+                      style: meta.copyWith(
+                        fontFamily: t.headingFont,
+                        color: t.colors['foreground-muted'],
+                      ),
+                    ),
                   if (widget.authorSubtitle != null)
                     Text(
                       widget.authorSubtitle!,
@@ -310,6 +330,26 @@ class _RaftQuotedMessageCardState extends State<RaftQuotedMessageCard> {
               ),
             ),
           );
+    final unavailable = widget.unavailableText;
+    if (unavailable != null) {
+      // `PreviewShell variant="muted"` around one hint line.
+      return GestureDetector(
+        onTap: widget.onTap,
+        child: Container(
+          key: const ValueKey('quoted-message-unavailable'),
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: BoxDecoration(
+            color: t.colors['fill-muted'],
+            border: Border.all(color: t.colors['line-muted']!),
+            borderRadius: BorderRadius.circular(
+              t.size('radius.control', fallback: RaftRadius.control),
+            ),
+          ),
+          child: Text(unavailable, style: text.copyWith(color: hint)),
+        ),
+      );
+    }
     final headerBox = Padding(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
       child: header,

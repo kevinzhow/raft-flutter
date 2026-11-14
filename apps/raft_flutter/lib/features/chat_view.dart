@@ -2714,7 +2714,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
         viewport.messageExpansionChanged(open, row);
       },
       timestamp: times.messageTime(m.createdAt),
-      continuationTimestamp: continuation ? times.clock(m.createdAt) : null,
+      continuationTimestamp: times.gutterClock(m.createdAt),
       timestampTooltip: continuation ? times.mediumDateTime(m.createdAt) : null,
       // Source renders a badge only for deactivated/departed identities.
       // Sender type is already represented by the scoped avatar, not an Agent badge.
@@ -3509,7 +3509,11 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
               children: [
                 KeyedSubtree(
                   key: const ValueKey('current-timeline'),
-                  child: currentTimeline,
+                  child: RaftTimelineTimeReveal(
+                    enabled: () =>
+                        pickerMessageId == null && menuMessageId == null,
+                    child: currentTimeline,
+                  ),
                 ),
                 MessageHistoryGapMonitor(controller: w, thread: widget.thread),
                 AgentTypingLineHost(controller: w, thread: thread),

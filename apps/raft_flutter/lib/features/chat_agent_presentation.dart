@@ -70,8 +70,15 @@ class ChatAgentPresentation extends ChangeNotifier {
     directory.addListener(changed);
     w.addListener(changed);
     events = w.client.events.listen(event);
+    _shown[w] = this;
     changed();
   }
+
+  static final _shown = Expando<ChatAgentPresentation>('live agent activity');
+
+  /// The live activity the shell shows for [w] (the most recent one bound),
+  /// for surfaces below it (the typing line) that say who works here.
+  static ChatAgentPresentation? shownFor(WorkspaceController w) => _shown[w];
   final WorkspaceController w;
   final MessageReferenceDirectory directory;
   final DateTime Function() clock;
@@ -268,6 +275,7 @@ class ChatAgentPresentation extends ChangeNotifier {
 
   @override
   void dispose() {
+    if (identical(_shown[w], this)) _shown[w] = null;
     ended = true;
     expiry?.cancel();
     events?.cancel();

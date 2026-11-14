@@ -34,17 +34,36 @@ bool _isSvgMime(String mime) =>
     mime.toLowerCase().split(';').first.trim() == 'image/svg+xml';
 
 /// Web isPreviewableImageAttachment (urlImageFallback.ts): any `image/*`, but
-/// an SVG only when the server rasterized it (`thumbnailUrl`, a 320px WebP).
+/// an SVG only when the server rasterized it (`thumbnailUrl`, a 320px WebP, or
+/// `rasterPreviewUrl`), and a HEIC/HEIF only with a raster too.
 /// Native never feeds authored SVG bytes to the raster decoder.
 bool attachmentIsInlineImage(Map<String, dynamic> metadata) {
   final mime = '${metadata['mimeType'] ?? 'application/octet-stream'}';
   final type = mime.toLowerCase().split(';').first.trim();
   if (!type.startsWith('image/')) return false;
-  if (!_isSvgMime(type)) return true;
-  final thumbnail = metadata['thumbnailUrl'];
-  return thumbnail is String &&
-      (thumbnail.startsWith('https://') || thumbnail.startsWith('http://'));
+  bool url(String key) {
+    final value = metadata[key];
+    return value is String &&
+        (value.startsWith('https://') || value.startsWith('http://'));
+  }
+
+  if (_isSvgMime(type)) return url('thumbnailUrl') || url('rasterPreviewUrl');
+  // Web 1.24: HEIC/HEIF only through a raster every platform decodes (the
+  // server thumbnail or raster preview); the raw file is never an inline
+  // source, so without one it is a file card.
+  if (_heicMimes.contains(type)) {
+    return url('thumbnailUrl') || url('rasterPreviewUrl');
+  }
+  return true;
 }
+
+/// Web `utils/imageMimeTypes.ts` HEIC_IMAGE_MIME_TYPES.
+const _heicMimes = {
+  'image/heic',
+  'image/heif',
+  'image/heic-sequence',
+  'image/heif-sequence',
+};
 
 /// The dialog of a picker download in progress (moved unchanged from the
 /// download flow); the file is complete only when the save finishes.

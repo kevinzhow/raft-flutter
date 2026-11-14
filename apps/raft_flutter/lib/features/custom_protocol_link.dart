@@ -8,13 +8,15 @@ import 'artifact_link.dart';
 import 'artifact_viewer.dart';
 import 'private_app_invite.dart';
 
-/// Web `markdownSanitizeSchema.ts` `MARKDOWN_EXTRA_HREF_PROTOCOLS`: the custom
-/// URL schemes a message body may link to, on top of http, https and mailto.
-/// Adding a scheme is a separate review upstream; this list mirrors it.
-const customLinkProtocols = {'obsidian'};
+/// Web 1.24 shared `CONFIRMED_EXTERNAL_LINK_SCHEMES` (externalLinkSchemes.ts):
+/// the URL schemes a message body may link to, on top of http, https and
+/// mailto, each behind the confirmation. Adding a scheme is a security review
+/// upstream; this list mirrors it.
+const customLinkProtocols = {'irc', 'ircs', 'xmpp', 'obsidian'};
 
-/// Web `isCustomProtocolHref` for an allowed scheme: an `obsidian://` link
-/// hands off to another application, so the reader confirms first. Every other
+/// Web `isCustomProtocolHref` for an allowed scheme: an `obsidian://` (or
+/// `irc:`, `ircs:`, `xmpp:`) link hands off to another application, so the
+/// reader confirms first. Every other
 /// scheme (javascript:, file:, ...) is not a link at all.
 bool isAllowedCustomProtocol(Uri uri) =>
     customLinkProtocols.contains(uri.scheme.toLowerCase());
