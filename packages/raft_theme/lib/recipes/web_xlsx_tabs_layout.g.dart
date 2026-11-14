@@ -1,6 +1,6 @@
 // GENERATED — do not edit. Regenerate with `tool/recipes/run`.
-// Source: raft-ui 0.7.0 dist/index.mjs (sha256 83bf0bff35092e3d),
-// tailwindcss 4.2.2 with raft-ui styles.css + Web @theme overrides. Recipe `webXlsxTabsLayout`.
+// Source: raft-ui 0.95.3 dist/index.mjs (sha256 63bb2df77b8bd7a2),
+// tailwindcss 4.3.3 with raft-ui styles.css + Web @theme overrides. Recipe `webXlsxTabsLayout`.
 // ignore_for_file: type=lint
 
 import 'recipe_runtime.dart';
@@ -16,7 +16,7 @@ class RaftWebXlsxTabsLayoutRecipeStyle {
   Map<String, RaftSlotStyle> get slots => {'root': root};
 }
 
-/// raft-ui recipe `webXlsxTabsLayout` (`Web src/components/message/attachmentPreviewSurfaces.tsx sha256:da9ca670a5fe4fa63894a48b76b3f4f897be868a55769d33837b25cb3e469e7d`, index.mjs:1).
+/// raft-ui recipe `webXlsxTabsLayout` (`Web src/components/message/attachmentPreviewSurfaces.tsx sha256:04b8ea8099dd3c1d0ddfd036c727b370c67575dba98b5ed97d7f267ebb3b69e4`, index.mjs:1).
 ///
 /// Used by: XlsxPreviewPaneTabs.
 ///
@@ -67,7 +67,7 @@ abstract final class RaftWebXlsxTabsLayoutRecipe {
 
   /// Distinct class lists (indices into [raftRecipeUtilities]).
   static const List<List<int>> _lists = [
-    [1433, 1424, 1585, 1604],
+    [1990, 2116, 1980],
   ];
 
   /// Per combination (mixed radix over [axes]): class list per slot.

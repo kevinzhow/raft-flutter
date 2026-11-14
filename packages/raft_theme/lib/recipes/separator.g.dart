@@ -1,6 +1,6 @@
 // GENERATED — do not edit. Regenerate with `tool/recipes/run`.
-// Source: raft-ui 0.7.0 dist/index.mjs (sha256 83bf0bff35092e3d),
-// tailwindcss 4.2.2 with raft-ui styles.css + Web @theme overrides. Recipe `separator`.
+// Source: raft-ui 0.95.3 dist/index.mjs (sha256 63bb2df77b8bd7a2),
+// tailwindcss 4.3.3 with raft-ui styles.css + Web @theme overrides. Recipe `separator`.
 // ignore_for_file: type=lint
 
 import 'recipe_runtime.dart';
@@ -35,9 +35,9 @@ class RaftSeparatorRecipeStyle {
   };
 }
 
-/// raft-ui recipe `separator` (`src/components/separator/separator.tsx`, index.mjs:13638).
+/// raft-ui recipe `separator` (`dist/components/separator/separator.mjs`, index.mjs:19702).
 ///
-/// Used by: ComboboxSeparator, ContextMenuSeparator, DropdownMenuSeparator, MessageTextSelectionToolbarSeparator, PopoverSeparator, PreviewCardSeparator, SelectSeparator, Separator.
+/// Used by: Separator.
 ///
 /// Class lists are the exact tailwind-variants + tailwind-merge output for
 /// every variant combination; [resolve] applies the CSS cascade for [states].
@@ -96,10 +96,10 @@ abstract final class RaftSeparatorRecipe {
 
   /// Distinct class lists (indices into [raftRecipeUtilities]).
   static const List<List<int>> _lists = [
-    [1740, 720, 724, 604, 716, 726],
-    [1040, 1045, 1319, 1025, 1673],
-    [1929, 1740, 1199, 604],
-    [1484, 1016, 1821, 1017, 1824],
+    [2499, 1054, 1057, 918, 1052, 1058],
+    [1489, 1496, 1864, 1468, 2419],
+    [2725, 2499, 1680, 918],
+    [2116, 1456, 2597, 1457, 2600],
   ];
 
   /// Per combination (mixed radix over [axes]): class list per slot.

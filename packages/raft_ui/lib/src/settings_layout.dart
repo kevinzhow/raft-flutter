@@ -21,6 +21,8 @@ import 'indicators.dart';
 import 'localization.dart';
 
 import 'package:raft_theme/recipes/sidebar_recipe.g.dart' as raft_sidebar;
+import 'package:raft_theme/recipes/sidebar_section_recipe.g.dart'
+    as raft_sidebar_section;
 
 import 'recipes/recipe_router.dart' show usesLegacyRecipes;
 import 'recipes/recipe_runtime.dart';
@@ -141,28 +143,34 @@ class RaftSettingsSidebarList extends StatelessWidget {
 }
 
 extension on RaftSettingsSidebarList {
-  /// raft-ui 0.7.0 `SidebarGroupLabel` + `SidebarItem` rows (the sidebar and
-  /// sidebarItem recipes: `px-2 pt-4 pb-1.5` 13/18 bold hint labels, `h-9` rows
-  /// with `my-px` margins that collapse to 1px between rows).
+  /// Web SettingsSidebarList uses the same `gap-0.5 py-2
+  /// md:pointer-fine:pt-1` row list as the published SidebarList slot.
   Widget _buildRaft(
     BuildContext context,
     RaftTokens t,
     List<RaftSettingsNavGroup> visible,
   ) {
     final rt = t.recipeTokens;
-    final labelSlot = raft_sidebar.RaftSidebarRecipe.resolve(tokens: rt)
-        .sidebarGroupLabel;
+    final size = MediaQuery.sizeOf(context);
+    final states = t.recipeStates().copyWith(
+      viewportWidth: size.width,
+      viewportHeight: size.height,
+    );
+    final labelSlot = raft_sidebar.RaftSidebarRecipe.resolve(
+      states: states,
+      tokens: rt,
+    ).sidebarGroupLabel;
+    final listSlot = raft_sidebar_section.RaftSidebarSectionRecipe.resolve(
+      states: states,
+      tokens: rt,
+    ).sidebarList;
     final label = labelSlot.textStyle(rt);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         for (final group in visible) ...[
           Padding(
-            // Web paints the 13/18 label glyphs one pixel below Flutter's line box.
-            padding: labelSlot.padding.copyWith(
-              top: labelSlot.padding.top + 1,
-              bottom: labelSlot.padding.bottom - 1,
-            ),
+            padding: labelSlot.padding,
             child: RaftCssText(
               // Web v1.21.23 names the group `Workspace`.
               _groupLabel(context, group.label),
@@ -171,15 +179,23 @@ extension on RaftSettingsSidebarList {
               overflow: TextOverflow.ellipsis,
             ),
           ),
-          for (final item in group.items)
-            RaftSettingsSidebarItem(
-              rowKey: ValueKey('workspace-settings-nav-${item.id}'),
-              entry: item,
-              active: item.id == activeId,
+          RaftRecipeBox(
+            style: listSlot,
+            tokens: rt,
+            applyText: false,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              spacing: listSlot.rowGap ?? 0,
+              children: [
+                for (final item in group.items)
+                  RaftSettingsSidebarItem(
+                    rowKey: ValueKey('workspace-settings-nav-${item.id}'),
+                    entry: item,
+                    active: item.id == activeId,
+                  ),
+              ],
             ),
-          // The last row's `my-px` margin collapses out of its group.
-          // ds-allow: Web SidebarItem `my-px`
-          const SizedBox(height: 1),
+          ),
         ],
       ],
     );
@@ -236,71 +252,94 @@ class _RaftSettingsSidebarItemState extends State<RaftSettingsSidebarItem> {
       context,
       widget.entry.label == 'Providers' ? 'AI Providers' : widget.entry.label,
     );
-    // `my-px`: the margins of neighbouring rows collapse to one pixel.
-    return Padding(
-      // ds-allow: Web SidebarItem `my-px`
-      padding: const EdgeInsets.only(top: 1),
-      child: Semantics(
-        button: true,
-        selected: widget.active,
-        label: widget.entry.label,
-        child: RaftHoverRegion(
-          cursor: SystemMouseCursors.click,
-          onEnter: (_) => setState(() => hovered = true),
-          onExit: (_) => setState(() => hovered = false),
-          child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: widget.entry.onTap,
-            child: RaftRecipeBox(
-              key: widget.rowKey,
-              style: s,
-              tokens: tokens,
-              applyText: false,
-              alignment: AlignmentDirectional.centerStart,
-              growWithText: true,
-              child: Row(
-                children: [
-                  SizedBox.square(
-                    dimension: iconBox,
-                    child: RaftIcon(
-                      widget.entry.glyph,
-                      size: 16,
-                      color: icon.color?.resolve(tokens),
+    final before = s.before;
+    return Semantics(
+      button: true,
+      selected: widget.active,
+      label: widget.entry.label,
+      child: RaftHoverRegion(
+        cursor: SystemMouseCursors.click,
+        onEnter: (_) => setState(() => hovered = true),
+        onExit: (_) => setState(() => hovered = false),
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: widget.entry.onTap,
+          child: Stack(
+            key: widget.rowKey,
+            clipBehavior: Clip.none,
+            children: [
+              if (before != null)
+                Positioned(
+                  left: before.length('left'),
+                  right: before.length('right'),
+                  top: before.length('top'),
+                  bottom: before.length('bottom'),
+                  child: IgnorePointer(
+                    // The list-cell's fill and inset/outer rings belong to
+                    // its positioned ::before shape, not the row's layout.
+                    child: RaftRecipeBox(
+                      style: before,
+                      tokens: tokens,
+                      applyText: false,
                     ),
                   ),
-                  SizedBox(width: s.columnGap ?? 8),
-                  Expanded(
-                    // Above the default text size the label wraps and the line
-                    // box is a minimum, so nothing is clipped.
-                    child: RaftScaled.grows(context)
-                        ? ConstrainedBox(
-                            constraints: BoxConstraints(minHeight: line),
-                            child: Align(
-                              alignment: AlignmentDirectional.centerStart,
-                              child: Text(
-                                title,
-                                style: RaftControlTypography.of(context, text),
+                ),
+              RaftRecipeBox(
+                style: s,
+                tokens: tokens,
+                applyText: false,
+                alignment: AlignmentDirectional.centerStart,
+                growWithText: true,
+                child: Row(
+                  children: [
+                    SizedBox.square(
+                      dimension: iconBox,
+                      child: RaftIcon(
+                        widget.entry.glyph,
+                        size: 16,
+                        color: icon.color?.resolve(tokens),
+                      ),
+                    ),
+                    SizedBox(width: s.columnGap ?? 8),
+                    Expanded(
+                      // Above the default text size the label wraps and the line
+                      // box is a minimum, so nothing is clipped.
+                      child: RaftScaled.grows(context)
+                          ? ConstrainedBox(
+                              constraints: BoxConstraints(minHeight: line),
+                              child: Align(
+                                alignment: AlignmentDirectional.centerStart,
+                                child: Text(
+                                  title,
+                                  style: RaftControlTypography.of(
+                                    context,
+                                    text,
+                                  ),
+                                ),
+                              ),
+                            )
+                          : SizedBox(
+                              height: line,
+                              child: Align(
+                                alignment: AlignmentDirectional.centerStart,
+                                child: Text(
+                                  title,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: RaftControlTypography.of(
+                                    context,
+                                    text,
+                                  ),
+                                ),
                               ),
                             ),
-                          )
-                        : SizedBox(
-                            height: line,
-                            child: Align(
-                              alignment: AlignmentDirectional.centerStart,
-                              child: Text(
-                                title,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: RaftControlTypography.of(context, text),
-                              ),
-                            ),
-                          ),
-                  ),
-                  if (widget.entry.attention)
-                    RaftAttentionDot(danger: widget.entry.attentionDanger),
-                ],
+                    ),
+                    if (widget.entry.attention)
+                      RaftAttentionDot(danger: widget.entry.attentionDanger),
+                  ],
+                ),
               ),
-            ),
+            ],
           ),
         ),
       ),

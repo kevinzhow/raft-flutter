@@ -16,6 +16,8 @@ export 'package:raft_theme/recipes/legacy/activity_inbox_shell.g.dart'
 
 /// Router for recipe `RaftActivityInboxShellRecipe`: the frozen 0.5.52 class for the Elegant and Brutal
 /// looks, the current raft-ui class for the Raft look.
+///
+/// Raft set differences: Raft-only slots: frame.
 abstract final class RaftActivityInboxShellRecipe {
   static const String recipeName =
       legacy.RaftActivityInboxShellRecipe.recipeName;

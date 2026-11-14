@@ -1,21 +1,26 @@
 // GENERATED — do not edit. Regenerate with `tool/recipes/run`.
-// Source: raft-ui 0.7.0 dist/index.mjs (sha256 83bf0bff35092e3d),
-// tailwindcss 4.2.2 with raft-ui styles.css + Web @theme overrides. Barrel and registry.
+// Source: raft-ui 0.95.3 dist/index.mjs (sha256 63bb2df77b8bd7a2),
+// tailwindcss 4.3.3 with raft-ui styles.css + Web @theme overrides. Barrel and registry.
 // ignore_for_file: type=lint
 
 import 'recipe_runtime.dart';
 import 'spinner.g.dart';
 import 'button_variants.g.dart';
+import 'dialog_sheet.g.dart';
+import 'alert_dialog.g.dart';
+import 'text_link_variants.g.dart';
+import 'panel_action_base.g.dart';
+import 'panel_action.g.dart';
+import 'panel_toggle_action.g.dart';
 import 'dialog.g.dart';
 import 'dialog_surface.g.dart';
 import 'dialog_nav.g.dart';
-import 'alert_dialog.g.dart';
 import 'panel_header.g.dart';
 import 'drawer_motion.g.dart';
 import 'drawer.g.dart';
 import 'badge.g.dart';
 import 'form_section.g.dart';
-import 'tooltip.g.dart';
+import 'text_selection_toolbar.g.dart';
 import 'card.g.dart';
 import 'list_row.g.dart';
 import 'status.g.dart';
@@ -23,11 +28,10 @@ import 'app_rail.g.dart';
 import 'copyable_code.g.dart';
 import 'checkbox_indicator.g.dart';
 import 'checkbox.g.dart';
-import 'scroll_area.g.dart';
 import 'sidebar_recipe.g.dart';
-import 'sidebar_menu_recipe.g.dart';
 import 'sidebar_item_recipe.g.dart';
 import 'sidebar_section_recipe.g.dart';
+import 'sidebar_menu_recipe.g.dart';
 import 'panel.g.dart';
 import 'conversation_panel.g.dart';
 import 'conversation_panel_empty_state.g.dart';
@@ -36,6 +40,9 @@ import 'context_menu.g.dart';
 import 'dropdown_menu.g.dart';
 import 'lightbox.g.dart';
 import 'mobile_nav.g.dart';
+import 'tooltip.g.dart';
+import 'message_embed.g.dart';
+import 'message_card.g.dart';
 import 'popover.g.dart';
 import 'preview_card.g.dart';
 import 'label.g.dart';
@@ -47,6 +54,10 @@ import 'picker_trigger_button.g.dart';
 import 'select.g.dart';
 import 'radio_group.g.dart';
 import 'switch_recipe.g.dart';
+import 'button_split.g.dart';
+import 'button_split_main.g.dart';
+import 'button_split_menu.g.dart';
+import 'fit_toolbar.g.dart';
 import 'segmented_control.g.dart';
 import 'toggle_group.g.dart';
 import 'textarea.g.dart';
@@ -57,40 +68,40 @@ import 'avatar.g.dart';
 import 'code_block.g.dart';
 import 'inline_code.g.dart';
 import 'markdown.g.dart';
+import 'message_reference.g.dart';
 import 'message_item.g.dart';
 import 'message_footer.g.dart';
-import 'message_reaction.g.dart';
-import 'message_reference.g.dart';
 import 'message_multi_select.g.dart';
-import 'message_text_selection_toolbar.g.dart';
+import 'message_reaction.g.dart';
 import 'message_system.g.dart';
-import 'message_embed.g.dart';
 import 'message_quoted_preview.g.dart';
 import 'message_replies.g.dart';
 import 'message_action_card.g.dart';
 import 'message_action_card_content.g.dart';
 import 'message_attachment.g.dart';
 import 'message_image_gallery.g.dart';
-import 'message_video_preview.g.dart';
 import 'message_forwarded_bundle.g.dart';
 import 'message_forwarded_bundle_item.g.dart';
 import 'message_forwarded_bundle_gallery.g.dart';
+import 'message_video_preview.g.dart';
 import 'progress.g.dart';
 import 'message_translation.g.dart';
 import 'message_list.g.dart';
+import 'message_list_jump.g.dart';
 import 'icon_tile.g.dart';
 import 'heading.g.dart';
 import 'sans.g.dart';
 import 'mono.g.dart';
 import 'table.g.dart';
 import 'file_preview.g.dart';
-import 'files.g.dart';
 import 'composer.g.dart';
 import 'composer_attachment.g.dart';
 import 'composer_drop_overlay.g.dart';
-import 'composer_suggestion_list.g.dart';
+import 'files.g.dart';
 import 'composer_root.g.dart';
+import 'composer_suggestion_list.g.dart';
 import 'composer_toolbar_label.g.dart';
+import 'drag.g.dart';
 import 'skeleton.g.dart';
 import 'banner.g.dart';
 import 'empty_state.g.dart';
@@ -99,15 +110,11 @@ import 'toast_styles.g.dart';
 import 'toast_action.g.dart';
 import 'tabs.g.dart';
 import 'separator.g.dart';
-import 'panel_action_base.g.dart';
-import 'panel_action.g.dart';
-import 'panel_toggle_action.g.dart';
 import 'app_shell.g.dart';
 import 'resizable.g.dart';
 import 'panel_notice.g.dart';
 import 'profile_panel.g.dart';
 import 'thread_panel.g.dart';
-import 'live_agent_activity_bar.g.dart';
 import 'task_board_column.g.dart';
 import 'task_status_soft.g.dart';
 import 'task_status_strong.g.dart';
@@ -118,7 +125,6 @@ import 'task_list_section.g.dart';
 import 'tasks_panel.g.dart';
 import 'task_loading.g.dart';
 import 'task_chip.g.dart';
-import 'legacy_task_panel.g.dart';
 import 'activity_inbox_shell.g.dart';
 import 'activity_inbox_sidebar.g.dart';
 import 'activity_inbox_toolbar.g.dart';
@@ -128,11 +134,33 @@ import 'search_entity.g.dart';
 import 'search_message.g.dart';
 import 'search_thread.g.dart';
 import 'search_trigger.g.dart';
+import 'inbox_item_skeleton.g.dart';
+import 'list_row_skeleton.g.dart';
+import 'mobile_nav_server.g.dart';
+import 'app_link_card.g.dart';
+import 'panel_split_action.g.dart';
+import 'panel_split_action_main.g.dart';
+import 'panel_split_action_toggle.g.dart';
+import 'panel_split_action_menu.g.dart';
+import 'announcement.g.dart';
+import 'comment.g.dart';
+import 'selection_toolbar.g.dart';
+import 'ellipsis.g.dart';
+import 'kbd_shortcut.g.dart';
+import 'meter.g.dart';
+import 'filter_chip.g.dart';
+import 'material_progress.g.dart';
+import 'pull_to_refresh_indicator.g.dart';
+import 'choice_list.g.dart';
+import 'save_status.g.dart';
+import 'task_completion_control.g.dart';
+import 'kbd_button.g.dart';
+import 'web_top_bar.g.dart';
 import 'web_selection_panel.g.dart';
-import 'web_menu_action.g.dart';
 import 'web_selection_row.g.dart';
-import 'web_sidebar_sort_menu.g.dart';
+import 'web_menu_action.g.dart';
 import 'web_help_menu.g.dart';
+import 'web_sidebar_sort_menu.g.dart';
 import 'web_dialog_card.g.dart';
 import 'web_member_picker.g.dart';
 import 'web_agent_reset_options.g.dart';
@@ -141,16 +169,21 @@ import 'web_xlsx_tabs_layout.g.dart';
 export 'recipe_utilities.g.dart';
 export 'spinner.g.dart';
 export 'button_variants.g.dart';
+export 'dialog_sheet.g.dart';
+export 'alert_dialog.g.dart';
+export 'text_link_variants.g.dart';
+export 'panel_action_base.g.dart';
+export 'panel_action.g.dart';
+export 'panel_toggle_action.g.dart';
 export 'dialog.g.dart';
 export 'dialog_surface.g.dart';
 export 'dialog_nav.g.dart';
-export 'alert_dialog.g.dart';
 export 'panel_header.g.dart';
 export 'drawer_motion.g.dart';
 export 'drawer.g.dart';
 export 'badge.g.dart';
 export 'form_section.g.dart';
-export 'tooltip.g.dart';
+export 'text_selection_toolbar.g.dart';
 export 'card.g.dart';
 export 'list_row.g.dart';
 export 'status.g.dart';
@@ -158,11 +191,10 @@ export 'app_rail.g.dart';
 export 'copyable_code.g.dart';
 export 'checkbox_indicator.g.dart';
 export 'checkbox.g.dart';
-export 'scroll_area.g.dart';
 export 'sidebar_recipe.g.dart';
-export 'sidebar_menu_recipe.g.dart';
 export 'sidebar_item_recipe.g.dart';
 export 'sidebar_section_recipe.g.dart';
+export 'sidebar_menu_recipe.g.dart';
 export 'panel.g.dart';
 export 'conversation_panel.g.dart';
 export 'conversation_panel_empty_state.g.dart';
@@ -171,6 +203,9 @@ export 'context_menu.g.dart';
 export 'dropdown_menu.g.dart';
 export 'lightbox.g.dart';
 export 'mobile_nav.g.dart';
+export 'tooltip.g.dart';
+export 'message_embed.g.dart';
+export 'message_card.g.dart';
 export 'popover.g.dart';
 export 'preview_card.g.dart';
 export 'label.g.dart';
@@ -182,6 +217,10 @@ export 'picker_trigger_button.g.dart';
 export 'select.g.dart';
 export 'radio_group.g.dart';
 export 'switch_recipe.g.dart';
+export 'button_split.g.dart';
+export 'button_split_main.g.dart';
+export 'button_split_menu.g.dart';
+export 'fit_toolbar.g.dart';
 export 'segmented_control.g.dart';
 export 'toggle_group.g.dart';
 export 'textarea.g.dart';
@@ -192,40 +231,40 @@ export 'avatar.g.dart';
 export 'code_block.g.dart';
 export 'inline_code.g.dart';
 export 'markdown.g.dart';
+export 'message_reference.g.dart';
 export 'message_item.g.dart';
 export 'message_footer.g.dart';
-export 'message_reaction.g.dart';
-export 'message_reference.g.dart';
 export 'message_multi_select.g.dart';
-export 'message_text_selection_toolbar.g.dart';
+export 'message_reaction.g.dart';
 export 'message_system.g.dart';
-export 'message_embed.g.dart';
 export 'message_quoted_preview.g.dart';
 export 'message_replies.g.dart';
 export 'message_action_card.g.dart';
 export 'message_action_card_content.g.dart';
 export 'message_attachment.g.dart';
 export 'message_image_gallery.g.dart';
-export 'message_video_preview.g.dart';
 export 'message_forwarded_bundle.g.dart';
 export 'message_forwarded_bundle_item.g.dart';
 export 'message_forwarded_bundle_gallery.g.dart';
+export 'message_video_preview.g.dart';
 export 'progress.g.dart';
 export 'message_translation.g.dart';
 export 'message_list.g.dart';
+export 'message_list_jump.g.dart';
 export 'icon_tile.g.dart';
 export 'heading.g.dart';
 export 'sans.g.dart';
 export 'mono.g.dart';
 export 'table.g.dart';
 export 'file_preview.g.dart';
-export 'files.g.dart';
 export 'composer.g.dart';
 export 'composer_attachment.g.dart';
 export 'composer_drop_overlay.g.dart';
-export 'composer_suggestion_list.g.dart';
+export 'files.g.dart';
 export 'composer_root.g.dart';
+export 'composer_suggestion_list.g.dart';
 export 'composer_toolbar_label.g.dart';
+export 'drag.g.dart';
 export 'skeleton.g.dart';
 export 'banner.g.dart';
 export 'empty_state.g.dart';
@@ -234,15 +273,11 @@ export 'toast_styles.g.dart';
 export 'toast_action.g.dart';
 export 'tabs.g.dart';
 export 'separator.g.dart';
-export 'panel_action_base.g.dart';
-export 'panel_action.g.dart';
-export 'panel_toggle_action.g.dart';
 export 'app_shell.g.dart';
 export 'resizable.g.dart';
 export 'panel_notice.g.dart';
 export 'profile_panel.g.dart';
 export 'thread_panel.g.dart';
-export 'live_agent_activity_bar.g.dart';
 export 'task_board_column.g.dart';
 export 'task_status_soft.g.dart';
 export 'task_status_strong.g.dart';
@@ -253,7 +288,6 @@ export 'task_list_section.g.dart';
 export 'tasks_panel.g.dart';
 export 'task_loading.g.dart';
 export 'task_chip.g.dart';
-export 'legacy_task_panel.g.dart';
 export 'activity_inbox_shell.g.dart';
 export 'activity_inbox_sidebar.g.dart';
 export 'activity_inbox_toolbar.g.dart';
@@ -263,11 +297,33 @@ export 'search_entity.g.dart';
 export 'search_message.g.dart';
 export 'search_thread.g.dart';
 export 'search_trigger.g.dart';
+export 'inbox_item_skeleton.g.dart';
+export 'list_row_skeleton.g.dart';
+export 'mobile_nav_server.g.dart';
+export 'app_link_card.g.dart';
+export 'panel_split_action.g.dart';
+export 'panel_split_action_main.g.dart';
+export 'panel_split_action_toggle.g.dart';
+export 'panel_split_action_menu.g.dart';
+export 'announcement.g.dart';
+export 'comment.g.dart';
+export 'selection_toolbar.g.dart';
+export 'ellipsis.g.dart';
+export 'kbd_shortcut.g.dart';
+export 'meter.g.dart';
+export 'filter_chip.g.dart';
+export 'material_progress.g.dart';
+export 'pull_to_refresh_indicator.g.dart';
+export 'choice_list.g.dart';
+export 'save_status.g.dart';
+export 'task_completion_control.g.dart';
+export 'kbd_button.g.dart';
+export 'web_top_bar.g.dart';
 export 'web_selection_panel.g.dart';
-export 'web_menu_action.g.dart';
 export 'web_selection_row.g.dart';
-export 'web_sidebar_sort_menu.g.dart';
+export 'web_menu_action.g.dart';
 export 'web_help_menu.g.dart';
+export 'web_sidebar_sort_menu.g.dart';
 export 'web_dialog_card.g.dart';
 export 'web_member_picker.g.dart';
 export 'web_agent_reset_options.g.dart';
@@ -283,16 +339,21 @@ typedef RaftRecipeResolver = Map<String, RaftSlotStyle> Function(
 const Map<String, RaftRecipeResolver> raftRecipes = {
   'spinner': RaftSpinnerRecipe.resolveProps,
   'buttonVariants': RaftButtonRecipe.resolveProps,
+  'dialogSheet': RaftDialogSheetRecipe.resolveProps,
+  'alertDialog': RaftAlertDialogRecipe.resolveProps,
+  'textLinkVariants': RaftTextLinkRecipe.resolveProps,
+  'panelActionBase': RaftPanelActionBaseRecipe.resolveProps,
+  'panelAction': RaftPanelActionRecipe.resolveProps,
+  'panelToggleAction': RaftPanelToggleActionRecipe.resolveProps,
   'dialog': RaftDialogRecipe.resolveProps,
   'dialogSurface': RaftDialogSurfaceRecipe.resolveProps,
   'dialogNav': RaftDialogNavRecipe.resolveProps,
-  'alertDialog': RaftAlertDialogRecipe.resolveProps,
   'panelHeader': RaftPanelHeaderRecipe.resolveProps,
   'drawerMotion': RaftDrawerMotionRecipe.resolveProps,
   'drawer': RaftDrawerRecipe.resolveProps,
   'badge': RaftBadgeRecipe.resolveProps,
   'formSection': RaftFormSectionRecipe.resolveProps,
-  'tooltip': RaftTooltipRecipe.resolveProps,
+  'textSelectionToolbar': RaftTextSelectionToolbarRecipe.resolveProps,
   'card': RaftCardRecipe.resolveProps,
   'listRow': RaftListRowRecipe.resolveProps,
   'status': RaftStatusRecipe.resolveProps,
@@ -300,11 +361,10 @@ const Map<String, RaftRecipeResolver> raftRecipes = {
   'copyableCode': RaftCopyableCodeRecipe.resolveProps,
   'checkboxIndicator': RaftCheckboxIndicatorRecipe.resolveProps,
   'checkbox': RaftCheckboxRecipe.resolveProps,
-  'scrollArea': RaftScrollAreaRecipe.resolveProps,
   'sidebarRecipe': RaftSidebarRecipe.resolveProps,
-  'sidebarMenuRecipe': RaftSidebarMenuRecipe.resolveProps,
   'sidebarItemRecipe': RaftSidebarItemRecipe.resolveProps,
   'sidebarSectionRecipe': RaftSidebarSectionRecipe.resolveProps,
+  'sidebarMenuRecipe': RaftSidebarMenuRecipe.resolveProps,
   'panel': RaftPanelRecipe.resolveProps,
   'conversationPanel': RaftConversationPanelRecipe.resolveProps,
   'conversationPanelEmptyState':
@@ -314,6 +374,9 @@ const Map<String, RaftRecipeResolver> raftRecipes = {
   'dropdownMenu': RaftDropdownMenuRecipe.resolveProps,
   'lightbox': RaftLightboxRecipe.resolveProps,
   'mobileNav': RaftMobileNavRecipe.resolveProps,
+  'tooltip': RaftTooltipRecipe.resolveProps,
+  'messageEmbed': RaftMessageEmbedRecipe.resolveProps,
+  'messageCard': RaftMessageCardRecipe.resolveProps,
   'popover': RaftPopoverRecipe.resolveProps,
   'previewCard': RaftPreviewCardRecipe.resolveProps,
   'label': RaftLabelRecipe.resolveProps,
@@ -325,6 +388,10 @@ const Map<String, RaftRecipeResolver> raftRecipes = {
   'select': RaftSelectRecipe.resolveProps,
   'radioGroup': RaftRadioGroupRecipe.resolveProps,
   'switchRecipe': RaftSwitchRecipe.resolveProps,
+  'buttonSplit': RaftButtonSplitRecipe.resolveProps,
+  'buttonSplitMain': RaftButtonSplitMainRecipe.resolveProps,
+  'buttonSplitMenu': RaftButtonSplitMenuRecipe.resolveProps,
+  'fitToolbar': RaftFitToolbarRecipe.resolveProps,
   'segmentedControl': RaftSegmentedControlRecipe.resolveProps,
   'toggleGroup': RaftToggleGroupRecipe.resolveProps,
   'textarea': RaftTextareaRecipe.resolveProps,
@@ -335,43 +402,42 @@ const Map<String, RaftRecipeResolver> raftRecipes = {
   'codeBlock': RaftCodeBlockRecipe.resolveProps,
   'inlineCode': RaftInlineCodeRecipe.resolveProps,
   'markdown': RaftMarkdownRecipe.resolveProps,
+  'messageReference': RaftMessageReferenceRecipe.resolveProps,
   'messageItem': RaftMessageItemRecipe.resolveProps,
   'messageFooter': RaftMessageFooterRecipe.resolveProps,
-  'messageReaction': RaftMessageReactionRecipe.resolveProps,
-  'messageReference': RaftMessageReferenceRecipe.resolveProps,
   'messageMultiSelect': RaftMessageMultiSelectRecipe.resolveProps,
-  'messageTextSelectionToolbar':
-      RaftMessageTextSelectionToolbarRecipe.resolveProps,
+  'messageReaction': RaftMessageReactionRecipe.resolveProps,
   'messageSystem': RaftMessageSystemRecipe.resolveProps,
-  'messageEmbed': RaftMessageEmbedRecipe.resolveProps,
   'messageQuotedPreview': RaftMessageQuotedPreviewRecipe.resolveProps,
   'messageReplies': RaftMessageRepliesRecipe.resolveProps,
   'messageActionCard': RaftMessageActionCardRecipe.resolveProps,
   'messageActionCardContent': RaftMessageActionCardContentRecipe.resolveProps,
   'messageAttachment': RaftMessageAttachmentRecipe.resolveProps,
   'messageImageGallery': RaftMessageImageGalleryRecipe.resolveProps,
-  'messageVideoPreview': RaftMessageVideoPreviewRecipe.resolveProps,
   'messageForwardedBundle': RaftMessageForwardedBundleRecipe.resolveProps,
   'messageForwardedBundleItem':
       RaftMessageForwardedBundleItemRecipe.resolveProps,
   'messageForwardedBundleGallery':
       RaftMessageForwardedBundleGalleryRecipe.resolveProps,
+  'messageVideoPreview': RaftMessageVideoPreviewRecipe.resolveProps,
   'progress': RaftProgressRecipe.resolveProps,
   'messageTranslation': RaftMessageTranslationRecipe.resolveProps,
   'messageList': RaftMessageListRecipe.resolveProps,
+  'messageListJump': RaftMessageListJumpRecipe.resolveProps,
   'iconTile': RaftIconTileRecipe.resolveProps,
   'heading': RaftHeadingRecipe.resolveProps,
   'sans': RaftSansRecipe.resolveProps,
   'mono': RaftMonoRecipe.resolveProps,
   'table': RaftTableRecipe.resolveProps,
   'filePreview': RaftFilePreviewRecipe.resolveProps,
-  'files': RaftFilesRecipe.resolveProps,
   'composer': RaftComposerRecipe.resolveProps,
   'composerAttachment': RaftComposerAttachmentRecipe.resolveProps,
   'composerDropOverlay': RaftComposerDropOverlayRecipe.resolveProps,
-  'composerSuggestionList': RaftComposerSuggestionListRecipe.resolveProps,
+  'files': RaftFilesRecipe.resolveProps,
   'composerRoot': RaftComposerRootRecipe.resolveProps,
+  'composerSuggestionList': RaftComposerSuggestionListRecipe.resolveProps,
   'composerToolbarLabel': RaftComposerToolbarLabelRecipe.resolveProps,
+  'drag': RaftDragRecipe.resolveProps,
   'skeleton': RaftSkeletonRecipe.resolveProps,
   'banner': RaftBannerRecipe.resolveProps,
   'emptyState': RaftEmptyStateRecipe.resolveProps,
@@ -380,15 +446,11 @@ const Map<String, RaftRecipeResolver> raftRecipes = {
   'toastAction': RaftToastActionRecipe.resolveProps,
   'tabs': RaftTabsRecipe.resolveProps,
   'separator': RaftSeparatorRecipe.resolveProps,
-  'panelActionBase': RaftPanelActionBaseRecipe.resolveProps,
-  'panelAction': RaftPanelActionRecipe.resolveProps,
-  'panelToggleAction': RaftPanelToggleActionRecipe.resolveProps,
   'appShell': RaftAppShellRecipe.resolveProps,
   'resizable': RaftResizableRecipe.resolveProps,
   'panelNotice': RaftPanelNoticeRecipe.resolveProps,
   'profilePanel': RaftProfilePanelRecipe.resolveProps,
   'threadPanel': RaftThreadPanelRecipe.resolveProps,
-  'liveAgentActivityBar': RaftLiveAgentActivityBarRecipe.resolveProps,
   'taskBoardColumn': RaftTaskBoardColumnRecipe.resolveProps,
   'taskStatusSoft': RaftTaskStatusSoftRecipe.resolveProps,
   'taskStatusStrong': RaftTaskStatusStrongRecipe.resolveProps,
@@ -399,7 +461,6 @@ const Map<String, RaftRecipeResolver> raftRecipes = {
   'tasksPanel': RaftTasksPanelRecipe.resolveProps,
   'taskLoading': RaftTaskLoadingRecipe.resolveProps,
   'taskChip': RaftTaskChipRecipe.resolveProps,
-  'legacyTaskPanel': RaftLegacyTaskPanelRecipe.resolveProps,
   'activityInboxShell': RaftActivityInboxShellRecipe.resolveProps,
   'activityInboxSidebar': RaftActivityInboxSidebarRecipe.resolveProps,
   'activityInboxToolbar': RaftActivityInboxToolbarRecipe.resolveProps,
@@ -409,11 +470,33 @@ const Map<String, RaftRecipeResolver> raftRecipes = {
   'searchMessage': RaftSearchMessageRecipe.resolveProps,
   'searchThread': RaftSearchThreadRecipe.resolveProps,
   'searchTrigger': RaftSearchTriggerRecipe.resolveProps,
+  'inboxItemSkeleton': RaftInboxItemSkeletonRecipe.resolveProps,
+  'listRowSkeleton': RaftListRowSkeletonRecipe.resolveProps,
+  'mobileNavServer': RaftMobileNavServerRecipe.resolveProps,
+  'appLinkCard': RaftAppLinkCardRecipe.resolveProps,
+  'panelSplitAction': RaftPanelSplitActionRecipe.resolveProps,
+  'panelSplitActionMain': RaftPanelSplitActionMainRecipe.resolveProps,
+  'panelSplitActionToggle': RaftPanelSplitActionToggleRecipe.resolveProps,
+  'panelSplitActionMenu': RaftPanelSplitActionMenuRecipe.resolveProps,
+  'announcement': RaftAnnouncementRecipe.resolveProps,
+  'comment': RaftCommentRecipe.resolveProps,
+  'selectionToolbar': RaftSelectionToolbarRecipe.resolveProps,
+  'ellipsis': RaftEllipsisRecipe.resolveProps,
+  'kbdShortcut': RaftKbdShortcutRecipe.resolveProps,
+  'meter': RaftMeterRecipe.resolveProps,
+  'filterChip': RaftFilterChipRecipe.resolveProps,
+  'materialProgress': RaftMaterialProgressRecipe.resolveProps,
+  'pullToRefreshIndicator': RaftPullToRefreshIndicatorRecipe.resolveProps,
+  'choiceList': RaftChoiceListRecipe.resolveProps,
+  'saveStatus': RaftSaveStatusRecipe.resolveProps,
+  'taskCompletionControl': RaftTaskCompletionControlRecipe.resolveProps,
+  'kbdButton': RaftKbdButtonRecipe.resolveProps,
+  'webTopBar': RaftWebTopBarRecipe.resolveProps,
   'webSelectionPanel': RaftWebSelectionPanelRecipe.resolveProps,
-  'webMenuAction': RaftWebMenuActionRecipe.resolveProps,
   'webSelectionRow': RaftWebSelectionRowRecipe.resolveProps,
-  'webSidebarSortMenu': RaftWebSidebarSortMenuRecipe.resolveProps,
+  'webMenuAction': RaftWebMenuActionRecipe.resolveProps,
   'webHelpMenu': RaftWebHelpMenuRecipe.resolveProps,
+  'webSidebarSortMenu': RaftWebSidebarSortMenuRecipe.resolveProps,
   'webDialogCard': RaftWebDialogCardRecipe.resolveProps,
   'webMemberPicker': RaftWebMemberPickerRecipe.resolveProps,
   'webAgentResetOptions': RaftWebAgentResetOptionsRecipe.resolveProps,

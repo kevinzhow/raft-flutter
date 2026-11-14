@@ -1,6 +1,6 @@
 // GENERATED — do not edit. Regenerate with `tool/recipes/run`.
-// Source: raft-ui 0.7.0 dist/index.mjs (sha256 83bf0bff35092e3d),
-// tailwindcss 4.2.2 with raft-ui styles.css + Web @theme overrides. Recipe `panelActionBase`.
+// Source: raft-ui 0.95.3 dist/index.mjs (sha256 63bb2df77b8bd7a2),
+// tailwindcss 4.3.3 with raft-ui styles.css + Web @theme overrides. Recipe `panelActionBase`.
 // ignore_for_file: type=lint
 
 import 'recipe_runtime.dart';
@@ -16,9 +16,9 @@ class RaftPanelActionBaseRecipeStyle {
   Map<String, RaftSlotStyle> get slots => {'base': base};
 }
 
-/// raft-ui recipe `panelActionBase` (`src/components/panel/panel-action.recipe.ts`, index.mjs:13683).
+/// raft-ui recipe `panelActionBase` (`dist/components/panel/panel-action.recipe.mjs`, index.mjs:1979).
 ///
-/// Used by: PanelAction, PanelToggleAction.
+/// Used by: PanelAction, PanelSplitActionMain, PanelSplitActionMenu, PanelSplitActionToggle, PanelToggleAction.
 ///
 /// Class lists are the exact tailwind-variants + tailwind-merge output for
 /// every variant combination; [resolve] applies the CSS cascade for [states].
@@ -68,41 +68,39 @@ abstract final class RaftPanelActionBaseRecipe {
   /// Distinct class lists (indices into [raftRecipeUtilities]).
   static const List<List<int>> _lists = [
     [
-      1682,
-      1305,
-      1927,
-      1740,
-      1319,
-      1324,
-      1584,
-      1016,
-      1346,
-      1783,
-      1727,
-      1577,
+      2433,
+      1847,
+      2723,
+      2499,
+      1864,
+      1869,
+      2253,
+      1456,
       1892,
+      2556,
+      2483,
+      2247,
+      2674,
+      1365,
+      344,
+      348,
+      1630,
+      2114,
+      2453,
       941,
-      173,
-      177,
-      1174,
-      1485,
-      1710,
-      622,
-      641,
-      615,
-      1658,
-      1666,
-      1451,
-      1459,
-      1463,
-      1438,
-      1437,
-      1822,
-      1272,
-      427,
-      996,
-      185,
-      1436,
+      963,
+      933,
+      2412,
+      2401,
+      2071,
+      723,
+      705,
+      2598,
+      1785,
+      697,
+      1439,
+      356,
+      543,
     ],
   ];
 

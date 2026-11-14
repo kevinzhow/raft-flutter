@@ -15,6 +15,8 @@ export 'package:raft_theme/recipes/legacy/composer_attachment.g.dart'
 
 /// Router for recipe `RaftComposerAttachmentRecipe`: the frozen 0.5.52 class for the Elegant and Brutal
 /// looks, the current raft-ui class for the Raft look.
+///
+/// Raft set differences: legacy slots empty in the Raft set: attachmentsViewport; Raft-only slots: attachmentsRow.
 abstract final class RaftComposerAttachmentRecipe {
   static const String recipeName =
       legacy.RaftComposerAttachmentRecipe.recipeName;
@@ -49,7 +51,7 @@ abstract final class RaftComposerAttachmentRecipe {
     return RaftComposerAttachmentRecipeStyle(
       attachments: s.attachments,
       attachmentsScrollArea: s.attachmentsScrollArea,
-      attachmentsViewport: s.attachmentsViewport,
+      attachmentsViewport: absentSlot(tokens),
       attachmentsNav: s.attachmentsNav,
       attachment: s.attachment,
       attachmentFile: s.attachmentFile,

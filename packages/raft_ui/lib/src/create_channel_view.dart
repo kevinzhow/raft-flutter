@@ -410,14 +410,17 @@ class _RecipeMemberPicker extends StatelessWidget {
     );
     return ConstrainedBox(
       constraints: BoxConstraints(
-        maxHeight: recipe.root.maxHeight ?? double.infinity,
+        maxHeight:
+            (recipe.scroller.maxHeight ?? double.infinity) +
+            recipe.root.borderWidth.vertical,
       ),
       child: RaftCard(
-        padding: recipe.root.padding,
+        padding: recipe.scroller.padding,
         clip: true,
         child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
+            spacing: recipe.rows.rowGap ?? 0,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               if (agents.isNotEmpty) ...[

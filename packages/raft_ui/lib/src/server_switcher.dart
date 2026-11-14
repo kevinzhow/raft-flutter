@@ -29,7 +29,9 @@ import 'recipes/avatar.g.dart';
 import 'recipes/badge.g.dart';
 import 'recipes/context_menu.g.dart';
 import 'recipes/popover.g.dart';
+import 'recipes/recipe_router.dart' show usesLegacyRecipes;
 import 'recipes/recipe_runtime.dart';
+import 'space.dart';
 import 'text_scaling.dart' show RaftChrome, RaftScaled;
 import 'page_tokens.dart';
 import 'theme.dart';
@@ -440,33 +442,36 @@ class RaftServerMenuPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
+    final legacy = usesLegacyRecipes(t.recipeTokens);
     final style = RaftPopoverRecipe.resolve(
       theme: t.recipeTheme,
       tokens: t.recipeTokens,
       states: t.recipeStates(),
     ).content;
-    final panel = RaftSlotStyle(
-      {
-        ...style.properties,
-        'background-color': const CssVar(
-          '--color-layer-panel',
-          null,
-          'layerPanel',
-        ),
-        for (final side in ['top', 'right', 'bottom', 'left']) ...{
-          'border-$side-width': const CssNum(1, 'px'),
-          'border-$side-style': const CssKeyword('solid'),
-          'border-$side-color': const CssVar(
-            '--color-line-muted',
-            null,
-            'lineMuted',
-          ),
-        },
-      },
-      style.targets,
-      style.classes,
-      style.tokens,
-    );
+    final panel = legacy
+        ? RaftSlotStyle(
+            {
+              ...style.properties,
+              'background-color': const CssVar(
+                '--color-layer-panel',
+                null,
+                'layerPanel',
+              ),
+              for (final side in ['top', 'right', 'bottom', 'left']) ...{
+                'border-$side-width': const CssNum(1, 'px'),
+                'border-$side-style': const CssKeyword('solid'),
+                'border-$side-color': const CssVar(
+                  '--color-line-muted',
+                  null,
+                  'lineMuted',
+                ),
+              },
+            },
+            style.targets,
+            style.classes,
+            style.tokens,
+          )
+        : style;
     final separator = RaftContextMenuRecipe.resolve(
       theme: t.recipeTheme,
       tokens: t.recipeTokens,
@@ -477,7 +482,10 @@ class RaftServerMenuPanel extends StatelessWidget {
       style: panel,
       tokens: t.recipeTokens,
       width: width,
-      padding: EdgeInsets.zero,
+      // Web v1.24 ServerSwitcherMenu.tsx:187 supplies `p-1`; the published
+      // Popover paints a ring, without adding a layout border. Frozen looks
+      // retain their earlier panel and zero content padding.
+      padding: legacy ? EdgeInsets.zero : const EdgeInsets.all(RaftSpace.x1),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -503,19 +511,41 @@ class RaftServerMenuPanel extends StatelessWidget {
             ),
           ),
           Padding(
-            // Source's -mx-1 extends into a card with overflow:hidden. Its
-            // visible span is the full inner width; only vertical margins
-            // affect layout. Flutter Padding cannot express negative margins.
+            // ContextMenuDivider's source `-mx-1 my-1 h-px`: vertical
+            // margins occupy layout; horizontal margins bleed into `p-1`.
             padding: EdgeInsets.only(
               top: separator.margin.top,
               bottom: separator.margin.bottom,
             ),
-            child: RaftRecipeBox(
-              style: separator,
-              tokens: t.recipeTokens,
-              padding: EdgeInsets.zero,
-              height: separator.height ?? separator.borderWidth.vertical,
-            ),
+            child: legacy
+                ? RaftRecipeBox(
+                    style: separator,
+                    tokens: t.recipeTokens,
+                    padding: EdgeInsets.zero,
+                    height: separator.height ?? separator.borderWidth.vertical,
+                  )
+                : SizedBox(
+                    height: separator.height ?? separator.borderWidth.vertical,
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        final lineWidth =
+                            constraints.maxWidth - separator.margin.horizontal;
+                        return OverflowBox(
+                          minWidth: lineWidth,
+                          maxWidth: lineWidth,
+                          child: RaftRecipeBox(
+                            style: separator,
+                            tokens: t.recipeTokens,
+                            width: lineWidth,
+                            padding: EdgeInsets.zero,
+                            height:
+                                separator.height ??
+                                separator.borderWidth.vertical,
+                          ),
+                        );
+                      },
+                    ),
+                  ),
           ),
           for (final entry in actions)
             _ServerAction(entry: entry, onActivate: onActivate),

@@ -1,6 +1,6 @@
 // GENERATED — do not edit. Regenerate with `tool/recipes/run`.
-// Source: raft-ui 0.7.0 dist/index.mjs (sha256 83bf0bff35092e3d),
-// tailwindcss 4.2.2 with raft-ui styles.css + Web @theme overrides. Recipe `dialogSurface`.
+// Source: raft-ui 0.95.3 dist/index.mjs (sha256 63bb2df77b8bd7a2),
+// tailwindcss 4.3.3 with raft-ui styles.css + Web @theme overrides. Recipe `dialogSurface`.
 // ignore_for_file: type=lint
 
 import 'recipe_runtime.dart';
@@ -16,7 +16,7 @@ class RaftDialogSurfaceRecipeStyle {
   Map<String, RaftSlotStyle> get slots => {'root': root};
 }
 
-/// raft-ui recipe `dialogSurface` (`src/components/dialog/dialog.tsx`, index.mjs:468).
+/// raft-ui recipe `dialogSurface` (`dist/components/dialog/dialog.mjs`, index.mjs:2365).
 ///
 /// Used by: DialogSurface.
 ///
@@ -67,7 +67,7 @@ abstract final class RaftDialogSurfaceRecipe {
 
   /// Distinct class lists (indices into [raftRecipeUtilities]).
   static const List<List<int>> _lists = [
-    [965, 1484, 967, 1577, 1582, 1711, 602, 1822, 1737, 1694, 1698],
+    [1400, 2116, 1404, 2247, 2251, 2464, 915, 2598, 2496, 2445, 2449],
   ];
 
   /// Per combination (mixed radix over [axes]): class list per slot.

@@ -16,6 +16,8 @@ export 'package:raft_theme/recipes/legacy/sidebar_section_recipe.g.dart'
 
 /// Router for recipe `RaftSidebarSectionRecipe`: the frozen 0.5.52 class for the Elegant and Brutal
 /// looks, the current raft-ui class for the Raft look.
+///
+/// Raft set differences: Raft-only slots: sidebarSectionChevronSlot, sidebarSectionEndChevron.
 abstract final class RaftSidebarSectionRecipe {
   static const String recipeName = legacy.RaftSidebarSectionRecipe.recipeName;
   static const List<String> slotNames =

@@ -174,7 +174,9 @@ void main() {
               themed.textTheme.bodyMedium!.fontFamily,
             );
             expect(_style(tester, 'Recent').fontWeight, FontWeight.w700);
-            expect(tester.getSize(popup), const Size(160, 132));
+            // Current surface py-1.5 + content p-1 + three 36px public rows.
+            // Responsive desktop option height is the deferred DS1 contract.
+            expect(tester.getSize(popup), const Size(160, 12 + 8 + 3 * 36));
             await tester.tap(find.byKey(const ValueKey('sidebar-sort-az')));
             await tester.pumpAndSettle();
             expect(result, 'az');

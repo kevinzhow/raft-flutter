@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -9,7 +10,7 @@ import 'package:raft_flutter/features/task_selection_filter.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_ui/test_themes.dart';
 
-// Fixed source: Web db5e399f, SelectionPopover.tsx, SidebarSortMenu.tsx and
+// Fixed source: Web v1.24, SelectionPopover.tsx, SidebarSortMenu.tsx and
 // TasksPanel.tsx. These observe public behavior and the source's used geometry;
 // replacing the old Panel/Header/Search helpers with SelectionPopover is valid.
 const _capture = ValueKey('selection-compat-capture');
@@ -160,7 +161,10 @@ void main() {
           await tester.tap(find.text('Sort'));
           await tester.pumpAndSettle();
           final popup = find.byKey(const Key('sidebar-sort-popover'));
-          expect(tester.getRect(popup).size, const Size(160, 132));
+          // Source surface py-1.5 + ScrollArea content p-1 + three options.
+          // DS0 retains the 36px public option helper; desktop source 34px
+          // width/pointer consumption remains the explicitly deferred DS1 work.
+          expect(tester.getRect(popup).size, const Size(160, 12 + 8 + 3 * 36));
           expect(
             tester.getRect(popup).right,
             tester.getRect(find.byKey(anchor)).right,
@@ -197,18 +201,27 @@ void main() {
       'actual Tasks filter shares source title Clear and search; dark=$dark',
       (tester) async {
         _FilterOwnerState? owner;
+        final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
         try {
           owner = await _openFilter(tester, dark: dark);
           expect(_style(tester, 'Assignee').fontSize, 12);
           expect(_style(tester, 'Assignee').height, 16 / 12);
           expect(_style(tester, 'Assignee').fontWeight, FontWeight.w700);
           expect(_style(tester, 'Clear').fontSize, 12);
-          expect(_style(tester, 'Clear').fontWeight, FontWeight.w600);
+          expect(_style(tester, 'Clear').fontWeight, FontWeight.w500);
           final underline = _underline(tester, 'Clear');
           expect(underline, isNotNull);
-          expect(underline!.active, isTrue);
+          expect(underline!.active, isFalse);
           expect(underline.thickness, 1.5);
           expect(underline.offset, 3);
+          // Current TextLink is font-medium with hover-only underline.
+          await mouse.addPointer(location: const Offset(700, 500));
+          await mouse.moveTo(tester.getCenter(find.text('Clear')));
+          await tester.pumpAndSettle();
+          expect(_underline(tester, 'Clear')!.active, isTrue);
+          await mouse.moveTo(const Offset(700, 500));
+          await tester.pumpAndSettle();
+          expect(_underline(tester, 'Clear')!.active, isFalse);
           final input = tester.widget<EditableText>(find.byType(EditableText));
           final tokens = raftTheme(dark: dark).extension<RaftTokens>()!;
           expect(input.style.fontSize, 14);
@@ -232,6 +245,7 @@ void main() {
           expect(find.text('Operations'), findsNothing);
           expect(tester.takeException(), isNull);
         } finally {
+          await mouse.removePointer();
           owner?.menu?.close();
           await _retire(tester);
         }

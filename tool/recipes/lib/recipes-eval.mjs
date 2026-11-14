@@ -25,6 +25,12 @@ export async function buildRecipes(raw, sourceRoot) {
     if (Array.isArray(v)) return v.map(materialise);
     if (v && typeof v === 'object') {
       if ('$recipe' in v) return build(v.$recipe);
+      if ('$recipeSlot' in v) {
+        const slots = build(v.$recipeSlot)(v.props);
+        if (typeof slots === 'string' && v.slot === 'base') return slots;
+        if (typeof slots?.[v.slot] !== 'function') throw new Error(`Unknown recipe slot ${v.$recipeSlot}.${v.slot}`);
+        return slots[v.slot]();
+      }
       if ('$nonLiteral' in v) throw new Error(`non-literal value ${v.$nonLiteral}`);
       return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, materialise(x)]));
     }
@@ -130,7 +136,7 @@ export function classesInOptions(options) {
   const addStr = (v) => {
     if (typeof v === 'string') for (const c of split(v)) out.add(c);
     else if (Array.isArray(v)) v.forEach(addStr);
-    else if (v && typeof v === 'object' && !('$recipe' in v)) Object.values(v).forEach(addStr);
+    else if (v && typeof v === 'object' && !('$recipe' in v) && !('$recipeSlot' in v)) Object.values(v).forEach(addStr);
   };
   addStr(options.base);
   addStr(options.slots);

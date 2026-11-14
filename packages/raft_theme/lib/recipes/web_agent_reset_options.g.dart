@@ -1,6 +1,6 @@
 // GENERATED — do not edit. Regenerate with `tool/recipes/run`.
-// Source: raft-ui 0.7.0 dist/index.mjs (sha256 83bf0bff35092e3d),
-// tailwindcss 4.2.2 with raft-ui styles.css + Web @theme overrides. Recipe `webAgentResetOptions`.
+// Source: raft-ui 0.95.3 dist/index.mjs (sha256 63bb2df77b8bd7a2),
+// tailwindcss 4.3.3 with raft-ui styles.css + Web @theme overrides. Recipe `webAgentResetOptions`.
 // ignore_for_file: type=lint
 
 import 'recipe_runtime.dart';
@@ -45,7 +45,7 @@ class RaftWebAgentResetOptionsRecipeStyle {
   };
 }
 
-/// raft-ui recipe `webAgentResetOptions` (`Web src/components/agent/ResetAgentDialog.tsx sha256:f8f8401169f240e2d89e833127f40ab633801f6229278ebebf0579c3523e9dcd`, index.mjs:1).
+/// raft-ui recipe `webAgentResetOptions` (`Web src/components/agent/ResetAgentDialog.tsx sha256:98d774a5ff4dfe780462523c6c693de92e62da3700514cf6d396c5927522f903`, index.mjs:1).
 ///
 /// Used by: ResetAgentDialogRadioOptions.
 ///
@@ -110,12 +110,12 @@ abstract final class RaftWebAgentResetOptionsRecipe {
 
   /// Distinct class lists (indices into [raftRecipeUtilities]).
   static const List<List<int>> _lists = [
-    [1019],
-    [965, 1470, 1321, 1025, 1673],
-    [1740],
-    [965, 1484, 967, 1020],
-    [1845, 1017, 1822],
-    [1821, 1015, 1827],
+    [1462],
+    [1400, 2100, 1866, 1468, 2419],
+    [2499],
+    [1400, 2116, 1404, 1463],
+    [2622, 1457, 2598],
+    [2597, 1455, 2603],
   ];
 
   /// Per combination (mixed radix over [axes]): class list per slot.

@@ -15,6 +15,8 @@ export 'package:raft_theme/recipes/legacy/message_item.g.dart'
 
 /// Router for recipe `RaftMessageItemRecipe`: the frozen 0.5.52 class for the Elegant and Brutal
 /// looks, the current raft-ui class for the Raft look.
+///
+/// Raft set differences: Raft-only slots: senderGroup, senderButton, delegatedBy, delegatedByName, delegatedByButton, delegatedAvatar, edited, trailing.
 abstract final class RaftMessageItemRecipe {
   static const String recipeName = legacy.RaftMessageItemRecipe.recipeName;
   static const List<String> slotNames = legacy.RaftMessageItemRecipe.slotNames;

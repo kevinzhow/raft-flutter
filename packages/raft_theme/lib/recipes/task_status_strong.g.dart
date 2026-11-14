@@ -1,6 +1,6 @@
 // GENERATED — do not edit. Regenerate with `tool/recipes/run`.
-// Source: raft-ui 0.7.0 dist/index.mjs (sha256 83bf0bff35092e3d),
-// tailwindcss 4.2.2 with raft-ui styles.css + Web @theme overrides. Recipe `taskStatusStrong`.
+// Source: raft-ui 0.95.3 dist/index.mjs (sha256 63bb2df77b8bd7a2),
+// tailwindcss 4.3.3 with raft-ui styles.css + Web @theme overrides. Recipe `taskStatusStrong`.
 // ignore_for_file: type=lint
 
 import 'recipe_runtime.dart';
@@ -8,6 +8,7 @@ import 'recipe_utilities.g.dart';
 
 /// `status` axis of `taskStatusStrong`.
 enum RaftTaskStatusStrongRecipeStatus {
+  backlog('backlog'),
   todo('todo'),
   inProgress('in-progress'),
   inReview('in-review'),
@@ -30,7 +31,7 @@ class RaftTaskStatusStrongRecipeStyle {
   Map<String, RaftSlotStyle> get slots => {'base': base};
 }
 
-/// raft-ui recipe `taskStatusStrong` (`src/components/tasks/task-status.recipe.ts`, index.mjs:14832).
+/// raft-ui recipe `taskStatusStrong` (`dist/components/tasks/task-status.recipe.mjs`, index.mjs:20780).
 ///
 /// Class lists are the exact tailwind-variants + tailwind-merge output for
 /// every variant combination; [resolve] applies the CSS cascade for [states].
@@ -40,7 +41,7 @@ abstract final class RaftTaskStatusStrongRecipe {
   static const List<RaftRecipeAxis> axes = [
     RaftRecipeAxis(
       'status',
-      ['todo', 'in-progress', 'in-review', 'done', 'closed'],
+      ['backlog', 'todo', 'in-progress', 'in-review', 'done', 'closed'],
       null,
       true,
     ),
@@ -88,11 +89,12 @@ abstract final class RaftTaskStatusStrongRecipe {
   /// Distinct class lists (indices into [raftRecipeUtilities]).
   static const List<List<int>> _lists = [
     [],
-    [1852],
-    [1850],
-    [1851],
-    [1849],
-    [1848],
+    [2598],
+    [2629],
+    [2627],
+    [2628],
+    [2626],
+    [2625],
   ];
 
   /// Per combination (mixed radix over [axes]): class list per slot.
@@ -103,5 +105,6 @@ abstract final class RaftTaskStatusStrongRecipe {
     [3],
     [4],
     [5],
+    [6],
   ];
 }

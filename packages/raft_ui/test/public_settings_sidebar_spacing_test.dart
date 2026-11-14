@@ -76,15 +76,15 @@ void main() {
         });
       }
       if (spec.$2 == raftThemePackId) {
-        // Pinned Web db5e399: 56px header + public frame p-2 +
-        // SidebarGroupLabel pt-4, 18px line, pb-1.5 + 1px row margin.
+        // The existing 56px header + public frame p-2, followed by the
+        // 0.95.3 SidebarGroupLabel pt-4 / 18px line / pb-0 and list py-2.
         expect(
           t
               .getTopLeft(
                 find.byKey(const ValueKey('workspace-settings-nav-appearance')),
               )
               .dy,
-          105,
+          56 + 8 + 16 + 18 + 8,
         );
       }
       expect(t.takeException(), isNull);

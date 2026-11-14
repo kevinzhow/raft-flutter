@@ -1,6 +1,6 @@
 // GENERATED — do not edit. Regenerate with `tool/recipes/run`.
-// Source: raft-ui 0.7.0 dist/index.mjs (sha256 83bf0bff35092e3d),
-// tailwindcss 4.2.2 with raft-ui styles.css + Web @theme overrides. Recipe `taskLoading`.
+// Source: raft-ui 0.95.3 dist/index.mjs (sha256 63bb2df77b8bd7a2),
+// tailwindcss 4.3.3 with raft-ui styles.css + Web @theme overrides. Recipe `taskLoading`.
 // ignore_for_file: type=lint
 
 import 'recipe_runtime.dart';
@@ -19,7 +19,7 @@ class RaftTaskLoadingRecipeStyle {
   Map<String, RaftSlotStyle> get slots => {'list': list, 'row': row};
 }
 
-/// raft-ui recipe `taskLoading` (`src/components/tasks/task-loading.recipe.ts`, index.mjs:15565).
+/// raft-ui recipe `taskLoading` (`dist/components/tasks/task-loading.recipe.mjs`, index.mjs:23563).
 ///
 /// Used by: TaskLoadingList, TaskLoadingRow.
 ///
@@ -70,8 +70,8 @@ abstract final class RaftTaskLoadingRecipe {
 
   /// Distinct class lists (indices into [raftRecipeUtilities]).
   static const List<List<int>> _lists = [
-    [965, 967, 1023],
-    [965, 1484, 967, 1596, 1023, 1709, 620, 633, 596, 1738],
+    [1400, 1404, 1466],
+    [1400, 2116, 1404, 2264, 1466, 2462, 939, 953, 911, 2497],
   ];
 
   /// Per combination (mixed radix over [axes]): class list per slot.

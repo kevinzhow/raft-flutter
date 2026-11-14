@@ -337,11 +337,16 @@ export function atRuleAtoms(name, params, ctx) {
   if (name !== 'media') { ctx.unknown.push(`@${name} ${p}`); return [`@${name} ${p}`]; }
   const atoms = [];
   for (const part of p.split(/\s+and\s+/)) {
+    if (part.trim() === 'not (pointer: fine)') { atoms.push('not:pointer-fine'); continue; }
     const q = part.replace(/^\(|\)$/g, '').trim().replace(/\s*:\s*/, ': ');
     let m;
     if (q === 'hover: hover') continue; // pointer device with hover: assumed
     if (q === 'prefers-color-scheme: dark') { atoms.push('dark'); continue; }
     if (q === 'hover: none') { atoms.push('hover-none'); continue; } // touch-only device
+    if (q === 'pointer: fine') { atoms.push('pointer-fine'); continue; }
+    if (q === 'pointer: coarse') { atoms.push('pointer-coarse'); continue; }
+    if (q === 'print') { atoms.push('print'); continue; }
+    if (q === 'not (pointer: fine)' || q === 'not all and (pointer: fine)') { atoms.push('not:pointer-fine'); continue; }
     if (/^forced-colors:\s*active$/.test(q)) { atoms.push('forced-colors'); continue; }
     if (q === 'prefers-reduced-motion: reduce') { atoms.push('motion-reduce'); continue; }
     if (q === 'prefers-reduced-motion: no-preference') { atoms.push('motion-safe'); continue; }

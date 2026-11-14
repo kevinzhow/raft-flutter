@@ -1,6 +1,6 @@
 // GENERATED — do not edit. Regenerate with `tool/recipes/run`.
-// Source: raft-ui 0.7.0 dist/index.mjs (sha256 83bf0bff35092e3d),
-// tailwindcss 4.2.2 with raft-ui styles.css + Web @theme overrides. Recipe `composer`.
+// Source: raft-ui 0.95.3 dist/index.mjs (sha256 63bb2df77b8bd7a2),
+// tailwindcss 4.3.3 with raft-ui styles.css + Web @theme overrides. Recipe `composer`.
 // ignore_for_file: type=lint
 
 import 'recipe_runtime.dart';
@@ -10,15 +10,20 @@ import 'recipe_utilities.g.dart';
 class RaftComposerRecipeStyle {
   const RaftComposerRecipeStyle({
     required this.root,
+    required this.inputFrame,
     required this.input,
     required this.toolbar,
     required this.actions,
     required this.meta,
     required this.iconButton,
+    required this.submit,
   });
 
   /// Slot `root`.
   final RaftSlotStyle root;
+
+  /// Slot `inputFrame`.
+  final RaftSlotStyle inputFrame;
 
   /// Slot `input`.
   final RaftSlotStyle input;
@@ -35,19 +40,24 @@ class RaftComposerRecipeStyle {
   /// Slot `iconButton`.
   final RaftSlotStyle iconButton;
 
+  /// Slot `submit`.
+  final RaftSlotStyle submit;
+
   Map<String, RaftSlotStyle> get slots => {
     'root': root,
+    'inputFrame': inputFrame,
     'input': input,
     'toolbar': toolbar,
     'actions': actions,
     'meta': meta,
     'iconButton': iconButton,
+    'submit': submit,
   };
 }
 
-/// raft-ui recipe `composer` (`src/components/composer/composer.recipe.ts`, index.mjs:11123).
+/// raft-ui recipe `composer` (`dist/components/composer/composer.recipe.mjs`, index.mjs:16067).
 ///
-/// Used by: Composer, ComposerActions, ComposerIconButton, ComposerInput, ComposerMeta, ComposerToolbar.
+/// Used by: Composer, ComposerActions, ComposerIconButton, ComposerInput, ComposerMeta, ComposerSubmit, ComposerToolbar.
 ///
 /// Class lists are the exact tailwind-variants + tailwind-merge output for
 /// every variant combination; [resolve] applies the CSS cascade for [states].
@@ -55,15 +65,20 @@ abstract final class RaftComposerRecipe {
   static const String recipeName = 'composer';
   static const List<String> slotNames = [
     'root',
+    'inputFrame',
     'input',
     'toolbar',
     'actions',
     'meta',
     'iconButton',
+    'submit',
   ];
-  static const List<RaftRecipeAxis> axes = [];
+  static const List<RaftRecipeAxis> axes = [
+    RaftRecipeAxis('icon', ['true', 'false'], null, true),
+  ];
 
   static RaftComposerRecipeStyle resolve({
+    bool? icon,
     RaftRecipeStates states = RaftRecipeStates.none,
     RaftTokenResolver? tokens,
   }) {
@@ -72,7 +87,7 @@ abstract final class RaftComposerRecipe {
       axes,
       _lists,
       _combos,
-      [],
+      [icon?.toString()],
       states,
       tokens,
       recipeName: recipeName,
@@ -80,11 +95,13 @@ abstract final class RaftComposerRecipe {
     );
     return RaftComposerRecipeStyle(
       root: s[0],
-      input: s[1],
-      toolbar: s[2],
-      actions: s[3],
-      meta: s[4],
-      iconButton: s[5],
+      inputFrame: s[1],
+      input: s[2],
+      toolbar: s[3],
+      actions: s[4],
+      meta: s[5],
+      iconButton: s[6],
+      submit: s[7],
     );
   }
 
@@ -111,46 +128,49 @@ abstract final class RaftComposerRecipe {
   /// Distinct class lists (indices into [raftRecipeUtilities]).
   static const List<List<int>> _lists = [
     [
-      965,
-      1929,
-      967,
-      1023,
-      1595,
-      1709,
-      622,
-      1660,
-      1647,
-      1606,
-      635,
-      596,
-      1822,
-      1738,
-      1002,
-    ],
-    [
-      1359,
-      1929,
-      1683,
-      615,
-      1577,
-      957,
-      1587,
-      1476,
-      1655,
-      1016,
-      1810,
-      1015,
-      1822,
+      1400,
+      2725,
+      1404,
       1466,
-      1628,
+      2263,
+      2462,
+      941,
+      2403,
+      2383,
+      2285,
+      952,
+      911,
+      2598,
+      2497,
+      1775,
     ],
-    [965, 1319, 1323, 1023],
-    [965, 1319, 1023],
-    [1757, 1710, 1827, 926, 924, 484, 482, 399, 266],
+    [2725, 2116, 575],
+    [
+      1912,
+      2725,
+      2434,
+      933,
+      2247,
+      1388,
+      2104,
+      2398,
+      1456,
+      2585,
+      1455,
+      2598,
+      2311,
+    ],
+    [1400, 1864, 1868, 2155, 1475, 2054],
+    [1400, 1864, 1475],
+    [2522, 2461, 2603, 2079, 2076, 2025, 2020, 1351, 1349, 776, 774, 461],
+    [2461],
+    [2461, 2079, 2076, 2025, 2020],
   ];
 
   /// Per combination (mixed radix over [axes]): class list per slot.
   static const List<List<int>> _combos = [
-    [0, 1, 2, 3, 3, 4],
+    [0, 1, 2, 3, 4, 4, 5, 6],
+    [0, 1, 2, 3, 4, 4, 5, 7],
+    [0, 1, 2, 3, 4, 4, 5, 6],
   ];
 }

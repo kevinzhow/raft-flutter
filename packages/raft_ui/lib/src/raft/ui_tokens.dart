@@ -1,8 +1,6 @@
-// raft-ui 0.7.1 role tokens and type styles for the ported core components.
-//
-// The components in lib/src/raft/ read the official 0.7.1 names (`sticker-ink`,
-// `fill-pressed`, `line-hairline`, ...) straight from [RaftLight] / [RaftDark] instead of the 0.5.52 field
-// schemas the older code still uses (see docs/design-tokens.md, "raft-ui 0.7.1 single look").
+// Role tokens and type styles for the ported core components. Retired typed
+// getters follow raft-ui's token-names codemod when a map has only current
+// names; frozen maps retain their own original values.
 import 'package:flutter/material.dart';
 
 import '../theme.dart'
@@ -59,8 +57,11 @@ class RaftUiColors {
   Color get layerFrame => this['layer-frame'];
   Color get layerSidebar => this['layer-sidebar'];
   Color get fillMuted => this['fill-muted'];
-  Color get fillPressed => this['fill-pressed'];
-  Color get fillFramePressed => this['fill-frame-pressed'];
+
+  /// Compatibility name: upstream renamed fill-pressed to fill-medium.
+  Color get fillPressed => _colors['fill-pressed'] ?? this['fill-medium'];
+  Color get fillFramePressed =>
+      _colors['fill-frame-pressed'] ?? this['fill-frame-medium'];
   Color get lineStrong => this['line-strong'];
   Color get lineHairline => this['line-hairline'];
   Color get lineSeam => this['line-seam'];
@@ -68,7 +69,8 @@ class RaftUiColors {
   Color get stickerInk => this['sticker-ink'];
   Color get stickerPaper => this['sticker-paper'];
   Color get stickerEdge => this['sticker-edge'];
-  Color get stickerPressed => this['sticker-pressed'];
+  Color get stickerPressed =>
+      _colors['sticker-pressed'] ?? this['sticker-medium'];
   Color get brand => this['brand-400'];
   Color get attention => this['attention-400'];
   Color get info => this['info'];

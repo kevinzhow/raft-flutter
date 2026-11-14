@@ -1,6 +1,6 @@
 // GENERATED — do not edit. Regenerate with `tool/recipes/run`.
-// Source: raft-ui 0.7.0 dist/index.mjs (sha256 83bf0bff35092e3d),
-// tailwindcss 4.2.2 with raft-ui styles.css + Web @theme overrides. Recipe `sidebarMenuRecipe`.
+// Source: raft-ui 0.95.3 dist/index.mjs (sha256 63bb2df77b8bd7a2),
+// tailwindcss 4.3.3 with raft-ui styles.css + Web @theme overrides. Recipe `sidebarMenuRecipe`.
 // ignore_for_file: type=lint
 
 import 'recipe_runtime.dart';
@@ -40,7 +40,7 @@ class RaftSidebarMenuRecipeStyle {
   };
 }
 
-/// raft-ui recipe `sidebarMenuRecipe` (`src/components/sidebar/sidebar-menu.recipe.ts`, index.mjs:2794).
+/// raft-ui recipe `sidebarMenuRecipe` (`dist/components/sidebar/sidebar-menu.recipe.mjs`, index.mjs:5056).
 ///
 /// Used by: SidebarMenu, SidebarMenuAside, SidebarMenuCount, SidebarMenuIcon, SidebarMenuTitle.
 ///
@@ -104,28 +104,28 @@ abstract final class RaftSidebarMenuRecipe {
   /// Distinct class lists (indices into [raftRecipeUtilities]).
   static const List<List<int>> _lists = [
     [
-      965,
-      1484,
-      966,
-      1319,
-      1196,
-      1022,
-      1716,
-      1016,
-      1821,
-      1008,
-      1529,
-      1873,
-      1824,
-      1285,
-      474,
-      1577,
-      996,
+      1400,
+      2116,
+      1401,
+      1864,
+      1673,
+      1465,
+      2471,
+      1456,
+      2597,
+      1449,
+      2165,
+      2654,
+      2600,
+      1798,
+      765,
+      2247,
+      1439,
     ],
-    [965, 1740, 1319, 1324, 277, 274, 296, 1752, 279, 292, 297],
-    [1484, 1897],
-    [965, 1740, 1319, 1021],
-    [1014, 1839, 1015, 1783, 1824],
+    [1400, 2499, 1864, 1869, 474, 470, 495, 2516, 477, 490, 496],
+    [2116, 2681],
+    [1400, 2499, 1864, 1464],
+    [1454, 2616, 1455, 2556, 2600],
   ];
 
   /// Per combination (mixed radix over [axes]): class list per slot.

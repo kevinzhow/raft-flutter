@@ -15,7 +15,7 @@ for(const f of ['foundation.css','fonts.css'])postcss.parse(readFileSync(join(so
 const compiler=await createCompiler(source),theme=splitOutput(compiler.build([])).themeVars;
 const globals=bindStepsThemeGlobals(css,theme,tokens);
 const config={orientation:'horizontal',status:'process',last:false,clickable:false,disabled:false};
-const env=(width,flags=[])=>({width,flags:new Set(flags)});
+const env=(width,flags=[])=>({width,containerWidth:width,flags:new Set(flags)});
 const run=(text,c=config,e=env(640))=>resolveSteps(parseStepsCss(text),c,e,n=>tokens.has(n),new Set(),globals);
 
 test('all published selectors are reached by the complete library capability matrix',()=>{
@@ -35,7 +35,7 @@ test('source geometry mutation flows into downstream slots mechanically',()=>{
  const original=run(css),changed=run(css.replace('--r-steps-gap: 8px;','--r-steps-gap: 9px;'));
  assert.equal(original.title['margin-left'].v,8);assert.equal(changed.title['margin-left'].v,9);
 });
-test('viewport boundary and mobile gap use parsed media/custom-property rules',()=>{
+test('container boundary and mobile gap use parsed container/custom-property rules',()=>{
  assert.equal(run(css,config,env(639)).content['padding-right'].v,6);
  assert.equal(run(css,config,env(640)).title['margin-left'].v,8);
  assert.equal(run(css,config,env(641)).title['margin-left'].v,8);
@@ -53,9 +53,9 @@ test('marker line height and last connector remain source-owned',()=>{
 });
 
 test('DOM fixture binds the actual published Steps/Step markup and disabled class rule', async()=>{
- const req=createRequire(join(source,'package.json'));const React=req('react');
- const webReq=createRequire(join(source,'../../..','package.json'));const {renderToStaticMarkup}=webReq('react-dom/server');
- const {Steps,Step}=await import(pathToFileURL(join(source,'dist/index.mjs')).href);
+ const req=createRequire(join(process.env.RAFT_WEB_CSS,'../../package.json'));const React=req('react');
+ const {renderToStaticMarkup}=req('react-dom/server');
+ const {Steps,Step}=await import(pathToFileURL(req.resolve('@botiverse/raft-ui')).href);
  const html=renderToStaticMarkup(React.createElement(Steps,{current:2,onUpdateCurrent:()=>{}},
   React.createElement(Step,{title:'Connect'}),React.createElement(Step,{title:'Channels'}),React.createElement(Step,{title:'Health',disabled:true})));
  assert.match(html,/r-step--finish r-step--clickable/);

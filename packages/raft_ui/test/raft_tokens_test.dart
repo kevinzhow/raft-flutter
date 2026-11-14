@@ -9,16 +9,18 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 // The generated Raft look (RaftLight / RaftDark, raft_tokens.g.dart) must equal
-// the vendored official file, tool/design-source/raft-ui-0.7.1/tokens.json,
+// the vendored official file, tool/design-source/raft-ui-0.95.3/tokens.json,
 // token by token and mode by mode. The expectation is computed here from the
 // JSON with its own port of the Chromium-exact oklch conversion
 // (docs/design-tokens.md), so a drifting generator, a hand edit of the
 // generated file or a stale vendored file fails this test.
 
+const _sourceVersion = '0.95.3';
+const _sourceDirectory = 'tool/design-source/raft-ui-$_sourceVersion';
+
 Directory _repoRoot() {
   var dir = Directory.current.absolute;
-  while (!File('${dir.path}/tool/design-source/raft-ui-0.7.1/tokens.json')
-      .existsSync()) {
+  while (!File('${dir.path}/tool/design-source/manifest.json').existsSync()) {
     final parent = dir.parent;
     if (parent.path == dir.path) throw StateError('repository root not found');
     dir = parent;
@@ -150,11 +152,12 @@ _Rgba _oklch(List components, [num? alpha]) => _Rgba(
 // ------------------------------------------------------------ tokens.json
 
 class _Token {
-  _Token(this.name, this.type, this.light, this.dark);
+  _Token(this.name, this.type, this.light, this.dark, this.desktop);
   final String name; // CSS custom property without `--`
-  final String type; // color | shadow | dimension | fontWeight
+  final String type;
   final Object light;
   final Object dark;
+  final Object? desktop;
   Object raw(bool dark) => dark ? this.dark : light;
 }
 
@@ -187,6 +190,10 @@ class _TokenFile {
 
   void _walk(Map<String, dynamic> node, List<String> path, String? inherited) {
     final type = (node[r'$type'] as String?) ?? inherited;
+    if (node.containsKey(r'$value')) {
+      _add(path, node, type);
+      return;
+    }
     for (final MapEntry(:key, :value) in node.entries) {
       if (key == r'$root') {
         _add(path, node[r'$root'] as Map, type);
@@ -211,11 +218,32 @@ class _TokenFile {
       (token[r'$type'] as String?) ?? type ?? 'color',
       light,
       dark,
+      ext?['desktop'],
     );
   }
 
+  double metric(String name, {required bool dark, bool desktop = false}) {
+    final token = tokens[name]!;
+    final raw = desktop ? token.desktop ?? token.raw(dark) : token.raw(dark);
+    if (raw is num) return raw.toDouble();
+    if (raw is Map) {
+      expect(raw['unit'], anyOf('px', 'rem'), reason: name);
+      return (raw['value'] as num).toDouble() * (raw['unit'] == 'rem' ? 16 : 1);
+    }
+    var expression = (raw as String).replaceAllMapped(
+      RegExp(r'var\(--([a-z0-9-]+)\)'),
+      (m) => metric(m.group(1)!, dark: dark, desktop: desktop).toString(),
+    );
+    expression = expression.replaceAllMapped(
+      RegExp(r'(\d+(?:\.\d+)?)(px|rem)'),
+      (m) => (double.parse(m.group(1)!) * (m.group(2) == 'rem' ? 16 : 1))
+          .toString(),
+    );
+    return _DimensionExpression(expression.replaceAll('calc', '')).value();
+  }
+
   /// The colour of [name] in one mode, resolving `{aliases}` and
-  /// `color-mix(in srgb, ...)` the way the CSS cascade does.
+  /// the published colour mixes the way the CSS cascade does.
   _Rgba color(String name, {required bool dark}) =>
       _resolve(tokens[name]!.raw(dark), dark);
 
@@ -226,6 +254,18 @@ class _TokenFile {
     }
     final text = raw as String;
     if (text.startsWith('{')) return color(_refName(text), dark: dark);
+    final transparentMix = RegExp(
+      r'^color-mix\(in oklch, var\(--([a-z0-9-]+)\) (\d+)%, transparent\)$',
+    ).firstMatch(text);
+    if (transparentMix != null) {
+      // Premultiplied interpolation with transparent retains the other
+      // colour's coordinates and scales only its alpha.
+      final base = color(transparentMix.group(1)!, dark: dark);
+      return _Rgba(
+        base.srgb,
+        base.alpha * int.parse(transparentMix.group(2)!) / 100,
+      );
+    }
     final mix = RegExp(
       r'^color-mix\(in srgb, var\(--([a-z0-9-]+)\) (\d+)%, var\(--([a-z0-9-]+)\)\)$',
     ).firstMatch(text);
@@ -240,6 +280,58 @@ class _TokenFile {
       for (var i = 0; i < 3; i++)
         _encode(_decode(a.srgb[i] * p + b.srgb[i] * (1 - p))),
     ], 1.0);
+  }
+}
+
+// Independent arithmetic for the published dimension expressions. This test
+// never imports the generator or uses its emitted numeric values as expected.
+class _DimensionExpression {
+  _DimensionExpression(String expression)
+    : parts = RegExp(r'\d+(?:\.\d+)?|[()+*/-]')
+          .allMatches(expression)
+          .map((m) => m.group(0)!)
+          .toList() {
+    expect(parts.join(), expression.replaceAll(RegExp(r'\s+'), ''));
+  }
+  final List<String> parts;
+  int position = 0;
+
+  double value() {
+    final result = _sum();
+    expect(position, parts.length);
+    return result;
+  }
+
+  double _sum() {
+    var result = _product();
+    while (position < parts.length &&
+        (parts[position] == '+' || parts[position] == '-')) {
+      final operation = parts[position++];
+      final right = _product();
+      result = operation == '+' ? result + right : result - right;
+    }
+    return result;
+  }
+
+  double _product() {
+    var result = _primary();
+    while (position < parts.length &&
+        (parts[position] == '*' || parts[position] == '/')) {
+      final operation = parts[position++];
+      final right = _primary();
+      result = operation == '*' ? result * right : result / right;
+    }
+    return result;
+  }
+
+  double _primary() {
+    final part = parts[position++];
+    if (part == '(') {
+      final result = _sum();
+      expect(parts[position++], ')');
+      return result;
+    }
+    return double.parse(part);
   }
 }
 
@@ -295,8 +387,7 @@ void main() {
   final root = _repoRoot();
   final file = _TokenFile(
     jsonDecode(
-      File('${root.path}/tool/design-source/raft-ui-0.7.1/tokens.json')
-          .readAsStringSync(),
+      File('${root.path}/$_sourceDirectory/tokens.json').readAsStringSync(),
     ) as Map<String, dynamic>,
   );
   final modes = {'light': false, 'dark': true};
@@ -310,7 +401,15 @@ void main() {
   ];
   final metricNames = [
     for (final t in file.tokens.values)
-      if (t.type == 'dimension' || t.type == 'fontWeight') t.name,
+      if (['dimension', 'fontWeight', 'number'].contains(t.type)) t.name,
+  ];
+  final durationNames = [
+    for (final t in file.tokens.values)
+      if (t.type == 'duration') t.name,
+  ];
+  final easingNames = [
+    for (final t in file.tokens.values)
+      if (t.type == 'cubicBezier') t.name,
   ];
 
   Map<String, Color> colorsOf(bool dark) =>
@@ -320,12 +419,39 @@ void main() {
   Map<String, double> metricsOf(bool dark) =>
       dark ? RaftDark.metrics : RaftLight.metrics;
 
-  test('tokens.json is the 0.7.1 file the generator was written against', () {
-    // 225 colours, 3 shadows, 6 metrics, 159 former names (393 tokens).
-    expect(colorNames, hasLength(225));
+  test('tokens.json and styles are explicitly pinned to $_sourceVersion', () {
+    final manifest = jsonDecode(
+      File('${root.path}/tool/design-source/manifest.json').readAsStringSync(),
+    ) as Map<String, dynamic>;
+    const origins = {
+      'tokens.json': 'dist/tokens.json',
+      'styles.css': 'dist/styles.css',
+      'token-names.mjs': 'codemods/token-names.mjs',
+    };
+    for (final MapEntry(:key, :value) in origins.entries) {
+      expect(
+        manifest['files']['raft-ui-$_sourceVersion/$key']['origin'],
+        'raft-ui@$_sourceVersion:$value',
+      );
+    }
+    expect(colorNames, hasLength(238));
     expect(shadowNames, ['elevation-float', 'elevation-sticker', 'focus-ring']);
-    expect(metricNames, hasLength(6));
-    expect(file.deprecated, hasLength(159));
+    expect(metricNames, hasLength(39));
+    expect(durationNames, hasLength(1));
+    expect(easingNames, hasLength(1));
+    expect(file.deprecated, isEmpty);
+    expect(file.tokens, hasLength(282));
+    expect(
+      {
+        ...colorNames,
+        ...shadowNames,
+        ...metricNames,
+        ...durationNames,
+        ...easingNames,
+      },
+      file.tokens.keys.toSet(),
+      reason: 'every authored token type must be covered',
+    );
   });
 
   for (final MapEntry(key: mode, value: dark) in modes.entries) {
@@ -334,6 +460,14 @@ void main() {
         expect(colorsOf(dark).keys.toSet(), colorNames.toSet());
         expect(shadowsOf(dark).keys.toSet(), shadowNames.toSet());
         expect(metricsOf(dark).keys.toSet(), metricNames.toSet());
+        expect(
+          (dark ? RaftDark.durations : RaftLight.durations).keys.toSet(),
+          durationNames.toSet(),
+        );
+        expect(
+          (dark ? RaftDark.easings : RaftLight.easings).keys.toSet(),
+          easingNames.toSet(),
+        );
       });
 
       test('every colour equals the Chromium-exact conversion', () {
@@ -383,16 +517,54 @@ void main() {
 
       test('every metric equals tokens.json', () {
         for (final name in metricNames) {
-          final raw = file.tokens[name]!.raw(dark);
-          final want = raw is Map ? raw['value'] as num : raw as num;
-          if (raw is Map) expect(raw['unit'], 'px', reason: name);
-          expect(metricsOf(dark)[name], want.toDouble(), reason: name);
+          expect(
+            metricsOf(dark)[name],
+            file.metric(name, dark: dark),
+            reason: name,
+          );
+        }
+      });
+
+      test('every motion token equals tokens.json', () {
+        final durations = dark ? RaftDark.durations : RaftLight.durations;
+        for (final name in durationNames) {
+          final raw = file.tokens[name]!.raw(dark) as Map;
+          expect(raw['unit'], 'ms', reason: name);
+          expect(
+            durations[name]!.inMicroseconds,
+            ((raw['value'] as num) * 1000).round(),
+            reason: name,
+          );
+        }
+        final easings = dark ? RaftDark.easings : RaftLight.easings;
+        for (final name in easingNames) {
+          final curve = easings[name]!;
+          expect(
+            [curve.a, curve.b, curve.c, curve.d],
+            file.tokens[name]!.raw(dark),
+            reason: name,
+          );
         }
       });
     });
   }
 
-  test('former names resolve to the current name, never by name alone', () {
+  test('desktop dimensions follow authored overrides and references', () {
+    final names = {
+      for (final token in file.tokens.values)
+        if (token.type == 'dimension') token.name,
+    };
+    expect(RaftDesktopMetrics.byCssName.keys.toSet(), names);
+    for (final name in names) {
+      expect(
+        RaftDesktopMetrics.byCssName[name],
+        file.metric(name, dark: false, desktop: true),
+        reason: name,
+      );
+    }
+  });
+
+  test('removed legacy aliases are separate from the current codemod', () {
     expect(
       RaftDeprecatedTokenNames.byCssName.length +
           RaftDeprecatedTokenNames.removed.length,
@@ -407,14 +579,17 @@ void main() {
         expect(file.tokens, contains(now), reason: '$old -> $now');
       }
     }
-    // The trap: the 0.5.52 `layer-panel` is today's `layer-canvas`, and the
-    // 0.5.52 `layer-canvas` has no successor.
-    expect(RaftDeprecatedTokenNames.byCssName['layer-panel'], 'layer-canvas');
-    expect(RaftDeprecatedTokenNames.byCssName, isNot(contains('layer-canvas')));
+    // 0.95.3 no longer publishes the deprecated alias group. Its official
+    // migration codemod still records the historical layer-panel rename.
+    expect(RaftDeprecatedTokenNames.byCssName, isEmpty);
+    expect(RaftDeprecatedTokenNames.removed, isEmpty);
+    final codemod = File('${root.path}/$_sourceDirectory/token-names.mjs')
+        .readAsStringSync();
+    expect(codemod, contains('"layer-panel": "layer-canvas"'));
   });
 
   test('radii, type scale and easing equal styles.css', () {
-    final css = File('${root.path}/tool/design-source/raft-ui-0.7.1/styles.css')
+    final css = File('${root.path}/$_sourceDirectory/styles.css')
         .readAsStringSync();
     final theme = RegExp(
       r'@theme \{(.*?)\n\}',

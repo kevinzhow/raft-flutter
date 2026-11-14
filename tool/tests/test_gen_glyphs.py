@@ -34,18 +34,20 @@ class GenGlyphs(unittest.TestCase):
     def test_product_pin_and_separate_specimen_extras(self):
         # raft-source v1.21.x: Web and raft-ui resolve lucide-react to one build, so no RaftUi variants.
         self.assertEqual(gen.WEB_LUCIDE, gen.RAFT_UI_LUCIDE)
-        host = set(self.doc['resolved'].get('flutterHost', {}).values())
-        self.assertEqual(host, {'app-window@1.59.0', 'octagon-alert@1.59.0'})
-        self.assertEqual({v['version'] for k, v in self.doc['icons'].items() if k not in host}, {gen.WEB_LUCIDE})
-        self.assertEqual({self.doc['icons'][k]['version'] for k in host}, {'1.59.0'})
-        self.assertFalse([n for n in self.by if n.endswith('RaftUi')])
+        frozen = self.doc['resolved']['frozen']
+        self.assertEqual(frozen['appWindow'], 'app-window@1.59.0')
+        self.assertEqual(frozen['octagonAlert'], 'octagon-alert@1.59.0')
+        for group in ('web', 'raftUi'):
+            self.assertEqual({self.doc['icons'][key]['version'] for key in self.doc['resolved'][group].values()}, {gen.WEB_LUCIDE})
+        self.assertEqual(self.doc['sources']['ricons']['version'], '0.1.1')
+        self.assertEqual(len(self.doc['resolved']['ricons']), 19)
 
     def test_provenance(self):
         icons = self.doc['icons']
         self.assertEqual(icons[self.by['checkSquare']['key']]['icon'], 'square-check-big')
         self.assertEqual(icons[self.by['home']['key']]['icon'], 'house')
-        self.assertEqual(self.by['checkCircle2']['key'], 'circle-check@1.55.0')
-        self.assertEqual(self.by['minus']['key'], 'minus@1.55.0')  # only raft-ui imports Minus
+        self.assertEqual(self.by['checkCircle2']['key'], 'circle-check@1.72.0')
+        self.assertEqual(self.by['minus']['key'], 'minus@1.72.0')  # only raft-ui imports Minus
         # lucide 1.x renamed the icon files behind these Web import names (geometry of trash-2 and building-2 unchanged).
         self.assertEqual(icons[self.by['smilePlus']['key']]['icon'], 'face-slightly-smiling-plus')
         self.assertEqual(icons[self.by['building2']['key']]['icon'], 'building-complex')
@@ -53,12 +55,20 @@ class GenGlyphs(unittest.TestCase):
         self.assertTrue(self.by['bookmarkFilled']['filled'])
         # Web names always carry the Web build.
         for e in self.by.values():
-            if e['web']:
+            if e['web'] and not e['key'].startswith('ricons-'):
                 self.assertTrue(e['key'].endswith('@' + gen.WEB_LUCIDE), e['name'])
 
     def test_legacy_names_still_exist(self):
         for name in gen.LEGACY + list(gen.FILLED):
             self.assertIn(name, self.by)
+
+    def test_ricons_small_mark_and_frozen_geometry_are_preserved(self):
+        icon = self.doc['icons'][self.by['unfollowArtifact']['key']]
+        self.assertEqual(icon['smallNodes'][-1]['strokeWidth'], 3)
+        self.assertNotEqual(icon['smallNodes'][-1], icon['nodes'][-1])
+        for name, key in self.doc['resolved']['frozen'].items():
+            self.assertEqual(self.by[name]['legacyKey'], key)
+        self.assertEqual(gen.scale_svg_path('M1 2a3 4 45 0 1 5 6', 2), 'M 2 4 a 6 8 45 0 1 10 12')
 
     def test_node_emission(self):
         rect = {'tag': 'rect', 'attrs': {'width': '18', 'height': '18', 'x': '3', 'y': '3', 'rx': '2'}}

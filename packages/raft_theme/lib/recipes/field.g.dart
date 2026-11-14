@@ -1,6 +1,6 @@
 // GENERATED — do not edit. Regenerate with `tool/recipes/run`.
-// Source: raft-ui 0.7.0 dist/index.mjs (sha256 83bf0bff35092e3d),
-// tailwindcss 4.2.2 with raft-ui styles.css + Web @theme overrides. Recipe `field`.
+// Source: raft-ui 0.95.3 dist/index.mjs (sha256 63bb2df77b8bd7a2),
+// tailwindcss 4.3.3 with raft-ui styles.css + Web @theme overrides. Recipe `field`.
 // ignore_for_file: type=lint
 
 import 'recipe_runtime.dart';
@@ -51,9 +51,9 @@ class RaftFieldRecipeStyle {
   };
 }
 
-/// raft-ui recipe `field` (`src/components/field/field.tsx`, index.mjs:5077).
+/// raft-ui recipe `field` (`dist/components/field/field.mjs`, index.mjs:7536).
 ///
-/// Used by: Field, FieldDescription, FieldError, FieldItem, FieldLabel, LegacyTaskPanelField.
+/// Used by: Field, FieldDescription, FieldError, FieldItem, FieldLabel.
 ///
 /// Class lists are the exact tailwind-variants + tailwind-merge output for
 /// every variant combination; [resolve] applies the CSS cascade for [states].
@@ -117,17 +117,18 @@ abstract final class RaftFieldRecipe {
 
   /// Distinct class lists (indices into [raftRecipeUtilities]).
   static const List<List<int>> _lists = [
-    [1143, 965, 967, 1022],
-    [1144, 965, 1321, 1023, 69],
-    [618, 1114, 1016, 1827, 1814, 1017],
-    [1114, 1814, 1824],
-    [1114, 1814, 1017, 1819],
-    [618, 1114, 1016, 1827, 1821, 1017],
+    [1604, 1400, 1404, 1465],
+    [1605, 1400, 1866, 1466, 155, 102, 126, 141, 2588],
+    [937, 2733, 1560, 1456, 2603, 2588, 1457],
+    [2733, 1560, 2588, 2600],
+    [2733, 1560, 2588, 1457, 2594],
+    [1605, 1400, 1866, 1466, 155, 102, 126, 141, 2597],
+    [937, 2733, 1560, 1456, 2603, 2597, 1457],
   ];
 
   /// Per combination (mixed radix over [axes]): class list per slot.
   static const List<List<int>> _combos = [
     [0, 1, 2, 3, 4],
-    [0, 1, 5, 3, 4],
+    [0, 5, 6, 3, 4],
   ];
 }

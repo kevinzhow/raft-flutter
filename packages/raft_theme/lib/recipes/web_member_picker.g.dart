@@ -1,6 +1,6 @@
 // GENERATED — do not edit. Regenerate with `tool/recipes/run`.
-// Source: raft-ui 0.7.0 dist/index.mjs (sha256 83bf0bff35092e3d),
-// tailwindcss 4.2.2 with raft-ui styles.css + Web @theme overrides. Recipe `webMemberPicker`.
+// Source: raft-ui 0.95.3 dist/index.mjs (sha256 63bb2df77b8bd7a2),
+// tailwindcss 4.3.3 with raft-ui styles.css + Web @theme overrides. Recipe `webMemberPicker`.
 // ignore_for_file: type=lint
 
 import 'recipe_runtime.dart';
@@ -14,6 +14,9 @@ class RaftWebMemberPickerRecipeStyle {
     required this.row,
     required this.label,
     required this.empty,
+    required this.badge,
+    required this.scroller,
+    required this.rows,
   });
 
   /// Slot `root`.
@@ -31,18 +34,30 @@ class RaftWebMemberPickerRecipeStyle {
   /// Slot `empty`.
   final RaftSlotStyle empty;
 
+  /// Slot `badge`.
+  final RaftSlotStyle badge;
+
+  /// Slot `scroller`.
+  final RaftSlotStyle scroller;
+
+  /// Slot `rows`.
+  final RaftSlotStyle rows;
+
   Map<String, RaftSlotStyle> get slots => {
     'root': root,
     'group': group,
     'row': row,
     'label': label,
     'empty': empty,
+    'badge': badge,
+    'scroller': scroller,
+    'rows': rows,
   };
 }
 
-/// raft-ui recipe `webMemberPicker` (`Web src/components/channel/CreateChannelDialog.tsx sha256:63ca5d6eb0050347255f9d637df2e0ce49cb5636279a254e4a9c52f79287348d; src/components/channel/memberPickerClasses.ts sha256:bd095e7c89107c9ce5dde28aceae30bb96c0eb12d1dc6dad80f9702198d848b1; src/components/ui/SectionEyebrow.tsx sha256:842e6ec0e8cfcd3948d384ef8a9cde6fd2b41be4db8dfd8ccd0321c12c4555b0`, index.mjs:1).
+/// raft-ui recipe `webMemberPicker` (`Web src/components/channel/MemberChoiceList.tsx sha256:448a0c9562300397725e5f96956e7fd8f667f6516a88e8720cf25bc87889f539`, index.mjs:1).
 ///
-/// Used by: CreateChannelDialogMemberPicker.
+/// Used by: MemberChoiceList.
 ///
 /// Class lists are the exact tailwind-variants + tailwind-merge output for
 /// every variant combination; [resolve] applies the CSS cascade for [states].
@@ -54,10 +69,16 @@ abstract final class RaftWebMemberPickerRecipe {
     'row',
     'label',
     'empty',
+    'badge',
+    'scroller',
+    'rows',
   ];
-  static const List<RaftRecipeAxis> axes = [];
+  static const List<RaftRecipeAxis> axes = [
+    RaftRecipeAxis('fill', ['false', 'true'], 'false', false),
+  ];
 
   static RaftWebMemberPickerRecipeStyle resolve({
+    bool? fill,
     RaftRecipeStates states = RaftRecipeStates.none,
     RaftTokenResolver? tokens,
   }) {
@@ -66,7 +87,7 @@ abstract final class RaftWebMemberPickerRecipe {
       axes,
       _lists,
       _combos,
-      [],
+      [fill?.toString()],
       states,
       tokens,
       recipeName: recipeName,
@@ -78,6 +99,9 @@ abstract final class RaftWebMemberPickerRecipe {
       row: s[2],
       label: s[3],
       empty: s[4],
+      badge: s[5],
+      scroller: s[6],
+      rows: s[7],
     );
   }
 
@@ -103,31 +127,39 @@ abstract final class RaftWebMemberPickerRecipe {
 
   /// Distinct class lists (indices into [raftRecipeUtilities]).
   static const List<List<int>> _lists = [
-    [1361, 1587, 1594],
-    [1821, 1008, 1824, 1659, 1645, 1604],
+    [1400, 2116, 1404, 2252, 2462, 939, 953, 911],
+    [983, 2402, 2381, 2274, 1456, 2588, 1449, 2600],
     [
-      965,
-      1480,
-      1929,
-      1319,
-      1024,
-      1710,
-      1659,
-      1836,
-      1813,
-      1013,
-      1822,
-      1577,
-      1270,
-      978,
-      995,
+      983,
+      1400,
+      2116,
+      1866,
+      1467,
+      2461,
+      2402,
+      2113,
+      2430,
+      2335,
+      2343,
+      2613,
+      1456,
+      2622,
+      2186,
+      2184,
+      1181,
     ],
-    [1484, 966, 1897],
-    [1659, 1671, 1813, 1824],
+    [1457, 2598, 1820, 2116, 2681],
+    [2402, 2417, 1456, 2587, 2600],
+    [1400, 2116, 1864, 1465],
+    [2098, 2116, 2261, 1916],
+    [1489, 1495, 1476, 1485],
+    [1400, 2116, 1404, 2252, 2462, 939, 953, 911, 2098, 1401],
+    [2098, 2116, 2261, 1401],
   ];
 
   /// Per combination (mixed radix over [axes]): class list per slot.
   static const List<List<int>> _combos = [
-    [0, 1, 2, 3, 4],
+    [0, 1, 2, 3, 4, 5, 6, 7],
+    [8, 1, 2, 3, 4, 5, 9, 7],
   ];
 }

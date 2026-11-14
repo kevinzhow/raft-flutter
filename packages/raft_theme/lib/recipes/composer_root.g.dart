@@ -1,6 +1,6 @@
 // GENERATED — do not edit. Regenerate with `tool/recipes/run`.
-// Source: raft-ui 0.7.0 dist/index.mjs (sha256 83bf0bff35092e3d),
-// tailwindcss 4.2.2 with raft-ui styles.css + Web @theme overrides. Recipe `composerRoot`.
+// Source: raft-ui 0.95.3 dist/index.mjs (sha256 63bb2df77b8bd7a2),
+// tailwindcss 4.3.3 with raft-ui styles.css + Web @theme overrides. Recipe `composerRoot`.
 // ignore_for_file: type=lint
 
 import 'recipe_runtime.dart';
@@ -16,7 +16,7 @@ class RaftComposerRootRecipeStyle {
   Map<String, RaftSlotStyle> get slots => {'base': base};
 }
 
-/// raft-ui recipe `composerRoot` (`src/components/composer/composer-root.tsx`, index.mjs:11975).
+/// raft-ui recipe `composerRoot` (`dist/components/composer/composer-root.mjs`, index.mjs:16674).
 ///
 /// Used by: ComposerRoot.
 ///
@@ -67,7 +67,7 @@ abstract final class RaftComposerRootRecipe {
 
   /// Distinct class lists (indices into [raftRecipeUtilities]).
   static const List<List<int>> _lists = [
-    [1682, 965, 1929, 967, 1023],
+    [2433, 1400, 2725, 1404, 1466],
   ];
 
   /// Per combination (mixed radix over [axes]): class list per slot.

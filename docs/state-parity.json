@@ -14475,12 +14475,6 @@
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
-      "packages/raft_theme/lib/recipes/recipe_runtime.dart#local-function:CLASS:RaftSlotStyle@39239/METHOD:border@49619/FUNCTION:side@49762": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
-      },
       "packages/raft_theme/lib/recipes/recipe_runtime.dart#method:RaftMixedColor.resolve": {
         "role": "unresolved",
         "familyRefs": [],
@@ -38310,18 +38304,6 @@
         "owner": "design-system alignment",
         "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
       },
-      "packages/raft_ui/lib/src/text_selection_toolbar.dart#local-function:CLASS:RaftTextSelectionToolbar@532/METHOD:build@1526/FUNCTION:recipe@1954": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
-      },
-      "packages/raft_ui/lib/src/text_selection_toolbar.dart#local-function:CLASS:RaftTextSelectionToolbar@532/METHOD:build@1526/FUNCTION:toolbar@2992": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
-      },
       "packages/raft_ui/lib/src/text_selection_toolbar.dart#method:RaftTextSelectionToolbar.build": {
         "role": "unresolved",
         "familyRefs": [],
@@ -40594,7 +40576,7 @@
         ],
         "reason": "Resolved constructor/function calls delegate to the registered canonical owner(s); this declaration owns no scanner-detected paint. This is source delegation, not runtime mount or visual evidence."
       },
-      "packages/raft_ui/lib/src/overlays/dialog_card_parts.dart#local-function:CLASS:_CardDialogPartsState@238/METHOD:build@488/FUNCTION:card@4170": {
+      "packages/raft_ui/lib/src/overlays/dialog_card_parts.dart#local-function:CLASS:_CardDialogPartsState@238/METHOD:build@488/FUNCTION:card@4217": {
         "role": "internal_wrapper",
         "familyRefs": [
           "dialog"
@@ -40605,7 +40587,7 @@
         ],
         "reason": "Resolved constructor/function calls delegate to the registered canonical owner(s); this declaration owns no scanner-detected paint. This is source delegation, not runtime mount or visual evidence."
       },
-      "packages/raft_ui/lib/src/overlays/dialog_card_parts.dart#local-function:CLASS:_CardDialogPartsState@238/METHOD:build@488/FUNCTION:scrollingContent@3730": {
+      "packages/raft_ui/lib/src/overlays/dialog_card_parts.dart#local-function:CLASS:_CardDialogPartsState@238/METHOD:build@488/FUNCTION:scrollingContent@3777": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "P1 dialogs / canonical Choice integration",
@@ -42422,7 +42404,7 @@
         "owner": "task289 whole-source ownership review",
         "reason": "Current resolved widget at the exact source identity. Family hints do not establish canonical delegation, real-entry applicability, mounted state or visual acceptance; those decisions remain pending."
       },
-      "packages/raft_ui/lib/src/steps.dart#local-function:CLASS:_PublishedStep@3826/METHOD:build@4722/FUNCTION:line@6194": {
+      "packages/raft_ui/lib/src/steps.dart#local-function:CLASS:_PublishedStep@4341/METHOD:build@5237/FUNCTION:line@6709": {
         "role": "unresolved",
         "familyRefs": [
           "steps"
@@ -42460,8 +42442,8 @@
           },
           {
             "file": "packages/raft_ui/lib/src/steps.dart",
-            "bytes": 8135,
-            "sha256": "5520147b51fcff20acdffe4795138b9d75fba27339f827e95185238c0290549c"
+            "bytes": 8650,
+            "sha256": "f10d6f1abbe1fa6f18e5e85f234578ceb859825493f7107143b57eb991904ef8"
           }
         ],
         "reviewDecision": "RaftSteps.build selects this split file only when !t.isRaftLook. The raw body is exactly equal to its ae852 steps.dart declaration after the explicit path move.",
@@ -42481,8 +42463,8 @@
           },
           {
             "file": "packages/raft_ui/lib/src/steps.dart",
-            "bytes": 8135,
-            "sha256": "5520147b51fcff20acdffe4795138b9d75fba27339f827e95185238c0290549c"
+            "bytes": 8650,
+            "sha256": "f10d6f1abbe1fa6f18e5e85f234578ceb859825493f7107143b57eb991904ef8"
           }
         ],
         "reviewDecision": "RaftSteps.build selects this split file only when !t.isRaftLook. The raw body is exactly equal to its ae852 steps.dart declaration after the explicit path move.",
@@ -42502,8 +42484,8 @@
           },
           {
             "file": "packages/raft_ui/lib/src/steps.dart",
-            "bytes": 8135,
-            "sha256": "5520147b51fcff20acdffe4795138b9d75fba27339f827e95185238c0290549c"
+            "bytes": 8650,
+            "sha256": "f10d6f1abbe1fa6f18e5e85f234578ceb859825493f7107143b57eb991904ef8"
           }
         ],
         "reviewDecision": "RaftSteps.build selects this split file only when !t.isRaftLook. The raw body is exactly equal to its ae852 steps.dart declaration after the explicit path move.",
@@ -42523,8 +42505,8 @@
           },
           {
             "file": "packages/raft_ui/lib/src/steps.dart",
-            "bytes": 8135,
-            "sha256": "5520147b51fcff20acdffe4795138b9d75fba27339f827e95185238c0290549c"
+            "bytes": 8650,
+            "sha256": "f10d6f1abbe1fa6f18e5e85f234578ceb859825493f7107143b57eb991904ef8"
           }
         ],
         "reviewDecision": "RaftSteps.build selects this split file only when !t.isRaftLook. This is the lifted former RaftSteps.build body with widget-qualified instance fields and formatting changes; it is not a byte-exact body comparison.",
@@ -42544,8 +42526,8 @@
           },
           {
             "file": "packages/raft_ui/lib/src/steps.dart",
-            "bytes": 8135,
-            "sha256": "5520147b51fcff20acdffe4795138b9d75fba27339f827e95185238c0290549c"
+            "bytes": 8650,
+            "sha256": "f10d6f1abbe1fa6f18e5e85f234578ceb859825493f7107143b57eb991904ef8"
           }
         ],
         "reviewDecision": "RaftSteps.build selects this split file only when !t.isRaftLook. The raw body is exactly equal to its ae852 steps.dart declaration after the explicit path move.",
@@ -42565,8 +42547,8 @@
           },
           {
             "file": "packages/raft_ui/lib/src/steps.dart",
-            "bytes": 8135,
-            "sha256": "5520147b51fcff20acdffe4795138b9d75fba27339f827e95185238c0290549c"
+            "bytes": 8650,
+            "sha256": "f10d6f1abbe1fa6f18e5e85f234578ceb859825493f7107143b57eb991904ef8"
           }
         ],
         "reviewDecision": "RaftSteps.build selects this split file only when !t.isRaftLook. The raw body is exactly equal to its ae852 steps.dart declaration after the explicit path move.",
@@ -42586,8 +42568,8 @@
           },
           {
             "file": "packages/raft_ui/lib/src/steps.dart",
-            "bytes": 8135,
-            "sha256": "5520147b51fcff20acdffe4795138b9d75fba27339f827e95185238c0290549c"
+            "bytes": 8650,
+            "sha256": "f10d6f1abbe1fa6f18e5e85f234578ceb859825493f7107143b57eb991904ef8"
           }
         ],
         "reviewDecision": "RaftSteps.build selects this split file only when !t.isRaftLook. The raw body is exactly equal to its ae852 steps.dart declaration after the explicit path move.",
@@ -42607,8 +42589,8 @@
           },
           {
             "file": "packages/raft_ui/lib/src/steps.dart",
-            "bytes": 8135,
-            "sha256": "5520147b51fcff20acdffe4795138b9d75fba27339f827e95185238c0290549c"
+            "bytes": 8650,
+            "sha256": "f10d6f1abbe1fa6f18e5e85f234578ceb859825493f7107143b57eb991904ef8"
           }
         ],
         "reviewDecision": "RaftSteps.build selects this split file only when !t.isRaftLook. The raw body is exactly equal to its ae852 steps.dart declaration after the explicit path move.",
@@ -43765,6 +43747,40 @@
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_theme/lib/recipes/recipe_runtime.dart#local-function:CLASS:RaftSlotStyle@39239/METHOD:border@50208/FUNCTION:side@50351": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/text_selection_toolbar.dart#local-function:CLASS:RaftTextSelectionToolbar@617/METHOD:build@1611/FUNCTION:recipe@2039": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/text_selection_toolbar.dart#local-function:CLASS:RaftTextSelectionToolbar@617/METHOD:build@1611/FUNCTION:toolbar@3610": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/raft/button.dart#function:_resolveButtonSlots": {
+        "role": "unresolved",
+        "familyRefs": [
+          "button"
+        ],
+        "owner": "WP-DS1 Button/TextLink compatibility",
+        "reason": "Shared source resolver bridges the retired Button link/inline axes to published TextLink slots; full real-entry/family/state visual acceptance remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/steps.dart#method:RaftSteps._buildPublished": {
+        "role": "unresolved",
+        "familyRefs": [
+          "steps"
+        ],
+        "owner": "task289 whole-source ownership review",
+        "reason": "Resolved builder introduced by the published Steps container-width adapter. Family hints do not establish canonical delegation, mounted-entry applicability, state coverage or current visual acceptance; those decisions remain pending."
       }
     },
     "entries": {
@@ -50303,26 +50319,6 @@
         "owner": "design-system alignment",
         "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
       },
-      "packages/raft_ui/lib/src/text_selection_toolbar.dart#local-function:CLASS:RaftTextSelectionToolbar@532/METHOD:build@1526/FUNCTION:recipe@1954|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:disabled": {
-        "applicability": "unknown",
-        "owner": "design-system alignment",
-        "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
-      },
-      "packages/raft_ui/lib/src/text_selection_toolbar.dart#local-function:CLASS:RaftTextSelectionToolbar@532/METHOD:build@1526/FUNCTION:recipe@1954|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:focusVisible": {
-        "applicability": "unknown",
-        "owner": "design-system alignment",
-        "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
-      },
-      "packages/raft_ui/lib/src/text_selection_toolbar.dart#local-function:CLASS:RaftTextSelectionToolbar@532/METHOD:build@1526/FUNCTION:recipe@1954|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:hovered": {
-        "applicability": "unknown",
-        "owner": "design-system alignment",
-        "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
-      },
-      "packages/raft_ui/lib/src/text_selection_toolbar.dart#local-function:CLASS:RaftTextSelectionToolbar@532/METHOD:build@1526/FUNCTION:recipe@1954|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:pressed": {
-        "applicability": "unknown",
-        "owner": "design-system alignment",
-        "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
-      },
       "packages/raft_ui/lib/src/text_selection_toolbar.dart#method:RaftTextSelectionToolbar.build|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:disabled": {
         "applicability": "unknown",
         "owner": "design-system alignment",
@@ -51463,6 +51459,26 @@
         "applicability": "unknown",
         "owner": "task289 menu/dialog state audit",
         "reason": "Resolved state atom data-selected is emitted by this source owner; exact real-entry/state applicability and matching reference capture remain unverified."
+      },
+      "packages/raft_ui/lib/src/text_selection_toolbar.dart#local-function:CLASS:RaftTextSelectionToolbar@617/METHOD:build@1611/FUNCTION:recipe@2039|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:disabled": {
+        "applicability": "unknown",
+        "owner": "design-system alignment",
+        "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/text_selection_toolbar.dart#local-function:CLASS:RaftTextSelectionToolbar@617/METHOD:build@1611/FUNCTION:recipe@2039|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:focusVisible": {
+        "applicability": "unknown",
+        "owner": "design-system alignment",
+        "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/text_selection_toolbar.dart#local-function:CLASS:RaftTextSelectionToolbar@617/METHOD:build@1611/FUNCTION:recipe@2039|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:hovered": {
+        "applicability": "unknown",
+        "owner": "design-system alignment",
+        "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/text_selection_toolbar.dart#local-function:CLASS:RaftTextSelectionToolbar@617/METHOD:build@1611/FUNCTION:recipe@2039|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:pressed": {
+        "applicability": "unknown",
+        "owner": "design-system alignment",
+        "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
       }
     },
     "evidence": {},

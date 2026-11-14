@@ -1,6 +1,6 @@
 // GENERATED — do not edit. Regenerate with `tool/recipes/run`.
-// Source: raft-ui 0.7.0 dist/index.mjs (sha256 83bf0bff35092e3d),
-// tailwindcss 4.2.2 with raft-ui styles.css + Web @theme overrides. Recipe `messageForwardedBundleItem`.
+// Source: raft-ui 0.95.3 dist/index.mjs (sha256 63bb2df77b8bd7a2),
+// tailwindcss 4.3.3 with raft-ui styles.css + Web @theme overrides. Recipe `messageForwardedBundleItem`.
 // ignore_for_file: type=lint
 
 import 'recipe_runtime.dart';
@@ -66,7 +66,7 @@ class RaftMessageForwardedBundleItemRecipeStyle {
   };
 }
 
-/// raft-ui recipe `messageForwardedBundleItem` (`src/components/message-forwarded-bundle/message-forwarded-bundle.recipe.ts`, index.mjs:9216).
+/// raft-ui recipe `messageForwardedBundleItem` (`dist/components/message-forwarded-bundle/message-forwarded-bundle.recipe.mjs`, index.mjs:14173).
 ///
 /// Used by: MessageForwardedBundleAttachment, MessageForwardedBundleAttachmentMeta, MessageForwardedBundleAttachmentName, MessageForwardedBundleAttachments, MessageForwardedBundleItem, MessageForwardedBundleItemAuthor, MessageForwardedBundleItemContent, MessageForwardedBundleItemMeta.
 ///
@@ -138,37 +138,50 @@ abstract final class RaftMessageForwardedBundleItemRecipe {
 
   /// Distinct class lists (indices into [raftRecipeUtilities]).
   static const List<List<int>> _lists = [
-    [1660, 1672, 1810, 1822],
-    [965, 1484, 971, 1319, 1430, 1022, 1014, 1839, 1783, 1824],
-    [1016, 1821, 1008, 1822],
-    [1484, 1424, 1938],
-    [965, 971, 1512, 1022],
-    [1305, 1424, 1319, 1191, 1021, 1708, 581, 1657, 1814, 1017, 1822, 279],
-    [1484, 1897],
-    [1740, 1014, 1015, 1824],
+    [2403, 2418, 2585, 2598],
+    [1400, 2116, 1408, 1864, 1987, 1465, 1454, 2616, 2556, 2600],
+    [1456, 2597, 1449, 2598],
+    [2116, 1980, 2734],
+    [1400, 1408, 2146, 1465],
     [
-      1305,
+      1847,
+      1980,
+      1864,
+      1666,
+      1464,
+      2461,
+      895,
+      2362,
+      2305,
+      2588,
+      1457,
+      2598,
+      477,
+    ],
+    [2116, 2681],
+    [2499, 1454, 1455, 2600],
+    [
+      1847,
+      1980,
+      1864,
+      1666,
+      1464,
+      2461,
+      895,
+      2362,
+      2305,
+      2588,
+      1457,
+      2598,
+      477,
+      997,
       1424,
-      1319,
-      1191,
-      1021,
-      1708,
-      581,
-      1657,
-      1814,
-      1017,
-      1822,
-      279,
-      664,
-      1893,
-      1276,
-      982,
-      988,
-      985,
-      1283,
-      429,
-      986,
-      996,
+      1429,
+      1427,
+      1794,
+      699,
+      1432,
+      1439,
     ],
   ];
 

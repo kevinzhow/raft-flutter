@@ -13,6 +13,8 @@ export 'package:raft_theme/recipes/legacy/drawer.g.dart' hide RaftDrawerRecipe;
 
 /// Router for recipe `RaftDrawerRecipe`: the frozen 0.5.52 class for the Elegant and Brutal
 /// looks, the current raft-ui class for the Raft look.
+///
+/// Raft set differences: Raft-only axis `nested`; Raft-only slots: closeButton.
 abstract final class RaftDrawerRecipe {
   static const String recipeName = legacy.RaftDrawerRecipe.recipeName;
   static const List<String> slotNames = legacy.RaftDrawerRecipe.slotNames;

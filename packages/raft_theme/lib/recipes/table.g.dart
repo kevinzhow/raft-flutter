@@ -1,10 +1,21 @@
 // GENERATED — do not edit. Regenerate with `tool/recipes/run`.
-// Source: raft-ui 0.7.0 dist/index.mjs (sha256 83bf0bff35092e3d),
-// tailwindcss 4.2.2 with raft-ui styles.css + Web @theme overrides. Recipe `table`.
+// Source: raft-ui 0.95.3 dist/index.mjs (sha256 63bb2df77b8bd7a2),
+// tailwindcss 4.3.3 with raft-ui styles.css + Web @theme overrides. Recipe `table`.
 // ignore_for_file: type=lint
 
 import 'recipe_runtime.dart';
 import 'recipe_utilities.g.dart';
+
+/// `align` axis of `table`.
+enum RaftTableRecipeAlign {
+  left('left'),
+  right('right');
+
+  const RaftTableRecipeAlign(this.css);
+
+  /// Variant value as written in the raft-ui source.
+  final String css;
+}
 
 /// Resolved slots of [RaftTableRecipe].
 class RaftTableRecipeStyle {
@@ -18,6 +29,10 @@ class RaftTableRecipeStyle {
     required this.colgroup,
     required this.column,
     required this.caption,
+    required this.sortableHead,
+    required this.sortButton,
+    required this.headSortButton,
+    required this.sortArrow,
   });
 
   /// Slot `root`.
@@ -47,6 +62,18 @@ class RaftTableRecipeStyle {
   /// Slot `caption`.
   final RaftSlotStyle caption;
 
+  /// Slot `sortableHead`.
+  final RaftSlotStyle sortableHead;
+
+  /// Slot `sortButton`.
+  final RaftSlotStyle sortButton;
+
+  /// Slot `headSortButton`.
+  final RaftSlotStyle headSortButton;
+
+  /// Slot `sortArrow`.
+  final RaftSlotStyle sortArrow;
+
   Map<String, RaftSlotStyle> get slots => {
     'root': root,
     'header': header,
@@ -57,12 +84,16 @@ class RaftTableRecipeStyle {
     'colgroup': colgroup,
     'column': column,
     'caption': caption,
+    'sortableHead': sortableHead,
+    'sortButton': sortButton,
+    'headSortButton': headSortButton,
+    'sortArrow': sortArrow,
   };
 }
 
-/// raft-ui recipe `table` (`src/components/table/table.recipe.ts`, index.mjs:10665).
+/// raft-ui recipe `table` (`dist/components/table/table.recipe.mjs`, index.mjs:15594).
 ///
-/// Used by: MarkdownTable, Table, TableBody, TableCaption, TableCell, TableColgroup, TableColumn, TableHead, TableHeader, TableRow.
+/// Used by: Table, TableBody, TableCaption, TableCell, TableColgroup, TableColumn, TableHead, TableHeader, TableRow, TableSortButton, TableSortableHead.
 ///
 /// Class lists are the exact tailwind-variants + tailwind-merge output for
 /// every variant combination; [resolve] applies the CSS cascade for [states].
@@ -78,10 +109,19 @@ abstract final class RaftTableRecipe {
     'colgroup',
     'column',
     'caption',
+    'sortableHead',
+    'sortButton',
+    'headSortButton',
+    'sortArrow',
   ];
-  static const List<RaftRecipeAxis> axes = [];
+  static const List<RaftRecipeAxis> axes = [
+    RaftRecipeAxis('align', ['left', 'right'], null, true),
+    RaftRecipeAxis('sorted', ['true', 'false'], null, true),
+  ];
 
   static RaftTableRecipeStyle resolve({
+    RaftTableRecipeAlign? align,
+    bool? sorted,
     RaftRecipeStates states = RaftRecipeStates.none,
     RaftTokenResolver? tokens,
   }) {
@@ -90,7 +130,7 @@ abstract final class RaftTableRecipe {
       axes,
       _lists,
       _combos,
-      [],
+      [align?.css, sorted?.toString()],
       states,
       tokens,
       recipeName: recipeName,
@@ -106,6 +146,10 @@ abstract final class RaftTableRecipe {
       colgroup: s[6],
       column: s[7],
       caption: s[8],
+      sortableHead: s[9],
+      sortButton: s[10],
+      headSortButton: s[11],
+      sortArrow: s[12],
     );
   }
 
@@ -131,17 +175,213 @@ abstract final class RaftTableRecipe {
 
   /// Distinct class lists (indices into [raftRecipeUtilities]).
   static const List<List<int>> _lists = [
-    [1929, 624, 652, 1016, 1813, 1822],
+    [2725, 943, 978, 1456, 2587, 2598],
     [],
-    [196, 197, 195],
-    [501, 502, 739, 744],
-    [1836, 1933, 623, 633, 1660, 1671, 1821, 1008, 1529, 1873, 1824],
-    [470, 1937, 623, 633, 1660, 1671],
-    [1645, 1814, 1824],
+    [367, 368, 370, 369],
+    [2166, 2167, 794, 795, 793, 1069, 1073, 1063],
+    [2613, 2729, 942, 953, 2403, 2417, 2597, 1449, 2165, 2654, 2600],
+    [762, 2733, 942, 953, 2403, 2417],
+    [2381, 2588, 2600],
+    [2260],
+    [
+      2433,
+      1400,
+      1678,
+      2725,
+      1864,
+      1464,
+      940,
+      933,
+      680,
+      997,
+      2471,
+      1798,
+      2247,
+      1439,
+      2326,
+      2329,
+      2327,
+      2328,
+      2325,
+      2600,
+    ],
+    [
+      2433,
+      1400,
+      2725,
+      1864,
+      1464,
+      940,
+      933,
+      2403,
+      2417,
+      680,
+      997,
+      2471,
+      1798,
+      2247,
+      1439,
+      2326,
+      2329,
+      2327,
+      2328,
+      2325,
+      2600,
+    ],
+    [2515, 2499],
+    [
+      2433,
+      1400,
+      1678,
+      2725,
+      1864,
+      1464,
+      940,
+      933,
+      680,
+      997,
+      2471,
+      1798,
+      2247,
+      1439,
+      2326,
+      2329,
+      2327,
+      2328,
+      2325,
+      2598,
+    ],
+    [
+      2433,
+      1400,
+      2725,
+      1864,
+      1464,
+      940,
+      933,
+      2403,
+      2417,
+      680,
+      997,
+      2471,
+      1798,
+      2247,
+      1439,
+      2326,
+      2329,
+      2327,
+      2328,
+      2325,
+      2598,
+    ],
+    [2729, 942, 953, 2403, 2417, 2597, 1449, 2165, 2654, 2600, 2618],
+    [762, 2733, 942, 953, 2403, 2417, 2618],
+    [
+      2433,
+      1400,
+      1678,
+      2725,
+      1864,
+      1464,
+      940,
+      933,
+      680,
+      997,
+      2471,
+      1798,
+      2247,
+      1439,
+      2326,
+      2329,
+      2327,
+      2328,
+      2325,
+      1870,
+      2600,
+    ],
+    [
+      2433,
+      1400,
+      2725,
+      1864,
+      1464,
+      940,
+      933,
+      2403,
+      2417,
+      680,
+      997,
+      2471,
+      1798,
+      2247,
+      1439,
+      2326,
+      2329,
+      2327,
+      2328,
+      2325,
+      1870,
+      2600,
+    ],
+    [
+      2433,
+      1400,
+      1678,
+      2725,
+      1864,
+      1464,
+      940,
+      933,
+      680,
+      997,
+      2471,
+      1798,
+      2247,
+      1439,
+      2326,
+      2329,
+      2327,
+      2328,
+      2325,
+      1870,
+      2598,
+    ],
+    [
+      2433,
+      1400,
+      2725,
+      1864,
+      1464,
+      940,
+      933,
+      2403,
+      2417,
+      680,
+      997,
+      2471,
+      1798,
+      2247,
+      1439,
+      2326,
+      2329,
+      2327,
+      2328,
+      2325,
+      1870,
+      2598,
+    ],
   ];
 
   /// Per combination (mixed radix over [axes]): class list per slot.
   static const List<List<int>> _combos = [
-    [0, 1, 2, 3, 4, 5, 1, 1, 6],
+    [0, 1, 2, 3, 4, 5, 1, 1, 6, 7, 8, 9, 10],
+    [0, 1, 2, 3, 4, 5, 1, 1, 6, 7, 11, 12, 10],
+    [0, 1, 2, 3, 4, 5, 1, 1, 6, 7, 8, 9, 10],
+    [0, 1, 2, 3, 4, 5, 1, 1, 6, 7, 8, 9, 10],
+    [0, 1, 2, 3, 4, 5, 1, 1, 6, 7, 11, 12, 10],
+    [0, 1, 2, 3, 4, 5, 1, 1, 6, 7, 8, 9, 10],
+    [0, 1, 2, 3, 13, 14, 1, 1, 6, 7, 15, 16, 10],
+    [0, 1, 2, 3, 13, 14, 1, 1, 6, 7, 17, 18, 10],
+    [0, 1, 2, 3, 13, 14, 1, 1, 6, 7, 15, 16, 10],
   ];
 }

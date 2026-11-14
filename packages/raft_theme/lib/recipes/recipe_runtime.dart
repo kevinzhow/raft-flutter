@@ -1246,11 +1246,30 @@ class RaftSlotStyle {
 
   double? _px(CssValue? v) => switch (v) {
     CssNum(unit: 'px', :final value) => value,
+    CssNum(unit: 'lh', :final value) =>
+      lineHeightPx == null ? null : value * lineHeightPx!,
     CssNum(unit: '', value: 0) => 0,
     CssVar(:final token?, :final fallback) =>
       tokens?.number(token) ?? _px(fallback),
+    CssCalc(:final expr) => _mathLength(expr),
     _ => null,
   };
+
+  double? _mathLength(CssValue value) {
+    if (value is CssNum && value.unit.isEmpty) return value.value;
+    if (value is CssOp) {
+      final a = _mathLength(value.a), b = _mathLength(value.b);
+      if (a == null || b == null) return null;
+      return switch (value.op) {
+        '+' => a + b,
+        '-' => a - b,
+        '*' => a * b,
+        '/' => b == 0 ? null : a / b,
+        _ => null,
+      };
+    }
+    return _px(value);
+  }
 
   double? get width => length('width');
   double? get height => length('height');

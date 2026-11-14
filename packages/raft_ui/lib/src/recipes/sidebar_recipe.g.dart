@@ -15,6 +15,8 @@ export 'package:raft_theme/recipes/legacy/sidebar_recipe.g.dart'
 
 /// Router for recipe `RaftSidebarRecipe`: the frozen 0.5.52 class for the Elegant and Brutal
 /// looks, the current raft-ui class for the Raft look.
+///
+/// Raft set differences: legacy slots empty in the Raft set: sidebarScrollbar, sidebarLiveActivity.
 abstract final class RaftSidebarRecipe {
   static const String recipeName = legacy.RaftSidebarRecipe.recipeName;
   static const List<String> slotNames = legacy.RaftSidebarRecipe.slotNames;
@@ -44,8 +46,8 @@ abstract final class RaftSidebarRecipe {
       sidebarContent: s.sidebarContent,
       sidebarViewport: s.sidebarViewport,
       sidebarContentInner: s.sidebarContentInner,
-      sidebarScrollbar: s.sidebarScrollbar,
-      sidebarLiveActivity: s.sidebarLiveActivity,
+      sidebarScrollbar: absentSlot(tokens),
+      sidebarLiveActivity: absentSlot(tokens),
     );
   }
 

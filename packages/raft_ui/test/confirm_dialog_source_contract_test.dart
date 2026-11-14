@@ -7,12 +7,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_ui/recipes.dart';
 
-// Pinned Web db5e399f / raft-ui 0.7.0:
+// Pinned Web v1.24 / raft-ui 0.95.3:
 // ResetAgentDialog -> ConfirmDialog uses plainMessage, Cancel, warning for
 // restart/session and danger for full reset. Its ordinary RotateCcw and
 // Spinner have no data-icon="inline-start" marker. The lg Button therefore
 // keeps px-4, rather than the marker-only pl-3.5 override.
-// Source identities and exact lines: Dialog-family-readonly/footer-review.md.
+// Button now uses h-control instead of h-11. Responsive desktop control
+// sizing remains in WP-DS1; this fixture retains its existing 44px token.
 
 bool _realFontsLoaded = false;
 
@@ -68,13 +69,10 @@ Finder _button(String label) => find.byWidgetPredicate(
   description: 'visible RaftButton labelled $label',
 );
 
-Finder _buttonSurface(Finder button) => find.descendant(
-  of: button,
-  matching: find.byWidgetPredicate(
-    (widget) =>
-        widget is RaftRecipeBox && widget.style.classes.contains('h-11'),
-  ),
-);
+// Inspect the outer painted surface, independently of the recipe's CSS class
+// spelling. The assertions below still verify its colour, height and insets.
+Finder _buttonSurface(Finder button) =>
+    find.descendant(of: button, matching: find.byType(RaftRecipeBox)).first;
 
 String _buttonFontDiagnostic(WidgetTester tester, Finder button) {
   final label = find.descendant(of: button, matching: find.byType(Text)).first;

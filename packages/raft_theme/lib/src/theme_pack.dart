@@ -227,6 +227,7 @@ const Set<String> raftTypeSlots = {
   'footnote',
   'caption',
   'label',
+  'control',
   'mono-meta',
   'mono-code',
 };

@@ -845,8 +845,7 @@ class RaftSelectionPopover extends StatelessWidget {
   /// that surface only; header, search, options and their interaction stay live.
   final RaftSlotStyle? surfaceStyle;
 
-  /// v1.21.23 `SelectionPopoverSections` inside the caller's surface
-  /// (`rounded-container border border-line-seam bg-layer-popover shadow-float`).
+  /// Current Web `SelectionPopoverSections` inside the caller's surface.
   Widget _buildRaft(BuildContext context, RaftTokens t) {
     final rt = t.recipeTokens;
     final slots = RaftWebSelectionPanelRecipe.resolve(
@@ -935,19 +934,26 @@ class RaftSelectionPopover extends StatelessWidget {
           applyText: false,
           child: SingleChildScrollView(
             primary: false,
-            child: options.isEmpty
-                ? RaftRecipeBox(
-                    style: slots.empty,
-                    tokens: rt,
-                    child: Text(emptyLabel),
-                  )
-                : Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      for (final option in options)
-                        _RaftSelectionRow(key: option.rowKey, option: option),
-                    ],
-                  ),
+            // ScrollArea's contentClassName is a separate source slot: its
+            // inset belongs inside the scroller, not on the caller surface.
+            child: RaftRecipeBox(
+              style: slots.content,
+              tokens: rt,
+              applyText: false,
+              child: options.isEmpty
+                  ? RaftRecipeBox(
+                      style: slots.empty,
+                      tokens: rt,
+                      child: Text(emptyLabel),
+                    )
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        for (final option in options)
+                          _RaftSelectionRow(key: option.rowKey, option: option),
+                      ],
+                    ),
+            ),
           ),
         ),
       ],
