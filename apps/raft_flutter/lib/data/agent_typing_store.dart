@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:raft_client/raft_client.dart';
+import 'package:raft_sync/raft_sync.dart' show AgentTypingEvent, LiveEvent;
 
 // Agent typing line (Web 1.24 store/agentTypingStore.ts, raft-design 0042):
 // who is about to post where. Fed by the server's `agent:typing` event (to
@@ -21,53 +22,6 @@ const agentTypingTtl = Duration(seconds: 20);
 
 /// Calls kept as "posted, ignore its starts"; the oldest goes past this.
 const agentTypingClearedCallsMax = 128;
-
-@immutable
-class AgentTypingEvent {
-  const AgentTypingEvent({
-    required this.agentId,
-    required this.serverId,
-    required this.channelId,
-    required this.parentMessageId,
-    required this.callId,
-    required this.start,
-    required this.expiresAt,
-  });
-  final String agentId, serverId, channelId, callId;
-
-  /// The thread's root message for a thread reply; null for the channel.
-  final String? parentMessageId;
-  final bool start;
-
-  /// Server epoch ms after which an unrefreshed `start` is dropped.
-  final int expiresAt;
-
-  /// Web `readAgentTypingEvent`: the wire shape we act on, or null.
-  static AgentTypingEvent? read(Object? payload) {
-    if (payload is! Map) return null;
-    final agentId = payload['agentId'], channelId = payload['channelId'];
-    final callId = payload['callId'], serverId = payload['serverId'];
-    final state = payload['state'];
-    if (agentId is! String || channelId is! String || callId is! String) {
-      return null;
-    }
-    if (serverId is! String || (state != 'start' && state != 'end')) {
-      return null;
-    }
-    final expires = payload['expiresAt'];
-    return AgentTypingEvent(
-      agentId: agentId,
-      serverId: serverId,
-      channelId: channelId,
-      parentMessageId: payload['parentMessageId'] is String
-          ? payload['parentMessageId'] as String
-          : null,
-      callId: callId,
-      start: state == 'start',
-      expiresAt: expires is num && expires.isFinite ? expires.toInt() : 0,
-    );
-  }
-}
 
 @immutable
 class AgentTypingEntry {
@@ -153,9 +107,13 @@ class AgentTypingStore implements Listenable {
   /// Handles one realtime event.
   void receive(RaftEvent event) {
     switch (event.name) {
-      case 'agent:typing':
-        final typing = AgentTypingEvent.read(event.payload);
-        if (typing != null && typing.serverId == serverId()) apply(typing);
+      case AgentTypingEvent.name:
+        // The wire shape is raft_sync's (`LiveEvent.read`).
+        if (LiveEvent.read(event.name, event.payload)
+            case final AgentTypingEvent typing
+            when typing.serverId == serverId()) {
+          apply(typing);
+        }
       case 'message:new':
         final message = event.payload;
         if (message is Map) clearForMessage(message);
@@ -210,7 +168,7 @@ class AgentTypingStore implements Listenable {
     final index = entries.indexWhere(
       (e) => e.agentId == event.agentId && e.callId == event.callId,
     );
-    if (!event.start) {
+    if (!event.started) {
       if (index < 0) return;
       _set(event.channelId, [...entries]..removeAt(index));
       _commit();
