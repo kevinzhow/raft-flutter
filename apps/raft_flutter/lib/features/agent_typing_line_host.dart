@@ -262,6 +262,10 @@ class _AgentTypingListEndState extends State<AgentTypingListEnd> {
   );
 }
 
+/// The inner stack of [AgentTypingInset]: the timeline's own stack is the
+/// next one up.
+const agentTypingInsetKey = ValueKey('agent-typing-inset');
+
 /// Lifts the list's bottom controls (Back to bottom, the unread-thread pill)
 /// above the typing line while it shows, so the two never overlap.
 class AgentTypingInset extends StatelessWidget {
@@ -285,7 +289,11 @@ class AgentTypingInset extends StatelessWidget {
       bottom: _shown(context, controller, thread)
           ? raftAgentTypingLineHeight
           : 0,
-      child: Stack(fit: StackFit.expand, children: [child]),
+      child: Stack(
+        key: agentTypingInsetKey,
+        fit: StackFit.expand,
+        children: [child],
+      ),
     ),
   );
 }
