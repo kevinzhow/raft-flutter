@@ -110,11 +110,8 @@ class RaftSettingsRowGroup extends StatelessWidget {
                     ),
             if (row.description != null)
               RaftListRowDescription(row.description!, wrap: true),
-            for (final child in row.body)
-              Padding(
-                padding: const EdgeInsets.only(top: RaftSpace.x2),
-                child: child,
-              ),
+            // Under the text the control comes first, then the rest (Web
+            // ServerLevelRow: title, select, "N channels customized").
             if (below)
               Padding(
                 padding: const EdgeInsets.only(top: RaftSpace.x2),
@@ -125,6 +122,11 @@ class RaftSettingsRowGroup extends StatelessWidget {
                     child: _ControlWidth(below: true, child: row.control!),
                   ),
                 ),
+              ),
+            for (final child in row.body)
+              Padding(
+                padding: const EdgeInsets.only(top: RaftSpace.x2),
+                child: child,
               ),
           ],
         ),
@@ -173,7 +175,9 @@ class RaftSettingsSelect<T> extends StatelessWidget {
           : raftText(context, placeholder!),
     );
     if (_ControlWidth.belowOf(context)) return select;
-    final style = RaftTokens.of(context).scale(RaftTypeScale.callout);
+    // The trigger's label is the body step (`text-body` in the select recipe).
+    final style = RaftTokens.of(context)
+        .scale(RaftTypeScale.body, weight: FontWeight.w500);
     var widest = 0.0;
     for (final label in [
       for (final item in items) item.label,
@@ -188,10 +192,16 @@ class RaftSettingsSelect<T> extends StatelessWidget {
       if (painter.width > widest) widest = painter.width;
       painter.dispose();
     }
-    // Trigger padding (px-3 twice), the chevron and its gap.
-    final width = (widest + RaftSpace.x3 * 2 + RaftSpace.x4 + RaftSpace.x2)
-        .clamp(_fitMin, _fitMax)
-        .toDouble();
+    // Trigger padding (px-3 twice), the chevron and its gap, the borders.
+    final width =
+        (widest +
+                RaftSpace.x3 * 2 +
+                RaftSpace.x4 +
+                RaftSpace.x2 +
+                RaftSpace.hairline * 2 +
+                RaftSpace.x1)
+            .clamp(_fitMin, _fitMax)
+            .toDouble();
     return SizedBox(width: width, child: select);
   }
 }
