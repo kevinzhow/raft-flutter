@@ -114,7 +114,5 @@ const Map<String, String> zhCatalogUpstream124Notif = <String, String>{
   "Sent. This version of Raft Desktop couldn’t confirm it appeared.":
       "已发出。这个版本的 Raft 桌面版无法确认它是否显示了。",
   "Waiting for this device…": "正在等待这台设备…",
-  "Disable push notifications": "停用推送通知",
-  "Enable push notifications": "启用推送通知",
   "On {serverName}": "我在 {serverName}",
 };
