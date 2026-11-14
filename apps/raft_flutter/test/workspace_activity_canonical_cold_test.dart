@@ -274,6 +274,8 @@ void main() {
             ),
             isEmpty,
           );
+          // The store's throttled read and retries are the store's own timers.
+          w.activityUnreadIfBound?.dispose();
           await tester.pumpWidget(const SizedBox());
           await tester.pump();
           expect(tester.takeException(), isNull);
@@ -419,6 +421,8 @@ void main() {
             ),
             isEmpty,
           );
+          // The store's throttled read and retries are the store's own timers.
+          w.activityUnreadIfBound?.dispose();
           await tester.pumpWidget(const SizedBox());
           await tester.pump();
           expect(tester.takeException(), isNull);
