@@ -426,17 +426,18 @@ class RaftTokens extends ThemeExtension<RaftTokens> {
   /// tokens) stay stable across rebuilds.
   RaftTokens withDesktop(bool value) {
     if (value == desktop) return this;
-    if (!value) return RaftTokens(
-      dark,
-      colors,
-      tokens: _tokens,
-      mode: _mode,
-      themeOverrides: themeOverrides,
-      systemFonts: systemFonts,
-      systemFontFamilies: systemFontFamilies,
-      textLocale: textLocale,
-      recipeSet: recipeSet,
-    );
+    if (!value)
+      return RaftTokens(
+        dark,
+        colors,
+        tokens: _tokens,
+        mode: _mode,
+        themeOverrides: themeOverrides,
+        systemFonts: systemFonts,
+        systemFontFamilies: systemFontFamilies,
+        textLocale: textLocale,
+        recipeSet: recipeSet,
+      );
     return _desktopVariants[this] ??= RaftTokens(
       dark,
       colors,
