@@ -2918,11 +2918,11 @@
    "status": "covered",
    "webEntry": "Sidebar.tsx ChannelRow / DmRow / AgentDmRow",
    "gate": "",
-   "flutterEntry": "workspace_view.dart channel row passes unread, joined, activityMuted, hasDraft, mention, quietNew (conversation reads newFlags) and providerBadge (bridge.provider); agent presence on avatar",
+   "flutterEntry": "workspace_view.dart channel row passes unread, joined, activityMuted, hasDraft, mention, quietNew and markedUnread (SidebarRowReads in sidebar_thread_unread.dart: conversation reads newFlags and marks) and providerBadge (bridge.provider); agent presence on avatar",
    "flutterRefs": [
     {
-     "file": "apps/raft_flutter/lib/features/workspace_view.dart",
-     "needle": "quietNew: w.conversationReads.newFlags.contains(c.id)"
+     "file": "apps/raft_flutter/lib/features/sidebar_thread_unread.dart",
+     "needle": "quietNew: reads.newFlags.contains(c.id)"
     },
     {
      "file": "apps/raft_flutter/lib/features/workspace_view.dart",
