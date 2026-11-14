@@ -35,6 +35,7 @@ class ArgsTest(unittest.TestCase):
     def test_restart_takes_one_service(self):
         self.assertEqual(stack.parse_args(['restart', 'web'])[1:], ('restart', 'web'))
         self.assertEqual(stack.parse_args(['restart', 'content-worker'])[2], 'content-worker')
+        self.assertEqual(stack.parse_args(['restart', 'risingwave'])[2], 'risingwave')
 
     def test_bad_usage_exits(self):
         for argv in ([], ['restart'], ['--config'], ['--config', 'a.json'], ['start', 'stop'],
@@ -110,6 +111,20 @@ class ApplyPatchesTest(unittest.TestCase):
         with self.assertRaises(SystemExit):
             stack.apply_patches(self.source, ['p'], self.patches)
         self.assertEqual(self.target.read_text(), 'something else\n')
+
+    def test_superseded_version_is_restored_then_replaced(self):
+        subprocess.run(['git', '-c', 'user.email=t@e', '-c', 'user.name=t', 'commit', '-qm', 'base'],
+                       cwd=self.source, check=True)
+        self.target.write_text('one\nOLD\nthree\n')
+        sha = lambda text: hashlib.sha256(text.encode()).hexdigest()
+        manifest = json.loads((self.patches / 'p.json').read_text())
+        manifest['supersededAfterSHA256'] = [sha('one\nOLD\nthree\n')]
+        (self.patches / 'p.json').write_text(json.dumps(manifest))
+        self.assertEqual(stack.apply_patches(self.source, ['p'], self.patches), ['p'])
+        self.assertEqual(self.target.read_text(), 'one\nTWO\nthree\n')
+        self.target.write_text('one\nOTHER\nthree\n')
+        with self.assertRaises(SystemExit):
+            stack.apply_patches(self.source, ['p'], self.patches)
 
     def test_upstream_manifest_applies_nothing(self):
         (self.patches / 'u.json').write_text(json.dumps({'upstream': 'already in the source'}))
@@ -260,6 +275,20 @@ class ArtifactsTest(unittest.TestCase):
                 self.assertFalse(pid_file.exists())
             finally:
                 stack.LOCAL = old_local
+
+
+class RisingWaveHealthTest(unittest.TestCase):
+    def test_counts_meta_heartbeat_failures(self):
+        log = ('2026-11-13T16:18:00Z WARN rw-standalone-frontend meta_client: Failed to send_heartbeat: timeout\n'
+               '2026-11-13T16:18:01Z INFO rw-standalone-meta ok\n'
+               '2026-11-13T16:18:01Z WARN rw-standalone-compute meta_client: Failed to send_heartbeat: timeout\n')
+        self.assertEqual(stack.heartbeat_failures(log), 2)
+        self.assertEqual(stack.heartbeat_failures(''), 0)
+
+    def test_restart_helper_and_container_names(self):
+        self.assertTrue(stack.RISINGWAVE_HELPER.exists())
+        self.assertEqual(stack.rw_names({'environment': 'cindy-w24'}),
+                         ('slock-dev-cindy-w24-risingwave', 'slock-dev-cindy-w24-pg'))
 
 
 class EnvTest(unittest.TestCase):

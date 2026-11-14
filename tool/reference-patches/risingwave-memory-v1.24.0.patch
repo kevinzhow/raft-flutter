@@ -1,17 +1,19 @@
 --- a/scripts/dev/raftdev.ts
 +++ b/scripts/dev/raftdev.ts
-@@ -504,9 +504,13 @@
-   opts: { owner?: string; memoryBytes?: number; configFile?: string } = {},
- ): string[] {
-   const memoryBytes = opts.memoryBytes ?? DEFAULT_RISINGWAVE_MEMORY_BYTES;
--  const dockerLimit = String(memoryBytes + RISINGWAVE_DOCKER_HEADROOM_BYTES);
-+  // Local fixture: the ephemeral state store lives in a 2 GiB tmpfs (RAM, counted in the
-+  // container limit) so checkpoints do not wait on fsync of a shared, busy disk.
-+  const stateTmpfsBytes = 2 * 1024 * 1024 * 1024;
-+  const dockerLimit = String(memoryBytes + RISINGWAVE_DOCKER_HEADROOM_BYTES + stateTmpfsBytes);
-   return [
-     "run", "-d", "--pull=always", "--name", e.RISINGWAVE_CONTAINER,
-+    "--tmpfs", `/root/.risingwave:rw,size=${stateTmpfsBytes}`,
-     "--label", RAFTDEV_MANAGED_LABEL_ARG,
-     ...(opts.owner ? ["--label", `${RAFTDEV_OWNER_LABEL}=${opts.owner}`] : []),
-     ...(network ? ["--network", network] : []),
+@@ -469,7 +469,15 @@
+ export const DEFAULT_RISINGWAVE_MEMORY_BYTES = 2 * 1024 * 1024 * 1024;
+ const RISINGWAVE_DOCKER_HEADROOM_BYTES = 1024 * 1024 * 1024;
+ export const RISINGWAVE_CONFIG_IN_CONTAINER = "/raftdev/risingwave.toml";
+-export const RISINGWAVE_CONFIG = "[storage]\ncompactor_memory_limit_mb = 768\n";
++// Local fixture, state on the container's disk as upstream, tuned for a shared busy disk:
++// - checkpoint_frequency 5: a checkpoint (one fsynced SST per state table group, ~100 with
++//   the 54-object graph) every 5 barriers instead of every barrier. At 1 per barrier the
++//   bootstrap was fsync-bound and each view took minutes longer than the last. Reads see
++//   checkpointed data, so RW lags Postgres by up to ~5 s more.
++// - time_travel_retention_ms 0: nothing here reads AS OF. With the default 10 minutes the meta
++//   store rewrote ~22k hummock_epoch_to_version rows every 30 s.
++export const RISINGWAVE_CONFIG =
++  "[storage]\ncompactor_memory_limit_mb = 768\n[system]\ncheckpoint_frequency = 5\ntime_travel_retention_ms = 0\n";
+ 
+ /**
+  * RAFTDEV_RW_MEMORY_BYTES, or the 2 GiB default. The default is also the

@@ -1,6 +1,9 @@
 {
   "path": "scripts/dev/raftdev.ts",
   "beforeSHA256": "dc0fe046829b78826d1c16cd27cf5c10e218b655a1f8a85479fae133b22b0ad2",
-  "afterSHA256": "d6e3d38ed0f1e0014493aa2e06cf69292c589cff8dd5bc37347acd465273496d",
-  "reason": "Source v1.24.0 already caps local RisingWave memory (2 GiB single_node budget, Docker limit 1 GiB above it, compactor limit from a mounted config), so the older 2 GiB container / 1.5 GiB budget hunk is not ported. What the local fixture still needs: the ephemeral state store (removed by raftdev stop anyway) in a 2 GiB tmpfs, added to the container limit. On a shared data disk the checkpoint fsyncs made each materialized view of the 54-step bootstrap take minutes longer than the previous one. Web, seed and queries unchanged."
+  "afterSHA256": "d77aba55ee2691548c909bf6d029e50613e3d93ee3a2debd6a0bdeb86b6a00ca",
+  "supersededAfterSHA256": [
+    "d6e3d38ed0f1e0014493aa2e06cf69292c589cff8dd5bc37347acd465273496d"
+  ],
+  "reason": "Source v1.24.0 already caps local RisingWave memory (2 GiB single_node budget, Docker limit 1 GiB above it, compactor limit from a mounted config), so the older 2 GiB container / 1.5 GiB budget hunk is not ported. The fixture config adds [system] checkpoint_frequency = 5 (one checkpoint of ~100 fsynced SSTs every 5 barriers: at every barrier the 54-step bootstrap was fsync-bound on a shared disk) and time_travel_retention_ms = 0 (nothing reads AS OF; the default made the meta store rewrite ~22k rows every 30 s). The first version of this patch (first superseded hash) put the whole state store in a 2 GiB tmpfs instead: on 2026-11-13 it grew from 0.46 GB to 1.5 GB in 2.5 h and host memory pressure swapped 4.3 GB of the container out. Web, seed and queries unchanged."
 }
