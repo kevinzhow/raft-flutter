@@ -212,7 +212,9 @@ void main() {
       await tester.pumpAndSettle();
       expect(
         await pixel(tester, const Offset(24, 24)),
-        Color(Color.alphaBlend(ui['fill-medium'], ui.layerCard).toARGB32()),
+        // Chromium composites the 8-bit alpha: chrome-headless-shell 1234 paints dark fill-medium over layer-card
+        // as 50,50,47 (float blend: 50,50,48).
+        raftChromeBlend(ui['fill-medium'], ui.layerCard),
       );
     });
   }

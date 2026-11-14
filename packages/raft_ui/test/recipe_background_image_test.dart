@@ -55,10 +55,9 @@ void main() {
                     final paper = tokens.colors['layer-card']!;
                     expected = !flags.contains('active')
                         ? paper
-                        : Color.alphaBlend(
-                            tokens.colors['fill-pressed']!,
-                            paper,
-                          );
+                        // Chromium's 8-bit alpha (chrome-headless-shell 1234: dark fill-medium over layer-card
+                        // paints 50,50,47).
+                        : raftChromeBlend(tokens.colors['fill-medium']!, paper);
                     return RepaintBoundary(
                       key: key,
                       child: SizedBox(
@@ -156,8 +155,9 @@ void main() {
                 format: ui.ImageByteFormat.png,
               ))!;
               final dir = Directory(out)..createSync(recursive: true);
-              File('${dir.path}/$id-$dark-$hover.png')
-                  .writeAsBytesSync(data.buffer.asUint8List());
+              File(
+                '${dir.path}/$id-$dark-$hover.png',
+              ).writeAsBytesSync(data.buffer.asUint8List());
             } finally {
               image.dispose();
             }
