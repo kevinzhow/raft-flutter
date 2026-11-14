@@ -18,6 +18,7 @@ import fnmatch
 import json
 import os
 import pathlib
+import re
 import shutil
 import subprocess
 import sys
@@ -25,7 +26,7 @@ import urllib.request
 import parity_case_map
 import raft_source
 from parity_reference_defects import admitted_defects, annotate_site
-from parity_baseline_repairs import (repair_definition,
+from parity_baseline_repairs import (repair_definition_for,
                                     capture_is_current, preserve_capture, repair_annotations, prepare_cases)
 
 root = pathlib.Path(__file__).resolve().parent.parent
@@ -224,6 +225,34 @@ async function parityCollectPlatformFonts(page: Page, selector: string) {
 """
 
 
+# Web v1.24 serves its own fonts (packages/web/src/fonts.css, woff2 beside the app): the spec no longer stubs Google
+# Fonts, so the production-font substitution above has nothing to replace. The generated copy keeps the path wiring
+# and the font/platform-font provenance only; the Web's own faces are the reference.
+SELF_HOSTED_FONT_SOURCE = 'the Web app\'s own woff2 (packages/web/src/fonts.css), as served in production'
+SPEC_PATCHES_SELF_HOSTED = [SPEC_PATCHES[0], SPEC_PATCHES[1], SPEC_PATCHES[2],
+    ('  expect(visualFonts.unexpectedExternalUrls).toEqual([]);',
+     '  (globalThis as any).__parityFontFaces = faces;\n  expect(visualFonts.unexpectedExternalUrls).toEqual([]);'),
+    ("""      writeFileSync(
+        resolve(outputDir, `${visualCase.id}.metadata.json`),""",
+     """      const parityPlatformFonts = await parityCollectPlatformFonts(page, selector);
+      writeFileSync(
+        resolve(outputDir, `${visualCase.id}.metadata.json`),"""),
+    ('            capturedAt: new Date().toISOString(),',
+     """            capturedAt: new Date().toISOString(),
+            fontSource: %s,
+            fontFaces: (globalThis as any).__parityFontFaces,
+            platformFonts: parityPlatformFonts,
+            textRendering: {
+              chromiumArgs: JSON.parse(process.env.PARITY_CHROMIUM_ARGS || "[]"),
+              textRunWidths: await parityTextRunWidths(page, selector),
+            },""" % json.dumps(SELF_HOSTED_FONT_SOURCE)),
+]
+
+
+def self_hosted_fonts(spec):
+    return 'function visualFontFile(' in spec
+
+
 def patch_exactly_once(text, old, new, what):
     count = text.count(old)
     if count != 1:
@@ -353,12 +382,17 @@ def prepare_react_provider():
     REACT_GEN.mkdir(parents=True, exist_ok=True)
     prepare_cases(root, RAFT_SOURCE, REACT_GEN, git(RAFT_SOURCE, 'rev-parse', 'HEAD'))
     spec = (VT / 'tests/react-provider.spec.ts').read_text()
-    for old, new in SPEC_PATCHES:
+    self_hosted = self_hosted_fonts(spec)
+    for old, new in (SPEC_PATCHES_SELF_HOSTED if self_hosted else SPEC_PATCHES):
         spec = patch_exactly_once(spec, old, new, 'react-provider.spec.ts')
     # Deterministic CSS animations/transitions: every capture call gets
     # Playwright's animations: "disabled" (finite animations/transitions jump
     # to their end state, infinite ones reset to their initial at-rest frame;
     # e.g. Skeleton's animate-pulse is captured at opacity 1, not mid-pulse).
+    # v1.24's spec imports sibling modules (`./runtimeFormV2Mock`, `../../web/visual-testing/homeChannelList`); the
+    # generated copy lives under OUT, so point them at the checkout.
+    spec = re.sub(r'(from\s+")(\.\.?/[^"]+)(")',
+                  lambda m: m.group(1) + os.path.normpath(str(VT / 'tests' / m.group(2))) + m.group(3), spec)
     shot = '.screenshot({ path: imagePath'
     if spec.count(shot) != 4:
         sys.exit(f'upstream react-provider.spec.ts changed: expected 4 screenshot calls, found {spec.count(shot)}')
@@ -366,14 +400,16 @@ def prepare_react_provider():
     spec = patch_exactly_once(spec, '    await expect(target).toBeVisible();',
         '    await expect(target).toBeVisible();\n'
         '    await parityPrepareRepairedNotification(page, visualCase.id);', 'notification interaction before screenshot')
+    indent = '      ' if self_hosted else '    '
+    font_source = (SELF_HOSTED_FONT_SOURCE if self_hosted else
+                   'production Google Fonts response for raft-ui fonts.css (raft-flutter parity deviation from upstream stub)')
     spec = patch_exactly_once(spec,
-        '    const parityPlatformFonts = await parityCollectPlatformFonts(page, selector);',
-        '    const baselineRepair = await parityVerifyRepairedMarkdown(page, visualCase.id, selector);\n'
-        '    const parityPlatformFonts = await parityCollectPlatformFonts(page, selector);', 'baseline render guard')
-    spec = patch_exactly_once(spec,
-        '          fontSource: "production Google Fonts response for raft-ui fonts.css (raft-flutter parity deviation from upstream stub)",',
-        '          ...(baselineRepair ? { baselineRepair } : {}),\n'
-        '          fontSource: "production Google Fonts response for raft-ui fonts.css (raft-flutter parity deviation from upstream stub)",', 'baseline repair metadata')
+        f'{indent}const parityPlatformFonts = await parityCollectPlatformFonts(page, selector);',
+        f'{indent}const baselineRepair = await parityVerifyRepairedMarkdown(page, visualCase.id, selector);\n'
+        f'{indent}const parityPlatformFonts = await parityCollectPlatformFonts(page, selector);', 'baseline render guard')
+    spec = patch_exactly_once(spec, f'fontSource: {json.dumps(font_source)},',
+        '...(baselineRepair ? { baselineRepair } : {}),\n          '
+        f'fontSource: {json.dumps(font_source)},', 'baseline repair metadata')
     (REACT_GEN / 'react-provider.spec.ts').write_text(spec + SPEC_APPENDIX + BASELINE_REPAIR_GUARD)
     # Same module type as the upstream package (packages/visual-testing is ESM).
     (REACT_GEN / 'package.json').write_text(json.dumps({'type': json.loads((VT / 'package.json').read_text())['type']}) + '\n')
@@ -415,7 +451,8 @@ CHROMIUM_TEXT_ARGS = {
 def run_react_production_fonts(case_ids, log, text_render='android'):
     """Same env and Playwright invocation as the CLI's runReactProvider, with
     the generated spec/config."""
-    cmd_fonts(argparse.Namespace(refresh=False))
+    if not self_hosted_fonts((VT / 'tests/react-provider.spec.ts').read_text()):
+        cmd_fonts(argparse.Namespace(refresh=False))
     config = prepare_react_provider()
     env = node_env()
     env.update({
@@ -439,7 +476,7 @@ def run_react_production_fonts(case_ids, log, text_render='android'):
 
 def react_capture(cases, refresh, fonts='production', text_render='android'):
     react_dir = RESULTS / 'react'
-    repair = repair_definition(root)
+    repair = repair_definition_for(root, git(RAFT_SOURCE, 'rev-parse', 'HEAD'))
     need = [c['id'] for c in cases
             if refresh or not (react_dir / f"{c['id']}.png").is_file()
             or (fonts == 'production' and c['id'] in repair['cases']
@@ -644,7 +681,7 @@ def cmd_run(a):
     summary = summarize()
     registry = json.loads((root / 'docs/parity-reference-defects.json').read_text())
     defects = admitted_defects(registry, git(RAFT_SOURCE, 'rev-parse', 'HEAD'), RESULTS / 'react')
-    repairs = repair_annotations(OUT, SITE, repair_definition(root))
+    repairs = repair_annotations(OUT, SITE, repair_definition_for(root, git(RAFT_SOURCE, 'rev-parse', 'HEAD')))
     annotate_site(SITE, {**defects, **repairs})
     shutil.copy(OUT / 'summary.json', SITE / 'flutter-parity-summary.json')
     shutil.copy(OUT / 'summary.md', SITE / 'flutter-parity-summary.md')

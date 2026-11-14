@@ -6,10 +6,25 @@ from pathlib import Path
 import shutil
 
 
-def prepare_cases(root, source, out, source_commit):
+def repair_definition_for(root, source_commit):
+    """The repairs that apply to the checkout at `source_commit`.
+
+    Every repair is bound to the Web commit whose fixtures it repaired (db5e399f, v1.21.23). Against any other
+    checkout (v1.24.0 and later) the original cases are captured unmodified: the anchors, fixtures and rendered
+    defects it patched belong to the old tree. A defect that survives is recorded per case in
+    docs/parity-reference-defects.json instead.
+    """
     repair = repair_definition(root)
+    if repair['sourceCommit'] == source_commit:
+        return repair
+    return {**repair, 'cases': [], 'markdownCases': [], 'additionalRepairs': [], 'tasks': [],
+            'retiredFor': source_commit}
+
+
+def prepare_cases(root, source, out, source_commit):
+    repair = repair_definition_for(root, source_commit)
     original = (Path(source) / 'packages/web/visual-testing/VisualTestingCases.tsx').read_text()
-    generated = repair_cases(original, repair, source_commit)
+    generated = original if repair.get('retiredFor') else repair_cases(original, repair, source_commit)
     repair['originalCasesSha256'] = hashlib.sha256(original.encode()).hexdigest()
     repair['generatedCasesSha256'] = hashlib.sha256(generated.encode()).hexdigest()
     out = Path(out)
