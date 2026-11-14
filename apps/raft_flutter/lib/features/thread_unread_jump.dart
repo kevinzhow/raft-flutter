@@ -5,6 +5,8 @@ import 'package:flutter/widgets.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
+import 'agent_typing_line_host.dart' show agentTypingInsetKey;
+
 import '../data/thread_unread_by_parent.dart';
 import '../data/workspace_controller.dart';
 
@@ -268,7 +270,9 @@ class _ChatBottomControlsState extends State<ChatBottomControls> {
     if (!mounted) return;
     Element? scope;
     context.visitAncestorElements((element) {
-      if (element.widget is Stack) {
+      // The typing line's inset wraps these controls in a stack of its own.
+      if (element.widget is Stack &&
+          element.widget.key != agentTypingInsetKey) {
         scope = element;
         return false;
       }
