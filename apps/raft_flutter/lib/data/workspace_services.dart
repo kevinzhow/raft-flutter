@@ -208,6 +208,7 @@ class WorkspaceServices {
               authority,
               projectReadState:
                   authority.conversationReads.projectActivityReadState,
+              liveUnread: authority.conversationReads.liveActivityUnread,
             ));
   SourceActivityUnreadStore? _activityUnread;
 

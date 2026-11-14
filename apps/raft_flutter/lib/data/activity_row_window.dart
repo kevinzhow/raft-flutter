@@ -1,5 +1,6 @@
 import 'dart:collection';
 
+import 'inbox_in_place_unread.dart';
 import 'resource_row_reconcile.dart';
 
 /// Immutable row identities with a lookup that does not enumerate the window.
@@ -71,22 +72,37 @@ class ActivityRowWindow extends IndexedActivityRows {
 
   /// Applies exactly the first loaded conversation advanced by this message,
   /// preserving the existing sequence validation and mute rule.
-  ({ActivityRowWindow window, Map<String, dynamic> row, String? key})? advance(
+  ///
+  /// A [live] message also moves the row's unread in place (Web #244); `delta`
+  /// is what it added to the unread total.
+  ({
+    ActivityRowWindow window,
+    Map<String, dynamic> row,
+    String? key,
+    int delta,
+  })?
+  advance(
     Map message, {
     required bool Function(Map<String, dynamic>) muted,
     required bool newestFirst,
+    LiveUnread? live,
   }) {
     final channel = message['channelId'];
     if (channel is! String || message['id'] is! String) return null;
     for (final rank in _get(_lookup, 'scope:$channel') ?? const <int>[]) {
       final entry = _get(_order, rank)!;
-      final next = advanceActivityRow(entry.row, message);
-      if (next == null) continue;
+      final advanced = advanceActivityRow(entry.row, message);
+      if (advanced == null) continue;
       if (muted(entry.row)) return null;
+      final next = {...advanced, ...liveUnreadFields(entry.row, message, live)};
+      final before = entry.row['unreadCount'], after = next['unreadCount'];
       return (
         window: _replace(rank, next, promote: newestFirst),
         row: next,
         key: entry.key,
+        delta:
+            (after is num ? after.toInt() : 0) -
+            (before is num ? before.toInt() : 0),
       );
     }
     return null;

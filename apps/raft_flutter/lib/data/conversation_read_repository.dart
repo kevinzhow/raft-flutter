@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_sync/raft_sync.dart';
 
+import 'inbox_in_place_unread.dart' show LiveUnread;
 import 'mark_unread_outcome.dart';
 import 'marked_unread_flags.dart';
 import 'read_write_queue.dart';
@@ -384,6 +385,34 @@ class ConversationReadRepository {
     if (_mentionsMember(row)) mentions = {...mentions, id};
     persistUnread();
     unawaited(_prefetch());
+  }
+
+  /// Source liveActivityUnread: what a live message does to its Activity row.
+  /// It counts one unread unless it is the person's own, is read as it lands
+  /// (the open conversation at its latest end, the same rule as
+  /// [receiveUnread]), or the accepted read cursor already covers it.
+  LiveUnread liveActivityUnread(Map message) {
+    final id = message['channelId'], me = client.user?.id;
+    final seq = canonicalWireSeq(message['seq']);
+    final serverId = client.serverId;
+    final cursor = id is! String || serverId == null || me == null
+        ? null
+        : _readState().state(serverId, me, id);
+    final counts =
+        me != null &&
+        id is String &&
+        !(message['senderType'] == 'user' && message['senderId'] == me) &&
+        !((id == _channelId() || id == _threadChannelId()) &&
+            _mayMarkRead(id) &&
+            scrolledAway.readsLiveArrival(id, _mobileNavigation())) &&
+        !(seq != null &&
+            cursor != null &&
+            BigInt.from(cursor['maxReadSeq']) >= seq);
+    return LiveUnread(
+      counts: counts,
+      mention: counts && _mentionsMember(Map<String, dynamic>.from(message)),
+      viewer: me,
+    );
   }
 
   bool _mentionsMember(Map<String, dynamic> row) {
