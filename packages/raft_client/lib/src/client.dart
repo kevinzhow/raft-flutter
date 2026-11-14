@@ -302,6 +302,15 @@ class UploadCancellation {
   CancelToken get cancelToken => _token;
 }
 
+/// [RaftClient.emitSocketEventWithAck] got no acknowledgement: `not_connected`,
+/// `stale` (the connection or account changed) or `timeout`.
+class RaftSocketAckException implements Exception {
+  const RaftSocketAckException(this.reason);
+  final String reason;
+  @override
+  String toString() => 'RaftSocketAckException($reason)';
+}
+
 class RaftEvent {
   const RaftEvent(this.name, this.payload, {this.ack});
   final String name;
@@ -507,6 +516,42 @@ class RaftClient {
     if (_closed || socket == null || !socket.connected) return false;
     socket.emit(event, payload);
     return true;
+  }
+
+  /// Sends [event] with [payload] and waits for the server's acknowledgement
+  /// (socket.io `emitWithAck`, Web `socket.timeout(ms).emitWithAck(...)`):
+  /// completes with the acknowledgement's data (its single argument, or the
+  /// list of them). Throws [RaftSocketAckException] when the socket is not
+  /// connected, the connection is replaced or closed before the answer, or
+  /// no answer arrives within [timeout]. Never queued.
+  Future<Object?> emitSocketEventWithAck(
+    String event, [
+    Object? payload,
+    Duration timeout = const Duration(seconds: 10),
+  ]) {
+    final socket = _socket;
+    if (_closed || socket == null || !socket.connected) {
+      return Future.error(const RaftSocketAckException('not_connected'));
+    }
+    final epoch = _generation;
+    final answer = Completer<Object?>();
+    socket.emitWithAck(
+      event,
+      payload,
+      ack: ([Object? first, Object? second, Object? third]) {
+        if (answer.isCompleted) return;
+        if (epoch != _generation || _closed) {
+          answer.completeError(const RaftSocketAckException('stale'));
+          return;
+        }
+        final rest = [?second, ?third];
+        answer.complete(rest.isEmpty ? first : [first, ...rest]);
+      },
+    );
+    return answer.future.timeout(
+      timeout,
+      onTimeout: () => throw const RaftSocketAckException('timeout'),
+    );
   }
 
   bool restoredOffline = false;

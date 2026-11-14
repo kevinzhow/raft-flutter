@@ -185,6 +185,56 @@ void main() {
     );
   });
 
+  group('emitSocketEventWithAck', () {
+    late _FakeSocketServer server;
+    setUp(() async {
+      server = _FakeSocketServer();
+      await server.start();
+    });
+    tearDown(() => server.close());
+
+    test('waits for the server acknowledgement and returns its data', () async {
+      final client = await _connected(server);
+      addTearDown(client.dispose);
+      final sent = server.next((f) => f.startsWith('42'));
+      final answer = client.emitSocketEventWithAck('sync:horizon', {
+        'scope': 'all',
+      });
+      final frame = await sent;
+      // `42<id>[event, payload]`: the ack id sits between the type and the body.
+      final match = RegExp(r'^42(\d+)(\[.*)$').firstMatch(frame)!;
+      expect(jsonDecode(match[2]!), [
+        'sync:horizon',
+        {'scope': 'all'},
+      ]);
+      server.peer!.add(
+        '43${match[1]}${jsonEncode([
+          {'horizon': 7},
+        ])}',
+      );
+      expect(await answer, {'horizon': 7});
+    });
+
+    test('times out when the server never answers', () async {
+      final client = await _connected(server);
+      addTearDown(client.dispose);
+      await expectLater(
+        client.emitSocketEventWithAck(
+          'sync:horizon',
+          null,
+          const Duration(milliseconds: 200),
+        ),
+        throwsA(
+          isA<RaftSocketAckException>().having(
+            (e) => e.reason,
+            'reason',
+            'timeout',
+          ),
+        ),
+      );
+    });
+  });
+
   test(
     'without a connection there is no socket id and nothing is sent',
     () async {
@@ -198,6 +248,16 @@ void main() {
       expect(
         client.emitSocketEvent('presence:activity', {'active': true}),
         isFalse,
+      );
+      await expectLater(
+        client.emitSocketEventWithAck('sync:horizon'),
+        throwsA(
+          isA<RaftSocketAckException>().having(
+            (e) => e.reason,
+            'reason',
+            'not_connected',
+          ),
+        ),
       );
     },
   );
