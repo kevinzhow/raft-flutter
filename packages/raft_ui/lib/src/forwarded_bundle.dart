@@ -21,6 +21,7 @@ class RaftForwardedItem {
     this.createdAt,
     this.sequence,
     this.sourceLabel,
+    this.taskTitle,
     this.thread = false,
     this.parent = false,
     this.attachments = const [],
@@ -38,6 +39,9 @@ class RaftForwardedItem {
   final DateTime? createdAt;
   final num? sequence;
   final String? sourceLabel;
+
+  /// `from #android:#7 · <title>` for a task discussion.
+  final String? taskTitle;
   final bool thread, parent;
   final List<Map<String, dynamic>> attachments;
 }
@@ -116,7 +120,8 @@ List<RaftForwardedItem> raftForwardedItems(Map<String, dynamic> metadata) {
         target is Map &&
             item['provenanceState'] == 'available' &&
             target['labelVisibility'] == 'public' &&
-            ['channel', 'thread'].contains(target['type']) &&
+            target['type'] is String &&
+            target['type'] != 'dm' &&
             target['label'] is String &&
             (target['label'] as String).trim().isNotEmpty
         ? target['label'] as String
@@ -133,6 +138,14 @@ List<RaftForwardedItem> raftForwardedItems(Map<String, dynamic> metadata) {
             ? item['sourceMessageSeq'] as num
             : null,
         sourceLabel: label,
+        // Web 1.24: a task discussion's source names the task's title.
+        taskTitle:
+            target is Map &&
+                target['type'] == 'task' &&
+                item['sourceTaskTitle'] is String &&
+                (item['sourceTaskTitle'] as String).trim().isNotEmpty
+            ? (item['sourceTaskTitle'] as String).trim()
+            : null,
         thread: thread,
         parent: item['sourceIsThreadParent'] == true,
         attachments: attachments,
@@ -241,13 +254,18 @@ class _RaftForwardedBundleState extends State<RaftForwardedBundle> {
     final style = widget.headerLine == null
         ? recipe.source
         : recipe.source.copyWith(height: widget.headerLine! / 11);
-    final label = raftFormat(
-      context,
-      first.thread && !first.sourceLabel!.endsWith(' · thread')
-          ? 'from {target} · thread'
-          : 'from {target}',
-      {'target': first.sourceLabel!},
-    );
+    final label = first.taskTitle != null
+        ? raftFormat(context, 'from {target} · {title}', {
+            'target': first.sourceLabel!,
+            'title': first.taskTitle!,
+          })
+        : raftFormat(
+            context,
+            first.thread && !first.sourceLabel!.endsWith(' · thread')
+                ? 'from {target} · thread'
+                : 'from {target}',
+            {'target': first.sourceLabel!},
+          );
     Text text(TextStyle style) => Text(
       label,
       style: style,

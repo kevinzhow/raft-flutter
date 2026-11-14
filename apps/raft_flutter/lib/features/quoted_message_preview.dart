@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
+import 'delegated_message.dart';
+
 import '../data/raft_permalink.dart';
 import '../data/workspace_controller.dart';
 
@@ -165,6 +167,10 @@ class _QuotedMessagePermalinkPreviewState
       authorName: name,
       avatar: widget.avatar(message),
       authorSubtitle: widget.subtitle(message),
+      authorDelegatedBy: delegatedByLabel(context, message, continuation: true),
+      unavailableText: message.retracted
+          ? raftText(context, 'This message was retracted.')
+          : null,
       content: message.content,
       attachmentLabel: attachments == null
           ? null

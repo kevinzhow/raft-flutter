@@ -5,6 +5,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_chat_core/flutter_chat_core.dart' as chat;
+import 'package:raft_ui/raft_ui.dart' show raftText;
 
 import 'message_preparation.dart';
 import 'timeline_scrollbar.dart';
@@ -92,6 +93,10 @@ class RaftMessageTimeline extends StatefulWidget {
 
   /// Older history is requested within this many viewports of the top.
   static const double prefetchViewports = 2;
+
+  /// Web 1.24 VirtualMessageTimeline `EDGE_LOAD_PX`: the next page loads
+  /// within two screens of a loaded edge, and never less than 600px.
+  static const double edgeLoadMinimum = 600;
 
   /// Rows built so far (tests measure per-frame layout work).
   @visibleForTesting
@@ -214,7 +219,7 @@ class _RaftMessageTimelineState extends State<RaftMessageTimeline>
   bool nearTop(ScrollPosition position) =>
       position.extentBefore <=
       math.max(
-        200.0,
+        RaftMessageTimeline.edgeLoadMinimum,
         position.viewportDimension * RaftMessageTimeline.prefetchViewports,
       );
 
@@ -249,7 +254,7 @@ class _RaftMessageTimelineState extends State<RaftMessageTimeline>
     final near =
         position.extentAfter <=
         math.max(
-          200.0,
+          RaftMessageTimeline.edgeLoadMinimum,
           position.viewportDimension * RaftMessageTimeline.prefetchViewports,
         );
     if (!near) {
@@ -532,20 +537,27 @@ class _RaftMessageTimelineState extends State<RaftMessageTimeline>
       actions: <Type, Action<Intent>>{ScrollIntent: _keyboardOlderScroll},
       child: NotificationListener<Notification>(
         onNotification: onNotification,
-        child: _TimelineScrollView(
-          controller: widget.controller,
-          // The timeline's own scrollbar replaces the platform default.
-          scrollBehavior: scrollbar
-              ? behavior.copyWith(scrollbars: false)
-              : null,
-          center: forwardKey,
-          anchor: widget.controller.anchor,
-          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-          semanticChildCount: messages.length,
-          scrollCacheExtent: ScrollCacheExtent.pixels(
-            widget.cacheExtent ?? nearbyCache,
+        // The list is named for screen readers (Web `role="log"` with
+        // `message.timeline.ariaLabel`).
+        child: Semantics(
+          container: true,
+          explicitChildNodes: true,
+          label: raftText(context, 'Messages'),
+          child: _TimelineScrollView(
+            controller: widget.controller,
+            // The timeline's own scrollbar replaces the platform default.
+            scrollBehavior: scrollbar
+                ? behavior.copyWith(scrollbars: false)
+                : null,
+            center: forwardKey,
+            anchor: widget.controller.anchor,
+            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+            semanticChildCount: messages.length,
+            scrollCacheExtent: ScrollCacheExtent.pixels(
+              widget.cacheExtent ?? nearbyCache,
+            ),
+            slivers: slivers,
           ),
-          slivers: slivers,
         ),
       ),
     );

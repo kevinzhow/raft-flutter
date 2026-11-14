@@ -32,4 +32,18 @@ const Map<String, String> zhCatalogUpstream124Msg = <String, String>{
   "Slack user {id}": "Slack 用户 {id}",
   // Card messages (message.messageCard.updated).
   "Updated {time}": "更新于 {time}",
+  // Typing line in a channel (message.agentTyping.workingHere, typingAndOthers,
+  // typingRow).
+  "{count} agent working here": "{count} 个 Agent 正在这里工作",
+  "{count} agents working here": "{count} 个 Agent 正在这里工作",
+  "{typing} · {others} other working": "{typing} · 另外 {others} 个在工作",
+  "{typing} · {others} others working": "{typing} · 另外 {others} 个在工作",
+  "Typing…": "正在输入…",
+  // Forwarded bundles (message.forwardedBundle.fromTask).
+  "from {target} · {title}": "来自 {target} · {title}",
+  // Mention hover activity (activity.log.freshnessHold.*).
+  "Reading new messages before sending": "发送前先读新消息",
+  "Reading new messages before claiming the task": "认领任务前先读新消息",
+  "Reading new messages before changing the task": "修改任务前先读新消息",
+  "Reading new messages before updating the task": "更新任务前先读新消息",
 };
