@@ -19,6 +19,7 @@ import '../data/workspace_controller.dart';
 import 'account_security_answer.dart';
 import 'account_security_dialogs.dart';
 import 'account_security_qr.dart';
+import 'icu_message.dart';
 
 /// What the Account page's Passkeys and Two-step verification sections share
 /// (Web `useSecondFactorSettings`): either one changing reloads both, and
@@ -406,7 +407,7 @@ class _TwoStepState extends State<TwoStepVerificationSection> {
                       key: const ValueKey('two-step-passkeys-row'),
                       glyph: RaftGlyph.keyRound,
                       title: 'Passkeys',
-                      description: raftFormat(
+                      description: icuText(
                         context,
                         '{count, plural, one {# passkey also works for this step} other {# passkeys also work for this step}}',
                         {'count': s.passkeys},
@@ -426,7 +427,7 @@ class _TwoStepState extends State<TwoStepVerificationSection> {
                     ),
                     notice: s.backupCodesRemaining <= lowBackupCodes
                         ? secondFactorBanner(
-                            raftFormat(
+                            icuText(
                               context,
                               "{count, plural, one {Only # backup code left.} other {Only # backup codes left.}} Regenerate them so you don't get locked out.",
                               {'count': s.backupCodesRemaining},
