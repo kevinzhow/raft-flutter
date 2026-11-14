@@ -4,9 +4,13 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:raft_client/raft_client.dart';
-import 'package:raft_sync/raft_sync.dart' show canonicalUint64, ReadStateLedger;
+import 'package:raft_sync/raft_sync.dart'
+    show canonicalUint64, canonicalWireSeq, ReadStateLedger;
 
+import 'device_preferences.dart';
+import 'inbox_background_refresh.dart';
 import 'inbox_convergence.dart';
+import 'inbox_in_place_unread.dart';
 import 'raft_api_gateway.dart';
 import 'resource_row_reconcile.dart';
 import 'source_read_all_transport.dart';
@@ -26,8 +30,11 @@ abstract interface class ActivityUnreadAuthority implements Listenable {
 /// Current-server Activity attention, owned independently of the Activity page.
 ///
 /// Source socketBridge owns boot at rooms:joined (with a two-second offline
-/// fallback) and debounces live Activity ingress for 150 ms. A canonical inbox
-/// response owns this total; Chat unread counters never substitute for it.
+/// fallback). A live message first patches its listed row's unread in place
+/// ([InboxInPlaceUnread], Web #244), then asks for the realtime re-read
+/// through [InboxBackgroundRefresh] (leading+trailing 2.5 s, nothing while the
+/// app is hidden). A canonical inbox response owns this total; Chat unread
+/// counters never substitute for it.
 ///
 /// The server lists a new message in the inbox about a second after the socket
 /// announces it, so a window read 150 ms after `message:new` can predate it.
@@ -35,7 +42,11 @@ abstract interface class ActivityUnreadAuthority implements Listenable {
 /// ([InboxConvergence]) and the store reads again at 0.7 s, 1.5 s and 3 s until
 /// it does.
 class SourceActivityUnreadStore extends ChangeNotifier {
-  SourceActivityUnreadStore(this.workspace, {required this._projectReadState}) {
+  SourceActivityUnreadStore(
+    this.workspace, {
+    required this._projectReadState,
+    this._liveUnread,
+  }) {
     workspace.addListener(_workspaceChanged);
     _subscription = workspace.client.events.listen(_event);
     _readObserver = InterceptorsWrapper(
@@ -63,7 +74,7 @@ class SourceActivityUnreadStore extends ChangeNotifier {
             !_denied) {
           // Source registerPersistedChannelReadListener closes stale snapshots
           // only after a successful persisted read in the same authority.
-          unawaited(refresh());
+          _persistedRead(request);
         }
         next.next(response);
       },
@@ -78,16 +89,28 @@ class SourceActivityUnreadStore extends ChangeNotifier {
     Map<String, dynamic>? retained,
   })
   _projectReadState;
+  final LiveUnread Function(Map message)? _liveUnread;
   late final StreamSubscription<RaftEvent> _subscription;
   final _pageEvents = StreamController<RaftEvent>.broadcast(sync: true);
   late final Interceptor _readObserver;
   final _readScopes = Expando<({String scope, int authority})>();
-  Timer? _boot, _debounce;
+  Timer? _boot;
+  final _settling = <String, Timer>{};
+  final _inPlace = InboxInPlaceUnread();
+  final _live = <String, LiveUnread>{};
+  late final _background = InboxBackgroundRefresh(
+    read: () => unawaited(refresh()),
+    now: () => clock(),
+  );
   String? _scope;
   bool _started = false, _everBound = false, _disposed = false, _denied = false;
   int _revision = 0, _request = 0, _authorityEpoch = 0;
+  // Web's catch-up retries (1.5 s, 3 s) also read nothing while hidden; ours
+  // keep their own 0.7/1.5/3 s schedule and budget.
   late final _convergence = InboxConvergence(
-    retry: () => unawaited(refresh()),
+    retry: () {
+      if (!_background.deferWhileHidden()) unawaited(refresh());
+    },
     now: () => clock(),
   );
 
@@ -222,7 +245,7 @@ class SourceActivityUnreadStore extends ChangeNotifier {
       _acceptedAt = null;
       _convergence.reset();
       _boot?.cancel();
-      _debounce?.cancel();
+      _resetBackground();
       _inFlight = null;
       _finishTrailing();
     }
@@ -313,13 +336,21 @@ class SourceActivityUnreadStore extends ChangeNotifier {
       unawaited(refresh());
       return;
     }
+    _readThrough(event);
     if (!_refreshes(event)) return;
     _expect(event.name, payload);
-    _debounce?.cancel();
-    _debounce = Timer(const Duration(milliseconds: 150), () {
-      _debounce = null;
-      unawaited(refresh());
-    });
+    _patchInPlace(event);
+    _background.request();
+  }
+
+  void _resetBackground() {
+    _background.cancel();
+    _inPlace.reset();
+    _live.clear();
+    for (final timer in _settling.values) {
+      timer.cancel();
+    }
+    _settling.clear();
   }
 
   /// Remember what the window read after this event has to contain.
@@ -354,6 +385,195 @@ class SourceActivityUnreadStore extends ChangeNotifier {
     }
   }
 
+  /// The judgement of a live message ([LiveUnread]), made once per message and
+  /// shared with the mounted page, which patches its own copy of the row.
+  LiveUnread? liveUnreadOf(Map message) {
+    final id = message['id'];
+    if (id is! String) return null;
+    final known = _live[id];
+    if (known != null) return known;
+    final judge = _liveUnread;
+    if (judge == null || _denied || _scope == null) return null;
+    if (_live.length >= 128) _live.remove(_live.keys.first);
+    return _live[id] = judge(message);
+  }
+
+  /// Web #244: a live message patches its listed row's unread at once, in the
+  /// window the badge counts and in the page's first-window seed.
+  void _patchInPlace(RaftEvent event) {
+    final payload = event.payload;
+    final message = switch (event.name) {
+      'message:new' => payload is Map ? payload : null,
+      'thread:updated' =>
+        payload is Map && payload['latestReply'] is Map
+            ? payload['latestReply'] as Map
+            : null,
+      _ => null,
+    };
+    final live = message == null ? null : liveUnreadOf(message);
+    final scope = message?['channelId'];
+    final server = workspace.client.serverId, user = workspace.client.user?.id;
+    if (message == null || live == null || scope is! String) return;
+    final read = server == null || user == null
+        ? null
+        : workspace.readState.state(server, user, scope);
+    final cursor = read == null ? null : BigInt.from(read['maxReadSeq']);
+    final now = clock();
+    InPlaceApplied? patch(List<Map<String, dynamic>> rows) =>
+        _inPlace.apply(rows, message, live, now: now, readSeq: cursor);
+    final shown = patch(_rows);
+    final window = _window, first = window?['items'];
+    final seeded = window == null || first is! List
+        ? null
+        : patch([
+            for (final row in first.whereType<Map>())
+              Map<String, dynamic>.from(row),
+          ]);
+    if (shown == null && seeded == null) return;
+    final delta = (shown ?? seeded)!.delta;
+    if (shown != null) _rows = shown.rows;
+    if (seeded != null && window != null) {
+      _window = {...window, 'items': seeded.rows};
+    }
+    _total = _total == null ? null : (_total! + delta).clamp(0, 1 << 53);
+    if (_window case final Map<String, dynamic> kept?) {
+      _window = {...kept, 'totalUnreadCount': _total};
+      _windowSerial = ++_serials;
+    }
+    if (!_inPlace.noteApplied(message)) _background.request();
+    notifyListeners();
+  }
+
+  /// A persisted read answered (Web registerPersistedChannelReadListener): the
+  /// stale snapshot closes with a re-read, unless the row of a settled list
+  /// already shows the read and `inbox_read_inplace_v1` is on.
+  void _persistedRead(RequestOptions request) {
+    final scope = RegExp(r'^/channels/([^/]+)/read(?:-all)?$')
+        .firstMatch(request.path)
+        ?.group(1);
+    if (scope == null || scope == 'inbox') {
+      _background.request();
+      return;
+    }
+    final authority = _scope, epoch = _authorityEpoch;
+    // The caller applies the receipt to the read state after this answer
+    // returns; judge the row once it has.
+    _settling[scope]?.cancel();
+    // ignore: raft_lints/avoid_unreviewed_idle_work -- one-shot, cancelled with the store; waits for the receipt's own microtasks.
+    _settling[scope] = Timer(Duration.zero, () {
+      _settling.remove(scope);
+      if (_disposed || authority != _scope || epoch != _authorityEpoch) return;
+      if (_projectReadStateRows()) notifyListeners();
+      final skip = readPersistedSkipsReread(
+        _rows,
+        scope,
+        listSettled: hasAcceptedWindow && _inFlight == null,
+        flagOn: _readInplaceOn,
+      );
+      if (!skip) _background.request();
+    });
+  }
+
+  /// `inbox_read_inplace_v1` for this server, as the rollout flags last
+  /// evaluated it (default off).
+  bool get _readInplaceOn {
+    final client = workspace.client, server = workspace.server;
+    final user = client.user?.id;
+    if (server == null || user == null) return false;
+    return FeatureFlagMemory.read([
+          client.origin,
+          user,
+          server.id,
+          server.string('role'),
+        ], inboxReadInplaceFlagKey) ??
+        false;
+  }
+
+  /// Web applyReadStateUpdate / clearActivityRowReadThrough: an accepted
+  /// `read_state:updated` this client cannot project, covering the row's latest
+  /// message, zeroes the Activity row. Never consumes the event.
+  void _readThrough(RaftEvent event) {
+    final payload = event.payload;
+    final server = workspace.client.serverId, user = workspace.client.user?.id;
+    if (_scope == null ||
+        payload is! Map ||
+        server == null ||
+        user == null ||
+        event.name != 'read_state:updated' &&
+            event.name != 'read_state:updated_bulk') {
+      return;
+    }
+    final updates = <String, ({BigInt read, Map update})>{};
+    for (final update
+        in event.name.endsWith('_bulk')
+            ? (payload['scopes'] as List? ?? const [])
+            : [payload]) {
+      final scope = update is Map ? update['scopeId'] : null;
+      final read = update is Map
+          ? canonicalWireSeq(update['maxReadSeq'])
+          : null;
+      final accepted = scope is String
+          ? workspace.readState.state(server, user, scope)
+          : null;
+      // Accepted: the ledger holds this very frame (consumeReadStateUpdate).
+      if (accepted != null &&
+          read != null &&
+          accepted['readStateVersion'] == (update as Map)['readStateVersion']) {
+        updates[scope as String] = (read: read, update: update);
+      }
+    }
+    if (updates.isEmpty) return;
+    var delta = 0;
+    List<Map<String, dynamic>>? clear(List<Map<String, dynamic>> rows) {
+      var changed = false;
+      final next = [
+        for (final row in rows)
+          () {
+            final fact = updates[activityScopeId(row)];
+            final cleared = fact == null
+                ? null
+                : clearedByReadThrough(
+                    row,
+                    maxReadSeq: fact.read,
+                    markedUnread: fact.update['markedUnread'] == true,
+                    unreadCount: fact.update['unreadCount'] is int
+                        ? fact.update['unreadCount'] as int
+                        : null,
+                  );
+            if (cleared == null) return row;
+            changed = true;
+            delta +=
+                _count(cleared['unreadCount']) - _count(row['unreadCount']);
+            return cleared;
+          }(),
+      ];
+      return changed ? next : null;
+    }
+
+    final rows = clear(_rows);
+    final shownDelta = delta;
+    delta = 0;
+    final window = _window;
+    final items = window?['items'];
+    final seeded = items is List
+        ? clear([
+            for (final row in items.whereType<Map>())
+              Map<String, dynamic>.from(row),
+          ])
+        : null;
+    if (rows == null && seeded == null) return;
+    if (rows != null) _rows = rows;
+    final total = _total;
+    if (total != null) {
+      _total = (total + (rows == null ? delta : shownDelta)).clamp(0, 1 << 53);
+    }
+    if (window != null && seeded != null) {
+      _window = {...window, 'items': seeded, 'totalUnreadCount': _total};
+      _windowSerial = ++_serials;
+    }
+    notifyListeners();
+  }
+
   /// Read the inbox until it lists [messageId] of [channelId] (an OS
   /// notification waits for this, so that opening the app from it finds the
   /// conversation already current). Completes true as soon as an accepted
@@ -374,8 +594,8 @@ class SourceActivityUnreadStore extends ChangeNotifier {
       _convergence.observe(_rows);
       return Future.value(true);
     }
-    // The debounce of the announcing event reads soon enough by itself.
-    if (_debounce == null && _inFlight == null) unawaited(refresh());
+    // The trailing read of the announcing event reads soon enough by itself.
+    if (!_background.pending && _inFlight == null) unawaited(refresh());
     return _convergence.whenReached(want, timeout);
   }
 
@@ -398,8 +618,10 @@ class SourceActivityUnreadStore extends ChangeNotifier {
     if (_disposed || !_started || _scope == null || _denied) {
       return Future.value();
     }
+    // A realtime read owed while hidden is paid now, fresh window or not.
+    final owed = _background.takeOwed();
     if (_inFlight != null) return _inFlight!;
-    if (hasAcceptedWindow && isFresh) return Future.value();
+    if (!owed && hasAcceptedWindow && isFresh) return Future.value();
     return refresh();
   }
 
@@ -443,14 +665,21 @@ class SourceActivityUnreadStore extends ChangeNotifier {
     }
     final rawRows = window['items'];
     if (rawRows is! List) return;
-    final rows = rawRows
+    final served = rawRows
         .whereType<Map>()
         .map(Map<String, dynamic>.from)
         .toList();
+    // A served row still behind a row patched in place keeps its unread.
+    _inPlace.counted.noteServed(served, reset: firstPage);
+    final kept = _inPlace.keepAhead(served, _rows, now: clock());
+    final rows = kept.rows;
     final supplied = window['totalUnreadCount'];
-    final count = supplied == null
+    final served0 = supplied == null
         ? rows.fold<int>(0, (sum, row) => sum + _count(row['unreadCount']))
         : _validCount(supplied);
+    final count = served0 == null || supplied == null
+        ? served0
+        : served0 + kept.delta;
     if (count == null) return;
     _revision++;
     final retained = _rows;
@@ -467,7 +696,7 @@ class SourceActivityUnreadStore extends ChangeNotifier {
       _windowSerial = ++_serials;
       _acceptedAt = clock();
     }
-    _convergence.observe(rows);
+    _convergence.observe(served);
     notifyListeners();
   }
 
@@ -548,9 +777,13 @@ class SourceActivityUnreadStore extends ChangeNotifier {
         )) {
       return projected;
     }
+    // A live reply patched in place advances the display seq past the
+    // frontier: a read covering only the frontier leaves it unread.
+    final display = canonicalUint64(projected['latestActivitySeq']);
     if (latest != null &&
         read != null &&
         BigInt.from(read['maxReadSeq']) >= latest &&
+        (display == null || BigInt.from(read['maxReadSeq']) >= display) &&
         _count(projected['unreadCount']) > 0) {
       return {...projected, 'unreadCount': 0};
     }
@@ -575,7 +808,7 @@ class SourceActivityUnreadStore extends ChangeNotifier {
     _acceptedAt = null;
     _convergence.reset();
     _boot?.cancel();
-    _debounce?.cancel();
+    _resetBackground();
     _inFlight = null;
     _finishTrailing();
     notifyListeners();
@@ -599,6 +832,7 @@ class SourceActivityUnreadStore extends ChangeNotifier {
     final authority = _scope!;
     final revision = _revision;
     final request = ++_request;
+    _background.noteResetStarted();
     final pending = _load(authority, revision, request);
     _inFlight = pending;
     return pending;
@@ -668,7 +902,7 @@ class SourceActivityUnreadStore extends ChangeNotifier {
     _acceptedAt = null;
     _convergence.dispose();
     _boot?.cancel();
-    _debounce?.cancel();
+    _resetBackground();
     _finishTrailing();
     _subscription.cancel();
     _pageEvents.close();
