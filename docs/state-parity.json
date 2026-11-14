@@ -40632,23 +40632,6 @@
         ],
         "reason": "Resolved constructor/function calls delegate to the registered canonical owner(s); this declaration owns no scanner-detected paint. This is source delegation, not runtime mount or visual evidence."
       },
-      "packages/raft_ui/lib/src/overlays/dialog_card_parts.dart#local-function:CLASS:_CardDialogPartsState@238/METHOD:build@488/FUNCTION:card@4217": {
-        "role": "internal_wrapper",
-        "familyRefs": [
-          "dialog"
-        ],
-        "owner": "P1 dialogs / canonical Choice integration",
-        "delegatesTo": [
-          "packages/raft_ui/lib/src/dialog_surface.dart#class:RaftDialogSurface"
-        ],
-        "reason": "Resolved constructor/function calls delegate to the registered canonical owner(s); this declaration owns no scanner-detected paint. This is source delegation, not runtime mount or visual evidence."
-      },
-      "packages/raft_ui/lib/src/overlays/dialog_card_parts.dart#local-function:CLASS:_CardDialogPartsState@238/METHOD:build@488/FUNCTION:scrollingContent@3777": {
-        "role": "entry_composition",
-        "familyRefs": [],
-        "owner": "P1 dialogs / canonical Choice integration",
-        "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
-      },
       "packages/raft_ui/lib/src/overlays/dialog_card_parts.dart#method:_CardDialogParts.createState": {
         "role": "entry_composition",
         "familyRefs": [],
@@ -42454,14 +42437,6 @@
         "owner": "task289 whole-source ownership review",
         "reason": "Current resolved widget at the exact source identity. Family hints do not establish canonical delegation, real-entry applicability, mounted state or visual acceptance; those decisions remain pending."
       },
-      "packages/raft_ui/lib/src/steps.dart#local-function:CLASS:_PublishedStep@4341/METHOD:build@5237/FUNCTION:line@6709": {
-        "role": "unresolved",
-        "familyRefs": [
-          "steps"
-        ],
-        "owner": "task289 whole-source ownership review",
-        "reason": "Current resolved builder at the exact source identity. Family hints do not establish canonical delegation, real-entry applicability, mounted state or visual acceptance; those decisions remain pending."
-      },
       "packages/raft_ui/lib/src/steps.dart#method:_PublishedStep.box": {
         "role": "unresolved",
         "familyRefs": [
@@ -44249,10 +44224,6 @@
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
       "apps/raft_flutter/lib/features/agent_typing_line_host.dart#function:typingAgents": {
-      },
-        "reason": "WP-NOTIF (Web v1.24 notification settings / levels): resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed.",
-      },
-      "packages/raft_theme/lib/recipes/recipe_runtime.dart#local-function:CLASS:RaftSlotStyle@39239/METHOD:border@50208/FUNCTION:side@50351": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
@@ -44271,8 +44242,6 @@
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
       "apps/raft_flutter/lib/features/agent_typing_line_host.dart#method:AgentTypingListEnd.createState": {
-      },
-      "packages/raft_ui/lib/src/text_selection_toolbar.dart#local-function:CLASS:RaftTextSelectionToolbar@617/METHOD:build@1611/FUNCTION:recipe@2039": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
@@ -44669,8 +44638,6 @@
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
       "apps/raft_flutter/lib/features/message_timeline.dart#local-function:CLASS:_RaftMessageTimelineState@4173/METHOD:build@15949/FUNCTION:row@16703": {
-      },
-      "packages/raft_ui/lib/src/text_selection_toolbar.dart#local-function:CLASS:RaftTextSelectionToolbar@617/METHOD:build@1611/FUNCTION:toolbar@3610": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
@@ -44771,6 +44738,49 @@
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/overlays/dialog_card_parts.dart#local-function:CLASS:_CardDialogPartsState@238/METHOD:build@488/FUNCTION:card@4217": {
+        "role": "internal_wrapper",
+        "familyRefs": [
+          "dialog"
+        ],
+        "owner": "P1 dialogs / canonical Choice integration",
+        "delegatesTo": [
+          "packages/raft_ui/lib/src/dialog_surface.dart#class:RaftDialogSurface"
+        ],
+        "reason": "Resolved constructor/function calls delegate to the registered canonical owner(s); this declaration owns no scanner-detected paint. This is source delegation, not runtime mount or visual evidence."
+      },
+      "packages/raft_ui/lib/src/overlays/dialog_card_parts.dart#local-function:CLASS:_CardDialogPartsState@238/METHOD:build@488/FUNCTION:scrollingContent@3777": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "P1 dialogs / canonical Choice integration",
+        "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+      },
+      "packages/raft_ui/lib/src/steps.dart#local-function:CLASS:_PublishedStep@4341/METHOD:build@5237/FUNCTION:line@6709": {
+        "role": "unresolved",
+        "familyRefs": [
+          "steps"
+        ],
+        "owner": "task289 whole-source ownership review",
+        "reason": "Current resolved builder at the exact source identity. Family hints do not establish canonical delegation, real-entry applicability, mounted state or visual acceptance; those decisions remain pending."
+      },
+      "packages/raft_theme/lib/recipes/recipe_runtime.dart#local-function:CLASS:RaftSlotStyle@39239/METHOD:border@50208/FUNCTION:side@50351": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/text_selection_toolbar.dart#local-function:CLASS:RaftTextSelectionToolbar@617/METHOD:build@1611/FUNCTION:recipe@2039": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/text_selection_toolbar.dart#local-function:CLASS:RaftTextSelectionToolbar@617/METHOD:build@1611/FUNCTION:toolbar@3610": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
       "packages/raft_ui/lib/src/raft/button.dart#function:_resolveButtonSlots": {
         "role": "unresolved",
