@@ -38,7 +38,8 @@ void main() {
         find.byKey(const ValueKey('message-menu-reaction-quick-row')),
       );
       final first = t.getRect(find.widgetWithText(RaftMenuButtonItem, 'Copy'));
-      expect(first.top - quick.bottom, id == raftThemePackId ? 13 : 2);
+      // Current ContextMenu separator: my-1 + h-px, with no list gap.
+      expect(first.top - quick.bottom, id == raftThemePackId ? 9 : 2);
       expect(t.takeException(), isNull);
       await t.pumpWidget(const SizedBox());
     });

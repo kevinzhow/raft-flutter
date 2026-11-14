@@ -186,7 +186,8 @@ void main() {
               'fontSize': 14.0,
               'lineHeight': closeTo(20 / 14, .0001),
               'fontWeight': FontWeight.w500,
-              'iconSize': const Size.square(14),
+              // Web v1.24 MenuItem fixes the leading SVG to size-4 (16px).
+              'iconSize': const Size.square(16),
               'iconInk': tokens.ui.foregroundMuted,
             },
           );

@@ -50,10 +50,12 @@ void main() {
         ]) {
           await tester.pumpWidget(host(theme, notice(status: status)));
           final d = decorationOf(tester);
-          expect(d.color, ui[token], reason: '$status');
+          // Generated CSS colours store alpha in ARGB bytes. Compare the
+          // exact paint value rather than the token's unquantized double.
+          expect(d.color?.toARGB32(), ui[token].toARGB32(), reason: '$status');
           final border = d.border! as Border;
           expect(border.bottom.width, 1);
-          expect(border.bottom.color, ui['line-seam']);
+          expect(border.bottom.color.toARGB32(), ui['line-seam'].toARGB32());
           expect(border.top.style, BorderStyle.none);
         }
         await tester.pumpWidget(host(theme, notice()));
