@@ -4,8 +4,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_ui/test_themes.dart';
 
-// Pinned raft-ui 0.7.0 `SegmentedControl`: fill-muted track (r11, p3,
-// gap 2), 32px items, yellow sticker checked item, flex-nowrap.
+// raft-ui 0.95.3 `SegmentedControl` (gap-[3px] p-[3px]): fill-muted track (r11, p3,
+// gap 3), 32px items, yellow sticker checked item, flex-nowrap.
 Widget _app(bool dark, Widget child) => MaterialApp(
   theme: raftTheme(dark: dark),
   home: Scaffold(
@@ -88,7 +88,7 @@ void main() {
     );
 
     testWidgets(
-      '$mode the track is 38px: 3px padding around 32px items, 2px apart',
+      '$mode the track is 38px: 3px padding around 32px items, 3px apart',
       (tester) async {
         await tester.pumpWidget(
           _app(
@@ -103,7 +103,7 @@ void main() {
         final all = tester.getRect(find.byKey(const ValueKey('all')));
         final unread = tester.getRect(find.byKey(const ValueKey('unread')));
         expect(all.height, 32);
-        expect(unread.left - all.right, 2);
+        expect(unread.left - all.right, 3);
         final track = tester.getRect(find.byType(RaftSegmentedTrack));
         expect(track.height, 38);
         expect(all.left - track.left, 3);
@@ -168,7 +168,7 @@ void main() {
       final off = tester.getRect(find.byKey(const ValueKey('off')));
       expect(unread.top, all.top);
       expect(off.top, all.top);
-      expect(unread.left - all.right, 2);
+      expect(unread.left - all.right, 3);
       expect(tester.getSize(find.byType(RaftSegmentedTrack)).height, 38);
       expect(tester.takeException(), isNull);
     });

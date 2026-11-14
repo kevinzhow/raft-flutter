@@ -39,7 +39,7 @@ void main() {
       }
     });
 
-    test('$mode: the 0.7.1 names the ported components read match too', () {
+    test('$mode: the names the ported components read match too', () {
       // The 0.7.1-only names live in the raw token maps, not in the legacy
       // role tiers that raftColorMap exposes.
       final colors = dark ? RaftDark.colors : RaftLight.colors;
@@ -49,7 +49,7 @@ void main() {
         'sticker-edge',
         'layer-frame',
         'foreground-on-frame',
-        'fill-frame-pressed',
+        'fill-frame-medium', // raft-ui 0.95.3 foundation.css: fill-frame-pressed was renamed
         'presence-online',
         'task-status-in-progress',
       ]) {

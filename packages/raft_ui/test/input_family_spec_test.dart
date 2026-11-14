@@ -134,7 +134,7 @@ void main() {
       );
       final decoration = root.decoration! as BoxDecoration;
       expect(decoration.color, ui.layerCard);
-      expect(decoration.borderRadius, BorderRadius.circular(8));
+      expect(decoration.borderRadius, BorderRadius.circular(10));
       // The `/` block: muted fill, `px-3`, centred.
       final addon = t.getRect(find.text('/'));
       expect(addon.center.dy, closeTo(22, 1));
@@ -185,7 +185,7 @@ void main() {
         final decoration = box.decoration! as BoxDecoration;
         expect(decoration.color, ui.layerCard);
         expect((decoration.border! as Border).top.color, ui.lineStrong);
-        expect(decoration.borderRadius, BorderRadius.circular(8));
+        expect(decoration.borderRadius, BorderRadius.circular(10));
       },
     );
 

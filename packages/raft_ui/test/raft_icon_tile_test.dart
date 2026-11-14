@@ -126,10 +126,12 @@ void main() {
     });
   }
 
-  test('app-window and octagon-alert come from the parity host lucide', () {
+  test('app-window and octagon-alert come from the Web v1.24 lucide', () {
+    // Web v1.24 packages/web/package.json pins lucide-react ^1.72.0; 1.72 renamed octagon-alert to
+    // octagon-exclamation-point. The 1.59.0 nodes stay as the frozen looks' legacyNodes.
     expect(RaftGlyph.appWindow.lucideName, 'app-window');
-    expect(RaftGlyph.appWindow.lucideVersion, '1.59.0');
-    expect(RaftGlyph.octagonAlert.lucideName, 'octagon-alert');
-    expect(RaftGlyph.octagonAlert.lucideVersion, '1.59.0');
+    expect(RaftGlyph.appWindow.lucideVersion, '1.72.0');
+    expect(RaftGlyph.octagonAlert.lucideName, 'octagon-exclamation-point');
+    expect(RaftGlyph.octagonAlert.lucideVersion, '1.72.0');
   });
 }

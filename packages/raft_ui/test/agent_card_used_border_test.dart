@@ -7,7 +7,7 @@ import 'package:raft_ui/test_themes.dart';
 import 'agent_surface_cascade_test.dart' as cascade;
 
 // The generic Card keeps its 1px used border. The migrated agent dialog uses
-// Web DialogSurface instead: one 1px seam ring and 20px inner padding.
+// Web DialogSurface instead: one 1px seam ring; the 20px inner inset belongs to its content.
 // The dark float shadow also contains its own separate 1px layer.
 void main() {
   test('Source normal-zoom used borders preserve specified recipe values', () {
@@ -105,7 +105,9 @@ void main() {
                       s.color == t.colors['line-seam'],
                 );
             expect(rings.length, 1);
-            expect(box.style.padding, const EdgeInsets.all(20));
+            // raft-ui 0.95.3 dialog.mjs DialogSurface: the frame has no padding; the 20px inset is the content's
+            // (asserted by the child offset below), as the Web pads the ScrollArea content.
+            expect(box.style.padding, EdgeInsets.zero);
           }
           expect(tester.getSize(root).width, 358);
           expect(

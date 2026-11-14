@@ -3,7 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_ui/test_themes.dart';
 
-// raft-ui 0.7.0 `ToggleGroup`: a fill-muted track (r11, p3, gap 2) of 32px items; a pressed item is the yellow
+// raft-ui 0.95.3 `ToggleGroup` (dist/components/toggle-group, gap-[3px] p-[3px]): a fill-muted track (r11, p3, gap 3) of 32px items; a pressed item is the yellow
 // sticker. The frozen looks have no track.
 Widget _app(bool dark, Widget child) => MaterialApp(
   theme: raftTheme(dark: dark),
@@ -44,7 +44,7 @@ void main() {
       expect(t.getSize(find.byKey(const ValueKey('grid'))), const Size(32, 32));
       final track = t.getRect(find.byType(RaftToggleGroup<String>));
       expect(track.height, 38);
-      expect(track.width, 3 + 32 + 2 + 32 + 3);
+      expect(track.width, 3 + 32 + 3 + 32 + 3);
     });
 
     testWidgets('$mode the pressed item is the brand sticker', (t) async {

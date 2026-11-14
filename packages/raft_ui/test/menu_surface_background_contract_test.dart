@@ -16,7 +16,9 @@ import 'package:raft_ui/src/surface_background_scope.dart';
 // same samples [41,41,39,255]. See reference-review/menu-surface-web-samples.json.
 const _webBase = Color(0xff292927);
 const _webBaseRgba = [41, 41, 39, 255];
-const _webHighlightRgba = [56, 52, 37, 255];
+// raft-ui 0.95.3 dark brand-soft is oklch(0.5501 0.0999 91.5 / 0.2) (0.7.x: 0.161); chrome-headless-shell 1234
+// paints it over the popover (#292927) as 59,54,37 (measured 2026-11-14), replacing the recorded 0.7.x 56,52,37.
+const _webHighlightRgba = [59, 54, 37, 255];
 const _raster = ValueKey('menu-background-raster');
 const _row = ValueKey('menu-background-row');
 
