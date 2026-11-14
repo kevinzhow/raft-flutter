@@ -116,7 +116,14 @@ class ConversationReadRepository {
 
   /// True when a versioned server acknowledgement can immediately project
   /// the row, without waiting for the asynchronously updated inbox snapshot.
-  Future<bool> markUnreadWithProjection(String id) async {
+  ///
+  /// [onNothingUnread] runs when the server answers that nothing countable
+  /// lies past the read point and the conversation stays read (Web
+  /// `onNothingUnread`: a toast tells the person).
+  Future<bool> markUnreadWithProjection(
+    String id, {
+    void Function()? onNothingUnread,
+  }) async {
     final identity = SourceReadAllIdentity.capture(client);
     if (_isDisposed() ||
         _revokedChannels().contains(id) ||
@@ -141,6 +148,9 @@ class ConversationReadRepository {
       if (!current()) return false;
       final answer = await client.post('/channels/$id/unread');
       if (!current()) return false;
+      if (resolveMarkUnreadOutcome(answer) == MarkUnreadOutcome.nothing) {
+        onNothingUnread?.call();
+      }
       return _holdUnreadAnswer(id, answer, identity);
     } finally {
       if (current()) await reconcileUnread();
@@ -310,6 +320,12 @@ class ConversationReadRepository {
   /// Folds a live `read_state:updated` fact's mark; repaints on a change.
   void acceptMark(String scopeId, int version, bool markedUnread) {
     if (marks.accept(scopeId, version, markedUnread)) _changed();
+  }
+
+  /// Web `clearAllMarkedUnreadForRead`: Mark all read is going out, so every
+  /// mark is read now, not when the frames or the snapshot arrive.
+  void clearAllMarksForRead() {
+    if (marks.clearAllForRead()) _changed();
   }
 
   final localReadState = ReadStateLedger();
