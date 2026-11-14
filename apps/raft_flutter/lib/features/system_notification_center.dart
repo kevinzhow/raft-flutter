@@ -11,11 +11,13 @@ import 'package:raft_sync/raft_sync.dart' show LiveEvent, ListChangedEvent;
 import 'package:raft_ui/raft_ui.dart';
 
 import '../data/freshness.dart';
+import '../data/second_factor_recovery_notice.dart';
 import '../data/system_notification_projection.dart';
 import '../data/system_notification_store.dart';
 import '../data/workspace_controller.dart';
 import '../data/workspace_entity_directory.dart';
 import 'fleet_views.dart';
+import 'account_security_recovery.dart';
 import 'joint_invite_errors.dart';
 import 'source_feedback_view.dart';
 import 'system_notification_copy.dart';
@@ -398,6 +400,9 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
       );
 
   RaftNotificationEntry display(SystemNotice n, String scope) {
+    if (n.id == secondFactorRecoveryNoticeId) {
+      return secondFactorRecoveryEntry(context, w.client, n, store, scope);
+    }
     final copy = systemNotificationCopy(context, n);
     return RaftNotificationEntry(
       id: n.id,
