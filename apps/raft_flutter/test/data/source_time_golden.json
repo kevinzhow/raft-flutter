@@ -1,6 +1,7 @@
 {
   "sourceCommit": "26f77ef97c40d3d91aa2c5e42b0fd66b8bf39fe6",
   "executed": "Original timeFormatting.ts bundle and exact DateDivider formatDayLabel function, Node Intl; not Flutter/browser runtime evidence",
+  "dayLabelUpdate": "Web v1.24.0 formatDayLabel (utils/timeFormatting.ts): Yesterday is the calendar day before today in the zone, and the year shows when the day is in another year than today in the zone. The 18 dayLabel values of host-yesterday-spring-projection and daylabel-host-year-seam were recomputed with that function in Node Intl; every other value is unchanged.",
   "node": "v22.22.3",
   "icu": "78.2",
   "tz": "2026a",
@@ -875,7 +876,7 @@
       "clock24": "12:30",
       "seconds": "12:30:00 PM",
       "messageTime": "03/08 12:30 PM",
-      "dayLabel": "Sunday, March 8"
+      "dayLabel": "Yesterday"
     },
     {
       "id": "host-yesterday-spring-projection",
@@ -889,7 +890,7 @@
       "clock24": "12:30",
       "seconds": "12:30:00",
       "messageTime": "03/08 12:30",
-      "dayLabel": "Sunday, March 8"
+      "dayLabel": "Yesterday"
     },
     {
       "id": "host-yesterday-spring-projection",
@@ -903,7 +904,7 @@
       "clock24": "12:30",
       "seconds": "12:30:00 PM",
       "messageTime": "03/08 12:30 PM",
-      "dayLabel": "Sunday, March 8"
+      "dayLabel": "Yesterday"
     },
     {
       "id": "host-yesterday-spring-projection",
@@ -917,7 +918,7 @@
       "clock24": "12:30",
       "seconds": "下午12:30:00",
       "messageTime": "03/08 下午12:30",
-      "dayLabel": "3月8日星期日"
+      "dayLabel": "昨天"
     },
     {
       "id": "host-yesterday-spring-projection",
@@ -931,7 +932,7 @@
       "clock24": "12:30",
       "seconds": "12:30:00",
       "messageTime": "03/08 12:30",
-      "dayLabel": "3月8日星期日"
+      "dayLabel": "昨天"
     },
     {
       "id": "host-yesterday-spring-projection",
@@ -945,7 +946,7 @@
       "clock24": "12:30",
       "seconds": "12:30:00",
       "messageTime": "03/08 12:30",
-      "dayLabel": "3月8日星期日"
+      "dayLabel": "昨天"
     },
     {
       "id": "daylabel-host-year-seam",
@@ -959,7 +960,7 @@
       "clock24": "00:30",
       "seconds": "12:30:00 AM",
       "messageTime": "01/02/2025 12:30 AM",
-      "dayLabel": "Thursday, January 2"
+      "dayLabel": "Thursday, January 2, 2025"
     },
     {
       "id": "daylabel-host-year-seam",
@@ -973,7 +974,7 @@
       "clock24": "00:30",
       "seconds": "00:30:00",
       "messageTime": "01/02/2025 00:30",
-      "dayLabel": "Thursday, January 2"
+      "dayLabel": "Thursday, January 2, 2025"
     },
     {
       "id": "daylabel-host-year-seam",
@@ -987,7 +988,7 @@
       "clock24": "00:30",
       "seconds": "12:30:00 AM",
       "messageTime": "01/02/2025 12:30 AM",
-      "dayLabel": "Thursday, January 2"
+      "dayLabel": "Thursday, January 2, 2025"
     },
     {
       "id": "daylabel-host-year-seam",
@@ -1001,7 +1002,7 @@
       "clock24": "00:30",
       "seconds": "上午12:30:00",
       "messageTime": "2025/01/02 上午12:30",
-      "dayLabel": "1月2日星期四"
+      "dayLabel": "2025年1月2日星期四"
     },
     {
       "id": "daylabel-host-year-seam",
@@ -1015,7 +1016,7 @@
       "clock24": "00:30",
       "seconds": "00:30:00",
       "messageTime": "2025/01/02 00:30",
-      "dayLabel": "1月2日星期四"
+      "dayLabel": "2025年1月2日星期四"
     },
     {
       "id": "daylabel-host-year-seam",
@@ -1029,7 +1030,7 @@
       "clock24": "00:30",
       "seconds": "00:30:00",
       "messageTime": "2025/01/02 00:30",
-      "dayLabel": "1月2日星期四"
+      "dayLabel": "2025年1月2日星期四"
     },
     {
       "id": "dst-host-yesterday",
@@ -2051,7 +2052,7 @@
       "clock24": "00:30",
       "seconds": "12:30:00 AM",
       "messageTime": "01/02/2025 12:30 AM",
-      "dayLabel": "Thursday, January 2"
+      "dayLabel": "Thursday, January 2, 2025"
     },
     {
       "id": "daylabel-host-year-seam",
@@ -2065,7 +2066,7 @@
       "clock24": "00:30",
       "seconds": "00:30:00",
       "messageTime": "01/02/2025 00:30",
-      "dayLabel": "Thursday, January 2"
+      "dayLabel": "Thursday, January 2, 2025"
     },
     {
       "id": "daylabel-host-year-seam",
@@ -2079,7 +2080,7 @@
       "clock24": "00:30",
       "seconds": "12:30:00 AM",
       "messageTime": "01/02/2025 12:30 AM",
-      "dayLabel": "Thursday, January 2"
+      "dayLabel": "Thursday, January 2, 2025"
     },
     {
       "id": "daylabel-host-year-seam",
@@ -2093,7 +2094,7 @@
       "clock24": "00:30",
       "seconds": "上午12:30:00",
       "messageTime": "2025/01/02 上午12:30",
-      "dayLabel": "1月2日星期四"
+      "dayLabel": "2025年1月2日星期四"
     },
     {
       "id": "daylabel-host-year-seam",
@@ -2107,7 +2108,7 @@
       "clock24": "00:30",
       "seconds": "00:30:00",
       "messageTime": "2025/01/02 00:30",
-      "dayLabel": "1月2日星期四"
+      "dayLabel": "2025年1月2日星期四"
     },
     {
       "id": "daylabel-host-year-seam",
@@ -2121,7 +2122,7 @@
       "clock24": "00:30",
       "seconds": "00:30:00",
       "messageTime": "2025/01/02 00:30",
-      "dayLabel": "1月2日星期四"
+      "dayLabel": "2025年1月2日星期四"
     },
     {
       "id": "dst-host-yesterday",
