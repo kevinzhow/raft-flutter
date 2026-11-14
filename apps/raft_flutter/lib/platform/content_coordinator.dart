@@ -282,16 +282,35 @@ class NativeContentCoordinator with WidgetsBindingObserver {
     return '${c!.origin}\n${c.user!.id}\n${c.serverId}';
   }
 
-  List<RaftChannel>? _seededChannels;
+  String? _seededLevels;
+  bool _seedQueued = false;
 
   /// Channel payloads carry their explicit `notificationLevel` (Web
-  /// NotificationRuntime seeds the store from the channel lists).
+  /// NotificationRuntime seeds the store from the channel lists). Compared
+  /// by content, not list identity, and applied after the current listener
+  /// pass, so a store change never re-enters the workspace's notification.
   void _seedLevels() {
     final w = _workspace, server = w?.server?.id;
     if (w == null || server == null || w.client.user == null) return;
-    if (identical(_seededChannels, w.channels)) return;
-    _seededChannels = w.channels;
-    NotificationSettingsStore.of(w.client).seedChannels(server, w.channels);
+    final rows = [
+      for (final c in w.channels)
+        if (c.json.containsKey('notificationLevel')) c,
+    ];
+    final signature = [
+      server,
+      for (final c in rows) '${c.id}=${c.json['notificationLevel']}',
+    ].join('|');
+    if (signature == _seededLevels || _seedQueued) return;
+    _seedQueued = true;
+    // ignore: raft_lints/avoid_unreviewed_idle_work -- One-shot, only when the channel list's levels changed (signature), and never re-queued while pending.
+    scheduleMicrotask(() {
+      _seedQueued = false;
+      if (_closed || !identical(_workspace, w) || w.server?.id != server) {
+        return;
+      }
+      _seededLevels = signature;
+      NotificationSettingsStore.of(w.client).seedChannels(server, rows);
+    });
   }
 
   void _changed() {
