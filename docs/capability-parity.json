@@ -419,7 +419,7 @@
      "needle": "'/message-translations:batch'"
     },
     {
-     "file": "apps/raft_flutter/lib/features/chat_view.dart",
+     "file": "apps/raft_flutter/lib/features/message_context_menu_sections.dart",
      "needle": "message-menu-translate"
     }
    ],
@@ -1138,7 +1138,7 @@
    "flutterEntry": "chat_view.dart actions() item 'copy-link' -> shareMessageLink(copy: true)",
    "flutterRefs": [
     {
-     "file": "apps/raft_flutter/lib/features/chat_view.dart",
+     "file": "apps/raft_flutter/lib/features/message_context_menu_sections.dart",
      "needle": "'Copy link'"
     },
     {
@@ -1182,12 +1182,12 @@
    "flutterEntry": "chat_view.dart actions() follow/unfollow items; on the thread-panel root row too (parentTile)",
    "flutterRefs": [
     {
-     "file": "apps/raft_flutter/lib/features/chat_view.dart",
+     "file": "apps/raft_flutter/lib/features/message_context_menu_sections.dart",
      "needle": "'Follow thread'"
     },
     {
      "file": "apps/raft_flutter/lib/features/chat_view.dart",
-     "needle": "final follow = canFollow && hasThreadConversation"
+     "needle": "follow: canFollow && hasThreadConversation ? followed : null"
     }
    ],
    "justification": "The thread panel's root row offers Follow / Unfollow like Web (showThreadFollowAction); its replies do not.",
@@ -1206,7 +1206,7 @@
    "flutterEntry": "chat_view.dart actions() 'Open Thread'",
    "flutterRefs": [
     {
-     "file": "apps/raft_flutter/lib/features/chat_view.dart",
+     "file": "apps/raft_flutter/lib/features/message_context_menu_sections.dart",
      "needle": "'Open Thread'"
     }
    ],
@@ -1230,7 +1230,7 @@
      "needle": "onReact: canReact"
     },
     {
-     "file": "apps/raft_flutter/lib/features/chat_view.dart",
+     "file": "apps/raft_flutter/lib/features/message_context_menu_sections.dart",
      "needle": "'React with {emoji}'"
     }
    ],
@@ -1270,7 +1270,7 @@
    "flutterEntry": "chat_view.dart actions() 'Select Message' (guest hidden; system rows never open the menu)",
    "flutterRefs": [
     {
-     "file": "apps/raft_flutter/lib/features/chat_view.dart",
+     "file": "apps/raft_flutter/lib/features/message_context_menu_sections.dart",
      "needle": "'Select message'"
     },
     {
@@ -1294,7 +1294,7 @@
    "flutterEntry": "chat_view.dart actions() taskItems -> messageTaskMenuItem (Convert to Task, or Create task from message with task v2) -> POST /tasks/convert-message; PATCH /tasks/:id/status. Server v1.24 task v2 (task_v2_conversations_v0): \"Create task from message\" -> CreateTaskDialog with sourceMessageId; a 409 task_v2_use_create from convert opens the same dialog (message_task_actions.dart).",
    "flutterRefs": [
     {
-     "file": "apps/raft_flutter/lib/features/chat_view.dart",
+     "file": "apps/raft_flutter/lib/features/message_context_menu_sections.dart",
      "needle": "messageTaskMenuItem(w, item)"
     },
     {
@@ -1322,7 +1322,7 @@
    "flutterEntry": "chat_view.dart actions() 'message-menu-translate' when translation.manualAction",
    "flutterRefs": [
     {
-     "file": "apps/raft_flutter/lib/features/chat_view.dart",
+     "file": "apps/raft_flutter/lib/features/message_context_menu_sections.dart",
      "needle": "message-menu-translate"
     }
    ],
@@ -11040,11 +11040,11 @@
    "flutterEntry": "chat_view.dart menu items",
    "flutterRefs": [
     {
-     "file": "apps/raft_flutter/lib/features/chat_view.dart",
+     "file": "apps/raft_flutter/lib/features/message_context_menu_sections.dart",
      "needle": "Mark as Done"
     },
     {
-     "file": "apps/raft_flutter/lib/features/chat_view.dart",
+     "file": "apps/raft_flutter/lib/features/message_context_menu_sections.dart",
      "needle": "Reopen task"
     }
    ],
