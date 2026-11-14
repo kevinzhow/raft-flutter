@@ -53,8 +53,10 @@ final Map<String, ParityCase> uiFrozenPrimitiveCases = {
 final Map<String, ParityUncovered> uiPrimitiveUncovered = {};
 
 // Source: v1.24.0-source.1 VisualTestingCases.tsx ui-typography-specimen.
-// Draw the product's current token/typography path. Any missing responsive
-// behavior remains visible in the comparison; this fixture does not repair it.
+// Draw the product's current token/typography path (`typeSlot` + `scale`, CSS
+// line box). The frame is a 390px phone viewport: the Web keeps its base scale
+// there, and so does `RaftTokens.of` (the desktop scale needs 768px and a
+// pointer, see packages/raft_ui/test/responsive_type_scale_test.dart).
 final ParityCase _typography = ParityCase(
   widgets: const ['raft_ui:RaftTokens'],
   build: (ctx) => Builder(
@@ -90,7 +92,7 @@ final ParityCase _typography = ParityCase(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               for (final (label, slot, weight) in lines)
-                Text(
+                RaftCssText(
                   '$label 排版 Aa 0123',
                   maxLines: 1,
                   softWrap: false,

@@ -148,7 +148,9 @@ extension RaftTokensUi on RaftTokens {
     return TextStyle(
       locale: textLocale,
       fontFamily: mono ? monoFont : bodyFont,
-      fontFamilyFallback: mono ? const ['monospace'] : fontFallback,
+      // Space Mono has no Han: the CJK chain follows monospace, as the Web's
+      // `--font-mono` stack falls through to the system CJK faces.
+      fontFamilyFallback: mono ? ['monospace', ...fontFallback] : fontFallback,
       fontSize: style.fontSize,
       height: style.height,
       fontWeight: w,

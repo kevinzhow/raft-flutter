@@ -176,10 +176,14 @@ entry or an entry points at a token that does not exist:
   overridden.
 - **Colours.** `RaftTokens.ui` (`RaftUiColors`) reads current roles from the active theme
   pack. Existing components also read the compatibility schemas through the mapping tables.
-- **Responsive type.** `RaftTypeScale` supplies base styles. The generated recipe utilities
-  also carry the source's desktop typography, such as body 16/24 -> 14/22 only
-  for a wide viewport with a fine pointer. Regenerating utilities does not make
-  existing hand-ported components pass this context automatically.
+- **Responsive type.** `RaftTypeScale` is the base (phone, and a touch screen at any width);
+  `RaftDesktopTypeScale` (generated from the `@media (width >= 48rem) and (pointer: fine)` block of
+  `styles.css`: body 14/22, headline 16/24, footnote 12/18 ...) is the desktop scale. `RaftTokens.of(context)`
+  returns a cached desktop variant (`RaftTokens.desktop`, `viewportWidth` = the breakpoint band) when the window
+  is at least 768dp and `RaftInteraction.of(context)` is not touch, so `typeSlot` and `scale(RaftTypeScale.x)`
+  follow without a call site passing anything; a user pack's own slot wins, Elegant and Brutal never switch.
+  `recipeStates(responsive: true)` adds `pointer-fine` and that width for the generated recipes (34px controls,
+  38x22 switch); a family opts in, the others keep their base states until their design-system package does.
 - **Borders.** `raftControlBorderPx(context, 1.5)` snaps a CSS border width the way Blink does (whole device
   pixels). The parity reference is captured with an emulated device scale factor, where Blink floors to whole CSS
   pixels (1.5px paints 1px), so the parity harness sets `RaftBorderSnap.emulatedDeviceScaleFactor`. Rings and inset
