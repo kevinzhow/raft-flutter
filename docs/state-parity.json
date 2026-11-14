@@ -2669,7 +2669,7 @@
       "id": "settings.server-notifications",
       "title": "Settings: On {server} › Notifications",
       "webEntry": "packages/web/src/components/settings/notifications/ServersCard.tsx#CurrentServerNotificationsCard",
-      "flutterEntry": "apps/raft_flutter/lib/features/notification_settings_view.dart#ServerNotificationSettingsView",
+      "flutterEntry": "apps/raft_flutter/lib/features/notification_settings_view.dart",
       "states": [
         {
           "state": "empty",
@@ -6843,7 +6843,7 @@
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
-      "apps/raft_flutter/lib/features/channel_settings.dart#local-function:CLASS:_ChannelSettingsState@2899/METHOD:membersStrip@42602/FUNCTION:tile@42710": {
+      "apps/raft_flutter/lib/features/channel_settings.dart#local-function:CLASS:_ChannelSettingsState@2939/METHOD:membersStrip@43877/FUNCTION:tile@43985": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
@@ -37352,7 +37352,7 @@
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
-      "packages/raft_ui/lib/src/sidebar_menus.dart#local-function:CLASS:_RaftSidebarContextMenuState@3354/METHOD:_menu@5647/FUNCTION:divider@6564": {
+      "packages/raft_ui/lib/src/sidebar_menus.dart#local-function:CLASS:_RaftSidebarContextMenuState@4030/METHOD:_menu@7284/FUNCTION:divider@8201": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
@@ -40172,12 +40172,6 @@
         "owner": "P1 dialogs / canonical Choice integration",
         "reason": "Resolved render_or_state_owner composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
       },
-      "apps/raft_flutter/lib/features/channel_settings.dart#local-function:CLASS:_ChannelSettingsState@2899/METHOD:membersStrip@42680/FUNCTION:tile@42788": {
-        "role": "entry_composition",
-        "familyRefs": [],
-        "owner": "P1 dialogs / canonical Choice integration",
-        "reason": "Resolved render_or_state_owner composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
-      },
       "apps/raft_flutter/lib/features/human_login_servers.dart#local-function:CLASS:_HumanLoginServerFieldState@2734/METHOD:_marketplace@5180/FUNCTION:rowWidgets@5634": {
         "role": "entry_composition",
         "familyRefs": [],
@@ -42294,12 +42288,6 @@
         "owner": "task289 scoped source registration",
         "reason": "Actual resolved declaration in the exact Mac preparation runtime subset. Independent paint/delegation/state/real-entry closure remains unresolved; no thin-wrapper or style exemption is granted."
       },
-      "packages/raft_ui/lib/src/sidebar_menus.dart#local-function:CLASS:_RaftSidebarContextMenuState@3385/METHOD:_menu@5678/FUNCTION:divider@6595": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "task289 scoped source registration",
-        "reason": "Actual resolved declaration in the exact Mac preparation runtime subset. Independent paint/delegation/state/real-entry closure remains unresolved; no thin-wrapper or style exemption is granted."
-      },
       "packages/raft_ui/lib/src/workspace_shell.dart#local-function:CLASS:RaftWorkspaceRailAction@4314/METHOD:build@5096/FUNCTION:iconFor@5327": {
         "role": "unresolved",
         "familyRefs": [],
@@ -43757,6 +43745,12 @@
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
+      "apps/raft_flutter/lib/features/channel_settings.dart#method:_ChannelSettingsState.notificationLevelRow": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-NOTIF (Web v1.24 notification settings / levels): resolved surface_factory; real-entry/family/state mapping remains unreviewed."
+      },
       "apps/raft_flutter/lib/features/integrations_views.dart#local-function:CLASS:_IntegrationsState@6703/METHOD:build@26732/FUNCTION:page@26773": {
         "role": "entry_composition",
         "familyRefs": [],
@@ -43809,6 +43803,312 @@
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/notification_level_menu.dart#class:NotificationLevelSelect": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-NOTIF (Web v1.24 notification settings / levels): resolved widget; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/notification_level_menu.dart#class:_NotificationLevelSelectState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-NOTIF (Web v1.24 notification settings / levels): resolved paint_owner; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/notification_level_menu.dart#method:NotificationLevelSelect.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-NOTIF (Web v1.24 notification settings / levels): resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/notification_level_menu.dart#method:_NotificationLevelSelectState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-NOTIF (Web v1.24 notification settings / levels): resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/notification_level_menu.dart#method:_NotificationLevelSelectState.didUpdateWidget": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-NOTIF (Web v1.24 notification settings / levels): resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/notification_settings_cards.dart#class:NotificationContentCard": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-NOTIF (Web v1.24 notification settings / levels): resolved widget; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/notification_settings_cards.dart#class:NotificationServersCard": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-NOTIF (Web v1.24 notification settings / levels): resolved widget; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/notification_settings_cards.dart#class:NotificationStoreBuilder": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-NOTIF (Web v1.24 notification settings / levels): resolved widget; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/notification_settings_cards.dart#class:PauseScheduleCard": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-NOTIF (Web v1.24 notification settings / levels): resolved widget; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/notification_settings_cards.dart#class:_NotificationServersCardState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-NOTIF (Web v1.24 notification settings / levels): resolved paint_owner; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/notification_settings_cards.dart#class:_PauseScheduleCardState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-NOTIF (Web v1.24 notification settings / levels): resolved paint_owner; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/notification_settings_cards.dart#class:_QuietTime": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-NOTIF (Web v1.24 notification settings / levels): resolved widget; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/notification_settings_cards.dart#class:_QuietTimeState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-NOTIF (Web v1.24 notification settings / levels): resolved paint_owner; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/notification_settings_cards.dart#function:serverLevelRows": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-NOTIF (Web v1.24 notification settings / levels): resolved surface_factory; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/notification_settings_cards.dart#method:NotificationContentCard.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-NOTIF (Web v1.24 notification settings / levels): resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/notification_settings_cards.dart#method:NotificationContentCard.save": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-NOTIF (Web v1.24 notification settings / levels): resolved surface_factory; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/notification_settings_cards.dart#method:NotificationServersCard.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-NOTIF (Web v1.24 notification settings / levels): resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/notification_settings_cards.dart#method:NotificationStoreBuilder.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-NOTIF (Web v1.24 notification settings / levels): resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/notification_settings_cards.dart#method:PauseScheduleCard.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-NOTIF (Web v1.24 notification settings / levels): resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/notification_settings_cards.dart#method:_NotificationServersCardState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-NOTIF (Web v1.24 notification settings / levels): resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/notification_settings_cards.dart#method:_NotificationServersCardState.didUpdateWidget": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-NOTIF (Web v1.24 notification settings / levels): resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/notification_settings_cards.dart#method:_PauseScheduleCardState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-NOTIF (Web v1.24 notification settings / levels): resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/notification_settings_cards.dart#method:_QuietTime.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-NOTIF (Web v1.24 notification settings / levels): resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/notification_settings_cards.dart#method:_QuietTimeState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-NOTIF (Web v1.24 notification settings / levels): resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/notification_settings_cards.dart#method:_QuietTimeState.didUpdateWidget": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-NOTIF (Web v1.24 notification settings / levels): resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/notification_settings_view.dart#class:ServerNotificationSettingsView": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-NOTIF (Web v1.24 notification settings / levels): resolved widget; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/notification_settings_view.dart#class:ServerNotificationsLink": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-NOTIF (Web v1.24 notification settings / levels): resolved widget; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/notification_settings_view.dart#class:_ServerNotificationSettingsViewState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-NOTIF (Web v1.24 notification settings / levels): resolved paint_owner; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/notification_settings_view.dart#method:ServerNotificationSettingsView.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-NOTIF (Web v1.24 notification settings / levels): resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/notification_settings_view.dart#method:ServerNotificationsLink.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-NOTIF (Web v1.24 notification settings / levels): resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/notification_settings_view.dart#method:_NotificationSettingsState.desktopCard": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-NOTIF (Web v1.24 notification settings / levels): resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/notification_settings_view.dart#method:_NotificationSettingsState.phoneCard": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-NOTIF (Web v1.24 notification settings / levels): resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/notification_settings_view.dart#method:_NotificationSettingsState.testBanner": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-NOTIF (Web v1.24 notification settings / levels): resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/notification_settings_view.dart#method:_ServerNotificationSettingsViewState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-NOTIF (Web v1.24 notification settings / levels): resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/paused_notifications_indicator.dart#class:PausedNotificationsIndicator": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-NOTIF (Web v1.24 notification settings / levels): resolved widget; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/paused_notifications_indicator.dart#class:_PausedNotificationsIndicatorState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-NOTIF (Web v1.24 notification settings / levels): resolved paint_owner; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/paused_notifications_indicator.dart#method:PausedNotificationsIndicator.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-NOTIF (Web v1.24 notification settings / levels): resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/paused_notifications_indicator.dart#method:_PausedNotificationsIndicatorState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-NOTIF (Web v1.24 notification settings / levels): resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/paused_notifications_indicator.dart#method:_PausedNotificationsIndicatorState.didUpdateWidget": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-NOTIF (Web v1.24 notification settings / levels): resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/paused_notifications_indicator.dart#method:_PausedNotificationsIndicatorState.resume": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-NOTIF (Web v1.24 notification settings / levels): resolved surface_factory; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/workspace_view_sidebar_menus.dart#method:_SidebarContextMenus.openChannelMenu": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-NOTIF (Web v1.24 notification settings / levels): resolved surface_factory; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/notification_settings_rows.dart#class:RaftSettingsRowGroup": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-NOTIF (Web v1.24 notification settings / levels): resolved widget; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/notification_settings_rows.dart#class:RaftSettingsSelect": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-NOTIF (Web v1.24 notification settings / levels): resolved widget; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/notification_settings_rows.dart#class:RaftTestNotificationBanner": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-NOTIF (Web v1.24 notification settings / levels): resolved widget; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/notification_settings_rows.dart#class:_ControlWidth": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-NOTIF (Web v1.24 notification settings / levels): resolved widget; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/notification_settings_rows.dart#method:RaftSettingsRowGroup._row": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-NOTIF (Web v1.24 notification settings / levels): resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/notification_settings_rows.dart#method:RaftSettingsRowGroup.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-NOTIF (Web v1.24 notification settings / levels): resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/notification_settings_rows.dart#method:RaftSettingsSelect.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-NOTIF (Web v1.24 notification settings / levels): resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/notification_settings_rows.dart#method:RaftTestNotificationBanner.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-NOTIF (Web v1.24 notification settings / levels): resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/notification_settings_rows.dart#method:_ControlWidth.belowOf": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-NOTIF (Web v1.24 notification settings / levels): resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/notification_settings_rows.dart#method:_ControlWidth.updateShouldNotify": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-NOTIF (Web v1.24 notification settings / levels): resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
       }
     },
     "entries": {
@@ -46369,6 +46669,59 @@
         ],
         "mountStatus": "source_reviewed",
         "reason": "Canonical alert dialog explains sending/removing an unretained attachment or restoring the draft database before retrying close. Root-flow widget tests cover interaction; actual native close/quit and paired visual acceptance remain NOT_RUN."
+      },
+      "screen:settings.server-notifications": {
+        "owner": "design-system alignment",
+        "kind": "route_or_panel_candidate",
+        "lifecycleScreenId": "settings.server-notifications",
+        "declarationRefs": [],
+        "mountStatus": "unresolved",
+        "reason": "WP-NOTIF lifecycle screen (Settings › On {server} › Notifications); exact builder/family composition and current mounted state are not yet established."
+      },
+      "surface:apps/raft_flutter/lib/features/channel_settings.dart#method:_ChannelSettingsState.notificationLevelRow": {
+        "owner": "design-system alignment",
+        "kind": "surface_factory_candidate",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/channel_settings.dart#method:_ChannelSettingsState.notificationLevelRow"
+        ],
+        "mountStatus": "unresolved",
+        "reason": "Resolved function owns a surface call; actual target, route and state are not yet observed."
+      },
+      "surface:apps/raft_flutter/lib/features/notification_settings_cards.dart#function:serverLevelRows": {
+        "owner": "design-system alignment",
+        "kind": "surface_factory_candidate",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/notification_settings_cards.dart#function:serverLevelRows"
+        ],
+        "mountStatus": "unresolved",
+        "reason": "Resolved function owns a surface call; actual target, route and state are not yet observed."
+      },
+      "surface:apps/raft_flutter/lib/features/notification_settings_cards.dart#method:NotificationContentCard.save": {
+        "owner": "design-system alignment",
+        "kind": "surface_factory_candidate",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/notification_settings_cards.dart#method:NotificationContentCard.save"
+        ],
+        "mountStatus": "unresolved",
+        "reason": "Resolved function owns a surface call; actual target, route and state are not yet observed."
+      },
+      "surface:apps/raft_flutter/lib/features/paused_notifications_indicator.dart#method:_PausedNotificationsIndicatorState.resume": {
+        "owner": "design-system alignment",
+        "kind": "surface_factory_candidate",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/paused_notifications_indicator.dart#method:_PausedNotificationsIndicatorState.resume"
+        ],
+        "mountStatus": "unresolved",
+        "reason": "Resolved function owns a surface call; actual target, route and state are not yet observed."
+      },
+      "surface:apps/raft_flutter/lib/features/workspace_view_sidebar_menus.dart#method:_SidebarContextMenus.openChannelMenu": {
+        "owner": "design-system alignment",
+        "kind": "surface_factory_candidate",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/workspace_view_sidebar_menus.dart#method:_SidebarContextMenus.openChannelMenu"
+        ],
+        "mountStatus": "unresolved",
+        "reason": "Resolved function owns a surface call; actual target, route and state are not yet observed."
       }
     },
     "requirements": {
@@ -49058,6 +49411,42 @@
         "applicability": "required",
         "owner": "task299 native server windows",
         "reason": "Actual native caption/shortcut/quit interaction, editor unsealing after a sibling veto and paired real-screen acceptance remain required; widget tests grant no native or visual pass."
+      },
+      "screen:settings.server-notifications:applicability": {
+        "entryId": "screen:settings.server-notifications",
+        "applicability": "unknown",
+        "owner": "design-system alignment",
+        "reason": "Review the real entry and applicable theme/input/state dimensions; historical case names do not establish current visual coverage."
+      },
+      "surface:apps/raft_flutter/lib/features/channel_settings.dart#method:_ChannelSettingsState.notificationLevelRow:applicability": {
+        "entryId": "surface:apps/raft_flutter/lib/features/channel_settings.dart#method:_ChannelSettingsState.notificationLevelRow",
+        "applicability": "unknown",
+        "owner": "design-system alignment",
+        "reason": "Real entry and applicable theme/input/state dimensions require source review and bound execution."
+      },
+      "surface:apps/raft_flutter/lib/features/notification_settings_cards.dart#function:serverLevelRows:applicability": {
+        "entryId": "surface:apps/raft_flutter/lib/features/notification_settings_cards.dart#function:serverLevelRows",
+        "applicability": "unknown",
+        "owner": "design-system alignment",
+        "reason": "Real entry and applicable theme/input/state dimensions require source review and bound execution."
+      },
+      "surface:apps/raft_flutter/lib/features/notification_settings_cards.dart#method:NotificationContentCard.save:applicability": {
+        "entryId": "surface:apps/raft_flutter/lib/features/notification_settings_cards.dart#method:NotificationContentCard.save",
+        "applicability": "unknown",
+        "owner": "design-system alignment",
+        "reason": "Real entry and applicable theme/input/state dimensions require source review and bound execution."
+      },
+      "surface:apps/raft_flutter/lib/features/paused_notifications_indicator.dart#method:_PausedNotificationsIndicatorState.resume:applicability": {
+        "entryId": "surface:apps/raft_flutter/lib/features/paused_notifications_indicator.dart#method:_PausedNotificationsIndicatorState.resume",
+        "applicability": "unknown",
+        "owner": "design-system alignment",
+        "reason": "Real entry and applicable theme/input/state dimensions require source review and bound execution."
+      },
+      "surface:apps/raft_flutter/lib/features/workspace_view_sidebar_menus.dart#method:_SidebarContextMenus.openChannelMenu:applicability": {
+        "entryId": "surface:apps/raft_flutter/lib/features/workspace_view_sidebar_menus.dart#method:_SidebarContextMenus.openChannelMenu",
+        "applicability": "unknown",
+        "owner": "design-system alignment",
+        "reason": "Real entry and applicable theme/input/state dimensions require source review and bound execution."
       }
     },
     "knownStateAtoms": {
