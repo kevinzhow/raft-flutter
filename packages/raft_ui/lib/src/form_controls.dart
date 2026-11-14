@@ -130,6 +130,7 @@ class RaftField extends StatelessWidget {
     }
     final rt = t.recipeTokens;
     final states = t.recipeStates(
+      responsive: true,
       extra: [if (error != null) 'group/field:data-invalid'],
     );
     final size = compact
@@ -491,6 +492,7 @@ class _RaftTextInputState extends State<RaftTextInput>
     final s = RaftInputRecipe.resolve(
       theme: t.recipeTheme,
       states: t.recipeStates(
+        responsive: true,
         hovered: hovered,
         disabled: !widget.enabled,
         extra: [
@@ -630,7 +632,7 @@ class _RaftTextInputState extends State<RaftTextInput>
           'bg-layer-panel',
           focused ? 'shadow-raft-sm' : 'shadow-raft-xs',
         ],
-        t.recipeStates(),
+        t.recipeStates(responsive: true),
         rt,
       );
       final red = t.product.brutalRed;
@@ -800,6 +802,7 @@ class _RaftTextareaState extends State<RaftTextarea>
     var s = RaftTextareaRecipe.resolve(
       theme: t.recipeTheme,
       states: t.recipeStates(
+        responsive: true,
         hovered: hovered,
         disabled: !widget.enabled,
         extra: [
@@ -913,6 +916,7 @@ class RaftTextareaCounter extends StatelessWidget {
       theme: t.recipeTheme,
       overLimit: length > limit,
       states: t.recipeStates(
+        responsive: true,
         extra: [if (fieldInvalid) 'group/field:data-invalid'],
       ),
       tokens: rt,
@@ -1074,6 +1078,7 @@ class _RaftInputGroupState extends State<RaftInputGroup>
           align: align,
           variant: widget.variant,
           states: t.recipeStates(
+            responsive: true,
             hovered: hovered,
             disabled: disabled,
             extra: [

@@ -162,6 +162,7 @@ class _RaftSettingsRecipeButtonState extends State<RaftSettingsRecipeButton> {
         variant: widget.variant,
         size: widget.size,
         states: t.recipeStates(
+          responsive: true,
           hovered: state.hovered,
           pressed: state.pressed,
           focusVisible: state.focusVisible,

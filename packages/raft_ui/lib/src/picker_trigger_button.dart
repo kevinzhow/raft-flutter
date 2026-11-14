@@ -53,6 +53,7 @@ class RaftPickerTriggerButton extends StatelessWidget {
         final style = RaftPickerTriggerButtonRecipe.resolve(
           theme: t.recipeTheme,
           states: t.recipeStates(
+            responsive: true,
             hovered: st.hovered,
             pressed: st.pressed,
             focusVisible: st.focusVisible,

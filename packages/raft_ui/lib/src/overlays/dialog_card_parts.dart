@@ -16,7 +16,7 @@ class _CardDialogPartsState extends State<_CardDialogParts> {
   Widget build(BuildContext context) {
     final d = widget.dialog;
     final t = RaftTokens.of(context), tokens = t.recipeTokens;
-    final states = t.recipeStates();
+    final states = t.recipeStates(responsive: true);
     final product = RaftWebDialogCardRecipe.resolve(
       states: states,
       tokens: tokens,

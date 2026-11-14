@@ -231,6 +231,7 @@ class _RecipeSwitch extends StatelessWidget {
         generated.RaftSwitchRecipe.resolve(
           theme: tokens.recipeTheme,
           states: tokens.recipeStates(
+            responsive: true,
             focusVisible: focusVisible,
             extra: [if (checked) 'data-checked', if (disabled) 'data-disabled'],
           ),

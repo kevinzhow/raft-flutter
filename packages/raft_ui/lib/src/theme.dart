@@ -129,6 +129,7 @@ class RaftTokens extends ThemeExtension<RaftTokens> {
     this.textLocale,
     this.recipeSet = RaftRecipeSet.raft,
     this.desktop = false,
+    this.viewportWidth,
   }) : _tokens = tokens,
        _mode = mode;
 
@@ -185,6 +186,10 @@ class RaftTokens extends ThemeExtension<RaftTokens> {
   /// passing either. A touch screen and a phone width keep the base values at
   /// every size. Elegant and Brutal never switch (frozen looks).
   final bool desktop;
+
+  /// The breakpoint band of the window (see `raftBreakpointWidth`) when
+  /// [desktop]; recipes compare their `width >=` rules against it.
+  final double? viewportWidth;
 
   /// Which generated recipe set this theme paints with: the Raft set for Raft
   /// and user packs, the frozen 0.5.52 set for the built-in Elegant and Brutal
@@ -410,35 +415,22 @@ class RaftTokens extends ThemeExtension<RaftTokens> {
         theme.extension<RaftTokens>() ??
         RaftTokens.theme(dark: theme.brightness == Brightness.dark);
     if (!base.isRaftLook) return base;
-    return raftBreakpointWidth(context) >= _desktopMinWidth &&
-            !RaftInteraction.of(context).touch
-        ? base.withDesktop(true)
+    final band = raftBreakpointWidth(context);
+    return band >= _desktopMinWidth && !RaftInteraction.of(context).touch
+        ? base.withDesktop(band)
         : base;
   }
 
   static const double _desktopMinWidth = 768;
-  static final Expando<RaftTokens> _desktopVariants = Expando<RaftTokens>(
-    'RaftTokens.desktop',
-  );
+  static final Expando<Map<double, RaftTokens>> _desktopVariants =
+      Expando<Map<double, RaftTokens>>('RaftTokens.desktop');
 
-  /// These tokens with [desktop] set. The variant is made once per base
-  /// instance, so identity comparisons (`shouldRepaint`, caches keyed by the
-  /// tokens) stay stable across rebuilds.
-  RaftTokens withDesktop(bool value) {
-    if (value == desktop) return this;
-    if (!value)
-      return RaftTokens(
-        dark,
-        colors,
-        tokens: _tokens,
-        mode: _mode,
-        themeOverrides: themeOverrides,
-        systemFonts: systemFonts,
-        systemFontFamilies: systemFontFamilies,
-        textLocale: textLocale,
-        recipeSet: recipeSet,
-      );
-    return _desktopVariants[this] ??= RaftTokens(
+  /// These tokens in their desktop variant for a window in breakpoint band
+  /// [band]. Made once per base instance and band, so identity comparisons
+  /// (`shouldRepaint`, caches keyed by the tokens) stay stable across rebuilds.
+  RaftTokens withDesktop(double band) {
+    if (desktop) return this;
+    return (_desktopVariants[this] ??= {})[band] ??= RaftTokens(
       dark,
       colors,
       tokens: _tokens,
@@ -449,6 +441,7 @@ class RaftTokens extends ThemeExtension<RaftTokens> {
       textLocale: textLocale,
       recipeSet: recipeSet,
       desktop: true,
+      viewportWidth: band,
     );
   }
 
@@ -469,6 +462,7 @@ class RaftTokens extends ThemeExtension<RaftTokens> {
           textLocale: textLocale ?? this.textLocale,
           recipeSet: recipeSet,
           desktop: desktop,
+          viewportWidth: viewportWidth,
         )
       : RaftTokens.theme(
           dark: dark,

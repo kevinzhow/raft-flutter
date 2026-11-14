@@ -274,7 +274,10 @@ class _RaftComboboxPanelState extends State<RaftComboboxPanel> {
     final r = RaftComboboxRecipe.resolve(
       theme: t.recipeTheme,
       inputOwner: RaftComboboxRecipeInputOwner.group,
-      states: t.recipeStates(focusVisible: inputFocus.hasFocus),
+      states: t.recipeStates(
+        responsive: true,
+        focusVisible: inputFocus.hasFocus,
+      ),
       tokens: tokens,
     );
     final base = RaftTypography.body(t, size: 14, line: 20);
@@ -377,6 +380,7 @@ class _RaftComboboxPanelState extends State<RaftComboboxPanel> {
                                 final recipe = RaftComboboxRecipe.resolve(
                                   theme: t.recipeTheme,
                                   states: t.recipeStates(
+                                    responsive: true,
                                     hovered: state.hovered && enabled,
                                     extra: {
                                       if (t.isRaftLook && !enabled)
@@ -508,7 +512,7 @@ class RaftComboboxGroupLabel extends StatelessWidget {
     final r = RaftComboboxRecipe.resolve(
       theme: t.recipeTheme,
       inputOwner: RaftComboboxRecipeInputOwner.group,
-      states: t.recipeStates(),
+      states: t.recipeStates(responsive: true),
       tokens: tokens,
     );
     final base = RaftTypography.body(t, size: 14, line: 20);

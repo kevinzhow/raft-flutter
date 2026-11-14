@@ -96,6 +96,7 @@ class _RaftRadioGroupState<T> extends State<RaftRadioGroup<T>> {
         ? RaftRadioGroupRecipe.resolve(
             theme: t.recipeTheme,
             states: t.recipeStates(
+              responsive: true,
               extra: [if (widget.onChanged == null) 'data-disabled'],
             ),
             tokens: t.recipeTokens,
@@ -195,7 +196,10 @@ class _RaftRadioGroupItemState<T> extends State<RaftRadioGroupItem<T>> {
           if (label != null && t.isRaftLook) {
             final recipe = RaftRadioGroupRecipe.resolve(
               theme: t.recipeTheme,
-              states: t.recipeStates(extra: [if (!enabled) 'data-disabled']),
+              states: t.recipeStates(
+                responsive: true,
+                extra: [if (!enabled) 'data-disabled'],
+              ),
               tokens: t.recipeTokens,
             );
             final style = recipe.root.target('& > label')?.text(t.recipeTokens);
@@ -254,6 +258,7 @@ class RaftRadioMark extends StatelessWidget {
     final s = RaftRadioGroupRecipe.resolve(
       theme: raftRecipeThemeOf(t),
       states: t.recipeStates(
+        responsive: true,
         focusVisible: focusVisible,
         disabled: !enabled,
         checked: checked,

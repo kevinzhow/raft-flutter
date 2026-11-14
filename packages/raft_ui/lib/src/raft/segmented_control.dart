@@ -237,6 +237,7 @@ class RaftSegmentedItem extends StatelessWidget {
       theme: t.recipeTheme,
       tokens: tokens,
       states: t.recipeStates(
+        responsive: true,
         hovered: state.enabled && state.hovered,
         pressed: state.enabled && state.pressed,
         focusVisible: state.focusVisible,
@@ -374,7 +375,7 @@ class RaftSegmentedTrack extends StatelessWidget {
       final recipe = RaftSegmentedControlRecipe.resolve(
         theme: t.recipeTheme,
         tokens: tokens,
-        states: t.recipeStates(),
+        states: t.recipeStates(responsive: true),
       );
       final root = recipe.root;
       final sourceItemRadius = recipe.item.borderRadius?.topLeft.x ?? 0;

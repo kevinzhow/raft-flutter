@@ -38,6 +38,12 @@ extension RaftRecipeBinding on RaftTokens {
     bool ariaDisabled = false,
     bool checked = false,
     Iterable<String> extra = const [],
+
+    /// Follow the window and the input like the Web does: with the tokens of
+    /// a context on desktop (see [RaftTokens.desktop]) the states carry
+    /// `pointer-fine` and the window's breakpoint band, so `md:pointer-fine:`
+    /// rules (34px controls, 14px field text) apply. Opt-in per family.
+    bool responsive = false,
   }) => RaftRecipeStates({
     if (dark) RaftRecipeStates.dark,
     if (hovered) RaftRecipeStates.hover,
@@ -49,8 +55,9 @@ extension RaftRecipeBinding on RaftTokens {
     if (disabled) RaftRecipeStates.disabled,
     if (ariaDisabled) RaftRecipeStates.ariaDisabled,
     if (checked) RaftRecipeStates.checked,
+    if (responsive && desktop) 'pointer-fine',
     ...extra,
-  });
+  }, responsive && desktop ? viewportWidth : null);
 }
 
 /// CSS text rendering defaults: half-leading split evenly like a CSS line box.

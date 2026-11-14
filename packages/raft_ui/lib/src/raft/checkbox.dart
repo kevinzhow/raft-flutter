@@ -84,7 +84,10 @@ class RaftCheckboxIndicator extends StatelessWidget {
       disabled: disabled,
       previewOnHover: previewOnHover,
       // `group-hover:text-foreground/20`: the parent row is hovered.
-      states: t.recipeStates(extra: [if (hovered) 'group:hover']),
+      states: t.recipeStates(
+        responsive: true,
+        extra: [if (hovered) 'group:hover'],
+      ),
       tokens: rt,
     ).root;
     final showMark = checked || previewOnHover;
@@ -187,6 +190,7 @@ class RaftCheckbox extends StatelessWidget {
           style: RaftCheckboxRecipe.resolve(
             theme: t.recipeTheme,
             states: t.recipeStates(
+              responsive: true,
               focusVisible: st.focusVisible,
               extra: [if (disabled) 'data-disabled'],
             ),
@@ -262,6 +266,7 @@ class RaftCheckboxRow extends StatelessWidget {
               style: RaftCheckboxRecipe.resolve(
                 theme: t.recipeTheme,
                 states: t.recipeStates(
+                  responsive: true,
                   focusVisible: st.focusVisible,
                   extra: [if (disabled) 'data-disabled'],
                 ),

@@ -83,6 +83,7 @@ class RaftButtonSurface extends StatelessWidget {
             ? RaftButtonRecipeSize.lg
             : RaftButtonRecipeSize.values.byName(size.name),
         states: t.recipeStates(
+          responsive: true,
           hovered: state.hovered && !disabled,
           pressed: state.pressed && !disabled,
           focusVisible: state.focusVisible && !disabled,

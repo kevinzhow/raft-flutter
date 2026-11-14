@@ -261,6 +261,7 @@ class _RaftSelectFieldState<T> extends State<RaftSelectField<T>> {
   }) {
     final rt = t.recipeTokens;
     final states = t.recipeStates(
+      responsive: true,
       hovered: st.hovered,
       pressed: st.pressed,
       focusVisible: st.focusVisible,
@@ -322,7 +323,7 @@ class _RaftSelectFieldState<T> extends State<RaftSelectField<T>> {
     final base = RaftSelectRecipe.resolve(
       theme: t.recipeTheme,
       chrome: widget.chrome,
-      states: t.recipeStates(),
+      states: t.recipeStates(responsive: true),
       tokens: rt,
     );
     final preferred = widget.items.indexWhere(
@@ -369,6 +370,7 @@ class _RaftSelectFieldState<T> extends State<RaftSelectField<T>> {
                       theme: t.recipeTheme,
                       chrome: widget.chrome,
                       states: t.recipeStates(
+                        responsive: true,
                         hovered: !state.disabled && state.hovered,
                         focusVisible: !state.disabled && state.focusVisible,
                         extra: [
@@ -419,7 +421,7 @@ class _RaftSelectFieldState<T> extends State<RaftSelectField<T>> {
     final sel = RaftSelectRecipe.resolve(
       theme: t.recipeTheme,
       chrome: widget.chrome,
-      states: t.recipeStates(),
+      states: t.recipeStates(responsive: true),
       tokens: rt,
     );
     final items = [
@@ -522,6 +524,7 @@ class _SelectItemState<T> extends State<_SelectItem<T>> {
       theme: t.recipeTheme,
       chrome: widget.chrome,
       states: t.recipeStates(
+        responsive: true,
         hovered: hovered && enabled && RaftHoverScope.of(context),
         extra: [
           if (!enabled) 'data-disabled',

@@ -204,7 +204,7 @@ class RaftButtonMetrics {
           _resolveButtonSlots(
             size: size,
             variant: variant,
-            states: t.recipeStates(extra: extra),
+            states: t.recipeStates(responsive: true, extra: extra),
             tokens: tokens,
           );
       final root = resolve()['root']!;
@@ -589,6 +589,7 @@ class RaftButton extends StatelessWidget {
     final inlineEnd =
         (hasIcon && iconInlineEnd || trailingGlyph != null) && hasLabel;
     final states = t.recipeStates(
+      responsive: true,
       hovered: state.hovered && !inactive,
       pressed: state.pressed && !inactive,
       focusVisible:
