@@ -18,7 +18,13 @@ void main() {
 
   test('manual proxy: an http proxy URL for mpv', () {
     SystemProxy.instance = SystemProxy()
-      ..configure(const ProxySettings(mode: ProxyMode.manual, host: '10.0.0.2', port: 8080));
+      ..configure(
+        const ProxySettings(
+          mode: ProxyMode.manual,
+          host: '10.0.0.2',
+          port: 8080,
+        ),
+      );
     expect(NativeAttachmentPlayer.httpProxyFor(url), 'http://10.0.0.2:8080');
   });
 
@@ -33,7 +39,10 @@ void main() {
           password: 'pw',
         ),
       );
-    expect(NativeAttachmentPlayer.httpProxyFor(url), 'http://kev:pw@10.0.0.2:8080');
+    expect(
+      NativeAttachmentPlayer.httpProxyFor(url),
+      'http://kev:pw@10.0.0.2:8080',
+    );
   });
 
   test('direct: FFmpeg is told not to fall back to http_proxy', () {
@@ -44,24 +53,49 @@ void main() {
 
   test('a proxy decision leaves the FFmpeg option to http-proxy', () {
     SystemProxy.instance = SystemProxy()
-      ..configure(const ProxySettings(mode: ProxyMode.manual, host: '10.0.0.2', port: 8080));
+      ..configure(
+        const ProxySettings(
+          mode: ProxyMode.manual,
+          host: '10.0.0.2',
+          port: 8080,
+        ),
+      );
     expect(NativeAttachmentPlayer.lavfOptionsFor(url), '');
   });
 
   test('loopback is never proxied', () {
     SystemProxy.instance = SystemProxy()
-      ..configure(const ProxySettings(mode: ProxyMode.manual, host: '10.0.0.2', port: 8080));
-    expect(NativeAttachmentPlayer.httpProxyFor(Uri.parse('http://127.0.0.1:9/x.mp4')), '');
+      ..configure(
+        const ProxySettings(
+          mode: ProxyMode.manual,
+          host: '10.0.0.2',
+          port: 8080,
+        ),
+      );
+    expect(
+      NativeAttachmentPlayer.httpProxyFor(
+        Uri.parse('http://127.0.0.1:9/x.mp4'),
+      ),
+      '',
+    );
   });
 
   test('mpv repeats a clip of 60 seconds or less and nothing else', () {
-    expect(NativeAttachmentPlayer.loopFileFor(const Duration(seconds: 3)), 'inf');
+    expect(
+      NativeAttachmentPlayer.loopFileFor(const Duration(seconds: 3)),
+      'inf',
+    );
     expect(NativeAttachmentPlayer.loopFileFor(kLoopingVideoMaxDuration), 'inf');
     expect(
-      NativeAttachmentPlayer.loopFileFor(kLoopingVideoMaxDuration + const Duration(milliseconds: 1)),
+      NativeAttachmentPlayer.loopFileFor(
+        kLoopingVideoMaxDuration + const Duration(milliseconds: 1),
+      ),
       'no',
     );
-    expect(NativeAttachmentPlayer.loopFileFor(const Duration(minutes: 10)), 'no');
+    expect(
+      NativeAttachmentPlayer.loopFileFor(const Duration(minutes: 10)),
+      'no',
+    );
     expect(NativeAttachmentPlayer.loopFileFor(Duration.zero), 'no');
   });
 }

@@ -201,7 +201,10 @@ final _action = find.byKey(const ValueKey('settings-about-update-action'));
 
 void main() {
   // Leak debt (other): see docs/development.md, Leak tracking.
-  leakDebt(const ['ValueNotifier<AppImageUpdateStatus>', 'ValueNotifier<bool>']);
+  leakDebt(const [
+    'ValueNotifier<AppImageUpdateStatus>',
+    'ValueNotifier<bool>',
+  ]);
   group('Linux AppImage in-place update', () {
     Future<(AppUpdateService, _FakeUpdater, _FakeAppImage, List<String>)> mount(
       WidgetTester t,

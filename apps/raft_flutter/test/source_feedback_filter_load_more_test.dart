@@ -12,7 +12,9 @@ import 'source_feedback_store_test.dart' as fixture;
 /// in the list (packages/raft_ui feedback_inbox.dart).
 
 void main() {
-  testWidgets('a filter with no loaded match still offers Load more', (t) async {
+  testWidgets('a filter with no loaded match still offers Load more', (
+    t,
+  ) async {
     final store = SourceFeedbackStore(
       authority: () => 'current',
       get: (_, {query}) async {

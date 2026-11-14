@@ -9,6 +9,7 @@ import 'package:raft_flutter/features/workspace_view.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_ui/test_themes.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import 'support/app_services_fixture.dart';
 
 const _agents = <Map<String, dynamic>>[
@@ -156,7 +157,10 @@ void main() {
           expect(w.pending.every((p) => !p.isCompleted), isTrue);
           expect(inDetail(rows[0]['name'] as String), findsWidgets);
           expect(
-            find.descendant(of: detail, matching: find.text('Loading profile…')),
+            find.descendant(
+              of: detail,
+              matching: find.text('Loading profile…'),
+            ),
             findsNothing,
           );
           for (final text in invented) {

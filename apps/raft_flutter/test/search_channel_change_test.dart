@@ -136,40 +136,39 @@ void main() {
     },
   );
 
-  testWidgets(
-    'a channel the user can no longer see removes only its hits',
-    (tester) async {
-      final dynamic state = await mountWithResults(tester);
-      final kept = state.rows.firstWhere((r) => r['channelId'] == 'ch0');
-      final searches = w.searches.length;
+  testWidgets('a channel the user can no longer see removes only its hits', (
+    tester,
+  ) async {
+    final dynamic state = await mountWithResults(tester);
+    final kept = state.rows.firstWhere((r) => r['channelId'] == 'ch0');
+    final searches = w.searches.length;
 
-      w.channels = [
-        channel(0),
-        channel(1),
-        // The principal left this private channel: it is no longer visible.
-        channel(2, extra: {'isPrivate': true, 'joined': false}),
-        channel(3),
-      ];
-      client.emit('channel:updated', {'id': 'ch2'});
-      w.notifyListeners();
-      await tester.pumpAndSettle();
+    w.channels = [
+      channel(0),
+      channel(1),
+      // The principal left this private channel: it is no longer visible.
+      channel(2, extra: {'isPrivate': true, 'joined': false}),
+      channel(3),
+    ];
+    client.emit('channel:updated', {'id': 'ch2'});
+    w.notifyListeners();
+    await tester.pumpAndSettle();
 
-      expect(state.rows, hasLength(30));
-      expect(state.rows.where((r) => r['channelId'] == 'ch2'), isEmpty);
-      expect(identical(state.rows.first, kept), isTrue);
-      expect(find.text('Search body 2'), findsNothing);
-      expect(state.query.text, 'body');
-      expect(state.advanced.timeRange, '7d');
-      expect(w.searches, hasLength(searches));
+    expect(state.rows, hasLength(30));
+    expect(state.rows.where((r) => r['channelId'] == 'ch2'), isEmpty);
+    expect(identical(state.rows.first, kept), isTrue);
+    expect(find.text('Search body 2'), findsNothing);
+    expect(state.query.text, 'body');
+    expect(state.advanced.timeRange, '7d');
+    expect(w.searches, hasLength(searches));
 
-      // A channel removed from the directory drops its hits the same way.
-      w.channels = [channel(0), channel(1), channel(3)];
-      w.notifyListeners();
-      await tester.pumpAndSettle();
-      expect(state.rows, hasLength(30));
-      expect(state.query.text, 'body');
-    },
-  );
+    // A channel removed from the directory drops its hits the same way.
+    w.channels = [channel(0), channel(1), channel(3)];
+    w.notifyListeners();
+    await tester.pumpAndSettle();
+    expect(state.rows, hasLength(30));
+    expect(state.query.text, 'body');
+  });
 
   testWidgets('a search in flight during a channel change still lands', (
     tester,

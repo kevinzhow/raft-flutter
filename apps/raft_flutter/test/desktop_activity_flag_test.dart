@@ -35,29 +35,26 @@ Map<String, dynamic> value(bool enabled) => {
 };
 Future<void> flush() => Future<void>.delayed(Duration.zero);
 void main() {
-  test(
-    '[N22a] the split-preview threshold is 768 whether or not the flag evaluated on',
-    () async {
-      final client = _Client();
-      final w = WorkspaceController(client)
-        ..server = RaftRecord({'id': 's', 'role': 'member'});
-      final flag = DesktopActivityFlag(w);
-      addTearDown(() {
-        flag.dispose();
-        w.dispose();
-      });
-      expect(flag.enabled, false);
-      expect(flag.masterDetail(900), true);
-      expect(flag.masterDetail(768), true);
-      expect(flag.masterDetail(767), false);
-      expect(client.flags.single['keys'], ['activity_sidebar_inbox_v0']);
-      client.pending.single.complete(value(true));
-      await flush();
-      expect(flag.enabled, true);
-      expect(flag.masterDetail(768), true);
-      expect(flag.masterDetail(767), false);
-    },
-  );
+  test('[N22a] the split-preview threshold is 768 whether or not the flag evaluated on', () async {
+    final client = _Client();
+    final w = WorkspaceController(client)
+      ..server = RaftRecord({'id': 's', 'role': 'member'});
+    final flag = DesktopActivityFlag(w);
+    addTearDown(() {
+      flag.dispose();
+      w.dispose();
+    });
+    expect(flag.enabled, false);
+    expect(flag.masterDetail(900), true);
+    expect(flag.masterDetail(768), true);
+    expect(flag.masterDetail(767), false);
+    expect(client.flags.single['keys'], ['activity_sidebar_inbox_v0']);
+    client.pending.single.complete(value(true));
+    await flush();
+    expect(flag.enabled, true);
+    expect(flag.masterDetail(768), true);
+    expect(flag.masterDetail(767), false);
+  });
   test(
     'late old-server flag cannot replace accepted new-server result',
     () async {

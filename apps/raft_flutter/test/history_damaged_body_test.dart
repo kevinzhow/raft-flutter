@@ -145,28 +145,25 @@ void main() {
       }
     }
 
-    test(
-      'opening the channel re-obtains a blanked tail body and it survives restart',
-      () async {
-        await oldClientDisk();
-        final cache = DriftWorkspaceCache(NativeDatabase(file));
-        final w = receiver(HistoryClient(), cache);
-        try {
-          await w.selectChannel(w.channels.single, autoRead: false);
-          await cache.messageHistory.reads.settled;
-          await w.flushCache();
-          await cache.messageHistory.reads.settled;
-          final shown = w.messageDomain.messages.firstWhere(
-            (m) => m.id == 'chat-990',
-          );
-          expect(shown.content, 'Saved message 990 中文');
-        } finally {
-          w.dispose();
-          await cache.close();
-        }
-        await expectIntactAfterRestart([990]);
-      },
-    );
+    test('opening the channel re-obtains a blanked tail body and it survives restart', () async {
+      await oldClientDisk();
+      final cache = DriftWorkspaceCache(NativeDatabase(file));
+      final w = receiver(HistoryClient(), cache);
+      try {
+        await w.selectChannel(w.channels.single, autoRead: false);
+        await cache.messageHistory.reads.settled;
+        await w.flushCache();
+        await cache.messageHistory.reads.settled;
+        final shown = w.messageDomain.messages.firstWhere(
+          (m) => m.id == 'chat-990',
+        );
+        expect(shown.content, 'Saved message 990 中文');
+      } finally {
+        w.dispose();
+        await cache.close();
+      }
+      await expectIntactAfterRestart([990]);
+    });
 
     test('scrolling into a durable-only range heals a blanked body', () async {
       await oldClientDisk(older: true);

@@ -156,8 +156,7 @@ void main() {
     expect(
       current,
       generated,
-      reason:
-          'Run UPDATE_TAP_DOCS=1 tool/flutter test test/tap_target_registry_test.dart',
+      reason: 'Run UPDATE_TAP_DOCS=1 tool/flutter test test/tap_target_registry_test.dart',
     );
   });
 }

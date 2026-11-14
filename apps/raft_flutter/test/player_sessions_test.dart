@@ -37,10 +37,7 @@ class _Player implements AttachmentPlayer {
   @override
   Future<void> pause() async {
     pauses++;
-    last = AttachmentPlayback(
-      position: last.position,
-      duration: last.duration,
-    );
+    last = AttachmentPlayback(position: last.position, duration: last.duration);
   }
 
   @override
@@ -54,7 +51,8 @@ class _Player implements AttachmentPlayer {
   }
 }
 
-AttachmentSource _source() => AttachmentSource.network(Uri.parse('https://x.invalid/a'));
+AttachmentSource _source() =>
+    AttachmentSource.network(Uri.parse('https://x.invalid/a'));
 
 void main() {
   late PlayerSessions sessions;
@@ -95,19 +93,26 @@ void main() {
     expect(card.session.viewerOpen, isTrue);
   });
 
-  test('the player is disposed when the last holder is gone, not before', () async {
-    final made = <_Player>[];
-    final card = take('a', made: made);
-    final viewer = take('a', viewer: true, made: made);
-    await card.ready;
-    card.release();
-    await pumpEventQueue();
-    expect(made.single.disposed, isFalse, reason: 'the viewer still holds it (card scrolled away)');
-    viewer.release();
-    await pumpEventQueue();
-    expect(made.single.disposed, isTrue);
-    expect(sessions.length, 0);
-  });
+  test(
+    'the player is disposed when the last holder is gone, not before',
+    () async {
+      final made = <_Player>[];
+      final card = take('a', made: made);
+      final viewer = take('a', viewer: true, made: made);
+      await card.ready;
+      card.release();
+      await pumpEventQueue();
+      expect(
+        made.single.disposed,
+        isFalse,
+        reason: 'the viewer still holds it (card scrolled away)',
+      );
+      viewer.release();
+      await pumpEventQueue();
+      expect(made.single.disposed, isTrue);
+      expect(sessions.length, 0);
+    },
+  );
 
   test('releasing twice counts once', () async {
     final made = <_Player>[];
@@ -123,20 +128,23 @@ void main() {
     expect(made.single.disposed, isTrue);
   });
 
-  test('the last holder leaving frees the player at once (no linger)', () async {
-    final made = <_Player>[];
-    final first = take('a', made: made);
-    await first.ready;
-    first.release();
-    await pumpEventQueue();
-    expect(made.single.disposed, isTrue);
-    expect(sessions.length, 0);
-    // The next holder starts a new player.
-    final again = take('a', made: made);
-    await again.ready;
-    expect(made, hasLength(2));
-    again.release();
-  });
+  test(
+    'the last holder leaving frees the player at once (no linger)',
+    () async {
+      final made = <_Player>[];
+      final first = take('a', made: made);
+      await first.ready;
+      first.release();
+      await pumpEventQueue();
+      expect(made.single.disposed, isTrue);
+      expect(sessions.length, 0);
+      // The next holder starts a new player.
+      final again = take('a', made: made);
+      await again.ready;
+      expect(made, hasLength(2));
+      again.release();
+    },
+  );
 
   test('a player that never opened or failed is not kept', () async {
     final made = <_Player>[];
@@ -160,30 +168,34 @@ void main() {
     next.release();
   });
 
-  test('over the cap the least recently used paused player is evicted', () async {
-    final made = <_Player>[];
-    final evicted = <String>[];
-    final a = take('a', made: made)..onEvicted = () => evicted.add('a');
-    await a.ready;
-    now = now.add(const Duration(seconds: 1));
-    final b = take('b', made: made)..onEvicted = () => evicted.add('b');
-    await b.ready;
-    now = now.add(const Duration(seconds: 1));
-    final c = take('c', made: made);
-    await c.ready;
-    expect(evicted, ['a']);
-    await pumpEventQueue();
-    expect(made.first.disposed, isTrue);
-    expect(sessions.length, 2);
-    b.release();
-    c.release();
-  });
+  test(
+    'over the cap the least recently used paused player is evicted',
+    () async {
+      final made = <_Player>[];
+      final evicted = <String>[];
+      final a = take('a', made: made)..onEvicted = () => evicted.add('a');
+      await a.ready;
+      now = now.add(const Duration(seconds: 1));
+      final b = take('b', made: made)..onEvicted = () => evicted.add('b');
+      await b.ready;
+      now = now.add(const Duration(seconds: 1));
+      final c = take('c', made: made);
+      await c.ready;
+      expect(evicted, ['a']);
+      await pumpEventQueue();
+      expect(made.first.disposed, isTrue);
+      expect(sessions.length, 2);
+      b.release();
+      c.release();
+    },
+  );
 
   test('a playing player or one a viewer holds is never evicted', () async {
     final made = <_Player>[];
     final evicted = <String>[];
     final a = take('a', made: made)..onEvicted = () => evicted.add('a');
-    final b = take('b', viewer: true, made: made)..onEvicted = () => evicted.add('b');
+    final b = take('b', viewer: true, made: made)
+      ..onEvicted = () => evicted.add('b');
     await Future.wait([a.ready, b.ready]);
     (a.player as _Player).last = const AttachmentPlayback(playing: true);
     take('c', made: made);
@@ -216,73 +228,87 @@ void main() {
     expect(made.last.disposed, isFalse);
   });
 
-  test('releasing while the source is still being resolved opens nothing', () async {
-    final gate = Completer<AttachmentSource>();
-    final made = <_Player>[];
-    final hold = sessions.acquire(
-      'slow',
-      create: () {
-        final p = _Player('slow');
-        made.add(p);
-        return p;
-      },
-      source: () => gate.future,
-    );
-    hold.release();
-    gate.complete(_source());
-    await pumpEventQueue();
-    expect(made.single.opened, 0);
-    expect(made.single.disposed, isTrue);
-  });
+  test(
+    'releasing while the source is still being resolved opens nothing',
+    () async {
+      final gate = Completer<AttachmentSource>();
+      final made = <_Player>[];
+      final hold = sessions.acquire(
+        'slow',
+        create: () {
+          final p = _Player('slow');
+          made.add(p);
+          return p;
+        },
+        source: () => gate.future,
+      );
+      hold.release();
+      gate.complete(_source());
+      await pumpEventQueue();
+      expect(made.single.opened, 0);
+      expect(made.single.disposed, isTrue);
+    },
+  );
 
   group('memory trim', () {
     Future<ui.Image> picture(WidgetTester tester, [int side = 16]) async =>
-        (await tester.runAsync(() => createTestImage(width: side, height: side, cache: false)))!;
+        (await tester.runAsync(
+          () => createTestImage(width: side, height: side, cache: false),
+        ))!;
 
-    testWidgets('releases idle stills but not those of a playing or viewed session', (tester) async {
-      final image = await picture(tester);
-      sessions = PlayerSessions(maxLive: 5, now: () => now);
-      final made = <_Player>[];
-      final idle = take('idle', made: made);
-      final playing = take('playing', made: made);
-      final viewed = take('viewed', viewer: true, made: made);
-      await Future.wait([idle.ready, playing.ready, viewed.ready]);
-      (made[1]).last = const AttachmentPlayback(playing: true);
-      for (final key in ['idle', 'playing', 'viewed', 'orphan']) {
-        sessions.keepStill(key, image);
-      }
-      expect(sessions.stillCount, 4);
-      final release = RaftMemoryRelease();
-      final remove = sessions.installMemoryTrim(release);
-      for (final reason in RaftMemoryTrim.values) {
-        // Both reasons release the same way; re-add what was released.
+    testWidgets(
+      'releases idle stills but not those of a playing or viewed session',
+      (tester) async {
+        final image = await picture(tester);
+        sessions = PlayerSessions(maxLive: 5, now: () => now);
+        final made = <_Player>[];
+        final idle = take('idle', made: made);
+        final playing = take('playing', made: made);
+        final viewed = take('viewed', viewer: true, made: made);
+        await Future.wait([idle.ready, playing.ready, viewed.ready]);
+        (made[1]).last = const AttachmentPlayback(playing: true);
+        for (final key in ['idle', 'playing', 'viewed', 'orphan']) {
+          sessions.keepStill(key, image);
+        }
+        expect(sessions.stillCount, 4);
+        final release = RaftMemoryRelease();
+        final remove = sessions.installMemoryTrim(release);
+        for (final reason in RaftMemoryTrim.values) {
+          // Both reasons release the same way; re-add what was released.
+          sessions.keepStill('idle', image);
+          sessions.keepStill('orphan', image);
+          release.trim(reason);
+          expect(sessions.hasStill('idle'), isFalse, reason: reason.name);
+          expect(sessions.hasStill('orphan'), isFalse, reason: reason.name);
+          expect(sessions.hasStill('playing'), isTrue, reason: reason.name);
+          expect(sessions.hasStill('viewed'), isTrue, reason: reason.name);
+          expect(sessions.stillBytes, 2 * 16 * 16 * 4);
+        }
+        // Never touches the players themselves.
+        expect(made.any((p) => p.disposed), isFalse);
+        expect(sessions.length, 3);
+        // A card that kept its own copy still has it after the trim.
         sessions.keepStill('idle', image);
-        sessions.keepStill('orphan', image);
-        release.trim(reason);
-        expect(sessions.hasStill('idle'), isFalse, reason: reason.name);
-        expect(sessions.hasStill('orphan'), isFalse, reason: reason.name);
-        expect(sessions.hasStill('playing'), isTrue, reason: reason.name);
-        expect(sessions.hasStill('viewed'), isTrue, reason: reason.name);
-        expect(sessions.stillBytes, 2 * 16 * 16 * 4);
-      }
-      // Never touches the players themselves.
-      expect(made.any((p) => p.disposed), isFalse);
-      expect(sessions.length, 3);
-      // A card that kept its own copy still has it after the trim.
-      sessions.keepStill('idle', image);
-      final copy = sessions.stillFor('idle')!;
-      release.trim(RaftMemoryTrim.backgrounded);
-      expect(copy.debugDisposed, isFalse);
-      copy.dispose();
-      remove();
-      sessions.keepStill('idle', image);
-      release.trim(RaftMemoryTrim.pressure);
-      expect(sessions.hasStill('idle'), isTrue, reason: 'removed trimmer is not called');
-      sessions.dispose(); // before the test ends: leak tracking checks there
-      image.dispose();
-    });
+        final copy = sessions.stillFor('idle')!;
+        release.trim(RaftMemoryTrim.backgrounded);
+        expect(copy.debugDisposed, isFalse);
+        copy.dispose();
+        remove();
+        sessions.keepStill('idle', image);
+        release.trim(RaftMemoryTrim.pressure);
+        expect(
+          sessions.hasStill('idle'),
+          isTrue,
+          reason: 'removed trimmer is not called',
+        );
+        sessions.dispose(); // before the test ends: leak tracking checks there
+        image.dispose();
+      },
+    );
 
-    testWidgets('keepStill stays within the byte budget, oldest first', (tester) async {
+    testWidgets('keepStill stays within the byte budget, oldest first', (
+      tester,
+    ) async {
       // 1500 x 1500 x 4 = 9 MB: two do not fit the 16 MiB budget.
       final big = await picture(tester, 1500);
       sessions.keepStill('a', big);

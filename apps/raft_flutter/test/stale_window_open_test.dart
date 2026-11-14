@@ -83,32 +83,31 @@ Future<void> _drain() async {
 }
 
 void main() {
-  test(
-    'opening a retained window the socket never updated fetches the tail and shows the new rows',
-    () async {
-      final (w, a, _, server) = await _login();
-      addTearDown(w.dispose);
-      server.rows['dm1'] = [_row('m1', 'dm1', 10)];
-      await w.selectChannel(_dm, autoRead: false);
-      await w.selectChannel(_c1, autoRead: false);
-      expect(server.pages(a, 'dm1'), 1);
-      // Messages the socket missed while the app was away.
-      server.rows['dm1'] = [
-        _row('m1', 'dm1', 10),
-        for (var i = 2; i <= 8; i++) _row('m$i', 'dm1', 9 + i),
-      ];
-      // An Activity row / notification tap targets the oldest unread, which
-      // the retained window already holds.
-      await w.jumpToMessage('dm1', 'm1', navigate: false);
-      await _drain();
-      expect(
-        server.pages(a, 'dm1'),
-        2,
-        reason: 'a retained window is revalidated on open',
-      );
-      expect(w.messageDomain.messages.map((m) => m.id), [for (var i = 1; i <= 8; i++) 'm$i']);
-    },
-  );
+  test('opening a retained window the socket never updated fetches the tail and shows the new rows', () async {
+    final (w, a, _, server) = await _login();
+    addTearDown(w.dispose);
+    server.rows['dm1'] = [_row('m1', 'dm1', 10)];
+    await w.selectChannel(_dm, autoRead: false);
+    await w.selectChannel(_c1, autoRead: false);
+    expect(server.pages(a, 'dm1'), 1);
+    // Messages the socket missed while the app was away.
+    server.rows['dm1'] = [
+      _row('m1', 'dm1', 10),
+      for (var i = 2; i <= 8; i++) _row('m$i', 'dm1', 9 + i),
+    ];
+    // An Activity row / notification tap targets the oldest unread, which
+    // the retained window already holds.
+    await w.jumpToMessage('dm1', 'm1', navigate: false);
+    await _drain();
+    expect(
+      server.pages(a, 'dm1'),
+      2,
+      reason: 'a retained window is revalidated on open',
+    );
+    expect(w.messageDomain.messages.map((m) => m.id), [
+      for (var i = 1; i <= 8; i++) 'm$i',
+    ]);
+  });
 
   test(
     'live rows for a channel that is not open join its retained window',
@@ -150,7 +149,12 @@ void main() {
     final before = server.pages(a, 'c1');
     client.emit('message:new', _row('live', 'c1', 13));
     await _drain();
-    expect(w.messageDomain.messages.map((m) => m.id), ['p', 'g1', 'g2', 'live']);
+    expect(w.messageDomain.messages.map((m) => m.id), [
+      'p',
+      'g1',
+      'g2',
+      'live',
+    ]);
     expect(server.pages(a, 'c1'), before + 1, reason: 'one tail refresh');
   });
 
@@ -174,8 +178,16 @@ void main() {
     final ids = w.messageDomain.messages.map((m) => m.id).toList();
     expect(ids, ['m1', 'm2', 'm3']);
     expect(ids.toSet().length, ids.length);
-    expect(w.conversationReads.unread['dm1'], unread, reason: 'a redelivery counts once');
-    expect(w.messageDomain.state.highlightedMessageId, 'm1', reason: 'the target stays focused');
+    expect(
+      w.conversationReads.unread['dm1'],
+      unread,
+      reason: 'a redelivery counts once',
+    );
+    expect(
+      w.messageDomain.state.highlightedMessageId,
+      'm1',
+      reason: 'the target stays focused',
+    );
   });
 
   test(

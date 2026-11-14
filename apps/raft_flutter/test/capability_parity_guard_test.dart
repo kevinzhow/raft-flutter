@@ -89,30 +89,32 @@ void main() {
     expect(problems, isEmpty, reason: problems.join('\n'));
   });
 
-  test('every covered or partial entry still points at existing Flutter code',
-      () {
-    final problems = <String>[];
-    final cache = <String, String?>{};
-    for (final e in entries) {
-      final status = _s(e, 'status');
-      if (status != 'covered' && status != 'partial') continue;
-      for (final ref in (e['flutterRefs'] as List<dynamic>? ?? const [])) {
-        final map = Map<String, dynamic>.from(ref as Map);
-        final path = _s(map, 'file');
-        final needle = _s(map, 'needle');
-        final text = cache.putIfAbsent(path, () {
-          final f = File('${root.path}/$path');
-          return f.existsSync() ? f.readAsStringSync() : null;
-        });
-        if (text == null) {
-          problems.add('${e['id']}: $path no longer exists');
-        } else if (needle.isEmpty || !text.contains(needle)) {
-          problems.add('${e['id']}: "$needle" not found in $path');
+  test(
+    'every covered or partial entry still points at existing Flutter code',
+    () {
+      final problems = <String>[];
+      final cache = <String, String?>{};
+      for (final e in entries) {
+        final status = _s(e, 'status');
+        if (status != 'covered' && status != 'partial') continue;
+        for (final ref in (e['flutterRefs'] as List<dynamic>? ?? const [])) {
+          final map = Map<String, dynamic>.from(ref as Map);
+          final path = _s(map, 'file');
+          final needle = _s(map, 'needle');
+          final text = cache.putIfAbsent(path, () {
+            final f = File('${root.path}/$path');
+            return f.existsSync() ? f.readAsStringSync() : null;
+          });
+          if (text == null) {
+            problems.add('${e['id']}: $path no longer exists');
+          } else if (needle.isEmpty || !text.contains(needle)) {
+            problems.add('${e['id']}: "$needle" not found in $path');
+          }
         }
       }
-    }
-    expect(problems, isEmpty, reason: problems.join('\n'));
-  });
+      expect(problems, isEmpty, reason: problems.join('\n'));
+    },
+  );
 
   final webSource = Platform.environment['RAFT_WEB_SOURCE'];
   test(
@@ -138,13 +140,16 @@ void main() {
       if (stale.isNotEmpty) {
         // Informational: Web dropped or renamed it; refresh the document.
         // ignore: avoid_print
-        print('capability-parity: recorded but no longer in Web:\n'
-            '${stale.join('\n')}');
+        print(
+          'capability-parity: recorded but no longer in Web:\n'
+          '${stale.join('\n')}',
+        );
       }
       expect(
         unrecorded,
         isEmpty,
-        reason: 'Web has capabilities that docs/capability-parity.json does '
+        reason:
+            'Web has capabilities that docs/capability-parity.json does '
             'not record. Decide each one (covered / partial / missing / na) '
             'and add it:\n${unrecorded.join('\n')}',
       );

@@ -257,7 +257,10 @@ void main() {
     expect(full.protectedFull, isTrue);
     expect(full.rows, 200);
     await db.acceptEvents(scope('chat'), rows('chat', 201, 201));
-    expect(await db.readContext(scope('chat'), 'chat-201', radius: 0), isNotNull);
+    expect(
+      await db.readContext(scope('chat'), 'chat-201', radius: 0),
+      isNotNull,
+    );
     await expectLater(
       db.acceptEvents(scope('other'), rows('other', 1, 1)),
       throwsA(isA<HistoryCapacityExceeded>()),

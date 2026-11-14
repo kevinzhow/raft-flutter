@@ -15,18 +15,25 @@ void main() {
     w.channels = [...w.channels, two];
     w.conversationReads.unread = {'c2': 3};
     final rows = [
-      for (final row in contextRows('two', count: 20)) {...row, 'channelId': 'c2'},
+      for (final row in contextRows('two', count: 20))
+        {...row, 'channelId': 'c2'},
     ];
     var pageRequests = 0;
     final slow = Completer<Map<String, dynamic>>();
     api.routes['GET /messages/channel/c2'] = (_) {
       pageRequests++;
-      return pageRequests == 1 ? {'messages': rows, 'hasMore': false} : slow.future;
+      return pageRequests == 1
+          ? {'messages': rows, 'hasMore': false}
+          : slow.future;
     };
     api.routes['POST /channels/c2/read'] = (_) => {};
     await w.prefetchLikelyChannels();
     expect(pageRequests, 1);
-    expect(w.conversationReads.unread['c2'], 3, reason: 'Prefetch never marks read');
+    expect(
+      w.conversationReads.unread['c2'],
+      3,
+      reason: 'Prefetch never marks read',
+    );
     expect(w.channel?.id, 'c1', reason: 'Prefetch never selects');
 
     unawaited(w.selectChannel(two));

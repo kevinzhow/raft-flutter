@@ -110,7 +110,10 @@ void main() {
       ],
     });
     final attachment = (await decodeWorkspaceCache(payload))['attachments'][0];
-    expect(attachment['thumbnailUrl'], 'https://cdn.example.invalid/thumbs/s1/a1.webp');
+    expect(
+      attachment['thumbnailUrl'],
+      'https://cdn.example.invalid/thumbs/s1/a1.webp',
+    );
     expect(attachment.containsKey('downloadUrl'), isFalse);
   });
 

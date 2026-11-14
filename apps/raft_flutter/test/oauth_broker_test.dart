@@ -116,88 +116,82 @@ void main() {
     return Future.value(client);
   }
 
-  test(
-    'loopback serves the styled return page in the app locale, with a strict CSP',
-    () async {
-      final transport = _OAuthAdapter();
-      final client = await loopbackClient(transport);
-      for (final (locale, error, expected) in const [
-        (Locale('en'), null, 'Returning to Raft'),
-        (Locale('zh', 'CN'), null, '正在返回 Raft'),
-        (
-          Locale('en'),
-          'access_denied',
-          'Sign-in was cancelled, or access was denied.',
-        ),
-        (Locale('zh', 'CN'), 'expired', '这个登录请求已过期。'),
-        (
-          Locale('en'),
-          '<script>alert(1)</script>',
-          'Sign-in could not be completed.',
-        ),
-      ]) {
-        final broker = NativeOAuthBroker(
-          android: false,
-          locale: locale,
-          presentWindow: () async {},
-          launch: (url) async {
-            final returned = Uri.parse(transport.start!['returnUri']);
-            final browser = HttpClient();
-            try {
-              final query = error == null
-                  ? ''
-                  : '?provider=github&mode=login&error=${Uri.encodeQueryComponent(error)}';
-              final response = await (await browser.getUrl(
-                returned.replace(
-                  fragment: '',
-                  query: query.isEmpty ? null : query.substring(1),
-                ),
-              )).close();
-              expect(response.statusCode, 200);
-              expect(response.headers.contentType?.mimeType, 'text/html');
-              expect(response.headers.value('cache-control'), 'no-store');
-              expect(
-                response.headers.value('x-content-type-options'),
-                'nosniff',
-              );
-              final csp = response.headers.value('content-security-policy')!;
-              expect(csp, contains("default-src 'none'"));
-              expect(csp, contains("frame-ancestors 'none'"));
-              expect(csp, isNot(contains('unsafe')));
-              final html = await utf8.decoder.bind(response).join();
-              expect(html, contains(expected));
-              expect(
-                html,
-                contains(
-                  'lang="${locale.languageCode == 'zh' ? 'zh-CN' : 'en'}"',
-                ),
-              );
-              expect(html, isNot(contains('<script>alert')));
-              // Finish the attempt through the real callback.
-              final state = Uri.splitQueryString(returned.fragment)['state'];
-              final post = await browser.postUrl(
-                returned.replace(path: '/auth/callback', fragment: ''),
-              );
-              post.headers.contentType = ContentType.json;
-              post.write(
-                jsonEncode({
-                  'state': state,
-                  'provider': 'github',
-                  'mode': 'login',
-                  'code': 'ephemeral-test-code',
-                }),
-              );
-              await (await post.close()).drain<void>();
-            } finally {
-              browser.close(force: true);
-            }
-          },
-        );
-        addTearDown(broker.cancel);
-        await broker.begin(client, 'github');
-      }
-    },
-  );
+  test('loopback serves the styled return page in the app locale, with a strict CSP', () async {
+    final transport = _OAuthAdapter();
+    final client = await loopbackClient(transport);
+    for (final (locale, error, expected) in const [
+      (Locale('en'), null, 'Returning to Raft'),
+      (Locale('zh', 'CN'), null, '正在返回 Raft'),
+      (
+        Locale('en'),
+        'access_denied',
+        'Sign-in was cancelled, or access was denied.',
+      ),
+      (Locale('zh', 'CN'), 'expired', '这个登录请求已过期。'),
+      (
+        Locale('en'),
+        '<script>alert(1)</script>',
+        'Sign-in could not be completed.',
+      ),
+    ]) {
+      final broker = NativeOAuthBroker(
+        android: false,
+        locale: locale,
+        presentWindow: () async {},
+        launch: (url) async {
+          final returned = Uri.parse(transport.start!['returnUri']);
+          final browser = HttpClient();
+          try {
+            final query = error == null
+                ? ''
+                : '?provider=github&mode=login&error=${Uri.encodeQueryComponent(error)}';
+            final response = await (await browser.getUrl(
+              returned.replace(
+                fragment: '',
+                query: query.isEmpty ? null : query.substring(1),
+              ),
+            )).close();
+            expect(response.statusCode, 200);
+            expect(response.headers.contentType?.mimeType, 'text/html');
+            expect(response.headers.value('cache-control'), 'no-store');
+            expect(response.headers.value('x-content-type-options'), 'nosniff');
+            final csp = response.headers.value('content-security-policy')!;
+            expect(csp, contains("default-src 'none'"));
+            expect(csp, contains("frame-ancestors 'none'"));
+            expect(csp, isNot(contains('unsafe')));
+            final html = await utf8.decoder.bind(response).join();
+            expect(html, contains(expected));
+            expect(
+              html,
+              contains(
+                'lang="${locale.languageCode == 'zh' ? 'zh-CN' : 'en'}"',
+              ),
+            );
+            expect(html, isNot(contains('<script>alert')));
+            // Finish the attempt through the real callback.
+            final state = Uri.splitQueryString(returned.fragment)['state'];
+            final post = await browser.postUrl(
+              returned.replace(path: '/auth/callback', fragment: ''),
+            );
+            post.headers.contentType = ContentType.json;
+            post.write(
+              jsonEncode({
+                'state': state,
+                'provider': 'github',
+                'mode': 'login',
+                'code': 'ephemeral-test-code',
+              }),
+            );
+            await (await post.close()).drain<void>();
+          } finally {
+            browser.close(force: true);
+          }
+        },
+      );
+      addTearDown(broker.cancel);
+      await broker.begin(client, 'github');
+    }
+  });
 
   test(
     'only an accepted callback brings the app window to the front',

@@ -10,6 +10,7 @@ import 'package:raft_flutter/features/incoming_share_picker.dart';
 import 'package:raft_flutter/platform/incoming_share_staging.dart';
 import 'package:raft_flutter/platform/native_sharing.dart';
 import 'package:raft_ui/raft_ui.dart';
+
 import 'flutter_test_config.dart' show leakDebt;
 
 class _Client extends RaftClient {
@@ -114,11 +115,11 @@ Future<_Client> _pump(
 
 void main() {
   // Leak debt (share flow): see docs/development.md, Leak tracking.
-  leakDebt(const ['IncomingShareStaging', 'ValueNotifier<RaftTransferProgress?>']);
-  for (final (name, dark) in [
-    ('light', false),
-    ('dark', true),
-  ]) {
+  leakDebt(const [
+    'IncomingShareStaging',
+    'ValueNotifier<RaftTransferProgress?>',
+  ]);
+  for (final (name, dark) in [('light', false), ('dark', true)]) {
     group(name, () {
       testWidgets(
         'targets page: header describes the share; rows are plain, no checkbox or chevron',

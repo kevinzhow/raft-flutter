@@ -231,24 +231,25 @@ void main() {
       expect(find.text('Agree & continue'), findsOneWidget);
     });
 
-    testWidgets('a changed agreement and any other failure use their own copy', (
-      t,
-    ) async {
-      Object failure = const RaftApiException('agreement_changed');
-      await host(t, onAgree: () async => throw failure);
-      await t.tap(find.text('Agree & continue'));
-      await t.pump();
-      expect(
-        find.text(
-          'The agreement was updated. Open the join action again to review the latest version.',
-        ),
-        findsOneWidget,
-      );
-      failure = const RaftApiException('boom');
-      await t.tap(find.text('Agree & continue'));
-      await t.pump();
-      expect(find.text('Failed to join community server'), findsOneWidget);
-    });
+    testWidgets(
+      'a changed agreement and any other failure use their own copy',
+      (t) async {
+        Object failure = const RaftApiException('agreement_changed');
+        await host(t, onAgree: () async => throw failure);
+        await t.tap(find.text('Agree & continue'));
+        await t.pump();
+        expect(
+          find.text(
+            'The agreement was updated. Open the join action again to review the latest version.',
+          ),
+          findsOneWidget,
+        );
+        failure = const RaftApiException('boom');
+        await t.tap(find.text('Agree & continue'));
+        await t.pump();
+        expect(find.text('Failed to join community server'), findsOneWidget);
+      },
+    );
 
     testWidgets(
       'close and Cancel report once; Chinese copy comes from the catalog',

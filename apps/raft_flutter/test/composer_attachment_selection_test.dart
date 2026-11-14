@@ -44,8 +44,9 @@ String _text(String key, Map<String, Object> args) => args.entries.fold(
     (name: name, bytes: Uint8List(size)..fillRange(0, size, 1));
 
 void main() {
-  WorkspaceController controller(_Client client) => WorkspaceController(client)
-    ..channel = RaftChannel({'id': 'channel', 'name': 'general'});
+  WorkspaceController controller(_Client client) =>
+      WorkspaceController(client)
+        ..channel = RaftChannel({'id': 'channel', 'name': 'general'});
 
   test('files are checking chips until the ceiling decides, then upload in turn', () async {
     final client = _Client();
@@ -80,19 +81,22 @@ void main() {
     expect(w.uploadsReady(), true);
   });
 
-  test('empty and oversize files leave with the Web notices (singular plural)', () async {
-    final client = _Client()..limit.complete(4096);
-    final w = controller(client);
-    await w.attachSelection([_file('e.txt', 0)], text: _text);
-    expect(w.uploads(), isEmpty);
-    expect(w.composerErrorFor(), '1 empty file skipped.');
-    await w.attachSelection([_file('big.png', 8192)], text: _text);
-    expect(w.uploads(), isEmpty);
-    expect(
-      w.composerErrorFor(),
-      'Max 4.0KB per file. Current largest file is 8.0KB.',
-    );
-  });
+  test(
+    'empty and oversize files leave with the Web notices (singular plural)',
+    () async {
+      final client = _Client()..limit.complete(4096);
+      final w = controller(client);
+      await w.attachSelection([_file('e.txt', 0)], text: _text);
+      expect(w.uploads(), isEmpty);
+      expect(w.composerErrorFor(), '1 empty file skipped.');
+      await w.attachSelection([_file('big.png', 8192)], text: _text);
+      expect(w.uploads(), isEmpty);
+      expect(
+        w.composerErrorFor(),
+        'Max 4.0KB per file. Current largest file is 8.0KB.',
+      );
+    },
+  );
 
   test('the eleventh file is skipped with a singular count', () async {
     final client = _Client()..limit.complete(1024);
@@ -147,24 +151,27 @@ void main() {
     );
   });
 
-  test('a checking draft whose scope changed is interrupted, not retryable', () async {
-    final client = _Client();
-    final w = controller(client);
-    final done = w.attachSelection([_file('a.png', 4)], text: _text);
-    final draft = w.uploads().single;
-    w.channel = RaftChannel({'id': 'other', 'name': 'other'});
-    client.limit.complete(100);
-    await done;
-    expect(draft.checking, false);
-    expect(draft.canRetry, false);
-    expect(
-      draft.error,
-      'File checking was interrupted. Remove it and attach again.',
-    );
-    await w.retryUpload(draft);
-    expect(draft.error, isNotNull);
-    expect(client.uploads, isEmpty);
-  });
+  test(
+    'a checking draft whose scope changed is interrupted, not retryable',
+    () async {
+      final client = _Client();
+      final w = controller(client);
+      final done = w.attachSelection([_file('a.png', 4)], text: _text);
+      final draft = w.uploads().single;
+      w.channel = RaftChannel({'id': 'other', 'name': 'other'});
+      client.limit.complete(100);
+      await done;
+      expect(draft.checking, false);
+      expect(draft.canRetry, false);
+      expect(
+        draft.error,
+        'File checking was interrupted. Remove it and attach again.',
+      );
+      await w.retryUpload(draft);
+      expect(draft.error, isNotNull);
+      expect(client.uploads, isEmpty);
+    },
+  );
 
   test('browser MIME types by extension; SVG is not previewable', () {
     expect(composerMimeType('Shot.PNG'), 'image/png');

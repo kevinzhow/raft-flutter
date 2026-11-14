@@ -56,7 +56,11 @@ void main() {
     expect(draft.progress, .5);
     expect(w.uploadsReady(), false);
     client.responses.single.completeError(
-      RaftApiException.response('File storage unavailable.', status: 500, body: {'error': 'File storage unavailable.'}),
+      RaftApiException.response(
+        'File storage unavailable.',
+        status: 500,
+        body: {'error': 'File storage unavailable.'},
+      ),
     );
     await pending;
     expect(draft.error, 'File storage unavailable.');

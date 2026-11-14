@@ -59,7 +59,10 @@ void main() {
           tester.element(find.byType(StretchEffect).last),
         );
         expect(route?.settings, isA<MaterialPage<void>>());
-        expect((route!.settings as MaterialPage<void>).allowSnapshotting, isFalse);
+        expect(
+          (route!.settings as MaterialPage<void>).allowSnapshotting,
+          isFalse,
+        );
         expect(find.byType(RawImage), findsNothing);
         rebuild(() => backMobilePage(navigation));
         await tester.pump();

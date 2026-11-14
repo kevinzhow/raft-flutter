@@ -115,7 +115,8 @@ void main() {
   testWidgets('a failed create shows the safe error and keeps the message; '
       'Cancel aborts an in-flight submit', (tester) async {
     final h = _Harness()
-      ..answer = (_) => const SourceFeedbackFailure(SourceFeedbackError.invalid);
+      ..answer = (_) =>
+          const SourceFeedbackFailure(SourceFeedbackError.invalid);
     await h.pump(tester);
     await tester.tap(_key('feedback-new'));
     await tester.pumpAndSettle();
@@ -202,7 +203,10 @@ void main() {
     h.details[fx.first] = fx.detail(
       fx.first,
       comments: [
-        {...fx.reply('mine', 3000, body: 'First line'), 'author_type': 'reporter'},
+        {
+          ...fx.reply('mine', 3000, body: 'First line'),
+          'author_type': 'reporter',
+        },
       ],
     );
     await tester.sendKeyEvent(LogicalKeyboardKey.enter);
@@ -313,7 +317,10 @@ void main() {
   testWidgets('close from an inbox row confirms in place and keeps the row '
       'order; the row without a split stays openable', (tester) async {
     final h = _Harness(
-      tickets: [fx.ticket(fx.first), fx.ticket(fx.second, status: 'resolved')],
+      tickets: [
+        fx.ticket(fx.first),
+        fx.ticket(fx.second, status: 'resolved'),
+      ],
     )..answer = (_) => {'ok': true};
     h.details[fx.second] = _closed(fx.second, 'completed');
     await h.pump(tester);

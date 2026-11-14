@@ -87,12 +87,14 @@ void main() {
     // No locale falls back to English; nothing in zh stays English.
     expect(OAuthReturnPage.render().html, en);
     expect(OAuthReturnPage.render(languageCode: 'fr').html, en);
-    final enReasons = RegExp(
-      r'class="reason" data-r="(\w+)">([^<]*)<',
-    ).allMatches(en).map((m) => m[2]).toList();
-    final zhReasons = RegExp(
-      r'class="reason" data-r="(\w+)">([^<]*)<',
-    ).allMatches(zh).map((m) => m[2]).toList();
+    final enReasons = RegExp(r'class="reason" data-r="(\w+)">([^<]*)<')
+        .allMatches(en)
+        .map((m) => m[2])
+        .toList();
+    final zhReasons = RegExp(r'class="reason" data-r="(\w+)">([^<]*)<')
+        .allMatches(zh)
+        .map((m) => m[2])
+        .toList();
     expect(enReasons, hasLength(OAuthReturnPage.reasonIds.length));
     expect(zhReasons, hasLength(enReasons.length));
     for (var i = 0; i < enReasons.length; i++) {

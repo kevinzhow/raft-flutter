@@ -15,7 +15,7 @@ const _memory = 'raft.server-surface.https%3A%2F%2Ffixture.invalid.alice';
 /// Activity ended in "Background session recovery is still running". The
 /// foreground owns the session now, so Activity loads whatever the guest does.
 void main() {
-  for (final guestKind in ['no worker','hung worker', 'dead worker engine']) {
+  for (final guestKind in ['no worker', 'hung worker', 'dead worker engine']) {
     testWidgets(
       'Activity loads its rows with a $guestKind holding the session',
       (t) async {

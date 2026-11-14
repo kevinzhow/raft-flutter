@@ -28,8 +28,14 @@ void main() {
 
   void attempt(MessageWindowRequest ticket) {
     windows.acceptThreadPage(
-      ticket, 'alpha', {'messages': [row('late')]},
-      focused: false, retainOlder: true, retainedHasMore: false,
+      ticket,
+      'alpha',
+      {
+        'messages': [row('late')],
+      },
+      focused: false,
+      retainOlder: true,
+      retainedHasMore: false,
     );
     windows.acceptRows(ticket, 'alpha', [row('late')], replace: true);
     windows.rememberWindow(

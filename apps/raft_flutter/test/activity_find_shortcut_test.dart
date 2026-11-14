@@ -11,6 +11,7 @@ import 'package:raft_flutter/features/activity_find_scope.dart';
 import 'package:raft_flutter/features/workspace_view.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import 'support/app_services_fixture.dart';
 
 // Activity find (Cmd+F on Apple platforms, Ctrl+F elsewhere) on the mounted
@@ -249,18 +250,16 @@ void main() {
     final variant = TargetPlatformVariant.only(platform);
     final chord = platform == TargetPlatform.macOS ? 'Cmd+F' : 'Ctrl+F';
 
-    testWidgets(
-      '$chord on a freshly opened Activity opens find ($platform)',
-      (t) async {
-        await _activity(t);
-        expect(_opened(), isFalse);
-        await _find(t);
-        expect(_opened(), isTrue);
-        expect(_focused(t), isTrue);
-        await t.pumpWidget(const SizedBox());
-      },
-      variant: variant,
-    );
+    testWidgets('$chord on a freshly opened Activity opens find ($platform)', (
+      t,
+    ) async {
+      await _activity(t);
+      expect(_opened(), isFalse);
+      await _find(t);
+      expect(_opened(), isTrue);
+      expect(_focused(t), isTrue);
+      await t.pumpWidget(const SizedBox());
+    }, variant: variant);
 
     testWidgets('$chord after a click on empty panel space ($platform)', (
       t,

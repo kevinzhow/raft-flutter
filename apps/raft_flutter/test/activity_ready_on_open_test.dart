@@ -98,10 +98,7 @@ void main() {
             }
 
             // A live arrival in a channel the user is not looking at.
-            w.inbox = [
-              channelRow(9, unread: 1, seq: 5000),
-              ...w.inbox,
-            ];
+            w.inbox = [channelRow(9, unread: 1, seq: 5000), ...w.inbox];
             client.emit('message:new', {
               'id': 'm9',
               'channelId': 'ch9',

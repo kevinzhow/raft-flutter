@@ -118,19 +118,24 @@ Future<void> _mountThread(
   await t.tap(input);
   await t.enterText(input, '@');
   for (var i = 0; i < 10; i++) {
-    await t.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 5)));
+    await t.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 5)),
+    );
     await t.pump(const Duration(milliseconds: 20));
   }
 }
 
 List<String> _shown(WidgetTester t) => [
-  for (final e in find
-      .byWidgetPredicate(
-        (w) =>
-            w.key is ValueKey<String> &&
-            (w.key as ValueKey<String>).value.startsWith('composer-suggestion-'),
-      )
-      .evaluate())
+  for (final e
+      in find
+          .byWidgetPredicate(
+            (w) =>
+                w.key is ValueKey<String> &&
+                (w.key as ValueKey<String>).value.startsWith(
+                  'composer-suggestion-',
+                ),
+          )
+          .evaluate())
     (e.widget.key as ValueKey<String>).value.substring(
       'composer-suggestion-'.length,
     ),

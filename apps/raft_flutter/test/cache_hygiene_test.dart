@@ -124,9 +124,8 @@ void main() {
       ];
       expect(left, hasLength(1));
       // The emptied account folders are gone too.
-      final accounts = Directory(
-        p.join(root.path, 'raft-attachments', 'v2'),
-      ).listSync();
+      final accounts = Directory(p.join(root.path, 'raft-attachments', 'v2'))
+          .listSync();
       expect(accounts, isEmpty);
     });
 
@@ -200,9 +199,8 @@ void main() {
         4,
       );
       expect(await cache.readPublic('avatar'), bytes(4));
-      final folders = Directory(
-        p.join(root.path, 'raft-attachments', 'v2'),
-      ).listSync();
+      final folders = Directory(p.join(root.path, 'raft-attachments', 'v2'))
+          .listSync();
       expect(folders, hasLength(1));
     });
 
@@ -272,7 +270,9 @@ void main() {
     test('an unreadable or incomplete session list deletes nothing', () async {
       final bob = folderOf(_origin, 'bob');
       expect(
-        await removeOrphanVideoAccounts(() async => throw StateError('keychain')),
+        await removeOrphanVideoAccounts(
+          () async => throw StateError('keychain'),
+        ),
         0,
       );
       expect(
@@ -319,9 +319,8 @@ void main() {
     test('a whole account folder removed underneath', () async {
       final cache = open();
       await cache.write(key('a'), bytes(10));
-      await Directory(
-        p.join(root.path, 'raft-attachments'),
-      ).delete(recursive: true);
+      await Directory(p.join(root.path, 'raft-attachments'))
+          .delete(recursive: true);
       expect(await cache.read(key('a')), isNull);
       expect(await cache.sizeBytes(), 0);
       await cache.write(key('a'), bytes(10)); // and it can be written again
@@ -332,9 +331,8 @@ void main() {
   group('staging sweep', () {
     late Directory staging, temp;
     setUp(() async {
-      staging = await Directory(
-        p.join(root.path, 'cache', 'staging'),
-      ).create(recursive: true);
+      staging = await Directory(p.join(root.path, 'cache', 'staging'))
+          .create(recursive: true);
       temp = await Directory(p.join(root.path, 'tmp')).create();
     });
 
@@ -343,9 +341,8 @@ void main() {
       String name, {
       Duration old = Duration.zero,
     }) async {
-      final dir = await Directory(
-        p.join(parent.path, name),
-      ).create(recursive: true);
+      final dir = await Directory(p.join(parent.path, name))
+          .create(recursive: true);
       final file = await File(p.join(dir.path, 'f.bin')).writeAsBytes([1]);
       if (old > Duration.zero) {
         await age(file.path, old);

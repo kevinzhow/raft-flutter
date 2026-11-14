@@ -79,19 +79,22 @@ void main() {
         };
         a.routes['POST /channels/thread/read'] = (_) => {};
         await tester.runAsync(
-          () => w.messageDomain.threads.openThread(RaftMessage(parent), focusedMessageId: 'reply'),
+          () => w.messageDomain.threads.openThread(
+            RaftMessage(parent),
+            focusedMessageId: 'reply',
+          ),
         );
         Widget application(bool thread) => MaterialApp(
           theme: raftTheme(),
           home: adaptive
               ? withAppServices(
-                WorkspaceView(
-                  controller: w,
-                  appearance: const RaftAppearance(),
-                  onAppearance: (_) async {},
-                  onLogout: () async {},
-                ),
-              )
+                  WorkspaceView(
+                    controller: w,
+                    appearance: const RaftAppearance(),
+                    onAppearance: (_) async {},
+                    onLogout: () async {},
+                  ),
+                )
               : Scaffold(
                   body: RaftChatView(
                     controller: w,

@@ -153,20 +153,22 @@ void main() {
       }
 
       expect(
-        (await run(_api(400, error: 'Scope not allowed')) as RaftUserError)
-            .message,
+        (await run(
+          _api(400, error: 'Scope not allowed'),
+        ) as RaftUserError).message,
         'Scope not allowed',
       );
       expect(
-        (await run(const RaftApiException('socket closed', status: 500))
-                as RaftUserError)
-            .message,
+        (await run(
+          const RaftApiException('socket closed', status: 500),
+        ) as RaftUserError).message,
         'Failed to grant access',
       );
       expect(
-        (await run(_api(400, error: 'Scope not allowed'), serverText: false)
-                as RaftUserError)
-            .message,
+        (await run(
+          _api(400, error: 'Scope not allowed'),
+          serverText: false,
+        ) as RaftUserError).message,
         'Failed to grant access',
       );
       expect(await run(_api(403, error: 'No')), isA<RaftApiException>());

@@ -90,7 +90,10 @@ Future<(WorkspaceController, _Api, _Client)> _fixture() async {
   w.channels = [w.channel!];
   w.messageDomain.ledger.switchServer('s1');
   final rows = [for (var i = 1; i <= 3; i++) _row('m$i', i, 'Earlier $i')];
-  w.messageDomain.ledger.ingest(rows, expectedGeneration: w.messageDomain.ledger.generation);
+  w.messageDomain.ledger.ingest(
+    rows,
+    expectedGeneration: w.messageDomain.ledger.generation,
+  );
   w.messageDomain.visibleIds['c1'] = {for (final r in rows) r['id'] as String};
   return (w, api, client);
 }
@@ -214,7 +217,9 @@ void main() {
           expect(find.byKey(ValueKey(key)), findsOneWidget);
           expect(t.element(find.byKey(ValueKey(key))), same(element));
           expect(
-            w.messageDomain.timeline().where((m) => m.content == 'Hello optimistic'),
+            w.messageDomain.timeline().where(
+              (m) => m.content == 'Hello optimistic',
+            ),
             hasLength(1),
           );
           expect(find.byKey(const ValueKey('message-sent-1')), findsNothing);
@@ -229,7 +234,10 @@ void main() {
             () => w.messageDomain.messages.any((m) => m.id == 'sent-1'),
             unchanged,
           );
-          expect(WorkspaceMessages.isPendingSend(w.messageDomain.timeline().last), false);
+          expect(
+            WorkspaceMessages.isPendingSend(w.messageDomain.timeline().last),
+            false,
+          );
         }
         ack.complete((200, {'message': accepted}));
         await _frames(
@@ -244,8 +252,16 @@ void main() {
         final confirmed = w.messageDomain.timeline().last;
         expect(confirmed.id, 'sent-1');
         expect(WorkspaceMessages.isPendingSend(confirmed), isFalse);
-        expect(w.messageDomain.messageKey(confirmed), w.messageDomain.messageKey(pending));
-        expect(w.messageDomain.timeline().map((m) => m.id), ['m1', 'm2', 'm3', 'sent-1']);
+        expect(
+          w.messageDomain.messageKey(confirmed),
+          w.messageDomain.messageKey(pending),
+        );
+        expect(w.messageDomain.timeline().map((m) => m.id), [
+          'm1',
+          'm2',
+          'm3',
+          'sent-1',
+        ]);
         expect(t.takeException(), isNull);
         await t.pumpWidget(const SizedBox());
         await t.pump(const Duration(seconds: 1));
@@ -294,7 +310,9 @@ void main() {
         replies[1].complete((503, {'error': 'Fixture offline'}));
         await _frames(
           t,
-          () => w.messageDomain.timeline().every((row) => row.content != 'Failed B'),
+          () => w.messageDomain.timeline().every(
+            (row) => row.content != 'Failed B',
+          ),
         );
 
         Future<void> accept(int index, String id, int seq) async {
@@ -310,10 +328,16 @@ void main() {
 
           if (socketFirst) {
             await deliver(() => client.event('message:new', row));
-            await _frames(t, () => w.messageDomain.messages.any((m) => m.id == id));
+            await _frames(
+              t,
+              () => w.messageDomain.messages.any((m) => m.id == id),
+            );
           }
           await deliver(() => replies[index].complete((200, {'message': row})));
-          await _frames(t, () => w.messageDomain.messages.any((m) => m.id == id));
+          await _frames(
+            t,
+            () => w.messageDomain.messages.any((m) => m.id == id),
+          );
           if (!socketFirst) {
             await deliver(() => client.event('message:new', row));
             await _frames(t, () => true);
@@ -399,10 +423,18 @@ void main() {
       await _tapSend(t);
       await t.pump();
       expect(paintedMessage(t, w.messageDomain.messageKey(pending)), isNotNull);
-      await _frames(t, () => w.messageDomain.messages.any((m) => m.id == 'sent-2'));
+      await _frames(
+        t,
+        () => w.messageDomain.messages.any((m) => m.id == 'sent-2'),
+      );
       expect(requests, hasLength(2));
       expect(requests[1].data['randomId'], requests[0].data['randomId']);
-      expect(w.messageDomain.timeline().map((m) => m.id), ['m1', 'm2', 'm3', 'sent-2']);
+      expect(w.messageDomain.timeline().map((m) => m.id), [
+        'm1',
+        'm2',
+        'm3',
+        'sent-2',
+      ]);
       expect(paintedMessage(t, w.messageDomain.messageKey(pending)), isNotNull);
       expect(t.widget<TextField>(_editor()).controller!.text, isEmpty);
       expect(t.takeException(), isNull);
@@ -435,9 +467,12 @@ void main() {
       await _frames(t, () => w.error != null);
       final controller = t.widget<TextField>(_editor()).controller!;
       expect(controller.value, composing);
-      t.testTextInput.updateEditingValue(const TextEditingValue(
-        text: '你', selection: TextSelection.collapsed(offset: 1),
-      ));
+      t.testTextInput.updateEditingValue(
+        const TextEditingValue(
+          text: '你',
+          selection: TextSelection.collapsed(offset: 1),
+        ),
+      );
       await t.pump();
       await t.pump();
       expect(controller.text, 'Failed draft\n你');
@@ -484,7 +519,9 @@ void main() {
       expect(WorkspaceMessages.isPendingSend(pending), isTrue);
       expect(w.uploads(), isEmpty);
       final card = find.descendant(
-        of: find.byKey(ValueKey('message-${w.messageDomain.messageKey(pending)}')),
+        of: find.byKey(
+          ValueKey('message-${w.messageDomain.messageKey(pending)}'),
+        ),
         matching: find.byKey(const ValueKey('attachment-att-1')),
       );
       expect(card, findsOneWidget);
@@ -523,7 +560,9 @@ void main() {
     (t) async {
       final (w, api, _) = (await t.runAsync(_fixture))!;
       addTearDown(w.dispose);
-      w.messageDomain.state.threadParent = RaftMessage(_row('m3', 3, 'Earlier 3'));
+      w.messageDomain.state.threadParent = RaftMessage(
+        _row('m3', 3, 'Earlier 3'),
+      );
       final created = Completer<(int, dynamic)>();
       final ack = Completer<(int, dynamic)>();
       RequestOptions? request;
@@ -578,8 +617,13 @@ void main() {
             'createdAt': '2026-10-10T08:00:00.000Z',
           },
       ];
-      w.messageDomain.ledger.ingest(rows, expectedGeneration: w.messageDomain.ledger.generation);
-      w.messageDomain.visibleIds['c1']!.addAll(rows.map((r) => r['id'] as String));
+      w.messageDomain.ledger.ingest(
+        rows,
+        expectedGeneration: w.messageDomain.ledger.generation,
+      );
+      w.messageDomain.visibleIds['c1']!.addAll(
+        rows.map((r) => r['id'] as String),
+      );
       final ack = Completer<(int, dynamic)>();
       RequestOptions? request;
       api.routes['POST /v2/messages'] = (o) {

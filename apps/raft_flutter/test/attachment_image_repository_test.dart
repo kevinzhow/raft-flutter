@@ -134,7 +134,11 @@ void main() {
         for (final lease in visible) lease.ready,
       ]).timeout(const Duration(seconds: 2));
       expect(images, hasLength(3));
-      expect(stuck.isCompleted, isFalse, reason: 'the stuck loaders never ended');
+      expect(
+        stuck.isCompleted,
+        isFalse,
+        reason: 'the stuck loaders never ended',
+      );
     },
   );
 

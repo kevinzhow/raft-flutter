@@ -43,29 +43,37 @@ class _Workspace extends WorkspaceController {
 }
 
 void main() {
-  test('preloaded storage: the stored choice is in place before bind yields', () {
-    final storage = _SyncStorage();
-    final key = PersonalPresentationStore(storage: storage).scopeKey('https://fixture.invalid', 'u')!;
-    storage.values[key] = jsonEncode({
-      'font': 'lg',
-      'liveActivity': false,
-      'modelName': true,
-      'hideEmptySections': true,
-    });
-    final store = PersonalPresentationStore(storage: storage, desktop: true);
-    var notified = 0;
-    store.addListener(() => notified++);
-    // Not awaited: this is the state the first frame builds from.
-    unawaited(store.bind('https://fixture.invalid', 'u'));
-    expect(store.value.font, 'lg');
-    expect(
-      store.value.hideEmptySections,
-      isTrue,
-      reason: 'stored choice overrides the off default',
-    );
-    expect(store.value.liveActivity, isFalse);
-    expect(notified, 1, reason: 'one notification, no defaults frame in between');
-  });
+  test(
+    'preloaded storage: the stored choice is in place before bind yields',
+    () {
+      final storage = _SyncStorage();
+      final key = PersonalPresentationStore(storage: storage)
+          .scopeKey('https://fixture.invalid', 'u')!;
+      storage.values[key] = jsonEncode({
+        'font': 'lg',
+        'liveActivity': false,
+        'modelName': true,
+        'hideEmptySections': true,
+      });
+      final store = PersonalPresentationStore(storage: storage, desktop: true);
+      var notified = 0;
+      store.addListener(() => notified++);
+      // Not awaited: this is the state the first frame builds from.
+      unawaited(store.bind('https://fixture.invalid', 'u'));
+      expect(store.value.font, 'lg');
+      expect(
+        store.value.hideEmptySections,
+        isTrue,
+        reason: 'stored choice overrides the off default',
+      );
+      expect(store.value.liveActivity, isFalse);
+      expect(
+        notified,
+        1,
+        reason: 'one notification, no defaults frame in between',
+      );
+    },
+  );
 
   test('local choice beats profile seed; corrupt storage and native/web defaults are safe', () async {
     final storage = _Storage();

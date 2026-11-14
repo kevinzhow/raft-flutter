@@ -86,7 +86,9 @@ void main() {
       icons = NativeAppIcon(
         api: api,
         platformOverride: TargetPlatform.android,
-        launchTheme: NativeLaunchTheme(platformOverride: TargetPlatform.android),
+        launchTheme: NativeLaunchTheme(
+          platformOverride: TargetPlatform.android,
+        ),
       );
     });
     tearDown(() => icons.dispose());

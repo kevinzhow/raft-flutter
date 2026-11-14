@@ -12,26 +12,26 @@ import 'package:raft_ui/raft_ui.dart';
 
 import 'activity_incremental_refresh_test.dart' show ActivityClient;
 
-Map<String, dynamic> taskRow(int n, String status, {String channel = 'c1'}) =>
-    {
-      'id': 't$n',
-      'taskNumber': n,
-      'title': 'Task $n',
-      'channelId': channel,
-      'channelName': channel == 'c1' ? 'General' : 'Secret',
-      'channelType': 'channel',
-      'status': status,
-      'createdByType': 'user',
-      'createdById': 'alice',
-      'createdByName': 'Alice',
-    };
+Map<String, dynamic> taskRow(int n, String status, {String channel = 'c1'}) => {
+  'id': 't$n',
+  'taskNumber': n,
+  'title': 'Task $n',
+  'channelId': channel,
+  'channelName': channel == 'c1' ? 'General' : 'Secret',
+  'channelType': 'channel',
+  'status': status,
+  'createdByType': 'user',
+  'createdById': 'alice',
+  'createdByName': 'Alice',
+};
 
 class _TaskWorkspace extends WorkspaceController {
   _TaskWorkspace(super.client);
   final taskQueries = <Map<String, dynamic>>[];
   Completer<void>? hold;
   List<Map<String, dynamic>> tasks = [
-    for (var n = 80; n > 0; n--) taskRow(n, 'todo', channel: n == 79 ? 'c2' : 'c1'),
+    for (var n = 80; n > 0; n--)
+      taskRow(n, 'todo', channel: n == 79 ? 'c2' : 'c1'),
     for (var n = 90; n > 85; n--) taskRow(n, 'in_progress'),
   ];
   @override
@@ -125,7 +125,10 @@ void main() {
       await tester.pumpWidget(away());
       await tester.pumpAndSettle();
       // The workspace page leaves its board on the session, not in the tasks slot.
-      expect(w.resourceSnapshots.read('tasks', state.identityAuthority), isNull);
+      expect(
+        w.resourceSnapshots.read('tasks', state.identityAuthority),
+        isNull,
+      );
       expect(window(), isNotNull);
       final requests = w.taskQueries.length;
       w.hold = Completer<void>();
@@ -155,65 +158,68 @@ void main() {
     },
   );
 
-  testWidgets(
-    'task events update, move, create and delete one card in place',
-    (tester) async {
-      final dynamic state = await mountBoard(tester);
-      final requests = w.taskQueries.length;
-      final untouched = lane(state, 'todo')[10];
+  testWidgets('task events update, move, create and delete one card in place', (
+    tester,
+  ) async {
+    final dynamic state = await mountBoard(tester);
+    final requests = w.taskQueries.length;
+    final untouched = lane(state, 'todo')[10];
 
-      // Same lane: patched where it is.
-      client.emit('task:updated', {
-        'channelId': 'c1',
-        'task': {...taskRow(78, 'todo'), 'title': 'Renamed 78'},
-      });
-      await tester.pump();
-      expect(lane(state, 'todo')[2]['title'], 'Renamed 78');
-      expect(find.text('Renamed 78'), findsOneWidget);
+    // Same lane: patched where it is.
+    client.emit('task:updated', {
+      'channelId': 'c1',
+      'task': {...taskRow(78, 'todo'), 'title': 'Renamed 78'},
+    });
+    await tester.pump();
+    expect(lane(state, 'todo')[2]['title'], 'Renamed 78');
+    expect(find.text('Renamed 78'), findsOneWidget);
 
-      // Status change: moves to its lane at the task-number position.
-      client.emit('task:updated', {
-        'channelId': 'c1',
-        'task': {...taskRow(77, 'in_progress'), 'title': 'Moved 77'},
-      });
-      await tester.pump();
-      expect(lane(state, 'todo'), hasLength(59));
-      expect(lane(state, 'todo').any((t) => t['id'] == 't77'), isFalse);
-      expect(
-        lane(state, 'in_progress').map((t) => t['id']),
-        ['t90', 't89', 't88', 't87', 't86', 't77'],
-      );
+    // Status change: moves to its lane at the task-number position.
+    client.emit('task:updated', {
+      'channelId': 'c1',
+      'task': {...taskRow(77, 'in_progress'), 'title': 'Moved 77'},
+    });
+    await tester.pump();
+    expect(lane(state, 'todo'), hasLength(59));
+    expect(lane(state, 'todo').any((t) => t['id'] == 't77'), isFalse);
+    expect(lane(state, 'in_progress').map((t) => t['id']), [
+      't90',
+      't89',
+      't88',
+      't87',
+      't86',
+      't77',
+    ]);
 
-      // Created and deleted tasks.
-      client.emit('task:created', {
-        'channelId': 'c1',
-        'tasks': [taskRow(95, 'in_review')],
-      });
-      client.emit('task:deleted', {'channelId': 'c1', 'taskId': 't76'});
-      await tester.pump();
-      expect(lane(state, 'in_review').single['id'], 't95');
-      expect(lane(state, 'todo'), hasLength(58));
-      expect(find.text('Task 95'), findsOneWidget);
-      expect(find.text('Task 76'), findsNothing);
+    // Created and deleted tasks.
+    client.emit('task:created', {
+      'channelId': 'c1',
+      'tasks': [taskRow(95, 'in_review')],
+    });
+    client.emit('task:deleted', {'channelId': 'c1', 'taskId': 't76'});
+    await tester.pump();
+    expect(lane(state, 'in_review').single['id'], 't95');
+    expect(lane(state, 'todo'), hasLength(58));
+    expect(find.text('Task 95'), findsOneWidget);
+    expect(find.text('Task 76'), findsNothing);
 
-      // A created task past the loaded window of a lane with more pages is
-      // left to that page.
-      client.emit('task:created', {
-        'channelId': 'c1',
-        'tasks': [
-          {...taskRow(0, 'todo'), 'id': 'old', 'title': 'Old todo'},
-        ],
-      });
-      await tester.pump(const Duration(milliseconds: 300));
-      expect(lane(state, 'todo').any((t) => t['id'] == 'old'), isFalse);
+    // A created task past the loaded window of a lane with more pages is
+    // left to that page.
+    client.emit('task:created', {
+      'channelId': 'c1',
+      'tasks': [
+        {...taskRow(0, 'todo'), 'id': 'old', 'title': 'Old todo'},
+      ],
+    });
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(lane(state, 'todo').any((t) => t['id'] == 'old'), isFalse);
 
-      // No lane was reloaded or reset to its first page.
-      expect(w.taskQueries, hasLength(requests));
-      expect(state.laneCursors['todo'], '60');
-      expect(identical(lane(state, 'todo')[8], untouched), isTrue);
-      expect(spinner, findsNothing);
-    },
-  );
+    // No lane was reloaded or reset to its first page.
+    expect(w.taskQueries, hasLength(requests));
+    expect(state.laneCursors['todo'], '60');
+    expect(identical(lane(state, 'todo')[8], untouched), isTrue);
+    expect(spinner, findsNothing);
+  });
 
   testWidgets('a task event arriving during a revalidation is not lost', (
     tester,
@@ -314,29 +320,30 @@ void main() {
     await tester.pumpAndSettle();
   });
 
-  testWidgets('a task event while the page is away patches one card and does not fetch', (
-    tester,
-  ) async {
-    await mountBoard(tester);
-    await tester.pumpWidget(away());
-    await tester.pumpAndSettle();
-    final requests = w.taskQueries.length;
-    client.emit('task:updated', {
-      'channelId': 'c1',
-      'task': {...taskRow(80, 'todo'), 'title': 'Patched away'},
-    });
-    await tester.pump(const Duration(milliseconds: 300));
-    expect(w.taskQueries, hasLength(requests));
-    expect(window()?.needsRevalidate, isFalse);
-    w.hold = Completer<void>();
-    await tester.pumpWidget(page());
-    expect(find.text('Patched away'), findsOneWidget);
-    expect(spinner, findsNothing);
-    expect(w.taskQueries, hasLength(requests + raftTaskStatuses.length));
-    w.hold!.complete();
-    w.hold = null;
-    await tester.pumpAndSettle();
-  });
+  testWidgets(
+    'a task event while the page is away patches one card and does not fetch',
+    (tester) async {
+      await mountBoard(tester);
+      await tester.pumpWidget(away());
+      await tester.pumpAndSettle();
+      final requests = w.taskQueries.length;
+      client.emit('task:updated', {
+        'channelId': 'c1',
+        'task': {...taskRow(80, 'todo'), 'title': 'Patched away'},
+      });
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(w.taskQueries, hasLength(requests));
+      expect(window()?.needsRevalidate, isFalse);
+      w.hold = Completer<void>();
+      await tester.pumpWidget(page());
+      expect(find.text('Patched away'), findsOneWidget);
+      expect(spinner, findsNothing);
+      expect(w.taskQueries, hasLength(requests + raftTaskStatuses.length));
+      w.hold!.complete();
+      w.hold = null;
+      await tester.pumpAndSettle();
+    },
+  );
 
   testWidgets('reconnect and an unnamed task while away only mark the window', (
     tester,
@@ -366,33 +373,34 @@ void main() {
     await tester.pumpAndSettle();
   });
 
-  testWidgets('a late revalidation cannot rewrite the board after the page leaves', (
-    tester,
-  ) async {
-    await mountBoard(tester);
-    await tester.pumpWidget(away());
-    await tester.pumpAndSettle();
-    w.hold = Completer<void>();
-    await tester.pumpWidget(page());
-    await tester.pump();
-    w.tasks[0] = {...w.tasks[0], 'title': 'Should not land'};
-    await tester.pumpWidget(away());
-    await tester.pump();
-    w.hold!.complete();
-    w.hold = null;
-    await tester.pumpAndSettle();
-    expect(
-      window()?.snapshot.rows.any((row) => row['title'] == 'Should not land'),
-      isFalse,
-    );
-    w.hold = Completer<void>();
-    await tester.pumpWidget(page());
-    expect(find.text('Task 80'), findsOneWidget);
-    expect(find.text('Should not land'), findsNothing);
-    w.hold!.complete();
-    w.hold = null;
-    await tester.pumpAndSettle();
-  });
+  testWidgets(
+    'a late revalidation cannot rewrite the board after the page leaves',
+    (tester) async {
+      await mountBoard(tester);
+      await tester.pumpWidget(away());
+      await tester.pumpAndSettle();
+      w.hold = Completer<void>();
+      await tester.pumpWidget(page());
+      await tester.pump();
+      w.tasks[0] = {...w.tasks[0], 'title': 'Should not land'};
+      await tester.pumpWidget(away());
+      await tester.pump();
+      w.hold!.complete();
+      w.hold = null;
+      await tester.pumpAndSettle();
+      expect(
+        window()?.snapshot.rows.any((row) => row['title'] == 'Should not land'),
+        isFalse,
+      );
+      w.hold = Completer<void>();
+      await tester.pumpWidget(page());
+      expect(find.text('Task 80'), findsOneWidget);
+      expect(find.text('Should not land'), findsNothing);
+      w.hold!.complete();
+      w.hold = null;
+      await tester.pumpAndSettle();
+    },
+  );
 
   testWidgets('a channel lost while away is absent on the first frame', (
     tester,
@@ -508,10 +516,7 @@ void main() {
     });
     await tester.pump(const Duration(milliseconds: 300));
     expect(state.rows, hasLength(65));
-    expect(
-      state.rows.firstWhere((t) => t['id'] == 't78')['status'],
-      'todo',
-    );
+    expect(state.rows.firstWhere((t) => t['id'] == 't78')['status'], 'todo');
     expect(w.taskQueries, hasLength(requests));
     // Revalidation spans each lane's loaded window.
     await state.load(keep: true);
@@ -546,10 +551,7 @@ void main() {
     await tester.tap(more);
     await tester.pumpAndSettle();
     expect(lane(state, 'todo'), hasLength(60));
-    expect(
-      w.taskQueries.last,
-      containsPair('cursor', '30'),
-    );
+    expect(w.taskQueries.last, containsPair('cursor', '30'));
     expect(w.taskQueries.last['status'], 'todo');
   });
 
@@ -561,24 +563,25 @@ void main() {
       );
       expect(merged, {'id': 't', 'title': 'B', 'description': 'full', 'x': 1});
     });
-    test('a revalidated window keeps rows pushed past it and the loaded tail', () {
-      final current = [for (var n = 10; n > 0; n--) taskRow(n, 'todo')];
-      final fetched = [
-        for (var n = 11; n > 6; n--) taskRow(n, 'todo'),
-      ];
-      final result = reconcileTaskWindow(
-        fetched: fetched,
-        current: current,
-        fetchedCursor: '5',
-        currentCursor: '10',
-        window: 5,
-        fetchedIds: {for (final row in fetched) row['id']},
-      );
-      expect(result.rows.map((t) => t['taskNumber']), [
-        11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, //
-      ]);
-      expect(identical(result.rows[1], current[0]), isTrue);
-      expect(result.cursor, '10');
-    });
+    test(
+      'a revalidated window keeps rows pushed past it and the loaded tail',
+      () {
+        final current = [for (var n = 10; n > 0; n--) taskRow(n, 'todo')];
+        final fetched = [for (var n = 11; n > 6; n--) taskRow(n, 'todo')];
+        final result = reconcileTaskWindow(
+          fetched: fetched,
+          current: current,
+          fetchedCursor: '5',
+          currentCursor: '10',
+          window: 5,
+          fetchedIds: {for (final row in fetched) row['id']},
+        );
+        expect(result.rows.map((t) => t['taskNumber']), [
+          11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, //
+        ]);
+        expect(identical(result.rows[1], current[0]), isTrue);
+        expect(result.cursor, '10');
+      },
+    );
   });
 }

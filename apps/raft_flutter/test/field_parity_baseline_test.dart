@@ -89,9 +89,9 @@ void main() {
     });
 
     test('channel list rows: type, joined, archived as Web reads them', () {
-      final channels = rows(
-        'channels-list-regular-and-joint',
-      ).map(RaftChannel.new).toList();
+      final channels = rows('channels-list-regular-and-joint')
+          .map(RaftChannel.new)
+          .toList();
       expect(channels.map((c) => c.type), ['channel', 'joint']);
       expect(channels.every((c) => c.joined && !c.archived), isTrue);
     });
