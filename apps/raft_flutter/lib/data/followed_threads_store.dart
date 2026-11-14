@@ -416,6 +416,11 @@ class FollowedThreadsStore extends ChangeNotifier {
     final open = isOpen?.call(threadId) == true;
     final unread = payload['unreadCount'];
     final reply = payload['latestReply'];
+    // Web liveReplyUnread: shown on screen is read, the member's own reply
+    // (sent from another device or window) leaves the count, anything else
+    // is one more. Only a reply that counts lights the @ mark or names the
+    // first unread message.
+    final counts = !open && !_isOwnReply(reply);
     final next = <String, dynamic>{
       ...row,
       if (payload['replyCount'] is num) 'replyCount': payload['replyCount'],
@@ -424,12 +429,12 @@ class FollowedThreadsStore extends ChangeNotifier {
       if (!open)
         'unreadCount': unread is num
             ? unread
-            : ((row['unreadCount'] as num?) ?? 0) + 1,
+            : ((row['unreadCount'] as num?) ?? 0) + (counts ? 1 : 0),
       // Source thread:updated: a reply that mentions the member lights the
       // thread's @ mark, and a reply into a fully read thread is its first
       // unread one.
-      if (!open && _mentionsMember(reply)) 'hasMention': true,
-      if (!open &&
+      if (counts && _mentionsMember(reply)) 'hasMention': true,
+      if (counts &&
           reply is Map &&
           reply['id'] is String &&
           ((row['unreadCount'] as num?) ?? 0) == 0)
@@ -448,6 +453,14 @@ class FollowedThreadsStore extends ChangeNotifier {
     });
     _setRows(rows);
     notifyListeners();
+  }
+
+  bool _isOwnReply(dynamic reply) {
+    final me = _scope?.principal;
+    return me != null &&
+        reply is Map &&
+        reply['senderType'] == 'user' &&
+        reply['senderId'] == me;
   }
 
   bool _mentionsMember(dynamic reply) {
