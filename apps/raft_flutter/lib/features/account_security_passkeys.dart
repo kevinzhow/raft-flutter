@@ -25,6 +25,10 @@ import 'second_factor_step_up.dart';
 
 const _nameMaxLength = 64;
 
+/// Web `settings.passkeys.lastFactor`.
+const _lastFactor =
+    "This is your only passkey or authenticator app, so it can't be deleted while two-step verification is on. Add another passkey first, or <turnOff>turn off two-step verification</turnOff>.";
+
 class PasskeysSection extends StatefulWidget {
   const PasskeysSection({
     super.key,
@@ -107,12 +111,11 @@ class _PasskeysState extends State<PasskeysSection> {
     String refused(Object error) {
       final code = SecondFactorFailure.of(error).code;
       if (code == 'passkey_not_found') gone = true;
-      return raftText(
-        context,
-        code == 'last_factor'
-            ? 'This is your only passkey or authenticator app, so it can\'t be deleted while two-step verification is on. Add another passkey first, or turn off two-step verification.'
-            : 'Something went wrong',
-      );
+      // Here the reason is plain text: the dialog is the delete step, not
+      // the place to turn it off.
+      return code == 'last_factor'
+          ? raftText(context, _lastFactor).replaceAll(RegExp('</?turnOff>'), '')
+          : raftText(context, 'Something went wrong');
     }
 
     final confirmed = await RaftConfirmDialog.show(
@@ -363,10 +366,7 @@ class _LastFactorNote extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    final text = raftText(
-      context,
-      "This is your only passkey or authenticator app, so it can't be deleted while two-step verification is on. Add another passkey first, or <turnOff>turn off two-step verification</turnOff>.",
-    );
+    final text = raftText(context, _lastFactor);
     final open = text.indexOf('<turnOff>'), close = text.indexOf('</turnOff>');
     final style = RaftTypography.body(t, size: 13, line: 18, color: t.muted);
     if (open < 0 || close < open) {
