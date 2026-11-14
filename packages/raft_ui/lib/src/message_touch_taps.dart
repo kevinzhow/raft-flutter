@@ -87,7 +87,9 @@ class RaftMessageTouchTaps {
 
   ({Offset start, bool tap})? _touch;
   int? _pointer;
-  ({DateTime at, Offset point})? _lastTap;
+  // Pointer event time stamps (not the wall clock): the window is measured
+  // between the events themselves.
+  ({Duration at, Offset point})? _lastTap;
   Timer? _pending;
   bool _owed = false;
 
@@ -119,7 +121,7 @@ class RaftMessageTouchTaps {
     longPressFired = false;
     final previous = _lastTap;
     if (previous != null &&
-        DateTime.now().difference(previous.at) > raftMessageDoubleTapWindow) {
+        event.timeStamp - previous.at > raftMessageDoubleTapWindow) {
       _lastTap = null;
     }
     final tap =
@@ -183,7 +185,7 @@ class RaftMessageTouchTaps {
     _payOwedTap();
     _lastTap = doubleTap == null
         ? null
-        : (at: DateTime.now(), point: touch.start);
+        : (at: event.timeStamp, point: touch.start);
     final tap = onTap;
     if (tap == null) return;
     if (doubleTap == null) {
