@@ -13,6 +13,7 @@ import 'app_notifications_catalog.dart';
 import 'app_permission_request_summary.dart';
 import 'app_setup.dart';
 import 'connected_app_editor.dart';
+import 'second_factor_step_up.dart';
 
 const integrationScopeLabels = <String, String>{
   'openid': 'OpenID identity',
@@ -328,6 +329,8 @@ class _IntegrationsState extends ManagementState<IntegrationsView> {
       return null;
     } catch (e) {
       if (!accepts(generation) || source != authority) return null;
+      // Closed "Verify it's you": nothing changed, no error.
+      if (isSecondFactorStepUpCancelled(e)) return null;
       if (invalidateDeniedMutation(e)) return null;
       return userErrorText(e, fallback: fallback, where: 'connected apps');
     } finally {
@@ -404,7 +407,14 @@ class _IntegrationsState extends ManagementState<IntegrationsView> {
             setModal(() => modalError = null);
             final failure = await _mutate(
               id,
-              () => w.client.post('/integrations/marketplace/$id/install'),
+              // Approving an app: "Verify it's you" first (Web
+              // IntegrationsSection, reason appAccess).
+              () => withSecondFactorStepUp(
+                context,
+                w.client,
+                () => w.client.post('/integrations/marketplace/$id/install'),
+                reason: StepUpReason.appAccess,
+              ),
               fallback: 'Failed to install marketplace app',
             );
             if (!modal.mounted) return;
@@ -1030,8 +1040,17 @@ class _InstalledAppPermissionsState extends State<_InstalledAppPermissions> {
   Future<void> approve() async {
     setState(() => saving = true);
     try {
-      await widget.controller.client.request('PUT', '$path/grant');
+      // Approving the app's update: "Verify it's you" first (Web
+      // AppNotificationsControls, reason appAccess).
+      await withSecondFactorStepUp(
+        context,
+        widget.controller.client,
+        () => widget.controller.client.request('PUT', '$path/grant'),
+        reason: StepUpReason.appAccess,
+      );
       await load();
+    } on SecondFactorStepUpCancelled {
+      // Nothing changed.
     } catch (e) {
       if (mounted) {
         setState(

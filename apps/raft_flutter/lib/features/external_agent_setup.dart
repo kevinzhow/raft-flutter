@@ -14,6 +14,7 @@ import '../data/agent_hosted_runtime.dart';
 import '../data/workspace_controller.dart';
 import 'agent_detail_view.dart' show agentTimeFormatter;
 import 'agent_hosted_status.dart';
+import 'second_factor_step_up.dart';
 
 /// `externalProfileSlug`.
 String externalProfileSlug(String name, String id) {
@@ -173,9 +174,16 @@ class _ExternalAgentSetupState extends State<ExternalAgentSetup> {
       error = false;
     });
     try {
-      final data = await w.client.post(
-        '/agents/${Uri.encodeComponent(id)}/credentials',
-        data: <String, dynamic>{},
+      // Two-step verification on: "Verify it's you" first (Web
+      // useExternalAgentCredentials, reason agentKey).
+      final data = await withSecondFactorStepUp(
+        context,
+        w.client,
+        () => w.client.post(
+          '/agents/${Uri.encodeComponent(id)}/credentials',
+          data: <String, dynamic>{},
+        ),
+        reason: StepUpReason.agentKey,
       );
       if (!live || opened != openedScope) return;
       if (data is! Map ||
@@ -193,6 +201,8 @@ class _ExternalAgentSetupState extends State<ExternalAgentSetup> {
         listError = false;
       });
       unawaited(loadCredentials());
+    } on SecondFactorStepUpCancelled {
+      // Closed "Verify it's you": nothing was created, no error.
     } catch (_) {
       // Neither error payloads nor successful responses are logged.
       if (live && opened == openedScope) setState(() => error = true);

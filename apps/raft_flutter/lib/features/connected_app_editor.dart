@@ -23,6 +23,7 @@ import 'app_setup.dart';
 import 'app_when_to_use.dart';
 import 'integrations_views.dart';
 import 'management_support.dart';
+import 'second_factor_step_up.dart';
 
 /// The one-time client secret the page keeps (Web `createdSecret` /
 /// `createdSecretClientId` / `secretCopied`), shown in the editor strip while
@@ -414,8 +415,15 @@ class _ConnectedAppEditorState extends State<ConnectedAppEditor> {
             if (e.value != null) e.key: e.value,
         };
         if (clientId.text.isNotEmpty) data['clientId'] = clientId.text;
+        // A new app's first secret: "Verify it's you" first (Web
+        // IntegrationsSection, reason secret).
         final created = managementMap(
-          await w.client.post('/integrations/clients', data: data),
+          await withSecondFactorStepUp(
+            context,
+            w.client,
+            () => w.client.post('/integrations/clients', data: data),
+            reason: StepUpReason.secret,
+          ),
         );
         if (!live) return;
         final client = managementMap(created['client']);
@@ -429,7 +437,9 @@ class _ConnectedAppEditorState extends State<ConnectedAppEditor> {
         await widget.onSaved(created: client);
       }
     } catch (e) {
-      if (live && widget.onDenied(e)) {
+      if (isSecondFactorStepUpCancelled(e)) {
+        // Closed "Verify it's you": nothing was created, no error.
+      } else if (live && widget.onDenied(e)) {
         widget.onClose();
       } else if (live) {
         error = failure(
@@ -456,6 +466,8 @@ class _ConnectedAppEditorState extends State<ConnectedAppEditor> {
     if (mounted) setState(() => error = null);
     try {
       return await action();
+    } on SecondFactorStepUpCancelled {
+      return null;
     } catch (e) {
       if (live && widget.onDenied(e)) {
         widget.onClose();
@@ -640,7 +652,12 @@ class _ConnectedAppEditorState extends State<ConnectedAppEditor> {
           error = null;
           try {
             final data = managementMap(
-              await w.client.post('$base/regenerate-secret'),
+              await withSecondFactorStepUp(
+                context,
+                w.client,
+                () => w.client.post('$base/regenerate-secret'),
+                reason: StepUpReason.secret,
+              ),
             );
             if (!live) return;
             editing = managementMap(data['client']);
@@ -649,6 +666,8 @@ class _ConnectedAppEditorState extends State<ConnectedAppEditor> {
               '${data['clientSecret']}',
             );
             await widget.onSaved();
+          } on SecondFactorStepUpCancelled {
+            // Closed "Verify it's you": the old secret stays.
           } catch (e) {
             error = failure(e, 'Failed to regenerate client secret');
             rethrow;
@@ -752,7 +771,13 @@ class _ConnectedAppEditorState extends State<ConnectedAppEditor> {
     await guarded(
       () async {
         final data = managementMap(
-          await w.client.post('$base/app-notifications/webhook/rotate-secret'),
+          await withSecondFactorStepUp(
+            context,
+            w.client,
+            () =>
+                w.client.post('$base/app-notifications/webhook/rotate-secret'),
+            reason: StepUpReason.secret,
+          ),
         );
         webhookSecret = data['signing_secret'] as String?;
         webhookSecretCopied = false;

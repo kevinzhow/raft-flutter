@@ -6,6 +6,7 @@ import 'package:raft_ui/raft_ui.dart';
 
 import 'human_login.dart';
 import 'human_login_servers.dart';
+import 'second_factor_step_up.dart';
 
 /// The native "Login with Raft" confirmation: Web `HumanLoginSetupPage` for
 /// an app that opened its sign-in inside the in-app browser. A bottom sheet on
@@ -83,6 +84,20 @@ class _HumanLoginSheetState extends State<HumanLoginSheet> {
 
   HumanLoginChoice? get choice => row?.choice;
 
+  /// Giving an app access to the account: with two-step verification on,
+  /// "Verify it's you" first (Web HumanLoginSetupPage, reason appAccess).
+  Future<dynamic> stepUp(Future<dynamic> Function() request) {
+    final api = widget.api;
+    return api is ClientHumanLoginApi
+        ? withSecondFactorStepUp(
+            context,
+            api.client,
+            request,
+            reason: StepUpReason.appAccess,
+          )
+        : request();
+  }
+
   Future<void> confirm() async {
     final current = choice;
     if (current == null ||
@@ -99,9 +114,12 @@ class _HumanLoginSheetState extends State<HumanLoginSheet> {
         widget.api,
         widget.request,
         current,
+        guard: stepUp,
       );
       if (!mounted) return;
       Navigator.of(context).pop(location);
+    } on SecondFactorStepUpCancelled {
+      if (mounted) setState(() => submitting = false);
     } on HumanLoginException catch (error) {
       if (!mounted) return;
       setState(() {
@@ -143,9 +161,12 @@ class _HumanLoginSheetState extends State<HumanLoginSheet> {
         widget.api,
         widget.request,
         installed,
+        guard: stepUp,
       );
       if (!mounted) return;
       Navigator.of(context).pop(location);
+    } on SecondFactorStepUpCancelled {
+      if (mounted) setState(() => installingId = '');
     } on HumanLoginException catch (error) {
       if (!mounted) return;
       setState(() {
