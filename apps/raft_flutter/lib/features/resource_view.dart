@@ -2390,8 +2390,7 @@ class _ResourceViewState extends State<ResourceView> {
   }) async {
     final scope = sourceScope ?? authority;
     if (!accepts(scope)) return;
-    if (path == '/channels/inbox/read-all')
-      w.conversationReads.clearAllMarksForRead();
+    w.conversationReads.writeGoingOut(path);
     try {
       final result = await w.client.request(method, path, data: data);
       if (!accepts(scope)) return;
