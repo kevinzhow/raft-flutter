@@ -215,6 +215,12 @@ Binary files a/g.png and /dev/null differ
         self.assertFalse(fn('  final String title;'))
         self.assertFalse(fn("  static const label = 'a { b';"))
 
+    def test_the_declaration_inserted_code_goes_into(self):
+        lines = ['class Ev {', '  const Ev(this.name);', '  final String name;', '', '  void run() {', '    go();', '  }', '}']
+        self.assertEqual(ti.Selector.enclosing_declaration_above(lines, 3, 2), (1, ['Ev']))  # a new member after `name`
+        self.assertEqual(ti.Selector.enclosing_declaration_above(lines, 6, 4), (5, ['run']))  # a statement in run()
+        self.assertIsNone(ti.Selector.enclosing_declaration_above(lines, 8, 0))  # new top-level code
+
     def test_enclosing_declaration(self):
         lines = ['const zhCatalog = <String, String>{', "  'a': 'b',", "  'c':", "      'd',", '};']
         self.assertEqual(ti.Selector.enclosing_declaration(lines, 4), (1, ['zhCatalog']))
@@ -269,6 +275,34 @@ class SelectTests(unittest.TestCase):
         self.repo.commit('case 3')
         # the next lines (default) and the previous (case 2) alone would miss one_test
         self.assertEqual(chosen(self.repo.select(maps=[imap])), {'one_test.dart', 'many_test.dart'})
+
+    def test_an_insertion_in_a_block_selects_the_tests_that_ran_its_header(self):
+        code = ('int pick(int a) {\n  if (a > 1) {\n    a = a * 2;\n  } else {\n    a = 0;\n  }\n  return a;\n}\n')
+        self.repo.write('apps/raft_flutter/lib/pick.dart', code)
+        base = self.repo.commit('pick')
+        app = f'{self.repo.root}/apps/raft_flutter'
+        extra = [  # big_test takes the if branch, small_test the else branch, both run line 2 and 7
+            {'test': f'{app}/test/big_test.dart', 'hits': {'package:raft_flutter/pick.dart': [1, 2, 3, 7]}, 'misses': {}},
+            {'test': f'{app}/test/small_test.dart', 'hits': {'package:raft_flutter/pick.dart': [1, 2, 5, 7]},
+             'misses': {'package:raft_flutter/pick.dart': [3]}},
+        ]
+        imap = ti.ImpactMap(ti.assemble(reports(self.repo.root) + extra, self.repo.root, {'raft_flutter': 'apps/raft_flutter'}, base,
+                                        'apps/raft_flutter', meta={'built': datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')}))
+        self.repo.branch()
+        self.repo.write('apps/raft_flutter/lib/pick.dart', code.replace('    a = 0;\n', '    a = 0;\n    a -= 1;\n'))
+        self.repo.commit('else grows')
+        # inside the else block: its header line (`} else {`) does not execute, the `if` does
+        self.assertEqual(chosen(self.repo.select(maps=[imap])), {'big_test.dart', 'small_test.dart'})
+        self.assertEqual(ti.enclosing_header(imap, 'apps/raft_flutter/lib/pick.dart', code.splitlines(), 3, 1, 4, True), 2)
+        self.assertIsNone(ti.enclosing_header(imap, 'apps/raft_flutter/lib/pick.dart', code.splitlines(), 6, 1, 2, True))
+
+    def test_class_level_insertions(self):
+        self.assertFalse(ti.reaches_existing_callers(['  final void Function(Object? data)? ack;', '  factory E.from(int a) {', '    return E(a);', '  }']))
+        self.assertFalse(ti.reaches_existing_callers(['  static final cache = <int>{};', '  int get twice => a * 2;']))
+        self.assertTrue(ti.reaches_existing_callers(['  @override', '  void didUpdateWidget(W old) {}']))
+        self.assertTrue(ti.reaches_existing_callers(['  final _items = <int>[];']))
+        self.assertTrue(ti.reaches_existing_callers(['  late final ScrollController controller = ScrollController();']))
+        self.assertTrue(ti.reaches_existing_callers(['  bool operator ==(Object other) => false;']))
 
     def test_a_function_no_test_runs_selects_nothing(self):
         self.repo.write('apps/raft_flutter/lib/calc.dart', CALC + '\nint unused(int a) {\n  return a;\n}\n')
@@ -357,6 +391,16 @@ class SelectTests(unittest.TestCase):
         selection = self.repo.select()
         self.assertEqual(chosen(selection), {'unmapped_test.dart'})
         self.assertTrue(any('only import/export' in note for note in selection.notes))
+
+    def test_a_private_name_is_only_followed_in_its_own_file(self):
+        self.repo.write('apps/raft_flutter/lib/cases.dart', 'const _build = 1;\nconst caseCount = _build;\n')
+        self.repo.write('apps/raft_flutter/lib/loader.dart', LOADER + 'const _build = 2;\n')
+        self.repo.write('apps/raft_flutter/test/private_user_test.dart', 'final _build = 3;\n')
+        self.repo.commit('privates')
+        self.repo.branch()
+        self.repo.write('apps/raft_flutter/lib/cases.dart', 'const _build = 5;\nconst caseCount = _build;\n')
+        self.repo.commit('change a private')
+        self.assertEqual(chosen(self.repo.select()), set())
 
     def test_a_build_input_selects_everything(self):
         self.repo.branch()
