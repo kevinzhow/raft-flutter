@@ -1,4 +1,4 @@
-// Real Web 0.7.0 captures: social-login outline, dialog footer, bulk restart,
+// Web v1.24 / raft-ui 0.95.3: social-login outline, dialog footer, bulk restart,
 // and keyboard-focused composer Send. The legacy looks keep their own recipes.
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -199,7 +199,8 @@ void main() {
       final ui = RaftUiColors.of(dark);
       expect(
         await pixel(t, const Offset(24, 24)),
-        Color(Color.alphaBlend(ui.fillPressed, ui.layerCard).toARGB32()),
+        // Button outline uses hover:overlay-medium over bg-layer-card.
+        Color(Color.alphaBlend(ui['fill-medium'], ui.layerCard).toARGB32()),
       );
       await mouse.removePointer();
     });

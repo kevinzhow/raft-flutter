@@ -284,9 +284,16 @@ void main() {
     testWidgets(
       '[$mode] settings navigation follows the raft-ui SidebarItem rows',
       (tester) async {
+        addTearDown(() => tester.pumpWidget(const SizedBox.shrink()));
         final rt = t.recipeTokens;
+        final invoked = <String>[];
         RaftSettingsNavEntry entry(String id, RaftGlyph glyph) =>
-            RaftSettingsNavEntry(id: id, label: id, glyph: glyph, onTap: () {});
+            RaftSettingsNavEntry(
+              id: id,
+              label: id,
+              glyph: glyph,
+              onTap: () => invoked.add(id),
+            );
         await tester.pumpWidget(
           _host(
             theme,
@@ -309,40 +316,88 @@ void main() {
         );
         Rect rect(String id) =>
             tester.getRect(find.byKey(ValueKey('workspace-settings-nav-$id')));
-        // `h-9` rows, `my-px` margins that collapse to a 37px pitch.
-        expect(rect('account').height, 36);
+        // raft-ui 0.95.3: `h-(--row-height)` (38px in this default
+        // environment), with the Web SettingsSidebarList's `gap-0.5 py-2`.
+        expect(rect('account').height, 38);
         expect(rect('account').width, 224);
-        expect(rect('appearance').top - rect('account').top, 37);
-        // `SidebarGroupLabel`: `px-2 pt-4 pb-1.5`, 13/18 bold hint.
+        expect(rect('appearance').top - rect('account').top, 40);
+        // `SidebarGroupLabel`: `px-5 pt-4 pb-0`, 13/18 bold hint.
         final label = tester.widget<RaftCssText>(
           find.widgetWithText(RaftCssText, 'Personal'),
         );
         expect(label.style!.fontSize, 13);
         expect(label.style!.fontWeight, FontWeight.w700);
+        final personal = tester.getRect(
+          find.widgetWithText(RaftCssText, 'Personal'),
+        );
+        expect(rect('account').top - personal.bottom, 8, reason: 'list py-2');
         final labelRect = tester.getRect(
           find.widgetWithText(RaftCssText, 'Workspace'),
         );
-        expect(labelRect.left - 24, 8, reason: 'px-2');
-        // The yellow sticker: ink border 1.5px, brand fill, 8px radius; rest rows have none.
-        final active = tester.widget<Container>(
-          find
-              .descendant(
-                of: find.byKey(
-                  const ValueKey('workspace-settings-nav-account'),
-                ),
-                matching: find.byType(Container),
-              )
-              .first,
+        expect(labelRect.left - 24, 20, reason: 'px-5');
+        expect(
+          labelRect.top - rect('appearance').bottom,
+          24,
+          reason: 'list pb-2, then the next label pt-4',
         );
-        final decoration = active.decoration! as BoxDecoration;
+        expect(rect('profile').top - labelRect.bottom, 8, reason: 'list py-2');
+        // The row has no layout border. Its selected shape is an inset
+        // ::before box; both rings paint without shifting the content.
         final item = RaftSidebarItemRecipe.resolve(
           theme: t.recipeTheme,
           states: t.recipeStates(extra: ['data-active']),
           tokens: rt,
         ).sidebarItem;
-        expect(decoration.color, item.backgroundColor!.resolve(rt));
-        expect(decoration.borderRadius, BorderRadius.circular(8));
-        expect((decoration.border! as Border).top.width, 1.5);
+        final before = item.before!;
+        final highlight = find.descendant(
+          of: find.byKey(const ValueKey('workspace-settings-nav-account')),
+          matching: find.byWidgetPredicate(
+            (w) => w is RaftRecipeBox && w.style.position == 'absolute',
+          ),
+        );
+        expect(highlight, findsOneWidget);
+        final highlightRect = tester.getRect(highlight);
+        expect(
+          highlightRect,
+          Rect.fromLTRB(
+            rect('account').left + 8,
+            rect('account').top,
+            rect('account').right - 8,
+            rect('account').bottom,
+          ),
+        );
+        expect(before.borderRadius, BorderRadius.circular(8));
+        expect(before.borderWidth, EdgeInsets.zero);
+        final shadows = before.cssShadows(rt);
+        final inset = shadows.singleWhere((shadow) => shadow.inset);
+        final outer = shadows.singleWhere(
+          (shadow) => !shadow.inset && shadow.spread > 0,
+        );
+        expect(inset.spread, 1.5);
+        expect(outer.spread, 1.5);
+        final at = await _sampler(tester);
+        final capture = tester.getTopLeft(find.byKey(_paint));
+        Color pixel(Offset point) =>
+            at(point.dx - capture.dx, point.dy - capture.dy);
+        final fill = before.backgroundColor!.resolve(rt);
+        expect(
+          pixel(Offset(highlightRect.right - 16, highlightRect.center.dy))
+              .toARGB32(),
+          fill.toARGB32(),
+          reason: 'the selected fill is actually painted below the content',
+        );
+        expect(
+          pixel(Offset(highlightRect.left + .5, highlightRect.center.dy))
+              .toARGB32(),
+          Color.alphaBlend(inset.color, fill).toARGB32(),
+          reason: 'the 1.5px ink ring is painted inside the highlight',
+        );
+        expect(
+          pixel(Offset(highlightRect.left - .5, highlightRect.center.dy))
+              .toARGB32(),
+          Color.alphaBlend(outer.color, Colors.white).toARGB32(),
+          reason: 'the outer ring paints outside the highlight, not as padding',
+        );
         expect(
           find.descendant(
             of: find.byKey(const ValueKey('workspace-settings-nav-account')),
@@ -364,6 +419,12 @@ void main() {
         expect(titleStyle('account').fontSize, 15);
         expect(titleStyle('account').fontWeight, FontWeight.w700);
         expect(titleStyle('appearance').fontWeight, FontWeight.w500);
+        await tester.tap(
+          find.byKey(const ValueKey('workspace-settings-nav-appearance')),
+        );
+        await tester.pump();
+        expect(invoked, ['appearance']);
+        expect(tester.takeException(), isNull);
       },
     );
 

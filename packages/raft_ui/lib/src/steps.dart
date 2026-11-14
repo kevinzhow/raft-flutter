@@ -59,21 +59,34 @@ class RaftSteps extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     if (!t.isRaftLook) return _frozenSteps(context, this);
+    return LayoutBuilder(
+      builder: (context, constraints) =>
+          _buildPublished(context, t, constraints),
+    );
+  }
+
+  Widget _buildPublished(
+    BuildContext context,
+    RaftTokens t,
+    BoxConstraints constraints,
+  ) {
     final viewport = MediaQuery.sizeOf(context);
+    final containerWidth = constraints.hasBoundedWidth
+        ? constraints.maxWidth
+        : null;
     final states = t.recipeStates().copyWith(
       viewportWidth: viewport.width,
       viewportHeight: viewport.height,
+      containerWidth: containerWidth,
     );
     final rt = t.recipeTokens;
+    final slots = RaftStepsCssRecipe.resolve(states: states, tokens: rt);
     // ignore: raft_lints/avoid_render_index_assertion -- The generated Steps schema always emits all eleven slots; no async/server data participates.
-    final root = RaftStepsCssRecipe.resolve(
-      states: states,
-      tokens: rt,
-    )['root']!;
-    // The source's wide media rule sets flex-wrap; the threshold itself is
-    // present only in the generated CSS table, not repeated in this adapter.
-    final wide = switch (root['flex-wrap']) {
-      CssKeyword(value: 'wrap') => true,
+    final root = slots['root']!;
+    // Current CSS always wraps the root. Its container query instead changes
+    // content from display:contents to block when text stacks below the marker.
+    final wide = switch (slots['content']?['display']) {
+      CssKeyword(value: 'contents') => true,
       _ => false,
     };
     final items = [
@@ -98,6 +111,8 @@ class RaftSteps extends StatelessWidget {
       child: RaftRecipeBox(
         style: root,
         tokens: rt,
+        // The source root's inline-size:100% establishes the query container.
+        width: containerWidth,
         child: wide
             ? Wrap(runSpacing: root.rowGap ?? 0, children: items)
             : Row(

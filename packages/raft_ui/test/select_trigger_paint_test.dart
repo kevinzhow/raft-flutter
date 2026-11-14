@@ -81,19 +81,24 @@ void main() {
               .descendant(of: fields.last, matching: find.byType(RaftRecipeBox))
               .first,
         );
-        expect(enabled.style.foreground(enabled.tokens), foreground);
+        // Compare exact paint bytes: generated CSS stores alpha in ARGB.
         expect(
-          enabled.style.backgroundColor?.resolve(enabled.tokens),
-          background,
+          enabled.style.foreground(enabled.tokens)?.toARGB32(),
+          foreground!.toARGB32(),
+        );
+        expect(
+          enabled.style.backgroundColor?.resolve(enabled.tokens).toARGB32(),
+          background!.toARGB32(),
         );
         expect(disabled.style.opacity, native ? 1 : .4);
         expect(
-          disabled.style.foreground(disabled.tokens),
-          native ? tokens.colors['foreground-hint'] : foreground,
+          disabled.style.foreground(disabled.tokens)?.toARGB32(),
+          (native ? tokens.colors['foreground-disabled'] : foreground)!
+              .toARGB32(),
         );
         expect(
-          disabled.style.backgroundColor?.resolve(disabled.tokens),
-          native ? tokens.colors['fill-muted'] : background,
+          disabled.style.backgroundColor?.resolve(disabled.tokens).toARGB32(),
+          (native ? tokens.colors['fill-muted'] : background)!.toARGB32(),
         );
         await t.tap(fields.last);
         await t.pump();

@@ -45,7 +45,7 @@ void main() {
       expect(raftCarriedMetrics.keys.toSet(), _metricFields);
     });
 
-    test('every target is a real 0.7.1 token in both modes', () {
+    test('every target is a real 0.95.3 token in both modes', () {
       for (final id in RaftThemeId.values) {
         final colors = _colors(id);
         for (final table in [
@@ -75,7 +75,7 @@ void main() {
     });
   });
 
-  test('the token sets carry exactly the mapped 0.7.1 values', () {
+  test('the token sets carry exactly the mapped 0.95.3 values', () {
     for (final id in RaftThemeId.values) {
       final set = RaftTokenSet.of(id);
       expect(set.id, id);
@@ -98,7 +98,7 @@ void main() {
     }
   });
 
-  test('field metrics are the 0.7.1 16/24 tokens; the card title still carries Elegant\'s', () {
+  test('field metrics are the 0.95.3 base16/24 tokens; the card title still carries Elegant\'s', () {
     // The tokens are 16/24 fields and 16/24/600 card titles ...
     for (final m in [RaftLight.metrics, RaftDark.metrics]) {
       expect(m['field-font-size'], 16);
@@ -119,7 +119,7 @@ void main() {
   });
 
   test('renames follow the design system, never the name alone', () {
-    // Every old name 0.7.1 deprecates maps to its documented successor ...
+    // Current published aliases, if any, must map to their successor ...
     for (final MapEntry(:key, :value) in raftSemanticMapping.entries) {
       final successor = RaftDeprecatedTokenNames.byCssName[key];
       if (successor != null) expect(value, successor, reason: key);
@@ -128,8 +128,10 @@ void main() {
     // meaning: the old layer-panel (the content paper) is the new layer-canvas,
     // and the old layer-canvas (the page under the panels) has no successor, so
     // it is deliberately folded into the same paper.
-    expect(RaftDeprecatedTokenNames.byCssName['layer-panel'], 'layer-canvas');
-    expect(RaftDeprecatedTokenNames.byCssName, isNot(contains('layer-canvas')));
+    // 0.95.3 removed its deprecated group; the historical rename remains in
+    // its official token-names codemod, checked by raft_tokens_test.dart.
+    expect(RaftDeprecatedTokenNames.byCssName, isEmpty);
+    expect(RaftDeprecatedTokenNames.removed, isEmpty);
     expect(raftSemanticMapping['layer-panel'], 'layer-canvas');
     expect(raftSemanticMapping['layer-canvas'], 'layer-canvas');
     expect(RaftTokenSet.light.colors.layerPanel, RaftLight.layerCanvas);
