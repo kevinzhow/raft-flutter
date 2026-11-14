@@ -4,6 +4,19 @@
 // counts and needs-attention summary, readiness copy, Delete Computer and force unbind, the row's
 // Restart / Upgrade confirmations). ICU plurals and selects are separate English keys here.
 const Map<String, String> zhCatalogUpstream124Comp1 = <String, String>{
+  "Upgrade soon": "请尽快升级",
+  "Upgrade soon: from {date}, agents on this computer stop running": "请尽快升级：从 {date} 起，这台计算机上的 Agent 将停止运行",
+  "This version needs a reinstall": "这个版本需要重新安装",
+  "Reinstall soon: from {date}, agents on this computer stop running": "请尽快重新安装：从 {date} 起，这台计算机上的 Agent 将停止运行",
+  "Agents on this computer aren't running: the version is too old": "这台计算机上的 Agent 没有在运行：版本太旧",
+  "v{version} is out of date. Please upgrade to v{floor} or later.": "v{version} 已过时，请升级到 v{floor} 或更高版本。",
+  "v{version} is too old to upgrade from here. Run this on that machine to reinstall Raft Computer:": "v{version} 太旧，无法从这里升级。在那台机器上运行下面的命令重新安装 Raft Computer：",
+  "Agents on this computer aren't running: it doesn't report its version": "这台计算机上的 Agent 没有在运行：它未上报版本",
+  "This computer doesn't report its version": "这台计算机未上报版本",
+  "This computer doesn't report its version, so it's too old for Raft. Reinstall it to keep its agents running. Run this on that machine:": "这台计算机未上报版本，所以对 Raft 来说太旧了。重新安装才能让它上面的 Agent 继续运行。在那台机器上运行：",
+  "Ask an admin to upgrade it.": "请管理员升级。",
+  "Ask an admin to reinstall it.": "请管理员重新安装。",
+  "Install guide": "安装指南",
   "A laptop, a desktop or a cloud server (VPS): run this command on it.": "笔记本、台式机或云服务器（VPS）都可以：在它上面运行下面这条命令。",
   "A server admin can fix it": "服务器管理员可以处理",
   "A server admin can fix it.": "需要服务器管理员处理。",

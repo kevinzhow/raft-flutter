@@ -372,3 +372,77 @@ class RackRowMenu extends StatelessWidget {
     );
   }
 }
+
+/// ComputerActionConfirms' Upgrade / Restart as a question only (the Computer
+/// page runs its own request and progress after the answer). True = confirmed.
+Future<bool> askComputerUpgrade(
+  BuildContext context,
+  Map<String, dynamic> m, {
+  required String version,
+  required int agentCount,
+}) async =>
+    await showRaftDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialog) => RaftConfirmDialog(
+        surfaceKey: const ValueKey('computer-upgrade-confirm'),
+        title: raftFormat(dialog, 'Upgrade to v{version}', {
+          'version': version,
+        }),
+        message: _upgradeMessage(dialog, m, version, agentCount),
+        confirmLabel: raftText(dialog, 'Upgrade'),
+        confirmVariant: RaftButtonRecipeVariant.warning,
+        confirmGlyph: RaftGlyph.alertTriangle,
+        onConfirm: () async {},
+      ),
+    ) ??
+    false;
+
+Future<bool> askComputerRestart(
+  BuildContext context,
+  Map<String, dynamic> m, {
+  required int agentCount,
+}) async =>
+    await showRaftDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialog) => RaftConfirmDialog(
+        surfaceKey: const ValueKey('computer-restart-confirm'),
+        title: raftText(dialog, 'Restart computer'),
+        message: _restartMessage(dialog, m, agentCount),
+        confirmLabel: raftText(dialog, 'Restart'),
+        confirmVariant: RaftButtonRecipeVariant.warning,
+        confirmGlyph: RaftGlyph.alertTriangle,
+        onConfirm: () async {},
+      ),
+    ) ??
+    false;
+
+String _upgradeMessage(
+  BuildContext context,
+  Map<String, dynamic> m,
+  String version,
+  int agentCount,
+) => raftFormat(
+  context,
+  agentCount == 0
+      ? '{name} restarts into v{version}, which disconnects it until it reconnects.'
+      : agentCount == 1
+      ? '{name} restarts into v{version}, which disconnects it and its {count} agent until it reconnects.'
+      : '{name} restarts into v{version}, which disconnects it and its {count} agents until it reconnects.',
+  {'name': m['name'], 'version': version, 'count': agentCount},
+);
+
+String _restartMessage(
+  BuildContext context,
+  Map<String, dynamic> m,
+  int agentCount,
+) => raftFormat(
+  context,
+  agentCount == 0
+      ? 'Restarting {name} disconnects it until it comes back online.'
+      : agentCount == 1
+      ? 'Restarting {name} disconnects it and its {count} agent until it comes back online.'
+      : 'Restarting {name} disconnects it and its {count} agents until it comes back online.',
+  {'name': m['name'], 'count': agentCount},
+);

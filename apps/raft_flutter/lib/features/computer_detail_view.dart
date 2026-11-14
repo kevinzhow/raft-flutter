@@ -16,8 +16,12 @@ import '../data/workspace_controller.dart';
 import '../data/workspace_entity_directory.dart';
 import 'agent_runtime_labels.dart' show runtimeLabelWithStatus;
 import 'agent_metadata_projection.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'computer_delete_dialog.dart';
+import 'computers_rack/computers_rack_actions.dart'
+    show askComputerRestart, askComputerUpgrade;
 import 'computer_runtime_detection.dart';
+import 'computer_version_tier.dart';
 import 'computer_setup_commands.dart';
 import 'model_label_catalog.dart';
 import 'computer_upgrade_outcome.dart';
@@ -269,6 +273,11 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel> {
   /// 421; `bulk_change_model_web_v0` is retired).
   late String bulkScope;
   final receiptTimer = RaftIdleTimer(yieldToAnimation: false);
+
+  /// "Online, no version yet" waits [unreportedVersionGrace] before it reads
+  /// as a reinstall (useComputerVersionTier); the machine the wait ran out for.
+  final graceTimer = RaftIdleTimer(yieldToAnimation: false);
+  String? graceWaitingFor, graceElapsedFor;
   String get receiptKey => 'bulk-model-receipt:$id';
   BulkModelReceipt? get receipt =>
       readPageSnapshot(w, receiptKey)?['receipt'] as BulkModelReceipt?;
@@ -316,6 +325,7 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel> {
     w.removeListener(_authorityChanged);
     modelLabels.removeListener(_changed);
     receiptTimer.cancel();
+    graceTimer.cancel();
     super.dispose();
   }
 
@@ -589,7 +599,9 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel> {
       m,
       (rid) => runtimeLabelWithStatus(context, rid),
     );
+    final service = isComputer && online ? this.service(fact, reconnect) : null;
     return RaftComputerDetailData(
+      versionNotice: _versionNotice(service),
       runtimeDetection: detection,
       canRescanRuntimes: canRescanComputerRuntimes(w, m),
       releaseNotes: _releaseNotes(fact),
@@ -645,7 +657,7 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel> {
       ],
       canManage: canManage,
       commands: commands,
-      service: isComputer && online ? service(fact, reconnect) : null,
+      service: service,
       upgradeLink: reconnect.reconnecting
           ? RaftComputerUpgradeLink.reconnecting
           : reconnect.overdue
@@ -654,6 +666,81 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel> {
       upgradeVersion: reconnect.targetVersion,
       requestOutcome: computerUpgradeRequestOutcome(m),
       highlightedAgentIds: receipt?.highlightsAt(_now()) ?? const {},
+    );
+  }
+
+  /// The version-floor notice (ComputerVersionNotice), once an online
+  /// Computer that reports no version has stayed silent past the grace.
+  RaftComputerVersionNoticeData? _versionNotice(RaftComputerService? service) {
+    var tier = computerVersionTier(m);
+    if (tier.kind == ComputerTierKind.unreported) {
+      // Not state: the timer's callback only marks the wait finished.
+      if (graceWaitingFor != id) {
+        graceWaitingFor = id;
+        graceElapsedFor = null;
+        graceTimer.start(unreportedVersionGrace, () {
+          if (!mounted) return;
+          setState(() => graceElapsedFor = graceWaitingFor);
+        });
+      }
+      tier = graceElapsedFor == id
+          ? tier.as(ComputerTierKind.reinstall)
+          : ComputerVersionTier.none;
+    } else if (graceWaitingFor != null) {
+      graceTimer.cancel();
+      graceWaitingFor = graceElapsedFor = null;
+    }
+    if (tier.kind != ComputerTierKind.upgrade &&
+        tier.kind != ComputerTierKind.reinstall) {
+      return null;
+    }
+    final c = ComputerCommands.build(
+      slug: w.server?.string('slug') ?? '',
+      serverUrl: w.client.origin,
+      deployment: widget.deployment,
+      windows: windows,
+    );
+    final lines = <RaftComputerInstallLine>[];
+    if (c != null) {
+      final one = windows ? null : c.installAndSetup;
+      if (one != null) {
+        lines.add((
+          label: null,
+          command: one,
+          copyLabel: 'Copy Computer CLI command',
+        ));
+      } else {
+        lines
+          ..add((
+            label: '1. Install',
+            command: c.install,
+            copyLabel: 'Copy 1. install command',
+          ))
+          ..add((
+            label: '2. Setup',
+            command: c.setup,
+            copyLabel: 'Copy 2. setup command',
+          ));
+      }
+    }
+    final at = tier.enforcedAt;
+    return RaftComputerVersionNoticeData(
+      kind: tier.kind == ComputerTierKind.upgrade
+          ? RaftComputerVersionNoticeKind.upgrade
+          : RaftComputerVersionNoticeKind.reinstall,
+      unknown: tier.unknown,
+      enforced: tier.enforced,
+      minVersion: tier.minVersion,
+      canManage: canManage,
+      computerVersion: '${m['computerVersion'] ?? ''}'.trim().isEmpty
+          ? null
+          : '${m['computerVersion']}'.trim(),
+      dateLabel: at == null ? null : DateFormat.yMMMd('en').format(at.toUtc()),
+      upgradeTargetVersion: service?.kind == RaftComputerServiceKind.oneClick
+          ? service?.version
+          : null,
+      manualInstall: service?.kind == RaftComputerServiceKind.commands,
+      installLines: lines,
     );
   }
 
@@ -888,6 +975,20 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel> {
       upgrade: _upgrade,
       deleteComputer: _deleteAction(),
       confirmDelete: _confirmDelete,
+      confirmRestart: () =>
+          askComputerRestart(context, m, agentCount: agents.length),
+      confirmUpgrade: (version) => askComputerUpgrade(
+        context,
+        m,
+        version: version,
+        agentCount: agents.length,
+      ),
+      openInstallGuide: () => unawaited(
+        launchUrl(
+          Uri.parse(computerInstallDocsUrl),
+          mode: LaunchMode.externalApplication,
+        ),
+      ),
       bulk: _bulk,
       openAgent: widget.onOpenAgent,
       createAgent: widget.onCreateAgent,

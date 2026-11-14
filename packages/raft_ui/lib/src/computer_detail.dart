@@ -144,8 +144,12 @@ class RaftComputerDetailData {
     this.runtimeDetection,
     this.canRescanRuntimes = false,
     this.releaseNotes,
+    this.versionNotice,
   });
   final String id, name, slug, createdLabel;
+
+  /// The version-floor notice at the top of the page (Web ComputerVersionNotice).
+  final RaftComputerVersionNoticeData? versionNotice;
 
   /// The explicit detection state while it is pending / did not finish (Web
   /// `Machine.runtimeDetection`); null when complete or not reported.
@@ -206,7 +210,18 @@ class RaftComputerDetailActions {
     this.rescanRuntimes,
     this.openCreator,
     this.confirmDelete,
+    this.openInstallGuide,
+    this.confirmRestart,
+    this.confirmUpgrade,
   });
+
+  /// Web ComputerActionConfirms: the confirmation each Restart / Upgrade click
+  /// goes through first. True means confirmed; null skips the confirmation.
+  final Future<bool> Function()? confirmRestart;
+  final Future<bool> Function(String version)? confirmUpgrade;
+
+  /// Opens the install guide (the version notice's link).
+  final VoidCallback? openInstallGuide;
 
   /// Replaces the built-in Delete Computer confirmation (the app's
   /// DeleteComputerDialog: own-computer key revocation and force unbind).
@@ -596,6 +611,9 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
   }
 
   Future<void> restart() async {
+    final confirm = widget.actions.confirmRestart;
+    if (confirm != null && !await confirm()) return;
+    if (!mounted) return;
     operationTimer?.cancel();
     setState(() => operation = (done: false, error: null));
     try {
@@ -631,8 +649,12 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
     }
   }
 
-  Future<void> upgrade(String target) async =>
-      widget.actions.upgrade?.call(target);
+  Future<void> upgrade(String target) async {
+    final confirm = widget.actions.confirmUpgrade;
+    if (confirm != null && !await confirm(target)) return;
+    if (!mounted) return;
+    await widget.actions.upgrade?.call(target);
+  }
 
   Future<void> deleteComputer() async {
     if (widget.actions.confirmDelete case final confirmDelete?) {
@@ -792,6 +814,17 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     _identity(t),
+                    if (d.versionNotice case final notice?)
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+                        child: RaftComputerVersionNotice(
+                          data: notice,
+                          onUpgrade: () =>
+                              upgrade(notice.upgradeTargetVersion ?? ''),
+                          onOpenInstallGuide:
+                              widget.actions.openInstallGuide ?? () {},
+                        ),
+                      ),
                     if (d.diskLowTitle case final diskTitle?)
                       Padding(
                         padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),

@@ -223,8 +223,11 @@ void main() {
       );
       await t.pump(const Duration(seconds: 1));
       await t.pump(const Duration(seconds: 1));
-      expect(row(t).runLabel, 'Updating…');
-      expect(row(t).dot, RaftComputerDot.upgrading);
+      // The v1.24 rack row carries it in its dot (Updating…), not "Offline".
+      final dot = t
+          .widget<RaftRackDeviceIcon>(find.byType(RaftRackDeviceIcon))
+          .dot;
+      expect(dot, RaftRackDot.upgrading);
     });
   });
 
@@ -300,6 +303,17 @@ void main() {
         client.row = m;
         await mount(t, detail(m));
         await t.tap(find.byKey(const ValueKey('computer-upgrade')));
+        await t.pump(const Duration(milliseconds: 300));
+        // v1.24: the click asks first (ComputerActionConfirms).
+        expect(client.writes, isEmpty);
+        await t.tap(
+          find
+              .descendant(
+                of: find.byType(RaftConfirmDialog),
+                matching: find.text('Upgrade'),
+              )
+              .last,
+        );
         await t.pump(const Duration(milliseconds: 100));
         await t.pump(const Duration(milliseconds: 100));
         expect(

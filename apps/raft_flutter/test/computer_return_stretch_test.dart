@@ -20,7 +20,7 @@ void main() {
     final f = fixture();
     await f.mount(t, 'light', 390, uri: Uri.parse('/s/alpha/computers'));
     final w = f.workspace(t);
-    final card = find.byKey(const ValueKey('fleet-computer-a'));
+    final card = find.byKey(const ValueKey('rack-row-computer-a'));
     await finishPageAnimation(t, card);
     for (var cycle = 0; cycle < 20; cycle++) {
       await t.tap(card);
