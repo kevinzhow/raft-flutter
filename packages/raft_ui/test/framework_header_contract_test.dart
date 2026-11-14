@@ -56,7 +56,10 @@ void main() {
         );
         expect(t.getSize(find.byType(RaftConversationHeader)).height, 56);
         for (final label in ['Search This Channel', 'Channel Settings']) {
-          expect(t.getSize(find.bySemanticsLabel(label)), const Size(32, 32));
+          expect(
+            t.getSize(find.bySemanticsLabel(label)),
+            Size.square(width >= 768 ? 34 : 32), // Button md:pointer-fine
+          );
           await t.tap(find.bySemanticsLabel(label));
         }
         expect([search, settings], [1, 1]);

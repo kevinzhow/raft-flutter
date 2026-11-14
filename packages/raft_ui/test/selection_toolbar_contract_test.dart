@@ -56,7 +56,10 @@ void main() {
         );
         await t.pumpAndSettle();
         expect(t.widget<RaftButton>(button('Copy link')).label, 'Copy link');
-        expect(t.getSize(button('More')).height, 32);
+        expect(
+          t.getSize(button('More')).height,
+          34,
+        ); // md:pointer-fine:h-control
         final count = t.widget<Text>(find.text('2 selected'));
         expect(count.style!.fontSize, 12);
         expect(count.style!.height, 16 / 12);

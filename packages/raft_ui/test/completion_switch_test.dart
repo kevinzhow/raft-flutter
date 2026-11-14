@@ -39,8 +39,8 @@ void main() {
             ),
           ),
         );
-        // raft-ui 0.7.1: the single 50x30 switch (the 36x20 `md` is gone).
-        expect(tester.getSize(find.byType(RaftSwitch)), const Size(50, 30));
+        // raft-ui 0.95.3: 38x22 with a mouse from 768px (50x30 on touch).
+        expect(tester.getSize(find.byType(RaftSwitch)), const Size(38, 22));
         await tester.tap(find.byType(RaftSwitch));
         await tester.pumpAndSettle();
         expect(changes, [true]);

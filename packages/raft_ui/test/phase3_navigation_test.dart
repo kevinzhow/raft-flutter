@@ -70,7 +70,7 @@ void main() {
     expect(recipe.foreground, tokens.colors['accent-strong']);
     expect(
       tester.getSize(find.byType(RaftSavedActionButton)),
-      const Size(32, 32),
+      const Size(34, 34),
     );
     expect(
       tester.widget<RaftIcon>(find.byType(RaftIcon)).glyph,

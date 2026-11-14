@@ -85,7 +85,7 @@ void main() {
         final expected = RaftSelectRecipe.resolve(
           theme: t.recipeTheme,
           tokens: t.recipeTokens,
-          states: t.recipeStates(),
+          states: t.recipeStates(responsive: true),
         );
         expect(surface.content.classes, expected.content.classes);
         expect(surface.list.classes, expected.list.classes);
@@ -99,7 +99,10 @@ void main() {
         final disabled = RaftSelectRecipe.resolve(
           theme: t.recipeTheme,
           tokens: t.recipeTokens,
-          states: t.recipeStates(extra: ['data-disabled', 'last-child']),
+          states: t.recipeStates(
+            responsive: true,
+            extra: ['data-disabled', 'last-child'],
+          ),
         );
         expect(
           state.item.properties.map(

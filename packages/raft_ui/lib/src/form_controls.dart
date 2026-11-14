@@ -207,7 +207,7 @@ class RaftField extends StatelessWidget {
     } else {
       messageRow = messageText;
     }
-    return Column(
+    final column = Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: f.root.rowGap ?? 0,
@@ -243,8 +243,9 @@ class RaftField extends StatelessWidget {
           // The action sits at the far end (`justify-between`): a loose
           // label next to a Spacer would split the free space with it and
           // leave the action in the middle of the row.
+          // Web v1.24 FormField: `grid-cols-[minmax(0,1fr)_auto] gap-x-2`.
           Row(
-            spacing: _tw,
+            spacing: labelAction == null ? _tw : _tw * 2,
             children: [
               Expanded(
                 child: Row(
@@ -255,15 +256,27 @@ class RaftField extends StatelessWidget {
                   ],
                 ),
               ),
-              ?labelAction,
+              if (labelAction != null)
+                // Drawn at the end of the label row, reached after the control:
+                // Tab and screen readers get to the field before its action.
+                FocusTraversalOrder(
+                  order: const NumericFocusOrder(2),
+                  child: labelAction!,
+                ),
             ],
           ),
-        child,
+        if (labelAction == null)
+          child
+        else
+          FocusTraversalOrder(order: const NumericFocusOrder(1), child: child),
         ...belowControl,
         if (messageRow != null)
           Semantics(liveRegion: error != null, child: messageRow),
       ],
     );
+    return labelAction == null
+        ? column
+        : FocusTraversalGroup(policy: OrderedTraversalPolicy(), child: column);
   }
 }
 

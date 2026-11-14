@@ -94,9 +94,9 @@ void main() {
             ),
           ),
         );
-        // buttonVariants size=md: h-8.
+        // buttonVariants size=md: h-8, `md:pointer-fine:h-control` (34) with a mouse.
         final rect = tester.getRect(find.byType(RaftButton));
-        expect(rect.height, 32);
+        expect(rect.height, density == RaftDensity.desktop ? 34 : 32);
         await tester.tapAt(Offset(rect.center.dx, rect.bottom + 6));
         await tester.pump();
         expect(clicks, density == RaftDensity.touch ? 1 : 0);

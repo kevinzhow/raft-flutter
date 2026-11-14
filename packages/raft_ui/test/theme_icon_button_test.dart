@@ -75,7 +75,9 @@ void main() {
                 _host(id: id, dark: dark, density: density, onPressed: () {}),
               );
               await t.pumpAndSettle();
-              final visual = id == raftThemePackId ? 32.0 : 24.0;
+              final visual = id == raftThemePackId
+                  ? (density == RaftDensity.desktop ? 34.0 : 32.0)
+                  : 24.0;
               final expected =
                   density == RaftDensity.touch && id != raftThemePackId
                   ? 48.0

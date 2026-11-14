@@ -39,7 +39,7 @@ import 'localization.dart';
 import 'recipe_surface.dart';
 import 'recipes/button_variants.g.dart';
 import 'raft/button.dart' show RaftButton, RaftButtonMetrics;
-import 'tokens/tokens.dart' show RaftTypeStyle;
+import 'tokens/tokens.dart' show RaftDesktopMetrics, RaftTypeStyle;
 import 'recipes/recipe_runtime.dart';
 import 'recipes/recipe_router.dart' show usesLegacyRecipes;
 import 'recipes/token_binding.dart';
@@ -324,7 +324,11 @@ class RaftRecipeButton extends StatelessWidget {
   }
 }
 
-/// Web `CloseButton`: ghost `icon-sm` Button with
+/// Web v1.24 `CloseButton`: ghost `icon-md` Button (the 32px ×) that, with a
+/// mouse on a desktop, is a 28px bar button at radius 6
+/// (`md:pointer-fine:size-(--bar-button-size) rounded-(--bar-button-radius)`,
+/// `BAR_BUTTON_DESKTOP`); the Elegant and Brutal looks keep the frozen
+/// `icon-sm` Button with
 /// `theme-brutal:border-2 theme-brutal:border-black theme-brutal:shadow-brutal-sm
 /// theme-brutal:bg-white theme-brutal:text-black` and an `X`.
 class RaftCloseButton extends StatelessWidget {
@@ -338,9 +342,39 @@ class RaftCloseButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
+    if (t.isRaftLook && t.desktop) {
+      const bar = RaftDesktopMetrics.barButtonSize;
+      return RaftButton(
+        tone: RaftButtonRecipeVariant.ghost,
+        size: RaftButtonRecipeSize.iconMd,
+        glyph: RaftGlyph.x,
+        semanticLabel: raftText(context, tooltip),
+        onPressed: onPressed,
+        foreground: t.colors['foreground-muted'],
+        physicalHeight: bar,
+        visualWidth: bar,
+        styleBuilder: (context, state, style) => style.copyWith(
+          properties: {
+            ...style.properties,
+            for (final corner in [
+              'top-left',
+              'top-right',
+              'bottom-left',
+              'bottom-right',
+            ])
+              'border-$corner-radius': const CssNum(
+                RaftDesktopMetrics.barButtonRadius,
+                'px',
+              ),
+          },
+        ),
+      );
+    }
     return RaftRecipeButton(
       variant: RaftButtonRecipeVariant.ghost,
-      size: RaftButtonRecipeSize.iconSm,
+      size: t.isRaftLook
+          ? RaftButtonRecipeSize.iconMd
+          : RaftButtonRecipeSize.iconSm,
       // `<X size={20} />`, but the recipe's `& svg:not([class*='size-'])`
       // width/height win over Lucide's size attributes.
       glyph: RaftGlyph.x,

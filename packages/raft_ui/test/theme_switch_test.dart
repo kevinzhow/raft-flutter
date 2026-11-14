@@ -47,8 +47,9 @@ void main() {
               ),
             ),
           );
+          // raft-ui 0.95.3 `md:pointer-fine` switch: 38x22 with a mouse from 768px.
           final expected = id == raftThemePackId
-              ? const Size(50, 30)
+              ? const Size(38, 22)
               : size == RaftSwitchSize.sm
               ? const Size(28, 16)
               : const Size(36, 20);
