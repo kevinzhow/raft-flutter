@@ -241,3 +241,9 @@ v1.24.0 有 TOTP 两步验证（`/api/auth/second-factor/*`：`reauth/password` 
 判断服务端真的在读 RW：Activity 接口（如 `/api/channels/unread`）没有 Postgres 回退，RW 不可用时是 503，有缓存时带 `X-Raft-Stale` 响应头；所以 200 且无该头、并且另一个账户发的新消息几秒内出现在未读数里，就是 RW 读路径在工作。
 
 私有状态（日志、PID 文件、toolchain 包装脚本）现在放在配置文件所在目录，另一个 worktree 的 `tool/raft-stack --config <同一个配置>` 也能管理同一套正在运行的环境。
+
+### CPU 上限
+
+- `containerCpus`（默认 2，0 表示不限制）：`start`、`sync`、`restart risingwave` 之后对本环境的 Postgres、Redis、RustFS、RisingWave、otelcol 容器执行 `docker update --cpus`；`restart risingwave` 在 bootstrap 之前就给新容器加上限。
+- `processPrefix`（可选，命令词列表，如本机的 `["cpu-lane", "agents"]`，一个执行命令本身的带 CPU 配额的 systemd scope）：加在工具自己启动的进程前面，即内容 Worker 和 `restart risingwave` 的辅助脚本（含 bootstrap）。前缀必须 exec 命令本身（`systemd-run --scope` 就是），这样记录的 PID 和启动时间仍是 Worker 自己的。
+- 服务端、Web、daemon 不在此列：raftdev 把它们作为用户 tmux 服务器的窗口启动，复用已经存在的 tmux 服务器，而那个服务器在任何此类 scope 之外，所以给 raftdev 加前缀管不到它们（`restart web` 的 respawn 也一样）。要限制它们，需要把用户的 tmux 服务器本身放进受限的 slice。
