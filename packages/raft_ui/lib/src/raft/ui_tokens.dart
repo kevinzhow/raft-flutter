@@ -112,6 +112,18 @@ Color raftChromeBlend(Color source, Color backdrop) {
 /// mutable fields.
 final Expando<RaftUiColors> _uiCache = Expando<RaftUiColors>('RaftUiColors');
 
+/// The desktop counterpart of one of the [RaftTypeScale] constants, or the
+/// style itself when the slot does not change on desktop (or is not a scale
+/// constant, such as a user pack's own style).
+RaftTypeStyle _desktopOf(RaftTypeStyle style) {
+  for (final entry in RaftTypeScale.byName.entries) {
+    if (identical(entry.value, style)) {
+      return RaftDesktopTypeScale.byName[entry.key] ?? style;
+    }
+  }
+  return style;
+}
+
 /// 0.7.1 type styles and colours for the active mode.
 extension RaftTokensUi on RaftTokens {
   RaftUiColors get ui => _uiCache[this] ??= RaftUiColors.fromMap(dark, colors);
@@ -126,6 +138,7 @@ extension RaftTokensUi on RaftTokens {
     bool mono = false,
     double? trackingEm,
   }) {
+    if (desktop) style = _desktopOf(style);
     final w =
         weight ??
         (style.fontWeight == null

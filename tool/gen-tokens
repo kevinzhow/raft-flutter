@@ -1379,6 +1379,35 @@ class RaftUiModel:
                         parse_length(tracking) if tracking else None, (v, line, weight, tracking))
         return out
 
+    def desktop_type_styles(self):
+        """`--text-*` overrides of `@media (width >= 48rem) and (pointer: fine)` in styles.css (desktop type).
+
+        Returns {slot: (size, line_height)}; the weight and tracking of a slot never change on desktop."""
+        text = strip_comments((SRC / RAFT_UI_CURRENT['styles']).read_text())
+        found = {}
+
+        def walk(rules):
+            for r in rules:
+                if r.prelude.startswith('@media') and 'pointer' in r.prelude and 'fine' in r.prelude \
+                        and '48rem' in r.prelude:
+                    for inner in r.children:
+                        for k, v in declarations(inner.body).items():
+                            if k.startswith('--text-'):
+                                found[k] = v
+                walk(r.children)
+        walk(parse_rules(text))
+        out = {}
+        for n, v in found.items():
+            if '--line-height' in n:
+                continue
+            key = n[len('--text-'):]
+            out[key] = (parse_length(v), parse_length(found[f'{n}--line-height']))
+        base = self.type_styles()
+        for key in out:
+            if key not in base:
+                raise SystemExit(f'gen-tokens: desktop type slot {key} has no base style')
+        return out
+
     def eases(self):
         out = {}
         for n, v in self.styles.items():
@@ -1546,6 +1575,21 @@ def emit_raft_tokens():
         lines.append(f'  static const RaftTypeStyle {camel(n)} = RaftTypeStyle({fmt_double(size)}, {fmt_double(lh)}{extra});')
     lines.append('  static const Map<String, RaftTypeStyle> byName = {')
     lines += [f"    '{n}': {camel(n)}," for n in styles]
+    lines += ['  };', '}', '']
+
+    lines += ['/// Desktop type (`@media (width >= 48rem) and (pointer: fine)` of styles.css): size and line height',
+              '/// of the slots that change; weight and tracking stay those of [RaftTypeScale]. A phone and a touch',
+              '/// screen at any width keep the base scale.',
+              'abstract final class RaftDesktopTypeScale {']
+    desk = m.desktop_type_styles()
+    for n, (size, lh) in desk.items():
+        w, t = styles[n][2], styles[n][3]
+        extra = ''.join([f', fontWeight: {w}' if w is not None else '',
+                         f', letterSpacingEm: {fmt_double(t)}' if t is not None else ''])
+        lines.append(f'  /// `--text-{n}` on desktop')
+        lines.append(f'  static const RaftTypeStyle {camel(n)} = RaftTypeStyle({fmt_double(size)}, {fmt_double(lh)}{extra});')
+    lines.append('  static const Map<String, RaftTypeStyle> byName = {')
+    lines += [f"    '{n}': {camel(n)}," for n in desk]
     lines += ['  };', '}', '']
 
     lines += ['/// `--ease-*` of styles.css @theme.', 'abstract final class RaftEase {']

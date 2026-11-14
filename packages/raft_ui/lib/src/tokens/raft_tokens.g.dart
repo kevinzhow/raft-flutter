@@ -1935,6 +1935,41 @@ abstract final class RaftTypeScale {
   };
 }
 
+/// Desktop type (`@media (width >= 48rem) and (pointer: fine)` of styles.css): size and line height
+/// of the slots that change; weight and tracking stay those of [RaftTypeScale]. A phone and a touch
+/// screen at any width keep the base scale.
+abstract final class RaftDesktopTypeScale {
+  /// `--text-headline` on desktop
+  static const RaftTypeStyle headline = RaftTypeStyle(16.0, 24.0, fontWeight: 700);
+  /// `--text-body` on desktop
+  static const RaftTypeStyle body = RaftTypeStyle(14.0, 22.0);
+  /// `--text-subhead` on desktop
+  static const RaftTypeStyle subhead = RaftTypeStyle(14.0, 22.0);
+  /// `--text-callout` on desktop
+  static const RaftTypeStyle callout = RaftTypeStyle(14.0, 22.0);
+  /// `--text-footnote` on desktop
+  static const RaftTypeStyle footnote = RaftTypeStyle(12.0, 18.0);
+  /// `--text-caption` on desktop
+  static const RaftTypeStyle caption = RaftTypeStyle(12.0, 18.0, fontWeight: 500);
+  /// `--text-mono-meta` on desktop
+  static const RaftTypeStyle monoMeta = RaftTypeStyle(12.0, 18.0);
+  /// `--text-mono-code` on desktop
+  static const RaftTypeStyle monoCode = RaftTypeStyle(13.0, 20.0);
+  /// `--text-control` on desktop
+  static const RaftTypeStyle control = RaftTypeStyle(14.0, 22.0);
+  static const Map<String, RaftTypeStyle> byName = {
+    'headline': headline,
+    'body': body,
+    'subhead': subhead,
+    'callout': callout,
+    'footnote': footnote,
+    'caption': caption,
+    'mono-meta': monoMeta,
+    'mono-code': monoCode,
+    'control': control,
+  };
+}
+
 /// `--ease-*` of styles.css @theme.
 abstract final class RaftEase {
   /// `--ease-slide: cubic-bezier(0.32, 0.72, 0, 1)`

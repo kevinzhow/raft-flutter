@@ -5,6 +5,8 @@ import 'package:raft_theme/recipes.dart'
     show RaftRecipeSet, RaftThemePackRecipes;
 
 import 'control_typography.dart';
+import 'interaction.dart' show RaftInteraction;
+import 'viewport_breakpoints.dart' show raftBreakpointWidth;
 import 'tokens/tokens.dart';
 
 /// The appearance setting: which theme to paint with (Raft, Elegant, Brutal or
@@ -126,6 +128,7 @@ class RaftTokens extends ThemeExtension<RaftTokens> {
     this.systemFontFamilies = const RaftFontFamilies(),
     this.textLocale,
     this.recipeSet = RaftRecipeSet.raft,
+    this.desktop = false,
   }) : _tokens = tokens,
        _mode = mode;
 
@@ -174,6 +177,14 @@ class RaftTokens extends ThemeExtension<RaftTokens> {
     );
   }
   final bool dark;
+
+  /// Desktop input: a window from 768dp wide driven by a mouse or trackpad, the
+  /// Web's `@media (width >= 48rem) and (pointer: fine)`. [RaftTokens.of] sets it
+  /// from the context, so [typeSlot], `scale` and the recipe states of the
+  /// families that opt in follow the window and the input without a call site
+  /// passing either. A touch screen and a phone width keep the base values at
+  /// every size. Elegant and Brutal never switch (frozen looks).
+  final bool desktop;
 
   /// Which generated recipe set this theme paints with: the Raft set for Raft
   /// and user packs, the frozen 0.5.52 set for the built-in Elegant and Brutal
@@ -313,8 +324,14 @@ class RaftTokens extends ThemeExtension<RaftTokens> {
   /// scale read this; the pre-theme looks keep their own literals behind their
   /// own option until their packs carry slots.
   RaftTypeStyle typeSlot(String slot) {
-    final base = RaftTypeScale.byName[slot]!;
     final spec = _mode?.type[slot];
+    final base = RaftTypeScale.byName[slot]!;
+    // A pack's own slot wins; the built-in Raft pack's slots are the base scale
+    // and so give way to the desktop scale (`themeOverrides` is null for it).
+    if (desktop && themeOverrides?.type[slot] == null) {
+      final wide = RaftDesktopTypeScale.byName[slot];
+      if (wide != null) return wide;
+    }
     return spec == null
         ? base
         : RaftTypeStyle(
@@ -385,10 +402,53 @@ class RaftTokens extends ThemeExtension<RaftTokens> {
     ];
   }
 
+  /// The tokens of [context]: the theme's, in their desktop variant when the
+  /// window is at least 768dp wide and the input is a pointer (see [desktop]).
   static RaftTokens of(BuildContext context) {
     final theme = Theme.of(context);
-    return theme.extension<RaftTokens>() ??
+    final base =
+        theme.extension<RaftTokens>() ??
         RaftTokens.theme(dark: theme.brightness == Brightness.dark);
+    if (!base.isRaftLook) return base;
+    return raftBreakpointWidth(context) >= _desktopMinWidth &&
+            !RaftInteraction.of(context).touch
+        ? base.withDesktop(true)
+        : base;
+  }
+
+  static const double _desktopMinWidth = 768;
+  static final Expando<RaftTokens> _desktopVariants = Expando<RaftTokens>(
+    'RaftTokens.desktop',
+  );
+
+  /// These tokens with [desktop] set. The variant is made once per base
+  /// instance, so identity comparisons (`shouldRepaint`, caches keyed by the
+  /// tokens) stay stable across rebuilds.
+  RaftTokens withDesktop(bool value) {
+    if (value == desktop) return this;
+    if (!value) return RaftTokens(
+      dark,
+      colors,
+      tokens: _tokens,
+      mode: _mode,
+      themeOverrides: themeOverrides,
+      systemFonts: systemFonts,
+      systemFontFamilies: systemFontFamilies,
+      textLocale: textLocale,
+      recipeSet: recipeSet,
+    );
+    return _desktopVariants[this] ??= RaftTokens(
+      dark,
+      colors,
+      tokens: _tokens,
+      mode: _mode,
+      themeOverrides: themeOverrides,
+      systemFonts: systemFonts,
+      systemFontFamilies: systemFontFamilies,
+      textLocale: textLocale,
+      recipeSet: recipeSet,
+      desktop: true,
+    );
   }
 
   @override
@@ -407,6 +467,7 @@ class RaftTokens extends ThemeExtension<RaftTokens> {
           systemFontFamilies: systemFontFamilies,
           textLocale: textLocale ?? this.textLocale,
           recipeSet: recipeSet,
+          desktop: desktop,
         )
       : RaftTokens.theme(
           dark: dark,
