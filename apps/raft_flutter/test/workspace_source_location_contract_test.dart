@@ -236,6 +236,8 @@ void main() {
           expect(w.location.route, RaftRoute.activity);
           expect(w.location.serverSlug, 'team space');
           await frames(tester, () {});
+          // The store's throttled read and retries are the store's own timers.
+          w.activityUnreadIfBound?.dispose();
           await tester.pumpWidget(const SizedBox());
           await tester.pumpAndSettle();
           expect(tester.takeException(), isNull);
@@ -312,6 +314,8 @@ void main() {
             isTrue,
           );
           await tester.runAsync(coordinator.dispose);
+          // The store's throttled read and retries are the store's own timers.
+          w.activityUnreadIfBound?.dispose();
           await tester.pumpWidget(const SizedBox());
           await tester.pumpAndSettle();
           expect(tester.takeException(), isNull);
@@ -395,6 +399,8 @@ void main() {
           });
           await waitForPainted(tester, focus);
           expect(w.messageDomain.state.highlightedMessageId, focus);
+          // The store's throttled read and retries are the store's own timers.
+          w.activityUnreadIfBound?.dispose();
           await tester.pumpWidget(const SizedBox());
           await tester.pumpAndSettle();
           expect(tester.takeException(), isNull);
@@ -522,6 +528,8 @@ void main() {
             w.messageDomain.messages.any((r) => r.id == 'parent'),
             isFalse,
           );
+          // The store's throttled read and retries are the store's own timers.
+          w.activityUnreadIfBound?.dispose();
           await tester.pumpWidget(const SizedBox());
           await tester.pumpAndSettle();
           expect(tester.takeException(), isNull);
@@ -598,6 +606,8 @@ void main() {
         await frames(tester, () {});
         expect(w.threadIdentity, isNull);
         expect(paintedMessage(tester, 'reply'), isNull);
+        // The store's throttled read and retries are the store's own timers.
+        w.activityUnreadIfBound?.dispose();
         await tester.pumpWidget(const SizedBox());
         await tester.pumpAndSettle();
         expect(tester.takeException(), isNull);
@@ -687,6 +697,8 @@ void main() {
         expect(w.replies.map((row) => row.id), ['reply']);
         expect(w.messageDomain.state.highlightedMessageId, isNot('parent'));
         expect(w.location.messageId, 'parent');
+        // The store's throttled read and retries are the store's own timers.
+        w.activityUnreadIfBound?.dispose();
         await tester.pumpWidget(const SizedBox());
         await tester.pumpAndSettle();
         expect(tester.takeException(), isNull);
@@ -736,6 +748,8 @@ void main() {
             isEmpty,
           );
           await frames(tester, () {});
+          // The store's throttled read and retries are the store's own timers.
+          w.activityUnreadIfBound?.dispose();
           await tester.pumpWidget(const SizedBox());
           await tester.pumpAndSettle();
           expect(tester.takeException(), isNull);
@@ -838,6 +852,8 @@ void main() {
           isTrue,
         );
         await frames(tester, () {});
+        // The store's throttled read and retries are the store's own timers.
+        w.activityUnreadIfBound?.dispose();
         await tester.pumpWidget(const SizedBox());
         // The fixture owns the session, which now outlives its last page.
         // Retire it before the widget test checks for pending timers.

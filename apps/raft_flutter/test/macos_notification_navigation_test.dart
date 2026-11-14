@@ -286,6 +286,8 @@ void main() {
             await _until(t, () => closed);
             await closing;
             notifications.dispose();
+            // The store's throttled read and retries are the store's own timers.
+            w.activityUnreadIfBound?.dispose();
             await t.pumpWidget(const SizedBox());
             await t.pumpAndSettle();
             expect(t.takeException(), isNull);
