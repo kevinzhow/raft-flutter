@@ -321,8 +321,9 @@ class _ArtifactWorkspaceViewerState extends State<ArtifactWorkspaceViewer> {
         }
         return true;
       } catch (_) {
-        if (mounted)
+        if (mounted) {
           showRaftToast(context, raftText(context, 'Couldn\'t copy'));
+        }
         return false;
       }
     },

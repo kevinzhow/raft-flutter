@@ -210,7 +210,7 @@ void main() {
       'and never for one that is not', (tester) async {
     savesAre(null);
     await show(tester);
-    final asks = () =>
+    int asks() =>
         client.requests.where((r) => r.contains('attachment-saves')).length;
     expect(asks(), 1);
     savesAre({'status': 'ok', 'card': artifactCardJson(title: 'notes')});
