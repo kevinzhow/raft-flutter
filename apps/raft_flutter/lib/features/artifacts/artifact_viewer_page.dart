@@ -687,9 +687,9 @@ class _ArtifactWorkspaceViewerState extends State<ArtifactWorkspaceViewer> {
       child: Focus(autofocus: true, child: view),
     );
     final safe = SafeArea(bottom: false, child: scoped);
-    // ds-allow: full-bleed viewer shell, the same Dialog.fullscreen the attachment preview shell uses (raft_ui)
     return widget.page
         ? safe
+        // ds-allow: full-bleed viewer shell, the same Dialog.fullscreen the attachment preview shell uses (raft_ui)
         : Dialog.fullscreen(backgroundColor: t.panel, child: safe);
   }
 }

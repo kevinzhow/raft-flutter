@@ -80,6 +80,26 @@ void main() {
       'raft.example.com',
     ]);
     expect(own.contentDomain, isNull);
+    final embedding = ArtifactDeployment.resolve('https://raft.example.com', [
+      'raft.example.com',
+    ], embedOrigin: 'https://embed.content.example');
+    expect(embedding.contentDomain, 'content.example');
+    expect(
+      ArtifactDeployment.resolve(
+        'https://raft.example.com',
+        null,
+        embedOrigin: 'https://embed-staging.content.example',
+      ).contentDomain,
+      isNull,
+    );
+    expect(
+      ArtifactDeployment.resolve(
+        'https://api.raft.build',
+        null,
+        embedOrigin: 'https://embed.raftusercontent.com',
+      ).contentDomain,
+      'w.raftusercontent.com',
+    );
     final local = ArtifactDeployment.resolve(
       'http://localhost:13022',
       ['localhost'],

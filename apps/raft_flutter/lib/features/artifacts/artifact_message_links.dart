@@ -148,6 +148,8 @@ bool openArtifactMessageLink(
   WorkspaceController w,
   String href,
 ) {
+  // Other links never wake the session (its flag read is a request).
+  if (!mayLinkArtifacts(href)) return false;
   final session = ArtifactSession.of(w);
   final target = session.linkTarget(href);
   if (target == null) return false;

@@ -189,7 +189,10 @@ class ArtifactDeployment {
 
   /// The official deployment's content domain (Web's production build pins
   /// `VITE_ARTIFACTS_CONTENT_DOMAIN`; app.raft.build frames from
-  /// `w-<uuid>.w.raftusercontent.com`).
+  /// `w-<uuid>.w.raftusercontent.com`). Observed in the production Web
+  /// bundle's app-shell chunk (2026-11) because neither the v1.24 source
+  /// (wrangler.jsonc CONTENT_DOMAIN is "") nor `/public/client-config` (only
+  /// `artifactsEmbedOrigin`) states it.
   static const officialContentDomains = <String, String>{
     'https://app.raft.build': 'w.raftusercontent.com',
   };
@@ -211,13 +214,18 @@ class ArtifactDeployment {
   /// client (it is the same for everyone on a deployment).
   static Future<ArtifactDeployment> of(RaftClient client) async {
     final config = await (_configs[client] ??= client.clientConfig());
-    return resolve(client.origin, config.appHosts);
+    return resolve(
+      client.origin,
+      config.appHosts,
+      embedOrigin: config.artifactsEmbedOrigin,
+    );
   }
 
   /// The deployment for the API [coordinator] with the hosts it published.
   static ArtifactDeployment resolve(
     String coordinator,
     List<String>? configuredHosts, {
+    String? embedOrigin,
     String define = contentDomainDefine,
     String boundApi = _boundApi,
   }) {
@@ -226,7 +234,8 @@ class ArtifactDeployment {
         Uri.tryParse(boundApi)?.origin == Uri.tryParse(coordinator)?.origin;
     final domain = define.isNotEmpty && bound
         ? artifactContentDomainOf(define)
-        : officialContentDomains[web.origin];
+        : officialContentDomains[web.origin] ??
+              contentDomainOfEmbedOrigin(embedOrigin);
     final hosts = [
       ...?(configuredHosts?.isNotEmpty == true
           ? configuredHosts
@@ -239,6 +248,21 @@ class ArtifactDeployment {
       appHosts: List.unmodifiable(hosts),
     );
   }
+}
+
+/// The content domain a self-hosted server implies through its client config.
+/// `/public/client-config` has no content-domain field, only
+/// `artifactsEmbedOrigin`, and the server's `.env.example` pairs
+/// `ARTIFACTS_CONTENT_DOMAIN=<d>` with `ARTIFACTS_EMBED_ORIGIN=https://embed.<d>`;
+/// so `embed.<d>` gives `<d>`, any other shape gives null (open in browser).
+/// The official deployment does not follow that pairing (embed.raftusercontent.com
+/// beside w.raftusercontent.com), hence its pin in
+/// [ArtifactDeployment.officialContentDomains], which wins.
+String? contentDomainOfEmbedOrigin(String? embedOrigin) {
+  final uri = Uri.tryParse(embedOrigin ?? '');
+  if (uri == null || !uri.host.startsWith('embed.')) return null;
+  final host = uri.host.substring('embed.'.length);
+  return artifactContentDomainOf(uri.hasPort ? '$host:${uri.port}' : host);
 }
 
 /// A content domain as `host[:port]`, lower case, or null when it is not a
