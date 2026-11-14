@@ -10,6 +10,7 @@ import 'app_setup.dart';
 import 'human_login_sheet.dart' show RequestedAppScopes;
 import 'integrations_views.dart' show integrationDomain;
 import 'private_app_invite.dart';
+import 'second_factor_step_up.dart';
 
 /// Re-enters the root's navigation owner only after resolving a current
 /// membership. The callback returns null after the root has been disposed.
@@ -149,11 +150,18 @@ class _PrivateAppInviteState extends State<PrivateAppInviteView> {
       error = null;
     });
     try {
+      // Installing an app: "Verify it's you" first (Web
+      // IntegrationInvitePage, reason appAccess).
       final result = PrivateAppInvite.parse(
-        await widget.client.postForServer(
-          target.id,
-          '$path/install',
-          data: {'serverId': target.id},
+        await withSecondFactorStepUp(
+          context,
+          widget.client,
+          () => widget.client.postForServer(
+            target.id,
+            '$path/install',
+            data: {'serverId': target.id},
+          ),
+          reason: StepUpReason.appAccess,
         ),
       );
       if (!live || ticket != request) return;
@@ -163,6 +171,8 @@ class _PrivateAppInviteState extends State<PrivateAppInviteView> {
         );
       }
       setState(() => invite = result);
+    } on SecondFactorStepUpCancelled {
+      // Closed "Verify it's you": nothing was installed, no error.
     } catch (e) {
       if (live && ticket == request) {
         setState(

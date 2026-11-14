@@ -6,6 +6,7 @@ import '../data/user_error.dart';
 import '../data/workspace_controller.dart' show WorkspaceController;
 import '../platform/content_links.dart';
 import 'public_avatar_url.dart';
+import 'second_factor_step_up.dart';
 
 /// "Login with Raft" for third-party apps, the logic of Web
 /// `HumanLoginSetupPage.tsx` (`/login-with-raft/setup`, pinned v1.21.23):
@@ -708,19 +709,26 @@ Future<HumanLoginChoice> installHumanLoginApp(
 /// browser goes to. Throws [HumanLoginException] with the server's own
 /// `error_description` or `error` when it refuses, else Web's generic text.
 /// The code is returned only inside the URL and is never logged.
+///
+/// [guard] wraps the request (the sheet's "Verify it's you" step-up); its
+/// [SecondFactorStepUpCancelled] goes to the caller.
 Future<Uri> authorizeHumanLogin(
   HumanLoginApi api,
   HumanLoginRequest request,
-  HumanLoginChoice choice,
-) async {
+  HumanLoginChoice choice, {
+  Future<dynamic> Function(Future<dynamic> Function() request)? guard,
+}) async {
   final Object? data;
+  Future<dynamic> send() => api.authorize(
+    request.authorizeBody(
+      clientId: choice.client.clientId,
+      serverId: choice.server.id,
+    ),
+  );
   try {
-    data = await api.authorize(
-      request.authorizeBody(
-        clientId: choice.client.clientId,
-        serverId: choice.server.id,
-      ),
-    );
+    data = await (guard == null ? send() : guard(send));
+  } on SecondFactorStepUpCancelled {
+    rethrow;
   } on RaftApiException catch (error) {
     // Web: `error_description || error || continueFailed`.
     throw _refused(

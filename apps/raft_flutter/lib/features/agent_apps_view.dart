@@ -10,6 +10,7 @@ import '../data/workspace_controller.dart';
 import 'agent_detail_view.dart' show agentTimeFormatter;
 import 'management_support.dart';
 import 'integrations_views.dart';
+import 'second_factor_step_up.dart';
 
 class AgentAppAccessView extends StatefulWidget {
   const AgentAppAccessView({
@@ -313,55 +314,55 @@ class _AgentAppsState extends ManagementState<AgentAppAccessView> {
             for (final item in active) _accessCard(context, item),
         ],
         [
-            RaftDescribedSectionHeader(
-              label: raftText(context, 'App events'),
-              description: raftText(
-                context,
-                "Events apps sent to this agent. They're kept for 30 days after they expire.",
+          RaftDescribedSectionHeader(
+            label: raftText(context, 'App events'),
+            description: raftText(
+              context,
+              "Events apps sent to this agent. They're kept for 30 days after they expire.",
+            ),
+            action: _small(
+              raftText(context, loading ? 'Refreshing…' : 'Refresh'),
+              busy || loading ? null : reload,
+            ),
+          ),
+          if (eventApps.length > 1)
+            RaftButtonWrap(
+              children: [
+                _small(raftText(context, 'All Apps'), () {
+                  setState(() => filter = null);
+                  reload();
+                }, selected: filter == null),
+                for (final app in eventApps.entries)
+                  _small(app.value, () {
+                    setState(() => filter = app.key);
+                    reload();
+                  }, selected: filter == app.key),
+              ],
+            ),
+          if (events.isEmpty && !loading)
+            Text(raftText(context, 'No app events yet'), style: empty)
+          else
+            for (final event in events)
+              RaftAccessCard(
+                title: '${event['summary']}',
+                subtitle:
+                    '${managementMap(event['app'])['name']} · ${event['kind']} · ${agentTimeFormatter(context, w).shortDateTime(event['createdAt'])}',
+                badge: _eventStatus(context, '${event['status']}'),
+                details: [
+                  if (_openEvents.contains('${event['id']}'))
+                    _payload(context, '${event['id']}'),
+                ],
+                onTap: () => toggleEvent(event),
               ),
-              action: _small(
-                raftText(context, loading ? 'Refreshing…' : 'Refresh'),
-                busy || loading ? null : reload,
+          if (nextCursor != null)
+            Align(
+              alignment: Alignment.centerLeft,
+              child: _small(
+                raftText(context, 'Load more'),
+                () => run(moreEvents, refresh: false),
               ),
             ),
-            if (eventApps.length > 1)
-              RaftButtonWrap(
-                children: [
-                  _small(raftText(context, 'All Apps'), () {
-                    setState(() => filter = null);
-                    reload();
-                  }, selected: filter == null),
-                  for (final app in eventApps.entries)
-                    _small(app.value, () {
-                      setState(() => filter = app.key);
-                      reload();
-                    }, selected: filter == app.key),
-                ],
-              ),
-            if (events.isEmpty && !loading)
-              Text(raftText(context, 'No app events yet'), style: empty)
-            else
-              for (final event in events)
-                RaftAccessCard(
-                  title: '${event['summary']}',
-                  subtitle:
-                      '${managementMap(event['app'])['name']} · ${event['kind']} · ${agentTimeFormatter(context, w).shortDateTime(event['createdAt'])}',
-                  badge: _eventStatus(context, '${event['status']}'),
-                  details: [
-                    if (_openEvents.contains('${event['id']}'))
-                      _payload(context, '${event['id']}'),
-                  ],
-                  onTap: () => toggleEvent(event),
-                ),
-            if (nextCursor != null)
-              Align(
-                alignment: Alignment.centerLeft,
-                child: _small(
-                  raftText(context, 'Load more'),
-                  () => run(moreEvents, refresh: false),
-                ),
-              ),
-          ],
+        ],
       ],
     );
   }
@@ -425,13 +426,20 @@ class _AgentAppsState extends ManagementState<AgentAppAccessView> {
         if (manager && pending) ...[
           _small(
             raftText(context, 'Approve'),
+            // Approving an app's access: "Verify it's you" first (Web
+            // AgentAppAccessTab, reason agentAccess); deny never asks.
             () => run(
-              () => _web('Failed to approve the request', () async {
-                await w.client.post(
-                  '/integrations/requests/${item['id']}/approve',
-                  data: {'remember': true},
-                );
-              }),
+              () => withSecondFactorStepUp(
+                context,
+                w.client,
+                () => _web('Failed to approve the request', () async {
+                  await w.client.post(
+                    '/integrations/requests/${item['id']}/approve',
+                    data: {'remember': true},
+                  );
+                }),
+                reason: StepUpReason.agentAccess,
+              ),
             ),
             selected: true,
           ),
