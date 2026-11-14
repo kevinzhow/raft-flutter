@@ -64,8 +64,9 @@ class ActivityClient extends RaftClient {
     }
     posts.add('$method $path');
     bodies.add(data);
-    if (responses.containsKey('$method $path'))
+    if (responses.containsKey('$method $path')) {
       return responses['$method $path'];
+    }
     return <String, dynamic>{};
   }
 

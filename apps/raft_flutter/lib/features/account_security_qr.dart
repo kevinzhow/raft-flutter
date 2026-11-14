@@ -26,11 +26,15 @@ class TotpQrCode extends StatelessWidget {
     return Center(
       child: Container(
         key: const ValueKey('two-step-totp-qr'),
+        // ds-allow: the Web QR frame is a fixed 160px sticker with 4px padding
         width: 160,
+        // ds-allow: the Web QR frame is a fixed 160px square
         height: 160,
+        // ds-allow: the Web QR frame has 4px padding
         padding: const EdgeInsets.all(4),
         decoration: BoxDecoration(
           color: ui.stickerPaper,
+          // ds-allow: the Web QR frame radius
           borderRadius: BorderRadius.circular(
             t.size('radius.sticker', fallback: 4),
           ),

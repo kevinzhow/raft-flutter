@@ -248,6 +248,7 @@ class _BackupCodesPanelState extends State<BackupCodesPanel> {
           padding: const EdgeInsets.all(RaftSpace.x3),
           decoration: BoxDecoration(
             color: t.ui.fillMuted,
+            // ds-allow: the codes block mirrors the Web CodeBlock radius; no raft_ui code-block recipe
             borderRadius: BorderRadius.circular(
               t.size('radius.control', fallback: 6),
             ),
@@ -259,6 +260,7 @@ class _BackupCodesPanelState extends State<BackupCodesPanel> {
               runSpacing: RaftSpace.x1,
               children: [
                 for (final code in widget.codes)
+                  // ds-allow: two fixed columns, as Web grid-cols-2 of the CodeBlock
                   SizedBox(width: 120, child: Text(code, style: codeStyle)),
               ],
             ),

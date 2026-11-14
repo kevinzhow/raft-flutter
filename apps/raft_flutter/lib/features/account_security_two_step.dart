@@ -241,6 +241,7 @@ class _TwoStepState extends State<TwoStepVerificationSection> {
             TotpQrCode(setup.otpauthUri),
             Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
+              // ds-allow: the key line mirrors Web spacing in the setup step
               spacing: 6,
               children: [
                 Text(
