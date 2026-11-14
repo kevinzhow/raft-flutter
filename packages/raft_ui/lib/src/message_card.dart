@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'icons.dart';
 import 'message_body.dart';
 import 'raft/badge.dart';
+import 'separator.dart';
 import 'raft/button.dart';
 import 'raft/ui_tokens.dart';
 import 'recipes/badge.g.dart'
@@ -318,14 +319,15 @@ class RaftMessageCard extends StatelessWidget {
         return RaftMessageBody(
           key: const ValueKey('message-card-markdown'),
           content: content,
-          fontSize: 14,
-          lineHeight: 20,
+          // `text-sm leading-5`: the callout size.
+          fontSize: RaftTypeScale.callout.fontSize,
+          lineHeight: RaftTypeScale.callout.lineHeight,
           onLink: onOpen,
         );
       case RaftCardFields(:final items):
         return _Fields(items);
       case RaftCardDivider():
-        return Divider(height: 1, thickness: 1, color: ui.lineHairline);
+        return RaftSeparator(color: ui.lineHairline);
     }
   }
 
