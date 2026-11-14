@@ -267,24 +267,27 @@ void main() {
       },
     );
 
-    test('a server with sync off (404) keeps the old reloads and freshness', () async {
-      final c = await connected();
-      c.client.changes.add(
-        RaftApiException.response(
-          'Incremental sync is off',
-          status: 404,
-          body: {'error': 'off', 'code': 'sync_changes_off'},
-        ),
-      );
-      c.client.wire.clear();
-      c.client.incoming.add(const RaftEvent('connected', null));
-      await c.settle();
-      expect(c.client.wire, contains('changes null'));
-      // The skipped reads run under their usual freshness (read just now at
-      // the first connect, so not again).
-      expect(c.client.wire, isNot(contains('sidebar')));
-      expect(WorkspaceLiveSync.of(c.client).syncSession!.hasCursor, isFalse);
-    });
+    test(
+      'a server with sync off (404) keeps the old reloads and freshness',
+      () async {
+        final c = await connected();
+        c.client.changes.add(
+          RaftApiException.response(
+            'Incremental sync is off',
+            status: 404,
+            body: {'error': 'off', 'code': 'sync_changes_off'},
+          ),
+        );
+        c.client.wire.clear();
+        c.client.incoming.add(const RaftEvent('connected', null));
+        await c.settle();
+        expect(c.client.wire, contains('changes null'));
+        // The skipped reads run under their usual freshness (read just now at
+        // the first connect, so not again).
+        expect(c.client.wire, isNot(contains('sidebar')));
+        expect(WorkspaceLiveSync.of(c.client).syncSession!.hasCursor, isFalse);
+      },
+    );
 
     test('[BP-RT-077] sync:changed pulls at once; a sidebar_order change re-reads it; '
         'invalid_cursor drops the cursor and reloads the lists', () async {
