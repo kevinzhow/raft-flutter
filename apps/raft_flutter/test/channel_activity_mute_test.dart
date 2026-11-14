@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/features/channel_settings.dart';
+import 'package:raft_flutter/features/notification_level_menu.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_ui/test_themes.dart';
 
@@ -21,9 +22,29 @@ RaftChannel _channel({
   'activityMuteSupported': supported,
 });
 
-Finder _mute() => find.byWidgetPredicate(
-  (widget) => widget is RaftSwitch && widget.semanticLabel == 'Mute activity',
-);
+// Web v1.24 ChannelPreferencesSection: the Activity mute is the
+// Notifications level select's third choice ("Mute").
+Finder _mute() =>
+    find.byKey(const ValueKey('channel-settings-notification-level-select'));
+
+RaftSettingsSelect<NotificationLevelChoice> _select(WidgetTester t) =>
+    t.widget<RaftSettingsSelect<NotificationLevelChoice>>(_mute());
+
+bool _muted(WidgetTester t) => _select(t).value == NotificationLevelChoice.mute;
+
+/// The select's write as the old switch's (on = Mute, off = back to a level).
+ValueChanged<bool>? _toggle(WidgetTester t) {
+  final changed = _select(t).onChanged;
+  return changed == null
+      ? null
+      : (on) => changed(
+          on ? NotificationLevelChoice.mute : NotificationLevelChoice.all,
+        );
+}
+
+bool _offersMute(WidgetTester t) =>
+    _mute().evaluate().isNotEmpty &&
+    _select(t).items.any((i) => i.value == NotificationLevelChoice.mute);
 
 void main() {
   for (final dark in raftThemeMatrix([false, true])) {
@@ -67,13 +88,12 @@ void main() {
           ),
         );
         await tester.pumpAndSettle();
-        expect(tester.widget<RaftSwitch>(_mute()).value, false);
-        final oldToggle = tester.widget<RaftSwitch>(_mute()).onChanged!;
-        await tester.ensureVisible(_mute());
-        await tester.tap(_mute());
+        expect(_muted(tester), false);
+        final oldToggle = _toggle(tester)!;
+        _toggle(tester)!(true);
         await tester.pump();
-        expect(tester.widget<RaftSwitch>(_mute()).onChanged, isNull);
-        expect(tester.widget<RaftSwitch>(_mute()).value, false);
+        expect(_toggle(tester), isNull);
+        expect(_muted(tester), false);
         // An activation queued before the busy rebuild must not write twice.
         oldToggle(true);
         for (
@@ -86,11 +106,11 @@ void main() {
         expect(api.calls.where((call) => call.method == 'PATCH').length, 1);
         pending.complete();
         await tester.pumpAndSettle();
-        expect(tester.widget<RaftSwitch>(_mute()).value, true);
-        await tester.tap(_mute());
+        expect(_muted(tester), true);
+        _toggle(tester)!(false);
         await tester.pumpAndSettle();
         expect(muted, false);
-        expect(tester.widget<RaftSwitch>(_mute()).value, false);
+        expect(_muted(tester), false);
         expect(
           api.calls
               .where((call) => call.method == 'PATCH')
@@ -147,7 +167,7 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      expect(_mute(), findsNothing);
+      expect(_offersMute(tester), isFalse);
       expect(api.calls.where((call) => call.method == 'PATCH'), isEmpty);
       expect(tester.takeException(), isNull);
     });
@@ -184,7 +204,7 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      final staleToggle = tester.widget<RaftSwitch>(_mute()).onChanged!;
+      final staleToggle = _toggle(tester)!;
       switch (revocation) {
         case 'membership':
           w.channels = [_channel(joined: false)];
@@ -241,19 +261,19 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      await tester.tap(_mute());
+      _toggle(tester)!(true);
       await tester.pumpAndSettle();
-      expect(tester.widget<RaftSwitch>(_mute()).value, false);
-      expect(tester.widget<RaftSwitch>(_mute()).onChanged, isNotNull);
+      expect(_muted(tester), false);
+      expect(_toggle(tester), isNotNull);
       api.statuses['PATCH /channels/c1/notification-settings'] = 200;
       api.routes['PATCH /channels/c1/notification-settings'] = (request) {
         muted = request.data['activityMuted'] as bool;
         return {'activityMuted': muted};
       };
-      await tester.tap(_mute());
+      _toggle(tester)!(true);
       await tester.pumpAndSettle();
       expect(muted, true);
-      expect(tester.widget<RaftSwitch>(_mute()).value, true);
+      expect(_muted(tester), true);
       expect(tester.takeException(), isNull);
     },
   );

@@ -168,7 +168,14 @@ class NotificationSettingsStore implements Listenable {
     _changed();
   }
 
-  Future<void> loadServerLevels(String serverId) async {
+  final Map<String, Future<void>> _levelLoads = {};
+
+  /// One read per server at a time (callers share an in-flight one).
+  Future<void> loadServerLevels(String serverId) =>
+      _levelLoads[serverId] ??= _loadServerLevels(serverId)
+          .whenComplete(() => _levelLoads.remove(serverId));
+
+  Future<void> _loadServerLevels(String serverId) async {
     ServerExplicitLevels? result;
     try {
       result = await api.fetchServerLevels(serverId);
