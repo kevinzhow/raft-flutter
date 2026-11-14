@@ -15,9 +15,8 @@ BigInt? canonicalUint64(dynamic value) {
 /// A message row's `seq` as it arrives on the wire: a JSON number on the
 /// normal paths, a decimal string where the server leaked the raw int8 driver
 /// value (Web `coerceWireMessageSeq`). Anything else is null.
-BigInt? canonicalWireSeq(dynamic value) => _safe(value)
-    ? BigInt.from(value)
-    : canonicalUint64(value);
+BigInt? canonicalWireSeq(dynamic value) =>
+    _safe(value) ? BigInt.from(value) : canonicalUint64(value);
 
 class ReadStateLedger {
   final Map<String, Map<String, dynamic>> _accepted = {};

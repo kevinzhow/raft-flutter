@@ -8,11 +8,13 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:raft_client/raft_client.dart';
+import 'package:raft_sync/raft_sync.dart' show ArtifactAttachmentSavedEvent;
 
 import '../../data/device_preferences.dart';
 import '../../data/feature_flag_client_facts.dart';
 import '../../data/workspace_controller.dart';
 import 'artifact_api.dart';
+import 'artifact_attachment_saves.dart';
 import 'artifact_models.dart';
 
 /// One presentation's Artifacts: created by the first surface that needs it
@@ -77,6 +79,7 @@ class ArtifactSession extends ChangeNotifier {
     if (!same) {
       generation++;
       summaries.clear();
+      attachments.clear();
       final remembered =
           w.server != null &&
           w.client.user != null &&
@@ -133,6 +136,13 @@ class ArtifactSession extends ChangeNotifier {
   }
 
   void _event(RaftEvent event) {
+    if (event.name == ArtifactAttachmentSavedEvent.name) {
+      // Web handleArtifactAttachmentSaved: only with the flag on, and only
+      // for an attachment shown here.
+      final saved = ArtifactAttachmentSavedEvent.read(event.payload);
+      if (saved != null && _enabled) attachments.saved(saved.attachmentId);
+      return;
+    }
     if (event.name == 'server:updated' || event.name == 'connected') {
       _changed(reevaluate: true);
     } else if (event.name == 'server:features-changed') {
@@ -145,6 +155,9 @@ class ArtifactSession extends ChangeNotifier {
       }
     }
   }
+
+  /// What the attachments on screen were saved as (and saves under way).
+  late final attachments = AttachmentSaves(api: api);
 
   late final summaries = ObjectSummaryLoader(
     post: (refs) => api.objectSummaries(refs),
@@ -187,6 +200,7 @@ class ArtifactSession extends ChangeNotifier {
     unawaited(_events?.cancel());
     _events = null;
     summaries.dispose();
+    attachments.dispose();
     super.dispose();
   }
 }

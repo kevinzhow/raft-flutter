@@ -148,7 +148,7 @@ class ArtifactApi {
 /// reader may open, a deleted one they saw, or one they can't see (its line
 /// then names no title).
 class ArtifactAttachmentSave {
-  const ArtifactAttachmentSave({this.card, this.deleted});
+  const ArtifactAttachmentSave({this.card, this.deleted, this.url});
 
   factory ArtifactAttachmentSave.fromJson(Object? json) {
     final map = json is Map ? json : const {};
@@ -157,12 +157,18 @@ class ArtifactAttachmentSave {
       'deleted' => ArtifactAttachmentSave(
         deleted: ArtifactDeleted.fromJson(map),
       ),
+      'unavailable' => ArtifactAttachmentSave(
+        url: map['url'] is String ? map['url'] as String : null,
+      ),
       _ => const ArtifactAttachmentSave(),
     };
   }
 
   final ArtifactCard? card;
   final ArtifactDeleted? deleted;
+
+  /// The id-only address of one this reader can't see (`unavailable`).
+  final String? url;
 
   /// Saved as an Artifact this reader can't open now.
   bool get hidden => card == null;

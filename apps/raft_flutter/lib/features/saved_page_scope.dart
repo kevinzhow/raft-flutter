@@ -148,7 +148,10 @@ void _bindSavedStore(WorkspaceController controller, ServerSavedWindow window) {
   store.addListener(onStore);
 }
 
-void _unbindSavedStore(WorkspaceController controller, ServerSavedWindow window) {
+void _unbindSavedStore(
+  WorkspaceController controller,
+  ServerSavedWindow window,
+) {
   final listener = _savedStoreListeners[window];
   if (listener == null) return;
   _savedStoreListeners[window] = null;

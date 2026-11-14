@@ -46,10 +46,8 @@ String mediaFailureMessage(
   return raftFormat(
     context,
     switch (kind) {
-      MediaFailureKind.proxyUnreachable =>
-        'Cannot reach the proxy {proxy}. Check Network settings, then try again.',
-      MediaFailureKind.proxyAuth =>
-        'The proxy {proxy} needs a username and password. Check Network settings.',
+      MediaFailureKind.proxyUnreachable => 'Cannot reach the proxy {proxy}. Check Network settings, then try again.',
+      MediaFailureKind.proxyAuth => 'The proxy {proxy} needs a username and password. Check Network settings.',
       MediaFailureKind.network =>
         'Cannot reach the server. Check your connection and try again.',
       MediaFailureKind.expired =>
