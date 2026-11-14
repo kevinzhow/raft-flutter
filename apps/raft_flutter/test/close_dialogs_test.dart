@@ -412,7 +412,6 @@ void registerCloseDialogTests(TestPart part) {
             context,
             (_) => RaftAddComputerDialog(
               commandsFor: (_) => null,
-              register: () async {},
               cancel: () async {},
               done: (_) async {},
             ),
@@ -956,7 +955,6 @@ void registerCloseDialogTests(TestPart part) {
             context,
             (_) => RaftAddComputerDialog(
               commandsFor: (_) => null,
-              register: () async {},
               cancel: () async => cancels++,
               done: (_) async {},
             ),

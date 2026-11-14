@@ -4,6 +4,7 @@
 // counts and needs-attention summary, readiness copy, Delete Computer and force unbind, the row's
 // Restart / Upgrade confirmations). ICU plurals and selects are separate English keys here.
 const Map<String, String> zhCatalogUpstream124Comp1 = <String, String>{
+  "A laptop, a desktop or a cloud server (VPS): run this command on it.": "笔记本、台式机或云服务器（VPS）都可以：在它上面运行下面这条命令。",
   "A server admin can fix it": "服务器管理员可以处理",
   "A server admin can fix it.": "需要服务器管理员处理。",
   "A server admin can sign in": "服务器管理员可以登录",

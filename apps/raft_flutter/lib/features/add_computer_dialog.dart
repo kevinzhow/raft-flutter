@@ -18,13 +18,18 @@ import 'computer_setup_commands.dart';
 Future<void> showAddComputerDialog(
   BuildContext context,
   WorkspaceController w, {
+  ValueChanged<String>? onOpenComputer,
   String deployment = const String.fromEnvironment(
     'RAFT_DEPLOYMENT_ENV',
     defaultValue: 'production',
   ),
 }) => RaftAddComputerDialog.show(
   context,
-  (_) => AddComputerDialog(controller: w, deployment: deployment),
+  (_) => AddComputerDialog(
+    controller: w,
+    deployment: deployment,
+    onOpenComputer: onOpenComputer,
+  ),
 );
 
 class AddComputerDialog extends StatefulWidget {
@@ -32,7 +37,9 @@ class AddComputerDialog extends StatefulWidget {
     super.key,
     required this.controller,
     this.deployment = 'production',
+    this.onOpenComputer,
   });
+  final ValueChanged<String>? onOpenComputer;
   final WorkspaceController controller;
   final String deployment;
   @override
@@ -41,7 +48,6 @@ class AddComputerDialog extends StatefulWidget {
 
 class _AddComputerDialogState extends State<AddComputerDialog> {
   WorkspaceController get w => widget.controller;
-  String? registeredId;
   Map<String, dynamic>? connected;
   List<Map<String, dynamic>> baseline = const [];
   bool requiresConfirmation = false, retired = false, canceled = false;
@@ -67,6 +73,7 @@ class _AddComputerDialogState extends State<AddComputerDialog> {
   void initState() {
     super.initState();
     openedAuthority = authority;
+    _freezeBaseline();
     w.addListener(_workspaceChanged);
     w.services.entityDirectory.addListener(_directoryChanged);
   }
@@ -91,7 +98,7 @@ class _AddComputerDialogState extends State<AddComputerDialog> {
   /// Watch the accepted directory, including an event accepted while the
   /// registration HTTP response was still pending.
   void _directoryChanged() {
-    if (!current || registeredId == null) return;
+    if (!current) return;
     final rows = w.services.entityDirectory.rows(WorkspaceEntityKind.computers);
     if (connected case final selected?) {
       // Latch identity, not a snapshot of a partially hydrated online row.
@@ -104,7 +111,7 @@ class _AddComputerDialogState extends State<AddComputerDialog> {
       _watchDetails();
       return;
     }
-    final match = resolveComputerConnectionMatch(rows, registeredId!, baseline);
+    final match = resolveComputerConnectionMatch(rows, '', baseline);
     if (match == null) return;
     setState(() {
       connected = Map<String, dynamic>.from(match.machine);
@@ -119,110 +126,49 @@ class _AddComputerDialogState extends State<AddComputerDialog> {
       '${connected!['os'] ?? ''}'.trim().isEmpty;
 
   void _watchDetails() {
-    if (_detailsPending) {
-      poll ??= RaftForegroundPeriodic(
-        const Duration(seconds: 3),
-        _recoverConnection,
-      );
-    } else {
+    if (!_detailsPending) {
       poll?.dispose();
       poll = null;
     }
   }
 
   void _recoverConnection() {
-    if (!current || !_detailsPending || registeredId == null) return;
+    if (!current || (connected != null && !_detailsPending)) return;
     unawaited(
       w.services.entityDirectory.refresh(WorkspaceEntityKind.computers),
     );
   }
 
-  Future<void> register() async {
-    if (!current) return;
-    // Freeze before the command can cause a socket update, not in a later
-    // frame where the newly connected Computer might poison the baseline.
+  /// Freeze the baseline when the dialog opens, before the command can cause
+  /// a socket update: Web's `useComputerConnectionWatch` snapshots during the
+  /// render that starts the attempt so the new row cannot poison it. Nothing
+  /// is registered on the server until a computer actually connects.
+  void _freezeBaseline() {
     baseline = [
       for (final row in w.services.entityDirectory.rows(
         WorkspaceEntityKind.computers,
       ))
         Map<String, dynamic>.from(row),
     ];
-    final serverId = w.server!.id;
-    try {
-      final result = await w.command(
-        'POST',
-        '/servers/$serverId/machines',
-        data: {'name': 'my-computer'},
-      );
-      final machine = result is Map ? result['machine'] : null;
-      if (machine is! Map || machine['id'] is! String) {
-        throw const RaftComputerActionError('Failed to register computer');
-      }
-      if (!current) {
-        // A canceled HTTP attempt can still have created its private raw
-        // placeholder. Only clean it while the original authority survives.
-        if (!retired && openedAuthority == authority) {
-          await _removePlaceholder(machine['id'] as String, serverId);
-        }
-        return;
-      }
-      registeredId = machine['id'] as String;
-      _directoryChanged();
-      if (_detailsPending) {
-        _watchDetails();
-        _recoverConnection();
-      }
-    } on RaftComputerActionError {
-      rethrow;
-    } catch (e) {
-      // Web: `data.error || machine.add.registerFailed`.
-      throw RaftComputerActionError(
-        userErrorText(
-          e,
-          fallback: 'Failed to register computer',
-          where: 'register computer',
-        ),
-      );
-    }
+    // Dropped-event fallback: Web reloads machines every 3 s while waiting.
+    poll = RaftForegroundPeriodic(
+      const Duration(seconds: 3),
+      _recoverConnection,
+    );
   }
 
   Future<void> cancel() async {
-    final id = registeredId;
-    // A failed cleanup can be retried, but a canceled attempt cannot adopt
-    // a later connection or issue commands under a different authority.
     if (!mounted || retired || openedAuthority != authority) return;
     canceled = true;
     poll?.dispose();
     poll = null;
-    if (id != null && connected?['id'] != id) {
-      await _removePlaceholder(id, w.server!.id, bestEffort: false);
-    }
-  }
-
-  Future<void> _removePlaceholder(
-    String id,
-    String serverId, {
-    bool bestEffort = true,
-  }) async {
-    try {
-      await w.command('DELETE', '/servers/$serverId/machines/$id');
-    } catch (error) {
-      // A successful previous DELETE may have lost its response.
-      if (error is RaftApiException && error.status == 404) return;
-      if (!bestEffort) {
-        throw RaftComputerActionError(
-          userErrorText(error, fallback: 'Could not finish computer setup.'),
-        );
-      }
-      // Only a late registration response after disposal is best effort.
-    }
   }
 
   Future<void> done(String name) async {
     if (!current) return;
     final id = connected?['id'] as String?;
     final serverId = w.server!.id;
-    if (id != null && name.isNotEmpty && name != 'my-computer') {
+    if (id != null && name.isNotEmpty && name != connected?['name']) {
       try {
         await w.command(
           'PATCH',
@@ -236,17 +182,14 @@ class _AddComputerDialogState extends State<AddComputerDialog> {
       }
     }
     if (!current) return;
-    final placeholder = registeredId;
-    if (placeholder != null && placeholder != id) {
-      await _removePlaceholder(placeholder, serverId, bestEffort: false);
-    }
-    if (!current) return;
     unawaited(
       w.services.entityDirectory.refresh(
         WorkspaceEntityKind.computers,
         force: true,
       ),
     );
+    // Web `nav.toMachine(machineId)` after Done.
+    if (id != null) widget.onOpenComputer?.call(id);
   }
 
   ComputerCommands? _commands(bool windows) => ComputerCommands.build(
@@ -263,8 +206,6 @@ class _AddComputerDialogState extends State<AddComputerDialog> {
       return c == null ? null : (c.install, c.setup);
     },
     installAndSetupFor: (windows) => _commands(windows)?.installAndSetup,
-    register: register,
-    onViewPlans: () => w.setSection('billing'),
     cancel: cancel,
     done: done,
     connected: connected == null

@@ -88,14 +88,12 @@ void main() {
             body: RaftAddComputerDialog(
               commandsFor: (_) => ('install-cmd', 'setup-cmd'),
               installAndSetupFor: (_) => 'one-paste-cmd',
-              register: () async {},
               cancel: () async {},
               done: (_) async {},
             ),
           ),
         ),
       );
-      await t.tap(find.byKey(const ValueKey('add-computer-next')));
       await t.pump();
       await t.pump();
     }

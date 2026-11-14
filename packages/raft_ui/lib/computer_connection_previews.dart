@@ -16,7 +16,6 @@ class _ConnectionPreview extends StatelessWidget {
 
   Widget dialog(BuildContext context) => RaftAddComputerDialog(
     commandsFor: (_) => null,
-    register: () async {},
     cancel: () async {},
     done: (_) async {},
     connected: RaftAddComputerConnection(

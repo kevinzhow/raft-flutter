@@ -1,7 +1,7 @@
 // Web packages/web/src/components/machine/AddMachineDialog.tsx +
-// ComputerCommandGuide.tsx (raft-source 26f77ef): "Add computer" (choose
-// Your Computer / Cloud Computer), then "Connect computer" (install + setup
-// commands per platform while waiting), then "Computer connected" (name it).
+// ComputerCommandGuide.tsx (v1.24.0): "Connect computer" (the install + setup
+// command per platform while waiting; nothing is registered on the server
+// until a computer actually connects), then "Computer connected" (name it).
 // The app performs the requests through the callbacks.
 
 import 'dart:async';
@@ -30,15 +30,15 @@ class RaftAddComputerDialog extends StatefulWidget {
     super.key,
     required this.commandsFor,
     this.installAndSetupFor,
-    required this.register,
     required this.cancel,
     required this.done,
     this.connected,
-    this.onViewPlans,
+    this.detectedRuntimes,
   });
 
-  /// Web `nav.toSettings("billing")` for the quota error's View Plans link.
-  final VoidCallback? onViewPlans;
+  /// Web `machine.detail.detectedRuntimes` row on the connected step (the
+  /// runtime chips of the connected Computer); null or empty hides it.
+  final Widget? detectedRuntimes;
 
   /// (install, setup) for macOS/Linux or Windows; null without a slug.
   final (String, String)? Function(bool windows) commandsFor;
@@ -47,11 +47,7 @@ class RaftAddComputerDialog extends StatefulWidget {
   /// `ComputerCommands.installAndSetup`); null keeps the two steps.
   final String? Function(bool windows)? installAndSetupFor;
 
-  /// Registers the placeholder row ("Next"); throws
-  /// [RaftComputerActionError] with the copy to show.
-  final Future<void> Function() register;
-
-  /// Leaves the flow, releasing an unconnected registration.
+  /// Leaves the flow before a computer connected (Cancel, Escape, back).
   final Future<void> Function() cancel;
 
   /// Names the connected Computer and closes.
@@ -96,7 +92,7 @@ class RaftAddComputerDialog extends StatefulWidget {
 const raftAddComputerWaitingHintDelay = Duration(seconds: 45);
 
 class _RaftAddComputerDialogState extends State<RaftAddComputerDialog> {
-  bool waiting = false, registering = false, waitingStalled = false;
+  bool waitingStalled = false;
   final stalledTimer = RaftIdleTimer(yieldToAnimation: false);
   bool confirmedComputerMatch = false, saving = false;
   bool nameEdited = false;
@@ -115,6 +111,9 @@ class _RaftAddComputerDialogState extends State<RaftAddComputerDialog> {
   void initState() {
     super.initState();
     name.text = widget.connected?.hostname ?? '';
+    stalledTimer.start(raftAddComputerWaitingHintDelay, () {
+      if (mounted) setState(() => waitingStalled = true);
+    });
   }
 
   @override
@@ -133,33 +132,6 @@ class _RaftAddComputerDialogState extends State<RaftAddComputerDialog> {
     stalledTimer.cancel();
     name.dispose();
     super.dispose();
-  }
-
-  Future<void> next() async {
-    setState(() {
-      registering = true;
-      error = '';
-    });
-    try {
-      await widget.register();
-      if (mounted) {
-        setState(() => waiting = true);
-        stalledTimer.start(raftAddComputerWaitingHintDelay, () {
-          if (mounted) setState(() => waitingStalled = true);
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(
-          () => error = RaftErrorScope.of(context)(
-            e,
-            fallback: 'Failed to register computer',
-          ),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => registering = false);
-    }
   }
 
   Future<void> cancel() async {
@@ -211,11 +183,7 @@ class _RaftAddComputerDialogState extends State<RaftAddComputerDialog> {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    final title = connectedStep
-        ? 'Computer connected'
-        : waiting
-        ? 'Connect computer'
-        : 'Add computer';
+    final title = connectedStep ? 'Computer connected' : 'Connect computer';
     // Escape and the system back gesture leave through the same path as the
     // X: `cancel` releases an unconnected registration, `done` names the
     // connected Computer.
@@ -241,11 +209,7 @@ class _RaftAddComputerDialogState extends State<RaftAddComputerDialog> {
                 // Card `max-w-lg p-6`.
                 maxWidth: 512,
                 onClose: leave,
-                child: connectedStep
-                    ? _connectedStep(t)
-                    : waiting
-                    ? _waitingStep(t)
-                    : _typeStep(t),
+                child: connectedStep ? _connectedStep(t) : _waitingStep(t),
               ),
             ),
           ),
@@ -256,77 +220,14 @@ class _RaftAddComputerDialogState extends State<RaftAddComputerDialog> {
 
   List<Widget> _errorBanner() => [
     if (error.isNotEmpty) ...[
-      // Web `<Banner intent="warning" className="mb-4 font-bold">`; a quota
-      // error ("... limit reached") adds the inline View Plans link.
+      // Web `<Banner intent="warning" className="mb-4 font-bold">`.
       RaftBanner(
         description: raftText(context, error),
         descriptionWeight: FontWeight.w700,
-        descriptionTail: error.contains('limit reached')
-            ? (
-                label: raftText(context, 'View plans'),
-                onPressed: () {
-                  Navigator.of(context).maybePop();
-                  widget.onViewPlans?.call();
-                },
-              )
-            : null,
-        descriptionTailWeight: FontWeight.w700,
       ),
       const SizedBox(height: 16),
     ],
   ];
-
-  Widget _typeStep(RaftTokens t) => Column(
-    mainAxisSize: MainAxisSize.min,
-    crossAxisAlignment: CrossAxisAlignment.stretch,
-    children: [
-      ..._errorBanner(),
-      Row(
-        children: [
-          Expanded(
-            child: RaftMachineTypeOption(
-              glyph: RaftGlyph.monitor,
-              title: 'Your own computer',
-              description: 'A laptop, a desktop or a cloud server (VPS): run one command on it',
-              selected: true,
-              onPressed: () {},
-            ),
-          ),
-          const SizedBox(width: 8),
-          const Expanded(
-            child: RaftMachineTypeOption(
-              glyph: RaftGlyph.cloud,
-              title: 'Cloud Computer',
-              description: 'Coming soon',
-              disabled: true,
-            ),
-          ),
-        ],
-      ),
-      const SizedBox(height: 16),
-      Row(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          RaftRecipeButton(
-            label: 'Cancel',
-            variant: RaftButtonRecipeVariant.outline,
-            size: RaftButtonRecipeSize.md,
-            disabled: saving,
-            onPressed: cancel,
-          ),
-          const SizedBox(width: 12),
-          RaftRecipeButton(
-            key: const ValueKey('add-computer-next'),
-            label: registering ? 'Setting Up…' : 'Next',
-            variant: RaftButtonRecipeVariant.accent,
-            size: RaftButtonRecipeSize.md,
-            disabled: registering || saving,
-            onPressed: next,
-          ),
-        ],
-      ),
-    ],
-  );
 
   Widget _waitingStep(RaftTokens t) {
     return Column(
@@ -335,6 +236,22 @@ class _RaftAddComputerDialogState extends State<RaftAddComputerDialog> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         ..._errorBanner(),
+        // `machine.add.ownComputerHint`: any machine of the person's own, a
+        // cloud server too.
+        Text(
+          raftText(
+            context,
+            'A laptop, a desktop or a cloud server (VPS): run this command on it.',
+          ),
+          key: const ValueKey('add-machine-own-computer-hint'),
+          style: RaftTypography.body(
+            t,
+            size: 14,
+            line: 20,
+            color: t.colors['foreground-muted'],
+          ),
+        ),
+        const SizedBox(height: 8),
         RaftComputerCommandGuide(
           platform: platform,
           onPlatform: (v) => setState(() => platform = v),
@@ -350,15 +267,8 @@ class _RaftAddComputerDialogState extends State<RaftAddComputerDialog> {
           // `<span className="font-bold text-foreground-strong">` after a
           // `<Status variant="warning" pulse />` dot.
           descriptionWeight: FontWeight.w700,
-          leading: Container(
-            width: 10,
-            height: 10,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: t.colors['warning'],
-              border: Border.all(color: t.colors['line-strong']!),
-            ),
-          ),
+          // Web v1.24: a Spinner takes the icon's place.
+          leading: const RaftSpinner(size: 16),
         ),
         if (waitingStalled) ...[
           const SizedBox(height: 8),
@@ -429,6 +339,10 @@ class _RaftAddComputerDialogState extends State<RaftAddComputerDialog> {
           onChanged: (_) => nameEdited = true,
         ),
         const SizedBox(height: 16),
+        if (widget.detectedRuntimes case final runtimes?) ...[
+          RaftKeyValueRow.child(label: 'Detected runtimes', child: runtimes),
+          const SizedBox(height: 16),
+        ],
         if (m.requiresConfirmation) ...[
           _confirmComputer(t, m),
           const SizedBox(height: 16),

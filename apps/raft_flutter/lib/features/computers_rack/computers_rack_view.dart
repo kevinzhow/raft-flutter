@@ -431,7 +431,17 @@ class _ComputersRackViewState extends State<ComputersRackView> {
               key: const ValueKey('computers-rack-add'),
               label: tr('Add computer'),
               glyph: RaftGlyph.plus,
-              onPressed: () => showAddComputerDialog(context, w),
+              onPressed: () => showAddComputerDialog(
+                context,
+                w,
+                onOpenComputer: (id) {
+                  final row = directory
+                      .rows(WorkspaceEntityKind.computers)
+                      .where((m) => m['id'] == id)
+                      .firstOrNull;
+                  if (row != null) widget.onOpenComputer(row);
+                },
+              ),
             )
           : null,
     );

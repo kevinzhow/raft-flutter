@@ -9,6 +9,13 @@ import 'package:raft_flutter/features/add_computer_dialog.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_ui/test_themes.dart';
 
+/// The waiting banner's spinner never stops animating, so settle by time.
+Future<void> _settle(WidgetTester t) async {
+  await t.pump();
+  await t.pump(const Duration(milliseconds: 400));
+  await t.pump(const Duration(milliseconds: 400));
+}
+
 class _Client extends RaftClient {
   _Client()
     : super(
@@ -28,10 +35,7 @@ class _Workspace extends WorkspaceController {
   List<Map<String, dynamic>> machines = [];
   final commands = <(String, String, dynamic)>[];
   final reads = <String>[];
-  Completer<dynamic>? registration;
-  Completer<void>? deletion;
-  bool failRead = false, failRegistration = false;
-  bool failDeletion = false;
+  bool failRead = false, failRename = false;
   @override
   Future<dynamic> query(String path, {Map<String, dynamic>? query}) async {
     reads.add(path);
@@ -45,24 +49,12 @@ class _Workspace extends WorkspaceController {
   @override
   Future<dynamic> command(String method, String path, {dynamic data}) async {
     commands.add((method, path, data));
-    if (method == 'POST') {
-      if (failRegistration) {
-        throw const RaftApiException('Failed to register computer');
-      }
-      return registration?.future ??
-          {
-            'machine': {'id': 'placeholder'},
-          };
-    }
-    if (method == 'DELETE') {
-      if (failDeletion) {
-        throw RaftApiException.response(
-          'Setup cleanup failed.',
-          status: 503,
-          body: {'error': 'Setup cleanup failed.'},
-        );
-      }
-      await deletion?.future;
+    if (method == 'PATCH' && failRename) {
+      throw RaftApiException.response(
+        'Could not save computer name.',
+        status: 503,
+        body: {'error': 'Could not save computer name.'},
+      );
     }
     return <String, dynamic>{};
   }
@@ -92,16 +84,12 @@ class _Fixture {
     WidgetTester t, {
     bool dark = false,
     double width = 1280,
+    ValueChanged<String>? onOpen,
   }) async {
     t.view.physicalSize = Size(width, 900);
     t.view.devicePixelRatio = 1;
     addTearDown(t.view.reset);
     addTearDown(() async {
-      if (w.registration case final pending? when !pending.isCompleted) {
-        pending.complete({
-          'machine': {'id': 'placeholder'},
-        });
-      }
       await t.pumpWidget(const SizedBox.shrink());
       await t.pump();
       w.dispose();
@@ -117,7 +105,8 @@ class _Fixture {
             body: Center(
               child: RaftButton(
                 label: 'Open computers',
-                onPressed: () => showAddComputerDialog(context, w),
+                onPressed: () =>
+                    showAddComputerDialog(context, w, onOpenComputer: onOpen),
               ),
             ),
           ),
@@ -125,15 +114,13 @@ class _Fixture {
       ),
     );
     await t.tap(find.text('Open computers'));
-    await t.pumpAndSettle();
-    await t.tap(find.byKey(const ValueKey('add-computer-next')));
-    await t.pumpAndSettle();
+    await _settle(t);
   }
 
   Future<void> event(WidgetTester t) async {
     c.stream.add(const RaftEvent('machine:created', {'machineId': 'actual'}));
     await t.pump(const Duration(milliseconds: 200));
-    await t.pumpAndSettle();
+    await _settle(t);
   }
 
   int get computerReads => w.reads.where((p) => p.endsWith('/machines')).length;
@@ -175,7 +162,7 @@ void main() {
         'os': 'macOS',
       }),
     );
-    await t.pumpAndSettle();
+    await _settle(t);
     expect(find.text('actual-host — macOS'), findsOneWidget);
     expect(
       find.byKey(const ValueKey('add-computer-details-loading')),
@@ -186,11 +173,10 @@ void main() {
       'actual-host',
     );
     await t.tap(find.widgetWithText(RaftRecipeButton, 'Done'));
-    await t.pumpAndSettle();
+    await _settle(t);
     expect(find.byType(RaftAddComputerDialog), findsNothing);
-    expect(f.w.commands.where((c) => c.$1 == 'DELETE').map((c) => c.$2), [
-      '/servers/s/machines/placeholder',
-    ]);
+    expect(f.w.commands.where((c) => c.$1 == 'DELETE'), isEmpty);
+    expect(f.w.commands.where((c) => c.$1 == 'POST'), isEmpty);
   });
 
   testWidgets('details recovery preserves a name the user has already typed', (
@@ -204,75 +190,24 @@ void main() {
     f.w.machines = [_computer('actual')..['os'] = 'macOS'];
     // No socket event: the incomplete details must keep the recovery poll.
     await t.pump(const Duration(seconds: 3));
-    await t.pumpAndSettle();
+    await _settle(t);
     expect(find.text('actual-host — macOS'), findsOneWidget);
     expect(
       t.widget<TextField>(find.byType(TextField)).controller!.text,
       'My chosen name',
     );
     await t.tap(find.widgetWithText(RaftRecipeButton, 'Done'));
-    await t.pumpAndSettle();
+    await _settle(t);
     expect(find.byType(RaftAddComputerDialog), findsNothing);
     expect(f.w.commands.singleWhere((c) => c.$1 == 'PATCH').$3, {
       'name': 'My chosen name',
     });
   });
 
-  testWidgets('failed cleanup stays visible and Done retries only its row', (
-    t,
-  ) async {
-    final f = _Fixture();
-    await f.open(t);
-    f.w.machines = [_computer('actual')];
-    await f.event(t);
-    f.w.failDeletion = true;
-    await t.tap(find.widgetWithText(RaftRecipeButton, 'Done'));
-    await t.pumpAndSettle();
-    expect(find.byType(RaftAddComputerDialog), findsOneWidget);
-    expect(find.text('Setup cleanup failed.'), findsOneWidget);
-    f.w.failDeletion = false;
-    await t.tap(find.widgetWithText(RaftRecipeButton, 'Done'));
-    await t.pumpAndSettle();
-    expect(find.byType(RaftAddComputerDialog), findsNothing);
-    expect(find.text('Setup cleanup failed.'), findsNothing);
-    expect(f.w.commands.where((c) => c.$1 == 'DELETE').map((c) => c.$2), [
-      '/servers/s/machines/placeholder',
-      '/servers/s/machines/placeholder',
-    ]);
-    // Reopen: no stale error survives the successful completion.
-    await t.tap(find.text('Open computers'));
-    await t.pumpAndSettle();
-    expect(find.text('Setup cleanup failed.'), findsNothing);
-  });
-
-  testWidgets('cancel cleanup failure can retry without accepting late joins', (
-    t,
-  ) async {
-    final f = _Fixture();
-    await f.open(t);
-    f.w.failDeletion = true;
-    await t.tap(find.widgetWithText(RaftRecipeButton, 'Cancel'));
-    await t.pumpAndSettle();
-    expect(find.byType(RaftAddComputerDialog), findsOneWidget);
-    expect(find.text('Setup cleanup failed.'), findsOneWidget);
-    f.w.machines = [_computer('late')];
-    await f.event(t);
-    expect(find.text('COMPUTER CONNECTED'), findsNothing);
-    f.w.failDeletion = false;
-    await t.tap(find.widgetWithText(RaftRecipeButton, 'Cancel'));
-    await t.pumpAndSettle();
-    expect(find.byType(RaftAddComputerDialog), findsNothing);
-    expect(f.w.commands.where((c) => c.$1 == 'DELETE').map((c) => c.$2), [
-      '/servers/s/machines/placeholder',
-      '/servers/s/machines/placeholder',
-    ]);
-    expect(f.w.commands.where((c) => c.$1 == 'PATCH'), isEmpty);
-  });
-
   for (final dark in raftThemeMatrix([false, true])) {
     for (final width in [390.0, 1280.0]) {
       testWidgets(
-        '${dark ? 'dark' : 'light'}/$width the real Computer finishes the placeholder registration and Done targets its identity',
+        '${dark ? 'dark' : 'light'}/$width the real Computer connects without any registration and Done targets its identity',
         (t) async {
           final f = _Fixture();
           await f.open(t, dark: dark, width: width);
@@ -294,14 +229,13 @@ void main() {
           );
           await t.enterText(find.byType(TextField), 'My connected computer');
           await t.tap(find.widgetWithText(RaftRecipeButton, 'Done'));
-          await t.pumpAndSettle();
+          await _settle(t);
           expect(find.byType(RaftAddComputerDialog), findsNothing);
           final rename = f.w.commands.singleWhere((c) => c.$1 == 'PATCH');
           expect(rename.$2, '/servers/s/machines/actual');
           expect(rename.$3, {'name': 'My connected computer'});
-          expect(f.w.commands.where((c) => c.$1 == 'DELETE').map((c) => c.$2), [
-            '/servers/s/machines/placeholder',
-          ]);
+          expect(f.w.commands.where((c) => c.$1 == 'DELETE'), isEmpty);
+          expect(f.w.commands.where((c) => c.$1 == 'POST'), isEmpty);
           final reads = f.computerReads;
           await t.pump(const Duration(seconds: 10));
           expect(
@@ -322,111 +256,14 @@ void main() {
       await f.open(t);
       f.w.failRead = true;
       await t.pump(const Duration(seconds: 3));
-      await t.pumpAndSettle();
+      await _settle(t);
       expect(find.text('Waiting for computer to connect...'), findsOneWidget);
       f.w.failRead = false;
       f.w.machines = [_computer('actual')];
       await t.pump(const Duration(seconds: 3));
-      await t.pumpAndSettle();
+      await _settle(t);
       expect(find.text('Computer connected'), findsOneWidget);
       expect(t.takeException(), isNull);
-    },
-  );
-
-  testWidgets(
-    'an online event before the registration response is still observed',
-    (t) async {
-      final f = _Fixture();
-      f.w.registration = Completer<dynamic>();
-      await f.open(t);
-      f.w.machines = [_computer('placeholder', computer: false)];
-      await f.event(t);
-      f.w.registration!.complete({
-        'machine': {'id': 'placeholder'},
-      });
-      await t.pumpAndSettle();
-      expect(find.text('Computer connected'), findsOneWidget);
-      expect(t.takeException(), isNull);
-    },
-  );
-
-  testWidgets('a real Computer event can precede the registration response', (
-    t,
-  ) async {
-    final f = _Fixture();
-    f.w.registration = Completer<dynamic>();
-    await f.open(t);
-    f.w.machines = [_computer('actual')];
-    await f.event(t);
-    f.w.registration!.complete({
-      'machine': {'id': 'placeholder'},
-    });
-    await t.pumpAndSettle();
-    expect(find.text('Computer connected'), findsOneWidget);
-    expect(t.takeException(), isNull);
-  });
-
-  testWidgets('registration failure can retry and clears the old error', (
-    t,
-  ) async {
-    final f = _Fixture();
-    f.w.failRegistration = true;
-    await f.open(t);
-    expect(find.text('Failed to register computer'), findsOneWidget);
-    f.w.failRegistration = false;
-    await t.tap(find.byKey(const ValueKey('add-computer-next')));
-    await t.pumpAndSettle();
-    expect(find.text('Failed to register computer'), findsNothing);
-    f.w.machines = [_computer('actual')];
-    await f.event(t);
-    await t.tap(find.widgetWithText(RaftRecipeButton, 'Done'));
-    await t.pumpAndSettle();
-    expect(find.byType(RaftAddComputerDialog), findsNothing);
-    expect(f.w.commands.where((c) => c.$1 == 'POST'), hasLength(2));
-    expect(t.takeException(), isNull);
-  });
-
-  testWidgets(
-    'cancel while registration is pending cleans only its late placeholder',
-    (t) async {
-      final f = _Fixture();
-      f.w.registration = Completer<dynamic>();
-      await f.open(t);
-      await t.tap(find.widgetWithText(RaftRecipeButton, 'Cancel'));
-      await t.pumpAndSettle();
-      expect(find.byType(RaftAddComputerDialog), findsNothing);
-      f.w.registration!.complete({
-        'machine': {'id': 'late-placeholder'},
-      });
-      await t.pumpAndSettle();
-      expect(f.w.commands.where((c) => c.$1 == 'DELETE').map((c) => c.$2), [
-        '/servers/s/machines/late-placeholder',
-      ]);
-      expect(f.w.commands.where((c) => c.$1 == 'PATCH'), isEmpty);
-      expect(t.takeException(), isNull);
-    },
-  );
-
-  testWidgets(
-    'a canceled attempt cannot advance while placeholder deletion is pending',
-    (t) async {
-      final f = _Fixture();
-      await f.open(t);
-      f.w.deletion = Completer<void>();
-      await t.tap(find.widgetWithText(RaftRecipeButton, 'Cancel'));
-      await t.pump();
-      f.w.machines = [_computer('late')];
-      await f.event(t);
-      final advanced = find.text('Computer connected').evaluate().isNotEmpty;
-      f.w.deletion!.complete();
-      await t.pumpAndSettle();
-      expect(
-        advanced,
-        isFalse,
-        reason: 'cancel retires the attempt before awaiting cleanup',
-      );
-      expect(find.byType(RaftAddComputerDialog), findsNothing);
-      expect(f.w.commands.where((c) => c.$1 == 'PATCH'), isEmpty);
     },
   );
 
@@ -445,7 +282,7 @@ void main() {
     t.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
     t.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
     await t.pump(const Duration(seconds: 3));
-    await t.pumpAndSettle();
+    await _settle(t);
     expect(find.text('Computer connected'), findsOneWidget);
     expect(t.takeException(), isNull);
   });
@@ -497,7 +334,7 @@ void main() {
       semantics.dispose();
       expect(t.widget<RaftRecipeButton>(done).disabled, isFalse);
       await t.tap(done);
-      await t.pumpAndSettle();
+      await _settle(t);
       expect(
         f.w.commands.any((c) => c.$1 == 'PATCH' && c.$2.endsWith('/resumed')),
         isTrue,
@@ -511,33 +348,12 @@ void main() {
   );
 
   testWidgets(
-    'canceling an ambiguous match removes only the unused placeholder',
-    (t) async {
-      final f = _Fixture();
-      await f.open(t);
-      f.w.machines = [_computer('first'), _computer('second')];
-      await f.event(t);
-      expect(
-        find.byKey(const ValueKey('add-computer-confirm-match')),
-        findsOneWidget,
-      );
-      await t.tap(find.byType(RaftDialogClose));
-      await t.pumpAndSettle();
-      expect(f.w.commands.where((c) => c.$1 == 'DELETE').map((c) => c.$2), [
-        '/servers/s/machines/placeholder',
-      ]);
-      expect(f.w.commands.where((c) => c.$1 == 'PATCH'), isEmpty);
-      expect(find.byType(RaftAddComputerDialog), findsNothing);
-    },
-  );
-
-  testWidgets(
     'canceling the wait stops recovery reads and late online events',
     (t) async {
       final f = _Fixture();
       await f.open(t);
       await t.tap(find.widgetWithText(RaftRecipeButton, 'Cancel'));
-      await t.pumpAndSettle();
+      await _settle(t);
       final reads = f.computerReads;
       f.w.machines = [_computer('late')];
       await t.pump(const Duration(seconds: 10));
@@ -555,7 +371,7 @@ void main() {
       f.c.selectServer('other');
       f.w.server = RaftRecord({'id': 'other', 'role': 'owner'});
       f.w.notifyListeners();
-      await t.pumpAndSettle();
+      await _settle(t);
       final reads = f.computerReads;
       f.w.machines = [_computer('actual')];
       await t.pump(const Duration(seconds: 10));
@@ -567,4 +383,58 @@ void main() {
       );
     },
   );
+
+  testWidgets('opening the dialog registers nothing and opens on the command', (
+    t,
+  ) async {
+    final f = _Fixture();
+    await f.open(t);
+    expect(find.text('Connect computer'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('add-machine-own-computer-hint')),
+      findsOne,
+    );
+    expect(find.byKey(const ValueKey('add-computer-next')), findsNothing);
+    expect(find.text('Cloud Computer'), findsNothing);
+    expect(find.text('Experimental'), findsNothing);
+    expect(f.w.commands, isEmpty);
+    await t.tap(find.widgetWithText(RaftRecipeButton, 'Cancel'));
+    await _settle(t);
+    expect(find.byType(RaftAddComputerDialog), findsNothing);
+    expect(f.w.commands, isEmpty, reason: 'Cancel leaves nothing behind');
+  });
+
+  testWidgets('a rename failure stays visible and Done retries the same row', (
+    t,
+  ) async {
+    final f = _Fixture();
+    await f.open(t);
+    f.w.machines = [_computer('actual')];
+    await f.event(t);
+    await t.enterText(find.byType(TextField), 'Renamed');
+    f.w.failRename = true;
+    await t.tap(find.widgetWithText(RaftRecipeButton, 'Done'));
+    await _settle(t);
+    expect(find.byType(RaftAddComputerDialog), findsOneWidget);
+    expect(find.text('Could not save computer name.'), findsOneWidget);
+    f.w.failRename = false;
+    await t.tap(find.widgetWithText(RaftRecipeButton, 'Done'));
+    await _settle(t);
+    expect(find.byType(RaftAddComputerDialog), findsNothing);
+    expect(f.w.commands.where((c) => c.$1 == 'PATCH').map((c) => c.$2), [
+      '/servers/s/machines/actual',
+      '/servers/s/machines/actual',
+    ]);
+  });
+
+  testWidgets('Done opens the connected computer', (t) async {
+    final f = _Fixture();
+    final opened = <String>[];
+    await f.open(t, onOpen: opened.add);
+    f.w.machines = [_computer('actual')];
+    await f.event(t);
+    await t.tap(find.widgetWithText(RaftRecipeButton, 'Done'));
+    await _settle(t);
+    expect(opened, ['actual']);
+  });
 }

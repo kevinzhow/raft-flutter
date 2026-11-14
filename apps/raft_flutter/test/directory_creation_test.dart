@@ -80,7 +80,13 @@ void main() {
                 ),
               ),
             );
-            await t.pumpAndSettle();
+            // The Add Computer dialog's waiting spinner never settles.
+            if (computer) {
+              await t.pump();
+              await t.pump(const Duration(milliseconds: 400));
+            } else {
+              await t.pumpAndSettle();
+            }
             if (!computer) {
               final managed = find.widgetWithText(RaftMenuItem, 'Create Agent');
               expect(managed, findsOneWidget);
@@ -99,16 +105,11 @@ void main() {
               await t.pumpAndSettle();
             }
             if (computer) {
-              // Web AddMachineDialog: choose Your Computer, then Next
-              // registers a placeholder row and shows the connect commands;
-              // the one-time key is never displayed.
+              // Web v1.24 AddMachineDialog opens on the connect commands and
+              // registers nothing; the one-time key is never displayed.
               expect(find.byType(RaftAddComputerDialog), findsOneWidget);
-              await t.tap(find.byKey(const ValueKey('add-computer-next')));
-              await t.pumpAndSettle();
-              expect(w.commands, hasLength(1));
-              expect(w.commands.single.$1, 'POST');
-              expect(w.commands.single.$2, '/servers/s/machines');
-              expect((w.commands.single.$3 as Map)['name'], 'my-computer');
+              await t.pump(const Duration(milliseconds: 400));
+              expect(w.commands, isEmpty);
               expect(
                 find.byKey(const ValueKey('add-computer-waiting')),
                 findsOneWidget,

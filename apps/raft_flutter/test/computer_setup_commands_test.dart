@@ -38,13 +38,9 @@ void main() {
         contains(r'RAFT_COMPUTER_INSTALL_DIR="$HOME/.raft-computer-work/bin"'),
       );
     }
-    expect(
-      commands.install,
-      contains(
-        'https://slock-cdn-staging.botiverse.dev/computer/staging/install.sh',
-      ),
-    );
-    expect(commands.install, contains('RAFT_COMPUTER_INSTALL_CHANNEL=alpha'));
+    // v1.24: staging installs from the production CDN too.
+    expect(commands.install, contains('https://cdn.raft.build/computer/install.sh'));
+    expect(commands.install, isNot(contains('slock-cdn-staging')));
     expect(commands.install, contains('RAFT_COMPUTER_VERSION=1.2.3-alpha.4'));
     expect(
       commands.setup,
