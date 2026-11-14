@@ -215,7 +215,38 @@ class _Lab extends ChangeNotifier {
         }),
       );
       await workspace.activityUnread.refresh();
-      await coordinator.desktop?.deliverPending();
+      // Desktop alerts are server-driven (Web v1.24): the lab plays the
+      // server's `notification:desktop` frame for the same message.
+      final delivered = Completer<void>();
+      client.ingress.add(
+        RaftEvent('notification:desktop', {
+          'v': 1,
+          'id': 'lab-notification-$serial',
+          'kind': 'dm',
+          'event': 'message',
+          'title': 'Tray acceptance',
+          'body': 'Synthetic background message',
+          'serverId': 'tray-lab',
+          'serverName': 'Tray lab',
+          'channelId': 'lab-dm',
+          'messageId': message,
+          'mentioned': false,
+          'url': '/s/tray-lab/dm/lab-dm?msg=$message',
+          'route': {
+            'type': 'dm',
+            'serverId': 'tray-lab',
+            'channelId': 'lab-dm',
+            'messageId': message,
+          },
+          'groupKey': 'tray-lab:lab-dm',
+          'createdAt': DateTime.now().toUtc().toIso8601String(),
+          'silent': false,
+        }, ack: (_) => delivered.complete()),
+      );
+      await delivered.future.timeout(
+        const Duration(seconds: 5),
+        onTimeout: () {},
+      );
       await coordinator.dockUnread.settled;
       await record();
     });
