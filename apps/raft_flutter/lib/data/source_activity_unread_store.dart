@@ -122,6 +122,10 @@ class SourceActivityUnreadStore extends ChangeNotifier {
   Future<void>? _inFlight, _trailing;
   Completer<void>? _trailingCompletion;
   List<Map<String, dynamic>> _rows = [];
+
+  /// The rows the server last served, before a row patched in place was kept
+  /// over its stale answer: what a convergence wait is judged against.
+  List<Map<String, dynamic>> _served = [];
   int? _total;
 
   /// The newest-first first-page inbox window accepted by this session, kept
@@ -240,6 +244,7 @@ class SourceActivityUnreadStore extends ChangeNotifier {
       _scope = next;
       _total = null;
       _rows = [];
+      _served = [];
       _window = null;
       _denied = false;
       _acceptedAt = null;
@@ -590,8 +595,8 @@ class SourceActivityUnreadStore extends ChangeNotifier {
     final want = _convergence.expect(channelId, messageId: messageId, seq: seq);
     // A conversation the window keeps not listing is not waited for.
     if (want == null) return Future.value(false);
-    if (hasAcceptedWindow && want.satisfiedBy(_rows)) {
-      _convergence.observe(_rows);
+    if (hasAcceptedWindow && want.satisfiedBy(_served)) {
+      _convergence.observe(_served);
       return Future.value(true);
     }
     // The trailing read of the announcing event reads soon enough by itself.
@@ -684,6 +689,7 @@ class SourceActivityUnreadStore extends ChangeNotifier {
     _revision++;
     final retained = _rows;
     _rows = rows;
+    _served = served;
     _total = count;
     _projectReadStateRows(retainedRows: retained);
     if (firstPage) {
@@ -804,6 +810,7 @@ class SourceActivityUnreadStore extends ChangeNotifier {
     _denied = true;
     _total = null;
     _rows = [];
+    _served = [];
     _window = null;
     _acceptedAt = null;
     _convergence.reset();
@@ -897,6 +904,7 @@ class SourceActivityUnreadStore extends ChangeNotifier {
     if (_disposed) return;
     _disposed = true;
     _rows = [];
+    _served = [];
     _window = null;
     _total = null;
     _acceptedAt = null;

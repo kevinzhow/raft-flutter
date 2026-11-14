@@ -252,8 +252,8 @@ class InboxInPlaceUnread {
   }
 
   /// A served window ([served]) over the rows shown ([current]): a served row
-  /// still behind a row patched in place keeps that row's unread fields and
-  /// stays where the live message put it (Web `preserveNewer*Activity` with
+  /// still behind a row patched in place stays as the live message left it,
+  /// with its unread, and where it put it (Web `preserveNewer*Activity` with
   /// `inPlaceUnreadOf`). Returns the rows and the unread they add over [served].
   ({List<Map<String, dynamic>> rows, int delta}) keepAhead(
     List<Map<String, dynamic>> served,
@@ -283,8 +283,14 @@ class InboxInPlaceUnread {
             _highWater.remove(scope);
             return row;
           }
-          if (!local.counts) return row;
-          final next = {...row, ...inPlaceUnreadOf(here)};
+          // The row as the live message left it (preview, seq, order), over
+          // the served frontier; the unread is the local one only if the
+          // message counted.
+          final next = {
+            ...here,
+            if (row.containsKey('readState')) 'readState': row['readState'],
+            if (!local.counts) ...inPlaceUnreadOf(row),
+          };
           delta += _count(next['unreadCount']) - _count(row['unreadCount']);
           kept.add(next);
           return next;
