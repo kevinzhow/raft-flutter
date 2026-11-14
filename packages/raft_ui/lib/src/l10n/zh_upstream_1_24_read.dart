@@ -12,4 +12,6 @@ const Map<String, String> zhCatalogUpstream124Read = <String, String>{
   "Activity may be out of date. It'll update on its own when Raft catches up.":
       "动态可能不是最新的，Raft 恢复后会自动更新。",
   "Activity is temporarily unavailable.": "动态暂时不可用。",
+  // thread.row.markUnreadNothing
+  "Nothing new from others here to mark unread.": "这里没有别人的新消息可以标为未读。",
 };
