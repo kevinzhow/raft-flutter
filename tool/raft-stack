@@ -69,6 +69,16 @@ Activity reads answer 503 until the views are back.
 status adds a RisingWave health line: container state, meta heartbeat failures in the last
 minute, whether the committed epoch moves, and how far the RW copy of messages lags Postgres.
 Private state (logs, PID files, the toolchain wrapper) lives next to the config file.
+  containerCpus   CPU limit (docker --cpus) for each of the environment's containers
+                  (Postgres, Redis, RustFS, RisingWave, otelcol), applied with `docker update`
+                  after start, sync and restart risingwave (the RW helper applies it before
+                  the bootstrap). Default 2; 0 leaves the containers unlimited
+  processPrefix   optional command prefix (e.g. ["cpu-lane", "agents"]: a CPU-capped systemd
+                  scope that execs the command) for the processes this tool starts itself: the
+                  content Worker and the RisingWave restart helper with its bootstrap. The
+                  server, Web and daemon are tmux windows of the user's tmux server, which
+                  raftdev reuses and which runs outside any such scope, so a prefix on raftdev
+                  would not reach them; bound those with the user's own slice for tmux
 A patch manifest may say {"upstream": "<why>"} instead of listing files: the source
 version already does what the patch did, so nothing is applied for that name.
 Logs are private files .local/<config stem>-<action>.log (stack-<action>.log for
@@ -502,9 +512,11 @@ def start_content_worker(config, source, stem, env):
     bindings_file, pid_file, log_file = worker_files(stem)
     fd = os.open(log_file, os.O_WRONLY | os.O_CREAT | os.O_APPEND, 0o600)
     with os.fdopen(fd, 'a') as log:
+        # A prefix such as `cpu-lane agents` (systemd-run --scope) execs the command, so the
+        # recorded PID and start time are the Worker's own.
         proc = subprocess.Popen(
-            [str(toolchain_bin(config) / 'node'), str(WORKER_SCRIPT), str(source / 'packages/content-worker'),
-             str(bindings_file), str(port)],
+            process_prefix(config) + [str(toolchain_bin(config) / 'node'), str(WORKER_SCRIPT),
+                                      str(source / 'packages/content-worker'), str(bindings_file), str(port)],
             cwd=source / 'packages/content-worker', env=env, stdin=subprocess.DEVNULL,
             stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
     pid_file.write_text(f'{proc.pid} {process_start_time(proc.pid)}\n')
@@ -646,6 +658,42 @@ def build_env(config, base_env, wrapper_dir=None):
     return env
 
 
+DEFAULT_CONTAINER_CPUS = 2
+CONTAINER_SUFFIXES = ('pg', 'redis', 'rustfs', 'risingwave', 'otelcol')
+
+
+def container_cpus(config):
+    value = config.get('containerCpus', DEFAULT_CONTAINER_CPUS)
+    if isinstance(value, bool) or not isinstance(value, (int, float)) or value < 0:
+        raise SystemExit('containerCpus must be a number of CPUs (0 = unlimited).')
+    return value
+
+
+def container_cpu_commands(config, existing):
+    """docker update commands for the environment's containers that exist; [] when unlimited."""
+    cpus = container_cpus(config)
+    if not cpus:
+        return []
+    names = [f"slock-dev-{config['environment']}-{suffix}" for suffix in CONTAINER_SUFFIXES]
+    return [['docker', 'update', '--cpus', f'{cpus:g}', name] for name in names if name in existing]
+
+
+def apply_container_cpus(config):
+    listed = subprocess.run(['docker', 'ps', '-a', '--format', '{{.Names}}'], capture_output=True, text=True)
+    commands = container_cpu_commands(config, set(listed.stdout.split()))
+    for command in commands:
+        subprocess.run(command, check=True, stdout=subprocess.DEVNULL)
+    if commands:
+        print(f'container CPU limit {container_cpus(config):g} on ' + ', '.join(c[-1] for c in commands))
+
+
+def process_prefix(config):
+    prefix = config.get('processPrefix') or []
+    if not isinstance(prefix, list) or not all(isinstance(part, str) and part for part in prefix):
+        raise SystemExit('processPrefix must be a list of command words.')
+    return prefix
+
+
 def rw_names(config):
     env = config['environment']
     return f'slock-dev-{env}-risingwave', f'slock-dev-{env}-pg'
@@ -718,11 +766,13 @@ def restart_risingwave(config, source, stem, env):
     fd = os.open(log, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
     with os.fdopen(fd, 'w') as output:
         result = subprocess.run(
-            ['pnpm', 'exec', 'node', '--import', '@oxc-node/core/register', str(RISINGWAVE_HELPER),
-             str(source), config['environment']],
-            cwd=source / 'packages/server', env=env, stdout=output, stderr=subprocess.STDOUT)
+            process_prefix(config) + ['pnpm', 'exec', 'node', '--import', '@oxc-node/core/register',
+                                      str(RISINGWAVE_HELPER), str(source), config['environment']],
+            cwd=source / 'packages/server', env=dict(env, RAFT_STACK_CONTAINER_CPUS=f'{container_cpus(config):g}'),
+            stdout=output, stderr=subprocess.STDOUT)
     print(f'restart risingwave: exit {result.returncode} after {time.monotonic() - started:.0f} s; private log: {log}')
     if result.returncode == 0:
+        apply_container_cpus(config)
         print('RisingWave: ' + rw_health(config)[1])
     return result.returncode
 
@@ -778,6 +828,7 @@ def main(argv):
         if config.get('artifacts') and (prepare_content_worker(config, stem) or not recorded_worker_pid(stem)):
             stop_content_worker(stem)
             start_content_worker(config, source, stem, env)
+        apply_container_cpus(config)
         print('synced: patches applied now: ' + (', '.join(applied) or 'none'))
         return 0
     if action == 'stop':
@@ -796,6 +847,7 @@ def main(argv):
         result = subprocess.run(args, cwd=source, env=env, stdout=output, stderr=subprocess.STDOUT)
     print(f'raftdev {action}: exit {result.returncode}; private local log: {log}')
     if result.returncode == 0 and action == 'start':
+        apply_container_cpus(config)
         apply_feature_flags(config, source)
         # The fixture server id exists only now; the freshly started server needs it.
         if prepare_server_env(config, source):

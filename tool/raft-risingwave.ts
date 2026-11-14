@@ -77,6 +77,12 @@ if (docker(runArgs, false).code !== 0) {
   console.error(`could not start ${container}`);
   process.exit(1);
 }
+// tool/raft-stack's containerCpus: bound the container before the CPU-heavy bootstrap.
+const cpus = process.env.RAFT_STACK_CONTAINER_CPUS?.trim();
+if (cpus && cpus !== "0" && docker(["update", "--cpus", cpus, container]).code !== 0) {
+  console.error(`could not limit ${container} to ${cpus} CPUs`);
+  process.exit(1);
+}
 
 // 3. pgwire SELECT 1.
 async function sqlReady(): Promise<boolean> {

@@ -291,6 +291,30 @@ class RisingWaveHealthTest(unittest.TestCase):
                          ('slock-dev-cindy-w24-risingwave', 'slock-dev-cindy-w24-pg'))
 
 
+class ContainerCpuTest(unittest.TestCase):
+    def test_default_limit_covers_existing_containers_only(self):
+        existing = {'slock-dev-e-pg', 'slock-dev-e-redis', 'slock-dev-e-risingwave', 'slock-dev-other-pg'}
+        commands = stack.container_cpu_commands({'environment': 'e'}, existing)
+        self.assertEqual(commands, [['docker', 'update', '--cpus', '2', 'slock-dev-e-pg'],
+                                    ['docker', 'update', '--cpus', '2', 'slock-dev-e-redis'],
+                                    ['docker', 'update', '--cpus', '2', 'slock-dev-e-risingwave']])
+
+    def test_custom_zero_and_invalid_limits(self):
+        self.assertEqual(stack.container_cpu_commands({'environment': 'e', 'containerCpus': 1.5}, {'slock-dev-e-rustfs'}),
+                         [['docker', 'update', '--cpus', '1.5', 'slock-dev-e-rustfs']])
+        self.assertEqual(stack.container_cpu_commands({'environment': 'e', 'containerCpus': 0}, {'slock-dev-e-pg'}), [])
+        for bad in (-1, '2', True):
+            with self.assertRaises(SystemExit):
+                stack.container_cpus({'containerCpus': bad})
+
+    def test_process_prefix(self):
+        self.assertEqual(stack.process_prefix({}), [])
+        self.assertEqual(stack.process_prefix({'processPrefix': ['cpu-lane', 'agents']}), ['cpu-lane', 'agents'])
+        for bad in ('cpu-lane agents', ['cpu-lane', ''], [1]):
+            with self.assertRaises(SystemExit):
+                stack.process_prefix({'processPrefix': bad})
+
+
 class EnvTest(unittest.TestCase):
     CONFIG = {'toolchain': {'binDir': '/opt/node/bin', 'env': {'COREPACK_HOME': '~/cp', 'COREPACK_ENABLE_DOWNLOAD_PROMPT': '0'}}}
 
