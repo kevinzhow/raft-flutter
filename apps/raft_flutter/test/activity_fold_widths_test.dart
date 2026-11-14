@@ -125,7 +125,6 @@ void main() {
               await t.pumpAndSettle();
               expect(find.byType(ResourceView), findsNothing);
               expect(find.byType(RaftChatView), findsOneWidget);
-              w.activityUnreadIfBound?.dispose();
               return;
             }
             // Preview: Activity stays the route and the list stays mounted.
@@ -156,7 +155,6 @@ void main() {
             expect(w.navigation.entries.length, entries + 1);
             await t.pumpAndSettle();
             expect(t.takeException(), isNull);
-            w.activityUnreadIfBound?.dispose();
           },
         );
       }
