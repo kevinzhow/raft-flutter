@@ -708,7 +708,10 @@ def declared_names(text):
     stripped = text.strip()
     stripped = re.sub(r'^@\w+(\([^)]*\))?\s*', '', stripped)
     names = []
-    for pattern in DECLARATIONS:
+    # `Type name = value,` / `Type name,` at this indentation is a parameter of a top-level function
+    # (or an argument), not a declaration; an enum value (`name,`) is the only declaration ending in `,`.
+    patterns = DECLARATIONS[-1:] if stripped.endswith(',') else DECLARATIONS
+    for pattern in patterns:
         match = pattern.match(stripped)
         if match:
             names.append(match.group(1))

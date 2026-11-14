@@ -283,5 +283,40 @@ class TestEnvironmentTests(unittest.TestCase):
         self.assertEqual((suite['name'], suite['cwd']), ('legacy-looks', 'apps/raft_flutter'))
 
 
+class ImpactMapJobTests(unittest.TestCase):
+    def test_a_package_run_records_the_impact_map_without_dds(self):
+        import types
+        from unittest import mock
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / 'wt'
+            package = root / 'packages/raft_sync'
+            (package / 'test').mkdir(parents=True)
+            (package / 'pubspec.yaml').write_text('name: raft_sync\n')
+            args = types.SimpleNamespace(date='2026-11-14', out_dir=tmp, worktree=str(root), max_hours=1, seed=1,
+                                         impact_cache=str(Path(tmp) / 'cache'))
+            run = nq.Run(args)
+            run.env, run.base_sha = {}, 'abc123'
+            seen = {}
+
+            def fake_run(cmd, cwd, log_path, timeout, env=None):
+                # what the probe writes at the end of one test file
+                seen.update(cmd=cmd, env=env, config=(package / 'test/flutter_test_config.dart').read_text())
+                raw = Path(env['RAFT_TEST_IMPACT_DIR'])
+                (raw / 'a.json').write_text(json.dumps({'test': f'{package}/test/a_test.dart',
+                                                        'hits': {'package:raft_sync/a.dart': [3]}, 'misses': {}}))
+                return {'code': 0, 'timed_out': False, 'seconds': 2.0}
+
+            with mock.patch.object(nq, 'run', side_effect=fake_run):
+                run.run_suite('raft_sync', package, ['test/'], 60, Path(tmp) / 'raft_sync.lcov', impact=True)
+            self.assertIn('--no-dds', seen['cmd'])
+            self.assertIn('recordTestImpact()', seen['config'])
+            self.assertFalse((package / 'test/flutter_test_config.dart').exists())  # the temporary config is gone
+            maps = nq.test_impact.load_maps(args.impact_cache)
+            self.assertEqual(maps[0].commit, 'abc123')
+            self.assertEqual(maps[0].tests_at('packages/raft_sync/lib/a.dart', 3), {'packages/raft_sync/test/a_test.dart'})
+            self.assertIn('packages/raft_sync: 1 test files mapped', run.data['impact'][0])
+            self.assertIn('测试影响图', nq.render_summary({**run.data, 'seed': 1, 'started': '03:00', 'seconds': 1}))
+
+
 if __name__ == '__main__':
     unittest.main()
