@@ -6,6 +6,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
+import 'package:raft_flutter/features/notification_level_menu.dart';
 import 'package:raft_flutter/data/resource_snapshot_cache.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/features/agent_scopes_view.dart';
@@ -531,11 +532,22 @@ void main() {
         .visible;
 
     // No convert-to-joint offer: Web 1.24 retired it on every server.
+    bool levelEnabled(WidgetTester t) =>
+        t
+            .widget<RaftSettingsSelect<NotificationLevelChoice>>(
+              find.byKey(
+                const ValueKey('channel-settings-notification-level-select'),
+              ),
+            )
+            .onChanged !=
+        null;
+
     List<Finder> layout() => [
       find.byType(RaftDialogTextInput).first,
       find.text('Guest access'),
       find.text('Pin channel'),
-      find.text('Mute activity'),
+      // v1.24: the Notifications level row (Mute is one of its choices).
+      find.text('Notifications'),
       find.text('Collapse long messages'),
       find.text('Leave channel'),
     ];
@@ -588,7 +600,9 @@ void main() {
         expect(find.text('Guest access'), findsOneWidget);
         expect(find.text('Chat with members from other servers'), findsNothing);
         // Per-channel values are in flight: rows hold their space.
-        expect(switchShown(t, 'Mute activity'), isFalse);
+        // The level row stays in place; its Mute choice waits for the
+        // channel's Activity mute state.
+        expect(levelEnabled(t), isFalse);
         expect(switchShown(t, 'Collapse long messages'), isFalse);
         final reserved = _rects(t, layout());
         await _settleStable(
@@ -597,7 +611,7 @@ void main() {
           reserved,
           done: () => switchShown(t, 'Collapse long messages'),
         );
-        expect(switchShown(t, 'Mute activity'), isTrue);
+        expect(levelEnabled(t), isTrue);
         expect(
           t.widget<RaftSwitch>(rowSwitch('Collapse long messages')).value,
           isFalse,

@@ -717,9 +717,12 @@ class _NotificationServersCardState extends State<NotificationServersCard> {
     load();
   }
 
+  /// Each server's levels once per page visit (a failed read is not
+  /// repeated on every rebuild).
+  final requested = <String>{};
   void load() {
     for (final server in ordered) {
-      if (!widget.store.levelsLoaded(server.id)) {
+      if (!widget.store.levelsLoaded(server.id) && requested.add(server.id)) {
         unawaited(widget.store.loadServerLevels(server.id));
       }
     }
