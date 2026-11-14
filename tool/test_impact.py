@@ -341,6 +341,10 @@ def build(root, packages, jobs, tier, raw_root, cache=CACHE, commit=None, log=pr
         env.pop('RAFT_TEST_ALL_THEMES', None)
         if tier:
             env['RAFT_TEST_TIER'] = tier
+        # The map build runs at the lowest priority on a shared machine: a test that waits for CPU past the
+        # gate's 60 s bound times out, the rest of its file fails, and its lines are lost. The bound is for
+        # hangs on the gate, not for this run.
+        env.setdefault('RAFT_TEST_TIMEOUT_SECONDS', '600')
         cmd = [sys.executable, str(root / 'tool/flutter'), 'test', '--no-pub', '-j', str(jobs), '--enable-vmservice', '--no-dds',
                '--reporter', 'failures-only', '--file-reporter', f'json:{events}', *extra_args]
         if package_name(package_dir) != 'raft_theme':  # the engine package runs whole (as in the nightly)
@@ -590,6 +594,49 @@ DECLARATIONS = (
 TYPE_HEADER = DECLARATIONS[0]
 
 
+FIELD_INITIALIZER = re.compile(r'^(?:late\s+)?(?:final\s+|var\s+)?(?:[\w<>?,. ]+?\s+)?\w+\s*=(?!>)')
+
+
+def reaches_existing_callers(added):
+    """Can class-level code inserted into an existing class run without a changed caller?
+
+    An override (`@override`, or `==` / `hashCode` / `toString` / `noSuchMethod`) runs wherever the class is
+    used, and an instance field initializer on every construction. A new method, getter or constructor runs
+    only when something calls it, and that call is a changed line.
+    """
+    member = min(indent(t) for t in added)
+    for text in added:
+        stripped = text.strip()
+        if '@override' in stripped or re.search(r'\b(operator\s*==|hashCode|toString|noSuchMethod)\b', stripped):
+            return True
+        if indent(text) == member and not stripped.startswith(('static ', 'const ', 'factory ')) and FIELD_INITIALIZER.match(stripped):
+            return True
+    return False
+
+
+def enclosing_header(imap, path, lines, line, declaration, level, inserted):
+    """The executable line that opens the innermost block around `line` inside the function at `declaration`.
+
+    Walks up from `line` to the first code line indented less than `level` (the changed or inserted code);
+    a line that is not executable (`} else {`, `try {`, a `case` label) hands over to the one above it at
+    its own indentation. Returns None when the walk reaches the function's own declaration (the body's
+    top level: the whole function is the unit) or the code is not formatted in blocks.
+    """
+    if level is None or level <= indent(lines[declaration - 1]) + 2:
+        return None
+    start = line if inserted else line - 1
+    for number in range(start, declaration, -1):
+        text = lines[number - 1]
+        if not is_code(text) or indent(text) >= level:
+            continue
+        if imap.is_coverable(path, number) and not text.lstrip().startswith('}'):
+            return number
+        level = indent(text) + (1 if text.lstrip().startswith('}') else 0)
+        if level <= indent(lines[declaration - 1]) + 2:
+            return None
+    return None
+
+
 def declaration_end(lines, number):
     """Last line of the declaration starting at `number`: the line before the next code line at its indentation
     or less (its closing `}` included)."""
@@ -804,9 +851,9 @@ class Selector:
         text = text_lines[line - 1] if 0 < line <= len(text_lines) else ''
         if text and not is_code(text):
             return
-        self.context_tests(imap, path, line, reason, depth, inserted=False)
+        self.context_tests(imap, path, line, reason, depth, inserted=False, level=indent(text) if text else None)
 
-    def context_tests(self, imap, path, line, reason, depth, inserted):
+    def context_tests(self, imap, path, line, reason, depth, inserted, level=None, added=()):
         """A line no test can execute by itself (a declaration, a const, an `else`) or the point new code goes in.
 
         Inside a function: every test that ran any line of the function (a test that reaches the line must
@@ -815,13 +862,21 @@ class Selector:
         field or const constructor: the tests that run the lines that use the name.
         """
         text_lines = self.text_at(imap.commit, path)
-        declaration = self.enclosing_declaration(text_lines, line)
+        if inserted and level is not None:
+            declaration = self.enclosing_declaration_above(text_lines, line, level)
+        else:
+            declaration = self.enclosing_declaration(text_lines, line)
         if declaration is None:
             if not inserted:
                 self.selection.add(imap.file_tests(path), f'{reason} (tests that ran {path})')
             return  # new top-level code: only changed code can call it
         number, names = declaration
         if is_function_declaration(text_lines, number):
+            header = enclosing_header(imap, path, text_lines, line, number, level, inserted)
+            if header is not None:
+                # inside a block: a test reaches the line only through the block's own executable header
+                self.selection.add(imap.tests_at(path, header), f'{reason} (tests that ran its block {path}:{header})')
+                return
             end = declaration_end(text_lines, number)
             tests = imap.tests_in_range(path, number, end)
             if tests:
@@ -830,6 +885,9 @@ class Selector:
                 self.selection.unexecuted.add(f'{path}:{number}')  # a function no test runs
             return
         if TYPE_HEADER.match(text_lines[number - 1].strip()):
+            if inserted and added and not reaches_existing_callers(added):
+                self.selection.notes.append(f'{reason}: new members only (no override, no field initializer); reached through changed code')
+                return
             end = declaration_end(text_lines, number)
             tests = imap.tests_in_range(path, number, end)
             self.selection.add(tests, f'{reason} (tests that ran {path}:{number}-{end})')
@@ -842,7 +900,8 @@ class Selector:
             self.declaration_tests(imap, path, name, reason, depth)
 
     def declaration_tests(self, imap, path, name, reason, depth):
-        refs = [r for r in self.references(imap.commit, name) if is_code(r[2]) and not is_directive(r[2])]
+        refs = [r for r in self.references(imap.commit, name) if is_code(r[2]) and not is_directive(r[2])
+                and (not name.startswith('_') or r[0] == path)]  # a private name is the library's own
         if len(refs) > REF_LIMIT:
             # Too many to follow line by line. The tests that ran the declaring file stand in for its users;
             # a file nothing executes (constants only) hands over to the tests that ran the files using the name.
@@ -868,6 +927,22 @@ class Selector:
     def _decl_lines(self, imap, path, name):
         lines = self.text_at(imap.commit, path)
         return {i for i, text in enumerate(lines, 1) if name in declared_names(text)}
+
+    @staticmethod
+    def enclosing_declaration_above(lines, line, level):
+        """For code inserted after `line` at indentation `level`: the declaration it goes into, or None (top level)."""
+        for number in range(min(line, len(lines)), 0, -1):
+            candidate = lines[number - 1]
+            if not is_code(candidate) or indent(candidate) >= level or candidate.lstrip()[:1] in ')]}':
+                continue
+            if indent(candidate) <= 2:
+                names = declared_names(candidate)
+                if names:
+                    return number, names
+            level = indent(candidate)
+            if level == 0:
+                return None
+        return None
 
     @staticmethod
     def enclosing_declaration(lines, line):
@@ -908,8 +983,10 @@ class Selector:
                 if code_added and not code_removed:
                     # inserted after `old_start` (or in place of comments): what contains the insertion point
                     anchor = old_start if old_count == 0 else old_start - 1
+                    level = min(indent(text) for text in code_added)
                     for line in translate.lines(path, max(anchor, 1)):
-                        self.context_tests(imap, map_path_, line, f'inserts code at {path}:{new_start}', 0, inserted=True)
+                        self.context_tests(imap, map_path_, line, f'inserts code at {path}:{new_start}', 0, inserted=True, level=level,
+                                           added=code_added)
         return bool(known)
 
     # file-level rules
@@ -987,7 +1064,8 @@ class Selector:
                 if affected_tests.is_test_file(path) and file_diff.status != 'D':
                     sel.add([path], 'changed test file')
                 for generated, inputs in GENERATED:
-                    if inputs.match(path):
+                    # the generated index lists its inputs: it changes when one is added, removed or renamed
+                    if file_diff.status in 'ADR' and (inputs.match(path) or (file_diff.old and inputs.match(file_diff.old))):
                         for imap in self.maps:
                             sel.add(imap.file_tests(generated), f'{path} feeds the generated {generated}')
                 if file_diff.status == 'D' or self.hunk_tests(file_diff, file_diff.old if file_diff.status == 'R' else path):
