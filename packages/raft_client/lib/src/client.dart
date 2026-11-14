@@ -2188,14 +2188,10 @@ class RaftClient {
   Future<dynamic> accountUnreadSummary() =>
       _accountRequest('GET', '/servers/unread-summary');
 
-  Future<List<RaftChannel>> channels({bool dm = false}) async =>
-      (await get(
-                dm ? '/channels/dm' : '/channels',
-                query: dm ? null : {'archived': 'include'},
-              )
-              as List)
-          .map((e) => RaftChannel(Map<String, dynamic>.from(e)))
-          .toList();
+  Future<List<RaftChannel>> channels({bool dm = false}) async => (await get(
+    dm ? '/channels/dm' : '/channels',
+    query: dm ? null : {'archived': 'include'},
+  ) as List).map((e) => RaftChannel(Map<String, dynamic>.from(e))).toList();
   Future<Map<String, dynamic>> messagePage(
     String id, {
     BigInt? before,

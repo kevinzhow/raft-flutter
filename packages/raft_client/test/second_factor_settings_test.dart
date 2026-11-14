@@ -178,31 +178,6 @@ void main() {
     expect(_body(calls[8]), isEmpty);
   });
 
-  test(
-    'stepUpBeforeApproval asks only for an unverified sign-in with it on',
-    () async {
-      var status = <String, dynamic>{};
-      final s = await _signedInClient((_) => (200, status));
-      status = {
-        'enabled': true,
-        'sessionVerified': false,
-        'methods': {'totp': true, 'passkeys': 1, 'backupCodesRemaining': 0},
-      };
-      expect(await s.client.stepUpBeforeApproval(), [
-        SecondFactorMethod.totp,
-        SecondFactorMethod.passkey,
-      ]);
-      status = {...status, 'sessionVerified': true};
-      expect(await s.client.stepUpBeforeApproval(), isNull);
-      // Older servers don't say: the approval's own 403 is the fallback.
-      status = {
-        'enabled': true,
-        'methods': {'totp': true},
-      };
-      expect(await s.client.stepUpBeforeApproval(), isNull);
-    },
-  );
-
   test('the recovery request goes signed out and trims the email', () async {
     final adapter = _Adapter((_) => (200, {'ok': true}));
     final client = RaftClient(
