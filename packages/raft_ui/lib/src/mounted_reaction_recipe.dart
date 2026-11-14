@@ -50,7 +50,7 @@ class RaftMountedReactionRecipe extends RaftControlRecipe {
   Color backgroundFor({bool hovered = false}) {
     if (raft) {
       final ui = tokens.ui;
-      // `hover:press-overlay`, `data-pressed:bg-attention-soft`,
+      // `hover:overlay-medium`, `data-pressed:bg-attention-soft`,
       // `has-[error]:bg-warning-soft`.
       final base = failure
           ? ui['warning-soft']
