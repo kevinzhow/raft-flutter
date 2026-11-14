@@ -38,6 +38,7 @@ class _Controller extends PlatformWebViewController {
     }
     log.add('background');
   }
+
   @override
   Future<void> setPlatformNavigationDelegate(
     PlatformNavigationDelegate handler,
@@ -61,9 +62,7 @@ class _Delegate extends PlatformNavigationDelegate {
   @override
   Future<void> setOnHttpError(HttpResponseErrorCallback callback) async {}
   @override
-  Future<void> setOnWebResourceError(
-    WebResourceErrorCallback callback,
-  ) async {}
+  Future<void> setOnWebResourceError(WebResourceErrorCallback callback) async {}
 }
 
 class _Widget extends PlatformWebViewWidget {
@@ -87,7 +86,9 @@ void main() {
     onProgressCallback = null;
   });
 
-  final uri = Uri.parse('https://api.example/api/attachments/a/html-preview?previewToken=t');
+  final uri = Uri.parse(
+    'https://api.example/api/attachments/a/html-preview?previewToken=t',
+  );
   Widget view(AttachmentHtmlWebViewEvents events) => MaterialApp(
     home: AttachmentHtmlWebView(
       uri: uri,
@@ -96,66 +97,9 @@ void main() {
     ),
   );
 
-  testWidgets('cookies, storage and cache are locked down before the first request', (tester) async {
-    await tester.pumpWidget(
-      view(
-        AttachmentHtmlWebViewEvents(
-          onNavigation: (_) => false,
-          onLoaded: () {},
-          onFailed: (_) {},
-        ),
-      ),
-    );
-    await tester.pump();
-    expect(log.indexOf('lockDown'), isNonNegative);
-    expect(log.indexOf('load:$uri'), greaterThan(log.indexOf('lockDown')));
-  });
-
-  testWidgets('closing unloads the document through about:blank, then purges, and ignores the old page', (tester) async {
-    var navigations = 0, failures = 0, loaded = 0;
-    await tester.pumpWidget(
-      view(
-        AttachmentHtmlWebViewEvents(
-          onNavigation: (_) {
-            navigations++;
-            return true;
-          },
-          onLoaded: () => loaded++,
-          onFailed: (_) => failures++,
-        ),
-      ),
-    );
-    await tester.pump();
-    final request = onNavigationRequest!;
-    expect(
-      await request(NavigationRequest(url: uri.toString(), isMainFrame: true)),
-      NavigationDecision.navigate,
-    );
-    log.clear();
-    await tester.pumpWidget(const SizedBox.shrink());
-    await tester.pump();
-    // The blank page must be allowed even though the preview is closed:
-    // WKWebView asks the delegate about programmatic loads as well.
-    expect(
-      await request(NavigationRequest(url: 'about:blank', isMainFrame: true)),
-      NavigationDecision.navigate,
-    );
-    // Nothing else may start after close (a script redirecting the old page).
-    for (final url in [uri.toString(), 'https://example.com/', 'file:///etc/passwd']) {
-      expect(
-        await request(NavigationRequest(url: url, isMainFrame: true)),
-        NavigationDecision.prevent,
-        reason: url,
-      );
-    }
-    expect([navigations, failures, loaded], [0, 0, 0]);
-    await tester.pump();
-    expect(log, ['load:about:blank', 'purge']);
-  });
-
-  testWidgets('macOS never sets a background colour (WKWebView has no opaque flag)', (tester) async {
-    debugDefaultTargetPlatformOverride = TargetPlatform.macOS;
-    try {
+  testWidgets(
+    'cookies, storage and cache are locked down before the first request',
+    (tester) async {
       await tester.pumpWidget(
         view(
           AttachmentHtmlWebViewEvents(
@@ -166,34 +110,109 @@ void main() {
         ),
       );
       await tester.pump();
-      expect(tester.takeException(), isNull);
-      expect(log, isNot(contains('background')));
-      expect(log, contains('load:$uri'));
-    } finally {
-      debugDefaultTargetPlatformOverride = null;
-    }
-  });
+      expect(log.indexOf('lockDown'), isNonNegative);
+      expect(log.indexOf('load:$uri'), greaterThan(log.indexOf('lockDown')));
+    },
+  );
 
-  testWidgets('page-load progress reaches the owner until the page finished or the preview closed', (tester) async {
-    final percents = <int>[];
-    await tester.pumpWidget(
-      view(
-        AttachmentHtmlWebViewEvents(
-          onNavigation: (_) => false,
-          onLoaded: () {},
-          onFailed: (_) {},
-          onProgress: percents.add,
+  testWidgets(
+    'closing unloads the document through about:blank, then purges, and ignores the old page',
+    (tester) async {
+      var navigations = 0, failures = 0, loaded = 0;
+      await tester.pumpWidget(
+        view(
+          AttachmentHtmlWebViewEvents(
+            onNavigation: (_) {
+              navigations++;
+              return true;
+            },
+            onLoaded: () => loaded++,
+            onFailed: (_) => failures++,
+          ),
         ),
-      ),
-    );
-    await tester.pump();
-    onProgressCallback!(0);
-    onProgressCallback!(40);
-    onProgressCallback!(100);
-    expect(percents, [0, 40, 100]);
-    await tester.pumpWidget(const SizedBox.shrink());
-    await tester.pump();
-    onProgressCallback!(60);
-    expect(percents, [0, 40, 100], reason: 'the closed page reports nothing');
-  });
+      );
+      await tester.pump();
+      final request = onNavigationRequest!;
+      expect(
+        await request(
+          NavigationRequest(url: uri.toString(), isMainFrame: true),
+        ),
+        NavigationDecision.navigate,
+      );
+      log.clear();
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump();
+      // The blank page must be allowed even though the preview is closed:
+      // WKWebView asks the delegate about programmatic loads as well.
+      expect(
+        await request(NavigationRequest(url: 'about:blank', isMainFrame: true)),
+        NavigationDecision.navigate,
+      );
+      // Nothing else may start after close (a script redirecting the old page).
+      for (final url in [
+        uri.toString(),
+        'https://example.com/',
+        'file:///etc/passwd',
+      ]) {
+        expect(
+          await request(NavigationRequest(url: url, isMainFrame: true)),
+          NavigationDecision.prevent,
+          reason: url,
+        );
+      }
+      expect([navigations, failures, loaded], [0, 0, 0]);
+      await tester.pump();
+      expect(log, ['load:about:blank', 'purge']);
+    },
+  );
+
+  testWidgets(
+    'macOS never sets a background colour (WKWebView has no opaque flag)',
+    (tester) async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.macOS;
+      try {
+        await tester.pumpWidget(
+          view(
+            AttachmentHtmlWebViewEvents(
+              onNavigation: (_) => false,
+              onLoaded: () {},
+              onFailed: (_) {},
+            ),
+          ),
+        );
+        await tester.pump();
+        expect(tester.takeException(), isNull);
+        expect(log, isNot(contains('background')));
+        expect(log, contains('load:$uri'));
+      } finally {
+        debugDefaultTargetPlatformOverride = null;
+      }
+    },
+  );
+
+  testWidgets(
+    'page-load progress reaches the owner until the page finished or the preview closed',
+    (tester) async {
+      final percents = <int>[];
+      await tester.pumpWidget(
+        view(
+          AttachmentHtmlWebViewEvents(
+            onNavigation: (_) => false,
+            onLoaded: () {},
+            onFailed: (_) {},
+            onProgress: percents.add,
+          ),
+        ),
+      );
+      await tester.pump();
+      onProgressCallback!(0);
+      onProgressCallback!(40);
+      onProgressCallback!(100);
+      expect(percents, [0, 40, 100]);
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump();
+      onProgressCallback!(60);
+      expect(percents, [0, 40, 100], reason: 'the closed page reports nothing');
+    },
+  );
 }

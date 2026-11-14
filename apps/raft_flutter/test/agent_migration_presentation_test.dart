@@ -26,7 +26,11 @@ RaftApiException _api({String? code, Object? details, String? message}) =>
     RaftApiException.response(
       message ?? 'Request failed',
       status: 409,
-      body: {'error': message ?? 'Request failed', 'code': ?code, 'details': ?details},
+      body: {
+        'error': message ?? 'Request failed',
+        'code': ?code,
+        'details': ?details,
+      },
     );
 
 void main() {
@@ -75,7 +79,10 @@ void main() {
       expect(canCancelMigration({'state': 'ready', 'revision': 0}), isFalse);
       expect(canCancelMigration({'state': 'ready'}), isFalse);
       expect(
-        canCancelMigration({'state': 'cancel_requested_pre_flip', 'revision': 3}),
+        canCancelMigration({
+          'state': 'cancel_requested_pre_flip',
+          'revision': 3,
+        }),
         isFalse,
       );
       expect(canCancelMigration({'state': 'failed', 'revision': 3}), isFalse);
@@ -167,7 +174,10 @@ void main() {
         now: _now,
         formatTimestamp: (v) => v,
       );
-      expect(none.message.english, 'Transferring workspace to Unknown computer.');
+      expect(
+        none.message.english,
+        'Transferring workspace to Unknown computer.',
+      );
       expect(
         _notice({'state': 'weird_v2'}).message.english,
         'Migration state weird_v2 for Build Box.',
@@ -201,7 +211,10 @@ void main() {
       });
       expect(pre.intent, MigrationIntent.warning);
       expect(pre.title.english, "Cancellation couldn't finish");
-      expect(pre.message.english, contains('cleaning up the original computer'));
+      expect(
+        pre.message.english,
+        contains('cleaning up the original computer'),
+      );
       expect(pre.technicalCode, 'CLEANUP_TIMEOUT');
       final post = _notice({
         'state': 'cancel_requested_post_flip',
@@ -332,7 +345,9 @@ void main() {
       });
       expect(
         n.message.english,
-        startsWith('A workspace already exists at ~/.slock/agents/a1 on the target'),
+        startsWith(
+          'A workspace already exists at ~/.slock/agents/a1 on the target',
+        ),
       );
     });
   });
@@ -353,7 +368,10 @@ void main() {
         'The workspace is too large to move: compressed, it is over the 2 GiB limit. Largest items: data/ (3 GiB), logs/ (1 GiB). Ask the agent to delete large files it no longer needs, or to list them in .raftmigrateignore, then try again.',
       );
       expect(
-        text('MIGRATION_OBJECT_STORE_BUNDLE_TOO_LARGE', 'x:maxBytes=1610612736'),
+        text(
+          'MIGRATION_OBJECT_STORE_BUNDLE_TOO_LARGE',
+          'x:maxBytes=1610612736',
+        ),
         'The workspace is too large to move: compressed, it is over the 1.5 GiB limit. Ask the agent to delete large files it no longer needs, or to list them in .raftmigrateignore, then try again.',
       );
       expect(
@@ -432,7 +450,11 @@ void main() {
           code: 'COMPUTER_CAPABILITY_INSUFFICIENT',
           details: {
             'failures': [
-              {'side': 'target', 'reason': 'runtime_missing', 'runtime': 'codex'},
+              {
+                'side': 'target',
+                'reason': 'runtime_missing',
+                'runtime': 'codex',
+              },
             ],
           },
         ),
@@ -456,8 +478,16 @@ void main() {
           code: 'COMPUTER_CAPABILITY_INSUFFICIENT',
           details: {
             'failures': [
-              {'side': 'source', 'reason': 'runtime_unconfirmed', 'runtime': 'claude'},
-              {'side': 'target', 'reason': 'runtime_missing', 'runtime': 'claude'},
+              {
+                'side': 'source',
+                'reason': 'runtime_unconfirmed',
+                'runtime': 'claude',
+              },
+              {
+                'side': 'target',
+                'reason': 'runtime_missing',
+                'runtime': 'claude',
+              },
             ],
           },
         ),
@@ -481,7 +511,11 @@ void main() {
         {'failures': []},
         {
           'failures': [
-            {'side': 'target', 'reason': 'runtime_missing', 'runtime': 'bad id'},
+            {
+              'side': 'target',
+              'reason': 'runtime_missing',
+              'runtime': 'bad id',
+            },
           ],
         },
         {
@@ -547,8 +581,14 @@ void main() {
   });
 
   test('panel header follows the state', () {
-    expect(migrationPanelHeader({'state': 'in_transit'}), 'Migrating to {target}');
-    expect(migrationPanelHeader({'state': 'completed'}), 'Migrated to {target}');
+    expect(
+      migrationPanelHeader({'state': 'in_transit'}),
+      'Migrating to {target}',
+    );
+    expect(
+      migrationPanelHeader({'state': 'completed'}),
+      'Migrated to {target}',
+    );
     expect(
       migrationPanelHeader({'state': 'canceled_post_flip'}),
       'Migration to {target} canceled',
@@ -589,10 +629,20 @@ void main() {
     }
 
     const states = [
-      'provisioning', 'prep', 'ready', 'in_transit', 'arriving', 'starting',
-      'cancel_requested_pre_flip', 'cancel_requested_post_flip',
-      'canceled_pre_flip', 'canceled_post_flip', 'completed', 'aborted',
-      'failed', 'mystery',
+      'provisioning',
+      'prep',
+      'ready',
+      'in_transit',
+      'arriving',
+      'starting',
+      'cancel_requested_pre_flip',
+      'cancel_requested_post_flip',
+      'canceled_pre_flip',
+      'canceled_post_flip',
+      'completed',
+      'aborted',
+      'failed',
+      'mystery',
     ];
     final variants = <Map<String, dynamic>>[
       {},
@@ -605,8 +655,14 @@ void main() {
         'sourceQuiescedAt': '2026-10-16T11:57:00Z',
         'sourceBuildProgress': {'files': 3, 'bytes': 9},
       },
-      {'sourceQuiescedAt': '2026-10-16T11:57:00Z', 'transportControlRegisteredAt': 'x'},
-      {'abortReason': 'prep-deadline', 'prepDeadlineAt': '2026-10-16T11:00:00Z'},
+      {
+        'sourceQuiescedAt': '2026-10-16T11:57:00Z',
+        'transportControlRegisteredAt': 'x',
+      },
+      {
+        'abortReason': 'prep-deadline',
+        'prepDeadlineAt': '2026-10-16T11:00:00Z',
+      },
       {'abortReason': 'prep-deadline'},
       {'abortReason': 'transfer-deadline'},
       {'abortReason': 'arrival-deadline'},
@@ -652,7 +708,8 @@ void main() {
         ),
       );
     }
-    const raw = 'x:maxBytes=1:topEntries=a,1:entryCount=3:topPaths=a,1:maxEntries=1:'
+    const raw =
+        'x:maxBytes=1:topEntries=a,1:entryCount=3:topPaths=a,1:maxEntries=1:'
         'topPathCounts=a,1:requiredBytes=1:availableBytes=1';
     for (final code in [
       'MIGRATION_OBJECT_STORE_BUNDLE_TOO_LARGE',
@@ -676,7 +733,9 @@ void main() {
         migrationStartErrorPresentation(
           _api(
             code: 'MIGRATION_RESUMABLE_CAPABILITY_REQUIRED',
-            details: side == null ? null : {'side': side, 'reason': 'capability_missing'},
+            details: side == null
+                ? null
+                : {'side': side, 'reason': 'capability_missing'},
           ),
           computers,
         ),

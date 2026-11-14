@@ -11,15 +11,15 @@ import 'package:raft_flutter/features/message_task_projection.dart';
 import 'package:raft_flutter/features/resource_view.dart';
 import 'package:raft_flutter/platform/background_inbox.dart';
 
-dynamic fixture(String name) =>
-    jsonDecode(File('test/fixtures/field_parity/$name.json').readAsStringSync());
+dynamic fixture(String name) => jsonDecode(
+  File('test/fixtures/field_parity/$name.json').readAsStringSync(),
+);
 
-Map<String, dynamic> inboxItem(String kind) =>
-    Map<String, dynamic>.from(
-      (fixture('tasks-activity-inbox-window')['items'] as List).firstWhere(
-        (row) => row['kind'] == kind,
-      ),
-    );
+Map<String, dynamic> inboxItem(String kind) => Map<String, dynamic>.from(
+  (fixture('tasks-activity-inbox-window')['items'] as List).firstWhere(
+    (row) => row['kind'] == kind,
+  ),
+);
 
 RaftMessage channelPageMessage(String suffix) => RaftMessage(
   Map<String, dynamic>.from(
@@ -54,14 +54,19 @@ void main() {
 
     test('peerName, then the row channelName, when no display name', () {
       expect(
-        activityRowTitle({'kind': 'dm', 'channelId': 'd2', 'channelName': 'x'}, dms),
+        activityRowTitle({
+          'kind': 'dm',
+          'channelId': 'd2',
+          'channelName': 'x',
+        }, dms),
         'cindy',
       );
       expect(
-        activityRowTitle(
-          {'kind': 'dm', 'channelId': 'unknown', 'channelName': 'alice'},
-          dms,
-        ),
+        activityRowTitle({
+          'kind': 'dm',
+          'channelId': 'unknown',
+          'channelName': 'alice',
+        }, dms),
         'alice',
       );
     });
@@ -105,7 +110,10 @@ void main() {
 
     test('thread mention whose firstMentionMessageId is older than the latest alerts', () {
       final row = inboxItem('thread');
-      expect(row['firstMentionMessageId'], isNot(row['latestActivityMessageId']));
+      expect(
+        row['firstMentionMessageId'],
+        isNot(row['latestActivityMessageId']),
+      );
       row['latestActivityMessageId'] = 'm-th-0009';
       final alert = BackgroundInboxAlert.fromRow(
         row,
@@ -166,7 +174,10 @@ void main() {
 
     test('same server executes, foreign server is read-only', () {
       expect(
-        actionCardReadOnlyInServer({...metadata, 'sourceServerId': 'srv'}, 'srv'),
+        actionCardReadOnlyInServer({
+          ...metadata,
+          'sourceServerId': 'srv',
+        }, 'srv'),
         false,
       );
       expect(
@@ -181,14 +192,17 @@ void main() {
   });
 
   group('provisional task chip reads the real message fields', () {
-    test('title from taskCurrentProjection and assignee from taskAssigneeName', () {
-      final task = provisionalMessageTask(channelPageMessage('0002'))!;
-      expect(task['title'], 'Ship the parity audit (amended title)');
-      expect(task['claimedByName'], 'Product-UX-Designer');
-      expect(task['taskNumber'], 12);
-      expect(task['status'], 'in_progress');
-      expect(task['id'], task['messageId']);
-    });
+    test(
+      'title from taskCurrentProjection and assignee from taskAssigneeName',
+      () {
+        final task = provisionalMessageTask(channelPageMessage('0002'))!;
+        expect(task['title'], 'Ship the parity audit (amended title)');
+        expect(task['claimedByName'], 'Product-UX-Designer');
+        expect(task['taskNumber'], 12);
+        expect(task['status'], 'in_progress');
+        expect(task['id'], task['messageId']);
+      },
+    );
 
     test('no projection falls back to content; unclaimed has no claimant', () {
       final json = {
@@ -226,28 +240,37 @@ void main() {
       expect(activityTaskLabel(next[1]), '#12 @cindy');
     });
 
-    test('unchanged facts keep the same list; unclaimed drops the claimant', () {
-      final rows = [inboxItem('thread')];
-      final same = applyTaskToActivityRows(rows, {
-        ...task,
-        'status': 'in_review',
-      });
-      expect(identical(same, rows), true);
-      final unclaimed = applyTaskToActivityRows(rows, {
-        ...task,
-        'claimedByName': null,
-      });
-      expect(unclaimed[0]['taskClaimedByName'], isNull);
-      expect(activityTaskLabel(unclaimed[0]), '#12');
-    });
+    test(
+      'unchanged facts keep the same list; unclaimed drops the claimant',
+      () {
+        final rows = [inboxItem('thread')];
+        final same = applyTaskToActivityRows(rows, {
+          ...task,
+          'status': 'in_review',
+        });
+        expect(identical(same, rows), true);
+        final unclaimed = applyTaskToActivityRows(rows, {
+          ...task,
+          'claimedByName': null,
+        });
+        expect(unclaimed[0]['taskClaimedByName'], isNull);
+        expect(activityTaskLabel(unclaimed[0]), '#12');
+      },
+    );
 
     test('another message and malformed facts are ignored', () {
       final rows = [inboxItem('thread')];
       expect(
-        identical(applyTaskToActivityRows(rows, {...task, 'messageId': 'x'}), rows),
+        identical(
+          applyTaskToActivityRows(rows, {...task, 'messageId': 'x'}),
+          rows,
+        ),
         true,
       );
-      expect(identical(applyTaskToActivityRows(rows, {'status': 3}), rows), true);
+      expect(
+        identical(applyTaskToActivityRows(rows, {'status': 3}), rows),
+        true,
+      );
     });
   });
 
@@ -262,10 +285,7 @@ void main() {
       ),
       isNull,
     );
-    expect(
-      externalSenderSubtitle(channelPageMessage('0002')),
-      isNull,
-    );
+    expect(externalSenderSubtitle(channelPageMessage('0002')), isNull);
   });
 
   group('SVG attachments are inline only through their raster thumbnail', () {
@@ -303,7 +323,9 @@ void main() {
       expect(
         messageForwardable(
           RaftMessage(
-            Map<String, dynamic>.from(fixture('messages-action-card-null-source')),
+            Map<String, dynamic>.from(
+              fixture('messages-action-card-null-source'),
+            ),
           ),
         ),
         false,
@@ -339,7 +361,9 @@ void main() {
     );
     expect(messageParentChannelId({'channelId': 'c'}), isNull);
     expect(
-      messageParentChannelId({'conversationContext': {'parentChannelId': ''}}),
+      messageParentChannelId({
+        'conversationContext': {'parentChannelId': ''},
+      }),
       isNull,
     );
   });

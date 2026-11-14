@@ -31,7 +31,9 @@ void main() {
         fetches++;
         return _body(
           'a',
-          expiresAt: clock.now.add(const Duration(seconds: 300)).toIso8601String(),
+          expiresAt: clock.now
+              .add(const Duration(seconds: 300))
+              .toIso8601String(),
         );
       }
 
@@ -44,33 +46,49 @@ void main() {
       expect(fetches, 2);
     });
 
-    test('dropping what is resolved forgets URLs but not a request on its way', () async {
-      var fetches = 0;
-      Future<dynamic> fetch() async {
-        fetches++;
-        return _body(
-          'a',
-          expiresAt: clock.now.add(const Duration(seconds: 300)).toIso8601String(),
+    test(
+      'dropping what is resolved forgets URLs but not a request on its way',
+      () async {
+        var fetches = 0;
+        Future<dynamic> fetch() async {
+          fetches++;
+          return _body(
+            'a',
+            expiresAt: clock.now
+                .add(const Duration(seconds: 300))
+                .toIso8601String(),
+          );
+        }
+
+        await cache.resolve('a', scope: 's', fetch: fetch);
+        expect(cache.length, 1);
+        final gate = Completer<dynamic>();
+        final waiting = cache.resolve(
+          'b',
+          scope: 's',
+          fetch: () => gate.future,
         );
-      }
 
-      await cache.resolve('a', scope: 's', fetch: fetch);
-      expect(cache.length, 1);
-      final gate = Completer<dynamic>();
-      final waiting = cache.resolve('b', scope: 's', fetch: () => gate.future);
+        cache.dropResolved();
+        expect(cache.length, 0);
+        expect(cache.peek('a', scope: 's'), isNull);
+        expect(cache.inFlightCount, 1);
 
-      cache.dropResolved();
-      expect(cache.length, 0);
-      expect(cache.peek('a', scope: 's'), isNull);
-      expect(cache.inFlightCount, 1);
-
-      // The request on its way still answers, and is stored.
-      gate.complete(_body('b', expiresAt: clock.now.add(const Duration(seconds: 300)).toIso8601String()));
-      expect(await waiting, contains('/b?'));
-      expect(cache.peek('b', scope: 's'), isNotNull);
-      await cache.resolve('a', scope: 's', fetch: fetch);
-      expect(fetches, 2, reason: 'signed again after the drop');
-    });
+        // The request on its way still answers, and is stored.
+        gate.complete(
+          _body(
+            'b',
+            expiresAt: clock.now
+                .add(const Duration(seconds: 300))
+                .toIso8601String(),
+          ),
+        );
+        expect(await waiting, contains('/b?'));
+        expect(cache.peek('b', scope: 's'), isNotNull);
+        await cache.resolve('a', scope: 's', fetch: fetch);
+        expect(fetches, 2, reason: 'signed again after the drop');
+      },
+    );
 
     test('never serves a URL within the safety margin of its expiry', () async {
       var fetches = 0;
@@ -78,7 +96,9 @@ void main() {
         fetches++;
         return _body(
           'a',
-          expiresAt: clock.now.add(const Duration(seconds: 100)).toIso8601String(),
+          expiresAt: clock.now
+              .add(const Duration(seconds: 100))
+              .toIso8601String(),
         );
       }
 
@@ -95,7 +115,9 @@ void main() {
         scope: 's',
         fetch: () async => _body(
           'a',
-          expiresAt: clock.now.add(const Duration(seconds: 20)).toIso8601String(),
+          expiresAt: clock.now
+              .add(const Duration(seconds: 20))
+              .toIso8601String(),
         ),
       );
       expect(cache.length, 0);
@@ -175,8 +197,18 @@ void main() {
 
     test('channel revocation drops its URLs and keeps others', () async {
       final cache = AttachmentUrlCache();
-      await cache.resolve('a', scope: 's', channelId: 'c1', fetch: () async => _body('a'));
-      await cache.resolve('b', scope: 's', channelId: 'c2', fetch: () async => _body('b'));
+      await cache.resolve(
+        'a',
+        scope: 's',
+        channelId: 'c1',
+        fetch: () async => _body('a'),
+      );
+      await cache.resolve(
+        'b',
+        scope: 's',
+        channelId: 'c2',
+        fetch: () async => _body('b'),
+      );
       cache.invalidateChannel('c1');
       expect(cache.peek('a', scope: 's'), isNull);
       expect(cache.peek('b', scope: 's'), isNotNull);
@@ -207,21 +239,27 @@ void main() {
       cache.dispose();
     });
 
-    test('a failed fetch is not remembered and the error is surfaced', () async {
-      final cache = AttachmentUrlCache();
-      var n = 0;
-      Future<dynamic> fetch() async {
-        if (n++ == 0) throw StateError('offline');
-        return _body('a');
-      }
+    test(
+      'a failed fetch is not remembered and the error is surfaced',
+      () async {
+        final cache = AttachmentUrlCache();
+        var n = 0;
+        Future<dynamic> fetch() async {
+          if (n++ == 0) throw StateError('offline');
+          return _body('a');
+        }
 
-      await expectLater(
-        cache.resolve('a', scope: 's', fetch: fetch),
-        throwsStateError,
-      );
-      expect(await cache.resolve('a', scope: 's', fetch: fetch), contains('/a'));
-      cache.dispose();
-    });
+        await expectLater(
+          cache.resolve('a', scope: 's', fetch: fetch),
+          throwsStateError,
+        );
+        expect(
+          await cache.resolve('a', scope: 's', fetch: fetch),
+          contains('/a'),
+        );
+        cache.dispose();
+      },
+    );
 
     test('a malformed answer is rejected', () async {
       final cache = AttachmentUrlCache();
@@ -244,7 +282,8 @@ void main() {
       }
 
       final all = [
-        for (var i = 0; i < 5; i++) cache.resolve('a', scope: 's', fetch: fetch),
+        for (var i = 0; i < 5; i++)
+          cache.resolve('a', scope: 's', fetch: fetch),
       ];
       expect(cache.inFlightCount, 1);
       gate.complete(_body('a'));
@@ -303,10 +342,14 @@ void main() {
       expect(requests, 1);
       var singles = 0;
       for (final id in ['a', 'b', 'c']) {
-        await cache.resolve(id, scope: 's', fetch: () async {
-          singles++;
-          return _body(id);
-        });
+        await cache.resolve(
+          id,
+          scope: 's',
+          fetch: () async {
+            singles++;
+            return _body(id);
+          },
+        );
       }
       expect(singles, 0);
       cache.dispose();
@@ -371,33 +414,48 @@ void main() {
   });
 
   group('WorkspaceController.attachmentUrl', () {
-    test('one read serves every surface; revocation and sign-out drop it', () async {
-      final client = _CountingClient()..user = RaftRecord({'id': 'alice'});
-      client.selectServer('server');
-      final w = WorkspaceController(client)
-        ..server = RaftRecord({'id': 'server', 'role': 'owner'});
-      addTearDown(() async {
-        w.dispose();
-        await client.dispose();
-      });
-      final urls = await Future.wait([
-        w.attachmentMedia.url('f1', channelId: 'c1'),
-        w.attachmentMedia.url('f1', channelId: 'c1'),
-      ]);
-      expect(urls.toSet().length, 1);
-      await w.attachmentMedia.url('f1', channelId: 'c1');
-      expect(client.urlReads, 1);
-      // A one-shot download link is never retained.
-      await w.attachmentMedia.url('f1', disposition: 'attachment', channelId: 'c1');
-      await w.attachmentMedia.url('f1', disposition: 'attachment', channelId: 'c1');
-      expect(client.urlReads, 3);
-      client.emit('channel:removed', {'channelId': 'c1'});
-      await Future<void>.delayed(const Duration(milliseconds: 20));
-      await w.attachmentMedia.url('f1', channelId: 'c1');
-      expect(client.urlReads, 4, reason: 'revoked channel asks the server again');
-      await Future<void>.delayed(const Duration(milliseconds: 200));
-      expect(client.batchReads, 0, reason: 'single reads only, no batch');
-    });
+    test(
+      'one read serves every surface; revocation and sign-out drop it',
+      () async {
+        final client = _CountingClient()..user = RaftRecord({'id': 'alice'});
+        client.selectServer('server');
+        final w = WorkspaceController(client)
+          ..server = RaftRecord({'id': 'server', 'role': 'owner'});
+        addTearDown(() async {
+          w.dispose();
+          await client.dispose();
+        });
+        final urls = await Future.wait([
+          w.attachmentMedia.url('f1', channelId: 'c1'),
+          w.attachmentMedia.url('f1', channelId: 'c1'),
+        ]);
+        expect(urls.toSet().length, 1);
+        await w.attachmentMedia.url('f1', channelId: 'c1');
+        expect(client.urlReads, 1);
+        // A one-shot download link is never retained.
+        await w.attachmentMedia.url(
+          'f1',
+          disposition: 'attachment',
+          channelId: 'c1',
+        );
+        await w.attachmentMedia.url(
+          'f1',
+          disposition: 'attachment',
+          channelId: 'c1',
+        );
+        expect(client.urlReads, 3);
+        client.emit('channel:removed', {'channelId': 'c1'});
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+        await w.attachmentMedia.url('f1', channelId: 'c1');
+        expect(
+          client.urlReads,
+          4,
+          reason: 'revoked channel asks the server again',
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 200));
+        expect(client.batchReads, 0, reason: 'single reads only, no batch');
+      },
+    );
 
     test('a signed-in identity change drops cached URLs', () async {
       final client = _CountingClient()..user = RaftRecord({'id': 'alice'});
@@ -455,7 +513,9 @@ void main() {
 
   group('AttachmentUrlCache request budget', () {
     Future<dynamic> answer(List<String> ids) async => {
-      'urls': [for (final id in ids) {'id': id, 'url': 'https://s.invalid/$id'}],
+      'urls': [
+        for (final id in ids) {'id': id, 'url': 'https://s.invalid/$id'},
+      ],
     };
 
     test('coalesced callers share one batch request', () async {
@@ -484,80 +544,91 @@ void main() {
       expect(requests.single, hasLength(30));
       expect(singles, 0);
       // Held now: a second look is free.
-      await cache.resolveCoalesced('img3', scope: 's', fetchMany: answer, fetch: () async => {});
+      await cache.resolveCoalesced(
+        'img3',
+        scope: 's',
+        fetchMany: answer,
+        fetch: () async => {},
+      );
       expect(requests, hasLength(1));
       cache.dispose();
     });
 
-    test('an id the batch left out is asked singly; a failed batch falls back', () async {
-      final cache = AttachmentUrlCache(
-        coalesceDelay: const Duration(milliseconds: 5),
-      );
-      var singles = <String>[];
-      Future<dynamic> single(String id) async {
-        singles.add(id);
-        return {'url': 'https://s.invalid/single-$id'};
-      }
+    test(
+      'an id the batch left out is asked singly; a failed batch falls back',
+      () async {
+        final cache = AttachmentUrlCache(
+          coalesceDelay: const Duration(milliseconds: 5),
+        );
+        var singles = <String>[];
+        Future<dynamic> single(String id) async {
+          singles.add(id);
+          return {'url': 'https://s.invalid/single-$id'};
+        }
 
-      final urls = await Future.wait([
-        cache.resolveCoalesced(
-          'a',
+        final urls = await Future.wait([
+          cache.resolveCoalesced(
+            'a',
+            scope: 's',
+            fetchMany: (ids) async => {
+              'urls': [
+                {'id': 'a', 'url': 'https://s.invalid/a'},
+              ],
+            },
+            fetch: () => single('a'),
+          ),
+          cache.resolveCoalesced(
+            'b',
+            scope: 's',
+            fetchMany: (ids) async => {'urls': []},
+            fetch: () => single('b'),
+          ),
+        ]);
+        expect(urls, ['https://s.invalid/a', 'https://s.invalid/single-b']);
+        expect(singles, ['b']);
+        // A batch that fails outright (not rate limited) degrades to singles.
+        singles = [];
+        final fallback = await cache.resolveCoalesced(
+          'c',
           scope: 's',
-          fetchMany: (ids) async => {
-            'urls': [
-              {'id': 'a', 'url': 'https://s.invalid/a'},
-            ],
-          },
-          fetch: () => single('a'),
-        ),
-        cache.resolveCoalesced(
-          'b',
-          scope: 's',
-          fetchMany: (ids) async => {'urls': []},
-          fetch: () => single('b'),
-        ),
-      ]);
-      expect(urls, ['https://s.invalid/a', 'https://s.invalid/single-b']);
-      expect(singles, ['b']);
-      // A batch that fails outright (not rate limited) degrades to singles.
-      singles = [];
-      final fallback = await cache.resolveCoalesced(
-        'c',
-        scope: 's',
-        fetchMany: (ids) async => throw StateError('route missing'),
-        fetch: () => single('c'),
-      );
-      expect(fallback, 'https://s.invalid/single-c');
-      cache.dispose();
-    });
+          fetchMany: (ids) async => throw StateError('route missing'),
+          fetch: () => single('c'),
+        );
+        expect(fallback, 'https://s.invalid/single-c');
+        cache.dispose();
+      },
+    );
 
-    test('a rate-limited coalesced batch reaches the callers without N singles', () async {
-      final cache = AttachmentUrlCache(
-        coalesceDelay: const Duration(milliseconds: 5),
-      );
-      var singles = 0;
-      final results = await Future.wait([
-        for (var i = 0; i < 10; i++)
-          cache
-              .resolveCoalesced(
-                'img$i',
-                scope: 's',
-                fetchMany: (ids) async => throw const RaftApiException(
-                  'Too many',
-                  status: 429,
-                  retryAfter: Duration(seconds: 3),
-                ),
-                fetch: () async {
-                  singles++;
-                  return {'url': 'x'};
-                },
-              )
-              .then<Object>((v) => v, onError: (Object e) => e),
-      ]);
-      expect(results.every((r) => r is RaftApiException), isTrue);
-      expect(singles, 0, reason: 'singles would hit the same closed limiter');
-      cache.dispose();
-    });
+    test(
+      'a rate-limited coalesced batch reaches the callers without N singles',
+      () async {
+        final cache = AttachmentUrlCache(
+          coalesceDelay: const Duration(milliseconds: 5),
+        );
+        var singles = 0;
+        final results = await Future.wait([
+          for (var i = 0; i < 10; i++)
+            cache
+                .resolveCoalesced(
+                  'img$i',
+                  scope: 's',
+                  fetchMany: (ids) async => throw const RaftApiException(
+                    'Too many',
+                    status: 429,
+                    retryAfter: Duration(seconds: 3),
+                  ),
+                  fetch: () async {
+                    singles++;
+                    return {'url': 'x'};
+                  },
+                )
+                .then<Object>((v) => v, onError: (Object e) => e),
+        ]);
+        expect(results.every((r) => r is RaftApiException), isTrue);
+        expect(singles, 0, reason: 'singles would hit the same closed limiter');
+        cache.dispose();
+      },
+    );
 
     test('rejecting one URL does not discard the answers of other ids', () async {
       final cache = AttachmentUrlCache();
@@ -567,8 +638,18 @@ void main() {
         return answer(ids);
       }
 
-      final a = cache.resolveCoalesced('a', scope: 's', fetchMany: slow, fetch: () async => {});
-      final b = cache.resolveCoalesced('b', scope: 's', fetchMany: slow, fetch: () async => {});
+      final a = cache.resolveCoalesced(
+        'a',
+        scope: 's',
+        fetchMany: slow,
+        fetch: () async => {},
+      );
+      final b = cache.resolveCoalesced(
+        'b',
+        scope: 's',
+        fetchMany: slow,
+        fetch: () async => {},
+      );
       await Future<void>.delayed(const Duration(milliseconds: 40));
       // A transfer rejected some other attachment's URL while the batch is out.
       cache.invalidate('zzz');
@@ -603,7 +684,9 @@ class _CountingClient extends RaftClient {
     urlReads++;
     return {
       'url': 'https://storage.invalid$path?n=$urlReads',
-      'expiresAt': DateTime.now().add(const Duration(seconds: 300)).toIso8601String(),
+      'expiresAt': DateTime.now()
+          .add(const Duration(seconds: 300))
+          .toIso8601String(),
     };
   }
 
@@ -613,7 +696,11 @@ class _CountingClient extends RaftClient {
     return {
       'urls': [
         for (final id in (data as Map)['attachmentIds'] as List)
-          {'id': id, 'url': 'https://storage.invalid/batch/$id', 'expiresAt': null},
+          {
+            'id': id,
+            'url': 'https://storage.invalid/batch/$id',
+            'expiresAt': null,
+          },
       ],
     };
   }

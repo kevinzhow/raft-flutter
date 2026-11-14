@@ -9,6 +9,7 @@ import 'package:raft_flutter/features/chat_view.dart';
 import 'package:raft_flutter/features/workspace_view.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import 'support/app_services_fixture.dart';
 
 /// High-frequency presence events (agent heartbeats, last-seen, machine status
@@ -176,7 +177,9 @@ void main() {
         _Client.messages,
         expectedGeneration: w.messageDomain.ledger.generation,
       );
-      w.messageDomain.visibleIds['c'] = {for (final m in _Client.messages) '${m['id']}'};
+      w.messageDomain.visibleIds['c'] = {
+        for (final m in _Client.messages) '${m['id']}',
+      };
       addTearDown(() async {
         w.dispose();
         await client.stream.close();

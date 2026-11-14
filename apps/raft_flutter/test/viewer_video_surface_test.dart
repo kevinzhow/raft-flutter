@@ -34,7 +34,8 @@ class _Platform extends VideoPlayerPlatform {
   @override
   Future<int?> createWithOptions(VideoCreationOptions options) async {
     types.add(options.viewType);
-    sources.add('${options.dataSource.sourceType.name}:${options.dataSource.uri}',
+    sources.add(
+      '${options.dataSource.sourceType.name}:${options.dataSource.uri}',
     );
     final id = types.length - 1;
     _streams[id] = StreamController<VideoEvent>()
@@ -110,7 +111,9 @@ class _Client extends RaftClient {
 
 void main() {
   // Leak debt (other): see docs/development.md, Leak tracking.
-  leakDebt(const ['ValueNotifier<VideoPlayerController?>', 'VideoPlayerController',
+  leakDebt(const [
+    'ValueNotifier<VideoPlayerController?>',
+    'VideoPlayerController',
   ]);
   late _Platform fake;
   late VideoPlayerPlatform previous;
@@ -156,25 +159,27 @@ void main() {
     return w;
   }
 
-  testWidgets('an SDR video in the viewer streams its URL on the shared texture', (
-    tester) async {
-    final w = await mountViewer(tester, 'clip.mp4');
-    expect(fake.types, [VideoViewType.textureView]);
-    // Streamed from the signed URL: nothing was downloaded to a local file.
-    expect(fake.sources, ['network:https://example.invalid/signed']);
-    expect(find.byType(RaftVideoViewer), findsOneWidget);
-    expect(find.byKey(const Key('picture')), findsOneWidget);
-    // Closing the viewer gives the player back; with no card it is freed.
-    await tester.pumpWidget(const SizedBox());
-    for (var i = 0; i < 10 && fake.disposed == 0; i++) {
-      await tester.runAsync(
-        () => Future<void>.delayed(const Duration(milliseconds: 10)),
-      );
-      await tester.pump();
-    }
-    expect(fake.disposed, 1);
-    expect(w.attachmentMedia.playerSessions.length, 0);
-  }, variant: system,
+  testWidgets(
+    'an SDR video in the viewer streams its URL on the shared texture',
+    (tester) async {
+      final w = await mountViewer(tester, 'clip.mp4');
+      expect(fake.types, [VideoViewType.textureView]);
+      // Streamed from the signed URL: nothing was downloaded to a local file.
+      expect(fake.sources, ['network:https://example.invalid/signed']);
+      expect(find.byType(RaftVideoViewer), findsOneWidget);
+      expect(find.byKey(const Key('picture')), findsOneWidget);
+      // Closing the viewer gives the player back; with no card it is freed.
+      await tester.pumpWidget(const SizedBox());
+      for (var i = 0; i < 10 && fake.disposed == 0; i++) {
+        await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 10)),
+        );
+        await tester.pump();
+      }
+      expect(fake.disposed, 1);
+      expect(w.attachmentMedia.playerSessions.length, 0);
+    },
+    variant: system,
   );
 
   testWidgets('an HDR video gets a native-view player at the shared position', (
@@ -199,117 +204,121 @@ void main() {
     expect(w.attachmentMedia.playerSessions.length, 0);
   }, variant: system);
 
-  testWidgets('an audio attachment in the viewer plays the cached file, no picture', (
-    tester) async {
-    final dir = Directory.systemTemp.createTempSync('viewer-audio');
-    addTearDown(() {
-      if (dir.existsSync()) dir.deleteSync(recursive: true);
-    });
-    final file = File('${dir.path}/tone.wav')..writeAsBytesSync([1, 2, 3]);
-    final lease = SharedFileLease(file, lifetime: const Duration(hours: 1));
-    final client = _Client();
-    final w = WorkspaceController(client);
-    addTearDown(() async {
-      w.dispose();
-      await client.dispose();
-    });
-    await tester.pumpWidget(
-      MaterialApp(
-        theme: raftTheme(),
-        home: AttachmentPreviewDialog(
-          controller: w,
-          metadata: const {'id': 'a', 'filename': 'tone.wav'},
-          authorized: () => true,
-          onClose: () {},
-          onDownload: () async {},
-          files: _Files(lease),
+  testWidgets(
+    'an audio attachment in the viewer plays the cached file, no picture',
+    (tester) async {
+      final dir = Directory.systemTemp.createTempSync('viewer-audio');
+      addTearDown(() {
+        if (dir.existsSync()) dir.deleteSync(recursive: true);
+      });
+      final file = File('${dir.path}/tone.wav')..writeAsBytesSync([1, 2, 3]);
+      final lease = SharedFileLease(file, lifetime: const Duration(hours: 1));
+      final client = _Client();
+      final w = WorkspaceController(client);
+      addTearDown(() async {
+        w.dispose();
+        await client.dispose();
+      });
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: raftTheme(),
+          home: AttachmentPreviewDialog(
+            controller: w,
+            metadata: const {'id': 'a', 'filename': 'tone.wav'},
+            authorized: () => true,
+            onClose: () {},
+            onDownload: () async {},
+            files: _Files(lease),
+          ),
         ),
-      ),
-    );
-    for (var i = 0; i < 8; i++) {
-      await tester.pump(const Duration(milliseconds: 50));
-    }
-    expect(fake.types, [VideoViewType.textureView]);
-    expect(fake.sources.single, startsWith('file:'));
-    await tester.pumpWidget(const SizedBox());
-    // The viewer disposes its player and the cached file's lease.
-    var present = true;
-    for (var i = 0; i < 30 && present; i++) {
-      present = (await tester.runAsync(() async {
-        await Future<void>.delayed(const Duration(milliseconds: 10));
-        return file.exists();
-      }))!;
-      await tester.pump();
-    }
-    expect(present, false);
-  }, variant: system,
+      );
+      for (var i = 0; i < 8; i++) {
+        await tester.pump(const Duration(milliseconds: 50));
+      }
+      expect(fake.types, [VideoViewType.textureView]);
+      expect(fake.sources.single, startsWith('file:'));
+      await tester.pumpWidget(const SizedBox());
+      // The viewer disposes its player and the cached file's lease.
+      var present = true;
+      for (var i = 0; i < 30 && present; i++) {
+        present = (await tester.runAsync(() async {
+          await Future<void>.delayed(const Duration(milliseconds: 10));
+          return file.exists();
+        }))!;
+        await tester.pump();
+      }
+      expect(present, false);
+    },
+    variant: system,
   );
 
   testWidgets(
     'only the viewer creates a player and closing it releases that player',
     (tester) async {
-    tester.view.physicalSize = const Size(600, 900);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.reset);
-    final (w, api) = (await tester.runAsync(() => fixture('owner')))!;
-    addTearDown(w.dispose);
-    api.routes['GET /attachments/a1/url'] = (_) => {
-      'url': 'https://media.invalid/a1',
-    };
-    const meta = {
-      'id': 'a1',
-      'filename': 'walkthrough.mp4',
-      'mimeType': 'video/mp4',
-      'sizeBytes': 1000000,
-    };
-    final context = GlobalKey<NavigatorState>();
-    await tester.pumpWidget(
-      MaterialApp(
-        navigatorKey: context,
-        theme: raftTheme(),
-        home: Scaffold(
-          body: InlineVideoAttachment(
-            controller: w,
-            metadata: meta,
-            authorized: () => true,
-            pending: false,
-            onOpenPreview: () => context.currentState!.push(
-              MaterialPageRoute<void>(
-                builder: (_) => AttachmentPreviewDialog(
-                  controller: w,
-                  metadata: meta,
-                  authorized: () => true,
-                  onClose: () => context.currentState!.pop(),
-                  onDownload: () async {},
-                  hdrDetector: (_) async => false,
+      tester.view.physicalSize = const Size(600, 900);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      final (w, api) = (await tester.runAsync(() => fixture('owner')))!;
+      addTearDown(w.dispose);
+      api.routes['GET /attachments/a1/url'] = (_) => {
+        'url': 'https://media.invalid/a1',
+      };
+      const meta = {
+        'id': 'a1',
+        'filename': 'walkthrough.mp4',
+        'mimeType': 'video/mp4',
+        'sizeBytes': 1000000,
+      };
+      final context = GlobalKey<NavigatorState>();
+      await tester.pumpWidget(
+        MaterialApp(
+          navigatorKey: context,
+          theme: raftTheme(),
+          home: Scaffold(
+            body: InlineVideoAttachment(
+              controller: w,
+              metadata: meta,
+              authorized: () => true,
+              pending: false,
+              onOpenPreview: () => context.currentState!.push(
+                MaterialPageRoute<void>(
+                  builder: (_) => AttachmentPreviewDialog(
+                    controller: w,
+                    metadata: meta,
+                    authorized: () => true,
+                    onClose: () => context.currentState!.pop(),
+                    onDownload: () async {},
+                    hdrDetector: (_) async => false,
+                  ),
                 ),
               ),
             ),
           ),
         ),
-      ),
-    );
-    for (var i = 0; i < 8; i++) {
-      await tester.pump(const Duration(milliseconds: 50));
-    }
-    expect(fake.types,
+      );
+      for (var i = 0; i < 8; i++) {
+        await tester.pump(const Duration(milliseconds: 50));
+      }
+      expect(
+        fake.types,
         isEmpty,
         reason: 'a timeline card never opens a player',
       );
       expect(w.attachmentMedia.playerSessions.created, 0);
-    await tester.tap(find.byKey(const Key('inline-video-poster-card')));
-    for (var i = 0; i < 12; i++) {
-      await tester.pump(const Duration(milliseconds: 50));
-    }
-    expect(find.byType(RaftVideoViewer), findsOneWidget);
-    expect(fake.types, [VideoViewType.textureView,
+      await tester.tap(find.byKey(const Key('inline-video-poster-card')));
+      for (var i = 0; i < 12; i++) {
+        await tester.pump(const Duration(milliseconds: 50));
+      }
+      expect(find.byType(RaftVideoViewer), findsOneWidget);
+      expect(fake.types, [
+        VideoViewType.textureView,
       ], reason: 'only the viewer creates a playback session');
-    expect(w.attachmentMedia.playerSessions.created, 1);
-    // Close at once, mid-way and fully: the viewer releases its only hold.
-    context.currentState!.pop();
-    await tester.pump(const Duration(milliseconds: 40));
-    await tester.pump(const Duration(seconds: 1));
-    expect(find.byType(RaftVideoViewer), findsNothing);
+      expect(w.attachmentMedia.playerSessions.created, 1);
+      // Close at once, mid-way and fully: the viewer releases its only hold.
+      context.currentState!.pop();
+      await tester.pump(const Duration(milliseconds: 40));
+      await tester.pump(const Duration(seconds: 1));
+      expect(find.byType(RaftVideoViewer), findsNothing);
       for (var i = 0; i < 50 && fake.disposed == 0; i++) {
         await tester.runAsync(
           () => Future<void>.delayed(const Duration(milliseconds: 10)),
@@ -318,9 +327,10 @@ void main() {
       }
       expect(fake.disposed, 1);
       expect(w.attachmentMedia.playerSessions.length, 0);
-    await tester.pumpWidget(const SizedBox());
-    w.attachmentMedia.playerSessions.clear();
-    await tester.pump(const Duration(milliseconds: 50));
-  }, variant: system,
+      await tester.pumpWidget(const SizedBox());
+      w.attachmentMedia.playerSessions.clear();
+      await tester.pump(const Duration(milliseconds: 50));
+    },
+    variant: system,
   );
 }

@@ -439,70 +439,66 @@ void main() {
       },
     );
 
-    test(
-      '[BP-RT-061][BP-RT-062] machine:upgrade-request and a successful computer:restart:done re-read only the machine list',
-      () async {
-        await hydrate();
-        events.add(const RaftEvent('machine:upgrade-request', {'machineId': 'c'}));
-        await settle();
-        expect(counts(), {
-          '/agents': 1,
-          '/servers/s/machines': 2,
-          '/servers/s/members': 1,
-        });
-        requests['/servers/s/machines']!.last.complete([computer]);
-        await settle();
-        // A restart that failed changes nothing the list shows.
-        events.add(
-          const RaftEvent('computer:restart:done', {
-            'machineId': 'c',
-            'requestId': 'r1',
-            'ok': false,
-            'error': 'restart_failed',
-          }),
-        );
-        await settle();
-        expect(counts()['/servers/s/machines'], 2);
-        events.add(
-          const RaftEvent('computer:restart:done', {
-            'machineId': 'c',
-            'requestId': 'r2',
-            'ok': true,
-          }),
-        );
-        await settle();
-        expect(counts(), {
-          '/agents': 1,
-          '/servers/s/machines': 3,
-          '/servers/s/members': 1,
-        });
-      },
-    );
+    test('[BP-RT-061][BP-RT-062] machine:upgrade-request and a successful computer:restart:done re-read only the machine list', () async {
+      await hydrate();
+      events.add(
+        const RaftEvent('machine:upgrade-request', {'machineId': 'c'}),
+      );
+      await settle();
+      expect(counts(), {
+        '/agents': 1,
+        '/servers/s/machines': 2,
+        '/servers/s/members': 1,
+      });
+      requests['/servers/s/machines']!.last.complete([computer]);
+      await settle();
+      // A restart that failed changes nothing the list shows.
+      events.add(
+        const RaftEvent('computer:restart:done', {
+          'machineId': 'c',
+          'requestId': 'r1',
+          'ok': false,
+          'error': 'restart_failed',
+        }),
+      );
+      await settle();
+      expect(counts()['/servers/s/machines'], 2);
+      events.add(
+        const RaftEvent('computer:restart:done', {
+          'machineId': 'c',
+          'requestId': 'r2',
+          'ok': true,
+        }),
+      );
+      await settle();
+      expect(counts(), {
+        '/agents': 1,
+        '/servers/s/machines': 3,
+        '/servers/s/members': 1,
+      });
+    });
 
-    test(
-      '[BP-RT-060] agent:deleted re-reads only the agent list, with or without the id',
-      () async {
-        await hydrate();
-        events.add(const RaftEvent('agent:deleted', {}));
-        await settle();
-        expect(counts(), {
-          '/agents': 2,
-          '/servers/s/machines': 1,
-          '/servers/s/members': 1,
-        });
-        requests['/agents']!.last.complete([agent]);
-        await settle();
-        events.add(const RaftEvent('agent:deleted', {'agentId': 'a'}));
-        expect(directory.agent('a'), isNull);
-        expect(directory.agentDeleted('a'), isTrue);
-        await settle();
-        expect(counts(), {
-          '/agents': 3,
-          '/servers/s/machines': 1,
-          '/servers/s/members': 1,
-        });
-      },
-    );
+    test('[BP-RT-060] agent:deleted re-reads only the agent list, with or without the id', () async {
+      await hydrate();
+      events.add(const RaftEvent('agent:deleted', {}));
+      await settle();
+      expect(counts(), {
+        '/agents': 2,
+        '/servers/s/machines': 1,
+        '/servers/s/members': 1,
+      });
+      requests['/agents']!.last.complete([agent]);
+      await settle();
+      events.add(const RaftEvent('agent:deleted', {'agentId': 'a'}));
+      expect(directory.agent('a'), isNull);
+      expect(directory.agentDeleted('a'), isTrue);
+      await settle();
+      expect(counts(), {
+        '/agents': 3,
+        '/servers/s/machines': 1,
+        '/servers/s/members': 1,
+      });
+    });
 
     test('agent:created upserts the pushed row and agent:deleted leaves a tombstone before the agent list read', () async {
       await hydrate();

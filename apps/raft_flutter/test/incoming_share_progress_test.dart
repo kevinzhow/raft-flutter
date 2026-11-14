@@ -16,6 +16,7 @@ import 'package:raft_flutter/platform/incoming_share_inbox.dart';
 import 'package:raft_flutter/platform/incoming_share_staging.dart';
 import 'package:raft_flutter/platform/native_sharing.dart';
 import 'package:raft_ui/raft_ui.dart';
+
 import 'flutter_test_config.dart' show leakDebt;
 
 class _Client extends RaftClient {
@@ -151,11 +152,11 @@ Future<void> _advance(WidgetTester t, [int ms = 300]) =>
 
 void main() {
   // Leak debt (share flow): see docs/development.md, Leak tracking.
-  leakDebt(const ['IncomingShareStaging', 'ValueNotifier<RaftTransferProgress?>']);
-  for (final (name, dark) in [
-    ('light', false),
-    ('dark', true),
-  ]) {
+  leakDebt(const [
+    'IncomingShareStaging',
+    'ValueNotifier<RaftTransferProgress?>',
+  ]);
+  for (final (name, dark) in [('light', false), ('dark', true)]) {
     group(name, () {
       testWidgets(
         'chips show waiting / bytes / done while the copy runs; the targets page shows the bytes',

@@ -63,6 +63,7 @@ class _Platform extends VideoPlayerPlatform {
     calls.add('loop');
     loops.add(looping);
   }
+
   @override
   Future<void> setVolume(int playerId, double volume) async {
     calls.add('volume');
@@ -93,7 +94,8 @@ class _Platform extends VideoPlayerPlatform {
 void main() {
   late _Platform fake;
   late VideoPlayerPlatform previous;
-  late Future<MediaFailure?> Function(Uri, Map<String, String>, String?) realProbe;
+  late Future<MediaFailure?> Function(Uri, Map<String, String>, String?)
+  realProbe;
   setUp(() {
     previous = VideoPlayerPlatform.instance;
     fake = _Platform();
@@ -233,7 +235,8 @@ void main() {
           url,
           cacheKey: 'a1',
           cacheAccount: account,
-          refresh: () async => Uri.parse('https://bucket.storage.invalid/a1.mp4?sig=2'),
+          refresh: () async =>
+              Uri.parse('https://bucket.storage.invalid/a1.mp4?sig=2'),
         ),
       );
       final first = fake.sources.single.uri;
@@ -248,10 +251,7 @@ void main() {
       // what counts is how often the player switched it on.
       int switchedOn() => fake.loops.where((on) => on).length;
 
-      Future<void> openClip(
-        Duration length, {
-        bool video = true,
-      }) async {
+      Future<void> openClip(Duration length, {bool video = true}) async {
         fake.duration = length;
         final player = VideoPlayerAttachmentPlayer(hasPicture: video);
         await player.open(AttachmentSource.file(File('/tmp/raft-test/c.mp4')));
@@ -264,7 +264,10 @@ void main() {
         expect(loopsAtEnd(Duration.zero), isFalse);
         expect(loopsAtEnd(const Duration(milliseconds: 1)), isTrue);
         expect(loopsAtEnd(const Duration(seconds: 60)), isTrue);
-        expect(loopsAtEnd(const Duration(seconds: 60, milliseconds: 1)), isFalse);
+        expect(
+          loopsAtEnd(const Duration(seconds: 60, milliseconds: 1)),
+          isFalse,
+        );
         expect(loopsAtEnd(const Duration(minutes: 5)), isFalse);
       });
 
@@ -294,20 +297,25 @@ void main() {
         expect(switchedOn(), 0);
       });
 
-      test('the factory passes video through, so audio players do not loop', () async {
-        fake.duration = const Duration(seconds: 10);
-        final audio = createAttachmentPlayer(
-          video: false,
-          platform: TargetPlatform.android,
-        );
-        await audio.open(AttachmentSource.file(File('/tmp/raft-test/a.wav')));
-        await audio.dispose();
-        expect(switchedOn(), 0);
-        final video = createAttachmentPlayer(platform: TargetPlatform.android);
-        await video.open(AttachmentSource.file(File('/tmp/raft-test/v.mp4')));
-        await video.dispose();
-        expect(switchedOn(), 1);
-      });
+      test(
+        'the factory passes video through, so audio players do not loop',
+        () async {
+          fake.duration = const Duration(seconds: 10);
+          final audio = createAttachmentPlayer(
+            video: false,
+            platform: TargetPlatform.android,
+          );
+          await audio.open(AttachmentSource.file(File('/tmp/raft-test/a.wav')));
+          await audio.dispose();
+          expect(switchedOn(), 0);
+          final video = createAttachmentPlayer(
+            platform: TargetPlatform.android,
+          );
+          await video.open(AttachmentSource.file(File('/tmp/raft-test/v.mp4')));
+          await video.dispose();
+          expect(switchedOn(), 1);
+        },
+      );
 
       test('a re-signed clip keeps looping', () async {
         fake.duration = const Duration(seconds: 10);
@@ -324,7 +332,9 @@ void main() {
       final player = VideoPlayerAttachmentPlayer();
       final seen = <AttachmentPlayback>[];
       player.changes.listen(seen.add);
-      await player.open(AttachmentSource.file(File('/tmp/raft-test/clip one.mp4')));
+      await player.open(
+        AttachmentSource.file(File('/tmp/raft-test/clip one.mp4')),
+      );
       await Future<void>.delayed(Duration.zero);
       expect(fake.sources.single.sourceType, DataSourceType.file);
       expect(fake.sources.single.uri, startsWith('file:///'));
@@ -401,7 +411,9 @@ void main() {
         ),
       );
       expect(find.byKey(const Key('texture')), findsNothing);
-      await tester.runAsync(() => player.open(AttachmentSource.file(File('/tmp/raft-test/c.mp4'))));
+      await tester.runAsync(
+        () => player.open(AttachmentSource.file(File('/tmp/raft-test/c.mp4'))),
+      );
       await tester.pump();
       await tester.pump();
       expect(find.byKey(const Key('texture')), findsOneWidget);
@@ -520,14 +532,17 @@ void main() {
   group('streaming a network URL', () {
     final url = Uri.parse('https://storage.invalid/a.mp4?sig=1');
 
-    test('opens the URL itself: no file, no header, never a download', () async {
-      final player = VideoPlayerAttachmentPlayer();
-      await player.open(AttachmentSource.network(url));
-      expect(fake.sources.single.sourceType, DataSourceType.network);
-      expect(fake.sources.single.uri, url.toString());
-      expect(fake.sources.single.httpHeaders, isEmpty);
-      await player.dispose();
-    });
+    test(
+      'opens the URL itself: no file, no header, never a download',
+      () async {
+        final player = VideoPlayerAttachmentPlayer();
+        await player.open(AttachmentSource.network(url));
+        expect(fake.sources.single.sourceType, DataSourceType.network);
+        expect(fake.sources.single.uri, url.toString());
+        expect(fake.sources.single.httpHeaders, isEmpty);
+        await player.dispose();
+      },
+    );
 
     test('a start position is seeked to once the stream is open', () async {
       final player = VideoPlayerAttachmentPlayer();
@@ -538,27 +553,30 @@ void main() {
       await player.dispose();
     });
 
-    test('an open that fails is retried once with a freshly signed URL', () async {
-      final player = VideoPlayerAttachmentPlayer();
-      fake.failures = 1;
-      var signed = 0;
-      await player.open(
-        AttachmentSource.network(
-          url,
-          refresh: () async {
-            signed++;
-            return Uri.parse('https://storage.invalid/a.mp4?sig=2');
-          },
-        ),
-      );
-      expect(signed, 1);
-      expect(fake.sources.map((s) => s.uri), [
-        url.toString(),
-        'https://storage.invalid/a.mp4?sig=2',
-      ]);
-      expect(player.playback.error, isFalse);
-      await player.dispose();
-    });
+    test(
+      'an open that fails is retried once with a freshly signed URL',
+      () async {
+        final player = VideoPlayerAttachmentPlayer();
+        fake.failures = 1;
+        var signed = 0;
+        await player.open(
+          AttachmentSource.network(
+            url,
+            refresh: () async {
+              signed++;
+              return Uri.parse('https://storage.invalid/a.mp4?sig=2');
+            },
+          ),
+        );
+        expect(signed, 1);
+        expect(fake.sources.map((s) => s.uri), [
+          url.toString(),
+          'https://storage.invalid/a.mp4?sig=2',
+        ]);
+        expect(player.playback.error, isFalse);
+        await player.dispose();
+      },
+    );
 
     // Regression (CodexMac's review repro): the first open of a resumed
     // stream failed on an expired URL and the re-sign reopened at zero.
@@ -626,7 +644,9 @@ void main() {
       final player = VideoPlayerAttachmentPlayer();
       await player.open(AttachmentSource.network(url));
       expect(player.playback.duration, const Duration(seconds: 10));
-      fake.streams[0]!.add(VideoEvent(eventType: VideoEventType.bufferingStart));
+      fake.streams[0]!.add(
+        VideoEvent(eventType: VideoEventType.bufferingStart),
+      );
       await Future<void>.delayed(Duration.zero);
       expect(player.playback.buffering, isTrue);
       fake.streams[0]!.add(VideoEvent(eventType: VideoEventType.bufferingEnd));

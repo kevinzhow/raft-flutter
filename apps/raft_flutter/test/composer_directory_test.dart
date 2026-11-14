@@ -301,7 +301,10 @@ void main() {
         if (p.isMention && p.inChannel == inChannel) p.id,
     ];
 
-    Future<ComposerDirectory> open(WorkspaceController w, {bool thread = false}) async {
+    Future<ComposerDirectory> open(
+      WorkspaceController w, {
+      bool thread = false,
+    }) async {
       final directory = ComposerDirectory(w, thread: thread);
       addTearDown(directory.dispose);
       // The server-scoped author directory a mounted workspace has loaded.
@@ -314,19 +317,25 @@ void main() {
       return directory;
     }
 
-    test('public channel: roster is in channel, other server agents are not', () async {
-      final (w, _) = await setup(type: 'channel');
-      final d = await open(w);
-      expect(ids(d, inChannel: true).toSet(), {'alice', ...members});
-      expect(ids(d, inChannel: false), ['outsider']);
-    });
+    test(
+      'public channel: roster is in channel, other server agents are not',
+      () async {
+        final (w, _) = await setup(type: 'channel');
+        final d = await open(w);
+        expect(ids(d, inChannel: true).toSet(), {'alice', ...members});
+        expect(ids(d, inChannel: false), ['outsider']);
+      },
+    );
 
-    test('DM is not member-scoped: server people stay available, peers in channel', () async {
-      final (w, _) = await setup(type: 'dm');
-      final d = await open(w);
-      expect(ids(d, inChannel: true).toSet(), {'alice', ...members});
-      expect(ids(d, inChannel: false), ['outsider']);
-    });
+    test(
+      'DM is not member-scoped: server people stay available, peers in channel',
+      () async {
+        final (w, _) = await setup(type: 'dm');
+        final d = await open(w);
+        expect(ids(d, inChannel: true).toSet(), {'alice', ...members});
+        expect(ids(d, inChannel: false), ['outsider']);
+      },
+    );
 
     test('joint channel offers only its own roster', () async {
       final (w, _) = await setup(type: 'joint');
@@ -340,10 +349,13 @@ void main() {
       final d = await open(w, thread: true);
       expect(ids(d, inChannel: true).toSet(), {'alice', ...members});
       expect(ids(d, inChannel: false), ['outsider']);
-      expect({
-        for (final p in d.people)
-          if (p.threadRank != null) p.id: p.threadRank,
-      }, {'m5': 0, 'm3': 1});
+      expect(
+        {
+          for (final p in d.people)
+            if (p.threadRank != null) p.id: p.threadRank,
+        },
+        {'m5': 0, 'm3': 1},
+      );
       expect(
         a.calls.where((r) => r.path == '/channels/c1/members'),
         hasLength(1),
@@ -359,12 +371,15 @@ void main() {
       }
     });
 
-    test('thread over a DM keeps the DM scope and does not reorder by recency', () async {
-      final (w, _) = await setup(type: 'dm', thread: true);
-      final d = await open(w, thread: true);
-      expect(ids(d, inChannel: true).toSet(), {'alice', ...members});
-      expect(d.people.every((p) => p.threadRank == null), isTrue);
-    });
+    test(
+      'thread over a DM keeps the DM scope and does not reorder by recency',
+      () async {
+        final (w, _) = await setup(type: 'dm', thread: true);
+        final d = await open(w, thread: true);
+        expect(ids(d, inChannel: true).toSet(), {'alice', ...members});
+        expect(d.people.every((p) => p.threadRank == null), isTrue);
+      },
+    );
 
     test('thread with an unresolved source channel suggests nobody', () async {
       final (w, _) = await setup(type: 'channel', thread: true);

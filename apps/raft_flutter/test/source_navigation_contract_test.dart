@@ -604,11 +604,20 @@ void main() {
         });
       }
 
-      test('[N03] invalid content kind or missing identity cannot create a slot', () {
-        for (final value in ['', 'channel:', ':id', 'unknown:id', 'channel']) {
-          expect(RaftContentLocation.parse(value), isNull, reason: value);
-        }
-      });
+      test(
+        '[N03] invalid content kind or missing identity cannot create a slot',
+        () {
+          for (final value in [
+            '',
+            'channel:',
+            ':id',
+            'unknown:id',
+            'channel',
+          ]) {
+            expect(RaftContentLocation.parse(value), isNull, reason: value);
+          }
+        },
+      );
 
       test('external identity requires exactly channel and message parts', () {
         for (final value in [

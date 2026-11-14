@@ -31,7 +31,10 @@ class RefusingFiles extends AttachmentFiles {
     attempts++;
     throw DioException(
       requestOptions: RequestOptions(path: url),
-      response: Response(requestOptions: RequestOptions(path: url), statusCode: 403),
+      response: Response(
+        requestOptions: RequestOptions(path: url),
+        statusCode: 403,
+      ),
       type: DioExceptionType.badResponse,
     );
   }
@@ -103,7 +106,10 @@ void main() {
       Future<Directory> root() async => directory;
       final metadata = {...video, 'thumbnailUrl': thumbnailUrl};
 
-      final (firstClient, first) = workspace(AttachmentDiskCache(root), metadata);
+      final (firstClient, first) = workspace(
+        AttachmentDiskCache(root),
+        metadata,
+      );
       final firstFiles = CountingFiles(poster);
       await mountCard(tester, first, firstFiles, metadata);
       expect(find.byType(Image), findsOneWidget);
@@ -132,7 +138,10 @@ void main() {
       poster = (await tester.runAsync(() => png(320, 180)))!;
       Future<Directory> root() async => directory;
       final metadata = {...video, 'thumbnailUrl': thumbnailUrl};
-      final (firstClient, first) = workspace(AttachmentDiskCache(root), metadata);
+      final (firstClient, first) = workspace(
+        AttachmentDiskCache(root),
+        metadata,
+      );
       await mountCard(tester, first, CountingFiles(poster), metadata);
       expect(await storedFiles(tester), 1);
       await tester.pumpWidget(const SizedBox());
@@ -167,7 +176,11 @@ void main() {
       }
       expect(files.attempts, 1);
       expect(find.byType(Image), findsNothing);
-      expect(client.resolutions, 0, reason: 'the video is never signed or fetched');
+      expect(
+        client.resolutions,
+        0,
+        reason: 'the video is never signed or fetched',
+      );
       expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox());
       w.dispose();

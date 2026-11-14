@@ -11,7 +11,9 @@ import 'package:raft_flutter/platform/native_sharing.dart';
 void main() {
   setUpAll(() => HttpOverrides.global = null);
   late HttpServer server;
-  late List<({String method, String uri, int port, Map<String, List<String>> headers})>
+  late List<
+    ({String method, String uri, int port, Map<String, List<String>> headers})
+  >
   seen;
   late String base;
 
@@ -79,8 +81,10 @@ void main() {
         'RateLimitInterceptor',
       ],
     );
-    expect(AttachmentHttp.shared.options.headers.keys.map((k) => k.toLowerCase()),
-        isNot(contains('authorization')));
+    expect(
+      AttachmentHttp.shared.options.headers.keys.map((k) => k.toLowerCase()),
+      isNot(contains('authorization')),
+    );
   });
 
   test('cancel semantics are unchanged on the shared client', () async {
@@ -100,7 +104,11 @@ void main() {
     await expectLater(
       future,
       throwsA(
-        isA<DioException>().having((e) => e.type, 'type', DioExceptionType.cancel),
+        isA<DioException>().having(
+          (e) => e.type,
+          'type',
+          DioExceptionType.cancel,
+        ),
       ),
     );
   });

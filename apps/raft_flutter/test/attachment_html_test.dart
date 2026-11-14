@@ -284,35 +284,40 @@ void main() {
     },
   );
 
-  test('large inline-image documents load, only the real cap refuses', () async {
-    // A real 3.2 MB report (inline base64 images + script) failed at 2 MiB.
-    final adapter = HtmlAdapter()
-      ..data = Uint8List.fromList(
-        '<h1>Report</h1><img src="data:image/jpeg;base64,${'A' * 3300000}">'
-            .codeUnits,
+  test(
+    'large inline-image documents load, only the real cap refuses',
+    () async {
+      // A real 3.2 MB report (inline base64 images + script) failed at 2 MiB.
+      final adapter = HtmlAdapter()
+        ..data = Uint8List.fromList(
+          '<h1>Report</h1><img src="data:image/jpeg;base64,${'A' * 3300000}">'
+              .codeUnits,
+        );
+      final loader = AttachmentHtmlLoader(
+        dio: Dio()..httpClientAdapter = adapter,
       );
-    final loader = AttachmentHtmlLoader(dio: Dio()..httpClientAdapter = adapter);
-    addTearDown(loader.dispose);
-    final uri = Uri.parse('https://example.com/preview');
-    final text = await loader.load(
-      uri,
-      cancel: CancelToken(),
-      authorized: () => true,
-    );
-    expect(text, contains('Report'));
-    expect(text!.length, greaterThan(3 * 1024 * 1024));
-    adapter.data = Uint8List(AttachmentHtmlLoader.maxBytes + 1);
-    await expectLater(
-      loader.load(uri, cancel: CancelToken(), authorized: () => true),
-      throwsA(isA<AttachmentHtmlTooLarge>()),
-    );
-    adapter.data = Uint8List.fromList('x'.codeUnits);
-    adapter.policy = "default-src 'none'";
-    await expectLater(
-      loader.load(uri, cancel: CancelToken(), authorized: () => true),
-      throwsA(isA<AttachmentHtmlNotIsolated>()),
-    );
-  });
+      addTearDown(loader.dispose);
+      final uri = Uri.parse('https://example.com/preview');
+      final text = await loader.load(
+        uri,
+        cancel: CancelToken(),
+        authorized: () => true,
+      );
+      expect(text, contains('Report'));
+      expect(text!.length, greaterThan(3 * 1024 * 1024));
+      adapter.data = Uint8List(AttachmentHtmlLoader.maxBytes + 1);
+      await expectLater(
+        loader.load(uri, cancel: CancelToken(), authorized: () => true),
+        throwsA(isA<AttachmentHtmlTooLarge>()),
+      );
+      adapter.data = Uint8List.fromList('x'.codeUnits);
+      adapter.policy = "default-src 'none'";
+      await expectLater(
+        loader.load(uri, cancel: CancelToken(), authorized: () => true),
+        throwsA(isA<AttachmentHtmlNotIsolated>()),
+      );
+    },
+  );
   test('closing one preview does not close the shared attachment client', () async {
     final adapter = HtmlAdapter();
     final shared = Dio()..httpClientAdapter = adapter;
@@ -337,7 +342,9 @@ void main() {
   test('verify checks the pinned sandbox without reading a size', () async {
     final adapter = HtmlAdapter()
       ..data = Uint8List(AttachmentHtmlLoader.maxBytes * 2);
-    final loader = AttachmentHtmlLoader(dio: Dio()..httpClientAdapter = adapter);
+    final loader = AttachmentHtmlLoader(
+      dio: Dio()..httpClientAdapter = adapter,
+    );
     addTearDown(loader.dispose);
     final uri = Uri.parse('https://example.com/preview');
     expect(
@@ -364,7 +371,10 @@ void main() {
     );
     ({AttachmentHtmlNavigationAction action, Uri? link}) nav(String url) =>
         attachmentHtmlNavigation(url, preview, 'https://api.raft.build');
-    expect(nav(preview.toString()).action, AttachmentHtmlNavigationAction.allow);
+    expect(
+      nav(preview.toString()).action,
+      AttachmentHtmlNavigationAction.allow,
+    );
     final external = nav('https://example.com/reference');
     expect(external.action, AttachmentHtmlNavigationAction.external);
     expect(external.link, Uri.parse('https://example.com/reference'));
@@ -382,7 +392,11 @@ void main() {
       'https://example.com/x?previewToken=leak',
       'https://user:pass@example.com/',
     ]) {
-      expect(nav(url).action, AttachmentHtmlNavigationAction.block, reason: url);
+      expect(
+        nav(url).action,
+        AttachmentHtmlNavigationAction.block,
+        reason: url,
+      );
     }
   });
   Future<(PendingHtmlLoader, List<AttachmentHtmlWebViewEvents>, List<Uri>)>
@@ -443,7 +457,11 @@ void main() {
         },
       );
       expect(loader.verified, 1);
-      expect(loader.loaded, 0, reason: 'the document is not downloaded into Dart');
+      expect(
+        loader.loaded,
+        0,
+        reason: 'the document is not downloaded into Dart',
+      );
       expect(shown.last.path, '/api/attachments/a/html-preview');
       expect(find.byKey(const ValueKey('fake-webview')), findsOneWidget);
       // Transfer stage until the page finished.
@@ -454,7 +472,10 @@ void main() {
       expect(events.last.onNavigation(shown.last.toString()), isTrue);
       expect(events.last.onNavigation('file:///etc/passwd'), isFalse);
       await tester.pump();
-      expect(find.text('This link is unavailable in the HTML preview.'), findsOneWidget);
+      expect(
+        find.text('This link is unavailable in the HTML preview.'),
+        findsOneWidget,
+      );
       expect(
         events.last.onNavigation('https://example.com/ref'),
         isFalse,
@@ -579,7 +600,10 @@ void main() {
   testWidgets(
     'WebView preview refuses a server response without the pinned sandbox and says why',
     (tester) async {
-      final (loader, _, shown) = await pumpWebViewDialog(tester, isolated: false);
+      final (loader, _, shown) = await pumpWebViewDialog(
+        tester,
+        isolated: false,
+      );
       expect(loader.verified, 1);
       expect(shown, isEmpty);
       expect(find.byKey(const ValueKey('fake-webview')), findsNothing);
@@ -636,7 +660,10 @@ void main() {
       );
       await waitForHtmlCompletion(tester, () => loader.attempted);
       await tester.pumpAndSettle();
-      expect(find.textContaining('too large for the in-app preview'), findsOneWidget);
+      expect(
+        find.textContaining('too large for the in-app preview'),
+        findsOneWidget,
+      );
       expect(find.text('Retry Preview'), findsNothing);
       expect(find.text('Open Interactive Preview in Browser'), findsOneWidget);
       await tester.tap(find.text('Download File'));

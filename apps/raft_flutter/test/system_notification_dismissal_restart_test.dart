@@ -76,39 +76,45 @@ void main() {
     store.dispose();
   });
 
-  test('a restart does not hide a different problem or another server', () async {
-    final storage = _Storage();
-    var store = _store(storage, [_machine('m1')]);
-    await store.bind(_scope());
-    await _settle();
-    store.dismiss('scope-s', store.entries.single.fingerprint!);
-    await store.writes;
-    store.dispose();
+  test(
+    'a restart does not hide a different problem or another server',
+    () async {
+      final storage = _Storage();
+      var store = _store(storage, [_machine('m1')]);
+      await store.bind(_scope());
+      await _settle();
+      store.dismiss('scope-s', store.entries.single.fingerprint!);
+      await store.writes;
+      store.dispose();
 
-    // Another computer goes offline: a different condition, shown.
-    store = _store(storage, [_machine('m1'), _machine('m2')]);
-    await store.bind(_scope());
-    await _settle();
-    expect(store.entries.map((e) => e.id), ['machine-offline']);
-    expect(store.entries.single.title, contains('Box m2'));
-    store.dispose();
+      // Another computer goes offline: a different condition, shown.
+      store = _store(storage, [_machine('m1'), _machine('m2')]);
+      await store.bind(_scope());
+      await _settle();
+      expect(store.entries.map((e) => e.id), ['machine-offline']);
+      expect(store.entries.single.title, contains('Box m2'));
+      store.dispose();
 
-    // The same problem on another server was never dismissed there.
-    store = _store(storage, [_machine('m1')]);
-    await store.bind(_scope(server: 'other'));
-    await _settle();
-    expect(store.entries.map((e) => e.id), ['machine-offline']);
-    store.dispose();
-  });
+      // The same problem on another server was never dismissed there.
+      store = _store(storage, [_machine('m1')]);
+      await store.bind(_scope(server: 'other'));
+      await _settle();
+      expect(store.entries.map((e) => e.id), ['machine-offline']);
+      store.dispose();
+    },
+  );
 
-  test('a computer that is back online shows nothing, dismissed or not', () async {
-    final storage = _Storage();
-    final store = _store(storage, [_machine('m1', status: 'online')]);
-    await store.bind(_scope());
-    await _settle();
-    expect(store.entries, isEmpty);
-    store.dispose();
-  });
+  test(
+    'a computer that is back online shows nothing, dismissed or not',
+    () async {
+      final storage = _Storage();
+      final store = _store(storage, [_machine('m1', status: 'online')]);
+      await store.bind(_scope());
+      await _settle();
+      expect(store.entries, isEmpty);
+      store.dispose();
+    },
+  );
 
   test('an unreadable stored list never hides or blocks a notice', () async {
     final key = _scope().storageKey!;
@@ -122,9 +128,14 @@ void main() {
       final store = _store(storage, [_machine('m1')]);
       await store.bind(_scope());
       await _settle();
-      expect(store.entries.map((e) => e.id), ['machine-offline'], reason: stored);
+      expect(store.entries.map((e) => e.id), [
+        'machine-offline',
+      ], reason: stored);
       // Dismissing still works and replaces the unreadable value.
-      expect(store.dismiss('scope-s', store.entries.single.fingerprint!), isTrue);
+      expect(
+        store.dismiss('scope-s', store.entries.single.fingerprint!),
+        isTrue,
+      );
       await store.writes;
       expect(jsonDecode(storage.data[key]!), [
         'machine-offline:m1',

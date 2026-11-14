@@ -294,9 +294,15 @@ void main() {
           'b',
           (page['messages'] as List).cast<Map<String, dynamic>>(),
         );
-        expect(w.messageDomain.ledger.message('b', 'b-25')!['content'], 'Accepted 25 中文');
+        expect(
+          w.messageDomain.ledger.message('b', 'b-25')!['content'],
+          'Accepted 25 中文',
+        );
         expect(await MessageHistoryPages.record(w, request, page), isTrue);
-        expect(w.messageDomain.ledger.message('b', 'b-25')!['content'], 'newer saved edit');
+        expect(
+          w.messageDomain.ledger.message('b', 'b-25')!['content'],
+          'newer saved edit',
+        );
       } finally {
         await w.flushCache();
         w.dispose();
@@ -337,14 +343,18 @@ void main() {
           }),
         );
         final seen = <String>[];
-        void listen() =>
-            seen.add('${w.messageDomain.ledger.message('b', 'b-25')?['content']}');
+        void listen() => seen.add(
+          '${w.messageDomain.ledger.message('b', 'b-25')?['content']}',
+        );
         w.addListener(listen);
         gate.complete();
         await db.messageHistory.receiver.settled;
         w.removeListener(listen);
         expect(seen, isNot(contains('older queued edit')));
-        expect(w.messageDomain.ledger.message('b', 'b-25')!['content'], 'newest live edit');
+        expect(
+          w.messageDomain.ledger.message('b', 'b-25')!['content'],
+          'newest live edit',
+        );
         expect(
           (await db.messageHistory.readContext(
             MessageHistoryPages.scope(w, 'b')!,
@@ -481,7 +491,8 @@ void main() {
       expect(
         (await db.messageHistory.readContext(
           scope,
-          'a-102', radius: 0,
+          'a-102',
+          radius: 0,
         ))!['targetMessageId'],
         'a-102',
       );
@@ -530,7 +541,8 @@ void main() {
         expect(
           (await db.messageHistory.readContext(
             scope,
-            'unvisited-thread-101', radius: 0,
+            'unvisited-thread-101',
+            radius: 0,
           ))!['targetMessageId'],
           'unvisited-thread-101',
         );

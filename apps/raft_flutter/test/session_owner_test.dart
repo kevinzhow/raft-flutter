@@ -41,48 +41,58 @@ void main() {
   });
 
   group('foreground claim', () {
-    test('is synchronous and settled when nothing else is registered', () async {
-      final ui = NativeSessionOwner(supported: true);
-      addTearDown(ui.release);
-      var settled = false;
-      ui.claim().then((_) => settled = true);
-      expect(ui.claimed, isTrue);
-      expect(_registered(), isNotNull);
-      await Future<void>.delayed(Duration.zero);
-      expect(settled, isTrue);
-    });
+    test(
+      'is synchronous and settled when nothing else is registered',
+      () async {
+        final ui = NativeSessionOwner(supported: true);
+        addTearDown(ui.release);
+        var settled = false;
+        ui.claim().then((_) => settled = true);
+        expect(ui.claimed, isTrue);
+        expect(_registered(), isNotNull);
+        await Future<void>.delayed(Duration.zero);
+        expect(settled, isTrue);
+      },
+    );
 
-    test('never waits for a hung guest: registered at once, settle is bounded', () async {
-      final guestWork = Completer<void>(); // never completes: a stuck guest
-      var preempts = 0;
-      final guest = NativeSessionOwner(
-        supported: true,
-        onPreempt: () {
-          preempts++;
-          return guestWork.future;
-        },
-      );
-      final ui = NativeSessionOwner(supported: true);
-      addTearDown(guest.release);
-      addTearDown(ui.release);
-      expect(guest.registerGuest(), isTrue);
-      final guestPort = _registered();
+    test(
+      'never waits for a hung guest: registered at once, settle is bounded',
+      () async {
+        final guestWork = Completer<void>(); // never completes: a stuck guest
+        var preempts = 0;
+        final guest = NativeSessionOwner(
+          supported: true,
+          onPreempt: () {
+            preempts++;
+            return guestWork.future;
+          },
+        );
+        final ui = NativeSessionOwner(supported: true);
+        addTearDown(guest.release);
+        addTearDown(ui.release);
+        expect(guest.registerGuest(), isTrue);
+        final guestPort = _registered();
 
-      final watch = Stopwatch()..start();
-      final settled = ui.claim();
-      // The foreground owns the registration before any guest answers.
-      expect(ui.claimed, isTrue);
-      expect(_registered(), isNot(guestPort));
-      expect(watch.elapsedMilliseconds, lessThan(50));
+        final watch = Stopwatch()..start();
+        final settled = ui.claim();
+        // The foreground owns the registration before any guest answers.
+        expect(ui.claimed, isTrue);
+        expect(_registered(), isNot(guestPort));
+        expect(watch.elapsedMilliseconds, lessThan(50));
 
-      var settledDone = false;
-      unawaited(settled.then((_) => settledDone = true));
-      await Future<void>.delayed(const Duration(milliseconds: 100));
-      expect(preempts, 1);
-      expect(settledDone, isFalse, reason: 'only rotation waits, and bounded');
-      await settled.timeout(guestSettleTimeout + const Duration(seconds: 1));
-      expect(settledDone, isTrue);
-    });
+        var settledDone = false;
+        unawaited(settled.then((_) => settledDone = true));
+        await Future<void>.delayed(const Duration(milliseconds: 100));
+        expect(preempts, 1);
+        expect(
+          settledDone,
+          isFalse,
+          reason: 'only rotation waits, and bounded',
+        );
+        await settled.timeout(guestSettleTimeout + const Duration(seconds: 1));
+        expect(settledDone, isTrue);
+      },
+    );
 
     test('guest confirms after draining; its release keeps the foreground registration', () async {
       final drained = Completer<void>();
@@ -107,14 +117,17 @@ void main() {
       expect(_registered(), mine);
     });
 
-    test('replaces a stale registration of a dead isolate immediately', () async {
-      _registerDead();
-      final ui = NativeSessionOwner(supported: true);
-      addTearDown(ui.release);
-      final settled = ui.claim();
-      expect(ui.claimed, isTrue);
-      await settled.timeout(guestSettleTimeout + const Duration(seconds: 1));
-    });
+    test(
+      'replaces a stale registration of a dead isolate immediately',
+      () async {
+        _registerDead();
+        final ui = NativeSessionOwner(supported: true);
+        addTearDown(ui.release);
+        final settled = ui.claim();
+        expect(ui.claimed, isTrue);
+        await settled.timeout(guestSettleTimeout + const Duration(seconds: 1));
+      },
+    );
 
     test('claim is idempotent', () async {
       final ui = NativeSessionOwner(supported: true);
@@ -211,16 +224,19 @@ void main() {
       expect(drained, isTrue);
     });
 
-    test('never overwrite credentials the foreground has since changed', () async {
-      final inner = _Store()..stored = _session('a');
-      final guest = GuestSessionStore(inner);
-      await guest.read('o');
-      inner.stored = _session('foreground-rotated');
-      await guest.write('o', _session('stale-guest'));
-      expect(inner.stored!.refreshToken, 'foreground-rotated');
-      inner.stored = null; // logout
-      await guest.write('o', _session('stale-guest'));
-      expect(inner.stored, isNull);
-    });
+    test(
+      'never overwrite credentials the foreground has since changed',
+      () async {
+        final inner = _Store()..stored = _session('a');
+        final guest = GuestSessionStore(inner);
+        await guest.read('o');
+        inner.stored = _session('foreground-rotated');
+        await guest.write('o', _session('stale-guest'));
+        expect(inner.stored!.refreshToken, 'foreground-rotated');
+        inner.stored = null; // logout
+        await guest.write('o', _session('stale-guest'));
+        expect(inner.stored, isNull);
+      },
+    );
   });
 }

@@ -588,8 +588,7 @@ void main() {
       );
       final w = f.workspace(t);
       await tapTab(f, t, 'computers');
-      final state =
-          t.state(find.byType(WorkspaceView)) as dynamic;
+      final state = t.state(find.byType(WorkspaceView)) as dynamic;
       final store = state.mobileTabbar as MobileTabbarStore;
       store.update(MobileTabbarSettings.defaults);
       await f.flush(t);

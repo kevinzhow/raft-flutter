@@ -53,50 +53,46 @@ void main() {
   final files =
       int.tryParse(Platform.environment['RAFT_CACHE_SCAN_FILES'] ?? '') ?? 2000;
 
-  test(
-    'indexing $files entries does not stall the isolate',
-    () async {
-      _populate(root, files);
-      final cache = AttachmentDiskCache(() async => root);
+  test('indexing $files entries does not stall the isolate', () async {
+    _populate(root, files);
+    final cache = AttachmentDiskCache(() async => root);
 
-      // A 2 ms ticker on the same isolate: its largest gap is the longest the
-      // scan kept the event loop (and so a frame) waiting.
-      final clock = Stopwatch()..start();
-      var last = clock.elapsedMicroseconds, worst = 0;
-      final ticker = Timer.periodic(const Duration(milliseconds: 2), (_) {
-        final now = clock.elapsedMicroseconds;
-        if (now - last > worst) worst = now - last;
-        last = now;
-      });
-      // What the ticker reports with nothing going on (timer jitter under load).
-      await Future<void>.delayed(const Duration(milliseconds: 300));
-      final idle = worst;
-      worst = 0;
-      last = clock.elapsedMicroseconds;
-      final start = clock.elapsedMicroseconds;
-      await cache.warm();
-      final scanMs = (clock.elapsedMicroseconds - start) / 1000;
-      ticker.cancel();
+    // A 2 ms ticker on the same isolate: its largest gap is the longest the
+    // scan kept the event loop (and so a frame) waiting.
+    final clock = Stopwatch()..start();
+    var last = clock.elapsedMicroseconds, worst = 0;
+    final ticker = Timer.periodic(const Duration(milliseconds: 2), (_) {
+      final now = clock.elapsedMicroseconds;
+      if (now - last > worst) worst = now - last;
+      last = now;
+    });
+    // What the ticker reports with nothing going on (timer jitter under load).
+    await Future<void>.delayed(const Duration(milliseconds: 300));
+    final idle = worst;
+    worst = 0;
+    last = clock.elapsedMicroseconds;
+    final start = clock.elapsedMicroseconds;
+    await cache.warm();
+    final scanMs = (clock.elapsedMicroseconds - start) / 1000;
+    ticker.cancel();
 
-      final count = await cache.entryCount();
-      expect(count, files + 50);
-      expect(await cache.sizeBytes(), (files + 50) * 1024);
-      expect(
-        await cache.sizeBytes(namespace: AttachmentCacheNamespace.public),
-        50 * 1024,
-      );
-      // ignore: avoid_print
-      print(
-        'cache index scan: $files private + 50 public files: '
-        '${scanMs.toStringAsFixed(0)} ms, longest event-loop gap '
-        '${(worst / 1000).toStringAsFixed(1)} ms '
-        '(${(idle / 1000).toStringAsFixed(1)} ms when idle)',
-      );
-      // Generous: a loaded CI machine, not a benchmark threshold.
-      expect(worst / 1000, lessThan(250));
-    },
-    timeout: const Timeout(Duration(minutes: 2)),
-  );
+    final count = await cache.entryCount();
+    expect(count, files + 50);
+    expect(await cache.sizeBytes(), (files + 50) * 1024);
+    expect(
+      await cache.sizeBytes(namespace: AttachmentCacheNamespace.public),
+      50 * 1024,
+    );
+    // ignore: avoid_print
+    print(
+      'cache index scan: $files private + 50 public files: '
+      '${scanMs.toStringAsFixed(0)} ms, longest event-loop gap '
+      '${(worst / 1000).toStringAsFixed(1)} ms '
+      '(${(idle / 1000).toStringAsFixed(1)} ms when idle)',
+    );
+    // Generous: a loaded CI machine, not a benchmark threshold.
+    expect(worst / 1000, lessThan(250));
+  }, timeout: const Timeout(Duration(minutes: 2)));
 
   test('callers that arrive while the index is being built see the right '
       'cache', () async {
@@ -139,9 +135,10 @@ void main() {
       5 * 1024,
       reason: 'the public namespace is not evicted for the attachments',
     );
-    final onDisk = await Directory(
-      root.path,
-    ).list(recursive: true).where((e) => e is File).length;
+    final onDisk = await Directory(root.path)
+        .list(recursive: true)
+        .where((e) => e is File)
+        .length;
     expect(onDisk, await cache.entryCount());
   });
 

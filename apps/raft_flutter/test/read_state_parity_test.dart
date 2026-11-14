@@ -204,31 +204,28 @@ void main() {
     expect(w.conversationReads.unread['c'], 1);
   });
 
-  test(
-    '[BP-READ-054] returning to the foreground with the conversation open sends the read',
-    () async {
-      final c = _Client();
-      final w = await _mobile(c);
-      addTearDown(() async {
-        w.dispose();
-        await c.stream.close();
-      });
-      await w.selectChannel(w.channels.single);
-      final before = c.reads;
-      w.setForeground(false);
-      c.pageRows = [...c.pageRows, _Client.message('later', 2)];
-      c.stream.add(RaftEvent('message:new', _Client.message('later', 2)));
-      await Future<void>.delayed(Duration.zero);
-      // Backgrounded: counted, not read.
-      expect(c.reads, before);
-      expect(w.conversationReads.unread['c'], 1);
-      w.setForeground(true);
-      await Future<void>.delayed(Duration.zero);
-      await Future<void>.delayed(Duration.zero);
-      expect(c.reads, before + 1);
-      expect(w.conversationReads.unread['c'], 0);
-    },
-  );
+  test('[BP-READ-054] returning to the foreground with the conversation open sends the read', () async {
+    final c = _Client();
+    final w = await _mobile(c);
+    addTearDown(() async {
+      w.dispose();
+      await c.stream.close();
+    });
+    await w.selectChannel(w.channels.single);
+    final before = c.reads;
+    w.setForeground(false);
+    c.pageRows = [...c.pageRows, _Client.message('later', 2)];
+    c.stream.add(RaftEvent('message:new', _Client.message('later', 2)));
+    await Future<void>.delayed(Duration.zero);
+    // Backgrounded: counted, not read.
+    expect(c.reads, before);
+    expect(w.conversationReads.unread['c'], 1);
+    w.setForeground(true);
+    await Future<void>.delayed(Duration.zero);
+    await Future<void>.delayed(Duration.zero);
+    expect(c.reads, before + 1);
+    expect(w.conversationReads.unread['c'], 0);
+  });
 
   test('[BP-READ-015] phone: a live append at the bottom is read with no pointer activity (owner decision 2026-10-12)', () async {
     final c = _Client();
@@ -248,26 +245,23 @@ void main() {
     expect(w.conversationReads.unread['c'] ?? 0, 0);
   });
 
-  test(
-    '[BP-READ-016] phone: a live append while scrolled above the bottom stays unread',
-    () async {
-      final c = _Client();
-      final w = await _mobile(c);
-      addTearDown(() async {
-        w.dispose();
-        await c.stream.close();
-      });
-      await w.selectChannel(w.channels.single);
-      final before = c.reads;
-      RaftUserActivity.forget();
-      w.conversationReads.setTimelineAtBottom('c', false);
-      c.stream.add(RaftEvent('message:new', _Client.message('live', 2)));
-      await Future<void>.delayed(Duration.zero);
-      await Future<void>.delayed(Duration.zero);
-      expect(c.reads, before);
-      expect(w.conversationReads.unread['c'], 1);
-    },
-  );
+  test('[BP-READ-016] phone: a live append while scrolled above the bottom stays unread', () async {
+    final c = _Client();
+    final w = await _mobile(c);
+    addTearDown(() async {
+      w.dispose();
+      await c.stream.close();
+    });
+    await w.selectChannel(w.channels.single);
+    final before = c.reads;
+    RaftUserActivity.forget();
+    w.conversationReads.setTimelineAtBottom('c', false);
+    c.stream.add(RaftEvent('message:new', _Client.message('live', 2)));
+    await Future<void>.delayed(Duration.zero);
+    await Future<void>.delayed(Duration.zero);
+    expect(c.reads, before);
+    expect(w.conversationReads.unread['c'], 1);
+  });
 
   test('desktop: a live append without recent activity stays unread (Web 1 s gate)', () async {
     final c = _Client();
@@ -336,29 +330,35 @@ void main() {
     c.syncRows = [_Client.message('gap1', 2), _Client.message('gap2', 3)];
     await w.messageDomain.navigation.syncVisibleScopes();
     await Future<void>.delayed(Duration.zero);
-    expect(w.messageDomain.messages.map((m) => m.id), containsAll(['gap1', 'gap2']));
+    expect(
+      w.messageDomain.messages.map((m) => m.id),
+      containsAll(['gap1', 'gap2']),
+    );
     expect(c.reads, before, reason: 'the reader never reached these rows');
     expect(w.conversationReads.unread['c'], 2);
   });
 
-  test('[BP-READ-024] a gap fill at the latest end reads the arrivals', () async {
-    final c = _Client();
-    final w = WorkspaceController(c);
-    addTearDown(() async {
-      w.dispose();
-      await c.stream.close();
-    });
-    await w.bootstrap();
-    w.setForeground(true);
-    await w.selectChannel(w.channels.single);
-    final before = c.reads;
-    c.syncRows = [_Client.message('gap1', 2)];
-    await w.messageDomain.navigation.syncVisibleScopes();
-    await Future<void>.delayed(Duration.zero);
-    await Future<void>.delayed(Duration.zero);
-    expect(c.reads, before + 1);
-    expect(w.conversationReads.unread['c'] ?? 0, 0);
-  });
+  test(
+    '[BP-READ-024] a gap fill at the latest end reads the arrivals',
+    () async {
+      final c = _Client();
+      final w = WorkspaceController(c);
+      addTearDown(() async {
+        w.dispose();
+        await c.stream.close();
+      });
+      await w.bootstrap();
+      w.setForeground(true);
+      await w.selectChannel(w.channels.single);
+      final before = c.reads;
+      c.syncRows = [_Client.message('gap1', 2)];
+      await w.messageDomain.navigation.syncVisibleScopes();
+      await Future<void>.delayed(Duration.zero);
+      await Future<void>.delayed(Duration.zero);
+      expect(c.reads, before + 1);
+      expect(w.conversationReads.unread['c'] ?? 0, 0);
+    },
+  );
 
   test('[BP-READ-078] a gap sync page takes numeric and decimal-string seq alike (v1.21.2 leaked strings from /messages/sync)', () async {
     final c = _Client();
@@ -376,7 +376,11 @@ void main() {
     ];
     await w.messageDomain.navigation.syncVisibleScopes();
     await Future<void>.delayed(Duration.zero);
-    expect(w.messageDomain.messages.map((m) => m.id), ['m', 'as-string', 'as-number']);
+    expect(w.messageDomain.messages.map((m) => m.id), [
+      'm',
+      'as-string',
+      'as-number',
+    ]);
     expect(w.messageDomain.ledger.watermark, BigInt.from(3));
   });
 
@@ -401,8 +405,13 @@ void main() {
       final rows = [
         for (final r in contextRows('row', count: 60)) {...r, 'channelId': 'c'},
       ];
-      w.messageDomain.ledger.ingest(rows, expectedGeneration: w.messageDomain.ledger.generation);
-      w.messageDomain.visibleIds['c'] = rows.map((r) => r['id'] as String).toSet();
+      w.messageDomain.ledger.ingest(
+        rows,
+        expectedGeneration: w.messageDomain.ledger.generation,
+      );
+      w.messageDomain.visibleIds['c'] = rows
+          .map((r) => r['id'] as String)
+          .toSet();
       await tester.pumpWidget(
         MaterialApp(
           theme: raftTheme(),
@@ -466,8 +475,13 @@ void main() {
           for (final r in contextRows('row', count: 60))
             {...r, 'channelId': 'c'},
         ];
-        w.messageDomain.ledger.ingest(rows, expectedGeneration: w.messageDomain.ledger.generation);
-        w.messageDomain.visibleIds['c'] = rows.map((r) => r['id'] as String).toSet();
+        w.messageDomain.ledger.ingest(
+          rows,
+          expectedGeneration: w.messageDomain.ledger.generation,
+        );
+        w.messageDomain.visibleIds['c'] = rows
+            .map((r) => r['id'] as String)
+            .toSet();
         await tester.pumpWidget(
           MaterialApp(
             theme: raftTheme(dark: dark),

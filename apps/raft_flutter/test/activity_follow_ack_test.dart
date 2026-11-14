@@ -193,7 +193,10 @@ void main() {
           buttons: kSecondaryMouseButton,
         );
         await tester.pumpAndSettle();
-        expect(find.widgetWithText(RaftMenuButtonItem, 'Unfollow'), findsOneWidget);
+        expect(
+          find.widgetWithText(RaftMenuButtonItem, 'Unfollow'),
+          findsOneWidget,
+        );
       },
     );
     testWidgets(
@@ -220,7 +223,9 @@ void main() {
         );
         await tester.pumpAndSettle();
         final oldHandler = tester
-            .widget<RaftMenuButtonItem>(find.widgetWithText(RaftMenuButtonItem, 'Unfollow'))
+            .widget<RaftMenuButtonItem>(
+              find.widgetWithText(RaftMenuButtonItem, 'Unfollow'),
+            )
             .onPressed;
         await tester.tap(find.widgetWithText(RaftMenuButtonItem, 'Unfollow'));
         await tester.pumpAndSettle();
@@ -282,8 +287,14 @@ void main() {
           buttons: kSecondaryMouseButton,
         );
         await tester.pumpAndSettle();
-        expect(find.widgetWithText(RaftMenuButtonItem, 'Follow'), findsOneWidget);
-        expect(find.widgetWithText(RaftMenuButtonItem, 'Unfollow'), findsNothing);
+        expect(
+          find.widgetWithText(RaftMenuButtonItem, 'Follow'),
+          findsOneWidget,
+        );
+        expect(
+          find.widgetWithText(RaftMenuButtonItem, 'Unfollow'),
+          findsNothing,
+        );
       },
     );
   }

@@ -7,6 +7,7 @@ import 'package:path/path.dart' as p;
 import 'package:raft_flutter/features/desktop_links_settings.dart';
 import 'package:raft_flutter/platform/linux_uri_scheme.dart';
 import 'package:raft_ui/raft_ui.dart';
+
 import 'flutter_test_config.dart' show leakDebt;
 
 class _Store extends LinuxSchemeStore {
@@ -55,9 +56,8 @@ void main() {
       // A removed launcher is no longer a handler, as on a real desktop.
       final gone =
           handler.startsWith('app.raft') &&
-          !File(
-            p.join(root.path, 'data', 'applications', handler),
-          ).existsSync();
+          !File(p.join(root.path, 'data', 'applications', handler))
+              .existsSync();
       return (exitCode: 0, stdout: gone ? '' : handler);
     },
   );

@@ -23,7 +23,9 @@ Object _readback() => {
 
 Future<void> _settle(WidgetTester t) async {
   for (var i = 0; i < 8; i++) {
-    await t.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 2)));
+    await t.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 2)),
+    );
     await t.pump(const Duration(milliseconds: 50));
   }
 }
@@ -45,7 +47,11 @@ Future<RootFixture> _signedOut(WidgetTester t, String path) async {
       {
         'id': 'm1',
         'senderType': 'user',
-        'sender': {'displayName': 'Wenyi', 'avatarUrl': null, 'description': null},
+        'sender': {
+          'displayName': 'Wenyi',
+          'avatarUrl': null,
+          'description': null,
+        },
         'messageType': 'chat',
         'content': 'Welcome to Gamma',
         'createdAt': '2026-06-18T09:12:00.000Z',
@@ -71,20 +77,23 @@ Future<RootFixture> _signedOut(WidgetTester t, String path) async {
 }
 
 void main() {
-  testWidgets('signed out: /s/<slug> opens the public server, not the sign-in form', (
+  testWidgets(
+    'signed out: /s/<slug> opens the public server, not the sign-in form',
+    (t) async {
+      final f = await _signedOut(t, '/s/gamma');
+      expect(find.byType(PublicServerView), findsOneWidget);
+      expect(find.byType(AuthView), findsNothing);
+      expect(find.text('Welcome to Gamma'), findsOneWidget);
+      expect(
+        f.adapter.calls.map((c) => '${c.method} ${c.path}'),
+        containsAll(['GET $_public', 'GET $_public/channels/pc/messages']),
+      );
+    },
+  );
+
+  testWidgets('signed out: a channel deep link selects that public channel', (
     t,
   ) async {
-    final f = await _signedOut(t, '/s/gamma');
-    expect(find.byType(PublicServerView), findsOneWidget);
-    expect(find.byType(AuthView), findsNothing);
-    expect(find.text('Welcome to Gamma'), findsOneWidget);
-    expect(
-      f.adapter.calls.map((c) => '${c.method} ${c.path}'),
-      containsAll(['GET $_public', 'GET $_public/channels/pc/messages']),
-    );
-  });
-
-  testWidgets('signed out: a channel deep link selects that public channel', (t) async {
     await _signedOut(t, '/s/gamma/channel/pc/message/x');
     expect(find.byType(PublicServerView), findsOneWidget);
     expect(find.text('Welcome to Gamma'), findsOneWidget);
@@ -101,26 +110,31 @@ void main() {
     },
   );
 
-  testWidgets('signed out: an unavailable server (404) falls through to sign in', (t) async {
-    SharedPreferences.setMockInitialValues({'raft.origin': 'https://fixture.invalid'});
-    final f = RootFixture();
-    // No route for the readback: the adapter answers 404.
-    await t.pumpWidget(
-      RaftApp(
-        services: const AppServices.updatesDisabledForTestOrPreview(),
-        sessionStore: f.sessions,
-        initialLocation: Uri(path: '/s/gone'),
-        nativeContent: f.content,
-        nativeSharing: NativeSharing(supported: false),
-        openWorkspaceCache: () async => f.cache,
-        createClient: (origin, store, kind) =>
-            f.client = RootClient(origin, store, kind, f.adapter),
-      ),
-    );
-    await _settle(t);
-    expect(find.byType(PublicServerView), findsNothing);
-    expect(find.byType(AuthView), findsOneWidget);
-  });
+  testWidgets(
+    'signed out: an unavailable server (404) falls through to sign in',
+    (t) async {
+      SharedPreferences.setMockInitialValues({
+        'raft.origin': 'https://fixture.invalid',
+      });
+      final f = RootFixture();
+      // No route for the readback: the adapter answers 404.
+      await t.pumpWidget(
+        RaftApp(
+          services: const AppServices.updatesDisabledForTestOrPreview(),
+          sessionStore: f.sessions,
+          initialLocation: Uri(path: '/s/gone'),
+          nativeContent: f.content,
+          nativeSharing: NativeSharing(supported: false),
+          openWorkspaceCache: () async => f.cache,
+          createClient: (origin, store, kind) =>
+              f.client = RootClient(origin, store, kind, f.adapter),
+        ),
+      );
+      await _settle(t);
+      expect(find.byType(PublicServerView), findsNothing);
+      expect(find.byType(AuthView), findsOneWidget);
+    },
+  );
 
   testWidgets('signed out: other paths still open sign in', (t) async {
     await _signedOut(t, '/');
@@ -128,36 +142,47 @@ void main() {
     expect(find.byType(AuthView), findsOneWidget);
   });
 
-  testWidgets('signed in member: a server the account has opens as before', (t) async {
+  testWidgets('signed in member: a server the account has opens as before', (
+    t,
+  ) async {
     final f = RootFixture();
     await f.mount(t, 'light', 1280, uri: Uri(path: '/s/alpha'));
     expect(find.byType(WorkspaceView), findsOneWidget);
     expect(find.byType(PublicServerView), findsNothing);
-    expect(f.adapter.calls.where((c) => c.path.startsWith('/public/')), isEmpty);
-  });
-
-  testWidgets('signed in nonmember: a public server is view only, there is no guest join (server v1.24.0)', (
-    t,
-  ) async {
-    final f = RootFixture();
-    f.overrides['GET $_public'] = (_) => _readback();
-    f.overrides['GET $_public/channels/pc/messages'] = (_) => {'messages': []};
-    await f.mount(t, 'light', 1280, uri: Uri(path: '/s/gamma'));
-    expect(find.byType(PublicServerView), findsOneWidget);
-    expect(find.byKey(const ValueKey('public-join-guest')), findsNothing);
-    expect(find.text('Join as Guest'), findsNothing);
     expect(
-      f.adapter.calls.where((c) => c.path.endsWith('/join-as-guest')),
+      f.adapter.calls.where((c) => c.path.startsWith('/public/')),
       isEmpty,
     );
   });
 
-  testWidgets('signed in nonmember: a server that is not public shows the server-not-found page', (t) async {
-    final f = RootFixture();
-    await f.mount(t, 'light', 1280, uri: Uri(path: '/s/private-one'));
-    expect(find.byType(PublicServerView), findsNothing);
-    expect(find.byType(GlobalServerSelector), findsNothing);
-    expect(find.byType(RaftServerAccessDeniedPage), findsOneWidget);
-    await f.close(t);
-  });
+  testWidgets(
+    'signed in nonmember: a public server is view only, there is no guest join (server v1.24.0)',
+    (t) async {
+      final f = RootFixture();
+      f.overrides['GET $_public'] = (_) => _readback();
+      f.overrides['GET $_public/channels/pc/messages'] = (_) => {
+        'messages': [],
+      };
+      await f.mount(t, 'light', 1280, uri: Uri(path: '/s/gamma'));
+      expect(find.byType(PublicServerView), findsOneWidget);
+      expect(find.byKey(const ValueKey('public-join-guest')), findsNothing);
+      expect(find.text('Join as Guest'), findsNothing);
+      expect(
+        f.adapter.calls.where((c) => c.path.endsWith('/join-as-guest')),
+        isEmpty,
+      );
+    },
+  );
+
+  testWidgets(
+    'signed in nonmember: a server that is not public shows the server-not-found page',
+    (t) async {
+      final f = RootFixture();
+      await f.mount(t, 'light', 1280, uri: Uri(path: '/s/private-one'));
+      expect(find.byType(PublicServerView), findsNothing);
+      expect(find.byType(GlobalServerSelector), findsNothing);
+      expect(find.byType(RaftServerAccessDeniedPage), findsOneWidget);
+      await f.close(t);
+    },
+  );
 }

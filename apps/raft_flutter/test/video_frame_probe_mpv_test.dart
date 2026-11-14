@@ -9,7 +9,13 @@ import 'package:raft_flutter/platform/video_frame_probe_mpv.dart';
 
 /// A libmpv stand-in: what the probe does with a player, without one.
 class FakeSession implements MpvFrameSession {
-  FakeSession({this.onOpen, this.size, this.rotation = 0, this.position = 0, this.grabs = 1});
+  FakeSession({
+    this.onOpen,
+    this.size,
+    this.rotation = 0,
+    this.position = 0,
+    this.grabs = 1,
+  });
 
   /// Runs on [open]; may fail the session or never return.
   final Future<void> Function(FakeSession session)? onOpen;
@@ -38,13 +44,14 @@ class FakeSession implements MpvFrameSession {
   }
 
   @override
-  Future<MpvFrameSnapshot> snapshot({bool settled = false}) async => MpvFrameSnapshot(
-    width: size?.$1 ?? 0,
-    height: size?.$2 ?? 0,
-    rotation: rotation,
-    duration: size == null ? Duration.zero : const Duration(seconds: 12),
-    streamPosition: position,
-  );
+  Future<MpvFrameSnapshot> snapshot({bool settled = false}) async =>
+      MpvFrameSnapshot(
+        width: size?.$1 ?? 0,
+        height: size?.$2 ?? 0,
+        rotation: rotation,
+        duration: size == null ? Duration.zero : const Duration(seconds: 12),
+        streamPosition: position,
+      );
 
   @override
   Future<Uint8List?> grab() async {
@@ -61,7 +68,8 @@ final _url = Uri.parse('https://files.example/video.mp4?sig=secret');
 
 void main() {
   final sessions = <FakeSession>[];
-  Future<MediaFailure?> Function(Uri, Map<String, String>, String?)? probeBackup;
+  Future<MediaFailure?> Function(Uri, Map<String, String>, String?)?
+  probeBackup;
   var diagnosed = 0;
 
   MpvVideoFrameProbe probeOf(FakeSession Function() make) => MpvVideoFrameProbe(
@@ -117,24 +125,43 @@ void main() {
 
     test('only an expired signature has its own failure class', () {
       expect(
-        MpvVideoFrameProbe.failureOf(const MediaFailure(MediaFailureKind.expired)).kind,
+        MpvVideoFrameProbe.failureOf(
+          const MediaFailure(MediaFailureKind.expired),
+        ).kind,
         VideoFrameFailure.expired,
       );
-      for (final kind in MediaFailureKind.values.where((k) => k != MediaFailureKind.expired)) {
-        expect(MpvVideoFrameProbe.failureOf(MediaFailure(kind)).kind, VideoFrameFailure.failed, reason: '$kind');
+      for (final kind in MediaFailureKind.values.where(
+        (k) => k != MediaFailureKind.expired,
+      )) {
+        expect(
+          MpvVideoFrameProbe.failureOf(MediaFailure(kind)).kind,
+          VideoFrameFailure.failed,
+          reason: '$kind',
+        );
       }
     });
   });
 
   group('probe', () {
     test('returns the displayed size, the rotation and the picture', () async {
-      final probe = probeOf(() => FakeSession(size: (1280, 720), rotation: 90, grabs: 3));
-      final info = await probe.probe(id: 'a', url: _url, maxEdge: 480, maxBytes: 1000);
+      final probe = probeOf(
+        () => FakeSession(size: (1280, 720), rotation: 90, grabs: 3),
+      );
+      final info = await probe.probe(
+        id: 'a',
+        url: _url,
+        maxEdge: 480,
+        maxBytes: 1000,
+      );
       expect((info.width, info.height), (720, 1280));
       expect(info.rotation, 90);
       expect(info.duration, const Duration(seconds: 12));
       expect(info.jpeg, isNotNull);
-      expect(sessions.single.grabCalls, 3, reason: 'retried until mpv had its first frame');
+      expect(
+        sessions.single.grabCalls,
+        3,
+        reason: 'retried until mpv had its first frame',
+      );
       expect(sessions.single.request!.maxEdge, 480);
       expect(sessions.single.request!.maxBytes, 1000);
       expect(sessions.single.disposed, 1);
@@ -145,57 +172,107 @@ void main() {
       final probe = probeOf(FakeSession.new);
       await expectLater(
         probe.probe(id: 'a', url: Uri.parse('file:///etc/passwd')),
-        throwsA(isA<VideoFrameException>().having((e) => e.kind, 'kind', VideoFrameFailure.failed)),
+        throwsA(
+          isA<VideoFrameException>().having(
+            (e) => e.kind,
+            'kind',
+            VideoFrameFailure.failed,
+          ),
+        ),
       );
       expect(sessions, isEmpty);
     });
 
-    test('a refused signature is "expired" and the ranged request decides it', () async {
-      final probe = probeOf(() => FakeSession(onOpen: (s) async {
-        s.failed = true;
-        s.evidence = 'Failed to open [url].';
-      }));
-      await expectLater(
-        probe.probe(id: 'a', url: _url),
-        throwsA(isA<VideoFrameException>().having((e) => e.kind, 'kind', VideoFrameFailure.expired)),
-      );
-      expect(diagnosed, 1);
-      expect(sessions.single.disposed, 1);
-      expect(probe.activeCount, 0);
-    });
+    test(
+      'a refused signature is "expired" and the ranged request decides it',
+      () async {
+        final probe = probeOf(
+          () => FakeSession(
+            onOpen: (s) async {
+              s.failed = true;
+              s.evidence = 'Failed to open [url].';
+            },
+          ),
+        );
+        await expectLater(
+          probe.probe(id: 'a', url: _url),
+          throwsA(
+            isA<VideoFrameException>().having(
+              (e) => e.kind,
+              'kind',
+              VideoFrameFailure.expired,
+            ),
+          ),
+        );
+        expect(diagnosed, 1);
+        expect(sessions.single.disposed, 1);
+        expect(probe.activeCount, 0);
+      },
+    );
 
     test('a failure that names its cause needs no request', () async {
-      final probe = probeOf(() => FakeSession(onOpen: (s) async {
-        s.failed = true;
-        s.evidence = 'ffmpeg: HTTP error 403 Forbidden';
-      }));
+      final probe = probeOf(
+        () => FakeSession(
+          onOpen: (s) async {
+            s.failed = true;
+            s.evidence = 'ffmpeg: HTTP error 403 Forbidden';
+          },
+        ),
+      );
       await expectLater(
         probe.probe(id: 'a', url: _url),
-        throwsA(isA<VideoFrameException>().having((e) => e.kind, 'kind', VideoFrameFailure.expired)),
+        throwsA(
+          isA<VideoFrameException>().having(
+            (e) => e.kind,
+            'kind',
+            VideoFrameFailure.expired,
+          ),
+        ),
       );
       expect(diagnosed, 0);
     });
 
     test('a host that serves the bytes but a file that does not decode is "failed"', () async {
-      MediaDiagnosis.probe = (url, headers, proxy) async => MediaDiagnosis.probeStatus(206);
-      final probe = probeOf(() => FakeSession(onOpen: (s) async {
-        s.failed = true;
-        s.evidence = 'Failed to recognize file format.';
-      }));
+      MediaDiagnosis.probe = (url, headers, proxy) async =>
+          MediaDiagnosis.probeStatus(206);
+      final probe = probeOf(
+        () => FakeSession(
+          onOpen: (s) async {
+            s.failed = true;
+            s.evidence = 'Failed to recognize file format.';
+          },
+        ),
+      );
       await expectLater(
         probe.probe(id: 'a', url: _url),
-        throwsA(isA<VideoFrameException>().having((e) => e.kind, 'kind', VideoFrameFailure.failed)),
+        throwsA(
+          isA<VideoFrameException>().having(
+            (e) => e.kind,
+            'kind',
+            VideoFrameFailure.failed,
+          ),
+        ),
       );
     });
 
     test('an audio-only file is "failed" without asking the host', () async {
-      final probe = probeOf(() => FakeSession(onOpen: (s) async {
-        s.failed = true;
-        s.noVideo = true;
-      }));
+      final probe = probeOf(
+        () => FakeSession(
+          onOpen: (s) async {
+            s.failed = true;
+            s.noVideo = true;
+          },
+        ),
+      );
       await expectLater(
         probe.probe(id: 'a', url: _url),
-        throwsA(isA<VideoFrameException>().having((e) => e.kind, 'kind', VideoFrameFailure.failed)),
+        throwsA(
+          isA<VideoFrameException>().having(
+            (e) => e.kind,
+            'kind',
+            VideoFrameFailure.failed,
+          ),
+        ),
       );
       expect(diagnosed, 0);
       expect(sessions.single.disposed, 1);
@@ -205,52 +282,105 @@ void main() {
       final probe = probeOf(FakeSession.new);
       final clock = Stopwatch()..start();
       await expectLater(
-        probe.probe(id: 'a', url: _url, timeout: const Duration(milliseconds: 150)),
-        throwsA(isA<VideoFrameException>().having((e) => e.kind, 'kind', VideoFrameFailure.failed)),
+        probe.probe(
+          id: 'a',
+          url: _url,
+          timeout: const Duration(milliseconds: 150),
+        ),
+        throwsA(
+          isA<VideoFrameException>().having(
+            (e) => e.kind,
+            'kind',
+            VideoFrameFailure.failed,
+          ),
+        ),
       );
       expect(clock.elapsedMilliseconds, lessThan(1500));
       expect(sessions.single.disposed, 1);
       expect(probe.activeCount, 0);
     });
 
-    test('a libmpv call that never returns cannot hold the probe past the budget', () async {
-      final probe = probeOf(() => FakeSession(onOpen: (s) => Completer<void>().future));
-      await expectLater(
-        probe.probe(id: 'a', url: _url, timeout: const Duration(milliseconds: 150)),
-        throwsA(isA<VideoFrameException>().having((e) => e.kind, 'kind', VideoFrameFailure.failed)),
-      );
-      expect(sessions.single.disposed, 1);
-    });
+    test(
+      'a libmpv call that never returns cannot hold the probe past the budget',
+      () async {
+        final probe = probeOf(
+          () => FakeSession(onOpen: (s) => Completer<void>().future),
+        );
+        await expectLater(
+          probe.probe(
+            id: 'a',
+            url: _url,
+            timeout: const Duration(milliseconds: 150),
+          ),
+          throwsA(
+            isA<VideoFrameException>().having(
+              (e) => e.kind,
+              'kind',
+              VideoFrameFailure.failed,
+            ),
+          ),
+        );
+        expect(sessions.single.disposed, 1);
+      },
+    );
 
     test('the byte budget ends a probe whose demuxer read too far', () async {
-      final probe = probeOf(() => FakeSession(size: (1280, 720), position: 5000));
+      final probe = probeOf(
+        () => FakeSession(size: (1280, 720), position: 5000),
+      );
       await expectLater(
         probe.probe(id: 'a', url: _url, maxBytes: 1000),
-        throwsA(isA<VideoFrameException>().having((e) => e.kind, 'kind', VideoFrameFailure.failed)),
+        throwsA(
+          isA<VideoFrameException>().having(
+            (e) => e.kind,
+            'kind',
+            VideoFrameFailure.failed,
+          ),
+        ),
       );
-      expect(sessions.single.grabCalls, 0, reason: 'no picture is taken past the budget');
+      expect(
+        sessions.single.grabCalls,
+        0,
+        reason: 'no picture is taken past the budget',
+      );
       expect(sessions.single.disposed, 1);
     });
 
-    test('a player that fails to dispose does not turn a picture into a failure', () async {
-      final probe = probeOf(() => _ThrowingDispose(size: (720, 1280)));
-      final info = await probe.probe(id: 'a', url: _url);
-      expect(info.jpeg, isNotNull);
-      expect(probe.activeCount, 0);
-    });
+    test(
+      'a player that fails to dispose does not turn a picture into a failure',
+      () async {
+        final probe = probeOf(() => _ThrowingDispose(size: (720, 1280)));
+        final info = await probe.probe(id: 'a', url: _url);
+        expect(info.jpeg, isNotNull);
+        expect(probe.activeCount, 0);
+      },
+    );
   });
 
   group('cancel', () {
     test('stops the matching probe, disposes its player and ends before it returns', () async {
       final probe = probeOf(FakeSession.new);
-      final other = probe.probe(id: 'other', url: _url, timeout: const Duration(milliseconds: 400));
-      final outcome = probe.probe(id: 'mine', url: _url).then<Object?>((v) => v, onError: (Object e) => e);
+      final other = probe.probe(
+        id: 'other',
+        url: _url,
+        timeout: const Duration(milliseconds: 400),
+      );
+      final outcome = probe
+          .probe(id: 'mine', url: _url)
+          .then<Object?>((v) => v, onError: (Object e) => e);
       await Future<void>.delayed(const Duration(milliseconds: 40));
       expect(probe.activeCount, 2);
       await probe.cancel('mine');
       expect(probe.activeCount, 1);
       final result = await outcome;
-      expect(result, isA<VideoFrameException>().having((e) => e.kind, 'kind', VideoFrameFailure.cancelled));
+      expect(
+        result,
+        isA<VideoFrameException>().having(
+          (e) => e.kind,
+          'kind',
+          VideoFrameFailure.cancelled,
+        ),
+      );
       expect(sessions[1].disposed, 1);
       expect(sessions[0].disposed, 0, reason: 'the other probe is untouched');
       await expectLater(other, throwsA(isA<VideoFrameException>()));
@@ -258,11 +388,22 @@ void main() {
     });
 
     test('works while libmpv is stuck opening', () async {
-      final probe = probeOf(() => FakeSession(onOpen: (s) => Completer<void>().future));
-      final outcome = probe.probe(id: 'a', url: _url).then<Object?>((v) => v, onError: (Object e) => e);
+      final probe = probeOf(
+        () => FakeSession(onOpen: (s) => Completer<void>().future),
+      );
+      final outcome = probe
+          .probe(id: 'a', url: _url)
+          .then<Object?>((v) => v, onError: (Object e) => e);
       await Future<void>.delayed(const Duration(milliseconds: 20));
       await probe.cancel('a');
-      expect(await outcome, isA<VideoFrameException>().having((e) => e.kind, 'kind', VideoFrameFailure.cancelled));
+      expect(
+        await outcome,
+        isA<VideoFrameException>().having(
+          (e) => e.kind,
+          'kind',
+          VideoFrameFailure.cancelled,
+        ),
+      );
       expect(sessions.single.disposed, 1);
       expect(probe.activeCount, 0);
     });
@@ -277,10 +418,21 @@ void main() {
 
     test('a second probe under the same id replaces the first', () async {
       final probe = probeOf(FakeSession.new);
-      final first = probe.probe(id: 'a', url: _url, timeout: const Duration(seconds: 5)).then<Object?>((v) => v, onError: (Object e) => e);
+      final first = probe
+          .probe(id: 'a', url: _url, timeout: const Duration(seconds: 5))
+          .then<Object?>((v) => v, onError: (Object e) => e);
       await Future<void>.delayed(const Duration(milliseconds: 20));
-      final second = probe.probe(id: 'a', url: _url, timeout: const Duration(milliseconds: 100)).then<Object?>((v) => v, onError: (Object e) => e);
-      expect(await first, isA<VideoFrameException>().having((e) => e.kind, 'kind', VideoFrameFailure.cancelled));
+      final second = probe
+          .probe(id: 'a', url: _url, timeout: const Duration(milliseconds: 100))
+          .then<Object?>((v) => v, onError: (Object e) => e);
+      expect(
+        await first,
+        isA<VideoFrameException>().having(
+          (e) => e.kind,
+          'kind',
+          VideoFrameFailure.cancelled,
+        ),
+      );
       expect(sessions[0].disposed, 1);
       await second;
       expect(sessions[1].disposed, 1);
@@ -289,17 +441,21 @@ void main() {
   });
 
   group('LibmpvPlayerPool', () {
-    LibmpvPlayerPool<FakePlayer> poolOf(List<FakePlayer> made, {int maxIdle = 2, Duration idleFor = const Duration(seconds: 30), FakePlayer Function()? make}) =>
-        LibmpvPlayerPool<FakePlayer>(
-          () {
-            final player = (make ?? FakePlayer.new)();
-            made.add(player);
-            return player;
-          },
-          maxIdle: maxIdle,
-          idleFor: idleFor,
-          settle: const Duration(milliseconds: 100),
-        );
+    LibmpvPlayerPool<FakePlayer> poolOf(
+      List<FakePlayer> made, {
+      int maxIdle = 2,
+      Duration idleFor = const Duration(seconds: 30),
+      FakePlayer Function()? make,
+    }) => LibmpvPlayerPool<FakePlayer>(
+      () {
+        final player = (make ?? FakePlayer.new)();
+        made.add(player);
+        return player;
+      },
+      maxIdle: maxIdle,
+      idleFor: idleFor,
+      settle: const Duration(milliseconds: 100),
+    );
 
     test('a player is stopped and reused by the next probe', () async {
       final made = <FakePlayer>[];
@@ -340,35 +496,48 @@ void main() {
       expect(made, hasLength(2));
     });
 
-    test('a player whose reset never returns is ended after the settle time', () async {
-      final made = <FakePlayer>[];
-      final pool = poolOf(made, make: () => FakePlayer(resetHangs: true));
-      await pool.release(pool.acquire());
-      expect(made.single.disposes, 1);
-      expect(pool.alive, 0);
-    });
+    test(
+      'a player whose reset never returns is ended after the settle time',
+      () async {
+        final made = <FakePlayer>[];
+        final pool = poolOf(made, make: () => FakePlayer(resetHangs: true));
+        await pool.release(pool.acquire());
+        expect(made.single.disposes, 1);
+        expect(pool.alive, 0);
+      },
+    );
 
-    test('a player flagged unfit (a start-up that never ended) is ended', () async {
-      final made = <FakePlayer>[];
-      final pool = poolOf(made);
-      await pool.release(pool.acquire(), reusable: false);
-      expect(made.single.resets, 0);
-      expect(made.single.disposes, 1);
-    });
+    test(
+      'a player flagged unfit (a start-up that never ended) is ended',
+      () async {
+        final made = <FakePlayer>[];
+        final pool = poolOf(made);
+        await pool.release(pool.acquire(), reusable: false);
+        expect(made.single.resets, 0);
+        expect(made.single.disposes, 1);
+      },
+    );
 
-    test('idle players are ended after the idle time, and a new probe keeps them', () async {
-      final made = <FakePlayer>[];
-      final pool = poolOf(made, idleFor: const Duration(milliseconds: 80));
-      await pool.release(pool.acquire());
-      final again = pool.acquire();
-      await Future<void>.delayed(const Duration(milliseconds: 200));
-      expect(made.single.disposes, 0, reason: 'leased players are never reaped');
-      await pool.release(again);
-      expect(pool.idleCount, 1);
-      await Future<void>.delayed(const Duration(milliseconds: 250));
-      expect(made.single.disposes, 1);
-      expect(pool.alive, 0);
-    });
+    test(
+      'idle players are ended after the idle time, and a new probe keeps them',
+      () async {
+        final made = <FakePlayer>[];
+        final pool = poolOf(made, idleFor: const Duration(milliseconds: 80));
+        await pool.release(pool.acquire());
+        final again = pool.acquire();
+        await Future<void>.delayed(const Duration(milliseconds: 200));
+        expect(
+          made.single.disposes,
+          0,
+          reason: 'leased players are never reaped',
+        );
+        await pool.release(again);
+        expect(pool.idleCount, 1);
+        await Future<void>.delayed(const Duration(milliseconds: 250));
+        expect(made.single.disposes, 1);
+        expect(pool.alive, 0);
+      },
+    );
   });
 }
 

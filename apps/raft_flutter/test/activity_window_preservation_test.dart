@@ -96,7 +96,9 @@ void main() {
         record('channel-query-ascending');
         // Machine-comparable fixture observations, identical on both refs.
         // ignore: avoid_print
-        print('M2_WINDOW_${phone ? 'PHONE' : 'DESKTOP'} ${jsonEncode(observations)}');
+        print(
+          'M2_WINDOW_${phone ? 'PHONE' : 'DESKTOP'} ${jsonEncode(observations)}',
+        );
       } finally {
         await tester.pumpWidget(const SizedBox());
       }

@@ -81,7 +81,10 @@ void main() {
   final original = Uint8List.fromList([1, 1, 1, 1]);
   final thumbnail = Uint8List.fromList([2, 2]);
 
-  Future<_Run> run({bool withOriginal = false, bool withThumbnail = false}) async {
+  Future<_Run> run({
+    bool withOriginal = false,
+    bool withThumbnail = false,
+  }) async {
     final store = MemoryImageStore();
     if (withOriginal) {
       await store.write(keyOf('original').storeKey, original);
@@ -118,27 +121,33 @@ void main() {
 
   test('the lightbox never settles for the stored thumbnail', () async {
     // Full size, and a stage-sized preload: both want the real picture.
-    for (final key in [keyOf('original'), keyOf('original', target: listTarget)]) {
+    for (final key in [
+      keyOf('original'),
+      keyOf('original', target: listTarget),
+    ]) {
       final r = await run(withThumbnail: true);
       expect(await r.load(key, bestAvailable: false), isFalse);
       expect(r.downloads, ['original']);
     }
   });
 
-  test('nothing stored: one download, saved under the requested rendition only', () async {
-    final r = await run();
-    expect(await r.load(keyOf('original', target: listTarget)), isFalse);
-    expect(r.downloads, ['original']);
-    for (var i = 0; i < 5; i++) {
-      await Future<void>.delayed(Duration.zero);
-    }
-    expect(r.store.entries.length, 1);
-    // The next launch carries the thumbnail URL: still no second download.
-    final next = _Run(r.store);
-    addTearDown(next.repository.dispose);
-    expect(await next.load(keyOf('thumbnail', target: listTarget)), isTrue);
-    expect(next.downloads, isEmpty);
-  });
+  test(
+    'nothing stored: one download, saved under the requested rendition only',
+    () async {
+      final r = await run();
+      expect(await r.load(keyOf('original', target: listTarget)), isFalse);
+      expect(r.downloads, ['original']);
+      for (var i = 0; i < 5; i++) {
+        await Future<void>.delayed(Duration.zero);
+      }
+      expect(r.store.entries.length, 1);
+      // The next launch carries the thumbnail URL: still no second download.
+      final next = _Run(r.store);
+      addTearDown(next.repository.dispose);
+      expect(await next.load(keyOf('thumbnail', target: listTarget)), isTrue);
+      expect(next.downloads, isEmpty);
+    },
+  );
 
   test('an undecodable stored hit is removed, not served again', () async {
     final store = MemoryImageStore();

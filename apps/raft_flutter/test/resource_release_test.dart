@@ -38,21 +38,23 @@ class _Clock {
 AttachmentImageRepository repository({
   Duration idleTtl = const Duration(minutes: 3),
   Duration Function()? clock,
-}) =>
-    AttachmentImageRepository(
-      scope: scope(),
-      retainedAuthority: (_) => true,
-      idleTtl: idleTtl,
-      clock: clock,
-      decoder: (bytes, _) async => DecodedAttachmentImage(
-        provider: MemoryImage(bytes),
-        encodedBytes: bytes.length,
-        decodedBytes: 4,
-        release: () async {},
-      ),
-    );
+}) => AttachmentImageRepository(
+  scope: scope(),
+  retainedAuthority: (_) => true,
+  idleTtl: idleTtl,
+  clock: clock,
+  decoder: (bytes, _) async => DecodedAttachmentImage(
+    provider: MemoryImage(bytes),
+    encodedBytes: bytes.length,
+    decodedBytes: 4,
+    release: () async {},
+  ),
+);
 
-Future<AttachmentImageLease> acquired(AttachmentImageRepository r, String id) async {
+Future<AttachmentImageLease> acquired(
+  AttachmentImageRepository r,
+  String id,
+) async {
   final lease = r.acquire(
     key(id),
     authorized: () => true,
@@ -102,27 +104,33 @@ class _RasterFiles extends AttachmentFiles {
 
 void main() {
   group('AttachmentImageRepository', () {
-    test('trimIdle drops decoded images no lease holds and keeps held ones', () async {
-      final r = repository();
-      addTearDown(r.dispose);
-      final held = await acquired(r, 'held');
-      final idle = await acquired(r, 'idle');
-      idle.release();
-      expect(r.entryCount, 2);
-      expect(r.trimIdle(), 1);
-      expect(r.entryCount, 1);
-      expect(held.active, isTrue);
-      expect(r.decodedByteCount, 4);
-      held.release();
-      expect(r.trimIdle(), 1);
-      expect(r.entryCount, 0);
-      expect(r.decodedByteCount, 0);
-      expect(r.encodedByteCount, 0);
-    });
+    test(
+      'trimIdle drops decoded images no lease holds and keeps held ones',
+      () async {
+        final r = repository();
+        addTearDown(r.dispose);
+        final held = await acquired(r, 'held');
+        final idle = await acquired(r, 'idle');
+        idle.release();
+        expect(r.entryCount, 2);
+        expect(r.trimIdle(), 1);
+        expect(r.entryCount, 1);
+        expect(held.active, isTrue);
+        expect(r.decodedByteCount, 4);
+        held.release();
+        expect(r.trimIdle(), 1);
+        expect(r.entryCount, 0);
+        expect(r.decodedByteCount, 0);
+        expect(r.encodedByteCount, 0);
+      },
+    );
 
     test('an image idle for the TTL goes on the next repository activity; a leased one never', () async {
       final clock = _Clock();
-      final r = repository(idleTtl: const Duration(minutes: 3), clock: clock.call);
+      final r = repository(
+        idleTtl: const Duration(minutes: 3),
+        clock: clock.call,
+      );
       addTearDown(r.dispose);
       final held = await acquired(r, 'held');
       final idle = await acquired(r, 'idle');
@@ -146,7 +154,10 @@ void main() {
 
     test('taking the image again before a sweep keeps it, and restarts its idle clock', () async {
       final clock = _Clock();
-      final r = repository(idleTtl: const Duration(minutes: 3), clock: clock.call);
+      final r = repository(
+        idleTtl: const Duration(minutes: 3),
+        clock: clock.call,
+      );
       addTearDown(r.dispose);
       (await acquired(r, 'a')).release();
       clock.now = const Duration(minutes: 4);
@@ -167,7 +178,10 @@ void main() {
 
     test('the sweep is rate limited and never starts a timer', () async {
       final clock = _Clock();
-      final r = repository(idleTtl: const Duration(seconds: 1), clock: clock.call);
+      final r = repository(
+        idleTtl: const Duration(seconds: 1),
+        clock: clock.call,
+      );
       addTearDown(r.dispose);
       (await acquired(r, 'a')).release();
       clock.now = const Duration(seconds: 6);
@@ -183,55 +197,67 @@ void main() {
   });
 
   group('RaftMemoryRelease', () {
-    testWidgets('hidden for the delay: flag set, image cache cleared, trimmers run; resume clears the flag', (tester) async {
-      final cache = _CountingImageCache();
-      final release = RaftMemoryRelease(
-        backgroundDelay: const Duration(seconds: 30),
-        imageCache: () => cache,
-      )..install();
-      addTearDown(release.uninstall);
-      final reasons = <RaftMemoryTrim>[];
-      release.addTrimmer(reasons.add);
-      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
-      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.hidden);
-      await tester.pump(const Duration(seconds: 29));
-      expect(release.backgrounded, isFalse);
-      expect(reasons, isEmpty);
-      // A quick app switch back costs nothing.
-      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
-      await tester.pump(const Duration(minutes: 2));
-      expect(release.backgrounded, isFalse);
-      expect(reasons, isEmpty);
-      expect(cache.clears, 0);
+    testWidgets(
+      'hidden for the delay: flag set, image cache cleared, trimmers run; resume clears the flag',
+      (tester) async {
+        final cache = _CountingImageCache();
+        final release = RaftMemoryRelease(
+          backgroundDelay: const Duration(seconds: 30),
+          imageCache: () => cache,
+        )..install();
+        addTearDown(release.uninstall);
+        final reasons = <RaftMemoryTrim>[];
+        release.addTrimmer(reasons.add);
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.inactive,
+        );
+        tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.hidden);
+        await tester.pump(const Duration(seconds: 29));
+        expect(release.backgrounded, isFalse);
+        expect(reasons, isEmpty);
+        // A quick app switch back costs nothing.
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.resumed,
+        );
+        await tester.pump(const Duration(minutes: 2));
+        expect(release.backgrounded, isFalse);
+        expect(reasons, isEmpty);
+        expect(cache.clears, 0);
 
-      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.hidden);
-      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
-      await tester.pump(const Duration(seconds: 31));
-      expect(release.backgrounded, isTrue);
-      expect(reasons, [RaftMemoryTrim.backgrounded]);
-      expect(cache.clears, 1);
-      // Staying in the background does not trim again.
-      await tester.pump(const Duration(minutes: 5));
-      expect(reasons, hasLength(1));
+        tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.hidden);
+        tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+        await tester.pump(const Duration(seconds: 31));
+        expect(release.backgrounded, isTrue);
+        expect(reasons, [RaftMemoryTrim.backgrounded]);
+        expect(cache.clears, 1);
+        // Staying in the background does not trim again.
+        await tester.pump(const Duration(minutes: 5));
+        expect(reasons, hasLength(1));
 
-      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
-      expect(release.backgrounded, isFalse);
-    });
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.resumed,
+        );
+        expect(release.backgrounded, isFalse);
+      },
+    );
 
-    testWidgets('memory pressure runs the trimmers; a failing one does not stop the rest', (tester) async {
-      final release = RaftMemoryRelease()..install();
-      addTearDown(release.uninstall);
-      final reasons = <RaftMemoryTrim>[];
-      release.addTrimmer((_) => throw StateError('boom'));
-      final remove = release.addTrimmer(reasons.add);
-      tester.binding.handleMemoryPressure();
-      expect(reasons, [RaftMemoryTrim.pressure]);
-      expect(tester.takeException(), isStateError);
-      remove();
-      tester.binding.handleMemoryPressure();
-      expect(reasons, hasLength(1));
-      expect(tester.takeException(), isStateError);
-    });
+    testWidgets(
+      'memory pressure runs the trimmers; a failing one does not stop the rest',
+      (tester) async {
+        final release = RaftMemoryRelease()..install();
+        addTearDown(release.uninstall);
+        final reasons = <RaftMemoryTrim>[];
+        release.addTrimmer((_) => throw StateError('boom'));
+        final remove = release.addTrimmer(reasons.add);
+        tester.binding.handleMemoryPressure();
+        expect(reasons, [RaftMemoryTrim.pressure]);
+        expect(tester.takeException(), isStateError);
+        remove();
+        tester.binding.handleMemoryPressure();
+        expect(reasons, hasLength(1));
+        expect(tester.takeException(), isStateError);
+      },
+    );
   });
 
   group('AttachmentView', () {
@@ -309,38 +335,50 @@ void main() {
     RaftAttachmentCard card(WidgetTester tester) =>
         tester.widget<RaftAttachmentCard>(find.byType(RaftAttachmentCard));
 
-    testWidgets('a row on a hidden route lets go of its image after the delay, so a trim can free it', (tester) async {
-      await tester.pumpWidget(app());
-      await waitImage(tester);
-      expect(w.attachmentMedia.retainedImageCount, 1);
-      final provider = tester.widget<Image>(find.byType(Image)).image;
+    testWidgets(
+      'a row on a hidden route lets go of its image after the delay, so a trim can free it',
+      (tester) async {
+        await tester.pumpWidget(app());
+        await waitImage(tester);
+        expect(w.attachmentMedia.retainedImageCount, 1);
+        final provider = tester.widget<Image>(find.byType(Image)).image;
 
-      tickers.value = false;
-      await tester.pump();
-      // Not at once: flipping back and forth must not thrash.
-      await tester.pump(const Duration(seconds: 4));
-      expect(card(tester).preview, isNotNull);
-      await tester.pump(const Duration(seconds: 2));
-      expect(card(tester).preview, isNull, reason: 'stream listener released');
-      // The decoded image is still retained for a quick return ...
-      expect(w.attachmentMedia.retainedImageCount, 1);
-      // ... until a trim: the row no longer pins it.
-      RaftMemoryRelease.instance.trim(RaftMemoryTrim.pressure);
-      expect(w.attachmentMedia.retainedImageCount, 0);
-      expect(w.attachmentMedia.retainedImageDecodedBytes, 0);
+        tickers.value = false;
+        await tester.pump();
+        // Not at once: flipping back and forth must not thrash.
+        await tester.pump(const Duration(seconds: 4));
+        expect(card(tester).preview, isNotNull);
+        await tester.pump(const Duration(seconds: 2));
+        expect(
+          card(tester).preview,
+          isNull,
+          reason: 'stream listener released',
+        );
+        // The decoded image is still retained for a quick return ...
+        expect(w.attachmentMedia.retainedImageCount, 1);
+        // ... until a trim: the row no longer pins it.
+        RaftMemoryRelease.instance.trim(RaftMemoryTrim.pressure);
+        expect(w.attachmentMedia.retainedImageCount, 0);
+        expect(w.attachmentMedia.retainedImageDecodedBytes, 0);
 
-      // Coming back decodes again (from the network here; the byte store in
-      // the product) and shows the image.
-      final before = files.downloads;
-      tickers.value = true;
-      await tester.pump();
-      await waitImage(tester);
-      expect(files.downloads, before + 1);
-      expect(tester.widget<Image>(find.byType(Image)).image, isNot(same(provider)));
-      await finish(tester);
-    });
+        // Coming back decodes again (from the network here; the byte store in
+        // the product) and shows the image.
+        final before = files.downloads;
+        tickers.value = true;
+        await tester.pump();
+        await waitImage(tester);
+        expect(files.downloads, before + 1);
+        expect(
+          tester.widget<Image>(find.byType(Image)).image,
+          isNot(same(provider)),
+        );
+        await finish(tester);
+      },
+    );
 
-    testWidgets('a quick return paints the retained image in the first frame', (tester) async {
+    testWidgets('a quick return paints the retained image in the first frame', (
+      tester,
+    ) async {
       await tester.pumpWidget(app());
       await waitImage(tester);
       final provider = tester.widget<Image>(find.byType(Image)).image;
@@ -357,38 +395,52 @@ void main() {
       await finish(tester);
     });
 
-    testWidgets('a hidden spell shorter than the delay keeps the image untouched', (tester) async {
-      await tester.pumpWidget(app());
-      await waitImage(tester);
-      tickers.value = false;
-      await tester.pump();
-      await tester.pump(const Duration(seconds: 3));
-      tickers.value = true;
-      await tester.pump(const Duration(seconds: 10));
-      expect(card(tester).preview, isNotNull);
-      await finish(tester);
-    });
+    testWidgets(
+      'a hidden spell shorter than the delay keeps the image untouched',
+      (tester) async {
+        await tester.pumpWidget(app());
+        await waitImage(tester);
+        tickers.value = false;
+        await tester.pump();
+        await tester.pump(const Duration(seconds: 3));
+        tickers.value = true;
+        await tester.pump(const Duration(seconds: 10));
+        expect(card(tester).preview, isNotNull);
+        await finish(tester);
+      },
+    );
 
-    testWidgets('a visible row keeps its image while the app is in the background; the idle ones go', (tester) async {
-      await tester.pumpWidget(app());
-      await waitImage(tester);
-      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.hidden);
-      await tester.pump(const Duration(minutes: 2));
-      expect(RaftMemoryRelease.instance.backgrounded, isTrue);
-      // The row still shows its image and the repository still retains it.
-      expect(find.byType(Image), findsOneWidget);
-      expect(w.attachmentMedia.retainedImageCount, 1);
-      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
-      await tester.pump();
-      expect(find.byType(Image), findsOneWidget);
-      await finish(tester);
-    });
+    testWidgets(
+      'a visible row keeps its image while the app is in the background; the idle ones go',
+      (tester) async {
+        await tester.pumpWidget(app());
+        await waitImage(tester);
+        tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.hidden);
+        await tester.pump(const Duration(minutes: 2));
+        expect(RaftMemoryRelease.instance.backgrounded, isTrue);
+        // The row still shows its image and the repository still retains it.
+        expect(find.byType(Image), findsOneWidget);
+        expect(w.attachmentMedia.retainedImageCount, 1);
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.resumed,
+        );
+        await tester.pump();
+        expect(find.byType(Image), findsOneWidget);
+        await finish(tester);
+      },
+    );
 
-    testWidgets('after the row is gone, the background trim frees its image', (tester) async {
+    testWidgets('after the row is gone, the background trim frees its image', (
+      tester,
+    ) async {
       await tester.pumpWidget(app());
       await waitImage(tester);
       await tester.pumpWidget(const SizedBox());
-      expect(w.attachmentMedia.retainedImageCount, 1, reason: 'kept for a quick revisit');
+      expect(
+        w.attachmentMedia.retainedImageCount,
+        1,
+        reason: 'kept for a quick revisit',
+      );
       tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.hidden);
       await tester.pump(const Duration(seconds: 31));
       expect(w.attachmentMedia.retainedImageCount, 0);

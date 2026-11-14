@@ -118,7 +118,6 @@ void main() {
     await f.close(t);
   });
 
-
   testWidgets('cache-first start: a resume during the revalidation neither '
       'repeats the read nor drops the revocation sweep', (t) async {
     final first = RootFixture();
@@ -164,18 +163,21 @@ void main() {
   });
 
   group('a directory load in flight survives the foreground refresh', () {
-    test('a resume while the load waits does not make it return false', () async {
-      final (w, adapter) = await _openGated();
-      adapter.gate = Completer<int>();
-      final load = w.loadServerDirectory();
-      await Future<void>.delayed(const Duration(milliseconds: 20));
-      w.resumeLiveSession();
-      w.recoverMembership(coalesce: true);
-      adapter.gate!.complete(200);
-      expect(await load, isTrue);
-      expect(adapter.directoryReads, 1);
-      expect(w.servers.map((s) => s.id), ['A']);
-    });
+    test(
+      'a resume while the load waits does not make it return false',
+      () async {
+        final (w, adapter) = await _openGated();
+        adapter.gate = Completer<int>();
+        final load = w.loadServerDirectory();
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+        w.resumeLiveSession();
+        w.recoverMembership(coalesce: true);
+        adapter.gate!.complete(200);
+        expect(await load, isTrue);
+        expect(adapter.directoryReads, 1);
+        expect(w.servers.map((s) => s.id), ['A']);
+      },
+    );
 
     test('a failed load frees the next refresh', () async {
       final (w, adapter) = await _openGated();

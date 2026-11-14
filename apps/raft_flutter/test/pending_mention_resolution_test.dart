@@ -43,7 +43,8 @@ class _Workspace extends WorkspaceController {
       for (final id in resolutionIds)
         id: {
           'resolutionId': id,
-          'status': answers[id] ?? (action == 'notify' ? 'queued' : 'delivered'),
+          'status':
+              answers[id] ?? (action == 'notify' ? 'queued' : 'delivered'),
         },
     };
   }

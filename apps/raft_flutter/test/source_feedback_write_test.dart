@@ -132,7 +132,8 @@ void main() {
   test('a failed create keeps the form, marks uploads failed and retries '
       'with the same submission id until the content changes', () async {
     final fake = _Fake()
-      ..answer = (_) => const SourceFeedbackFailure(SourceFeedbackError.invalid);
+      ..answer = (_) =>
+          const SourceFeedbackFailure(SourceFeedbackError.invalid);
     final store = fake.store;
     store
       ..startNew()
@@ -249,27 +250,29 @@ void main() {
     store.dispose();
   });
 
-  test('a failed reply keeps the draft and shows the error in the composer',
-      () async {
-    final fake = _Fake()
-      ..answer = (_) =>
-          const SourceFeedbackFailure(SourceFeedbackError.rateLimited);
-    final store = fake.store;
-    await store.loadList();
-    await store.openTicket(fx.first);
-    store
-      ..setReply('Hello')
-      ..addReplyAttachments([_png('a.png')]);
-    expect(await store.sendReply(), isFalse);
-    expect(store.reply, 'Hello');
-    expect(store.replySending, isFalse);
-    expect(store.actionError!.error, SourceFeedbackError.rateLimited);
-    expect(
-      store.replyAttachments.single.state,
-      SourceFeedbackUploadState.failed,
-    );
-    store.dispose();
-  });
+  test(
+    'a failed reply keeps the draft and shows the error in the composer',
+    () async {
+      final fake = _Fake()
+        ..answer = (_) =>
+            const SourceFeedbackFailure(SourceFeedbackError.rateLimited);
+      final store = fake.store;
+      await store.loadList();
+      await store.openTicket(fx.first);
+      store
+        ..setReply('Hello')
+        ..addReplyAttachments([_png('a.png')]);
+      expect(await store.sendReply(), isFalse);
+      expect(store.reply, 'Hello');
+      expect(store.replySending, isFalse);
+      expect(store.actionError!.error, SourceFeedbackError.rateLimited);
+      expect(
+        store.replyAttachments.single.state,
+        SourceFeedbackUploadState.failed,
+      );
+      store.dispose();
+    },
+  );
 
   test('close from the conversation: confirm, busy dialog cannot be '
       'dismissed, then the closed ticket moves to the inbox top', () async {
@@ -309,9 +312,15 @@ void main() {
 
   test('close from an inbox row replaces the row in place; a failure stays '
       'in the dialog', () async {
-    final fake = _Fake(
-      tickets: [fx.ticket(fx.first), fx.ticket(fx.second, status: 'resolved')],
-    )..answer = (_) => const SourceFeedbackFailure(SourceFeedbackError.unavailable);
+    final fake =
+        _Fake(
+            tickets: [
+              fx.ticket(fx.first),
+              fx.ticket(fx.second, status: 'resolved'),
+            ],
+          )
+          ..answer = (_) =>
+              const SourceFeedbackFailure(SourceFeedbackError.unavailable);
     final store = fake.store;
     await store.loadList();
     expect(

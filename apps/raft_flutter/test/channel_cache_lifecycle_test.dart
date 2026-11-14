@@ -149,86 +149,84 @@ Future<void> _openThread(WorkspaceController w, MessageAdapter a) async {
 
 void main() {
   group('per-channel authority invalidation', () {
-    test(
-      'an unrelated channel membership/authority change keeps every other cache',
-      () async {
-        final (w, a, client) = await _login();
-        addTearDown(w.dispose);
-        await w.selectChannel(_c3, autoRead: false);
-        await w.selectChannel(_c1, autoRead: false);
-        await _openThread(w, a);
-        expect(w.threadIdentity?.parentMessageId, 'p-c1');
-        expect(w.replies.map((m) => m.id), ['t-c1-r']);
+    test('an unrelated channel membership/authority change keeps every other cache', () async {
+      final (w, a, client) = await _login();
+      addTearDown(w.dispose);
+      await w.selectChannel(_c3, autoRead: false);
+      await w.selectChannel(_c1, autoRead: false);
+      await _openThread(w, a);
+      expect(w.threadIdentity?.parentMessageId, 'p-c1');
+      expect(w.replies.map((m) => m.id), ['t-c1-r']);
 
-        // Private c2's member list, c3's own authority and c1's public
-        // member list: none of them changes who may read c1.
-        client.emit('channel:members-updated', {'channelId': 'c2'});
-        client.emit('channel:authority-updated', {
-          'channelId': 'c3',
-          'channelRole': 'member',
-        });
-        client.emit('channel:members-updated', {'channelId': 'c1'});
-        await _drain();
-        expect(w.threadIdentity?.parentMessageId, 'p-c1');
-        expect(w.messageDomain.threadSummaries['p-c1'], isNotNull);
+      // Private c2's member list, c3's own authority and c1's public
+      // member list: none of them changes who may read c1.
+      client.emit('channel:members-updated', {'channelId': 'c2'});
+      client.emit('channel:authority-updated', {
+        'channelId': 'c3',
+        'channelRole': 'member',
+      });
+      client.emit('channel:members-updated', {'channelId': 'c1'});
+      await _drain();
+      expect(w.threadIdentity?.parentMessageId, 'p-c1');
+      expect(w.messageDomain.threadSummaries['p-c1'], isNotNull);
 
-        // The open thread's cached window survives a close and reopen.
-        w.closeThread();
-        a.routes['GET /messages/channel/t-c1'] = (_) =>
-            Completer<Map<String, dynamic>>().future;
-        unawaited(
-          w.openThreadIdentity(
-            parentChannelId: 'c1',
-            parentMessageId: 'p-c1',
-            initialThreadChannelId: 't-c1',
-          ),
-        );
-        expect(w.messageDomain.state.threadLoading, isFalse, reason: 'cached thread window');
-        expect(w.replies.map((m) => m.id), ['t-c1-r']);
-        w.closeThread();
+      // The open thread's cached window survives a close and reopen.
+      w.closeThread();
+      a.routes['GET /messages/channel/t-c1'] = (_) =>
+          Completer<Map<String, dynamic>>().future;
+      unawaited(
+        w.openThreadIdentity(
+          parentChannelId: 'c1',
+          parentMessageId: 'p-c1',
+          initialThreadChannelId: 't-c1',
+        ),
+      );
+      expect(
+        w.messageDomain.state.threadLoading,
+        isFalse,
+        reason: 'cached thread window',
+      );
+      expect(w.replies.map((m) => m.id), ['t-c1-r']);
+      w.closeThread();
 
-        // c1 keeps its window and reply rows across a switch away and back.
-        await w.selectChannel(_c2, autoRead: false);
-        final back = _revisitHeld(w, a, _c1);
-        expect(back.rows, ['p-c1']);
-        expect(back.summary, isTrue);
-      },
-    );
+      // c1 keeps its window and reply rows across a switch away and back.
+      await w.selectChannel(_c2, autoRead: false);
+      final back = _revisitHeld(w, a, _c1);
+      expect(back.rows, ['p-c1']);
+      expect(back.summary, isTrue);
+    });
 
-    test(
-      'a channel whose authority changed drops its own data at once; others keep theirs',
-      () async {
-        final (w, a, client) = await _login();
-        addTearDown(w.dispose);
-        await w.selectChannel(_c3, autoRead: false);
-        await w.selectChannel(_c2, autoRead: false);
-        await w.selectChannel(_c1, autoRead: false);
-        await _openThread(w, a);
-        expect(w.threadIdentity, isNotNull);
+    test('a channel whose authority changed drops its own data at once; others keep theirs', () async {
+      final (w, a, client) = await _login();
+      addTearDown(w.dispose);
+      await w.selectChannel(_c3, autoRead: false);
+      await w.selectChannel(_c2, autoRead: false);
+      await w.selectChannel(_c1, autoRead: false);
+      await _openThread(w, a);
+      expect(w.threadIdentity, isNotNull);
 
-        // Targeted authority change for c1: its thread identity and in-flight
-        // loads are retired immediately, before the directory refresh.
-        client.emit('channel:authority-updated', {
-          'channelId': 'c1',
-          'channelRole': 'viewer',
-        });
-        expect(w.threadIdentity, isNull);
+      // Targeted authority change for c1: its thread identity and in-flight
+      // loads are retired immediately, before the directory refresh.
+      client.emit('channel:authority-updated', {
+        'channelId': 'c1',
+        'channelRole': 'viewer',
+      });
+      expect(w.threadIdentity, isNull);
 
-        // Private c2's member list changed: it may have been this principal.
-        client.emit('channel:members-updated', {'channelId': 'c2'});
-        await _drain();
+      // Private c2's member list changed: it may have been this principal.
+      client.emit('channel:members-updated', {'channelId': 'c2'});
+      await _drain();
 
-        final c2 = _revisitHeld(w, a, _c2);
-        expect(c2.rows, isEmpty, reason: 'membership-scoped window dropped');
-        expect(c2.summary, isFalse);
-        final c3 = _revisitHeld(w, a, _c3);
-        expect(c3.rows, ['p-c3'], reason: 'unrelated window kept');
-        expect(c3.summary, isTrue);
-        final c1 = _revisitHeld(w, a, _c1);
-        expect(c1.rows, isEmpty, reason: 'authority-changed window dropped');
-        expect(c1.summary, isFalse);
-      },
-    );
+      final c2 = _revisitHeld(w, a, _c2);
+      expect(c2.rows, isEmpty, reason: 'membership-scoped window dropped');
+      expect(c2.summary, isFalse);
+      final c3 = _revisitHeld(w, a, _c3);
+      expect(c3.rows, ['p-c3'], reason: 'unrelated window kept');
+      expect(c3.summary, isTrue);
+      final c1 = _revisitHeld(w, a, _c1);
+      expect(c1.rows, isEmpty, reason: 'authority-changed window dropped');
+      expect(c1.summary, isFalse);
+    });
 
     test(
       'an authority event without a channel id fails closed for every channel',
@@ -257,44 +255,41 @@ void main() {
   });
 
   group('thread summaries per channel', () {
-    test(
-      'prefetch fills summaries; first open and revisit project them before the network',
-      () async {
-        final (w, a, client) = await _login();
-        addTearDown(w.dispose);
-        await w.selectChannel(_c1, autoRead: false);
-        w.conversationReads.unread = {'c3': 2};
-        await w.prefetchLikelyChannels();
-        expect(w.messageDomain.threadSummariesFor('c3')['p-c3'], isNotNull);
+    test('prefetch fills summaries; first open and revisit project them before the network', () async {
+      final (w, a, client) = await _login();
+      addTearDown(w.dispose);
+      await w.selectChannel(_c1, autoRead: false);
+      w.conversationReads.unread = {'c3': 2};
+      await w.prefetchLikelyChannels();
+      expect(w.messageDomain.threadSummariesFor('c3')['p-c3'], isNotNull);
 
-        final first = _revisitHeld(w, a, _c3);
-        expect(first.rows, ['p-c3']);
-        expect(first.summary, isTrue);
+      final first = _revisitHeld(w, a, _c3);
+      expect(first.rows, ['p-c3']);
+      expect(first.summary, isTrue);
 
-        // A live thread:updated for the non-selected c1 patches c1's bucket.
-        client.emit('thread:updated', {
-          'parentMessageId': 'p-c1',
-          'threadChannelId': 't-c1',
-          'replyCount': 5,
-          'latestReply': {
-            ..._row('t-c1-r5', 't-c1', 200),
-            'conversationContext': {
-              'channelType': 'thread',
-              'parentMessageId': 'p-c1',
-              'parentChannelId': 'c1',
-              'parentChannelType': 'channel',
-            },
+      // A live thread:updated for the non-selected c1 patches c1's bucket.
+      client.emit('thread:updated', {
+        'parentMessageId': 'p-c1',
+        'threadChannelId': 't-c1',
+        'replyCount': 5,
+        'latestReply': {
+          ..._row('t-c1-r5', 't-c1', 200),
+          'conversationContext': {
+            'channelType': 'thread',
+            'parentMessageId': 'p-c1',
+            'parentChannelId': 'c1',
+            'parentChannelType': 'channel',
           },
-        });
-        expect(w.messageDomain.threadSummaries['p-c1'], isNull);
-        expect(w.messageDomain.threadSummariesFor('c1')['p-c1']['replyCount'], 5);
+        },
+      });
+      expect(w.messageDomain.threadSummaries['p-c1'], isNull);
+      expect(w.messageDomain.threadSummariesFor('c1')['p-c1']['replyCount'], 5);
 
-        a.routes['GET /messages/channel/c1'] = (_) =>
-            Completer<Map<String, dynamic>>().future;
-        unawaited(w.selectChannel(_c1, autoRead: false));
-        expect(w.messageDomain.threadSummaries['p-c1']['replyCount'], 5);
-      },
-    );
+      a.routes['GET /messages/channel/c1'] = (_) =>
+          Completer<Map<String, dynamic>>().future;
+      unawaited(w.selectChannel(_c1, autoRead: false));
+      expect(w.messageDomain.threadSummaries['p-c1']['replyCount'], 5);
+    });
 
     test(
       'jumping to a cached message keeps the destination summaries',
@@ -311,33 +306,42 @@ void main() {
   });
 
   group('unread counts move per event', () {
-    test(
-      '[BP-READ-017][BP-READ-018][BP-READ-019] message:new counts locally; own, duplicate, edits and unjoined do not',
-      () async {
-        final (w, a, client) = await _login();
-        addTearDown(w.dispose);
-        await w.selectChannel(_c1, autoRead: false);
-        w.conversationReads.unread = {'c2': 1};
-        final reads = _unreadReads(a);
+    test('[BP-READ-017][BP-READ-018][BP-READ-019] message:new counts locally; own, duplicate, edits and unjoined do not', () async {
+      final (w, a, client) = await _login();
+      addTearDown(w.dispose);
+      await w.selectChannel(_c1, autoRead: false);
+      w.conversationReads.unread = {'c2': 1};
+      final reads = _unreadReads(a);
 
-        client.emit('message:new', _row('n1', 'c2', 500));
-        expect(w.conversationReads.unread['c2'], 2);
-        client.emit('message:new', _row('n1', 'c2', 500));
-        expect(w.conversationReads.unread['c2'], 2, reason: 'redelivery counts once');
-        client.emit('message:updated', {..._row('n1', 'c2', 500), 'x': 1});
-        expect(w.conversationReads.unread['c2'], 2, reason: 'an edit is not a new message');
-        client.emit('message:new', _row('mine', 'c2', 501, sender: 'alice'));
-        expect(w.conversationReads.unread['c2'], 2, reason: 'own message');
-        client.emit('message:new', _row('n2', 'c3', 502));
-        expect(w.conversationReads.unread['c3'], 1);
-        client.emit('message:new', _row('n3', 'lobby', 503));
-        expect(w.conversationReads.unread['lobby'], isNull, reason: 'not joined');
-        client.emit('message:new', _row('n4', 'stranger-thread', 504));
-        expect(w.conversationReads.unread['stranger-thread'], isNull, reason: 'untracked');
-        await _drain();
-        expect(_unreadReads(a), reads, reason: 'no snapshot GET per event');
-      },
-    );
+      client.emit('message:new', _row('n1', 'c2', 500));
+      expect(w.conversationReads.unread['c2'], 2);
+      client.emit('message:new', _row('n1', 'c2', 500));
+      expect(
+        w.conversationReads.unread['c2'],
+        2,
+        reason: 'redelivery counts once',
+      );
+      client.emit('message:updated', {..._row('n1', 'c2', 500), 'x': 1});
+      expect(
+        w.conversationReads.unread['c2'],
+        2,
+        reason: 'an edit is not a new message',
+      );
+      client.emit('message:new', _row('mine', 'c2', 501, sender: 'alice'));
+      expect(w.conversationReads.unread['c2'], 2, reason: 'own message');
+      client.emit('message:new', _row('n2', 'c3', 502));
+      expect(w.conversationReads.unread['c3'], 1);
+      client.emit('message:new', _row('n3', 'lobby', 503));
+      expect(w.conversationReads.unread['lobby'], isNull, reason: 'not joined');
+      client.emit('message:new', _row('n4', 'stranger-thread', 504));
+      expect(
+        w.conversationReads.unread['stranger-thread'],
+        isNull,
+        reason: 'untracked',
+      );
+      await _drain();
+      expect(_unreadReads(a), reads, reason: 'no snapshot GET per event');
+    });
 
     test(
       'read_state:updated clears a count at the latest activity without a GET',
@@ -357,7 +361,11 @@ void main() {
           'maxReadSeq': 610,
           'readStateVersion': 1,
         });
-        expect(w.conversationReads.unread['c2'], 1, reason: 'held messages cover the frontier');
+        expect(
+          w.conversationReads.unread['c2'],
+          1,
+          reason: 'held messages cover the frontier',
+        );
         client.emit('read_state:updated_bulk', {
           'serverId': 's1',
           'scopes': [

@@ -6,10 +6,8 @@ import 'package:raft_flutter/features/system_message_grouping.dart';
 RaftMessage _m(String id, String content, {String type = 'system'}) =>
     RaftMessage({'id': id, 'content': content, 'messageType': type});
 
-String _format(String text, Map<String, Object?> values) => text.replaceAllMapped(
-  RegExp(r'\{(\w+)\}'),
-  (m) => '${values[m[1]] ?? m[0]}',
-);
+String _format(String text, Map<String, Object?> values) => text
+    .replaceAllMapped(RegExp(r'\{(\w+)\}'), (m) => '${values[m[1]] ?? m[0]}');
 
 void main() {
   test('adjacent system rows collapse into one summary, the rest hide', () {

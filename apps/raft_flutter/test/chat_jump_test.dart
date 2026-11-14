@@ -32,7 +32,9 @@ void main() {
         'senderId': 'alice',
         'content': 'Latest message',
       };
-      w.messageDomain.ledger.ingest([old], expectedGeneration: w.messageDomain.ledger.generation);
+      w.messageDomain.ledger.ingest([
+        old,
+      ], expectedGeneration: w.messageDomain.ledger.generation);
       w.messageDomain.visibleIds['c1'] = {'old'};
       w.messageDomain.state.hasNewer = true;
       a.routes['GET /messages/channel/c1'] = (_) => {
@@ -65,9 +67,7 @@ void main() {
       final before = w.messageDomain.channelGeneration;
       final button = tester.widget<RaftComposerAction>(
         find.byWidgetPredicate(
-          (widget) =>
-              widget is RaftComposerAction &&
-              widget.tooltip == 'Send',
+          (widget) => widget is RaftComposerAction && widget.tooltip == 'Send',
         ),
       );
       await tester.runAsync(() async {
@@ -120,9 +120,7 @@ void main() {
       expect(oldController.text, 'Old pending draft');
       final button = tester.widget<RaftComposerAction>(
         find.byWidgetPredicate(
-          (w) =>
-              w is RaftComposerAction &&
-              w.tooltip == 'Send',
+          (w) => w is RaftComposerAction && w.tooltip == 'Send',
         ),
       );
       await tester.runAsync(() async {
@@ -188,8 +186,13 @@ void main() {
             List.filled(i % 7 + 1, 'Variable-height message $i').join('\n'),
       };
       final initial = [for (var i = 1; i <= 100; i++) row(i)];
-      w.messageDomain.ledger.ingest(initial, expectedGeneration: w.messageDomain.ledger.generation);
-      w.messageDomain.visibleIds['c1'] = initial.map((r) => r['id'] as String).toSet();
+      w.messageDomain.ledger.ingest(
+        initial,
+        expectedGeneration: w.messageDomain.ledger.generation,
+      );
+      w.messageDomain.visibleIds['c1'] = initial
+          .map((r) => r['id'] as String)
+          .toSet();
       a.routes['POST /channels/c1/read'] = (_) => {};
       a.routes['GET /messages/context/variable-98'] = (_) => {
         'messages': initial.skip(60).toList(),
@@ -271,8 +274,13 @@ void main() {
         'content': 'Context row $i',
       };
       final initial = [for (var i = 1; i <= 100; i++) row(i)];
-      w.messageDomain.ledger.ingest(initial, expectedGeneration: w.messageDomain.ledger.generation);
-      w.messageDomain.visibleIds['c1'] = initial.map((r) => r['id'] as String).toSet();
+      w.messageDomain.ledger.ingest(
+        initial,
+        expectedGeneration: w.messageDomain.ledger.generation,
+      );
+      w.messageDomain.visibleIds['c1'] = initial
+          .map((r) => r['id'] as String)
+          .toSet();
       a.routes['POST /channels/c1/read'] = (_) => {};
       a.routes['GET /messages/context/offset-94'] = (_) => {
         'messages': initial.skip(84).toList(),
@@ -346,8 +354,13 @@ void main() {
             'content': 'Old message $i',
           },
       ];
-      w.messageDomain.ledger.ingest(first, expectedGeneration: w.messageDomain.ledger.generation);
-      w.messageDomain.visibleIds['c1'] = first.map((r) => r['id'] as String).toSet();
+      w.messageDomain.ledger.ingest(
+        first,
+        expectedGeneration: w.messageDomain.ledger.generation,
+      );
+      w.messageDomain.visibleIds['c1'] = first
+          .map((r) => r['id'] as String)
+          .toSet();
       await tester.pumpWidget(
         MaterialApp(
           theme: raftTheme(),

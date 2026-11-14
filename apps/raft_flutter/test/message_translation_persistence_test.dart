@@ -209,51 +209,48 @@ void main() {
   });
 
   group('store', () {
-    test(
-      'restored entries paint without a request; an edit or another target reads as absent',
-      () async {
-        final db = DriftWorkspaceCache(NativeDatabase.memory());
-        addTearDown(db.close);
-        await _gate(db);
-        await db.writeTranslations(_origin, 'alice', 's1', [
-          _saved('kept'),
-          _saved('edited', content: 'before'),
-          _saved('japanese', target: 'ja'),
-        ]);
-        final (w, a) = await _fixture(db);
-        addTearDown(w.dispose);
-        await w.translations.restore();
-        final settings = w.translations.settings;
-        expect(settings.loaded, isTrue, reason: 'gate restored');
-        expect(settings.targetLanguage, 'en');
+    test('restored entries paint without a request; an edit or another target reads as absent', () async {
+      final db = DriftWorkspaceCache(NativeDatabase.memory());
+      addTearDown(db.close);
+      await _gate(db);
+      await db.writeTranslations(_origin, 'alice', 's1', [
+        _saved('kept'),
+        _saved('edited', content: 'before'),
+        _saved('japanese', target: 'ja'),
+      ]);
+      final (w, a) = await _fixture(db);
+      addTearDown(w.dispose);
+      await w.translations.restore();
+      final settings = w.translations.settings;
+      expect(settings.loaded, isTrue, reason: 'gate restored');
+      expect(settings.targetLanguage, 'en');
 
-        final kept = w.translations.present(_message('kept', '你好'));
-        expect(kept.translatedContent, 'EN kept');
-        expect(kept.skeleton, isFalse);
-        expect(kept.needsRequest, isFalse);
+      final kept = w.translations.present(_message('kept', '你好'));
+      expect(kept.translatedContent, 'EN kept');
+      expect(kept.skeleton, isFalse);
+      expect(kept.needsRequest, isFalse);
 
-        // Edited since: the saved translation is not for this content.
-        final edited = w.translations.present(_message('edited', 'after'));
-        expect(edited.entry, isNull);
-        expect(edited.translatedContent, isNull);
-        expect(edited.needsRequest, isTrue);
+      // Edited since: the saved translation is not for this content.
+      final edited = w.translations.present(_message('edited', 'after'));
+      expect(edited.entry, isNull);
+      expect(edited.translatedContent, isNull);
+      expect(edited.needsRequest, isTrue);
 
-        // Saved for another target language.
-        final japanese = w.translations.present(_message('japanese', '你好'));
-        expect(japanese.entry, isNull);
-        expect(japanese.needsRequest, isTrue);
-        expect(a.calls.where((c) => c.path.contains('translation')), isEmpty);
+      // Saved for another target language.
+      final japanese = w.translations.present(_message('japanese', '你好'));
+      expect(japanese.entry, isNull);
+      expect(japanese.needsRequest, isTrue);
+      expect(a.calls.where((c) => c.path.contains('translation')), isEmpty);
 
-        // The new answer for the edit replaces the saved entry.
-        await w.translations.requestTranslations([_message('edited', 'after')]);
-        await w.flushCache();
-        final saved = {
-          for (final e in await db.readTranslations(_origin, 'alice', 's1'))
-            e['messageId']: e,
-        };
-        expect(saved['edited'], containsPair('originalContent', 'after'));
-      },
-    );
+      // The new answer for the edit replaces the saved entry.
+      await w.translations.requestTranslations([_message('edited', 'after')]);
+      await w.flushCache();
+      final saved = {
+        for (final e in await db.readTranslations(_origin, 'alice', 's1'))
+          e['messageId']: e,
+      };
+      expect(saved['edited'], containsPair('originalContent', 'after'));
+    });
 
     test(
       'a target language change hides restored entries until asked again',
@@ -334,29 +331,26 @@ void main() {
       },
     );
 
-    test(
-      'a retired cache (logout) writes nothing more; clearing the account purges entries',
-      () async {
-        final db = DriftWorkspaceCache(NativeDatabase.memory());
-        addTearDown(db.close);
-        await _gate(db);
-        await db.writeTranslations(_origin, 'alice', 's1', [_saved('m1')]);
-        final (w, _) = await _fixture(db);
-        addTearDown(w.dispose);
-        await w.translations.restore();
-        await w.translations.requestTranslations([_message('m2', '早上好')]);
-        await w.retireCache();
-        await db.clearAccount(_origin, 'alice');
-        await w.flushCache();
-        await Future<void>.delayed(MessageTranslationStore.persistDelay * 2);
-        await w.flushCache();
-        expect(await db.readTranslations(_origin, 'alice', 's1'), isEmpty);
-        expect(
-          await db.read(_origin, 'alice', 's1', 'translation-settings', ''),
-          isNull,
-        );
-      },
-    );
+    test('a retired cache (logout) writes nothing more; clearing the account purges entries', () async {
+      final db = DriftWorkspaceCache(NativeDatabase.memory());
+      addTearDown(db.close);
+      await _gate(db);
+      await db.writeTranslations(_origin, 'alice', 's1', [_saved('m1')]);
+      final (w, _) = await _fixture(db);
+      addTearDown(w.dispose);
+      await w.translations.restore();
+      await w.translations.requestTranslations([_message('m2', '早上好')]);
+      await w.retireCache();
+      await db.clearAccount(_origin, 'alice');
+      await w.flushCache();
+      await Future<void>.delayed(MessageTranslationStore.persistDelay * 2);
+      await w.flushCache();
+      expect(await db.readTranslations(_origin, 'alice', 's1'), isEmpty);
+      expect(
+        await db.read(_origin, 'alice', 's1', 'translation-settings', ''),
+        isNull,
+      );
+    });
 
     test('a restored entry shown again becomes most recently used', () async {
       final db = DriftWorkspaceCache(

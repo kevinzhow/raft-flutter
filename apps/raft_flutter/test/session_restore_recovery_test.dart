@@ -53,7 +53,11 @@ void main() {
         expect(_recovery, findsOneWidget);
         expect(find.byType(AuthView), findsNothing);
         final stored = await f.sessions.read(_origin);
-        expect(stored?.refreshToken, 'fixture-only', reason: 'credentials kept');
+        expect(
+          stored?.refreshToken,
+          'fixture-only',
+          reason: 'credentials kept',
+        );
         await f.close(t);
       },
     );
@@ -67,7 +71,10 @@ void main() {
       await f.mount(t, 'light', 390);
       expect(find.byType(AuthView), findsOneWidget);
       expect(_recovery, findsNothing);
-      expect(find.text('Your session has expired. Sign in again.'), findsOneWidget);
+      expect(
+        find.text('Your session has expired. Sign in again.'),
+        findsOneWidget,
+      );
       expect(await f.sessions.read(_origin), isNull);
       expect(
         f.adapter.calls.where((c) => c.path == '/auth/logout'),
@@ -100,7 +107,10 @@ void main() {
         expect(_recovery, findsOneWidget);
         expect(find.byType(AuthView), findsNothing);
         expect(store.clears, 0);
-        expect(find.text('Your saved sign-in is not available yet'), findsOneWidget);
+        expect(
+          find.text('Your saved sign-in is not available yet'),
+          findsOneWidget,
+        );
 
         // The device unlocks / the Keystore answers again.
         store.readError = null;
@@ -112,7 +122,10 @@ void main() {
               find.byType(WorkspaceView).evaluate().isNotEmpty,
           isTrue,
         );
-        expect((await store.read(_origin))?.refreshToken, anyOf('fixture-only'));
+        expect(
+          (await store.read(_origin))?.refreshToken,
+          anyOf('fixture-only'),
+        );
         await f.close(t);
       },
     );
@@ -131,18 +144,19 @@ void main() {
     await f.close(t);
   });
 
-  testWidgets('"Sign in again" is an explicit choice that keeps stored credentials until a new sign-in', (
-    t,
-  ) async {
-    final f = RootFixture();
-    f.adapter.statuses['GET /auth/me'] = 503;
-    await f.mount(t, 'light', 390);
-    await t.tap(find.byKey(const Key('session-recovery-sign-in')));
-    await f.flush(t);
-    expect(find.byType(AuthView), findsOneWidget);
-    expect((await f.sessions.read(_origin))?.refreshToken, 'fixture-only');
-    await f.close(t);
-  });
+  testWidgets(
+    '"Sign in again" is an explicit choice that keeps stored credentials until a new sign-in',
+    (t) async {
+      final f = RootFixture();
+      f.adapter.statuses['GET /auth/me'] = 503;
+      await f.mount(t, 'light', 390);
+      await t.tap(find.byKey(const Key('session-recovery-sign-in')));
+      await f.flush(t);
+      expect(find.byType(AuthView), findsOneWidget);
+      expect((await f.sessions.read(_origin))?.refreshToken, 'fixture-only');
+      await f.close(t);
+    },
+  );
 
   for (final status in [400, 403, 404, 408, 429, 500, 503]) {
     testWidgets(

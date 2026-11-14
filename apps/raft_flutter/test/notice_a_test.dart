@@ -51,7 +51,10 @@ class _FailingFollow extends WorkspaceController {
 
 void main() {
   // Leak debt (share flow): see docs/development.md, Leak tracking.
-  leakDebt(const ['IncomingShareStaging', 'ValueNotifier<RaftTransferProgress?>']);
+  leakDebt(const [
+    'IncomingShareStaging',
+    'ValueNotifier<RaftTransferProgress?>',
+  ]);
   testWidgets(
     'thread follow failure notice does not follow the widget to another thread',
     (t) async {

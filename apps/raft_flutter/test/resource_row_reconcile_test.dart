@@ -68,23 +68,20 @@ void main() {
       preserveTail: true,
       localFrontiers: {},
     );
-    expect(
-      result.rows.where((r) => r['channelId'] == 'ch35'),
-      hasLength(1),
-    );
+    expect(result.rows.where((r) => r['channelId'] == 'ch35'), hasLength(1));
     expect(result.rows.first['channelId'], 'ch35');
     expect(result.rows, hasLength(40));
   });
 
   test('newer local activity survives a stale response; newer served wins', () {
-    final local = {
-      ...threadRow('t1', seq: '20'),
-      'unreadCount': 1,
-    };
+    final local = {...threadRow('t1', seq: '20'), 'unreadCount': 1};
     final current = [threadRow('t0'), local];
     final frontiers = {'thread:t1': BigInt.from(20)};
     final stale = reconcileActivityWindow(
-      incoming: [threadRow('t0'), threadRow('t1', seq: '10')],
+      incoming: [
+        threadRow('t0'),
+        threadRow('t1', seq: '10'),
+      ],
       current: current,
       hasMore: false,
       preserveTail: false,
@@ -94,7 +91,10 @@ void main() {
     expect(stale.unreadDelta, 1);
     expect(frontiers, contains('thread:t1'));
     final fresh = reconcileActivityWindow(
-      incoming: [threadRow('t1', seq: '21'), threadRow('t0')],
+      incoming: [
+        threadRow('t1', seq: '21'),
+        threadRow('t0'),
+      ],
       current: stale.rows,
       hasMore: false,
       preserveTail: false,

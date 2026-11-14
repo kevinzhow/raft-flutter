@@ -69,12 +69,10 @@ void main() {
     data = p.join(root.path, 'data');
     config = p.join(root.path, 'config');
     exeDir = p.join(root.path, 'mount', 'raft');
-    Directory(
-      p.join(exeDir, 'data', 'icons/hicolor/256x256/apps'),
-    ).createSync(recursive: true);
-    File(
-      p.join(exeDir, 'data', linuxIconRelative),
-    ).writeAsBytesSync(List.filled(64, 7));
+    Directory(p.join(exeDir, 'data', 'icons/hicolor/256x256/apps'))
+        .createSync(recursive: true);
+    File(p.join(exeDir, 'data', linuxIconRelative))
+        .writeAsBytesSync(List.filled(64, 7));
     desktop = _Desktop()..mimeList = File(p.join(config, 'mimeapps.list'));
     store = _Store();
   });
@@ -433,99 +431,95 @@ void main() {
   // HOME/XDG tree; the member's own configuration is never involved.
   group('real xdg-utils', () {
     final xdg = File('/usr/bin/xdg-mime').existsSync();
-    test(
-      'registers, repairs and unregisters',
-      () async {
-        final realList = File(
-          p.join(
-            Platform.environment['HOME'] ?? '/nonexistent',
-            '.config/mimeapps.list',
-          ),
-        );
-        final realBefore = realList.existsSync()
-            ? realList.readAsBytesSync()
-            : null;
-        final home = Directory(p.join(root.path, 'home'))..createSync();
-        final env = {
-          'HOME': home.path,
-          'XDG_DATA_HOME': data,
-          'XDG_CONFIG_HOME': config,
-          'PATH': '/usr/local/bin:/usr/bin:/bin',
-          'APPIMAGE': '/opt/Raft Chat/Raft.AppImage',
-          // What AppRun would leave behind.
-          'APPDIR': '/tmp/.mount_Raft',
-          'LD_LIBRARY_PATH': '/tmp/.mount_Raft/raft/lib',
-          'RAFT_APPIMAGE_HOST_LD_LIBRARY_PATH_SET': '',
-          'RAFT_APPIMAGE_HOST_LD_LIBRARY_PATH': '',
-        };
-        LinuxUriSchemeRegistration real() => LinuxUriSchemeRegistration(
-          environment: env,
-          linux: true,
-          store: store,
-          executable: p.join(exeDir, 'raft_flutter'),
-        );
-        Future<String> query() async => (await Process.run(
-          'xdg-mime',
-          ['query', 'default', 'x-scheme-handler/raft'],
-          environment: env,
-          includeParentEnvironment: false,
-        )).stdout.toString().trim();
+    test('registers, repairs and unregisters', () async {
+      final realList = File(
+        p.join(
+          Platform.environment['HOME'] ?? '/nonexistent',
+          '.config/mimeapps.list',
+        ),
+      );
+      final realBefore = realList.existsSync()
+          ? realList.readAsBytesSync()
+          : null;
+      final home = Directory(p.join(root.path, 'home'))..createSync();
+      final env = {
+        'HOME': home.path,
+        'XDG_DATA_HOME': data,
+        'XDG_CONFIG_HOME': config,
+        'PATH': '/usr/local/bin:/usr/bin:/bin',
+        'APPIMAGE': '/opt/Raft Chat/Raft.AppImage',
+        // What AppRun would leave behind.
+        'APPDIR': '/tmp/.mount_Raft',
+        'LD_LIBRARY_PATH': '/tmp/.mount_Raft/raft/lib',
+        'RAFT_APPIMAGE_HOST_LD_LIBRARY_PATH_SET': '',
+        'RAFT_APPIMAGE_HOST_LD_LIBRARY_PATH': '',
+      };
+      LinuxUriSchemeRegistration real() => LinuxUriSchemeRegistration(
+        environment: env,
+        linux: true,
+        store: store,
+        executable: p.join(exeDir, 'raft_flutter'),
+      );
+      Future<String> query() async => (await Process.run(
+        'xdg-mime',
+        ['query', 'default', 'x-scheme-handler/raft'],
+        environment: env,
+        includeParentEnvironment: false,
+      )).stdout.toString().trim();
 
-        final scheme = real();
-        await scheme.ensure();
-        expect(scheme.error, isNull);
-        expect(scheme.status, LinuxSchemeStatus.registered);
-        expect(await query(), _ours);
-        expect(
-          File(p.join(config, 'mimeapps.list')).readAsStringSync(),
-          contains('x-scheme-handler/raft=$_ours'),
-        );
-        expect(
-          launcher().readAsStringSync(),
-          contains('Exec="/opt/Raft Chat/Raft.AppImage" %u'),
-        );
+      final scheme = real();
+      await scheme.ensure();
+      expect(scheme.error, isNull);
+      expect(scheme.status, LinuxSchemeStatus.registered);
+      expect(await query(), _ours);
+      expect(
+        File(p.join(config, 'mimeapps.list')).readAsStringSync(),
+        contains('x-scheme-handler/raft=$_ours'),
+      );
+      expect(
+        launcher().readAsStringSync(),
+        contains('Exec="/opt/Raft Chat/Raft.AppImage" %u'),
+      );
 
-        final moved = LinuxUriSchemeRegistration(
-          environment: {...env, 'APPIMAGE': '/elsewhere/Raft.AppImage'},
-          linux: true,
-          store: store,
-          executable: p.join(exeDir, 'raft_flutter'),
-        );
-        await moved.ensure();
-        expect(
-          launcher().readAsStringSync(),
-          contains('Exec=/elsewhere/Raft.AppImage %u'),
-        );
+      final moved = LinuxUriSchemeRegistration(
+        environment: {...env, 'APPIMAGE': '/elsewhere/Raft.AppImage'},
+        linux: true,
+        store: store,
+        executable: p.join(exeDir, 'raft_flutter'),
+      );
+      await moved.ensure();
+      expect(
+        launcher().readAsStringSync(),
+        contains('Exec=/elsewhere/Raft.AppImage %u'),
+      );
 
-        await moved.unregister();
-        expect(await query(), isEmpty);
-        expect(launcher().existsSync(), isFalse);
+      await moved.unregister();
+      expect(await query(), isEmpty);
+      expect(launcher().existsSync(), isFalse);
 
-        // Another default handler survives a startup.
-        File(p.join(data, 'applications', 'other.desktop')).writeAsStringSync(
-          '[Desktop Entry]\nType=Application\nName=Other\nExec=true %u\n'
-          'MimeType=x-scheme-handler/raft;\n',
-        );
-        await Process.run(
-          'xdg-mime',
-          ['default', 'other.desktop', 'x-scheme-handler/raft'],
-          environment: env,
-          includeParentEnvironment: false,
-        );
-        store.stored = null;
-        final guarded = real();
-        await guarded.ensure();
-        expect(guarded.status, LinuxSchemeStatus.otherHandler);
-        expect(await query(), 'other.desktop');
-        expect(launcher().existsSync(), isFalse);
+      // Another default handler survives a startup.
+      File(p.join(data, 'applications', 'other.desktop')).writeAsStringSync(
+        '[Desktop Entry]\nType=Application\nName=Other\nExec=true %u\n'
+        'MimeType=x-scheme-handler/raft;\n',
+      );
+      await Process.run(
+        'xdg-mime',
+        ['default', 'other.desktop', 'x-scheme-handler/raft'],
+        environment: env,
+        includeParentEnvironment: false,
+      );
+      store.stored = null;
+      final guarded = real();
+      await guarded.ensure();
+      expect(guarded.status, LinuxSchemeStatus.otherHandler);
+      expect(await query(), 'other.desktop');
+      expect(launcher().existsSync(), isFalse);
 
-        expect(
-          realList.existsSync() ? realList.readAsBytesSync() : null,
-          realBefore,
-          reason: "the member's own handler list is untouched",
-        );
-      },
-      skip: xdg ? false : 'xdg-utils is not installed',
-    );
+      expect(
+        realList.existsSync() ? realList.readAsBytesSync() : null,
+        realBefore,
+        reason: "the member's own handler list is untouched",
+      );
+    }, skip: xdg ? false : 'xdg-utils is not installed');
   });
 }

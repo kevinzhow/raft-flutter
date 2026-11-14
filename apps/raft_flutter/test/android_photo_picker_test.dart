@@ -78,36 +78,42 @@ void main() {
     FileSelectorPlatform.instance = documents;
   });
 
-  test('Android media button uses the Photo Picker without full metadata', () async {
-    final picker = _Photos();
-    final files = await selectUploads(
-      mediaOnly: true,
-      platform: TargetPlatform.android,
-      picker: picker,
-    );
-    expect(files.map((f) => f.name), ['IMG_1.heic', 'clip.mp4']);
-    expect(picker.calls.single, (kind: 'media', metadata: false));
-    expect(documents.opened, isEmpty);
-  });
+  test(
+    'Android media button uses the Photo Picker without full metadata',
+    () async {
+      final picker = _Photos();
+      final files = await selectUploads(
+        mediaOnly: true,
+        platform: TargetPlatform.android,
+        picker: picker,
+      );
+      expect(files.map((f) => f.name), ['IMG_1.heic', 'clip.mp4']);
+      expect(picker.calls.single, (kind: 'media', metadata: false));
+      expect(documents.opened, isEmpty);
+    },
+  );
 
-  test('Android single and multi image selection use the Photo Picker', () async {
-    final picker = _Photos();
-    await selectImage(
-      typeGroup: image,
-      platform: TargetPlatform.android,
-      picker: picker,
-    );
-    await selectImages(
-      typeGroup: image,
-      platform: TargetPlatform.android,
-      picker: picker,
-    );
-    expect(picker.calls, [
-      (kind: 'image', metadata: false),
-      (kind: 'images', metadata: false),
-    ]);
-    expect(documents.opened, isEmpty);
-  });
+  test(
+    'Android single and multi image selection use the Photo Picker',
+    () async {
+      final picker = _Photos();
+      await selectImage(
+        typeGroup: image,
+        platform: TargetPlatform.android,
+        picker: picker,
+      );
+      await selectImages(
+        typeGroup: image,
+        platform: TargetPlatform.android,
+        picker: picker,
+      );
+      expect(picker.calls, [
+        (kind: 'image', metadata: false),
+        (kind: 'images', metadata: false),
+      ]);
+      expect(documents.opened, isEmpty);
+    },
+  );
 
   test('the file button keeps the document picker on every platform', () async {
     for (final platform in TargetPlatform.values) {
@@ -135,16 +141,22 @@ void main() {
     expect(documents.opened.first, mediaPickerTypeGroups);
   });
 
-  test('startup opts Android into the Photo Picker below Android 16 only there', () {
-    final android = ImagePickerAndroid();
-    configureAndroidPhotoPicker(
-      platform: TargetPlatform.android,
-      picker: android,
-    );
-    expect(android.useAndroidPhotoPicker, isTrue);
-    final other = ImagePickerAndroid();
-    configureAndroidPhotoPicker(platform: TargetPlatform.iOS, picker: other);
-    configureAndroidPhotoPicker(platform: TargetPlatform.linux, picker: other);
-    expect(other.useAndroidPhotoPicker, isFalse);
-  });
+  test(
+    'startup opts Android into the Photo Picker below Android 16 only there',
+    () {
+      final android = ImagePickerAndroid();
+      configureAndroidPhotoPicker(
+        platform: TargetPlatform.android,
+        picker: android,
+      );
+      expect(android.useAndroidPhotoPicker, isTrue);
+      final other = ImagePickerAndroid();
+      configureAndroidPhotoPicker(platform: TargetPlatform.iOS, picker: other);
+      configureAndroidPhotoPicker(
+        platform: TargetPlatform.linux,
+        picker: other,
+      );
+      expect(other.useAndroidPhotoPicker, isFalse);
+    },
+  );
 }

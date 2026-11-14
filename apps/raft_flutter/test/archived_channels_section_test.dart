@@ -46,8 +46,9 @@ class _Fixture {
       user: {'id': 'alice', 'preferredTimezone': 'UTC'},
       server: 's',
     );
-    w = WorkspaceController(client)
-      ..server = RaftRecord({'id': 's', 'name': 'S', 'slug': 's', 'role': role});
+    w = WorkspaceController(
+      client,
+    )..server = RaftRecord({'id': 's', 'name': 'S', 'slug': 's', 'role': role});
     w.channels = [for (final r in rows) RaftChannel(r)];
     addTearDown(w.dispose);
   }
@@ -122,28 +123,38 @@ void main() {
     expect(find.text('#partner-sync'), findsOneWidget);
     expect(find.text('#dm-x'), findsNothing);
     expect(find.text('#general'), findsNothing);
-    expect(find.textContaining('Public channel · Archived Jun 10, 2026'), findsOneWidget);
-    expect(find.textContaining('Private channel · Archived Jun 2, 2026'), findsOneWidget);
-    expect(find.textContaining('Joint channel · Archived May 21, 2026'), findsOneWidget);
+    expect(
+      find.textContaining('Public channel · Archived Jun 10, 2026'),
+      findsOneWidget,
+    );
+    expect(
+      find.textContaining('Private channel · Archived Jun 2, 2026'),
+      findsOneWidget,
+    );
+    expect(
+      find.textContaining('Joint channel · Archived May 21, 2026'),
+      findsOneWidget,
+    );
   });
 
-  testWidgets('hidden without the capability, while loading, or when nothing is archived', (
-    t,
-  ) async {
-    var f = _Fixture(role: 'member');
-    await f.mount(t);
-    expect(_header(t), isNull);
+  testWidgets(
+    'hidden without the capability, while loading, or when nothing is archived',
+    (t) async {
+      var f = _Fixture(role: 'member');
+      await f.mount(t);
+      expect(_header(t), isNull);
 
-    f = _Fixture();
-    f.w.loading = true;
-    await f.mount(t);
-    expect(_header(t), isNull);
+      f = _Fixture();
+      f.w.loading = true;
+      await f.mount(t);
+      expect(_header(t), isNull);
 
-    f = _Fixture();
-    f.w.channels = [RaftChannel(f.rows.first)];
-    await f.mount(t);
-    expect(_header(t), isNull);
-  });
+      f = _Fixture();
+      f.w.channels = [RaftChannel(f.rows.first)];
+      await f.mount(t);
+      expect(_header(t), isNull);
+    },
+  );
 
   testWidgets('Unarchive restores the channel and the row leaves the list', (
     t,
@@ -151,10 +162,7 @@ void main() {
     final f = _Fixture();
     f.after = [
       for (final r in f.rows)
-        if (r['id'] != 'priv')
-          r
-        else
-          {...r}..remove('archivedAt'),
+        if (r['id'] != 'priv') r else {...r}..remove('archivedAt'),
     ];
     await f.mount(t);
     await t.tap(find.byKey(const ValueKey('archived-channel-unarchive-priv')));
@@ -217,18 +225,21 @@ void main() {
     expect(f.w.section, 'chat');
   });
 
-  testWidgets('narrow screens stack a full-width button, Chinese uses the Web catalog', (
-    t,
-  ) async {
-    final f = _Fixture(locale: const Locale('zh', 'CN'));
-    await f.mount(t, width: 390);
-    expect(_header(t)?.label, 'Archived channels');
-    expect(find.textContaining('已归档频道', findRichText: true), findsOneWidget);
-    expect(find.textContaining('公开频道 · 归档于'), findsOneWidget);
-    final row = t.getRect(find.byKey(const ValueKey('archived-channel-row-old')));
-    final button = t.getRect(
-      find.byKey(const ValueKey('archived-channel-unarchive-old')),
-    );
-    expect(button.width, greaterThan(row.width - 40));
-  });
+  testWidgets(
+    'narrow screens stack a full-width button, Chinese uses the Web catalog',
+    (t) async {
+      final f = _Fixture(locale: const Locale('zh', 'CN'));
+      await f.mount(t, width: 390);
+      expect(_header(t)?.label, 'Archived channels');
+      expect(find.textContaining('已归档频道', findRichText: true), findsOneWidget);
+      expect(find.textContaining('公开频道 · 归档于'), findsOneWidget);
+      final row = t.getRect(
+        find.byKey(const ValueKey('archived-channel-row-old')),
+      );
+      final button = t.getRect(
+        find.byKey(const ValueKey('archived-channel-unarchive-old')),
+      );
+      expect(button.width, greaterThan(row.width - 40));
+    },
+  );
 }

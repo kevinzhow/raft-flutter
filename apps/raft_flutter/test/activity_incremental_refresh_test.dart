@@ -64,11 +64,13 @@ class ActivityClient extends RaftClient {
     }
     posts.add('$method $path');
     bodies.add(data);
-    if (responses.containsKey('$method $path')) return responses['$method $path'];
+    if (responses.containsKey('$method $path'))
+      return responses['$method $path'];
     return <String, dynamic>{};
   }
 
-  void emit(String name, Object? payload) => ingress.add(RaftEvent(name, payload));
+  void emit(String name, Object? payload) =>
+      ingress.add(RaftEvent(name, payload));
 
   @override
   Future<void> dispose() async {
@@ -183,14 +185,11 @@ class ActivityWorkspace extends WorkspaceController {
 }
 
 /// Activity titles and previews are rich text after an inline icon/sender.
-Finder shown(String text) => find.textContaining(
-  RegExp('${RegExp.escape(text)}\$'),
-  findRichText: true,
-);
+Finder shown(String text) =>
+    find.textContaining(RegExp('${RegExp.escape(text)}\$'), findRichText: true);
 
 Finder get skeleton => find.byWidgetPredicate(
-  (widget) =>
-      widget is RaftActivityLoadingList || widget is RaftSpinner,
+  (widget) => widget is RaftActivityLoadingList || widget is RaftSpinner,
 );
 
 ScrollableState activityScroll(WidgetTester tester) => tester.state(
@@ -314,10 +313,7 @@ void main() {
         await tester.pumpAndSettle();
         expect(state.rows.first['channelId'], 'ch5');
         expect(state.rows.first['lastMessagePreview'], 'Live preview');
-        expect(
-          state.rows.where((r) => r['channelId'] == 'ch5'),
-          hasLength(1),
-        );
+        expect(state.rows.where((r) => r['channelId'] == 'ch5'), hasLength(1));
         expect(identical(state.rows[2], untouched), isTrue);
         // Once the server catches up its row is accepted.
         w.inbox
@@ -363,7 +359,10 @@ void main() {
       (tester) async {
         final dynamic state = await mount(tester);
         await tester.tap(
-          find.ancestor(of: shown('Channel 1'), matching: find.byType(RaftConversationCard)),
+          find.ancestor(
+            of: shown('Channel 1'),
+            matching: find.byType(RaftConversationCard),
+          ),
           buttons: kSecondaryMouseButton,
         );
         await tester.pumpAndSettle();
@@ -424,10 +423,7 @@ void main() {
         // A principal/role change still retires every accepted row.
         w.hold = Completer<void>();
         w.inbox = [];
-        w.server = RaftRecord({
-          'id': 's1',
-          'role': 'member',
-        });
+        w.server = RaftRecord({'id': 's1', 'role': 'member'});
         w.notifyListeners();
         await tester.pump();
         expect(state.rows, isEmpty);

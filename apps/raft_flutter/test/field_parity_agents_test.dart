@@ -28,7 +28,10 @@ void main() {
       expect(agentRowActivity(loop[0]).detailKind, 'wake_crash_loop_blocked');
       expect(agentRowActivity(loop[1]).detailKind, 'delivery_unconsumed');
       // Socket patches written by the directory use the other key.
-      expect(agentRowDetailKind({'detailKind': 'running_command'}), 'running_command');
+      expect(
+        agentRowDetailKind({'detailKind': 'running_command'}),
+        'running_command',
+      );
     });
 
     test('Web copy for the paused and unconsumed rows', () {
@@ -62,27 +65,68 @@ void main() {
 
     test('fixed labels, ellipses and raw passthrough', () {
       expect(agentActivityText('online', 'ignored', null), 'Online');
-      expect(agentActivityText('thinking', 'some detail', 'other'), 'Thinking…');
+      expect(
+        agentActivityText('thinking', 'some detail', 'other'),
+        'Thinking…',
+      );
       expect(agentActivityText('working', '', null), 'Working…');
-      expect(agentActivityText('working', 'Running tests', 'running_command'), 'Running tests');
+      expect(
+        agentActivityText('working', 'Running tests', 'running_command'),
+        'Running tests',
+      );
       expect(agentActivityText('working', 'x', 'starting'), 'Starting…');
-      expect(agentActivityText('working', 'x', 'runtime_starting'), 'Starting…');
-      expect(agentActivityText('working', 'x', 'compacting_context'), 'Compacting context…');
+      expect(
+        agentActivityText('working', 'x', 'runtime_starting'),
+        'Starting…',
+      );
+      expect(
+        agentActivityText('working', 'x', 'compacting_context'),
+        'Compacting context…',
+      );
       expect(agentActivityText('error', '', null), 'Error');
-      expect(agentActivityText('error', 'plain failure', null), 'Error: plain failure');
-      expect(agentActivityText('error', '{"error":{"message":" nested "}}', null), 'Error: nested');
-      expect(agentActivityText('error', '{"errors":[{"message":"first"}]}', null), 'Error: first');
+      expect(
+        agentActivityText('error', 'plain failure', null),
+        'Error: plain failure',
+      );
+      expect(
+        agentActivityText('error', '{"error":{"message":" nested "}}', null),
+        'Error: nested',
+      );
+      expect(
+        agentActivityText('error', '{"errors":[{"message":"first"}]}', null),
+        'Error: first',
+      );
       expect(agentActivityText('error', '{broken', null), 'Error: {broken');
       expect(agentActivityText('offline', '', null), 'Offline');
-      expect(agentActivityText('offline', 'Stopped', 'stopped'), "Stopped — won't receive messages until restarted");
-      expect(agentActivityText('offline', 'Start failed: no disk', 'runtime_unavailable'), 'Start failed: no disk');
-      expect(agentActivityText('offline', '', 'runtime_unavailable'), 'Offline');
-      expect(agentActivityText('terminal_failure_paused_x', '', null), 'terminal_failure_paused_x');
+      expect(
+        agentActivityText('offline', 'Stopped', 'stopped'),
+        "Stopped — won't receive messages until restarted",
+      );
+      expect(
+        agentActivityText(
+          'offline',
+          'Start failed: no disk',
+          'runtime_unavailable',
+        ),
+        'Start failed: no disk',
+      );
+      expect(
+        agentActivityText('offline', '', 'runtime_unavailable'),
+        'Offline',
+      );
+      expect(
+        agentActivityText('terminal_failure_paused_x', '', null),
+        'terminal_failure_paused_x',
+      );
     });
 
     test('terminal failure pause uses the server detail when present', () {
       expect(
-        agentActivityText('offline', 'Paused until 10:00', 'terminal_failure_paused'),
+        agentActivityText(
+          'offline',
+          'Paused until 10:00',
+          'terminal_failure_paused',
+        ),
         'Paused until 10:00',
       );
       expect(
@@ -109,7 +153,10 @@ void main() {
       final recent = seen.add(const Duration(seconds: 90));
       final display = agentRowAmbientDisplay(external, now: recent);
       expect(display.activity, 'offline');
-      expect(agentRowPresence(external, now: recent).activity, RaftAvatarActivity.offline);
+      expect(
+        agentRowPresence(external, now: recent).activity,
+        RaftAvatarActivity.offline,
+      );
     });
 
     test('without a hydrated activity the lastSeenAt window decides', () {
@@ -164,10 +211,17 @@ void main() {
       expect(agentRowActivity({'status': 'active'}).activity, 'working');
       expect(agentRowActivity({'status': 'inactive'}).activity, 'offline');
       expect(
-        agentRowActivity({'status': 'active', 'activityKind': 'thinking', 'activity': 'online'}).activity,
+        agentRowActivity({
+          'status': 'active',
+          'activityKind': 'thinking',
+          'activity': 'online',
+        }).activity,
         'thinking',
       );
-      expect(agentRowActivity({'status': 'active', 'activity': 'bogus'}).activity, 'working');
+      expect(
+        agentRowActivity({'status': 'active', 'activity': 'bogus'}).activity,
+        'working',
+      );
     });
 
     test('fleet subtitle is a label, not a raw enum', () {
@@ -189,7 +243,10 @@ void main() {
       expect(agentServerRoleChip('guest')!.label, 'Guest');
       expect(agentServerRoleChip(null), isNull);
       expect(agentServerRoleChip('  '), isNull);
-      expect(agentServerRoleChip('admin', deletedAt: '2026-10-01T00:00:00Z'), isNull);
+      expect(
+        agentServerRoleChip('admin', deletedAt: '2026-10-01T00:00:00Z'),
+        isNull,
+      );
     });
   });
 
@@ -225,12 +282,12 @@ void main() {
     late WorkspaceEntityDirectory directory;
     late StreamController<RaftEvent> events;
     final managed = rows('agents-list-managed-agent').single;
-    final frame =
-        Map<String, dynamic>.from(
-              (fixture('agents-socket-frames') as Map).entries
-                  .firstWhere((e) => (e.key as String).startsWith('agent:activity'))
-                  .value as Map,
-            );
+    final frame = Map<String, dynamic>.from(
+      (fixture('agents-socket-frames') as Map).entries
+              .firstWhere((e) => (e.key as String).startsWith('agent:activity'))
+              .value
+          as Map,
+    );
 
     setUp(() async {
       events = StreamController.broadcast(sync: true);
@@ -308,7 +365,10 @@ void main() {
           'activityKind': 'thinking',
         }),
       );
-      expect(directory.agent(frame['agentId'] as String)!['activity'], 'thinking');
+      expect(
+        directory.agent(frame['agentId'] as String)!['activity'],
+        'thinking',
+      );
     });
 
     test('a reconnect resets the seq baseline', () {
@@ -323,7 +383,10 @@ void main() {
           'serverSeq': 1,
         }),
       );
-      expect(directory.agent(frame['agentId'] as String)!['activity'], 'online');
+      expect(
+        directory.agent(frame['agentId'] as String)!['activity'],
+        'online',
+      );
     });
   });
 
