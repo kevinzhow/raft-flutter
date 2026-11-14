@@ -1,20 +1,18 @@
-// The rack's lucide glyphs that arrive with the raft-ui 0.95.3 glyph set
-// (WP-DS0: circle-arrow-up, circle-dot, cpu, rows-3, search-x). Until DS0
-// lands they are the nearest glyph already in the set; this file is the one
-// place to switch them.
+// The rack's lucide glyphs from the raft-ui 0.95.3 glyph set (WP-DS0:
+// circle-arrow-up, circle-dot, cpu, rows-3, search-x).
 import 'package:raft_ui/raft_ui.dart' show RaftGlyph;
 
 /// RackRowAction's Upgrade (lucide CircleArrowUp).
-const rackGlyphCircleArrowUp = RaftGlyph.arrowUp;
+const rackGlyphCircleArrowUp = RaftGlyph.circleArrowUp;
 
 /// The Status filter (lucide CircleDot).
-const rackGlyphCircleDot = RaftGlyph.circle;
+const rackGlyphCircleDot = RaftGlyph.circleDot;
 
 /// The Runtime filter (lucide Cpu).
-const rackGlyphCpu = RaftGlyph.hardDrive;
+const rackGlyphCpu = RaftGlyph.cpu;
 
 /// Group (lucide Rows3).
-const rackGlyphRows3 = RaftGlyph.list;
+const rackGlyphRows3 = RaftGlyph.rows3;
 
 /// No computers match (lucide SearchX).
-const rackGlyphSearchX = RaftGlyph.search;
+const rackGlyphSearchX = RaftGlyph.searchX;
