@@ -83,4 +83,31 @@ void main() {
       }
     });
   }
+
+  testWidgets('CloseButton: 32px icon-md, a 28px bar button on desktop', (
+    t,
+  ) async {
+    final close = find.byType(RaftCloseButton);
+    await _mount(
+      t,
+      RaftCloseButton(onPressed: () {}),
+      size: wide,
+      platform: TargetPlatform.android,
+    );
+    expect(t.getSize(close), const Size(32, 32));
+    await _mount(
+      t,
+      RaftCloseButton(onPressed: () {}),
+      size: narrow,
+      platform: TargetPlatform.linux,
+    );
+    expect(t.getSize(close), const Size(32, 32));
+    await _mount(
+      t,
+      RaftCloseButton(onPressed: () {}),
+      size: wide,
+      platform: TargetPlatform.linux,
+    );
+    expect(t.getSize(close), const Size(28, 28));
+  });
 }
