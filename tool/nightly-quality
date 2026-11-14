@@ -14,6 +14,10 @@ Four jobs on a fresh worktree of origin/cindy/integration, one Chinese summary:
                 order, and a second 25 minute run would only repeat it.
   3b. legacy-looks  the Dart tests of the legacy looks (Elegant, Brutal) and the theme engine package, through
                 `tool/theme-suite --look all --tests-only`: the Raft run above tests the Raft look only. Its coverage joins job 1.
+  3c. impact-map the app and package runs above also record, per test file, the library lines it executed
+                (tool/testing/impact_probe.dart); the reports become the test impact maps
+                (~/.cache/raft-flutter/test-impact/<package>/map.json.gz) that `tool/test-impact select` reads.
+                No extra suite run: the probe adds one VM-service call at the end of each test file.
   4. visual     the fast subset of the three-level visual suite (tool/nightly_visual.py): L1 frame cases and
                 the key L2 pages at phone and desktop widths, light mode, for the Raft look (against the Web
                 v1.21.23 render) and the Elegant / Brutal looks (against their frozen a57b9dab originals); the
@@ -47,6 +51,7 @@ sys.path.insert(0, str(TOOL))
 import affected_tests  # noqa: E402
 import diff_coverage  # noqa: E402
 import nightly_visual  # noqa: E402
+import test_impact  # noqa: E402
 import theme_looks  # noqa: E402
 
 REPO = TOOL.parent
@@ -355,6 +360,8 @@ def render_summary(data):
     add('')
 
     add('## 6. 运行记录')
+    for line in data.get('impact') or []:
+        add(f'- 测试影响图（tool/test-impact）：{line}')
     for line in data.get('notes', []):
         add(f'- {line}')
     add(f"- 原始输出：`{data['out']}`")
@@ -531,11 +538,24 @@ class Run:
                 self.note(f'tool/raft_lints: pub get --enforce-lockfile failed ({name}); lint rules are not part of this run')
         return done['code'] == 0
 
-    def run_suite(self, name, cwd, files, timeout, lcov, coverage_package=False, seed=None, dds=True):
+    def run_suite(self, name, cwd, files, timeout, lcov, coverage_package=False, seed=None, dds=True, impact=False):
         events = self.out / f'{name}.events.json'
         log_path = self.out / f'{name}.log'
         for stale in (events, lcov):
             stale.unlink(missing_ok=True)
+        env, raw, temp_config = self.env, None, None
+        if impact:
+            # Job 3c: the probe connects to the VM service directly, so no DDS in front of it.
+            raw = self.tmp / 'impact' / name
+            shutil.rmtree(raw, ignore_errors=True)
+            raw.mkdir(parents=True)
+            env = test_impact.impact_env(self.env, raw, self.worktree, test_impact.affected_tests.workspace_packages(self.worktree))
+            dds = False
+            try:
+                temp_config = test_impact.ensure_probe_config(cwd, self.worktree)
+            except RuntimeError as error:
+                self.note(f'impact map {name}: {error}')
+                env, impact = self.env, False
         cmd = self.flutter('test', '--no-pub', '-j', str(JOBS), '--coverage', '--coverage-path', str(lcov),
                            '--reporter', 'failures-only', '--file-reporter', f'json:{events}')
         if cwd.name != 'raft_theme':  # the engine package runs whole: its look-tagged files are engine tests
@@ -551,12 +571,31 @@ class Run:
             # and still produced coverage (Cody, #raft-flutter d291162a). Why DDS stalls is not known yet.
             cmd += ['--no-dds']
         cmd += files
-        done = run(cmd, cwd, log_path, min(timeout, self.remaining()), self.env)
+        try:
+            done = run(cmd, cwd, log_path, min(timeout, self.remaining()), env)
+        finally:
+            test_impact.remove_temp_config(temp_config)
         lines = events.read_text(errors='replace').splitlines() if events.is_file() else []
         parsed = parse_test_events(lines, self.worktree)
         passed_marker = done['code'] == 0 and not parsed['failed'] and not done['timed_out']
+        if impact:
+            self.impact_map(name, cwd, raw, events, done)
         return {'name': name, 'code': done['code'], 'timed_out': done['timed_out'], 'seconds': done['seconds'], 'limit': timeout,
                 'ok': passed_marker, 'log': log_path.name, **parsed, 'lcov': lcov, 'cwd': str(cwd.relative_to(self.worktree)) or '.'}
+
+    def impact_map(self, name, cwd, raw, events, done):
+        """Job 3c: the test impact map of one suite run; a failure is a note, never the end of the night."""
+        package = str(cwd.relative_to(self.worktree))
+        if done['timed_out']:
+            self.note(f'impact map {package}: run timed out, map not refreshed')
+        else:
+            try:
+                summary = test_impact.assemble_run(self.worktree, package, raw, events, self.base_sha, 'full', done['seconds'],
+                                                   self.args.impact_cache)
+                self.data.setdefault('impact', []).append(f'{package}: {summary}')
+            except Exception as error:  # noqa: BLE001
+                self.note(f'impact map {package}: {type(error).__name__}: {error}')
+        shutil.rmtree(raw, ignore_errors=True)
 
     def legacy_suite(self):
         """The legacy looks' Dart tests through `tool/theme-suite` (the visual part is job 4); same shape as `run_suite`."""
@@ -582,15 +621,16 @@ class Run:
         app = self.worktree / APP
         suites = []
         files = self.args.app_tests or ['test/']
+        impact = not self.args.skip_impact_map and not self.args.app_tests  # a reduced run would write a partial map
         suites.append(self.run_suite('app', app, files, self.args.app_timeout_minutes * 60, self.out / 'app.lcov', True, self.args.seed,
-                                     dds=False))
+                                     dds=False, impact=impact))
         if not self.args.skip_packages:
             for package in self.package_dirs():
                 if self.remaining() < 120:
                     self.note(f'总时限将到，跳过 {package.name} 的测试')
                     break
                 suites.append(self.run_suite(package.name, package, ['test/'], self.args.package_timeout_minutes * 60,
-                                             self.out / f'{package.name}.lcov', False, self.args.seed))
+                                             self.out / f'{package.name}.lcov', False, self.args.seed, impact=not self.args.skip_impact_map))
         if self.remaining() < 300:
             self.note('总时限将到，跳过 legacy-looks（tool/theme-suite）')
         else:
@@ -791,6 +831,8 @@ def main(argv=None):
     parser.add_argument('--skip-prs', action='store_true')
     parser.add_argument('--skip-osv', action='store_true')
     parser.add_argument('--skip-visual', action='store_true', help='skip the visual regression job (tool/nightly_visual.py)')
+    parser.add_argument('--skip-impact-map', action='store_true', help='do not record the test impact maps (job 3c, tool/test-impact)')
+    parser.add_argument('--impact-cache', default=str(test_impact.CACHE), help='where job 3c writes the maps')
     parser.add_argument('--visual-timeout-minutes', type=float, default=75)
     parser.add_argument('--legacy-timeout-minutes', type=float, default=60, help='the legacy looks Dart tests (tool/theme-suite --look all --tests-only)')
     args = parser.parse_args(argv)

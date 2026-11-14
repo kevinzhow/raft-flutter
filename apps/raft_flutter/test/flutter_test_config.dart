@@ -12,6 +12,7 @@ import 'package:raft_flutter/platform/video_frame_probe.dart'
 import 'package:raft_flutter/data/source_time_formatter.dart'
     show initializeSourceTimeFormatting;
 
+import '../../../tool/testing/impact_probe.dart';
 import '../../../tool/testing/matrix_leaks.dart';
 import 'support/release_test_images.dart';
 
@@ -149,6 +150,8 @@ void leakDebt(List<String> classes) {
 }
 
 Future<void> testExecutable(FutureOr<void> Function() testMain) async {
+  // Off unless RAFT_TEST_IMPACT_DIR is set (tool/test-impact).
+  recordTestImpact();
   _enableLeakTracking();
   trackMatrixLeaksOnce();
   // No test reaches a real platform probe (a native channel or libmpv); a test

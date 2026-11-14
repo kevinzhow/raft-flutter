@@ -1,0 +1,9 @@
+#!/usr/bin/env python3
+"""Coverage-based test impact selection; see tool/test_impact.py."""
+import pathlib
+import sys
+
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+import test_impact  # noqa: E402
+
+sys.exit(test_impact.main())
