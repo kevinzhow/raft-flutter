@@ -1,19 +1,40 @@
 --- a/scripts/dev/raftdev.ts
 +++ b/scripts/dev/raftdev.ts
-@@ -469,7 +469,15 @@
+@@ -469,7 +469,24 @@
  export const DEFAULT_RISINGWAVE_MEMORY_BYTES = 2 * 1024 * 1024 * 1024;
  const RISINGWAVE_DOCKER_HEADROOM_BYTES = 1024 * 1024 * 1024;
  export const RISINGWAVE_CONFIG_IN_CONTAINER = "/raftdev/risingwave.toml";
 -export const RISINGWAVE_CONFIG = "[storage]\ncompactor_memory_limit_mb = 768\n";
-+// Local fixture, state on the container's disk as upstream, tuned for a shared busy disk:
-+// - checkpoint_frequency 5: a checkpoint (one fsynced SST per state table group, ~100 with
-+//   the 54-object graph) every 5 barriers instead of every barrier. At 1 per barrier the
-+//   bootstrap was fsync-bound and each view took minutes longer than the last. Reads see
-+//   checkpointed data, so RW lags Postgres by up to ~5 s more.
-+// - time_travel_retention_ms 0: nothing here reads AS OF. With the default 10 minutes the meta
-+//   store rewrote ~22k hummock_epoch_to_version rows every 30 s.
++// Local fixture on a shared, busy disk (tool/raft-stack, docs/local-test-stack.md):
++// - checkpoint_frequency 5: a checkpoint (~100 fsynced SSTs with the 54-object graph) every
++//   5 barriers; at every barrier the bootstrap was fsync-bound. Reads lag up to ~5 s more.
++// - time_travel_retention_ms 0: nothing here reads AS OF; the default made the meta store
++//   rewrite ~22k hummock_epoch_to_version rows every 30 s.
++// - max_heartbeat_interval_secs 300 (default 60): a meta stall no longer expires the compute
++//   node, whose SSTs recovery then rejects ("SST is invalid") and the process exits.
 +export const RISINGWAVE_CONFIG =
-+  "[storage]\ncompactor_memory_limit_mb = 768\n[system]\ncheckpoint_frequency = 5\ntime_travel_retention_ms = 0\n";
++  "[storage]\ncompactor_memory_limit_mb = 768\n" +
++  "[meta]\nmax_heartbeat_interval_secs = 300\n" +
++  "[system]\ncheckpoint_frequency = 5\ntime_travel_retention_ms = 0\n";
++/**
++ * Local fixture: the SQLite meta store (a few MB) in a tmpfs, out of reach of the shared disk's
++ * fsync latency; the state store stays on the container's disk. Counted in the Docker limit.
++ * A stopped container loses this tmpfs, so replace it (raftdev start, tool/raft-stack restart
++ * risingwave) rather than `docker start` it.
++ */
++export const RISINGWAVE_META_STORE_TMPFS_BYTES = 256 * 1024 * 1024;
  
  /**
   * RAFTDEV_RW_MEMORY_BYTES, or the 2 GiB default. The default is also the
+@@ -504,9 +521,10 @@
+   opts: { owner?: string; memoryBytes?: number; configFile?: string } = {},
+ ): string[] {
+   const memoryBytes = opts.memoryBytes ?? DEFAULT_RISINGWAVE_MEMORY_BYTES;
+-  const dockerLimit = String(memoryBytes + RISINGWAVE_DOCKER_HEADROOM_BYTES);
++  const dockerLimit = String(memoryBytes + RISINGWAVE_DOCKER_HEADROOM_BYTES + RISINGWAVE_META_STORE_TMPFS_BYTES);
+   return [
+     "run", "-d", "--pull=always", "--name", e.RISINGWAVE_CONTAINER,
++    "--tmpfs", `/root/.risingwave/meta_store:rw,size=${RISINGWAVE_META_STORE_TMPFS_BYTES}`,
+     "--label", RAFTDEV_MANAGED_LABEL_ARG,
+     ...(opts.owner ? ["--label", `${RAFTDEV_OWNER_LABEL}=${opts.owner}`] : []),
+     ...(network ? ["--network", network] : []),

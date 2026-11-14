@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Run an isolated local comparison stack without changing global tools.
 
-Usage: tool/raft-stack [--config PATH] start|stop|status|ports|sync
+Usage: tool/raft-stack [--config PATH] start|stop|status|ports|sync|watchdog
        tool/raft-stack [--config PATH] flags [on|off KEY...]
        tool/raft-stack [--config PATH] restart web|content-worker|risingwave
 
@@ -61,6 +61,11 @@ to featureFlags.
 restart web restarts only the Web dev server (tmux respawn of the raftdev `web` window with
 its original command, after refreshing .env.local); restart content-worker restarts only the
 content Worker. Neither touches the database, the server or the other windows.
+watchdog (for a timer): if the environment is up (its Postgres container runs) and RisingWave
+is UNHEALTHY or its container is missing or stopped, run restart risingwave; one line per
+check goes to watchdogLog. DEGRADED (heartbeat timeouts while the epoch moves) is left alone.
+restart risingwave saves the old container's log next to the config first (newest 5 kept) and
+holds a lock, so a watchdog and a manual restart never overlap.
 restart risingwave recreates only the managed RisingWave container with the source's own
 container arguments and config (tool/raft-risingwave.ts imports them from scripts/dev/raftdev.ts,
 so the reference patches apply) and provisions its CDC source and views from Postgres with the
@@ -73,6 +78,9 @@ Private state (logs, PID files, the toolchain wrapper) lives next to the config 
                   (Postgres, Redis, RustFS, RisingWave, otelcol), applied with `docker update`
                   after start, sync and restart risingwave (the RW helper applies it before
                   the bootstrap). Default 2; 0 leaves the containers unlimited
+  risingwaveCpus  CPU limit for the RisingWave container alone (default: containerCpus)
+  watchdogLog     file the watchdog action appends one line per check to (default
+                  .local/<config stem>-watchdog.log next to the config)
   processPrefix   optional command prefix (e.g. ["cpu-lane", "agents"]: a CPU-capped systemd
                   scope that execs the command) for the processes this tool starts itself: the
                   content Worker and the RisingWave restart helper with its bootstrap. The
@@ -99,7 +107,7 @@ from local_env_file import random_b64, read_env_file, write_env_file  # noqa: E4
 ROOT = Path(__file__).resolve().parents[1]
 LOCAL = ROOT / '.local'
 PATCH_DIR = ROOT / 'tool/reference-patches'
-ACTIONS = {'start', 'stop', 'status', 'ports', 'flags', 'sync'}
+ACTIONS = {'start', 'stop', 'status', 'ports', 'flags', 'sync', 'watchdog'}
 RESTARTABLE = ('web', 'content-worker', 'risingwave')
 RISINGWAVE_HELPER = ROOT / 'tool/raft-risingwave.ts'
 WORKER_SCRIPT = ROOT / 'tool/raft-content-worker.mjs'
@@ -107,7 +115,7 @@ WEB_ENV_MARKER = '# Managed by tool/raft-stack (artifacts.contentDomain); rewrit
 
 DEFAULT_PATCHES = ('seed-history', 'risingwave-memory')
 DEFAULT_IMAGE = 'mirror.gcr.io/risingwavelabs/risingwave@sha256:ba5915a5e85c938a3ec62d76c63c6e4cb37d4f4e3c5c30886f0d2eff61b70073'
-USAGE = ('Usage: tool/raft-stack [--config PATH] start|stop|status|ports|sync\n'
+USAGE = ('Usage: tool/raft-stack [--config PATH] start|stop|status|ports|sync|watchdog\n'
          '       tool/raft-stack [--config PATH] flags [on|off KEY...]\n'
          '       tool/raft-stack [--config PATH] restart web|content-worker|risingwave')
 
@@ -669,13 +677,21 @@ def container_cpus(config):
     return value
 
 
+def risingwave_cpus(config):
+    if 'risingwaveCpus' not in config:
+        return container_cpus(config)
+    return container_cpus({'containerCpus': config['risingwaveCpus']})
+
+
 def container_cpu_commands(config, existing):
-    """docker update commands for the environment's containers that exist; [] when unlimited."""
-    cpus = container_cpus(config)
-    if not cpus:
-        return []
-    names = [f"slock-dev-{config['environment']}-{suffix}" for suffix in CONTAINER_SUFFIXES]
-    return [['docker', 'update', '--cpus', f'{cpus:g}', name] for name in names if name in existing]
+    """docker update commands for the environment's containers that exist (unlimited ones skipped)."""
+    commands = []
+    for suffix in CONTAINER_SUFFIXES:
+        name = f"slock-dev-{config['environment']}-{suffix}"
+        cpus = risingwave_cpus(config) if suffix == 'risingwave' else container_cpus(config)
+        if cpus and name in existing:
+            commands.append(['docker', 'update', '--cpus', f'{cpus:g}', name])
+    return commands
 
 
 def apply_container_cpus(config):
@@ -684,7 +700,7 @@ def apply_container_cpus(config):
     for command in commands:
         subprocess.run(command, check=True, stdout=subprocess.DEVNULL)
     if commands:
-        print(f'container CPU limit {container_cpus(config):g} on ' + ', '.join(c[-1] for c in commands))
+        print('container CPU limits: ' + ', '.join(f'{c[-1]} {c[-2]}' for c in commands))
 
 
 def process_prefix(config):
@@ -757,10 +773,38 @@ def rw_health(config):
     return moving, f'{label}: meta heartbeat failures in the last minute {failures}; {epoch}; {lag}'
 
 
+KEPT_RISINGWAVE_LOGS = 5
+
+
+def save_risingwave_log(config, stem):
+    """Keep the old container's log (the restart removes the container): newest KEPT_RISINGWAVE_LOGS."""
+    import time
+    rw = rw_names(config)[0]
+    if subprocess.run(['docker', 'inspect', rw], capture_output=True).returncode != 0:
+        return None
+    path = LOCAL / f"{stem}-risingwave-{time.strftime('%Y%m%dT%H%M%SZ', time.gmtime())}.log"
+    fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    with os.fdopen(fd, 'w') as output:
+        subprocess.run(['docker', 'logs', '--timestamps', rw], stdout=output, stderr=subprocess.STDOUT)
+    for old in sorted(LOCAL.glob(f'{stem}-risingwave-*.log'))[:-KEPT_RISINGWAVE_LOGS]:
+        old.unlink()
+    return path
+
+
 def restart_risingwave(config, source, stem, env):
     """Recreate only the RW container and re-provision it (tool/raft-risingwave.ts)."""
+    import fcntl
     import time
+    lock = open(LOCAL / f'{stem}-risingwave.lock', 'w')
+    try:
+        fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except BlockingIOError:
+        print('restart risingwave: another restart of this environment is running; skipped')
+        return 75
     apply_patches(source, select_patches(config))
+    saved = save_risingwave_log(config, stem)
+    if saved:
+        print(f'old RisingWave log saved: {saved}')
     log = LOCAL / f'{stem}-restart-risingwave.log'
     started = time.monotonic()
     fd = os.open(log, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
@@ -768,13 +812,40 @@ def restart_risingwave(config, source, stem, env):
         result = subprocess.run(
             process_prefix(config) + ['pnpm', 'exec', 'node', '--import', '@oxc-node/core/register',
                                       str(RISINGWAVE_HELPER), str(source), config['environment']],
-            cwd=source / 'packages/server', env=dict(env, RAFT_STACK_CONTAINER_CPUS=f'{container_cpus(config):g}'),
+            cwd=source / 'packages/server', env=dict(env, RAFT_STACK_CONTAINER_CPUS=f'{risingwave_cpus(config):g}'),
             stdout=output, stderr=subprocess.STDOUT)
     print(f'restart risingwave: exit {result.returncode} after {time.monotonic() - started:.0f} s; private log: {log}')
     if result.returncode == 0:
         apply_container_cpus(config)
         print('RisingWave: ' + rw_health(config)[1])
     return result.returncode
+
+
+def watchdog_decision(pg_running, health):
+    """'down' (environment not up: leave it), 'ok', or 'restart' for (ok, summary) from rw_health."""
+    if not pg_running:
+        return 'down'
+    return 'ok' if health[0] else 'restart'
+
+
+def watchdog(config, source, stem, env):
+    import time
+    pg = rw_names(config)[1]
+    state = subprocess.run(['docker', 'inspect', '-f', '{{.State.Status}}', pg], capture_output=True, text=True)
+    pg_running = state.returncode == 0 and state.stdout.strip() == 'running'
+    health = rw_health(config) if pg_running else (False, 'environment down')
+    decision = watchdog_decision(pg_running, health)
+    line = f"{time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())} {config['environment']} {decision}: {health[1]}"
+    code = 0
+    if decision == 'restart':
+        code = restart_risingwave(config, source, stem, env)
+        line += f' -> restart risingwave exit {code}; now: {rw_health(config)[1]}'
+    log = Path(os.path.expanduser(config.get('watchdogLog') or str(LOCAL / f'{stem}-watchdog.log')))
+    log.parent.mkdir(parents=True, exist_ok=True)
+    with open(log, 'a') as output:
+        output.write(line + '\n')
+    print(line)
+    return code
 
 
 def main(argv):
@@ -803,6 +874,8 @@ def main(argv):
         apply_patches(source, select_patches(config))
         prepare_server_env(config, source)
         prepare_web_env(config, source)
+    if action == 'watchdog':
+        return watchdog(config, source, stem, env)
     if action == 'restart':
         if parsed[2] == 'web':
             return restart_web(config, source)

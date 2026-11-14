@@ -1,9 +1,10 @@
 {
   "path": "scripts/dev/raftdev.ts",
   "beforeSHA256": "dc0fe046829b78826d1c16cd27cf5c10e218b655a1f8a85479fae133b22b0ad2",
-  "afterSHA256": "d77aba55ee2691548c909bf6d029e50613e3d93ee3a2debd6a0bdeb86b6a00ca",
+  "afterSHA256": "baaf7059d2081d5ea5f3483ca374c4cba316e1832fc5534ee5b13936b5a3ebec",
   "supersededAfterSHA256": [
-    "d6e3d38ed0f1e0014493aa2e06cf69292c589cff8dd5bc37347acd465273496d"
+    "d6e3d38ed0f1e0014493aa2e06cf69292c589cff8dd5bc37347acd465273496d",
+    "d77aba55ee2691548c909bf6d029e50613e3d93ee3a2debd6a0bdeb86b6a00ca"
   ],
-  "reason": "Source v1.24.0 already caps local RisingWave memory (2 GiB single_node budget, Docker limit 1 GiB above it, compactor limit from a mounted config), so the older 2 GiB container / 1.5 GiB budget hunk is not ported. The fixture config adds [system] checkpoint_frequency = 5 (one checkpoint of ~100 fsynced SSTs every 5 barriers: at every barrier the 54-step bootstrap was fsync-bound on a shared disk) and time_travel_retention_ms = 0 (nothing reads AS OF; the default made the meta store rewrite ~22k rows every 30 s). The first version of this patch (first superseded hash) put the whole state store in a 2 GiB tmpfs instead: on 2026-11-13 it grew from 0.46 GB to 1.5 GB in 2.5 h and host memory pressure swapped 4.3 GB of the container out. Web, seed and queries unchanged."
+  "reason": "Source v1.24.0 already caps local RisingWave memory (2 GiB single_node budget, Docker limit 1 GiB above it, compactor limit from a mounted config), so the older 2 GiB container / 1.5 GiB budget hunk is not ported. Local fixture settings on a shared busy disk: [system] checkpoint_frequency = 5 (at every barrier the 54-step bootstrap was fsync-bound), time_travel_retention_ms = 0 (nothing reads AS OF), [meta] max_heartbeat_interval_secs = 300 (2026-11-14: the meta store waited 8 s for SQLite connections, probably on the shared disk's latency spike (not verified), the compute node expired after 60 s without a heartbeat, recovery rejected its SSTs as invalid and the process exited), and the SQLite meta store in a 256 MiB tmpfs added to the container limit; the state store stays on the container disk. Superseded: the first version put the whole state store in a 2 GiB tmpfs (it grew to 1.5 GB and was swapped out), the second had only the [system] settings. Web, seed and queries unchanged."
 }
