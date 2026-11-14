@@ -251,10 +251,10 @@ void main() {
       await tester.pumpAndSettle();
       final hoverRect = tester.getRect(_row(_documentation));
       final tokens = Theme.of(tester.element(_popup)).extension<RaftTokens>()!;
-      final expected = Color.alphaBlend(
+      final expected = raftChromeBlend(
         tokens.colors['brand-soft']!,
         tokens.popover,
-      );
+      ); // Chromium's 8-bit alpha: dark brand-soft (0.2) over the popover paints 59,54,37 in chrome-headless-shell 1234
       final hoverPixel = (await _pixels(tester, [
         Offset(hoverRect.right - 12, hoverRect.center.dy),
       ])).single;
@@ -278,10 +278,10 @@ void main() {
         isTrue,
       );
       final tokens = Theme.of(tester.element(_popup)).extension<RaftTokens>()!;
-      final expected = Color.alphaBlend(
+      final expected = raftChromeBlend(
         tokens.colors['brand-soft']!,
         tokens.popover,
-      );
+      ); // Chromium's 8-bit alpha: dark brand-soft (0.2) over the popover paints 59,54,37 in chrome-headless-shell 1234
       final focusRect = tester.getRect(_row(_documentation));
       final focusPixel = (await _pixels(tester, [
         Offset(focusRect.right - 12, focusRect.center.dy),

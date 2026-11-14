@@ -199,8 +199,9 @@ void main() {
       final ui = RaftUiColors.of(dark);
       expect(
         await pixel(t, const Offset(24, 24)),
-        // Button outline uses hover:overlay-medium over bg-layer-card.
-        Color(Color.alphaBlend(ui['fill-medium'], ui.layerCard).toARGB32()),
+        // Button outline uses hover:overlay-medium over bg-layer-card. Chromium composites the 8-bit alpha:
+        // chrome-headless-shell 1234 paints dark fill-medium over layer-card as 50,50,47 (float blend: 50,50,48).
+        raftChromeBlend(ui['fill-medium'], ui.layerCard),
       );
       await mouse.removePointer();
     });
