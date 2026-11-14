@@ -247,3 +247,38 @@ v1.24.0 有 TOTP 两步验证（`/api/auth/second-factor/*`：`reauth/password` 
 - `containerCpus`（默认 2，0 表示不限制）：`start`、`sync`、`restart risingwave` 之后对本环境的 Postgres、Redis、RustFS、RisingWave、otelcol 容器执行 `docker update --cpus`；`restart risingwave` 在 bootstrap 之前就给新容器加上限。
 - `processPrefix`（可选，命令词列表，如本机的 `["cpu-lane", "agents"]`，一个执行命令本身的带 CPU 配额的 systemd scope）：加在工具自己启动的进程前面，即内容 Worker 和 `restart risingwave` 的辅助脚本（含 bootstrap）。前缀必须 exec 命令本身（`systemd-run --scope` 就是），这样记录的 PID 和启动时间仍是 Worker 自己的。
 - 服务端、Web、daemon 不在此列：raftdev 把它们作为用户 tmux 服务器的窗口启动，复用已经存在的 tmux 服务器，而那个服务器在任何此类 scope 之外，所以给 raftdev 加前缀管不到它们（`restart web` 的 respawn 也一样）。要限制它们，需要把用户的 tmux 服务器本身放进受限的 slice。
+
+### RisingWave 退出（2026-11-14）、meta 存储与 watchdog
+
+现象：`restart risingwave` 之后约 2.7 h（06:47:31Z）容器以 1 退出。最后的日志：meta 的 sqlx 记了一次 `aquired_after_secs=8.46` 的慢连接获取（meta 用 SQLite），compute 被判 `worker expired`，随后恢复时 `failure_recovery{error=Hummock error: SST 19665 is invalid}`，进程退出。这次的旧容器被下一次 `restart risingwave` 删掉了，完整日志没有保存；现在 `restart risingwave` 会先把旧容器日志存到配置旁边（最近 5 份）。
+
+逐项核对：
+- 上次卡死留下的损坏状态：排除。RW 容器只挂载配置文件，state store 在容器自己的可写层里，`restart risingwave`/`start` 都用 `docker rm -fv` 删掉容器，每次都是空状态重建。
+- 2 个 CPU 不够：没有证据。`--cpus 2` 下稳定运行 3 分钟采样平均 0.14 核、最高 0.19 核，0/1800 个调度周期被限流；最重的阶段（54 步 bootstrap，相当于恢复）107 s 中 1063 个周期有 38 个被限流（共 3.9 s）。`risingwaveCpus` 可以单独给 RW 设上限，默认仍等于 `containerCpus`（2）。
+- `SST … is invalid` 的来源（RW v2.8.0 `src/meta/src/hummock/manager/context.rs`）：提交 epoch 时，写这个 SST 的 worker 已不是有效上下文就拒绝。也就是说 compute 先因为 60 s（`max_heartbeat_interval_secs` 默认值）没有心跳被判过期，它手上的 SST 随后在恢复里被拒，单机进程退出。
+- 主机：sar 显示 15:40–15:50 JST（含 06:47Z）数据盘 `nvme0n1` 平均写等待 94.7 ms、队列 43.8（之前 20 分钟 21–24 ms），iowait 8.5%，CPU 一半空闲。推测，未验证：meta 的 SQLite（当时在这块盘上的容器可写层里）每次提交都要 fsync，排队到秒级，连接池等待 8 s，心跳处理被拖过 60 s。
+
+改动（`risingwave-memory-v1.24.0` 第三版，前两版列在 `supersededAfterSHA256`）：
+- SQLite meta 存储放进 256 MiB tmpfs（几 MB），并加进容器内存上限；state store 仍在容器磁盘上。tmpfs 在容器停止时清空，所以 RW 容器只能替换（`start`、`restart risingwave`），不能 `docker start`。改后 `restart risingwave` 约 40 s（之前 79–110 s）。
+- `[meta] max_heartbeat_interval_secs = 300`：meta 短暂停顿不再让 compute 过期，从而走不到上面的退出路径。
+
+watchdog：`tool/raft-stack --config … watchdog` 在环境开着（Postgres 容器在跑）且 RisingWave `UNHEALTHY`、容器不存在或已停止时运行 `restart risingwave`，每次检查往 `watchdogLog` 追加一行；`DEGRADED` 不处理；与手动 `restart risingwave` 共用一把锁。本机用 systemd 用户定时器每 10 分钟跑一次，服务放在 CPU 受限的 slice 里：
+
+```ini
+# ~/.config/systemd/user/raft-stack-<env>-watchdog.service
+[Service]
+Type=oneshot
+Slice=<a CPU-capped user slice>
+Environment=PATH=<dir with docker, and your processPrefix command>:/usr/bin:/bin
+ExecStart=<checkout>/tool/raft-stack --config <config> watchdog
+TimeoutStartSec=20min
+
+# ~/.config/systemd/user/raft-stack-<env>-watchdog.timer
+[Timer]
+OnBootSec=5min
+OnUnitActiveSec=10min
+[Install]
+WantedBy=timers.target
+```
+
+`systemctl --user enable --now raft-stack-<env>-watchdog.timer`。实测：手动停掉 RW 容器后触发一次检查，52 s 内重建完成，日志行 `restart: container exited -> restart risingwave exit 0; now: OK …`。

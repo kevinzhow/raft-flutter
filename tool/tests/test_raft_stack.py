@@ -291,6 +291,18 @@ class RisingWaveHealthTest(unittest.TestCase):
                          ('slock-dev-cindy-w24-risingwave', 'slock-dev-cindy-w24-pg'))
 
 
+class WatchdogTest(unittest.TestCase):
+    def test_restarts_only_an_unhealthy_risingwave_of_a_running_environment(self):
+        self.assertEqual(stack.watchdog_decision(False, (False, 'environment down')), 'down')
+        self.assertEqual(stack.watchdog_decision(True, (True, 'OK: ...')), 'ok')
+        self.assertEqual(stack.watchdog_decision(True, (True, 'DEGRADED: ...')), 'ok')
+        self.assertEqual(stack.watchdog_decision(True, (False, 'container exited')), 'restart')
+        self.assertEqual(stack.watchdog_decision(True, (False, 'UNHEALTHY: epoch stuck')), 'restart')
+
+    def test_watchdog_is_an_action(self):
+        self.assertEqual(stack.parse_args(['--config', 'c.json', 'watchdog'])[1], 'watchdog')
+
+
 class ContainerCpuTest(unittest.TestCase):
     def test_default_limit_covers_existing_containers_only(self):
         existing = {'slock-dev-e-pg', 'slock-dev-e-redis', 'slock-dev-e-risingwave', 'slock-dev-other-pg'}
@@ -306,6 +318,16 @@ class ContainerCpuTest(unittest.TestCase):
         for bad in (-1, '2', True):
             with self.assertRaises(SystemExit):
                 stack.container_cpus({'containerCpus': bad})
+
+    def test_risingwave_can_have_its_own_limit(self):
+        existing = {'slock-dev-e-pg', 'slock-dev-e-risingwave'}
+        commands = stack.container_cpu_commands({'environment': 'e', 'risingwaveCpus': 3}, existing)
+        self.assertEqual(commands, [['docker', 'update', '--cpus', '2', 'slock-dev-e-pg'],
+                                    ['docker', 'update', '--cpus', '3', 'slock-dev-e-risingwave']])
+        self.assertEqual(stack.container_cpu_commands({'environment': 'e', 'risingwaveCpus': 0}, existing),
+                         [['docker', 'update', '--cpus', '2', 'slock-dev-e-pg']])
+        with self.assertRaises(SystemExit):
+            stack.risingwave_cpus({'risingwaveCpus': 'x'})
 
     def test_process_prefix(self):
         self.assertEqual(stack.process_prefix({}), [])
