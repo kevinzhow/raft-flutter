@@ -230,8 +230,10 @@ bool _isAddressWordChar(int c) => _isAsciiAlnum(c) || c == 0x5f;
 /// occurrence is preceded by nothing, whitespace, CJK text or punctuation
 /// other than `_`, and is not followed by whitespace.
 bool _opensBefore(String source, int index, String mark) {
-  final at = source.lastIndexOf(mark, index - 1);
-  if (at < 0 || at + mark.length > index) return false;
+  final from = _lookbackStart(source, index);
+  final found = source.substring(from, index).lastIndexOf(mark);
+  if (found < 0) return false;
+  final at = from + found;
   final next = at + mark.length < source.length
       ? source.codeUnitAt(at + mark.length)
       : null;
@@ -249,6 +251,21 @@ bool _opensBefore(String source, int index, String mark) {
 
 final _punctuationOrSymbol = RegExp(r'[\p{P}\p{S}]', unicode: true);
 
+/// How far back an emphasis opener for the URL at [index] is looked for: its
+/// paragraph (back to a blank line), at most [_lookback] characters, so a
+/// message with thousands of URLs stays linear.
+int _lookbackStart(String source, int index) {
+  final limit = index - _lookback < 0 ? 0 : index - _lookback;
+  for (var i = index - 1; i > limit; i--) {
+    if (source.codeUnitAt(i) == 0x0a && source.codeUnitAt(i - 1) == 0x0a) {
+      return i + 1;
+    }
+  }
+  return limit;
+}
+
+const _lookback = 512;
+
 /// Web 1.24 `restoreTrailingUrlMarks`: a trailing `_` or `~` that closes no
 /// emphasis (no such mark opened before the URL) belongs to the address
 /// (login links often end in a token such as `state=Ab_`).
@@ -259,7 +276,7 @@ int _restoreTrailingMarks(String source, int index, int end) {
     marks++;
   }
   if (marks == end) return end;
-  final before = source.substring(0, index);
+  final before = source.substring(_lookbackStart(source, index), index);
   for (var i = end; i < marks; i++) {
     if (before.contains(String.fromCharCode(source.codeUnitAt(i)))) return end;
   }

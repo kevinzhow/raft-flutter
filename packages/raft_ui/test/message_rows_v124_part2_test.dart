@@ -162,6 +162,25 @@ void main() {
       expect(raftBareUrls('_https://x.com_').single.href, 'https://x.com');
     });
 
+    test('thousands of URLs stay linear (the opener lookback is bounded)', () {
+      int fastest(String text) {
+        var best = 1 << 62;
+        for (var i = 0; i < 3; i++) {
+          final clock = Stopwatch()..start();
+          raftBareUrls(text);
+          if (clock.elapsedMicroseconds < best) {
+            best = clock.elapsedMicroseconds;
+          }
+        }
+        return best;
+      }
+
+      const unit = 'see https://x.com/a_ and ';
+      final n = fastest(List.filled(2000, unit).join());
+      final four = fastest(List.filled(8000, unit).join());
+      expect(four, lessThan(n * 8), reason: '4N ${four}us, N ${n}us');
+    });
+
     test('a mark that closes one opened before the URL ends it', () {
       expect(raftBareUrls('**https://x.com**说明').single.href, 'https://x.com');
       expect(
