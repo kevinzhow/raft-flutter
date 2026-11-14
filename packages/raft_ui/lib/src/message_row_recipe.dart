@@ -15,6 +15,7 @@ import 'localization.dart';
 import 'panel_layout.dart' show RaftCssText;
 import 'message_semantics.dart';
 import 'message_touch_taps.dart';
+import 'timeline_time_reveal.dart';
 import 'pointer_intent.dart';
 import 'viewport_breakpoints.dart';
 import 'css_border.dart';
@@ -1295,7 +1296,20 @@ class _RaftMessageRowState extends State<RaftMessageRow> {
         ),
       ),
     );
-    if (!compact) return row;
+    // Web 1.24 touch time reveal: the row slides with the conversation and
+    // its clock comes in past its right edge (TimelineRevealTime).
+    final revealed = RaftTimeRevealRow(
+      time: gutterClock,
+      timeStyle: RaftTypography.mono(
+        recipe.tokens,
+        size: 12,
+        line: 16,
+        color: recipe.tokens.ui.foregroundHint,
+      ),
+      timeTop: recipe.margin.top + recipe.padding.top + 2,
+      child: row,
+    );
+    if (!compact) return revealed;
     return ValueListenableBuilder<double?>(
       valueListenable: visibleFraction,
       builder: (context, fraction, child) {
@@ -1319,7 +1333,7 @@ class _RaftMessageRowState extends State<RaftMessageRow> {
           child: child,
         );
       },
-      child: row,
+      child: revealed,
     );
   }
 

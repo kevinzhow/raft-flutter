@@ -188,6 +188,21 @@ class SourceTimeFormatter {
         : _clock(date, seconds: seconds, force24: force24);
   }
 
+  /// Web 1.24 `formatGutterClock`: a continuation row's gutter (and the
+  /// touch time reveal) shows hour and minute only, without the day period,
+  /// in the person's 12h / 24h choice: "6:35" (no leading zero) or "18:35".
+  String gutterClock(Object? value) {
+    final date = _date(value);
+    if (date == null) return value?.toString() ?? '';
+    final wall = wallTime(date);
+    final minute = wall.minute.toString().padLeft(2, '0');
+    if (effectiveTimeFormat == SourceTimeFormat.twelveHour) {
+      final hour = wall.hour % 12 == 0 ? 12 : wall.hour % 12;
+      return '$hour:$minute';
+    }
+    return '${wall.hour.toString().padLeft(2, '0')}:$minute';
+  }
+
   DateTime _previousHostDay(DateTime now) {
     final host = hostWallTime(now);
     // Exact source operation is host Date.setDate(getDate()-1), not subtracting
@@ -313,15 +328,25 @@ class SourceTimeFormatter {
     final today = _todayFor(now ?? sourceTimeNow());
     final key = dayKey(date);
     if (key == today.today) return todayLabel;
-    if (key == today.yesterday) return yesterdayLabel;
-    // DateDivider.tsx compares getFullYear in the host zone; messageTime above
-    // instead compares preferred-zone years. Preserve the separate source rules.
-    final sameYear = hostWallTime(date).year == today.hostYear;
+    // Web 1.24 formatDayLabel: yesterday is the calendar day before today in
+    // the person's zone, and the year shows when it differs from today's
+    // there (DateDivider no longer reads the host zone).
+    if (key == _previousDayKey(today.today)) return yesterdayLabel;
+    final sameYear = key.substring(0, 4) == today.today.substring(0, 4);
     final format = sameYear
         ? DateFormat.MMMMEEEEd(locale)
         : DateFormat.yMMMMEEEEd(locale);
     return format.format(wallTime(date));
   }
+}
+
+/// Web `previousDayKey`: the calendar day before a `YYYY-MM-DD` key.
+String _previousDayKey(String dayKey) {
+  final day = DateTime.parse('${dayKey}T12:00:00Z')
+      .subtract(const Duration(days: 1));
+  return '${day.year.toString().padLeft(4, '0')}-'
+      '${day.month.toString().padLeft(2, '0')}-'
+      '${day.day.toString().padLeft(2, '0')}';
 }
 
 class _TodayContext {
