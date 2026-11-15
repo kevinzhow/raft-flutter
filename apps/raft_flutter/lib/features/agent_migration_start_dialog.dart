@@ -26,7 +26,12 @@ class AgentMigrationStartDialog extends StatefulWidget {
     this.hostedAvailable = false,
     this.sourceName,
     this.startHosted,
+    this.initialTarget,
   });
+
+  /// A computer to preselect (a drop on the Computers rack, Web
+  /// `AgentMigrationDialog.initialTarget`); ignored unless it is offered.
+  final String? initialTarget;
 
   /// The cloud is offered as a target (`agent_migration_hosted_v0`, the cloud
   /// runtime on and configured: Web `useHostedMigrationAvailable`).
@@ -59,7 +64,10 @@ class AgentMigrationStartDialog extends StatefulWidget {
 const _cloudTarget = '__cloud__';
 
 class _AgentMigrationStartDialogState extends State<AgentMigrationStartDialog> {
-  late String target = _firstTarget;
+  late String target =
+      widget.targets.any((m) => '${m['id']}' == widget.initialTarget)
+      ? widget.initialTarget!
+      : _firstTarget;
   MigrationPresentation? failure;
   HostedModelsLoader? _models;
   String? _hostedPick;

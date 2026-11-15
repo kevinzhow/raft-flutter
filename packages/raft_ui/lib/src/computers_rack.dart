@@ -1160,3 +1160,32 @@ class RaftRackSidePanelLayout extends StatelessWidget {
     );
   }
 }
+
+/// A rack row or card that takes a dragged agent (Web ComputerRackRow
+/// `data-drop-target`): `bg-info-soft` while a valid drag is over it. [accepts]
+/// decides per dragged value; [onDrop] gets it.
+class RaftRackDropTarget<T extends Object> extends StatelessWidget {
+  const RaftRackDropTarget({
+    super.key,
+    required this.accepts,
+    required this.onDrop,
+    required this.child,
+  });
+  final bool Function(T value) accepts;
+  final ValueChanged<T> onDrop;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = RaftTokens.of(context);
+    return DragTarget<T>(
+      onWillAcceptWithDetails: (d) => accepts(d.data),
+      onAcceptWithDetails: (d) => onDrop(d.data),
+      builder: (context, candidates, _) => Container(
+        key: const ValueKey('rack-drop-surface'),
+        color: candidates.isEmpty ? null : t.colors['info-soft'],
+        child: child,
+      ),
+    );
+  }
+}

@@ -22,6 +22,7 @@ import '../sender_avatar_projection.dart' show projectSenderAvatar;
 import 'computer_attention_seen.dart';
 import 'computers_rack_actions.dart';
 import 'computers_rack_glyphs.dart';
+import 'rack_move_dialog.dart';
 import 'computers_rack_model.dart';
 import 'computers_rack_preferences.dart';
 
@@ -50,6 +51,10 @@ class _ComputersRackViewState extends State<ComputersRackView> {
   WorkspaceController get w => widget.controller;
   WorkspaceEntityDirectory get directory => w.services.entityDirectory;
   final prefs = ComputersRackPreferences.instance;
+
+  /// The agent being dragged (a valid drop target lights up while it is).
+  Map<String, dynamic>? dragAgent;
+  Map<String, Map<String, dynamic>> _machineById = const {};
   late final search = TextEditingController(text: prefs.query);
 
   /// Folded groups and the Offline section's choice, on this server only.
@@ -128,6 +133,7 @@ class _ComputersRackViewState extends State<ComputersRackView> {
           : directory.rows(WorkspaceEntityKind.computers),
       userId,
     );
+    _machineById = {for (final m in machines) '${m['id']}': m};
     final state = directory.state(WorkspaceEntityKind.computers);
     final loading = !directory.settled(WorkspaceEntityKind.computers);
     final loaded = state.loaded && !loading;
@@ -925,12 +931,28 @@ class _ComputersRackViewState extends State<ComputersRackView> {
             ),
     );
     // The keys the Computers list has always been reached by (the phone list's
-    // and the desktop directory's).
+    // and the desktop directory's); on desktop the row also takes a dragged agent.
+    final key = ValueKey(
+      widget.phone ? 'fleet-$id' : 'desktop-directory-computer-$id',
+    );
+    if (widget.phone) return KeyedSubtree(key: key, child: row);
     return KeyedSubtree(
-      key: ValueKey(
-        widget.phone ? 'fleet-$id' : 'desktop-directory-computer-$id',
+      key: key,
+      child: RaftRackDropTarget<Map<String, dynamic>>(
+        accepts: (agent) => isRackDropTarget(m, agent),
+        onDrop: (agent) {
+          setState(() => dragAgent = null);
+          unawaited(
+            showRackMoveDialog(
+              context,
+              w,
+              agent: agent,
+              targetId: '${m['id']}',
+            ),
+          );
+        },
+        child: row,
       ),
-      child: row,
     );
   }
 
@@ -947,7 +969,7 @@ class _ComputersRackViewState extends State<ComputersRackView> {
       members: const [],
       currentUser: w.client.user?.json,
     );
-    return RaftTooltip(
+    final slot = RaftTooltip(
       message: name,
       child: RaftAvatar(
         key: ValueKey('rack-slot-$id'),
@@ -966,6 +988,20 @@ class _ComputersRackViewState extends State<ComputersRackView> {
           ),
         ),
       ),
+    );
+    if (widget.phone || !canDragRackAgent(w, a, _machineById)) return slot;
+    // Web AgentRackSlot `draggable`: desktop only, for agents the viewer manages.
+    return Draggable<Map<String, dynamic>>(
+      data: a,
+      onDragStarted: () => setState(() => dragAgent = a),
+      onDragEnd: (_) {
+        if (mounted) setState(() => dragAgent = null);
+      },
+      onDraggableCanceled: (_, _) {
+        if (mounted) setState(() => dragAgent = null);
+      },
+      feedback: Opacity(opacity: .8, child: slot),
+      child: slot,
     );
   }
 }
