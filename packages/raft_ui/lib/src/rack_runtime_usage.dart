@@ -252,7 +252,14 @@ class RaftRackUsageCell extends StatelessWidget {
                 style: _mono(t, color: color),
               ),
             ),
-            Text(' · ${m.text}', maxLines: 1, style: _mono(t, color: color)),
+            Flexible(
+              child: Text(
+                ' · ${m.text}',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: _mono(t, color: color),
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 4),

@@ -210,6 +210,10 @@ class RaftProgressBar extends StatelessWidget {
       style: trackStyle,
       tokens: rt,
       width: double.infinity,
+      // No text in the track: its recipe height stays a height, not the
+      // minimum that grows with the text scale (an unbounded row would then
+      // lay the indicator out at infinite height).
+      growWithText: false,
       // Source dark determinate tracks allow the indicator's outer glow.
       clip: !(t.dark && !indeterminate),
       child: Align(
