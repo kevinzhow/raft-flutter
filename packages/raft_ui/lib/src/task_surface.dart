@@ -296,9 +296,11 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
             ),
           );
     return Shortcuts(
-      shortcuts: const {
-        SingleActivator(LogicalKeyboardKey.escape): DismissIntent(),
-      },
+      // Beside a list the slot owns Escape (a field's Escape stays the
+      // field's, Web TaskContentSlot `isOthersEscape`).
+      shortcuts: widget.inPlace
+          ? const <ShortcutActivator, Intent>{}
+          : const {SingleActivator(LogicalKeyboardKey.escape): DismissIntent()},
       child: Actions(
         actions: {
           DismissIntent: CallbackAction<DismissIntent>(

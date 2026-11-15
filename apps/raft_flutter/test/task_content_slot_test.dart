@@ -150,6 +150,25 @@ void main() {
     expect(focusIn(card), isTrue);
   });
 
+  testWidgets('desktop: Escape in the task\'s composer leaves it open', (
+    t,
+  ) async {
+    final w = await mountTasks(t, desktop);
+    await t.tap(card);
+    await settle(t);
+    final field = find.descendant(
+      of: slot,
+      matching: find.byType(EditableText),
+    );
+    expect(field, findsWidgets);
+    await t.tap(field.first);
+    await t.pump();
+    await t.sendKeyEvent(LogicalKeyboardKey.escape);
+    await settle(t);
+    expect(slot, findsOneWidget);
+    expect(w.location.query('open'), 'task:task-1');
+  });
+
   testWidgets('desktop, task v2 off: the Tasks page keeps the dialog', (
     t,
   ) async {

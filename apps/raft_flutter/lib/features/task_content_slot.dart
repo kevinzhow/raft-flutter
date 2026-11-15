@@ -121,13 +121,11 @@ class TaskContentSlot extends StatelessWidget {
             event.logicalKey != LogicalKeyboardKey.escape) {
           return KeyEventResult.ignored;
         }
-        final focused = FocusManager.instance.primaryFocus?.context;
-        // A field's Escape (the composer's, an input method's) is its own.
-        if (focused == null ||
-            focused.widget is EditableText ||
-            focused.findAncestorWidgetOfExactType<EditableText>() != null) {
-          return KeyEventResult.ignored;
-        }
+        final focused = FocusManager.instance.primaryFocus;
+        if (focused?.context == null) return KeyEventResult.ignored;
+        // A field's Escape (the composer's, an input method's) is its own:
+        // it neither closes the task nor reaches the shell's Escape.
+        if (_isField(focused!)) return KeyEventResult.skipRemainingHandlers;
         close();
         return KeyEventResult.handled;
       },
@@ -139,6 +137,24 @@ class TaskContentSlot extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Whether [node] is a text field's: the EditableText it focuses sits at or
+/// just under its Focus (a field may wrap its own Focus around it).
+bool _isField(FocusNode node) {
+  final context = node.context!;
+  if (context.findAncestorWidgetOfExactType<EditableText>() != null) {
+    return true;
+  }
+  var found = false;
+  void visit(Element e) {
+    final widget = e.widget;
+    if (widget is EditableText && widget.focusNode == node) found = true;
+    if (!found) e.visitChildren(visit);
+  }
+
+  (context as Element).visitChildren(visit);
+  return found;
 }
 
 /// Web TaskContentSlot's unavailable state: the task closed from inside
@@ -154,9 +170,9 @@ class _TaskUnavailable extends StatelessWidget {
         title: raftText(context, 'Task'),
         height: raftPageHeaderHeight(context),
         actions: [
-          RaftIconButton(
+          RaftButton.iconAction(
             key: const ValueKey('activity-task-gone-close'),
-            glyph: RaftGlyph.x,
+            icon: const RaftIcon(RaftGlyph.x, size: 16),
             tooltip: 'Close task',
             onPressed: onClose,
           ),

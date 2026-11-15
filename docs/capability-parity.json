@@ -10482,11 +10482,11 @@
    "status": "covered",
    "webEntry": "TasksPanel (Tasks rail tab /s/:slug/tasks for server-wide; Chat > Tasks tab for channel) channel mode > 'New Task' > CreateTaskDialog (multiple title rows)",
    "gate": "Non-guest member of the channel",
-   "flutterEntry": "create_task_dialog.dart CreateTaskDialog via 'Create Task' button (channel tab only; guest hidden)",
+   "flutterEntry": "create_task_dialog.dart CreateTaskDialog via 'Create Task' (channel tab, and the Tasks page with the channel picked in the dialog; guest hidden)",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/create_task_dialog.dart",
-     "needle": "/tasks/channel/${widget.channelId}"
+     "needle": "/tasks/channel/$channelId"
     },
     {
      "file": "apps/raft_flutter/lib/features/resource_view.dart",
