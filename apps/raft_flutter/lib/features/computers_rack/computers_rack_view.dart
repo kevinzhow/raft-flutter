@@ -872,6 +872,9 @@ class _ComputersRackViewState extends State<ComputersRackView> {
       canManage: canManage,
       availableVersion: belowFloor ? null : available,
     );
+    final restart = canManage && m['isComputer'] == true && !offline
+        ? w.services.entityDirectory.computerRestartProgress.progress(id)
+        : null;
     final computer = RaftRackComputer(
       id: id,
       name: '${m['name'] ?? ''}',
@@ -907,9 +910,10 @@ class _ComputersRackViewState extends State<ComputersRackView> {
       onOpen: () => widget.onOpenComputer(m),
       noAgentsLabel: tr('No agents on this computer yet'),
       otherRuntimesLabel: tr('Other runtimes'),
-      action: step == null
+      action: step == null && restart == null
           ? null
           : RackRowAction(
+              restart: restart,
               step: step,
               desktop: !widget.phone,
               machineId: id,
@@ -937,6 +941,7 @@ class _ComputersRackViewState extends State<ComputersRackView> {
               agents: on,
               canManage: canManage,
               upgrading: step is RackUpgrading,
+              restarting: restart != null,
             ),
     );
     // The keys the Computers list has always been reached by (the phone list's

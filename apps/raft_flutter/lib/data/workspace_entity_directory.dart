@@ -7,6 +7,7 @@ import 'package:raft_sync/raft_sync.dart'
 
 import '../features/agent_metadata_catalog.dart';
 import 'computer_release_notes.dart';
+import 'computer_restart_progress.dart';
 import 'computer_upgrade_in_flight.dart';
 import 'migration_error.dart' show migrationPhase;
 import '../features/agent_tool_stuck_notice.dart' show toolStuckCarrier;
@@ -209,6 +210,13 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
   /// offline transition was seen. Never persisted; cleared with the scope.
   final _upgradeAccepted = <String, AcceptedComputerUpgrade>{};
   final _upgradeSubmitting = <String, String>{};
+  late final computerRestartProgress = ComputerRestartProgressStore(
+    onChange: () {
+      if (_disposed) return;
+      _computerRevision++;
+      notifyListeners();
+    },
+  );
   final _offlineObservedAt = <String, int>{};
   final _upgradeDeadlines = <String, int>{};
   Timer? _upgradeTimer;
@@ -242,6 +250,7 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
     _latestComputerReleaseNotes = null;
     _upgradeAccepted.clear();
     _upgradeSubmitting.clear();
+    computerRestartProgress.clearAll();
     _offlineObservedAt.clear();
     _upgradeDeadlines.clear();
     _upgradeTimer?.cancel();
@@ -1122,6 +1131,15 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
           when computers:
         _scheduleReload(const {WorkspaceEntityKind.computers});
       case 'computer:restart:done' when computers:
+        final machineId = payload['machineId'];
+        if (machineId is String) {
+          computerRestartProgress.complete(
+            machineId,
+            payload['requestId'] as String?,
+            payload['ok'] == true,
+            payload['error'] as String?,
+          );
+        }
         if (payload['ok'] == true) {
           _scheduleReload(const {WorkspaceEntityKind.computers});
         }
@@ -1272,6 +1290,7 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
     _agentReadUpdates.clear();
     _refresh?.cancel();
     _upgradeTimer?.cancel();
+    computerRestartProgress.dispose();
     _dirty.clear();
     _queued.clear();
     // Unflushed device writes are dropped: the owner flushes before closing.

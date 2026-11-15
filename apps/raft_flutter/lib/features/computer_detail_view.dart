@@ -22,6 +22,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'computer_delete_dialog.dart';
 import 'computers_rack/computers_rack_actions.dart'
     show askComputerRestart, askComputerUpgrade;
+import 'computer_restart_request.dart';
 import 'computer_runtime_detection.dart';
 import 'computer_version_tier.dart';
 import 'computers_rack/computers_rack_view.dart' show rackDeviceGlyph;
@@ -712,6 +713,15 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel> {
     return RaftComputerDetailData(
       versionNotice: _versionNotice(service),
       deviceGlyph: rackDeviceGlyph(m),
+      restartShared: true,
+      restartProgress: switch (w
+          .services
+          .entityDirectory
+          .computerRestartProgress
+          .progress(id)) {
+        final p? => (done: p.done, error: p.error),
+        null => null,
+      },
       runtimeDetection: detection,
       canRescanRuntimes: canRescanComputerRuntimes(w, m),
       releaseNotes: _releaseNotes(fact),
@@ -942,25 +952,7 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel> {
     ];
   }
 
-  Future<void> _restart() async {
-    try {
-      await w.command(
-        'POST',
-        '/servers/$serverId/machines/$id/computer/restart',
-      );
-    } catch (e) {
-      // Web handleComputerRestart: the server's `error` text, else the restart
-      // message; the `computer_offline` code gets its own copy.
-      throw RaftComputerActionError(
-        userErrorText(
-          e,
-          fallback: 'Failed to request restart. The Computer must be online.',
-          codeText: const {'computer_offline': 'The Computer is offline.'},
-          where: 'computer restart',
-        ),
-      );
-    }
-  }
+  Future<void> _restart() => requestComputerRestart(w, id);
 
   Future<void> _upgrade(String target) async {
     final directory = w.services.entityDirectory;

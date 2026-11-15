@@ -262,6 +262,7 @@ export 'src/computer_surfaces.dart';
 export 'src/mobile_computer_list.dart';
 export 'src/computer_detail.dart';
 export 'src/computers_rack.dart';
+export 'src/rack_restart_progress.dart';
 export 'src/computer_version_notice.dart';
 export 'src/computer_release_notes.dart';
 export 'src/computer_runtime_detection.dart';

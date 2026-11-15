@@ -194,8 +194,16 @@ class RaftComputerDetailData {
     this.releaseNotes,
     this.versionNotice,
     this.deviceGlyph = RaftGlyph.monitor,
+    this.restartProgress,
+    this.restartShared = false,
   });
   final String id, name, slug, createdLabel;
+
+  /// A restart in flight / just ended that the app shares with the rack row
+  /// (Web computerOperationProgress); used when [restartShared]. Otherwise
+  /// the page keeps its own progress.
+  final ({bool done, String? error})? restartProgress;
+  final bool restartShared;
 
   /// The device shape in the header (Web ComputerDeviceIcon).
   final RaftGlyph deviceGlyph;
@@ -672,6 +680,11 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
     final confirm = widget.actions.confirmRestart;
     if (confirm != null && !await confirm()) return;
     if (!mounted) return;
+    if (d.restartShared) {
+      // The app owns the progress (shared with the rack row).
+      await widget.actions.restart();
+      return;
+    }
     operationTimer?.cancel();
     setState(() => operation = (done: false, error: null));
     try {
@@ -2189,7 +2202,7 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
     final sentence = service?.sentence ?? '';
     final webUpgradeOn = service?.webUpgradeOn ?? false;
     final upgradeCommands = kind == RaftComputerServiceKind.commands ? c : null;
-    final progress = operation;
+    final progress = d.restartShared ? d.restartProgress : operation;
     return RaftCard(
       key: const ValueKey('computer-section-service'),
       padding: const EdgeInsets.all(16),

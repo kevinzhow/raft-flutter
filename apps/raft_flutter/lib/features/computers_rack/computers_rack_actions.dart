@@ -8,11 +8,13 @@ import 'package:flutter/widgets.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
+import '../../data/computer_restart_progress.dart';
 import '../../data/user_error.dart';
 import '../../data/workspace_controller.dart';
 import '../../data/workspace_entity_directory.dart';
 import '../computer_delete_dialog.dart';
 import '../computer_detail_view.dart' show isComputerSemver;
+import '../computer_restart_request.dart';
 import '../computer_setup_commands.dart';
 import '../managed_agent_launcher.dart';
 import 'computers_rack_glyphs.dart';
@@ -211,24 +213,8 @@ Future<void> confirmComputerRestart(
     confirmLabel: raftText(dialog, 'Restart'),
     confirmVariant: RaftButtonRecipeVariant.warning,
     confirmGlyph: RaftGlyph.alertTriangle,
-    onConfirm: () async {
-      try {
-        await w.command(
-          'POST',
-          '/servers/${w.server?.id}/machines/${m['id']}/computer/restart',
-          data: <String, dynamic>{},
-        );
-      } catch (e) {
-        throw RaftApiException(
-          userErrorText(
-            e,
-            fallback: 'Failed to request restart. The Computer must be online.',
-            codeText: const {'computer_offline': 'The Computer is offline.'},
-            where: 'computer restart',
-          ),
-        );
-      }
-    },
+    // Web closes the question at once; the progress shows in the row / page.
+    onConfirm: () async => unawaited(requestComputerRestart(w, '${m['id']}')),
   ),
 );
 
@@ -241,56 +227,76 @@ class RackRowAction extends StatelessWidget {
     required this.machineId,
     required this.onUpgrade,
     required this.onOpenComputer,
+    this.restart,
   });
-  final RackNextStep step;
+
+  /// The shared restart progress; while it runs it replaces the next step
+  /// (RackRowAction `if (progress)`, after the offline recovery).
+  final ComputerRestartProgress? restart;
+  final RackNextStep? step;
   final bool desktop;
   final String machineId;
   final VoidCallback onUpgrade, onOpenComputer;
 
   @override
-  Widget build(BuildContext context) => switch (step) {
-    RackRecover(:final command) => RaftRackRecovery(
-      key: ValueKey('rack-offline-recovery-$machineId'),
-      label: desktop
-          ? raftText(context, 'Bring this computer back online')
-          : null,
-      command: RaftCopyableCode(
-        command,
-        copyLabel: raftText(context, 'Copy command'),
-        codeKey: ValueKey('rack-restart-command-$machineId'),
+  Widget build(BuildContext context) {
+    final progress = restart;
+    if (progress != null && step is! RackRecover) {
+      return RaftRackRestartProgress(
+        key: ValueKey('rack-restart-progress-$machineId'),
+        text: progress.done ? (progress.error ?? 'Restarted.') : 'Restarting…',
+        error: progress.error != null,
+      );
+    }
+    return switch (step) {
+      null => const SizedBox.shrink(),
+      RackRecover(:final command) => RaftRackRecovery(
+        key: ValueKey('rack-offline-recovery-$machineId'),
+        label: desktop
+            ? raftText(context, 'Bring this computer back online')
+            : null,
+        command: RaftCopyableCode(
+          command,
+          copyLabel: raftText(context, 'Copy command'),
+          codeKey: ValueKey('rack-restart-command-$machineId'),
+        ),
       ),
-    ),
-    RackUpgrading(:final waitingAgents) => RaftButton(
-      key: ValueKey('rack-upgrading-$machineId'),
-      label: waitingAgents > 0
-          ? raftFormat(
-              context,
-              waitingAgents == 1
-                  ? 'Waiting for {count} agent on this server…'
-                  : 'Waiting for {count} agents on this server…',
-              {'count': waitingAgents},
-            )
-          : raftText(context, 'Updating…'),
-      secondary: true,
-      busy: true,
-      onPressed: null,
-    ),
-    RackOneClick(:final version) => RaftButton(
-      key: ValueKey('rack-upgrade-$machineId'),
-      label: raftFormat(context, 'Upgrade to v{version}', {'version': version}),
-      glyph: rackGlyphCircleArrowUp,
-      secondary: true,
-      onPressed: onUpgrade,
-    ),
-    RackManualUpgrade(:final version) => RaftButton(
-      key: ValueKey('rack-manual-upgrade-$machineId'),
-      label: raftFormat(context, 'Upgrade to v{version}', {'version': version}),
-      glyph: RaftGlyph.terminal,
-      secondary: true,
-      // The install command to run on that machine is on its page.
-      onPressed: onOpenComputer,
-    ),
-  };
+      RackUpgrading(:final waitingAgents) => RaftButton(
+        key: ValueKey('rack-upgrading-$machineId'),
+        label: waitingAgents > 0
+            ? raftFormat(
+                context,
+                waitingAgents == 1
+                    ? 'Waiting for {count} agent on this server…'
+                    : 'Waiting for {count} agents on this server…',
+                {'count': waitingAgents},
+              )
+            : raftText(context, 'Updating…'),
+        secondary: true,
+        busy: true,
+        onPressed: null,
+      ),
+      RackOneClick(:final version) => RaftButton(
+        key: ValueKey('rack-upgrade-$machineId'),
+        label: raftFormat(context, 'Upgrade to v{version}', {
+          'version': version,
+        }),
+        glyph: rackGlyphCircleArrowUp,
+        secondary: true,
+        onPressed: onUpgrade,
+      ),
+      RackManualUpgrade(:final version) => RaftButton(
+        key: ValueKey('rack-manual-upgrade-$machineId'),
+        label: raftFormat(context, 'Upgrade to v{version}', {
+          'version': version,
+        }),
+        glyph: RaftGlyph.terminal,
+        secondary: true,
+        // The install command to run on that machine is on its page.
+        onPressed: onOpenComputer,
+      ),
+    };
+  }
 }
 
 /// RackRowMenu: Create agent (online), Restart (online, no upgrade or restart
@@ -303,11 +309,12 @@ class RackRowMenu extends StatelessWidget {
     required this.agents,
     required this.canManage,
     required this.upgrading,
+    this.restarting = false,
   });
   final WorkspaceController controller;
   final Map<String, dynamic> machine;
   final List<Map<String, dynamic>> agents;
-  final bool canManage, upgrading;
+  final bool canManage, upgrading, restarting;
 
   @override
   Widget build(BuildContext context) {
@@ -315,7 +322,8 @@ class RackRowMenu extends StatelessWidget {
     final w = controller, m = machine;
     final id = '${m['id']}';
     final online = m['status'] == 'online';
-    final canRestart = m['isComputer'] == true && online && !upgrading;
+    final canRestart =
+        m['isComputer'] == true && online && !upgrading && !restarting;
     final label = raftText(context, 'More actions');
     return RaftDropdownMenu(
       key: ValueKey('rack-row-menu-$id'),
