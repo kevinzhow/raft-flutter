@@ -47061,18 +47061,6 @@
         "owner": "task289 whole-source ownership review",
         "reason": "Current resolved builder at the exact source identity. Family hints do not establish canonical delegation, real-entry applicability, mounted state or visual acceptance; those decisions remain pending."
       },
-      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5557/METHOD:buildWorkspace@47771/FUNCTION:<anonymous>@48009/FUNCTION:workspace@64323": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "task289 whole-source ownership review",
-        "reason": "Current resolved builder at the exact source identity. Family hints do not establish canonical delegation, real-entry applicability, mounted state or visual acceptance; those decisions remain pending."
-      },
-      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5557/METHOD:settingsRailAction@108474/FUNCTION:action@108508": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "task289 whole-source ownership review",
-        "reason": "Current resolved builder at the exact source identity. Family hints do not establish canonical delegation, real-entry applicability, mounted state or visual acceptance; those decisions remain pending."
-      },
       "apps/raft_flutter/lib/features/resource_view.dart#method:_ResourceViewState.wide": {
         "role": "unresolved",
         "familyRefs": [],
@@ -47198,6 +47186,18 @@
         "familyRefs": [],
         "owner": "WP-TASK2 v1.24 alignment",
         "reason": "Source census candidate (WP-TASK2 part 3: task beside the list, create-task channel field, task head pull-down); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5557/METHOD:buildWorkspace@47771/FUNCTION:<anonymous>@48009/FUNCTION:workspace@64394": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "task289 whole-source ownership review",
+        "reason": "Current resolved builder at the exact source identity. Family hints do not establish canonical delegation, real-entry applicability, mounted state or visual acceptance; those decisions remain pending."
+      },
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5557/METHOD:settingsRailAction@108545/FUNCTION:action@108579": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "task289 whole-source ownership review",
+        "reason": "Current resolved builder at the exact source identity. Family hints do not establish canonical delegation, real-entry applicability, mounted state or visual acceptance; those decisions remain pending."
       }
     },
     "entries": {
