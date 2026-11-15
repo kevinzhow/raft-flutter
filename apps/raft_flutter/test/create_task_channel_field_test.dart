@@ -64,7 +64,12 @@ Future<(WorkspaceController, _Adapter)> _fixture({required bool v2}) async {
       'archivedAt': '2026-01-01',
     }),
     RaftChannel({'id': 'c4', 'name': 'away', 'joined': false}),
-    RaftChannel({'id': 'c5', 'name': 'quiet', 'joined': true, 'canPost': false}),
+    RaftChannel({
+      'id': 'c5',
+      'name': 'quiet',
+      'joined': true,
+      'canPost': false,
+    }),
   ];
   if (v2) TaskV2ConversationsFlag.of(w).markEnabled();
   return (w, a);

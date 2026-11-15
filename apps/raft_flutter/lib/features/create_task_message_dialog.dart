@@ -129,11 +129,7 @@ class _CreateTaskMessageDialogState extends State<CreateTaskMessageDialog> {
       submitting = true;
       error = null;
     });
-    final keyText = jsonEncode([
-      channelId,
-      draft.title,
-      draft.description,
-    ]);
+    final keyText = jsonEncode([channelId, draft.title, draft.description]);
     final key = sourceKey.text == keyText || sourceKey.text.isEmpty
         ? sourceKey.id
         : _randomUuid();

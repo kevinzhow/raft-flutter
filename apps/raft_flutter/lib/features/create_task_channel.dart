@@ -18,4 +18,6 @@ List<({String id, String label})> createTaskChannelOptions(
 }
 
 String? createTaskInitialChannel(WorkspaceController w, String? preferred) =>
-    createTaskChannelOptions(w).any((o) => o.id == preferred) ? preferred : null;
+    createTaskChannelOptions(w).any((o) => o.id == preferred)
+    ? preferred
+    : null;
