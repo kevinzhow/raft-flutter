@@ -772,6 +772,14 @@ class _AuthState extends State<AuthView> {
     await loadProviders(requestPermission: true);
   }
 
+  /// Web `<form onSubmit>` on LoginPage, RegisterPage, ForgotPasswordPage
+  /// and ResetPasswordPage: Enter in any field submits, unless the submit
+  /// button is disabled (RegisterPage before the terms are accepted).
+  void submitFromField(String _) {
+    if (busy || (mode == 'register' && !accepted)) return;
+    unawaited(submitChecked());
+  }
+
   Future<void> submitChecked() async {
     final originError = authOriginError(base.text);
     if (originError != null) {
@@ -981,6 +989,7 @@ class _AuthState extends State<AuthView> {
                 onChanged: (_) {
                   if (emailError != null) setState(() => emailError = null);
                 },
+                onSubmitted: submitFromField,
               ),
         tokenField: mode != 'reset' || widget.resetToken != null
             ? null
@@ -993,6 +1002,7 @@ class _AuthState extends State<AuthView> {
                 onChanged: (_) {
                   if (tokenError != null) setState(() => tokenError = null);
                 },
+                onSubmitted: submitFromField,
               ),
         passwordField: mode == 'forgot'
             ? null
@@ -1016,7 +1026,7 @@ class _AuthState extends State<AuthView> {
                     setState(() => passwordError = null);
                   }
                 },
-                onSubmitted: mode == 'reset' ? null : (_) => submitChecked(),
+                onSubmitted: submitFromField,
               ),
         confirmField: mode != 'reset'
             ? null
@@ -1031,7 +1041,7 @@ class _AuthState extends State<AuthView> {
                     setState(() => confirmError = null);
                   }
                 },
-                onSubmitted: (_) => submitChecked(),
+                onSubmitted: submitFromField,
               ),
         accepted: accepted,
         onAccepted: (v) => setState(() => accepted = v),
