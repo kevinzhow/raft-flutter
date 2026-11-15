@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 
 import 'design_primitives.dart';
+import 'focus_visible.dart';
 import 'form_controls.dart';
 import 'menu_action_row.dart';
 import 'popover_surface.dart';
@@ -1414,8 +1415,10 @@ class _RenderAutoMarginWrap extends RenderBox
 }
 
 /// The popover's search row: `flex h-10 items-center gap-2 border-b
-/// border-line-hairline px-3 text-foreground-hint`, the focus ring drawn
-/// inside the edge (`focus-within:shadow-[inset_0_0_0_2px_var(--foreground)]`).
+/// border-line-hairline px-3 text-foreground-hint` (`md:pointer-fine:h-control`:
+/// 34 with a mouse from 768), the focus ring drawn inside the edge
+/// (`keyboard:has-focus-visible:shadow-[inset_0_0_0_2px_var(--foreground)]`):
+/// it shows for keyboard focus only.
 class _RaftSearchRow extends StatefulWidget {
   const _RaftSearchRow({
     required this.controller,
@@ -1440,16 +1443,21 @@ class _RaftSearchRowState extends State<_RaftSearchRow> {
   void initState() {
     super.initState();
     node.addListener(sync);
+    RaftFocusVisible.shared.acquire();
+    RaftFocusVisible.shared.addListener(sync);
   }
 
   void sync() {
-    if (mounted && focused != node.hasFocus) {
-      setState(() => focused = node.hasFocus);
+    final next = node.hasFocus && RaftFocusVisible.shared.keyboard;
+    if (mounted && focused != next) {
+      setState(() => focused = next);
     }
   }
 
   @override
   void dispose() {
+    RaftFocusVisible.shared.removeListener(sync);
+    RaftFocusVisible.shared.release();
     node.removeListener(sync);
     own.dispose();
     super.dispose();
@@ -1461,7 +1469,8 @@ class _RaftSearchRowState extends State<_RaftSearchRow> {
     final rt = t.recipeTokens;
     final slots = RaftWebSelectionPanelRecipe.resolve(
       states: t.recipeStates(
-        extra: [if (focused) RaftRecipeStates.focusWithin],
+        responsive: true,
+        extra: [if (focused) 'has:focus-visible'],
       ),
       tokens: rt,
     );

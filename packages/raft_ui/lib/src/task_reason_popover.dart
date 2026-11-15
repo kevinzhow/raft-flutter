@@ -7,6 +7,8 @@
 // with the failure under the field).
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:raft_theme/recipes/popover.g.dart' as raft_popover;
+import 'package:raft_theme/recipes/recipe_runtime.dart' show RaftRecipeStates;
 
 import 'anchored_popup.dart';
 import 'dismiss_scope.dart';
@@ -14,6 +16,8 @@ import 'form_controls.dart' show RaftTextInput, RaftTextarea;
 import 'localization.dart';
 import 'popover_surface.dart';
 import 'raft/button.dart';
+import 'recipe_surface.dart';
+
 import 'space.dart';
 import 'task_surface.dart' show taskAssigneeSurface;
 import 'theme.dart';
@@ -131,50 +135,106 @@ class RaftTaskReasonPanelState extends State<RaftTaskReasonPanel> {
     final textStyle = DefaultTextStyle.of(context).style;
     return CallbackShortcuts(
       bindings: {const SingleActivator(LogicalKeyboardKey.escape): cancel},
-      child: Padding(
+      child: _panel(
         key: ValueKey(backlog ? id : '$id-panel'),
+        context: context,
+        body: [
+          if (!backlog) Text(label, style: textStyle),
+          field,
+          if (failed)
+            Text(
+              failure,
+              key: ValueKey('$id-error'),
+              style: textStyle.copyWith(
+                color: RaftTokens.of(context).colors['warning-strong'],
+              ),
+            ),
+        ],
+        actions: [
+          RaftButton(
+            key: ValueKey('$id-cancel'),
+            label: 'Cancel',
+            uiVariant: RaftButtonVariant.ghost,
+            uiSize: RaftButtonSize.md,
+            onPressed: cancel,
+          ),
+          RaftButton(
+            key: ValueKey('$id-confirm'),
+            label: confirm,
+            uiVariant: RaftButtonVariant.outline,
+            uiSize: RaftButtonSize.md,
+            busy: busy,
+            onPressed: submit,
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Raft look: raft-ui `PopoverBody` (`px-4 pt-4 pb-3 gap-1.5`) then
+  /// `PopoverActions` (`px-4 pb-3 last:pb-4 gap-2 justify-end`), read from
+  /// the popover recipe. The frozen looks keep one 12px padded column.
+  Widget _panel({
+    required Key key,
+    required BuildContext context,
+    required List<Widget> body,
+    required List<Widget> actions,
+  }) {
+    final t = RaftTokens.of(context);
+    final actionRow = Wrap(
+      alignment: WrapAlignment.end,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      spacing: RaftSpace.x2,
+      runSpacing: RaftSpace.x2,
+      children: actions,
+    );
+    if (!t.isRaftLook) {
+      return Padding(
+        key: key,
         padding: const EdgeInsets.all(RaftSpace.x3),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           spacing: RaftSpace.x3,
-          children: [
-            if (!backlog) Text(label, style: textStyle),
-            field,
-            if (failed)
-              Text(
-                failure,
-                key: ValueKey('$id-error'),
-                style: textStyle.copyWith(
-                  color: RaftTokens.of(context).colors['warning-strong'],
-                ),
-              ),
-            Wrap(
-              alignment: WrapAlignment.end,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              spacing: RaftSpace.x2,
-              runSpacing: RaftSpace.x2,
-              children: [
-                RaftButton(
-                  key: ValueKey('$id-cancel'),
-                  label: 'Cancel',
-                  uiVariant: RaftButtonVariant.ghost,
-                  uiSize: RaftButtonSize.md,
-                  onPressed: cancel,
-                ),
-                RaftButton(
-                  key: ValueKey('$id-confirm'),
-                  label: confirm,
-                  uiVariant: RaftButtonVariant.outline,
-                  uiSize: RaftButtonSize.md,
-                  busy: busy,
-                  onPressed: submit,
-                ),
-              ],
-            ),
-          ],
+          children: [...body, actionRow],
         ),
-      ),
+      );
+    }
+    raft_popover.RaftPopoverRecipeStyle resolve(RaftRecipeStates states) =>
+        raft_popover.RaftPopoverRecipe.resolve(
+          states: states,
+          tokens: t.recipeTokens,
+        );
+    final slots = resolve(t.recipeStates());
+    // `last:pb-4`: the actions are the popover's last child.
+    final actionsSlot = resolve(
+      t.recipeStates(extra: const ['last-child']),
+    ).actions;
+    return Column(
+      key: key,
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: slots.body.padding,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            spacing: slots.body.rowGap ?? 0,
+            children: body,
+          ),
+        ),
+        Padding(
+          padding: actionsSlot.padding,
+          child: Wrap(
+            alignment: WrapAlignment.end,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: actionsSlot.columnGap ?? RaftSpace.x2,
+            runSpacing: actionsSlot.rowGap ?? RaftSpace.x2,
+            children: actions,
+          ),
+        ),
+      ],
     );
   }
 }

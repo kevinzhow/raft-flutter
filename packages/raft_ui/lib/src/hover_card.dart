@@ -53,7 +53,7 @@ class RaftHoverCard extends StatefulWidget {
     required this.card,
     this.controller,
     this.enabled = true,
-    this.width = 280,
+    this.width = 300,
     this.delay = const Duration(milliseconds: 200),
     this.closeDelay = const Duration(milliseconds: 120),
     this.side = RaftHoverCardSide.bottom,

@@ -170,8 +170,9 @@ class _RaftInlineBadgeEditorState extends State<RaftInlineBadgeEditor> {
         : BorderRadius.circular(
             badge.borderRadius!.topLeft.x.clamp(0, 9999).toDouble(),
           );
-    final inherited = DefaultTextStyle.of(context).style
-        .merge(badge.textStyle(rt));
+    final inherited = DefaultTextStyle.of(
+      context,
+    ).style.merge(badge.textStyle(rt));
     final label = inherited.copyWith(
       // Badge sets no family: inherit the caller's mounted shell style.
       fontFamily: inherited.fontFamily,
@@ -685,7 +686,8 @@ class _InlineBadgeMenuRowState extends State<_InlineBadgeMenuRow> {
               focusVisible: state.focusVisible,
               trailing: Opacity(
                 opacity: widget.selected ? 1 : 0,
-                child: const RaftIcon(RaftGlyph.check, size: 14),
+                // InlineBadgeMenuItem.tsx: `<Check size={16} />`.
+                child: const RaftIcon(RaftGlyph.check, size: 16),
               ),
             ),
           );
