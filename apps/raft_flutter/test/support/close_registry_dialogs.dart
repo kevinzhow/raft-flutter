@@ -640,4 +640,76 @@ const dialogSurfaces = <CloseSurface>[
     status: 'approved',
     fix: _sheetOnPhone,
   ),
+  CloseSurface(
+    'runtime-sign-in-dialog',
+    kind: SurfaceKind.dialog,
+    webOutside: WebOutside.stays,
+    web:
+        'RuntimeSignInDialog.tsx:375 `<Dialog open disablePointerDismissal>`: X + Esc, '
+        'no outside press; closing mid-login cancels the login; a sheet on a phone '
+        '(NarrowDialogContent narrow="sheet")',
+    phone: {_x, _esc, _sys},
+    fold: {_x, _esc, _sys},
+    desktop: {_x, _esc, _sys},
+    files: [
+      'lib/features/computer_runtime_sign_in_dialog.dart',
+      'lib/features/computer_runtime_sign_in_parts.dart',
+    ],
+    status: 'ok',
+  ),
+  CloseSurface(
+    'runtime-pi-sign-in-dialog',
+    kind: SurfaceKind.dialog,
+    webOutside: WebOutside.stays,
+    web:
+        'PiSignInDialog.tsx:277 `<Dialog open disablePointerDismissal>`: X + Esc, '
+        'no outside press; a sheet on a phone (NarrowDialogContent narrow="sheet")',
+    phone: {_x, _esc, _sys},
+    fold: {_x, _esc, _sys},
+    desktop: {_x, _esc, _sys},
+    files: ['lib/features/computer_runtime_pi_sign_in_dialog.dart'],
+    status: 'ok',
+  ),
+  CloseSurface(
+    'runtime-sign-out-dialog',
+    kind: SurfaceKind.dialog,
+    webOutside: WebOutside.stays,
+    web:
+        'RuntimeSignOutDialog.tsx -> ConfirmDialog.tsx:138-165 Dialog '
+        'disablePointerDismissal (max-w-md): X + Esc, no pointer dismissal, '
+        'gated on the logout in flight',
+    phone: {_x, _esc, _sys},
+    fold: {_x, _esc, _sys},
+    desktop: {_x, _esc, _sys},
+    files: ['lib/features/computer_runtime_sign_out_dialog.dart'],
+    status: 'ok',
+  ),
+  CloseSurface(
+    'runtime-limit-reset-dialog',
+    kind: SurfaceKind.dialog,
+    webOutside: WebOutside.stays,
+    web:
+        'RuntimeLimitResetDialog.tsx -> ConfirmDialog.tsx:138-165 Dialog '
+        'disablePointerDismissal (max-w-md): X + Esc, no pointer dismissal, '
+        'gated on the redeem in flight',
+    phone: {_x, _esc, _sys},
+    fold: {_x, _esc, _sys},
+    desktop: {_x, _esc, _sys},
+    files: ['lib/features/computer_runtime_limit_reset_dialog.dart'],
+    status: 'ok',
+  ),
+  CloseSurface(
+    'runtime-provider-connect-dialog',
+    kind: SurfaceKind.dialog,
+    webOutside: WebOutside.stays,
+    web:
+        'RuntimeProviderConnectDialog.tsx:230 `<Dialog open disablePointerDismissal>`: '
+        'X + Esc, no outside press; a sheet on a phone '
+        '(NarrowDialogContent narrow="sheet"); the key is dropped with the dialog',
+    phone: {_x, _esc, _sys},
+    fold: {_x, _esc, _sys},
+    desktop: {_x, _esc, _sys},
+    files: ['lib/features/computer_runtime_provider_connect_dialog.dart'],
+    status: 'ok',
+  ),
 ];
