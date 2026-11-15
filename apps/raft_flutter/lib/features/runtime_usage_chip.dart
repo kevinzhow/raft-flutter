@@ -21,7 +21,8 @@ import 'computer_runtime_claude_limit_resets.dart';
 import 'computer_runtime_limit_reset_dialog.dart';
 import 'computer_runtime_pi_sign_in_dialog.dart';
 import 'computer_runtime_provider_connect_dialog.dart';
-import 'computer_runtime_sign_in_notice.dart' show RuntimeAuthViewWatch;
+import 'computer_runtime_sign_in_notice.dart'
+    show RuntimeAuthViewWatch, runtimeAuthClientOf;
 import 'computer_runtime_sign_in_dialog.dart';
 import 'computer_runtime_sign_out_dialog.dart';
 import 'computers_rack/computers_rack_model.dart' show rackRuntimeDisplayName;

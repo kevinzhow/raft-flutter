@@ -907,6 +907,16 @@ void registerCloseDialogTests(TestPart part) {
     'computer-others-agents-dialog',
     'create-external-agent',
     'external-credential-confirm',
+    // WP-COMP2: run in close_computer_runtime_dialogs_test.dart,
+    // close_computer_runtime_sign_in_test.dart and
+    // close_computer_runtime_claude_resets_test.dart.
+    'runtime-sign-in-dialog',
+    'runtime-pi-sign-in-dialog',
+    'runtime-sign-out-dialog',
+    'runtime-limit-reset-dialog',
+    'runtime-provider-connect-dialog',
+    'claude-limit-resets-dialog',
+    'claude-limit-reset-confirm-dialog',
   };
   final surfaces = [
     for (final surface in dialogSurfaces)

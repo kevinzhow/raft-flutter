@@ -12,8 +12,6 @@ import 'dart:async';
 
 import 'package:raft_client/raft_client.dart';
 
-import 'workspace_controller.dart';
-
 /// RUNTIME_AUTH_RUNTIMES.
 const runtimeAuthRuntimes = [
   'claude',
@@ -667,16 +665,3 @@ class RuntimeAuthClient {
     );
   }
 }
-
-/// The workspace's runtime-auth client, bound to the server-level identity
-/// (the cache empties on account / server / role changes, as the usage
-/// client's does).
-RuntimeAuthClient runtimeAuthClientOf(WorkspaceController w) =>
-    w.agentTabCache.putIfAbsent(
-      'runtime-auth',
-      () => RuntimeAuthClient(
-        get: (path) => w.query(path),
-        post: (path, body) => w.command('POST', path, data: body),
-        events: w.client.events,
-      ),
-    ) as RuntimeAuthClient;
