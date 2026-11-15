@@ -236,11 +236,11 @@ void main() {
       final hint = find.byKey(const ValueKey('computer-upgrade-failure-hint'));
       expect(hint, findsOneWidget);
       expect(
-        find.textContaining('systemctl stop raft.service'),
+        find.textContaining('systemctl stop raft.service', findRichText: true),
         findsOneWidget,
       );
       expect(
-        find.textContaining('systemctl start raft.service'),
+        find.textContaining('systemctl start raft.service', findRichText: true),
         findsOneWidget,
       );
       expect(

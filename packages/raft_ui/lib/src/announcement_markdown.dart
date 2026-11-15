@@ -48,6 +48,16 @@ class RaftCssBlock {
 ///
 /// Vertical margins collapse like CSS (siblings and through parents without
 /// padding); the scroll container's padding stops them at the edges.
+/// The raft-ui InlineCode (the same recipe the announcement and message
+/// markdown draw `code` with) as a span, for copy that names a command or a
+/// value inline (Web `<InlineCode>` in a formatted message).
+InlineSpan raftInlineCodeSpan(BuildContext context, String text) =>
+    _MarkdownBlocks(
+      context,
+      null,
+      const [],
+    )._inlineCode(text, DefaultTextStyle.of(context).style);
+
 class RaftAnnouncementMarkdown extends StatefulWidget {
   const RaftAnnouncementMarkdown(this.data, {super.key, this.onLink});
 
