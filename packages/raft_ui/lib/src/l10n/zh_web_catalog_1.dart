@@ -9,7 +9,7 @@ const Map<String, String> zhCatalogWeb1 = <String, String>{
   "{runtime} usage": "{runtime} 用量",
   "Version {version}": "版本 {version}",
   "Account-wide · updated {updated}": "整个账户 · {updated}更新",
-  "{percent}% used · resets {reset}": "已用 {percent}% · {reset}后重置",
+  "{percent}% used · resets {reset}": "已用 {percent}% · {reset}重置",
   "{percent}% used · reset time unavailable": "已用 {percent}% · 重置时间暂不可用",
   "{provider} runtime account usage": "{provider} 运行时账户用量",
   "{runtime} runtime account usage": "{runtime} 运行时账户用量",
