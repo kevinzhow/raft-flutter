@@ -1819,6 +1819,54 @@
       ]
     },
     {
+      "id": "tasks.content-slot",
+      "title": "Task v2 beside the list (Tasks page, Activity, Search)",
+      "webEntry": "packages/web/src/components/layout/TaskContentSlot.tsx",
+      "flutterEntry": "apps/raft_flutter/lib/features/task_content_slot.dart",
+      "states": [
+        {
+          "state": "loading",
+          "variant": "task loading in the slot",
+          "web": "yes",
+          "flutter": "partial",
+          "parityCase": [],
+          "status": "gap",
+          "justification": "The slot draws the task dialog's page (tasks.conversation): the same loading difference (Web head skeleton, Flutter the task surface's loading row). No parity case for the slot yet.",
+          "size": "S",
+          "gapKind": "impl-diff"
+        },
+        {
+          "state": "empty",
+          "variant": "This task isn't available",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "gap",
+          "justification": "Flutter draws Web's Task header with × over the EmptyState when the slot names a task this account cannot open (task_content_slot.dart _TaskUnavailable); no parity case exists for the slot.",
+          "size": "S",
+          "gapKind": "case-missing"
+        },
+        {
+          "state": "error",
+          "variant": "task gone (deleted / 404)",
+          "web": "no",
+          "flutter": "no",
+          "parityCase": [],
+          "status": "na",
+          "justification": "As in the dialog, a deleted task closes the slot (TaskContentSlot unavailable state after closing from inside); no error state to draw."
+        },
+        {
+          "state": "partial",
+          "variant": "list beside the task",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "na",
+          "justification": "The list beside the task is the Tasks / Activity / Search page's own states (tasks.list and the Activity / Search screens); the slot adds none."
+        }
+      ]
+    },
+    {
       "id": "members.list",
       "title": "Members list (agents and humans)",
       "webEntry": "packages/web/src/components/layout/Sidebar.tsx",
