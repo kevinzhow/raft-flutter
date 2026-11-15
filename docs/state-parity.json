@@ -1850,10 +1850,10 @@
           "state": "error",
           "variant": "task gone (deleted / 404)",
           "web": "no",
-          "flutter": "no",
+          "flutter": "yes",
           "parityCase": [],
           "status": "na",
-          "justification": "As in the dialog, a deleted task closes the slot (TaskContentSlot unavailable state after closing from inside); no error state to draw."
+          "justification": "As in the dialog, a deleted task closes the slot (Flutter: the task surface's onClose after a 404 / delete); no error state to draw on either side."
         },
         {
           "state": "partial",
@@ -11465,18 +11465,6 @@
         ],
         "owner": "Choice9 design-system alignment",
         "reason": "Reviewed production choice composition/delegation, not a thin-wrapper/no-paint claim or a visual PASS."
-      },
-      "apps/raft_flutter/lib/features/resource_view.dart#local-function:CLASS:_ResourceViewState@6430/METHOD:scopedDialog@45917/FUNCTION:buildOwned@46144": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
-      },
-      "apps/raft_flutter/lib/features/resource_view.dart#local-function:CLASS:_ResourceViewState@6430/METHOD:scopedMenu@46965/FUNCTION:buildOwned@47172": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
       "apps/raft_flutter/lib/features/resource_view.dart#method:ResourceView.createState": {
         "role": "unresolved",
@@ -38287,18 +38275,6 @@
         "owner": "design-system alignment",
         "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
       },
-      "packages/raft_ui/lib/src/task_surface.dart#local-function:CLASS:_RaftTaskSurfaceState@3984/METHOD:_historyDetail@34232/FUNCTION:badge@34629": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
-      },
-      "packages/raft_ui/lib/src/task_surface.dart#local-function:CLASS:_RaftTaskSurfaceState@3984/METHOD:assigneePanel@28678/FUNCTION:avatar@29037": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
-      },
       "packages/raft_ui/lib/src/task_surface.dart#method:RaftTaskSurface.createState": {
         "role": "unresolved",
         "familyRefs": [],
@@ -42490,24 +42466,6 @@
         "familyRefs": [
           "spinner"
         ],
-        "owner": "task289 whole-source ownership review",
-        "reason": "Current resolved builder at the exact source identity. Family hints do not establish canonical delegation, real-entry applicability, mounted state or visual acceptance; those decisions remain pending."
-      },
-      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5351/METHOD:buildWorkspace@47564/FUNCTION:<anonymous>@47802/FUNCTION:conversation@50916": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "task289 whole-source ownership review",
-        "reason": "Current resolved builder at the exact source identity. Family hints do not establish canonical delegation, real-entry applicability, mounted state or visual acceptance; those decisions remain pending."
-      },
-      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5351/METHOD:buildWorkspace@47564/FUNCTION:<anonymous>@47802/FUNCTION:workspace@63511": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "task289 whole-source ownership review",
-        "reason": "Current resolved builder at the exact source identity. Family hints do not establish canonical delegation, real-entry applicability, mounted state or visual acceptance; those decisions remain pending."
-      },
-      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5351/METHOD:settingsRailAction@108718/FUNCTION:action@108752": {
-        "role": "unresolved",
-        "familyRefs": [],
         "owner": "task289 whole-source ownership review",
         "reason": "Current resolved builder at the exact source identity. Family hints do not establish canonical delegation, real-entry applicability, mounted state or visual acceptance; those decisions remain pending."
       },
@@ -47072,6 +47030,174 @@
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/resource_view.dart#local-function:CLASS:_ResourceViewState@6647/METHOD:scopedDialog@46134/FUNCTION:buildOwned@46361": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/resource_view.dart#local-function:CLASS:_ResourceViewState@6647/METHOD:scopedMenu@47182/FUNCTION:buildOwned@47389": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/task_surface.dart#local-function:CLASS:_RaftTaskSurfaceState@5304/METHOD:_historyDetail@45880/FUNCTION:badge@46277": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/task_surface.dart#local-function:CLASS:_RaftTaskSurfaceState@5304/METHOD:assigneePanel@40021/FUNCTION:avatar@40380": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5557/METHOD:buildWorkspace@47771/FUNCTION:<anonymous>@48009/FUNCTION:conversation@51123": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "task289 whole-source ownership review",
+        "reason": "Current resolved builder at the exact source identity. Family hints do not establish canonical delegation, real-entry applicability, mounted state or visual acceptance; those decisions remain pending."
+      },
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5557/METHOD:buildWorkspace@47771/FUNCTION:<anonymous>@48009/FUNCTION:workspace@64323": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "task289 whole-source ownership review",
+        "reason": "Current resolved builder at the exact source identity. Family hints do not establish canonical delegation, real-entry applicability, mounted state or visual acceptance; those decisions remain pending."
+      },
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5557/METHOD:settingsRailAction@108474/FUNCTION:action@108508": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "task289 whole-source ownership review",
+        "reason": "Current resolved builder at the exact source identity. Family hints do not establish canonical delegation, real-entry applicability, mounted state or visual acceptance; those decisions remain pending."
+      },
+      "apps/raft_flutter/lib/features/resource_view.dart#method:_ResourceViewState.wide": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-TASK2 v1.24 alignment",
+        "reason": "Source census candidate (WP-TASK2 part 3: task beside the list, create-task channel field, task head pull-down); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/task_content_slot.dart#class:TaskContentSlot": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-TASK2 v1.24 alignment",
+        "reason": "Source census candidate (WP-TASK2 part 3: task beside the list, create-task channel field, task head pull-down); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/task_content_slot.dart#class:TaskSlotRow": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-TASK2 v1.24 alignment",
+        "reason": "Source census candidate (WP-TASK2 part 3: task beside the list, create-task channel field, task head pull-down); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/task_content_slot.dart#class:TaskSlotScope": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-TASK2 v1.24 alignment",
+        "reason": "Source census candidate (WP-TASK2 part 3: task beside the list, create-task channel field, task head pull-down); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/task_content_slot.dart#class:TaskV2FlagBuilder": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-TASK2 v1.24 alignment",
+        "reason": "Source census candidate (WP-TASK2 part 3: task beside the list, create-task channel field, task head pull-down); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/task_content_slot.dart#class:_TaskSlotRowState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-TASK2 v1.24 alignment",
+        "reason": "Source census candidate (WP-TASK2 part 3: task beside the list, create-task channel field, task head pull-down); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/task_content_slot.dart#class:_TaskUnavailable": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-TASK2 v1.24 alignment",
+        "reason": "Source census candidate (WP-TASK2 part 3: task beside the list, create-task channel field, task head pull-down); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/task_content_slot.dart#class:_TaskV2FlagBuilderState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-TASK2 v1.24 alignment",
+        "reason": "Source census candidate (WP-TASK2 part 3: task beside the list, create-task channel field, task head pull-down); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/task_content_slot.dart#method:TaskContentSlot.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-TASK2 v1.24 alignment",
+        "reason": "Source census candidate (WP-TASK2 part 3: task beside the list, create-task channel field, task head pull-down); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/task_content_slot.dart#method:TaskSlotRow.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-TASK2 v1.24 alignment",
+        "reason": "Source census candidate (WP-TASK2 part 3: task beside the list, create-task channel field, task head pull-down); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/task_content_slot.dart#method:TaskSlotScope.maybeOf": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-TASK2 v1.24 alignment",
+        "reason": "Source census candidate (WP-TASK2 part 3: task beside the list, create-task channel field, task head pull-down); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/task_content_slot.dart#method:TaskSlotScope.updateShouldNotify": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-TASK2 v1.24 alignment",
+        "reason": "Source census candidate (WP-TASK2 part 3: task beside the list, create-task channel field, task head pull-down); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/task_content_slot.dart#method:TaskV2FlagBuilder.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-TASK2 v1.24 alignment",
+        "reason": "Source census candidate (WP-TASK2 part 3: task beside the list, create-task channel field, task head pull-down); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/task_content_slot.dart#method:_TaskSlotRowState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-TASK2 v1.24 alignment",
+        "reason": "Source census candidate (WP-TASK2 part 3: task beside the list, create-task channel field, task head pull-down); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/task_content_slot.dart#method:_TaskSlotRowState.didUpdateWidget": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-TASK2 v1.24 alignment",
+        "reason": "Source census candidate (WP-TASK2 part 3: task beside the list, create-task channel field, task head pull-down); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/task_content_slot.dart#method:_TaskUnavailable.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-TASK2 v1.24 alignment",
+        "reason": "Source census candidate (WP-TASK2 part 3: task beside the list, create-task channel field, task head pull-down); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/task_content_slot.dart#method:_TaskV2FlagBuilderState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-TASK2 v1.24 alignment",
+        "reason": "Source census candidate (WP-TASK2 part 3: task beside the list, create-task channel field, task head pull-down); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/task_content_slot.dart#method:_TaskV2FlagBuilderState.didUpdateWidget": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-TASK2 v1.24 alignment",
+        "reason": "Source census candidate (WP-TASK2 part 3: task beside the list, create-task channel field, task head pull-down); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/workspace_task_host.dart#method:_WorkspaceTaskHostState.slotLayout": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-TASK2 v1.24 alignment",
+        "reason": "Source census candidate (WP-TASK2 part 3: task beside the list, create-task channel field, task head pull-down); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/create_task_view.dart#class:RaftCreateTaskChannelField": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-TASK2 v1.24 alignment",
+        "reason": "Source census candidate (WP-TASK2 part 3: task beside the list, create-task channel field, task head pull-down); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/create_task_view.dart#method:RaftCreateTaskChannelField.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-TASK2 v1.24 alignment",
+        "reason": "Source census candidate (WP-TASK2 part 3: task beside the list, create-task channel field, task head pull-down); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       }
     },
     "entries": {
@@ -49916,6 +50042,14 @@
         ],
         "mountStatus": "unresolved",
         "reason": "Resolved function owns a surface call; actual target, route and state are not yet observed."
+      },
+      "screen:tasks.content-slot": {
+        "owner": "task v2",
+        "kind": "route_or_panel_candidate",
+        "lifecycleScreenId": "tasks.content-slot",
+        "declarationRefs": [],
+        "mountStatus": "unresolved",
+        "reason": "Task v2 beside the Tasks / Activity / Search list (TaskContentSlot); widget and live evidence only, no visual PASS is asserted."
       }
     },
     "requirements": {
