@@ -262,6 +262,28 @@ void main() {
     expectFocusOn(failureHint);
   });
 
+  testWidgets('the hint\'s inline commands follow the footnote and stay '
+      'inside the popover', (t) async {
+    await openRack(t, _computer(request: _failed));
+    await t.tap(failureHint);
+    await t.pumpAndSettle();
+    final popover = t.getRect(failurePopover);
+    final code = find.descendant(
+      of: failurePopover,
+      matching: find.textContaining('systemctl stop raft.service'),
+    );
+    expect(code, findsOneWidget);
+    // Web InlineCode follows the footnote it sits in; it is not the popover's
+    // larger default text, and it never runs past the popover's edge.
+    final text = t.widget<RichText>(
+      find.descendant(of: code, matching: find.byType(RichText)).first,
+    );
+    expect(text.text.style?.fontSize ?? 0, lessThanOrEqualTo(13));
+    final rect = t.getRect(code);
+    expect(rect.right, lessThanOrEqualTo(popover.right));
+    expect(rect.left, greaterThanOrEqualTo(popover.left));
+  });
+
   testWidgets('a repair recommendation puts its hint button before Upgrade', (
     t,
   ) async {

@@ -18,7 +18,8 @@ import 'indicators.dart';
 import 'raft/avatar.dart' show RaftAvatarSize;
 import 'raft/status.dart';
 import 'theme.dart';
-import 'tokens/raft_tokens.g.dart' show RaftRadius, RaftTypeScale, RaftTypeStyle;
+import 'tokens/raft_tokens.g.dart'
+    show RaftRadius, RaftTypeScale, RaftTypeStyle;
 
 /// The list's three layouts: a desktop table row, a phone block, or a card.
 enum RaftRackLayout { list, phone, card }

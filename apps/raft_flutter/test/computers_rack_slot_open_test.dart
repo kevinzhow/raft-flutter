@@ -99,7 +99,9 @@ void main() {
     final mouse = await t.createGesture(kind: PointerDeviceKind.mouse);
     addTearDown(mouse.removePointer);
     await mouse.addPointer(location: Offset.zero);
-    await mouse.moveTo(t.getCenter(find.byKey(const ValueKey('rack-slot-agent-1'))));
+    await mouse.moveTo(
+      t.getCenter(find.byKey(const ValueKey('rack-slot-agent-1'))),
+    );
     // The card waits for the pointer to move over the trigger, then 200ms.
     await mouse.moveBy(const Offset(2, 0));
     await t.pump(const Duration(milliseconds: 100));
@@ -130,6 +132,7 @@ void main() {
           found = e.widget.key;
         }
       }
+
       check(context as Element);
       context.visitAncestorElements((e) {
         check(e);

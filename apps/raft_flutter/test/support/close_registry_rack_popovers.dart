@@ -9,8 +9,7 @@ const rackPopoverSurfaces = <CloseSurface>[
   CloseSurface(
     'rack-manual-upgrade-popover',
     kind: SurfaceKind.popup,
-    web:
-        'features/computer/RackRowAction.tsx:117-135 Popover (side bottom, align end): Esc, outside press, focus back to the trigger',
+    web: 'features/computer/RackRowAction.tsx:117-135 Popover (side bottom, align end): Esc, outside press, focus back to the trigger',
     phone: {_esc, _scrim},
     fold: {_esc, _scrim},
     desktop: {_esc, _scrim},
@@ -22,8 +21,7 @@ const rackPopoverSurfaces = <CloseSurface>[
   CloseSurface(
     'rack-upgrade-hint-popover',
     kind: SurfaceKind.popup,
-    web:
-        'features/computer/RackRowAction.tsx:96-150 Popover (side bottom, align end) behind the warning icon: Esc, outside press, focus back to the trigger',
+    web: 'features/computer/RackRowAction.tsx:96-150 Popover (side bottom, align end) behind the warning icon: Esc, outside press, focus back to the trigger',
     phone: {_esc, _scrim},
     fold: {_esc, _scrim},
     desktop: {_esc, _scrim},

@@ -286,8 +286,7 @@ class _TransferOwnerDialogState extends State<_TransferOwnerDialog> {
             status: RaftBannerRecipeStatus.warning,
             size: RaftBannerRecipeSize.sm,
             glyph: RaftGlyph.alertTriangle,
-            description:
-                'Claude and Codex logins and git credentials on this computer stay those of whoever is signed in on it. Transferring only changes who Raft records as its owner.',
+            description: 'Claude and Codex logins and git credentials on this computer stay those of whoever is signed in on it. Transferring only changes who Raft records as its owner.',
           ),
         ],
       ),

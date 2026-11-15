@@ -6555,14 +6555,14 @@
    "status": "covered",
    "webEntry": "MachineDetailPanel > Actions > Computer card > 'Restart'",
    "gate": "machine.isComputer, online, canManageMachines",
-   "flutterEntry": "computer_detail_view.dart _restart()",
+   "flutterEntry": "computer_restart_request.dart requestComputerRestart() (Computer page and rack row menu; shared progress in computer_restart_progress.dart)",
    "flutterRefs": [
     {
-     "file": "apps/raft_flutter/lib/features/computer_detail_view.dart",
+     "file": "apps/raft_flutter/lib/features/computer_restart_request.dart",
      "needle": "/computer/restart"
     },
     {
-     "file": "apps/raft_flutter/lib/features/computer_detail_view.dart",
+     "file": "apps/raft_flutter/lib/features/computer_restart_request.dart",
      "needle": "computer_offline"
     }
    ],

@@ -989,31 +989,28 @@ class _ComputersRackViewState extends State<ComputersRackView> {
         ? widget.onOpenAgent!(id)
         : w.openProfile(RaftProfileKind.agent, id);
     final avatarWidget = RaftAvatar(
+      name: name,
+      presence: agentRowPresence(a),
+      mountedContext: RaftMountedAvatarContext.compactRow,
+      kind: RaftAvatarKind.agent,
+      content: RaftAvatarContent(
         name: name,
-        presence: agentRowPresence(a),
-        mountedContext: RaftMountedAvatarContext.compactRow,
-        kind: RaftAvatarKind.agent,
-        content: RaftAvatarContent(
-          name: name,
-          kind: RaftAvatarContentKind.agent,
-          uploadedUrl: avatar.uploadedUrl,
-          pixelKey: avatar.pixelKey,
-          fallback: const RaftMountedAvatarFallback(
-            avatarContext: RaftMountedAvatarContext.compactRow,
-            identity: RaftMountedAvatarIdentity.agent,
-          ),
+        kind: RaftAvatarContentKind.agent,
+        uploadedUrl: avatar.uploadedUrl,
+        pixelKey: avatar.pixelKey,
+        fallback: const RaftMountedAvatarFallback(
+          avatarContext: RaftMountedAvatarContext.compactRow,
+          identity: RaftMountedAvatarIdentity.agent,
         ),
-      );
+      ),
+    );
     final slot = ProfilePreviewHoverCard(
       controller: w,
       agent: true,
       id: id,
       fallback: a,
-      onOpenActivity: (agentId) => w.openProfile(
-        RaftProfileKind.agent,
-        agentId,
-        agentTab: 'activity',
-      ),
+      onOpenActivity: (agentId) =>
+          w.openProfile(RaftProfileKind.agent, agentId, agentTab: 'activity'),
       child: RaftInteractive(
         key: ValueKey('rack-slot-$id'),
         onPressed: open,
@@ -1022,9 +1019,7 @@ class _ComputersRackViewState extends State<ComputersRackView> {
         // rounded-control, focus-visible:shadow-focus.
         builder: (context, state) => DecoratedBox(
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(
-              RaftTokens.of(context).radius,
-            ),
+            borderRadius: BorderRadius.circular(RaftTokens.of(context).radius),
             boxShadow: state.focusVisible
                 ? RaftTokens.of(context).focusShadows
                 : null,

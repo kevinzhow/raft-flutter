@@ -13,7 +13,6 @@ import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/features/computers_rack/computers_rack_preferences.dart';
 import 'package:raft_flutter/features/fleet_views.dart';
 import 'package:raft_ui/raft_ui.dart';
-import 'package:raft_ui/test_themes.dart';
 
 import 'mobile_computer_navigation_test.dart' show fixture;
 
@@ -52,7 +51,6 @@ Future<void> _settle(WidgetTester t) async {
   await t.pump(const Duration(milliseconds: 400));
   await t.pump(const Duration(milliseconds: 400));
 }
-
 
 void main() {
   testWidgets('the search clear button says Clear search; Escape empties the '

@@ -14,8 +14,15 @@ class RaftUpgradeFailureHintText extends StatelessWidget {
   final RaftUpgradeFailureHint hint;
   final TextStyle style;
 
+  // InlineCode follows the text it sits in (the footnote), not whatever
+  // DefaultTextStyle happens to enclose the hint (a popover's larger default).
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => DefaultTextStyle.merge(
+    style: style,
+    child: Builder(builder: _build),
+  );
+
+  Widget _build(BuildContext context) {
     final unit = hint.unit;
     if (unit == null ||
         unit.isEmpty ||
