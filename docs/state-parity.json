@@ -25631,19 +25631,19 @@
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
-      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@33194/METHOD:_buildRecipe@34464/FUNCTION:addon@35924": {
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@34906/METHOD:_buildRecipe@36176/FUNCTION:addon@37666": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
-      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@33194/METHOD:_buildRecipe@34464/FUNCTION:box@35614": {
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@34906/METHOD:_buildRecipe@36176/FUNCTION:box@37356": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
-      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@33194/METHOD:_buildRecipe@34464/FUNCTION:resolve@34650": {
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@34906/METHOD:_buildRecipe@36176/FUNCTION:resolve@36362": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
@@ -31388,7 +31388,7 @@
         "owner": "design-system canonical registry",
         "reason": "Actual resolved Widget bound by canonicalBindings; registering ownership does not establish current visual acceptance."
       },
-      "packages/raft_ui/lib/src/raft/button.dart#local-function:CLASS:RaftButtonMetrics@3896/METHOD:of@5517/FUNCTION:resolve@5707": {
+      "packages/raft_ui/lib/src/raft/button.dart#local-function:CLASS:RaftButtonMetrics@4779/METHOD:of@6400/FUNCTION:resolve@6590": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
@@ -36373,7 +36373,7 @@
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
-      "packages/raft_ui/lib/src/settings_controls.dart#local-function:CLASS:RaftServerProfileTile@33587/METHOD:_tile@35637/FUNCTION:image@35716": {
+      "packages/raft_ui/lib/src/settings_controls.dart#local-function:CLASS:RaftServerProfileTile@30492/METHOD:_tile@32542/FUNCTION:image@32621": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
@@ -40453,8 +40453,8 @@
         "sourceBindings": [
           {
             "file": "packages/raft_ui/lib/src/dialog_card.dart",
-            "bytes": 32870,
-            "sha256": "433d34f0abf2f4be0f7cec465644006210b5b02463385d965736946d8cb4bd17"
+            "bytes": 34100,
+            "sha256": "61bb800047df1f3ff8b7132f9fdc7cbca3d5d3b0214519edd94fa34df4f7daeb"
           }
         ],
         "reviewDecision": "Source reviewed at fixed Choice/P1 combination: this declaration is in an explicit frozen part/helper or a frozen Dialog class, selected only by the existing non-Raft/legacy recipe branch.",
@@ -40477,8 +40477,8 @@
         "sourceBindings": [
           {
             "file": "packages/raft_ui/lib/src/dialog_card.dart",
-            "bytes": 32870,
-            "sha256": "433d34f0abf2f4be0f7cec465644006210b5b02463385d965736946d8cb4bd17"
+            "bytes": 34100,
+            "sha256": "61bb800047df1f3ff8b7132f9fdc7cbca3d5d3b0214519edd94fa34df4f7daeb"
           }
         ],
         "reviewDecision": "Source reviewed at fixed Choice/P1 combination: this declaration is in an explicit frozen part/helper or a frozen Dialog class, selected only by the existing non-Raft/legacy recipe branch.",
@@ -40491,8 +40491,8 @@
         "sourceBindings": [
           {
             "file": "packages/raft_ui/lib/src/dialog_card.dart",
-            "bytes": 32870,
-            "sha256": "433d34f0abf2f4be0f7cec465644006210b5b02463385d965736946d8cb4bd17"
+            "bytes": 34100,
+            "sha256": "61bb800047df1f3ff8b7132f9fdc7cbca3d5d3b0214519edd94fa34df4f7daeb"
           }
         ],
         "reviewDecision": "Source reviewed at fixed Choice/P1 combination: this declaration is in an explicit frozen part/helper or a frozen Dialog class, selected only by the existing non-Raft/legacy recipe branch.",
@@ -40516,8 +40516,8 @@
         "sourceBindings": [
           {
             "file": "packages/raft_ui/lib/src/dialog_card.dart",
-            "bytes": 32870,
-            "sha256": "433d34f0abf2f4be0f7cec465644006210b5b02463385d965736946d8cb4bd17"
+            "bytes": 34100,
+            "sha256": "61bb800047df1f3ff8b7132f9fdc7cbca3d5d3b0214519edd94fa34df4f7daeb"
           }
         ],
         "reviewDecision": "Source reviewed at fixed Choice/P1 combination: this declaration is in an explicit frozen part/helper or a frozen Dialog class, selected only by the existing non-Raft/legacy recipe branch.",
@@ -40540,8 +40540,8 @@
         "sourceBindings": [
           {
             "file": "packages/raft_ui/lib/src/dialog_card.dart",
-            "bytes": 32870,
-            "sha256": "433d34f0abf2f4be0f7cec465644006210b5b02463385d965736946d8cb4bd17"
+            "bytes": 34100,
+            "sha256": "61bb800047df1f3ff8b7132f9fdc7cbca3d5d3b0214519edd94fa34df4f7daeb"
           }
         ],
         "reviewDecision": "Source reviewed at fixed Choice/P1 combination: this declaration is in an explicit frozen part/helper or a frozen Dialog class, selected only by the existing non-Raft/legacy recipe branch.",
@@ -40814,8 +40814,8 @@
         "sourceBindings": [
           {
             "file": "packages/raft_ui/lib/src/radio_group.dart",
-            "bytes": 9598,
-            "sha256": "068ee81591bfb0f26b1dca7bd7f4977fd4cccfc45243c2327be1a9eb53084ea3"
+            "bytes": 9723,
+            "sha256": "55b3baf3abf5baf5a31d392e8e500a5ef3ea088a0a954f6c3f7027943b848268"
           }
         ],
         "reviewDecision": "Source reviewed at fixed Choice/P1 combination: this declaration is in an explicit frozen part/helper or a frozen Dialog class, selected only by the existing non-Raft/legacy recipe branch.",
@@ -41472,8 +41472,8 @@
         "sourceBindings": [
           {
             "file": "packages/raft_ui/lib/src/settings_controls.dart",
-            "bytes": 42890,
-            "sha256": "07c00d2ab0ef6923f59080b3b4ee932fec0be468454a79083e55881730f27d44"
+            "bytes": 42918,
+            "sha256": "6d10010ed7c6420f826882a0556537a99de08b0de37fe8d859105a140176ed2a"
           }
         ],
         "reviewDecision": "Source reviewed at fixed Choice/P1 combination: this declaration is in an explicit frozen part/helper or a frozen Dialog class, selected only by the existing non-Raft/legacy recipe branch. The whole-file binding is refreshed after exact raw declaration-body comparison with ae852; surrounding current-look edits do not imply a change to this frozen body.",
@@ -41486,8 +41486,8 @@
         "sourceBindings": [
           {
             "file": "packages/raft_ui/lib/src/settings_controls.dart",
-            "bytes": 42890,
-            "sha256": "07c00d2ab0ef6923f59080b3b4ee932fec0be468454a79083e55881730f27d44"
+            "bytes": 42918,
+            "sha256": "6d10010ed7c6420f826882a0556537a99de08b0de37fe8d859105a140176ed2a"
           }
         ],
         "reviewDecision": "Source reviewed at fixed Choice/P1 combination: this declaration is in an explicit frozen part/helper or a frozen Dialog class, selected only by the existing non-Raft/legacy recipe branch. The whole-file binding is refreshed after exact raw declaration-body comparison with ae852; surrounding current-look edits do not imply a change to this frozen body.",
@@ -41500,8 +41500,8 @@
         "sourceBindings": [
           {
             "file": "packages/raft_ui/lib/src/settings_controls.dart",
-            "bytes": 42890,
-            "sha256": "07c00d2ab0ef6923f59080b3b4ee932fec0be468454a79083e55881730f27d44"
+            "bytes": 42918,
+            "sha256": "6d10010ed7c6420f826882a0556537a99de08b0de37fe8d859105a140176ed2a"
           }
         ],
         "reviewDecision": "Source reviewed at fixed Choice/P1 combination: this declaration is in an explicit frozen part/helper or a frozen Dialog class, selected only by the existing non-Raft/legacy recipe branch. The whole-file binding is refreshed after exact raw declaration-body comparison with ae852; surrounding current-look edits do not imply a change to this frozen body.",
@@ -41542,8 +41542,8 @@
         "sourceBindings": [
           {
             "file": "packages/raft_ui/lib/src/settings_controls.dart",
-            "bytes": 42890,
-            "sha256": "07c00d2ab0ef6923f59080b3b4ee932fec0be468454a79083e55881730f27d44"
+            "bytes": 42918,
+            "sha256": "6d10010ed7c6420f826882a0556537a99de08b0de37fe8d859105a140176ed2a"
           }
         ],
         "reviewDecision": "Source reviewed at fixed Choice/P1 combination: this declaration is in an explicit frozen part/helper or a frozen Dialog class, selected only by the existing non-Raft/legacy recipe branch. The whole-file binding is refreshed after exact raw declaration-body comparison with ae852; surrounding current-look edits do not imply a change to this frozen body.",
@@ -41556,8 +41556,8 @@
         "sourceBindings": [
           {
             "file": "packages/raft_ui/lib/src/settings_controls.dart",
-            "bytes": 42890,
-            "sha256": "07c00d2ab0ef6923f59080b3b4ee932fec0be468454a79083e55881730f27d44"
+            "bytes": 42918,
+            "sha256": "6d10010ed7c6420f826882a0556537a99de08b0de37fe8d859105a140176ed2a"
           }
         ],
         "reviewDecision": "Source reviewed at fixed Choice/P1 combination: this declaration is in an explicit frozen part/helper or a frozen Dialog class, selected only by the existing non-Raft/legacy recipe branch. The whole-file binding is refreshed after exact raw declaration-body comparison with ae852; surrounding current-look edits do not imply a change to this frozen body.",
@@ -44784,7 +44784,7 @@
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
-      "packages/raft_ui/lib/src/overlays/dialog_card_parts.dart#local-function:CLASS:_CardDialogPartsState@238/METHOD:build@488/FUNCTION:card@4217": {
+      "packages/raft_ui/lib/src/overlays/dialog_card_parts.dart#local-function:CLASS:_CardDialogPartsState@238/METHOD:build@488/FUNCTION:card@4233": {
         "role": "internal_wrapper",
         "familyRefs": [
           "dialog"
@@ -44795,7 +44795,7 @@
         ],
         "reason": "Resolved constructor/function calls delegate to the registered canonical owner(s); this declaration owns no scanner-detected paint. This is source delegation, not runtime mount or visual evidence."
       },
-      "packages/raft_ui/lib/src/overlays/dialog_card_parts.dart#local-function:CLASS:_CardDialogPartsState@238/METHOD:build@488/FUNCTION:scrollingContent@3777": {
+      "packages/raft_ui/lib/src/overlays/dialog_card_parts.dart#local-function:CLASS:_CardDialogPartsState@238/METHOD:build@488/FUNCTION:scrollingContent@3793": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "P1 dialogs / canonical Choice integration",
@@ -53885,8 +53885,8 @@
         "sourceBindings": [
           {
             "file": "packages/raft_ui/lib/src/dialog_card.dart",
-            "bytes": 32870,
-            "sha256": "433d34f0abf2f4be0f7cec465644006210b5b02463385d965736946d8cb4bd17"
+            "bytes": 34100,
+            "sha256": "61bb800047df1f3ff8b7132f9fdc7cbca3d5d3b0214519edd94fa34df4f7daeb"
           }
         ]
       },
@@ -54077,8 +54077,8 @@
         "sourceBindings": [
           {
             "file": "packages/raft_ui/lib/src/radio_group.dart",
-            "bytes": 8300,
-            "sha256": "cc714f8791330c9735e1e409f547ca6baebf55f792d9429017ba2ae1bd08efad"
+            "bytes": 9723,
+            "sha256": "55b3baf3abf5baf5a31d392e8e500a5ef3ea088a0a954f6c3f7027943b848268"
           }
         ]
       },
@@ -54089,8 +54089,8 @@
         "sourceBindings": [
           {
             "file": "packages/raft_ui/lib/src/radio_group.dart",
-            "bytes": 8300,
-            "sha256": "cc714f8791330c9735e1e409f547ca6baebf55f792d9429017ba2ae1bd08efad"
+            "bytes": 9723,
+            "sha256": "55b3baf3abf5baf5a31d392e8e500a5ef3ea088a0a954f6c3f7027943b848268"
           }
         ]
       },
@@ -54101,8 +54101,8 @@
         "sourceBindings": [
           {
             "file": "packages/raft_ui/lib/src/radio_group.dart",
-            "bytes": 8300,
-            "sha256": "cc714f8791330c9735e1e409f547ca6baebf55f792d9429017ba2ae1bd08efad"
+            "bytes": 9723,
+            "sha256": "55b3baf3abf5baf5a31d392e8e500a5ef3ea088a0a954f6c3f7027943b848268"
           }
         ]
       },
@@ -54113,8 +54113,8 @@
         "sourceBindings": [
           {
             "file": "packages/raft_ui/lib/src/radio_group.dart",
-            "bytes": 8300,
-            "sha256": "cc714f8791330c9735e1e409f547ca6baebf55f792d9429017ba2ae1bd08efad"
+            "bytes": 9723,
+            "sha256": "55b3baf3abf5baf5a31d392e8e500a5ef3ea088a0a954f6c3f7027943b848268"
           }
         ]
       },
@@ -54521,8 +54521,8 @@
         "sourceBindings": [
           {
             "file": "packages/raft_ui/lib/src/settings_controls.dart",
-            "bytes": 42496,
-            "sha256": "f4781747f42a600d2d422de0c20b8c05ea20c4eaf4e066a38f1d6eb9d493c786"
+            "bytes": 42918,
+            "sha256": "6d10010ed7c6420f826882a0556537a99de08b0de37fe8d859105a140176ed2a"
           }
         ]
       },
@@ -54889,6 +54889,191 @@
         "applicability": "unknown",
         "owner": "design-system alignment",
         "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/combobox_panel.dart#method:RaftComboboxGroupLabel.build|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+        "applicability": "unknown",
+        "owner": "WP-DS1 form controls",
+        "reason": "Resolved state use added with the responsive recipe states (pointer-fine and the window band); look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/combobox_panel.dart#method:_RaftComboboxPanelState.build|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+        "applicability": "unknown",
+        "owner": "WP-DS1 form controls",
+        "reason": "Resolved state use added with the responsive recipe states (pointer-fine and the window band); look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@34906/METHOD:_buildRecipe@36176/FUNCTION:resolve@36362|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:disabled": {
+        "applicability": "unknown",
+        "owner": "WP-DS1 form controls",
+        "reason": "Resolved state use added with the responsive recipe states (pointer-fine and the window band); look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@34906/METHOD:_buildRecipe@36176/FUNCTION:resolve@36362|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:hovered": {
+        "applicability": "unknown",
+        "owner": "WP-DS1 form controls",
+        "reason": "Resolved state use added with the responsive recipe states (pointer-fine and the window band); look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@34906/METHOD:_buildRecipe@36176/FUNCTION:resolve@36362|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+        "applicability": "unknown",
+        "owner": "WP-DS1 form controls",
+        "reason": "Resolved state use added with the responsive recipe states (pointer-fine and the window band); look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@34906/METHOD:_buildRecipe@36176/FUNCTION:resolve@36362|state:focus-within": {
+        "applicability": "unknown",
+        "owner": "WP-DS1 form controls",
+        "reason": "Resolved state use added with the responsive recipe states (pointer-fine and the window band); look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@34906/METHOD:_buildRecipe@36176/FUNCTION:resolve@36362|state:has:data-slot=input-group-control+data-invalid": {
+        "applicability": "unknown",
+        "owner": "WP-DS1 form controls",
+        "reason": "Resolved state use added with the responsive recipe states (pointer-fine and the window band); look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@34906/METHOD:_buildRecipe@36176/FUNCTION:resolve@36362|state:has:data-slot=input-group-control+disabled": {
+        "applicability": "unknown",
+        "owner": "WP-DS1 form controls",
+        "reason": "Resolved state use added with the responsive recipe states (pointer-fine and the window band); look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/form_controls.dart#method:RaftField.build|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+        "applicability": "unknown",
+        "owner": "WP-DS1 form controls",
+        "reason": "Resolved state use added with the responsive recipe states (pointer-fine and the window band); look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/form_controls.dart#method:RaftTextareaCounter.build|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+        "applicability": "unknown",
+        "owner": "WP-DS1 form controls",
+        "reason": "Resolved state use added with the responsive recipe states (pointer-fine and the window band); look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/form_controls.dart#method:_RaftTextInputState._buildLegacyChrome|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+        "applicability": "unknown",
+        "owner": "WP-DS1 form controls",
+        "reason": "Resolved state use added with the responsive recipe states (pointer-fine and the window band); look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/form_controls.dart#method:_RaftTextInputState._buildRecipe|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+        "applicability": "unknown",
+        "owner": "WP-DS1 form controls",
+        "reason": "Resolved state use added with the responsive recipe states (pointer-fine and the window band); look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/form_controls.dart#method:_RaftTextareaState.build|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+        "applicability": "unknown",
+        "owner": "WP-DS1 form controls",
+        "reason": "Resolved state use added with the responsive recipe states (pointer-fine and the window band); look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/kbd.dart#method:RaftKbd.build|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+        "applicability": "unknown",
+        "owner": "WP-DS1 form controls",
+        "reason": "Resolved state use added with the responsive recipe states (pointer-fine and the window band); look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/kbd.dart#method:RaftKbdGroup.build|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+        "applicability": "unknown",
+        "owner": "WP-DS1 form controls",
+        "reason": "Resolved state use added with the responsive recipe states (pointer-fine and the window band); look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/overlays/dialog_card_parts.dart#method:_CardDialogPartsState.build|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+        "applicability": "unknown",
+        "owner": "WP-DS1 form controls",
+        "reason": "Resolved state use added with the responsive recipe states (pointer-fine and the window band); look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/picker_trigger_button.dart#method:RaftPickerTriggerButton.build|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+        "applicability": "unknown",
+        "owner": "WP-DS1 form controls",
+        "reason": "Resolved state use added with the responsive recipe states (pointer-fine and the window band); look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/radio_group.dart#method:RaftRadioMark.build|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+        "applicability": "unknown",
+        "owner": "WP-DS1 form controls",
+        "reason": "Resolved state use added with the responsive recipe states (pointer-fine and the window band); look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/radio_group.dart#method:_RaftRadioGroupItemState.build|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+        "applicability": "unknown",
+        "owner": "WP-DS1 form controls",
+        "reason": "Resolved state use added with the responsive recipe states (pointer-fine and the window band); look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/radio_group.dart#method:_RaftRadioGroupState.build|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+        "applicability": "unknown",
+        "owner": "WP-DS1 form controls",
+        "reason": "Resolved state use added with the responsive recipe states (pointer-fine and the window band); look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/raft/button.dart#local-function:CLASS:RaftButtonMetrics@4779/METHOD:of@6400/FUNCTION:resolve@6590|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+        "applicability": "unknown",
+        "owner": "WP-DS1 form controls",
+        "reason": "Resolved state use added with the responsive recipe states (pointer-fine and the window band); look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/raft/button.dart#method:RaftButton._recipeSurface|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+        "applicability": "unknown",
+        "owner": "WP-DS1 form controls",
+        "reason": "Resolved state use added with the responsive recipe states (pointer-fine and the window band); look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/raft/button_surface.dart#method:RaftButtonSurface.build|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+        "applicability": "unknown",
+        "owner": "WP-DS1 form controls",
+        "reason": "Resolved state use added with the responsive recipe states (pointer-fine and the window band); look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/raft/checkbox.dart#method:RaftCheckbox.build|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+        "applicability": "unknown",
+        "owner": "WP-DS1 form controls",
+        "reason": "Resolved state use added with the responsive recipe states (pointer-fine and the window band); look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/raft/checkbox.dart#method:RaftCheckboxIndicator.build|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+        "applicability": "unknown",
+        "owner": "WP-DS1 form controls",
+        "reason": "Resolved state use added with the responsive recipe states (pointer-fine and the window band); look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/raft/checkbox.dart#method:RaftCheckboxRow.build|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+        "applicability": "unknown",
+        "owner": "WP-DS1 form controls",
+        "reason": "Resolved state use added with the responsive recipe states (pointer-fine and the window band); look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/raft/segmented_control.dart#method:RaftSegmentedItem._recipeSurface|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+        "applicability": "unknown",
+        "owner": "WP-DS1 form controls",
+        "reason": "Resolved state use added with the responsive recipe states (pointer-fine and the window band); look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/raft/segmented_control.dart#method:RaftSegmentedTrack.build|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+        "applicability": "unknown",
+        "owner": "WP-DS1 form controls",
+        "reason": "Resolved state use added with the responsive recipe states (pointer-fine and the window band); look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/raft/switch.dart#local-function:CLASS:_RecipeSwitch@7793/METHOD:build@8157/FUNCTION:resolve@8259|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+        "applicability": "unknown",
+        "owner": "WP-DS1 form controls",
+        "reason": "Resolved state use added with the responsive recipe states (pointer-fine and the window band); look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates|state:pointer-fine": {
+        "applicability": "unknown",
+        "owner": "WP-DS1 form controls",
+        "reason": "Resolved state use added with the responsive recipe states (pointer-fine and the window band); look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/select_field.dart#method:_RaftSelectFieldState._popup|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+        "applicability": "unknown",
+        "owner": "WP-DS1 form controls",
+        "reason": "Resolved state use added with the responsive recipe states (pointer-fine and the window band); look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/select_field.dart#method:_RaftSelectFieldState._raftPopup|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+        "applicability": "unknown",
+        "owner": "WP-DS1 form controls",
+        "reason": "Resolved state use added with the responsive recipe states (pointer-fine and the window band); look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/select_field.dart#method:_RaftSelectFieldState._raftTrigger|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+        "applicability": "unknown",
+        "owner": "WP-DS1 form controls",
+        "reason": "Resolved state use added with the responsive recipe states (pointer-fine and the window band); look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/select_field.dart#method:_SelectItemState.build|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+        "applicability": "unknown",
+        "owner": "WP-DS1 form controls",
+        "reason": "Resolved state use added with the responsive recipe states (pointer-fine and the window band); look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/settings_controls.dart#method:_RaftSettingsRecipeButtonState._recipe|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+        "applicability": "unknown",
+        "owner": "WP-DS1 form controls",
+        "reason": "Resolved state use added with the responsive recipe states (pointer-fine and the window band); look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/toggle_group.dart#method:RaftToggleGroup._item|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+        "applicability": "unknown",
+        "owner": "WP-DS1 form controls",
+        "reason": "Resolved state use added with the responsive recipe states (pointer-fine and the window band); look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/toggle_group.dart#method:RaftToggleGroup.build|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+        "applicability": "unknown",
+        "owner": "WP-DS1 form controls",
+        "reason": "Resolved state use added with the responsive recipe states (pointer-fine and the window band); look/input/real-entry applicability remains unreviewed."
       }
     },
     "evidence": {},
