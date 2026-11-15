@@ -1,7 +1,13 @@
+import 'dart:math' as math;
+
 import 'hover_region.dart';
 
 import 'package:flutter/material.dart';
 
+import 'recipe_surface.dart';
+import 'recipes/drawer.g.dart';
+import 'recipes/recipe_runtime.dart'
+    show RaftRecipeTheme, RaftShadowLayers, RaftSlotStyle;
 import 'settings_layout.dart' show RaftSpace;
 import 'system_inset.dart';
 import 'theme.dart';
@@ -36,18 +42,104 @@ abstract final class RaftSheetMetrics {
   static const mediumDetent = .6;
 
   /// The handle's hit area, its mark and the gap that keeps it clear of the
-  /// content.
+  /// content (the frozen looks; the Raft look reads [handleBox]).
   static const handleArea = RaftSpace.x5 + RaftSpace.x1;
   static const handleWidth = 36.0, handleHeight = RaftSpace.x1;
 
-  static double topRadius(RaftTokens t) => RaftSpace.x4;
+  /// A drag target is never smaller than this: the Raft handle box is 16px
+  /// tall, so the pinned header that holds it grows to this.
+  static const minDragTarget = 44.0;
 
-  /// The sheet's surface: panel color, rounded (elegant) or square (brutal)
-  /// top corners and the frame line.
+  /// The raft-ui Drawer popup (`side=down`): `layer-popover` fill,
+  /// `ring-1 ring-line-seam`, `shadow-float`, `rounded-t-dialog`. Null for the
+  /// frozen looks, which keep the panel sheet.
+  static RaftSlotStyle? _popup(RaftTokens t) => t.isRaftLook
+      ? RaftDrawerRecipe.resolve(
+          side: RaftDrawerRecipeSide.down,
+          axis: RaftDrawerRecipeAxis.y,
+          theme: RaftRecipeTheme.elegant,
+          states: t.recipeStates(),
+          tokens: t.recipeTokens,
+        ).popup
+      : null;
+
+  static RaftSlotStyle? _swipeHandle(RaftTokens t) => t.isRaftLook
+      ? RaftDrawerRecipe.resolve(
+          side: RaftDrawerRecipeSide.down,
+          axis: RaftDrawerRecipeAxis.y,
+          theme: RaftRecipeTheme.elegant,
+          states: t.recipeStates(),
+          tokens: t.recipeTokens,
+        ).swipeHandle
+      : null;
+
+  /// The sheet's fill.
+  static Color fill(RaftTokens t) =>
+      _popup(t)?.backgroundColor?.resolve(t.recipeTokens) ??
+      (t.isRaftLook ? t.colors['layer-popover']! : t.panel);
+
+  /// The outer shadows: the Raft look's ring and float shadow; none for the
+  /// frozen looks.
+  static List<BoxShadow> shadows(RaftTokens t) =>
+      _popup(t)?.boxShadow.toBoxShadows(t.recipeTokens) ?? const [];
+
+  static double topRadius(RaftTokens t) =>
+      _popup(t)?.borderRadius?.topLeft.x ?? RaftSpace.x4;
+
+  /// The handle box: 16px tall in the Raft look (`swipeHandle` slot), the
+  /// frozen looks keep [handleArea].
+  static double handleBox(RaftTokens t) =>
+      _swipeHandle(t)?.height ?? handleArea;
+
+  /// Where the mark starts inside [handleBox] (`::before` `top-1.5`); null
+  /// centres it (the frozen looks).
+  static double? handleMarkTop(RaftTokens t) =>
+      _swipeHandle(t)?.before?.length('top');
+
+  /// The mark's color: `line-seam` in the Raft look.
+  static Color handleColor(RaftTokens t) => t.isRaftLook
+      ? t.colors['line-seam']!
+      : t.colors['foreground-placeholder']!.withValues(alpha: .5);
+
+  /// The sheet's surface: rounded (elegant) or square (brutal) top corners.
+  /// The frozen looks keep the frame line; the Raft look's ring is part of
+  /// [shadows].
   static ShapeBorder shape(RaftTokens t) => RoundedRectangleBorder(
     borderRadius: BorderRadius.vertical(top: Radius.circular(topRadius(t))),
-    side: BorderSide(color: t.colors['line-muted']!, width: 1),
+    side: t.isRaftLook
+        ? BorderSide.none
+        : BorderSide(color: t.colors['line-muted']!, width: 1),
   );
+}
+
+/// The sheet's own surface inside a route that paints none: fill, rounded top
+/// and (Raft look) the ring and float shadow.
+class RaftSheetPanel extends StatelessWidget {
+  const RaftSheetPanel({super.key, required this.child});
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = RaftTokens.of(context);
+    final shadows = RaftSheetMetrics.shadows(t);
+    final surface = Material(
+      color: RaftSheetMetrics.fill(t),
+      elevation: 0,
+      clipBehavior: Clip.antiAlias,
+      shape: RaftSheetMetrics.shape(t),
+      child: child,
+    );
+    if (shadows.isEmpty) return surface;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(RaftSheetMetrics.topRadius(t)),
+        ),
+        boxShadow: shadows,
+      ),
+      child: surface,
+    );
+  }
 }
 
 /// The sheet's surface, for drawing a sheet without a route (previews):
@@ -58,25 +150,16 @@ class RaftSheetSurface extends StatelessWidget {
   final double? height;
 
   @override
-  Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
-    return Align(
-      alignment: Alignment.bottomCenter,
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: RaftSheetMetrics.maxWidth),
-        child: SizedBox(
-          height: height,
-          child: Material(
-            color: t.panel,
-            elevation: 0,
-            clipBehavior: Clip.antiAlias,
-            shape: RaftSheetMetrics.shape(t),
-            child: child,
-          ),
-        ),
+  Widget build(BuildContext context) => Align(
+    alignment: Alignment.bottomCenter,
+    child: ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: RaftSheetMetrics.maxWidth),
+      child: SizedBox(
+        height: height,
+        child: RaftSheetPanel(child: child),
       ),
-    );
-  }
+    ),
+  );
 }
 
 /// What the route tells the content: the scroll controller of the sheet's
@@ -140,23 +223,29 @@ class RaftSheetHandle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    return SizedBox(
-      height: RaftSheetMetrics.handleArea,
-      child: Center(
-        child: SizedBox(
-          key: const ValueKey('raft-sheet-handle'),
-          width: RaftSheetMetrics.handleWidth,
-          height: RaftSheetMetrics.handleHeight,
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              color: t.colors['foreground-placeholder']!.withValues(alpha: .5),
-              borderRadius: BorderRadius.circular(
-                RaftSheetMetrics.handleHeight,
-              ),
-            ),
-          ),
+    final markTop = RaftSheetMetrics.handleMarkTop(t);
+    final mark = SizedBox(
+      key: const ValueKey('raft-sheet-handle'),
+      width: RaftSheetMetrics.handleWidth,
+      height: RaftSheetMetrics.handleHeight,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: RaftSheetMetrics.handleColor(t),
+          borderRadius: BorderRadius.circular(RaftSheetMetrics.handleHeight),
         ),
       ),
+    );
+    return SizedBox(
+      height: RaftSheetMetrics.handleBox(t),
+      child: markTop == null
+          ? Center(child: mark)
+          : Align(
+              alignment: Alignment.topCenter,
+              child: Padding(
+                padding: EdgeInsets.only(top: markTop),
+                child: mark,
+              ),
+            ),
     );
   }
 }
@@ -219,6 +308,8 @@ class RaftSheet extends StatelessWidget {
       );
     }
     final controller = RaftSheetScope.maybeOf(context)?.scrollController;
+    final t = RaftTokens.of(context);
+    final handle = RaftSheetMetrics.handleBox(t);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -229,8 +320,13 @@ class RaftSheet extends StatelessWidget {
               SliverPersistentHeader(
                 pinned: true,
                 delegate: _PinnedHeader(
-                  extent: RaftSheetMetrics.handleArea + headerExtent,
-                  color: RaftTokens.of(context).panel,
+                  extent: t.isRaftLook
+                      ? math.max(
+                          handle + headerExtent,
+                          RaftSheetMetrics.minDragTarget,
+                        )
+                      : handle + headerExtent,
+                  color: RaftSheetMetrics.fill(t),
                   child: _PointerDragArea(
                     child: Column(
                       children: [

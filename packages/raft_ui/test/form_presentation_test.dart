@@ -16,8 +16,9 @@ Widget _app({
 }) => MaterialApp(
   theme: raftTheme(),
   builder: (context, home) => MediaQuery(
-    data: MediaQuery.of(context)
-        .copyWith(viewInsets: EdgeInsets.only(bottom: keyboard)),
+    data: MediaQuery.of(
+      context,
+    ).copyWith(viewInsets: EdgeInsets.only(bottom: keyboard)),
     child: home!,
   ),
   home: Builder(
@@ -194,9 +195,8 @@ void main() {
         expect(find.byType(RaftFormDialog), findsNothing);
       });
 
-      testWidgets('the X asks on a changed form; Cancel never asks', (
-        tester,
-      ) async {
+      testWidgets('the X asks on a changed form; Discard closes it (the phone '
+          'sheet has no Cancel: the X is Cancel)', (tester) async {
         await phoneForm(tester);
         await tester.enterText(find.byKey(const ValueKey('field-f1')), 'mine');
         await tester.tap(find.byType(RaftCloseButton));
@@ -204,7 +204,10 @@ void main() {
         expect(asked, findsOneWidget);
         await tester.tap(find.text('Keep Editing'));
         await tester.pumpAndSettle();
-        await tester.tap(find.text('Cancel'));
+        expect(find.text('Cancel'), findsNothing);
+        await tester.tap(find.byType(RaftCloseButton));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Discard Changes'));
         await tester.pumpAndSettle();
         expect(asked, findsNothing);
         expect(find.byType(RaftFormDialog), findsNothing);

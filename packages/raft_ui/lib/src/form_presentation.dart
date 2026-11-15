@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart' show SchedulerPhase;
@@ -12,6 +13,7 @@ import 'dialog_card.dart' show RaftCloseButton, RaftTextSteps, raftCssTextStyle;
 import 'presentation.dart';
 import 'settings_layout.dart' show RaftSpace;
 import 'sheet.dart';
+import 'system_inset.dart';
 import 'tap_slop.dart';
 import 'theme.dart';
 import 'recipes/recipe_runtime.dart' show RaftRecipeSet;
@@ -347,6 +349,7 @@ class RaftFormSheet extends StatelessWidget {
     this.footer,
     this.titleGlyph,
     this.closeButton,
+    this.commit,
   });
 
   /// The title as it is shown (already localized).
@@ -363,6 +366,12 @@ class RaftFormSheet extends StatelessWidget {
   /// The scaffold's own close button; defaults to [RaftCloseButton].
   final Widget? closeButton;
 
+  /// The submit action, for the Raft look's phone sheet head (Web
+  /// `NarrowDialog` `DialogCommit`): the close X at the start, the title and
+  /// this button at the end over a seam, with no footer (the X is Cancel).
+  /// Without it, and in the frozen looks, [footer] is drawn as before.
+  final Widget? commit;
+
   static const _closeFace = RaftMetrics.buttonSm;
   static const _titleLines = 2, _glyph = 18.0;
 
@@ -377,6 +386,9 @@ class RaftFormSheet extends StatelessWidget {
     );
     final text = title;
     final scaler = MediaQuery.textScalerOf(context);
+    if (commit != null && t.isRaftLook) {
+      return _narrowSheet(context, t, style);
+    }
     return LayoutBuilder(
       builder: (context, box) {
         // The pinned header has one fixed height: as tall as the title needs,
@@ -451,6 +463,76 @@ class RaftFormSheet extends StatelessWidget {
                 ),
         );
       },
+    );
+  }
+
+  /// Web `NarrowDialogLayout` on a phone: a 56px head (X, title, commit) with
+  /// a seam below, the body at `px-4 pt-4 pb-[max(16px,safe-bottom)]`.
+  Widget _narrowSheet(BuildContext context, RaftTokens t, TextStyle style) {
+    final scaler = MediaQuery.textScalerOf(context);
+    final painter = TextPainter(
+      text: TextSpan(text: title, style: style),
+      textDirection: Directionality.of(context),
+      textScaler: scaler,
+      maxLines: 1,
+    )..layout();
+    final line = painter.height;
+    painter.dispose();
+    final extent = math.max(
+      RaftMetrics.panelHeader,
+      math.max(line, _closeFace) + RaftSpace.x2 * 2 + 1,
+    );
+    final keyboard = MediaQuery.viewInsetsOf(context).bottom > 0;
+    return RaftSheet(
+      header: Column(
+        key: const ValueKey('raft-form-sheet-head'),
+        children: [
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: RaftSpace.x4),
+              child: Row(
+                spacing: RaftSpace.x2,
+                children: [
+                  closeButton ??
+                      RaftCloseButton(
+                        onPressed: raftGuardedClose(context, onClose),
+                      ),
+                  if (titleGlyph != null)
+                    RaftIcon(titleGlyph!, size: _glyph, color: t.ink),
+                  Expanded(
+                    child: Semantics(
+                      header: true,
+                      child: Text(
+                        title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: style,
+                      ),
+                    ),
+                  ),
+                  ?commit,
+                ],
+              ),
+            ),
+          ),
+          SizedBox(
+            key: const ValueKey('raft-form-sheet-head-seam'),
+            height: 1,
+            width: double.infinity,
+            child: ColoredBox(color: t.colors['line-seam']!),
+          ),
+        ],
+      ),
+      headerExtent: extent,
+      padding: EdgeInsets.fromLTRB(
+        RaftSpace.x4,
+        RaftSpace.x4,
+        RaftSpace.x4,
+        keyboard
+            ? RaftSpace.x4
+            : math.max(RaftSpace.x4, raftBottomInset(context)),
+      ),
+      body: RaftTapSlopHost(child: body),
     );
   }
 }

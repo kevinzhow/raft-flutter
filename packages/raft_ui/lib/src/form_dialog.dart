@@ -440,6 +440,18 @@ class _RaftFormDialogState extends State<RaftFormDialog> {
     ),
   );
 
+  /// The submit action in the phone sheet's head (Web `DialogCommit`, size
+  /// md); the frozen looks keep it in the footer.
+  Widget _commit() => RaftButton(
+    label: busy && widget.busyLabel != null
+        ? widget.busyLabel!
+        : widget.submitLabel,
+    uiSize: RaftButtonSize.md,
+    busy: busy,
+    onPressed: _canSubmit ? submit : null,
+    destructive: widget.destructive,
+  );
+
   List<Widget> _actions() {
     final legacy = RaftTokens.of(context).recipeSet == RaftRecipeSet.legacy;
     return [
@@ -479,6 +491,7 @@ class _RaftFormDialogState extends State<RaftFormDialog> {
               title: raftText(context, widget.title),
               onClose: busy ? null : () => Navigator.pop(context, false),
               body: _form(),
+              commit: _commit(),
               footer: OverflowBar(
                 alignment: MainAxisAlignment.end,
                 spacing: RaftSpace.x2,
