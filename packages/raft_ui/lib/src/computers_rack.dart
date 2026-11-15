@@ -821,23 +821,28 @@ class RaftRackToolbar extends StatelessWidget {
             ];
             final wide = box.maxWidth >= 900;
             if (wide) {
-              // The search keeps at least half the line; controls that do
-              // not fit scroll sideways rather than squeeze it.
+              // Web: the search is a fixed-width field (322 px) at the start;
+              // the controls follow at the end, scrolling sideways only when
+              // the window is too narrow for them.
               return Row(
                 children: [
-                  Expanded(child: search),
+                  SizedBox(width: 322, child: search),
                   const SizedBox(width: 8),
-                  Flexible(
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      reverse: true,
-                      child: Row(
-                        children: [
-                          for (var i = 0; i < controls.length; i++) ...[
-                            if (i > 0) const SizedBox(width: 8),
-                            controls[i],
+                  Expanded(
+                    child: Align(
+                      alignment: Alignment.centerRight,
+                      child: SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        reverse: true,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            for (var i = 0; i < controls.length; i++) ...[
+                              if (i > 0) const SizedBox(width: 8),
+                              controls[i],
+                            ],
                           ],
-                        ],
+                        ),
                       ),
                     ),
                   ),
