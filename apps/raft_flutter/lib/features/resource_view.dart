@@ -5110,147 +5110,151 @@ class _ResourceViewState extends State<ResourceView> {
                 ? toolbar.columnGap ?? 0
                 : 0,
           ),
-          child: Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            children: [
-              for (final field in [
-                if (widget.channelId == null) 'Channel',
-                'Creator',
-                'Assignee',
-              ])
-                Builder(
-                  builder: (context) {
-                    final selection = switch (field) {
-                      'Channel' => taskAdvanced.channels,
-                      'Creator' => taskAdvanced.creators,
-                      _ => taskAdvanced.assignees,
-                    };
-                    final self = w.client.user;
-                    final options = field == 'Channel'
-                        ? channelOptions
-                        : <String, String>{
-                            // IdentityFilterChip: "me" first, then Unassigned.
-                            if (self != null)
-                              'user:${self.id}': t.isRaftLook
-                                  ? raftTextZh(
-                                      context,
-                                      field == 'Creator'
-                                          ? 'Created by me'
-                                          : 'Assigned to me',
-                                      field == 'Creator' ? '我创建的' : '分配给我的',
-                                    )
-                                  : raftText(
-                                      context,
-                                      field == 'Creator'
-                                          ? 'Created by Me'
-                                          : 'Assigned to Me',
-                                    ),
-                            if (field == 'Assignee')
-                              'unassigned': raftTextZh(
-                                context,
-                                'Unassigned',
-                                '未分配',
-                              ),
-                            for (final entry in ordered)
-                              if (entry.key != 'user:${self?.id}')
-                                entry.key: entry.value,
-                          };
-                    return TaskSelectionFilter(
-                      key: ValueKey('$scope:$field'),
-                      field: field,
-                      options: options,
-                      selfIdentity: self == null
-                          ? null
-                          : ResourceSender(self.id, 'user', self.name),
-                      identityAvatars: t.isRaftLook && field != 'Channel'
-                          ? projectTaskFilterAvatars(
-                              origin: w.client.origin,
-                              identityKeys: names.keys,
-                              agents: rowAgents,
-                              members: rowPeople,
-                              currentUser: self?.json,
-                            )
-                          : const {},
-                      selection: selection,
-                      beforeOpen: (active) {
-                        for (final menu in filterMenus) {
-                          if (!identical(menu, active) && menu.isOpen) {
-                            menu.close();
+          child: TaskV2FlagBuilder(
+            controller: w,
+            builder: (_, v2) => Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                for (final field in [
+                  if (widget.channelId == null) 'Channel',
+                  'Creator',
+                  'Assignee',
+                ])
+                  Builder(
+                    builder: (context) {
+                      final selection = switch (field) {
+                        'Channel' => taskAdvanced.channels,
+                        'Creator' => taskAdvanced.creators,
+                        _ => taskAdvanced.assignees,
+                      };
+                      final self = w.client.user;
+                      final options = field == 'Channel'
+                          ? channelOptions
+                          : <String, String>{
+                              // IdentityFilterChip: "me" first, then Unassigned.
+                              if (self != null)
+                                'user:${self.id}': t.isRaftLook
+                                    ? raftTextZh(
+                                        context,
+                                        field == 'Creator'
+                                            ? 'Created by me'
+                                            : 'Assigned to me',
+                                        field == 'Creator' ? '我创建的' : '分配给我的',
+                                      )
+                                    : raftText(
+                                        context,
+                                        field == 'Creator'
+                                            ? 'Created by Me'
+                                            : 'Assigned to Me',
+                                      ),
+                              if (field == 'Assignee')
+                                'unassigned': raftTextZh(
+                                  context,
+                                  'Unassigned',
+                                  '未分配',
+                                ),
+                              for (final entry in ordered)
+                                if (entry.key != 'user:${self?.id}')
+                                  entry.key: entry.value,
+                            };
+                      return TaskSelectionFilter(
+                        key: ValueKey('$scope:$field'),
+                        field: field,
+                        options: options,
+                        selfIdentity: self == null
+                            ? null
+                            : ResourceSender(self.id, 'user', self.name),
+                        identityAvatars: t.isRaftLook && field != 'Channel'
+                            ? projectTaskFilterAvatars(
+                                origin: w.client.origin,
+                                identityKeys: names.keys,
+                                agents: rowAgents,
+                                members: rowPeople,
+                                currentUser: self?.json,
+                              )
+                            : const {},
+                        selection: selection,
+                        beforeOpen: (active) {
+                          for (final menu in filterMenus) {
+                            if (!identical(menu, active) && menu.isOpen) {
+                              menu.close();
+                            }
                           }
-                        }
-                      },
-                      valid: () => accepts(scope),
-                      aliases: {
-                        for (final person in senders)
-                          person.key: '${person.handle} ${person.label}',
-                      },
-                      onController: (menu, add) {
-                        if (add) {
-                          filterMenus.add(menu);
-                        } else {
-                          filterMenus.remove(menu);
-                        }
-                      },
-                      onToggle: (key) {
-                        if (accepts(scope)) {
-                          setState(() {
-                            if (!selection.remove(key)) selection.add(key);
-                          });
-                        }
-                      },
-                      onClear: () {
-                        if (accepts(scope)) setState(selection.clear);
-                      },
-                    );
+                        },
+                        valid: () => accepts(scope),
+                        aliases: {
+                          for (final person in senders)
+                            person.key: '${person.handle} ${person.label}',
+                        },
+                        onController: (menu, add) {
+                          if (add) {
+                            filterMenus.add(menu);
+                          } else {
+                            filterMenus.remove(menu);
+                          }
+                        },
+                        onToggle: (key) {
+                          if (accepts(scope)) {
+                            setState(() {
+                              if (!selection.remove(key)) selection.add(key);
+                            });
+                          }
+                        },
+                        onClear: () {
+                          if (accepts(scope)) setState(selection.clear);
+                        },
+                      );
+                    },
+                  ),
+                // TasksPanel.tsx: "New Task" (Plus 12) is channel mode only;
+                // task v2's Tasks page has it too (TasksPageToolbar.tsx).
+                if ((widget.channelId != null || v2) &&
+                    w.server?.string('role') != 'guest')
+                  RaftNewTaskButton(
+                    onPressed: () => createTask(sourceScope: scope),
+                  ),
+                RaftSegmentedControl<String>(
+                  legacyStyle: RaftSegmentedStyle.taskViews,
+                  value: taskLayout,
+                  visualHeight: RaftMetrics.buttonMd,
+                  minimumTargetSize: RaftMetrics.buttonMd,
+                  label: raftText(context, 'Task view'),
+                  items: const [
+                    RaftSegmentedOption(
+                      value: 'board',
+                      label: 'Board',
+                      tooltip: 'Show Task Board',
+                      glyph: RaftGlyph.columns3,
+                    ),
+                    RaftSegmentedOption(
+                      value: 'list',
+                      label: 'List',
+                      tooltip: 'Show Task List',
+                      glyph: RaftGlyph.layoutList,
+                    ),
+                  ],
+                  onChanged: (layout) {
+                    if (accepts(scope) && taskLayout != layout) {
+                      taskLayout = layout;
+                      rememberTaskView(layout);
+                      load();
+                    }
                   },
                 ),
-              // TasksPanel.tsx: "New Task" (Plus 12) is channel mode only.
-              if (widget.channelId != null &&
-                  w.server?.string('role') != 'guest')
-                RaftNewTaskButton(
-                  onPressed: () => createTask(sourceScope: scope),
-                ),
-              RaftSegmentedControl<String>(
-                legacyStyle: RaftSegmentedStyle.taskViews,
-                value: taskLayout,
-                visualHeight: RaftMetrics.buttonMd,
-                minimumTargetSize: RaftMetrics.buttonMd,
-                label: raftText(context, 'Task view'),
-                items: const [
-                  RaftSegmentedOption(
-                    value: 'board',
-                    label: 'Board',
-                    tooltip: 'Show Task Board',
-                    glyph: RaftGlyph.columns3,
+                if (!taskAdvanced.isEmpty)
+                  RaftTouchTargetExpander(
+                    minSize: const Size.square(RaftMetrics.touchTarget),
+                    child: RaftTaskFilterButton(
+                      onPressed: () {
+                        if (accepts(scope)) setState(taskAdvanced.clear);
+                      },
+                      child: Text(raftText(context, 'Clear All')),
+                    ),
                   ),
-                  RaftSegmentedOption(
-                    value: 'list',
-                    label: 'List',
-                    tooltip: 'Show Task List',
-                    glyph: RaftGlyph.layoutList,
-                  ),
-                ],
-                onChanged: (layout) {
-                  if (accepts(scope) && taskLayout != layout) {
-                    taskLayout = layout;
-                    rememberTaskView(layout);
-                    load();
-                  }
-                },
-              ),
-              if (!taskAdvanced.isEmpty)
-                RaftTouchTargetExpander(
-                  minSize: const Size.square(RaftMetrics.touchTarget),
-                  child: RaftTaskFilterButton(
-                    onPressed: () {
-                      if (accepts(scope)) setState(taskAdvanced.clear);
-                    },
-                    child: Text(raftText(context, 'Clear All')),
-                  ),
-                ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

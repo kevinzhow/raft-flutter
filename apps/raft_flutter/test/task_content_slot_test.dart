@@ -169,6 +169,20 @@ void main() {
     expect(w.location.query('open'), 'task:task-1');
   });
 
+  testWidgets('task v2: the Tasks page has New task, the dialog asks for '
+      'the channel; off, it has none', (t) async {
+    await mountTasks(t, desktop);
+    final newTask = find.widgetWithText(RaftNewTaskButton, 'New task');
+    expect(newTask, findsOneWidget);
+    await t.tap(newTask);
+    await settle(t);
+    expect(find.byKey(const ValueKey('create-task-channel-field')), findsOne);
+    expect(find.byKey(const ValueKey('create-task-status')), findsOne);
+    await t.pumpWidget(const SizedBox());
+    await mountTasks(t, desktop, v2: false);
+    expect(find.byType(RaftNewTaskButton), findsNothing);
+  });
+
   testWidgets('desktop, task v2 off: the Tasks page keeps the dialog', (
     t,
   ) async {

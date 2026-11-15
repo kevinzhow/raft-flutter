@@ -293,3 +293,55 @@ bool openTaskFromList(
   w.notifyListeners();
   return true;
 }
+
+/// Builds with whether task v2 is on for [controller]'s server, evaluating it
+/// once (the Tasks page can be the first screen that needs it: its New task
+/// and its in-place open).
+class TaskV2FlagBuilder extends StatefulWidget {
+  const TaskV2FlagBuilder({
+    super.key,
+    required this.controller,
+    required this.builder,
+  });
+  final WorkspaceController controller;
+  final Widget Function(BuildContext context, bool enabled) builder;
+
+  @override
+  State<TaskV2FlagBuilder> createState() => _TaskV2FlagBuilderState();
+}
+
+class _TaskV2FlagBuilderState extends State<TaskV2FlagBuilder> {
+  late TaskV2ConversationsFlag flag;
+
+  void bind() {
+    flag = TaskV2ConversationsFlag.of(widget.controller)..addListener(changed);
+    flag.ensure().ignore();
+  }
+
+  void changed() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    bind();
+  }
+
+  @override
+  void didUpdateWidget(TaskV2FlagBuilder old) {
+    super.didUpdateWidget(old);
+    if (old.controller == widget.controller) return;
+    flag.removeListener(changed);
+    bind();
+  }
+
+  @override
+  void dispose() {
+    flag.removeListener(changed);
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.builder(context, flag.enabled);
+}
