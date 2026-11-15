@@ -188,6 +188,7 @@ const dialogSurfaces = <CloseSurface>[
   CloseSurface(
     'task-delete-confirm',
     kind: SurfaceKind.dialog,
+    webOutside: WebOutside.stays,
     web: 'task/TaskDeleteConfirmDialog.tsx ConfirmDialog: X + Esc, no scrim close, gated while deleting',
     phone: {_x, _esc, _sys},
     fold: {_x, _esc, _sys},
@@ -268,6 +269,7 @@ const dialogSurfaces = <CloseSurface>[
   CloseSurface(
     'rack-move-dialog',
     kind: SurfaceKind.dialog,
+    webOutside: WebOutside.closes,
     web: 'RackMoveDialog.tsx -> AgentMigrationDialog.tsx:273,359-372 Dialog: Esc and overlay press (onOpenChange, gated on submitting), header X (closeLabel Close), ghost Cancel button',
     phone: {_x, _esc, _scrim, _sys, _drag},
     fold: {_x, _esc, _scrim, _sys},

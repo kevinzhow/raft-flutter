@@ -25,12 +25,11 @@ List<CloseSurface> get allCloseSurfaces => [
 /// Many never call an opener API themselves (the shell supplies the column,
 /// Esc and Back), so the file scan alone cannot require them; the registry
 /// test requires every panel-like widget the shell builds to be listed here
-/// or in [shellHostedContent]. The computer-detail entry belongs to COMP1
-/// (#624).
+/// or in [shellHostedContent]. Since COMP1 (#624) the person, agent and
+/// computer details beside a page sit inside ProfileSidePanel's host
+/// (desktop_detail_host.dart), so the shell builds only that panel.
 const shellHostedPanels = <String, List<String>>{
   'ProfileSidePanel': ['profile-human', 'profile-agent', 'profile-external'],
-  'MemberProfileView': ['directory-human-detail'],
-  'FleetDetail': ['computer-detail', 'agent-directory-detail'],
   'ThreadAgentFollowersView': ['thread-followers'],
   'RaftOverflowBareSheet': ['channel-members-page'],
 };
