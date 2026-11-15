@@ -699,6 +699,35 @@ const dialogSurfaces = <CloseSurface>[
     status: 'ok',
   ),
   CloseSurface(
+    'claude-limit-resets-dialog',
+    kind: SurfaceKind.dialog,
+    webOutside: WebOutside.stays,
+    web:
+        'ClaudeLimitResetsDialog.tsx -> ConfirmDialog.tsx:138-165 Dialog '
+        'disablePointerDismissal (size md; the consent step is the same '
+        'ConfirmDialog, max-w-md): X + Esc, no pointer dismissal',
+    phone: {_x, _esc, _sys},
+    fold: {_x, _esc, _sys},
+    desktop: {_x, _esc, _sys},
+    files: ['lib/features/computer_runtime_claude_limit_resets.dart'],
+    status: 'ok',
+  ),
+  CloseSurface(
+    'claude-limit-reset-confirm-dialog',
+    kind: SurfaceKind.dialog,
+    webOutside: WebOutside.stays,
+    web:
+        'ClaudeLimitResetConfirmDialog (ClaudeLimitResetsDialog.tsx) -> '
+        'ConfirmDialog.tsx:138-165 Dialog disablePointerDismissal (max-w-md): '
+        'X + Esc, no pointer dismissal, gated on the redeem in flight; over '
+        'the list (layer 1) Cancel returns to it',
+    phone: {_x, _esc, _sys},
+    fold: {_x, _esc, _sys},
+    desktop: {_x, _esc, _sys},
+    files: ['lib/features/computer_runtime_claude_limit_resets.dart'],
+    status: 'ok',
+  ),
+  CloseSurface(
     'runtime-provider-connect-dialog',
     kind: SurfaceKind.dialog,
     webOutside: WebOutside.stays,

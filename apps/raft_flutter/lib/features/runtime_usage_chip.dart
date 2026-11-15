@@ -17,6 +17,7 @@ import '../data/runtime_account_usage.dart';
 import '../data/runtime_auth.dart';
 import '../data/workspace_controller.dart';
 import 'computer_readiness_copy.dart';
+import 'computer_runtime_claude_limit_resets.dart';
 import 'computer_runtime_limit_reset_dialog.dart';
 import 'computer_runtime_pi_sign_in_dialog.dart';
 import 'computer_runtime_provider_connect_dialog.dart';
@@ -316,6 +317,13 @@ class _RuntimeUsageChipState extends State<RuntimeUsageChip> {
     provider = computedProvider;
     final generation = ++subject;
     final p = provider;
+    if (p == 'claude') {
+      unawaited(
+        ClaudeLimitResetFlag.of(widget.controller).ensure().then((_) {
+          if (mounted && generation == subject) changed();
+        }),
+      );
+    }
     result = p == null
         ? null
         : client.cached(widget.serverId, widget.machineId, p);
@@ -784,10 +792,32 @@ class _RuntimeUsageChipState extends State<RuntimeUsageChip> {
     );
   }
 
-  /// A Claude runtime's limit resets by kind (claude_limit_reset): the card's
-  /// buttons and owner-only line are drawn from this; the Claude flow wires
-  /// it later.
-  RaftRuntimeClaudeLimitReset? get claudeLimitReset => null;
+  /// A Claude runtime's limit resets by kind (claude_limit_reset): shown where
+  /// the flag is on and the server says what this Computer can do.
+  late final claudeResets = ClaudeLimitResets(
+    context: () => context,
+    mounted: () => mounted,
+    client: () => authClient,
+    serverId: () => widget.serverId,
+    machineId: () => widget.machineId,
+    subject: () => limitResetSubject,
+    onNote: (note) {
+      limitResetNote = note;
+      changed();
+    },
+    showUsageAfterReset: showUsageAfterReset,
+    refresh: refresh,
+    changed: changed,
+  );
+
+  RaftRuntimeClaudeLimitReset? get claudeLimitReset => claudeResets.surface(
+    claude: provider == 'claude',
+    flagOn: ClaudeLimitResetFlag.of(widget.controller).enabled,
+    canAct: canActOnRuntimes,
+    loggedOut: authStatus?.kind == 'logged_out',
+    view: authView,
+    snapshot: result?.snapshot,
+  );
 
   RaftRuntimeUsageData data(BuildContext context) {
     final r = result;
