@@ -17,6 +17,7 @@ import 'banner.dart';
 import 'indicators.dart';
 import 'raft/avatar.dart' show RaftAvatarSize;
 import 'raft/status.dart';
+import 'rack_runtime_usage.dart';
 import 'theme.dart';
 import 'tokens/raft_tokens.g.dart'
     show RaftRadius, RaftTypeScale, RaftTypeStyle;
@@ -33,6 +34,16 @@ const double raftRackCellWidth = 80;
 const double raftRackOtherWidth = 40;
 const double raftRackActionWidth = 184;
 const double raftRackMenuWidth = 32;
+
+/// The usage columns and Other with the gaps before them and the hairline
+/// ahead (computersRackLayout.ts metricsWidthPx beyond Disk and Memory).
+double raftRackRuntimeColumnsWidth(int usage, bool other) {
+  if (usage == 0 && !other) return 0;
+  return raftRackGap +
+      1 +
+      usage * (raftRackUsageCellWidth + raftRackGap) +
+      (other ? raftRackOtherCellWidth + raftRackGap : 0);
+}
 
 /// Cards of at least 250px: four a row at 1440 wide, one on a phone.
 const double raftRackCardMinWidth = 250;
@@ -86,6 +97,9 @@ class RaftRackComputer {
     this.agentCount = 0,
     this.agents = const [],
     this.otherRuntimes = const [],
+    this.usageCells = const [],
+    this.usageLines = const [],
+    this.otherCell,
     this.selected = false,
     this.dotLabel,
     this.glyph = RaftGlyph.monitor,
@@ -120,6 +134,14 @@ class RaftRackComputer {
 
   /// The runtimes that report no usage ("Other").
   final List<String> otherRuntimes;
+
+  /// The runtime usage columns, the same on every row (an absent one is an
+  /// empty widget); [otherCell] is the Other column's, null with no such column.
+  final List<Widget> usageCells;
+  final Widget? otherCell;
+
+  /// A card's usage lines, one per provider the computer has.
+  final List<Widget> usageLines;
   final bool selected;
 }
 
@@ -335,12 +357,16 @@ class RaftRackListHeader extends StatelessWidget {
     required this.diskLabel,
     required this.memoryLabel,
     this.otherLabel,
+    this.usage = const [],
     this.sortedKey,
     this.descending = false,
     this.onSort,
   });
   final String computerLabel, agentsLabel, diskLabel, memoryLabel;
   final String? otherLabel;
+
+  /// The usage columns' headings, in column order; each sorts by its key.
+  final List<RaftRackUsageHeading> usage;
 
   /// 'name', 'disk' or 'memory'.
   final String? sortedKey;
@@ -350,18 +376,25 @@ class RaftRackListHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     final style = _type(t, RaftTypeScale.caption, color: _hint(t));
-    Widget heading(String label, String? key, double? width) {
+    Widget heading(
+      String label,
+      String? key,
+      double? width, {
+      Widget Function(Color color)? content,
+    }) {
       final sorted = key != null && key == sortedKey;
       final Widget headingLabel = Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Flexible(
-            child: Text(
-              label,
-              style: sorted ? style.copyWith(color: t.strong) : style,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
+            child: content != null
+                ? content(sorted ? t.strong : _hint(t))
+                : Text(
+                    label,
+                    style: sorted ? style.copyWith(color: t.strong) : style,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
           ),
           if (sorted) ...[
             const SizedBox(width: 4),
@@ -401,9 +434,26 @@ class RaftRackListHeader extends StatelessWidget {
             heading(diskLabel, 'disk', raftRackCellWidth),
             const SizedBox(width: raftRackGap),
             heading(memoryLabel, 'memory', raftRackCellWidth),
+            if (usage.isNotEmpty || otherLabel != null) ...[
+              const SizedBox(width: raftRackGap),
+              Container(width: 1, height: 16, color: t.colors['line-hairline']),
+            ],
+            for (final u in usage) ...[
+              const SizedBox(width: raftRackGap),
+              heading(
+                u.fullName,
+                u.key,
+                raftRackUsageCellWidth,
+                content: (color) => RaftRackRuntimeHeading(
+                  shortName: u.shortName,
+                  fullName: u.fullName,
+                  color: color,
+                ),
+              ),
+            ],
             if (otherLabel != null) ...[
               const SizedBox(width: raftRackGap),
-              heading(otherLabel!, null, raftRackOtherWidth),
+              heading(otherLabel!, null, raftRackOtherCellWidth),
             ],
             const SizedBox(width: raftRackGap + raftRackActionWidth),
             const SizedBox(width: raftRackGap + raftRackMenuWidth),
@@ -642,6 +692,10 @@ class _RaftRackRowState extends State<RaftRackRow> {
                   const SizedBox(height: 8),
                   if (c.memory != null)
                     RaftRackResource(meter: c.memory!, line: true),
+                  for (final line in c.usageLines) ...[
+                    const SizedBox(height: 8),
+                    line,
+                  ],
                   if (other != null) ...[
                     const SizedBox(height: 12),
                     Row(
@@ -696,6 +750,37 @@ class _RaftRackRowState extends State<RaftRackRow> {
                     const SizedBox(height: 8),
                     slots(),
                   ],
+                  if (!c.offline &&
+                      (c.usageCells.isNotEmpty || c.otherCell != null)) ...[
+                    const SizedBox(height: 8),
+                    Row(
+                      key: ValueKey('rack-metrics-${c.id}'),
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        for (final (i, cell) in c.usageCells.indexed) ...[
+                          if (i > 0) const SizedBox(width: 8),
+                          Expanded(
+                            child: Align(
+                              alignment: Alignment.topLeft,
+                              child: ConstrainedBox(
+                                constraints: const BoxConstraints(
+                                  maxWidth: raftRackUsageCellWidth,
+                                ),
+                                child: cell,
+                              ),
+                            ),
+                          ),
+                        ],
+                        if (c.otherCell != null) ...[
+                          if (c.usageCells.isNotEmpty) const SizedBox(width: 8),
+                          SizedBox(
+                            width: raftRackOtherCellWidth,
+                            child: c.otherCell,
+                          ),
+                        ],
+                      ],
+                    ),
+                  ],
                   if (action != null) ...[const SizedBox(height: 8), action],
                 ],
               ),
@@ -747,16 +832,47 @@ class _RaftRackRowState extends State<RaftRackRow> {
                         width:
                             raftRackCellWidth * 2 +
                             raftRackGap * 2 +
-                            raftRackActionWidth,
+                            raftRackActionWidth +
+                            raftRackRuntimeColumnsWidth(
+                              c.usageCells.length,
+                              c.otherCell != null,
+                            ),
                         child: Align(
                           alignment: AlignmentDirectional.centerEnd,
                           child: action ?? const SizedBox.shrink(),
                         ),
                       )
                     else ...[
-                      if (c.disk != null) RaftRackResource(meter: c.disk!),
-                      const SizedBox(width: raftRackGap),
-                      if (c.memory != null) RaftRackResource(meter: c.memory!),
+                      // Top-aligned: every cell's first line on one line; a
+                      // two-line usage cell grows the row.
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (c.disk != null) RaftRackResource(meter: c.disk!),
+                          const SizedBox(width: raftRackGap),
+                          if (c.memory != null)
+                            RaftRackResource(meter: c.memory!),
+                          if (c.usageCells.isNotEmpty ||
+                              c.otherCell != null) ...[
+                            const SizedBox(width: raftRackGap),
+                            Container(width: 1),
+                          ],
+                          for (final cell in c.usageCells) ...[
+                            const SizedBox(width: raftRackGap),
+                            SizedBox(
+                              width: raftRackUsageCellWidth,
+                              child: cell,
+                            ),
+                          ],
+                          if (c.otherCell != null) ...[
+                            const SizedBox(width: raftRackGap),
+                            SizedBox(
+                              width: raftRackOtherCellWidth,
+                              child: c.otherCell,
+                            ),
+                          ],
+                        ],
+                      ),
                       const SizedBox(width: raftRackGap),
                       SizedBox(
                         width: raftRackActionWidth,
@@ -1117,10 +1233,14 @@ class RaftRackScroller extends StatelessWidget {
     required this.layout,
     required this.children,
     this.header,
+    this.extraWidth = 0,
   });
   final RaftRackLayout layout;
   final List<Widget> children;
   final Widget? header;
+
+  /// The usage columns' and Other's width ([raftRackRuntimeColumnsWidth]).
+  final double extraWidth;
 
   /// computersRackLayout.ts listMinWidthPx without usage columns.
   static const double listMinWidth =
@@ -1155,11 +1275,15 @@ class RaftRackScroller extends StatelessWidget {
         child: layout == RaftRackLayout.phone
             ? list
             : LayoutBuilder(
-                builder: (context, box) => box.maxWidth >= listMinWidth
+                builder: (context, box) =>
+                    box.maxWidth >= listMinWidth + extraWidth
                     ? list
                     : SingleChildScrollView(
                         scrollDirection: Axis.horizontal,
-                        child: SizedBox(width: listMinWidth, child: list),
+                        child: SizedBox(
+                          width: listMinWidth + extraWidth,
+                          child: list,
+                        ),
                       ),
               ),
       );

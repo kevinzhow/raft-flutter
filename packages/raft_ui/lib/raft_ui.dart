@@ -272,6 +272,7 @@ export 'src/others_agents_list.dart';
 export 'src/computers_rack.dart';
 export 'src/rack_restart_progress.dart';
 export 'src/rack_row_popover.dart';
+export 'src/rack_runtime_usage.dart';
 export 'src/computer_manual_install.dart';
 export 'src/upgrade_failure_hint_text.dart';
 export 'src/computer_version_notice.dart';

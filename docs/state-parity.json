@@ -49002,6 +49002,180 @@
         "familyRefs": [],
         "owner": "WP-DS1 task-board family",
         "reason": "Source census candidate (WP-DS1 part 2, raft-ui 0.95.3 task board: column chevron, drop state of the lane box, keyboard-focusable trigger and card open area); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computers_rack/computers_rack_runtime_usage.dart#class:RackUsageCellView": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 rack runtime usage",
+        "reason": "Source census candidate (WP-COMP2 rack runtime usage columns: usage cells, headings, Other cell, usage reads); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computers_rack/computers_rack_runtime_usage.dart#function:rackRuntimeParts": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 rack runtime usage",
+        "reason": "Source census candidate (WP-COMP2 rack runtime usage columns: usage cells, headings, Other cell, usage reads); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computers_rack/computers_rack_runtime_usage.dart#local-function:FUNCTION:rackRuntimeParts@26086/FUNCTION:cell@26392": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 rack runtime usage",
+        "reason": "Source census candidate (WP-COMP2 rack runtime usage columns: usage cells, headings, Other cell, usage reads); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computers_rack/computers_rack_runtime_usage.dart#method:RackUsageCellView.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 rack runtime usage",
+        "reason": "Source census candidate (WP-COMP2 rack runtime usage columns: usage cells, headings, Other cell, usage reads); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computers_rack/computers_rack_view.dart#local-function:CLASS:_ComputersRackViewState@2263/METHOD:_list@21978/FUNCTION:row@25427": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 rack runtime usage",
+        "reason": "Source census candidate (WP-COMP2 rack runtime usage columns: usage cells, headings, Other cell, usage reads); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computers_rack/computers_rack_view.dart#local-function:CLASS:_ComputersRackViewState@2263/METHOD:_list@21978/FUNCTION:title@25526": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 rack runtime usage",
+        "reason": "Source census candidate (WP-COMP2 rack runtime usage columns: usage cells, headings, Other cell, usage reads); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/rack_runtime_usage_previews.dart#class:_RackRuntimeUsagePreview": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 rack runtime usage",
+        "reason": "Source census candidate (WP-COMP2 rack runtime usage columns: usage cells, headings, Other cell, usage reads); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/rack_runtime_usage_previews.dart#function:rackRuntimeUsagePreview": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 rack runtime usage",
+        "reason": "Source census candidate (WP-COMP2 rack runtime usage columns: usage cells, headings, Other cell, usage reads); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/rack_runtime_usage_previews.dart#method:_RackRuntimeUsagePreview.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 rack runtime usage",
+        "reason": "Source census candidate (WP-COMP2 rack runtime usage columns: usage cells, headings, Other cell, usage reads); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/computers_rack.dart#local-function:CLASS:RaftRackListHeader@10723/METHOD:build@11415/FUNCTION:heading@11562": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 rack runtime usage",
+        "reason": "Source census candidate (WP-COMP2 rack runtime usage columns: usage cells, headings, Other cell, usage reads); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/computers_rack.dart#local-function:CLASS:_RaftRackRowState@15474/METHOD:build@17120/FUNCTION:slots@19541": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 rack runtime usage",
+        "reason": "Source census candidate (WP-COMP2 rack runtime usage columns: usage cells, headings, Other cell, usage reads); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/rack_runtime_usage.dart#class:_AttentionPixel": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 rack runtime usage",
+        "reason": "Source census candidate (WP-COMP2 rack runtime usage columns: usage cells, headings, Other cell, usage reads); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/rack_runtime_usage.dart#class:RaftRackOtherCell": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 rack runtime usage",
+        "reason": "Source census candidate (WP-COMP2 rack runtime usage columns: usage cells, headings, Other cell, usage reads); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/rack_runtime_usage.dart#class:RaftRackPhoneRuntimeHeader": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 rack runtime usage",
+        "reason": "Source census candidate (WP-COMP2 rack runtime usage columns: usage cells, headings, Other cell, usage reads); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/rack_runtime_usage.dart#class:RaftRackRuntimeHeading": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 rack runtime usage",
+        "reason": "Source census candidate (WP-COMP2 rack runtime usage columns: usage cells, headings, Other cell, usage reads); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/rack_runtime_usage.dart#class:RaftRackRuntimeMark": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 rack runtime usage",
+        "reason": "Source census candidate (WP-COMP2 rack runtime usage columns: usage cells, headings, Other cell, usage reads); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/rack_runtime_usage.dart#class:RaftRackUsageCell": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 rack runtime usage",
+        "reason": "Source census candidate (WP-COMP2 rack runtime usage columns: usage cells, headings, Other cell, usage reads); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/rack_runtime_usage.dart#function:_bar": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 rack runtime usage",
+        "reason": "Source census candidate (WP-COMP2 rack runtime usage columns: usage cells, headings, Other cell, usage reads); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/rack_runtime_usage.dart#local-function:CLASS:RaftRackUsageCell@4235/METHOD:_line@8261/FUNCTION:value@9205": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 rack runtime usage",
+        "reason": "Source census candidate (WP-COMP2 rack runtime usage columns: usage cells, headings, Other cell, usage reads); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/rack_runtime_usage.dart#method:_AttentionPixel.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 rack runtime usage",
+        "reason": "Source census candidate (WP-COMP2 rack runtime usage columns: usage cells, headings, Other cell, usage reads); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/rack_runtime_usage.dart#method:RaftRackOtherCell.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 rack runtime usage",
+        "reason": "Source census candidate (WP-COMP2 rack runtime usage columns: usage cells, headings, Other cell, usage reads); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/rack_runtime_usage.dart#method:RaftRackPhoneRuntimeHeader.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 rack runtime usage",
+        "reason": "Source census candidate (WP-COMP2 rack runtime usage columns: usage cells, headings, Other cell, usage reads); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/rack_runtime_usage.dart#method:RaftRackRuntimeHeading.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 rack runtime usage",
+        "reason": "Source census candidate (WP-COMP2 rack runtime usage columns: usage cells, headings, Other cell, usage reads); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/rack_runtime_usage.dart#method:RaftRackRuntimeMark.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 rack runtime usage",
+        "reason": "Source census candidate (WP-COMP2 rack runtime usage columns: usage cells, headings, Other cell, usage reads); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/rack_runtime_usage.dart#method:RaftRackUsageCell.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 rack runtime usage",
+        "reason": "Source census candidate (WP-COMP2 rack runtime usage columns: usage cells, headings, Other cell, usage reads); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/rack_runtime_usage.dart#method:RaftRackUsageCell._line": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 rack runtime usage",
+        "reason": "Source census candidate (WP-COMP2 rack runtime usage columns: usage cells, headings, Other cell, usage reads); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/rack_runtime_usage.dart#method:RaftRackUsageCell._meter": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 rack runtime usage",
+        "reason": "Source census candidate (WP-COMP2 rack runtime usage columns: usage cells, headings, Other cell, usage reads); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/rack_runtime_usage.dart#method:RaftRackUsageCell._modelLine": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 rack runtime usage",
+        "reason": "Source census candidate (WP-COMP2 rack runtime usage columns: usage cells, headings, Other cell, usage reads); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/rack_runtime_usage.dart#method:RaftRackUsageCell._pending": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 rack runtime usage",
+        "reason": "Source census candidate (WP-COMP2 rack runtime usage columns: usage cells, headings, Other cell, usage reads); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       }
     },
     "entries": {
