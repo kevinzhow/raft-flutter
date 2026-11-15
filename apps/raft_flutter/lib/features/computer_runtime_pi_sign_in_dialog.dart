@@ -22,6 +22,9 @@ import 'agent_runtime_labels.dart';
 import 'computer_runtime_sign_in_dialog.dart';
 import 'computer_runtime_sign_in_parts.dart';
 
+/// PiSignInDialog `max-h-[420px] overflow-y-auto` provider list.
+const _listMaxHeight = 420.0;
+
 /// Opens the sign-in dialog for [runtime] (a runtime-auth id) on the
 /// Computer [machineId]; [runtimeId] is the Raft runtime id it is shown for.
 Future<void> showComputerRuntimePiSignInDialog(
@@ -482,7 +485,7 @@ class _PiSignInState extends State<ComputerRuntimePiSignInView> {
           )
         else
           ConstrainedBox(
-            constraints: const BoxConstraints(maxHeight: 420),
+            constraints: const BoxConstraints(maxHeight: _listMaxHeight),
             child: SingleChildScrollView(
               child: RaftRadioGroup<String>(
                 value: chosenValue,
@@ -493,13 +496,17 @@ class _PiSignInState extends State<ComputerRuntimePiSignInView> {
                   if (shownAccounts.isNotEmpty)
                     RaftDialogSectionEyebrow(
                       'Sign in with an account',
-                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                        vertical: RaftSpace.x2,
+                      ),
                     ),
                   for (final row in shownAccounts) _row(context, row),
                   if (shownKeys.isNotEmpty)
                     RaftDialogSectionEyebrow(
                       'Use an API key',
-                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                        vertical: RaftSpace.x2,
+                      ),
                     ),
                   for (final row in shownKeys) _row(context, row),
                 ],
@@ -571,7 +578,7 @@ class _PiSignInState extends State<ComputerRuntimePiSignInView> {
       value: row.value,
       enabled: enabled,
       minHeight: 44,
-      padding: const EdgeInsets.symmetric(vertical: 6),
+      padding: const EdgeInsets.symmetric(vertical: RaftSpace.x1_5),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

@@ -49410,6 +49410,180 @@
         "familyRefs": [],
         "owner": "WP-COMP2 runtime usage card",
         "reason": "Source census candidate (WP-COMP2 runtime usage card state, sign-out, provider connect and limit reset dialogs, RuntimeSignInNotice); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computer_runtime_pi_sign_in_dialog.dart#class:ComputerRuntimePiSignInView": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 runtime sign-in",
+        "reason": "Source census candidate (WP-COMP2 runtime sign-in dialogs, runtime usage rack cells); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computer_runtime_pi_sign_in_dialog.dart#class:_PiSignInState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 runtime sign-in",
+        "reason": "Source census candidate (WP-COMP2 runtime sign-in dialogs, runtime usage rack cells); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computer_runtime_pi_sign_in_dialog.dart#function:showComputerRuntimePiSignInDialog": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 runtime sign-in",
+        "reason": "Source census candidate (WP-COMP2 runtime sign-in dialogs, runtime usage rack cells); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computer_runtime_pi_sign_in_dialog.dart#method:ComputerRuntimePiSignInView.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 runtime sign-in",
+        "reason": "Source census candidate (WP-COMP2 runtime sign-in dialogs, runtime usage rack cells); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computer_runtime_pi_sign_in_dialog.dart#method:_PiSignInState._actions": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 runtime sign-in",
+        "reason": "Source census candidate (WP-COMP2 runtime sign-in dialogs, runtime usage rack cells); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computer_runtime_pi_sign_in_dialog.dart#method:_PiSignInState._body": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 runtime sign-in",
+        "reason": "Source census candidate (WP-COMP2 runtime sign-in dialogs, runtime usage rack cells); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computer_runtime_pi_sign_in_dialog.dart#method:_PiSignInState._chooser": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 runtime sign-in",
+        "reason": "Source census candidate (WP-COMP2 runtime sign-in dialogs, runtime usage rack cells); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computer_runtime_pi_sign_in_dialog.dart#method:_PiSignInState._keyForm": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 runtime sign-in",
+        "reason": "Source census candidate (WP-COMP2 runtime sign-in dialogs, runtime usage rack cells); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computer_runtime_pi_sign_in_dialog.dart#method:_PiSignInState._row": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 runtime sign-in",
+        "reason": "Source census candidate (WP-COMP2 runtime sign-in dialogs, runtime usage rack cells); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computer_runtime_pi_sign_in_dialog.dart#method:_PiSignInState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 runtime sign-in",
+        "reason": "Source census candidate (WP-COMP2 runtime sign-in dialogs, runtime usage rack cells); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computer_runtime_sign_in_dialog.dart#class:ComputerRuntimeSignInView": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 runtime sign-in",
+        "reason": "Source census candidate (WP-COMP2 runtime sign-in dialogs, runtime usage rack cells); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computer_runtime_sign_in_dialog.dart#class:_SignInState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 runtime sign-in",
+        "reason": "Source census candidate (WP-COMP2 runtime sign-in dialogs, runtime usage rack cells); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computer_runtime_sign_in_dialog.dart#function:showComputerRuntimeSignInDialog": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 runtime sign-in",
+        "reason": "Source census candidate (WP-COMP2 runtime sign-in dialogs, runtime usage rack cells); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computer_runtime_sign_in_dialog.dart#method:ComputerRuntimeSignInView.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 runtime sign-in",
+        "reason": "Source census candidate (WP-COMP2 runtime sign-in dialogs, runtime usage rack cells); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computer_runtime_sign_in_dialog.dart#method:_SignInState._actions": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 runtime sign-in",
+        "reason": "Source census candidate (WP-COMP2 runtime sign-in dialogs, runtime usage rack cells); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computer_runtime_sign_in_dialog.dart#method:_SignInState._authLink": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 runtime sign-in",
+        "reason": "Source census candidate (WP-COMP2 runtime sign-in dialogs, runtime usage rack cells); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computer_runtime_sign_in_dialog.dart#method:_SignInState._body": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 runtime sign-in",
+        "reason": "Source census candidate (WP-COMP2 runtime sign-in dialogs, runtime usage rack cells); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computer_runtime_sign_in_dialog.dart#method:_SignInState._codeForm": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 runtime sign-in",
+        "reason": "Source census candidate (WP-COMP2 runtime sign-in dialogs, runtime usage rack cells); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computer_runtime_sign_in_dialog.dart#method:_SignInState._deviceCode": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 runtime sign-in",
+        "reason": "Source census candidate (WP-COMP2 runtime sign-in dialogs, runtime usage rack cells); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computer_runtime_sign_in_dialog.dart#method:_SignInState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 runtime sign-in",
+        "reason": "Source census candidate (WP-COMP2 runtime sign-in dialogs, runtime usage rack cells); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computer_runtime_sign_in_parts.dart#class:SignInStepDialog": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 runtime sign-in",
+        "reason": "Source census candidate (WP-COMP2 runtime sign-in dialogs, runtime usage rack cells); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computer_runtime_sign_in_parts.dart#function:showSignInStep": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 runtime sign-in",
+        "reason": "Source census candidate (WP-COMP2 runtime sign-in dialogs, runtime usage rack cells); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computer_runtime_sign_in_parts.dart#function:signInCommit": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 runtime sign-in",
+        "reason": "Source census candidate (WP-COMP2 runtime sign-in dialogs, runtime usage rack cells); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computer_runtime_sign_in_parts.dart#function:signInGhost": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 runtime sign-in",
+        "reason": "Source census candidate (WP-COMP2 runtime sign-in dialogs, runtime usage rack cells); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computer_runtime_sign_in_parts.dart#function:signInHint": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 runtime sign-in",
+        "reason": "Source census candidate (WP-COMP2 runtime sign-in dialogs, runtime usage rack cells); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computer_runtime_sign_in_parts.dart#function:signInStatusLine": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 runtime sign-in",
+        "reason": "Source census candidate (WP-COMP2 runtime sign-in dialogs, runtime usage rack cells); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computer_runtime_sign_in_parts.dart#method:SignInStepDialog.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 runtime sign-in",
+        "reason": "Source census candidate (WP-COMP2 runtime sign-in dialogs, runtime usage rack cells); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computers_rack/computers_rack_runtime_usage.dart#local-function:FUNCTION:rackRuntimeParts@26072/FUNCTION:cell@26378": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 runtime sign-in",
+        "reason": "Source census candidate (WP-COMP2 runtime sign-in dialogs, runtime usage rack cells); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/rack_runtime_usage.dart#local-function:CLASS:RaftRackUsageCell@4235/METHOD:_line@8421/FUNCTION:value@9365": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 runtime sign-in",
+        "reason": "Source census candidate (WP-COMP2 runtime sign-in dialogs, runtime usage rack cells); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       }
     },
     "entries": {
