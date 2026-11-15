@@ -3833,6 +3833,102 @@
     "canonicalRegistry": "tool/ds-audit-families.json",
     "about": "Ownership registration only. The resolved scanner checks completeness. UNKNOWN/pending/history never count as current visual PASS. Existing lifecycle covered records retain their original scope.",
     "declarations": {
+      "apps/raft_flutter/lib/features/computers_rack/computers_rack_page.dart#method:_ComputersRackDesktopPageState.panelOpen": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 part 3: rack slots, row tab stop, restart progress, row popovers, owner row, delete phase 2); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computers_rack/computers_rack_view.dart#local-function:CLASS:_ComputersRackViewState@2133/METHOD:_list@21042/FUNCTION:row@24328": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 part 2: rack drag-to-move, version notices, bulk model); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computers_rack/computers_rack_view.dart#local-function:CLASS:_ComputersRackViewState@2133/METHOD:_list@21042/FUNCTION:title@24404": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 part 2: rack drag-to-move, version notices, bulk model); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/computer_detail.dart#local-function:CLASS:_RaftComputerDetailViewState@17058/METHOD:_agentsSection@62588/FUNCTION:row@64657": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder observed at the current source position; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/computer_detail.dart#local-function:CLASS:_RaftComputerDetailViewState@17058/METHOD:_infoSection@45457/FUNCTION:versionValue@45594": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "P1 dialogs / canonical Choice integration",
+        "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+      },
+      "packages/raft_ui/lib/src/computer_detail.dart#local-function:CLASS:_RaftComputerDetailViewState@17058/METHOD:_recoveryGuide@87477/FUNCTION:step@87772": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "P1 dialogs / canonical Choice integration",
+        "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+      },
+      "packages/raft_ui/lib/src/computer_detail.dart#local-function:CLASS:_RaftComputerDetailViewState@17058/METHOD:_upgradeAdvice@85460/FUNCTION:lines@85982": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/computers_rack.dart#class:_RaftRackRowState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 part 3: rack slots, row tab stop, restart progress, row popovers, owner row, delete phase 2); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/computers_rack.dart#local-function:CLASS:RaftRackListHeader@9889/METHOD:build@10436/FUNCTION:heading@10583": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 Computers rack / Computer page); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/computers_rack.dart#local-function:CLASS:_RaftRackRowState@13662/METHOD:build@15308/FUNCTION:slots@17729": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 part 3: rack slots, row tab stop, restart progress, row popovers, owner row, delete phase 2); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/computers_rack.dart#method:RaftRackRow.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 part 3: rack slots, row tab stop, restart progress, row popovers, owner row, delete phase 2); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/computers_rack.dart#method:_RaftRackRowState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 part 3: rack slots, row tab stop, restart progress, row popovers, owner row, delete phase 2); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/computers_rack.dart#method:_RaftRackRowState.surface": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 part 3: rack slots, row tab stop, restart progress, row popovers, owner row, delete phase 2); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35175/METHOD:_buildRecipe@36445/FUNCTION:addon@37935": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "P1 dialogs / canonical Choice integration",
+        "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+      },
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35175/METHOD:_buildRecipe@36445/FUNCTION:box@37625": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "P1 dialogs / canonical Choice integration",
+        "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+      },
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35175/METHOD:_buildRecipe@36445/FUNCTION:resolve@36631": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "P1 dialogs / canonical Choice integration",
+        "reason": "Resolved render_or_state_owner composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+      },
       "apps/raft_flutter/lib/features/sso_required_page.dart#class:SsoRequiredPage": {
         "role": "unresolved",
         "familyRefs": [],
@@ -46388,17 +46484,6 @@
         "owner": "WP-COMP1 v1.24 alignment",
         "reason": "Source census candidate (WP-COMP1 Computers rack / Computer page); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
-      "packages/raft_ui/lib/src/computer_detail.dart#local-function:CLASS:_RaftComputerDetailViewState@16620/METHOD:_agentsSection@61739/FUNCTION:row@63808": {
-        "role": "internal_wrapper",
-        "familyRefs": [
-          "checkbox"
-        ],
-        "owner": "P1 dialogs / canonical Choice integration",
-        "delegatesTo": [
-          "packages/raft_ui/lib/src/raft/checkbox.dart#class:RaftCheckboxIndicator"
-        ],
-        "reason": "Resolved constructor/function calls delegate to the registered canonical owner(s); this declaration owns no scanner-detected paint. This is source delegation, not runtime mount or visual evidence."
-      },
       "packages/raft_ui/lib/src/computer_detail.dart#local-function:CLASS:_RaftComputerDetailViewState@16620/METHOD:_infoSection@45019/FUNCTION:versionValue@45156": {
         "role": "entry_composition",
         "familyRefs": [],
@@ -53103,6 +53188,36 @@
       "iconInlineEnd": "has:data-icon=inline-end"
     },
     "stateUses": {
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35175/METHOD:_buildRecipe@36445/FUNCTION:resolve@36631|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:disabled": {
+        "applicability": "unknown",
+        "owner": "WP-DS1 form controls",
+        "reason": "Resolved state use added with the responsive recipe states (pointer-fine and the window band); look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35175/METHOD:_buildRecipe@36445/FUNCTION:resolve@36631|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:hovered": {
+        "applicability": "unknown",
+        "owner": "WP-DS1 form controls",
+        "reason": "Resolved state use added with the responsive recipe states (pointer-fine and the window band); look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35175/METHOD:_buildRecipe@36445/FUNCTION:resolve@36631|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+        "applicability": "unknown",
+        "owner": "WP-DS1 form controls",
+        "reason": "Resolved state use added with the responsive recipe states (pointer-fine and the window band); look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35175/METHOD:_buildRecipe@36445/FUNCTION:resolve@36631|state:focus-within": {
+        "applicability": "unknown",
+        "owner": "WP-DS1 form controls",
+        "reason": "Resolved state use added with the responsive recipe states (pointer-fine and the window band); look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35175/METHOD:_buildRecipe@36445/FUNCTION:resolve@36631|state:has:data-slot=input-group-control+data-invalid": {
+        "applicability": "unknown",
+        "owner": "WP-DS1 form controls",
+        "reason": "Resolved state use added with the responsive recipe states (pointer-fine and the window band); look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35175/METHOD:_buildRecipe@36445/FUNCTION:resolve@36631|state:has:data-slot=input-group-control+disabled": {
+        "applicability": "unknown",
+        "owner": "WP-DS1 form controls",
+        "reason": "Resolved state use added with the responsive recipe states (pointer-fine and the window band); look/input/real-entry applicability remains unreviewed."
+      },
       "apps/raft_flutter/lib/features/fleet_views.dart#method:_FleetDetailState.editAvatar|state:dark": {
         "applicability": "unknown",
         "owner": "design-system alignment",
