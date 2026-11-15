@@ -8,10 +8,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/device_preferences.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
-import 'package:raft_flutter/features/computers_rack/computers_rack_model.dart';
 import 'package:raft_flutter/features/computers_rack/computers_rack_preferences.dart';
 import 'package:raft_flutter/features/computers_rack/computers_rack_view.dart';
-import 'package:raft_flutter/features/fleet_views.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
