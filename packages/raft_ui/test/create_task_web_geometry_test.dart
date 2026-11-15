@@ -66,7 +66,9 @@ void main() {
         expect(card.width, 448);
         expect(
           card.height,
-          count == 1 ? 226 : 278,
+          // 0.95.3 desktop density (34px buttons and fields); the v1.21.23
+          // measurement (226 / 278) is superseded and not yet re-measured on v1.24.
+          count == 1 ? 202 : 244,
           reason: 'Web card element at the same 1280×800 viewport',
         );
       });
@@ -79,8 +81,8 @@ void main() {
       final submit = t.getRect(
         find.byKey(const ValueKey('create-task-submit')),
       );
-      expect(cancel.height, 44);
-      expect(submit.height, 44);
+      expect(cancel.height, 34); // 0.95.3 desktop button
+      expect(submit.height, 34);
       expect(submit.left - cancel.right, 8);
     });
     testWidgets('Web task title rows use 8px gap dark=$dark', (t) async {

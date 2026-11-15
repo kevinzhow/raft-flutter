@@ -151,7 +151,8 @@ void main() {
         );
         expect(box.style.padding.left, padding);
         expect(box.style.padding.right, 12);
-        expect(t.getSize(trigger).height, 44);
+        // raft-ui 0.95.3 desktop density: one 34px control height with a mouse from 768px.
+        expect(t.getSize(trigger).height, 34);
         // Root content must begin after the CSS used border, not authored1.5.
         expect(
           t.getTopLeft(find.text('Alpha')).dx - t.getTopLeft(trigger).dx,

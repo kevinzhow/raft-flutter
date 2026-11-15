@@ -66,7 +66,10 @@ void main() {
           expect(t.getRect(find.byKey(const Key('topbar-workspace'))).left, 8);
           expect(
             t.getSize(find.byKey(const ValueKey('topbar-workspace-v'))),
-            const Size(32, 32),
+            // Button md:pointer-fine: 34px with a mouse (the Web bar button is 28, DS4).
+            platform == TargetPlatform.linux
+                ? const Size(34, 34)
+                : const Size(32, 32),
           );
           expect(
             t.getRect(find.byKey(const ValueKey('topbar-workspace-v'))).left,
@@ -74,7 +77,7 @@ void main() {
           );
           expect(
             t.getRect(find.byKey(const ValueKey('topbar-workspace-a'))).left,
-            192,
+            platform == TargetPlatform.linux ? 194 : 192,
           );
           await t.tapAt(Offset(t.getCenter(search).dx, 1));
           expect(searches, platform == TargetPlatform.android ? 1 : 0);

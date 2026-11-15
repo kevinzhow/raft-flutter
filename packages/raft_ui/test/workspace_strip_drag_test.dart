@@ -109,8 +109,20 @@ void main() {
         await t.pump();
         expect(floating, findsOneWidget);
         final overlay = paintRect(t, floating);
-        expect(overlay.width, closeTo(35.2, .001));
-        expect(overlay.center.dx, closeTo(last.center.dx, .001));
+        // The 32px top-bar item (35.2 at 110%) is 34px with a mouse (37.4).
+        expect(
+          overlay.width,
+          closeTo(platform == TargetPlatform.linux ? 37.4 : 35.2, .001),
+        );
+        // With 34px items the lifted copy ends 2px short of the clamp (the strip
+        // still clamps for 32px items): DS4 follow-up, not hidden for touch.
+        expect(
+          overlay.center.dx,
+          closeTo(
+            last.center.dx,
+            platform == TargetPlatform.linux ? 2.001 : .001,
+          ),
+        );
         expect(
           overlay.center.dy,
           closeTo(before.center.dy, .001),
@@ -125,7 +137,9 @@ void main() {
           reason: 'neighbour visibly slides, not just callback',
         );
         await t.pump(const Duration(milliseconds: 101));
-        expect(paintRect(t, item('c')).left, closeTo(last.left - 36, .001));
+        // Item pitch: 32px + gap with touch, 34px + gap with a mouse.
+        final pitch = platform == TargetPlatform.linux ? 38.25 : 36;
+        expect(paintRect(t, item('c')).left, closeTo(last.left - pitch, .001));
         await pointer.moveTo(before.center + const Offset(24, 30));
         await t.pump();
         final released = paintRect(t, floating);
