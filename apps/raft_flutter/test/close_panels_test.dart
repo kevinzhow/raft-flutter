@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/raft_location.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
+import 'package:raft_flutter/data/workspace_entity_directory.dart';
 import 'package:raft_flutter/features/channel_members.dart';
 import 'package:raft_flutter/features/channel_settings.dart';
 import 'package:raft_flutter/features/workspace_view.dart';
@@ -61,6 +62,39 @@ void main() {
         x: inPanel(panel, 'Close Profile'),
         back: inPanel(panel, 'Back'),
         scrim: size.width >= 768 ? outsideProfile(t, size) : null,
+      );
+    },
+    'computers-rack-side-panel': (t, size) async {
+      final (w, api) = await mountWorkspace(t, size);
+      api.routes['GET /servers/s1/machines'] = (_) => {
+        'machines': [
+          {
+            'id': 'm1',
+            'name': 'Build Computer',
+            'isComputer': true,
+            'status': 'online',
+            'hostname': 'fixture-host',
+            'userId': 'alice',
+            'runtimes': ['codex'],
+          },
+        ],
+      };
+      await t.runAsync(() async {
+        await w.entityDirectory.refresh(
+          WorkspaceEntityKind.computers,
+          force: true,
+        );
+      });
+      w.navigation.navigate(RaftLocation.parse('/s/demo/computers'));
+      w.notifyListeners();
+      await frames(t, 25);
+      w.navigation.navigate(RaftLocation.parse('/s/demo/computer/m1'));
+      w.notifyListeners();
+      await frames(t, 25);
+      final panel = find.byKey(const ValueKey('computers-rack-side-panel'));
+      return SurfaceProbe(
+        isOpen: () => panel.evaluate().isNotEmpty,
+        x: find.byKey(const ValueKey('machine-panel-close')),
       );
     },
     'profile-external': (t, size) async {

@@ -21,16 +21,13 @@ List<CloseSurface> get allCloseSurfaces => [
 /// Files that contain a surface API call but are not a surface themselves.
 /// Each entry says why; a new entry needs a reviewer's agreement.
 const closeScanExempt = <String, String>{
-  'lib/features/computers_rack/rack_move_dialog.dart':
-      'Web RackMoveDialog is a thin opener: a drop shows the existing Move to '
-      'Another Computer form dialog (agent_migration_start_dialog, closes '
-      'through RaftFormDialog) or the Pro upgrade RaftConfirmDialog; it adds '
-      'no layer or close affordance of its own',
   'lib/features/computers_rack/computers_rack_view.dart':
-      'the Computers overview is a top-level section page like Tasks or '
-      'Activity (Web ComputersRackOverview has no Back or X); on a phone the '
-      'shell\'s mobile page header owns Back, and its dialogs go through '
-      'confirmComputer* / showDeleteComputerDialog (the listed confirm surfaces)',
+      'only the Computers overview page itself: a top-level section page like '
+      'Tasks or Activity (Web ComputersRackOverview has no Back or X); on a '
+      "phone the shell's mobile page header owns Back. The computer it opens "
+      'beside it on desktop is NOT covered by this entry: it is registered as '
+      "the 'computers-rack-side-panel' panel surface, and the move dialog as "
+      "'rack-move-dialog'",
   '../../packages/raft_ui/lib/src/raft_selection_area.dart':
       'the Quote / Copy pair beside a mouse selection is a non-modal toolbar '
       '(Web MessageSelectionShortcut): it closes with the next press, Escape '

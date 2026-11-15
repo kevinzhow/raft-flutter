@@ -1083,6 +1083,11 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel> {
         MediaQuery.sizeOf(context).width < RaftLayoutMetrics.desktopBreakpoint
         ? widget.onClose ?? () => Navigator.of(context).maybePop()
         : null,
+    // Web MachinePanelHeader: the docked panel's Close, from desktop width.
+    onClose:
+        MediaQuery.sizeOf(context).width >= RaftLayoutMetrics.desktopBreakpoint
+        ? widget.onClose
+        : null,
     data: data(),
     actions: RaftComputerDetailActions(
       rename: (name) => _patch({'name': name}),

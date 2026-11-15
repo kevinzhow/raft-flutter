@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:raft_flutter/features/computers_rack/rack_move_dialog.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/raft_location.dart';
@@ -856,6 +857,19 @@ void registerCloseDialogTests(TestPart part) {
         showRaftModal<bool>(
           context,
           builder: (_) => AddMembersDialog(controller: w, channelId: 'c1'),
+        ),
+      ),
+    ),
+    'rack-move-dialog': (t, size) => inWorkspace(
+      t,
+      size,
+      RaftFormDialog,
+      (context, w) => unawaited(
+        showRackMoveDialog(
+          context,
+          w,
+          agent: const {'id': 'a1', 'name': 'cindy', 'machineId': 'm1'},
+          targetId: 'm2',
         ),
       ),
     ),

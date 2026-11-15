@@ -252,6 +252,20 @@ const dialogSurfaces = <CloseSurface>[
         '$_sheetOnPhone; earlier: RaftFormDialog gets a header X and Escape; call sites stop closing on a scrim tap',
   ),
   CloseSurface(
+    'rack-move-dialog',
+    kind: SurfaceKind.dialog,
+    web: 'RackMoveDialog.tsx -> AgentMigrationDialog.tsx:273,359-372 Dialog: Esc and overlay press (onOpenChange, gated on submitting), header X (closeLabel Close), ghost Cancel button',
+    phone: {_x, _esc, _scrim, _sys, _drag},
+    fold: {_x, _esc, _scrim, _sys},
+    desktop: {_x, _esc, _scrim, _sys},
+    files: [
+      'lib/features/computers_rack/rack_move_dialog.dart',
+      'lib/features/agent_migration_start_dialog.dart',
+    ],
+    status: 'approved',
+    fix: _sheetOnPhone,
+  ),
+  CloseSurface(
     'sos-dialog',
     kind: SurfaceKind.dialog,
     web: 'SOSDialog.tsx:57 DialogCard: X + Esc, no backdrop close (not gated on stopping)',

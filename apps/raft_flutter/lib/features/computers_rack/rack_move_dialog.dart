@@ -93,9 +93,10 @@ Future<void> showRackMoveDialog(
   var proRequired = false;
   final agentId = '${agent['id']}';
   var started = false;
-  await showRaftDialog<void>(
-    context: context,
-    barrierDismissible: false,
+  // A form: a sheet on a phone; Esc, the X, a press on the overlay and a drag
+  // down all close it, as Web's AgentMigrationDialog does.
+  await showRaftForm<void>(
+    context,
     builder: (dialog) => AgentMigrationStartDialog(
       targets: targets,
       initialTarget: targetId,

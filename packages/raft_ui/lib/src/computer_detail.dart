@@ -470,6 +470,7 @@ class RaftComputerDetailView extends StatefulWidget {
     required this.data,
     required this.actions,
     this.onBack,
+    this.onClose,
     this.backKey,
     this.headerKey,
     this.agentNotice,
@@ -479,6 +480,11 @@ class RaftComputerDetailView extends StatefulWidget {
 
   /// MachineDetailPanel `onMobileBack`: the boxed Back below md.
   final VoidCallback? onBack;
+
+  /// The docked panel's Close (Web MachinePanelHeader `onClose`, `hidden
+  /// md:flex`): an X in the header, named "Close"; null on a phone page,
+  /// which has Back instead.
+  final VoidCallback? onClose;
   final Key? backKey, headerKey;
   final Widget? agentNotice;
   @override
@@ -946,6 +952,15 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
         iconAlwaysVisible: true,
         onBack: widget.onBack,
         backKey: widget.backKey,
+        actions: [
+          if (widget.onClose case final close?)
+            RaftPanelIconButton(
+              key: const ValueKey('machine-panel-close'),
+              glyph: RaftGlyph.x,
+              tooltip: raftText(context, 'Close'),
+              onPressed: close,
+            ),
+        ],
         iconSlot: RaftPanelHeaderIconTile(
           glyph: RaftGlyph.monitor,
           // bg-primary-soft theme-brutal:bg-soft-signal; elegant border-0
@@ -1179,7 +1194,11 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
       ),
       const SizedBox(height: 4),
       if (manage && editingName)
-        _gapColumn(5, [
+        // Escape in the field cancels the rename only; the panel's own Escape
+        // (close) is not reached (Web: the field marks it handled).
+        RaftDismissScope(
+          onDismiss: () => setState(() => editingName = false),
+          child: _gapColumn(5, [
           RaftRecipeInput(
             fieldKey: const ValueKey('computer-name-field'),
             controller: nameField,
@@ -1203,7 +1222,8 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
               raftText(context, nameError),
               style: ink.body(12, 16, color: ink.orange, w: FontWeight.w700),
             ),
-        ])
+        ]),
+        )
       else
         RaftCssText('${d.name}', style: ink.body(14, 20, color: ink.strong)),
     ]);
@@ -1226,7 +1246,9 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
       ),
       const SizedBox(height: 4),
       if (manage && editingDescription)
-        _gapColumn(5, [
+        RaftDismissScope(
+          onDismiss: () => setState(() => editingDescription = false),
+          child: _gapColumn(5, [
           RaftRecipeTextarea(
             fieldKey: const ValueKey('computer-description-field'),
             controller: descriptionField,
@@ -1255,7 +1277,8 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
               raftText(context, descriptionError),
               style: ink.body(12, 16, color: ink.orange, w: FontWeight.w700),
             ),
-        ])
+        ]),
+        )
       else
         RaftCssText(
           description.isEmpty ? 'No description' : description,

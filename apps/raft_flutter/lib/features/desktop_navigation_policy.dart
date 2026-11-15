@@ -234,6 +234,19 @@ class DesktopNavigationState {
   bool accepts(String scope, int revision) =>
       _scope == scope && revision == navigation.revision;
   void closeTarget() {
+    if (navigation.location.route == RaftRoute.computer) {
+      // The computer beside the rack closes back to the Computers page (Web
+      // ProfilePanel `closeProfile` keeps /computers); its tab's home is
+      // Settings, which would leave the page.
+      navigation.navigate(
+        RaftLocation.at(
+          serverSlug: navigation.location.serverSlug,
+          route: RaftRoute.computers,
+        ),
+        kind: RaftNavigationKind.replace,
+      );
+      return;
+    }
     if ({
       RaftRoute.agent,
       RaftRoute.human,

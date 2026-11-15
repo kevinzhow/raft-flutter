@@ -47,6 +47,22 @@ const panelSurfaces = <CloseSurface>[
     status: 'approved',
   ),
   CloseSurface(
+    'computers-rack-side-panel',
+    kind: SurfaceKind.panel,
+    web: 'ProfilePanel -> MachinePanelHeader.tsx:51-63: X (hidden md:flex, aria-label Close); ProfilePanel.tsx:304 Escape (useShortcutLayer "panel": an overlay or a field handling Escape takes it first)',
+    none: {
+      'phone': 'a phone opens the computer as its own page (computer-detail), not beside the rack',
+    },
+    fold: {_x, _esc, _sys},
+    desktop: {_x, _esc, _sys},
+    files: [
+      'lib/features/computers_rack/computers_rack_page.dart',
+      'lib/features/computer_detail_view.dart',
+    ],
+    status: 'fixed',
+    fix: 'header X added; closing returns to the Computers page (it went to Settings); Escape in a rename or description field cancels the edit only',
+  ),
+  CloseSurface(
     'thread-panel',
     kind: SurfaceKind.panel,
     web: 'ThreadPanel.tsx: Back lg:hidden, X lg:flex, Esc',
