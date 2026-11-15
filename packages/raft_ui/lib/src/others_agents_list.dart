@@ -6,7 +6,6 @@
 import 'package:flutter/widgets.dart';
 
 import '../raft_ui.dart';
-import 'tokens/raft_tokens.g.dart' show RaftTypeScale, RaftTypeStyle;
 
 TextStyle _type(
   RaftTokens t,
@@ -188,7 +187,11 @@ class RaftOthersAgentsList extends StatelessWidget {
                           ),
                           Text(
                             a.ownerLine,
-                            style: _type(t, RaftTypeScale.callout, color: muted),
+                            style: _type(
+                              t,
+                              RaftTypeScale.callout,
+                              color: muted,
+                            ),
                           ),
                           a.actions,
                         ],

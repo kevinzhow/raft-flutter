@@ -35,10 +35,30 @@ class _Owner {
       'machines': [machine],
     };
     f.overrides['GET /servers/a/members'] = (_) => [
-      {'userId': 'alice', 'name': 'alice', 'displayName': 'Alice', 'role': 'owner'},
-      {'userId': 'bob', 'name': 'bob', 'displayName': 'Bob Builder', 'role': 'member'},
-      {'userId': 'carol', 'name': 'carol', 'displayName': 'Carol Guest', 'role': 'guest'},
-      {'userId': 'dave', 'name': 'dave', 'displayName': 'Dave Dev', 'role': 'admin'},
+      {
+        'userId': 'alice',
+        'name': 'alice',
+        'displayName': 'Alice',
+        'role': 'owner',
+      },
+      {
+        'userId': 'bob',
+        'name': 'bob',
+        'displayName': 'Bob Builder',
+        'role': 'member',
+      },
+      {
+        'userId': 'carol',
+        'name': 'carol',
+        'displayName': 'Carol Guest',
+        'role': 'guest',
+      },
+      {
+        'userId': 'dave',
+        'name': 'dave',
+        'displayName': 'Dave Dev',
+        'role': 'admin',
+      },
     ];
     f.overrides['PUT /servers/a/machines/computer-a/owner'] = (o) {
       puts.add(Map<String, dynamic>.from(o.data as Map));
@@ -75,8 +95,7 @@ class _Owner {
   Finder get makeMine => find.byKey(const ValueKey('computer-owner-make-mine'));
   Finder get dialog =>
       find.byKey(const ValueKey('transfer-computer-owner-dialog'));
-  Finder inDialog(Finder child) =>
-      find.descendant(of: dialog, matching: child);
+  Finder inDialog(Finder child) => find.descendant(of: dialog, matching: child);
 
   Future<void> see(WidgetTester t, Finder target) async {
     await t.ensureVisible(target);
@@ -105,10 +124,7 @@ void main() {
     await h.see(t, h.ownerLink);
     expect(h.publicText, findsNothing);
     expect(
-      find.descendant(
-        of: h.ownerLink,
-        matching: find.text('Bob Builder'),
-      ),
+      find.descendant(of: h.ownerLink, matching: find.text('Bob Builder')),
       findsOneWidget,
     );
     expect(
@@ -166,7 +182,9 @@ void main() {
   });
 
   group('Make it mine', () {
-    testWidgets('shown to the connector of a Public Computer, PUTs me', (t) async {
+    testWidgets('shown to the connector of a Public Computer, PUTs me', (
+      t,
+    ) async {
       final h = _Owner(
         extra: {'computerAttachedByCurrentUser': true},
         role: 'member',
@@ -214,7 +232,9 @@ void main() {
       expect(h.makeMine, findsNothing);
     });
 
-    testWidgets('a raw daemon row: the registrant (userId) may claim', (t) async {
+    testWidgets('a raw daemon row: the registrant (userId) may claim', (
+      t,
+    ) async {
       final h = _Owner(
         role: 'member',
         extra: {'isComputer': false, 'userId': 'alice'},
@@ -247,7 +267,15 @@ void main() {
   group('Transfer owner dialog', () {
     for (final width in [390.0, 856.0]) {
       testWidgets('a person is picked and saved at $width', (t) async {
-        final h = _Owner(ownerUserId: 'alice', owner: {..._bob, 'id': 'alice', 'name': 'alice', 'displayName': 'Alice'});
+        final h = _Owner(
+          ownerUserId: 'alice',
+          owner: {
+            ..._bob,
+            'id': 'alice',
+            'name': 'alice',
+            'displayName': 'Alice',
+          },
+        );
         h.putAnswer = (body) => {
           'machine': {
             ...h.machine,
@@ -286,18 +314,23 @@ void main() {
       });
     }
 
-    testWidgets('only non-guest members who are not the owner are offered; me reads (you)', (t) async {
-      final h = _Owner(ownerUserId: 'bob', owner: _bob);
-      await h.open(t);
-      await h.openDialog(t);
-      await t.tap(h.inDialog(find.byKey(const ValueKey('transfer-owner-person'))));
-      await t.pumpAndSettle();
-      expect(find.text('Alice (you)'), findsOneWidget);
-      expect(find.text('Dave Dev'), findsOneWidget);
-      expect(find.text('Carol Guest'), findsNothing);
-      // Bob is the owner: only the page's Owner row names him, not the list.
-      expect(find.text('Bob Builder'), findsOneWidget);
-    });
+    testWidgets(
+      'only non-guest members who are not the owner are offered; me reads (you)',
+      (t) async {
+        final h = _Owner(ownerUserId: 'bob', owner: _bob);
+        await h.open(t);
+        await h.openDialog(t);
+        await t.tap(
+          h.inDialog(find.byKey(const ValueKey('transfer-owner-person'))),
+        );
+        await t.pumpAndSettle();
+        expect(find.text('Alice (you)'), findsOneWidget);
+        expect(find.text('Dave Dev'), findsOneWidget);
+        expect(find.text('Carol Guest'), findsNothing);
+        // Bob is the owner: only the page's Owner row names him, not the list.
+        expect(find.text('Bob Builder'), findsOneWidget);
+      },
+    );
 
     testWidgets('Public: PUT {ownerUserId: null}', (t) async {
       final h = _Owner(ownerUserId: 'bob', owner: _bob);
@@ -306,13 +339,14 @@ void main() {
       };
       await h.open(t);
       await h.openDialog(t);
-      await t.tap(h.inDialog(find.byKey(const ValueKey('transfer-owner-choice-public'))));
-      await t.pumpAndSettle();
-      expect(
-        find.byKey(const ValueKey('transfer-owner-person')),
-        findsNothing,
+      await t.tap(
+        h.inDialog(find.byKey(const ValueKey('transfer-owner-choice-public'))),
       );
-      final confirm = h.inDialog(find.widgetWithText(RaftButton, 'Make public'));
+      await t.pumpAndSettle();
+      expect(find.byKey(const ValueKey('transfer-owner-person')), findsNothing);
+      final confirm = h.inDialog(
+        find.widgetWithText(RaftButton, 'Make public'),
+      );
       await t.tap(confirm);
       await h.f.flush(t);
       expect(h.puts, [
@@ -322,7 +356,9 @@ void main() {
       await h.see(t, h.publicText);
     });
 
-    testWidgets('Public is disabled when the Computer is already Public', (t) async {
+    testWidgets('Public is disabled when the Computer is already Public', (
+      t,
+    ) async {
       final h = _Owner(role: 'owner');
       await h.open(t);
       await h.openDialog(t);
@@ -340,7 +376,9 @@ void main() {
       );
     });
 
-    testWidgets('a failure shows a banner, keeps the dialog and the choice', (t) async {
+    testWidgets('a failure shows a banner, keeps the dialog and the choice', (
+      t,
+    ) async {
       final h = _Owner(ownerUserId: 'bob', owner: _bob)..failPut = true;
       await h.open(t);
       await h.openDialog(t);

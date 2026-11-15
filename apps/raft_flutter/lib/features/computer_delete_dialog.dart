@@ -46,10 +46,7 @@ List<OthersAgent>? othersAgentsOf(Object error) {
   if (error.details['code'] != 'others_agents_on_computer') return null;
   final listed = error.details['agents'];
   if (listed is! List) return null;
-  final agents = [
-    for (final a in listed)
-      if (OthersAgent.fromJson(a) case final agent?) agent,
-  ];
+  final agents = [for (final a in listed) ?OthersAgent.fromJson(a)];
   return agents.isEmpty ? null : agents;
 }
 
@@ -198,7 +195,8 @@ Future<bool> showDeleteComputerDialog(
   );
   // The notify state outlives a trip to the force confirmation and back.
   final notifier = AgentOwnerNotifier(
-    send: (ids) => postNotifyAgentOwners(w.command, '$base/notify-agent-owners', ids),
+    send: (ids) =>
+        postNotifyAgentOwners(w.command, '$base/notify-agent-owners', ids),
   );
   try {
     while (others != null && !deleted && valid()) {
@@ -364,10 +362,14 @@ Future<void> showForceUnbindAgentsDialog(
                     ? raftFormat(dialog, 'No owner · {computerName}', {
                         'computerName': computerName,
                       })
-                    : raftFormat(dialog, 'Owner: {ownerName} · {computerName}', {
-                        'ownerName': a.owner!.name,
-                        'computerName': computerName,
-                      }),
+                    : raftFormat(
+                        dialog,
+                        'Owner: {ownerName} · {computerName}',
+                        {
+                          'ownerName': a.owner!.name,
+                          'computerName': computerName,
+                        },
+                      ),
               ),
           ],
         ),

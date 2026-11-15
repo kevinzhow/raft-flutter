@@ -16,7 +16,10 @@ import 'support/close_surface.dart';
 /// transfer only) and the system back. They have their own file so the six
 /// `close_dialogs` parts keep their deal.
 void main() {
-  const ids = {'transfer-computer-owner-dialog', 'computer-others-agents-dialog'};
+  const ids = {
+    'transfer-computer-owner-dialog',
+    'computer-others-agents-dialog',
+  };
   final surfaces = [
     for (final surface in dialogSurfaces)
       if (ids.contains(surface.id)) surface,
@@ -42,11 +45,7 @@ void main() {
         showOthersAgentsDialog(
           context,
           agents: const [
-            OthersAgent(
-              id: 'a1',
-              name: 'Zed',
-              owner: (id: 'bob', name: 'Bob'),
-            ),
+            OthersAgent(id: 'a1', name: 'Zed', owner: (id: 'bob', name: 'Bob')),
           ],
           notifier: AgentOwnerNotifier(
             send: (ids) => postNotifyAgentOwners(

@@ -46417,6 +46417,114 @@
         "owner": "WP-COMP1 v1.24 alignment",
         "reason": "Source census candidate (WP-COMP1); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
+      "apps/raft_flutter/lib/features/agent_owner_notify.dart#class:AgentOwnerNotifyActions": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 part 3: Computer owner row and transfer, Delete Computer's other-people's-agents list with Notify owner); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/agent_owner_notify.dart#method:AgentOwnerNotifyActions.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 part 3: Computer owner row and transfer, Delete Computer's other-people's-agents list with Notify owner); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computer_delete_dialog.dart#function:showOthersAgentsDialog": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 part 3: Computer owner row and transfer, Delete Computer's other-people's-agents list with Notify owner); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computer_owner.dart#class:_TransferOwnerDialog": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 part 3: Computer owner row and transfer, Delete Computer's other-people's-agents list with Notify owner); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computer_owner.dart#class:_TransferOwnerDialogState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 part 3: Computer owner row and transfer, Delete Computer's other-people's-agents list with Notify owner); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computer_owner.dart#function:claimComputer": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 part 3: Computer owner row and transfer, Delete Computer's other-people's-agents list with Notify owner); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computer_owner.dart#function:showTransferComputerOwnerDialog": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 part 3: Computer owner row and transfer, Delete Computer's other-people's-agents list with Notify owner); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computer_owner.dart#method:_TransferOwnerDialog.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 part 3: Computer owner row and transfer, Delete Computer's other-people's-agents list with Notify owner); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computer_owner.dart#method:_TransferOwnerDialogState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 part 3: Computer owner row and transfer, Delete Computer's other-people's-agents list with Notify owner); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/computer_owner_row.dart#class:RaftComputerOwnerValue": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 part 3: Computer owner row and transfer, Delete Computer's other-people's-agents list with Notify owner); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/computer_owner_row.dart#class:_RaftComputerOwnerValueState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 part 3: Computer owner row and transfer, Delete Computer's other-people's-agents list with Notify owner); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/computer_owner_row.dart#local-function:CLASS:_RaftComputerOwnerValueState@1446/METHOD:build@1824/FUNCTION:identity@2065": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 part 3: Computer owner row and transfer, Delete Computer's other-people's-agents list with Notify owner); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/computer_owner_row.dart#method:RaftComputerOwnerValue.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 part 3: Computer owner row and transfer, Delete Computer's other-people's-agents list with Notify owner); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/computer_owner_row.dart#method:_RaftComputerOwnerValueState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 part 3: Computer owner row and transfer, Delete Computer's other-people's-agents list with Notify owner); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/others_agents_list.dart#class:RaftAgentOwnerNotifyActions": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 part 3: Computer owner row and transfer, Delete Computer's other-people's-agents list with Notify owner); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/others_agents_list.dart#class:RaftOthersAgentsList": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 part 3: Computer owner row and transfer, Delete Computer's other-people's-agents list with Notify owner); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/others_agents_list.dart#method:RaftAgentOwnerNotifyActions.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 part 3: Computer owner row and transfer, Delete Computer's other-people's-agents list with Notify owner); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/others_agents_list.dart#method:RaftOthersAgentsList.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 part 3: Computer owner row and transfer, Delete Computer's other-people's-agents list with Notify owner); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
       "apps/raft_flutter/lib/features/artifacts/artifact_frame_view.dart#class:ArtifactFrameView": {
         "role": "unresolved",
         "familyRefs": [],
@@ -50070,6 +50178,33 @@
         "mountStatus": "unresolved",
         "reason": "Resolved function owns a surface call; actual target, route and state are not yet observed."
       },
+      "surface:apps/raft_flutter/lib/features/computer_delete_dialog.dart#function:showOthersAgentsDialog": {
+        "owner": "WP-COMP1 v1.24 alignment",
+        "kind": "surface_factory_candidate",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/computer_delete_dialog.dart#function:showOthersAgentsDialog"
+        ],
+        "mountStatus": "unresolved",
+        "reason": "Resolved function owns a surface call (WP-COMP1 part 3); actual target, route and state are not yet observed."
+      },
+      "surface:apps/raft_flutter/lib/features/computer_owner.dart#function:claimComputer": {
+        "owner": "WP-COMP1 v1.24 alignment",
+        "kind": "surface_factory_candidate",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/computer_owner.dart#function:claimComputer"
+        ],
+        "mountStatus": "unresolved",
+        "reason": "Resolved function owns a surface call (WP-COMP1 part 3); actual target, route and state are not yet observed."
+      },
+      "surface:apps/raft_flutter/lib/features/computer_owner.dart#function:showTransferComputerOwnerDialog": {
+        "owner": "WP-COMP1 v1.24 alignment",
+        "kind": "surface_factory_candidate",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/computer_owner.dart#function:showTransferComputerOwnerDialog"
+        ],
+        "mountStatus": "unresolved",
+        "reason": "Resolved function owns a surface call (WP-COMP1 part 3); actual target, route and state are not yet observed."
+      },
       "surface:showRackMoveDialog": {
         "owner": "WP-COMP1 v1.24 alignment",
         "kind": "dialog",
@@ -50718,6 +50853,24 @@
         "applicability": "unknown",
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "surface:apps/raft_flutter/lib/features/computer_delete_dialog.dart#function:showOthersAgentsDialog:applicability": {
+        "entryId": "surface:apps/raft_flutter/lib/features/computer_delete_dialog.dart#function:showOthersAgentsDialog",
+        "applicability": "unknown",
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Real entry and applicable theme/input/state dimensions require source review and bound execution."
+      },
+      "surface:apps/raft_flutter/lib/features/computer_owner.dart#function:claimComputer:applicability": {
+        "entryId": "surface:apps/raft_flutter/lib/features/computer_owner.dart#function:claimComputer",
+        "applicability": "unknown",
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Real entry and applicable theme/input/state dimensions require source review and bound execution."
+      },
+      "surface:apps/raft_flutter/lib/features/computer_owner.dart#function:showTransferComputerOwnerDialog:applicability": {
+        "entryId": "surface:apps/raft_flutter/lib/features/computer_owner.dart#function:showTransferComputerOwnerDialog",
+        "applicability": "unknown",
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Real entry and applicable theme/input/state dimensions require source review and bound execution."
       },
       "surface:apps/raft_flutter/lib/features/add_computer_dialog.dart#function:showAddComputerDialog:applicability": {
         "entryId": "surface:apps/raft_flutter/lib/features/add_computer_dialog.dart#function:showAddComputerDialog",

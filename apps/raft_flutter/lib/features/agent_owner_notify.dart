@@ -51,7 +51,9 @@ class OthersAgent {
       owner: owner is Map && owner['id'] is String
           ? (
               id: owner['id'] as String,
-              name: owner['name'] is String && (owner['name'] as String).isNotEmpty
+              name:
+                  owner['name'] is String &&
+                      (owner['name'] as String).isNotEmpty
                   ? owner['name'] as String
                   : owner['id'] as String,
             )
@@ -131,7 +133,9 @@ Future<NotifyAgentOwnersResult> postNotifyAgentOwners(
       await command(
         'POST',
         path,
-        data: {'agentIds': ids.sublist(start, end > ids.length ? ids.length : end)},
+        data: {
+          'agentIds': ids.sublist(start, end > ids.length ? ids.length : end),
+        },
       ),
     );
     notified.addAll(batch.notified);
@@ -280,7 +284,8 @@ class AgentOwnerNotifyActions extends StatelessWidget {
       );
       final (:limited, at: nextAt) = notifier.nextReminder(agent);
       final chinese = Localizations.localeOf(context).languageCode == 'zh';
-      String relative(String iso) => resourceRelativeTime(iso, chinese: chinese);
+      String relative(String iso) =>
+          resourceRelativeTime(iso, chinese: chinese);
       final failed = notifier.failed.contains(agent.id);
       final undelivered = notifier.undelivered.contains(agent.id);
       return RaftAgentOwnerNotifyActions(

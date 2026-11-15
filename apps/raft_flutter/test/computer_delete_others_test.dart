@@ -2,8 +2,6 @@
 // force, OthersAgentsOnComputerDialog, AgentOwnerNotifyActions): deleting
 // one's own Computer while other people's agents are on it lists them with
 // Notify owner to move it before Force unbind and delete.
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_flutter/features/agent_owner_notify.dart';
@@ -209,7 +207,9 @@ void main() {
     expect(find.text('You can remind again in 3 hours'), findsOneWidget);
   });
 
-  testWidgets('rate_limited without a time says once every 24 hours', (t) async {
+  testWidgets('rate_limited without a time says once every 24 hours', (
+    t,
+  ) async {
     final h = _Others();
     h.notifyAnswer = (ids) => {
       'notified': <Object>[],
@@ -242,7 +242,9 @@ void main() {
     expect(find.text('You can remind again in 22 hours'), findsOneWidget);
   });
 
-  testWidgets('no_owner turns the row into the contact-an-admin line', (t) async {
+  testWidgets('no_owner turns the row into the contact-an-admin line', (
+    t,
+  ) async {
     final h = _Others();
     h.notifyAnswer = (ids) => {
       'notified': <Object>[],
@@ -254,13 +256,12 @@ void main() {
     await h.tapNotify(t, 'a1');
     expect(h.enabled(t, h.notify('a1')), isFalse);
     expect(find.text('No owner'), findsOneWidget);
-    expect(
-      find.textContaining("There's no owner to notify."),
-      findsOneWidget,
-    );
+    expect(find.textContaining("There's no owner to notify."), findsOneWidget);
   });
 
-  testWidgets('not_delivered says so and can be tried again at once', (t) async {
+  testWidgets('not_delivered says so and can be tried again at once', (
+    t,
+  ) async {
     final h = _Others();
     h.notifyAnswer = (ids) => {
       'notified': <Object>[],
@@ -296,28 +297,27 @@ void main() {
     );
   });
 
-  testWidgets('Force unbind and delete opens the force confirm; Cancel goes back', (
-    t,
-  ) async {
-    final h = _Others();
-    await h.open(t);
-    await h.tapNotify(t, 'a1');
-    await t.tap(h.forceFromList);
-    await h.f.flush(t);
-    expect(h.force, findsOneWidget);
-    expect(h.others, findsNothing);
-    expect(find.text('Force unbind 1 agent?'), findsOneWidget);
-    await t.tap(
-      find.descendant(of: h.force, matching: find.text('Cancel')),
-    );
-    await h.f.flush(t);
-    expect(h.force, findsNothing);
-    expect(h.others, findsOneWidget);
-    // What the list learned from its own calls is still there.
-    expect(find.textContaining('Notified ·'), findsOneWidget);
-    expect(h.deletes, 0);
-    expect(h.revokes, hasLength(1));
-  });
+  testWidgets(
+    'Force unbind and delete opens the force confirm; Cancel goes back',
+    (t) async {
+      final h = _Others();
+      await h.open(t);
+      await h.tapNotify(t, 'a1');
+      await t.tap(h.forceFromList);
+      await h.f.flush(t);
+      expect(h.force, findsOneWidget);
+      expect(h.others, findsNothing);
+      expect(find.text('Force unbind 1 agent?'), findsOneWidget);
+      await t.tap(find.descendant(of: h.force, matching: find.text('Cancel')));
+      await h.f.flush(t);
+      expect(h.force, findsNothing);
+      expect(h.others, findsOneWidget);
+      // What the list learned from its own calls is still there.
+      expect(find.textContaining('Notified ·'), findsOneWidget);
+      expect(h.deletes, 0);
+      expect(h.revokes, hasLength(1));
+    },
+  );
 
   testWidgets('confirming the force revokes with forceAgentIds, then deletes', (
     t,
@@ -376,9 +376,7 @@ void main() {
   testWidgets('closing the list ends the flow without deleting', (t) async {
     final h = _Others();
     await h.open(t);
-    await t.tap(
-      find.descendant(of: h.others, matching: find.text('Cancel')),
-    );
+    await t.tap(find.descendant(of: h.others, matching: find.text('Cancel')));
     await h.f.flush(t);
     expect(h.others, findsNothing);
     expect(h.force, findsNothing);
@@ -393,7 +391,8 @@ void main() {
         calls.add(ids);
         return {
           'notified': [
-            for (final id in ids) {'agentId': id, 'notifiedAt': _in(Duration.zero)},
+            for (final id in ids)
+              {'agentId': id, 'notifiedAt': _in(Duration.zero)},
           ],
           'skipped': <Object>[],
         };

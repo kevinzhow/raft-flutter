@@ -105,7 +105,10 @@ Future<void> claimComputer(
 ) async {
   final me = w.client.user?.id;
   if (me == null) return;
-  final failed = raftText(context, 'Couldn’t make this computer yours. Try again.');
+  final failed = raftText(
+    context,
+    'Couldn’t make this computer yours. Try again.',
+  );
   try {
     await setComputerOwner(w, machine, me);
   } catch (error) {
@@ -123,9 +126,8 @@ Future<void> showTransferComputerOwnerDialog(
   WorkspaceController w,
   Map<String, dynamic> machine,
 ) {
-  final directory = w.services.entityDirectory..ensure(const [
-    WorkspaceEntityKind.members,
-  ]);
+  final directory = w.services.entityDirectory
+    ..ensure(const [WorkspaceEntityKind.members]);
   return showRaftForm<void>(
     context,
     builder: (dialog) => _TransferOwnerDialog(
