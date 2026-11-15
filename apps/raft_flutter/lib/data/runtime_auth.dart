@@ -106,10 +106,10 @@ class RuntimeAuthAccount {
   final String? maskedLabel, planLabel, methodLabel;
 }
 
-/// accountText.ts: "plan · masked email" (whichever is known), or null.
+/// accountText.ts: "masked email · plan" (whichever is known), or null.
 String? runtimeAuthAccountText(RuntimeAuthAccount? account) {
   if (account == null) return null;
-  final parts = [?account.planLabel, ?account.maskedLabel];
+  final parts = [?account.maskedLabel, ?account.planLabel];
   return parts.isEmpty ? null : parts.join(' · ');
 }
 

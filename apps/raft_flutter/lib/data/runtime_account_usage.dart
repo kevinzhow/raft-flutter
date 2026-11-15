@@ -12,7 +12,7 @@ import 'runtime_auth.dart' show runtimeUsageRequestHeaders;
 
 /// RUNTIME_ACCOUNT_USAGE_PROVIDERS; `kimi-sdk` reads the `kimi` provider.
 String? runtimeUsageProvider(String runtimeId) => switch (runtimeId) {
-  'claude' || 'codex' || 'grok' => runtimeId,
+  'claude' || 'codex' || 'grok' || 'antigravity' => runtimeId,
   'kimi' || 'kimi-sdk' => 'kimi',
   _ => null,
 };
@@ -21,6 +21,7 @@ String runtimeUsageProviderName(String provider) => switch (provider) {
   'claude' => 'Claude',
   'codex' => 'Codex',
   'grok' => 'Grok',
+  'antigravity' => 'Antigravity',
   _ => 'Kimi',
 };
 

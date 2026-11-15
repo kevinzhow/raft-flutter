@@ -107,19 +107,31 @@ Widget reactionReactorsPreview() => const Center(
   ),
 );
 
-RaftRuntimeUsageData _usage(String? state) => RaftRuntimeUsageData(
+RaftRuntimeUsageData _usage(
+  String? state, {
+  RaftRuntimeAuthData? auth,
+  RaftRuntimeLimitReset? limitReset,
+  String? statusText,
+  String? resets,
+  bool usedUp = true,
+}) => RaftRuntimeUsageData(
   provider: 'Claude',
+  runtimeName: 'Claude Code',
+  runtimeId: 'claude',
   version: '2.1.3',
   state: state,
   updated: '5 minutes ago',
-  footer: 'Cached snapshot only',
-  accounts: const [
+  statusText: statusText,
+  auth: auth,
+  limitReset: limitReset,
+  accounts: [
     RaftRuntimeUsageAccount(
-      health: 'ok',
+      health: usedUp ? 'rate_limited' : 'ok',
       plan: 'Claude Max',
       identity: 'art****@example.com',
+      resetsText: resets,
       windows: [
-        RaftRuntimeUsageWindow(
+        const RaftRuntimeUsageWindow(
           label: '5-hour',
           status: 'ok',
           percent: 42,
@@ -127,13 +139,48 @@ RaftRuntimeUsageData _usage(String? state) => RaftRuntimeUsageData(
         ),
         RaftRuntimeUsageWindow(
           label: 'Weekly',
-          status: 'limit_reached',
-          percent: 100,
+          status: usedUp ? 'limit_reached' : 'ok',
+          percent: usedUp ? 100 : 20,
           reset: 'in 2 days',
+          usedUp: usedUp,
         ),
       ],
     ),
   ],
+);
+
+RaftRuntimeAuthData _auth(
+  String runtime,
+  String? status, {
+  RaftRuntimeAuthActionKind action = RaftRuntimeAuthActionKind.none,
+  String? account,
+  bool perProvider = false,
+  bool providerKey = false,
+  List<RaftRuntimeAuthProvider> providers = const [],
+  bool outline = false,
+  String? hint,
+  String? unavailableText,
+  String? install,
+}) => RaftRuntimeAuthData(
+  runtime: runtime,
+  status: status,
+  accountText: account,
+  action: action,
+  perProvider: perProvider,
+  providerKey: providerKey,
+  providers: providers,
+  outlineAction: outline,
+  hint: hint,
+  unavailableText: unavailableText,
+  installCommand: install,
+  onSignIn: () {},
+  onSignOut: () {},
+  onConnectProvider: () {},
+);
+
+Widget _card(RaftRuntimeUsageData data) => SizedBox(
+  width: 320,
+  child: RaftRuntimeUsageSurface(data: data, onRefresh: () {}, onClose: () {}),
 );
 
 @RaftPreviews('Hover card: runtime account usage', size: Size(900, 520))
@@ -153,6 +200,142 @@ Widget runtimeUsageCardPreview() => SingleChildScrollView(
               onClose: () {},
             ),
           ),
+      ],
+    ),
+  ),
+);
+
+@RaftPreviews('Hover card: runtime sign-in states', size: Size(1000, 760))
+Widget runtimeAuthCardPreview() => SingleChildScrollView(
+  child: Padding(
+    padding: const EdgeInsets.all(16),
+    child: Wrap(
+      spacing: 12,
+      runSpacing: 12,
+      children: [
+        // Signed out: no usage, only the way to sign in.
+        _card(
+          _usage(
+            'fresh',
+            auth: _auth(
+              'claude',
+              'logged_out',
+              action: RaftRuntimeAuthActionKind.signIn,
+            ),
+          ),
+        ),
+        // Signed in: the account line (usage not naming it), Sign out.
+        _card(
+          RaftRuntimeUsageData(
+            provider: 'Kimi',
+            runtimeName: 'Kimi Code',
+            runtimeId: 'kimi-sdk',
+            state: 'missing',
+            auth: _auth(
+              'kimi',
+              'logged_in',
+              account: 'Kimi Pro · k****@example.com',
+              action: RaftRuntimeAuthActionKind.signOut,
+            ),
+          ),
+        ),
+        // Auth-only card (Qoder).
+        _card(
+          RaftRuntimeUsageData(
+            provider: null,
+            runtimeName: 'Qoder',
+            runtimeId: 'qoder',
+            auth: _auth('qoder', 'logged_in'),
+          ),
+        ),
+        // Per-provider rows (Pi).
+        _card(
+          RaftRuntimeUsageData(
+            provider: null,
+            runtimeName: 'Pi',
+            runtimeId: 'pi',
+            auth: _auth(
+              'pi',
+              'logged_in',
+              perProvider: true,
+              action: RaftRuntimeAuthActionKind.addProvider,
+              outline: true,
+              providers: [
+                RaftRuntimeAuthProvider(
+                  id: 'anthropic',
+                  label: 'Anthropic',
+                  detail: 'Subscription account',
+                  isKey: false,
+                  onSignOut: () {},
+                ),
+                RaftRuntimeAuthProvider(
+                  id: 'openai',
+                  label: 'OpenAI',
+                  detail: 'API key',
+                  isKey: true,
+                  onSignOut: () {},
+                ),
+              ],
+            ),
+          ),
+        ),
+        // Provider configured / not (Qwen).
+        _card(
+          RaftRuntimeUsageData(
+            provider: null,
+            runtimeName: 'Qwen Code',
+            runtimeId: 'qwen',
+            auth: _auth(
+              'qwen',
+              'logged_in',
+              providerKey: true,
+              outline: true,
+              action: RaftRuntimeAuthActionKind.connectProvider,
+            ),
+          ),
+        ),
+        _card(
+          RaftRuntimeUsageData(
+            provider: null,
+            runtimeName: 'Qwen Code',
+            runtimeId: 'qwen',
+            auth: _auth(
+              'qwen',
+              'logged_out',
+              providerKey: true,
+              action: RaftRuntimeAuthActionKind.connectProvider,
+            ),
+          ),
+        ),
+        // CLI unavailable, with its install command.
+        _card(
+          RaftRuntimeUsageData(
+            provider: null,
+            runtimeName: 'Codex CLI',
+            runtimeId: 'codex',
+            auth: _auth(
+              'codex',
+              'unavailable',
+              action: RaftRuntimeAuthActionKind.unavailable,
+              unavailableText: "Install this runtime's command-line tool on the Computer, then use Rescan runtimes on the Computer's page.",
+              install: 'npm install -g @openai/codex',
+            ),
+          ),
+        ),
+        // Limit reset as the primary action while rate-limited.
+        _card(
+          _usage(
+            'fresh',
+            resets: '2 resets left',
+            statusText: 'Limits reset.',
+            auth: _auth(
+              'claude',
+              'logged_in',
+              action: RaftRuntimeAuthActionKind.signOut,
+            ),
+            limitReset: RaftRuntimeLimitReset(primary: true, onUse: () {}),
+          ),
+        ),
       ],
     ),
   ),
