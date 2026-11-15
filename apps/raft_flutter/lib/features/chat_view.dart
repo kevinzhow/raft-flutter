@@ -485,7 +485,6 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
   @override
   void initState() {
     super.initState();
-    ClipboardAttachments.watch(); // iOS composer Paste of images and files.
     // Close the anchored reaction picker on window metric changes without a
     // MediaQuery size dependency: that dependency rebuilt the whole timeline
     // on every frame of a window resize.

@@ -121,6 +121,32 @@ class RunnerTests: XCTestCase {
       WorkmanagerPlugin.registerPeriodicTask(withIdentifier: identifier)
     }
   }
+
+  /// A system Paste of attachments is taken only once Dart's watcher listens
+  /// (it asks `available` first). Before that the text paste runs at once.
+  @MainActor
+  func testClipboardPasteWaitsForDartWatcher() {
+    let image = UIGraphicsImageRenderer(size: CGSize(width: 2, height: 2)).image { context in
+      UIColor.red.setFill()
+      context.fill(CGRect(x: 0, y: 0, width: 2, height: 2))
+    }
+    UIPasteboard.general.image = image
+    let engine = FlutterEngine(name: "clipboard-attachments-test")
+    let channel = FlutterMethodChannel(
+      name: "app.raft/clipboard-attachments-test", binaryMessenger: engine.binaryMessenger)
+    let clipboard = RaftClipboardAttachments(channel: channel)
+    var textPastes = 0
+
+    XCTAssertFalse(clipboard.dartReady)
+    XCTAssertFalse(clipboard.systemPaste(orElse: { textPastes += 1 }))
+    XCTAssertEqual(textPastes, 0)
+
+    var answer: Any?
+    clipboard.handle(FlutterMethodCall(methodName: "available", arguments: nil)) { answer = $0 }
+    XCTAssertTrue(clipboard.dartReady)
+    XCTAssertEqual(answer as? Bool, true)
+    XCTAssertTrue(clipboard.systemPaste(orElse: { textPastes += 1 }))
+  }
 }
 
 private final class FoldLayoutTestView: UIView {

@@ -132,6 +132,10 @@ final class RaftClipboardAttachments {
   private var lastAvailable = false
   private var pending: (id: Int, load: (@escaping ([[String: Any]]) -> Void) -> Void)?
   private var pastes = 0
+  /// Dart has a handler for `paste` (its watcher asks `available` first).
+  /// Before that a `paste` would wait in the channel buffer with no answer,
+  /// and a later overflow would run the text paste at a random moment.
+  private(set) var dartReady = false
 
   init(channel: FlutterMethodChannel) {
     self.channel = channel
@@ -181,7 +185,9 @@ final class RaftClipboardAttachments {
 
   func handle(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) {
     switch call.method {
-    case "available": result(available())
+    case "available":
+      dartReady = true
+      result(available())
     case "read":
       // The files of the last system Paste, else a direct read (Cmd+V on an
       // iPad keyboard; iOS may ask the user first).
@@ -213,7 +219,7 @@ final class RaftClipboardAttachments {
       let original = unsafeBitCast(method_getImplementation(method), to: Original.self)
       let block: @convention(block) (AnyObject, Selector, Any?) -> Bool = { this, action, sender in
         if action == #selector(UIResponderStandardEditActions.paste(_:)),
-           shared?.available() == true { return true }
+           let bridge = shared, bridge.dartReady, bridge.available() { return true }
         return original(this, canPerform, action, sender)
       }
       method_setImplementation(method, imp_implementationWithBlock(block))
@@ -232,8 +238,8 @@ final class RaftClipboardAttachments {
 
   /// Starts reading inside the trusted Paste action; false leaves the text
   /// paste. A focused field that takes no attachments gets [orElse].
-  private func systemPaste(orElse: @escaping () -> Void) -> Bool {
-    guard available() else { return false }
+  func systemPaste(orElse: @escaping () -> Void) -> Bool {
+    guard dartReady, available() else { return false }
     let providers = UIPasteboard.general.itemProviders
     guard providers.contains(where: { Self.attachmentType($0.registeredTypeIdentifiers) != nil }) else {
       return false

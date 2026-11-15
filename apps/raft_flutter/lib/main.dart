@@ -5,6 +5,7 @@ import 'platform/desktop_window_runtime.dart';
 import 'data/device_preferences.dart';
 import 'data/source_time_formatter.dart';
 import 'platform/android_performance_hint.dart';
+import 'platform/clipboard_attachments.dart';
 import 'platform/file_selection.dart' show configureAndroidPhotoPicker;
 import 'platform/memory_budgets.dart';
 import 'platform/system_proxy_bootstrap.dart';
@@ -17,6 +18,9 @@ Future<void> main([List<String> args = const []]) async {
   final desktopWindows = await initializeDesktopWindows(args);
   await RaftMemoryBudgets.initialize();
   configureAndroidPhotoPicker();
+  // Composer paste of copied files and images. Started before any text field
+  // exists: iOS takes a system Paste of attachments only once Dart listens.
+  ClipboardAttachments.watch();
   await NativeSystemFonts.instance.initialize();
   await initializeSourceTimeFormatting();
   // First frames read saved layout choices synchronously from this.

@@ -46088,19 +46088,19 @@
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
-      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4920/METHOD:attachmentGallery@66407/FUNCTION:view@67561": {
+      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4920/METHOD:attachmentGallery@66330/FUNCTION:view@67484": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
-      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4920/METHOD:buildTimeline@114778/FUNCTION:timelineFor@118277": {
+      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4920/METHOD:buildTimeline@114701/FUNCTION:timelineFor@118200": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
-      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4920/METHOD:senderAvatar@78985/FUNCTION:avatar@81460": {
+      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4920/METHOD:senderAvatar@78908/FUNCTION:avatar@81383": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
