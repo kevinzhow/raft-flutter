@@ -57,7 +57,7 @@ abstract final class RaftSheetMetrics {
       ? RaftDrawerRecipe.resolve(
           side: RaftDrawerRecipeSide.down,
           axis: RaftDrawerRecipeAxis.y,
-          theme: RaftRecipeTheme.elegant,
+          theme: t.recipeTheme,
           states: t.recipeStates(),
           tokens: t.recipeTokens,
         ).popup
@@ -67,7 +67,7 @@ abstract final class RaftSheetMetrics {
       ? RaftDrawerRecipe.resolve(
           side: RaftDrawerRecipeSide.down,
           axis: RaftDrawerRecipeAxis.y,
-          theme: RaftRecipeTheme.elegant,
+          theme: t.recipeTheme,
           states: t.recipeStates(),
           tokens: t.recipeTokens,
         ).swipeHandle
