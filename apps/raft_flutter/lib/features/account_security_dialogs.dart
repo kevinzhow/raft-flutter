@@ -370,12 +370,7 @@ mixin SecondFactorAnswerState<T extends StatefulWidget> on State<T> {
   /// password under the field, anything else in the banner.
   void failed(RaftClient client, Object error, SecondFactorAnswerKind kind) {
     final text = secondFactorFailureText(context, client, error, kind);
-    final code = SecondFactorFailure.of(error).code;
-    final underField = const {
-      'second_factor_code_invalid',
-      'backup_code_used',
-      'password_incorrect',
-    }.contains(code);
+    final underField = secondFactorFailureUnderField(error);
     setState(() {
       fieldError = underField ? text : null;
       bannerError = underField ? null : text;

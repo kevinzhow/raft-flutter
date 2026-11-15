@@ -10,9 +10,16 @@ import '../data/source_time_formatter.dart';
 /// What the person answered with.
 enum SecondFactorAnswerKind { totp, backupCode, password }
 
-/// A failed call's text for [kind] (Web `useFailureCopy`), already localized.
-/// Web puts a wrong code or password under the field and the rest in a
-/// banner; the form dialog here shows both in its banner.
+/// Web `useFailureCopy` placement: a wrong or used code or a wrong password
+/// goes under the field, anything else in a banner.
+bool secondFactorFailureUnderField(Object error) => const {
+  'second_factor_code_invalid',
+  'backup_code_used',
+  'password_incorrect',
+}.contains(SecondFactorFailure.of(error).code);
+
+/// A failed call's text for [kind] (Web `useFailureCopy`), already localized;
+/// where it goes: [secondFactorFailureUnderField].
 String secondFactorFailureText(
   BuildContext context,
   RaftClient client,

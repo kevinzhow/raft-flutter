@@ -29,12 +29,72 @@ class RaftFormField {
     this.localizeChoices = true,
     this.help,
     this.validator,
+    this.keyboardType,
+    this.autofillHints,
+    this.autocorrect = true,
   });
+
+  /// A one-time code from an authenticator app (Web `AnswerField` kind
+  /// totp: `inputMode="numeric"`, `autoComplete="one-time-code"`,
+  /// `autoCapitalize="off"`, `spellCheck={false}`): the number pad and the
+  /// system's code suggestion.
+  const RaftFormField.oneTimeCode(
+    this.id,
+    this.label, {
+    this.required = true,
+    this.help,
+    this.validator,
+  }) : initial = '',
+       multiline = false,
+       obscure = false,
+       trim = true,
+       choices = null,
+       localizeChoices = true,
+       keyboardType = TextInputType.number,
+       autofillHints = const [AutofillHints.oneTimeCode],
+       autocorrect = false;
+
+  /// A code typed from a list (a backup code; Web `inputMode="text"`,
+  /// `autoComplete="off"`, no capitals, no spell check).
+  const RaftFormField.typedCode(
+    this.id,
+    this.label, {
+    this.required = true,
+    this.help,
+    this.validator,
+  }) : initial = '',
+       multiline = false,
+       obscure = false,
+       trim = true,
+       choices = null,
+       localizeChoices = true,
+       keyboardType = TextInputType.text,
+       autofillHints = null,
+       autocorrect = false;
+
   final String id, label, initial;
   final bool required, multiline, obscure, trim, localizeChoices;
   final Map<String, String>? choices;
   final String? help;
   final String? Function(String)? validator;
+
+  /// The soft keyboard; null is the text keyboard (multiline: new lines).
+  final TextInputType? keyboardType;
+
+  /// What the system may suggest for the field (a one-time code).
+  final Iterable<String>? autofillHints;
+
+  /// False turns off autocorrect, suggestions and capitals (codes).
+  final bool autocorrect;
+}
+
+/// Thrown by [RaftFormDialog.onSubmit] to put its [message] under the field
+/// [fieldId] instead of in the banner (Web `FailureCopy.field`: a wrong code
+/// or password sits under its field). It goes away when that field is edited.
+/// The text is shown as any [RaftUserError]'s is.
+class RaftFieldError extends RaftUserError {
+  const RaftFieldError(this.fieldId, super.message);
+  final String fieldId;
 }
 
 /// Owns each editor for the full dialog route lifetime, including its exit
@@ -60,12 +120,18 @@ class RaftFormDialog extends StatefulWidget {
     this.errorFallback,
     this.errorContent,
     this.submitEnabled = true,
+    this.submitWhenFilled = false,
     this.busyLabel,
   });
   final String title, submitLabel;
 
   /// False keeps the submit action disabled (Web `disabled={!target}`).
+  /// Enter in a field submits only while the action is enabled.
   final bool submitEnabled;
+
+  /// The submit action stays disabled until every required text field has
+  /// text (Web `disabled={!normalizeEnteredCode(value)}`).
+  final bool submitWhenFilled;
 
   /// The submit action's catalog text while the submit is in flight (Web
   /// "Starting migration…" in place of the idle label); null keeps
@@ -102,6 +168,21 @@ class _RaftFormDialogState extends State<RaftFormDialog> {
   // ignore: raft_lints/avoid_imperative_notice_state -- Same lifetime as [error]: cleared when the next submit starts.
   Widget? errorWidget;
 
+  /// A failed submit's [RaftFieldError] per field; cleared when the field is
+  /// edited and when the next submit starts.
+  final fieldErrors = <String, String>{};
+
+  /// Whether the submit action (and Enter) may run now.
+  bool get _canSubmit =>
+      widget.submitEnabled &&
+      (!widget.submitWhenFilled ||
+          widget.fields.every(
+            (f) =>
+                !f.required ||
+                f.choices != null ||
+                editors[f.id]!.text.trim().isNotEmpty,
+          ));
+
   /// Keeps one editor / selection per current field: the dialog can be rebuilt
   /// with another field set (e.g. after its inputs load) and submit() and the
   /// field widgets read these maps by field id.
@@ -113,6 +194,7 @@ class _RaftFormDialogState extends State<RaftFormDialog> {
     for (final id in choices.keys.toList()) {
       if (!ids.contains(id)) choices.remove(id);
     }
+    fieldErrors.removeWhere((id, _) => !ids.contains(id));
     for (final field in widget.fields) {
       editors.putIfAbsent(
         field.id,
@@ -165,10 +247,11 @@ class _RaftFormDialogState extends State<RaftFormDialog> {
     if (busy) return;
     // Web: every submit starts with `setError("")`, validation included, so a
     // rejection of the previous values does not outlive them.
-    if (error != null || errorWidget != null) {
+    if (error != null || errorWidget != null || fieldErrors.isNotEmpty) {
       setState(() {
         error = null;
         errorWidget = null;
+        fieldErrors.clear();
       });
     }
     if (!form.currentState!.validate()) return;
@@ -186,6 +269,18 @@ class _RaftFormDialogState extends State<RaftFormDialog> {
       // completes. Its stale context must never pop the underlying home route.
       if (mounted && ModalRoute.of(context)?.isCurrent == true) {
         Navigator.pop(context, true);
+      }
+    } on RaftFieldError catch (e) {
+      if (mounted) {
+        final text = raftErrorMessage(context, e);
+        setState(() {
+          // A field no longer shown: the banner says it.
+          if (widget.fields.any((f) => f.id == e.fieldId)) {
+            fieldErrors[e.fieldId] = text;
+          } else {
+            error = text;
+          }
+        });
       }
     } catch (e) {
       if (mounted) {
@@ -263,11 +358,33 @@ class _RaftFormDialogState extends State<RaftFormDialog> {
                     )
                   : TextFormField(
                       contextMenuBuilder: RaftTextSelectionToolbar.editableText,
-                      autofillHints: null,
+                      autofillHints: field.autofillHints,
+                      keyboardType:
+                          field.keyboardType ??
+                          (field.multiline ? TextInputType.multiline : null),
+                      autocorrect: field.autocorrect,
+                      enableSuggestions: field.autocorrect,
                       key: ValueKey('field-${field.id}'),
                       controller: editors[field.id],
                       enabled: !busy,
                       obscureText: field.obscure,
+                      forceErrorText: fieldErrors[field.id],
+                      // Web `<form onSubmit>`: Enter in a one-line field
+                      // submits; a multiline field takes the new line.
+                      textInputAction: field.multiline
+                          ? TextInputAction.newline
+                          : TextInputAction.done,
+                      onFieldSubmitted: field.multiline
+                          ? null
+                          : (_) {
+                              if (_canSubmit) submit();
+                            },
+                      onChanged: (_) {
+                        final cleared = fieldErrors.remove(field.id) != null;
+                        if (cleared || widget.submitWhenFilled) {
+                          setState(() {});
+                        }
+                      },
                       autofocus: field == widget.fields.first,
                       minLines: field.multiline ? 3 : 1,
                       maxLines: field.multiline ? 8 : 1,
@@ -345,7 +462,7 @@ class _RaftFormDialogState extends State<RaftFormDialog> {
             : widget.submitLabel,
         uiSize: legacy ? null : RaftButtonSize.lg,
         busy: busy,
-        onPressed: widget.submitEnabled ? submit : null,
+        onPressed: _canSubmit ? submit : null,
         destructive: widget.destructive,
       ),
     ];

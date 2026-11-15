@@ -189,16 +189,20 @@ class _VerifyItsYouDialogState extends State<_VerifyItsYouDialog> {
           ),
         );
       }
-      throw RaftUserError(
-        secondFactorFailureText(
-          context,
-          widget.client,
-          error,
-          backup
-              ? SecondFactorAnswerKind.backupCode
-              : SecondFactorAnswerKind.totp,
-        ),
+      final text = secondFactorFailureText(
+        context,
+        widget.client,
+        error,
+        backup
+            ? SecondFactorAnswerKind.backupCode
+            : SecondFactorAnswerKind.totp,
       );
+      // Web `FailureCopy`: a wrong or used code under the field (gone once it
+      // is edited), a lock or anything else in the banner.
+      if (secondFactorFailureUnderField(error)) {
+        throw RaftFieldError(current.wire, text);
+      }
+      throw RaftUserError(text);
     }
   }
 
@@ -210,19 +214,20 @@ class _VerifyItsYouDialogState extends State<_VerifyItsYouDialog> {
         if (other != current) other,
     ];
     return RaftFormDialog(
+      // Web `AnswerField key={method}` and `reset()` on a switch: the other
+      // way starts empty, without the last failure.
+      key: ValueKey('step-up-${current?.wire}'),
       title: "Verify it's you",
       description: widget.description,
       submitLabel: 'Verify',
       submitEnabled: current != null,
+      // Web `disabled={!normalizeEnteredCode(value)}`.
+      submitWhenFilled: true,
       fields: [
-        if (current != null)
-          RaftFormField(
-            current.wire,
-            current == SecondFactorMethod.backupCode
-                ? 'Backup code'
-                : 'Authenticator code',
-            required: true,
-          ),
+        if (current == SecondFactorMethod.backupCode)
+          RaftFormField.typedCode(current!.wire, 'Backup code')
+        else if (current != null)
+          RaftFormField.oneTimeCode(current.wire, 'Authenticator code'),
       ],
       extra: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,

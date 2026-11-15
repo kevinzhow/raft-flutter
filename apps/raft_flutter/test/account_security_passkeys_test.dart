@@ -131,6 +131,8 @@ void main() {
       ),
       '123456',
     );
+    // Verify is enabled on the frame after the code is typed.
+    await t.pump();
     await t.tap(find.text('Verify'));
     await t.pumpAndSettle();
     final deletes = client.to('/auth/second-factor/passkeys/$first');

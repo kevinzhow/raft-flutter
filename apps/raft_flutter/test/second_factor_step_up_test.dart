@@ -124,6 +124,8 @@ void main() {
       ),
       code,
     );
+    // Verify is enabled on the frame after the code is typed.
+    await t.pump();
     await t.tap(find.text('Verify'));
     await t.pumpAndSettle();
   }

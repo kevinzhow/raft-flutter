@@ -131,6 +131,8 @@ void main() {
       ),
       '123456',
     );
+    // Verify is enabled on the frame after the code is typed.
+    await t.pump();
     await t.tap(find.text('Verify'));
     await settle(t);
     expect(c.stepUps.single, {'code': '123456'});
