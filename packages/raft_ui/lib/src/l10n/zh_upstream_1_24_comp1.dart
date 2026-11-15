@@ -4,6 +4,16 @@
 // counts and needs-attention summary, readiness copy, Delete Computer and force unbind, the row's
 // Restart / Upgrade confirmations). ICU plurals and selects are separate English keys here.
 const Map<String, String> zhCatalogUpstream124Comp1 = <String, String>{
+  "From {date}, agents on an outdated Computer stop running. Upgrade it from its page in one click.": "从 {date} 起，版本过旧的计算机上的 Agent 将停止运行。在计算机页面一键即可升级。",
+  "{count} Computers need an upgrade by {date}": "{count} 台计算机需要在 {date} 前升级",
+  "{name} needs an upgrade by {date}": "{name} 需要在 {date} 前升级",
+  "Do this by {date}: after that, agents on these machines stop running. Your agents and files stay where they are.": "请在 {date} 前完成：之后这些机器上的 Agent 将停止运行。你的 Agent 和文件都会保留在原处。",
+  "Your agents and files stay where they are.": "你的 Agent 和文件都会保留在原处。",
+  "{count} machines need a one-time reinstall or migration": "{count} 台机器需要一次性重新安装或迁移",
+  "{count} machines need to be migrated to Raft Computer": "{count} 台机器需要迁移到 Raft Computer",
+  "{count} Computers need a one-time reinstall": "{count} 台 Computer 需要一次性重新安装",
+  "{name} needs a one-time reinstall": "{name} 需要一次性重新安装",
+"{name} needs to be migrated to Raft Computer": "{name} 需要迁移到 Raft Computer",
   "Restart running agents now": "立即重启运行中的 Agent",
   "{count} running agent switches when next idle.": "{count} 个运行中的 Agent 会在下次空闲时切换。",
   "{count} running agents switch when next idle.": "{count} 个运行中的 Agent 会在下次空闲时切换。",

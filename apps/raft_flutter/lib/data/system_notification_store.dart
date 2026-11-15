@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:raft_client/raft_client.dart'
     show RaftApiException, SecondFactorRecovery;
 
+import 'computer_version_notices.dart';
 import 'joint_invite_notices.dart';
 import 'second_factor_recovery_notice.dart';
 import 'search_memory.dart';
@@ -29,7 +30,12 @@ class SystemNotificationContext {
     required this.canViewMachines,
     required this.canViewAgents,
     required this.mobile,
+    this.managesMachines = false,
   });
+
+  /// A role that manages machines at all (Web canManageMachine's capability
+  /// half); the per-machine half is read from each row.
+  final bool managesMachines;
   final String scope, origin, principal;
   final Map<String, dynamic>? server;
   final List<Map<String, dynamic>> channels;
@@ -147,6 +153,13 @@ class SystemNotificationStore extends ChangeNotifier {
             feedbackUnread: feedbackUnread,
             now: clock(),
           ),
+          if (c.server != null && c.canViewMachines)
+            ...computerVersionNotices(
+              machines: shared?.machines ?? _machines,
+              userId: c.principal.isEmpty ? null : c.principal,
+              managesMachines: c.managesMachines,
+              dismissed: dismissed,
+            ),
         ]
         .where(
           (n) => n.fingerprint == null || !dismissed.contains(n.fingerprint),

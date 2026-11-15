@@ -133,6 +133,60 @@ SystemNotificationCopy systemNotificationCopy(
           {'free': p['free'], 'percent': p['percent']},
         ),
       );
+    case 'computer-reinstall':
+      final number = p['count'] as int? ?? 0;
+      final need = '${p['need']}';
+      final dateAt = DateTime.tryParse('${p['date'] ?? ''}')?.toLocal();
+      if (dateAt != null && !_dateSymbolsReady) {
+        unawaited(initializeDateFormatting());
+        _dateSymbolsReady = true;
+      }
+      final date = dateAt == null ? '' : DateFormat.yMMMd(locale).format(dateAt);
+      return SystemNotificationCopy(
+        number == 1
+            ? format(
+                need == 'migrate'
+                    ? '{name} needs to be migrated to Raft Computer'
+                    : '{name} needs a one-time reinstall',
+                {'name': p['name']},
+              )
+            : format(switch (need) {
+                'reinstall' => '{count} Computers need a one-time reinstall',
+                'migrate' =>
+                  '{count} machines need to be migrated to Raft Computer',
+                _ =>
+                  '{count} machines need a one-time reinstall or migration',
+              }, {'count': count(number)}),
+        dateAt == null
+            ? text('Your agents and files stay where they are.')
+            : format(
+                'Do this by {date}: after that, agents on these machines stop running. Your agents and files stay where they are.',
+                {'date': date},
+              ),
+      );
+    case 'computer-upgrade-deadline':
+      final number = p['count'] as int? ?? 0;
+      final dateAt = DateTime.tryParse('${p['date'] ?? ''}')?.toLocal();
+      if (dateAt != null && !_dateSymbolsReady) {
+        unawaited(initializeDateFormatting());
+        _dateSymbolsReady = true;
+      }
+      final date = dateAt == null ? '' : DateFormat.yMMMd(locale).format(dateAt);
+      return SystemNotificationCopy(
+        number == 1
+            ? format('{name} needs an upgrade by {date}', {
+                'name': p['name'],
+                'date': date,
+              })
+            : format('{count} Computers need an upgrade by {date}', {
+                'count': count(number),
+                'date': date,
+              }),
+        format(
+          'From {date}, agents on an outdated Computer stop running. Upgrade it from its page in one click.',
+          {'date': date},
+        ),
+      );
     case 'feedback-replies':
       final number = p['count'] as int? ?? 0;
       return SystemNotificationCopy(

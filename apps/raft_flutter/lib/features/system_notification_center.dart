@@ -156,6 +156,14 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
       canViewMachines: w.can('viewMachines'),
       canViewAgents: w.can('viewAgents'),
       mobile: widget.mobile,
+      managesMachines: const [
+        'editMachines',
+        'controlComputers',
+        'removeMachines',
+        'rotateMachineKeys',
+        'createAgents',
+        'migrateAgents',
+      ].any(w.can),
     ),
   );
 
