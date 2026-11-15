@@ -151,6 +151,9 @@ class _PiSignInState extends State<ComputerRuntimePiSignInView> {
   bool connecting = false;
   SignInFailure? failure;
   bool keyRefusedByServer = false;
+
+  /// The key the server refused, to tell when it was edited.
+  String refusedKey = '';
   int listAttempt = 0;
 
   bool get opencode => widget.runtime == 'opencode';
@@ -161,6 +164,12 @@ class _PiSignInState extends State<ComputerRuntimePiSignInView> {
     super.initState();
     // Read once on open and again from Try again, never by a rebuild.
     loadProviders();
+    apiKey.addListener(() {
+      // A changed key is a new key: the server's refusal of the old one goes.
+      if (keyRefusedByServer && apiKey.text != refusedKey) {
+        setState(() => keyRefusedByServer = false);
+      }
+    });
   }
 
   @override
@@ -322,6 +331,7 @@ class _PiSignInState extends State<ComputerRuntimePiSignInView> {
               connecting = false;
               if (refused.field) {
                 keyRefusedByServer = true;
+                refusedKey = apiKey.text;
               } else {
                 failure = refused.failure;
               }
@@ -600,7 +610,6 @@ class _PiSignInState extends State<ComputerRuntimePiSignInView> {
 
   List<Widget> _keyForm(BuildContext context, Map<String, Object?> values) {
     final row = chosen!;
-    final invalid = keyRefusedHere || keyRefusedByServer;
     final refused = raftText(
       context,
       opencode
@@ -622,30 +631,33 @@ class _PiSignInState extends State<ComputerRuntimePiSignInView> {
       ),
       ListenableBuilder(
         listenable: apiKey,
-        builder: (context, _) => RaftProductFormField(
-          label: raftText(context, 'API key'),
-          required: true,
-          hint: invalid
-              ? null
-              : raftFormat(
-                  context,
-                  'Find it in your {provider} account settings.',
-                  {'provider': row.provider.label},
-                ),
-          error: !invalid
-              ? null
-              : keyRefusedHere
-              ? refused
-              : raftText(context, 'Paste the whole API key, with no spaces.'),
-          child: RaftDialogTextInput(
-            fieldKey: const ValueKey('pi-key-input'),
-            controller: apiKey,
-            obscure: true,
-            mono: true,
-            enabled: !connecting,
-            onSubmitted: (_) => connect(),
-          ),
-        ),
+        builder: (context, _) {
+          final invalid = keyRefusedHere || keyRefusedByServer;
+          return RaftProductFormField(
+            label: raftText(context, 'API key'),
+            required: true,
+            hint: invalid
+                ? null
+                : raftFormat(
+                    context,
+                    'Find it in your {provider} account settings.',
+                    {'provider': row.provider.label},
+                  ),
+            error: !invalid
+                ? null
+                : keyRefusedHere
+                ? refused
+                : raftText(context, 'Paste the whole API key, with no spaces.'),
+            child: RaftDialogTextInput(
+              fieldKey: const ValueKey('pi-key-input'),
+              controller: apiKey,
+              obscure: true,
+              mono: true,
+              enabled: !connecting,
+              onSubmitted: (_) => connect(),
+            ),
+          );
+        },
       ),
       signInHint(
         context,

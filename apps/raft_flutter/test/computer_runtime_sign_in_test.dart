@@ -34,12 +34,14 @@ class FakeAuth {
   late final client = RuntimeAuthClient(
     get: (path) async {
       gets.add(path);
-      return onGet == null ? {'kind': 'listed', 'providers': []} : onGet!(path);
+      final custom = onGet;
+      if (custom == null) return {'kind': 'listed', 'providers': []};
+      return await custom(path);
     },
     post: (path, body) async {
       posts.add((path, body));
       final custom = onPost;
-      if (custom != null) return custom(path, body);
+      if (custom != null) return await custom(path, body);
       if (path.endsWith('/login')) {
         logins++;
         await startGate?.future;

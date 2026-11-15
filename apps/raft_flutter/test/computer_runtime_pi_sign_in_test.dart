@@ -168,11 +168,15 @@ void main() {
     t,
   ) async {
     final (h, _) = await pi(t);
-    await t.enterText(find.byType(EditableText).first, 'azure');
+    final search = find.descendant(
+      of: find.byType(RaftSearchInput),
+      matching: find.byType(EditableText),
+    );
+    await t.enterText(search, 'azure');
     await h.settle();
     expect(choice('key:azure'), findsOneWidget);
     expect(choice('key:openai'), findsNothing);
-    await t.enterText(find.byType(EditableText).first, 'zzz');
+    await t.enterText(search, 'zzz');
     await h.settle();
     expect(txt('No matching providers'), findsOneWidget);
   });
@@ -614,6 +618,10 @@ void main() {
       await h.tapKey('pi-key-connect');
       expect(txt('Paste the whole API key, with no spaces.'), findsOneWidget);
       expect(find.byKey(const ValueKey('pi-key-failed')), findsNothing);
+      // Editing the key is a new key: the refusal of the old one goes.
+      await type(h, 'sk-keep2');
+      expect(txt('Paste the whole API key, with no spaces.'), findsNothing);
+      await type(h, 'sk-keep');
       // The same key can be sent again once the Computer answers.
       fake.onPost = (path, body) async => {'kind': 'connected'};
       await h.tapKey('pi-key-connect');

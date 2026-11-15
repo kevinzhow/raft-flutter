@@ -476,6 +476,9 @@ class _SignInState extends State<ComputerRuntimeSignInView> {
       RaftButton(
         key: const ValueKey('runtime-sign-in-open-page'),
         label: raftText(context, 'Open sign-in page'),
+        // LeavingRaftMark: a link that leaves Raft says so after its label.
+        semanticLabel:
+            '${raftText(context, 'Open sign-in page')} ${raftText(context, '(opens in a new tab)')}',
         trailingGlyph: RaftGlyph.arrowUpRight,
         tone: codeEntered
             ? RaftButtonRecipeVariant.default_
@@ -502,11 +505,16 @@ class _SignInState extends State<ComputerRuntimeSignInView> {
         ),
         Align(
           alignment: AlignmentDirectional.centerStart,
-          child: RaftTextLink(
-            key: const ValueKey('runtime-sign-in-device-link'),
-            label: device.uri,
-            glyph: RaftGlyph.arrowUpRight,
-            onPressed: () => unawaited(openSignInPage(device.uri)),
+          child: Semantics(
+            link: true,
+            excludeSemantics: true,
+            label: '${device.uri} ${raftText(context, '(opens in a new tab)')}',
+            child: RaftTextLink(
+              key: const ValueKey('runtime-sign-in-device-link'),
+              label: device.uri,
+              glyph: RaftGlyph.arrowUpRight,
+              onPressed: () => unawaited(openSignInPage(device.uri)),
+            ),
           ),
         ),
         RaftCopyableCode(
