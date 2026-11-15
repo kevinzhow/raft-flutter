@@ -193,6 +193,7 @@ void main() {
       return SurfaceProbe(
         isOpen: () => w.location.route == RaftRoute.human,
         back: find.byTooltip('Back'),
+        x: find.byTooltip('Close Profile'),
       );
     },
     'search-agent-slot': (t, size) async {

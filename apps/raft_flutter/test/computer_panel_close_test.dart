@@ -79,4 +79,58 @@ void main() {
     );
     await f.close(t);
   });
+
+  bool focusInPanel() {
+    final context = FocusManager.instance.primaryFocus?.context;
+    if (context == null) return false;
+    var inside = false;
+    context.visitAncestorElements((e) {
+      if (e.widget.key == const ValueKey('computers-rack-side-panel')) {
+        inside = true;
+      }
+      return !inside;
+    });
+    return inside;
+  }
+
+  testWidgets('focus moves into the panel on open and out of it on close', (
+    t,
+  ) async {
+    final f = await openPanel(t);
+    await t.pump(const Duration(milliseconds: 100));
+    expect(focusInPanel(), isTrue, reason: 'Web ProfilePanel moves focus in');
+    await t.tap(find.byKey(const ValueKey('machine-panel-close')));
+    await f.flush(t);
+    await t.pump(const Duration(milliseconds: 400));
+    expect(
+      find.byKey(const ValueKey('computers-rack-side-panel')),
+      findsNothing,
+    );
+    expect(focusInPanel(), isFalse);
+    await f.close(t);
+  });
+
+  testWidgets('Ctrl+Enter saves the description from its field', (t) async {
+    final f = await openPanel(t);
+    await t.ensureVisible(
+      find.byKey(const ValueKey('computer-edit-description')),
+    );
+    await t.tap(find.byKey(const ValueKey('computer-edit-description')));
+    await t.pump(const Duration(milliseconds: 300));
+    await t.enterText(
+      find.byKey(const ValueKey('computer-description-field')),
+      'Build box',
+    );
+    await t.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+    await t.sendKeyEvent(LogicalKeyboardKey.enter);
+    await t.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+    await f.flush(t);
+    await t.pump(const Duration(milliseconds: 400));
+    final saves = f.adapter.calls.where(
+      (o) => o.method == 'PATCH' && o.path == '/servers/a/machines/computer-a',
+    );
+    expect(saves, hasLength(1), reason: 'Ctrl+Enter saved the description');
+    expect(saves.single.data, {'description': 'Build box'});
+    await f.close(t);
+  });
 }

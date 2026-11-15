@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:raft_ui/raft_ui.dart';
 
+import 'desktop_detail_host.dart';
+
 /// MainLayout1777/masterDetailPanelSizing.ts executable classic-panel bounds.
 /// These values are independent of chat sidebar preferences.
 abstract final class DesktopMasterPanelBounds {
@@ -32,7 +34,17 @@ class DesktopMasterDetail extends StatefulWidget {
     this.directoryWidth,
     this.masterEdge = false,
     this.onWidthChanged,
+    this.detailPanelWidth,
+    this.onDetailPanelWidthChanged,
   });
+
+  /// Web ProfilePanel beside a page (Members, Agents): the detail is a panel of
+  /// this width (the profile panel's 300 to 600) that the page's own list
+  /// leaves room for, and its left edge is the resize handle (Web
+  /// `ColumnResizeHandle column="detail"`). Null keeps the classic split where
+  /// the handle resizes the master (Search, Activity).
+  final double? detailPanelWidth;
+  final ValueChanged<double>? onDetailPanelWidthChanged;
   final Widget master;
   final Widget? detail;
   final double wideWidth, compactWidth;
@@ -55,6 +67,7 @@ class _DesktopMasterDetailState extends State<DesktopMasterDetail> {
   late double wideWidth = widget.wideWidth;
   late double compactWidth = widget.compactWidth;
   late double? directoryWidth = widget.directoryWidth;
+  late double panel = widget.detailPanelWidth ?? 380;
 
   // While a detail covers the folded master (phones), the framework is handed
   // the master widget it last built when it was visible, so the hidden list is
@@ -81,7 +94,11 @@ class _DesktopMasterDetailState extends State<DesktopMasterDetail> {
       final split = widget.detail != null;
       final folded = RaftAdaptiveWorkspace.compactOf(context);
       final compact = widget.compact || MediaQuery.sizeOf(context).width < 1024;
-      final width = split && directoryWidth != null
+      final panelMode = widget.detailPanelWidth != null;
+      final panelWidth = panel.clamp(300.0, 600.0);
+      final width = panelMode && split
+          ? (size.maxWidth - panelWidth).clamp(0.0, size.maxWidth)
+          : split && directoryWidth != null
           ? directoryWidth!
                 .clamp(180, 320)
                 .clamp(0, (size.maxWidth - 320).clamp(0, size.maxWidth))
@@ -123,49 +140,64 @@ class _DesktopMasterDetailState extends State<DesktopMasterDetail> {
       final Widget column = widget.masterEdge
           ? RaftPanelMasterEdge(split: split, child: master)
           : master;
-      return Stack(
-        fit: StackFit.expand,
-        children: [
-          Row(
-            children: [
-              Offstage(
-                offstage: folded && split,
-                child: ExcludeFocus(
-                  excluding: folded && split,
-                  child: TickerMode(
-                    enabled: !folded || !split,
-                    child: SizedBox(
-                      key: const Key('desktop-master-panel'),
-                      width: folded ? size.maxWidth : width.toDouble(),
-                      child: column,
+      return DesktopDetailFocus(
+        open: split && !folded,
+        builder: (scope) => Stack(
+          fit: StackFit.expand,
+          children: [
+            Row(
+              children: [
+                Offstage(
+                  offstage: folded && split,
+                  child: ExcludeFocus(
+                    excluding: folded && split,
+                    child: TickerMode(
+                      enabled: !folded || !split,
+                      child: SizedBox(
+                        key: const Key('desktop-master-panel'),
+                        width: folded ? size.maxWidth : width.toDouble(),
+                        child: column,
+                      ),
                     ),
                   ),
                 ),
-              ),
-              if (split) ...[
-                Expanded(
-                  child: KeyedSubtree(
-                    key: const Key('desktop-content-detail'),
-                    child: widget.detail!,
+                if (split) ...[
+                  Expanded(
+                    child: KeyedSubtree(
+                      key: const Key('desktop-content-detail'),
+                      child: FocusScope(node: scope, child: widget.detail!),
+                    ),
                   ),
-                ),
+                ],
               ],
-            ],
-          ),
-          if (split && !folded)
-            Positioned(
-              left: width - 4,
-              top: 0,
-              bottom: 0,
-              width: 8,
-              child: RaftPanelResizeHandle(
-                key: const Key('desktop-master-resize-handle'),
-                label: 'Resize results',
-                value: width.toDouble(),
-                onChanged: resize,
-              ),
             ),
-        ],
+            if (split && !folded)
+              Positioned(
+                left: width - 4,
+                top: 0,
+                bottom: 0,
+                width: 8,
+                child: RaftPanelResizeHandle(
+                  key: const Key('desktop-master-resize-handle'),
+                  label: panelMode
+                      ? raftText(context, 'Resize profile')
+                      : 'Resize results',
+                  value: panelMode ? panelWidth : width.toDouble(),
+                  reversed: panelMode,
+                  min: panelMode ? 300 : null,
+                  max: panelMode ? 600 : null,
+                  defaultValue: panelMode ? 380 : null,
+                  onChanged: panelMode
+                      ? (next) =>
+                            setState(() => panel = next.clamp(300.0, 600.0))
+                      : resize,
+                  onChangeEnd: panelMode
+                      ? () => widget.onDetailPanelWidthChanged?.call(panel)
+                      : null,
+                ),
+              ),
+          ],
+        ),
       );
     },
   );

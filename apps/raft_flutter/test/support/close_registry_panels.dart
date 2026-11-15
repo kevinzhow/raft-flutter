@@ -110,13 +110,16 @@ const panelSurfaces = <CloseSurface>[
   CloseSurface(
     'directory-human-detail',
     kind: SurfaceKind.page,
-    web: 'HumanDetailPanel.tsx: Back md:hidden, no desktop close (route page)',
+    web: 'Phone: a route page, HumanDetailPanel.tsx Back md:hidden. From 768 /human/:id opens the ProfilePanel on Members (useMembersProfileRedirect.tsx:38-52, MainLayout.tsx:814-817): HumanDetailPanel.tsx:613-621 X hidden md:flex, ProfilePanel.tsx:304 Escape',
     phone: {_back, _sys},
-    desktop: {_sys},
-    fold: {_sys},
-    files: ['lib/features/member_profile_view.dart'],
+    desktop: {_x, _esc, _sys},
+    fold: {_x, _esc, _sys},
+    files: [
+      'lib/features/member_profile_view.dart',
+      'lib/features/desktop_detail_host.dart',
+    ],
     status: 'fixed',
-    fix: 'phone Back was missing',
+    fix: 'phone Back was missing; the desktop X was hidden (showClose false) and is shown for a directory detail',
   ),
   CloseSurface(
     'search-agent-slot',

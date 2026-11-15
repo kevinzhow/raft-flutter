@@ -570,9 +570,10 @@ void main() {
       expect(find.byType(MemberProfileView), findsOneWidget);
       expect(find.text('Public profile'), findsOneWidget);
       expect(t.state(find.byType(DesktopDirectoryView)), same(directory));
-      // Web's desktop human panel has no close control (the panel header is
-      // the profile band); closing is the shell's detail-close action.
-      t.widget<MemberProfileView>(find.byType(MemberProfileView)).onClose();
+      // Web v1.24 hosts /human/:id in the ProfilePanel on desktop
+      // (useMembersProfileRedirect.tsx:38-52, MainLayout.tsx:814-817):
+      // HumanDetailPanel shows the X (`hidden md:flex`) and Escape closes it.
+      await t.tap(find.byTooltip('Close Profile'));
       await t.pumpAndSettle();
       expect(find.byType(MemberProfileView), findsNothing);
       expect(t.state(find.byType(DesktopDirectoryView)), same(directory));

@@ -75,11 +75,11 @@ import 'desktop_directory_view.dart';
 import 'desktop_activity_flag.dart';
 import 'resource_search.dart';
 import 'quick_switcher_host.dart';
-import 'member_profile_view.dart';
 import 'fleet_views.dart';
 import 'private_route_guard.dart';
 import 'server_setup_gate.dart';
 import 'panel_width_store.dart';
+import 'desktop_detail_host.dart';
 import 'sidebar_conversation_finder.dart';
 import 'sidebar_projection.dart';
 import 'activity_first_unread.dart';
@@ -1044,6 +1044,7 @@ class _WorkspaceViewState extends State<WorkspaceView>
   /// Escape: closes the topmost closable layer and nothing else (Web's
   /// document listeners do not navigate Back from a plain page).
   void escapePanel() {
+    if (takeDetailFieldEscape()) return;
     final layer =
         mobileHost != null ||
         w.location.profile != null ||
@@ -1691,6 +1692,11 @@ class _WorkspaceViewState extends State<WorkspaceView>
                   setState(() => sidebarWidth = value);
                   savePanels(value, threadWidth);
                 },
+                detailPanelWidth: wide && desktopNavigation.target != null
+                    ? profilePanelWidth
+                          .value // Web ProfilePanel
+                    : null,
+                onDetailPanelWidthChanged: profilePanelWidth.save,
                 detail:
                     desktopContentDetail() ??
                     (wide ? const SizedBox.expand() : null),
@@ -1738,9 +1744,7 @@ class _WorkspaceViewState extends State<WorkspaceView>
         double legacyDockWidth,
         VoidCallback? onLegacyEscape,
       ) => RaftDismissScope(
-        // Web closes panels from a document-level Escape listener; here the
-        // scope holds the shell's initial focus, so Escape reaches it even
-        // before anything inside was focused.
+        // Web's document-level Escape: the scope holds the shell's initial focus.
         onDismiss: onLegacyEscape ?? escapePanel,
         child: PopScope(
           // Tasks/channel management own mobile MaterialPages. Their hidden
@@ -2623,43 +2627,22 @@ class _WorkspaceViewState extends State<WorkspaceView>
       'search',
       'activity',
     }.contains(desktopNavigation.masterRoute);
-    if (target.kind == DesktopContentKind.human) {
-      return MemberProfileView(
-        key: key,
-        controller: w,
-        userId: target.id,
-        onClose: closeDesktopDetail,
-        onBack: !wide
-            ? dismissPanel
-            : slot
-            ? closeDesktopDetail
-            : null,
-        showClose: false,
-        onMessage: () => messageDesktopProfile(target),
-      );
-    }
-    if (target.kind == DesktopContentKind.agent ||
-        target.kind == DesktopContentKind.computer) {
-      return FleetDetail(
-        key: key,
-        controller: w,
-        computers: target.kind == DesktopContentKind.computer,
-        initial:
-            (target.kind == DesktopContentKind.computer
-                ? w.services.entityDirectory.computer(target.id)
-                : w.services.entityDirectory.agent(target.id)) ??
-            {'id': target.id},
-        onClose: !wide && target.kind == DesktopContentKind.computer
-            ? dismissPanel
-            : closeDesktopDetail,
-        backAlways: slot && target.kind == DesktopContentKind.agent,
-        onOpenAgent: (id) => wide
-            ? desktopNavigation.selectTarget(
-                DesktopContentTarget(DesktopContentKind.agent, id),
-              )
-            : openDirectoryLocation(RaftRoute.agent, id),
-      );
-    }
+    final profile = desktopProfileDetail(
+      w: w,
+      key: key,
+      target: target,
+      wide: wide,
+      slot: slot,
+      close: closeDesktopDetail,
+      dismiss: dismissPanel,
+      message: () => messageDesktopProfile(target),
+      openAgent: (id) => wide
+          ? desktopNavigation.selectTarget(
+              DesktopContentTarget(DesktopContentKind.agent, id),
+            )
+          : openDirectoryLocation(RaftRoute.agent, id),
+    );
+    if (profile != null) return profile;
     final thread = target.kind == DesktopContentKind.thread;
     // The destination is still being resolved: like Source ChannelById, hold a
     // neutral "Loading channel" body instead of the previous channel's name
