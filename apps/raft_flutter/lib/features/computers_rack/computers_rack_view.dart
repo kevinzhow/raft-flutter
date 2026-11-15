@@ -27,6 +27,9 @@ import 'computers_rack_glyphs.dart';
 import 'rack_move_dialog.dart';
 import 'computers_rack_model.dart';
 import 'computers_rack_preferences.dart';
+import 'computers_rack_runtime_usage.dart';
+import '../runtime_usage_chip.dart'
+    show canViewRuntimeUsage, runtimeUsageClient;
 
 class ComputersRackView extends StatefulWidget {
   const ComputersRackView({
@@ -64,6 +67,9 @@ class _ComputersRackViewState extends State<ComputersRackView> {
   Map<String, Map<String, dynamic>> _machineById = const {};
   late final search = TextEditingController(text: prefs.query);
 
+  /// The runtime accounts' usage reads, for the usage columns and the sort.
+  late RackUsageReads usage = RackUsageReads(runtimeUsageClient(w));
+
   /// Folded groups and the Offline section's choice, on this server only.
   String? foldScope;
   Set<String> folded = {};
@@ -74,6 +80,7 @@ class _ComputersRackViewState extends State<ComputersRackView> {
     super.initState();
     _bind(w);
     prefs.addListener(_changed);
+    usage.version.addListener(_usageChanged);
   }
 
   void _bind(WorkspaceController c) {
@@ -98,6 +105,9 @@ class _ComputersRackViewState extends State<ComputersRackView> {
     if (!identical(old.controller, w)) {
       _unbind(old.controller);
       _bind(w);
+      usage.dispose();
+      usage = RackUsageReads(runtimeUsageClient(w))
+        ..version.addListener(_usageChanged);
     }
   }
 
@@ -105,12 +115,22 @@ class _ComputersRackViewState extends State<ComputersRackView> {
   void dispose() {
     _unbind(w);
     prefs.removeListener(_changed);
+    usage.dispose();
     search.dispose();
     super.dispose();
   }
 
   void _changed() {
     if (mounted) setState(() {});
+  }
+
+  /// A usage read landed: only a list sorted by remaining usage reorders.
+  void _usageChanged() {
+    final key = effectiveRackSort(
+      prefs.sort,
+      rackRuntimeColumns(_machineById.values),
+    )?.key;
+    if (key != null && parseRemainingSortKey(key) != null) _changed();
   }
 
   String tr(String s) => raftText(context, s);
@@ -141,6 +161,11 @@ class _ComputersRackViewState extends State<ComputersRackView> {
       userId,
     );
     _machineById = {for (final m in machines) '${m['id']}': m};
+    usage.sync(serverId, {
+      for (final m in machines)
+        if (m['status'] == 'online' && canViewRuntimeUsage(w, m))
+          '${m['id']}': machineUsageProviders(m),
+    });
     final state = directory.state(WorkspaceEntityKind.computers);
     final loading = !directory.settled(WorkspaceEntityKind.computers);
     final loaded = state.loaded && !loading;
@@ -616,6 +641,8 @@ class _ComputersRackViewState extends State<ComputersRackView> {
     required Map<String, List<Map<String, dynamic>>> agentsByMachine,
   }) {
     final view = prefs.view;
+    double? remaining(RackMachine m, String provider) =>
+        rackRemaining(usage.results('${m['id']}')?[provider]);
     final layout = view == RackView.cards
         ? RaftRackLayout.card
         : widget.phone
@@ -636,7 +663,9 @@ class _ComputersRackViewState extends State<ComputersRackView> {
       status: prefs.status,
       runtimes: runtimes,
     );
-    final sorted = sort == null ? filtered : sortRackMachines(filtered, sort);
+    final sorted = sort == null
+        ? filtered
+        : sortRackMachines(filtered, sort, remaining: remaining);
     if (machines.isNotEmpty && sorted.isEmpty) {
       return RaftEmptyState(
         key: const ValueKey('computers-rack-empty-filters'),
@@ -675,7 +704,7 @@ class _ComputersRackViewState extends State<ComputersRackView> {
       personalLabel: tr('Personal computers'),
       otherLabel: tr('Other'),
       rank: sort != null && sort.key != 'name'
-          ? (m) => rackSortValue(m, sort.key, null) == null
+          ? (m) => rackSortValue(m, sort.key, remaining) == null
                 ? null
                 : rankOf[m['id']]
           : sort == null
@@ -697,7 +726,8 @@ class _ComputersRackViewState extends State<ComputersRackView> {
         online.length + (offlineOpen ? offline.length : 0),
       );
     }
-    Widget row(RackMachine m) => _row(context, m, layout, agentsByMachine);
+    Widget row(RackMachine m) =>
+        _row(context, m, layout, agentsByMachine, columns, sort);
     Widget title(
       String key,
       String text,
@@ -747,6 +777,8 @@ class _ComputersRackViewState extends State<ComputersRackView> {
               agentsLabel: tr('Agents'),
               diskLabel: tr('Disk'),
               memoryLabel: tr('Memory'),
+              otherLabel: columns.other.isEmpty ? null : tr('Other'),
+              usage: rackUsageHeadings(columns),
               sortedKey: sort?.key,
               descending: sort?.direction == RackSortDirection.desc,
               onSort: (key) {
@@ -763,7 +795,17 @@ class _ComputersRackViewState extends State<ComputersRackView> {
                 );
               },
             )
+          : layout == RaftRackLayout.phone &&
+                (columns.usage.isNotEmpty || columns.other.isNotEmpty)
+          ? RaftRackPhoneRuntimeHeader(
+              usage: rackUsageHeadings(columns),
+              otherLabel: columns.other.isEmpty ? null : tr('Other'),
+            )
           : null,
+      extraWidth: raftRackRuntimeColumnsWidth(
+        columns.usage.length,
+        columns.other.isNotEmpty,
+      ),
     );
   }
 
@@ -774,10 +816,12 @@ class _ComputersRackViewState extends State<ComputersRackView> {
     RaftRackLayout layout,
     List<Widget> children, {
     Widget? header,
+    double extraWidth = 0,
   }) => RaftRackScroller(
     key: const ValueKey('computers-rack'),
     layout: layout,
     header: header,
+    extraWidth: extraWidth,
     children: children,
   );
 
@@ -786,6 +830,8 @@ class _ComputersRackViewState extends State<ComputersRackView> {
     RackMachine m,
     RaftRackLayout layout,
     Map<String, List<Map<String, dynamic>>> agentsByMachine,
+    RackRuntimeColumns columns,
+    RackSort? sort,
   ) {
     final id = '${m['id']}';
     final on = agentsByMachine[id] ?? const <Map<String, dynamic>>[];
@@ -875,6 +921,14 @@ class _ComputersRackViewState extends State<ComputersRackView> {
     final restart = canManage && m['isComputer'] == true && !offline
         ? w.services.entityDirectory.computerRestartProgress.progress(id)
         : null;
+    final runtime = rackRuntimeParts(
+      controller: w,
+      reads: usage,
+      machine: m,
+      columns: columns,
+      agents: on,
+      leadProvider: sort == null ? null : parseRemainingSortKey(sort.key),
+    );
     final computer = RaftRackComputer(
       id: id,
       name: '${m['name'] ?? ''}',
@@ -898,6 +952,9 @@ class _ComputersRackViewState extends State<ComputersRackView> {
       memory: meter(tr('Memory'), memoryStatus),
       agentCount: on.length,
       agents: [for (final a in on) _slot(a)],
+      usageCells: runtime.usageCells,
+      usageLines: runtime.usageLines,
+      otherCell: runtime.otherCell,
       otherRuntimes: [
         for (final r in rackOtherRuntimes(m, rackRuntimeColumns([m]).other))
           rackRuntimeDisplayName(r),

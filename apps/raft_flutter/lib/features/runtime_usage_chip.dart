@@ -20,6 +20,7 @@ import 'computer_readiness_copy.dart';
 import 'computer_runtime_limit_reset_dialog.dart';
 import 'computer_runtime_pi_sign_in_dialog.dart';
 import 'computer_runtime_provider_connect_dialog.dart';
+import 'computer_runtime_sign_in_notice.dart' show RuntimeAuthViewWatch;
 import 'computer_runtime_sign_in_dialog.dart';
 import 'computer_runtime_sign_out_dialog.dart';
 import 'computers_rack/computers_rack_model.dart' show rackRuntimeDisplayName;
@@ -176,9 +177,8 @@ class _RuntimeUsageChipState extends State<RuntimeUsageChip> {
 
   /// The Computer's runtime sign-in state, read once (cached per Computer)
   /// and again whenever the Computer reports a new one.
-  RuntimeAuthView? authView;
-  void Function()? unwatchAuth;
-  int authSeq = 0;
+  late final authWatch = RuntimeAuthViewWatch(onChange: authChanged);
+  RuntimeAuthView? get authView => authWatch.view;
 
   /// What the last limit reset did, said once in the action row; the subject
   /// is the one it was made for.
@@ -273,8 +273,7 @@ class _RuntimeUsageChipState extends State<RuntimeUsageChip> {
     widget.controller.services.entityDirectory.removeListener(machineChanged);
     subject++;
     poll++;
-    authSeq++;
-    unwatchAuth?.call();
+    authWatch.dispose();
     ticker?.cancel();
     reread?.cancel();
     model.dispose();
@@ -288,33 +287,21 @@ class _RuntimeUsageChipState extends State<RuntimeUsageChip> {
   // --- the sign-in view (useRuntimeAuthView) ---
 
   void startAuth() {
-    unwatchAuth?.call();
-    unwatchAuth = null;
     authClient = widget.authClient ?? runtimeAuthClientOf(widget.controller);
-    authView = null;
-    if (authRuntime == null) return;
-    authView = authClient.cached(widget.serverId, widget.machineId);
-    unwatchAuth = authClient.watch(widget.machineId, rereadAuth);
-    rereadAuth();
+    authWatch.start(
+      authClient,
+      widget.serverId,
+      widget.machineId,
+      enabled: authRuntime != null,
+    );
   }
 
-  /// Only the newest read may land: an older answer that arrives after a
-  /// newer read started (a status update mid-read) is stale.
-  void rereadAuth() {
-    if (authRuntime == null) return;
-    final seq = ++authSeq;
-    final server = widget.serverId, machine = widget.machineId;
-    authClient.read(server, machine).then(
-      (view) {
-        if (!mounted || seq != authSeq) return;
-        authView = view;
-        changed();
-        syncProvider();
-      },
-      // Not allowed to see it, or the read failed: the card stays as usage
-      // alone.
-      onError: (Object _) {},
-    );
+  void rereadAuth() => authWatch.reread();
+
+  void authChanged() {
+    if (!mounted) return;
+    changed();
+    syncProvider();
   }
 
   /// A server-gated runtime's usage starts once the server lists it.
