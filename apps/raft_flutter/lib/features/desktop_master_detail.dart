@@ -38,12 +38,18 @@ class DesktopMasterDetail extends StatefulWidget {
     this.onDetailPanelWidthChanged,
   });
 
-  /// Web ProfilePanel beside a page (Members, Agents): the detail is a panel of
-  /// this width (the profile panel's 300 to 600) that the page's own list
-  /// leaves room for, and its left edge is the resize handle (Web
-  /// `ColumnResizeHandle column="detail"`). Null keeps the classic split where
-  /// the handle resizes the master (Search, Activity).
+  /// Web ProfilePanel beside a page (Members, Agents): the detail is a column of
+  /// this width (at least 300) that the page's own list leaves room for, and
+  /// its left edge is the seam (Web `ColumnResizeHandle column="detail"`). The
+  /// seam trades the list's width for the panel's, down to the list's
+  /// [listFloor]. Null keeps the classic split where the handle resizes the
+  /// master (Search, Activity).
   final double? detailPanelWidth;
+
+  /// The narrowest the list beside a profile column gets: Web's planned row
+  /// trades the conversation like any column down to SEAM_COLUMN_MIN_WIDTH
+  /// (rowSeams.ts startSeamDrag, seamCascade.ts).
+  static const listFloor = 160.0;
   final ValueChanged<double>? onDetailPanelWidthChanged;
   final Widget master;
   final Widget? detail;
@@ -86,6 +92,9 @@ class _DesktopMasterDetailState extends State<DesktopMasterDetail> {
     if (widget.directoryWidth != oldWidget.directoryWidth) {
       directoryWidth = widget.directoryWidth;
     }
+    // A profile opening on a page that first built without one: its saved width.
+    final saved = widget.detailPanelWidth;
+    if (saved != null && saved != oldWidget.detailPanelWidth) panel = saved;
   }
 
   @override
@@ -95,7 +104,11 @@ class _DesktopMasterDetailState extends State<DesktopMasterDetail> {
       final folded = RaftAdaptiveWorkspace.compactOf(context);
       final compact = widget.compact || MediaQuery.sizeOf(context).width < 1024;
       final panelMode = widget.detailPanelWidth != null;
-      final panelWidth = panel.clamp(300.0, 600.0);
+      final panelMax = (size.maxWidth - DesktopMasterDetail.listFloor).clamp(
+        300.0,
+        double.infinity,
+      );
+      final panelWidth = panel.clamp(300.0, panelMax);
       final width = panelMode && split
           ? (size.maxWidth - panelWidth).clamp(0.0, size.maxWidth)
           : split && directoryWidth != null
@@ -195,14 +208,16 @@ class _DesktopMasterDetailState extends State<DesktopMasterDetail> {
                   value: panelMode ? panelWidth : width.toDouble(),
                   reversed: panelMode,
                   min: panelMode ? 300 : null,
-                  max: panelMode ? 600 : null,
+                  max: panelMode ? panelMax : null,
                   defaultValue: panelMode ? 380 : null,
                   onChanged: panelMode
                       ? (next) =>
-                            setState(() => panel = next.clamp(300.0, 600.0))
+                            setState(() => panel = next.clamp(300.0, panelMax))
                       : resize,
                   onChangeEnd: panelMode
-                      ? () => widget.onDetailPanelWidthChanged?.call(panel)
+                      ? () => widget.onDetailPanelWidthChanged?.call(
+                          panel.clamp(300.0, panelMax),
+                        )
                       : null,
                 ),
               ),

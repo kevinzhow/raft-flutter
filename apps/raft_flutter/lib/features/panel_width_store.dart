@@ -23,11 +23,15 @@ class PanelWidthStore {
   }
 }
 
-/// Web `ProfilePanel` (`slock:profilePanelWidth`): 300 to 600, 380 by default.
+/// Web `ProfilePanel` (`slock:profilePanelWidth`): at least 300, 380 by
+/// default. The upper bound is Web's safety clamp (`COLUMN_BOUNDS.detail`
+/// GROWS_TO_MAIN_MIN_SAFETY_MAX): beside the Members list the column grows
+/// until the list is at its floor (`DesktopMasterDetail.listFloor`), and every
+/// host clamps it to the room it has.
 const profilePanelWidth = PanelWidthStore(
   'raft.layout.profileWidth',
   300,
-  600,
+  8192,
   380,
 );
 

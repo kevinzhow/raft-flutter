@@ -1697,9 +1697,9 @@ class _WorkspaceViewState extends State<WorkspaceView>
                           .value // Web ProfilePanel
                     : null,
                 onDetailPanelWidthChanged: profilePanelWidth.save,
-                detail:
-                    desktopContentDetail() ??
-                    (wide ? const SizedBox.expand() : null),
+                // Web v1.24: Members is the whole page until something opens
+                // beside it (MainLayout `thread-main-column`, no sidebar).
+                detail: desktopContentDetail(),
               );
       }
       if (DesktopNavigationPolicy.forSection(route).contentMasterDetail) {

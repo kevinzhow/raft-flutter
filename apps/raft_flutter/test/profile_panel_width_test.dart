@@ -14,16 +14,19 @@ void main() {
   tearDown(DevicePreferences.reset);
 
   group('store (Web slock:profilePanelWidth)', () {
-    test('380 until saved; outside 300..600 is the default', () async {
+    test('380 until saved; under 300 is the default', () async {
       SharedPreferences.setMockInitialValues({});
       DevicePreferences.adopt(await SharedPreferences.getInstance());
       expect(profilePanelWidth.value, 380);
       profilePanelWidth.save(450);
       expect(profilePanelWidth.value, 450);
-      // A width the panel cannot have is never stored, and a stored one from
-      // elsewhere that is out of bounds reads as the default.
+      // Beside the Members list the column may be wider than 600 (each host
+      // clamps it to its room); a width the panel cannot have is never stored,
+      // and a stored one from elsewhere that is out of bounds is the default.
       profilePanelWidth.save(900);
-      expect(profilePanelWidth.value, 450);
+      expect(profilePanelWidth.value, 900);
+      profilePanelWidth.save(120);
+      expect(profilePanelWidth.value, 900);
       SharedPreferences.setMockInitialValues({profilePanelWidth.key: 120.0});
       DevicePreferences.adopt(await SharedPreferences.getInstance());
       expect(profilePanelWidth.value, 380);

@@ -34,7 +34,14 @@ class ComputersRackDesktopPage extends StatefulWidget {
 class _ComputersRackDesktopPageState extends State<ComputersRackDesktopPage> {
   /// The panel's width while it is dragged; kept as the profile panel's
   /// (Web `ColumnResizeHandle column="detail"`).
-  double width = profilePanelWidth.value;
+  double width = profilePanelWidth.value.clamp(
+    profilePanelWidth.min,
+    rackPanelMax,
+  );
+
+  /// The rack's side panel keeps its 300 to 600 (the shared width can be
+  /// wider, dragged beside the Members list).
+  static const rackPanelMax = 600.0;
 
   String? get selected => widget.target?.kind == DesktopContentKind.computer
       ? widget.target!.id
@@ -48,13 +55,12 @@ class _ComputersRackDesktopPageState extends State<ComputersRackDesktopPage> {
       builder: (scope) => RaftRackSidePanelLayout(
         width: width,
         onResize: (value) => setState(
-          () =>
-              width = value.clamp(profilePanelWidth.min, profilePanelWidth.max),
+          () => width = value.clamp(profilePanelWidth.min, rackPanelMax),
         ),
         onResizeEnd: () => profilePanelWidth.save(width),
         resizeLabel: raftText(context, 'Resize profile'),
         resizeMin: profilePanelWidth.min,
-        resizeMax: profilePanelWidth.max,
+        resizeMax: rackPanelMax,
         resizeDefault: profilePanelWidth.fallback,
         rack: ComputersRackView(
           controller: widget.controller,

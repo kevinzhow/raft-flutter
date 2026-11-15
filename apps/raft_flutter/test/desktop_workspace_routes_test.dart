@@ -527,7 +527,7 @@ void main() {
     },
   );
   testWidgets(
-    'Members col2 remains mounted when a human profile opens and closes',
+    'The Members list remains mounted when a human profile opens and closes',
     (t) async {
       SharedPreferences.setMockInitialValues({});
       t.view.physicalSize = const Size(1280, 720);
@@ -561,9 +561,10 @@ void main() {
       await t.pumpAndSettle();
       final directory = t.state(find.byType(DesktopDirectoryView));
       expect(find.byKey(const Key('workspace-sidebar-panel')), findsNothing);
+      // Web v1.24: Members is the whole page right of the rail (no col2).
       expect(
-        t.getSize(find.byKey(const Key('desktop-master-panel'))).width,
-        240,
+        t.getRect(find.byKey(const Key('desktop-master-panel'))).right,
+        1280,
       );
       await t.tap(find.text('Public human'));
       await t.pumpAndSettle();
