@@ -182,6 +182,7 @@ class RaftComputerDetailData {
     this.versionKind = RaftComputerVersionKind.unknown,
     this.availableVersion,
     this.creator,
+    this.owner,
     this.diskLowTitle,
     this.commands,
     this.service,
@@ -240,6 +241,9 @@ class RaftComputerDetailData {
   /// whether this machine reported it.
   final List<(String, bool)> runtimes;
   final RaftComputerCreator? creator;
+
+  /// Who Raft records as the owner; null is Public.
+  final RaftComputerOwner? owner;
   final List<RaftComputerAgent> agents;
   final RaftComputerCommandSet? commands;
   final RaftComputerService? service;
@@ -269,6 +273,9 @@ class RaftComputerDetailActions {
     this.changeModel,
     this.rescanRuntimes,
     this.openCreator,
+    this.openOwner,
+    this.transferOwner,
+    this.makeMine,
     this.confirmDelete,
     this.openInstallGuide,
     this.confirmRestart,
@@ -315,6 +322,12 @@ class RaftComputerDetailActions {
 
   /// Opens the creator's profile (the Creator row is a button when set).
   final VoidCallback? openCreator;
+
+  /// The Owner row: opens the owner's profile, opens Transfer owner (set when
+  /// the viewer may), claims a Public Computer (set when they connected it).
+  final VoidCallback? openOwner;
+  final VoidCallback? transferOwner;
+  final Future<void> Function()? makeMine;
 }
 
 /// Text helpers for the Tailwind classes this page writes in JSX.
@@ -1483,6 +1496,16 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
                             .copyWith(fontStyle: FontStyle.italic),
                       ),
               ),
+            // Web ComputerOwnerField: after Creator, for every machine row.
+            RaftKeyValueRow.child(
+              label: 'Owner',
+              child: RaftComputerOwnerValue(
+                owner: d.owner,
+                openOwner: widget.actions.openOwner,
+                transfer: widget.actions.transferOwner,
+                makeMine: widget.actions.makeMine,
+              ),
+            ),
           ],
         ),
       ]),

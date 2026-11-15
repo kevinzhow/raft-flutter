@@ -1222,6 +1222,27 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
     };
   }
 
+  /// Accept a command's answer for one Computer incrementally, in the scope
+  /// that issued it (Web machineStore `setMachineOwner`: merge the returned
+  /// row, else patch locally). Returns the patch taker; a stale scope or a
+  /// Computer that is gone is ignored.
+  void Function(String id, Map<String, dynamic> patch) computerPatchReceiver() {
+    synchronize();
+    final scope = _scope, epoch = _epoch;
+    return (id, patch) {
+      if (scope == null || !_accepts(scope, epoch)) return;
+      final rows = _rows[WorkspaceEntityKind.computers];
+      final old = rows?[id];
+      if (old == null) return;
+      final next = {...old, ..._copy(patch)};
+      if (_sameValue(old, next)) return;
+      rows![id] = next;
+      _computerRevision++;
+      _persist(WorkspaceEntityKind.computers);
+      notifyListeners();
+    };
+  }
+
   static bool _sameValue(dynamic a, dynamic b) {
     if (a is List && b is List) {
       return a.length == b.length &&

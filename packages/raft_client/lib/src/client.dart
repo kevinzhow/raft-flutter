@@ -160,6 +160,10 @@ Map<String, dynamic> _errorDetails(Map? body) {
     'current_scopes',
     'current_groups',
     'current_text_revision_id',
+    // others_agents_on_computer (revoke-computer-key, 409): other people's
+    // agents on the Computer, each with its owner and reminder times, which
+    // Delete Computer lists with Notify owner (Web othersAgentsApi.ts).
+    'agents',
   };
   dynamic freeze(dynamic value) {
     if (value is Map) {
@@ -234,6 +238,24 @@ Map<String, dynamic> _errorDetails(Map? body) {
     }
     if (key == 'agreement') {
       return receipt(value, {'id', 'title', 'bodyMarkdown', 'version'});
+    }
+    if (key == 'agents') {
+      return [
+        if (value is List)
+          for (final agent in value)
+            if (agent is Map)
+              {
+                ...receipt(agent, {
+                  'id',
+                  'name',
+                  'ownerNotifiedAt',
+                  'ownerNextNotifyAt',
+                  'personalAssistant',
+                }),
+                if (agent['owner'] is Map)
+                  'owner': receipt(agent['owner'], {'id', 'name'}),
+              },
+      ];
     }
     if (key == 'conversionCommand')
       return receipt(value, {

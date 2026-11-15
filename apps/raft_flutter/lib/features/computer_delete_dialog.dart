@@ -8,14 +8,20 @@
 // they created, or their personal assistant) block it; confirming revokes the
 // Computer's key first (revoke-computer-key), and while other people's agents
 // are on it the server answers 409 with them: the force-unbind confirmation
-// lists them and sends exactly those as `forceAgentIds`. A DELETE that fails
-// after the key was revoked says so in our words.
+// shows them (OthersAgentsOnComputerDialog) with Notify owner to move it (once
+// a day, shared with Delete Account) and Force unbind and delete, which asks
+// again (ForceUnbindAgentsDialog) and sends exactly those as `forceAgentIds`.
+// Cancel in that confirmation goes back to the list; a 409 on it means more
+// arrived and nothing happened: it shows the newer list and says so. A DELETE
+// that fails after the key was revoked says so in our words.
+import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/widgets.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import '../data/user_error.dart';
 import '../data/workspace_controller.dart';
+import 'agent_owner_notify.dart';
 
 /// othersAgentsApi.ts isOwnAgent.
 bool isOwnAgent(Map agent, String? userId) {
@@ -34,33 +40,15 @@ bool computerAttachedByMe(Map machine, String? userId) =>
     userId != null &&
     machine['userId'] == userId;
 
-/// One agent the force-unbind confirmation lists.
-typedef ForceUnbindAgent = ({
-  String id,
-  String name,
-  String? ownerName,
-  String computerName,
-});
-
 /// The 409 `others_agents_on_computer` list, or null for any other answer.
-List<ForceUnbindAgent>? othersAgentsOf(Object error, String computerName) {
+List<OthersAgent>? othersAgentsOf(Object error) {
   if (error is! RaftApiException || error.status != 409) return null;
   if (error.details['code'] != 'others_agents_on_computer') return null;
   final listed = error.details['agents'];
   if (listed is! List) return null;
-  final agents = <ForceUnbindAgent>[
-    for (final a in listed.whereType<Map>())
-      if (a['id'] is String)
-        (
-          id: a['id'] as String,
-          name: a['name'] is String ? a['name'] as String : a['id'] as String,
-          ownerName: switch (a['owner']) {
-            {'name': final String name} when name.isNotEmpty => name,
-            {'id': final String id} => id,
-            _ => null,
-          },
-          computerName: computerName,
-        ),
+  final agents = [
+    for (final a in listed)
+      if (OthersAgent.fromJson(a) case final agent?) agent,
   ];
   return agents.isEmpty ? null : agents;
 }
@@ -136,7 +124,7 @@ Future<bool> showDeleteComputerDialog(
   var deleted = false;
 
   /// Deletes it; the others' agents still on it when the server refused.
-  Future<List<ForceUnbindAgent>?> remove(List<String> force) async {
+  Future<List<OthersAgent>?> remove(List<String> force) async {
     if (!valid()) throw const RaftApiException('Fleet access changed.');
     if (mine) {
       try {
@@ -146,7 +134,7 @@ Future<bool> showDeleteComputerDialog(
           data: force.isEmpty ? {} : {'forceAgentIds': force},
         );
       } catch (error) {
-        final others = othersAgentsOf(error, name);
+        final others = othersAgentsOf(error);
         if (others != null) return others;
         final key = error is RaftApiException ? error.details['code'] : null;
         if (!(error is RaftApiException &&
@@ -172,7 +160,7 @@ Future<bool> showDeleteComputerDialog(
     return null;
   }
 
-  List<ForceUnbindAgent>? others;
+  List<OthersAgent>? others;
   if (!context.mounted) return false;
   await showRaftDialog<void>(
     context: context,
@@ -208,28 +196,128 @@ Future<bool> showDeleteComputerDialog(
       ),
     ),
   );
-  while (others != null && !deleted && valid()) {
-    final listed = others!;
-    others = null;
-    if (!context.mounted) break;
-    await showForceUnbindAgentsDialog(
-      context,
-      agents: listed,
-      confirmLabel: tr('Force unbind and delete'),
-      onConfirm: () async {
-        final again = await remove([for (final a in listed) a.id]);
-        if (again != null) {
-          others = again;
-          throw RaftComputerActionError(
-            tr(
-              'More agents were added to this computer, so nothing was unbound. Check the list and confirm again.',
-            ),
-          );
-        }
-      },
-    );
+  // The notify state outlives a trip to the force confirmation and back.
+  final notifier = AgentOwnerNotifier(
+    send: (ids) => postNotifyAgentOwners(w.command, '$base/notify-agent-owners', ids),
+  );
+  try {
+    while (others != null && !deleted && valid()) {
+      if (!context.mounted) break;
+      final force = await showOthersAgentsDialog(
+        context,
+        agents: others!,
+        notifier: notifier,
+        changes: changes,
+        gone: () => !valid(),
+      );
+      if (force != true || !valid() || !context.mounted) break;
+      // The confirmation shows the newest list; Cancel goes back to the list.
+      final listed = _ListedAgents(others!);
+      try {
+        await showForceUnbindAgentsDialog(
+          context,
+          agents: listed,
+          computerName: name,
+          confirmLabel: tr('Force unbind and delete'),
+          changes: changes,
+          gone: () => !valid(),
+          onConfirm: () async {
+            final again = await remove([for (final a in listed.value) a.id]);
+            if (again != null) {
+              others = again;
+              listed.value = again;
+              throw RaftComputerActionError(
+                tr(
+                  'More agents were added to this computer, so nothing was unbound. Check the list and confirm again.',
+                ),
+              );
+            }
+          },
+        );
+      } finally {
+        listed.dispose();
+      }
+    }
+  } finally {
+    notifier.dispose();
   }
   return deleted;
+}
+
+/// OthersAgentsOnComputerDialog: other people's agents on the Computer, each
+/// with its owner and Notify owner to move it. True: Force unbind and delete
+/// was chosen; false or null: closed.
+Future<bool?> showOthersAgentsDialog(
+  BuildContext context, {
+  required List<OthersAgent> agents,
+  required AgentOwnerNotifier notifier,
+  Listenable? changes,
+  bool Function()? gone,
+}) => showRaftDialog<bool>(
+  context: context,
+  barrierDismissible: false,
+  builder: (dialog) => _CloseWhenGone(
+    changes: changes,
+    gone: gone ?? () => false,
+    child: ListenableBuilder(
+      listenable: notifier,
+      builder: (dialog, _) => RaftConfirmDialog(
+        surfaceKey: const ValueKey('computer-others-agents'),
+        confirmKey: const ValueKey('computer-others-agents-force'),
+        title: raftText(dialog, "Other people's agents on this computer"),
+        maxWidth: 448,
+        plainMessage: true,
+        content: RaftOthersAgentsList(
+          message: raftText(
+            dialog,
+            'Only their owners can move them to another computer. Raft can remind each owner with a system message, or you can force unbind them and delete the computer now.',
+          ),
+          listLabel: raftText(dialog, "Other people's agents"),
+          agents: [
+            for (final a in agents)
+              (
+                id: a.id,
+                name: a.name,
+                ownerLine: switch (notifier.ownerNow(a)) {
+                  final owner? => raftFormat(dialog, 'Owner: {ownerName}', {
+                    'ownerName': owner.name,
+                  }),
+                  null => raftText(dialog, 'No owner'),
+                },
+                actions: AgentOwnerNotifyActions(
+                  agent: a,
+                  notifier: notifier,
+                  testIdPrefix: 'computer',
+                ),
+              ),
+          ],
+        ),
+        confirmLabel: raftText(dialog, 'Force unbind and delete'),
+        confirmVariant: RaftButtonRecipeVariant.outline,
+      ),
+    ),
+  ),
+);
+
+/// The agents the force confirmation lists; a newer list replaces them.
+class _ListedAgents implements ValueListenable<List<OthersAgent>> {
+  _ListedAgents(this._value);
+  List<OthersAgent> _value;
+  final _listeners = <VoidCallback>{};
+  @override
+  List<OthersAgent> get value => _value;
+  set value(List<OthersAgent> next) {
+    _value = next;
+    for (final listener in _listeners.toList()) {
+      listener();
+    }
+  }
+
+  @override
+  void addListener(VoidCallback listener) => _listeners.add(listener);
+  @override
+  void removeListener(VoidCallback listener) => _listeners.remove(listener);
+  void dispose() => _listeners.clear();
 }
 
 /// ForceUnbindAgentsDialog: the destructive confirmation listing every agent
@@ -237,48 +325,58 @@ Future<bool> showDeleteComputerDialog(
 /// it open with the reason.
 Future<void> showForceUnbindAgentsDialog(
   BuildContext context, {
-  required List<ForceUnbindAgent> agents,
+  required ValueListenable<List<OthersAgent>> agents,
+  required String computerName,
   required String confirmLabel,
   required Future<void> Function() onConfirm,
+  Listenable? changes,
+  bool Function()? gone,
 }) => showRaftDialog<void>(
   context: context,
   barrierDismissible: false,
-  builder: (dialog) => RaftConfirmDialog(
-    surfaceKey: const ValueKey('force-unbind-dialog'),
-    confirmKey: const ValueKey('force-unbind-confirm'),
-    title: raftFormat(
-      dialog,
-      agents.length == 1
-          ? 'Force unbind {count} agent?'
-          : 'Force unbind {count} agents?',
-      {'count': agents.length},
-    ),
-    content: RaftForceUnbindAgentList(
-      message: raftText(
-        dialog,
-        'Their workspaces on your computers are lost. The agents themselves stay, with their messages and settings, and their owners can keep using them on another computer. Each owner gets a system notice.',
-      ),
-      listLabel: raftText(dialog, 'Agents to unbind'),
-      agents: [
-        for (final a in agents)
-          (
-            id: a.id,
-            name: a.name,
-            meta: a.ownerName == null
-                ? raftFormat(dialog, 'No owner · {computerName}', {
-                    'computerName': a.computerName,
-                  })
-                : raftFormat(dialog, 'Owner: {ownerName} · {computerName}', {
-                    'ownerName': a.ownerName,
-                    'computerName': a.computerName,
-                  }),
+  builder: (dialog) => _CloseWhenGone(
+    changes: changes,
+    gone: gone ?? () => false,
+    child: ValueListenableBuilder<List<OthersAgent>>(
+      valueListenable: agents,
+      builder: (dialog, listed, _) => RaftConfirmDialog(
+        surfaceKey: const ValueKey('force-unbind-dialog'),
+        confirmKey: const ValueKey('force-unbind-confirm'),
+        title: raftFormat(
+          dialog,
+          listed.length == 1
+              ? 'Force unbind {count} agent?'
+              : 'Force unbind {count} agents?',
+          {'count': listed.length},
+        ),
+        content: RaftForceUnbindAgentList(
+          message: raftText(
+            dialog,
+            'Their workspaces on your computers are lost. The agents themselves stay, with their messages and settings, and their owners can keep using them on another computer. Each owner gets a system notice.',
           ),
-      ],
+          listLabel: raftText(dialog, 'Agents to unbind'),
+          agents: [
+            for (final a in listed)
+              (
+                id: a.id,
+                name: a.name,
+                meta: a.owner == null
+                    ? raftFormat(dialog, 'No owner · {computerName}', {
+                        'computerName': computerName,
+                      })
+                    : raftFormat(dialog, 'Owner: {ownerName} · {computerName}', {
+                        'ownerName': a.owner!.name,
+                        'computerName': computerName,
+                      }),
+              ),
+          ],
+        ),
+        confirmLabel: confirmLabel,
+        loadingLabel: raftText(dialog, 'Unbinding…'),
+        confirmVariant: RaftButtonRecipeVariant.danger,
+        onConfirm: onConfirm,
+      ),
     ),
-    confirmLabel: confirmLabel,
-    loadingLabel: raftText(dialog, 'Unbinding…'),
-    confirmVariant: RaftButtonRecipeVariant.danger,
-    onConfirm: onConfirm,
   ),
 );
 

@@ -20,6 +20,7 @@ import 'agent_metadata_projection.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'computer_delete_dialog.dart';
+import 'computer_owner.dart';
 import 'computers_rack/computers_rack_actions.dart'
     show askComputerRestart, askComputerUpgrade;
 import 'computer_restart_request.dart';
@@ -735,6 +736,7 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel> {
               avatarUrl: creator['avatarUrl'] as String?,
             )
           : null,
+      owner: computerOwnerOf(m),
       diskLowTitle: disk == null
           ? null
           : raftFormat(context, 'Low disk space: {free} free of {total}', {
@@ -1064,6 +1066,9 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel> {
       runtimeChip: _runtimeChip,
       changeModel: canManage ? _changeModels : null,
       rescanRuntimes: _rescanRuntimes,
+      openOwner: computerOwnerActions(context, w, m).openOwner,
+      transferOwner: computerOwnerActions(context, w, m).transferOwner,
+      makeMine: computerOwnerActions(context, w, m).makeMine,
       openCreator: switch (m['creator']) {
         {'id': final String creator} => () => w.openProfile(
           RaftProfileKind.human,

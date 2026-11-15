@@ -261,6 +261,8 @@ export 'src/copyable_code.dart';
 export 'src/computer_surfaces.dart';
 export 'src/mobile_computer_list.dart';
 export 'src/computer_detail.dart';
+export 'src/computer_owner_row.dart';
+export 'src/others_agents_list.dart';
 export 'src/computers_rack.dart';
 export 'src/rack_restart_progress.dart';
 export 'src/rack_row_popover.dart';
