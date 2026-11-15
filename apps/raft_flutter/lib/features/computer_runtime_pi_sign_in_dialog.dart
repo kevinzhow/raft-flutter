@@ -527,15 +527,18 @@ class _PiSignInState extends State<ComputerRuntimePiSignInView> {
       // A sign-in that ended as loopback_required on this Computer: greyed
       // out for the session.
       final computerOnly = needsComputer(row);
-      how = raftText(context, switch (computerOnly
-          ? 'computer_only'
-          : row.method!.flow) {
-        'device_code' => 'Sign in with a device code',
-        'paste_code' => 'Sign in, then paste a code',
-        'paste_address' => 'Sign in, then paste the page address',
-        'link' => "Sign in on the provider's page",
-        _ => 'Needs a browser on the Computer itself: sign in there',
-      });
+      how = computerOnly
+          ? raftText(
+              context,
+              'Needs a browser on the Computer itself: sign in there',
+            )
+          : raftText(context, switch (row.method!.flow) {
+              'device_code' => 'Sign in with a device code',
+              'paste_code' => 'Sign in, then paste a code',
+              'paste_address' => 'Sign in, then paste the page address',
+              'link' => "Sign in on the provider's page",
+              _ => 'Needs a browser on the Computer itself: sign in there',
+            });
       // OpenCode's method labels ("Login with GitHub (device)") do not name
       // the provider.
       label = choosesMethod
