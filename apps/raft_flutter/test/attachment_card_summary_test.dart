@@ -44,6 +44,13 @@ class _Client extends RaftClient {
   final requests = <String>[];
   final answers = <String, Object?>{};
   final gates = <String, Completer<void>>{};
+  // A document card also wakes the Artifacts session (Save as Artifact),
+  // which reads its flag: answered off here, so no request is left pending.
+  @override
+  Future<dynamic> post(String path, {dynamic data}) async => {
+    'evaluations': const [],
+  };
+
   @override
   Future<dynamic> get(String path, {Map<String, dynamic>? query}) async {
     requests.add(path);

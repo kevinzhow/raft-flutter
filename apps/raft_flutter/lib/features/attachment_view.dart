@@ -16,6 +16,7 @@ import '../data/attachment_image_repository.dart';
 import '../platform/attachment_files.dart';
 import '../platform/native_sharing.dart';
 import '../platform/video_frame_probe.dart';
+import 'artifacts/artifact_attachment_slot.dart';
 import 'attachment_card_summary.dart';
 import 'attachment_comment_ref.dart' show AttachmentPendingOpen;
 import 'attachment_preview_dialog.dart';
@@ -1072,12 +1073,23 @@ class _AttachmentViewState extends State<AttachmentView> {
 
   Widget card(BuildContext context) {
     final summary = cardSummary;
-    return summary == null
+    final card = summary == null
         ? rawCard(context)
         : ListenableBuilder(
             listenable: summary,
             builder: (context, _) => rawCard(context),
           );
+    // Web AttachmentChip's `menu` and the saved line: a document that is in a
+    // message (not an image, not an export) can be saved as an Artifact.
+    if (widget.exportMode || isImage || widget.messageId == null) return card;
+    return ArtifactAttachmentSlot(
+      controller: w,
+      attachmentId: '${widget.metadata['id']}',
+      filename: name,
+      sizeBytes: (widget.metadata['sizeBytes'] as num?)?.toInt() ?? 0,
+      onDownload: download,
+      child: card,
+    );
   }
 
   Widget rawCard(BuildContext context) {

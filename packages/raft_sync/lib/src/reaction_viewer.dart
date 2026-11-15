@@ -10,12 +10,17 @@ class ReactionViewerLedger {
   }
 
   String accept(dynamic payload, {required String serverId}) {
-    if (payload is! Map || payload['serverId'] != serverId ||
-        payload['messageId'] is! String || (payload['messageId'] as String).isEmpty ||
-        payload['viewerVersion'] is! int || payload['viewerVersion'] < 0 ||
+    if (payload is! Map ||
+        payload['serverId'] != serverId ||
+        payload['messageId'] is! String ||
+        (payload['messageId'] as String).isEmpty ||
+        payload['viewerVersion'] is! int ||
+        payload['viewerVersion'] < 0 ||
         payload['viewerVersion'] > 9007199254740991 ||
         payload['reactedEmojis'] is! List ||
-        (payload['reactedEmojis'] as List).any((e) => e is! String || e.isEmpty)) {
+        (payload['reactedEmojis'] as List).any(
+          (e) => e is! String || e.isEmpty,
+        )) {
       return 'corrupt';
     }
     final emojis = Set<String>.from(payload['reactedEmojis']).toList()..sort();
@@ -23,12 +28,18 @@ class ReactionViewerLedger {
     if (old != null) {
       if (payload['viewerVersion'] < old['viewerVersion']) return 'stale';
       if (payload['viewerVersion'] == old['viewerVersion']) {
-        return jsonEncode(emojis) == jsonEncode(old['reactedEmojis']) ? 'duplicate' : 'conflict';
+        return jsonEncode(emojis) == jsonEncode(old['reactedEmojis'])
+            ? 'duplicate'
+            : 'conflict';
       }
     }
-    _snapshots[id] = {'viewerVersion': payload['viewerVersion'], 'reactedEmojis': emojis};
+    _snapshots[id] = {
+      'viewerVersion': payload['viewerVersion'],
+      'reactedEmojis': emojis,
+    };
     return 'accepted';
   }
+
   void reset() => _snapshots.clear();
   void remove(String messageId) => _snapshots.remove(messageId);
 }

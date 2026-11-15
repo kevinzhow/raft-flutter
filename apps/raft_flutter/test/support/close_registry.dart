@@ -1,3 +1,4 @@
+import 'close_registry_artifacts.dart';
 import 'close_registry_community.dart';
 import 'close_registry_dialogs.dart';
 import 'close_registry_links.dart';
@@ -16,6 +17,7 @@ List<CloseSurface> get allCloseSurfaces => [
   ...popupSurfaces,
   ...raftbenchSurfaces,
   ...viewerSurfaces,
+  ...artifactSurfaces,
 ];
 
 /// Files that contain a surface API call but are not a surface themselves.

@@ -11,6 +11,7 @@ import '../data/user_error.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
+import 'artifacts/artifact_message_links.dart';
 import 'message_card_read.dart';
 import 'resource_cards.dart' show resourceRelativeTime;
 
@@ -411,6 +412,14 @@ class MessagePresentation extends StatelessWidget {
           await openPermalinkInApp(context, controller, link)) {
         return;
       }
+      // Web openArtifactOnPlainClick: an Artifact of this server opens in
+      // the viewer (workspace_artifacts_v0).
+      if (localAuthority &&
+          !exportMode &&
+          context.mounted &&
+          openArtifactMessageLink(context, controller, href)) {
+        return;
+      }
       onExternalLink(href);
       return;
     }
@@ -604,7 +613,7 @@ class MessagePresentation extends StatelessWidget {
                   raftFormat(ctx, 'Status: {status}', {
                     'status': raftText(
                       ctx,
-                      raftTaskStatuses.contains(data['status'])
+                      raftTaskStatusVocabulary.contains(data['status'])
                           ? raftTaskStatusLabel(data['status'])
                           : data['status'],
                     ),
@@ -804,6 +813,22 @@ class MessagePresentation extends StatelessWidget {
   }
 
   Widget body(BuildContext context, {String? content}) {
+    final shown = content ?? text;
+    final body = _body(context, content: content);
+    // Web ArtifactMessageRefs in the embedded slot: the cards for the
+    // Artifacts the text links to.
+    if (exportMode || !localAuthority || !mayLinkArtifacts(shown)) return body;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        body,
+        ArtifactLinkCards(controller: controller, content: shown),
+      ],
+    );
+  }
+
+  Widget _body(BuildContext context, {String? content}) {
     return RaftMessageBody(
       mountedMessage: true,
       messagePipeline: true,
@@ -945,6 +970,8 @@ class MessagePresentation extends StatelessWidget {
       case 'task' when parts.length == 1:
         final task = taskByNumber?.call(int.tryParse(parts[0]) ?? 0);
         final status = switch (task?['status']) {
+          // Web v1.24 taskStatusUi: backlog is a status of its own.
+          'backlog' => RaftMessageTaskStatus.backlog,
           'todo' => RaftMessageTaskStatus.todo,
           'in_progress' => RaftMessageTaskStatus.inProgress,
           'in_review' => RaftMessageTaskStatus.inReview,

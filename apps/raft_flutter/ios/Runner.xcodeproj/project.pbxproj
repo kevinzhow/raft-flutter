@@ -355,6 +355,7 @@
 				9705A1C41CF9048500538489 /* Embed Frameworks */,
 				376447DFF38333F07E628490 /* Embed App Extensions */,
 				3B06AD1E1E4923F5004D2608 /* Thin Binary */,
+				A7F1C0DE5A1B2C3D4E5F6A01 /* Debug Artifact ATS */,
 			);
 			buildRules = (
 			);
@@ -457,6 +458,21 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
+		A7F1C0DE5A1B2C3D4E5F6A01 /* Debug Artifact ATS */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Debug Artifact ATS";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "/bin/sh \"$PROJECT_DIR/../tool/apple_debug_artifact_ats.sh\"\n";
+		};
 		3B06AD1E1E4923F5004D2608 /* Thin Binary */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;

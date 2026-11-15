@@ -29,6 +29,7 @@ sealed class LiveEvent {
     ListChangedEvent.jointInvites,
     ListChangedEvent.seatJoinBlocks,
     ServerFeaturesChangedEvent.name,
+    ArtifactAttachmentSavedEvent.name,
   };
 
   /// The typed value of one socket frame, or null (unknown event or a frame
@@ -43,6 +44,9 @@ sealed class LiveEvent {
     SyncChangedEvent.name => const SyncChangedEvent(),
     ThreadReplyUpdatedEvent.name => ThreadReplyUpdatedEvent.read(payload),
     ServerFeaturesChangedEvent.name => ServerFeaturesChangedEvent.read(payload),
+    ArtifactAttachmentSavedEvent.name => ArtifactAttachmentSavedEvent.read(
+      payload,
+    ),
     _ when ListChangedEvent.events.contains(event) => ListChangedEvent.read(
       event,
       payload,
@@ -356,5 +360,36 @@ class ServerFeaturesChangedEvent extends LiveEvent {
     return ServerFeaturesChangedEvent(serverId, [
       if (keys is List) ...keys.whereType<String>(),
     ]);
+  }
+}
+
+/// `artifact:attachment-saved` (Web components/message/artifactAttachmentSaved.ts
+/// readArtifactAttachmentSavedEvent): an attachment of [messageId] was saved as
+/// an Artifact. It names no Artifact (who may see it differs per person), so a
+/// reader asks the server what that attachment was saved as, for them.
+class ArtifactAttachmentSavedEvent extends LiveEvent {
+  const ArtifactAttachmentSavedEvent({
+    required this.channelId,
+    required this.messageId,
+    required this.attachmentId,
+  });
+  static const name = 'artifact:attachment-saved';
+  final String channelId, messageId, attachmentId;
+
+  static ArtifactAttachmentSavedEvent? read(Object? payload) {
+    if (payload is! Map) return null;
+    final channelId = payload['channelId'];
+    final messageId = payload['messageId'];
+    final attachmentId = payload['attachmentId'];
+    if (channelId is! String ||
+        messageId is! String ||
+        attachmentId is! String) {
+      return null;
+    }
+    return ArtifactAttachmentSavedEvent(
+      channelId: channelId,
+      messageId: messageId,
+      attachmentId: attachmentId,
+    );
   }
 }

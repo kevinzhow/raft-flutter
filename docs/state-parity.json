@@ -46347,6 +46347,524 @@
         "familyRefs": [],
         "owner": "WP-COMP1 v1.24 alignment",
         "reason": "Source census candidate (WP-COMP1); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_frame_view.dart#class:ArtifactFrameView": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-ART0 spike: Porthole Artifact frame host in the platform WebView; the frame shows the content's own page, no Raft component draws it. ART1 maps the real viewer entry."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_frame_view.dart#class:_ArtifactFrameViewState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-ART0 spike: Porthole Artifact frame host in the platform WebView; the frame shows the content's own page, no Raft component draws it. ART1 maps the real viewer entry."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_frame_view.dart#method:ArtifactFrameView.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-ART0 spike: Porthole Artifact frame host in the platform WebView; the frame shows the content's own page, no Raft component draws it. ART1 maps the real viewer entry."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_frame_view.dart#method:_ArtifactFrameViewState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-ART0 spike: Porthole Artifact frame host in the platform WebView; the frame shows the content's own page, no Raft component draws it. ART1 maps the real viewer entry."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_frame_view.dart#method:_ArtifactFrameViewState.didUpdateWidget": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-ART0 spike: Porthole Artifact frame host in the platform WebView; the frame shows the content's own page, no Raft component draws it. ART1 maps the real viewer entry."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_open_in_browser.dart#class:ArtifactOpenInBrowser": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-ART0 spike: Porthole Artifact frame host in the platform WebView; the frame shows the content's own page, no Raft component draws it. ART1 maps the real viewer entry."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_open_in_browser.dart#method:ArtifactOpenInBrowser.build": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button"
+        ],
+        "owner": "Artifact viewer",
+        "reason": "WP-ART0 spike fallback (Linux, Windows): canonical RaftEmptyState with one RaftButton that opens Raft Web's page for the Artifact in the browser. Visual acceptance pending (ART1)."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_attachment_slot.dart#class:ArtifactAttachmentSlot": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Artifact viewer",
+        "reason": "WP-ART1 Artifact viewer, cards and attachment save (Web v1.24); compositions of raft_ui parts, real-entry mapping stays with the viewer owner."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_attachment_slot.dart#class:_LineBox": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Artifact viewer",
+        "reason": "WP-ART1 Artifact viewer, cards and attachment save (Web v1.24); compositions of raft_ui parts, real-entry mapping stays with the viewer owner."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_attachment_slot.dart#class:_Menu": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Artifact viewer",
+        "reason": "WP-ART1 Artifact viewer, cards and attachment save (Web v1.24); compositions of raft_ui parts, real-entry mapping stays with the viewer owner."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_attachment_slot.dart#method:ArtifactAttachmentSlot._line": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Artifact viewer",
+        "reason": "WP-ART1 Artifact viewer, cards and attachment save (Web v1.24); compositions of raft_ui parts, real-entry mapping stays with the viewer owner."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_attachment_slot.dart#method:ArtifactAttachmentSlot._save": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Artifact viewer",
+        "reason": "WP-ART1 Artifact viewer, cards and attachment save (Web v1.24); compositions of raft_ui parts, real-entry mapping stays with the viewer owner."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_attachment_slot.dart#method:ArtifactAttachmentSlot.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Artifact viewer",
+        "reason": "WP-ART1 Artifact viewer, cards and attachment save (Web v1.24); compositions of raft_ui parts, real-entry mapping stays with the viewer owner."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_attachment_slot.dart#method:_LineBox.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Artifact viewer",
+        "reason": "WP-ART1 Artifact viewer, cards and attachment save (Web v1.24); compositions of raft_ui parts, real-entry mapping stays with the viewer owner."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_attachment_slot.dart#method:_Menu.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Artifact viewer",
+        "reason": "WP-ART1 Artifact viewer, cards and attachment save (Web v1.24); compositions of raft_ui parts, real-entry mapping stays with the viewer owner."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_content.dart#class:ArtifactDrawnContent": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Artifact viewer",
+        "reason": "WP-ART1 Artifact viewer, cards and attachment save (Web v1.24); compositions of raft_ui parts, real-entry mapping stays with the viewer owner."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_content.dart#class:ArtifactNoPreview": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Artifact viewer",
+        "reason": "WP-ART1 Artifact viewer, cards and attachment save (Web v1.24); compositions of raft_ui parts, real-entry mapping stays with the viewer owner."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_content.dart#class:_ArtifactDrawnContentState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Artifact viewer",
+        "reason": "WP-ART1 Artifact viewer, cards and attachment save (Web v1.24); compositions of raft_ui parts, real-entry mapping stays with the viewer owner."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_content.dart#method:ArtifactDrawnContent.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Artifact viewer",
+        "reason": "WP-ART1 Artifact viewer, cards and attachment save (Web v1.24); compositions of raft_ui parts, real-entry mapping stays with the viewer owner."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_content.dart#method:ArtifactNoPreview.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Artifact viewer",
+        "reason": "WP-ART1 Artifact viewer, cards and attachment save (Web v1.24); compositions of raft_ui parts, real-entry mapping stays with the viewer owner."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_content.dart#method:_ArtifactDrawnContentState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Artifact viewer",
+        "reason": "WP-ART1 Artifact viewer, cards and attachment save (Web v1.24); compositions of raft_ui parts, real-entry mapping stays with the viewer owner."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_content.dart#method:_ArtifactDrawnContentState.noPreview": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Artifact viewer",
+        "reason": "WP-ART1 Artifact viewer, cards and attachment save (Web v1.24); compositions of raft_ui parts, real-entry mapping stays with the viewer owner."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_find_bar.dart#class:ArtifactFindBar": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Artifact viewer",
+        "reason": "WP-ART1 Artifact viewer, cards and attachment save (Web v1.24); compositions of raft_ui parts, real-entry mapping stays with the viewer owner."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_find_bar.dart#class:_ArtifactFindBarState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Artifact viewer",
+        "reason": "WP-ART1 Artifact viewer, cards and attachment save (Web v1.24); compositions of raft_ui parts, real-entry mapping stays with the viewer owner."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_find_bar.dart#local-function:CLASS:_ArtifactFindBarState@998/METHOD:build@2435/FUNCTION:step@2930": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Artifact viewer",
+        "reason": "WP-ART1 Artifact viewer, cards and attachment save (Web v1.24); compositions of raft_ui parts, real-entry mapping stays with the viewer owner."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_find_bar.dart#method:ArtifactFindBar.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Artifact viewer",
+        "reason": "WP-ART1 Artifact viewer, cards and attachment save (Web v1.24); compositions of raft_ui parts, real-entry mapping stays with the viewer owner."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_find_bar.dart#method:_ArtifactFindBarState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Artifact viewer",
+        "reason": "WP-ART1 Artifact viewer, cards and attachment save (Web v1.24); compositions of raft_ui parts, real-entry mapping stays with the viewer owner."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_find_bar.dart#method:_ArtifactFindBarState.didUpdateWidget": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Artifact viewer",
+        "reason": "WP-ART1 Artifact viewer, cards and attachment save (Web v1.24); compositions of raft_ui parts, real-entry mapping stays with the viewer owner."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_frame_confirm.dart#function:confirmArtifactFrameRequest": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Artifact viewer",
+        "reason": "WP-ART1 Artifact viewer, cards and attachment save (Web v1.24); compositions of raft_ui parts, real-entry mapping stays with the viewer owner."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_frame_view.dart#function:_platformWebView": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Artifact viewer",
+        "reason": "WP-ART1 Artifact viewer, cards and attachment save (Web v1.24); compositions of raft_ui parts, real-entry mapping stays with the viewer owner."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_message_card.dart#class:ArtifactBadge": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Artifact viewer",
+        "reason": "WP-ART1 Artifact viewer, cards and attachment save (Web v1.24); compositions of raft_ui parts, real-entry mapping stays with the viewer owner."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_message_card.dart#class:ArtifactDeletedCard": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Artifact viewer",
+        "reason": "WP-ART1 Artifact viewer, cards and attachment save (Web v1.24); compositions of raft_ui parts, real-entry mapping stays with the viewer owner."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_message_card.dart#class:ArtifactKindTile": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Artifact viewer",
+        "reason": "WP-ART1 Artifact viewer, cards and attachment save (Web v1.24); compositions of raft_ui parts, real-entry mapping stays with the viewer owner."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_message_card.dart#class:ArtifactMessageCard": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Artifact viewer",
+        "reason": "WP-ART1 Artifact viewer, cards and attachment save (Web v1.24); compositions of raft_ui parts, real-entry mapping stays with the viewer owner."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_message_card.dart#class:ArtifactMessageCardLoading": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Artifact viewer",
+        "reason": "WP-ART1 Artifact viewer, cards and attachment save (Web v1.24); compositions of raft_ui parts, real-entry mapping stays with the viewer owner."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_message_card.dart#class:ArtifactMessageRefs": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Artifact viewer",
+        "reason": "WP-ART1 Artifact viewer, cards and attachment save (Web v1.24); compositions of raft_ui parts, real-entry mapping stays with the viewer owner."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_message_card.dart#class:_CardBox": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Artifact viewer",
+        "reason": "WP-ART1 Artifact viewer, cards and attachment save (Web v1.24); compositions of raft_ui parts, real-entry mapping stays with the viewer owner."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_message_card.dart#method:ArtifactBadge.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Artifact viewer",
+        "reason": "WP-ART1 Artifact viewer, cards and attachment save (Web v1.24); compositions of raft_ui parts, real-entry mapping stays with the viewer owner."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_message_card.dart#method:ArtifactDeletedCard.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Artifact viewer",
+        "reason": "WP-ART1 Artifact viewer, cards and attachment save (Web v1.24); compositions of raft_ui parts, real-entry mapping stays with the viewer owner."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_message_card.dart#method:ArtifactKindTile.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Artifact viewer",
+        "reason": "WP-ART1 Artifact viewer, cards and attachment save (Web v1.24); compositions of raft_ui parts, real-entry mapping stays with the viewer owner."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_message_card.dart#method:ArtifactMessageCard.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Artifact viewer",
+        "reason": "WP-ART1 Artifact viewer, cards and attachment save (Web v1.24); compositions of raft_ui parts, real-entry mapping stays with the viewer owner."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_message_card.dart#method:ArtifactMessageCardLoading.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Artifact viewer",
+        "reason": "WP-ART1 Artifact viewer, cards and attachment save (Web v1.24); compositions of raft_ui parts, real-entry mapping stays with the viewer owner."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_message_card.dart#method:ArtifactMessageRefs.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Artifact viewer",
+        "reason": "WP-ART1 Artifact viewer, cards and attachment save (Web v1.24); compositions of raft_ui parts, real-entry mapping stays with the viewer owner."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_message_card.dart#method:_CardBox.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Artifact viewer",
+        "reason": "WP-ART1 Artifact viewer, cards and attachment save (Web v1.24); compositions of raft_ui parts, real-entry mapping stays with the viewer owner."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_message_links.dart#class:ArtifactLinkCards": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Artifact viewer",
+        "reason": "WP-ART1 Artifact viewer, cards and attachment save (Web v1.24); compositions of raft_ui parts, real-entry mapping stays with the viewer owner."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_message_links.dart#class:_ArtifactLinkCardsState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Artifact viewer",
+        "reason": "WP-ART1 Artifact viewer, cards and attachment save (Web v1.24); compositions of raft_ui parts, real-entry mapping stays with the viewer owner."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_message_links.dart#method:ArtifactLinkCards.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Artifact viewer",
+        "reason": "WP-ART1 Artifact viewer, cards and attachment save (Web v1.24); compositions of raft_ui parts, real-entry mapping stays with the viewer owner."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_message_links.dart#method:_ArtifactLinkCardsState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Artifact viewer",
+        "reason": "WP-ART1 Artifact viewer, cards and attachment save (Web v1.24); compositions of raft_ui parts, real-entry mapping stays with the viewer owner."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_message_links.dart#method:_ArtifactLinkCardsState.didUpdateWidget": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Artifact viewer",
+        "reason": "WP-ART1 Artifact viewer, cards and attachment save (Web v1.24); compositions of raft_ui parts, real-entry mapping stays with the viewer owner."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_viewer_actions.dart#method:ArtifactViewerActions.copyLink": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Artifact viewer",
+        "reason": "WP-ART1 Artifact viewer, cards and attachment save (Web v1.24); compositions of raft_ui parts, real-entry mapping stays with the viewer owner."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_viewer_actions.dart#method:ArtifactViewerActions.download": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Artifact viewer",
+        "reason": "WP-ART1 Artifact viewer, cards and attachment save (Web v1.24); compositions of raft_ui parts, real-entry mapping stays with the viewer owner."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_viewer_actions.dart#method:ArtifactViewerActions.downloadFile": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Artifact viewer",
+        "reason": "WP-ART1 Artifact viewer, cards and attachment save (Web v1.24); compositions of raft_ui parts, real-entry mapping stays with the viewer owner."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_viewer_page.dart#class:ArtifactWorkspaceViewer": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Artifact viewer",
+        "reason": "WP-ART1 Artifact viewer, cards and attachment save (Web v1.24); compositions of raft_ui parts, real-entry mapping stays with the viewer owner."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_viewer_page.dart#class:_ArtifactWorkspaceViewerState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Artifact viewer",
+        "reason": "WP-ART1 Artifact viewer, cards and attachment save (Web v1.24); compositions of raft_ui parts, real-entry mapping stays with the viewer owner."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_viewer_page.dart#function:openWorkspaceArtifact": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Artifact viewer",
+        "reason": "WP-ART1 Artifact viewer, cards and attachment save (Web v1.24); compositions of raft_ui parts, real-entry mapping stays with the viewer owner."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_viewer_page.dart#local-function:FUNCTION:openWorkspaceArtifact@1647/FUNCTION:viewer@1843": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Artifact viewer",
+        "reason": "WP-ART1 Artifact viewer, cards and attachment save (Web v1.24); compositions of raft_ui parts, real-entry mapping stays with the viewer owner."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_viewer_page.dart#method:ArtifactWorkspaceViewer.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Artifact viewer",
+        "reason": "WP-ART1 Artifact viewer, cards and attachment save (Web v1.24); compositions of raft_ui parts, real-entry mapping stays with the viewer owner."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_viewer_page.dart#method:_ArtifactWorkspaceViewerState._body": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Artifact viewer",
+        "reason": "WP-ART1 Artifact viewer, cards and attachment save (Web v1.24); compositions of raft_ui parts, real-entry mapping stays with the viewer owner."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_viewer_page.dart#method:_ArtifactWorkspaceViewerState._content": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Artifact viewer",
+        "reason": "WP-ART1 Artifact viewer, cards and attachment save (Web v1.24); compositions of raft_ui parts, real-entry mapping stays with the viewer owner."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_viewer_page.dart#method:_ArtifactWorkspaceViewerState._frame": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Artifact viewer",
+        "reason": "WP-ART1 Artifact viewer, cards and attachment save (Web v1.24); compositions of raft_ui parts, real-entry mapping stays with the viewer owner."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_viewer_page.dart#method:_ArtifactWorkspaceViewerState._header": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Artifact viewer",
+        "reason": "WP-ART1 Artifact viewer, cards and attachment save (Web v1.24); compositions of raft_ui parts, real-entry mapping stays with the viewer owner."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_viewer_page.dart#method:_ArtifactWorkspaceViewerState._host": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Artifact viewer",
+        "reason": "WP-ART1 Artifact viewer, cards and attachment save (Web v1.24); compositions of raft_ui parts, real-entry mapping stays with the viewer owner."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_viewer_page.dart#method:_ArtifactWorkspaceViewerState._panel": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Artifact viewer",
+        "reason": "WP-ART1 Artifact viewer, cards and attachment save (Web v1.24); compositions of raft_ui parts, real-entry mapping stays with the viewer owner."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_viewer_page.dart#method:_ArtifactWorkspaceViewerState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Artifact viewer",
+        "reason": "WP-ART1 Artifact viewer, cards and attachment save (Web v1.24); compositions of raft_ui parts, real-entry mapping stays with the viewer owner."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_viewer_panels.dart#class:ArtifactFilesPanel": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Artifact viewer",
+        "reason": "WP-ART1 Artifact viewer, cards and attachment save (Web v1.24); compositions of raft_ui parts, real-entry mapping stays with the viewer owner."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_viewer_panels.dart#class:ArtifactVersionsPanel": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Artifact viewer",
+        "reason": "WP-ART1 Artifact viewer, cards and attachment save (Web v1.24); compositions of raft_ui parts, real-entry mapping stays with the viewer owner."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_viewer_panels.dart#class:_FileRow": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Artifact viewer",
+        "reason": "WP-ART1 Artifact viewer, cards and attachment save (Web v1.24); compositions of raft_ui parts, real-entry mapping stays with the viewer owner."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_viewer_panels.dart#class:_PanelHeader": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Artifact viewer",
+        "reason": "WP-ART1 Artifact viewer, cards and attachment save (Web v1.24); compositions of raft_ui parts, real-entry mapping stays with the viewer owner."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_viewer_panels.dart#method:ArtifactFilesPanel.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Artifact viewer",
+        "reason": "WP-ART1 Artifact viewer, cards and attachment save (Web v1.24); compositions of raft_ui parts, real-entry mapping stays with the viewer owner."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_viewer_panels.dart#method:ArtifactVersionsPanel.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Artifact viewer",
+        "reason": "WP-ART1 Artifact viewer, cards and attachment save (Web v1.24); compositions of raft_ui parts, real-entry mapping stays with the viewer owner."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_viewer_panels.dart#method:_FileRow.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Artifact viewer",
+        "reason": "WP-ART1 Artifact viewer, cards and attachment save (Web v1.24); compositions of raft_ui parts, real-entry mapping stays with the viewer owner."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_viewer_panels.dart#method:_PanelHeader.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Artifact viewer",
+        "reason": "WP-ART1 Artifact viewer, cards and attachment save (Web v1.24); compositions of raft_ui parts, real-entry mapping stays with the viewer owner."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_viewer_parts.dart#class:ArtifactLoadingSplash": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Artifact viewer",
+        "reason": "WP-ART1 Artifact viewer, cards and attachment save (Web v1.24); compositions of raft_ui parts, real-entry mapping stays with the viewer owner."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_viewer_parts.dart#class:ArtifactNewVersionNotice": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Artifact viewer",
+        "reason": "WP-ART1 Artifact viewer, cards and attachment save (Web v1.24); compositions of raft_ui parts, real-entry mapping stays with the viewer owner."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_viewer_parts.dart#class:ArtifactVersionNotice": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Artifact viewer",
+        "reason": "WP-ART1 Artifact viewer, cards and attachment save (Web v1.24); compositions of raft_ui parts, real-entry mapping stays with the viewer owner."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_viewer_parts.dart#class:ArtifactVersionTag": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Artifact viewer",
+        "reason": "WP-ART1 Artifact viewer, cards and attachment save (Web v1.24); compositions of raft_ui parts, real-entry mapping stays with the viewer owner."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_viewer_parts.dart#class:ArtifactViewerState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Artifact viewer",
+        "reason": "WP-ART1 Artifact viewer, cards and attachment save (Web v1.24); compositions of raft_ui parts, real-entry mapping stays with the viewer owner."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_viewer_parts.dart#function:artifactFrameStateView": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Artifact viewer",
+        "reason": "WP-ART1 Artifact viewer, cards and attachment save (Web v1.24); compositions of raft_ui parts, real-entry mapping stays with the viewer owner."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_viewer_parts.dart#local-function:FUNCTION:artifactFrameStateView@1761/FUNCTION:retry@2020": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Artifact viewer",
+        "reason": "WP-ART1 Artifact viewer, cards and attachment save (Web v1.24); compositions of raft_ui parts, real-entry mapping stays with the viewer owner."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_viewer_parts.dart#method:ArtifactLoadingSplash.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Artifact viewer",
+        "reason": "WP-ART1 Artifact viewer, cards and attachment save (Web v1.24); compositions of raft_ui parts, real-entry mapping stays with the viewer owner."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_viewer_parts.dart#method:ArtifactNewVersionNotice.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Artifact viewer",
+        "reason": "WP-ART1 Artifact viewer, cards and attachment save (Web v1.24); compositions of raft_ui parts, real-entry mapping stays with the viewer owner."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_viewer_parts.dart#method:ArtifactVersionNotice.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Artifact viewer",
+        "reason": "WP-ART1 Artifact viewer, cards and attachment save (Web v1.24); compositions of raft_ui parts, real-entry mapping stays with the viewer owner."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_viewer_parts.dart#method:ArtifactVersionTag.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Artifact viewer",
+        "reason": "WP-ART1 Artifact viewer, cards and attachment save (Web v1.24); compositions of raft_ui parts, real-entry mapping stays with the viewer owner."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_viewer_parts.dart#method:ArtifactViewerState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Artifact viewer",
+        "reason": "WP-ART1 Artifact viewer, cards and attachment save (Web v1.24); compositions of raft_ui parts, real-entry mapping stays with the viewer owner."
+      },
+      "apps/raft_flutter/lib/features/attachment_view.dart#local-function:CLASS:_AttachmentViewState@4593/METHOD:previewImage@38466/FUNCTION:image@38699": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Artifact viewer",
+        "reason": "WP-ART1 Artifact viewer, cards and attachment save (Web v1.24); compositions of raft_ui parts, real-entry mapping stays with the viewer owner."
+      },
+      "apps/raft_flutter/lib/features/message_presentation.dart#method:MessagePresentation._body": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Artifact viewer",
+        "reason": "WP-ART1 Artifact viewer, cards and attachment save (Web v1.24); compositions of raft_ui parts, real-entry mapping stays with the viewer owner."
       }
     },
     "entries": {
@@ -49110,6 +49628,69 @@
         ],
         "mountStatus": "unresolved",
         "reason": "Drop of a dragged agent on a rack row opens the Move to Another Computer dialog (WP-COMP1 part 2); no real-entry capture acceptance is inferred."
+      },
+      "surface:ArtifactAttachmentSlot._save": {
+        "owner": "Artifact viewer",
+        "kind": "dialog",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/artifacts/artifact_attachment_slot.dart#method:ArtifactAttachmentSlot._save"
+        ],
+        "mountStatus": "unresolved",
+        "reason": "WP-ART1 entry of the Artifact viewer (Web v1.24); widget tests cover it, no real-entry capture acceptance is inferred."
+      },
+      "surface:confirmArtifactFrameRequest": {
+        "owner": "Artifact viewer",
+        "kind": "dialog",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/artifacts/artifact_frame_confirm.dart#function:confirmArtifactFrameRequest"
+        ],
+        "mountStatus": "unresolved",
+        "reason": "WP-ART1 entry of the Artifact viewer (Web v1.24); widget tests cover it, no real-entry capture acceptance is inferred."
+      },
+      "surface:ArtifactViewerActions.copyLink": {
+        "owner": "Artifact viewer",
+        "kind": "dialog",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/artifacts/artifact_viewer_actions.dart#method:ArtifactViewerActions.copyLink"
+        ],
+        "mountStatus": "unresolved",
+        "reason": "WP-ART1 entry of the Artifact viewer (Web v1.24); widget tests cover it, no real-entry capture acceptance is inferred."
+      },
+      "surface:ArtifactViewerActions.download": {
+        "owner": "Artifact viewer",
+        "kind": "dialog",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/artifacts/artifact_viewer_actions.dart#method:ArtifactViewerActions.download"
+        ],
+        "mountStatus": "unresolved",
+        "reason": "WP-ART1 entry of the Artifact viewer (Web v1.24); widget tests cover it, no real-entry capture acceptance is inferred."
+      },
+      "surface:ArtifactViewerActions.downloadFile": {
+        "owner": "Artifact viewer",
+        "kind": "dialog",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/artifacts/artifact_viewer_actions.dart#method:ArtifactViewerActions.downloadFile"
+        ],
+        "mountStatus": "unresolved",
+        "reason": "WP-ART1 entry of the Artifact viewer (Web v1.24); widget tests cover it, no real-entry capture acceptance is inferred."
+      },
+      "surface:openWorkspaceArtifact": {
+        "owner": "Artifact viewer",
+        "kind": "dialog",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/artifacts/artifact_viewer_page.dart#function:openWorkspaceArtifact"
+        ],
+        "mountStatus": "unresolved",
+        "reason": "WP-ART1 entry of the Artifact viewer (Web v1.24); widget tests cover it, no real-entry capture acceptance is inferred."
+      },
+      "surface:_ArtifactWorkspaceViewerState._host": {
+        "owner": "Artifact viewer",
+        "kind": "dialog",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/artifacts/artifact_viewer_page.dart#method:_ArtifactWorkspaceViewerState._host"
+        ],
+        "mountStatus": "unresolved",
+        "reason": "WP-ART1 entry of the Artifact viewer (Web v1.24); widget tests cover it, no real-entry capture acceptance is inferred."
       }
     },
     "requirements": {
