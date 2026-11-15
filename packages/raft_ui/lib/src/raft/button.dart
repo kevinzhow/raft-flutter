@@ -13,6 +13,7 @@ import '../recipes/recipe_router.dart';
 import '../recipes/recipe_runtime.dart';
 import '../recipes/text_link_variants.g.dart';
 import '../recipe_surface.dart';
+import '../stacked_actions.dart' show RaftStackedActions;
 import '../text_scaling.dart' show RaftScaled;
 import '../raft_underline.dart';
 import 'legacy_button_surface.dart';
@@ -602,6 +603,8 @@ class RaftButton extends StatelessWidget {
         if (inlineEnd) RaftRecipeStates.iconInlineEnd,
         if (MediaQuery.disableAnimationsOf(context))
           RaftRecipeStates.motionReduce,
+        // `in-data-stacked:`: a footer row that did not fit (stacked-actions).
+        if (RaftStackedActions.of(context)) 'ancestor:data-stacked',
       ],
     );
     final slots = _resolveButtonSlots(

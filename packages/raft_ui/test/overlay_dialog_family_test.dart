@@ -118,8 +118,23 @@ void main() {
 
     // The ghost Cancel's `in-data-stacked:` frame is the Button recipe's
     // `ancestor:data-stacked` state, read from this scope (raft/button.dart).
-    bool ghostFrame(WidgetTester t) =>
-        RaftStackedActions.of(t.element(find.byKey(const Key('cancel'))));
+    // Both the scope and the painted `border-line-strong` frame.
+    bool ghostFrame(WidgetTester t) {
+      final cancel = find.byKey(const Key('cancel'));
+      final scoped = RaftStackedActions.of(t.element(cancel));
+      final framed = t
+          .widgetList<DecoratedBox>(
+            find.descendant(of: cancel, matching: find.byType(DecoratedBox)),
+          )
+          .map((d) => d.decoration)
+          .whereType<BoxDecoration>()
+          .any((d) {
+            final b = d.border;
+            return b is Border && b.top.width > 0 && b.top.color.a > 0;
+          });
+      expect(framed, scoped, reason: 'the frame follows the stacked scope');
+      return scoped;
+    }
 
     for (final (name, size, platform) in [
       ('390x844 Linux', const Size(390, 844), TargetPlatform.linux),
