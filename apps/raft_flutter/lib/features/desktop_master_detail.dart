@@ -141,7 +141,9 @@ class _DesktopMasterDetailState extends State<DesktopMasterDetail> {
           ? RaftPanelMasterEdge(split: split, child: master)
           : master;
       return DesktopDetailFocus(
-        open: split && !folded,
+        // Web moves focus into the ProfilePanel only; the Search / Activity
+        // slots keep it where the user clicked (their find shortcuts live there).
+        open: split && !folded && panelMode,
         builder: (scope) => Stack(
           fit: StackFit.expand,
           children: [
@@ -165,7 +167,15 @@ class _DesktopMasterDetailState extends State<DesktopMasterDetail> {
                   Expanded(
                     child: KeyedSubtree(
                       key: const Key('desktop-content-detail'),
-                      child: FocusScope(node: scope, child: widget.detail!),
+                      child: FocusScope(
+                        node: scope,
+                        child: panelMode
+                            ? KeyedSubtree(
+                                key: const ValueKey('desktop-profile-detail'),
+                                child: widget.detail!,
+                              )
+                            : widget.detail!,
+                      ),
                     ),
                   ),
                 ],

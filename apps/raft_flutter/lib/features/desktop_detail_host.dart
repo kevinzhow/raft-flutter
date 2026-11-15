@@ -11,7 +11,7 @@ import 'member_profile_view.dart';
 
 /// Keys of the panels this host wraps (see [detailFieldHasFocus]).
 const desktopDetailKeys = <Key>[
-  Key('desktop-content-detail'),
+  ValueKey('desktop-profile-detail'),
   ValueKey('computers-rack-side-panel'),
 ];
 
