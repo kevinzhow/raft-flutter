@@ -68,10 +68,13 @@ bool bulkAgentRebuildable(BulkModelAgent agent) {
       (config['command'] as String).trim().isEmpty;
 }
 
+/// Web `planBulkModelChange`: [restartNow] restarts the running agents at
+/// once; otherwise they switch at their next idle point.
 List<BulkModelRow> planBulkModelChange(
   List<BulkModelAgent> agents,
-  BulkModelTarget target,
-) => [
+  BulkModelTarget target, {
+  bool restartNow = false,
+}) => [
   for (final agent in agents)
     if (agent.phase == BulkUnfinishedPhase.restartPending &&
         target.matches(agent.value))
@@ -92,7 +95,11 @@ List<BulkModelRow> planBulkModelChange(
     else if (target.matches(agent.value))
       BulkModelRow(agent, BulkModelAction.skip, skip: BulkModelSkip.noChange)
     else
-      BulkModelRow(agent, BulkModelAction.change, restarts: agent.running),
+      BulkModelRow(
+        agent,
+        BulkModelAction.change,
+        restarts: agent.running && restartNow,
+      ),
 ];
 
 Map<String, dynamic> buildBulkAgentUpdate(
@@ -267,3 +274,9 @@ class BulkModelExecutor {
     );
   }
 }
+
+/// Web `plan.runningChangeCount`: running agents among the changes, restarted
+/// now or switching when next idle.
+int bulkRunningChangeCount(List<BulkModelRow> rows) => rows
+    .where((r) => r.action == BulkModelAction.change && r.agent.running)
+    .length;

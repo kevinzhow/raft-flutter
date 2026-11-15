@@ -321,6 +321,12 @@ void main() {
       await panel(tester);
       await open(tester, all: true);
       await tap(tester, 'bulk-model-next');
+      // Web v1.24: running agents switch when next idle unless asked.
+      expect(
+        find.text('1 running agent switches when next idle.'),
+        findsOneWidget,
+      );
+      await tap(tester, 'bulk-model-restart-now');
       expect(find.text('1 running agent will restart.'), findsOneWidget);
       await tap(tester, 'bulk-model-apply');
       expect(savedReceipt()!.unfinished, {

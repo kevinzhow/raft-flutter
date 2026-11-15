@@ -258,7 +258,10 @@ class _BulkAgentModelDialogState extends State<BulkAgentModelDialog> {
             targetRuntimeAllowed: allowed[row['id']],
             phase: widget.retry?.unfinished[row['id']],
           ),
-      ], target);
+      ], target, restartNow: restartNow);
+
+  /// "Restart running agents now": off, running agents switch when next idle.
+  bool restartNow = false;
 
   Future<void> _review() async {
     if (!current || checking) return;
@@ -531,6 +534,7 @@ class _BulkAgentModelDialogState extends State<BulkAgentModelDialog> {
     final rows = plan;
     final count = rows.where((r) => r.action != BulkModelAction.skip).length;
     final restarts = rows.where((r) => r.restarts).length;
+    final runningChanges = bulkRunningChangeCount(rows);
     final busy = step == _Step.applying;
     String plural(String one, String many, int value) =>
         raftFormat(context, value == 1 ? one : many, {'count': value});
@@ -613,6 +617,27 @@ class _BulkAgentModelDialogState extends State<BulkAgentModelDialog> {
                       for (final row in rows)
                         if (!busy || row.action != BulkModelAction.skip)
                           _row(row, applying: busy),
+                      if (!busy && runningChanges > 0) ...[
+                        const SizedBox(height: RaftSpace.x3),
+                        RaftCheckboxRow(
+                          key: const ValueKey('bulk-model-restart-now'),
+                          value: restartNow,
+                          title: raftText(
+                            context,
+                            'Restart running agents now',
+                          ),
+                          dense: true,
+                          onChanged: (v) => setState(() => restartNow = v),
+                        ),
+                      ],
+                      if (!busy && !restartNow && runningChanges > 0)
+                        RaftAgentFieldNote(
+                          plural(
+                            '{count} running agent switches when next idle.',
+                            '{count} running agents switch when next idle.',
+                            runningChanges,
+                          ),
+                        ),
                       if (!busy && restarts > 0)
                         RaftAgentFieldNote(
                           plural(
