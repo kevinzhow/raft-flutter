@@ -10,6 +10,7 @@ import 'sheet.dart';
 import 'settings_layout.dart' show RaftSpace;
 import 'text_scaling.dart';
 import 'theme.dart';
+import 'tokens/raft_tokens.g.dart' show RaftEase;
 
 // One place decides which form a floating window takes. A window states what
 // it is for (a [RaftPresentationPolicy]); the window's width gives the layout
@@ -163,6 +164,8 @@ class RaftPresentedRoute<T> extends ModalBottomSheetRoute<T> {
     bool sheetFillsHeight = false,
     double sheetInitialSize = RaftSheetMetrics.largeDetent,
     double sideWidth = 420,
+    bool raftLook = false,
+    bool reduceMotion = false,
   }) : this._(
          _SheetBuilder(),
          policy: policy,
@@ -182,6 +185,8 @@ class RaftPresentedRoute<T> extends ModalBottomSheetRoute<T> {
          sheetFillsHeight: sheetFillsHeight,
          sheetInitialSize: sheetInitialSize,
          sideWidth: sideWidth,
+         raftLook: raftLook,
+         reduceMotion: reduceMotion,
        );
 
   RaftPresentedRoute._(
@@ -203,6 +208,8 @@ class RaftPresentedRoute<T> extends ModalBottomSheetRoute<T> {
     required this.sheetFillsHeight,
     required this.sheetInitialSize,
     required this.sideWidth,
+    required this.raftLook,
+    required bool reduceMotion,
   }) : super(
          builder: _sheetBuilder.call,
          capturedThemes: capturedThemes,
@@ -215,21 +222,61 @@ class RaftPresentedRoute<T> extends ModalBottomSheetRoute<T> {
          // also decide when a pull at the top of the content closes it.
          enableDrag: sheetFillsHeight && dragDismissible,
          showDragHandle: false,
-         backgroundColor: panelColor,
-         shape: sheetShape,
+         // The Raft look's sheet draws its own surface (ring and float shadow
+         // do not survive the route's clipping material): the route paints
+         // none.
+         backgroundColor: raftLook ? Colors.transparent : panelColor,
+         shape: raftLook ? null : sheetShape,
          elevation: 0,
-         clipBehavior: Clip.antiAlias,
+         clipBehavior: raftLook ? Clip.none : Clip.antiAlias,
          constraints: const BoxConstraints(maxWidth: RaftSheetMetrics.maxWidth),
-         sheetAnimationStyle:
-             initialForm == RaftSurfaceForm.dialog ||
-                 initialForm == RaftSurfaceForm.popover
-             ? const AnimationStyle(
-                 duration: Duration(milliseconds: 150),
-                 reverseDuration: Duration(milliseconds: 150),
-               )
-             : null,
+         sheetAnimationStyle: _animationStyle(
+           initialForm,
+           raftLook: raftLook,
+           reduceMotion: reduceMotion,
+         ),
        ) {
     _sheetBuilder.target = _buildSheet;
+  }
+
+  /// The Raft look: the sheet is the raft-ui Drawer (own surface, 240/180ms
+  /// `ease-slide`) and a dialog has no motion, as the Web Dialog has none.
+  final bool raftLook;
+
+  // Drawer popup `transition-duration: 240ms` on `--ease-slide`; the exit is
+  // `180ms` (drawer_motion recipe; dialog-sheet-context.mjs:42-54).
+  // No motion, but not a zero-length animation: a route popped while the tree
+  // builds (the composer collapsing on a real disable) must not notify its
+  // listeners synchronously. One millisecond is one frame without movement.
+  static const _instant = AnimationStyle(
+    duration: Duration(milliseconds: 1),
+    reverseDuration: Duration(milliseconds: 1),
+  );
+
+  static AnimationStyle? _animationStyle(
+    RaftSurfaceForm initialForm, {
+    required bool raftLook,
+    required bool reduceMotion,
+  }) {
+    final centered =
+        initialForm == RaftSurfaceForm.dialog ||
+        initialForm == RaftSurfaceForm.popover;
+    if (raftLook && (reduceMotion || centered)) return _instant;
+    if (centered) {
+      return const AnimationStyle(
+        duration: Duration(milliseconds: 150),
+        reverseDuration: Duration(milliseconds: 150),
+      );
+    }
+    if (raftLook && initialForm == RaftSurfaceForm.sheet) {
+      return const AnimationStyle(
+        duration: Duration(milliseconds: 240),
+        reverseDuration: Duration(milliseconds: 180),
+        curve: RaftEase.slide,
+        reverseCurve: RaftEase.slide,
+      );
+    }
+    return null;
   }
 
   final _SheetBuilder _sheetBuilder;
@@ -280,6 +327,8 @@ class RaftPresentedRoute<T> extends ModalBottomSheetRoute<T> {
         builder: (context) => content(context, RaftSurfaceForm.sheet),
       ),
     );
+    Widget surface(Widget child) =>
+        raftLook ? RaftSheetPanel(child: child) : child;
     // The sheet rides above the keyboard: its room shrinks by the inset.
     return Padding(
       padding: EdgeInsets.only(bottom: keyboard),
@@ -290,16 +339,20 @@ class RaftPresentedRoute<T> extends ModalBottomSheetRoute<T> {
                   media.size.height * RaftSheetMetrics.largeDetent,
                   box.maxHeight,
                 ),
-                child: RaftSheetScope(scrollController: null, child: body),
+                child: surface(
+                  RaftSheetScope(scrollController: null, child: body),
+                ),
               ),
             )
           : _DetentSheet(
               initialSize: sheetInitialSize,
               closesOnDrag: dragDismissible,
-              builder: (controller, drag) => RaftSheetScope(
-                scrollController: controller,
-                pointerDrag: drag,
-                child: body,
+              builder: (controller, drag) => surface(
+                RaftSheetScope(
+                  scrollController: controller,
+                  pointerDrag: drag,
+                  child: body,
+                ),
               ),
             ),
     );
@@ -356,7 +409,7 @@ class RaftPresentedRoute<T> extends ModalBottomSheetRoute<T> {
     // The sheet animates itself, with the route's controller.
     RaftSurfaceForm.sheet => child,
     RaftSurfaceForm.dialog ||
-    RaftSurfaceForm.popover => _fadeScale(animation, child),
+    RaftSurfaceForm.popover => raftLook ? child : _fadeScale(animation, child),
     RaftSurfaceForm.page => SlideTransition(
       position: animation.drive(
         Tween(begin: const Offset(0, 1), end: Offset.zero),
@@ -596,6 +649,8 @@ RaftPresentedRoute<T> raftPresentedRoute<T>(
     initialForm: policy.formFor(raftLayoutClassOf(context)),
     panelColor: t.panel,
     sheetShape: RaftSheetMetrics.shape(t),
+    raftLook: t.isRaftLook,
+    reduceMotion: MediaQuery.maybeDisableAnimationsOf(context) ?? false,
     label: label,
     settings: routeSettings,
     dismissible: dismissible,
