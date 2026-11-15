@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'design_primitives.dart' show RaftInteractive;
 import 'icons.dart';
 import 'localization.dart';
+import 'recipe_surface.dart';
+import 'recipes/text_selection_toolbar.g.dart';
 import 'theme.dart';
 
 /// Web `selectedTextQuote.ts` (Selection-quote v0).
@@ -78,6 +80,7 @@ class RaftSelectionShortcutBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     final below = anchors.secondaryAnchor ?? anchors.primaryAnchor;
+    if (t.isRaftLook) return _raft(context, t, below);
     Widget item(String label, RaftGlyph glyph, VoidCallback onTap) =>
         RaftInteractive(
           onPressed: onTap,
@@ -159,6 +162,120 @@ class RaftSelectionShortcutBar extends StatelessWidget {
                       item(raftText(context, 'Copy'), RaftGlyph.copy, onCopy),
                     ],
                   ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+extension on RaftSelectionShortcutBar {
+  /// raft-ui `TextSelectionToolbar` (Web `MessageSelectionShortcut`): the
+  /// toolbar, button and separator slots of the generated recipe. Buttons are
+  /// `h-7 rounded-chip px-2.5`, and `h-control rounded-control` with a mouse
+  /// from 768dp (the tokens of this context are the desktop variant then).
+  Widget _raft(BuildContext context, RaftTokens t, Offset below) {
+    final rt = t.recipeTokens;
+    RaftTextSelectionToolbarRecipeStyle recipe({
+      bool hovered = false,
+      bool pressed = false,
+      bool focusVisible = false,
+    }) => RaftTextSelectionToolbarRecipe.resolve(
+      states: t.recipeStates(
+        hovered: hovered,
+        pressed: pressed,
+        focusVisible: focusVisible,
+        responsive: true,
+      ),
+      tokens: rt,
+    );
+    final rest = recipe();
+    final toolbarText = rest.toolbar.text(
+      rt,
+      base: DefaultTextStyle.of(
+        context,
+      ).style.copyWith(decoration: TextDecoration.none),
+    );
+    Widget item(Key key, String label, RaftGlyph glyph, VoidCallback onTap) =>
+        RaftInteractive(
+          key: key,
+          onPressed: onTap,
+          semanticLabel: label,
+          builder: (_, state) {
+            final s = recipe(
+              hovered: state.hovered,
+              pressed: state.pressed,
+              focusVisible: state.focusVisible,
+            ).button;
+            final svg = s.target('& svg');
+            return RaftRecipeBox(
+              style: s,
+              tokens: rt,
+              applyText: false,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  RaftIcon(
+                    glyph,
+                    size: svg?.width ?? 16,
+                    color: svg?.color?.resolve(rt) ?? t.muted,
+                  ),
+                  SizedBox(width: s.columnGap ?? 6),
+                  Text(label, style: s.text(rt, base: toolbarText)),
+                ],
+              ),
+            );
+          },
+        );
+    return TapRegion(
+      groupId: SelectableRegion,
+      child: Semantics(
+        label: raftText(context, 'Selected text actions'),
+        container: true,
+        child: CustomSingleChildLayout(
+          delegate: _ShortcutLayout(
+            above:
+                anchors.primaryAnchor -
+                const Offset(0, RaftSelectionShortcutBar._gap),
+            below: below + const Offset(0, RaftSelectionShortcutBar._gap),
+          ),
+          child: Material(
+            type: MaterialType.transparency,
+            child: DefaultTextStyle(
+              style: toolbarText,
+              child: RaftRecipeBox(
+                key: const Key('selection-shortcut-frame'),
+                style: rest.toolbar,
+                tokens: rt,
+                applyText: false,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    item(
+                      const Key('selection-shortcut-quote'),
+                      raftText(context, 'Quote'),
+                      RaftGlyph.textQuote,
+                      onQuote,
+                    ),
+                    SizedBox(width: rest.toolbar.columnGap ?? 4),
+                    RaftRecipeBox(
+                      key: const Key('selection-shortcut-separator'),
+                      style: rest.separator,
+                      tokens: rt,
+                      width: rest.separator.width ?? 1,
+                      height: rest.separator.height ?? 20,
+                    ),
+                    SizedBox(width: rest.toolbar.columnGap ?? 4),
+                    item(
+                      const Key('selection-shortcut-copy'),
+                      raftText(context, 'Copy'),
+                      RaftGlyph.copy,
+                      onCopy,
+                    ),
+                  ],
                 ),
               ),
             ),

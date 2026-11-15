@@ -161,6 +161,10 @@ void main() {
       await t.pump(const Duration(seconds: 4));
       expect(find.text('Latest'), findsOneWidget);
       await t.pump(const Duration(seconds: 1));
+      // This test has no theme, so the toast is the Raft HUD and leaves over
+      // 220ms.
+      await t.pump();
+      await t.pump(const Duration(milliseconds: 240));
       expect(find.byType(RaftToast), findsNothing);
       controller.show('Clear hovered notice');
       await t.pump();
@@ -173,6 +177,8 @@ void main() {
       controller.show('New scope notice');
       await t.pump();
       await t.pump(const Duration(seconds: 5));
+      await t.pump();
+      await t.pump(const Duration(milliseconds: 240));
       expect(find.byType(RaftToast), findsNothing);
       controller.show('Scope feedback');
       await t.pump();

@@ -7,7 +7,7 @@ import 'package:flutter/services.dart';
 
 import 'attachment_comment_scope.dart';
 import 'attachment_lightbox.dart';
-import 'design_primitives.dart' show RaftLightboxRecipe, RaftSpinner;
+import 'design_primitives.dart' show RaftSpinner;
 import 'icons.dart';
 import 'localization.dart';
 import 'panel_layout.dart' show RaftPanelHeaderBar;
@@ -182,7 +182,6 @@ class _RaftAttachmentPreviewShellState
         onPressed: widget.onDownload,
       ),
     ];
-    final pageRecipe = RaftLightboxRecipe(t);
     final Widget header = widget.page
         // Native page: no Web counterpart, so it wears the same Web
         // PanelHeader (boxed Back, file badge, title, actions) as every phone
@@ -197,10 +196,7 @@ class _RaftAttachmentPreviewShellState
           )
         : RaftLightboxHeader(
             title: widget.filename,
-            leading: RaftFileTypeBadge(
-              filename: widget.filename,
-              headerLabel: true,
-            ),
+            leading: RaftFileTypeBadge(filename: widget.filename),
             borderWidth: 1,
             onClose: widget.onClose,
             actions: actions,
@@ -328,7 +324,7 @@ class _RaftAttachmentPreviewShellState
     );
     final scoped = RaftAttachmentCommentScope(state: session, child: content);
     return widget.page
-        ? Material(color: pageRecipe.backdrop, child: scoped)
+        ? Material(color: t.colors['layer-backdrop']!, child: scoped)
         : Dialog.fullscreen(
             backgroundColor: raftLightboxBackdropOf(t),
             child: scoped,
