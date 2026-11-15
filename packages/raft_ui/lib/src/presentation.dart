@@ -155,6 +155,7 @@ class RaftPresentedRoute<T> extends ModalBottomSheetRoute<T> {
     String? label,
     RouteSettings? settings,
     bool dismissible = true,
+    bool dragDismissible = true,
     double dialogMaxWidth = 560,
     double? dialogMaxHeight,
     bool dialogFillsHeight = false,
@@ -173,6 +174,7 @@ class RaftPresentedRoute<T> extends ModalBottomSheetRoute<T> {
          label: label,
          settings: settings,
          dismissible: dismissible,
+         dragDismissible: dragDismissible,
          dialogMaxWidth: dialogMaxWidth,
          dialogMaxHeight: dialogMaxHeight,
          dialogFillsHeight: dialogFillsHeight,
@@ -193,6 +195,7 @@ class RaftPresentedRoute<T> extends ModalBottomSheetRoute<T> {
     String? label,
     super.settings,
     required bool dismissible,
+    required this.dragDismissible,
     required this.dialogMaxWidth,
     required this.dialogMaxHeight,
     required this.dialogFillsHeight,
@@ -210,7 +213,7 @@ class RaftPresentedRoute<T> extends ModalBottomSheetRoute<T> {
          // A fixed sheet (an editor) is dragged as a whole by the framework's
          // sheet; a scrolling sheet is dragged by its draggable detents, which
          // also decide when a pull at the top of the content closes it.
-         enableDrag: sheetFillsHeight,
+         enableDrag: sheetFillsHeight && dragDismissible,
          showDragHandle: false,
          backgroundColor: panelColor,
          shape: sheetShape,
@@ -238,6 +241,13 @@ class RaftPresentedRoute<T> extends ModalBottomSheetRoute<T> {
   final Widget Function(BuildContext context, RaftSurfaceForm form) content;
   final double dialogMaxWidth, sideWidth;
   final double? dialogMaxHeight;
+
+  /// A drag down closes the sheet. Independent of the scrim ([isDismissible]):
+  /// a form sheet adds the drag where Web has no backdrop close (an approved
+  /// phone difference, docs/close-affordances.md). False for a window no
+  /// pointer may close (Web `disablePointerDismissal` on content shown once,
+  /// such as new backup codes): the sheet then only moves between its detents.
+  final bool dragDismissible;
 
   /// The dialog takes all the height there is (up to [dialogMaxHeight]).
   final bool dialogFillsHeight;
@@ -285,6 +295,7 @@ class RaftPresentedRoute<T> extends ModalBottomSheetRoute<T> {
             )
           : _DetentSheet(
               initialSize: sheetInitialSize,
+              closesOnDrag: dragDismissible,
               builder: (controller, drag) => RaftSheetScope(
                 scrollController: controller,
                 pointerDrag: drag,
@@ -378,10 +389,18 @@ class RaftPresentedRoute<T> extends ModalBottomSheetRoute<T> {
 /// to close, answered the way Back and Esc are: [Navigator.maybePop]. A route
 /// that vetoes the pop (`PopScope(canPop: false)`, a form with unsaved input)
 /// hears `didPop: false` and the sheet slides back to its detent; the framework
-/// would close it with a raw `Navigator.pop` instead.
+/// would close it with a raw `Navigator.pop` instead. Without [closesOnDrag]
+/// (a route opened with `dragDismissible: false`) a drag only moves between the detents: let go low or flung down, the sheet
+/// slides back to its opening size. Back, Esc and the close button still
+/// close it.
 class _DetentSheet extends StatefulWidget {
-  const _DetentSheet({required this.initialSize, required this.builder});
+  const _DetentSheet({
+    required this.initialSize,
+    required this.builder,
+    this.closesOnDrag = true,
+  });
   final double initialSize;
+  final bool closesOnDrag;
   final Widget Function(ScrollController controller, RaftSheetPointerDrag drag)
   builder;
 
@@ -398,6 +417,11 @@ class _DetentSheetState extends State<_DetentSheet>
   double extentHeight = 0;
   static const _minSize = .25;
 
+  /// The lowest the sheet goes: a sheet a drag may not close stops at its
+  /// opening size (the framework snaps to its minimum, which would strand it
+  /// there).
+  double get minSize => widget.closesOnDrag ? _minSize : widget.initialSize;
+
   List<double> get snapSizes => [
     if (widget.initialSize < RaftSheetMetrics.largeDetent) widget.initialSize,
     RaftSheetMetrics.largeDetent,
@@ -410,7 +434,7 @@ class _DetentSheetState extends State<_DetentSheet>
     // that is asked once, when the drag ends.
     controller.jumpTo(
       (controller.size - dy / extentHeight).clamp(
-        _minSize + .01,
+        widget.closesOnDrag ? _minSize + .01 : minSize,
         RaftSheetMetrics.largeDetent,
       ),
     );
@@ -422,7 +446,8 @@ class _DetentSheetState extends State<_DetentSheet>
     final size = controller.size;
     // Flung down, or let go below half the opening size: a request to close,
     // answered the way a finger's drag to the bottom is.
-    if (velocityDy > 700 || size < widget.initialSize / 2) {
+    if (widget.closesOnDrag &&
+        (velocityDy > 700 || size < widget.initialSize / 2)) {
       // Reaching the bottom asks the route (see [onExtent]).
       unawaited(
         controller.animateTo(
@@ -454,7 +479,7 @@ class _DetentSheetState extends State<_DetentSheet>
   }
 
   bool onExtent(DraggableScrollableNotification n) {
-    if (n.extent > n.minExtent + .001) return false;
+    if (!widget.closesOnDrag || n.extent > n.minExtent + .001) return false;
     close();
     return false;
   }
@@ -489,7 +514,7 @@ class _DetentSheetState extends State<_DetentSheet>
           controller: controller,
           expand: false,
           initialChildSize: widget.initialSize,
-          minChildSize: _minSize,
+          minChildSize: minSize,
           maxChildSize: RaftSheetMetrics.largeDetent,
           snap: true,
           snapSizes: snapSizes,
@@ -516,6 +541,7 @@ Future<T?> showRaftPresented<T>(
   String? label,
   RouteSettings? routeSettings,
   bool dismissible = true,
+  bool dragDismissible = true,
   double dialogMaxWidth = 560,
   double? dialogMaxHeight,
   bool dialogFillsHeight = false,
@@ -531,6 +557,7 @@ Future<T?> showRaftPresented<T>(
       label: label,
       routeSettings: routeSettings,
       dismissible: dismissible,
+      dragDismissible: dragDismissible,
       dialogMaxWidth: dialogMaxWidth,
       dialogMaxHeight: dialogMaxHeight,
       dialogFillsHeight: dialogFillsHeight,
@@ -549,6 +576,7 @@ RaftPresentedRoute<T> raftPresentedRoute<T>(
   String? label,
   RouteSettings? routeSettings,
   bool dismissible = true,
+  bool dragDismissible = true,
   double dialogMaxWidth = 560,
   double? dialogMaxHeight,
   bool dialogFillsHeight = false,
@@ -571,6 +599,7 @@ RaftPresentedRoute<T> raftPresentedRoute<T>(
     label: label,
     settings: routeSettings,
     dismissible: dismissible,
+    dragDismissible: dragDismissible,
     dialogMaxWidth: dialogMaxWidth,
     dialogMaxHeight: dialogMaxHeight,
     dialogFillsHeight: dialogFillsHeight,

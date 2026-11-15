@@ -242,8 +242,6 @@ const dialogSurfaces = <CloseSurface>[
       'lib/features/management_support.dart',
       'lib/features/mcp_server_editor.dart',
       'lib/features/resource_view.dart',
-      'lib/features/second_factor_step_up.dart',
-      'lib/features/account_security_dialogs.dart',
       'lib/features/server_views.dart',
       '../../packages/raft_ui/lib/src/form_dialog.dart',
       '../../packages/raft_ui/lib/src/form_presentation.dart',
@@ -265,6 +263,27 @@ const dialogSurfaces = <CloseSurface>[
     ],
     status: 'approved',
     fix: _sheetOnPhone,
+  ),
+  CloseSurface(
+    'second-factor-step',
+    kind: SurfaceKind.dialog,
+    web:
+        'TwoStepVerificationSection.tsx:413 StepDialog `<Dialog disablePointerDismissal>` '
+        '(also VerifyItsYouDialog.tsx:94 and the PasskeysSection.tsx dialogs): X + Esc, '
+        'no outside press; closing refused while busy',
+    phone: {_x, _esc, _sys},
+    fold: {_x, _esc, _sys},
+    desktop: {_x, _esc, _sys},
+    files: [
+      'lib/features/second_factor_step_up.dart',
+      'lib/features/account_security_dialogs.dart',
+    ],
+    status: 'fixed',
+    fix:
+        'showSecondFactorStep and showVerifyItsYou open with dismissible and '
+        'dragDismissible false: a scrim press or a drag down on the phone '
+        'sheet no longer throws away the backup codes shown once or a typed '
+        'code (close_second_factor_test.dart)',
   ),
   CloseSurface(
     'sos-dialog',

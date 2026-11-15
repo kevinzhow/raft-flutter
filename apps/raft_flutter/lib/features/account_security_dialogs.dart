@@ -13,8 +13,10 @@ import '../platform/attachment_files.dart';
 import 'account_security_answer.dart';
 
 /// Web `StepDialog`: a bottom sheet below 768 and a dialog from there
-/// ([showRaftForm]). Closing is refused while [busy]; a scrim press does not
-/// close it.
+/// ([showRaftForm]). Closing is refused while [busy]; Esc, Back and the X
+/// close it, a scrim press or a drag down does not (Web
+/// `disablePointerDismissal`: a stray tap must not lose the backup codes shown
+/// once or a typed code).
 class SecondFactorStepDialog extends StatelessWidget {
   const SecondFactorStepDialog({
     super.key,
@@ -63,8 +65,11 @@ Future<T?> showSecondFactorStep<T>(
 }) => showRaftForm<T>(
   context,
   label: raftText(context, label),
-  // A typed code is not a draft: closing never asks first. The form window's
-  // closes are the approved `form-dialog` set (close registry).
+  // Web StepDialog `<Dialog disablePointerDismissal>`: no scrim press, and
+  // no drag down on the phone sheet either.
+  dismissible: false,
+  dragDismissible: false,
+  // A typed code is not a draft: closing never asks first.
   guardUnsaved: false,
   builder: builder,
 );

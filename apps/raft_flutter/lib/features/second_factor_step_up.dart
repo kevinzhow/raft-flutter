@@ -125,6 +125,10 @@ Future<bool> showVerifyItsYou(
   final verified = await showRaftForm<bool>(
     context,
     label: raftText(context, "Verify it's you"),
+    // Web StepDialog `<Dialog disablePointerDismissal>`: a stray tap must
+    // not cancel the step-up and drop the typed code.
+    dismissible: false,
+    dragDismissible: false,
     // Web closes the dialog at once: a typed code is not a draft.
     guardUnsaved: false,
     builder: (_) => _VerifyItsYouDialog(

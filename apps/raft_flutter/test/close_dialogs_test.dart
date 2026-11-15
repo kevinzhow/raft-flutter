@@ -872,17 +872,20 @@ void registerCloseDialogTests(TestPart part) {
       (context, w) => unawaited(showWorkspaceMenuInvite(context, w)),
     ),
   };
-  // The release-notes dialog has its own file (close_release_notes_test.dart),
-  // the task delete confirmation too (close_task_dialogs_test.dart) and the
-  // rack's move dialog (close_rack_dialogs_test.dart): the six parts keep
-  // their deal.
+  // Surfaces with a file of their own, so the six parts keep their deal:
+  // the release-notes dialog (close_release_notes_test.dart), the task
+  // delete confirmation (close_task_dialogs_test.dart), the rack's move
+  // dialog (close_rack_dialogs_test.dart) and the two-step dialogs
+  // (close_second_factor_test.dart).
+  const ownFile = {
+    'computer-release-notes',
+    'task-delete-confirm',
+    'rack-move-dialog',
+    'second-factor-step',
+  };
   final surfaces = [
     for (final surface in dialogSurfaces)
-      if (surface.id != 'computer-release-notes' &&
-          surface.id != 'task-delete-confirm' &&
-          surface.id != 'rack-move-dialog' &&
-          part.claim())
-        surface,
+      if (!ownFile.contains(surface.id) && part.claim()) surface,
   ];
   registerCloseTests(surfaces, harness);
   registerNoScrimTests(surfaces, harness);

@@ -73,6 +73,7 @@ RaftPresentedRoute<T> raftFormRoute<T>(
   RaftPresentationPolicy policy = RaftPresentationPolicy.form,
   RouteSettings? routeSettings,
   bool dismissible = true,
+  bool dragDismissible = true,
   bool guardUnsaved = true,
   String? label,
   double dialogMaxWidth = 560,
@@ -83,6 +84,7 @@ RaftPresentedRoute<T> raftFormRoute<T>(
   content: (_, form) => _formContent(builder, form, guardUnsaved),
   routeSettings: routeSettings,
   dismissible: dismissible,
+  dragDismissible: dragDismissible,
   label: label,
   dialogMaxWidth: dialogMaxWidth,
   scrollDialogSurface: true,
@@ -96,7 +98,11 @@ RaftPresentedRoute<T> raftFormRoute<T>(
 /// a drag down and the close button all ask the route to close, and with
 /// [guardUnsaved] (the default) a form whose fields changed since it opened
 /// asks "Discard your changes?" first; Cancel and Submit in the footer pop
-/// directly and never ask. [policy] is [RaftPresentationPolicy.confirm] for a form without inputs
+/// directly and never ask. [dismissible] false keeps a scrim press from
+/// closing it; [dragDismissible] false keeps a drag down from closing the
+/// sheet. Both false is Web `disablePointerDismissal` for content a stray
+/// touch must not throw away (backup codes shown once, a step-up code).
+/// [policy] is [RaftPresentationPolicy.confirm] for a form without inputs
 /// (a question with two buttons), which stays a dialog on every width.
 Future<T?> showRaftForm<T>(
   BuildContext context, {
@@ -104,6 +110,7 @@ Future<T?> showRaftForm<T>(
   RaftPresentationPolicy policy = RaftPresentationPolicy.form,
   RouteSettings? routeSettings,
   bool dismissible = true,
+  bool dragDismissible = true,
   bool guardUnsaved = true,
   String? label,
   double dialogMaxWidth = 560,
@@ -115,6 +122,7 @@ Future<T?> showRaftForm<T>(
     policy: policy,
     routeSettings: routeSettings,
     dismissible: dismissible,
+    dragDismissible: dragDismissible,
     guardUnsaved: guardUnsaved,
     label: label,
     dialogMaxWidth: dialogMaxWidth,
