@@ -8,6 +8,7 @@ import 'package:flutter/widgets.dart';
 
 import 'card.dart' show RaftCard;
 import 'design_primitives.dart';
+import 'raft/css_box.dart' show RaftCssBox;
 import 'focus_visible.dart';
 import 'hover_region.dart';
 import 'icons.dart';
@@ -473,11 +474,22 @@ class _RaftRackRowState extends State<RaftRackRow> {
       behavior: HitTestBehavior.opaque,
       excludeFromSemantics: true,
       onTap: widget.onOpen,
-      child: CustomPaint(
-        foregroundPainter: ring
-            ? _RackRowRing(RaftTokens.of(context).ink, radius)
-            : null,
-        child: child,
+      // The stretched link's focus ring, `inset-ring-2 inset-ring-ink` over
+      // the whole row or card (paint only).
+      child: Stack(
+        fit: StackFit.passthrough,
+        children: [
+          child,
+          Positioned.fill(
+            child: IgnorePointer(
+              child: RaftCssBox(
+                radius: radius,
+                insetRingWidth: ring ? 2 : 0,
+                insetRingColor: RaftTokens.of(context).ink,
+              ),
+            ),
+          ),
+        ],
       ),
     ),
   );
@@ -766,28 +778,6 @@ class _RaftRackRowState extends State<RaftRackRow> {
         );
     }
   }
-}
-
-/// The stretched name link's focus ring: `inset-ring-2 inset-ring-ink` over
-/// the whole row or card (paint only).
-class _RackRowRing extends CustomPainter {
-  const _RackRowRing(this.color, this.radius);
-  final Color color;
-  final double radius;
-  @override
-  void paint(Canvas canvas, Size size) => canvas.drawRRect(
-    RRect.fromRectAndRadius(
-      (Offset.zero & size).deflate(1),
-      Radius.circular(radius > 1 ? radius - 1 : 0),
-    ),
-    Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2
-      ..color = color,
-  );
-  @override
-  bool shouldRepaint(_RackRowRing old) =>
-      old.color != color || old.radius != radius;
 }
 
 /// RackRowSkeleton.tsx: a placeholder in a loaded row's shape.
