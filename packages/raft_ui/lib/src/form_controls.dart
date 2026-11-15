@@ -87,6 +87,7 @@ class RaftField extends StatelessWidget {
     this.helperHint = false,
     this.helperRecipe = false,
     this.surface = true,
+    this.hintBuilder,
   });
 
   final String label;
@@ -94,6 +95,12 @@ class RaftField extends StatelessWidget {
   final bool required, optional;
   final String optionalLabel;
   final String? hint, error;
+
+  /// Opt in: draws the hint itself in the message row's description [style]
+  /// (a hint with inline links). Only the Raft look; the frozen looks print
+  /// [hint] as plain text, so pass the link-free reading of it there. Never
+  /// replaces an error.
+  final Widget Function(BuildContext context, TextStyle style)? hintBuilder;
 
   /// `size="compact"`: the `sm` label step.
   final bool compact;
@@ -166,6 +173,8 @@ class RaftField extends StatelessWidget {
     final message = error ?? hint;
     final messageText = message == null
         ? null
+        : error == null && hintBuilder != null
+        ? hintBuilder!(context, f.description.text(rt, base: base))
         : Text(
             raftText(context, message),
             style: (error != null ? f.error : f.description).text(

@@ -1,0 +1,15 @@
+{
+  "protocolVersion": 1,
+  "runtimeId": "kimi",
+  "schemaVersion": "kimi.edit.v1",
+  "sourceId": "model",
+  "kind": "select",
+  "pointer": "/model",
+  "options": [
+    {
+      "value": "default",
+      "label": "Configured Default"
+    }
+  ],
+  "defaultValue": "default"
+}

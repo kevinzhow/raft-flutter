@@ -7,9 +7,11 @@
 // (credentialInvalidReasonOf, agentNeedsManualRestart,
 // formatCredentialInvalidText).
 //
-// Not here (another package owns it): the readiness chip branch
-// (utils/readinessCopy.ts) and the paused personal assistant chip.
+// The readiness branch (utils/readinessCopy.ts readinessHolds / readinessLight)
+// is decided here; its words come from computer_readiness_copy.dart. Not here
+// (another package owns it): the paused personal assistant chip.
 import '../data/runtime_error.dart' show isRuntimeErrorCode;
+import 'computer_readiness_copy.dart' show readinessLimitWaitCodes;
 import 'agent_metadata_catalog.dart' show sourceAgentActivities;
 import 'agent_metadata_projection.dart';
 
@@ -155,6 +157,28 @@ AgentActivityDescriptor credentialInvalidDescriptor(
   }
 }
 
+/// Web `readinessHolds`: the server's readiness says the agent cannot work
+/// now (blocked) or must wait.
+bool readinessHolds(Object? readiness) =>
+    readiness is Map &&
+    (readiness['state'] == 'blocked' || readiness['state'] == 'waiting');
+
+/// Web `readinessLight`: a Computer offline is stone like any offline; a block
+/// or a limit wait is orange (error); a wait in progress (the Computer
+/// restarting or updating) is yellow (busy).
+({AgentChipTone tone, AgentChipLight light}) readinessLight(Map readiness) {
+  final primary = readiness['primary'];
+  final code = primary is Map ? primary['code'] : null;
+  if (code == 'computer_offline') {
+    return (tone: AgentChipTone.muted, light: AgentChipLight.offline);
+  }
+  if (readiness['state'] == 'blocked' ||
+      (code is String && readinessLimitWaitCodes.contains(code))) {
+    return (tone: AgentChipTone.warning, light: AgentChipLight.error);
+  }
+  return (tone: AgentChipTone.busy, light: AgentChipLight.busy);
+}
+
 /// The chip's wash, as raft-ui `Badge` variants (Web `PRESENCE_CHIP_VARIANT`).
 enum AgentChipTone { success, busy, warning, muted, information }
 
@@ -174,7 +198,15 @@ class AgentStatusChip {
     this.detail,
     this.likelyOnline = false,
     this.tooltip,
+    this.readiness,
+    this.showReadinessDetail = false,
   });
+
+  /// The readiness this chip reads (its words are the readiness copy, which
+  /// needs the viewer's language: the host formats them). [showReadinessDetail]
+  /// adds the sentence and the portal link for the viewers who see details.
+  final Map? readiness;
+  final bool showReadinessDetail;
 
   /// The chip's words (also its tooltip unless [tooltip]).
   final AgentActivityDescriptor text;
@@ -297,7 +329,11 @@ class AgentStatusInput {
     this.errorCode,
     this.spawnFailure,
     this.spawnFailureText,
+    this.readiness,
   });
+
+  /// The agent row's readiness (null from a server that does not send it).
+  final Map? readiness;
   final Map row;
   final String activity, detailKind, detail;
   final bool hasActivityState, machineOffline, showDetail;
@@ -343,6 +379,25 @@ AgentStatusChip resolveAgentStatusChip(AgentStatusInput i) {
       tone: offline ? AgentChipTone.muted : AgentChipTone.warning,
       light: offline ? AgentChipLight.offline : AgentChipLight.error,
       blocked: blocked,
+    );
+  }
+  // The server's readiness, when the agent cannot work now and its Computer is
+  // not already shown as the blocker: the first broken link in words, whose
+  // problem it is and who fixes it. Retry only for a verification.
+  final readiness = i.readiness;
+  if (readiness != null && readinessHolds(readiness)) {
+    final light = readinessLight(readiness);
+    final primary = readiness['primary'];
+    return AgentStatusChip(
+      text: (source: '', values: const {}, raw: true),
+      tone: light.tone,
+      light: light.light,
+      readiness: readiness,
+      showReadinessDetail: i.showDetail,
+      showRetry:
+          i.canRestart &&
+          primary is Map &&
+          primary['code'] == 'verification_required',
     );
   }
   final likelyOnline = !i.hasActivityState && status == 'active';

@@ -332,31 +332,23 @@ void main() {
         },
       );
 
-      test('reasoning, API URL and command sets', () {
+      test('reasoning sets', () {
         for (final r in [
           'builtin',
           'claude',
           'codex',
           'grok',
+          'antigravity',
           'copilot',
           'pi',
           'kimi-sdk',
+          'codebuddy',
         ]) {
           expect(runtimeSupportsReasoning(r), isTrue, reason: r);
         }
-        for (final r in [
-          'antigravity',
-          'kimi',
-          'cursor',
-          'gemini',
-          'opencode',
-        ]) {
+        for (final r in ['kimi', 'cursor', 'gemini', 'opencode']) {
           expect(runtimeSupportsReasoning(r), isFalse, reason: r);
         }
-        expect(runtimeSupportsApiUrl('claude'), isTrue);
-        expect(runtimeSupportsApiUrl('codex'), isFalse);
-        expect(runtimeSupportsCommand('claude'), isTrue);
-        expect(runtimeSupportsCommand('codex'), isFalse);
       });
 
       test('command is read for Claude only', () {

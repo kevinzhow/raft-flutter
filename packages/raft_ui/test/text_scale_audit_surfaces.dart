@@ -37,6 +37,7 @@ import 'package:raft_ui/directory_navigation_previews.dart';
 import 'package:raft_ui/document_previews.dart';
 import 'package:raft_ui/dropdown_viewport_previews.dart';
 import 'package:raft_ui/elegant_navigation_previews.dart';
+import 'package:raft_ui/external_agent_previews.dart';
 import 'package:raft_ui/hover_card_previews.dart';
 import 'package:raft_ui/html_previews.dart';
 import 'package:raft_ui/html_region_comment_previews.dart';
@@ -72,6 +73,7 @@ import 'package:raft_ui/quick_switcher_previews.dart';
 import 'package:raft_ui/search_surface_previews.dart';
 import 'package:raft_ui/section_pager_previews.dart';
 import 'package:raft_ui/sheet_previews.dart';
+import 'package:raft_ui/select_group_previews.dart';
 import 'package:raft_ui/selection_popover_previews.dart';
 import 'package:raft_ui/selection_toolbar_previews.dart';
 import 'package:raft_ui/settings_administration_previews.dart';
@@ -538,6 +540,12 @@ final auditSurfaces = <AuditSurface>[
     'Combobox panel',
     comboboxPreview,
     Size(300, 320),
+  ),
+  AuditSurface(
+    'comboboxUnavailablePreview',
+    'Combobox panel, unavailable rows',
+    comboboxUnavailablePreview,
+    Size(300, 360),
   ),
   AuditSurface(
     'composerExpandButtonPreview',
@@ -1024,6 +1032,12 @@ final auditSurfaces = <AuditSurface>[
     'Mobile section paging',
     sectionPagerPreview,
     Size(390, 600),
+  ),
+  AuditSurface(
+    'selectGroupPreview',
+    'Select · groups, description and action row',
+    selectGroupPreview,
+    Size(420, 560),
   ),
   AuditSurface(
     'selectionPopoverPreview',
@@ -1673,5 +1687,29 @@ final auditSurfaces = <AuditSurface>[
     'Follow newest log',
     followNewestLogPreview,
     Size(420, 360),
+  ),
+  AuditSurface(
+    'externalAgentCreateFormPreview',
+    'Create external agent form',
+    externalAgentCreateFormPreview,
+    Size(390, 560),
+  ),
+  AuditSurface(
+    'externalAgentWaitingPreview',
+    'External agent: waiting, existing agent',
+    externalAgentWaitingPreview,
+    Size(390, 760),
+  ),
+  AuditSurface(
+    'externalAgentOnlinePreview',
+    'External agent: online, SDK steps and credentials',
+    externalAgentOnlinePreview,
+    Size(390, 900),
+  ),
+  AuditSurface(
+    'externalAgentOfflinePreview',
+    'External agent: offline, create credential',
+    externalAgentOfflinePreview,
+    Size(390, 520),
   ),
 ];

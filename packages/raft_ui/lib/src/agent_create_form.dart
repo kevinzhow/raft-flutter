@@ -386,6 +386,7 @@ class RaftStableField extends StatelessWidget {
     this.counter,
     this.labelAccessory,
     this.belowControl = const [],
+    this.hintBuilder,
   });
   final String label;
   final Widget child;
@@ -393,6 +394,9 @@ class RaftStableField extends StatelessWidget {
   final String? hint, error, counter;
   final Widget? labelAccessory;
   final List<Widget> belowControl;
+
+  /// A hint with inline links: see [RaftField.hintBuilder].
+  final Widget Function(BuildContext context, TextStyle style)? hintBuilder;
 
   @override
   Widget build(BuildContext context) => RaftField(
@@ -403,6 +407,7 @@ class RaftStableField extends StatelessWidget {
     counter: counter,
     labelAccessory: labelAccessory,
     belowControl: belowControl,
+    hintBuilder: hintBuilder,
     reserveMessage: true,
     legacy: RaftLegacyField.stable,
     child: child,
@@ -534,10 +539,40 @@ class _CssOuterShadowPainter extends CustomPainter {
 
 /// One option of [RaftAgentSelect].
 class RaftAgentSelectOption<T> {
-  const RaftAgentSelectOption(this.value, this.label, {this.enabled = true});
+  const RaftAgentSelectOption(
+    this.value,
+    this.label, {
+    this.enabled = true,
+    this.group,
+    this.description,
+    this.badge,
+    this.suffix,
+    this.suffixInList = true,
+    this.onAction,
+  });
+
+  /// The non-value action row at the end of the list ("Show all supported"):
+  /// it is never selected and leaves the list open ([RaftSelectItem.action]).
+  /// [value] only identifies the row.
+  const RaftAgentSelectOption.action(
+    this.value,
+    this.label, {
+    required VoidCallback this.onAction,
+  }) : enabled = true,
+       group = null,
+       description = null,
+       badge = null,
+       suffix = null,
+       suffixInList = true;
   final T value;
   final String label;
   final bool enabled;
+
+  /// Group heading, second line, inline badge and trailing suffix; see
+  /// [RaftSelectItem]. All opt-in: an option without them renders as before.
+  final String? group, description, badge, suffix;
+  final bool suffixInList;
+  final VoidCallback? onAction;
 }
 
 /// raft-ui Select with `chrome="field"`: trigger = Button(outline, md) merged
@@ -570,11 +605,23 @@ class RaftAgentSelect<T> extends StatelessWidget {
     height: RaftTokens.of(context).size('size.fieldSelect', fallback: 36),
     items: [
       for (final option in options)
-        RaftSelectItem<T>(
-          value: option.value,
-          enabled: option.enabled,
-          label: option.label,
-        ),
+        if (option.onAction case final action?)
+          RaftSelectItem<T>.action(
+            value: option.value,
+            label: option.label,
+            onAction: action,
+          )
+        else
+          RaftSelectItem<T>(
+            value: option.value,
+            enabled: option.enabled,
+            label: option.label,
+            group: option.group,
+            description: option.description,
+            badge: option.badge,
+            suffix: option.suffix,
+            suffixInList: option.suffixInList,
+          ),
     ],
     onChanged: onChanged == null
         ? null

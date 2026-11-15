@@ -42,7 +42,11 @@ class _Workspace extends WorkspaceController {
     if (path.endsWith('/runtime-options')) {
       return {
         'options': [
-          {'runtimeId': 'codex', 'canSelectInThisContext': true},
+          {
+            'runtimeId': 'codex',
+            'canSelectInThisContext': true,
+            'runtimeFormV2': {'protocolVersion': 2},
+          },
         ],
       };
     }
@@ -119,13 +123,12 @@ void main() {
           find.textContaining('limit reached ('),
           allowed ? findsNothing : findsOneWidget,
         );
-        // The dialog title and its submit button share the label.
-        await tester.tap(find.text('Create Agent').last);
+        await tester.tap(find.text('Create'));
         await tester.pumpAndSettle();
         expect(workspace.posts, allowed ? ['/agents'] : isEmpty);
         expect(
-          find.text('Create Agent'),
-          allowed ? findsNothing : findsNWidgets(2),
+          find.text('Create agent'),
+          allowed ? findsNothing : findsOneWidget,
         );
         expect(tester.takeException(), isNull);
         await tester.pumpWidget(const SizedBox());

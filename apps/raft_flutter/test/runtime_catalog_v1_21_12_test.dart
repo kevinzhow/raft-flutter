@@ -1,7 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_flutter/features/agent_runtime_catalog.dart';
-import 'package:raft_flutter/features/agent_runtime_draft.dart';
 import 'package:raft_flutter/features/agent_runtime_labels.dart';
 import 'package:raft_flutter/features/computer_detail_view.dart';
 
@@ -22,16 +21,17 @@ void main() {
     );
   });
 
-  test('Copilot CLI is not creatable but stays visible for its own agents', () {
+  test('Copilot CLI is not creatable', () {
     // getCreatableRuntimeOptions(): supported and not deprecated.
     expect(creatableRuntimeIds, isNot(contains('copilot')));
     expect(creatableRuntimeIds, containsAll(['claude', 'codex', 'pi']));
-    // getExistingAgentRuntimeOptions(current): a deprecated runtime is listed
-    // only as the agent's own current runtime.
-    List<String> ids(String current) =>
-        existingAgentRuntimeOptions(current).map((r) => r.id).toList();
-    expect(ids('copilot'), contains('copilot'));
-    expect(ids('claude'), isNot(contains('copilot')));
+    // Which runtimes an agent may switch to is the server's runtime-options
+    // answer (getExistingAgentRuntimeOptions runs there); the bundled entry
+    // only names the runtime and marks it deprecated.
+    expect(
+      runtimeInfos.firstWhere((r) => r.id == 'copilot').deprecated,
+      isTrue,
+    );
   });
 
   testWidgets('formatRuntimeLabelWithStatus: only deprecated runtimes get it', (

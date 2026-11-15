@@ -49,6 +49,18 @@ Widget agentStatusChipPreview() => Padding(
         onRetry: () {},
       ),
       RaftAgentStatusRow(
+        text: 'Account needs verification',
+        tone: RaftAgentStatusTone.warning,
+        light: RaftAgentStatusLight.error,
+        wrap: true,
+        tooltip:
+            "This Computer's problem: verify the account, then choose Retry.",
+        body: "This Computer's problem: verify the account, then choose Retry.",
+        linkLabel: 'Open the Anthropic verification portal',
+        onLink: () {},
+        onRetry: () {},
+      ),
+      RaftAgentStatusRow(
         text: 'Working…',
         tone: RaftAgentStatusTone.busy,
         light: RaftAgentStatusLight.busy,

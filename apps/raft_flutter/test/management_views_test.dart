@@ -564,7 +564,7 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('Verify on computer'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Verify Connection'));
+      await tester.tap(find.text('Verify'));
       await tester.pumpAndSettle();
       expect(find.text('Provider verified'), findsNothing);
       expect(
@@ -574,7 +574,7 @@ void main() {
         findsOneWidget,
       );
       mismatch = false;
-      await tester.tap(find.text('Verify Connection'));
+      await tester.tap(find.text('Verify'));
       await tester.pumpAndSettle();
       expect(find.text('Provider verified'), findsOneWidget);
       final probes = a.calls

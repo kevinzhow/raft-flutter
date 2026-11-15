@@ -1,0 +1,204 @@
+{
+  "protocolVersion": 1,
+  "runtimeId": "codex",
+  "schemaVersion": "codex.create.v1",
+  "sourceId": "model",
+  "kind": "select",
+  "pointer": "/model",
+  "options": [
+    {
+      "value": "gpt-6.1-sol",
+      "label": "GPT-6.1 Sol",
+      "supportedReasoningEfforts": [
+        "low",
+        "medium",
+        "high",
+        "xhigh",
+        "max",
+        "ultra"
+      ],
+      "defaultReasoningEffort": "low"
+    },
+    {
+      "value": "gpt-6-astra",
+      "label": "GPT-6-Astra",
+      "supportedReasoningEfforts": [
+        "low",
+        "medium",
+        "high",
+        "xhigh",
+        "max",
+        "ultra"
+      ],
+      "defaultReasoningEffort": "low"
+    },
+    {
+      "value": "gpt-6-sol",
+      "label": "GPT-6 Sol",
+      "supportedReasoningEfforts": [
+        "low",
+        "medium",
+        "high",
+        "xhigh",
+        "max",
+        "ultra"
+      ],
+      "defaultReasoningEffort": "medium"
+    },
+    {
+      "value": "gpt-6-luna",
+      "label": "GPT-6 Luna",
+      "supportedReasoningEfforts": [
+        "low",
+        "medium",
+        "high",
+        "xhigh",
+        "max"
+      ],
+      "defaultReasoningEffort": "medium"
+    },
+    {
+      "value": "gpt-5.6-sol",
+      "label": "GPT-5.6 Sol",
+      "supportedReasoningEfforts": [
+        "low",
+        "medium",
+        "high",
+        "xhigh",
+        "max",
+        "ultra"
+      ],
+      "defaultReasoningEffort": "medium"
+    },
+    {
+      "value": "gpt-5.6-terra",
+      "label": "GPT-5.6 Terra",
+      "supportedReasoningEfforts": [
+        "low",
+        "medium",
+        "high",
+        "xhigh",
+        "max",
+        "ultra"
+      ],
+      "defaultReasoningEffort": "medium"
+    },
+    {
+      "value": "gpt-5.6-luna",
+      "label": "GPT-5.6 Luna",
+      "supportedReasoningEfforts": [
+        "low",
+        "medium",
+        "high",
+        "xhigh",
+        "max"
+      ],
+      "defaultReasoningEffort": "medium"
+    },
+    {
+      "value": "gpt-5.5",
+      "label": "GPT-5.5",
+      "supportedReasoningEfforts": [
+        "low",
+        "medium",
+        "high",
+        "xhigh"
+      ]
+    },
+    {
+      "value": "gpt-5.4",
+      "label": "GPT-5.4",
+      "supportedReasoningEfforts": [
+        "low",
+        "medium",
+        "high",
+        "xhigh"
+      ]
+    },
+    {
+      "value": "gpt-5.3-codex",
+      "label": "GPT-5.3 Codex",
+      "supportedReasoningEfforts": [
+        "low",
+        "medium",
+        "high",
+        "xhigh"
+      ]
+    },
+    {
+      "value": "gpt-5.3-codex-spark",
+      "label": "GPT-5.3 Codex Spark",
+      "supportedReasoningEfforts": [
+        "low",
+        "medium",
+        "high",
+        "xhigh"
+      ]
+    },
+    {
+      "value": "gpt-5.2-codex",
+      "label": "GPT-5.2 Codex",
+      "supportedReasoningEfforts": [
+        "low",
+        "medium",
+        "high",
+        "xhigh"
+      ]
+    },
+    {
+      "value": "gpt-5.2",
+      "label": "GPT-5.2",
+      "supportedReasoningEfforts": [
+        "low",
+        "medium",
+        "high",
+        "xhigh"
+      ]
+    },
+    {
+      "value": "gpt-5.1-codex-max",
+      "label": "GPT-5.1 Codex Max",
+      "supportedReasoningEfforts": [
+        "low",
+        "medium",
+        "high",
+        "xhigh"
+      ]
+    },
+    {
+      "value": "gpt-5.1-codex",
+      "label": "GPT-5.1 Codex",
+      "supportedReasoningEfforts": [
+        "low",
+        "medium",
+        "high",
+        "xhigh"
+      ]
+    },
+    {
+      "value": "gpt-5-codex",
+      "label": "GPT-5 Codex",
+      "supportedReasoningEfforts": [
+        "low",
+        "medium",
+        "high",
+        "xhigh"
+      ]
+    },
+    {
+      "value": "gpt-5",
+      "label": "GPT-5",
+      "supportedReasoningEfforts": [
+        "low",
+        "medium",
+        "high",
+        "xhigh"
+      ]
+    }
+  ],
+  "defaultValue": "gpt-6.1-sol",
+  "customValueAllowed": true,
+  "status": "fallback",
+  "reason": "missing_config",
+  "retryable": false
+}

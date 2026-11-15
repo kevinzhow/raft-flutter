@@ -12,7 +12,8 @@ import '../data/workspace_controller.dart';
 import '../data/workspace_entity_directory.dart';
 import 'management_support.dart';
 import 'agent_detail_view.dart';
-import 'agent_runtime_labels.dart' show runtimeLabelWithStatus;
+import 'agent_runtime_labels.dart'
+    show RuntimeDeprecatedHereState, runtimeLabelWithStatus;
 import 'channel_member_servers.dart' show withPrimedServers;
 import 'member_profile_rules.dart';
 import 'member_profile_self_edit.dart';
@@ -54,9 +55,12 @@ class MemberProfileView extends StatefulWidget {
   State<MemberProfileView> createState() => _MemberProfileViewState();
 }
 
-class _MemberProfileViewState extends ManagementState<MemberProfileView> {
+class _MemberProfileViewState extends ManagementState<MemberProfileView>
+    with RuntimeDeprecatedHereState<MemberProfileView> {
   @override
   WorkspaceController get w => widget.controller;
+  @override
+  WorkspaceController get runtimeCatalogWorkspace => w;
   Map<String, dynamic> profile = {};
 
   /// The profile read (description, created agents, join date) was accepted
@@ -759,9 +763,11 @@ class _MemberProfileViewState extends ManagementState<MemberProfileView> {
                         slot: RaftAvatarSlotContext.surfaceList,
                       ),
                       name: humanDisplayName(a),
+                      // CreatedAgentRow.tsx:47: the server's answer.
                       subtitle: runtimeLabelWithStatus(
                         context,
                         '${a['runtime'] ?? ''}',
+                        deprecated: deprecatedHere('${a['runtime'] ?? ''}'),
                       ),
                       rightContent: [
                         RaftActivityDot(

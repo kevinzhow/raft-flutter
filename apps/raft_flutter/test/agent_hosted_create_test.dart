@@ -172,7 +172,6 @@ void main() {
         find.textContaining('Runtime', findRichText: true),
         findsOneWidget,
       );
-      expect(find.text(_hint), findsNothing);
       await t.tap(find.text('Office-Mac'));
       await t.pumpAndSettle();
       expect(find.text(_option), findsOneWidget);
@@ -186,7 +185,7 @@ void main() {
     await open(t);
     await chooseCloud(t);
     expect(find.textContaining('Runtime', findRichText: true), findsNothing);
-    expect(find.text(_hint), findsOneWidget);
+    expect(find.text(_hint), findsNothing);
     expect(
       find.byWidgetPredicate((w) => w is RaftStableField && w.label == 'Model'),
       findsOneWidget,
@@ -204,7 +203,7 @@ void main() {
       await t.tap(
         find.descendant(
           of: find.byType(RaftAgentDialogButton),
-          matching: find.text('Create Agent'),
+          matching: find.text('Create'),
         ),
       );
       await t.pumpAndSettle();
@@ -235,7 +234,7 @@ void main() {
     await t.tap(
       find.descendant(
         of: find.byType(RaftAgentDialogButton),
-        matching: find.text('Create Agent'),
+        matching: find.text('Create'),
       ),
     );
     await t.pumpAndSettle();
@@ -263,7 +262,7 @@ void main() {
     await t.tap(
       find.descendant(
         of: find.byType(RaftAgentDialogButton),
-        matching: find.text('Create Agent'),
+        matching: find.text('Create'),
       ),
     );
     await t.pumpAndSettle();
@@ -297,7 +296,7 @@ void main() {
     await t.tap(
       find.descendant(
         of: find.byType(RaftAgentDialogButton),
-        matching: find.text('Create Agent'),
+        matching: find.text('Create'),
       ),
     );
     await t.pumpAndSettle();
@@ -317,7 +316,7 @@ void main() {
     await t.tap(
       find.descendant(
         of: find.byType(RaftAgentDialogButton),
-        matching: find.text('Create Agent'),
+        matching: find.text('Create'),
       ),
       warnIfMissed: false,
     );
@@ -385,12 +384,12 @@ void main() {
   ) async {
     await open(t);
     expect(find.text('Connect a computer first'), findsNothing);
-    expect(find.text(_hint), findsOneWidget);
+    expect(find.text(_hint), findsNothing);
     expect(find.textContaining('Runtime', findRichText: true), findsNothing);
     await t.tap(
       find.descendant(
         of: find.byType(RaftAgentDialogButton),
-        matching: find.text('Create Agent'),
+        matching: find.text('Create'),
       ),
     );
     await t.pumpAndSettle();
@@ -416,7 +415,7 @@ void main() {
     await t.tap(
       find.descendant(
         of: find.byType(RaftAgentDialogButton),
-        matching: find.text('Create Agent'),
+        matching: find.text('Create'),
       ),
     );
     await t.pumpAndSettle();
@@ -432,7 +431,7 @@ void main() {
     await t.tap(
       find.descendant(
         of: find.byType(RaftAgentDialogButton),
-        matching: find.text('Create Agent'),
+        matching: find.text('Create'),
       ),
     );
     await t.pumpAndSettle();

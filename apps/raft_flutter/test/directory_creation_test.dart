@@ -122,28 +122,25 @@ void main() {
               expect(t.takeException(), isNull);
               return;
             }
-            expect(find.byType(RaftFormDialog), findsOneWidget);
-            await t.enterText(find.byType(TextField).first, 'Own resource');
+            // Web v1.24 CreateExternalAgentDialog: step 1, then Next.
+            expect(
+              find.byKey(const ValueKey('create-external-agent-dialog')),
+              findsOneWidget,
+            );
+            await t.enterText(
+              find.byKey(const ValueKey('create-external-agent-name')),
+              'Own resource',
+            );
+            await t.pump();
             await t.tap(
-              find.widgetWithText(
-                RaftButton,
-                computer ? 'Register Computer' : 'Create external agent',
-              ),
+              find.byKey(const ValueKey('create-external-agent-next')),
             );
             await t.pumpAndSettle();
-            expect(w.commands, hasLength(1));
-            expect(w.commands.single.$1, 'POST');
-            expect(
-              w.commands.single.$2,
-              computer ? '/servers/s/machines' : '/agents',
-            );
-            expect((w.commands.single.$3 as Map)['name'], 'Own resource');
-            if (computer) {
-              expect(find.text('Credential hidden'), findsOneWidget);
-              expect(find.text('TEST_ONLY_NOT_A_CREDENTIAL'), findsNothing);
-            } else {
-              expect((w.commands.single.$3 as Map)['external'], true);
-            }
+            final first = w.commands.first;
+            expect(first.$1, 'POST');
+            expect(first.$2, '/agents');
+            expect((first.$3 as Map)['name'], 'Own resource');
+            expect((first.$3 as Map)['external'], true);
             expect(t.takeException(), isNull);
           },
         );
@@ -188,14 +185,21 @@ void main() {
         await t.pumpAndSettle();
         await t.tap(find.widgetWithText(RaftMenuItem, 'Create external agent'));
         await t.pumpAndSettle();
-        await t.enterText(find.byType(TextField).first, 'Old account resource');
+        await t.enterText(
+          find.byKey(const ValueKey('create-external-agent-name')),
+          'Old account resource',
+        );
+        await t.pump();
         w.pending = Completer<dynamic>();
-        await t.tap(find.widgetWithText(RaftButton, 'Create external agent'));
+        await t.tap(find.byKey(const ValueKey('create-external-agent-next')));
         await t.pump();
         c.user = RaftRecord({'id': 'bob'});
         w.notifyListeners();
         await t.pumpAndSettle();
-        expect(find.byType(RaftFormDialog), findsNothing);
+        expect(
+          find.byKey(const ValueKey('create-external-agent-dialog')),
+          findsNothing,
+        );
         w.pending!.complete({'id': 'old-private-row'});
         await t.pumpAndSettle();
         expect(find.text('Old account resource'), findsNothing);

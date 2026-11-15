@@ -56,7 +56,11 @@ class _Workspace extends WorkspaceController {
       return {
         'options': [
           for (final r in runtimes)
-            {'runtimeId': r, 'canSelectInThisContext': true},
+            {
+              'runtimeId': r,
+              'canSelectInThisContext': true,
+              'runtimeFormV2': {'protocolVersion': 2},
+            },
         ],
       };
     }
@@ -164,7 +168,11 @@ void main() {
     } finally {
       pending.complete({
         'options': [
-          {'runtimeId': 'codex', 'canSelectInThisContext': true},
+          {
+            'runtimeId': 'codex',
+            'canSelectInThisContext': true,
+            'runtimeFormV2': {'protocolVersion': 2},
+          },
         ],
       });
       await t.pumpAndSettle();
@@ -195,7 +203,7 @@ void main() {
       w.reads.where((path) => path.endsWith('/runtime-options')),
       hasLength(2),
     );
-    await t.tap(find.widgetWithText(RaftButton, 'Create Agent'));
+    await t.tap(find.widgetWithText(RaftButton, 'Create'));
     await t.pumpAndSettle();
     expect(w.posts, hasLength(1));
     await open(t, name: 'Alice-Retry');
@@ -205,14 +213,14 @@ void main() {
 
   testWidgets('zero computers shows the connect-a-computer branch', (t) async {
     await open(t);
-    expect(find.text('Create Agent'), findsOneWidget);
+    expect(find.text('Create agent'), findsOneWidget);
     expect(find.text('Connect a computer first'), findsOneWidget);
     expect(find.text('Add computer'), findsOneWidget);
     expect(find.text('Computer'), findsNothing);
   });
 
   testWidgets(
-    'capacity banner, invalid prefilled name and pre-admission model',
+    'capacity banner, invalid prefilled name and no pre-admission model picker',
     (t) async {
       w
         ..machines = [_machine]
@@ -231,14 +239,16 @@ void main() {
         findsOneWidget,
       );
       expect(find.text('15/3000'), findsOneWidget);
-      // No runtime catalog: runtime unselected, declared Claude picker shown.
+      // No runtime catalog: the runtime is unselected and there is no form,
+      // not even Claude's pre-admission model picker.
       expect(find.text('Select…'), findsOneWidget);
-      expect(find.text('Claude Opus'), findsOneWidget);
+      expect(find.text('Claude Opus'), findsNothing);
       expect(
         find.textContaining('Could not load models from this computer.'),
-        findsOneWidget,
+        findsNothing,
       );
-      await t.tap(find.text('Create Agent').last);
+      expect(w.reads.any((path) => path.contains('/runtime-models/')), isFalse);
+      await t.tap(find.text('Create').last);
       await t.pump();
       expect(w.posts, isEmpty);
     },
@@ -335,24 +345,6 @@ void main() {
     });
   }
 
-  testWidgets('a live model row without an id does not break the dialog', (
-    t,
-  ) async {
-    w
-      ..machines = [_machine]
-      ..claudeModels = {
-        'kind': 'live',
-        'value': {
-          'models': [
-            {'label': 'Unnamed model'},
-          ],
-        },
-      };
-    await open(t);
-    expect(t.takeException(), isNull);
-    expect(find.text('Unnamed model'), findsOneWidget);
-  });
-
   testWidgets('selected runtime submits the v2 form in one dialog', (t) async {
     w
       ..machines = [_machine]
@@ -360,8 +352,8 @@ void main() {
     final result = await open(t, name: 'Product-QA-Bot', description: 'QA');
     expect(find.text('Codex CLI'), findsOneWidget);
     expect(find.text('GPT-5'), findsOneWidget);
-    expect(find.text('More'), findsOneWidget);
-    await t.tap(find.text('Create Agent').last);
+    expect(find.text('Advanced'), findsOneWidget);
+    await t.tap(find.text('Create').last);
     await t.pumpAndSettle();
     expect(w.posts, hasLength(1));
     final data = w.posts.single['data'] as Map;
@@ -376,7 +368,7 @@ void main() {
     });
     expect((data['formValues'] as Map)['model'], 'gpt-5');
     expect(await result, {'id': 'agent-new', 'name': 'Product-QA-Bot'});
-    expect(find.text('Create Agent'), findsNothing);
+    expect(find.text('Create agent'), findsNothing);
   });
 
   testWidgets('OpenCode creation scrolls to and submits the last live model', (
@@ -415,8 +407,8 @@ void main() {
     await t.tap(last);
     await t.pumpAndSettle();
     expect(find.text('Fixture Model 39'), findsOneWidget);
-    await t.ensureVisible(find.text('Create Agent').last);
-    await t.tap(find.text('Create Agent').last);
+    await t.ensureVisible(find.text('Create').last);
+    await t.tap(find.text('Create').last);
     await t.pumpAndSettle();
     expect(w.posts.single['data']['formValues']['model'], 'fixture-model-39');
     expect(await result, {'id': 'agent-new', 'name': 'Model-Scroll-Check'});
@@ -453,7 +445,7 @@ void main() {
       ),
       findsOneWidget,
     );
-    await t.tap(find.widgetWithText(RaftButton, 'Create Agent'));
+    await t.tap(find.widgetWithText(RaftButton, 'Create'));
     await t.pumpAndSettle();
     expect(
       (w.posts.single['data'] as Map)['formValues']['model'],
@@ -488,7 +480,7 @@ void main() {
     expect(find.text('Fixture Model 38'), findsNothing);
     await t.tap(find.text('Fixture Model 39'));
     await t.pumpAndSettle();
-    await t.tap(find.widgetWithText(RaftButton, 'Create Agent'));
+    await t.tap(find.widgetWithText(RaftButton, 'Create'));
     await t.pumpAndSettle();
     expect(w.posts.single['data']['formValues']['model'], 'fixture-model-39');
   });

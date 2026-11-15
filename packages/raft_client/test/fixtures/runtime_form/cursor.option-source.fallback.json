@@ -1,0 +1,27 @@
+{
+  "protocolVersion": 1,
+  "runtimeId": "cursor",
+  "schemaVersion": "cursor.create.v1",
+  "sourceId": "model",
+  "kind": "select",
+  "pointer": "/model",
+  "options": [
+    {
+      "value": "composer-2-fast",
+      "label": "Composer 2 Fast"
+    },
+    {
+      "value": "composer-2",
+      "label": "Composer 2"
+    },
+    {
+      "value": "auto",
+      "label": "Auto"
+    }
+  ],
+  "defaultValue": "composer-2-fast",
+  "customValueAllowed": true,
+  "status": "fallback",
+  "reason": "missing_config",
+  "retryable": false
+}

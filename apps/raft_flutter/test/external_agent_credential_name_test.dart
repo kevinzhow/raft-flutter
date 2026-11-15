@@ -73,7 +73,7 @@ class _Client extends RaftClient {
 }
 
 void main() {
-  testWidgets('Generate Token names the credential "Created on this page"', (
+  testWidgets('Create credential names the credential "Created on this page"', (
     tester,
   ) async {
     SharedPreferences.setMockInitialValues({});
@@ -102,7 +102,9 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const ValueKey('external-token-generate')));
+    await tester.tap(
+      find.byKey(const ValueKey('external-agent-create-credential')),
+    );
     await tester.pumpAndSettle();
     expect(c.posts, [
       {'name': 'Created on this page'},

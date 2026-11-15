@@ -1,0 +1,72 @@
+{
+  "protocolVersion": 2,
+  "runtimeId": "opencode",
+  "schemaVersion": "opencode.create.v1",
+  "dataSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "model"
+    ],
+    "properties": {
+      "model": {
+        "type": "string",
+        "title": "Model",
+        "minLength": 1,
+        "x-optionSource": "model"
+      },
+      "envVars": {
+        "type": "object",
+        "title": "Environment Variables",
+        "additionalProperties": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "uiSchema": {
+    "order": [
+      "model",
+      "envVars"
+    ],
+    "layout": {
+      "advanced": [
+        "/envVars"
+      ]
+    },
+    "visibility": [],
+    "localization": {
+      "model": {
+        "label": "Model",
+        "hint": "Models available from this computer's OpenCode configuration."
+      },
+      "envVars": {
+        "label": "Environment Variables",
+        "hint": "These will be injected into the runtime command environment."
+      }
+    }
+  },
+  "capabilities": {
+    "providerKinds": [],
+    "writeOnlyPointers": [],
+    "forbiddenPointers": [
+      "/hostUserState"
+    ]
+  },
+  "optionSources": {
+    "model": {
+      "protocolVersion": 1,
+      "runtimeId": "opencode",
+      "schemaVersion": "opencode.create.v1",
+      "sourceId": "model",
+      "kind": "select",
+      "pointer": "/model"
+    }
+  },
+  "values": {
+    "model": "deepseek/deepseek-v4-pro",
+    "envVars": {
+      "EXAMPLE_FLAG": "1"
+    }
+  }
+}

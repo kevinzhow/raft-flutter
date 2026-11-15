@@ -37,6 +37,7 @@ class RaftComboboxItem {
     this.keywords,
     this.group,
     this.enabled = true,
+    this.wrapDescription = false,
   });
 
   /// What [RaftComboboxPanel.onSelected] receives (the option's value).
@@ -57,6 +58,11 @@ class RaftComboboxItem {
   /// Heading above the first row of each run of equal groups.
   final String? group;
   final bool enabled;
+
+  /// Opt in: the [description] wraps instead of ending in an ellipsis. For a
+  /// disabled row whose description is the reason it cannot be picked (Web
+  /// `RuntimeChoiceCombobox`: a disabled option's description wraps).
+  final bool wrapDescription;
 }
 
 /// Case-insensitive match on what a person may remember: the name, the stored
@@ -437,9 +443,22 @@ class _RaftComboboxPanelState extends State<RaftComboboxPanel> {
                                                   ),
                                                   Text(
                                                     second,
-                                                    maxLines: 1,
+                                                    maxLines:
+                                                        choices[i]
+                                                                .wrapDescription &&
+                                                            choices[i]
+                                                                    .description !=
+                                                                null
+                                                        ? null
+                                                        : 1,
                                                     overflow:
-                                                        TextOverflow.ellipsis,
+                                                        choices[i]
+                                                                .wrapDescription &&
+                                                            choices[i]
+                                                                    .description !=
+                                                                null
+                                                        ? TextOverflow.visible
+                                                        : TextOverflow.ellipsis,
                                                     style: TextStyle(
                                                       fontSize: 12,
                                                       height: 16 / 12,

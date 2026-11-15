@@ -71,14 +71,6 @@ class RaftCindySetupScreen extends StatelessWidget {
                   raftText(context, 'Meet Cindy'),
                   style: style(20, 28, FontWeight.w700),
                 ),
-                const SizedBox(height: 4),
-                RaftCssText(
-                  raftText(
-                    context,
-                    'Cindy is the onboarding agent that knows Raft inside out.',
-                  ),
-                  style: style(12, 20, FontWeight.w400, color: muted),
-                ),
               ],
             ),
           ),

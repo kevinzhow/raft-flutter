@@ -103,8 +103,7 @@ void main() {
         home: Scaffold(
           body: Builder(
             builder: (context) => TextButton(
-              onPressed: () =>
-                  showFleetRegistration(context, w, computers: true),
+              onPressed: () => showFleetRegistration(context, w),
               child: const Text('Start registration'),
             ),
           ),

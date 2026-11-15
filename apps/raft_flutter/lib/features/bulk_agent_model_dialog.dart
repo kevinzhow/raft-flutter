@@ -5,10 +5,11 @@ import 'package:flutter/material.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import '../data/runtime_account_usage.dart';
+import '../data/runtime_config.dart' show runtimeSupportsReasoning;
 import '../data/workspace_controller.dart';
 import 'agent_metadata_projection.dart';
 import 'agent_runtime_catalog.dart';
-import 'agent_runtime_draft.dart';
+import 'agent_runtime_models.dart';
 import 'bulk_agent_model_change.dart';
 import 'bulk_model_step_body.dart';
 import 'management_support.dart';
@@ -121,6 +122,7 @@ class _BulkAgentModelDialogState extends State<BulkAgentModelDialog> {
   late String? reasoningChoice = widget.retry?.target.reasoning;
   _Step step = _Step.choose;
   RuntimeModelSource source = const RuntimeModelIdle();
+  RuntimeModelFreshness freshness = RuntimeModelFreshness.ok;
   var sourceTicket = 0;
   bool checking = false;
   final allowed = <String, bool>{};
@@ -185,22 +187,25 @@ class _BulkAgentModelDialogState extends State<BulkAgentModelDialog> {
     final key = 'bulk-model:${widget.machine['id']}:$runtime:models';
     final cached = readPageSnapshot(w, key);
     final at = cached?['at'];
+    // Web `sharedRuntimeModelSource`: only a fresh live list is reused; a
+    // stale or unavailable answer asks again.
     if (cached?['source'] is RuntimeModelLive &&
         at is DateTime &&
         _now().difference(at).inSeconds < 60) {
       source = cached!['source'] as RuntimeModelLive;
+      freshness = RuntimeModelFreshness.ok;
       return;
     }
     source = runtimeModelLoadingFor(runtime);
-    final Future<RuntimeModelSource> pending;
-    if (cached?['pending'] case final Future<RuntimeModelSource> existing) {
+    final Future<RuntimeModelLoad> pending;
+    if (cached?['pending'] case final Future<RuntimeModelLoad> existing) {
       pending = existing;
     } else {
-      late final Future<RuntimeModelSource> request;
+      late final Future<RuntimeModelLoad> request;
       request = (() async {
-        RuntimeModelSource next;
+        RuntimeModelLoad next;
         try {
-          next = parseRuntimeModelSourcePayload(
+          next = parseRuntimeModelLoad(
             await Future.sync(
               () => w.query(
                 '/servers/${w.server!.id}/machines/${widget.machine['id']}/runtime-models/$selectedRuntime',
@@ -208,13 +213,17 @@ class _BulkAgentModelDialogState extends State<BulkAgentModelDialog> {
             ),
           );
         } catch (_) {
-          next = const RuntimeModelError();
+          next = (
+            source: const RuntimeModelError(),
+            freshness: RuntimeModelFreshness.ok,
+          );
         }
         if (identity == pageIdentity(w) &&
             identical(readPageSnapshot(w, key)?['pending'], request)) {
+          final reusable = runtimeModelLoadReusable(next);
           writePageSnapshot(w, key, identity, {
-            if (next is RuntimeModelLive) 'source': next,
-            if (next is RuntimeModelLive) 'at': _now(),
+            if (reusable) 'source': next.source,
+            if (reusable) 'at': _now(),
           });
         }
         return next;
@@ -224,13 +233,31 @@ class _BulkAgentModelDialogState extends State<BulkAgentModelDialog> {
     }
     unawaited(
       pending.then((next) {
-        if (current && ticket == sourceTicket) setState(() => source = next);
+        if (current && ticket == sourceTicket) {
+          setState(() {
+            source = next.source;
+            freshness = next.freshness;
+          });
+        }
       }),
     );
   }
 
   List<RuntimeModelInfo> get models =>
       projectRuntimeModels(runtime, source).models;
+
+  /// `projectRuntimeModelSourcePresentation().unavailable`: the live list's
+  /// disabled entries that no usable model carries.
+  List<RuntimeModelUnavailable> get unavailableModels {
+    final src = source;
+    if (src is! RuntimeModelLive) return const [];
+    final usable = {for (final m in models) m.id};
+    return [
+      for (final m in src.unavailable)
+        if (!usable.contains(m.id)) m,
+    ];
+  }
+
   String get model {
     if (models.any((m) => m.id == modelChoice)) return modelChoice;
     final preferred = source is RuntimeModelLive
@@ -247,7 +274,7 @@ class _BulkAgentModelDialogState extends State<BulkAgentModelDialog> {
       BulkModelTarget(
         runtime,
         model,
-        supportsRuntimeReasoning(runtime)
+        runtimeSupportsReasoning(runtime)
             ? reconcileReasoningEffort(runtime, model, reasoningChoice, models)
             : null,
       );
@@ -434,13 +461,23 @@ class _BulkAgentModelDialogState extends State<BulkAgentModelDialog> {
               placeholder: 'Loading models…',
               options: [
                 for (final m in models) RaftAgentSelectOption(m.id, m.label),
+                // Models this Computer's runtime listed as disabled come last,
+                // greyed and not selectable.
+                for (final m in unavailableModels)
+                  RaftAgentSelectOption(
+                    m.id,
+                    m.label.isEmpty ? m.id : m.label,
+                    enabled: false,
+                    group: raftText(context, 'Not available on this computer'),
+                    description: m.reason.isEmpty ? null : m.reason,
+                  ),
               ],
               onChanged: checking
                   ? null
                   : (id) => setState(() => modelChoice = id),
             ),
           ),
-          if (supportsRuntimeReasoning(runtime) && model.isNotEmpty) ...[
+          if (runtimeSupportsReasoning(runtime) && model.isNotEmpty) ...[
             const SizedBox(height: RaftSpace.x4),
             field(
               'Reasoning',

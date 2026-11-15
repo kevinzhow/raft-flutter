@@ -1,0 +1,31 @@
+{
+  "protocolVersion": 1,
+  "runtimeId": "gemini",
+  "schemaVersion": "gemini.edit.v1",
+  "sourceId": "model",
+  "kind": "select",
+  "pointer": "/model",
+  "options": [
+    {
+      "value": "default",
+      "label": "Configured Default / Auto"
+    },
+    {
+      "value": "gemini-3.1-pro-preview",
+      "label": "Gemini 3.1 Pro (Preview)"
+    },
+    {
+      "value": "gemini-3-flash-preview",
+      "label": "Gemini 3 Flash (Preview)"
+    },
+    {
+      "value": "gemini-2.5-pro",
+      "label": "Gemini 2.5 Pro"
+    },
+    {
+      "value": "gemini-2.5-flash",
+      "label": "Gemini 2.5 Flash"
+    }
+  ],
+  "defaultValue": "default"
+}

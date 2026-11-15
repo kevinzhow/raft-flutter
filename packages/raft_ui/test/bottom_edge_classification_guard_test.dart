@@ -20,6 +20,8 @@ const _interior = {
   'RaftAuthSessionFooter': 'The auth-page frame owns safe and keyboard insets.',
   'RaftCindySessionFooter': 'The setup page/card owns its outer safe boundary.',
   'RaftAgentDialogFooter': 'The presented form/dialog frame owns its insets.',
+  'RaftExternalSetupFooter':
+      'The create-external-agent dialog frame owns its insets.',
   'RaftDialogFooter': 'The dialog presentation frame owns its insets.',
 };
 

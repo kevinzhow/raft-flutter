@@ -1,38 +1,29 @@
-// The agent profile's "Edit runtime config" modal (Web AgentDetailPanel
-// `editingRuntimeConfig` + RuntimeConfigFields). Web picks the editor by
-// capability: the protocol-v2 server form whenever the runtime's admission
-// option carries `runtimeFormV2.protocolVersion === 2` (Web 1.24
-// CreateAgentDialog.tsx:433, AgentProfileInfo.tsx:206; the
-// `runtime_form_v2_web` flag is retired); otherwise it presents the
-// legacy Runtime / Provider / Model / Reasoning / Mode fields, which this file
-// ports for every runtime except Built-in Pi, Pi and Kimi Code (those keep
-// the v2 form here). Saving follows Web 1.24 (AgentProfileInfo.tsx
-// `saveRuntimeFormV2Edit`): nothing changed closes; only a stopped agent's
-// runtime switch is confirmed (`restartMode: "session"`); everything else is
-// saved without `restartMode` and the server applies it when the agent is next
-// idle, which a toast says (agent_runtime_config_apply.dart).
+// The agent profile's "Edit runtime config" modal (Web AgentProfileInfo
+// `editingRuntimeConfig` + RuntimeConfigFields). Web 1.24 has one editor: the
+// server-described protocol-v2 form, picked by the runtime's admission row
+// (`runtimeFormV2.protocolVersion === 2`), under a Runtime select. A runtime
+// whose row has no marker shows the form-unavailable notice and cannot be
+// saved. Saving follows Web 1.24 (`saveRuntimeFormV2Edit`): nothing changed
+// closes; only a stopped agent's runtime switch is confirmed
+// (`restartMode: "session"`); everything else is saved without `restartMode`
+// and the server applies it when the agent is next idle, which a toast says
+// (agent_runtime_config_apply.dart).
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:raft_client/raft_client.dart' show RaftAgentFields;
 import 'package:raft_ui/raft_ui.dart';
 
-import '../data/runtime_error.dart'
-    show runtimeLookupDisplayForReason, runtimeLookupText;
 import '../data/user_error.dart';
 import '../data/workspace_controller.dart';
 import 'agent_metadata_projection.dart' show agentRowName;
+import 'agent_model_limits_warning.dart';
 import 'agent_runtime_catalog.dart';
 import 'agent_runtime_config_apply.dart';
 import 'agent_runtime_labels.dart';
-import 'agent_runtime_draft.dart';
-import 'agent_runtime_model_field.dart';
-import 'model_label_catalog.dart';
-import 'model_label_listener.dart';
-import 'management_support.dart'
-    show pageIdentity, readPageSnapshot, writePageSnapshot;
 import 'private_route_guard.dart';
-import 'runtime_options_request.dart';
 import 'runtime_form_dialog.dart';
+import 'runtime_options_request.dart';
 
 /// A confirmation the profile shows after the modal closes (Web
 /// `requestConfirm` closes the editor first).
@@ -91,18 +82,6 @@ Future<RuntimeEditorConfirm?> showAgentRuntimeEditor(
   }
 }
 
-/// `formatList(labels, { type: "conjunction" })`.
-String runtimeEditorList(BuildContext context, List<String> labels) {
-  if (labels.length < 2) return labels.join();
-  final zh = Localizations.localeOf(context).languageCode == 'zh';
-  if (zh) {
-    return '${labels.take(labels.length - 1).join('、')}和${labels.last}';
-  }
-  return labels.length == 2
-      ? '${labels.first} and ${labels.last}'
-      : '${labels.take(labels.length - 1).join(', ')}, and ${labels.last}';
-}
-
 class AgentRuntimeEditor extends StatefulWidget {
   const AgentRuntimeEditor({
     super.key,
@@ -123,11 +102,8 @@ class AgentRuntimeEditor extends StatefulWidget {
   State<AgentRuntimeEditor> createState() => _AgentRuntimeEditorState();
 }
 
-class _AgentRuntimeEditorState extends State<AgentRuntimeEditor>
-    with ModelLabelCatalogListener<AgentRuntimeEditor> {
+class _AgentRuntimeEditorState extends State<AgentRuntimeEditor> {
   WorkspaceController get w => widget.controller;
-  @override
-  WorkspaceController get modelLabelWorkspace => w;
   Map<String, dynamic> get agent => widget.agent;
   String get agentId => '${agent['id']}';
   String? get machineId =>
@@ -146,23 +122,28 @@ class _AgentRuntimeEditorState extends State<AgentRuntimeEditor>
       openingAuthority == workspaceAuthority(w) &&
       (widget.authorized?.call() ?? true);
 
-  late final RuntimeDraft base = RuntimeDraft.hydrate(agent);
-  late final RuntimeDraft draft = base.copy();
-  late final String agentRuntime = base.runtime;
+  /// The agent's saved runtime; the draft is only which runtime the form is
+  /// for (Web `draftRuntime`): the form owns every other drafted value.
+  late final String agentRuntime = _savedRuntime();
+  late String draftRuntime = agentRuntime;
+  bool get runtimeSwitched => draftRuntime != agentRuntime;
 
-  // Admission chooses the editor protocol. Wait for this opening's read so
-  // a default or cached legacy form cannot flash before the v2 form loads.
-  String _modelsKey(String machine, String runtime) =>
-      'agent-runtime-editor:$machine:$runtime:models';
+  /// `GET /agents/:id/runtime-options`; null until it arrives.
   List<Map<String, dynamic>>? admissions;
-  bool initialModelsLoading = true;
-  RuntimeModelSource source = const RuntimeModelIdle();
-  int sourceTicket = 0;
-  bool moreOpen = false, saving = false;
-  // ignore: raft_lints/avoid_imperative_notice_state -- Cleared at the start of every Save (legacy and protocol-v2) and gone with the dialog.
+  bool saving = false;
+  // ignore: raft_lints/avoid_imperative_notice_state -- Cleared at the start of every Save and gone with the dialog.
   String? saveError;
 
   RuntimeFormController? form;
+
+  String _savedRuntime() {
+    final stored = agent['runtimeConfig'];
+    final fromConfig = stored is Map ? stored['runtime'] : null;
+    for (final value in [fromConfig, agent['runtime']]) {
+      if (value is String && value.trim().isNotEmpty) return value.trim();
+    }
+    return 'claude';
+  }
 
   /// `isActive`.
   bool get isActive {
@@ -176,7 +157,6 @@ class _AgentRuntimeEditorState extends State<AgentRuntimeEditor>
     super.initState();
     w.addListener(authorityChanged);
     unawaited(loadAdmissions());
-    loadModels(initial: true);
   }
 
   @override
@@ -184,7 +164,7 @@ class _AgentRuntimeEditorState extends State<AgentRuntimeEditor>
     super.didChangeDependencies();
     // A form's first read carries the display language, which is not
     // available in initState.
-    if (admissions != null) createForm();
+    if (admissions != null) ensureForm();
   }
 
   @override
@@ -200,7 +180,7 @@ class _AgentRuntimeEditorState extends State<AgentRuntimeEditor>
 
   // ------------------------------------------------------------- loading
 
-  /// `useExistingAgentRuntimeOptions`: fails closed to an empty list.
+  /// `useExistingAgentRuntimeSelectionOptions`: fails closed to an empty list.
   Future<void> loadAdmissions() async {
     List<Map<String, dynamic>> options = const [];
     try {
@@ -216,141 +196,76 @@ class _AgentRuntimeEditorState extends State<AgentRuntimeEditor>
     } catch (_) {}
     if (!current) return;
     setState(() => admissions = options);
-    syncForm();
+    ensureForm();
   }
 
   Map<String, dynamic>? admission(String runtime) =>
       admissions?.where((o) => o['runtimeId'] == runtime).firstOrNull;
 
-  /// Web `v2EditEligible`: the runtime's v2 marker, the draft still on the
-  /// agent's saved runtime. Runtimes without a legacy form stay v2.
-  bool get v2Active {
-    if (!legacyRuntimeEditorSupports(agentRuntime)) return true;
-    final option = admission(agentRuntime);
-    final marker = option?['runtimeFormV2'];
-    return draft.runtime == agentRuntime &&
-        marker is Map &&
-        marker['protocolVersion'] == 2;
+  /// Web `draftRuntimeHasFormV2`: the runtime's admission row carries the v2
+  /// marker (and the Computer is known). Without it the form is unavailable.
+  bool hasFormV2(String runtime) {
+    final marker = admission(runtime)?['runtimeFormV2'];
+    return machineId != null && marker is Map && marker['protocolVersion'] == 2;
   }
 
-  void createForm() {
-    if (v2Active && form == null && machineId != null) {
-      form = RuntimeFormController(
+  /// The form belongs to the draft runtime: the agent's own values for its
+  /// saved runtime, the create form of another one (a runtime switch).
+  void ensureForm() {
+    if (form == null || form!.runtimeId != draftRuntime) {
+      final old = form;
+      final next = RuntimeFormController(
         w,
-        machineId: machineId!,
-        runtimeId: agentRuntime,
-        agentId: agentId,
+        machineId: machineId ?? '',
+        runtimeId: draftRuntime,
+        agentId: runtimeSwitched ? null : agentId,
         valid: () => current,
         language: runtimeFormLanguageTag(context),
-      )..load();
+      );
+      form = next;
+      // Web `RUNTIME_FORM_V2_UNAVAILABLE`: no marker, nothing to load.
+      if (hasFormV2(draftRuntime)) {
+        next.load();
+      } else {
+        next.markUnavailable();
+      }
+      if (old != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) => old.dispose());
+      }
     }
-  }
-
-  void syncForm() {
-    createForm();
     if (mounted) setState(() {});
-  }
-
-  /// `useRuntimeModels(agent.machineId, draftRuntime)`.
-  void loadModels({bool initial = false}) {
-    final id = machineId;
-    final runtime = draft.runtime;
-    if (id == null || runtime.isEmpty || w.server == null) {
-      source = const RuntimeModelIdle();
-      if (initial) initialModelsLoading = false;
-      return;
-    }
-    final ticket = ++sourceTicket;
-    final key = _modelsKey(id, runtime), identity = pageIdentity(w);
-    final cached = readPageSnapshot(w, key)?['source'];
-    source = cached is RuntimeModelLive
-        ? cached
-        : runtimeModelLoadingFor(runtime);
-    unawaited(() async {
-      RuntimeModelSource next;
-      try {
-        next = parseRuntimeModelSourcePayload(
-          await w.client.get(
-            '/servers/${w.server!.id}/machines/$id/runtime-models/$runtime',
-          ),
-        );
-      } catch (_) {
-        next = const RuntimeModelError();
-      }
-      if (!current || ticket != sourceTicket) return;
-      if (next is RuntimeModelLive) {
-        writePageSnapshot(w, key, identity, {'source': next});
-      }
-      setState(() {
-        source = next;
-        if (initial) initialModelsLoading = false;
-      });
-    }());
   }
 
   // ---------------------------------------------------------- derived
 
-  ({List<RuntimeModelInfo> models, bool loading, bool live}) get projection =>
-      projectRuntimeModels(draft.runtime, source);
+  /// Web `v2EditChanged`: a runtime switch is a change by itself.
+  bool get changed => runtimeSwitched || (form?.valuesChanged ?? false);
 
-  bool get changed => draft.changedFrom(base);
-
+  /// The runtime must still be selectable here: its Computer capability can
+  /// go away mid-edit (`draftRuntimeCanSelect`).
   bool get runtimeCanSelect =>
-      admission(draft.runtime)?['canSelectInThisContext'] == true;
+      admission(draftRuntime)?['canSelectInThisContext'] == true;
 
-  bool get modelSourceInvalid => !runtimeModelSelectionIsRunnable(
-    runtime: draft.runtime,
-    source: source,
-    model: draft.model,
-    customMode: draft.customModelMode,
-    customAllowed: supportsRuntimeCustomModelName(draft.runtime),
-  );
-
-  bool get saveDisabled => runtimeConfigSaveDisabled(
-    saving: saving,
-    changed: changed,
-    runtimeCanSelect: runtimeCanSelect,
-    providerApiUrlInvalid: draft.apiUrlInvalid,
-    providerApiKeyInvalid: draft.apiKeyInvalid,
-    customModelInvalid: draft.customModelInvalid,
-    modelSourceInvalid: modelSourceInvalid,
-  );
+  /// Web `v2EditSaveDisabled`.
+  bool get saveDisabled {
+    final f = form;
+    return saving ||
+        !runtimeCanSelect ||
+        f == null ||
+        f.loading ||
+        f.definition == null ||
+        !changed ||
+        f.reentryBlocked;
+  }
 
   // ----------------------------------------------------------- changes
 
+  /// Web `changeDraftRuntime`: the form's draft belongs to the form it was
+  /// made in, so the other runtime loads its own.
   void changeRuntime(String id) {
-    final next = RuntimeDraft(
-      runtime: id,
-      model: defaultRuntimeModel(id),
-      envVars: draft.envVars,
-    );
-    draft
-      ..runtime = next.runtime
-      ..model = next.model
-      ..customModelMode = false
-      ..providerCustom = false
-      ..providerApiUrl = ''
-      ..providerApiKey = ''
-      ..fastMode = false
-      ..command = ''
-      ..reasoning = supportsRuntimeReasoning(id)
-          ? reconcileReasoningEffort(id, next.model, null, const [])
-          : null;
-    loadModels();
-    setState(() {});
-    syncForm();
-  }
-
-  void changeModel(String model) {
-    draft
-      ..model = model
-      ..reasoning = reconcileReasoningEffort(
-        draft.runtime,
-        model,
-        draft.reasoning,
-        projection.models,
-      );
-    setState(() {});
+    if (id == draftRuntime) return;
+    draftRuntime = id;
+    ensureForm();
   }
 
   // -------------------------------------------------------------- save
@@ -414,97 +329,19 @@ class _AgentRuntimeEditorState extends State<AgentRuntimeEditor>
     }
   }
 
-  String reasoningLabel(BuildContext context) => draft.reasoning == null
-      ? raftText(context, 'Default')
-      : (reasoningEfforts
-                .where((e) => e.$1 == draft.reasoning)
-                .firstOrNull
-                ?.$2 ??
-            draft.reasoning!);
-
+  /// Web `handleSaveRuntimeConfiguration` + `saveRuntimeFormV2Edit`.
   Future<void> submit() async {
-    // Web handleSaveRuntimeConfiguration clears the banner for both forms.
     setState(() => saveError = null);
-    if (v2Active) return submitV2();
-    if (!changed) return widget.onClose();
-    if (saveDisabled) return;
-    final context = this.context;
-    String tr(String s) => raftText(context, s);
-    final runtime = draft.runtime;
-    final config = draft.buildRuntimeConfig();
-    final fields = {
-      'runtime': runtime,
-      'model': draft.model,
-      'runtimeConfig': config,
-      'reasoningEffort': supportsRuntimeReasoning(runtime)
-          ? draft.reasoning
-          : null,
-    };
-    final runtimeChanged = runtime != base.runtime;
-    final customChanged = draft.customModelMode != base.customModelMode;
-    // A stopped agent's runtime switch is confirmed: it starts on a new session.
-    if (runtimeChanged && !isActive) {
-      final from = runtimeDisplayName(base.runtime);
-      final to = runtimeDisplayName(runtime);
-      widget.onClose(
-        RuntimeEditorConfirm(
-          title: tr('Switch runtime config'),
-          message: raftFormat(
-            context,
-            'This will switch the runtime from {from} to {to}.',
-            {'from': from, 'to': to},
-          ),
-          confirmLabel: tr('Save runtime change'),
-          loadingLabel: tr('Applying…'),
-          variant: RaftButtonRecipeVariant.warning,
-          operation: () async {
-            await patch(fields, restartMode: 'session');
-          },
-        ),
-      );
-      return;
-    }
-    // Web reconciler step 11c: a running agent is not interrupted. Saved
-    // without `restartMode`, the change applies at its next idle point.
-    await saveAndAnnounce(
-      () async {
-        try {
-          return await patch(fields);
-        } catch (e) {
-          if (mounted) {
-            setState(
-              () => saveError = userErrorText(
-                e,
-                fallback: 'Runtime config is invalid.',
-                where: 'agent runtime save',
-              ),
-            );
-          }
-          rethrow;
-        }
-      },
-      newSession:
-          runtimeConfigStartsNewSession(
-            runtimeSwitched: runtimeChanged,
-            runtime: runtime,
-            model: draft.model,
-            initialModel: base.model,
-          ) ||
-          (runtime == 'codex' && customChanged),
-    );
-  }
-
-  /// Web `saveRuntimeFormV2Edit`.
-  Future<void> submitV2() async {
     final f = form;
     if (f == null || f.definition == null || saving) return;
-    if (!f.valuesChanged) return widget.onClose();
+    if (!changed) return widget.onClose();
     // Field errors are already shown beside the fields; nothing to send yet.
     if (f.validate().isNotEmpty) return;
     final fields = f.submission;
-    Future<dynamic> save() async {
+    final context = this.context;
+    Future<dynamic> save({String? restartMode}) async {
       try {
-        return await patch(fields);
+        return await patch(fields, restartMode: restartMode);
       } catch (e) {
         if (mounted) {
           // Web: `data.error ?? runtimeConfigInvalid`, and each `issues`
@@ -517,7 +354,7 @@ class _AgentRuntimeEditorState extends State<AgentRuntimeEditor>
             () => saveError = userErrorText(
               e,
               fallback: 'Runtime config is invalid.',
-              where: 'agent runtime v2 save',
+              where: 'agent runtime save',
             ),
           );
         }
@@ -525,113 +362,86 @@ class _AgentRuntimeEditorState extends State<AgentRuntimeEditor>
       }
     }
 
+    // A stopped agent's runtime switch is confirmed: it starts on a new
+    // session.
+    if (runtimeSwitched && !isActive) {
+      String tr(String s) => raftText(context, s);
+      widget.onClose(
+        RuntimeEditorConfirm(
+          title: tr('Switch runtime config'),
+          message: raftFormat(
+            context,
+            'This will switch the runtime from {from} to {to}.',
+            {
+              'from': runtimeDisplayNameOf(agentRuntime),
+              'to': runtimeDisplayNameOf(draftRuntime),
+            },
+          ),
+          confirmLabel: tr('Save runtime change'),
+          loadingLabel: tr('Applying…'),
+          variant: RaftButtonRecipeVariant.warning,
+          operation: () async {
+            await save(restartMode: 'session');
+          },
+        ),
+      );
+      return;
+    }
     // A running agent is not interrupted (Web reconciler step 11c): the change
-    // applies at its next idle point and a toast says so. The v2 form cannot
-    // switch the runtime; a Codex model change starts a new session.
+    // applies at its next idle point and a toast says so. A runtime switch or
+    // a Codex model change starts a new session.
     await saveAndAnnounce(
       save,
-      newSession: agentRuntime == 'codex' && f.changedKeys.contains('model'),
+      newSession:
+          runtimeSwitched ||
+          (draftRuntime == 'codex' && f.changedKeys.contains('model')),
     );
   }
 
   // ------------------------------------------------------------- build
 
-  String runtimeDisplayName(String id) =>
-      runtimeInfos.where((r) => r.id == id).firstOrNull?.name ?? id;
-
-  /// `formatRuntimeLabelWithStatus` + `formatRuntimeAvailabilitySuffix`.
-  String runtimeLabel(BuildContext context, String id) {
-    var label = runtimeDisplayName(id);
-    if (isRuntimeDeprecated(id)) {
+  /// `formatRuntimeLabelWithStatus` + `formatRuntimeAvailabilitySuffix`: the
+  /// "(deprecated)" status is this server's answer for the row.
+  String runtimeLabel(BuildContext context, Map<String, dynamic> option) {
+    final id = '${option['runtimeId']}';
+    var label = runtimeDisplayNameOf(id);
+    if (option['admissionReason'] == 'deprecated') {
       label += raftText(context, ' (deprecated)');
     }
-    label += switch (runtimeAvailabilityKind(id, machineRuntimes)) {
-      'comingSoon' => raftText(context, ' (coming soon)'),
-      'updateComputer' => raftText(context, ' (update required)'),
-      'notInstalled' => raftText(context, ' (not installed)'),
-      _ => '',
-    };
+    final info = runtimeInfos.where((r) => r.id == id).firstOrNull;
+    if (info != null && !info.supported) {
+      label += raftText(context, ' (coming soon)');
+    } else if (info != null && !machineRuntimes.contains(id)) {
+      label += raftText(
+        context,
+        info.binary.isEmpty ? ' (update required)' : ' (not installed)',
+      );
+    }
     return label;
   }
 
-  List<RaftAgentSelectOption<String>> runtimeOptions(BuildContext context) => [
-    for (final option in admissions ?? const <Map<String, dynamic>>[])
-      if (existingAgentRuntimeOptions(base.runtime)
-              .any((r) => r.id == option['runtimeId']) &&
-          (legacyRuntimeEditorSupports('${option['runtimeId']}') ||
-              option['runtimeId'] == draft.runtime))
+  /// Web `runtimePickerRows`: the server's rows for runtimes this build
+  /// names, the agent's own runtime first.
+  List<RaftAgentSelectOption<String>> runtimeOptions(BuildContext context) {
+    final rows = [
+      for (final option in admissions ?? const <Map<String, dynamic>>[])
+        if (runtimeInfos.any((r) => r.id == option['runtimeId'] && r.supported))
+          option,
+    ];
+    rows.sort((a, b) {
+      int rank(Map<String, dynamic> o) =>
+          o['runtimeId'] == agentRuntime ? 0 : 1;
+      return rank(a).compareTo(rank(b));
+    });
+    return [
+      for (final option in rows)
         RaftAgentSelectOption(
           '${option['runtimeId']}',
-          runtimeLabel(context, '${option['runtimeId']}'),
+          runtimeLabel(context, option),
           enabled: option['canSelectInThisContext'] == true,
         ),
-  ];
-
-  /// `runtimeModelSourceStatus`.
-  String? sourceStatus(BuildContext context) {
-    final runtimeName = runtimeDisplayName(draft.runtime);
-    String fmt(String s) =>
-        raftFormat(context, s, {'runtimeName': runtimeName});
-    return switch (source) {
-      RuntimeModelLive() => null,
-      RuntimeModelLoading() => raftText(
-        context,
-        'Checking models on this Computer…',
-      ),
-      RuntimeModelIdle() => raftText(
-        context,
-        'Choose an online computer to check available models.',
-      ),
-      RuntimeModelNonLive(kind: 'missing_config') => fmt(
-        '{runtimeName} needs configuration on this Computer before its models can be loaded.',
-      ),
-      RuntimeModelNonLive(kind: 'no_models') => fmt(
-        '{runtimeName} is configured, but this Computer reported no available models.',
-      ),
-      RuntimeModelNonLive() =>
-        runtimeIgnoresModel(draft.runtime)
-            ? fmt(
-                '{runtimeName} uses its configured default; no model selection is required.',
-              )
-            : fmt(
-                '{runtimeName} does not report a model catalog from this Computer.',
-              ),
-      RuntimeModelError(:final code, :final reason) => switch (code) {
-        'runtime_not_authenticated' =>
-          draft.runtime == 'grok'
-              ? raftText(
-                  context,
-                  'Grok CLI is not signed in. Run grok login on this computer, then retry.',
-                )
-              : fmt(
-                  '{runtimeName} requires sign-in on this Computer. Sign in, then retry.',
-                ),
-        // Only a confirmed miss says "install it"; a timeout, a permission
-        // denial, an unresolved failure and an old daemon (no reason) each
-        // get their own wording.
-        'runtime_not_found' => fmt(
-          runtimeLookupText(runtimeLookupDisplayForReason(reason)),
-        ),
-        'detect_timeout' => fmt(
-          '{runtimeName} model discovery timed out. Check the runtime on this Computer, then retry.',
-        ),
-        'protocol_unsupported' => fmt(
-          'This version of {runtimeName} does not support the model discovery protocol. Update it, then retry.',
-        ),
-        'computer_offline' => raftText(
-          context,
-          'This Computer is offline. Reconnect it, then retry.',
-        ),
-        _ => raftText(context, 'Could not load models from this computer.'),
-      },
-    };
+    ];
   }
-
-  bool get sourceCanRetry => switch (source) {
-    RuntimeModelNonLive(kind: 'missing_config' || 'no_models') => true,
-    RuntimeModelError(:final retryable) => retryable,
-    _ => false,
-  };
 
   @override
   Widget build(BuildContext context) {
@@ -644,51 +454,52 @@ class _AgentRuntimeEditorState extends State<AgentRuntimeEditor>
   }
 
   Widget buildCard(BuildContext context) {
-    final t = RaftTokens.of(context);
     String tr(String s) => raftText(context, s);
     final f = form;
-    final initialLoading =
-        admissions == null ||
-        (v2Active
-            ? f == null || f.loading && f.definition == null
-            : initialModelsLoading);
+    final formLoading = f != null && f.loading && f.definition == null;
     final Widget fields;
-    if (initialLoading) {
+    if (admissions == null) {
       fields = const RaftAgentFieldNote('Loading runtime configuration…');
-    } else if (v2Active) {
-      fields = f == null
-          ? const RaftAgentFieldNote('Loading runtime configuration…')
-          : RuntimeFormFields(
-              form: f,
-              busy: saving,
-              rowGap: 16,
-              // Web `schema-runtime-unavailable`: a form that did not load (or
-              // went stale twice) says so instead of showing nothing.
-              leading: [
-                if (f.loading && f.definition == null)
-                  const RaftAgentFieldNote('Loading runtime configuration…')
-                else if (f.error != null)
-                  RaftAgentBanner(
-                    key: const ValueKey('runtime-editor-form-error'),
-                    status: RaftAgentBannerStatus.warning,
-                    description: f.error!,
-                    action: 'Retry',
-                    onAction: f.load,
-                  ),
-              ],
-            );
     } else {
-      fields = legacyFields(context, t);
+      final runtimeField = RaftStableField(
+        label: 'Runtime',
+        required: true,
+        child: RaftAgentSelect<String>(
+          key: const ValueKey('runtime-editor-runtime'),
+          value: draftRuntime,
+          unmatchedLabel: runtimeDisplayNameOf(draftRuntime),
+          options: runtimeOptions(context),
+          placeholder: 'Select…',
+          semanticLabel: tr('Runtime'),
+          onChanged: saving ? null : changeRuntime,
+        ),
+      );
+      if (f == null) {
+        fields = runtimeField;
+      } else {
+        fields = RuntimeFormFields(
+          key: ValueKey('runtime-form-$draftRuntime'),
+          form: f,
+          busy: saving,
+          rowGap: raftAgentSectionGap,
+          // Web `RuntimeFormUnavailableNotice`: loading is information, a
+          // failed load a warning with a retry.
+          leading: [
+            runtimeField,
+            if (formLoading)
+              const RaftAgentFieldNote('Loading runtime configuration…')
+            else if (f.error != null)
+              RaftAgentBanner(
+                key: const ValueKey('runtime-editor-form-error'),
+                status: RaftAgentBannerStatus.warning,
+                description: f.error!,
+                action: 'Retry',
+                onAction: f.load,
+              ),
+          ],
+        );
+      }
     }
-    final v2Ready = f != null && f.definition != null;
-    final disabled = v2Active
-        ? saving ||
-              f == null ||
-              f.loading ||
-              f.definition == null ||
-              !f.valuesChanged ||
-              f.reentryBlocked
-        : saveDisabled;
     final footer = RaftAgentDialogFooter(
       children: [
         RaftAgentDialogButton(
@@ -701,9 +512,7 @@ class _AgentRuntimeEditorState extends State<AgentRuntimeEditor>
           label: tr('Save Runtime Config'),
           primary: true,
           size: RaftButtonRecipeSize.md,
-          onPressed: initialLoading || disabled && !(v2Active && !v2Ready)
-              ? null
-              : submit,
+          onPressed: admissions == null || saveDisabled ? null : submit,
         ),
       ],
     );
@@ -718,6 +527,14 @@ class _AgentRuntimeEditorState extends State<AgentRuntimeEditor>
       footer: footer,
       children: [
         fields,
+        // Web `agent.modelDefaultsReported && draftRuntime === "builtin" &&
+        // !v2EditChanged`.
+        if (RaftAgentFields(agent).modelDefaultsReported == true &&
+            draftRuntime == 'builtin' &&
+            !changed) ...[
+          const SizedBox(height: raftAgentSectionGap),
+          const AgentModelLimitsWarning(),
+        ],
         if (saveError != null) ...[
           const SizedBox(height: raftAgentSectionGap),
           // Web `<Banner intent="warning" density="sm" className="font-bold">`.
@@ -731,267 +548,4 @@ class _AgentRuntimeEditorState extends State<AgentRuntimeEditor>
       ],
     );
   }
-
-  /// RuntimeConfigFields legacy arm: Runtime, Provider (Claude), Model,
-  /// Reasoning, Mode and the MORE disclosure (command, environment variables).
-  Widget legacyFields(BuildContext context, RaftTokens t) {
-    String tr(String s) => raftText(context, s);
-    final runtime = draft.runtime;
-    final proj = projection;
-    final customAllowed = supportsRuntimeCustomModelName(runtime);
-    final status = sourceStatus(context);
-    final machineSourceApplies = true;
-    final showHeaderRescan =
-        machineSourceApplies &&
-        (source is RuntimeModelLive || source is RuntimeModelLoading);
-    final modelInfo = proj.models.where((m) => m.id == draft.model).firstOrNull;
-    final suggestionOnly = modelInfo?.verified == 'suggestion_only';
-    final showSuggestion =
-        suggestionOnly ||
-        (!proj.live &&
-            !proj.loading &&
-            proj.models.any((m) => m.verified == 'suggestion_only'));
-    final reasoningChoices = reasoningOptionsForModel(
-      runtime,
-      draft.model,
-      proj.models,
-    );
-    const defaultReasoning = '__default_reasoning_effort__';
-    final rows = <Widget>[
-      RaftStableField(
-        label: 'Runtime',
-        required: true,
-        child: RaftAgentSelect<String>(
-          key: const ValueKey('runtime-editor-runtime'),
-          value: runtime,
-          unmatchedLabel: runtime,
-          options: runtimeOptions(context),
-          placeholder: 'Select…',
-          semanticLabel: tr('Runtime'),
-          onChanged: saving ? null : changeRuntime,
-        ),
-      ),
-      if (supportsRuntimeApiUrl(runtime)) ...[
-        RaftStableField(
-          label: 'Provider',
-          hint: 'Default leaves Claude Code provider settings untouched. Custom sets ANTHROPIC_BASE_URL and ANTHROPIC_API_KEY for this agent.',
-          child: RaftAgentSelect<String>(
-            key: const ValueKey('runtime-editor-provider'),
-            value: draft.providerCustom ? 'custom' : 'default',
-            options: [
-              RaftAgentSelectOption('default', tr('Default')),
-              RaftAgentSelectOption('custom', tr('Custom')),
-            ],
-            semanticLabel: tr('Provider'),
-            onChanged: saving
-                ? null
-                : (v) => setState(() {
-                    draft.providerCustom = v == 'custom';
-                    if (!draft.providerCustom) {
-                      draft
-                        ..providerApiUrl = ''
-                        ..providerApiKey = '';
-                    }
-                  }),
-          ),
-        ),
-        if (draft.apiUrlRequired) ...[
-          RaftStableField(
-            label: 'API URL',
-            required: true,
-            error: draft.apiUrlInvalid
-                ? tr('API URL must start with http:// or https://.')
-                : null,
-            child: _TextField(
-              key: const ValueKey('runtime-editor-api-url'),
-              value: draft.providerApiUrl,
-              placeholder: 'https://gateway.example.com',
-              invalid: draft.apiUrlInvalid,
-              onChanged: (v) => setState(() => draft.providerApiUrl = v),
-            ),
-          ),
-          RaftStableField(
-            label: 'API key',
-            required: true,
-            error: draft.apiKeyInvalid
-                ? tr('API Key is required for a custom provider.')
-                : null,
-            child: _TextField(
-              key: const ValueKey('runtime-editor-api-key'),
-              value: draft.providerApiKey,
-              placeholder: 'sk-ant-...',
-              obscure: true,
-              invalid: draft.apiKeyInvalid,
-              onChanged: (v) => setState(() => draft.providerApiKey = v),
-            ),
-          ),
-        ],
-      ],
-      RaftStableField(
-        label: 'Model',
-        required: draft.customModelMode,
-        error: draft.customModelInvalid
-            ? tr('Custom model name is required.')
-            : null,
-        labelAccessory: showHeaderRescan
-            ? RaftIconButton(
-                key: const ValueKey('runtime-editor-rescan'),
-                glyph: RaftGlyph.refreshCw,
-                tooltip: tr('Rescan Models from This Computer'),
-                visualSize: 20,
-                minimumTargetSize: 20,
-                glyphSize: 12,
-                variant: RaftControlVariant.ghost,
-                onPressed: machineId == null || proj.loading || saving
-                    ? null
-                    : () => setState(loadModels),
-              )
-            : null,
-        belowControl: [
-          if (status != null)
-            RaftAgentSourceStatus(
-              key: const ValueKey('runtime-model-source-status'),
-              message: status,
-              retryLabel: sourceCanRetry ? tr('Retry') : null,
-              onRetry: machineId == null || proj.loading
-                  ? null
-                  : () => setState(loadModels),
-            ),
-          if (showSuggestion)
-            const RaftAgentFieldNote(
-              "This model is a catalog suggestion and has not been verified to launch with this computer's current runtime config.",
-            ),
-        ],
-        child: RuntimeModelCombobox(
-          key: const ValueKey('runtime-editor-model'),
-          displayLabel: (id, fallback) => modelDisplayLabel(
-            w,
-            machineId: machineId,
-            runtime: runtime,
-            model: id,
-            fallback: fallback,
-          ),
-          runtime: runtime,
-          models: proj.models,
-          live: proj.live,
-          model: draft.model,
-          customModelMode: draft.customModelMode,
-          customAllowed: customAllowed,
-          enabled: !saving,
-          invalid: draft.customModelInvalid,
-          onChanged: (model, custom) {
-            draft.customModelMode = custom;
-            changeModel(model);
-          },
-        ),
-      ),
-      if (supportsRuntimeReasoning(runtime))
-        RaftStableField(
-          label: 'Reasoning',
-          child: RaftAgentSelect<String>(
-            key: const ValueKey('runtime-editor-reasoning'),
-            value: draft.reasoning ?? defaultReasoning,
-            unmatchedLabel: draft.reasoning,
-            options: [
-              RaftAgentSelectOption(defaultReasoning, tr('Default')),
-              for (final (id, label) in reasoningChoices)
-                RaftAgentSelectOption(id, tr(label)),
-            ],
-            placeholder: 'Reasoning',
-            semanticLabel: tr('Reasoning'),
-            onChanged: saving
-                ? null
-                : (v) => setState(
-                    () => draft.reasoning = v == defaultReasoning ? null : v,
-                  ),
-          ),
-        ),
-      if (supportsRuntimeFastMode(runtime))
-        RaftStableField(
-          label: 'Mode',
-          child: RaftAgentOptionCard(
-            key: const ValueKey('runtime-editor-fast-mode'),
-            checked: draft.fastMode,
-            title: 'Fast mode',
-            description: 'Launch this runtime with higher speed at a higher cost per token.',
-            onChanged: saving
-                ? null
-                : (v) => setState(() => draft.fastMode = v),
-          ),
-        ),
-      RaftAgentMoreDisclosure(
-        key: const ValueKey('runtime-editor-more'),
-        open: moreOpen,
-        onToggle: () => setState(() => moreOpen = !moreOpen),
-        children: [
-          if (supportsRuntimeCommand(runtime))
-            RaftStableField(
-              label: 'Claude command',
-              hint: 'Executable path or command name; Slock adds the Claude stream-json runtime arguments.',
-              child: _TextField(
-                key: const ValueKey('runtime-editor-command'),
-                value: draft.command,
-                placeholder: 'claude',
-                onChanged: (v) => setState(() => draft.command = v),
-              ),
-            ),
-          RaftStableField(
-            label: 'Environment variables',
-            child: RaftAgentKeyValueRows(
-              hint:
-                  'Environment variables are injected into the agent runtime.',
-              entries: draft.envVars,
-              enabled: !saving,
-              onChanged: (entries) => setState(() => draft.envVars = entries),
-            ),
-          ),
-        ],
-      ),
-    ];
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        for (final (i, row) in rows.indexed) ...[
-          if (i > 0) const SizedBox(height: raftAgentSectionGap), // `space-y-4`
-          row,
-        ],
-      ],
-    );
-  }
-}
-
-/// A recipe text input driven by a plain string value.
-class _TextField extends StatefulWidget {
-  const _TextField({
-    super.key,
-    required this.value,
-    required this.onChanged,
-    this.placeholder,
-    this.obscure = false,
-    this.invalid = false,
-  });
-  final String value;
-  final ValueChanged<String> onChanged;
-  final String? placeholder;
-  final bool obscure, invalid;
-  @override
-  State<_TextField> createState() => _TextFieldState();
-}
-
-class _TextFieldState extends State<_TextField> {
-  late final controller = TextEditingController(text: widget.value);
-  @override
-  void dispose() {
-    controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) => RaftAgentTextInput(
-    controller: controller,
-    placeholder: widget.placeholder,
-    obscure: widget.obscure,
-    invalid: widget.invalid,
-    onChanged: widget.onChanged,
-  );
 }

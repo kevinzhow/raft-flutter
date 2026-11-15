@@ -1,0 +1,22 @@
+{
+  "sourceId": "tier",
+  "kind": "select",
+  "pointer": "/tier",
+  "options": [
+    {
+      "value": "fast",
+      "label": "fast (option label, overridden by choices)",
+      "supportedReasoningEfforts": [
+        "low",
+        "high",
+        "max"
+      ],
+      "defaultReasoningEffort": "low"
+    },
+    {
+      "value": "steady",
+      "label": "Steady (no choices key: the option's own label)"
+    }
+  ],
+  "defaultValue": "fast"
+}

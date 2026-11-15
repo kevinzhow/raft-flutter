@@ -125,12 +125,6 @@ class HostedCreateChoice extends ChangeNotifier {
     ];
   }
 
-  /// The hint under the Computer picker.
-  Widget hint(BuildContext context) => RaftAgentFieldNote(
-    'Raft creates the agent in the cloud and connects it for you. No command line needed.',
-    key: const ValueKey('create-agent-hosted-runtime'),
-  );
-
   void _changed() {
     if (_disposed) return;
     // The list is read the first time the dialog is in cloud mode.

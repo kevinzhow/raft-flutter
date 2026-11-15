@@ -1,45 +1,28 @@
-// Create Agent dialog — Web packages/web/src/components/agent/CreateAgentDialog.tsx
+// Create agent dialog — Web packages/web/src/features/agent/CreateAgentDialog.tsx
 // (DialogCard, capacity Banner, COMPUTER / NAME / DESCRIPTION StableFields,
-// RuntimeConfigFields: RUNTIME select + the runtime's protocol-v2 fields,
-// Cancel / Create Agent footer) and its zero-computer branch.
+// RuntimeConfigFields: the grouped RUNTIME select + the runtime's protocol-v2
+// fields, Cancel / Create footer) and its zero-computer branch.
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import '../data/agent_name_generator.dart';
 import '../data/billing_plans.dart';
 import '../data/cause_notice.dart';
 import '../data/create_agent_last_config.dart';
+import '../data/machine_order.dart';
 import '../data/user_error.dart';
 import '../data/workspace_controller.dart';
 import '../data/workspace_entity_directory.dart' show WorkspaceEntityKind;
-import 'agent_metadata_catalog.dart';
-import 'model_label_catalog.dart';
-import 'model_label_listener.dart';
 import 'agent_hosted_create.dart';
-import 'agent_runtime_labels.dart' show creatableRuntimeIds;
+import 'agent_runtime_catalog.dart' show runtimeInfos;
+import 'agent_runtime_labels.dart';
 import 'delete_server_confirm.dart';
 import 'private_route_guard.dart';
 import 'runtime_options_request.dart';
 import 'runtime_form_dialog.dart';
-
-/// shared/src/runtimeCatalog.ts `RUNTIMES[].displayName`.
-const createAgentRuntimeNames = {
-  'claude': 'Claude Code',
-  'codex': 'Codex CLI',
-  'grok': 'Grok Build',
-  'builtin': 'Built-in Pi',
-  'antigravity': 'Antigravity CLI',
-  'kimi-sdk': 'Kimi Code',
-  'kimi': 'Kimi CLI',
-  'copilot': 'Copilot CLI',
-  'cursor': 'Cursor CLI',
-  'gemini': 'Gemini CLI',
-  'opencode': 'OpenCode',
-  'pi': 'Pi',
-};
+import 'runtime_picker_rows.dart';
 
 /// shared MAX_AGENT_DESCRIPTION_LENGTH.
 const createAgentDescriptionLimit = 3000;
@@ -100,6 +83,8 @@ class CreateAgentDialog extends StatefulWidget {
     this.actionCardMessageId,
     this.actionCardConfirmationVersion,
     this.onCreated,
+    this.onCreatedDetail,
+    this.minimumDaemonVersion,
     this.onConnectComputer,
     this.onboarding = false,
     this.onboardingModal = false,
@@ -141,17 +126,28 @@ class CreateAgentDialog extends StatefulWidget {
   final int? actionCardConfirmationVersion;
   final void Function(Map<String, dynamic>)? onCreated;
 
+  /// After [onCreated], with what only the dialog knows: whether this was the
+  /// server's first agent (Web `wasFirstAgent`, counted before the create call;
+  /// onboarding always is). The Created toast is not for a first agent.
+  final void Function(
+    Map<String, dynamic> agent, {
+    required bool wasFirstAgent,
+  })?
+  onCreatedDetail;
+
+  /// The lowest Computer (daemon) version the agent being created needs
+  /// (Web `minimumDaemonVersion`): an older or unknown-version Computer is
+  /// disabled in the picker and a line under it says why.
+  final String? minimumDaemonVersion;
+
   /// Zero-computer branch CTA ("Connect a Computer").
   final VoidCallback? onConnectComputer;
   @override
   State<CreateAgentDialog> createState() => _CreateAgentDialogState();
 }
 
-class _CreateAgentDialogState extends State<CreateAgentDialog>
-    with ModelLabelCatalogListener<CreateAgentDialog> {
+class _CreateAgentDialogState extends State<CreateAgentDialog> {
   WorkspaceController get w => widget.controller;
-  @override
-  WorkspaceController get modelLabelWorkspace => w;
   late final int generation;
   late final String openingAuthority;
   bool get currentAuthority =>
@@ -160,7 +156,6 @@ class _CreateAgentDialogState extends State<CreateAgentDialog>
       openingAuthority == workspaceAuthority(w) &&
       w.can('createAgents');
   final name = TextEditingController(), description = TextEditingController();
-  final preAdmissionEnv = TextEditingController();
   late final math.Random random = widget.random ?? math.Random();
 
   /// The "Cloud agent" choice of the Computer picker.
@@ -172,20 +167,21 @@ class _CreateAgentDialogState extends State<CreateAgentDialog>
     prefilledModel: widget.initialHostedModel,
   );
 
-  /// The last computer, runtime and model created with on this server (Web
+  /// The last computer and runtime created with on this server (Web
   /// `rememberedConfig`); null for onboarding, which never uses it.
   CreateAgentLastConfig? remembered;
   String? machineId, runtime;
+
+  /// The server's admission rows for the selected computer, all of them (the
+  /// picker groups them; `canSelectInThisContext` decides what can be picked).
   List<Map<String, dynamic>> runtimeOptions = [];
   RuntimeFormController? form;
   Map<String, dynamic>? billing;
 
-  /// Pre-admission model picker (Web: the declared Claude source shown while
-  /// no runtime is selected) — `null` while loading.
-  String preAdmissionModel = '';
-  List<Map<String, dynamic>>? preAdmissionModels;
-  bool preAdmissionLive = false, preAdmissionLoading = false;
-  bool moreOpen = false, busy = false, validationAttempted = false;
+  /// Show all supported belongs to the computer it was asked for: another
+  /// computer starts collapsed again (Web `showAllRuntimesFor`).
+  String? showAllFor;
+  bool busy = false, validationAttempted = false;
   bool runtimesRescanning = false;
   bool runtimeOptionsLoading = false;
   // ignore: raft_lints/avoid_imperative_notice_state -- Cleared when the next submit starts or the name is edited; the dialog state is dropped when it closes.
@@ -196,6 +192,8 @@ class _CreateAgentDialogState extends State<CreateAgentDialog>
   /// with a retry, a successful rescan or a switch to another computer.
   late final rescanError = CauseNotice(scope: () => machineTicket);
   late final runtimeOptionsError = CauseNotice(scope: () => machineTicket);
+
+  String? get userId => w.client.user?.id;
 
   @override
   void initState() {
@@ -216,18 +214,7 @@ class _CreateAgentDialogState extends State<CreateAgentDialog>
         : widget.initialDescription ?? '';
     // An invalid prefill reports from the first render (task #1139 E-state).
     validationAttempted = name.text.isNotEmpty && _nameReasonInvalid(name.text);
-    final ids = [for (final m in widget.machines) m['id'] as String?];
-    final online = [
-      for (final m in widget.machines)
-        if (m['status'] == 'online') m['id'] as String?,
-    ];
-    machineId =
-        widget.requiredMachineId ??
-        (ids.contains(widget.initialMachineId)
-            ? widget.initialMachineId
-            : online.contains(remembered?.machineId)
-            ? remembered?.machineId
-            : online.firstOrNull ?? ids.firstOrNull);
+    machineId = initialMachineId();
     w.addListener(authorityChanged);
     hosted
       ..addListener(authorityChanged)
@@ -236,16 +223,64 @@ class _CreateAgentDialogState extends State<CreateAgentDialog>
     if (machineId != null) selectMachine(machineId!);
   }
 
+  bool _usable(Map<String, dynamic>? m) =>
+      m != null &&
+      m['status'] == 'online' &&
+      machineMeetsDaemonRequirement(m, widget.minimumDaemonVersion);
+
+  /// Web `selectedMachineId`'s initial value: the required computer, the
+  /// caller's suggestion, the last one used, else an online computer of the
+  /// viewer's own before any other. Nothing is chosen when none is usable.
+  String? initialMachineId() {
+    final byId = {for (final m in widget.machines) m['id']: m};
+    final required = widget.requiredMachineId;
+    if (required != null) return required;
+    final suggested = byId[widget.initialMachineId];
+    if (suggested != null) return widget.initialMachineId;
+    final last = byId[remembered?.machineId];
+    if (_usable(last)) return remembered!.machineId;
+    return pickFallbackMachine(
+          widget.machines,
+          widget.minimumDaemonVersion,
+          userId,
+        )?['id']
+        as String?;
+  }
+
+  @override
+  void didUpdateWidget(CreateAgentDialog oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // The computer list arrives or changes in place (Web's one-shot waiter):
+    // nothing chosen yet, so choose now; a choice the person made stays.
+    if (machineId == null && widget.machines != oldWidget.machines) {
+      final next = initialMachineId();
+      if (next != null &&
+          _usable(widget.machines.where((m) => m['id'] == next).firstOrNull)) {
+        selectMachine(next);
+      }
+    }
+  }
+
   void authorityChanged() {
     if (mounted) setState(() {});
   }
 
-  /// Names already used on this server, so a suggested name avoids them (Web
-  /// `takenAgentNames`).
+  /// Names already used on this server by agents or human members, so a
+  /// suggested name avoids them (Web `takenAgentNames`).
   List<String> takenAgentNames() => [
     for (final a in w.services.entityDirectory.rows(WorkspaceEntityKind.agents))
       if (a['deletedAt'] == null && a['name'] is String) a['name'] as String,
+    for (final m in w.services.entityDirectory.rows(
+      WorkspaceEntityKind.members,
+    ))
+      if (m['name'] is String) m['name'] as String,
   ];
+
+  /// Web `agents.length === 0` (before the create call): the server's first
+  /// agent gets no Created toast.
+  bool get noAgentsYet => !w.services.entityDirectory
+      .rows(WorkspaceEntityKind.agents)
+      .any((a) => a['deletedAt'] == null);
 
   void suggestName() {
     if (busy) return;
@@ -273,7 +308,6 @@ class _CreateAgentDialogState extends State<CreateAgentDialog>
     form?.dispose();
     name.dispose();
     description.dispose();
-    preAdmissionEnv.dispose();
     super.dispose();
   }
 
@@ -311,6 +345,46 @@ class _CreateAgentDialogState extends State<CreateAgentDialog>
     return null;
   }
 
+  /// The admission rows of runtimes this build knows (Web: `getRuntimeInfo(id)
+  /// ?.supported`), in the server's order.
+  List<Map<String, dynamic>> _supportedRows(Object? catalog) => [
+    for (final o
+        in (catalog is Map ? catalog['options'] as List? ?? [] : [])
+            .whereType<Map>())
+      if (runtimeInfos.any((r) => r.id == o['runtimeId'] && r.supported))
+        Map<String, dynamic>.from(o),
+  ];
+
+  List<String> get _availableRuntimes => [
+    for (final o in runtimeOptions)
+      if (o['canSelectInThisContext'] == true) o['runtimeId'] as String,
+  ];
+
+  /// Web `pickCreateAgentRuntime`: onboarding prefers Claude, Codex, Grok and
+  /// Built-in; a create restores the last runtime when it is still offered.
+  String pickRuntime() {
+    final available = _availableRuntimes;
+    String? firstSupported(Iterable<String> ids) => ids
+        .where((id) => runtimeInfos.any((r) => r.id == id && r.supported))
+        .firstOrNull;
+    if (widget.onboarding) {
+      return const ['claude', 'codex', 'grok', 'builtin']
+              .where(available.contains)
+              .where((id) => runtimeInfos.any((r) => r.id == id && r.supported))
+              .firstOrNull ??
+          firstSupported(available) ??
+          available.firstOrNull ??
+          '';
+    }
+    final last = remembered?.runtime;
+    if (last != null &&
+        available.contains(last) &&
+        runtimeInfos.any((r) => r.id == last && r.supported)) {
+      return last;
+    }
+    return firstSupported(available) ?? available.firstOrNull ?? '';
+  }
+
   Future<void> selectMachine(String id) async {
     final ticket = ++machineTicket;
     form?.dispose();
@@ -321,37 +395,19 @@ class _CreateAgentDialogState extends State<CreateAgentDialog>
       runtimeOptions = [];
       runtimeOptionsLoading = true;
       runtimeOptionsError.clear();
-      preAdmissionModels = null;
-      preAdmissionModel = remembered?.runtime == 'claude'
-          ? remembered!.model
-          : '';
     });
-    final runtimes = machine?['runtimes'];
-    if (runtimes is List && runtimes.contains('claude')) loadPreAdmission();
     try {
       final catalog = await readRuntimeOptions(
         () => w.query('/servers/${w.server!.id}/machines/$id/runtime-options'),
       );
       if (!currentAuthority || ticket != machineTicket) return;
-      final options = [
-        for (final o in (catalog['options'] as List? ?? []).whereType<Map>())
-          if (o['canSelectInThisContext'] == true &&
-              creatableRuntimeIds.contains(o['runtimeId']))
-            Map<String, dynamic>.from(o),
-      ];
-      setState(() => runtimeOptions = options);
-      if (options.isNotEmpty) {
-        final initial = options
-            .where((o) => o['runtimeId'] == widget.initialRuntimeId)
-            .firstOrNull;
-        final last = options
-            .where((o) => o['runtimeId'] == remembered?.runtime)
-            .firstOrNull;
-        final pick = initial ?? last ?? options.first;
-        selectRuntime(
-          pick['runtimeId'],
-          restoreModel: initial == null && last != null,
-        );
+      setState(() => runtimeOptions = _supportedRows(catalog));
+      final available = _availableRuntimes;
+      if (available.isNotEmpty) {
+        final initial = available.contains(widget.initialRuntimeId)
+            ? widget.initialRuntimeId
+            : null;
+        selectRuntime(initial ?? pickRuntime());
       }
     } catch (failure) {
       if (currentAuthority && ticket == machineTicket) {
@@ -389,15 +445,9 @@ class _CreateAgentDialogState extends State<CreateAgentDialog>
         () => w.query('/servers/${w.server!.id}/machines/$id/runtime-options'),
       );
       if (!currentAuthority || ticket != machineTicket) return;
-      final options = [
-        for (final o in (catalog['options'] as List? ?? []).whereType<Map>())
-          if (o['canSelectInThisContext'] == true &&
-              creatableRuntimeIds.contains(o['runtimeId']))
-            Map<String, dynamic>.from(o),
-      ];
       setState(() {
-        runtimeOptions = options;
-        if (runtime != null && !options.any((o) => o['runtimeId'] == runtime)) {
+        runtimeOptions = _supportedRows(catalog);
+        if (runtime != null && !_availableRuntimes.contains(runtime)) {
           runtime = null;
           form?.dispose();
           form = null;
@@ -422,45 +472,7 @@ class _CreateAgentDialogState extends State<CreateAgentDialog>
     }
   }
 
-  Future<void> loadPreAdmission({bool refresh = false}) async {
-    final id = machineId;
-    final fallback = <Map<String, dynamic>>[
-      for (final e in sourceRuntimeModelLabels['claude']!.entries)
-        {'id': e.key, 'label': e.value, 'verified': 'suggestion_only'},
-    ];
-    setState(() => preAdmissionLoading = true);
-    var models = fallback;
-    var live = false;
-    try {
-      final result = await w.query(
-        '/servers/${w.server!.id}/machines/$id/runtime-models/claude',
-        query: refresh ? {'refresh': 1} : null,
-      );
-      final value = result is Map && result['kind'] == 'live'
-          ? result['value']
-          : result;
-      if (value is Map && value['models'] is List) {
-        models = [
-          for (final m in (value['models'] as List).whereType<Map>())
-            Map<String, dynamic>.from(m),
-        ];
-        live = true;
-      }
-    } catch (_) {
-      // The machine source failed: the bundled catalog stays as suggestions.
-    }
-    if (!currentAuthority || id != machineId) return;
-    setState(() {
-      preAdmissionLoading = false;
-      preAdmissionLive = live;
-      preAdmissionModels = models;
-      if (!models.any((m) => m['id'] == preAdmissionModel)) {
-        preAdmissionModel = '${models.firstOrNull?['id'] ?? ''}';
-      }
-    });
-  }
-
-  void selectRuntime(String id, {bool restoreModel = false}) {
+  void selectRuntime(String id) {
     form?.dispose();
     final next = RuntimeFormController(
       w,
@@ -469,84 +481,25 @@ class _CreateAgentDialogState extends State<CreateAgentDialog>
       valid: () => currentAuthority,
       language: runtimeFormLanguageTag(context),
     );
-    Map<String, String>? env;
-    try {
-      env = parseRuntimeStringMap(preAdmissionEnv.text);
-    } on FormatException {
-      env = null;
+    // Web `runtimeHasFormV2`: a row without the v2 marker has no form here.
+    final row = runtimeOptions.where((o) => o['runtimeId'] == id).firstOrNull;
+    if (row?['runtimeFormV2'] == null) {
+      next.markUnavailable();
+    } else {
+      next.load();
     }
-    // Claude takes its model from the pre-admission picker (which already
-    // starts at the remembered one); other runtimes restore it once the form
-    // and its option sources are in.
-    final lastModel = remembered?.model ?? '';
-    if (restoreModel && id != 'claude' && lastModel.isNotEmpty) {
-      restoreRememberedModel(next, lastModel);
-    }
-    next.load(
-      seed: {
-        if (id == 'claude' && preAdmissionModel.isNotEmpty)
-          'model': preAdmissionModel,
-        if (env != null && env.isNotEmpty) 'envVars': env,
-      },
-    );
     setState(() {
       runtime = id;
       form = next;
-      moreOpen = false;
     });
   }
 
-  /// Puts the remembered [model] into the model field once [f] has loaded, but
-  /// only where the form still offers it (a listed option, a custom value the
-  /// source allows, or a free text field).
-  void restoreRememberedModel(RuntimeFormController f, String model) {
-    void apply() {
-      if (f.loading) return;
-      f.removeListener(apply);
-      final definition = f.definition;
-      final field = definition?.fields
-          .where((field) => field.key == 'model')
-          .firstOrNull;
-      if (definition == null || field == null || f.values['model'] == model) {
-        return;
-      }
-      final offered = switch (field.kind) {
-        'text' => true,
-        'select' || 'dependent_select' || 'derived_select' =>
-          definition
-                  .choices(field, f.sources, f.values)
-                  .any((c) => c['value'] == model) ||
-              definition.custom(field, f.sources, f.values),
-        _ => false,
-      };
-      if (offered) f.change(field, model);
-    }
-
-    f.addListener(apply);
-  }
-
-  /// Web `writeCreateAgentLastConfig` after a successful create.
-  void rememberConfig(RuntimeFormController f) {
+  /// Web `rememberedConfig` write after a successful create: only the
+  /// computer and runtime; the runtime's server form owns its defaults.
+  void rememberConfig() {
     final id = machineId, selected = runtime;
-    final field = f.definition?.fields
-        .where((field) => field.key == 'model')
-        .firstOrNull;
     if (widget.onboarding || id == null || selected == null) return;
-    final value = f.values['model'];
-    final model = value is String ? value.trim() : '';
-    final custom =
-        field != null &&
-        model.isNotEmpty &&
-        f.definition!.custom(field, f.sources, f.values) &&
-        !f.definition!
-            .choices(field, f.sources, f.values)
-            .any((c) => c['value'] == model);
-    CreateAgentLastConfig(
-      machineId: id,
-      runtime: selected,
-      model: model,
-      customModelMode: custom,
-    ).write(w.server?.id);
+    CreateAgentLastConfig(machineId: id, runtime: selected).write(w.server?.id);
   }
 
   bool get createDisabled {
@@ -563,9 +516,12 @@ class _CreateAgentDialogState extends State<CreateAgentDialog>
         (widget.requiredMachineId != null &&
             machineId != widget.requiredMachineId) ||
         machine?['status'] != 'online' ||
+        !machineMeetsDaemonRequirement(machine, widget.minimumDaemonVersion) ||
         runtime == null ||
+        !_availableRuntimes.contains(runtime) ||
         f == null ||
         f.loading ||
+        f.unavailable ||
         f.definition == null ||
         f.missingRequired ||
         name.text.trim().isEmpty;
@@ -588,6 +544,9 @@ class _CreateAgentDialogState extends State<CreateAgentDialog>
       error = null;
     });
     try {
+      // Counted before the create call mutates the directory (Web
+      // `wasFirstAgent`): onboarding is first-agent territory by definition.
+      final wasFirstAgent = widget.onboarding || noAgentsYet;
       final created = await w.command(
         'POST',
         '/agents',
@@ -609,9 +568,11 @@ class _CreateAgentDialogState extends State<CreateAgentDialog>
         },
       );
       if (mounted && currentAuthority) {
-        if (!cloud) rememberConfig(f!);
+        if (!cloud) rememberConfig();
         if (created is Map) {
-          widget.onCreated?.call(Map<String, dynamic>.from(created));
+          final agent = Map<String, dynamic>.from(created);
+          widget.onCreatedDetail?.call(agent, wasFirstAgent: wasFirstAgent);
+          widget.onCreated?.call(agent);
         }
         if (widget.closeOnCreated &&
             ModalRoute.of(context)?.isCurrent == true) {
@@ -644,7 +605,7 @@ class _CreateAgentDialogState extends State<CreateAgentDialog>
   }
 
   Widget needsComputer(BuildContext context) => RaftDialog.agent(
-    title: 'Create Agent',
+    title: 'Create agent',
     onClose: close,
     children: [
       const RaftAgentBanner(
@@ -669,68 +630,89 @@ class _CreateAgentDialogState extends State<CreateAgentDialog>
     ],
   );
 
-  List<Widget> preAdmissionFields(BuildContext context) {
-    final models = preAdmissionModels;
-    if (models == null && !preAdmissionLoading) return const [];
-    final selected = models
-        ?.where((m) => m['id'] == preAdmissionModel)
-        .firstOrNull;
-    return [
-      RaftStableField(
-        label: 'Model',
-        belowControl: [
-          if (preAdmissionLoading)
-            const RaftAgentSourceStatus(
-              message: 'Checking models on this Computer…',
-            )
-          else if (!preAdmissionLive)
-            RaftAgentSourceStatus(
-              message: 'Could not load models from this computer.',
-              retryLabel: 'Retry',
-              onRetry: () => loadPreAdmission(refresh: true),
+  /// Web `machineOptions`: `name (hostname)` plus " · Offline" and
+  /// " · Update required"; an offline computer, one the action card did not
+  /// ask for and one whose daemon is too old are disabled.
+  RaftAgentSelectOption<String> computerOption(
+    BuildContext context,
+    Map<String, dynamic> m,
+  ) {
+    final offline = m['status'] != 'online';
+    final blocked =
+        widget.requiredMachineId != null && m['id'] != widget.requiredMachineId;
+    final tooOld = !machineMeetsDaemonRequirement(
+      m,
+      widget.minimumDaemonVersion,
+    );
+    final hostname = m['hostname'];
+    return RaftAgentSelectOption(
+      m['id'] as String,
+      '${m['name'] ?? m['id']}'
+      '${hostname is String && hostname.isNotEmpty ? ' ($hostname)' : ''}'
+      '${offline ? raftText(context, ' · Offline') : ''}'
+      '${tooOld && widget.minimumDaemonVersion != null ? raftText(context, ' · Update required') : ''}',
+      enabled: !(offline || blocked || tooOld),
+    );
+  }
+
+  /// The runtime field's rows (Web `runtimePickerRows`): one per admission row
+  /// this build knows. Onboarding keeps one flat list with suffixes; a create
+  /// groups them by whether they can run on this computer right now.
+  List<RaftAgentSelectOption<String>> runtimePickerOptions(
+    BuildContext context,
+  ) {
+    final installed = machine?['runtimes'] is List
+        ? [for (final r in machine!['runtimes'] as List) '$r']
+        : const <String>[];
+    final experimental = raftText(context, 'Experimental');
+    final rows = [
+      for (final o in runtimeOptions)
+        () {
+          final id = o['runtimeId'] as String;
+          final deprecated = o['admissionReason'] == 'deprecated';
+          return RuntimePickerRow(
+            value: id,
+            label: runtimeLabelBesideBadge(context, id, deprecated: deprecated),
+            availabilitySuffix: runtimeAvailabilitySuffixText(
+              context,
+              id,
+              installed,
             ),
-          if (selected?['verified'] == 'suggestion_only')
-            const RaftAgentFieldNote(
-              "This model is a catalog suggestion and has not been verified to launch with this computer's current runtime config.",
+            experimental: runtimeShowsExperimentalBadge(
+              id,
+              deprecated: deprecated,
             ),
-        ],
-        child: RaftAgentSelect<String>(
-          value: preAdmissionModel,
-          placeholder: 'Model',
-          semanticLabel: raftText(context, 'Model'),
-          options: [
-            for (final m in models ?? const <Map<String, dynamic>>[])
-              RaftAgentSelectOption(
-                '${m['id'] ?? ''}',
-                modelDisplayLabel(
-                  w,
-                  machineId: machineId,
-                  runtime: 'claude',
-                  model: '${m['id'] ?? ''}',
-                  fallback: '${m['label'] ?? m['id']}',
-                ),
-              ),
-          ],
-          onChanged: busy ? null : (v) => setState(() => preAdmissionModel = v),
-        ),
-      ),
-      if (!widget.onboarding)
-        RaftAgentMoreDisclosure(
-          open: moreOpen,
-          onToggle: () => setState(() => moreOpen = !moreOpen),
-          children: [
-            RaftStableField(
-              label: 'Environment variables',
-              hint: 'One KEY=value per line.',
-              child: RaftAgentTextInput(
-                controller: preAdmissionEnv,
-                multiline: true,
-                semanticLabel: raftText(context, 'Environment variables'),
-              ),
-            ),
-          ],
-        ),
+            disabled: o['canSelectInThisContext'] != true,
+            capabilityStatus: '${o['capabilityStatus'] ?? 'available'}',
+            selectable: o['canSelectInThisContext'] == true,
+          );
+        }(),
     ];
+    if (widget.onboarding) {
+      return flatRuntimePickerOptions(rows, experimentalLabel: experimental);
+    }
+    final showAll = showAllFor != null && showAllFor == machineId;
+    final grouped = groupRuntimePickerRows(
+      rows,
+      showAll: showAll,
+      selectedValue: runtime ?? '',
+      labels: RuntimePickerGroupLabels(
+        current: raftText(context, 'Current runtime'),
+        ready: raftText(context, 'Ready on this computer'),
+        notAvailable: raftText(context, 'Not available on this server'),
+        needsUpdate: raftText(context, 'Needs a Raft Computer update'),
+        notInstalled: raftText(context, 'Not installed on this computer'),
+      ),
+      experimentalLabel: experimental,
+    );
+    final action = runtimeShowAllAction(
+      canToggle: grouped.canToggle,
+      showAll: showAll,
+      showAllLabel: raftText(context, 'Show all supported'),
+      installedOnlyLabel: raftText(context, 'Show installed only'),
+      onToggle: () => setState(() => showAllFor = showAll ? null : machineId),
+    );
+    return [...grouped.options, ?action];
   }
 
   @override
@@ -837,21 +819,23 @@ class _CreateAgentDialogState extends State<CreateAgentDialog>
         RaftStableField(
           label: 'Computer',
           required: true,
-          hint: cloud
-              ? 'Raft creates the agent in the cloud and connects it for you. No command line needed.'
-              : null,
+          hint: switch (widget.minimumDaemonVersion) {
+            final version? when !cloud => raftFormat(
+              context,
+              'Use a Computer updated to {version} or newer.',
+              {'version': version},
+            ),
+            _ => null,
+          },
           child: RaftAgentSelect<String>(
             value: cloud ? hostedComputerChoice : machineId,
             semanticLabel: raftText(context, 'Computer'),
             options: [
-              for (final m in widget.machines)
-                RaftAgentSelectOption(
-                  m['id'] as String,
-                  '${m['name'] ?? m['hostname'] ?? m['id']}',
-                  enabled:
-                      widget.requiredMachineId == null ||
-                      m['id'] == widget.requiredMachineId,
-                ),
+              for (final m in orderMachinesLikeSidebar(
+                widget.machines,
+                userId: userId,
+              ))
+                computerOption(context, m),
               if (hosted.offered) hosted.option(context),
             ],
             onChanged: busy || widget.requiredMachineId != null
@@ -908,7 +892,6 @@ class _CreateAgentDialogState extends State<CreateAgentDialog>
       RaftStableField(
         label: 'Runtime',
         required: true,
-        hint: widget.onboarding ? 'The runtime your agents run on.' : null,
         labelAccessory: widget.onboarding
             ? RaftRecipeButton(
                 key: const Key('cindy-rescan-runtimes'),
@@ -924,14 +907,7 @@ class _CreateAgentDialogState extends State<CreateAgentDialog>
           value: runtime,
           placeholder: 'Select…',
           semanticLabel: raftText(context, 'Runtime'),
-          options: [
-            for (final o in runtimeOptions)
-              RaftAgentSelectOption(
-                o['runtimeId'] as String,
-                // ignore: raft_lints/avoid_render_index_assertion -- runtimeOptions are filtered with creatableRuntimeIds (a subset of createAgentRuntimeNames) when loaded.
-                createAgentRuntimeNames[o['runtimeId']]!,
-              ),
-          ],
+          options: runtimePickerOptions(context),
           onChanged: busy
               ? null
               : (id) => id == runtime ? null : selectRuntime(id),
@@ -946,10 +922,7 @@ class _CreateAgentDialogState extends State<CreateAgentDialog>
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                for (final (i, row) in [
-                  ...leading,
-                  ...preAdmissionFields(context),
-                ].indexed) ...[
+                for (final (i, row) in leading.indexed) ...[
                   if (i > 0) const SizedBox(height: raftCindyFieldGap),
                   i == 0 && capacity != null
                       ? Padding(
@@ -972,7 +945,6 @@ class _CreateAgentDialogState extends State<CreateAgentDialog>
                         )
                       : row,
               ],
-              hideAdvanced: true,
               rowGap: raftCindyFieldGap,
             );
       return PopScope(
@@ -1003,7 +975,7 @@ class _CreateAgentDialogState extends State<CreateAgentDialog>
     return PopScope(
       canPop: !busy,
       child: RaftDialog.agent(
-        title: 'Create Agent',
+        title: 'Create agent',
         onClose: close,
         footerGap: raftAgentFormGap,
         footer: ListenableBuilder(
@@ -1012,7 +984,7 @@ class _CreateAgentDialogState extends State<CreateAgentDialog>
             children: [
               RaftAgentDialogButton(label: 'Cancel', onPressed: close),
               RaftAgentDialogButton(
-                label: 'Create Agent',
+                label: 'Create',
                 primary: true,
                 // CreateAgentDialog.tsx2103 caller; other primary buttons keep defaults.
                 foreground: tokens.dark
@@ -1032,9 +1004,7 @@ class _CreateAgentDialogState extends State<CreateAgentDialog>
               children: [
                 for (final (i, row) in [
                   ...leading,
-                  ...(cloud
-                      ? hosted.fields(context, busy: busy)
-                      : preAdmissionFields(context)),
+                  if (cloud) ...hosted.fields(context, busy: busy),
                 ].indexed) ...[
                   if (i > 0) const SizedBox(height: raftAgentFormGap),
                   row,

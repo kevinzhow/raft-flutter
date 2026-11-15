@@ -252,9 +252,13 @@ void main() {
       (
         'external agent setup',
         SingleChildScrollView(
-          child: ExternalAgentSetup(controller: w, agent: externalAgent),
+          child: ExternalAgentSetup(
+            controller: w,
+            agent: externalAgent,
+            status: const {'setupState': 'credential_minted'},
+          ),
         ),
-        find.textContaining('sk_agent_ab12'),
+        find.text('Agent credential'),
       ),
     ];
     for (final (name, page, shown) in pages) {

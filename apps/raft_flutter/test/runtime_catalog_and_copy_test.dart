@@ -2,9 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_flutter/features/agent_metadata_catalog.dart';
 import 'package:raft_flutter/features/agent_runtime_catalog.dart';
-import 'package:raft_flutter/features/agent_runtime_draft.dart';
+import 'package:raft_flutter/features/agent_runtime_models.dart';
 import 'package:raft_flutter/features/agent_runtime_labels.dart';
-import 'package:raft_flutter/features/agent_runtime_model_field.dart';
 import 'package:raft_flutter/features/runtime_form_dialog.dart';
 import 'package:raft_flutter/features/runtime_form_status_copy.dart';
 import 'package:raft_ui/raft_ui.dart';
@@ -101,116 +100,6 @@ void main() {
         text('fallback', null),
         'The options could not be loaded. Showing the standard list instead.',
       );
-    });
-  });
-
-  group('legacy Model combobox', () {
-    const models = [
-      RuntimeModelInfo(id: 'gpt-6.1-sol', label: 'GPT-6.1 Sol'),
-      RuntimeModelInfo(id: 'gpt-6-luna', label: 'GPT-6 Luna'),
-    ];
-    final picked = <(String, bool)>[];
-    Future<void> pump(
-      WidgetTester tester, {
-      String model = 'gpt-6-luna',
-      bool custom = false,
-      bool customAllowed = true,
-      bool live = false,
-    }) async {
-      picked.clear();
-      await tester.binding.setSurfaceSize(const Size(500, 900));
-      addTearDown(() => tester.binding.setSurfaceSize(null));
-      await tester.pumpWidget(
-        MaterialApp(
-          theme: raftTheme(),
-          home: Scaffold(
-            body: RuntimeModelCombobox(
-              key: const ValueKey('model'),
-              runtime: 'codex',
-              models: models,
-              live: live,
-              model: model,
-              customModelMode: custom,
-              customAllowed: customAllowed,
-              enabled: true,
-              invalid: false,
-              onChanged: (m, c) => picked.add((m, c)),
-            ),
-          ),
-        ),
-      );
-      await tester.pumpAndSettle();
-    }
-
-    testWidgets('a listed model shows its name and picks by id', (
-      tester,
-    ) async {
-      await pump(tester);
-      expect(find.text('GPT-6 Luna'), findsOneWidget);
-      await tester.tap(find.byType(EditableText));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('GPT-6.1 Sol'));
-      await tester.pumpAndSettle();
-      expect(picked, [('gpt-6.1-sol', false)]);
-    });
-
-    testWidgets('a typed name that matches nothing is used as typed', (
-      tester,
-    ) async {
-      await pump(tester);
-      await tester.enterText(find.byType(EditableText), 'my-model');
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Use “my-model”'));
-      await tester.pumpAndSettle();
-      expect(picked, [('my-model', true)]);
-    });
-
-    testWidgets('a runtime without custom names offers no Use row', (
-      tester,
-    ) async {
-      await pump(tester, customAllowed: false);
-      await tester.enterText(find.byType(EditableText), 'my-model');
-      await tester.pumpAndSettle();
-      expect(find.text('Use “my-model”'), findsNothing);
-    });
-
-    testWidgets('a saved model missing from the list stays selected, marked', (
-      tester,
-    ) async {
-      await pump(tester, model: 'retired-model');
-      expect(find.text('retired-model'), findsOneWidget);
-      expect(
-        find.textContaining('The saved value retired-model is not in the'),
-        findsOneWidget,
-      );
-      await tester.tap(find.byType(EditableText));
-      await tester.pumpAndSettle();
-      expect(find.text('Not in the current list'), findsOneWidget);
-    });
-
-    testWidgets('a typed model is marked Custom and has no saved-value note', (
-      tester,
-    ) async {
-      await pump(tester, model: 'my-model', custom: true);
-      expect(find.textContaining('The saved value'), findsNothing);
-      await tester.tap(find.byType(EditableText));
-      await tester.pumpAndSettle();
-      expect(find.text('Custom'), findsOneWidget);
-      // Re-picking the custom row keeps it custom.
-      await tester.tap(find.text('Custom'));
-      await tester.pumpAndSettle();
-      expect(picked, [('my-model', true)]);
-    });
-
-    testWidgets('a live list names a saved model it does not report', (
-      tester,
-    ) async {
-      await pump(tester, model: 'gpt-old', live: true);
-      expect(
-        find.textContaining("(not in this computer's config)"),
-        findsOneWidget,
-      );
-      expect(find.textContaining('The saved value'), findsNothing);
     });
   });
 }

@@ -66,7 +66,11 @@ class _Workspace extends WorkspaceController {
     if (path.endsWith('/runtime-options')) {
       return {
         'options': [
-          {'runtimeId': 'codex', 'canSelectInThisContext': admitted},
+          {
+            'runtimeId': 'codex',
+            'canSelectInThisContext': admitted,
+            'runtimeFormV2': {'protocolVersion': 2},
+          },
         ],
       };
     }

@@ -19,6 +19,7 @@ import '../data/web_error.dart';
 import '../data/workspace_controller.dart';
 import '../data/workspace_entity_directory.dart';
 import '../platform/system_bars.dart';
+import 'create_external_agent_dialog.dart';
 import 'managed_agent_launcher.dart';
 import 'agent_scopes_view.dart';
 import 'agent_detail_view.dart';
@@ -163,24 +164,20 @@ Future<void> showCredential(
   }
 }
 
-/// Agent and Computer directories share lifecycle and authority fencing, but
-/// their commands use separate mounted API contracts.
-/// Shared account/workspace-guarded registration used by both native
-/// directories; one-time computer credentials stay inside the private dialog.
+/// Account/workspace-guarded Computer registration used by both native
+/// directories; the one-time computer credential stays inside the private
+/// dialog. External agents are created by [showCreateExternalAgentDialog].
 Future<void> showFleetRegistration(
   BuildContext context,
   WorkspaceController w, {
-  bool computers = false,
   Future<void> Function()? onCreated,
   bool Function()? authorized,
 }) async {
   final captured = _FleetScope(w);
-  final endpoint = computers ? '/servers/${w.server!.id}/machines' : '/agents';
-  final cap = computers ? 'registerMachines' : 'createAgents';
   bool valid() =>
       context.mounted &&
       captured.current(w) &&
-      w.can(cap) &&
+      w.can('registerMachines') &&
       (authorized?.call() ?? true);
   if (!valid()) return;
   String? credential;
@@ -190,37 +187,30 @@ Future<void> showFleetRegistration(
     valid,
     form: true,
     (_) => RaftFormDialog(
-      title: computers ? 'Register Computer' : 'Create external agent',
-      submitLabel: computers ? 'Register Computer' : 'Create external agent',
-      description: computers
-          ? 'Register a computer, then use its one-time key to connect Raft Computer.'
-          : 'An external agent runs in a client you connect yourself.',
-      fields: [
-        const RaftFormField('name', 'Name', required: true),
-        if (!computers)
-          const RaftFormField('description', 'Description', multiline: true),
-      ],
+      title: 'Register Computer',
+      submitLabel: 'Register Computer',
+      description: 'Register a computer, then use its one-time key to connect Raft Computer.',
+      fields: const [RaftFormField('name', 'Name', required: true)],
       onSubmit: (values) async {
         if (!valid()) throw const RaftApiException('Fleet access changed.');
-        Future<dynamic> post() => w.command(
-          'POST',
-          endpoint,
-          data: {...values, if (!computers) 'external': true},
-        );
+        // Web machineStore.registerMachine: behind two-step verification's
+        // "Verify it's you"; closing it registers nothing.
         final dynamic result;
-        if (computers) {
-          // Web machineStore.registerMachine: behind two-step verification's
-          // "Verify it's you"; closing it registers nothing.
-          try {
-            result = await withSecondFactorStepUp(context, w.client, post);
-          } on SecondFactorStepUpCancelled {
-            return;
-          }
-        } else {
-          result = await post();
+        try {
+          result = await withSecondFactorStepUp(
+            context,
+            w.client,
+            () => w.command(
+              'POST',
+              '/servers/${w.server!.id}/machines',
+              data: values,
+            ),
+          );
+        } on SecondFactorStepUpCancelled {
+          return;
         }
         if (!valid()) return;
-        if (computers) credential = result['apiKey'];
+        credential = result['apiKey'];
         await onCreated?.call();
       },
     ),
@@ -338,10 +328,18 @@ class _FleetViewState extends State<FleetView> {
 
   Future<void> create() async {
     final captured = scope;
+    if (!widget.computers) {
+      await showCreateExternalAgentDialog(
+        context,
+        w,
+        onCreated: load,
+        authorized: () => current(captured),
+      );
+      return;
+    }
     await showFleetRegistration(
       context,
       w,
-      computers: widget.computers,
       onCreated: load,
       authorized: () => current(captured),
     );

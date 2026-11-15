@@ -12,6 +12,7 @@ import 'private_route_guard.dart';
 import 'create_agent_dialog.dart';
 import 'management_support.dart' show managementMap, managementRows;
 import 'provider_edit_dialog.dart';
+import 'runtime_form_hint.dart';
 import 'runtime_form_status_copy.dart';
 
 /// Web `runtimeFormUnavailableMessageId`: the catalog message for a failed
@@ -57,6 +58,13 @@ Map<String, String> runtimeFormIssueErrors(Object error, {String? fallback}) {
   };
 }
 
+/// The loaded form cannot be used by this client (a required capability it
+/// lacks, or a v3 rule it cannot evaluate): Web `status: "unsupported"`, shown
+/// as unavailable with create and save blocked, and no retry that could help.
+class _UnavailableForm implements Exception {
+  const _UnavailableForm();
+}
+
 typedef _FetchedForm = ({
   RuntimeForm form,
   Set<String> advanced,
@@ -90,7 +98,7 @@ class RuntimeFormController extends ChangeNotifier {
       '/servers/${w.server!.id}/machines/$machineId/runtime-forms/v2/${Uri.encodeComponent(runtimeId)}';
   RuntimeForm? definition;
 
-  /// `uiSchema.layout.advanced` keys: rendered behind the MORE disclosure.
+  /// `uiSchema.layout.advanced` keys: rendered behind the Advanced disclosure.
   Set<String> advanced = {};
   Map<String, Map<String, dynamic>> sources = {};
   Map<String, dynamic> values = {};
@@ -105,6 +113,25 @@ class RuntimeFormController extends ChangeNotifier {
   final mapProblems = <String, String>{};
   final editors = <String, TextEditingController>{};
   bool loading = true, disposed = false;
+
+  /// The runtime has no usable form on this client (Web
+  /// `RUNTIME_FORM_V2_UNAVAILABLE`): a runtime whose admission row has no v2
+  /// marker ([markUnavailable]), or a form that needs capabilities this client
+  /// lacks. The editor and the create dialog render
+  /// `agent.runtimeConfig.schemaUnavailable` and keep create and save blocked
+  /// (no definition); [error] stays null, so no Retry is offered.
+  bool unavailable = false;
+
+  /// A runtime row without the v2 marker: nothing to load. Sets [unavailable]
+  /// and settles [loading] without any request.
+  void markUnavailable() {
+    _generation++;
+    definition = null;
+    loading = false;
+    error = null;
+    unavailable = true;
+    _notify();
+  }
 
   /// Bumped on every whole-form (re)install: a response that belongs to an
   /// earlier generation (a retry still in flight across a reload) is dropped
@@ -175,15 +202,21 @@ class RuntimeFormController extends ChangeNotifier {
       );
     } catch (e) {
       // A stale revision always propagates: the caller refetches the form.
-      if (isFormRevisionStale(e) ||
-          !owner.capabilities.contains('option_source.status')) {
-        rethrow;
-      }
+      if (isFormRevisionStale(e)) rethrow;
+      // Per-source status is always supported (Web `unreachableSource`): a
+      // failed source marks only its own field unavailable and retryable,
+      // never the whole form.
+      final ref = owner.sourceRefs[id]!;
       return {
-        ...owner.sourceRefs[id]!,
+        ...ref,
         'status': 'unavailable',
         'retryable': true,
-        'options': [],
+        if (ref['kind'] == 'dependent_select')
+          'optionsByValue': <String, dynamic>{}
+        else ...{
+          'options': [],
+          'defaultValue': '',
+        },
       };
     }
   }
@@ -194,18 +227,15 @@ class RuntimeFormController extends ChangeNotifier {
   Future<_FetchedForm> _fetch() async {
     final raw = await _read(editing ? '/agents/$agentId/runtime-form' : base);
     final form = RuntimeForm.parse(raw);
-    if (form == null || !form.supported) {
-      throw const RaftApiException(
-        'This runtime form needs a newer client. It cannot be edited safely.',
-      );
+    if (form == null) {
+      throw const RaftApiException('The runtime form could not be read.');
     }
-    final layout = raw is Map && raw['uiSchema'] is Map
-        ? (raw['uiSchema'] as Map)['layout']
-        : null;
+    // Checked before any option source is loaded: an unavailable form is not
+    // rendered at all.
+    if (!form.supported) throw const _UnavailableForm();
     final advanced = {
-      if (layout is Map && layout['advanced'] is List)
-        for (final p in layout['advanced'] as List)
-          if (p is String && p.startsWith('/')) p.substring(1),
+      for (final f in form.fields)
+        if (f.advanced) f.key,
     };
     final loaded = await Future.wait([
       for (final id in form.sourceRefs.keys) source(id, form: form),
@@ -227,6 +257,7 @@ class RuntimeFormController extends ChangeNotifier {
     final generation = ++_generation;
     loading = true;
     error = null;
+    unavailable = false;
     _notify();
     try {
       _FetchedForm fetched;
@@ -264,6 +295,12 @@ class RuntimeFormController extends ChangeNotifier {
       values = nextValues;
       initialValues = jsonDecode(jsonEncode(values)) as Map<String, dynamic>;
       loading = false;
+      _notify();
+    } on _UnavailableForm {
+      if (disposed || generation != _generation) return;
+      definition = null;
+      loading = false;
+      unavailable = true;
       _notify();
     } catch (e) {
       if (disposed || generation != _generation) return;
@@ -350,14 +387,26 @@ class RuntimeFormController extends ChangeNotifier {
     _notify();
   }
 
-  Future<void> retry(String id) async {
-    if (!retrying.add(id)) return;
+  /// Re-requests one option source (`?refresh=1` when [refresh]: for a
+  /// Computer-reported list that also bypasses the Computer's model-list
+  /// cache). The sources keyed by this source's field (v3: a reasoning effort
+  /// keyed by model) follow, once it answers, without asking the Computer
+  /// again (Web `reloadSource` / `dependentsOf`).
+  Future<void> retry(String id, {bool refresh = true}) async {
+    final form = definition;
     final generation = _generation;
+    if (form == null || disposed || !retrying.add(id)) return;
     _notify();
+    var followers = const <String>[];
     try {
-      final next = await source(id, refresh: true);
+      final next = await source(id, refresh: refresh);
       if (disposed || !valid() || generation != _generation) return;
       sources[id] = next;
+      final key = form.sourceRefs[id]?['key'];
+      followers = [
+        for (final entry in form.sourceRefs.entries)
+          if (key != null && entry.value['parent'] == key) entry.key,
+      ];
     } catch (e) {
       if (disposed || generation != _generation) return;
       if (!await _recoverFromStale(e)) rethrow;
@@ -365,6 +414,10 @@ class RuntimeFormController extends ChangeNotifier {
       retrying.remove(id);
       _notify();
     }
+    if (generation != _generation) return;
+    await Future.wait([
+      for (final dependent in followers) retry(dependent, refresh: false),
+    ]);
   }
 
   /// Re-requests every option source of the current form (without a probe
@@ -431,12 +484,20 @@ class RuntimeFormController extends ChangeNotifier {
   }
 
   Map<String, dynamic> get submission => {
-    'formDefinitionRef': {'protocolVersion': 2, 'runtimeId': runtimeId},
+    // Echoes the protocol the loaded form speaks (2 or 3).
+    'formDefinitionRef': {
+      'protocolVersion': definition!.protocolVersion,
+      'runtimeId': runtimeId,
+    },
     'formValues': definition!.submission(values, sources),
   };
 }
 
-String? runtimeFieldError(BuildContext context, String? code) => switch (code) {
+String? runtimeFieldError(
+  BuildContext context,
+  String? code, {
+  bool savedConnection = false,
+}) => switch (code) {
   'required' => raftText(context, 'This field is required.'),
   'invalid_map' => raftText(context, 'Enter one unique KEY=value per line.'),
   // The field's source status line already says why, with its retry.
@@ -454,6 +515,14 @@ String? runtimeFieldError(BuildContext context, String? code) => switch (code) {
     context,
     'This saved provider is unavailable. Select another provider.',
   ),
+  // v3: the value is an unavailable entry (a saved connection, or a model on
+  // a list-only source): shown selected, pick another to save.
+  'option_unavailable' => raftText(
+    context,
+    savedConnection
+        ? 'This saved provider is unavailable. Select another provider.'
+        : 'Choose one of the available options.',
+  ),
   'unsupported_required' => raftText(
     context,
     'Update Raft to edit this setting.',
@@ -461,8 +530,10 @@ String? runtimeFieldError(BuildContext context, String? code) => switch (code) {
   _ => null,
 };
 
-/// The v2 fields as StableField rows (Web RuntimeFormV2Fields); advanced
-/// layout fields sit behind the MORE disclosure.
+/// The v2/v3 fields as StableField rows (Web RuntimeFormV2Fields); advanced
+/// layout fields sit behind the Advanced disclosure. A form the client cannot
+/// use ([RuntimeFormController.unavailable]) shows the unavailable notice in
+/// its place.
 class RuntimeFormFields extends StatefulWidget {
   const RuntimeFormFields({
     super.key,
@@ -471,11 +542,15 @@ class RuntimeFormFields extends StatefulWidget {
     this.leading = const [],
     this.hideAdvanced = false,
     this.rowGap = raftAgentFormGap,
+    this.openLink = openRuntimeFormLink,
   });
   final RuntimeFormController form;
   final bool busy;
   final bool hideAdvanced;
   final double rowGap;
+
+  /// Opens a link in a field's hint outside the app.
+  final RuntimeFormLinkOpener openLink;
 
   /// Rows rendered before the runtime fields (same rhythm).
   final List<Widget> leading;
@@ -484,7 +559,11 @@ class RuntimeFormFields extends StatefulWidget {
 }
 
 class _RuntimeFormFieldsState extends State<RuntimeFormFields> {
-  bool moreOpen = false;
+  /// Renderer convention: Advanced opens whenever a visible field in it has a
+  /// value (on edit, or once one is set), so a value in effect is never
+  /// collapsed out of sight. Opened once per appearance; the user may collapse
+  /// it.
+  bool moreOpen = false, sawAdvancedValue = false;
   RuntimeFormController get c => widget.form;
 
   bool editingProvider = false;
@@ -552,8 +631,8 @@ class _RuntimeFormFieldsState extends State<RuntimeFormFields> {
     final d = c.definition!;
     final choices = d.choices(f, c.sources, c.values),
         custom = d.custom(f, c.sources, c.values);
-    final source = c.sources[f.sourceId];
-    final status = source?['status'], sourceReason = source?['reason'];
+    final status = d.sourceStatus(f, c.sources);
+    final unavailableSelected = d.unavailableSelection(f, c.sources, c.values);
     if (f.kind == 'derived_select' && choices.isEmpty) {
       return const SizedBox.shrink();
     }
@@ -576,20 +655,37 @@ class _RuntimeFormFieldsState extends State<RuntimeFormFields> {
             : raftText(context, serverError)) ??
         (reentry
             ? runtimeFieldError(context, 'secret_reentry_required')
-            : runtimeFieldError(context, c.validation[f.key]));
+            : runtimeFieldError(
+                context,
+                c.validation[f.key],
+                savedConnection: unavailableSelected?['connectionId'] is String,
+              ));
+    final serverHint = f.copy['hint'] as String?;
     final hint = ownedNow
         ? managed
         : secretKept
         ? 'Leave blank to keep the saved value.'
         : f.kind == 'string_map'
         ? 'One KEY=value per line.'
-        : f.copy['hint'] as String?;
+        : serverHint == null
+        ? null
+        : runtimeFormHintPlain(serverHint);
+    // Server hint copy may carry inline Markdown links (https only).
+    final linkedHint =
+        !ownedNow &&
+            !secretKept &&
+            f.kind != 'string_map' &&
+            serverHint != null &&
+            runtimeFormHintHasLinks(serverHint)
+        ? serverHint
+        : null;
     // Web `RuntimeFormV2FieldControl`: a list the server describes is searched
     // in a combobox (a field that takes typed text too); only a derived list
     // (reasoning effort) is a plain select, and a dependent field whose
     // current parent takes free text is a plain text input.
     final searchable =
-        f.kind == 'select' || (f.kind == 'dependent_select' && !custom);
+        f.kind == 'select' ||
+        (f.kind == 'dependent_select' && !d.freeText(f, c.sources, c.values));
     // A stored value the current list no longer offers (a retired model, a
     // removed connection) stays selected, marked, until another is picked.
     final text = c.values[f.key] is String ? c.values[f.key] as String : '';
@@ -636,10 +732,20 @@ class _RuntimeFormFieldsState extends State<RuntimeFormFields> {
         enabled: !widget.busy,
         items: [
           if (unlisted)
+            // The value is an `unavailableOptions` entry: shown selected, by
+            // its own label and reason.
             RaftComboboxItem(
               text,
-              text,
-              description: raftText(context, 'Not in the current list'),
+              unavailableSelected?['label'] is String &&
+                      (unavailableSelected!['label'] as String).isNotEmpty
+                  ? unavailableSelected['label'] as String
+                  : text,
+              description:
+                  unavailableSelected?['reason'] is String &&
+                      (unavailableSelected!['reason'] as String).isNotEmpty
+                  ? unavailableSelected['reason'] as String
+                  : raftText(context, 'Not in the current list'),
+              wrapDescription: unavailableSelected != null,
             ),
           for (final o in choices)
             RaftComboboxItem(
@@ -651,6 +757,28 @@ class _RuntimeFormFieldsState extends State<RuntimeFormFields> {
               group: runtimeOptionGroup(context, o),
               enabled: o['unavailable'] != true,
             ),
+          // `OptionSource.unavailableOptions`: a disabled group after the
+          // list, by the server's `group` else "Not available on this
+          // computer"; the reason wraps, never truncated.
+          for (final o in d.unavailableOptions(f, c.sources))
+            if (o['value'] != text &&
+                !choices.any((listed) => listed['value'] == o['value']))
+              RaftComboboxItem(
+                '${o['value']}',
+                o['label'] is String && (o['label'] as String).isNotEmpty
+                    ? o['label'] as String
+                    : '${o['value']}',
+                description:
+                    o['reason'] is String && (o['reason'] as String).isNotEmpty
+                    ? o['reason'] as String
+                    : null,
+                keywords: '${o['value']}',
+                group:
+                    runtimeOptionGroup(context, o) ??
+                    raftText(context, 'Not available on this computer'),
+                enabled: false,
+                wrapDescription: true,
+              ),
         ],
         onSelected: (id) => c.change(f, id),
         // A field that takes typed text offers the typed value as is.
@@ -673,25 +801,62 @@ class _RuntimeFormFieldsState extends State<RuntimeFormFields> {
         onChanged: (v) => c.changeText(f, v),
       );
     }
-    final connectionId = selectedConnection?['connectionId'] as String?;
+    // v3 keeps a bound connection that is not selectable in
+    // `unavailableOptions`: its pencil still opens it.
+    final connectionId =
+        (selectedConnection?['connectionId'] ??
+                unavailableSelected?['connectionId'])
+            as String?;
+    // Every field bound to an option source gets a refresh action: it
+    // re-requests the source with `?refresh=1` (for a Computer-reported list
+    // that also bypasses the Computer's model-list cache). A non-live source
+    // with a retryable status already shows "Retry" below the control.
+    final sourceId = f.kind == 'derived_select' ? null : f.sourceId;
+    final showRefresh = sourceId != null && status?.retryable != true;
+    final refreshing = sourceId != null && c.retrying.contains(sourceId);
+    final pencil = connectionId != null && c.w.can('manageExternalAuth')
+        ? RaftInlineIconButton(
+            key: ValueKey('runtime-${f.key}-edit-provider'),
+            glyph: RaftGlyph.pencil,
+            tooltip: 'Edit saved provider',
+            size: 14,
+            onPressed: widget.busy
+                ? null
+                : () => editSavedProvider(f.key, connectionId),
+          )
+        : null;
+    final refresh = showRefresh
+        ? RaftInlineIconButton(
+            key: ValueKey('runtime-${f.key}-refresh-source'),
+            glyph: RaftGlyph.refreshCw,
+            tooltip: 'Load this list again, right now',
+            size: 14,
+            onPressed: widget.busy || refreshing
+                ? null
+                : () => c.retry(sourceId),
+          )
+        : null;
     return RaftStableField(
       label: f.label,
-      required: f.required && f.kind != 'boolean' && !ownedNow && !secretKept,
+      required:
+          d.isRequired(f, c.values) &&
+          f.kind != 'boolean' &&
+          !ownedNow &&
+          !secretKept,
       hint: hint,
+      hintBuilder: linkedHint == null
+          ? null
+          : (context, style) => RuntimeFormHintText(
+              hint: linkedHint,
+              style: style,
+              open: widget.openLink,
+            ),
       error: error,
       // The pencil for the selected saved connection: operators who manage
       // provider connections only (Web `capabilities.manageExternalAuth`).
-      labelAccessory: connectionId != null && c.w.can('manageExternalAuth')
-          ? RaftInlineIconButton(
-              key: ValueKey('runtime-${f.key}-edit-provider'),
-              glyph: RaftGlyph.pencil,
-              tooltip: 'Edit saved provider',
-              size: 14,
-              onPressed: widget.busy
-                  ? null
-                  : () => editSavedProvider(f.key, connectionId),
-            )
-          : null,
+      labelAccessory: pencil == null && refresh == null
+          ? null
+          : Row(mainAxisSize: MainAxisSize.min, children: [?refresh, ?pencil]),
       belowControl: [
         if (unlisted)
           RaftAgentFieldNote(
@@ -701,14 +866,15 @@ class _RuntimeFormFieldsState extends State<RuntimeFormFields> {
               {'value': text},
             ),
           ),
-        if (status == 'fallback' || status == 'unavailable')
+        if (status != null)
           RaftAgentSourceStatus(
             message: runtimeSourceStatusText(
               context,
-              status: status as String,
-              reason: sourceReason,
+              status: status.status,
+              reason: status.reason,
+              stale: status.stale,
             ),
-            retryLabel: source?['retryable'] == true ? 'Retry' : null,
+            retryLabel: status.retryable ? 'Retry' : null,
             onRetry: widget.busy || c.retrying.contains(f.sourceId)
                 ? null
                 : () => c.retry(f.sourceId!),
@@ -748,6 +914,11 @@ class _RuntimeFormFieldsState extends State<RuntimeFormFields> {
     listenable: c,
     builder: (context, _) {
       final d = c.definition;
+      final startsOpen = d != null && d.advancedStartsOpen(c.values, c.sources);
+      if (startsOpen != sawAdvancedValue) {
+        sawAdvancedValue = startsOpen;
+        if (startsOpen) moreOpen = true;
+      }
       final visible = d == null
           ? const <RuntimeField>[]
           : [
@@ -764,9 +935,18 @@ class _RuntimeFormFieldsState extends State<RuntimeFormFields> {
       ];
       final rows = [
         ...widget.leading,
+        // A form this client cannot use blocks create and save (no
+        // definition) and says why; never a Retry that could not help.
+        if (c.unavailable && d == null)
+          RaftAgentBanner(
+            key: const ValueKey('runtime-form-unavailable'),
+            status: RaftAgentBannerStatus.warning,
+            description: runtimeFormUnavailableText(context),
+          ),
         ...basic,
         if (more.isNotEmpty && !widget.hideAdvanced)
           RaftAgentMoreDisclosure(
+            label: 'Advanced',
             open: moreOpen,
             onToggle: () => setState(() => moreOpen = !moreOpen),
             children: more,
@@ -1020,10 +1200,20 @@ class _RuntimeFormDialogState extends State<RuntimeFormDialog> {
                   form: form,
                   busy: busy,
                   leading: [
-                    if (error != null || loadError != null)
+                    // Web `RuntimeFormUnavailableNotice`: a failed load offers
+                    // Retry (the whole form again); a failed save is only said.
+                    if (error != null)
                       RaftAgentBanner(
                         status: RaftAgentBannerStatus.warning,
-                        description: (error ?? loadError)!,
+                        description: error!,
+                      )
+                    else if (loadError != null)
+                      RaftAgentBanner(
+                        key: const ValueKey('runtime-form-load-error'),
+                        status: RaftAgentBannerStatus.warning,
+                        description: loadError,
+                        action: 'Retry',
+                        onAction: form.load,
                       ),
                     if (!editing && form.definition != null) ...[
                       RaftStableField(
@@ -1067,12 +1257,6 @@ class _RuntimeFormDialogState extends State<RuntimeFormDialog> {
                       primary: true,
                       busy: busy,
                       onPressed: form.reentryBlocked ? null : submit,
-                    )
-                  else if (!form.loading)
-                    RaftAgentDialogButton(
-                      label: 'Try again',
-                      primary: true,
-                      onPressed: form.load,
                     ),
                 ],
               ),

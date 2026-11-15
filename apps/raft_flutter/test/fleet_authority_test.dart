@@ -158,8 +158,7 @@ void main() {
         child: Scaffold(
           body: Builder(
             builder: (context) => TextButton(
-              onPressed: () =>
-                  showFleetRegistration(context, w, computers: true),
+              onPressed: () => showFleetRegistration(context, w),
               child: const Text('Start registration'),
             ),
           ),
@@ -199,8 +198,7 @@ void main() {
         child: Scaffold(
           body: Builder(
             builder: (context) => TextButton(
-              onPressed: () =>
-                  showFleetRegistration(context, w, computers: true),
+              onPressed: () => showFleetRegistration(context, w),
               child: const Text('Start registration'),
             ),
           ),

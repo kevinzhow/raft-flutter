@@ -1,0 +1,27 @@
+{
+  "protocolVersion": 1,
+  "runtimeId": "opencode",
+  "schemaVersion": "opencode.create.v1",
+  "sourceId": "model",
+  "kind": "select",
+  "pointer": "/model",
+  "options": [
+    {
+      "value": "default",
+      "label": "Configured Default / Auto"
+    },
+    {
+      "value": "deepseek/deepseek-v4-pro",
+      "label": "DeepSeek V4 Pro · DeepSeek"
+    },
+    {
+      "value": "openrouter/anthropic/claude-opus-4.5",
+      "label": "Claude Opus 4.5 · Anthropic via OpenRouter"
+    },
+    {
+      "value": "fusecode/opus[1m]",
+      "label": "Opus 1M · FuseCode"
+    }
+  ],
+  "defaultValue": "default"
+}

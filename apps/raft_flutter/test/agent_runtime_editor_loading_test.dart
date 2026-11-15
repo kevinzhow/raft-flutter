@@ -5,7 +5,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/features/fleet_views.dart';
-import 'package:raft_flutter/features/runtime_form_dialog.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -66,7 +65,6 @@ class _Client extends RaftClient {
   }
   bool v2 = true, formFails = false;
   var admissions = Completer<void>();
-  final models = Completer<void>();
   final definition = Completer<void>();
   final optionSource = Completer<void>();
   final calls = <(String, String, dynamic)>[];
@@ -118,21 +116,6 @@ class _Client extends RaftClient {
         ],
       };
     }
-    if (path.endsWith('/runtime-models/codex')) {
-      await models.future;
-      return {
-        'kind': 'live',
-        'value': {
-          'models': [
-            {
-              'id': 'gpt-5-codex',
-              'label': 'GPT-5 Codex',
-              'verified': 'launchable',
-            },
-          ],
-        },
-      };
-    }
     if (path == '/agents/a1/runtime-form') {
       await definition.future;
       if (formFails) throw const RaftApiException('fixture unavailable');
@@ -175,7 +158,7 @@ Future<_Client> _mount(WidgetTester t) async {
     ..server = RaftRecord({'id': 's', 'role': 'owner'});
   addTearDown(() async {
     await t.pumpWidget(const SizedBox.shrink());
-    for (final gate in [c.admissions, c.models, c.definition, c.optionSource]) {
+    for (final gate in [c.admissions, c.definition, c.optionSource]) {
       if (!gate.isCompleted) gate.complete();
     }
     await t.pump();
@@ -205,21 +188,27 @@ Future<void> _openFirstFrame(WidgetTester t) async {
   await t.pump();
 }
 
-void _expectLoading(WidgetTester t) {
+/// The first frames: before the admission rows arrive nothing but the loading
+/// note shows; after them the Runtime select is final and only the form below
+/// it is still loading (Web renders the select, then the form).
+void _expectLoading(WidgetTester t, {bool admitted = false}) {
   expect(_editor, findsOneWidget);
   expect(find.text('Loading runtime configuration…'), findsOneWidget);
-  expect(_key('runtime-editor-runtime'), findsNothing);
+  expect(
+    _key('runtime-editor-runtime'),
+    admitted ? findsOneWidget : findsNothing,
+  );
   expect(_key('runtime-editor-model'), findsNothing);
   expect(_key('runtime-model'), findsNothing);
-  expect(find.byType(RuntimeFormFields), findsNothing);
+  expect(_key('runtime-command'), findsNothing);
   expect(_saveEnabled(t), isFalse);
   expect(t.takeException(), isNull);
 }
 
-Future<void> _loadingFrames(WidgetTester t) async {
+Future<void> _loadingFrames(WidgetTester t, {bool admitted = false}) async {
   for (var i = 0; i < 5; i++) {
     await t.pump(const Duration(milliseconds: 16));
-    _expectLoading(t);
+    _expectLoading(t, admitted: admitted);
   }
 }
 
@@ -233,14 +222,14 @@ void main() {
       await _loadingFrames(t);
 
       c.admissions.complete();
-      await _loadingFrames(t);
+      await _loadingFrames(t, admitted: true);
       expect(
         c.calls.where((call) => call.$2.endsWith('/runtime-form')),
         hasLength(1),
       );
 
       c.definition.complete();
-      await _loadingFrames(t);
+      await _loadingFrames(t, admitted: true);
       expect(
         c.calls.where((call) => call.$2.endsWith('/option-sources/model')),
         hasLength(1),
@@ -249,7 +238,7 @@ void main() {
       c.optionSource.complete();
       await t.pumpAndSettle();
       expect(find.text('Loading runtime configuration…'), findsNothing);
-      expect(_key('runtime-editor-runtime'), findsNothing);
+      expect(_key('runtime-editor-runtime'), findsOneWidget);
       expect(find.text('Command from Computer'), findsOneWidget);
       final command = find.descendant(
         of: _key('runtime-command'),
@@ -267,47 +256,45 @@ void main() {
     },
   );
 
-  testWidgets('legacy fields wait for the initial Computer model read', (
+  testWidgets('a runtime row without the marker is final: no form, no flash', (
     t,
   ) async {
     final c = (await _mount(t))..v2 = false;
     await _openFirstFrame(t);
     _expectLoading(t);
     c.admissions.complete();
-    await _loadingFrames(t);
-    c.models.complete();
     await t.pumpAndSettle();
-    expect(find.text('Loading runtime configuration…'), findsNothing);
     expect(_key('runtime-editor-runtime'), findsOneWidget);
-    expect(_key('runtime-editor-model'), findsOneWidget);
+    expect(_key('runtime-form-unavailable'), findsOneWidget);
     expect(c.calls.where((call) => call.$2.endsWith('/runtime-form')), isEmpty);
+    expect(_saveEnabled(t), isFalse);
   });
 
-  testWidgets(
-    'reopening revalidates cached legacy admission before v2 fields',
-    (t) async {
-      final c = (await _mount(t))..v2 = false;
-      c.admissions.complete();
-      c.models.complete();
-      await _openFirstFrame(t);
-      await t.pumpAndSettle();
-      expect(_key('runtime-editor-runtime'), findsOneWidget);
-      await t.tap(find.text('Cancel').last);
-      await t.pumpAndSettle();
+  testWidgets('reopening revalidates the admission before showing any form', (
+    t,
+  ) async {
+    final c = (await _mount(t))..v2 = false;
+    c.admissions.complete();
+    await _openFirstFrame(t);
+    await t.pumpAndSettle();
+    expect(_key('runtime-form-unavailable'), findsOneWidget);
+    await t.tap(find.text('Cancel').last);
+    await t.pumpAndSettle();
 
-      c.v2 = true;
-      c.admissions = Completer<void>();
-      await _openFirstFrame(t);
-      _expectLoading(t);
-      c.admissions.complete();
-      await _loadingFrames(t);
-      c.definition.complete();
-      c.optionSource.complete();
-      await t.pumpAndSettle();
-      expect(_key('runtime-editor-runtime'), findsNothing);
-      expect(_key('runtime-model'), findsOneWidget);
-    },
-  );
+    // The server now carries the marker; the earlier answer is not reused.
+    c.v2 = true;
+    c.admissions = Completer<void>();
+    await _openFirstFrame(t);
+    _expectLoading(t);
+    expect(_key('runtime-form-unavailable'), findsNothing);
+    c.admissions.complete();
+    await _loadingFrames(t, admitted: true);
+    c.definition.complete();
+    c.optionSource.complete();
+    await t.pumpAndSettle();
+    expect(_key('runtime-form-unavailable'), findsNothing);
+    expect(_key('runtime-model'), findsOneWidget);
+  });
 
   testWidgets('a failed v2 load can retry and reveal only complete values', (
     t,
@@ -319,12 +306,12 @@ void main() {
     c.definition.complete();
     await t.pumpAndSettle();
     expect(_key('runtime-editor-form-error'), findsOneWidget);
-    expect(_key('runtime-editor-runtime'), findsNothing);
+    expect(_key('runtime-editor-runtime'), findsOneWidget);
     expect(_key('runtime-command'), findsNothing);
 
     c.formFails = false;
     await t.tapOnText(find.textRange.ofSubstring('Retry'));
-    await _loadingFrames(t);
+    await _loadingFrames(t, admitted: true);
     c.optionSource.complete();
     await t.pumpAndSettle();
     expect(_key('runtime-editor-form-error'), findsNothing);

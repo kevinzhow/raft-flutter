@@ -1,0 +1,69 @@
+{
+  "protocolVersion": 2,
+  "runtimeId": "cursor",
+  "schemaVersion": "cursor.create.v1",
+  "requiredClientCapabilities": [
+    "select.custom_value"
+  ],
+  "dataSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "model"
+    ],
+    "properties": {
+      "model": {
+        "type": "string",
+        "title": "Model",
+        "minLength": 1,
+        "x-optionSource": "model"
+      },
+      "envVars": {
+        "type": "object",
+        "title": "Environment Variables",
+        "additionalProperties": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "uiSchema": {
+    "order": [
+      "model",
+      "envVars"
+    ],
+    "layout": {
+      "advanced": [
+        "/envVars"
+      ]
+    },
+    "visibility": [],
+    "localization": {
+      "model": {
+        "label": "Model",
+        "hint": "Models available from this computer's Cursor CLI. You can also type a model ID."
+      },
+      "envVars": {
+        "label": "Environment Variables",
+        "hint": "These will be injected into the runtime command environment."
+      }
+    }
+  },
+  "capabilities": {
+    "providerKinds": [],
+    "writeOnlyPointers": [],
+    "forbiddenPointers": [
+      "/hostUserState"
+    ]
+  },
+  "optionSources": {
+    "model": {
+      "protocolVersion": 1,
+      "runtimeId": "cursor",
+      "schemaVersion": "cursor.create.v1",
+      "sourceId": "model",
+      "kind": "select",
+      "pointer": "/model"
+    }
+  }
+}

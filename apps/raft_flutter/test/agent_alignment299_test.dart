@@ -3,7 +3,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/features/agent_detail_view.dart';
 import 'package:raft_flutter/features/agent_runtime_editor.dart';
-import 'package:raft_flutter/features/create_agent_dialog.dart';
 import 'package:raft_flutter/features/fleet_views.dart';
 import 'package:raft_flutter/features/provider_views.dart';
 import 'package:raft_ui/raft_ui.dart';
@@ -46,10 +45,58 @@ class _Fixture {
         },
         '/agents/a/runtime-options': () => {
           'options': [
-            {'runtimeId': 'codex', 'canSelectInThisContext': true},
+            {
+              'runtimeId': 'codex',
+              'canSelectInThisContext': true,
+              'runtimeFormV2': {'protocolVersion': 2},
+            },
           ],
         },
         '/servers/s/machines/m1/runtime-options': () => {'options': []},
+        // The agent's edit form (Web 1.24: the one runtime editor).
+        '/agents/a/runtime-form': () => {
+          'protocolVersion': 2,
+          'runtimeId': 'codex',
+          'schemaVersion': 'codex.edit.fixture.v1',
+          'dataSchema': {
+            'type': 'object',
+            'required': ['model'],
+            'properties': {
+              'model': {
+                'type': 'string',
+                'title': 'Model',
+                'x-optionSource': 'model',
+              },
+            },
+          },
+          'uiSchema': {
+            'order': ['model'],
+          },
+          'optionSources': {
+            'model': {
+              'protocolVersion': 1,
+              'runtimeId': 'codex',
+              'schemaVersion': 'codex.edit.fixture.v1',
+              'sourceId': 'model',
+              'kind': 'select',
+              'pointer': '/model',
+            },
+          },
+          'values': {'model': agent['model']},
+        },
+        '/servers/s/machines/m1/runtime-forms/v2/codex/option-sources/model':
+            () => {
+              'protocolVersion': 1,
+              'runtimeId': 'codex',
+              'schemaVersion': 'codex.edit.fixture.v1',
+              'sourceId': 'model',
+              'kind': 'select',
+              'pointer': '/model',
+              'options': [
+                {'value': _model, 'label': _label},
+              ],
+              'customValueAllowed': false,
+            },
         for (final runtime in ['codex', 'claude'])
           '/servers/s/machines/m1/runtime-models/$runtime': () => {
             'kind': 'live',
@@ -208,12 +255,13 @@ void main() {
         onClose: ([_]) {},
       ),
     );
+    // The editor is the server-described form: the option's label is the
+    // Computer-approved name and the value stays the model id.
     expect(find.text(_label), findsWidgets);
     expect(find.text('Runtime source fallback'), findsNothing);
-    await t.tap(find.byKey(const ValueKey('runtime-editor-model')));
+    await t.tap(find.byKey(const ValueKey('runtime-model')));
     await t.pumpAndSettle();
     expect(find.text(_label), findsWidgets);
-    expect(find.text(_model), findsWidgets);
   });
 
   testWidgets('alignment299 choosing a catalog name submits the original id', (
@@ -231,7 +279,7 @@ void main() {
         onClose: ([_]) => closed = true,
       ),
     );
-    await t.tap(find.byKey(const ValueKey('runtime-editor-model')));
+    await t.tap(find.byKey(const ValueKey('runtime-model')));
     await t.pumpAndSettle();
     await t.tap(find.text(_label).last);
     await t.pumpAndSettle();
@@ -240,33 +288,8 @@ void main() {
     final body =
         f.w.calls.singleWhere((c) => c.$1 == 'PATCH' && c.$2 == '/agents/a').$3
             as Map;
-    expect(body['model'], _model);
-    expect((body['runtimeConfig'] as Map)['model'], {
-      'kind': 'preset',
-      'id': _model,
-    });
+    expect((body['formValues'] as Map)['model'], _model);
     expect(closed, isTrue);
-  });
-
-  testWidgets('alignment299 create pre-admission uses the shared catalog', (
-    t,
-  ) async {
-    final f = _Fixture();
-    await f.mount(
-      t,
-      CreateAgentDialog(
-        controller: f.w,
-        machines: f.machines,
-        initialName: 'Valid-Agent',
-      ),
-    );
-    final field = find.byWidgetPredicate(
-      (w) => w is RaftAgentSelect<String> && w.semanticLabel == 'Model',
-    );
-    expect(field, findsOneWidget);
-    final selected = t.widget<RaftAgentSelect<String>>(field);
-    expect(selected.options.single.value, _model);
-    expect(selected.options.single.label, _label);
   });
 
   testWidgets('alignment299 provider assigned live agent opens its profile', (

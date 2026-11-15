@@ -1,7 +1,9 @@
 // Web v1.21.12 machine/bulkChangeModelPlan.ts and the dialog's apply step.
 // No UI or transport ownership: planning and execution are independently testable.
-import 'agent_runtime_draft.dart';
+import '../data/runtime_config.dart'
+    show runtimeSupportsFastMode, runtimeSupportsReasoning;
 import 'agent_runtime_catalog.dart';
+import 'agent_runtime_models.dart';
 
 class BulkModelTarget {
   const BulkModelTarget(this.runtime, this.model, this.reasoning);
@@ -111,25 +113,41 @@ Map<String, dynamic> buildBulkAgentUpdate(
   final env = config is Map
       ? config['envVars'] ?? agent.value['envVars']
       : agent.value['envVars'];
-  final draft = RuntimeDraft(
-    runtime: target.runtime,
-    model: target.model,
-    reasoning: target.reasoning,
-    fastMode:
-        agent.runtime == target.runtime &&
-        mode is Map &&
-        mode['kind'] == 'fast',
-    envVars: [
-      if (env is Map)
-        for (final entry in env.entries)
-          MapEntry('${entry.key}', '${entry.value}'),
-    ],
-  );
+  final envVars = <String, String>{
+    if (env is Map)
+      for (final entry in env.entries)
+        if (('${entry.key}').trim().isNotEmpty)
+          ('${entry.key}').trim(): '${entry.value}',
+  };
+  final fastMode =
+      agent.runtime == target.runtime && mode is Map && mode['kind'] == 'fast';
+  // Web `buildRuntimeConfig` for a preset model: the agent's own env vars stay,
+  // its fast mode stays on a runtime that supports it, and provider / command
+  // are never present (the planner skips such agents).
   return {
     'runtime': target.runtime,
     'model': target.model,
     'reasoningEffort': target.reasoning,
-    'runtimeConfig': draft.buildRuntimeConfig(),
+    'runtimeConfig': {
+      'version': runtimeConfigVersion,
+      'runtime': target.runtime,
+      if (target.runtime == 'claude') 'provider': {'kind': 'default'},
+      'model': {
+        'kind': 'preset',
+        'id': target.model.isEmpty
+            ? defaultRuntimeModel(target.runtime)
+            : target.model,
+      },
+      'mode': {
+        'kind': fastMode && runtimeSupportsFastMode(target.runtime)
+            ? 'fast'
+            : 'default',
+      },
+      'reasoningEffort': runtimeSupportsReasoning(target.runtime)
+          ? target.reasoning
+          : null,
+      'envVars': envVars.isEmpty ? null : envVars,
+    },
   };
 }
 
@@ -160,12 +178,24 @@ class BulkModelReceipt {
        skipped = List.unmodifiable(skipped),
        unfinished = Map.unmodifiable(unfinished),
        bannerUntil = now.add(const Duration(seconds: 5)),
-       highlightUntil = now.add(const Duration(seconds: 3));
+       highlightUntil = now.add(const Duration(seconds: 3)),
+       highlightNonce = changed.isEmpty ? null : ++_highlightSeq;
   final BulkModelTarget target;
   final int total;
   final List<String> changed, skipped;
   final Map<String, BulkUnfinishedPhase> unfinished;
   final DateTime bannerUntil, highlightUntil;
+
+  /// Web `BulkChangeModelReceiptState.highlights[machine].nonce`: counts the
+  /// bulk changes that changed at least one agent, so every change's highlight
+  /// is a request of its own and a second change restarts it. Null when no
+  /// agent changed (nothing to locate).
+  final int? highlightNonce;
+
+  /// The located request the highlighted rows run under (`bulk:<nonce>`).
+  String? get locatedRequest =>
+      highlightNonce == null ? null : 'bulk:$highlightNonce';
+  static int _highlightSeq = 0;
   bool get success => unfinished.isEmpty;
   bool visibleAt(DateTime now) => !success || now.isBefore(bannerUntil);
   Set<String> highlightsAt(DateTime now) =>

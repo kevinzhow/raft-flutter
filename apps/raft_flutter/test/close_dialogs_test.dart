@@ -895,8 +895,9 @@ void registerCloseDialogTests(TestPart part) {
   // the release-notes dialog (close_release_notes_test.dart), the task
   // delete confirmation (close_task_dialogs_test.dart), the rack's move
   // dialog (close_rack_dialogs_test.dart), the two-step dialogs
-  // (close_second_factor_test.dart) and the Computer owner transfer and
-  // others-agents dialogs (close_computer_owner_dialogs_test.dart).
+  // (close_second_factor_test.dart), the Computer owner transfer and
+  // others-agents dialogs (close_computer_owner_dialogs_test.dart) and the
+  // external agent dialogs (close_external_agent_test.dart).
   const ownFile = {
     'computer-release-notes',
     'task-delete-confirm',
@@ -904,6 +905,8 @@ void registerCloseDialogTests(TestPart part) {
     'second-factor-step',
     'transfer-computer-owner-dialog',
     'computer-others-agents-dialog',
+    'create-external-agent',
+    'external-credential-confirm',
   };
   final surfaces = [
     for (final surface in dialogSurfaces)

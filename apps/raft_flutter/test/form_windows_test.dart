@@ -9,6 +9,7 @@ import 'package:raft_flutter/features/agent_runtime_editor.dart';
 import 'package:raft_flutter/features/create_channel_dialog.dart';
 import 'package:raft_flutter/features/create_joint_channel_dialog.dart';
 import 'package:raft_flutter/features/create_task_dialog.dart';
+import 'package:raft_flutter/features/create_external_agent_dialog.dart';
 import 'package:raft_flutter/features/fleet_views.dart';
 import 'package:raft_flutter/features/managed_agent_launcher.dart';
 import 'package:raft_flutter/features/report_issue.dart';
@@ -173,8 +174,7 @@ final _forms = <_Form>[
   ),
   _Form(
     'register computer',
-    open: (t, context, w, _) =>
-        showFleetRegistration(context, w, computers: true),
+    open: (t, context, w, _) => showFleetRegistration(context, w),
     field: () => _key('field-name'),
     routes: (api) =>
         api.routes['POST /servers/s1/machines'] = (_) => {'id': 'm9'},
@@ -183,10 +183,10 @@ final _forms = <_Form>[
   ),
   _Form(
     'create external agent',
-    open: (t, context, w, _) => showFleetRegistration(context, w),
-    field: () => _key('field-name'),
+    open: (t, context, w, _) => showCreateExternalAgentDialog(context, w),
+    field: () => _key('create-external-agent-name'),
     routes: (api) => api.routes['POST /agents'] = (_) => {'id': 'a9'},
-    submit: () => find.widgetWithText(RaftButton, 'Create external agent'),
+    submit: () => _key('create-external-agent-next'),
     submitted: (api, _) => _posted(api, 'POST', '/agents'),
   ),
   _Form(

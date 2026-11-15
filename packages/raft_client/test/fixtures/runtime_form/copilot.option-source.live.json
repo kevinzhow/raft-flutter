@@ -1,0 +1,53 @@
+{
+  "protocolVersion": 1,
+  "runtimeId": "copilot",
+  "schemaVersion": "copilot.edit.v1",
+  "sourceId": "model",
+  "kind": "select",
+  "pointer": "/model",
+  "options": [
+    {
+      "value": "gpt-5.4",
+      "label": "GPT-5.4",
+      "supportedReasoningEfforts": [
+        "low",
+        "medium",
+        "high",
+        "xhigh"
+      ]
+    },
+    {
+      "value": "gpt-5.2",
+      "label": "GPT-5.2",
+      "supportedReasoningEfforts": [
+        "low",
+        "medium",
+        "high",
+        "xhigh"
+      ]
+    },
+    {
+      "value": "claude-4-sonnet",
+      "label": "Claude 4 Sonnet",
+      "supportedReasoningEfforts": [
+        "low",
+        "medium",
+        "high",
+        "xhigh"
+      ]
+    },
+    {
+      "value": "claude-4.5-sonnet",
+      "label": "Claude 4.5 Sonnet",
+      "supportedReasoningEfforts": [
+        "low",
+        "medium",
+        "high",
+        "xhigh"
+      ]
+    }
+  ],
+  "defaultValue": "gpt-5.4",
+  "customValueAllowed": true,
+  "status": "live"
+}

@@ -2,7 +2,7 @@
 // agent (create form, migration start dialog) and for a retry after the
 // provider refused the picked model: the provider's offered models with
 // "Default ({label})" first, read-only while an administrator decides
-// (`locked`), a spinner while the list loads and a warning with Try Again when
+// (`locked`), a spinner while the list loads and a warning with Try again when
 // it could not be read. `null` is the provider's default.
 import 'package:flutter/material.dart';
 import 'package:raft_ui/raft_ui.dart';

@@ -14,7 +14,8 @@ import '../data/raft_location.dart' show RaftProfileKind;
 import '../data/user_error.dart';
 import '../data/workspace_controller.dart';
 import '../data/workspace_entity_directory.dart';
-import 'agent_runtime_labels.dart' show runtimeLabelWithStatus;
+import 'agent_runtime_labels.dart'
+    show RuntimeDeprecatedHereState, runtimeLabelWithStatus;
 import 'agent_metadata_projection.dart';
 
 import 'package:url_launcher/url_launcher.dart';
@@ -51,6 +52,9 @@ const computerRuntimeOptions = <(String, String, bool)>[
   ('cursor', 'Cursor CLI', false),
   ('opencode', 'OpenCode', false),
   ('pi', 'Pi', false),
+  ('qwen', 'Qwen Code', false),
+  ('qoder', 'Qoder', false),
+  ('codebuddy', 'CodeBuddy Code', false),
 ];
 
 final _semver = RegExp(r'^(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z.-]+))?$');
@@ -271,8 +275,11 @@ class ComputerDetailPanel extends StatefulWidget {
   State<ComputerDetailPanel> createState() => _ComputerDetailPanelState();
 }
 
-class _ComputerDetailPanelState extends State<ComputerDetailPanel> {
+class _ComputerDetailPanelState extends State<ComputerDetailPanel>
+    with RuntimeDeprecatedHereState<ComputerDetailPanel> {
   WorkspaceController get w => widget.controller;
+  @override
+  WorkspaceController get runtimeCatalogWorkspace => w;
   Map<String, dynamic> get m => widget.machine;
   String get id => m['id'] as String;
   String get serverId => w.server?.id ?? '';
@@ -682,7 +689,9 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel> {
     final version = m['computerVersion'];
     final detection = computerRuntimeDetection(
       m,
-      (rid) => runtimeLabelWithStatus(context, rid),
+      // MachineInfoSection.tsx:159: the server's answer.
+      (rid) =>
+          runtimeLabelWithStatus(context, rid, deprecated: deprecatedHere(rid)),
     );
     final service = isComputer && online ? this.service(fact, reconnect) : null;
     return RaftComputerDetailData(
@@ -849,7 +858,12 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel> {
     final runtime = '${a['runtime'] ?? ''}';
     final model = '${a['model'] ?? ''}';
     return [
-      runtimeLabelWithStatus(context, runtime),
+      // MachineAgentRow.tsx:49: the server's answer.
+      runtimeLabelWithStatus(
+        context,
+        runtime,
+        deprecated: deprecatedHere(runtime),
+      ),
       if (model.isNotEmpty)
         modelDisplayLabel(
           w,

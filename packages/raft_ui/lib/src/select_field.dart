@@ -5,6 +5,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/semantics.dart' show SemanticsRole;
+import 'package:raft_theme/recipes/select.g.dart' as raft_select;
 
 import 'design_primitives.dart';
 import 'hover_region.dart';
@@ -15,9 +16,11 @@ import 'localization.dart';
 import 'menu_popup_backend.dart';
 import 'panel_layout.dart' show RaftCssText;
 import 'recipe_surface.dart';
+import 'recipes/badge.g.dart' show RaftBadgeRecipeVariant;
 import 'recipes/button_variants.g.dart';
 import 'recipes/recipe_runtime.dart';
 import 'recipes/select.g.dart';
+import 'agent_profile.dart' show RaftInlineBadge, RaftRecipeBadge;
 import 'form_controls.dart' show RaftField;
 import 'theme.dart';
 import 'tokens/tokens.dart' show RaftCssShadow;
@@ -44,6 +47,11 @@ RaftSlotStyle raftMergeSlots(RaftSlotStyle a, RaftSlotStyle b) {
 
 /// One option of a [RaftSelectField] (`SelectItem` with its `SelectItemText`): the [value] it selects, the
 /// [label] shown in the trigger and in the list, and whether it can be picked.
+///
+/// The optional parts are opt-in and change nothing for an item that sets none of them: a [group] heading
+/// (`SelectGroup` + `SelectGroupLabel`), a [description] line (`SelectItemDescription`), a [badge] after the
+/// label, a [suffix] after the label and badge, and the non-value action row ([RaftSelectItem.action],
+/// `SelectActionItem`).
 @immutable
 class RaftSelectItem<T> {
   const RaftSelectItem({
@@ -52,7 +60,29 @@ class RaftSelectItem<T> {
     this.enabled = true,
     this.cssText = false,
     this.labelKey,
-  });
+    this.group,
+    this.description,
+    this.badge,
+    this.suffix,
+    this.suffixInList = true,
+  }) : onAction = null;
+
+  /// A row at the end of the list that changes what the list shows ("Show all supported"). It is reached by
+  /// the arrow keys and by typeahead like an option, but it never becomes the value, never reaches
+  /// `onChanged` and leaves the list open. [value] only identifies the row (a sentinel the owner never uses
+  /// as a real value).
+  const RaftSelectItem.action({
+    required this.value,
+    required this.label,
+    required VoidCallback this.onAction,
+    this.labelKey,
+  }) : enabled = true,
+       cssText = false,
+       group = null,
+       description = null,
+       badge = null,
+       suffix = null,
+       suffixInList = true;
 
   final T value;
 
@@ -66,9 +96,66 @@ class RaftSelectItem<T> {
   /// Key of the label text (tests find a choice by it, in the trigger and in the list).
   final Key? labelKey;
 
-  /// The label widget both the trigger and the list show.
-  Widget get child =>
-      cssText ? RaftCssText(label, key: labelKey) : Text(label, key: labelKey);
+  /// Heading of the group this row belongs to. Contiguous rows with the same group share one heading; a
+  /// hairline separates groups. Null rows list without a heading.
+  final String? group;
+
+  /// A second line under the label: what the row means, not its name again.
+  final String? description;
+
+  /// Text of an inline badge after the label (Web `Badge.Experimental`), in the list and in the closed field.
+  final String? badge;
+
+  /// What follows the label and badge (" · Update required"). Always in the closed field; in the list unless
+  /// [suffixInList] is false (the group heading already says it).
+  final String? suffix;
+  final bool suffixInList;
+
+  /// Set for the action row ([RaftSelectItem.action]).
+  final VoidCallback? onAction;
+  bool get isAction => onAction != null;
+
+  bool get _decorated => badge != null || suffix != null;
+
+  Widget _build(bool inList) {
+    if (!_decorated) {
+      return cssText
+          ? RaftCssText(label, key: labelKey)
+          : Text(label, key: labelKey);
+    }
+    final tail = inList && !suffixInList ? null : suffix;
+    return Text.rich(
+      key: labelKey,
+      TextSpan(
+        children: [
+          TextSpan(text: label),
+          if (badge != null) ...[
+            const TextSpan(text: ' '),
+            WidgetSpan(
+              alignment: PlaceholderAlignment.middle,
+              child: RaftInlineBadge(
+                badge: RaftRecipeBadge(
+                  badge!,
+                  variant: RaftBadgeRecipeVariant.success,
+                ),
+              ),
+            ),
+          ],
+          if (tail != null) TextSpan(text: tail),
+        ],
+      ),
+    );
+  }
+
+  /// The label widget the closed trigger shows: name, badge and every suffix.
+  Widget get child => _build(false);
+
+  /// The label widget the list shows.
+  Widget get listChild => _build(true);
+
+  /// The label as announced: name, badge and suffix in the closed field.
+  String get semanticLabel =>
+      '$label${badge == null ? '' : ' $badge'}${suffix ?? ''}';
 }
 
 /// A [RaftSelectField] under its label (`Field` + `FieldLabel` + `Select`). The Raft look draws the canonical field
@@ -198,7 +285,9 @@ class _RaftSelectFieldState<T> extends State<RaftSelectField<T>> {
     final enabled = widget.onChanged != null;
     final fieldChrome = widget.chrome == RaftSelectRecipeChrome.field;
     final selected = widget.items
-        .where((e) => e.value == widget.value && widget.value != null)
+        .where(
+          (e) => !e.isAction && e.value == widget.value && widget.value != null,
+        )
         .firstOrNull;
     final hasValue =
         selected != null ||
@@ -326,9 +415,59 @@ class _RaftSelectFieldState<T> extends State<RaftSelectField<T>> {
       states: t.recipeStates(responsive: true),
       tokens: rt,
     );
-    final preferred = widget.items.indexWhere(
-      (item) => item.enabled && item.value == widget.value,
+    final preferredItem = widget.items.indexWhere(
+      (item) => !item.isAction && item.enabled && item.value == widget.value,
     );
+    // Group headings, separators and the action row come from the items; the
+    // backend only sees entries. `itemOf[i]` is the item behind entry i (null
+    // for a heading or separator). Plain selects produce one entry per item.
+    final entries = <RaftMenuPopupEntry>[];
+    final itemOf = <int?>[];
+    final structured = widget.items.any(
+      (item) => item.group != null || item.isAction,
+    );
+    String? openGroup;
+    for (var i = 0; i < widget.items.length; i++) {
+      final item = widget.items[i];
+      if (structured) {
+        final group = item.isAction ? null : item.group;
+        if (i > 0 && (item.isAction || group != openGroup)) {
+          entries.add(
+            RaftMenuPopupEntry.separator(key: ValueKey('separator:$i')),
+          );
+          itemOf.add(null);
+        }
+        if (group != null && group != openGroup) {
+          entries.add(
+            RaftMenuPopupEntry.heading(
+              key: ValueKey('group:$group'),
+              label: group,
+            ),
+          );
+          itemOf.add(null);
+        }
+        openGroup = group;
+      }
+      entries.add(
+        RaftMenuPopupEntry(
+          key: ValueKey(item.value),
+          label: item.semanticLabel,
+          labelChild: item.listChild,
+          enabled: item.enabled,
+          selected: !item.isAction && item.value == widget.value,
+          description: item.description,
+          action: item.isAction,
+          indicator: RaftIcon(
+            RaftGlyph.check,
+            size: base.itemIndicator.target('& > svg')!.width!,
+          ),
+        ),
+      );
+      itemOf.add(i);
+    }
+    final preferred = itemOf.indexOf(preferredItem < 0 ? null : preferredItem);
+    final needsExtras =
+        structured || widget.items.any((e) => e.description != null);
     return Positioned.fill(
       child: TapRegion(
         onTapOutside: (_) => close(),
@@ -344,45 +483,46 @@ class _RaftSelectFieldState<T> extends State<RaftSelectField<T>> {
                   key: const ValueKey('raft-select-popup'),
                   anchorWidth: triggerSize.width,
                   triggerFocus: triggerFocus,
-                  preferredIndex: preferred < 0 ? null : preferred,
+                  preferredIndex: preferredItem < 0 || preferred < 0
+                      ? null
+                      : preferred,
                   semanticRole: SemanticsRole.list,
                   itemSemanticRole: SemanticsRole.listItem,
                   selectionSemantics: true,
-                  entries: [
-                    for (final item in widget.items)
-                      RaftMenuPopupEntry(
-                        key: ValueKey(item.value),
-                        label: item.label,
-                        labelChild: item.child,
-                        enabled: item.enabled,
-                        selected: item.value == widget.value,
-                        indicator: RaftIcon(
-                          RaftGlyph.check,
-                          size: base.itemIndicator.target('& > svg')!.width!,
-                        ),
-                      ),
-                  ],
+                  entries: entries,
                   resolveSlots: (state) {
+                    final states = t.recipeStates(
+                      responsive: true,
+                      hovered: !state.disabled && state.hovered,
+                      focusVisible: !state.disabled && state.focusVisible,
+                      extra: [
+                        if (state.disabled) 'data-disabled',
+                        if (state.selected) 'data-selected',
+                        if (!state.disabled && state.highlighted)
+                          'data-highlighted',
+                        if (state.lastChild) 'last-child',
+                      ],
+                    );
                     // The backend resolves its surface/list with index -1.
                     // Row state is already a complete recipe input, so no
                     // option lookup (including a sentinel lookup) is needed.
                     final sel = RaftSelectRecipe.resolve(
                       theme: t.recipeTheme,
                       chrome: widget.chrome,
-                      states: t.recipeStates(
-                        responsive: true,
-                        hovered: !state.disabled && state.hovered,
-                        focusVisible: !state.disabled && state.focusVisible,
-                        extra: [
-                          if (state.disabled) 'data-disabled',
-                          if (state.selected) 'data-selected',
-                          if (!state.disabled && state.highlighted)
-                            'data-highlighted',
-                          if (state.lastChild) 'last-child',
-                        ],
-                      ),
+                      states: states,
                       tokens: rt,
                     );
+                    // The Raft-only slots of the grouped / described / action
+                    // rows (the router's legacy class has none of them).
+                    final more = !needsExtras
+                        ? null
+                        : raft_select.RaftSelectRecipe.resolve(
+                            chrome: raft_select.RaftSelectRecipeChrome.values
+                                .where((e) => e.css == widget.chrome.css)
+                                .firstOrNull,
+                            states: states,
+                            tokens: rt,
+                          );
                     return RaftMenuPopupSlots(
                       content: sel.content,
                       list: sel.list,
@@ -390,14 +530,27 @@ class _RaftSelectFieldState<T> extends State<RaftSelectField<T>> {
                       itemIndicator: sel.itemIndicator,
                       itemLeading: sel.itemLeading,
                       itemText: sel.itemText,
+                      itemDescription: more?.itemDescription,
+                      actionItem: more?.actionItem,
+                      groupLabel: more?.groupLabel,
+                      separator: more?.separator,
                     );
                   },
                   onActivate: (index) {
                     // Typed values and current activation authority remain
                     // with Select; the backend only returns an index.
-                    if (index < 0 || index >= widget.items.length) return;
-                    final item = widget.items[index];
-                    if (!item.enabled || widget.onChanged == null) return;
+                    if (index < 0 || index >= itemOf.length) return;
+                    final at = itemOf[index];
+                    if (at == null) return;
+                    final item = widget.items[at];
+                    if (!item.enabled) return;
+                    // An action row changes what the list shows and leaves
+                    // it open; it is never the value.
+                    if (item.onAction case final action?) {
+                      action();
+                      return;
+                    }
+                    if (widget.onChanged == null) return;
                     widget.onChanged!(item.value);
                     close();
                   },
@@ -428,13 +581,19 @@ class _RaftSelectFieldState<T> extends State<RaftSelectField<T>> {
       for (var i = 0; i < widget.items.length; i++)
         _SelectItem<T>(
           item: widget.items[i],
-          selected: widget.items[i].value == widget.value,
+          selected:
+              !widget.items[i].isAction &&
+              widget.items[i].value == widget.value,
           chrome: widget.chrome,
           last: i == widget.items.length - 1,
           autofocus:
               widget.items[i].value == widget.value ||
               (widget.value == null && i == 0),
           onSelect: () {
+            if (widget.items[i].onAction case final action?) {
+              action();
+              return;
+            }
             widget.onChanged?.call(widget.items[i].value);
             close();
           },
@@ -571,7 +730,7 @@ class _SelectItemState<T> extends State<_SelectItem<T>> {
                     maxLines: 1,
                     softWrap: false,
                     overflow: TextOverflow.ellipsis,
-                    child: widget.item.child,
+                    child: widget.item.listChild,
                   ),
                 ),
                 if (widget.selected) ...[

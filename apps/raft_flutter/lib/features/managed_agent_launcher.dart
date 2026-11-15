@@ -8,11 +8,19 @@ import '../data/workspace_controller.dart';
 import '../data/workspace_entity_directory.dart';
 import 'private_route_guard.dart';
 import 'create_agent_dialog.dart';
+import 'created_agent_toast.dart';
 
 /// Web CreateAgentDialog: computer, name, description, runtime and the
 /// runtime's protocol-v2 fields in one dialog (zero computers shows the
 /// "Connect a computer first" branch). A required computer never silently
 /// falls back to a different computer.
+///
+/// Once the dialog has closed, an agent created from the sidebar, the Members
+/// page or a Computer gets a "Created {name}" toast whose View opens its DM
+/// and profile (Web `showCreatedAgentToast`). Not for a first agent, an action
+/// card, onboarding, or a create that [stayOnCreate] (a channel's Add members
+/// create, which joins the agent there; by default whenever
+/// [autoJoinChannelName] is set).
 Future<Map<String, dynamic>?> showManagedAgentForm(
   BuildContext context,
   WorkspaceController w, {
@@ -29,6 +37,7 @@ Future<Map<String, dynamic>?> showManagedAgentForm(
   String? prefilledNameNote,
   math.Random? random,
   bool onboarding = false,
+  bool? stayOnCreate,
 }) async {
   final authority = workspaceAuthority(w);
   bool current() =>
@@ -40,6 +49,7 @@ Future<Map<String, dynamic>?> showManagedAgentForm(
   // directory's copy (revalidated in place); only a directory that cannot
   // provide it is fetched, behind the already-open dialog.
   Map<String, dynamic>? created;
+  var firstAgent = true;
   await showRaftForm<bool>(
     context,
     builder: (_) => _ManagedAgentFormHost(
@@ -58,6 +68,8 @@ Future<Map<String, dynamic>?> showManagedAgentForm(
         actionCardMessageId: actionCardMessageId,
         actionCardConfirmationVersion: actionCardConfirmationVersion,
         onCreated: (value) => created = value,
+        onCreatedDetail: (_, {required bool wasFirstAgent}) =>
+            firstAgent = wasFirstAgent,
         onConnectComputer: onConnectComputer,
         autoJoinChannelName: autoJoinChannelName,
         prefilledNameNote: prefilledNameNote,
@@ -67,7 +79,16 @@ Future<Map<String, dynamic>?> showManagedAgentForm(
       ),
     ),
   );
-  return current() ? created : null;
+  final agent = created;
+  if (!current()) return null;
+  final toast =
+      agent != null &&
+      !(stayOnCreate ?? autoJoinChannelName != null) &&
+      actionCardMessageId == null &&
+      !onboarding &&
+      !firstAgent;
+  if (toast && context.mounted) showCreatedAgentToast(context, w, agent);
+  return agent;
 }
 
 /// Supplies [CreateAgentDialog] with the account's computers: the directory
@@ -167,7 +188,7 @@ class _ManagedAgentFormHostState extends State<_ManagedAgentFormHost> {
     final list = machines;
     if (list != null) return widget.dialog(list);
     return RaftDialog.agent(
-      title: 'Create Agent',
+      title: 'Create agent',
       onClose: () => Navigator.of(context).maybePop(),
       children: [
         if (failure != null)

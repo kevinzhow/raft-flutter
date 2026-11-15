@@ -87,6 +87,8 @@ class RaftMenuSlotRow extends StatelessWidget {
     this.itemLeading,
     this.itemText,
     this.itemIndicator,
+    this.description,
+    this.descriptionStyle,
   });
 
   final String label;
@@ -94,6 +96,11 @@ class RaftMenuSlotRow extends StatelessWidget {
   final RaftTokenResolver tokens;
   final Widget? labelChild, leading, trailing, indicator;
   final RaftSlotStyle? itemLeading, itemText, itemIndicator;
+
+  /// A second line under the row (`SelectItemDescription`): it takes the whole
+  /// width under the label, and the row grows to hold it.
+  final String? description;
+  final RaftSlotStyle? descriptionStyle;
 
   @override
   Widget build(BuildContext context) {
@@ -134,6 +141,19 @@ class RaftMenuSlotRow extends StatelessWidget {
       return content;
     }
 
+    Widget line(
+      Widget text,
+      Widget Function(Widget, RaftSlotStyle?, {bool first}) iconSlot,
+    ) => Row(
+      spacing: root.columnGap ?? 0,
+      children: [
+        if (leading != null) iconSlot(leading!, itemLeading, first: true),
+        Expanded(child: text),
+        if (trailing != null) trailing!,
+        if (indicator != null) iconSlot(indicator!, itemIndicator),
+      ],
+    );
+
     Widget text = DefaultTextStyle.merge(
       maxLines: grows ? null : 1,
       softWrap: grows,
@@ -148,15 +168,22 @@ class RaftMenuSlotRow extends StatelessWidget {
       tokens: tokens,
       width: double.infinity,
       controlLabel: true,
-      child: Row(
-        spacing: root.columnGap ?? 0,
-        children: [
-          if (leading != null) iconSlot(leading!, itemLeading, first: true),
-          Expanded(child: text),
-          if (trailing != null) trailing!,
-          if (indicator != null) iconSlot(indicator!, itemIndicator),
-        ],
-      ),
+      child: description == null
+          ? line(text, iconSlot)
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              spacing: root.rowGap ?? 0,
+              children: [
+                line(text, iconSlot),
+                descriptionStyle == null
+                    ? Text(description!)
+                    : RaftRecipeBox(
+                        style: descriptionStyle!,
+                        tokens: descriptionStyle!.tokens ?? tokens,
+                        child: Text(description!),
+                      ),
+              ],
+            ),
     );
   }
 }

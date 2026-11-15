@@ -146,7 +146,8 @@ Map<String, dynamic>? _staticSource(String runtime, String source) {
 // "Create Agent" entry opens (FleetView, action cards).
 
 /// react-provider.spec.ts visualBillingInfo() for a non-billing case (Free
-/// plan, 2/2 agents): the capacity Banner React shows on every create case.
+/// plan, 2/2 agents): served to the no-computer case only (Web 1.24 split the capacity
+/// banner out of the other create cases).
 Map<String, dynamic> _visualBilling() => {
   'plan': 'free',
   'displayName': 'Free',
@@ -162,11 +163,18 @@ List<Map<String, dynamic>> _createAgentMachines(
   MsFixture fixture,
   List<String> runtimes,
 ) => [
-  {...fixture.machine('primary'), 'status': 'online', 'runtimes': runtimes},
+  // Web's visual host machines carry no hostname, so its picker label is the name.
+  {
+    ...fixture.machine('primary'),
+    'status': 'online',
+    'runtimes': runtimes,
+    'hostname': null,
+  },
   {
     ...fixture.machine('studio'),
     'status': 'offline',
     'runtimes': ['codex'],
+    'hostname': null,
   },
 ];
 
@@ -206,8 +214,9 @@ ParityCase _createAgent(
     final server = '/servers/visual-server/machines';
     final base = 'GET $server/computer-mbp/runtime-forms/v2/$runtime';
     final form = _forms(runtime);
+    // Web 1.24 split the capacity banner into its own case: the create cases
+    // show no banner, so no billing summary is served.
     final routes = <String, Object? Function(dynamic)>{
-      'GET /billing/subscription': (_) => _visualBilling(),
       'GET $server': (_) => {
         'machines': _createAgentMachines(fixture, machineRuntimes),
       },
@@ -233,6 +242,7 @@ ParityCase _createAgent(
               'availableForNew': true,
               'manageableForCurrentAgent': false,
               'canSelectInThisContext': true,
+              'runtimeFormV2': {'protocolVersion': 2},
             },
           ],
         },
@@ -283,9 +293,9 @@ Future<void> _fillCustomProvider(WidgetTester t, ParityContext ctx) async {
     find.byKey(const ValueKey('runtime-apiKey')),
     'visual-test-key',
   );
-  await t.ensureVisible(find.text('More'));
+  await t.ensureVisible(find.text('Advanced'));
   await t.pump(const Duration(milliseconds: 100));
-  await t.tap(find.text('More'));
+  await t.tap(find.text('Advanced'));
   await t.pump(const Duration(milliseconds: 100));
   await t.enterText(find.byKey(const ValueKey('runtime-command')), 'claude');
   await t.pump(const Duration(milliseconds: 100));

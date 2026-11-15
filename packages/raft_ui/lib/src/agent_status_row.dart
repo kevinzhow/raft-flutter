@@ -38,7 +38,19 @@ class RaftAgentStatusRow extends StatelessWidget {
     this.retrying = false,
     this.onChangeModel,
     this.detail,
+    this.linkLabel,
+    this.onLink,
+    this.body,
   });
+
+  /// A readiness chip's own link (Web `agent-readiness-link`, a TextLink to
+  /// the verification portal): [linkLabel] opens through [onLink].
+  final String? linkLabel;
+  final VoidCallback? onLink;
+
+  /// The readiness sentence under the chip row (Web `agent-readiness-detail`,
+  /// callout, muted). Null draws nothing.
+  final String? body;
 
   /// The chip's words, already localized. Also its tooltip unless [tooltip].
   final String text;
@@ -123,6 +135,23 @@ class RaftAgentStatusRow extends StatelessWidget {
     }
 
     final links = <Widget>[
+      if (linkLabel != null && onLink != null)
+        // `whitespace-nowrap`: one line; in a window too narrow for it the
+        // link shrinks to fit instead of overflowing.
+        LayoutBuilder(
+          builder: (context, box) => ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: box.maxWidth),
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: AlignmentDirectional.centerStart,
+              child: link(
+                const ValueKey('agent-readiness-link'),
+                linkLabel!,
+                onLink,
+              ),
+            ),
+          ),
+        ),
       if (onChangeModel != null)
         link(
           const ValueKey('agent-status-change-model'),
@@ -156,10 +185,30 @@ class RaftAgentStatusRow extends StatelessWidget {
           );
     // A panel mid-transition can hand the row no width at all: draw nothing
     // rather than a chip that cannot fit its light.
+    final sentence = body;
     return LayoutBuilder(
-      builder: (context, box) => box.maxWidth < 24
-          ? const SizedBox.shrink()
-          : _layout(chip, links, hint),
+      builder: (context, box) {
+        if (box.maxWidth < 24) return const SizedBox.shrink();
+        final row = _layout(chip, links, hint);
+        if (sentence == null) return row;
+        // `flex flex-col gap-1`: the chip row, then the sentence.
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          spacing: 4,
+          children: [
+            row,
+            RaftCssText(
+              sentence,
+              key: const ValueKey('agent-readiness-detail'),
+              style: t.scale(
+                RaftTypeScale.callout,
+                color: t.ui.foregroundMuted,
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 

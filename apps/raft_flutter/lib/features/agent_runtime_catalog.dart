@@ -23,6 +23,8 @@ const runtimeConfigVersion = 1;
 
 /// `REASONING_EFFORTS` (id, label) in ladder order.
 const reasoningEfforts = <(String, String)>[
+  ("off", "No reasoning"),
+  ("minimal", "Minimal"),
   ("low", "Low"),
   ("medium", "Medium"),
   ("high", "High"),
@@ -35,28 +37,60 @@ const reasoningEfforts = <(String, String)>[
 const baseReasoningEfforts = <String>{"low", "medium", "high", "xhigh"};
 
 /// `REASONING_EFFORT_RUNTIMES`.
-const reasoningEffortRuntimes = <String>{"builtin", "claude", "codex", "grok", "copilot", "pi", "kimi-sdk"};
+const reasoningEffortRuntimes = <String>{"builtin", "claude", "codex", "grok", "antigravity", "copilot", "pi", "kimi-sdk", "codebuddy"};
 
 /// `RUNTIME_FAST_MODE_RUNTIMES`.
 const fastModeRuntimes = <String>{"claude", "codex"};
 
-/// `RUNTIMES` (id, displayName, binary, supported, deprecated).
-const runtimeInfos = <({String id, String name, String binary, bool supported, bool deprecated})>[
-  (id: "claude", name: "Claude Code", binary: "claude", supported: true, deprecated: false),
-  (id: "codex", name: "Codex CLI", binary: "codex", supported: true, deprecated: false),
-  (id: "grok", name: "Grok Build", binary: "grok", supported: true, deprecated: false),
-  (id: "builtin", name: "Built-in Pi", binary: "", supported: true, deprecated: false),
-  (id: "antigravity", name: "Antigravity CLI", binary: "agy", supported: true, deprecated: true),
-  (id: "kimi-sdk", name: "Kimi Code", binary: "", supported: true, deprecated: false),
-  (id: "kimi", name: "Kimi CLI", binary: "kimi", supported: true, deprecated: true),
-  (id: "copilot", name: "Copilot CLI", binary: "copilot", supported: true, deprecated: true),
-  (id: "cursor", name: "Cursor CLI", binary: "cursor-agent", supported: true, deprecated: false),
-  (id: "gemini", name: "Gemini CLI", binary: "gemini", supported: true, deprecated: true),
-  (id: "opencode", name: "OpenCode", binary: "opencode", supported: true, deprecated: false),
-  (id: "pi", name: "Pi", binary: "pi", supported: true, deprecated: false),
+/// `RUNTIMES` (id, displayName, binary, supported, deprecated, experimental).
+/// `oarOnly` is `isOarOnlyRuntime`: the runtime runs only on the Computer's OAR host.
+const runtimeInfos = <({String id, String name, String binary, bool supported, bool deprecated, bool experimental, bool oarOnly})>[
+  (id: "claude", name: "Claude Code", binary: "claude", supported: true, deprecated: false, experimental: false, oarOnly: false),
+  (id: "codex", name: "Codex CLI", binary: "codex", supported: true, deprecated: false, experimental: false, oarOnly: false),
+  (id: "grok", name: "Grok Build", binary: "grok", supported: true, deprecated: false, experimental: false, oarOnly: false),
+  (id: "builtin", name: "Built-in Pi", binary: "", supported: true, deprecated: false, experimental: false, oarOnly: false),
+  (id: "antigravity", name: "Antigravity CLI", binary: "agy", supported: true, deprecated: true, experimental: false, oarOnly: false),
+  (id: "kimi-sdk", name: "Kimi Code", binary: "", supported: true, deprecated: false, experimental: false, oarOnly: false),
+  (id: "kimi", name: "Kimi CLI", binary: "kimi", supported: true, deprecated: true, experimental: false, oarOnly: false),
+  (id: "copilot", name: "Copilot CLI", binary: "copilot", supported: true, deprecated: true, experimental: false, oarOnly: false),
+  (id: "cursor", name: "Cursor CLI", binary: "cursor-agent", supported: true, deprecated: false, experimental: false, oarOnly: false),
+  (id: "gemini", name: "Gemini CLI", binary: "gemini", supported: true, deprecated: true, experimental: false, oarOnly: false),
+  (id: "opencode", name: "OpenCode", binary: "opencode", supported: true, deprecated: false, experimental: false, oarOnly: false),
+  (id: "pi", name: "Pi", binary: "pi", supported: true, deprecated: false, experimental: false, oarOnly: false),
+  (id: "qwen", name: "Qwen Code", binary: "qwen", supported: true, deprecated: false, experimental: true, oarOnly: true),
+  (id: "qoder", name: "Qoder", binary: "qodercli", supported: true, deprecated: false, experimental: true, oarOnly: true),
+  (id: "codebuddy", name: "CodeBuddy Code", binary: "codebuddy", supported: true, deprecated: false, experimental: true, oarOnly: true),
 ];
 
-/// `RUNTIME_MODELS` of the runtimes the legacy editor covers; the first entry
+/// `PI_REASONING_EFFORTS`: every Pi thinking level, offered for every model on
+/// the Pi runtimes (`defaultReasoningEffortsForRuntime`).
+const piReasoningEfforts = <String>["off", "minimal", "low", "medium", "high", "xhigh", "max"];
+
+/// The runtimes whose undeclared-effort default is [piReasoningEfforts].
+const piReasoningEffortRuntimes = <String>{"builtin", "pi"};
+
+/// Runtimes where `runtimeOffersUndeclaredReasoningEfforts` is false: a model
+/// that declares no efforts offers none (the Computer lists them per model).
+const noUndeclaredReasoningEffortRuntimes = <String>{"antigravity", "codebuddy"};
+
+/// `isReasoningEffortOfferedOnRuntime`: `off` and `minimal` are Pi thinking
+/// levels, offered and accepted on the Pi runtimes only.
+bool isReasoningEffortOfferedOnRuntime(String runtime, String effort) =>
+    (effort != 'off' && effort != 'minimal') ||
+    piReasoningEffortRuntimes.contains(runtime);
+
+/// `defaultReasoningEffortsForRuntime`: what a model that declares none
+/// offers (Pi's full set on Pi runtimes, else the base set).
+List<String> defaultReasoningEffortsForRuntime(String runtime) =>
+    piReasoningEffortRuntimes.contains(runtime)
+        ? piReasoningEfforts
+        : baseReasoningEfforts.toList(growable: false);
+
+/// `runtimeOffersUndeclaredReasoningEfforts`.
+bool runtimeOffersUndeclaredReasoningEfforts(String runtime) =>
+    !noUndeclaredReasoningEffortRuntimes.contains(runtime);
+
+/// `RUNTIME_MODELS` of the runtimes with a bundled catalog; the first entry
 /// is `getDefaultModel`.
 const runtimeModelCatalog = <String, List<RuntimeModelInfo>>{
   "claude": [
@@ -69,6 +103,7 @@ const runtimeModelCatalog = <String, List<RuntimeModelInfo>>{
     RuntimeModelInfo(id: "claude-opus-4-8", label: "Claude Opus 4.8", supportedReasoningEfforts: ["low", "medium", "high", "xhigh", "max"]),
     RuntimeModelInfo(id: "claude-opus-4-7", label: "Claude Opus 4.7", supportedReasoningEfforts: ["low", "medium", "high", "xhigh", "max"]),
     RuntimeModelInfo(id: "claude-opus-4-6", label: "Claude Opus 4.6", supportedReasoningEfforts: ["low", "medium", "high", "xhigh", "max"]),
+    RuntimeModelInfo(id: "claude-fable-5-2", label: "Claude Fable 5.2", supportedReasoningEfforts: ["low", "medium", "high", "xhigh", "max"]),
     RuntimeModelInfo(id: "claude-fable-5-1", label: "Claude Fable 5.1", supportedReasoningEfforts: ["low", "medium", "high", "xhigh", "max"]),
     RuntimeModelInfo(id: "claude-fable-5", label: "Claude Fable 5", supportedReasoningEfforts: ["low", "medium", "high", "xhigh", "max"]),
     RuntimeModelInfo(id: "claude-sonnet-5-5", label: "Claude Sonnet 5.5", supportedReasoningEfforts: ["low", "medium", "high", "xhigh", "max"]),
@@ -147,6 +182,7 @@ const staticRuntimeModelSources = <String, List<RuntimeModelInfo>>{
     RuntimeModelInfo(id: "claude-opus-4-8", label: "Claude Opus 4.8", supportedReasoningEfforts: ["low", "medium", "high", "xhigh", "max"], verified: "launchable"),
     RuntimeModelInfo(id: "claude-opus-4-7", label: "Claude Opus 4.7", supportedReasoningEfforts: ["low", "medium", "high", "xhigh", "max"], verified: "launchable"),
     RuntimeModelInfo(id: "claude-opus-4-6", label: "Claude Opus 4.6", supportedReasoningEfforts: ["low", "medium", "high", "xhigh", "max"], verified: "launchable"),
+    RuntimeModelInfo(id: "claude-fable-5-2", label: "Claude Fable 5.2", supportedReasoningEfforts: ["low", "medium", "high", "xhigh", "max"], verified: "launchable"),
     RuntimeModelInfo(id: "claude-fable-5-1", label: "Claude Fable 5.1", supportedReasoningEfforts: ["low", "medium", "high", "xhigh", "max"], verified: "launchable"),
     RuntimeModelInfo(id: "claude-fable-5", label: "Claude Fable 5", supportedReasoningEfforts: ["low", "medium", "high", "xhigh", "max"], verified: "launchable"),
     RuntimeModelInfo(id: "claude-sonnet-5-5", label: "Claude Sonnet 5.5", supportedReasoningEfforts: ["low", "medium", "high", "xhigh", "max"], verified: "launchable"),

@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_client/raft_client.dart';
 
+import '../data/machine_order.dart';
+import 'server_runtime_catalog_reads.dart';
 import '../data/user_error.dart';
 import '../data/raft_location.dart' show RaftProfileKind;
 import '../data/web_error.dart';
@@ -159,7 +161,7 @@ class _ProviderConnectionsState
           );
         });
       },
-      submit: 'Add Connection',
+      submit: 'Add',
     );
   }
 
@@ -219,11 +221,21 @@ class _ProviderConnectionsState
     // The dialog opens at once and fills in when the list answers.
     await scopedDialog<void>(
       (dialog) => _LoadedDialog<Map<String, dynamic>>(
-        load: () async => managementMap(
-          await w.client.get(
-            '/provider-connections/${connection['id']}/agents',
-          ),
-        ),
+        load: () async {
+          // The runtime words come from this server's catalog (Antigravity is
+          // not deprecated where its OAR switch is on): the rows wait for it
+          // so they render once, final.
+          final reads = ServerRuntimeCatalogReads.of(w);
+          final serverId = w.server?.id;
+          final catalog = serverId == null ? null : reads.read(serverId);
+          final result = managementMap(
+            await w.client.get(
+              '/provider-connections/${connection['id']}/agents',
+            ),
+          );
+          await catalog;
+          return result;
+        },
         builder: (context, data, failure) => RaftAlertDialog(
           legacy: RaftLegacyAlert.material,
           title: Text('Agents using ${connection['name']}'),
@@ -261,7 +273,7 @@ class _ProviderConnectionsState
                           children: [
                             RaftListRowTitle(humanDisplayName(a)),
                             RaftListRowDescription(
-                              '${runtimeLabelWithStatus(context, '${a['runtime'] ?? ''}')} · ${a['status']}${a['computerName'] == null ? '' : ' · ${a['computerName']}'}',
+                              '${runtimeLabelWithStatus(context, '${a['runtime'] ?? ''}', deprecated: ServerRuntimeCatalogReads.of(w).deprecatedHere()('${a['runtime'] ?? ''}'))} · ${a['status']}${a['computerName'] == null ? '' : ' · ${a['computerName']}'}',
                               wrap: true,
                             ),
                           ],
@@ -325,13 +337,16 @@ class _ProviderConnectionsState
               await w.client.get('/servers/${w.server!.id}/machines'),
             )['machines'],
           );
-    final candidates = machines
-        .where(
-          (m) =>
-              m['status'] == 'online' &&
-              managementStrings(m['runtimes']).contains('builtin'),
-        )
-        .toList();
+    // Ordered like the sidebar: this device, mine, the rest (Web
+    // `orderMachinesLikeSidebar`).
+    final candidates = orderMachinesLikeSidebar(
+      machines.where(
+        (m) =>
+            m['status'] == 'online' &&
+            managementStrings(m['runtimes']).contains('builtin'),
+      ),
+      userId: w.client.user?.id,
+    );
     if (candidates.isEmpty) {
       // Web `settings.providers.verifyNoComputers`.
       throw const RaftUserError(
@@ -377,7 +392,7 @@ class _ProviderConnectionsState
                                 failure,
                                 'Verification could not be started.',
                               ),
-                        submitLabel: 'Verify Connection',
+                        submitLabel: 'Verify',
                         onSubmit: (_) async => throw const RaftUserError(
                           'Verification could not be started.',
                         ),
@@ -478,7 +493,7 @@ class _ProviderConnectionsState
                             );
                           }
                         },
-                        submitLabel: 'Verify Connection',
+                        submitLabel: 'Verify',
                         description: 'Run one canary request through the selected computer. This may incur the provider’s normal usage charges.',
                       ),
               ),

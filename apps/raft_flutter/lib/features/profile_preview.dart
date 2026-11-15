@@ -12,7 +12,8 @@ import '../data/runtime_config.dart';
 import '../data/workspace_controller.dart';
 import '../data/workspace_entity_directory.dart';
 import 'agent_detail_view.dart' show agentTimeFormatter;
-import 'agent_runtime_labels.dart' show runtimeLabelWithStatus;
+import 'agent_runtime_labels.dart'
+    show RuntimeDeprecatedHereState, runtimeLabelWithStatus;
 import 'agent_trajectory_log.dart';
 import 'model_label_catalog.dart';
 import 'agent_metadata_projection.dart';
@@ -276,8 +277,11 @@ class ProfilePreviewContent extends StatefulWidget {
   State<ProfilePreviewContent> createState() => _ProfilePreviewContentState();
 }
 
-class _ProfilePreviewContentState extends State<ProfilePreviewContent> {
+class _ProfilePreviewContentState extends State<ProfilePreviewContent>
+    with RuntimeDeprecatedHereState<ProfilePreviewContent> {
   WorkspaceController get w => widget.controller;
+  @override
+  WorkspaceController get runtimeCatalogWorkspace => w;
   StreamSubscription<RaftEvent>? events;
   late final ModelLabelCatalogStore modelLabels;
   Map<String, dynamic>? fetched;
@@ -498,7 +502,12 @@ class _ProfilePreviewContentState extends State<ProfilePreviewContent> {
                 RaftProfilePreviewFact(raftText(context, 'Computer'), computer),
               RaftProfilePreviewFact(
                 raftText(context, 'Runtime'),
-                runtimeLabelWithStatus(context, runtime),
+                // ProfilePreviewCardContent.tsx:235: the server's answer.
+                runtimeLabelWithStatus(
+                  context,
+                  runtime,
+                  deprecated: deprecatedHere(runtime),
+                ),
               ),
               RaftProfilePreviewFact(
                 raftText(context, 'Model'),

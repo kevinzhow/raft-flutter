@@ -13,6 +13,11 @@ import 'recipe_background_scope.dart';
 import 'recipes/recipe_runtime.dart';
 import 'theme.dart';
 
+/// What a [RaftMenuPopupEntry] paints: a row the person can reach, a group
+/// heading (`SelectGroupLabel`) or a separator (`SelectSeparator`). Headings and
+/// separators are never focusable, activatable or announced as options.
+enum RaftMenuPopupEntryKind { item, heading, separator }
+
 /// Presentation data for one popup row. Typed values stay with its owner.
 @immutable
 class RaftMenuPopupEntry {
@@ -25,7 +30,45 @@ class RaftMenuPopupEntry {
     this.leading,
     this.trailing,
     this.indicator,
-  });
+    this.description,
+    this.action = false,
+  }) : kind = RaftMenuPopupEntryKind.item;
+
+  /// A non-interactive group heading above the rows it names.
+  const RaftMenuPopupEntry.heading({this.key, required this.label})
+    : kind = RaftMenuPopupEntryKind.heading,
+      labelChild = null,
+      enabled = false,
+      selected = false,
+      leading = null,
+      trailing = null,
+      indicator = null,
+      description = null,
+      action = false;
+
+  /// A hairline between groups.
+  const RaftMenuPopupEntry.separator({this.key})
+    : kind = RaftMenuPopupEntryKind.separator,
+      label = '',
+      labelChild = null,
+      enabled = false,
+      selected = false,
+      leading = null,
+      trailing = null,
+      indicator = null,
+      description = null,
+      action = false;
+
+  final RaftMenuPopupEntryKind kind;
+
+  /// A second line under the label (`SelectItemDescription`): what the row
+  /// means, not its name again. Part of the row's accessible description.
+  final String? description;
+
+  /// An action row (`SelectActionItem`): reachable by arrow keys and
+  /// typeahead like an item, painted with the action slot. The owner decides
+  /// what activating it does and whether the popup stays open.
+  final bool action;
 
   final Key? key;
   final String label;
@@ -69,10 +112,18 @@ class RaftMenuPopupSlots {
     required this.itemIndicator,
     this.itemLeading,
     this.itemText,
+    this.itemDescription,
+    this.actionItem,
+    this.groupLabel,
+    this.separator,
   });
 
   final RaftSlotStyle content, list, item, itemIndicator;
   final RaftSlotStyle? itemLeading, itemText;
+
+  /// Slots of the optional entry kinds; a caller that never passes such an
+  /// entry leaves them null.
+  final RaftSlotStyle? itemDescription, actionItem, groupLabel, separator;
 }
 
 typedef RaftMenuPopupSlotResolver = RaftMenuPopupSlots Function(
@@ -292,6 +343,53 @@ class _RaftMenuPopupBackendState extends State<RaftMenuPopupBackend> {
     if (next != null) _focus(next);
   }
 
+  // Typeahead (Base UI's list navigation): printable keys build a prefix that
+  // moves to the next enabled row whose label starts with it. The buffer ends
+  // after a pause, judged from event timestamps (no timer to keep alive).
+  static const _typeaheadReset = Duration(milliseconds: 500);
+  String _typed = '';
+  Duration? _typedAt;
+
+  KeyEventResult _typeahead(FocusNode node, KeyEvent event) {
+    if (event is! KeyDownEvent && event is! KeyRepeatEvent) {
+      return KeyEventResult.ignored;
+    }
+    final keyboard = HardwareKeyboard.instance;
+    if (keyboard.isControlPressed ||
+        keyboard.isMetaPressed ||
+        keyboard.isAltPressed) {
+      return KeyEventResult.ignored;
+    }
+    final char = event.character;
+    if (char == null || char.isEmpty || char.runes.length != 1) {
+      return KeyEventResult.ignored;
+    }
+    final code = char.runes.first;
+    if (code < 0x20 || code == 0x7f) return KeyEventResult.ignored;
+    final fresh =
+        _typedAt != null && event.timeStamp - _typedAt! <= _typeaheadReset;
+    // A space starts nothing: with no word in progress it activates the row.
+    if (char == ' ' && (!fresh || _typed.isEmpty)) {
+      return KeyEventResult.ignored;
+    }
+    _typed = (fresh ? _typed : '') + char.toLowerCase();
+    _typedAt = event.timeStamp;
+    final count = widget.entries.length;
+    // A repeated single letter cycles; a longer prefix may stay on the row.
+    final cycle = _typed.split('').every((c) => c == _typed[0]);
+    final start = _activeIndex ?? -1;
+    final prefix = cycle ? _typed[0] : _typed;
+    for (var step = cycle ? 1 : 0; step <= count; step++) {
+      final index = ((start + step) % count + count) % count;
+      if (_enabled(index) &&
+          widget.entries[index].label.toLowerCase().startsWith(prefix)) {
+        _focus(index);
+        break;
+      }
+    }
+    return KeyEventResult.handled;
+  }
+
   void _activate(int? index) {
     if (_dismissing || !_enabled(index)) return;
     widget.onActivate(index!);
@@ -386,6 +484,7 @@ class _RaftMenuPopupBackendState extends State<RaftMenuPopupBackend> {
             child: Focus(
               focusNode: _keyboardFocus,
               skipTraversal: true,
+              onKeyEvent: _typeahead,
               child: ConstrainedBox(
                 constraints: BoxConstraints(maxHeight: availableHeight),
                 child: RaftRecipeBox(
@@ -436,6 +535,15 @@ class _RaftMenuPopupBackendState extends State<RaftMenuPopupBackend> {
 
   Widget _row(int index, RaftTokenResolver tokens) {
     final entry = widget.entries[index];
+    if (entry.kind != RaftMenuPopupEntryKind.item) {
+      return KeyedSubtree(
+        key: entry.key,
+        child: KeyedSubtree(
+          key: _rowKeys[index],
+          child: _decoration(entry, tokens),
+        ),
+      );
+    }
     return KeyedSubtree(
       key: entry.key,
       child: KeyedSubtree(
@@ -444,8 +552,11 @@ class _RaftMenuPopupBackendState extends State<RaftMenuPopupBackend> {
           focusNode: _nodes[index],
           onPressed: entry.enabled ? () => _activate(index) : null,
           semanticLabel: entry.label,
+          semanticValue: entry.description,
           semanticRole: widget.itemSemanticRole,
-          selected: widget.selectionSemantics ? entry.selected : null,
+          selected: widget.selectionSemantics && !entry.action
+              ? entry.selected
+              : null,
           button: false,
           builder: (context, state) {
             final slots = widget.resolveSlots(
@@ -467,7 +578,11 @@ class _RaftMenuPopupBackendState extends State<RaftMenuPopupBackend> {
                 leading: entry.leading,
                 trailing: entry.trailing,
                 indicator: entry.selected ? entry.indicator : null,
-                root: slots.item,
+                description: entry.description,
+                descriptionStyle: slots.itemDescription,
+                root: entry.action
+                    ? slots.actionItem ?? slots.item
+                    : slots.item,
                 itemLeading: slots.itemLeading,
                 itemText: slots.itemText,
                 itemIndicator: slots.itemIndicator,
@@ -477,6 +592,40 @@ class _RaftMenuPopupBackendState extends State<RaftMenuPopupBackend> {
           },
         ),
       ),
+    );
+  }
+
+  /// A group heading or a separator: painted from the list's own slots, never
+  /// focusable and never an option for assistive technology.
+  Widget _decoration(RaftMenuPopupEntry entry, RaftTokenResolver tokens) {
+    final slots = widget.resolveSlots(
+      const RaftMenuPopupRowState(index: -1, disabled: true),
+    );
+    if (entry.kind == RaftMenuPopupEntryKind.separator) {
+      final style = slots.separator;
+      return ExcludeSemantics(
+        child: style == null
+            ? const SizedBox.shrink()
+            : RaftRecipeBox(
+                style: style,
+                tokens: style.tokens ?? tokens,
+                child: const SizedBox(width: double.infinity),
+              ),
+      );
+    }
+    final style = slots.groupLabel;
+    return Semantics(
+      header: true,
+      label: entry.label,
+      excludeSemantics: true,
+      child: style == null
+          ? Text(entry.label)
+          : RaftMenuItemSurface(
+              style: style,
+              tokens: style.tokens ?? tokens,
+              width: double.infinity,
+              child: Text(entry.label),
+            ),
     );
   }
 

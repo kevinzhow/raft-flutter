@@ -2900,12 +2900,18 @@ class RaftTextLink extends StatelessWidget {
     this.glyph,
     this.textStyle,
     this.variant = RaftTextLinkVariant.saved,
+    this.scale,
   });
   final String label;
   final VoidCallback? onPressed;
   final RaftGlyph? glyph;
   final TextStyle? textStyle;
   final RaftTextLinkVariant variant;
+
+  /// The type step of a Web-style link (muted or strong) that sits in smaller
+  /// text than body: Web inherits the surrounding size, so a link in a field
+  /// description is caption-sized. Null keeps body.
+  final RaftTypeStyle? scale;
   @override
   Widget build(BuildContext context) => RaftControl(
     kind: RaftControlKind.textLink,
@@ -2940,6 +2946,7 @@ class RaftTextLink extends StatelessWidget {
                 strong: variant == RaftTextLinkVariant.strong,
                 disabled: onPressed == null,
                 style: textStyle,
+                scale: scale,
               ),
       ],
     ),
@@ -2954,10 +2961,12 @@ class _RaftWebLinkLabel extends StatefulWidget {
     required this.strong,
     required this.disabled,
     this.style,
+    this.scale,
   });
   final String label;
   final bool strong, disabled;
   final TextStyle? style;
+  final RaftTypeStyle? scale;
 
   @override
   State<_RaftWebLinkLabel> createState() => _RaftWebLinkLabelState();
@@ -2986,7 +2995,7 @@ class _RaftWebLinkLabelState extends State<_RaftWebLinkLabel> {
             widget.style ??
             t.scale(
               // Web inherits the surrounding size (body in a card).
-              RaftTypeScale.body,
+              widget.scale ?? RaftTypeScale.body,
               weight: widget.strong ? FontWeight.w600 : FontWeight.w500,
               color: color,
             ),

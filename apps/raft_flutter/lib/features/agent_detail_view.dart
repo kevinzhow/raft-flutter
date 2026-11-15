@@ -41,9 +41,10 @@ import 'agent_raw_log.dart' show agentCachedActivityEntries;
 export 'agent_raw_log.dart' show AgentActivityTab, agentCachedActivityEntries;
 import 'runtime_usage_chip.dart';
 import 'agent_runtime_catalog.dart' show reasoningEfforts, runtimeInfos;
-import 'agent_runtime_draft.dart' show runtimeModelLabel;
+import 'agent_model_limits_warning.dart';
+import 'agent_runtime_models.dart' show runtimeModelLabel;
 import 'agent_runtime_labels.dart'
-    show isRuntimeDeprecated, runtimeLabelWithStatus;
+    show RuntimeDeprecatedHereState, runtimeLabelWithStatus;
 import 'agent_metadata_projection.dart';
 import 'agent_runtime_error_banner_view.dart';
 import 'agent_runtime_error_state.dart';
@@ -255,7 +256,12 @@ SourceTimeFormatter agentTimeFormatter(
 );
 
 class _AgentDetailPanelState extends State<AgentDetailPanel>
-    with ModelLabelCatalogListener<AgentDetailPanel> {
+    with
+        ModelLabelCatalogListener<AgentDetailPanel>,
+        RuntimeDeprecatedHereState<AgentDetailPanel> {
+  @override
+  WorkspaceController get runtimeCatalogWorkspace => widget.controller;
+
   @override
   WorkspaceController? get modelLabelWorkspace =>
       _bounded ? null : widget.controller;
@@ -809,6 +815,20 @@ class _AgentDetailPanelState extends State<AgentDetailPanel>
   /// EXTERNAL_AGENT_ONLINE_WINDOW_MS (store/presenceClock.ts).
   static const _externalOnlineWindow = Duration(milliseconds: 120000);
 
+  /// An external agent's presence (Web `useAgentDisplayState().isOnline`): its
+  /// credential seen within the online window; an explicit offline (the agent
+  /// declared it stopped) shows at once.
+  bool get _externalOnline {
+    final seen = a['lastSeenAt'] is String
+        ? DateTime.tryParse(a['lastSeenAt'] as String)
+        : null;
+    final now = (widget.clock ?? DateTime.now)();
+    final seenOnline =
+        seen != null && now.difference(seen) < _externalOnlineWindow;
+    final hasState = agentHasActivityState(a, live: widget.liveActivity);
+    return seenOnline && !(hasState && _display.activity == 'offline');
+  }
+
   /// Web v1.24 `AgentStatusBadge` (features/agent/AgentStatusBadge.tsx): the
   /// profile header's chip. An external agent reads its presence (the
   /// credential seen within the online window) and managers its setup state;
@@ -882,6 +902,7 @@ class _AgentDetailPanelState extends State<AgentDetailPanel>
             ? agentRowSpawnFailure(a)
             : null,
         spawnFailureText: _spawnFailureText(context),
+        readiness: a['readiness'] is Map ? a['readiness'] as Map : null,
       ),
     );
   }
@@ -1020,6 +1041,84 @@ class _AgentDetailPanelState extends State<AgentDetailPanel>
     );
   }
 
+  /// The Model row's value: the model badge and, when the running process
+  /// reports a different runtime or model than the saved one, Web's
+  /// `runningConfigHint` under it.
+  Widget _modelValue(
+    BuildContext context,
+    Map<String, dynamic> a,
+    RuntimeConfig config,
+    String model,
+    String runtime,
+  ) {
+    final badge = RaftInlineBadge(
+      badge: RaftRecipeBadge(
+        model.isEmpty
+            ? raftText(context, 'Default')
+            : modelDisplayLabel(
+                widget.controller,
+                machineId: a['machineId'] as String?,
+                runtime: runtime,
+                model: model,
+              ),
+        variant: RaftBadgeRecipeVariant.accent,
+      ),
+    );
+    final hint = _runningSwitchesHint(context, a, config);
+    if (hint == null) return badge;
+    return RaftGapColumn(
+      gap: 4,
+      children: [
+        Align(alignment: Alignment.centerLeft, child: badge),
+        RaftCssText(
+          hint,
+          key: const ValueKey('agent-runtime-config-running'),
+          style: RaftPanelText.caption(RaftTokens.of(context)),
+        ),
+      ],
+    );
+  }
+
+  /// Web `runningConfigHint` (AgentProfileInfo.tsx:169-173): what the running
+  /// process reports (`runtimeProfile.current`) differs from the saved config,
+  /// which applies at the agent's next idle point. Unknown or equal says
+  /// nothing; an agent that is not running reports nothing.
+  String _runtimeName(String id) =>
+      runtimeInfos.where((r) => r.id == id).firstOrNull?.name ?? id;
+
+  String? _runningSwitchesHint(
+    BuildContext context,
+    Map<String, dynamic> a,
+    RuntimeConfig config,
+  ) {
+    if (!(online || a['status'] == 'active')) return null;
+    final profile = a['runtimeProfile'];
+    final running = profile is Map ? profile['current'] : null;
+    if (running is! Map) return null;
+    final runningRuntime = running['runtime'];
+    final runningModel = running['model'];
+    String? say(String runningText, String savedText) => raftFormat(
+      context,
+      'Running {running} · switches to {saved} when idle',
+      {'running': runningText, 'saved': savedText},
+    );
+    if (runningRuntime is String &&
+        runningRuntime.isNotEmpty &&
+        runningRuntime != config.runtime) {
+      return say(_runtimeName(runningRuntime), _runtimeName(config.runtime));
+    }
+    if (runningModel is String &&
+        runningModel.isNotEmpty &&
+        config.model.isNotEmpty &&
+        runningModel != config.model) {
+      return say(
+        runtimeModelLabel(config.runtime, runningModel),
+        runtimeModelLabel(config.runtime, config.model),
+      );
+    }
+    return null;
+  }
+
   Widget _profile(BuildContext context) {
     final t = RaftTokens.of(context);
     final canEdit = _canManage && a['deletedAt'] == null;
@@ -1061,6 +1160,9 @@ class _AgentDetailPanelState extends State<AgentDetailPanel>
               AgentStatusChipView(
                 key: ValueKey('agent-status-$agentId'),
                 chip: statusChip,
+                runtimeId: a['runtime'] is String
+                    ? a['runtime'] as String
+                    : null,
                 tooltip: statusChip.tooltip,
                 onRetry: _canControlRuntime ? _retryStart : null,
                 onChangeModel: widget.actions.onEditRuntime,
@@ -1229,10 +1331,11 @@ class _AgentDetailPanelState extends State<AgentDetailPanel>
             key: ValueKey('external-setup-$agentId'),
             controller: widget.controller,
             agent: a,
-            setupState: externalStatus?['setupState'] as String?,
-            credentialLastUsedAt:
-                externalStatus?['credentialLastUsedAt'] as String?,
+            status: externalStatus,
             statusError: externalStatusError,
+            online: _externalOnline,
+            lastSeenAt: a['lastSeenAt'] as String?,
+            clock: widget.clock,
             hostedRuntime: HostedRuntimeSummary.parse(_hostedRuntime),
             onStatus: adoptExternalStatus,
           ),
@@ -1410,13 +1513,21 @@ class _AgentDetailPanelState extends State<AgentDetailPanel>
                     enabled: canViewRuntimeUsage(widget.controller, machine),
                     runtimeId: runtime,
                     machineId: '${machine?['id'] ?? ''}',
-                    label: runtimeLabelWithStatus(context, runtime),
+                    label: runtimeLabelWithStatus(
+                      context,
+                      runtime,
+                      deprecated: deprecatedHere(runtime),
+                    ),
                     runtimeVersion: machine?['runtimeVersions'] is Map
                         ? (machine!['runtimeVersions'] as Map)[runtime]
                               as String?
                         : null,
                     chip: (status) => RaftRecipeBadge(
-                      runtimeLabelWithStatus(context, runtime),
+                      runtimeLabelWithStatus(
+                        context,
+                        runtime,
+                        deprecated: deprecatedHere(runtime),
+                      ),
                       appearance: RaftBadgeRecipeAppearance.solid,
                       variant: RaftBadgeRecipeVariant.information,
                       trailing: status,
@@ -1424,9 +1535,9 @@ class _AgentDetailPanelState extends State<AgentDetailPanel>
                   ),
                 ),
               ),
-              // Web `currentRuntimeDeprecated`: the agent keeps running, but new
-              // agents cannot select this runtime.
-              if (isRuntimeDeprecated(runtime))
+              // Web `currentRuntimeDeprecated` (AgentProfileInfo.tsx:233): the
+              // agent keeps running, but new agents cannot select this runtime.
+              if (deprecatedHere(runtime))
                 RaftBanner(
                   status: RaftBannerRecipeStatus.warning,
                   size: RaftBannerRecipeSize.sm,
@@ -1438,19 +1549,7 @@ class _AgentDetailPanelState extends State<AgentDetailPanel>
                 ),
               RaftInfoRow(
                 label: raftText(context, 'Model'),
-                child: RaftInlineBadge(
-                  badge: RaftRecipeBadge(
-                    model.isEmpty
-                        ? raftText(context, 'Default')
-                        : modelDisplayLabel(
-                            widget.controller,
-                            machineId: a['machineId'] as String?,
-                            runtime: runtime,
-                            model: model,
-                          ),
-                    variant: RaftBadgeRecipeVariant.accent,
-                  ),
-                ),
+                child: _modelValue(context, a, config, model, runtime),
               ),
               if (config.supportsReasoning)
                 RaftInfoRow(
@@ -1499,6 +1598,10 @@ class _AgentDetailPanelState extends State<AgentDetailPanel>
                           ),
                   ),
               ],
+              // Web `agent.modelLimits?.defaultsReported &&
+              // <AgentModelLimitsWarning className="mt-3" />`.
+              if (RaftAgentFields(a).modelDefaultsReported == true)
+                const AgentModelLimitsWarning(),
               if (env.isNotEmpty) RaftEnvVarsBlock(vars: env),
             ],
           ),

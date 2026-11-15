@@ -41,7 +41,11 @@ class _Workspace extends WorkspaceController {
       return {
         'options': [
           for (final r in runtimes)
-            {'runtimeId': r, 'canSelectInThisContext': true},
+            {
+              'runtimeId': r,
+              'canSelectInThisContext': true,
+              'runtimeFormV2': {'protocolVersion': 2},
+            },
         ],
       };
     }
@@ -150,20 +154,15 @@ void main() {
 
     test('stores the Web record under the per-server Web key', () {
       expect(CreateAgentLastConfig.read('srv/1'), isNull);
-      const config = CreateAgentLastConfig(
-        machineId: 'm1',
-        runtime: 'codex',
-        model: 'gpt-5',
-        customModelMode: false,
-      );
+      const config = CreateAgentLastConfig(machineId: 'm1', runtime: 'codex');
       config.write('srv/1');
       expect(
         prefs.getString('raft:create-agent:last-config:v1:srv%2F1'),
-        '{"machineId":"m1","runtime":"codex","model":"gpt-5","customModelMode":false}',
+        '{"machineId":"m1","runtime":"codex"}',
       );
       final read = CreateAgentLastConfig.read('srv/1');
       expect(read?.machineId, 'm1');
-      expect(read?.model, 'gpt-5');
+      expect(read?.runtime, 'codex');
       expect(CreateAgentLastConfig.read('other'), isNull);
     });
 
@@ -171,29 +170,26 @@ void main() {
       for (final raw in [
         'not json',
         '[]',
-        '{"machineId":"","runtime":"codex","model":"","customModelMode":false}',
-        '{"machineId":"m","runtime":"codex","model":"x","customModelMode":"no"}',
-        '{"machineId":"m","runtime":"codex","model":"${'x' * 513}","customModelMode":false}',
+        '{"machineId":"","runtime":"codex"}',
+        '{"machineId":"m","runtime":""}',
+        '{"machineId":"m"}',
+        '{"machineId":"${'x' * 513}","runtime":"codex"}',
       ]) {
         await prefs.setString(_key, raw);
         expect(CreateAgentLastConfig.read('s'), isNull, reason: raw);
       }
+      // A record of the previous release still reads: its model is ignored.
       await prefs.setString(
         _key,
         '{"machineId":"m","runtime":"codex","model":"","customModelMode":false}',
       );
-      expect(CreateAgentLastConfig.read('s')?.model, '');
+      expect(CreateAgentLastConfig.read('s')?.runtime, 'codex');
     });
 
     test('reading without preloaded preferences keeps the defaults', () {
       DevicePreferences.reset();
       expect(CreateAgentLastConfig.read('s'), isNull);
-      const CreateAgentLastConfig(
-        machineId: 'm',
-        runtime: 'codex',
-        model: '',
-        customModelMode: false,
-      ).write('s');
+      const CreateAgentLastConfig(machineId: 'm', runtime: 'codex').write('s');
     });
   });
 
@@ -336,7 +332,7 @@ void main() {
       await t.tap(
         find.descendant(
           of: find.byType(RaftAgentDialogButton),
-          matching: find.text('Create Agent'),
+          matching: find.text('Create'),
         ),
       );
       await t.pumpAndSettle();
@@ -347,41 +343,40 @@ void main() {
       expect(key, isNot(anyOf('mug', 'finch')));
     });
 
-    testWidgets('the last computer, runtime and model come back next time', (
-      t,
-    ) async {
-      w
-        ..machines = [
-          _machine('mbp', 'Studio Mac'),
-          _machine('rig', 'Build Rig'),
-        ]
-        ..runtimes = ['claude', 'codex'];
-      await open(t, name: 'first');
-      // Nothing remembered yet: the first online computer, the first runtime.
-      expect(prefs.getString(_key), isNull);
-      await t.tap(find.text('Cancel'));
-      await t.pumpAndSettle();
+    testWidgets(
+      'the last computer and runtime come back next time, not the model',
+      (t) async {
+        w
+          ..machines = [
+            _machine('mbp', 'Studio Mac'),
+            _machine('rig', 'Build Rig'),
+          ]
+          ..runtimes = ['claude', 'codex'];
+        await open(t, name: 'first');
+        // Nothing remembered yet: the first online computer, the first runtime.
+        expect(prefs.getString(_key), isNull);
+        await t.tap(find.text('Cancel'));
+        await t.pumpAndSettle();
 
-      await prefs.setString(
-        _key,
-        '{"machineId":"rig","runtime":"codex","model":"gpt-5-mini","customModelMode":false}',
-      );
-      await open(t, name: 'second');
-      expect(find.text('Build Rig'), findsOneWidget);
-      expect(find.text('Codex CLI'), findsOneWidget);
-      expect(find.text('GPT-5 Mini'), findsOneWidget);
-      await t.tap(
-        find.descendant(
-          of: find.byType(RaftAgentDialogButton),
-          matching: find.text('Create Agent'),
-        ),
-      );
-      await t.pumpAndSettle();
-      final data = w.posts.single['data'] as Map;
-      expect(data['machineId'], 'rig');
-      expect(data['runtime'], 'codex');
-      expect((data['formValues'] as Map)['model'], 'gpt-5-mini');
-    });
+        await prefs.setString(_key, '{"machineId":"rig","runtime":"codex"}');
+        await open(t, name: 'second');
+        expect(find.text('Build Rig'), findsOneWidget);
+        expect(find.text('Codex CLI'), findsOneWidget);
+        // The runtime's server form owns the model default.
+        expect(find.text('GPT-5'), findsOneWidget);
+        await t.tap(
+          find.descendant(
+            of: find.byType(RaftAgentDialogButton),
+            matching: find.text('Create'),
+          ),
+        );
+        await t.pumpAndSettle();
+        final data = w.posts.single['data'] as Map;
+        expect(data['machineId'], 'rig');
+        expect(data['runtime'], 'codex');
+        expect((data['formValues'] as Map)['model'], 'gpt-5');
+      },
+    );
 
     testWidgets('creating an agent remembers what it used, per server', (
       t,
@@ -400,14 +395,11 @@ void main() {
       await t.tap(
         find.descendant(
           of: find.byType(RaftAgentDialogButton),
-          matching: find.text('Create Agent'),
+          matching: find.text('Create'),
         ),
       );
       await t.pumpAndSettle();
-      expect(
-        prefs.getString(_key),
-        '{"machineId":"mbp","runtime":"codex","model":"gpt-5-mini","customModelMode":false}',
-      );
+      expect(prefs.getString(_key), '{"machineId":"mbp","runtime":"codex"}');
       expect(CreateAgentLastConfig.read('another-server'), isNull);
     });
 
@@ -420,7 +412,7 @@ void main() {
       await t.tap(
         find.descendant(
           of: find.byType(RaftAgentDialogButton),
-          matching: find.text('Create Agent'),
+          matching: find.text('Create'),
         ),
       );
       await t.pumpAndSettle();
@@ -436,24 +428,11 @@ void main() {
             _machine('rig', 'Build Rig', status: 'offline'),
           ]
           ..runtimes = ['codex'];
-        await prefs.setString(
-          _key,
-          '{"machineId":"rig","runtime":"claude","model":"retired-model","customModelMode":false}',
-        );
+        await prefs.setString(_key, '{"machineId":"rig","runtime":"claude"}');
         await open(t, name: 'fallback');
         // The remembered computer is offline and its runtime is not offered.
         expect(find.text('Studio Mac'), findsOneWidget);
         expect(find.text('Codex CLI'), findsOneWidget);
-        expect(find.text('GPT-5'), findsOneWidget);
-        await t.tap(find.text('Cancel'));
-        await t.pumpAndSettle();
-        // A remembered model the runtime no longer lists is still a custom value
-        // the source allows, but never a remembered model of another runtime.
-        await prefs.setString(
-          _key,
-          '{"machineId":"mbp","runtime":"claude","model":"gpt-5-mini","customModelMode":false}',
-        );
-        await open(t, name: 'other-runtime');
         expect(find.text('GPT-5'), findsOneWidget);
       },
     );

@@ -188,6 +188,8 @@ export 'src/composer_recipe.dart';
 export 'src/composer_attachments.dart';
 export 'src/composer_recoverable_uploads.dart';
 export 'src/composer_drop_overlay.dart';
+export 'src/external_agent_create_view.dart';
+export 'src/external_agent_parts.dart';
 export 'src/external_agent_setup.dart';
 export 'src/report_issue_dialog.dart';
 export 'src/sos_dialog.dart';

@@ -13,6 +13,7 @@ import 'legal_acceptance.dart';
 import 'models.dart';
 import 'rate_limit_governor.dart';
 import 'request_meter.dart';
+import 'runtime_form.dart' show runtimeFormRequestQuery;
 import 'second_factor.dart';
 import 'server_rate_limits.dart';
 import 'proxy/transport_stub.dart'
@@ -1468,6 +1469,9 @@ class RaftClient {
     final level = priority ?? RaftClient.currentPriority;
     final scoped = currentRequestHeaders;
     if (scoped.isNotEmpty) headers = {...scoped, ...?headers};
+    // Runtime-form reads and create/save advertise the client capabilities
+    // (Web `runtimeFormV2ClientCapabilityParams`): one place for create and edit.
+    query = runtimeFormRequestQuery(method, path, data, query);
     Future<dynamic> transmit() => _sendPaced(
       method,
       path,

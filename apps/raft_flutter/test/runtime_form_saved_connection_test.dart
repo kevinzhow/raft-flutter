@@ -118,7 +118,11 @@ class _Workspace extends WorkspaceController {
     if (path.endsWith('/runtime-options')) {
       return {
         'options': [
-          {'runtimeId': 'builtin', 'canSelectInThisContext': true},
+          {
+            'runtimeId': 'builtin',
+            'canSelectInThisContext': true,
+            'runtimeFormV2': {'protocolVersion': 2},
+          },
         ],
       };
     }
@@ -233,8 +237,7 @@ void main() {
     await t.pumpAndSettle();
   }
 
-  Finder createButton() =>
-      find.widgetWithText(RaftAgentDialogButton, 'Create Agent');
+  Finder createButton() => find.widgetWithText(RaftAgentDialogButton, 'Create');
   bool createEnabled(WidgetTester t) =>
       t.widget<RaftAgentDialogButton>(createButton()).onPressed != null;
 

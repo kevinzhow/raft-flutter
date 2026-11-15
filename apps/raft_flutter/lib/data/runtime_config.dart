@@ -2,7 +2,8 @@
 // see it. Port of Web `hydrateRuntimeConfigForm(agent)` (packages/web
 // utils/runtimeConfigForm.ts) -> shared `hydrateRuntimeConfig` /
 // `hydrateLegacyRuntimeConfigWithTrace` (packages/shared runtimeConfigLegacy.ts)
-// plus the `runtimeConfig*` accessors and `supports*` predicates.
+// plus the `runtimeConfig*` accessors and `supports*` predicates the profile's
+// read-only rows use.
 //
 // The server stores the structured `runtimeConfig`
 // ({version, runtime, provider?, model: {kind, id|name}, mode: {kind},
@@ -58,12 +59,6 @@ bool runtimeSupportsFastMode(String runtime) =>
 /// `REASONING_EFFORT_RUNTIMES.has(runtime)`.
 bool runtimeSupportsReasoning(String runtime) =>
     reasoningEffortRuntimes.contains(runtime);
-
-/// `supportsRuntimeApiUrl`.
-bool runtimeSupportsApiUrl(String runtime) => runtime == 'claude';
-
-/// `supportsRuntimeCommand`.
-bool runtimeSupportsCommand(String runtime) => runtime == 'claude';
 
 // ------------------------------------------------------------------- config
 

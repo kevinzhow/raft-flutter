@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:raft_ui/raft_ui.dart';
 
+import '../data/machine_order.dart';
 import '../data/workspace_controller.dart';
 import '../data/workspace_entity_directory.dart';
 import 'desktop_navigation_policy.dart';
@@ -11,6 +12,7 @@ import 'agent_avatar_projection.dart';
 import 'chat_agent_presentation.dart';
 import 'computer_detail_view.dart'
     show computerAvailableVersion, computerDiskLow, computerRowStatus;
+import 'create_external_agent_dialog.dart';
 import 'fleet_views.dart' show showFleetRegistration;
 import 'managed_agent_launcher.dart';
 import 'member_row_menu.dart';
@@ -145,15 +147,29 @@ class _DesktopDirectoryViewState extends State<DesktopDirectoryView> {
   Future<void> refreshDirectory() =>
       Future.wait([for (final kind in waitKinds) reload(kind)]);
 
-  Future<void> register(bool computer) async {
+  /// Create external agent (Web CreateExternalAgentDialog): Done opens the
+  /// agent's page in the directory.
+  Future<void> createExternalAgent() async {
+    final captured = authority;
+    await showCreateExternalAgentDialog(
+      context,
+      w,
+      onCreated: () => reload(WorkspaceEntityKind.agents),
+      onOpenAgent: (id) {
+        if (mounted && captured == authority) {
+          widget.onSelected(DesktopContentTarget(DesktopContentKind.agent, id));
+        }
+      },
+      authorized: () => mounted && captured == authority,
+    );
+  }
+
+  Future<void> register() async {
     final captured = authority;
     await showFleetRegistration(
       context,
       w,
-      computers: computer,
-      onCreated: () => reload(
-        computer ? WorkspaceEntityKind.computers : WorkspaceEntityKind.agents,
-      ),
+      onCreated: () => reload(WorkspaceEntityKind.computers),
       authorized: () => mounted && captured == authority,
     );
   }
@@ -180,7 +196,7 @@ class _DesktopDirectoryViewState extends State<DesktopDirectoryView> {
       RaftMenuEntry(
         label: raftText(context, 'Create external agent'),
         glyph: RaftGlyph.link2,
-        onPressed: () => register(false),
+        onPressed: () => unawaited(createExternalAgent()),
       ),
     ],
     triggerBuilder: (context, focus, open) => RaftControl(
@@ -353,10 +369,7 @@ class _DesktopDirectoryViewState extends State<DesktopDirectoryView> {
     final error =
         w.services.entityDirectory.state(WorkspaceEntityKind.computers).error !=
         null;
-    final ordered = [
-      ...rows.where((m) => m['computerAttachedByCurrentUser'] == true),
-      ...rows.where((m) => m['computerAttachedByCurrentUser'] != true),
-    ];
+    final ordered = orderMachinesLikeSidebar(rows, userId: w.client.user?.id);
     return RaftComputerSidebarList(
       listKey: const Key('desktop-directory-list'),
       label: raftText(context, 'Computers'),
@@ -491,7 +504,7 @@ class _DesktopDirectoryViewState extends State<DesktopDirectoryView> {
                     label: raftText(context, 'Add computer'),
                     key: const ValueKey('desktop-directory-add-computer'),
                     glyph: RaftGlyph.plus,
-                    onPressed: () => register(true),
+                    onPressed: () => register(),
                   ),
                 ]
               : kind == DesktopContentKind.human && w.can('inviteMembers')

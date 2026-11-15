@@ -232,7 +232,8 @@ class _ExternalClient extends RaftClient {
   }
 }
 
-/// The server projects the deprecated Copilot CLI as selectable.
+/// The server projects Copilot CLI (deprecated in the bundled catalog) as
+/// selectable.
 class _CopilotWorkspace extends _Workspace {
   _CopilotWorkspace(super.client);
   @override
@@ -240,8 +241,16 @@ class _CopilotWorkspace extends _Workspace {
     if (path.endsWith('/runtime-options')) {
       return {
         'options': [
-          {'runtimeId': 'copilot', 'canSelectInThisContext': true},
-          {'runtimeId': 'codex', 'canSelectInThisContext': true},
+          {
+            'runtimeId': 'copilot',
+            'canSelectInThisContext': true,
+            'runtimeFormV2': {'protocolVersion': 2},
+          },
+          {
+            'runtimeId': 'codex',
+            'canSelectInThisContext': true,
+            'runtimeFormV2': {'protocolVersion': 2},
+          },
         ],
       };
     }
@@ -257,7 +266,11 @@ class _RescanWorkspace extends _Workspace {
     if (path.endsWith('/runtime-options')) {
       return {
         'options': [
-          {'runtimeId': 'codex', 'canSelectInThisContext': true},
+          {
+            'runtimeId': 'codex',
+            'canSelectInThisContext': true,
+            'runtimeFormV2': {'protocolVersion': 2},
+          },
         ],
       };
     }
@@ -542,11 +555,12 @@ void main() {
     });
   });
 
-  testWidgets('create agent: the deprecated Copilot CLI is not offered', (
+  testWidgets('create agent: the server, not the bundle, decides Copilot CLI', (
     t,
   ) async {
-    // Web v1.21.12 CreateAgentDialog intersects the server's admission options
-    // with getCreatableRuntimeOptions() (supported, not deprecated).
+    // Web v1.24 CreateAgentDialog.tsx:388-393: what a new agent can run on is
+    // the server's runtime-options rows, never the bundle's `deprecated`
+    // (v1.21.12 still filtered with getCreatableRuntimeOptions()).
     final activity = ActivityClient()..user = RaftRecord({'id': 'alice'});
     activity.selectServer('s');
     final ws = _CopilotWorkspace(activity)
@@ -576,10 +590,10 @@ void main() {
       ),
     );
     await t.pumpAndSettle();
-    // Copilot was asked for but is not creatable: the first creatable runtime
-    // is selected instead and Copilot appears nowhere.
-    expect(find.textContaining('Copilot'), findsNothing);
-    expect(find.text('Codex CLI'), findsWidgets);
+    // The server row is selectable, so the requested Copilot stays selected
+    // and Codex is not substituted for it.
+    expect(find.textContaining('Copilot CLI'), findsWidgets);
+    expect(find.text('Codex CLI'), findsNothing);
     await t.pumpWidget(const SizedBox.shrink());
   });
 
@@ -607,6 +621,7 @@ void main() {
               'creatorType': 'user',
               'creatorId': 'alice',
             },
+            status: const {'setupState': 'waiting_for_login'},
           ),
         ),
       );
@@ -614,29 +629,40 @@ void main() {
       return (w, c);
     }
 
-    testWidgets('a token failure is dropped when the account changes', (
+    testWidgets('a credential failure is dropped when the account changes', (
       t,
     ) async {
       final (w, c) = await mount(t);
-      await t.tap(find.byKey(const ValueKey('external-token-generate')));
+      await t.tap(
+        find.byKey(const ValueKey('external-agent-create-credential')),
+      );
       await t.pumpAndSettle();
-      expect(find.byKey(const ValueKey('external-token-error')), findsOne);
+      expect(
+        find.byKey(const ValueKey('external-agent-create-error')),
+        findsOne,
+      );
       c.user = RaftRecord({'id': 'bob'});
       w.notifyListeners();
       await t.pumpAndSettle();
-      expect(find.byKey(const ValueKey('external-token-error')), findsNothing);
+      expect(
+        find.byKey(const ValueKey('external-agent-create-error')),
+        findsNothing,
+      );
     });
 
     testWidgets('a revoke failure is dropped when the account changes', (
       t,
     ) async {
       final (w, c) = await mount(t);
-      await t.tap(find.byKey(const ValueKey('external-token-revoke-cred-1')));
-      await t.pump();
-      await t.tap(find.byKey(const ValueKey('external-token-confirm-revoke')));
+      await t.tap(
+        find.byKey(const ValueKey('external-credential-menu-cred-1')),
+      );
       await t.pumpAndSettle();
-      const text =
-          'Revocation was not confirmed. Refresh to check the token before trying again.';
+      await t.tap(find.text('Revoke').last);
+      await t.pumpAndSettle();
+      await t.tap(find.byKey(const ValueKey('external-agent-revoke-confirm')));
+      await t.pumpAndSettle();
+      const text = "Raft couldn't revoke the credential. Try again.";
       expect(find.text(text), findsOneWidget);
       c.user = RaftRecord({'id': 'bob'});
       w.notifyListeners();

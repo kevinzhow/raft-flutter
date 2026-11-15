@@ -79,8 +79,8 @@
           "sourceBindings": [
             {
               "file": "packages/raft_ui/lib/src/menu_popup_backend.dart",
-              "bytes": 19672,
-              "sha256": "9d02f6c24a1e54f9cab37715c5dde4bc0dfe0c4e03ff120e6d95a8191447e83c"
+              "bytes": 25039,
+              "sha256": "228f63b093b986c604d1d7bd63a922aeaa119f812bfca341d5d8b6e3da0f2aa7"
             }
           ],
           "reason": "Data/options/slot metadata or callback signature; does not extend Widget/State/RenderObject. This record grants no style exemption, mount or visual acceptance."
@@ -92,8 +92,8 @@
           "sourceBindings": [
             {
               "file": "packages/raft_ui/lib/src/menu_popup_backend.dart",
-              "bytes": 19672,
-              "sha256": "9d02f6c24a1e54f9cab37715c5dde4bc0dfe0c4e03ff120e6d95a8191447e83c"
+              "bytes": 25039,
+              "sha256": "228f63b093b986c604d1d7bd63a922aeaa119f812bfca341d5d8b6e3da0f2aa7"
             }
           ],
           "reason": "Data/options/slot metadata or callback signature; does not extend Widget/State/RenderObject. This record grants no style exemption, mount or visual acceptance."
@@ -105,8 +105,8 @@
           "sourceBindings": [
             {
               "file": "packages/raft_ui/lib/src/menu_popup_backend.dart",
-              "bytes": 19672,
-              "sha256": "9d02f6c24a1e54f9cab37715c5dde4bc0dfe0c4e03ff120e6d95a8191447e83c"
+              "bytes": 25039,
+              "sha256": "228f63b093b986c604d1d7bd63a922aeaa119f812bfca341d5d8b6e3da0f2aa7"
             }
           ],
           "reason": "Data/options/slot metadata or callback signature; does not extend Widget/State/RenderObject. This record grants no style exemption, mount or visual acceptance."
@@ -118,8 +118,8 @@
           "sourceBindings": [
             {
               "file": "packages/raft_ui/lib/src/menu_popup_backend.dart",
-              "bytes": 19672,
-              "sha256": "9d02f6c24a1e54f9cab37715c5dde4bc0dfe0c4e03ff120e6d95a8191447e83c"
+              "bytes": 25039,
+              "sha256": "228f63b093b986c604d1d7bd63a922aeaa119f812bfca341d5d8b6e3da0f2aa7"
             }
           ],
           "reason": "Data/options/slot metadata or callback signature; does not extend Widget/State/RenderObject. This record grants no style exemption, mount or visual acceptance."
@@ -350,8 +350,8 @@
           "sourceBindings": [
             {
               "file": "packages/raft_ui/lib/src/combobox_panel.dart",
-              "bytes": 20923,
-              "sha256": "81909ed305ca5d8af2ca4d42569ce5e1c200d4be4e505b31e87e0a5309a4debd"
+              "bytes": 22165,
+              "sha256": "3a85160c7e208589af2fe8ab59fbe481dfd66aad6db70212841967333a3083d9"
             }
           ],
           "reason": "Public option/item data model; it does not extend Widget/State/RenderObject and is not a canonical rendering component. This source record grants no style exemption or visual acceptance."
@@ -419,8 +419,8 @@
           "sourceBindings": [
             {
               "file": "packages/raft_ui/lib/src/select_field.dart",
-              "bytes": 19786,
-              "sha256": "91e507ba4fac18fc06a483fd86bf5b35a799c459720e8045eccd5b10085ac863"
+              "bytes": 25701,
+              "sha256": "2fbcf1c33bd83fd0f04cd147252fb8350217a8d8343682c0bb9b5c87e141139d"
             }
           ],
           "reason": "Public option/item data model; it does not extend Widget/State/RenderObject and is not a canonical rendering component. This source record grants no style exemption or visual acceptance."

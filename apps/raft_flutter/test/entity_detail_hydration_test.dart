@@ -117,12 +117,15 @@ void main() {
           // AgentSkills, its `/skills` list; member profile) are fetched.
           // The profile's Recent activity card (Web AgentRecentActivity) reads
           // the newest turns. The model-label catalog also hydrates
-          // independently; none of these held requests gates the first frame.
+          // independently, and so does the server's runtime catalog (Web
+          // AgentProfileInfo.tsx:111 useRuntimeDeprecatedHere); none of these
+          // held requests gates the first frame.
           expect(w.pending.keys, switch (kind) {
             'agent' => unorderedEquals([
               '/agents/a',
               '/agents/a/skills',
               '/agents/a/activity-summaries',
+              '/servers/s/runtimes',
               '/servers/s/model-label-catalog',
             ]),
             'computer' => isEmpty,

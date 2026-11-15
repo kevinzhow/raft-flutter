@@ -2,20 +2,17 @@ import 'dart:convert';
 
 import 'device_preferences.dart';
 
-/// What the Create Agent dialog remembers per server: the computer, runtime and
-/// model of the last agent created there (Web `createAgentLastConfig.ts`, same
+/// What the Create Agent dialog remembers per server: the computer and runtime
+/// of the last agent created there (Web `createAgentLastConfig.ts`, same
 /// storage key and JSON, kept in the device preferences instead of
-/// localStorage). Best effort: a failed read or write never blocks creating an
-/// agent.
+/// localStorage). The runtime's settings (model and the rest) are not
+/// remembered: the runtime's server form owns their defaults. Records written
+/// before that still carry `model` / `customModelMode`; they parse and those
+/// fields are ignored. Best effort: a failed read or write never blocks
+/// creating an agent.
 class CreateAgentLastConfig {
-  const CreateAgentLastConfig({
-    required this.machineId,
-    required this.runtime,
-    required this.model,
-    required this.customModelMode,
-  });
-  final String machineId, runtime, model;
-  final bool customModelMode;
+  const CreateAgentLastConfig({required this.machineId, required this.runtime});
+  final String machineId, runtime;
 
   static const keyPrefix = 'raft:create-agent:last-config:v1:';
   static const _maxValueLength = 512;
@@ -23,39 +20,22 @@ class CreateAgentLastConfig {
   static String storageKey(String serverId) =>
       '$keyPrefix${Uri.encodeComponent(serverId)}';
 
-  static bool _valid(Object? value, {bool allowEmpty = false}) =>
-      value is String &&
-      value.length <= _maxValueLength &&
-      (allowEmpty || value.isNotEmpty);
+  static bool _valid(Object? value) =>
+      value is String && value.length <= _maxValueLength && value.isNotEmpty;
 
   /// Web `parseCreateAgentLastConfig`: any malformed record is "nothing
-  /// remembered".
+  /// remembered"; other keys are ignored.
   static CreateAgentLastConfig? parse(Object? value) {
     if (value is! Map) return null;
-    final machineId = value['machineId'],
-        runtime = value['runtime'],
-        model = value['model'],
-        custom = value['customModelMode'];
-    if (!_valid(machineId) ||
-        !_valid(runtime) ||
-        !_valid(model, allowEmpty: true) ||
-        custom is! bool) {
-      return null;
-    }
+    final machineId = value['machineId'], runtime = value['runtime'];
+    if (!_valid(machineId) || !_valid(runtime)) return null;
     return CreateAgentLastConfig(
       machineId: machineId as String,
       runtime: runtime as String,
-      model: model as String,
-      customModelMode: custom,
     );
   }
 
-  Map<String, Object> toJson() => {
-    'machineId': machineId,
-    'runtime': runtime,
-    'model': model,
-    'customModelMode': customModelMode,
-  };
+  Map<String, Object> toJson() => {'machineId': machineId, 'runtime': runtime};
 
   /// The remembered configuration for [serverId], or null.
   static CreateAgentLastConfig? read(String? serverId) {

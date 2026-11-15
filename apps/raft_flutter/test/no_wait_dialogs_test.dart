@@ -157,27 +157,39 @@ void main() {
   });
 
   testWidgets('the agent runtime editor revalidates a revisit before '
-      'showing cached models', (t) async {
+      'showing cached fields', (t) async {
     final (w, api) = await mountWorkspace(t, desktop);
     // The test holds requests open on a fake clock; a revisit must start its
     // own reads instead of joining the held ones.
     w.client.singleFlightWindow = Duration.zero;
     const options = {
       'options': [
-        {'runtimeId': 'claude', 'canSelectInThisContext': true},
+        {
+          'runtimeId': 'claude',
+          'canSelectInThisContext': true,
+          'runtimeFormV2': {'protocolVersion': 2},
+        },
       ],
     };
-    const models = {
-      'kind': 'live',
-      'value': {
-        'models': [
-          {'id': 'sonnet', 'label': 'Sonnet Live Edition'},
-        ],
+    // The agent's edit form (Web 1.24: the one runtime editor).
+    const form = {
+      'protocolVersion': 2,
+      'runtimeId': 'claude',
+      'schemaVersion': 'claude.edit.fixture.v1',
+      'dataSchema': {
+        'type': 'object',
+        'properties': {
+          'command': {'type': 'string', 'title': 'Sonnet Live Edition'},
+        },
       },
+      'uiSchema': {
+        'order': ['command'],
+      },
+      'optionSources': {},
+      'values': {'command': 'claude'},
     };
     api.routes['GET /agents/a1/runtime-options'] = (_) => options;
-    api.routes['GET /servers/s1/machines/m1/runtime-models/claude'] = (_) =>
-        models;
+    api.routes['GET /agents/a1/runtime-form'] = (_) => form;
     const agent = {
       'id': 'a1',
       'name': 'cindy',
@@ -191,7 +203,7 @@ void main() {
       controller: w,
       agent: agent,
     );
-    // The label only the machine's live answer carries.
+    // The label only the form's own answer carries.
     final live = find.text('Sonnet Live Edition');
     api.hangAll = true;
     open();
@@ -207,21 +219,21 @@ void main() {
     await t.sendKeyEvent(LogicalKeyboardKey.escape);
     await frames(t, 10);
     final admissionRead = Completer<Map<String, dynamic>>();
-    final modelRead = Completer<Map<String, dynamic>>();
+    final formRead = Completer<Map<String, dynamic>>();
     addTearDown(() {
       if (!admissionRead.isCompleted) admissionRead.complete(options);
-      if (!modelRead.isCompleted) modelRead.complete(models);
+      if (!formRead.isCompleted) formRead.complete(form);
     });
     api.routes['GET /agents/a1/runtime-options'] = (_) => admissionRead.future;
-    api.routes['GET /servers/s1/machines/m1/runtime-models/claude'] = (_) =>
-        modelRead.future;
-    void expectWaiting() {
+    api.routes['GET /agents/a1/runtime-form'] = (_) => formRead.future;
+    void expectWaiting({bool admitted = false}) {
       expect(find.byType(AgentRuntimeEditor), findsOneWidget);
       expect(find.text('Loading runtime configuration…'), findsOneWidget);
       expect(live, findsNothing, reason: 'cached fields must not flash');
+      // The Runtime select is final once the admission rows are in.
       expect(
         find.byKey(const ValueKey('runtime-editor-runtime')),
-        findsNothing,
+        admitted ? findsOneWidget : findsNothing,
       );
       expect(find.byKey(const ValueKey('runtime-editor-model')), findsNothing);
       final save = find.descendant(
@@ -236,8 +248,8 @@ void main() {
     expectWaiting();
     admissionRead.complete(options);
     await frames(t, 4);
-    expectWaiting();
-    modelRead.complete(models);
+    expectWaiting(admitted: true);
+    formRead.complete(form);
     await frames(t, 20);
     expect(find.text('Loading runtime configuration…'), findsNothing);
     expect(

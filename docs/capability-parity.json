@@ -5153,12 +5153,12 @@
    "kind": "endpoint",
    "id": "DELETE /agents/:id/credentials/:id",
    "area": "agents-computers-runtimes",
-   "capability": "Revoke an external agent login token (Revoke > warning > Confirm revoke / Cancel)",
+   "capability": "Revoke an external agent credential (row menu Revoke > confirm)",
    "background": false,
    "status": "covered",
-   "webEntry": "ExternalAgentToken 'Revoke' button with inline confirm",
+   "webEntry": "ExternalAgentCredentialList row menu 'Revoke' > ConfirmDialog",
    "gate": "same as GET credentials",
-   "flutterEntry": "external_agent_setup.dart onConfirmRevoke/onCancelRevoke",
+   "flutterEntry": "external_agent_setup.dart revoke() behind the Revoke RaftConfirmDialog",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/external_agent_setup.dart",
@@ -5166,7 +5166,7 @@
     },
     {
      "file": "apps/raft_flutter/lib/features/external_agent_setup.dart",
-     "needle": "onConfirmRevoke"
+     "needle": "external-agent-revoke-confirm"
     }
    ],
    "justification": "",
@@ -5306,7 +5306,7 @@
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/fleet_views.dart",
-     "needle": "/agents'"
+     "needle": "WorkspaceEntityKind.agents"
     },
     {
      "file": "apps/raft_flutter/lib/data/workspace_entity_directory.dart",
@@ -5618,7 +5618,7 @@
    "background": false,
    "status": "covered",
    "webEntry": "AgentDetailPanel > 'Edit runtime config' modal (v2 mode)",
-   "gate": "canManageAgent; admission marker runtimeFormV2.protocolVersion 2 (runtime_form_v2_web is retired in Web 1.24)",
+   "gate": "canManageAgent; admission marker runtimeFormV2 (protocol 2 or 3; the request advertises clientCapabilities=dependent_select.custom_value_with_options,runtime_form.v3 via runtimeFormRequestQuery in raft_client; runtime_form_v2_web is retired in Web 1.24)",
    "flutterEntry": "runtime_form_dialog.dart (editing branch) opened from agent_runtime_editor.dart",
    "flutterRefs": [
     {
@@ -5949,15 +5949,15 @@
    "status": "covered",
    "webEntry": "CreateAgentDialog and Edit runtime config > Model select / rescan icon (useRuntimeModels)",
    "gate": "canManageAgent / agent creator",
-   "flutterEntry": "agent_runtime_editor.dart loadModels (and create_agent_dialog.dart pre-admission Claude models)",
+   "flutterEntry": "bulk_agent_model_dialog.dart _loadModels (Change model); the runtime form reads the Computer's models through its option source",
    "flutterRefs": [
     {
-     "file": "apps/raft_flutter/lib/features/agent_runtime_editor.dart",
-     "needle": "/runtime-models/$runtime"
+     "file": "apps/raft_flutter/lib/features/bulk_agent_model_dialog.dart",
+     "needle": "/runtime-models/$selectedRuntime"
     },
     {
-     "file": "apps/raft_flutter/lib/features/agent_runtime_editor.dart",
-     "needle": "runtime-editor-rescan"
+     "file": "apps/raft_flutter/lib/features/agent_runtime_models.dart",
+     "needle": "parseRuntimeModelLoad"
     }
    ],
    "justification": "",
@@ -6036,11 +6036,7 @@
      "needle": "mixin ModelLabelCatalogListener"
     },
     {
-     "file": "apps/raft_flutter/lib/features/agent_runtime_editor.dart",
-     "needle": "displayLabel:"
-    },
-    {
-     "file": "apps/raft_flutter/lib/features/create_agent_dialog.dart",
+     "file": "apps/raft_flutter/lib/features/agent_detail_view.dart",
      "needle": "modelDisplayLabel("
     }
    ],
@@ -6141,7 +6137,7 @@
    "status": "partial",
    "webEntry": "Sidebar Agents section '+' (Add agent) menu: 'Create Agent' / 'Create External Agent' / 'Take over a local session' (Electron only) | Members page create | channel Add members > 'Create agent' (auto-joins channel) | onboarding 'Meet Cindy' | action-card Create Agent",
    "gate": "canCreateAgent (createAgents capability); plan agent limit",
-   "flutterEntry": "create_agent_dialog.dart (managed) via managed_agent_launcher.dart; fleet_views.dart showFleetRegistration (external: name+description only); desktop_directory_view.dart 'Add agent' menu",
+   "flutterEntry": "create_agent_dialog.dart (managed) via managed_agent_launcher.dart; create_external_agent_dialog.dart (external: name, description, method, credential, status); desktop_directory_view.dart 'Add agent' menu",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/create_agent_dialog.dart",
@@ -6149,7 +6145,7 @@
     },
     {
      "file": "apps/raft_flutter/lib/features/desktop_directory_view.dart",
-     "needle": "Create external agent"
+     "needle": "createExternalAgent"
     }
    ],
    "justification": "Managed create covers computer/name/description/runtime/model/effort/mode/env/capacity/onboarding/action-card, the remembered last computer/runtime/model, a suggested name with the dice button, the random pixel avatar and the dialog side of the channel Add members entry (autoJoinChannelName context line, prefilledNameNote). A cloud agent is the 'Cloud agent' choice of the Computer picker (flag antiproton_hosted_runtime + the provider probe). Gaps: the Add members entry that opens the dialog and joins the channel is not wired yet; Web's legacy (non-v2) runtime fields are not used, Flutter renders the server's v2 runtime form (saved provider, built-in provider, Pi provider, local plugins are fields of that form).",
@@ -6219,20 +6215,20 @@
    "kind": "endpoint",
    "id": "POST /agents/:id/credentials",
    "area": "agents-computers-runtimes",
-   "capability": "Generate a one-time external agent login token ('Generate login token', then 'Copy')",
+   "capability": "Create an external agent credential ('Create credential' / 'Create new credential', shown once, Copy)",
    "background": false,
    "status": "covered",
-   "webEntry": "ExternalAgentToken 'Generate login token' / 'Copy' (token shown masked once)",
+   "webEntry": "ExternalAgentConnectionCard 'Create credential'; CreateExternalAgentDialog Next (credential shown once in a CopyField)",
    "gate": "same as GET credentials",
-   "flutterEntry": "external_agent_setup.dart onGenerate/onCopy",
+   "flutterEntry": "external_agent_setup.dart create(); create_external_agent_dialog.dart next()",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/external_agent_setup.dart",
-     "needle": "onGenerate"
+     "needle": "replacesCredentialId"
     },
     {
      "file": "apps/raft_flutter/lib/features/external_agent_setup.dart",
-     "needle": "copyToken"
+     "needle": "pageCredentialName"
     }
    ],
    "justification": "",
@@ -7118,7 +7114,7 @@
     },
     {
      "file": "apps/raft_flutter/lib/features/create_agent_dialog.dart",
-     "needle": "Environment variables"
+     "needle": "RuntimeFormFields("
     }
    ],
    "justification": "Flutter renders the server v2 runtime form for every runtime, which carries the saved-provider picker (Saved providers group, Edit saved provider), the built-in and Pi provider fields and local plugins; Web's legacy fields are not used.",
@@ -7284,20 +7280,20 @@
    "kind": "ui",
    "id": "ui:agents.external-setup",
    "area": "agents-computers-runtimes",
-   "capability": "External agent setup: status, Claude Code / Hermes / Other agents tabs, per-step 'Copy step', 'Copy setup', login-token manager",
+   "capability": "External agent setup: four-state status line, existing-agent / SDK steps with the method switch, 'How it connects' folding, credential list",
    "background": false,
    "status": "covered",
-   "webEntry": "Profile > External setup section (ExternalSetupTabSegmentedControl, ExternalAgentToken)",
+   "webEntry": "Profile > External setup section (ExternalAgentConnectionCard, ExternalAgentCredentialList)",
    "gate": "external agent + canManageAgent; token manager needs issueAgentCredentials or creator",
-   "flutterEntry": "external_agent_setup.dart ExternalAgentSetup (RaftExternalSetupSection)",
+   "flutterEntry": "external_agent_setup.dart ExternalAgentSetup (RaftExternalConnectionSection)",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/external_agent_setup.dart",
-     "needle": "RaftExternalSetupSection("
+     "needle": "RaftExternalConnectionSection("
     },
     {
      "file": "apps/raft_flutter/lib/features/external_agent_setup.dart",
-     "needle": "RaftExternalSetupTab.hermes"
+     "needle": "externalSetupMethodOfUi"
     }
    ],
    "justification": "",
@@ -7595,10 +7591,10 @@
    "kind": "ui",
    "id": "ui:agents.runtime-config-edit",
    "area": "agents-computers-runtimes",
-   "capability": "Edit runtime config modal: runtime, model (+custom), reasoning effort, fast mode, provider URL/key, command, env vars (More), rescan models; save with restart/reset-session confirm",
+   "capability": "Edit runtime config modal: Runtime select over the server-described form (model, reasoning, mode, provider, command, env vars under Advanced); a runtime without a form shows the unavailable notice; save applies when idle, a stopped agent's runtime switch is confirmed",
    "background": false,
-   "status": "partial",
-   "webEntry": "Profile > Runtime Config pencil -> RuntimeConfigFields modal (legacy or v2 schema form)",
+   "status": "covered",
+   "webEntry": "Profile > Runtime Config pencil -> RuntimeConfigFields modal (protocol v2 form under the Runtime select)",
    "gate": "canManageAgent",
    "flutterEntry": "agent_runtime_editor.dart showAgentRuntimeEditor + runtime_form_dialog.dart (v2)",
    "flutterRefs": [
@@ -7608,12 +7604,12 @@
     },
     {
      "file": "apps/raft_flutter/lib/features/agent_runtime_editor.dart",
-     "needle": "runtime-editor-fast-mode"
+     "needle": "markUnavailable"
     }
    ],
-   "justification": "Core fields match. Missing in the legacy editor: 'Saved providers' managed-connection picker and 'Edit saved provider', Built-in provider mode/API key/base URL/image input, Pi provider mode/key, 'Load local plugins'.",
-   "impact": "Admins on built-in/Pi runtimes or with saved provider connections cannot manage those settings from the app.",
-   "size": "M"
+   "justification": "",
+   "impact": "",
+   "size": ""
   },
   {
    "kind": "ui",
@@ -8227,7 +8223,7 @@
     },
     {
      "file": "apps/raft_flutter/lib/features/desktop_directory_view.dart",
-     "needle": "Create external agent"
+     "needle": "createExternalAgent"
     }
    ],
    "justification": "Handoff Session (take over a local coding session) is Electron-desktop-only on Web, tracked as ui:global-ui.desktop-handoff-local-session.",
