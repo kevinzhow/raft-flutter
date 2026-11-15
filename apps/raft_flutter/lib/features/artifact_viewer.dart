@@ -16,6 +16,7 @@ import 'artifact_link.dart';
 import 'human_login.dart';
 import 'human_login_scope.dart';
 import 'human_login_sheet.dart';
+import 'private_app_invite.dart';
 
 /// Opens an artifact link inside the app: a full-screen page on narrow
 /// windows, a full-bleed dialog on wide ones (the same split as attachment
@@ -305,12 +306,23 @@ class _ArtifactViewerState extends State<ArtifactViewer> {
     takingOver = true;
     try {
       final request = HumanLoginRequest.fromSetupUri(setup);
+      // "Find a server admin" leaves the sign-in for that server's Members
+      // page in the app, as Web leaves the setup page for it.
+      final openInApp = PrivateAppInviteScope.opener(context);
+      Uri? leaveFor;
       final location = await showHumanLoginSheet(
         context,
         api: api,
         request: request,
+        openInApp: openInApp == null ? null : (to) async => leaveFor = to,
       );
       if (!mounted) return;
+      final members = leaveFor;
+      if (members != null && openInApp != null) {
+        widget.onClose();
+        await openInApp(members);
+        return;
+      }
       if (location == null) {
         await returnToSignIn();
       } else if (!isArtifactCallback(location)) {

@@ -73,6 +73,12 @@ class PrivateAppInviteScope extends InheritedWidget {
     return true;
   }
 
+  /// The root navigation owner's opener for a local app location
+  /// (`/s/<slug>/…`), or null outside the app shell. It switches servers when
+  /// the location names another one.
+  static Future<void> Function(Uri location)? opener(BuildContext context) =>
+      context.getInheritedWidgetOfExactType<PrivateAppInviteScope>()?.onOpen;
+
   @override
   bool updateShouldNotify(PrivateAppInviteScope oldWidget) =>
       oldWidget.coordinator != coordinator || oldWidget.onOpen != onOpen;

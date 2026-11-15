@@ -23,10 +23,15 @@ Future<Uri?> showHumanLoginSheet(
   required HumanLoginApi api,
   required HumanLoginRequest request,
   Future<bool> Function(Uri)? openExternal,
+  Future<void> Function(Uri location)? openInApp,
 }) => showRaftForm<Uri>(
   context,
-  builder: (_) =>
-      HumanLoginSheet(api: api, request: request, openExternal: openExternal),
+  builder: (_) => HumanLoginSheet(
+    api: api,
+    request: request,
+    openExternal: openExternal,
+    openInApp: openInApp,
+  ),
   // No text input: nothing to guard.
   guardUnsaved: false,
   label: 'Login with Raft',
@@ -38,12 +43,18 @@ class HumanLoginSheet extends StatefulWidget {
     required this.api,
     required this.request,
     this.openExternal,
+    this.openInApp,
   });
   final HumanLoginApi api;
   final HumanLoginRequest request;
 
   /// Opens a Web page in the system browser (tests replace it).
   final Future<bool> Function(Uri)? openExternal;
+
+  /// Leaves the sign-in for an app location (`/s/<slug>/members`); called
+  /// after the sheet closes. Null outside the app shell: the page then opens
+  /// in the browser.
+  final Future<void> Function(Uri location)? openInApp;
 
   @override
   State<HumanLoginSheet> createState() => _HumanLoginSheetState();
@@ -203,14 +214,22 @@ class _HumanLoginSheetState extends State<HumanLoginSheet> {
   /// (`/s/{slug}/members`) on the Raft Web app. The sheet runs inside an
   /// artifact's sign-in, with no workspace of that Server open, so the page
   /// opens in the browser and the sign-in stays where it is.
+  /// Web HumanLoginSetupPage.tsx:755-760: a same-tab link to that Server's
+  /// Members page, an app route (App.tsx:1502 `/s/:serverSlug/*`), so the
+  /// person leaves the sign-in for it. In the app that is the app's own
+  /// Members page; the sheet closes, authorizing nothing.
   void findAdmin(HumanLoginServer server) {
-    final page = widget.api.webOrigin.resolve(
-      '/s/${Uri.encodeComponent(server.slug)}/members',
-    );
+    final members = Uri.parse('/s/${Uri.encodeComponent(server.slug)}/members');
+    final inApp = widget.openInApp;
+    if (inApp != null) {
+      Navigator.of(context).pop();
+      unawaited(inApp(members));
+      return;
+    }
     final open =
         widget.openExternal ??
         (uri) => launchUrl(uri, mode: LaunchMode.externalApplication);
-    unawaited(open(page));
+    unawaited(open(widget.api.webOrigin.resolveUri(members)));
   }
 
   @override

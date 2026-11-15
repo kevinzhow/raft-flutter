@@ -72,8 +72,10 @@ void main() {
     ),
   );
 
-  testWidgets('a member who cannot install gets Find a server admin, which '
-      'opens that Server\'s members page and leaves the sign-in open', (
+  // Inside the app shell the link opens the app's own Members page
+  // (human_login_find_admin_in_app_test.dart); without one, Web's page.
+  testWidgets('a member who cannot install gets Find a server admin; with no '
+      'app shell it opens Web\'s members page and the sign-in stays', (
     t,
   ) async {
     final api = waiting(canInstall: false);
