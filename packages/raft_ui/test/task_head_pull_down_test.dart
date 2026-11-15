@@ -137,17 +137,26 @@ void main() {
     expect(find.byKey(const ValueKey('task-modal-bar-summary')), findsNothing);
   });
 
-  testWidgets('the title is the Web headline: 17/22 semibold', (t) async {
-    t.view.physicalSize = const Size(1280, 900);
-    t.view.devicePixelRatio = 1;
-    addTearDown(t.view.reset);
-    await t.pumpWidget(_surface(const Size(1280, 900)));
-    await t.pump();
-    final style = t
-        .widget<Text>(find.byKey(const ValueKey('task-modal-title')))
-        .style!;
-    expect(style.fontSize, 17);
-    expect(style.height! * style.fontSize!, closeTo(22, .01));
-    expect(style.fontWeight, FontWeight.w600);
-  });
+  // Web TaskModalHead: `text-headline font-semibold` (600). raft-ui 0.95.3
+  // dist/styles.css:181-185, `@media (width >= 48rem) and (pointer: fine)`
+  // sets --text-headline 16px / 24px line height; a phone keeps 17/22
+  // (styles.css:103-105). The surface picks touch density below 768.
+  for (final (name, size, fontSize, line) in [
+    ('a desktop window with a mouse', const Size(1280, 900), 16.0, 24.0),
+    ('a phone', const Size(390, 844), 17.0, 22.0),
+  ]) {
+    testWidgets('the title is the Web headline, semibold: $name', (t) async {
+      t.view.physicalSize = size;
+      t.view.devicePixelRatio = 1;
+      addTearDown(t.view.reset);
+      await t.pumpWidget(_surface(size));
+      await t.pump();
+      final style = t
+          .widget<Text>(find.byKey(const ValueKey('task-modal-title')))
+          .style!;
+      expect(style.fontSize, fontSize);
+      expect(style.height! * style.fontSize!, closeTo(line, .01));
+      expect(style.fontWeight, FontWeight.w600);
+    });
+  }
 }
