@@ -29445,7 +29445,7 @@
         "owner": "design-system alignment",
         "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
       },
-      "packages/raft_ui/lib/src/mounted_avatar_recipe.dart#local-function:CLASS:RaftMountedAvatarFrame@7245/METHOD:build@8071/FUNCTION:badge@8445": {
+      "packages/raft_ui/lib/src/mounted_avatar_recipe.dart#local-function:CLASS:RaftMountedAvatarFrame@7543/METHOD:build@8369/FUNCTION:badge@8743": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
@@ -46265,13 +46265,13 @@
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
-      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5557/METHOD:buildWorkspace@47738/FUNCTION:<anonymous>@47976/FUNCTION:workspace@64290": {
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5557/METHOD:buildWorkspace@47738/FUNCTION:<anonymous>@47976/FUNCTION:workspace@64361": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
-      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5557/METHOD:settingsRailAction@108386/FUNCTION:action@108420": {
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5557/METHOD:settingsRailAction@108457/FUNCTION:action@108491": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
@@ -46319,13 +46319,13 @@
         "owner": "WP-COMP1 v1.24 alignment",
         "reason": "Source census candidate (WP-COMP1); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
-      "packages/raft_ui/lib/src/computers_rack.dart#local-function:CLASS:RaftRackListHeader@9729/METHOD:build@10276/FUNCTION:heading@10423": {
+      "packages/raft_ui/lib/src/computers_rack.dart#local-function:CLASS:RaftRackListHeader@9776/METHOD:build@10323/FUNCTION:heading@10470": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "WP-COMP1 v1.24 alignment",
         "reason": "Source census candidate (WP-COMP1 Computers rack / Computer page); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
-      "packages/raft_ui/lib/src/computers_rack.dart#local-function:CLASS:RaftRackRow@12731/METHOD:build@13308/FUNCTION:slots@15300": {
+      "packages/raft_ui/lib/src/computers_rack.dart#local-function:CLASS:RaftRackRow@12778/METHOD:build@13355/FUNCTION:slots@15347": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "WP-COMP1 v1.24 alignment",
