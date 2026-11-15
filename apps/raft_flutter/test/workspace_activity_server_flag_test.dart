@@ -414,7 +414,10 @@ void main() {
                     find.byKey(const ValueKey('activity-enabled-toolbar')),
                   )
                   .height,
-              width >= 768 ? (89) : 54,
+              // 8 + 32 scope button + 8 + 34 controls + 8 + 1 border: the search field and
+              // sort select are the 34px desktop control height with a mouse (raft-ui 0.95.3
+              // CHANGELOG, Desktop density / InputGroup `size`; v1.21.23 measured 32 -> 89).
+              width >= 768 ? (91) : 54,
             );
             expect(find.byType(RaftSegmentedControl<String>), findsNothing);
             Future<void> select(String view) async {

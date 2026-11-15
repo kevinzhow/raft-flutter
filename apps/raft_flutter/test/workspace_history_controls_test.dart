@@ -51,7 +51,10 @@ void main() {
           await t.pumpAndSettle();
           button(history, enabled: true);
           // The real header chooses Button's on-frame compound, not the
-          // default 32px icon. Its source border box and glyph are 36/20.
+          // default 32px icon. Its source border box and glyph are 36/20 on a
+          // touch screen; with a mouse from 768px `--frame-item-height` is the
+          // 34px control height (raft-ui 0.95.3 foundation.css desktop block,
+          // `--frame-item-height: var(--control-height)`; Web AppTopBar frame items).
           for (final key in [
             'topbar-history',
             if (width >= 1000) ...['topbar-back', 'topbar-forward'],
@@ -60,7 +63,7 @@ void main() {
             final face = find
                 .descendant(of: action, matching: find.byType(RaftRecipeBox))
                 .first;
-            expect(t.getSize(face), const Size.square(36), reason: key);
+            expect(t.getSize(face), const Size.square(34), reason: key);
             final glyph = find.descendant(
               of: action,
               matching: find.byType(RaftIcon),

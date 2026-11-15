@@ -350,8 +350,8 @@
           "sourceBindings": [
             {
               "file": "packages/raft_ui/lib/src/combobox_panel.dart",
-              "bytes": 20810,
-              "sha256": "77c44a6f61ce8ee5799f01d3cff7cabc5839ce6a16015141826a9eb26fddbe2a"
+              "bytes": 20923,
+              "sha256": "81909ed305ca5d8af2ca4d42569ce5e1c200d4be4e505b31e87e0a5309a4debd"
             }
           ],
           "reason": "Public option/item data model; it does not extend Widget/State/RenderObject and is not a canonical rendering component. This source record grants no style exemption or visual acceptance."
@@ -419,8 +419,8 @@
           "sourceBindings": [
             {
               "file": "packages/raft_ui/lib/src/select_field.dart",
-              "bytes": 19662,
-              "sha256": "54248e98a4b8e210a72d75fe9a7b1370102190ec8eaa6efcb3455e1637beb41e"
+              "bytes": 19786,
+              "sha256": "91e507ba4fac18fc06a483fd86bf5b35a799c459720e8045eccd5b10085ac863"
             }
           ],
           "reason": "Public option/item data model; it does not extend Widget/State/RenderObject and is not a canonical rendering component. This source record grants no style exemption or visual acceptance."
@@ -500,8 +500,8 @@
           "sourceBindings": [
             {
               "file": "packages/raft_ui/lib/src/toggle_group.dart",
-              "bytes": 5151,
-              "sha256": "87459614d481bdf9f4835829e423e3955ae2c70eb650136f7679ad30853287bb"
+              "bytes": 5197,
+              "sha256": "83164e859dc875df6f326f4d43f8c02aae7e34085475daa8ca111dfc0f846e6a"
             }
           ],
           "reason": "Public option/item data model; it does not extend Widget/State/RenderObject and is not a canonical rendering component. This source record grants no style exemption or visual acceptance."

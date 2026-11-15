@@ -96,11 +96,19 @@ final ParityCase _typography = ParityCase(
                   '$label 排版 Aa 0123',
                   maxLines: 1,
                   softWrap: false,
-                  style: t.scale(
-                    t.typeSlot(slot),
-                    weight: weight,
-                    mono: slot.startsWith('mono-'),
-                  ),
+                  // Space Mono has no Han: the Web's `--font-mono` stack falls through to
+                  // the system CJK faces, so the fixture chains them after monospace.
+                  style: t
+                      .scale(
+                        t.typeSlot(slot),
+                        weight: weight,
+                        mono: slot.startsWith('mono-'),
+                      )
+                      .copyWith(
+                        fontFamilyFallback: slot.startsWith('mono-')
+                            ? ['monospace', ...t.fontFallback]
+                            : null,
+                      ),
                 ),
             ],
           ),
