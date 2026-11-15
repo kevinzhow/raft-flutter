@@ -70,6 +70,7 @@ import 'package:raft_ui/private_app_invite_previews.dart';
 import 'package:raft_ui/pull_to_refresh_previews.dart';
 import 'package:raft_ui/quick_reaction_picker_previews.dart';
 import 'package:raft_ui/quick_switcher_previews.dart';
+import 'package:raft_ui/rack_runtime_usage_previews.dart';
 import 'package:raft_ui/search_surface_previews.dart';
 import 'package:raft_ui/section_pager_previews.dart';
 import 'package:raft_ui/sheet_previews.dart';
@@ -731,6 +732,12 @@ final auditSurfaces = <AuditSurface>[
     'Hover card: runtime account usage',
     runtimeUsageCardPreview,
     Size(900, 520),
+  ),
+  AuditSurface(
+    'rackRuntimeUsagePreview',
+    'Rack runtime usage cells',
+    rackRuntimeUsagePreview,
+    Size(560, 240),
   ),
   AuditSurface(
     'runtimeAuthCardPreview',
