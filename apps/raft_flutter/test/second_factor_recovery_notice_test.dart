@@ -69,13 +69,13 @@ void main() {
     expect(first.incidentId, isNull);
 
     recovery = {'recovery': _view('ready')};
-    await store.refresh();
+    await store.refreshSecondFactorRecovery();
     await _settle();
     expect(store.entries.first.title, 'Reset ready');
 
     // Not reachable: keep what is shown.
     fail = true;
-    await store.refresh();
+    await store.refreshSecondFactorRecovery();
     await _settle();
     expect(store.entries.first.id, secondFactorRecoveryNoticeId);
 
@@ -87,7 +87,7 @@ void main() {
     );
     fail = false;
     recovery = {'recovery': null};
-    await store.refresh();
+    await store.refreshSecondFactorRecovery();
     await _settle();
     expect(
       store.entries.where((n) => n.id == secondFactorRecoveryNoticeId),

@@ -188,6 +188,7 @@ class SystemNotificationStore extends ChangeNotifier {
     unawaited(refresh());
     unawaited(refreshUsageLimit());
     unawaited(refreshJointInvites());
+    unawaited(refreshSecondFactorRecovery());
     try {
       final raw = await storage.read(key);
       if (closed ||
@@ -215,7 +216,6 @@ class SystemNotificationStore extends ChangeNotifier {
   Future<void> refresh() async {
     final c = context;
     if (closed || c?.server == null) return;
-    unawaited(refreshSecondFactorRecovery());
     final current = c!;
     final ticket = ++revision, readTicket = feedbackRevision;
     loading = true;
@@ -341,7 +341,7 @@ class SystemNotificationStore extends ChangeNotifier {
   }
 
   /// This person's request to reset two-step verification (account-wide):
-  /// read with every refresh (open, resume, the 60 s poll). A failed read
+  /// read when the account opens and on resume (Web useSecondFactorRecoveryNotification: mount, focus, visibilitychange; no poll). A failed read
   /// keeps what is shown.
   Future<void> refreshSecondFactorRecovery() async {
     final c = context;

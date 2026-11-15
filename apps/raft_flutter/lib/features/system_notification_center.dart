@@ -249,6 +249,7 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
         unawaited(store.refresh());
         unawaited(store.refreshUsageLimit());
         unawaited(store.refreshJointInvites());
+        unawaited(store.refreshSecondFactorRecovery());
       }
     }
   }
