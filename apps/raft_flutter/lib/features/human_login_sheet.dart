@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'human_login.dart';
 import 'human_login_servers.dart';
@@ -21,18 +22,28 @@ Future<Uri?> showHumanLoginSheet(
   BuildContext context, {
   required HumanLoginApi api,
   required HumanLoginRequest request,
+  Future<bool> Function(Uri)? openExternal,
 }) => showRaftForm<Uri>(
   context,
-  builder: (_) => HumanLoginSheet(api: api, request: request),
+  builder: (_) =>
+      HumanLoginSheet(api: api, request: request, openExternal: openExternal),
   // No text input: nothing to guard.
   guardUnsaved: false,
   label: 'Login with Raft',
 );
 
 class HumanLoginSheet extends StatefulWidget {
-  const HumanLoginSheet({super.key, required this.api, required this.request});
+  const HumanLoginSheet({
+    super.key,
+    required this.api,
+    required this.request,
+    this.openExternal,
+  });
   final HumanLoginApi api;
   final HumanLoginRequest request;
+
+  /// Opens a Web page in the system browser (tests replace it).
+  final Future<bool> Function(Uri)? openExternal;
 
   @override
   State<HumanLoginSheet> createState() => _HumanLoginSheetState();
@@ -178,6 +189,20 @@ class _HumanLoginSheetState extends State<HumanLoginSheet> {
 
   void cancel() => Navigator.of(context).pop();
 
+  /// Web links "Find a server admin" to the Server's members page
+  /// (`/s/{slug}/members`) on the Raft Web app. The sheet runs inside an
+  /// artifact's sign-in, with no workspace of that Server open, so the page
+  /// opens in the browser and the sign-in stays where it is.
+  void findAdmin(HumanLoginServer server) {
+    final page = widget.api.webOrigin.resolve(
+      '/s/${Uri.encodeComponent(server.slug)}/members',
+    );
+    final open =
+        widget.openExternal ??
+        (uri) => launchUrl(uri, mode: LaunchMode.externalApplication);
+    unawaited(open(page));
+  }
+
   @override
   Widget build(BuildContext context) {
     String tr(String s) => raftText(context, s);
@@ -276,6 +301,7 @@ class _HumanLoginSheetState extends State<HumanLoginSheet> {
                     row: current,
                     scopes: scopes,
                     busy: installing,
+                    onFindAdmin: findAdmin,
                   ),
               ],
               if (failure != null && !notAccessible)

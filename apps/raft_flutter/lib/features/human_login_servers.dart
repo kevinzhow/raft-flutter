@@ -356,10 +356,15 @@ class HumanLoginCommitZone extends StatelessWidget {
     required this.row,
     required this.scopes,
     required this.busy,
+    this.onFindAdmin,
   });
   final HumanLoginRow? row;
   final List<String> scopes;
   final bool busy;
+
+  /// Web "Find a server admin" (HumanLoginSetupPage.tsx:746-753): only an
+  /// owner or admin can install, so the member gets the way to them.
+  final ValueChanged<HumanLoginServer>? onFindAdmin;
 
   @override
   Widget build(BuildContext context) {
@@ -415,6 +420,18 @@ class HumanLoginCommitZone extends StatelessWidget {
             RaftAppSetupRequirement(
               domain: setupDomain,
               description: client?.setupDescription,
+            ),
+          if (state == HumanLoginCommit.adminNeeded && onFindAdmin != null)
+            // Web OUTLINE_LINK_BUTTON_CLASS: a full-width outline button.
+            Padding(
+              padding: const EdgeInsets.only(top: RaftSpace.x1),
+              child: RaftButton(
+                key: const ValueKey('human-login-find-admin'),
+                label: tr('Find a server admin'),
+                tone: RaftButtonRecipeVariant.outline,
+                size: RaftButtonRecipeSize.md,
+                onPressed: () => onFindAdmin!(server!),
+              ),
             ),
         ],
       ),
