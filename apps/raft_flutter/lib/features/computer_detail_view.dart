@@ -531,9 +531,18 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel> {
       String? version,
     ]) => RaftComputerService(
       kind: kind,
-      installLines: kind == RaftComputerServiceKind.manualUpgrade
+      installLines:
+          kind == RaftComputerServiceKind.manualUpgrade ||
+              kind == RaftComputerServiceKind.oneClick
           ? _installLines()
           : const [],
+      failureHint: kind == RaftComputerServiceKind.oneClick
+          ? _failureHint()
+          : null,
+      recommendRepair:
+          kind == RaftComputerServiceKind.oneClick &&
+          m['installerRepairHint'] is Map &&
+          (m['installerRepairHint'] as Map)['reason'] == 'unrecovered_operation',
       sentence: sentence,
       version: version,
       webUpgradeOn: webUpgradeOn,
@@ -629,6 +638,31 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel> {
         available,
       ),
     };
+  }
+
+  /// `upgradeRequest.failureHint`, shown beside an offered Upgrade only while the
+  /// last request failed and the Computer still runs the version it failed on.
+  RaftUpgradeFailureHint? _failureHint() {
+    final request = m['upgradeRequest'];
+    if (request is! Map || request['state'] != 'failed') return null;
+    if (computerUpgradeRequestOutcome(m) != RaftComputerUpgradeOutcome.failed) {
+      return null;
+    }
+    final observed = request['observedVersion'];
+    if (observed != null && observed != m['computerVersion']) return null;
+    final hint = request['failureHint'];
+    if (hint is! Map) return null;
+    final reason = hint['reason'];
+    if (reason != 'unsafe_kill_mode' && reason != 'installation_held') {
+      return null;
+    }
+    String? text(Object? v) => v is String && v.isNotEmpty ? v : null;
+    return RaftUpgradeFailureHint(
+      unsafeKillMode: reason == 'unsafe_kill_mode',
+      unit: text(hint['unit']),
+      scope: text(hint['scope']),
+      killMode: text(hint['killMode']),
+    );
   }
 
   /// "Waiting for N agents ... then upgrading" while the Computer drains,

@@ -9,6 +9,7 @@ import 'package:flutter/widgets.dart';
 import 'card.dart' show RaftCard;
 import 'design_primitives.dart';
 import 'icons.dart';
+import 'adaptive_workspace.dart' show RaftPanelResizeHandle;
 import 'banner.dart';
 import 'indicators.dart';
 import 'raft/status.dart';
@@ -1135,20 +1136,28 @@ class RaftRackScroller extends StatelessWidget {
 
 /// The rack beside the open computer's panel (Raft DS › Navigation,
 /// "Opening an item"): the panel at [width] on the right, a hairline between.
+/// With [onResize] its left edge is a drag handle (Web `ColumnResizeHandle
+/// column="detail"`, the profile panel's 300 to 600 range), kept by the host.
 class RaftRackSidePanelLayout extends StatelessWidget {
   const RaftRackSidePanelLayout({
     super.key,
     required this.rack,
     required this.width,
     this.panel,
+    this.onResize,
+    this.onResizeEnd,
+    this.resizeLabel = 'Resize profile',
   });
   final Widget rack;
   final Widget? panel;
   final double width;
+  final ValueChanged<double>? onResize;
+  final VoidCallback? onResizeEnd;
+  final String resizeLabel;
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    return Row(
+    final row = Row(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Expanded(child: rack),
@@ -1161,6 +1170,28 @@ class RaftRackSidePanelLayout extends StatelessWidget {
             ),
             child: SizedBox(width: width, child: panel),
           ),
+      ],
+    );
+    if (panel == null || onResize == null) return row;
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        row,
+        // The handle overlays the seam; its hit strip takes no layout width.
+        Positioned(
+          right: width - RaftPanelResizeHandle.hitExtent / 2,
+          top: 0,
+          bottom: 0,
+          width: RaftPanelResizeHandle.hitExtent,
+          child: RaftPanelResizeHandle(
+            key: const ValueKey('rack-side-panel-resize-handle'),
+            label: resizeLabel,
+            value: width,
+            reversed: true,
+            onChanged: onResize!,
+            onChangeEnd: onResizeEnd,
+          ),
+        ),
       ],
     );
   }

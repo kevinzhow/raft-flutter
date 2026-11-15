@@ -17,6 +17,19 @@ class AcceptedComputerUpgrade {
   final int acceptedAtMs;
 }
 
+/// How long the server waits for this request before settling it as
+/// `no_response`: its own `deadlineAt - requestedAt` (both server clock; a
+/// request whose Computer waits for its agents first is longer), else the
+/// 30 minute default (Web `computerUpgradeRequestDeadlineMs`).
+int computerUpgradeRequestDeadlineMs(Map request) {
+  final deadline = _ms(request['deadlineAt']);
+  final requested = _ms(request['requestedAt']);
+  if (deadline != null && requested != null && deadline > requested) {
+    return deadline - requested;
+  }
+  return computerUpgradeRequestDeadline.inMilliseconds;
+}
+
 int? _ms(Object? iso) =>
     iso is String ? DateTime.tryParse(iso)?.millisecondsSinceEpoch : null;
 
@@ -54,8 +67,7 @@ Map<String, dynamic>? computerUpgradeInFlight(
       machine['computerVersion'] == request['targetVersion']) {
     return null;
   }
-  if (nowMs >=
-      accepted.acceptedAtMs + computerUpgradeRequestDeadline.inMilliseconds) {
+  if (nowMs >= accepted.acceptedAtMs + computerUpgradeRequestDeadlineMs(request)) {
     return null;
   }
   return request;

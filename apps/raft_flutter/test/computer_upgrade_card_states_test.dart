@@ -53,6 +53,7 @@ Map<String, dynamic> machine({
   bool supported = true,
   Map<String, dynamic>? policy,
   Map<String, dynamic>? request,
+  bool repair = false,
 }) => {
   'id': 'm1',
   'name': 'Studio Mac',
@@ -67,6 +68,7 @@ Map<String, dynamic> machine({
   'computerBroadcastPolicy':
       policy ?? {'eligibility': 'eligible', 'targetVersion': '1.0.47'},
   'upgradeRequest': ?request,
+  if (repair) 'installerRepairHint': {'reason': 'unrecovered_operation'},
 };
 
 void main() {
@@ -210,4 +212,96 @@ void main() {
       await leave(t);
     });
   }
+
+  testWidgets(
+    'a failure the web cannot get past names the unit and the way out',
+    (t) async {
+      await mount(
+        t,
+        machine(
+          request: {
+            'id': 'r1',
+            'state': 'failed',
+            'targetVersion': '1.0.47',
+            'observedVersion': '1.0.46',
+            'failureHint': {
+              'reason': 'unsafe_kill_mode',
+              'unit': 'raft.service',
+              'scope': 'system',
+              'killMode': 'process',
+            },
+          },
+        ),
+      );
+      final hint = find.byKey(const ValueKey('computer-upgrade-failure-hint'));
+      expect(hint, findsOneWidget);
+      expect(
+        find.textContaining('systemctl stop raft.service'),
+        findsOneWidget,
+      );
+      expect(
+        find.textContaining('systemctl start raft.service'),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey('computer-upgrade-failure-manual')),
+        findsOne,
+      );
+      // The retry stays, worded for what happened.
+      expect(find.text('Try again from the web'), findsOneWidget);
+      await leave(t);
+    },
+  );
+
+  testWidgets('a failure of another version leaves no hint behind', (t) async {
+    await mount(
+      t,
+      machine(
+        request: {
+          'id': 'r1',
+          'state': 'failed',
+          'targetVersion': '1.0.47',
+          'observedVersion': '1.0.44',
+          'failureHint': {'reason': 'installation_held'},
+        },
+      ),
+    );
+    expect(
+      find.byKey(const ValueKey('computer-upgrade-failure-hint')),
+      findsNothing,
+    );
+    // Still failed, so the manual fallback line and command show.
+    expect(
+      find.text('Or upgrade on that machine with this command:'),
+      findsOne,
+    );
+    await leave(t);
+  });
+
+  testWidgets('an unfinished installation recommends the install command', (
+    t,
+  ) async {
+    await mount(t, machine(repair: true));
+    expect(
+      find.byKey(const ValueKey('computer-upgrade-repair-hint')),
+      findsOne,
+    );
+    expect(find.byKey(const ValueKey('computer-upgrade-repair')), findsOne);
+    expect(find.text('Try upgrading from the web anyway'), findsOneWidget);
+    expect(find.byKey(const ValueKey('computer-upgrade')), findsOneWidget);
+    await leave(t);
+  });
+
+  testWidgets('a healthy Computer shows no advice', (t) async {
+    await mount(t, machine());
+    expect(
+      find.byKey(const ValueKey('computer-upgrade-repair-hint')),
+      findsNothing,
+    );
+    expect(
+      find.byKey(const ValueKey('computer-upgrade-failure-manual')),
+      findsNothing,
+    );
+    await leave(t);
+  });
 }

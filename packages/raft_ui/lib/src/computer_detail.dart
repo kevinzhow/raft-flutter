@@ -60,6 +60,21 @@ enum RaftComputerUpgradeOutcome {
 /// MachineAgentList bulk modes.
 enum RaftComputerBulk { start, stop, restart, session, full }
 
+/// A failure only the install command on the machine gets past (Web
+/// `upgradeRequest.failureHint`): the systemd unit the Computer runs under.
+class RaftUpgradeFailureHint {
+  const RaftUpgradeFailureHint({
+    required this.unsafeKillMode,
+    this.unit,
+    this.scope,
+    this.killMode,
+  });
+
+  /// `unsafe_kill_mode`, else `installation_held`.
+  final bool unsafeKillMode;
+  final String? unit, scope, killMode;
+}
+
 class RaftComputerService {
   const RaftComputerService({
     required this.kind,
@@ -68,8 +83,18 @@ class RaftComputerService {
     this.webUpgradeOn = false,
     this.outcome = RaftComputerUpgradeOutcome.none,
     this.installLines = const [],
+    this.failureHint,
+    this.recommendRepair = false,
   });
   final RaftComputerServiceKind kind;
+
+  /// Why the last web upgrade failed, beside an offered Upgrade (the install
+  /// command is the way out); null when the failure has no special cause.
+  final RaftUpgradeFailureHint? failureHint;
+
+  /// The installer state looks unfinished: the install command is recommended
+  /// over the offered one-click Upgrade (which stays).
+  final bool recommendRepair;
 
   /// The manual install line(s) a [RaftComputerServiceKind.manualUpgrade]
   /// card shows.
@@ -2191,7 +2216,11 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
                   ),
                 if (kind == RaftComputerServiceKind.oneClick)
                   _actionButton(
-                    'Upgrade to v$version',
+                    service?.failureHint != null
+                        ? 'Try again from the web'
+                        : (service?.recommendRepair ?? false)
+                        ? 'Try upgrading from the web anyway'
+                        : 'Upgrade to v$version',
                     key: const ValueKey('computer-upgrade'),
                     glyph: RaftGlyph.play,
                     variant: RaftButtonRecipeVariant.accent,
@@ -2216,6 +2245,7 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
               const SizedBox(height: 8),
               line,
             ],
+            ..._upgradeAdvice(t, service),
             if (kind == RaftComputerServiceKind.manualUpgrade &&
                 (service?.installLines.isNotEmpty ?? false)) ...[
               const SizedBox(height: 12),
@@ -2279,6 +2309,93 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
           ],
         ],
       ),
+    );
+  }
+
+  /// Beside an offered one-click Upgrade (Web ComputerServiceActionsCard): the
+  /// repair advice when the installer state looks unfinished; after a failed or
+  /// refused request the way that does not depend on the web, naming the
+  /// systemd unit when the failure did. Each with the install line(s).
+  List<Widget> _upgradeAdvice(RaftTokens t, RaftComputerService? service) {
+    if (service == null || service.kind != RaftComputerServiceKind.oneClick) {
+      return const [];
+    }
+    final ink = _Ink(t);
+    final hint = service.failureHint;
+    final failedOrRefused = service.outcome != RaftComputerUpgradeOutcome.none;
+    final repair = service.recommendRepair && hint == null;
+    final fallback = failedOrRefused && (hint != null || !service.recommendRepair);
+    if (!repair && !fallback) return const [];
+    Widget lines(String key) => Column(
+      key: ValueKey(key),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const SizedBox(height: 8),
+        for (final line in service.installLines) ...[
+          RaftCopyableCode(line.command, copyLabel: line.copyLabel),
+          const SizedBox(height: 8),
+        ],
+      ],
+    );
+    return [
+      const SizedBox(height: 12),
+      if (repair) ...[
+        RaftBanner(
+          key: const ValueKey('computer-upgrade-repair-hint'),
+          size: RaftBannerRecipeSize.sm,
+          description: raftFormat(
+            context,
+            'An earlier installation on this computer was not finished, and upgrading from the web may fail until it is repaired. Recommended: run the install command on that machine once; it repairs the installation and installs v{version}.',
+            {'version': service.version ?? ''},
+          ),
+        ),
+        lines('computer-upgrade-repair'),
+      ] else ...[
+        if (hint != null)
+          RaftBanner(
+            key: const ValueKey('computer-upgrade-failure-hint'),
+            size: RaftBannerRecipeSize.sm,
+            description: _failureHintText(hint),
+          )
+        else
+          RaftCssText(
+            raftText(context, 'Or upgrade on that machine with this command:'),
+            style: ink.note,
+          ),
+        lines('computer-upgrade-failure-manual'),
+      ],
+    ];
+  }
+
+  /// ComputerUpgradeFailureHintText: stop the unit, run the install command
+  /// once, start the unit again; names the unit and its commands when the
+  /// failure did. The commands are the same in every language.
+  String _failureHintText(RaftUpgradeFailureHint hint) {
+    final unit = hint.unit;
+    if (unit == null || unit.isEmpty || (hint.unsafeKillMode && hint.killMode == null)) {
+      return raftText(
+        context,
+        hint.unsafeKillMode
+            ? 'This Computer runs under your own systemd unit, whose KillMode stops a web upgrade on this version. On that machine: stop the unit, run the install command below once, then start the unit again.'
+            : "The installer can't upgrade this Computer while it runs inside your systemd unit. Stop the unit, run the install command below once, then start it again.",
+      );
+    }
+    final systemctl = switch (hint.scope) {
+      'user' => 'systemctl --user',
+      'system' => 'systemctl',
+      _ => 'systemctl [--user]',
+    };
+    return raftFormat(
+      context,
+      hint.unsafeKillMode
+          ? 'This Computer runs under your own systemd unit {unit} (KillMode={killMode}), which stops a web upgrade on this version. On that machine: stop the unit ({stopCommand}), run the install command below once, then start the unit again ({startCommand}).'
+          : "The installer can't upgrade this Computer while it runs inside your systemd unit {unit}. On that machine: stop the unit ({stopCommand}), run the install command below once, then start it again ({startCommand}).",
+      {
+        'unit': unit,
+        'killMode': hint.killMode ?? '',
+        'stopCommand': '$systemctl stop $unit',
+        'startCommand': '$systemctl start $unit',
+      },
     );
   }
 

@@ -10,7 +10,7 @@ import '../desktop_navigation_policy.dart';
 import '../panel_width_store.dart';
 import 'computers_rack_view.dart';
 
-class ComputersRackDesktopPage extends StatelessWidget {
+class ComputersRackDesktopPage extends StatefulWidget {
   const ComputersRackDesktopPage({
     super.key,
     required this.controller,
@@ -26,23 +26,40 @@ class ComputersRackDesktopPage extends StatelessWidget {
   final Widget? detail;
 
   @override
+  State<ComputersRackDesktopPage> createState() =>
+      _ComputersRackDesktopPageState();
+}
+
+class _ComputersRackDesktopPageState extends State<ComputersRackDesktopPage> {
+  /// The panel's width while it is dragged; kept as the profile panel's
+  /// (Web `ColumnResizeHandle column="detail"`).
+  double width = profilePanelWidth.value;
+
+  @override
   Widget build(BuildContext context) {
-    final selected = target?.kind == DesktopContentKind.computer
-        ? target!.id
+    final selected = widget.target?.kind == DesktopContentKind.computer
+        ? widget.target!.id
         : null;
     return RaftRackSidePanelLayout(
-      width: profilePanelWidth.value,
+      width: width,
+      onResize: (value) => setState(
+        () => width = value.clamp(profilePanelWidth.min, profilePanelWidth.max),
+      ),
+      onResizeEnd: () => profilePanelWidth.save(width),
+      resizeLabel: raftText(context, 'Resize profile'),
       rack: ComputersRackView(
-        controller: controller,
+        controller: widget.controller,
         selectedId: selected,
         onOpenComputer: (row) {
           final id = row['id'];
           if (id is String) {
-            onSelected(DesktopContentTarget(DesktopContentKind.computer, id));
+            widget.onSelected(
+              DesktopContentTarget(DesktopContentKind.computer, id),
+            );
           }
         },
       ),
-      panel: selected == null ? null : detail,
+      panel: selected == null ? null : widget.detail,
     );
   }
 }
