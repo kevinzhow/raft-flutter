@@ -1378,7 +1378,9 @@ Future<void> showRaftRuntimeUsageSheet(
       builder: (sheetContext, _) => RaftRuntimeUsageSheet(
         data: data(sheetContext),
         onRefresh: onRefresh,
-        onClose: () => Navigator.of(dialogContext).maybePop(),
+        // pop at once: an action that opens a dialog closes the sheet first, and
+        // a pop that waits a turn would close that dialog instead.
+        onClose: () => Navigator.of(dialogContext).pop(),
       ),
     ),
   ),

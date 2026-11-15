@@ -446,7 +446,7 @@ void registerCloseDialogTests(TestPart part) {
             listenable: usageChanges,
             data: (_) => const RaftRuntimeUsageData(
               provider: 'Claude',
-              footer: 'Cached',
+              statusText: 'Cached',
             ),
             onRefresh: () {},
           ),

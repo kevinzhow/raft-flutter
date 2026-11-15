@@ -280,7 +280,7 @@ void main() {
           version: '2.1.0',
           state: state,
           updated: '5 minutes ago',
-          footer: 'Cached snapshot only',
+          statusText: 'Cached snapshot only',
           accounts: const [
             RaftRuntimeUsageAccount(
               health: 'ok',
@@ -353,14 +353,14 @@ void main() {
       expect(opens, 1);
       for (final text in [
         'Claude usage',
-        'Version 2.1.0',
+        '2.1.0',
         'Max',
         'ada****@example.com',
         'ok',
         '5h',
         '42% used · resets in 3 hours',
         'Usage unavailable',
-        'Account-wide · updated 5 minutes ago',
+        'Updated 5 minutes ago',
         'Cached snapshot only',
         'Refresh',
       ]) {

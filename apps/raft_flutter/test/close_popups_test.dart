@@ -126,7 +126,7 @@ Widget runtimeUsageChip(BuildContext context) => RaftRuntimeUsageChip(
   data: const RaftRuntimeUsageData(
     provider: 'Claude',
     state: 'fresh',
-    footer: 'Cached snapshot only',
+    statusText: 'Cached snapshot only',
   ),
   onOpen: () {},
   onRefresh: () {},
@@ -136,7 +136,7 @@ Widget runtimeUsageChip(BuildContext context) => RaftRuntimeUsageChip(
     data: (_) => const RaftRuntimeUsageData(
       provider: 'Claude',
       state: 'fresh',
-      footer: 'Cached snapshot only',
+      statusText: 'Cached snapshot only',
     ),
     onRefresh: () {},
   ),

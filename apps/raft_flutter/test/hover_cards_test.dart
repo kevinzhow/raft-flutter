@@ -334,11 +334,11 @@ void main() {
     expect(find.byType(RaftRuntimeUsageStatus), findsOneWidget);
     expect(find.byType(RaftRuntimeUsageChip), findsOneWidget);
     final mouse = await _hover(t, find.text('Claude Code'));
-    expect(find.text('Claude usage'), findsOneWidget);
-    expect(find.text('Version 2.1.0'), findsOneWidget);
+    expect(find.text('Claude Code usage'), findsOneWidget);
+    expect(find.text('2.1.0'), findsOneWidget);
     expect(find.text('Max'), findsOneWidget);
     expect(find.text('ali****@example.com'), findsOneWidget);
-    expect(find.text('Account-wide · updated 5 minutes ago'), findsOneWidget);
+    expect(find.text('Updated 5 minutes ago'), findsOneWidget);
     // Manual refresh posts once and starts the cooldown countdown.
     await t.tap(find.byKey(const ValueKey('runtime-usage-refresh')));
     await t.pump();

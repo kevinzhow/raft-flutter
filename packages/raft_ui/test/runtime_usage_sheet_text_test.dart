@@ -41,7 +41,7 @@ void main() {
                             version: '0.162.1',
                             state: 'fresh',
                             updated: '12 minutes ago',
-                            footer: changes.value == 0
+                            statusText: changes.value == 0
                                 ? 'Cached snapshot only'
                                 : 'Requested snapshot',
                             accounts: const [

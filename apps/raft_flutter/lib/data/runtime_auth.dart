@@ -75,6 +75,9 @@ bool runtimeAuthHasProviderKey(String runtime) => runtime == 'qwen';
 /// (`kimi-sdk` is Kimi's), or null when it has no sign-in from here.
 String? runtimeAuthRuntimeFor(String raftRuntimeId) {
   if (raftRuntimeId == 'kimi-sdk') return 'kimi';
+  // The deprecated Kimi CLI (`kimi`) has none: its agents run on
+  // `~/.kimi/config.toml`, which that sign-in does not touch.
+  if (raftRuntimeId == 'kimi') return null;
   return runtimeAuthRuntimes.contains(raftRuntimeId) ? raftRuntimeId : null;
 }
 
@@ -343,7 +346,11 @@ class RuntimeAuthClient {
   final _cache = <String, (RuntimeAuthView, DateTime)>{};
   final _reads = <String, Future<RuntimeAuthView>>{};
   final _watchers = <String, Set<void Function()>>{};
-  final _login = StreamController<RuntimeAuthLoginPush>.broadcast();
+  // The socket is listened to once the first caller listens (the getter
+  // below runs before its `listen`, so it cannot know).
+  late final _login = StreamController<RuntimeAuthLoginPush>.broadcast(
+    onListen: _syncSocket,
+  );
 
   static String _key(String server, String machine) => '$server\u0000$machine';
   static String _base(String server, String machine) =>
