@@ -12,6 +12,7 @@ export 'src/status_bar.dart';
 export 'src/desktop_title_bar.dart';
 export 'src/workspace_top_bar.dart';
 export 'src/components.dart';
+export 'src/composer_paste.dart' show RaftPasteAttachmentsIntent;
 
 export 'src/task.dart';
 export 'src/task_surface.dart';

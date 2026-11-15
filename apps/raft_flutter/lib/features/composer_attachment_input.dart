@@ -15,6 +15,9 @@ import '../platform/clipboard_attachments.dart';
 //   drop overlay while a drag is over it and the folder notices on drop;
 // * Ctrl/Cmd+V of copied files or an image (`handlePaste`); text paste is
 //   unaffected when the clipboard carries neither;
+// * iOS: the system Paste (edit menu, keyboard) of a copied image or file,
+//   which iOS lets the app read without a prompt (ClipboardAttachments.watch,
+//   RaftSharingBridge.swift);
 // * software-keyboard image insertion (Android IME commit content).
 
 /// Captures the draft scope; a conversation switch meanwhile drops the files.

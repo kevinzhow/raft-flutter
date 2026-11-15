@@ -136,6 +136,8 @@ void _enableLeakTracking() {
       '_SetupSignal',
       // Process-wide notifier behind the full-bleed overlay hold.
       '_HoldCount',
+      // Process-wide iOS clipboard-attachment availability.
+      '_ClipboardAvailability',
     ],
   );
 }
