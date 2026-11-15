@@ -17,10 +17,19 @@ class _CardDialogPartsState extends State<_CardDialogParts> {
     final d = widget.dialog;
     final t = RaftTokens.of(context), tokens = t.recipeTokens;
     final states = t.recipeStates(responsive: true);
+    final hasDescription = d.description != null;
     final product = RaftWebDialogCardRecipe.resolve(
+      description: hasDescription,
       states: states,
       tokens: tokens,
     );
+    // The gap above a footer is the header's `mb-4`, with or without text.
+    final footerMargin = hasDescription
+        ? RaftWebDialogCardRecipe.resolve(
+            states: states,
+            tokens: tokens,
+          ).header.margin.bottom
+        : product.header.margin.bottom;
     final root = product.root;
     final contentInset = product.body.padding;
     final header = product.header;
@@ -89,7 +98,7 @@ class _CardDialogPartsState extends State<_CardDialogParts> {
         ],
       );
     }
-    final heading = Padding(
+    final headerRow = Padding(
       padding: EdgeInsets.only(bottom: header.margin.bottom),
       child: Row(
         spacing: header.columnGap ?? 0,
@@ -104,6 +113,25 @@ class _CardDialogPartsState extends State<_CardDialogParts> {
         ],
       ),
     );
+    final heading = d.description == null
+        ? headerRow
+        : Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              headerRow,
+              Padding(
+                padding: product.description.margin,
+                child: Text(
+                  raftText(context, d.description!),
+                  style: product.description.text(
+                    tokens,
+                    base: DefaultTextStyle.of(context).style,
+                  ),
+                ),
+              ),
+            ],
+          );
     Widget scrollingContent({
       required bool includeHeading,
       required bool includeFooter,
@@ -114,12 +142,16 @@ class _CardDialogPartsState extends State<_CardDialogParts> {
         if (includeHeading) heading,
         body,
         if (includeFooter && footer != null) ...[
-          SizedBox(height: d.footerGap ?? header.margin.bottom),
+          SizedBox(height: d.footerGap ?? footerMargin),
           footer,
         ],
       ],
     );
-    Widget card({required bool scaled, required double maxWidth}) => Semantics(
+    Widget card({
+      required bool scaled,
+      required double maxWidth,
+      bool capped = false,
+    }) => Semantics(
       scopesRoute: true,
       namesRoute: true,
       explicitChildNodes: true,
@@ -185,18 +217,27 @@ class _CardDialogPartsState extends State<_CardDialogParts> {
                               mainAxisSize: MainAxisSize.min,
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
-                                SizedBox(
-                                  height: d.footerGap ?? header.margin.bottom,
-                                ),
+                                SizedBox(height: d.footerGap ?? footerMargin),
                                 footer,
                               ],
                             ),
                           ),
+                      ] else if (capped) ...[
+                        // The popup is capped at `100dvh - 2rem`; its content
+                        // (heading, body, footer) scrolls inside it.
+                        Flexible(
+                          child: SingleChildScrollView(
+                            child: scrollingContent(
+                              includeHeading: true,
+                              includeFooter: true,
+                            ),
+                          ),
+                        ),
                       ] else ...[
                         heading,
                         body,
                         if (footer != null) ...[
-                          SizedBox(height: d.footerGap ?? header.margin.bottom),
+                          SizedBox(height: d.footerGap ?? footerMargin),
                           footer,
                         ],
                       ],
@@ -240,10 +281,22 @@ class _CardDialogPartsState extends State<_CardDialogParts> {
         final keyboard = media.viewInsets.bottom;
         if (!box.hasBoundedHeight) {
           if (!scaled) {
+            // Inside a modal backdrop the popup is capped at `100dvh - 2rem`
+            // and scrolls its own content (raft-ui Dialog).
+            final cap = RaftModalCardCap.of(context);
             return Align(
               widthFactor: 1,
               heightFactor: 1,
-              child: card(scaled: false, maxWidth: maxWidth),
+              child: cap == null
+                  ? card(scaled: false, maxWidth: maxWidth)
+                  : ConstrainedBox(
+                      constraints: BoxConstraints(maxHeight: cap),
+                      child: card(
+                        scaled: false,
+                        maxWidth: maxWidth,
+                        capped: true,
+                      ),
+                    ),
             );
           }
           final available =

@@ -13,23 +13,15 @@ class _ShellDialogPartsState extends State<_ShellDialogParts> {
   @override
   Widget build(BuildContext context) {
     final d = widget.dialog;
-    final slots = RaftDialogSlots.of(context);
-    final body = KeyedSubtree(key: _body, child: d.content!);
-    final footer = KeyedSubtree(
-      key: _footer,
-      child: Wrap(
-        alignment: WrapAlignment.end,
-        crossAxisAlignment: WrapCrossAlignment.center,
-        spacing: slots.footer.columnGap ?? 0,
-        runSpacing: slots.footer.rowGap ?? 0,
-        children: d.actions!,
-      ),
-    );
+    final body = d.content == null
+        ? null
+        : KeyedSubtree(key: _body, child: d.content!);
+    final footer = RaftDialogActions(key: _footer, children: d.actions!);
     if (RaftFormFrame.sheetOf(context)) {
       return RaftFormSheet(
         title: raftText(context, d.title! as String),
         onClose: d.onClose,
-        body: body,
+        body: body ?? const SizedBox.shrink(),
         footer: footer,
       );
     }

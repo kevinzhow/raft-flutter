@@ -19,6 +19,7 @@ import 'localization.dart';
 import 'overlays/dialog.dart';
 import 'panel_layout.dart' show RaftCssText;
 import 'recipe_surface.dart';
+import 'recipes/announcement.g.dart';
 import 'recipes/button_variants.g.dart';
 import 'sized_image.dart';
 import 'raft/status.dart' show RaftStatus, RaftStatusSize;
@@ -212,8 +213,20 @@ class RaftAnnouncementCard extends StatelessWidget {
     final rt = t.recipeTokens;
     final slots = RaftDialogSlots.of(context);
     final media = MediaQuery.of(context);
+    // raft-ui `announcement` recipe: body / footer insets are
+    // `--surface-inset` (16 with a mouse at >=768, 20 by touch).
+    final raft = t.option('announcement.style', or: 'recipe') == 'raft';
+    final a = raft
+        ? RaftAnnouncementRecipe.resolve(
+            states: t.recipeStates(responsive: true),
+            tokens: rt,
+          )
+        : null;
     // `w-[calc(100%-2rem)] max-w-xl max-h-[calc(100dvh-2rem)]`.
-    final width = math.min(maxWidth, math.max(0.0, media.size.width - 32));
+    final width = math.min(
+      a?.content.maxWidth ?? maxWidth,
+      math.max(0.0, media.size.width - 32),
+    );
     final maxHeight = math.max(
       0.0,
       media.size.height - 32 - media.viewInsets.bottom,
@@ -221,7 +234,6 @@ class RaftAnnouncementCard extends StatelessWidget {
     final ink = t.semantic.foreground;
     // raft-ui wip `announcement`: `text-headline` title, `text-subhead
     // text-foreground-muted` copy, `px-5 pt-5 pb-5` body, no footer rule.
-    final raft = t.option('announcement.style', or: 'recipe') == 'raft';
     final titleStyle = raft
         ? t.scale(RaftTypeScale.headline, weight: FontWeight.w700)
         : slots.title
@@ -255,9 +267,9 @@ class RaftAnnouncementCard extends StatelessWidget {
             constraints: BoxConstraints(maxHeight: media.size.height * .7),
             child: SingleChildScrollView(
               key: const ValueKey('announcement-body'),
-              // `px-7 pt-6 pb-5` (`px-5 pt-5 pb-5` in the Raft look).
+              // `px-7 pt-6 pb-5` (the `body` slot in the Raft look).
               padding: raft
-                  ? const EdgeInsets.all(20)
+                  ? a!.body.padding
                   : const EdgeInsets.fromLTRB(28, 24, 28, 20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -273,7 +285,7 @@ class RaftAnnouncementCard extends StatelessWidget {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
+                  SizedBox(height: raft ? a!.title.margin.top : 12),
                   Semantics(
                     header: true,
                     child: RaftCssText(
@@ -283,11 +295,17 @@ class RaftAnnouncementCard extends StatelessWidget {
                     ),
                   ),
                   if (picture != null) ...[
-                    const SizedBox(height: 20),
+                    SizedBox(height: raft ? a!.picture.margin.top : 20),
                     _Picture(picture),
                   ],
                   // `mt-3`, `mt-5` right after the picture.
-                  SizedBox(height: picture == null ? 12 : 20),
+                  SizedBox(
+                    height: raft
+                        ? (picture == null
+                              ? a!.text.margin.top
+                              : a!.picture.margin.top)
+                        : (picture == null ? 12 : 20),
+                  ),
                   DefaultTextStyle(
                     key: const ValueKey('announcement-page-body'),
                     style: bodyStyle,
@@ -300,13 +318,14 @@ class RaftAnnouncementCard extends StatelessWidget {
         ),
         Container(
           key: const ValueKey('announcement-footer'),
-          // `border-t px-7 py-4` (`px-5 pt-0 pb-5`, no rule, in the Raft look).
+          // `border-t px-7 py-4` (the `footer` slot, no rule, in the Raft look).
           padding: raft
-              ? const EdgeInsets.fromLTRB(20, 0, 20, 20)
+              ? a!.footer.padding
               : const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
           decoration: raft ? null : BoxDecoration(border: Border(top: rule)),
           child: _Footer(
-            secondary: ctaLabel == null
+            // v1.24: one action, the CTA or "Got it".
+            secondary: ctaLabel == null || raft
                 ? null
                 : RaftRecipeButton(
                     key: const ValueKey('announcement-dismiss'),
@@ -410,7 +429,8 @@ class _Label extends StatelessWidget {
 
 /// `AnnouncementDialogPicture`: `h-44 w-full overflow-hidden border
 /// border-line-muted` (brutal `border-2 border-line-strong`, elegant
-/// `rounded-lg`) with the image `object-contain`.
+/// `rounded-lg`) with the image `object-contain`. The Raft caller overrides it
+/// (`aspect-video h-auto border-0`, image `object-fill`).
 class _Picture extends StatelessWidget {
   const _Picture(this.image);
   final RaftAnnouncementImage image;
@@ -419,29 +439,34 @@ class _Picture extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     final raft = t.option('announcement.style', or: 'recipe') == 'raft';
-    final border = Border.all(
-      color: raft ? t.ui.lineHairline : t.semantic.lineMuted,
-      width: 1,
-    );
+    final border = raft
+        ? null
+        : Border.all(color: t.semantic.lineMuted, width: 1);
     final radius = BorderRadius.circular(
       raft ? t.size('radius.container', fallback: 10) : 8,
     );
-    return Container(
+    Widget picture = Container(
       key: const ValueKey('announcement-picture'),
-      height: 176,
-      decoration: BoxDecoration(border: border, borderRadius: radius),
+      height: raft ? null : 176,
+      decoration: BoxDecoration(
+        border: border,
+        borderRadius: radius,
+        color: raft ? t.ui['fill-muted'] : null,
+      ),
       clipBehavior: Clip.antiAlias,
       child: LayoutBuilder(
         builder: (context, box) => RaftSizedImage.network(
           image.url,
           width: box.maxWidth,
           height: box.maxHeight,
-          fit: BoxFit.contain,
+          fit: raft ? BoxFit.fill : BoxFit.contain,
           semanticLabel: image.alt,
           errorBuilder: (_, _, _) => const SizedBox.shrink(),
         ),
       ),
     );
+    if (raft) picture = AspectRatio(aspectRatio: 16 / 9, child: picture);
+    return picture;
   }
 }
 

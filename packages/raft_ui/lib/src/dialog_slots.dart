@@ -161,14 +161,19 @@ class RaftDialogCloseOutset extends StatelessWidget {
     required this.child,
     this.verticalOutset,
     this.endOutset,
+    this.extent,
   });
   final Widget child;
   final double? verticalOutset;
   final double? endOutset;
+
+  /// The button's side; defaults to the `size.dialogClose` token. The Raft
+  /// look passes the Button recipe's `icon-md` (32, 28 with a mouse at >=768).
+  final double? extent;
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    final extent = t.size('size.dialogClose', fallback: 28);
+    final extent = this.extent ?? t.size('size.dialogClose', fallback: 28);
     final outset = endOutset ?? t.size('space.dialogCloseOutset', fallback: 0);
     final vertical = verticalOutset ?? outset;
     if (outset == 0) return SizedBox.square(dimension: extent, child: child);
