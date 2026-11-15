@@ -3833,6 +3833,60 @@
     "canonicalRegistry": "tool/ds-audit-families.json",
     "about": "Ownership registration only. The resolved scanner checks completeness. UNKNOWN/pending/history never count as current visual PASS. Existing lifecycle covered records retain their original scope.",
     "declarations": {
+      "packages/raft_ui/lib/src/task.dart#class:_TaskColumnChevron": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS1 task-board family",
+        "reason": "Source census candidate (WP-DS1 part 2, raft-ui 0.95.3 task board: column chevron, drop state of the lane box, keyboard-focusable trigger and card open area); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/task.dart#class:_TaskDropScope": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS1 task-board family",
+        "reason": "Source census candidate (WP-DS1 part 2, raft-ui 0.95.3 task board: column chevron, drop state of the lane box, keyboard-focusable trigger and card open area); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/task.dart#class:_TaskPressable": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS1 task-board family",
+        "reason": "Source census candidate (WP-DS1 part 2, raft-ui 0.95.3 task board: column chevron, drop state of the lane box, keyboard-focusable trigger and card open area); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/task.dart#class:_TaskPressableState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS1 task-board family",
+        "reason": "Source census candidate (WP-DS1 part 2, raft-ui 0.95.3 task board: column chevron, drop state of the lane box, keyboard-focusable trigger and card open area); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/task.dart#method:_TaskColumnChevron.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS1 task-board family",
+        "reason": "Source census candidate (WP-DS1 part 2, raft-ui 0.95.3 task board: column chevron, drop state of the lane box, keyboard-focusable trigger and card open area); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/task.dart#method:_TaskDropScope.of": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS1 task-board family",
+        "reason": "Source census candidate (WP-DS1 part 2, raft-ui 0.95.3 task board: column chevron, drop state of the lane box, keyboard-focusable trigger and card open area); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/task.dart#method:_TaskDropScope.updateShouldNotify": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS1 task-board family",
+        "reason": "Source census candidate (WP-DS1 part 2, raft-ui 0.95.3 task board: column chevron, drop state of the lane box, keyboard-focusable trigger and card open area); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/task.dart#method:_TaskPressable.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS1 task-board family",
+        "reason": "Source census candidate (WP-DS1 part 2, raft-ui 0.95.3 task board: column chevron, drop state of the lane box, keyboard-focusable trigger and card open area); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/task.dart#method:_TaskPressableState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS1 task-board family",
+        "reason": "Source census candidate (WP-DS1 part 2, raft-ui 0.95.3 task board: column chevron, drop state of the lane box, keyboard-focusable trigger and card open area); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
       "packages/raft_ui/lib/src/upgrade_failure_hint_text.dart#method:RaftUpgradeFailureHintText._build": {
         "role": "unresolved",
         "familyRefs": [],
@@ -53206,6 +53260,31 @@
       "iconInlineEnd": "has:data-icon=inline-end"
     },
     "stateUses": {
+      "packages/raft_ui/lib/src/task.dart#function:_taskSectionTrigger|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+        "applicability": "unknown",
+        "owner": "WP-DS1 task-board family",
+        "reason": "Resolved state use added with the raft-ui 0.95.3 task board (responsive recipe states: pointer-fine and the window band; the collapsed column's allowed-drop outline); look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/task.dart#method:RaftTaskBoardColumn.build|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+        "applicability": "unknown",
+        "owner": "WP-DS1 task-board family",
+        "reason": "Resolved state use added with the raft-ui 0.95.3 task board (responsive recipe states: pointer-fine and the window band; the collapsed column's allowed-drop outline); look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/task.dart#method:RaftTaskBoardColumn.build|state:data-drop-collapsed=true": {
+        "applicability": "unknown",
+        "owner": "WP-DS1 task-board family",
+        "reason": "Resolved state use added with the raft-ui 0.95.3 task board (responsive recipe states: pointer-fine and the window band; the collapsed column's allowed-drop outline); look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/task.dart#method:RaftTaskBoardColumn.build|state:data-drop-state=allowed": {
+        "applicability": "unknown",
+        "owner": "WP-DS1 task-board family",
+        "reason": "Resolved state use added with the raft-ui 0.95.3 task board (responsive recipe states: pointer-fine and the window band; the collapsed column's allowed-drop outline); look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/task.dart#method:RaftTaskLaneEmpty.build|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+        "applicability": "unknown",
+        "owner": "WP-DS1 task-board family",
+        "reason": "Resolved state use added with the raft-ui 0.95.3 task board (responsive recipe states: pointer-fine and the window band; the collapsed column's allowed-drop outline); look/input/real-entry applicability remains unreviewed."
+      },
       "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35175/METHOD:_buildRecipe@36445/FUNCTION:resolve@36631|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:disabled": {
         "applicability": "unknown",
         "owner": "WP-DS1 form controls",
