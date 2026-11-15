@@ -23,19 +23,21 @@ class MigrationText {
 
   /// [localize] maps a catalog English string to its localized form.
   String resolve(String Function(String source) localize) {
-    return localize(source)
-        .replaceAllMapped(RegExp(r'\{([a-zA-Z0-9_]+)\}'), (match) {
-          final name = match[1]!;
-          if (!values.containsKey(name)) return match[0]!;
-          final value = values[name];
-          if (value is MigrationText) return value.resolve(localize);
-          if (value is List) {
-            return value
-                .map((v) => v is MigrationText ? v.resolve(localize) : '$v')
-                .join(', ');
-          }
-          return '${value ?? ''}';
-        });
+    return localize(source).replaceAllMapped(
+      RegExp(r'\{([a-zA-Z0-9_]+)\}'),
+      (match) {
+        final name = match[1]!;
+        if (!values.containsKey(name)) return match[0]!;
+        final value = values[name];
+        if (value is MigrationText) return value.resolve(localize);
+        if (value is List) {
+          return value
+              .map((v) => v is MigrationText ? v.resolve(localize) : '$v')
+              .join(', ');
+        }
+        return '${value ?? ''}';
+      },
+    );
   }
 
   /// The English rendering (tests, logs).
@@ -145,8 +147,7 @@ bool canCancelMigration(Map<String, dynamic> migration) {
 /// Web state.ts `migrationProgressStep`: the state's floor, advanced by what
 /// the timestamps show happened.
 int migrationProgressStep(Map<String, dynamic> migration) {
-  if (isHostedMigration(migration))
-    return hostedMigrationProgressStep(migration);
+  if (isHostedMigration(migration)) return hostedMigrationProgressStep(migration);
   final step = _stateStep[migration['state']] ?? 0;
   if (step == migrationProgressSteps.length) return step;
   final observed = _has(migration['arrivedAt']) || _has(migration['flippedAt'])
@@ -179,7 +180,9 @@ Object migrationComputerLabel(
   if (machineId is! String || machineId.isEmpty) {
     return const MigrationText('Unknown computer');
   }
-  final name = machines.where((m) => m['id'] == machineId).firstOrNull?['name'];
+  final name = machines
+      .where((m) => m['id'] == machineId)
+      .firstOrNull?['name'];
   if (name is String) return name;
   return machineId.length > 8 ? machineId.substring(0, 8) : machineId;
 }
@@ -390,10 +393,7 @@ MigrationText _insufficientDisk(String? raw) {
   return required != null && available != null
       ? MigrationText(
           'The target computer needs {required} free to stage and install this migration, but only {available} is available. Free disk space and try again.',
-          {
-            'required': _formatGib(required),
-            'available': _formatGib(available),
-          },
+          {'required': _formatGib(required), 'available': _formatGib(available)},
         )
       : const MigrationText(
           'The target computer does not have enough free disk space to stage and install this migration. Free disk space and try again.',
@@ -568,8 +568,7 @@ MigrationText _transportLost({
     migrationCodeText('MIGRATION_TRANSPORT_LOST', context),
   );
   if (context != MigrationErrorContext.failed) return plain;
-  final lostAt =
-      _has(transportLostAt) && DateTime.tryParse(transportLostAt!) != null
+  final lostAt = _has(transportLostAt) && DateTime.tryParse(transportLostAt!) != null
       ? formatTimestamp?.call(transportLostAt)
       : null;
   final event = lostAt != null && lostAt.isNotEmpty
@@ -591,9 +590,7 @@ MigrationText _transportLost({
   final sourceOffline = computers.sourceStatus == 'offline';
   final targetOffline = computers.targetStatus == 'offline';
   final retry = sourceKnown && targetKnown && !sourceOffline && !targetOffline
-      ? const MigrationText(
-          'Both computers are online now, so you can try again.',
-        )
+      ? const MigrationText('Both computers are online now, so you can try again.')
       : sourceKnown && targetKnown && sourceOffline && targetOffline
       ? MigrationText('Bring {source} and {target} online, then try again.', {
           'source': computers.sourceName,
@@ -786,8 +783,9 @@ MigrationPresentation _failureReason(
       .firstOrNull;
   final source = migrationComputerLabel(machines, migration['sourceMachineId']);
   final target = migrationNoticeTargetLabel(machines, migration);
-  String? text(String key) =>
-      migration[key] is String ? migration[key] as String : null;
+  String? text(String key) => migration[key] is String
+      ? migration[key] as String
+      : null;
   if (migration['state'] == 'aborted') {
     final fallback = migrationErrorPresentation(
       context: MigrationErrorContext.aborted,
@@ -849,24 +847,14 @@ MigrationPresentation _failurePresentation(
     return reason.copyWith(
       message: MigrationText(
         'The agent moved to {target} but could not start there. Make sure Raft Computer is running on {target}, then start the agent.',
-        {
-          'target': migrationComputerLabel(
-            machines,
-            migration['targetMachineId'],
-          ),
-        },
+        {'target': migrationComputerLabel(machines, migration['targetMachineId'])},
       ),
     );
   }
   return reason.copyWith(
     placement: MigrationText(
       'The agent is still on {source} and works as usual.',
-      {
-        'source': migrationComputerLabel(
-          machines,
-          migration['sourceMachineId'],
-        ),
-      },
+      {'source': migrationComputerLabel(machines, migration['sourceMachineId'])},
     ),
   );
 }
@@ -1026,16 +1014,13 @@ MigrationNoticePresentation migrationNoticePresentation(
       );
     case 'ready':
       return status(
-        MigrationText(
-          'The workspace is uploaded. {target} is downloading it.',
-          {'target': target},
-        ),
+        MigrationText('The workspace is uploaded. {target} is downloading it.', {
+          'target': target,
+        }),
       );
     case 'in_transit':
       return status(
-        MigrationText('Transferring workspace to {target}.', {
-          'target': target,
-        }),
+        MigrationText('Transferring workspace to {target}.', {'target': target}),
       );
     case 'arriving':
       return status(
@@ -1083,8 +1068,7 @@ String migrationPanelHeader(Map<String, dynamic> migration) {
   if (isHostedMigration(migration)) return hostedPanelHeader(migration);
   final state = migration['state'] as String?;
   final phase = migrationPhase(state);
-  final cancelRequested =
-      state != null && state.startsWith('cancel_requested_');
+  final cancelRequested = state != null && state.startsWith('cancel_requested_');
   if (phase == 'completed') return 'Migrated to {target}';
   if (phase == 'canceled') return 'Migration to {target} canceled';
   if (migrationShownFailed(migration) ||

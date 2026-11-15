@@ -107,18 +107,19 @@ ComposerSendBlock? composerSendBlockOf(List<UploadDraft> drafts) {
 
 /// Web `message.composer.*` title for the send action while files are not
 /// sendable, or null when none applies.
-String? composerSendBlockTitle(
-  BuildContext context,
-  List<UploadDraft> drafts,
-) => switch (composerSendBlockOf(drafts)) {
-  ComposerSendBlock.checking => raftText(context, 'Checking attachments…'),
-  ComposerSendBlock.uploading => raftText(context, 'Uploading attachments…'),
-  ComposerSendBlock.failed => raftText(
-    context,
-    'Retry or remove failed attachments',
-  ),
-  null => null,
-};
+String? composerSendBlockTitle(BuildContext context, List<UploadDraft> drafts) =>
+    switch (composerSendBlockOf(drafts)) {
+      ComposerSendBlock.checking => raftText(context, 'Checking attachments…'),
+      ComposerSendBlock.uploading => raftText(
+        context,
+        'Uploading attachments…',
+      ),
+      ComposerSendBlock.failed => raftText(
+        context,
+        'Retry or remove failed attachments',
+      ),
+      null => null,
+    };
 
 /// Web `handleSubmit`: the notice a blocked send leaves in the banner.
 String? composerSendBlockNotice(

@@ -41,7 +41,8 @@ class _SignInDiagnosticsCardState extends State<SignInDiagnosticsCard> {
       padding: const EdgeInsets.only(top: RaftSpace.x6),
       child: RaftSettingsActionCard(
         title: 'Sign-in diagnostics',
-        description: 'Copy a short log of recent sign-out and sign-in problems on this device (no passwords, tokens or messages) to paste into a feedback report.',
+        description:
+            'Copy a short log of recent sign-out and sign-in problems on this device (no passwords, tokens or messages) to paste into a feedback report.',
         action: RaftSettingsRecipeButton(
           key: const Key('account-sign-in-diagnostics'),
           label: copied ? 'Copied' : 'Copy',

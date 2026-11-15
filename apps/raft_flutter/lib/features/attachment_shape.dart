@@ -63,10 +63,7 @@ Future<void> readStoredShape(
     if (bytes == null || !authorized()) return;
     final stored = VideoShape.fromBytes(bytes);
     if (stored != null) {
-      w.attachmentMedia.playerSessions.rememberShape(
-        attachmentMediaKey(metadata),
-        stored,
-      );
+      w.attachmentMedia.playerSessions.rememberShape(attachmentMediaKey(metadata), stored);
     }
   } on Object {
     // Not stored: the shape comes with the first decode.
@@ -82,10 +79,7 @@ void learnShape(
   required String channelId,
   bool persist = true,
 }) {
-  w.attachmentMedia.playerSessions.rememberShape(
-    attachmentMediaKey(metadata),
-    shape,
-  );
+  w.attachmentMedia.playerSessions.rememberShape(attachmentMediaKey(metadata), shape);
   final disk = w.attachmentMedia.diskCache;
   if (persist && disk != null) {
     unawaited(

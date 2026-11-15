@@ -241,10 +241,12 @@ class AttachmentLightboxImageState extends State<AttachmentLightboxImage> {
       failure is! AttachmentImageDecodeUnavailable;
 
   String get _failureMessage => switch (failure) {
-    AttachmentImageBudgetExceeded() => 'Not enough memory to preview this image. Download it to open in another app.',
+    AttachmentImageBudgetExceeded() =>
+      'Not enough memory to preview this image. Download it to open in another app.',
     AttachmentImageDecodeFailed() =>
       'Cannot decode this image. Download it to open in another app.',
-    AttachmentImageDecodeUnavailable() => 'Cannot prepare this image preview right now. Try again or download it to open in another app.',
+    AttachmentImageDecodeUnavailable() =>
+      'Cannot prepare this image preview right now. Try again or download it to open in another app.',
     _ => 'Failed to load image',
   };
 

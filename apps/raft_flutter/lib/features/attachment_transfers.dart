@@ -23,12 +23,13 @@ typedef AttachmentTransferScope = ({
 
 /// Builds the dialog route that shows a download's progress; Cancel calls
 /// `onCancel`.
-typedef AttachmentProgressRouteBuilder = DialogRoute<void> Function({
-  required BuildContext context,
-  required String name,
-  required ValueListenable<double?> progress,
-  required VoidCallback onCancel,
-});
+typedef AttachmentProgressRouteBuilder =
+    DialogRoute<void> Function({
+      required BuildContext context,
+      required String name,
+      required ValueListenable<double?> progress,
+      required VoidCallback onCancel,
+    });
 
 /// Save / share / save-to-gallery of one attachment, for the message tile
 /// and for every page of the image viewer.
