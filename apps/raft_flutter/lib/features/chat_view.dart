@@ -59,6 +59,7 @@ import 'private_route_guard.dart';
 import 'message_selection.dart';
 import 'system_message_grouping.dart';
 import 'task_handoff_notice.dart';
+import 'task_v2_mode.dart' show threadComposerHint;
 import 'copy_selection_links.dart';
 import 'custom_protocol_link.dart';
 import 'message_grouping.dart';
@@ -3656,7 +3657,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
                         thread: thread,
                       ),
                 hint: thread
-                    ? raftText(context, 'Message thread')
+                    ? threadComposerHint(context, widget.hideThreadParent)
                     : w.channel?.type == 'dm'
                     // Web ChatPanel: a DM composer reads `Message @<peer>`.
                     ? raftFormat(context, 'Message @{name}', {

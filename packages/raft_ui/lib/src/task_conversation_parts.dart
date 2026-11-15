@@ -77,11 +77,16 @@ class RaftTaskConversationBar extends StatelessWidget {
     required this.taskNumber,
     required this.mobile,
     required this.onClose,
+    this.summary,
   });
   final RaftTaskConversation conversation;
   final Object? taskNumber;
   final bool mobile;
   final VoidCallback onClose;
+
+  /// A phone whose head has scrolled away: the bar names the task's state
+  /// instead of just its label, and it pulls the head down.
+  final Widget Function(String label)? summary;
 
   @override
   Widget build(BuildContext context) {
@@ -135,7 +140,7 @@ class RaftTaskConversationBar extends StatelessWidget {
                 ? Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children: [refText, labelText],
+                    children: [refText, summary?.call(label) ?? labelText],
                   )
                 : Row(
                     crossAxisAlignment: CrossAxisAlignment.baseline,

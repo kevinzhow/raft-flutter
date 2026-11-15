@@ -229,6 +229,7 @@ export 'src/attachment_tokens.dart';
 export 'src/mounted_task_chip.dart';
 export 'src/task_chip_list.dart';
 export 'src/task_handoff_card.dart';
+export 'src/task_head_pull_down.dart';
 export 'src/task_reason_popover.dart';
 export 'src/task_v2_dialogs.dart';
 export 'src/task_head_editor.dart';

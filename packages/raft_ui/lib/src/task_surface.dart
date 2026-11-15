@@ -37,8 +37,11 @@ import 'task.dart';
 import 'task_conversation_parts.dart';
 import 'task_head_editor.dart';
 import 'task_status_badge.dart';
+import 'raft/ui_tokens.dart';
+import 'task_head_pull_down.dart';
 import 'task_reason_popover.dart';
 import 'task_timeline.dart';
+import 'tokens/tokens.dart' show RaftTypeScale;
 import 'page_tokens.dart';
 import 'theme.dart';
 import 'tooltip.dart' show RaftTooltip;
@@ -146,6 +149,12 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
       reasonPanelKey = GlobalKey<RaftTaskReasonPanelState>();
   bool askBacklog = false;
 
+  /// Task v2 on a phone: whether the head (a row of the conversation) is on
+  /// screen, and the head pulled down from the bar once it is not.
+  final headInView = RaftTaskHeadVisibility();
+  final barLink = LayerLink();
+  bool headPanelOpen = false;
+
   /// Someone other than the viewer chosen in the picker: the reason step
   /// shows in the picker before the write.
   ({Map<String, String> value, String name})? handoff;
@@ -162,6 +171,7 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
 
   @override
   void dispose() {
+    headInView.dispose();
     assigneeSearch.dispose();
     super.dispose();
   }
@@ -207,26 +217,33 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
             ? size.height
             : math.min(legacy ? 720 : 900, size.height * (legacy ? .78 : .86)) -
                   2 * borderWidth,
-        child: Column(
-          children: [
-            header(context, mobile),
-            Expanded(
-              // The modern ThreadPanel is a raft-ui `Panel edge="attached"`
-              // (`border-l-2 border-black`, elegant `border-l border-line-muted`):
-              // its column starts 2px / 1px inside the modal frame, in the
-              // modal. The shared rule (RaftPanelEdge) leaves the full-width
-              // phone page without it. LegacyTaskPanel keeps its own
-              // side-presentation border (`framed` below).
-              child: legacy
-                  ? body
-                  : Container(
-                      decoration: BoxDecoration(
-                        border: RaftPanelEdge.left(context),
+        child: pullDown(
+          context,
+          mobile,
+          (dismissable) => Column(
+            children: [
+              CompositedTransformTarget(
+                link: barLink,
+                child: header(context, mobile),
+              ),
+              Expanded(
+                // The modern ThreadPanel is a raft-ui `Panel edge="attached"`
+                // (`border-l-2 border-black`, elegant `border-l border-line-muted`):
+                // its column starts 2px / 1px inside the modal frame, in the
+                // modal. The shared rule (RaftPanelEdge) leaves the full-width
+                // phone page without it. LegacyTaskPanel keeps its own
+                // side-presentation border (`framed` below).
+                child: legacy
+                    ? body
+                    : Container(
+                        decoration: BoxDecoration(
+                          border: RaftPanelEdge.left(context),
+                        ),
+                        child: dismissable(body),
                       ),
-                      child: body,
-                    ),
-            ),
-          ],
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -318,6 +335,27 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
         taskNumber: task['taskNumber'],
         mobile: phone,
         onClose: phone ? widget.onBack ?? widget.onClose : widget.onClose,
+        summary: !summarizes(mobile)
+            ? null
+            : (label) => ValueListenableBuilder<bool>(
+                valueListenable: headInView,
+                builder: (context, inView, _) => inView
+                    ? Text(label, key: const ValueKey('task-modal-bar-label'))
+                    : RaftTaskBarSummary(
+                        label: label,
+                        status: '${task['status']}',
+                        assignee: task['claimedById'] == null
+                            ? null
+                            : widget.displayNameFor?.call(
+                                '${task['claimedByType']}',
+                                '${task['claimedById']}',
+                              ),
+                        assigneeIsAgent: task['claimedByType'] == 'agent',
+                        open: headPanelOpen,
+                        onToggle: () =>
+                            setState(() => headPanelOpen = !headPanelOpen),
+                      ),
+              ),
       );
     }
     if (widget.unresolvedBody != null) {
@@ -471,7 +509,57 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
         ),
       );
     }
-    return buildDiscussion(head);
+    if (widget.conversation == null) return buildDiscussion(head);
+    // Task v2: pinned above the conversation, but on a phone its first row.
+    return summarizes(MediaQuery.sizeOf(context).width < 768)
+        ? NotificationListener<ScrollNotification>(
+            onNotification: (_) {
+              headInView.remeasure();
+              return false;
+            },
+            child: buildDiscussion(
+              RaftTaskHeadInView(visibility: headInView, child: head),
+            ),
+          )
+        : raftTaskPinnedHead(
+            head: head,
+            child: buildDiscussion(const SizedBox.shrink()),
+          );
+  }
+
+  /// Task v2 on a phone (not a full page): the head scrolls with the
+  /// conversation and the bar summarises the task once it is out of view.
+  bool summarizes(bool mobile) =>
+      widget.conversation != null && !widget.legacy && mobile && !widget.page;
+
+  /// The head pulled down from the bar, over the messages; [body] is what a
+  /// press or a scroll start closes it from (never the bar itself).
+  Widget pullDown(
+    BuildContext context,
+    bool mobile,
+    Widget Function(Widget Function(Widget body) dismissable) build,
+  ) {
+    if (!summarizes(mobile)) return build((body) => body);
+    return ValueListenableBuilder<bool>(
+      valueListenable: headInView,
+      builder: (context, inView, _) {
+        final open = headPanelOpen && !inView;
+        void close() => setState(() => headPanelOpen = false);
+        return raftTaskPullDownHost(
+          link: barLink,
+          open: open,
+          onClose: close,
+          panel: properties(context),
+          child: build(
+            (body) => raftTaskPullDownDismiss(
+              open: open,
+              onClose: close,
+              child: body,
+            ),
+          ),
+        );
+      },
+    );
   }
 
   /// Web `TaskModalHead`: PanelSection (`border-t-0 bg-layer-panel`) holding
@@ -498,7 +586,13 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
               overflow: TextOverflow.ellipsis,
               // v1.21.23 PanelHeading is a bare flex slot: the title inherits the
               // body text (16/24 regular); a57b9dab drew it 18px bold.
-              style: _webHead(t)
+              // Task v2 (Web TASK_HEAD_TITLE_CLASS): `text-headline
+              // font-semibold text-foreground`.
+              style: widget.conversation != null
+                  ? t
+                        .scale(RaftTypeScale.headline, weight: FontWeight.w600)
+                        .copyWith(color: t.colors['foreground'])
+                  : _webHead(t)
                   ? RaftTypography.body(
                       t,
                       size: 16,
