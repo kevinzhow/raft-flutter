@@ -6,7 +6,7 @@ import 'package:flutter/services.dart';
 
 import 'banner.dart';
 import 'raft/button.dart';
-import 'raft/ui_tokens.dart' show raftChromeBlend;
+import 'raft/ui_tokens.dart';
 
 import 'design_primitives.dart' hide RaftPanelHeaderRecipe;
 import 'error_presentation.dart';
@@ -24,7 +24,9 @@ import 'hover_region.dart';
 import 'icons.dart';
 import 'recipe_min_height.dart';
 import 'localization.dart';
-import 'overlays/dialog.dart' show RaftDialog, showRaftDialog;
+import 'overlays/dialog.dart'
+    show RaftDialog, RaftDialogSize, RaftDialogSlots, showRaftDialog;
+import 'tokens/tokens.dart' show RaftTypeScale;
 import 'panel_layout.dart' show RaftCssText;
 import 'recipe_surface.dart';
 import 'recipes/recipe_router.dart' show usesLegacyRecipes;
@@ -533,7 +535,21 @@ class RaftConfirmDialog extends StatefulWidget {
     this.confirmGlyph,
     this.actionSize,
     this.plainMessage = false,
+    this.size,
+    this.initialFocusCancel = false,
+    this.confirmTrailingGlyph,
   });
+
+  /// ConfirmDialog `size`: the raft-ui Dialog size (`sm` / `md`) instead of
+  /// [maxWidth]; the width comes from the dialog recipe.
+  final RaftDialogSize? size;
+
+  /// ConfirmDialog `initialFocus="cancel"`: Cancel has the focus on open, so
+  /// Enter does not confirm.
+  final bool initialFocusCancel;
+
+  /// ConfirmDialog `confirmTrailingIcon` (the `↗` of an action that leaves).
+  final RaftGlyph? confirmTrailingGlyph;
 
   /// ConfirmDialog `actionSize` (`xs` for confirmations in dense surfaces).
   final RaftButtonRecipeSize? actionSize;
@@ -586,13 +602,19 @@ class RaftConfirmDialog extends StatefulWidget {
     builder: (_) => dialog,
   );
 
-  /// `text-sm leading-relaxed text-foreground-muted` (font-normal body).
-  static TextStyle messageStyle(RaftTokens t) => RaftTypography.body(
-    t,
-    size: t.size('type.confirmBody.size', fallback: 14),
-    line: t.size('type.confirmBody.line', fallback: 22.75),
-    color: t.muted,
-  );
+  /// `text-subhead text-foreground-muted` (the frozen looks keep their
+  /// `text-sm leading-relaxed`).
+  static TextStyle messageStyle(RaftTokens t) =>
+      usesLegacyRecipes(t.recipeTokens)
+      ? RaftTypography.body(
+          t,
+          size: t.size('type.confirmBody.size', fallback: 14),
+          line: t.size('type.confirmBody.line', fallback: 22.75),
+          color: t.muted,
+        )
+      : t
+            .scale(RaftTypeScale.subhead, color: t.muted)
+            .copyWith(fontFamilyFallback: t.fontFallback);
 
   @override
   State<RaftConfirmDialog> createState() => _RaftConfirmDialogState();
@@ -600,8 +622,25 @@ class RaftConfirmDialog extends StatefulWidget {
 
 class _RaftConfirmDialogState extends State<RaftConfirmDialog> {
   bool loading = false;
+  final _cancelFocus = FocusNode(debugLabel: 'confirm cancel');
   // ignore: raft_lints/avoid_imperative_notice_state -- Cleared when the next confirm starts; the dialog state is dropped when it closes.
   String? error;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialFocusCancel && widget.showCancel) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _cancelFocus.requestFocus();
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _cancelFocus.dispose();
+    super.dispose();
+  }
 
   Future<void> confirm() async {
     final run = widget.onConfirm;
@@ -645,8 +684,13 @@ class _RaftConfirmDialogState extends State<RaftConfirmDialog> {
   Widget build(BuildContext context) {
     final widget = this.widget;
     final title = widget.title, message = widget.message;
-    final content = widget.content, maxWidth = widget.maxWidth;
+    final content = widget.content;
     final t = RaftTokens.of(context);
+    final legacy = usesLegacyRecipes(t.recipeTokens);
+    final maxWidth = widget.size == null || legacy
+        ? widget.maxWidth
+        : RaftDialogSlots.of(context, size: widget.size!).content.maxWidth ??
+              widget.maxWidth;
     final actionHeight = t.size('size.confirmAction', fallback: 44);
     final actionSize = widget.actionSize == null
         ? actionHeight <= t.size('size.control.sm', fallback: 32)
@@ -684,6 +728,8 @@ class _RaftConfirmDialogState extends State<RaftConfirmDialog> {
         ),
       );
     }
+    // ConfirmDialog renders no body without a message, content or error.
+    final bare = !legacy && message == null && content == null && error == null;
     if (error case final error?) {
       body = Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -709,15 +755,17 @@ class _RaftConfirmDialogState extends State<RaftConfirmDialog> {
         title: title,
         maxWidth: maxWidth,
         onClose: loading ? null : cancel,
-        body: body,
+        body: bare ? null : body,
         footer: [
           if (widget.showCancel)
             RaftButton(
               label: widget.cancelLabel,
+              focusNode: widget.initialFocusCancel ? _cancelFocus : null,
               uiSize: actionSize,
               physicalHeight: widget.actionSize == null ? actionHeight : null,
               uiVariant:
-                  t.option('dialog.cancelSurface', or: 'outline') == 'ghost'
+                  !legacy ||
+                      t.option('dialog.cancelSurface', or: 'outline') == 'ghost'
                   ? RaftButtonVariant.ghost
                   : RaftButtonVariant.outline,
               onPressed: loading ? null : cancel,
@@ -731,6 +779,7 @@ class _RaftConfirmDialogState extends State<RaftConfirmDialog> {
                   ? widget.loadingLabel ?? 'Working…'
                   : widget.confirmLabel,
               glyph: loading ? null : widget.confirmGlyph,
+              trailingGlyph: loading ? null : widget.confirmTrailingGlyph,
               // ConfirmDialog passes an ordinary SVG/Spinner, without the
               // Button recipe's explicit data-icon="inline-start" marker.
               iconInlineStart: usesLegacyRecipes(t.recipeTokens),

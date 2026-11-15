@@ -133,7 +133,9 @@ void main() {
     expect(links, ['https://raft.build']);
   });
 
-  testWidgets('a CTA is the primary action beside a Got it link', (t) async {
+  testWidgets('a CTA is the only footer action (v1.24 drops "Got it")', (
+    t,
+  ) async {
     var dismiss = 0, cta = 0;
     await t.pumpWidget(
       frame(
@@ -147,52 +149,45 @@ void main() {
     await t.pump();
     expect(find.text('Release'), findsOneWidget);
     expect(find.text("What's new"), findsNothing);
-    final gotIt = t.getRect(find.byKey(const ValueKey('announcement-dismiss')));
+    expect(find.byKey(const ValueKey('announcement-dismiss')), findsNothing);
     final primary = t.getRect(find.byKey(const ValueKey('announcement-ok')));
-    // One row: the link at the start, the CTA at the end (`ml-auto`).
-    expect(gotIt.top, closeTo(primary.top, 0.5));
-    expect(gotIt.left, lessThan(primary.left));
+    // The one action at the end (`ml-auto`).
     final card = t.getRect(find.byKey(const ValueKey('announcement-modal')));
     expect(primary.right, closeTo(card.right - inset(t), 0.5));
     await t.sendKeyEvent(LogicalKeyboardKey.enter);
     expect((dismiss, cta), (0, 1));
-    await t.tap(find.byKey(const ValueKey('announcement-dismiss')));
-    expect((dismiss, cta), (1, 1));
     await t.tap(find.byKey(const ValueKey('announcement-ok')));
-    expect((dismiss, cta), (1, 2));
+    expect((dismiss, cta), (0, 2));
   });
 
-  testWidgets('narrow dialogs stack the actions at full width', (t) async {
+  testWidgets('narrow dialogs give the action the full width', (t) async {
     await t.pumpWidget(
       frame(false, ctaLabel: 'Read more', size: const Size(390, 800)),
     );
     await t.pump();
-    final gotIt = t.getRect(find.byKey(const ValueKey('announcement-dismiss')));
     final primary = t.getRect(find.byKey(const ValueKey('announcement-ok')));
-    expect(gotIt.width, primary.width);
-    expect(primary.top, greaterThanOrEqualTo(gotIt.bottom));
     final card = t.getRect(find.byKey(const ValueKey('announcement-modal')));
     expect(primary.width, closeTo(card.width - 2 * inset(t), 0.5));
   });
 
-  testWidgets('a long CTA label wraps and the footer wraps with it', (t) async {
+  testWidgets('a long CTA label wraps inside the footer', (t) async {
     await t.pumpWidget(
       frame(
         false,
-        ctaLabel: 'Read the full migration guide and the list of changes for every runtime',
+        ctaLabel:
+            'Read the full migration guide and the list of changes for every runtime',
       ),
     );
     await t.pump();
-    final gotIt = t.getRect(find.byKey(const ValueKey('announcement-dismiss')));
     final primary = t.getRect(find.byKey(const ValueKey('announcement-ok')));
-    // Too wide for one row: the link keeps the first line, the CTA the next,
-    // pushed to the end.
-    expect(primary.top, greaterThan(gotIt.bottom));
     final card = t.getRect(find.byKey(const ValueKey('announcement-modal')));
     expect(primary.right, closeTo(card.right - inset(t), 0.5));
+    expect(primary.width, lessThanOrEqualTo(card.width - 2 * inset(t) + 0.5));
   });
 
-  testWidgets('the picture box is h-44 inside the body', (t) async {
+  testWidgets('the picture is 16:9 inside the body (`aspect-video`)', (
+    t,
+  ) async {
     await t.pumpWidget(
       frame(
         false,
@@ -206,7 +201,7 @@ void main() {
     final picture = t.getRect(
       find.byKey(const ValueKey('announcement-picture')),
     );
-    expect(picture.height, 176);
+    expect(picture.width / picture.height, closeTo(16 / 9, 0.01));
     final card = t.getRect(find.byKey(const ValueKey('announcement-modal')));
     expect(picture.width, closeTo(card.width - 2 * inset(t), 0.5));
   });

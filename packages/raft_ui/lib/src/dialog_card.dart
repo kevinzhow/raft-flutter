@@ -467,7 +467,10 @@ class _RaftModalBackdropState extends State<RaftModalBackdrop> {
     final t = RaftTokens.of(context);
     // Web Modal has no blur in Raft; the frozen packs supply their own radius.
     final blur = t.size('blur.modalBackdrop', fallback: 2);
-    final scrim = t.colors['layer-backdrop']!;
+    final scrim =
+        RaftDialogNested.of(context) && !usesLegacyRecipes(t.recipeTokens)
+        ? t.colors['layer-backdrop-nested']!
+        : t.colors['layer-backdrop']!;
     // The scrim dims the status bar band over its width too (see
     // `status_bar.dart`: a modal inside the host's scope publishes it).
     return RaftStatusBarSource(
@@ -478,53 +481,92 @@ class _RaftModalBackdropState extends State<RaftModalBackdrop> {
         filter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
         child: _ModalPaint(
           color: scrim,
-          child: LayoutBuilder(
-            builder: (context, box) {
-              Widget content = _PixelCenter(child: child);
-              if (onBackdrop != null) {
-                // Presses inside [child] never reach the backdrop handler.
-                content = GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: onBackdrop,
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: _PixelCenter(
-                      child: GestureDetector(
-                        behavior: HitTestBehavior.opaque,
-                        onTap: () {},
-                        excludeFromSemantics: true,
-                        child: child,
+          // The scrim fills the window; the card keeps to one side of a hinge.
+          child: _FoldAvoiding(
+            child: LayoutBuilder(
+              builder: (context, box) {
+                Widget content = _PixelCenter(child: child);
+                if (onBackdrop != null) {
+                  // Presses inside [child] never reach the backdrop handler.
+                  content = GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: onBackdrop,
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: _PixelCenter(
+                        child: GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: () {},
+                          excludeFromSemantics: true,
+                          child: child,
+                        ),
                       ),
                     ),
+                  );
+                } else {
+                  content = Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: content,
+                  );
+                }
+                // Edge to edge: the layer spans the window, so a dialog taller
+                // than the screen must scroll clear of the gesture / nav bar.
+                // The centring area shrinks by the same amount (0 on desktop).
+                final inset = raftBottomInset(context);
+                // Web's Dialog caps the popup at `100dvh - 2rem` and scrolls
+                // inside the card: a card gets this cap, so the window itself
+                // only scrolls for content that is not a card.
+                final cap = box.hasBoundedHeight
+                    ? math.max(0.0, box.maxHeight - inset - 32)
+                    : null;
+                return SingleChildScrollView(
+                  padding: EdgeInsets.only(bottom: inset),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minHeight: box.hasBoundedHeight
+                          ? math.max(0, box.maxHeight - inset)
+                          : 0,
+                    ),
+                    child: RaftModalCardCap(maxHeight: cap, child: content),
                   ),
                 );
-              } else {
-                content = Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: content,
-                );
-              }
-              // Edge to edge: the layer spans the window, so a dialog taller
-              // than the screen must scroll clear of the gesture / nav bar.
-              // The centring area shrinks by the same amount (0 on desktop).
-              final inset = raftBottomInset(context);
-              return SingleChildScrollView(
-                padding: EdgeInsets.only(bottom: inset),
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(
-                    minHeight: box.hasBoundedHeight
-                        ? math.max(0, box.maxHeight - inset)
-                        : 0,
-                  ),
-                  child: content,
-                ),
-              );
-            },
+              },
+            ),
           ),
         ),
       ),
     );
   }
+}
+
+/// The height a card may take inside [RaftModalBackdrop] (`100dvh - 2rem`),
+/// above which the card scrolls its own content.
+class RaftModalCardCap extends InheritedWidget {
+  const RaftModalCardCap({
+    super.key,
+    required this.maxHeight,
+    required super.child,
+  });
+  final double? maxHeight;
+
+  static double? of(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<RaftModalCardCap>()?.maxHeight;
+
+  @override
+  bool updateShouldNotify(RaftModalCardCap oldWidget) =>
+      maxHeight != oldWidget.maxHeight;
+}
+
+/// Frozen looks keep their full-window layout; the Raft look keeps the card
+/// off a fold or hinge while the scrim still spans the window.
+class _FoldAvoiding extends StatelessWidget {
+  const _FoldAvoiding({required this.child});
+  final Widget child;
+  @override
+  Widget build(BuildContext context) =>
+      usesLegacyRecipes(RaftTokens.of(context).recipeTokens)
+      ? child
+      : DisplayFeatureSubScreen(child: child);
 }
 
 class _ModalPaint extends StatelessWidget {
@@ -625,11 +667,15 @@ class RaftDialogCard extends StatelessWidget {
     this.actions,
     this.footer,
     this.footerGap = 16,
+    this.description,
   });
   final String title;
   final VoidCallback onClose;
   final Widget child;
   final double maxWidth, footerGap;
+
+  /// DialogCard `description` under the title (Raft look).
+  final String? description;
   final RaftGlyph? titleGlyph;
   final Widget? actions, footer;
   @override
@@ -641,6 +687,7 @@ class RaftDialogCard extends StatelessWidget {
     actions: actions,
     footer: footer,
     footerGap: footerGap,
+    description: description,
     child: child,
   );
 }
