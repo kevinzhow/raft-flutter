@@ -101,7 +101,7 @@ String? readinessWhoOf(BuildContext context, Map of) {
   if (actor is! String) return null;
   final action = _knownAction(of['action']);
   // readiness.ownerCan.<action>, one key per actor (ICU select).
-  return raftText(context, switch ((actor, action)) {
+  final String source = switch ((actor, action)) {
     ('computer_owner', 'sign_in') => "The computer's owner can sign in",
     ('computer_owner', 'verify_account') =>
       "The computer's owner can verify the account",
@@ -118,7 +118,8 @@ String? readinessWhoOf(BuildContext context, Map of) {
     (_, 'verify_account') => 'A server admin can verify the account',
     (_, 'update_computer') => 'A server admin can update this computer',
     _ => 'A server admin can fix it',
-  });
+  };
+  return raftText(context, source);
 }
 
 /// readinessDoLabel: "Sign in", "Verify account", "Update", "Open".

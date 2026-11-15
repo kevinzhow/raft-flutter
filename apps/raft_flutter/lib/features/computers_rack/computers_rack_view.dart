@@ -886,7 +886,7 @@ class _ComputersRackViewState extends State<ComputersRackView> {
       ],
       selected: widget.selectedId == id,
     );
-    return RaftRackRow(
+    final row = RaftRackRow(
       computer: computer,
       layout: layout,
       onOpen: () => widget.onOpenComputer(m),
@@ -923,6 +923,14 @@ class _ComputersRackViewState extends State<ComputersRackView> {
               canManage: canManage,
               upgrading: step is RackUpgrading,
             ),
+    );
+    // The keys the Computers list has always been reached by (the phone list's
+    // and the desktop directory's).
+    return KeyedSubtree(
+      key: ValueKey(
+        widget.phone ? 'fleet-$id' : 'desktop-directory-computer-$id',
+      ),
+      child: row,
     );
   }
 
