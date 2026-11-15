@@ -132,7 +132,9 @@ void main() {
           ).chipHeight,
         );
         final rect = tester.getRect(find.byType(RaftMessageTaskStatusIcon));
-        expect(rect.size, const Size(12, 12));
+        // raft-ui 0.95.3 TaskChip: the status pixel's slot is
+        // `[&>svg[data-slot=task-status-icon]]:size-2.5` (10px).
+        expect(rect.size, const Size(10, 10));
         await tester.tap(control);
         expect(calls, 1);
       } finally {

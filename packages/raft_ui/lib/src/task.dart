@@ -6,6 +6,7 @@ import 'localization.dart';
 
 import 'theme.dart';
 import 'design_primitives.dart';
+import 'icons.dart';
 import 'inline_badge_editor.dart';
 import 'recipe_surface.dart';
 import 'mounted_task_chip.dart';
@@ -198,12 +199,15 @@ class RaftTaskCard extends StatelessWidget {
           children: [
             RaftInlineLineBox(
               style: document,
-              child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                // The card-level Semantics above exposes the open action.
-                excludeFromSemantics: true,
-                onTap: onTap,
-                child: Column(
+              // Web TaskCard's open button (`inline-block w-full rounded-control
+              // focus-visible:shadow-focus`): a Tab stop that Enter or Space
+              // opens. The card-level Semantics above exposes the open action.
+              child: _TaskPressable(
+                onPressed: onTap,
+                radius: BorderRadius.circular(
+                  t.size('radius.control', fallback: 8),
+                ),
+                builder: (_) => Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -523,6 +527,16 @@ Widget _taskSectionTrigger(
   final t = RaftTokens.of(context);
   final label = raftText(context, raftTaskStatusLabel(status));
   final plain = t.option('listGroup.frame', or: 'framed') == 'plain';
+  // raft-ui 0.95.3 taskListSection with a mouse from 768px
+  // (`md:pointer-fine:min-h-control`): a 34px trigger, 32px by touch; the
+  // count is `font-mono text-mono-meta text-foreground-hint`.
+  final raft = plain
+      ? RaftTaskListSectionRecipe.resolve(
+          theme: t.recipeTheme,
+          states: t.recipeStates(responsive: true),
+          tokens: rt,
+        )
+      : r;
   return Semantics(
     button: onToggle != null,
     expanded: !collapsed,
@@ -530,12 +544,14 @@ Widget _taskSectionTrigger(
         '${collapsed ? raftText(context, 'Show') : raftText(context, 'Hide')} $label',
     excludeSemantics: true,
     onTap: onToggle,
-    child: GestureDetector(
+    child: _TaskPressable(
       key: triggerKey,
-      behavior: HitTestBehavior.opaque,
-      onTap: onToggle,
-      child: Container(
-        constraints: plain ? const BoxConstraints(minHeight: 32) : null,
+      onPressed: onToggle,
+      radius: raft.trigger.borderRadius,
+      builder: (_) => Container(
+        constraints: plain
+            ? BoxConstraints(minHeight: raft.trigger.minHeight ?? 32)
+            : null,
         padding: plain
             ? const EdgeInsets.symmetric(horizontal: 8)
             : r.trigger.padding,
@@ -548,16 +564,23 @@ Widget _taskSectionTrigger(
                 RaftTaskSectionBadge(status: status, label: label),
                 Text(
                   '$count',
-                  // TaskSectionCount + `text-xs font-mono
-                  // text-foreground-muted`.
-                  style: r.count
-                      .textStyle(rt)
-                      .copyWith(
-                        fontFamily: t.monoFont,
-                        fontSize: 12,
-                        height: 16 / 12,
-                        color: t.colors['foreground-muted'],
-                      ),
+                  style: plain
+                      ? raft.count
+                            .textStyle(rt)
+                            .copyWith(
+                              fontFamily: t.monoFont,
+                              fontFamilyFallback: const ['monospace'],
+                            )
+                      // TaskSectionCount + `text-xs font-mono
+                      // text-foreground-muted` (frozen looks).
+                      : r.count
+                            .textStyle(rt)
+                            .copyWith(
+                              fontFamily: t.monoFont,
+                              fontSize: 12,
+                              height: 16 / 12,
+                              color: t.colors['foreground-muted'],
+                            ),
                 ),
               ],
             ),
@@ -573,25 +596,27 @@ Widget _taskSectionEmpty(
   RaftTaskListSectionRecipeStyle r,
   RaftRecipeTokens rt,
   String? label,
-) => Container(
-  padding: r.empty.padding,
-  decoration: BoxDecoration(
-    color: r.empty.backgroundColor?.resolve(rt),
-    borderRadius: r.empty.borderRadius,
-    border: Border.all(
-      color:
-          r.empty.borderColor?.resolve(rt) ??
-          RaftTokens.of(context).colors['line-muted']!,
-      width: r.empty.borderWidth.top,
-    ),
-  ),
-  child: Text(
-    label ?? '',
-    style: r.empty
-        .textStyle(rt)
-        .copyWith(fontFamily: RaftTokens.of(context).bodyFont),
-  ),
-);
+) => RaftTokens.of(context).option('listGroup.frame', or: 'framed') == 'plain'
+    ? RaftTaskLaneEmpty(label: label ?? '')
+    : Container(
+        padding: r.empty.padding,
+        decoration: BoxDecoration(
+          color: r.empty.backgroundColor?.resolve(rt),
+          borderRadius: r.empty.borderRadius,
+          border: Border.all(
+            color:
+                r.empty.borderColor?.resolve(rt) ??
+                RaftTokens.of(context).colors['line-muted']!,
+            width: r.empty.borderWidth.top,
+          ),
+        ),
+        child: Text(
+          label ?? '',
+          style: r.empty
+              .textStyle(rt)
+              .copyWith(fontFamily: RaftTokens.of(context).bodyFont),
+        ),
+      );
 
 /// TaskSectionBadge: TaskStatusIcon + label; brutal adds the taskStatus
 /// status background.
@@ -612,6 +637,18 @@ class RaftTaskSectionBadge extends StatelessWidget {
     final t = RaftTokens.of(context);
     final rt = RaftRecipeTokens(t);
     if (t.option('listGroup.frame', or: 'framed') == 'plain') {
+      // raft-ui 0.95.3: `font-sans text-footnote font-bold`, the board
+      // column's label in `foreground-muted`, the list section's in
+      // `foreground-hint`; the status pixel in front.
+      final ink = board
+          ? RaftTaskBoardColumnRecipe.resolve(
+              theme: t.recipeTheme,
+              tokens: rt,
+            ).badge.textStyle(rt).color
+          : RaftTaskListSectionRecipe.resolve(
+              theme: t.recipeTheme,
+              tokens: rt,
+            ).badge.textStyle(rt).color;
       return Row(
         mainAxisSize: MainAxisSize.min,
         spacing: 8,
@@ -619,14 +656,13 @@ class RaftTaskSectionBadge extends StatelessWidget {
           RaftMessageTaskStatusIcon(
             status: raftTaskStatusOf(status),
             color: t.ui.foregroundHint,
-            size: 9,
           ),
           RaftCssText(
             label,
             style: t.scale(
               RaftTypeScale.footnote,
               weight: FontWeight.w700,
-              color: t.ui.foregroundHint,
+              color: ink ?? t.ui.foregroundHint,
             ),
             controlLabel: true,
           ),
@@ -680,10 +716,11 @@ class RaftTaskSectionBadge extends StatelessWidget {
   }
 }
 
-/// Web `TaskBoardColumn` (taskBoardColumn recipe): a 320px column whose
-/// trigger row shows the status badge and count (the whole row toggles the
-/// column), then `mb-3` and the [body]. [dropActive] is the allowed drop
-/// state (`border-line-strong bg-primary-soft shadow-raft-sm`).
+/// Web `TaskBoardColumn` (taskBoardColumn recipe): a column whose trigger row
+/// shows the status badge, the count and the open/closed chevron (the whole
+/// row toggles the column), then the [body]. [dropActive] is the allowed drop
+/// state of a card over the column; [dropBlockedLabel] the blocked one (with
+/// the reason an empty column shows in place of "No … tasks").
 class RaftTaskBoardColumn extends StatelessWidget {
   const RaftTaskBoardColumn({
     super.key,
@@ -694,22 +731,57 @@ class RaftTaskBoardColumn extends StatelessWidget {
     required this.body,
     this.triggerKey,
     this.dropActive = false,
+    this.dropBlockedLabel,
   });
   final String status, count;
   final bool collapsed, dropActive;
   final VoidCallback onToggle;
   final Widget body;
   final Key? triggerKey;
+
+  /// A dragged card can't be dropped here (`data-drop-state=blocked`): why,
+  /// as `TaskBoardColumnEmptyBlocked` says it in an empty column.
+  final String? dropBlockedLabel;
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     final rt = RaftRecipeTokens(t);
+    final flat = t.option('taskBoard.column', or: 'flat') == 'flat';
+    // Raft: raft-ui 0.95.3 with the window and the input (34px trigger with a
+    // mouse from 768px); the frozen looks keep their base states.
     final r = RaftTaskBoardColumnRecipe.resolve(
       theme: t.recipeTheme,
-      states: t.recipeStates(),
+      states: flat ? t.recipeStates(responsive: true) : t.recipeStates(),
       tokens: rt,
     );
     final label = raftText(context, raftTaskStatusLabel(status));
+    final countText = Text(
+      count,
+      style: flat
+          // TaskBoardColumnCount: `font-mono text-mono-meta text-foreground-hint`.
+          ? r.count
+                .textStyle(rt)
+                .copyWith(
+                  fontFamily: t.monoFont,
+                  fontFamilyFallback: const ['monospace'],
+                )
+          : r.count
+                .textStyle(rt)
+                .copyWith(
+                  fontFamily: t.monoFont,
+                  fontSize: 12,
+                  height: 16 / 12,
+                  color: t.colors['foreground-muted'],
+                ),
+    );
+    final heading = Row(
+      mainAxisSize: MainAxisSize.min,
+      spacing: r.heading.columnGap ?? 8,
+      children: [
+        RaftTaskSectionBadge(status: status, label: label, board: true),
+        countText,
+      ],
+    );
     final trigger = Semantics(
       button: true,
       expanded: !collapsed,
@@ -717,61 +789,81 @@ class RaftTaskBoardColumn extends StatelessWidget {
           '${collapsed ? raftText(context, 'Show') : raftText(context, 'Hide')} $label',
       excludeSemantics: true,
       onTap: onToggle,
-      child: GestureDetector(
+      child: _TaskPressable(
         key: triggerKey,
-        behavior: HitTestBehavior.opaque,
-        onTap: onToggle,
-        child: Padding(
-          padding: t.option('taskBoard.column', or: 'flat') == 'flat'
-              ? EdgeInsets.zero
-              : r.trigger.padding,
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            spacing: r.heading.columnGap ?? 8,
-            children: [
-              RaftTaskSectionBadge(status: status, label: label, board: true),
-              Text(
-                count,
-                style: r.count
-                    .textStyle(rt)
-                    .copyWith(
-                      fontFamily: t.monoFont,
-                      fontSize: 12,
-                      height: 16 / 12,
-                      color: t.colors['foreground-muted'],
+        onPressed: onToggle,
+        radius: r.trigger.borderRadius,
+        builder: (hovered) => flat
+            ? ConstrainedBox(
+                constraints: BoxConstraints(
+                  minHeight: r.trigger.minHeight ?? 32,
+                ),
+                // `flex justify-between gap-2`: heading, then the chevron.
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  spacing: r.trigger.columnGap ?? 8,
+                  children: [
+                    Flexible(child: heading),
+                    _TaskColumnChevron(
+                      open: !collapsed,
+                      size: r.chevron.target('& svg')?.width ?? 14,
+                      // `text-foreground-hint group-hover:text-foreground`.
+                      color: hovered
+                          ? t.ui.foreground
+                          : r.chevron.textStyle(rt).color ??
+                                t.ui.foregroundHint,
                     ),
-              ),
-            ],
-          ),
-        ),
+                  ],
+                ),
+              )
+            : Padding(padding: r.trigger.padding, child: heading),
       ),
     );
-    // raft-ui 0.7.0 taskBoardColumn: a flat 232px lane (no border, fill or
-    // padding), `min-h-8` trigger, `mb-2` under it while open; the pre-theme
+    // raft-ui 0.95.3 taskBoardColumn: a flat 232px lane (no border, fill or
+    // padding; "the column itself never changes fill"), `mb-2` under the
+    // trigger while open. A collapsed column a card may drop on shows
+    // `outline: 1.5px dashed line-strong; outline-offset: 4px`. The frozen
     // looks keep the bordered 320px lane card (taskBoard.column).
-    if (t.option('taskBoard.column', or: 'flat') == 'flat') {
-      return Container(
-        width: 232,
-        decoration: BoxDecoration(
-          color: dropActive ? t.colors['fill-pressed'] : null,
-          borderRadius: BorderRadius.circular(
-            t.size('radius.container', fallback: 10),
-          ),
-        ),
+    if (flat) {
+      final radius = r.root.borderRadius?.topLeft.x ?? 0;
+      final column = SizedBox(
+        width: r.root.width,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            ConstrainedBox(
-              constraints: const BoxConstraints(minHeight: 32),
-              child: Align(alignment: Alignment.centerLeft, child: trigger),
-            ),
+            trigger,
             if (!collapsed) ...[
               const SizedBox(height: 8),
-              Flexible(child: body),
+              Flexible(
+                child: _TaskDropScope(
+                  allowed: dropActive,
+                  blockedLabel: dropActive ? null : dropBlockedLabel,
+                  child: body,
+                ),
+              ),
             ],
           ],
         ),
+      );
+      if (!(collapsed && dropActive)) return column;
+      final outline = RaftTaskBoardColumnRecipe.resolve(
+        theme: t.recipeTheme,
+        states: t.recipeStates(
+          responsive: true,
+          extra: const ['data-drop-collapsed=true', 'data-drop-state=allowed'],
+        ),
+        tokens: rt,
+      ).root;
+      return CustomPaint(
+        foregroundPainter: _LaneEmptyPainter(
+          null,
+          outline.outlineColor?.resolve(rt) ?? t.ui.lineStrong,
+          outline.outlineWidth ?? 0,
+          radius,
+          outset: outline.outlineOffset ?? 0,
+        ),
+        child: column,
       );
     }
     return RaftRecipeBox(
@@ -806,9 +898,105 @@ class RaftTaskBoardColumn extends StatelessWidget {
   }
 }
 
+/// TaskBoardColumnChevron: `ChevronDown`, `-rotate-90` while the column is
+/// collapsed and `rotate-0` open, in 150ms (none with reduced motion).
+class _TaskColumnChevron extends StatelessWidget {
+  const _TaskColumnChevron({
+    required this.open,
+    required this.size,
+    required this.color,
+  });
+  final bool open;
+  final double size;
+  final Color color;
+  @override
+  Widget build(BuildContext context) => AnimatedRotation(
+    turns: open ? 0 : -.25,
+    duration: MediaQuery.disableAnimationsOf(context)
+        ? Duration.zero
+        : const Duration(milliseconds: 150),
+    curve: const Cubic(.4, 0, .2, 1),
+    child: RaftIcon(RaftGlyph.chevronDown, size: size, color: color),
+  );
+}
+
+/// The drop state of the board column around a lane's empty box
+/// (`data-drop-state` on the TaskDropZone the column renders as).
+class _TaskDropScope extends InheritedWidget {
+  const _TaskDropScope({
+    required this.allowed,
+    required this.blockedLabel,
+    required super.child,
+  });
+  final bool allowed;
+  final String? blockedLabel;
+  static _TaskDropScope? of(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<_TaskDropScope>();
+  @override
+  bool updateShouldNotify(_TaskDropScope old) =>
+      old.allowed != allowed || old.blockedLabel != blockedLabel;
+}
+
+/// A Web `<button>` without a fill of its own (a column or section trigger,
+/// the card's open area): a Tab stop that Enter or Space activates, the
+/// `focus-visible:shadow-focus` ring at [radius] for keyboard focus only, and
+/// whether a mouse is over it. Its semantics stay with the caller.
+class _TaskPressable extends StatefulWidget {
+  const _TaskPressable({
+    super.key,
+    required this.onPressed,
+    required this.radius,
+    required this.builder,
+  });
+  final VoidCallback? onPressed;
+  final BorderRadius? radius;
+  final Widget Function(bool hovered) builder;
+  @override
+  State<_TaskPressable> createState() => _TaskPressableState();
+}
+
+class _TaskPressableState extends State<_TaskPressable> {
+  bool focused = false, hovered = false;
+  @override
+  Widget build(BuildContext context) {
+    final onPressed = widget.onPressed;
+    return FocusableActionDetector(
+      enabled: onPressed != null,
+      includeFocusSemantics: false,
+      mouseCursor: onPressed == null
+          ? MouseCursor.defer
+          : SystemMouseCursors.click,
+      onShowFocusHighlight: (value) => setState(() => focused = value),
+      onShowHoverHighlight: (value) => setState(() => hovered = value),
+      actions: {
+        ActivateIntent: CallbackAction<ActivateIntent>(
+          onInvoke: (_) => onPressed?.call(),
+        ),
+      },
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        excludeFromSemantics: true,
+        onTap: onPressed,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            borderRadius: widget.radius,
+            boxShadow: focused && onPressed != null
+                ? RaftTokens.of(context).focusShadows
+                : null,
+          ),
+          child: widget.builder(hovered && onPressed != null),
+        ),
+      ),
+    );
+  }
+}
+
 /// `TaskSectionEmpty` / `TaskBoardColumnEmpty`: the dashed "No {status}
-/// tasks." box of an empty lane (`border-dashed px-3 py-5 text-sm
-/// text-foreground-muted`).
+/// tasks." box of an empty lane. Raft (raft-ui 0.95.3): `flex min-h-16
+/// items-center justify-center px-3 py-3 rounded-container border
+/// border-dashed border-line-seam text-center text-footnote
+/// text-foreground-hint`; on the board it is hidden while a card may drop on
+/// the column and says why while it can't (`text-foreground-muted`).
 class RaftTaskLaneEmpty extends StatelessWidget {
   const RaftTaskLaneEmpty({
     super.key,
@@ -822,12 +1010,67 @@ class RaftTaskLaneEmpty extends StatelessWidget {
   /// `layer-panel` fill) instead of the list section box.
   final bool board;
 
-  /// List section fill (the recipe's `fill-muted`); unused on the board.
+  /// List section fill (the recipe's `fill-muted`) of the frozen looks;
+  /// unused on the board and in the Raft look.
   final Color? fill;
 
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
+    if (t.option(
+          board ? 'taskBoard.column' : 'listGroup.frame',
+          or: board ? 'flat' : 'framed',
+        ) ==
+        (board ? 'flat' : 'plain')) {
+      final drop = board ? _TaskDropScope.of(context) : null;
+      if (drop?.allowed ?? false) return const SizedBox.shrink();
+      final blocked = drop?.blockedLabel;
+      final rt = RaftRecipeTokens(t);
+      final states = t.recipeStates(responsive: true);
+      final e = board
+          ? RaftTaskBoardColumnRecipe.resolve(
+              theme: t.recipeTheme,
+              states: states,
+              tokens: rt,
+            ).empty
+          : RaftTaskListSectionRecipe.resolve(
+              theme: t.recipeTheme,
+              states: states,
+              tokens: rt,
+            ).empty;
+      return ConstrainedBox(
+        constraints: BoxConstraints(
+          minWidth: double.infinity,
+          minHeight: e.minHeight ?? 0,
+        ),
+        child: CustomPaint(
+          painter: _LaneEmptyPainter(
+            null,
+            e.borderColor?.resolve(rt) ?? t.ui.lineSeam,
+            e.borderWidth.top,
+            e.borderRadius?.topLeft.x ?? 0,
+          ),
+          child: Padding(
+            padding: e.padding,
+            // `flex items-center justify-center`: the box is its text's
+            // height (at least min-h-16), the text centred in it.
+            child: Align(
+              heightFactor: 1,
+              child: RaftCssText(
+                blocked ?? label,
+                textAlign: TextAlign.center,
+                style: t.scale(
+                  RaftTypeScale.footnote,
+                  color: blocked != null
+                      ? t.ui.foregroundMuted
+                      : t.ui.foregroundHint,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
     // Board: border 1 (Brutal 2) line-muted (black/20); list: border-2
     // line-muted (black/30).
     final borderWidth = board ? (1.0) : 2.0;
@@ -860,19 +1103,29 @@ class RaftTaskLaneEmpty extends StatelessWidget {
   }
 }
 
+/// A dashed rounded border the way Chromium draws one: dashes 3x the border
+/// width, the gaps spread evenly over the path. With [outset] it is a CSS
+/// `outline` that far outside the box (`outline-offset`), its radius grown
+/// by the same amount.
 class _LaneEmptyPainter extends CustomPainter {
-  const _LaneEmptyPainter(this.fill, this.color, this.width, this.radius);
+  const _LaneEmptyPainter(
+    this.fill,
+    this.color,
+    this.width,
+    this.radius, {
+    this.outset = 0,
+  });
   final Color? fill, color;
-  final double width, radius;
+  final double width, radius, outset;
 
   @override
   void paint(Canvas canvas, Size size) {
+    final grow = outset > 0 ? outset + width : 0.0;
     final outer = RRect.fromRectAndRadius(
-      Offset.zero & size,
-      Radius.circular(radius),
+      (Offset.zero & size).inflate(grow),
+      Radius.circular(radius + grow),
     );
     if (fill != null) canvas.drawRRect(outer, Paint()..color = fill!);
-    // Chromium dashes: 3x the border width, gaps spread evenly over the path.
     final path = Path()..addRRect(outer.deflate(width / 2));
     final paint = Paint()
       ..color = color!
@@ -897,7 +1150,8 @@ class _LaneEmptyPainter extends CustomPainter {
       old.fill != fill ||
       old.color != color ||
       old.width != width ||
-      old.radius != radius;
+      old.radius != radius ||
+      old.outset != outset;
 }
 
 /// TasksPanel lane paging button: `<Button size="sm" variant="outline"

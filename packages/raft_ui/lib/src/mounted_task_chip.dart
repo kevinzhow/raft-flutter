@@ -40,10 +40,13 @@ class RaftMessageTaskChipRecipe extends RaftControlRecipe {
   BorderRadius get radius => BorderRadius.circular(
     squareStatus ? tokens.size('radius.chip', fallback: 5) : 999,
   );
+
+  /// raft-ui 0.95.3 TaskChip `default`: `h-[22px] gap-1.5 px-[7px]`
+  /// (0.7.0 was `pr-2 pl-1.5`).
   @override
-  EdgeInsets get padding => squareStatus
-      ? const EdgeInsets.only(left: 6, right: 8)
-      : const EdgeInsets.symmetric(horizontal: 8);
+  EdgeInsets get padding =>
+      // ignore: raft_lints/off_grid_spacing -- TaskChip's `px-[7px]` is an explicit arbitrary value in the raft-ui 0.95.3 source, not a spacing step.
+      EdgeInsets.symmetric(horizontal: squareStatus ? 7 : 8);
   String get _token => tokenOf(status);
 
   /// The `--task-status-*` token a status paints with. The one place a task
@@ -286,36 +289,44 @@ class RaftMessageTaskStatusIcon extends StatelessWidget {
     RaftMessageTaskStatus.closed => RaftGlyph.ban,
   };
 
+  /// raft-ui 0.95.3 `TaskStatusPixel`: a 10px square (8.5 + the 1.5px edge)
+  /// that is also its slot in a chip (`[&>svg[data-slot=task-status-icon]]:
+  /// size-2.5`); 0.7.0 drew it at 9. The frozen looks keep 9 for Backlog.
+  static double pixelOf(RaftTokens tokens) =>
+      tokens.option('task.status', or: 'symbol') == 'square' ? 10 : 9;
+
   @override
-  Widget build(BuildContext context) => ExcludeSemantics(
-    child: SizedBox.square(
-      dimension: size,
-      // Backlog (raft-ui 0.95.3 TaskBacklogIcon) is the status pixel, hollow,
-      // with a `line-strong` edge (sticker-ink would vanish on a dark canvas).
-      child:
-          status == RaftMessageTaskStatus.backlog ||
-              RaftTokens.of(context).option('task.status', or: 'symbol') ==
-                  'square'
-          ? Center(
-              child: Container(
-                width: 9,
-                height: 9,
-                decoration: BoxDecoration(
-                  color: status == RaftMessageTaskStatus.backlog
-                      ? null
-                      : RaftTokens.of(context)
-                            .colors[RaftMessageTaskChipRecipe.tokenOf(status)],
-                  border: Border.all(
+  Widget build(BuildContext context) {
+    final t = RaftTokens.of(context);
+    final square = t.option('task.status', or: 'symbol') == 'square';
+    final pixel = pixelOf(t);
+    return ExcludeSemantics(
+      child: SizedBox.square(
+        dimension: square ? pixel : size,
+        // Backlog (raft-ui 0.95.3 TaskBacklogIcon) is the status pixel,
+        // hollow, with a `line-strong` edge (sticker-ink would vanish on a
+        // dark canvas).
+        child: status == RaftMessageTaskStatus.backlog || square
+            ? Center(
+                child: Container(
+                  width: pixel,
+                  height: pixel,
+                  decoration: BoxDecoration(
                     color: status == RaftMessageTaskStatus.backlog
-                        ? RaftTokens.of(context).colors['line-strong']!
-                        : RaftTokens.of(context).ui.stickerInk,
-                    width: 1.5,
+                        ? null
+                        : t.colors[RaftMessageTaskChipRecipe.tokenOf(status)],
+                    border: Border.all(
+                      color: status == RaftMessageTaskStatus.backlog
+                          ? t.colors['line-strong']!
+                          : t.ui.stickerInk,
+                      width: 1.5,
+                    ),
+                    borderRadius: BorderRadius.circular(2),
                   ),
-                  borderRadius: BorderRadius.circular(2),
                 ),
-              ),
-            )
-          : RaftIcon(glyphOf(status), size: size, color: color),
-    ),
-  );
+              )
+            : RaftIcon(glyphOf(status), size: size, color: color),
+      ),
+    );
+  }
 }
