@@ -1093,15 +1093,18 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel>
     ),
   );
 
-  /// MachineDetailPanel RuntimeAccountUsageGateChip: detected usage
-  /// runtimes open the usage card for viewers allowed to inspect it.
+  /// MachineRuntimeChips RuntimeAccountUsageGateChip: every detected runtime
+  /// with usage or a sign-in from here opens its card (usage, sign-in state
+  /// and actions) for viewers allowed to inspect it; the gate draws the plain
+  /// chip otherwise.
   Widget? _runtimeChip(int index) {
     if (index >= computerRuntimeOptions.length) return null;
     final (rid, name, _) = computerRuntimeOptions[index];
     final detected = [
       for (final r in (m['runtimes'] as List? ?? const [])) '$r',
     ].contains(rid);
-    if (!detected || runtimeUsageProvider(rid) == null) return null;
+    if (!detected) return null;
+    final provider = runtimeUsageProvider(rid);
     final versions = m['runtimeVersions'];
     return runtimeUsageGateChip(
       controller: w,
@@ -1110,7 +1113,7 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel>
       machineId: id,
       // Web aria-label: the chip's children (label + availability suffix)
       // are not one string here, so it reads the provider name.
-      label: runtimeUsageProviderName(runtimeUsageProvider(rid)!),
+      label: provider == null ? name : runtimeUsageProviderName(provider),
       runtimeVersion: versions is Map ? versions[rid] as String? : null,
       chip: (status) =>
           RaftRuntimeChip(label: name, detected: true, trailing: status),
