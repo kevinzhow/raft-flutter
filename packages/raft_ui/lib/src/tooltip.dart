@@ -13,6 +13,8 @@ import 'design_primitives.dart' show RaftTouchTarget;
 import 'pointer_intent.dart';
 import 'focus_visible.dart';
 import 'hover_dismiss_scope.dart';
+import 'recipe_surface.dart';
+import 'recipes/tooltip.g.dart' as generated;
 import 'theme.dart';
 
 /// RUI tooltip1392 and foundation361/489; product timing is provider-owned.
@@ -29,24 +31,52 @@ class RaftTooltipRecipe {
   Duration get transition => const Duration(milliseconds: 150);
   Curve get curve => const Cubic(.22, 1, .36, 1);
   bool get hasArrow => true;
+  bool get _raft => tokens.isRaftLook;
+
+  /// Raft look: raft-ui `bg-layer-hud text-foreground-on-hud` in both modes.
   // tooltip recipe `content` brutal background-color: token(primary400).
-  Color get background => tokens.dark
+  Color get background => _raft
+      ? tokens.colors['layer-hud']!
+      : tokens.dark
       ? tokens.popover
       // foundation.css311 oklch(.263 .009 294.9), converted to sRGB.
       : tokens.colors['layer-hud'] ?? const Color(0xff252429);
-  Color get foreground => tokens.dark
+  Color get foreground => _raft
+      ? tokens.colors['foreground-on-hud']!
+      : tokens.dark
       ? tokens.ink
       // foundation.css312 oklch(.965 .002 286), converted to sRGB.
       : tokens.colors['layer-hud-foreground'] ?? const Color(0xfff3f3f5);
-  TextStyle get text => TextStyle(
-    fontFamily: tokens.bodyFont,
-    fontFamilyFallback: tokens.fontFallback,
-    fontSize: 13,
-    height: 18 / 13,
-    fontWeight: FontWeight.w500,
-    letterSpacing: -.065,
-    color: foreground,
-  );
+
+  /// Raft look: the generated `body` slot (`text-footnote`: 13/18, 12/18 with
+  /// a mouse from 768 via the desktop tokens), no tracking.
+  TextStyle get text {
+    if (_raft) {
+      final slot = generated.RaftTooltipRecipe.resolve(
+        theme: tokens.recipeTheme,
+        states: tokens.recipeStates(responsive: true),
+        tokens: tokens.recipeTokens,
+      ).body;
+      return slot
+          .textStyle(tokens.recipeTokens)
+          .copyWith(
+            fontFamily: tokens.bodyFont,
+            fontFamilyFallback: tokens.fontFallback,
+            fontWeight: slot.fontWeight ?? FontWeight.w500,
+            color: foreground,
+          );
+    }
+    return TextStyle(
+      fontFamily: tokens.bodyFont,
+      fontFamilyFallback: tokens.fontFallback,
+      fontSize: 13,
+      height: 18 / 13,
+      fontWeight: FontWeight.w500,
+      letterSpacing: -.065,
+      color: foreground,
+    );
+  }
+
   List<BoxShadow> get shadows => [
     for (final layer in tokens.shadowLayers('shadow.tooltip').reversed)
       if (!layer.inset) layer.toBoxShadow(),
@@ -664,7 +694,7 @@ class _TooltipSurface extends StatelessWidget {
       boxShadow: recipe.shadows,
     ),
     child: CustomPaint(
-      foregroundPainter: recipe.tokens.dark
+      foregroundPainter: recipe.tokens.dark && !recipe.tokens.isRaftLook
           ? _TooltipInset(recipe.radius)
           : null,
       child: Padding(
@@ -725,7 +755,7 @@ class _TooltipArrow extends CustomPainter {
       ..lineTo(11, 0)
       ..lineTo(6, 5.25)
       ..close();
-    if (recipe.tokens.dark) {
+    if (recipe.tokens.dark && !recipe.tokens.isRaftLook) {
       canvas.save();
       canvas.translate(0, 1);
       canvas.drawPath(

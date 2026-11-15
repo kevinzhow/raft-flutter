@@ -189,7 +189,8 @@ class _Item extends StatelessWidget {
               tokens: resolver,
               leading: item.glyph == null
                   ? null
-                  : RaftIcon(item.glyph!, size: 14),
+                  // context-menu.mjs: `size-4`.
+                  : RaftIcon(item.glyph!, size: 16),
             );
           }
           final color =

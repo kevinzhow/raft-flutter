@@ -237,7 +237,7 @@ void main() {
         tester
             .getSize(find.byKey(const ValueKey('raft-hover-card-surface')))
             .width,
-        280,
+        300,
       );
       // The heading link dismisses the card first, then opens activity.
       await mouse.moveTo(tester.getCenter(find.text('Recent activity')));

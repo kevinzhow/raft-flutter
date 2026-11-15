@@ -133,8 +133,14 @@ class RaftProfilePreviewCard extends StatelessWidget {
     final rule = t.colors['line-muted']!;
     final factStyle = mono(11, 11 * 1.25, muted);
     final factLabel = mono(11, 11 * 1.25, t.colors['foreground-placeholder']!);
+    // Raft look: raft-ui `px-4 pt-4 pb-3 last:pb-4` (16 under the avatar row
+    // when nothing follows, 12 above a description or activity section).
+    final last =
+        (description == null || description!.isEmpty) && activity.isEmpty;
     final header = Padding(
-      padding: const EdgeInsets.all(12),
+      padding: t.isRaftLook
+          ? EdgeInsets.fromLTRB(16, 16, 16, last ? 16 : 12)
+          : const EdgeInsets.all(12),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

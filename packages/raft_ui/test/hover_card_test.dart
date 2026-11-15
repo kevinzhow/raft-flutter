@@ -50,10 +50,10 @@ void main() {
     final surface = tester.getRect(
       find.byKey(const ValueKey('raft-hover-card-surface')),
     );
-    // side bottom, align start, sideOffset 6, w-[280px].
+    // side bottom, align start, sideOffset 6, w-[300px].
     expect(surface.top, moreOrLessEquals(trigger.bottom + 6));
     expect(surface.left, moreOrLessEquals(trigger.left));
-    expect(surface.width, 280);
+    expect(surface.width, 300);
     await settle(tester, mouse);
   });
 

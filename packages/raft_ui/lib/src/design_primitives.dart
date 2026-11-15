@@ -1867,6 +1867,59 @@ class RaftMenuController extends ChangeNotifier {
   }
 }
 
+/// The dropdown separator: raft-ui `-mx-1 my-1 h-px bg-line-hairline`, one
+/// pixel, bleeding through the popup's `p-1` inset (read from the
+/// `dropdown_menu` recipe's `separator` slot). The frozen looks keep their
+/// hairline.
+class _RaftMenuSeparator extends StatelessWidget {
+  const _RaftMenuSeparator();
+  @override
+  Widget build(BuildContext context) {
+    final t = RaftTokens.of(context);
+    if (!t.isRaftLook) {
+      return SizedBox(
+        height: 9,
+        child: Center(
+          child: Container(height: .5, color: t.colors['line-hairline']),
+        ),
+      );
+    }
+    final rt = t.recipeTokens;
+    final style = RaftDropdownMenuRecipe.resolve(
+      theme: t.recipeTheme,
+      tokens: rt,
+      states: t.recipeStates(),
+    ).separator;
+    final margin = style.margin;
+    return Padding(
+      padding: EdgeInsets.only(top: margin.top, bottom: margin.bottom),
+      child: CustomPaint(
+        key: const ValueKey('raft-menu-separator'),
+        size: Size(double.infinity, style.height ?? 1),
+        painter: _MenuSeparatorPainter(
+          style.backgroundColor?.resolve(rt) ?? t.colors['line-hairline']!,
+          left: margin.left,
+          right: margin.right,
+        ),
+      ),
+    );
+  }
+}
+
+class _MenuSeparatorPainter extends CustomPainter {
+  const _MenuSeparatorPainter(this.color, {this.left = 0, this.right = 0});
+  final Color color;
+  final double left, right;
+  @override
+  void paint(Canvas canvas, Size size) => canvas.drawRect(
+    Rect.fromLTRB(left, 0, size.width - right, size.height),
+    Paint()..color = color,
+  );
+  @override
+  bool shouldRepaint(_MenuSeparatorPainter old) =>
+      old.color != color || old.left != left || old.right != right;
+}
+
 @immutable
 class RaftMenuEntry {
   const RaftMenuEntry({
@@ -2310,15 +2363,7 @@ class _RaftDropdownMenuState extends State<RaftDropdownMenu> {
                                       i++
                                     )
                                       if (widget.entries[i].label == null)
-                                        SizedBox(
-                                          height: 9,
-                                          child: Center(
-                                            child: Container(
-                                              height: .5,
-                                              color: t.colors['line-hairline'],
-                                            ),
-                                          ),
-                                        )
+                                        const _RaftMenuSeparator()
                                       else
                                         RaftMenuItem(
                                           kind: widget.kind,
@@ -2705,7 +2750,8 @@ class _RaftMenuItemState extends State<RaftMenuItem> {
                         widget.leading ??
                         (widget.glyph == null
                             ? null
-                            : RaftIcon(widget.glyph!, size: 14)),
+                            // MenuItem.tsx v1.24: the first icon is 16.
+                            : RaftIcon(widget.glyph!, size: 16)),
                     trailing: widget.trailing,
                     enabled: enabled,
                     hovered: hovered,
