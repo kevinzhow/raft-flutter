@@ -11,6 +11,7 @@ import '../platform/system_bars.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
+import '../data/second_factor_last_method.dart';
 import '../data/server_error_code.dart';
 import '../data/source_time_formatter.dart';
 import '../data/user_error.dart';
@@ -355,15 +356,15 @@ class _AuthState extends State<AuthView> {
   }
 
   /// Web `startSecondFactorSignIn` + SecondFactorSignInStep: start with the
-  /// first usable method; at the challenge's end the page says it expired
-  /// (no countdown).
+  /// method this device used last (Web `initialMethod`), else the first
+  /// usable one; at the challenge's end the page says it expired (no
+  /// countdown).
   void startSecondFactor(SecondFactorRequired pending) {
     final usable = usableSecondFactorMethods(pending.challenge.methods);
     secondFactorExpiry?.cancel();
     secondFactor = pending;
-    secondFactorMethod = usable.methods.isEmpty
-        ? null
-        : _codeMethod(usable.methods.first);
+    final first = initialSecondFactorMethod(usable.methods);
+    secondFactorMethod = first == null ? null : _codeMethod(first);
     secondFactorCode.clear();
     secondFactorFieldError = secondFactorBanner = secondFactorEnded = null;
     recoveryView = null;
@@ -428,14 +429,17 @@ class _AuthState extends State<AuthView> {
     try {
       if (run == null) throw const RaftApiException('Sign-in failed');
       final totp = method == RaftSecondFactorCodeMethod.totp;
-      await run(
-        base.text.trim(),
-        (c) => c.verifySecondFactor(
+      await run(base.text.trim(), (c) async {
+        await c.verifySecondFactor(
           pending,
           code: totp ? entered : null,
           backupCode: totp ? null : entered,
-        ),
-      );
+        );
+        // Web: remembered once the answer passed, before signing in.
+        rememberSecondFactorMethod(
+          totp ? SecondFactorMethod.totp : SecondFactorMethod.backupCode,
+        );
+      });
       if (mounted && identical(secondFactor, pending)) {
         setState(endSecondFactor);
       }

@@ -14,6 +14,7 @@ import 'package:flutter/widgets.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
+import '../data/second_factor_last_method.dart';
 import 'account_security_answer.dart';
 
 /// What the dialog says the step-up is for (Web `StepUpReason`,
@@ -162,7 +163,8 @@ class _VerifyItsYouDialog extends StatefulWidget {
 }
 
 class _VerifyItsYouDialogState extends State<_VerifyItsYouDialog> {
-  late SecondFactorMethod? method = widget.methods.firstOrNull;
+  /// Web `initialMethod`: the way this device answered with last.
+  late SecondFactorMethod? method = initialSecondFactorMethod(widget.methods);
 
   /// 403 `session_family_required`: the banner offers Sign in again.
   bool signInAgain = false;
@@ -177,6 +179,7 @@ class _VerifyItsYouDialogState extends State<_VerifyItsYouDialog> {
       await widget.onAnswer(
         backup ? StepUpAnswer.backupCode(entered) : StepUpAnswer.code(entered),
       );
+      rememberSecondFactorMethod(current);
     } catch (error) {
       if (!mounted) rethrow;
       final code = SecondFactorFailure.of(error).code;
