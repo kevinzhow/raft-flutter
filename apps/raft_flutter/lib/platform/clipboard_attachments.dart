@@ -10,8 +10,9 @@ import 'package:raft_ui/raft_ui.dart' show RaftPasteAttachmentsIntent;
 
 typedef ComposerFile = ({String name, Uint8List bytes});
 
-/// Web `extractClipboardFiles` over the native clipboard (pasteboard plugin):
-/// copied files first (desktop file managers), then a copied image. Text-only
+/// Web `extractClipboardFiles` over the native clipboard: copied files first
+/// (desktop file managers through the pasteboard plugin; iOS and Android
+/// through `app.raft/clipboard-attachments`), then a copied image. Text-only
 /// clipboards yield nothing so the editor's own text paste runs.
 class ClipboardAttachments {
   const ClipboardAttachments({
@@ -20,12 +21,14 @@ class ClipboardAttachments {
     this._desktop,
     this._native,
     this._ios,
+    this._android,
   });
   final Future<List<String>> Function()? _files;
   final Future<Uint8List?> Function()? _image;
   final bool? _desktop;
   final Future<List<ComposerFile>> Function()? _native;
   final bool? _ios;
+  final bool? _android;
 
   static const channel = MethodChannel('app.raft/clipboard-attachments');
   // ignore: raft_lints/avoid_unreleased_resource -- Process-wide clipboard state lives for the lifetime of the app.
@@ -33,9 +36,13 @@ class ClipboardAttachments {
   static bool _watching = false;
 
   /// Observes attachment availability without reading clipboard contents,
-  /// and hands a system Paste of attachments to the focused composer.
+  /// and hands a system Paste of attachments to the focused composer (iOS).
+  /// Android only reports availability: its toolbar Paste is the composer's.
   static void watch() {
-    if (kIsWeb || defaultTargetPlatform != TargetPlatform.iOS || _watching) {
+    if (kIsWeb ||
+        _watching ||
+        (defaultTargetPlatform != TargetPlatform.iOS &&
+            defaultTargetPlatform != TargetPlatform.android)) {
       return;
     }
     _watching = true;
@@ -88,15 +95,15 @@ class ClipboardAttachments {
       _desktop ?? (Platform.isLinux || Platform.isMacOS || Platform.isWindows);
 
   Future<List<ComposerFile>> read() async {
-    if (_ios ?? Platform.isIOS) {
+    // Android copied files are content URIs that Dart cannot open; the
+    // native side resolves them (NativeClipboardAttachmentsBridge.kt).
+    if ((_ios ?? Platform.isIOS) || (_android ?? Platform.isAndroid)) {
       final files = await _safe(_native ?? _readNative, const <ComposerFile>[]);
       if (files.isNotEmpty) return files;
     } else if (desktop) {
       final paths = await _safe(_files ?? Pasteboard.files, const <String>[]);
       if (paths.isNotEmpty) return readLocalFiles(paths);
     }
-    // Android clipboard file entries are content URIs that Dart cannot open;
-    // the plugin's image read resolves image URIs through the resolver.
     final image = await _safe(_image ?? () => Pasteboard.image, null);
     return image == null || image.isEmpty
         ? const []

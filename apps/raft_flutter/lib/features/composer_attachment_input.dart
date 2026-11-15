@@ -13,7 +13,8 @@ import '../platform/clipboard_attachments.dart';
 //
 // * drag-and-drop of OS files onto the composer root (desktop), with the
 //   drop overlay while a drag is over it and the folder notices on drop;
-// * Ctrl/Cmd+V of copied files or an image (`handlePaste`); text paste is
+// * Ctrl/Cmd+V and the toolbar Paste of copied files or an image
+//   (`handlePaste`; Android content URIs resolved natively); text paste is
 //   unaffected when the clipboard carries neither;
 // * iOS: the system Paste (edit menu, keyboard) of a copied image or file,
 //   which iOS lets the app read without a prompt (ClipboardAttachments.watch,

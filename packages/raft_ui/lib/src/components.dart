@@ -2211,9 +2211,10 @@ class RaftComposer extends StatefulWidget {
   /// Otherwise the ordinary text paste runs unchanged.
   final Future<bool> Function()? onPasteAttachments;
 
-  /// Whether the clipboard has attachments, so the iOS menu offers Paste
-  /// without a string. The host's native Paste then sends
-  /// [RaftPasteAttachmentsIntent] to the focused composer.
+  /// Whether the clipboard has attachments, so the menu offers Paste without
+  /// a string. Read when the menu is built. On iOS the host's native Paste
+  /// then sends [RaftPasteAttachmentsIntent] to the focused composer; on
+  /// Android the toolbar's Paste goes to [onPasteAttachments] first.
   final ValueListenable<bool>? pasteAttachmentsAvailable;
 
   /// Rich content committed by a software keyboard (Android IME image,
@@ -3065,30 +3066,48 @@ class _RaftComposerState extends State<RaftComposer> {
           ..insert(index + 1, const IOSSystemContextMenuItemPaste()),
       );
     }
+    void paste() {
+      state.hideToolbar();
+      final take = widget.onPasteAttachments;
+      if (take == null) {
+        state.pasteText(SelectionChangedCause.toolbar);
+        return;
+      }
+      unawaited(
+        pasteComposerClipboard(
+          state,
+          take,
+          cause: SelectionChangedCause.toolbar,
+        ),
+      );
+    }
+
+    final items = [
+      for (final item in state.contextMenuButtonItems)
+        item.type == ContextMenuButtonType.paste
+            ? item.copyWith(onPressed: paste)
+            : item,
+    ];
+    // Android offers Paste only for text; a copied file is a content URI.
+    if (widget.onPasteAttachments != null &&
+        widget.pasteAttachmentsAvailable?.value == true &&
+        !items.any((item) => item.type == ContextMenuButtonType.paste)) {
+      final index = items.lastIndexWhere(
+        (item) =>
+            item.type == ContextMenuButtonType.cut ||
+            item.type == ContextMenuButtonType.copy,
+      );
+      items.insert(
+        index + 1,
+        ContextMenuButtonItem(
+          type: ContextMenuButtonType.paste,
+          onPressed: paste,
+        ),
+      );
+    }
     return RaftTextSelectionToolbar.buttonItems(
       anchors: state.contextMenuAnchors,
-      buttonItems: [
-        for (final item in state.contextMenuButtonItems)
-          item.type == ContextMenuButtonType.paste
-              ? item.copyWith(
-                  onPressed: () {
-                    state.hideToolbar();
-                    final take = widget.onPasteAttachments;
-                    if (take == null) {
-                      state.pasteText(SelectionChangedCause.toolbar);
-                      return;
-                    }
-                    unawaited(
-                      pasteComposerClipboard(
-                        state,
-                        take,
-                        cause: SelectionChangedCause.toolbar,
-                      ),
-                    );
-                  },
-                )
-              : item,
-      ],
+      buttonItems: items,
     );
   }
 
