@@ -300,8 +300,6 @@ const Map<String, String> zhCatalogUpstream124Art1 = <String, String>{
   "Couldn't download the files. Try again.": "没能下载这些文件。请再试一次。",
   // artifacts.download.fileFailed
   "Couldn't download the file. Try again.": "没能下载这个文件。请再试一次。",
-  // artifacts.menu.rename
-  "Rename": "重命名",
   // artifacts.menu.delete
   "Delete Artifact": "删除 Artifact",
   // artifacts.menu.displayReport
