@@ -45269,29 +45269,6 @@
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
-      "packages/raft_ui/lib/src/computer_detail.dart#local-function:CLASS:_RaftComputerDetailViewState@14443/METHOD:_agentsSection@57648/FUNCTION:row@59717": {
-        "role": "internal_wrapper",
-        "familyRefs": [
-          "checkbox"
-        ],
-        "owner": "P1 dialogs / canonical Choice integration",
-        "delegatesTo": [
-          "packages/raft_ui/lib/src/raft/checkbox.dart#class:RaftCheckboxIndicator"
-        ],
-        "reason": "Resolved constructor/function calls delegate to the registered canonical owner(s); this declaration owns no scanner-detected paint. This is source delegation, not runtime mount or visual evidence."
-      },
-      "packages/raft_ui/lib/src/computer_detail.dart#local-function:CLASS:_RaftComputerDetailViewState@14443/METHOD:_infoSection@41222/FUNCTION:versionValue@41359": {
-        "role": "entry_composition",
-        "familyRefs": [],
-        "owner": "P1 dialogs / canonical Choice integration",
-        "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
-      },
-      "packages/raft_ui/lib/src/computer_detail.dart#local-function:CLASS:_RaftComputerDetailViewState@14443/METHOD:_recoveryGuide@79396/FUNCTION:step@79691": {
-        "role": "entry_composition",
-        "familyRefs": [],
-        "owner": "P1 dialogs / canonical Choice integration",
-        "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
-      },
       "apps/raft_flutter/lib/features/computer_delete_dialog.dart#class:_CloseWhenGone": {
         "role": "unresolved",
         "familyRefs": [],
@@ -46215,6 +46192,65 @@
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/computer_detail.dart#local-function:CLASS:_RaftComputerDetailViewState@15012/METHOD:_agentsSection@58511/FUNCTION:row@60580": {
+        "role": "internal_wrapper",
+        "familyRefs": [
+          "checkbox"
+        ],
+        "owner": "P1 dialogs / canonical Choice integration",
+        "delegatesTo": [
+          "packages/raft_ui/lib/src/raft/checkbox.dart#class:RaftCheckboxIndicator"
+        ],
+        "reason": "Resolved constructor/function calls delegate to the registered canonical owner(s); this declaration owns no scanner-detected paint. This is source delegation, not runtime mount or visual evidence."
+      },
+      "packages/raft_ui/lib/src/computer_detail.dart#local-function:CLASS:_RaftComputerDetailViewState@15012/METHOD:_infoSection@41791/FUNCTION:versionValue@41928": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "P1 dialogs / canonical Choice integration",
+        "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+      },
+      "packages/raft_ui/lib/src/computer_detail.dart#local-function:CLASS:_RaftComputerDetailViewState@15012/METHOD:_recoveryGuide@80759/FUNCTION:step@81054": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "P1 dialogs / canonical Choice integration",
+        "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+      },
+      "apps/raft_flutter/lib/features/bulk_agent_model_dialog.dart#local-function:CLASS:_BulkAgentModelDialogState@2958/METHOD:_choose@12081/FUNCTION:field@12176": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 part 2: rack drag-to-move, version notices, bulk model); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computers_rack/computers_rack_view.dart#local-function:CLASS:_ComputersRackViewState@1787/METHOD:_list@20664/FUNCTION:row@23950": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 part 2: rack drag-to-move, version notices, bulk model); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computers_rack/computers_rack_view.dart#local-function:CLASS:_ComputersRackViewState@1787/METHOD:_list@20664/FUNCTION:title@24026": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 part 2: rack drag-to-move, version notices, bulk model); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computers_rack/rack_move_dialog.dart#function:showRackMoveDialog": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 part 2: rack drag-to-move, version notices, bulk model); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/computers_rack.dart#class:RaftRackDropTarget": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 part 2: rack drag-to-move, version notices, bulk model); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/computers_rack.dart#method:RaftRackDropTarget.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 part 2: rack drag-to-move, version notices, bulk model); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       }
     },
     "entries": {
@@ -48969,6 +49005,15 @@
         ],
         "mountStatus": "unresolved",
         "reason": "Resolved function owns a surface call; actual target, route and state are not yet observed."
+      },
+      "surface:showRackMoveDialog": {
+        "owner": "WP-COMP1 v1.24 alignment",
+        "kind": "dialog",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/computers_rack/rack_move_dialog.dart#function:showRackMoveDialog"
+        ],
+        "mountStatus": "unresolved",
+        "reason": "Drop of a dragged agent on a rack row opens the Move to Another Computer dialog (WP-COMP1 part 2); no real-entry capture acceptance is inferred."
       }
     },
     "requirements": {
