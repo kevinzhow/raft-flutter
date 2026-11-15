@@ -71,6 +71,7 @@ void main() {
           ];
         }
         if (path == '/channels/joint-invites') return {'invites': []};
+        if (path == '/auth/second-factor/recovery') return {'recovery': null};
         expect(query, {'limit': 1});
         return {'unread_total': 2};
       },
@@ -83,6 +84,8 @@ void main() {
       '/product-feedback/tickets',
       // An owner can be invited to joint channels (RFC 075 section 4.5).
       '/channels/joint-invites',
+      // Web useSecondFactorRecoveryNotification reads the reset on mount.
+      '/auth/second-factor/recovery',
     ]);
     expect(store.entries.map((n) => n.id), [
       'computer-attention',
