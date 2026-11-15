@@ -3,7 +3,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/runtime_auth.dart';
 import 'package:raft_flutter/features/computer_runtime_sign_out_dialog.dart';
-import 'package:raft_ui/raft_ui.dart';
 
 import 'support/runtime_auth_fixture.dart';
 

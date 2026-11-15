@@ -597,7 +597,7 @@ class RaftRuntimeUsageSurface extends StatelessWidget {
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
                       color: t.colors['fill-muted'],
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: RaftShapes.field(t),
                     ),
                     child: RaftIcon(
                       p.isKey ? RaftGlyph.keyRound : RaftGlyph.userRound,
@@ -699,7 +699,7 @@ class RaftRuntimeUsageSurface extends StatelessWidget {
     final stale = data.state == 'stale';
     final divider = BorderSide(color: t.colors['line-hairline']!, width: 1);
     return ColoredBox(
-      color: stale ? t.colors['fill-muted']! : const Color(0x00000000),
+      color: stale ? t.colors['fill-muted']! : Colors.transparent,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [

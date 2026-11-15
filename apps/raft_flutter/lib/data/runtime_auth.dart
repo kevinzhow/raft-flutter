@@ -313,8 +313,9 @@ class RuntimeAuthMalformedResponse implements Exception {
 
 /// runtimeAuthRequestError: the HTTP status and server `code` of a failure.
 ({int? status, String? code}) runtimeAuthRequestError(Object error) {
-  if (error is RaftApiException)
+  if (error is RaftApiException) {
     return (status: error.status, code: error.code);
+  }
   return (status: null, code: null);
 }
 

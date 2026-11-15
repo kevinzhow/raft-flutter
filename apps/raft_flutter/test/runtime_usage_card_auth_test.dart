@@ -182,14 +182,14 @@ void main() {
     await open(t);
     expect(find.text('Signed out'), findsOneWidget);
     expect(find.byKey(const ValueKey('runtime-auth-sign-in')), findsNothing);
-    expect(find.byKey(const ValueKey('runtime-auth-unavailable')), findsNothing);
+    expect(
+      find.byKey(const ValueKey('runtime-auth-unavailable')),
+      findsNothing,
+    );
   });
 
   for (final (availability, text) in [
-    (
-      'computer_upgrade_required',
-      'Upgrade this Computer to sign in from here',
-    ),
+    ('computer_upgrade_required', 'Upgrade this Computer to sign in from here'),
     (
       'computer_not_attached',
       "This Computer has no owner, so its runtimes can't be signed in from here",
@@ -243,7 +243,10 @@ void main() {
       ..usage = usageSnapshot();
     await mount(t, 'claude');
     await open(t);
-    expect(find.byKey(const ValueKey('runtime-auth-cli-unavailable')), findsOne);
+    expect(
+      find.byKey(const ValueKey('runtime-auth-cli-unavailable')),
+      findsOne,
+    );
     expect(
       find.text(
         "Install this runtime's command-line tool on the Computer, then use Rescan runtimes on the Computer's page.",
@@ -286,7 +289,10 @@ void main() {
       find.text('Sign in to this runtime on the Computer itself.'),
       findsOneWidget,
     );
-    expect(find.byKey(const ValueKey('runtime-auth-install-line')), findsNothing);
+    expect(
+      find.byKey(const ValueKey('runtime-auth-install-line')),
+      findsNothing,
+    );
   });
 
   testWidgets('Qoder has no usage: an auth-only card titled by the runtime, '
@@ -343,9 +349,7 @@ void main() {
   });
 
   testWidgets('Pi with no stored sign-in: the plain chip (a key in the '
-      'environment may still serve it) and "No provider signed in"', (
-    t,
-  ) async {
+      'environment may still serve it) and "No provider signed in"', (t) async {
     api.view = authView(
       supported: ['claude', 'codex', 'pi'],
       runtimes: {
@@ -462,7 +466,10 @@ void main() {
         'action while rate-limited', (t) async {
       await codex(t);
       expect(find.text('2 resets left'), findsOneWidget);
-      expect(find.byKey(const ValueKey('runtime-limit-reset-action')), findsOne);
+      expect(
+        find.byKey(const ValueKey('runtime-limit-reset-action')),
+        findsOne,
+      );
       expect(find.text('Used up · back in 3 hours'), findsOneWidget);
     });
 
@@ -472,7 +479,10 @@ void main() {
       api.usage = usageSnapshot(provider: 'codex', resets: 1);
       await codex(t);
       expect(find.text('1 reset left'), findsOneWidget);
-      expect(find.byKey(const ValueKey('runtime-limit-reset-action')), findsOne);
+      expect(
+        find.byKey(const ValueKey('runtime-limit-reset-action')),
+        findsOne,
+      );
     });
 
     testWidgets('absent for a person who may not act, a signed-out runtime '

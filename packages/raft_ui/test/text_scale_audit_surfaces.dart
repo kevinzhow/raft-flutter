@@ -732,6 +732,12 @@ final auditSurfaces = <AuditSurface>[
     runtimeUsageCardPreview,
     Size(900, 520),
   ),
+  AuditSurface(
+    'runtimeAuthCardPreview',
+    'Hover card: runtime sign-in states',
+    runtimeAuthCardPreview,
+    Size(1000, 760),
+  ),
   AuditSurface('htmlPreview', 'HTML preview', htmlPreview, Size(640, 440)),
   AuditSurface(
     'sourceInlineBadgeEditorPreview',

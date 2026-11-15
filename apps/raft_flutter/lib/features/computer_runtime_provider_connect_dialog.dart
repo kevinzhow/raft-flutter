@@ -183,6 +183,9 @@ Future<void> showComputerRuntimeProviderConnectDialog(
   ),
 );
 
+/// ChoiceList's `max-h-70` scroll area.
+const _listMaxHeight = 280.0;
+
 enum _Step { choose, details, done }
 
 class RuntimeProviderConnectForm extends StatefulWidget {
@@ -443,8 +446,8 @@ class _RuntimeProviderConnectFormState
                 maxWidth: 448,
                 footer: Wrap(
                   alignment: WrapAlignment.end,
-                  spacing: RaftDialogSlots.of(context).footer.columnGap ?? 0,
-                  runSpacing: RaftDialogSlots.of(context).footer.columnGap ?? 0,
+                  spacing: RaftSpace.x2,
+                  runSpacing: RaftSpace.x2,
                   children: actions,
                 ),
                 child: body,
@@ -545,7 +548,7 @@ class _RuntimeProviderConnectFormState
         child: Row(
           children: [
             const RaftSpinner(),
-            const SizedBox(width: 8),
+            const SizedBox(width: RaftSpace.x2),
             Expanded(
               child: Text(
                 raftFormat(
@@ -579,7 +582,7 @@ class _RuntimeProviderConnectFormState
             tr('Choose the provider your API key is from.'),
             style: _muted(t),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: RaftSpace.x3),
           _ProviderChoices(
             providers: providers,
             chosenId: chosenId,
@@ -624,7 +627,7 @@ class _RuntimeProviderConnectFormState
           key: const ValueKey('runtime-provider-chosen'),
           style: _muted(t).copyWith(color: t.strong),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: RaftSpace.x4),
         if (needsEndpoint) ...[
           RaftField(
             label: tr('Endpoint'),
@@ -648,7 +651,7 @@ class _RuntimeProviderConnectFormState
                   : (v) => setState(() => endpointId = v),
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: RaftSpace.x4),
         ],
         if (needsBaseUrl) ...[
           RaftField(
@@ -675,7 +678,7 @@ class _RuntimeProviderConnectFormState
               onSubmitted: (_) => connect(),
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: RaftSpace.x4),
         ],
         if (needsModel) ...[
           RaftField(
@@ -700,7 +703,7 @@ class _RuntimeProviderConnectFormState
               onSubmitted: (_) => connect(),
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: RaftSpace.x4),
         ],
         RaftField(
           label: tr('API key'),
@@ -725,7 +728,7 @@ class _RuntimeProviderConnectFormState
             onSubmitted: (_) => connect(),
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: RaftSpace.x4),
         Text(
           raftFormat(
             context,
@@ -736,7 +739,7 @@ class _RuntimeProviderConnectFormState
           style: _muted(t, size: 12),
         ),
         if (failure != null) ...[
-          const SizedBox(height: 16),
+          const SizedBox(height: RaftSpace.x4),
           RaftBanner(
             key: const ValueKey('runtime-provider-failed'),
             status: RaftBannerRecipeStatus.warning,
@@ -816,12 +819,12 @@ class _ProviderChoicesState extends State<_ProviderChoices> {
           onChanged: (_) => setState(() {}),
           onClear: () => setState(widget.search.clear),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: RaftSpace.x2),
         ConstrainedBox(
-          constraints: const BoxConstraints(maxHeight: 280),
+          constraints: const BoxConstraints(maxHeight: _listMaxHeight),
           child: groups.isEmpty
               ? Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  padding: const EdgeInsets.symmetric(vertical: RaftSpace.x4),
                   child: Text(
                     widget.noMatch,
                     textAlign: TextAlign.center,
@@ -838,7 +841,12 @@ class _ProviderChoicesState extends State<_ProviderChoices> {
                   children: [
                     for (final entry in groups.entries) ...[
                       Padding(
-                        padding: const EdgeInsets.fromLTRB(8, 8, 8, 4),
+                        padding: const EdgeInsets.fromLTRB(
+                          RaftSpace.x2,
+                          RaftSpace.x2,
+                          RaftSpace.x2,
+                          RaftSpace.x1,
+                        ),
                         child: Text(
                           entry.key,
                           style: RaftTypography.body(
@@ -873,7 +881,7 @@ class _ProviderChoicesState extends State<_ProviderChoices> {
       selected: selected,
       onPressed: () => widget.onChoose(id),
       builder: (context, state) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+        padding: const EdgeInsets.all(RaftSpace.x2),
         decoration: BoxDecoration(
           color: selected
               ? t.colors['info-soft']
@@ -881,7 +889,7 @@ class _ProviderChoicesState extends State<_ProviderChoices> {
               ? t.colors['layer-inset']
               : null,
           border: state.focusVisible
-              ? Border.all(color: t.strong, width: 2)
+              ? Border.all(color: t.strong, width: t.border)
               : null,
         ),
         child: Column(

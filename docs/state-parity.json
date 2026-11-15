@@ -49176,6 +49176,240 @@
         "familyRefs": [],
         "owner": "WP-COMP2 rack runtime usage",
         "reason": "Source census candidate (WP-COMP2 rack runtime usage columns: usage cells, headings, Other cell, usage reads); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computer_runtime_limit_reset_dialog.dart#class:_LimitResetDialog": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 runtime usage card",
+        "reason": "Source census candidate (WP-COMP2 runtime usage card state, sign-out, provider connect and limit reset dialogs, RuntimeSignInNotice); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computer_runtime_limit_reset_dialog.dart#function:showComputerRuntimeLimitResetDialog": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 runtime usage card",
+        "reason": "Source census candidate (WP-COMP2 runtime usage card state, sign-out, provider connect and limit reset dialogs, RuntimeSignInNotice); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computer_runtime_limit_reset_dialog.dart#method:_LimitResetDialog.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 runtime usage card",
+        "reason": "Source census candidate (WP-COMP2 runtime usage card state, sign-out, provider connect and limit reset dialogs, RuntimeSignInNotice); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computer_runtime_provider_connect_dialog.dart#class:RuntimeProviderConnectForm": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 runtime usage card",
+        "reason": "Source census candidate (WP-COMP2 runtime usage card state, sign-out, provider connect and limit reset dialogs, RuntimeSignInNotice); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computer_runtime_provider_connect_dialog.dart#class:_ProviderChoices": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 runtime usage card",
+        "reason": "Source census candidate (WP-COMP2 runtime usage card state, sign-out, provider connect and limit reset dialogs, RuntimeSignInNotice); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computer_runtime_provider_connect_dialog.dart#class:_ProviderChoicesState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 runtime usage card",
+        "reason": "Source census candidate (WP-COMP2 runtime usage card state, sign-out, provider connect and limit reset dialogs, RuntimeSignInNotice); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computer_runtime_provider_connect_dialog.dart#class:_RuntimeProviderConnectFormState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 runtime usage card",
+        "reason": "Source census candidate (WP-COMP2 runtime usage card state, sign-out, provider connect and limit reset dialogs, RuntimeSignInNotice); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computer_runtime_provider_connect_dialog.dart#function:showComputerRuntimeProviderConnectDialog": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 runtime usage card",
+        "reason": "Source census candidate (WP-COMP2 runtime usage card state, sign-out, provider connect and limit reset dialogs, RuntimeSignInNotice); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computer_runtime_provider_connect_dialog.dart#method:RuntimeProviderConnectForm.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 runtime usage card",
+        "reason": "Source census candidate (WP-COMP2 runtime usage card state, sign-out, provider connect and limit reset dialogs, RuntimeSignInNotice); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computer_runtime_provider_connect_dialog.dart#method:_ProviderChoices.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 runtime usage card",
+        "reason": "Source census candidate (WP-COMP2 runtime usage card state, sign-out, provider connect and limit reset dialogs, RuntimeSignInNotice); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computer_runtime_provider_connect_dialog.dart#method:_ProviderChoicesState._row": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 runtime usage card",
+        "reason": "Source census candidate (WP-COMP2 runtime usage card state, sign-out, provider connect and limit reset dialogs, RuntimeSignInNotice); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computer_runtime_provider_connect_dialog.dart#method:_ProviderChoicesState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 runtime usage card",
+        "reason": "Source census candidate (WP-COMP2 runtime usage card state, sign-out, provider connect and limit reset dialogs, RuntimeSignInNotice); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computer_runtime_provider_connect_dialog.dart#method:_RuntimeProviderConnectFormState._actions": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 runtime usage card",
+        "reason": "Source census candidate (WP-COMP2 runtime usage card state, sign-out, provider connect and limit reset dialogs, RuntimeSignInNotice); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computer_runtime_provider_connect_dialog.dart#method:_RuntimeProviderConnectFormState._body": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 runtime usage card",
+        "reason": "Source census candidate (WP-COMP2 runtime usage card state, sign-out, provider connect and limit reset dialogs, RuntimeSignInNotice); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computer_runtime_provider_connect_dialog.dart#method:_RuntimeProviderConnectFormState._button": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 runtime usage card",
+        "reason": "Source census candidate (WP-COMP2 runtime usage card state, sign-out, provider connect and limit reset dialogs, RuntimeSignInNotice); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computer_runtime_provider_connect_dialog.dart#method:_RuntimeProviderConnectFormState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 runtime usage card",
+        "reason": "Source census candidate (WP-COMP2 runtime usage card state, sign-out, provider connect and limit reset dialogs, RuntimeSignInNotice); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computer_runtime_sign_in_notice.dart#class:RuntimeSignInNotice": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 runtime usage card",
+        "reason": "Source census candidate (WP-COMP2 runtime usage card state, sign-out, provider connect and limit reset dialogs, RuntimeSignInNotice); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computer_runtime_sign_in_notice.dart#class:_RuntimeSignInNoticeState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 runtime usage card",
+        "reason": "Source census candidate (WP-COMP2 runtime usage card state, sign-out, provider connect and limit reset dialogs, RuntimeSignInNotice); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computer_runtime_sign_in_notice.dart#method:RuntimeSignInNotice.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 runtime usage card",
+        "reason": "Source census candidate (WP-COMP2 runtime usage card state, sign-out, provider connect and limit reset dialogs, RuntimeSignInNotice); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computer_runtime_sign_in_notice.dart#method:_RuntimeSignInNoticeState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 runtime usage card",
+        "reason": "Source census candidate (WP-COMP2 runtime usage card state, sign-out, provider connect and limit reset dialogs, RuntimeSignInNotice); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computer_runtime_sign_in_notice.dart#method:_RuntimeSignInNoticeState.didUpdateWidget": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 runtime usage card",
+        "reason": "Source census candidate (WP-COMP2 runtime usage card state, sign-out, provider connect and limit reset dialogs, RuntimeSignInNotice); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computer_runtime_sign_out_dialog.dart#class:_SignOutDialog": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 runtime usage card",
+        "reason": "Source census candidate (WP-COMP2 runtime usage card state, sign-out, provider connect and limit reset dialogs, RuntimeSignInNotice); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computer_runtime_sign_out_dialog.dart#class:_SignOutDialogState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 runtime usage card",
+        "reason": "Source census candidate (WP-COMP2 runtime usage card state, sign-out, provider connect and limit reset dialogs, RuntimeSignInNotice); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computer_runtime_sign_out_dialog.dart#function:showComputerRuntimeSignOutDialog": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 runtime usage card",
+        "reason": "Source census candidate (WP-COMP2 runtime usage card state, sign-out, provider connect and limit reset dialogs, RuntimeSignInNotice); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computer_runtime_sign_out_dialog.dart#method:_SignOutDialog.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 runtime usage card",
+        "reason": "Source census candidate (WP-COMP2 runtime usage card state, sign-out, provider connect and limit reset dialogs, RuntimeSignInNotice); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computer_runtime_sign_out_dialog.dart#method:_SignOutDialogState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 runtime usage card",
+        "reason": "Source census candidate (WP-COMP2 runtime usage card state, sign-out, provider connect and limit reset dialogs, RuntimeSignInNotice); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/hover_card_previews.dart#function:_card": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 runtime usage card",
+        "reason": "Source census candidate (WP-COMP2 runtime usage card state, sign-out, provider connect and limit reset dialogs, RuntimeSignInNotice); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/hover_card_previews.dart#function:runtimeAuthCardPreview": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 runtime usage card",
+        "reason": "Source census candidate (WP-COMP2 runtime usage card state, sign-out, provider connect and limit reset dialogs, RuntimeSignInNotice); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/runtime_usage_card.dart#class:RaftRuntimeWarningChip": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 runtime usage card",
+        "reason": "Source census candidate (WP-COMP2 runtime usage card state, sign-out, provider connect and limit reset dialogs, RuntimeSignInNotice); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/runtime_usage_card.dart#class:_AuthHeaderLine": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 runtime usage card",
+        "reason": "Source census candidate (WP-COMP2 runtime usage card state, sign-out, provider connect and limit reset dialogs, RuntimeSignInNotice); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/runtime_usage_card.dart#class:_ReadinessNotice": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 runtime usage card",
+        "reason": "Source census candidate (WP-COMP2 runtime usage card state, sign-out, provider connect and limit reset dialogs, RuntimeSignInNotice); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/runtime_usage_card.dart#method:RaftRuntimeUsageSurface._actions": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 runtime usage card",
+        "reason": "Source census candidate (WP-COMP2 runtime usage card state, sign-out, provider connect and limit reset dialogs, RuntimeSignInNotice); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/runtime_usage_card.dart#method:RaftRuntimeUsageSurface._authAction": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 runtime usage card",
+        "reason": "Source census candidate (WP-COMP2 runtime usage card state, sign-out, provider connect and limit reset dialogs, RuntimeSignInNotice); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/runtime_usage_card.dart#method:RaftRuntimeUsageSurface._providerRows": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 runtime usage card",
+        "reason": "Source census candidate (WP-COMP2 runtime usage card state, sign-out, provider connect and limit reset dialogs, RuntimeSignInNotice); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/runtime_usage_card.dart#method:RaftRuntimeUsageSurface._window": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 runtime usage card",
+        "reason": "Source census candidate (WP-COMP2 runtime usage card state, sign-out, provider connect and limit reset dialogs, RuntimeSignInNotice); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/runtime_usage_card.dart#method:RaftRuntimeWarningChip.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 runtime usage card",
+        "reason": "Source census candidate (WP-COMP2 runtime usage card state, sign-out, provider connect and limit reset dialogs, RuntimeSignInNotice); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/runtime_usage_card.dart#method:_AuthHeaderLine._badge": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 runtime usage card",
+        "reason": "Source census candidate (WP-COMP2 runtime usage card state, sign-out, provider connect and limit reset dialogs, RuntimeSignInNotice); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/runtime_usage_card.dart#method:_AuthHeaderLine.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 runtime usage card",
+        "reason": "Source census candidate (WP-COMP2 runtime usage card state, sign-out, provider connect and limit reset dialogs, RuntimeSignInNotice); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/runtime_usage_card.dart#method:_ReadinessNotice.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 runtime usage card",
+        "reason": "Source census candidate (WP-COMP2 runtime usage card state, sign-out, provider connect and limit reset dialogs, RuntimeSignInNotice); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       }
     },
     "entries": {
@@ -52141,6 +52375,33 @@
         ],
         "mountStatus": "unresolved",
         "reason": "Resolved function owns a surface call (WP-COMP1 part 3); actual target, route and state are not yet observed."
+      },
+      "surface:apps/raft_flutter/lib/features/computer_runtime_limit_reset_dialog.dart#function:showComputerRuntimeLimitResetDialog": {
+        "owner": "WP-COMP2 runtime usage card",
+        "kind": "surface_factory_candidate",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/computer_runtime_limit_reset_dialog.dart#function:showComputerRuntimeLimitResetDialog"
+        ],
+        "mountStatus": "unresolved",
+        "reason": "Resolved function owns a surface call (WP-COMP2 runtime usage card); actual target, route and state are not yet observed."
+      },
+      "surface:apps/raft_flutter/lib/features/computer_runtime_provider_connect_dialog.dart#function:showComputerRuntimeProviderConnectDialog": {
+        "owner": "WP-COMP2 runtime usage card",
+        "kind": "surface_factory_candidate",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/computer_runtime_provider_connect_dialog.dart#function:showComputerRuntimeProviderConnectDialog"
+        ],
+        "mountStatus": "unresolved",
+        "reason": "Resolved function owns a surface call (WP-COMP2 runtime usage card); actual target, route and state are not yet observed."
+      },
+      "surface:apps/raft_flutter/lib/features/computer_runtime_sign_out_dialog.dart#function:showComputerRuntimeSignOutDialog": {
+        "owner": "WP-COMP2 runtime usage card",
+        "kind": "surface_factory_candidate",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/computer_runtime_sign_out_dialog.dart#function:showComputerRuntimeSignOutDialog"
+        ],
+        "mountStatus": "unresolved",
+        "reason": "Resolved function owns a surface call (WP-COMP2 runtime usage card); actual target, route and state are not yet observed."
       }
     },
     "requirements": {
@@ -54937,6 +55198,24 @@
         "entryId": "surface:apps/raft_flutter/lib/features/computer_owner.dart#function:showTransferComputerOwnerDialog",
         "applicability": "unknown",
         "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Real entry and applicable theme/input/state dimensions require source review and bound execution."
+      },
+      "surface:apps/raft_flutter/lib/features/computer_runtime_limit_reset_dialog.dart#function:showComputerRuntimeLimitResetDialog:applicability": {
+        "entryId": "surface:apps/raft_flutter/lib/features/computer_runtime_limit_reset_dialog.dart#function:showComputerRuntimeLimitResetDialog",
+        "applicability": "unknown",
+        "owner": "WP-COMP2 runtime usage card",
+        "reason": "Real entry and applicable theme/input/state dimensions require source review and bound execution."
+      },
+      "surface:apps/raft_flutter/lib/features/computer_runtime_provider_connect_dialog.dart#function:showComputerRuntimeProviderConnectDialog:applicability": {
+        "entryId": "surface:apps/raft_flutter/lib/features/computer_runtime_provider_connect_dialog.dart#function:showComputerRuntimeProviderConnectDialog",
+        "applicability": "unknown",
+        "owner": "WP-COMP2 runtime usage card",
+        "reason": "Real entry and applicable theme/input/state dimensions require source review and bound execution."
+      },
+      "surface:apps/raft_flutter/lib/features/computer_runtime_sign_out_dialog.dart#function:showComputerRuntimeSignOutDialog:applicability": {
+        "entryId": "surface:apps/raft_flutter/lib/features/computer_runtime_sign_out_dialog.dart#function:showComputerRuntimeSignOutDialog",
+        "applicability": "unknown",
+        "owner": "WP-COMP2 runtime usage card",
         "reason": "Real entry and applicable theme/input/state dimensions require source review and bound execution."
       }
     },

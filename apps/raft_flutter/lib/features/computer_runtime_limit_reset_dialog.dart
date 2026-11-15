@@ -228,7 +228,13 @@ class _LimitResetDialog extends StatelessWidget {
             if (parts.length > 1) ...[
               TextSpan(
                 text: accountLabel,
-                style: TextStyle(color: t.strong, fontWeight: FontWeight.w600),
+                style: RaftTypography.body(
+                  t,
+                  size: 14,
+                  line: 14 * 1.625,
+                  color: t.strong,
+                  weight: FontWeight.w600,
+                ),
               ),
               TextSpan(text: parts.sublist(1).join(_marker)),
             ],

@@ -217,7 +217,7 @@ class _SignOutDialogState extends State<_SignOutDialog> {
             ),
             style: muted,
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: RaftSpace.x3),
           if (list.isNotEmpty) ...[
             Text(
               icuText(
@@ -229,21 +229,24 @@ class _SignOutDialogState extends State<_SignOutDialog> {
               ),
               style: muted,
             ),
-            const SizedBox(height: 6),
+            const SizedBox(height: RaftSpace.x1_5),
             Column(
               key: const ValueKey('runtime-sign-out-agents'),
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 for (final a in list)
                   Padding(
-                    padding: const EdgeInsets.only(bottom: 4),
+                    padding: const EdgeInsets.only(bottom: RaftSpace.x1),
                     child: Text(
                       '${(a['displayName'] ?? '').toString().isNotEmpty ? a['displayName'] : a['name']}',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: muted.copyWith(
+                      style: RaftTypography.body(
+                        t,
+                        size: 14,
+                        line: 20,
                         color: t.strong,
-                        fontWeight: FontWeight.w600,
+                        weight: FontWeight.w600,
                       ),
                     ),
                   ),
