@@ -13,7 +13,6 @@ import 'package:flutter/widgets.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import '../../data/workspace_controller.dart';
-import '../icu_message.dart';
 import 'artifact_api.dart';
 import 'artifact_attachment_saves.dart';
 import 'artifact_message_card.dart' show ArtifactBadge;

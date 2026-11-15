@@ -124,7 +124,7 @@ void main() {
       final loader = ObjectSummaryLoader(
         post: (refs) async {
           posts.add(refs);
-          if (fail != null) throw fail!;
+          if (fail != null) throw fail;
           return [
             for (final ref in refs)
               ref.version == 9
