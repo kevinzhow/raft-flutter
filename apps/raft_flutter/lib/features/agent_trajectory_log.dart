@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'tool_display.dart' show hideToolStartInActivityLog;
+
 /// Mounted Source agentActivityEvents.ts: hydrate:trajectory-log merges with
 /// an already admitted live window. This owns no disk, HTTP or ambient status.
 List<Map<String, dynamic>> mergeAgentTrajectoryLog(
@@ -130,4 +132,55 @@ List<Map<String, dynamic>> admittedAgentTrajectoryRows(dynamic value) => [
     },
     secondary: detail,
   );
+}
+
+/// Web `isVisibleTrajectoryEntry` (AgentActivityLog.tsx): a freshness hold
+/// arrives as a status row and an action entry; the action entry says it, so
+/// the status row would only repeat it. A `tool_start` of a hidden tool
+/// (`shouldHideToolStartInActivityLog`: send_message) is no durable row.
+bool isVisibleTrajectoryRow(Map<String, dynamic> row) {
+  final entry = row['entry'];
+  if (entry is! Map) return false;
+  if (entry['kind'] == 'status' && entry['detailKind'] == 'freshness_hold') {
+    return false;
+  }
+  return entry['kind'] != 'tool_start' ||
+      !hideToolStartInActivityLog('${entry['toolName']}');
+}
+
+/// Web `FRESHNESS_HOLD_LABELS` / `freshnessHoldLabelId` (utils/activity.ts):
+/// the daemon's title of an action held until the agent reads newer messages,
+/// as the label that says what the agent is doing. Null for any other title.
+String? freshnessHoldLabel(String? title) => switch (title?.trim()) {
+  'Send held by freshness check' => 'Reading new messages before sending',
+  'Task claim held by freshness check' =>
+    'Reading new messages before claiming the task',
+  'Task amendment held by freshness check' =>
+    'Reading new messages before changing the task',
+  'Task update held by freshness check' =>
+    'Reading new messages before updating the task',
+  _ => null,
+};
+
+/// Web `parseFreshnessHoldText`: the hold's body as the daemon writes it
+/// (`target: #x`, `new messages: 3 newer messages`, ...) read back as the count
+/// and the target, so the log can say "3 new messages in #x". Null when it does
+/// not read as one.
+({int count, String target})? parseFreshnessHoldText(String text) {
+  final target = RegExp(
+    r'^target: (.+)$',
+    multiLine: true,
+  ).firstMatch(text)?[1]?.trim();
+  final count =
+      RegExp(
+        r'^new messages: (\d+) newer',
+        multiLine: true,
+      ).firstMatch(text)?[1] ??
+      RegExp(
+        r'^unreviewed synced context for this target: (\d+)',
+        multiLine: true,
+      ).firstMatch(text)?[1];
+  return target != null && target.isNotEmpty && count != null
+      ? (count: int.parse(count), target: target)
+      : null;
 }

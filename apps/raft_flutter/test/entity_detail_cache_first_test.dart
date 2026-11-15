@@ -144,14 +144,19 @@ void main() {
           await tester.tap(row(0));
           await tester.pump();
           expect(detail, findsOneWidget);
-          // An agent's detail-only reads are open (its runtime profile and,
-          // like Web's embedded AgentSkills, the `/skills` list), a computer
-          // has none; either way nothing but the accepted directory is on
-          // screen.
+          // An agent's detail-only reads are open (its runtime profile,
+          // like Web's embedded AgentSkills the `/skills` list, and like Web
+          // v1.24 features/agent/AgentRecentActivity.tsx:35 the Recent
+          // activity card's newest turns), a computer has none; either way
+          // nothing but the accepted directory is on screen.
           if (!computers) {
             expect(
               w.detailReads,
-              unorderedEquals(['/agents/a', '/agents/a/skills']),
+              unorderedEquals([
+                '/agents/a',
+                '/agents/a/activity-summaries',
+                '/agents/a/skills',
+              ]),
             );
           }
           expect(w.pending.every((p) => !p.isCompleted), isTrue);
@@ -190,8 +195,10 @@ void main() {
               w.detailReads,
               unorderedEquals([
                 '/agents/a',
+                '/agents/a/activity-summaries',
                 '/agents/a/skills',
                 '/agents/b',
+                '/agents/b/activity-summaries',
                 '/agents/b/skills',
               ]),
             );

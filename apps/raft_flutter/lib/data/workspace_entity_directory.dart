@@ -6,6 +6,7 @@ import 'package:raft_sync/raft_sync.dart'
     show AgentActivityStateEvent, UserProfileUpdatedEvent;
 
 import '../features/agent_metadata_catalog.dart';
+import 'agent_error_record_refresh.dart';
 import 'computer_release_notes.dart';
 import 'computer_restart_progress.dart';
 import 'computer_upgrade_in_flight.dart';
@@ -222,6 +223,9 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
   Timer? _upgradeTimer;
   final _dirty = <WorkspaceEntityKind>{}, _queued = <WorkspaceEntityKind>{};
   final _presence = WorkspaceAgentPresenceCache();
+  late final _errorRefresh = AgentErrorRecordRefresh(
+    reread: _rereadAgentRecord,
+  );
   StreamSubscription<RaftEvent>? _subscription;
 
   /// Window in which catalog events (created/deleted/updated, machine
@@ -244,6 +248,7 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
     _activityVersions.clear();
     _activity.clear();
     _activitySeq.clear();
+    _errorRefresh.clear();
     _tombstones.clear();
     _settled.clear();
     _latestComputerVersion = null;
@@ -947,6 +952,22 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
         };
         _activityVersions[id] = (_activityVersions[id] ?? 0) + 1;
         _activity[id] = patch;
+        // Web observeAgentActivityForErrorRecord: a new fact showing an error
+        // the record does not describe yet schedules one re-read; a heartbeat
+        // or probe reply only restates the state.
+        if (payload['isHeartbeat'] != true &&
+            payload['isRefreshOnly'] != true) {
+          final held = _rows[WorkspaceEntityKind.agents]?[id];
+          final detail = patch['activityDetail'] as String;
+          if (held != null &&
+              AgentErrorRecordRefresh.stale(
+                lastRuntimeError: held['lastRuntimeError'],
+                activity: kind as String,
+                detail: detail,
+              )) {
+            _errorRefresh.schedule(id, detail);
+          }
+        }
         // A heartbeat repeating the accepted activity changes nothing.
         final row = _rows[WorkspaceEntityKind.agents]?[id];
         if (row == null ||
@@ -1184,6 +1205,26 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
     }
   }
 
+  /// Web `refreshAgentRecord`: re-reads one listed agent (`GET /agents/:id`)
+  /// and replaces its row in place, keeping the live activity (the socket's is
+  /// newer). For a field the server does not push, such as the stored
+  /// `lastRuntimeError`.
+  Future<void> _rereadAgentRecord(String id) async {
+    if (_disposed || _rows[WorkspaceEntityKind.agents]?[id] == null) return;
+    final receive = agentUpdateReceiver();
+    try {
+      final value = await Future.sync(() => query('/agents/$id'));
+      if (value is! Map || value['id'] != id) return;
+      final fresh = Map<String, dynamic>.from(value);
+      for (final key in _activity[id]?.keys ?? const <String>[]) {
+        fresh.remove(key);
+      }
+      receive(fresh);
+    } catch (_) {
+      // The next distinct error asks again.
+    }
+  }
+
   void _patchAgent(String id, bool Function(Map<String, dynamic> row) patch) {
     final row = _rows[WorkspaceEntityKind.agents]?[id];
     if (row != null && patch(row)) {
@@ -1310,6 +1351,7 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
     _pending.clear();
     _agentReadUpdates.clear();
     _refresh?.cancel();
+    _errorRefresh.clear();
     _upgradeTimer?.cancel();
     computerRestartProgress.dispose();
     _dirty.clear();

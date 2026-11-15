@@ -85,11 +85,11 @@ void main() {
       expect(joinConjunction(['a', 'b', 'c'], chinese: true), 'a、b和c');
     });
 
-    test('a failed check run is process information, not a problem', () {
+    test('only a tool call that itself failed counts as a problem', () {
       final turn = TurnSummary.tryParse(
         _turn(
           't',
-          problemCount: 3,
+          problemCount: 4,
           problems: [
             {'at': 1, 'kind': 'run_checks', 'reason': 'exit_nonzero'},
             {
@@ -98,11 +98,17 @@ void main() {
               'reason': 'exit_nonzero',
               'exitCode': 2,
             },
+            {'at': 3, 'kind': 'run_command', 'reason': 'send_held'},
+            {'at': 4, 'kind': 'read_file', 'reason': 'call_failed'},
           ],
         ),
       )!;
-      expect(turn.problems.map((p) => p.counts), [false, true]);
-      expect(turn.problemsShown, 2);
+      // Web countsAsProblem: exits and held sends are ordinary work.
+      expect(turn.problems.map((p) => p.counts), [false, false, false, true]);
+      // Web isListedProblem: failing checks stay as process information; a
+      // plain exit code and a held send are not listed.
+      expect(turn.problems.map((p) => p.listed), [true, false, false, true]);
+      expect(turn.problemsShown, 1);
     });
 
     test('a row without times or an outcome is not a turn', () {
@@ -212,8 +218,9 @@ void main() {
           findsNWidgets(5),
         );
         // Outcomes.
-        expect(find.text('Done'), findsOneWidget);
-        expect(find.text('Done, 2 steps went wrong'), findsOneWidget);
+        // A plain finished turn has no badge ("Done" read as "the work is done").
+        expect(find.text('Done'), findsNothing);
+        expect(find.text('1 step went wrong'), findsOneWidget);
         expect(find.text('Ended with an error'), findsOneWidget);
         expect(find.text('Stopped'), findsOneWidget);
         expect(find.text('Ended, outcome unknown'), findsOneWidget);
@@ -230,23 +237,21 @@ void main() {
         );
         expect(find.text('ran 3 commands and read a file'), findsOneWidget);
         expect(find.text('No tool calls'), findsWidgets);
-        for (final i in [0, 1]) {
-          expect(
-            find.byKey(ValueKey('activity-overview-problem-$i')),
-            findsOneWidget,
-          );
-        }
+        // Only the failed tool call is listed, not a plain non-zero exit.
+        expect(
+          find.byKey(const ValueKey('activity-overview-problem-0')),
+          findsNothing,
+        );
+        expect(
+          find.byKey(const ValueKey('activity-overview-problem-1')),
+          findsOneWidget,
+        );
         expect(find.text('Shipped it.'), findsOneWidget);
         expect(
           find.textContaining('2 messages sent this turn'),
           findsOneWidget,
         );
-        expect(find.text('No message sent this turn'), findsWidgets);
-        // The Now card sums the turns.
-        expect(
-          find.textContaining('5 turns below · 20 steps · 2 steps went wrong'),
-          findsOneWidget,
-        );
+        expect(find.text('No message sent'), findsWidgets);
       },
     );
 
@@ -381,7 +386,10 @@ void main() {
         find.byKey(const ValueKey('activity-overview-open-computer')),
         findsNothing,
       );
-      expect(find.textContaining("hasn't reported any turns"), findsOneWidget);
+      expect(
+        find.textContaining("hasn't reported a finished turn"),
+        findsOneWidget,
+      );
     });
 
     testWidgets('nothing at all is the plain empty state', (tester) async {
@@ -490,7 +498,7 @@ void main() {
       settle: false,
     );
     await tester.pump(const Duration(milliseconds: 300));
-    expect(find.byKey(const ValueKey('activity-overview-now')), findsOneWidget);
+    expect(find.byKey(const ValueKey('agent-now-card')), findsOneWidget);
     expect(find.byKey(const ValueKey('activity-overview-turn')), findsNothing);
     expect(find.text('No activity yet'), findsNothing);
     await tester.pump(const Duration(seconds: 6));

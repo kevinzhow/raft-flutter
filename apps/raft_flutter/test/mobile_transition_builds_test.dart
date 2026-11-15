@@ -471,6 +471,16 @@ void main() {
         }
       }
 
+      // A route snapshot paints a bare RawImage. Real images (Web v1.24's
+      // Ottie in the profile's Recent activity card,
+      // features/agent/AgentRecentActivity.tsx) are RawImages that an Image
+      // widget built, so only the bare ones count.
+      final snapshots = find.byWidgetPredicate((widget) => widget is RawImage);
+      int snapshotImages() => snapshots
+          .evaluate()
+          .where((e) => e.findAncestorWidgetOfExactType<Image>() == null)
+          .length;
+
       void liveRoute() {
         final detail = find.byKey(
           const ValueKey('workspace-mobile-detail-header'),
@@ -479,11 +489,11 @@ void main() {
           find.ancestor(of: detail, matching: find.byType(ExcludeSemantics)),
         );
         expect(exclusions.every((widget) => !widget.excluding), isTrue);
-        expect(find.byType(RawImage), findsNothing);
+        expect(snapshotImages(), 0);
       }
 
       await settle();
-      expect(find.byType(RawImage), findsNothing);
+      expect(snapshotImages(), 0);
       await tester.tap(
         find.byKey(const ValueKey('desktop-directory-agent-agent-0')),
       );
@@ -495,9 +505,9 @@ void main() {
       await tester.binding.handlePopRoute();
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 60));
-      expect(find.byType(RawImage), findsNothing);
+      expect(snapshotImages(), 0);
       await settle();
-      expect(find.byType(RawImage), findsNothing);
+      expect(snapshotImages(), 0);
       expect(tester.takeException(), isNull);
       semantics.dispose();
     },

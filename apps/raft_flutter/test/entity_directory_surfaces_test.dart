@@ -336,6 +336,9 @@ void main() {
       );
       await t.pump();
       expect(reason(), isNull);
+      // Web v1.24 store/agentErrorRecordRefresh.ts: an error the agent's
+      // record does not describe re-reads the record 1.5 s later; let it run.
+      await t.pump(const Duration(seconds: 2));
     },
   );
 }

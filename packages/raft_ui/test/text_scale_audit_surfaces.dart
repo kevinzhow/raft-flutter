@@ -8,7 +8,9 @@ import 'package:raft_ui/activity_scope_previews.dart';
 import 'package:raft_ui/activity_selected_previews.dart';
 import 'package:raft_ui/agent_avatar_picker_previews.dart';
 import 'package:raft_ui/agent_menu_previews.dart';
+import 'package:raft_ui/agent_now_previews.dart';
 import 'package:raft_ui/agent_status_previews.dart';
+import 'package:raft_ui/agent_subagents_previews.dart';
 import 'package:raft_ui/agent_surface_previews.dart';
 import 'package:raft_ui/announcement_previews.dart';
 import 'package:raft_ui/app_icon_previews.dart';
@@ -1647,5 +1649,29 @@ final auditSurfaces = <AuditSurface>[
     'Runtime error banner, billing',
     runtimeErrorBannerBillingPreview,
     Size(520, 360),
+  ),
+  AuditSurface(
+    'agentNowCardPreview',
+    'Agent now card',
+    agentNowCardPreview,
+    Size(420, 520),
+  ),
+  AuditSurface(
+    'subagentsListPreview',
+    'Subagents list',
+    subagentsListPreview,
+    Size(420, 520),
+  ),
+  AuditSurface(
+    'subagentDetailPreview',
+    'Subagent detail',
+    subagentDetailPreview,
+    Size(420, 360),
+  ),
+  AuditSurface(
+    'followNewestLogPreview',
+    'Follow newest log',
+    followNewestLogPreview,
+    Size(420, 360),
   ),
 ];

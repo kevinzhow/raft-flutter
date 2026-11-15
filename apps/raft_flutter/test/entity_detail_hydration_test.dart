@@ -115,12 +115,14 @@ void main() {
           // A revisit never re-reads the shared lists; only detail-only
           // fields (agent runtime profile and, like Web's embedded
           // AgentSkills, its `/skills` list; member profile) are fetched.
-          // The model-label catalog also hydrates independently; none of
-          // these held requests gates the first frame.
+          // The profile's Recent activity card (Web AgentRecentActivity) reads
+          // the newest turns. The model-label catalog also hydrates
+          // independently; none of these held requests gates the first frame.
           expect(w.pending.keys, switch (kind) {
             'agent' => unorderedEquals([
               '/agents/a',
               '/agents/a/skills',
+              '/agents/a/activity-summaries',
               '/servers/s/model-label-catalog',
             ]),
             'computer' => isEmpty,

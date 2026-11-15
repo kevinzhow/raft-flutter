@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/raft_location.dart';
+import 'package:raft_flutter/features/agent_detail_view.dart'
+    show AgentDetailPanel;
 import 'package:raft_flutter/data/source_feedback_store.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/features/add_members_dialog.dart';
@@ -622,10 +624,27 @@ void registerCloseDialogTests(TestPart part) {
         await t.tap(overflow);
         await frames(t, 20);
       }
-      // On the profile tab the button sits at the end of the body ListView
-      // (agent_detail_view.dart:1012,1057), below the 900px viewport at the
-      // foldable size: scroll it in, prove it is hittable, then tap.
+      // On the profile tab the button sits at the end of the body ListView,
+      // below the 900px viewport at the foldable size and, since Web v1.24's
+      // Recent activity card (features/agent/AgentRecentActivity.tsx) made
+      // the profile taller, beyond what the lazy list builds: scroll the list
+      // until it is built, prove it is hittable, then tap.
+      final profileList = find
+          .descendant(
+            of: find.byType(AgentDetailPanel),
+            matching: find.byWidgetPredicate(
+              (w) =>
+                  w is Scrollable &&
+                  axisDirectionToAxis(w.axisDirection) == Axis.vertical,
+            ),
+          )
+          .first;
       final reset = find.text('Restart / reset').first;
+      await t.scrollUntilVisible(
+        find.text('Restart / reset'),
+        200,
+        scrollable: profileList,
+      );
       await t.ensureVisible(reset);
       await frames(t, 5);
       expect(reset.hitTestable(), findsOneWidget);

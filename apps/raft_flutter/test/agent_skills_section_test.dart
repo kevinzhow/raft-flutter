@@ -76,6 +76,13 @@ void main() {
           hasLength(1),
         );
 
+        // The profile grew with Web v1.24's Recent activity card
+        // (features/agent/AgentRecentActivity.tsx), so the section can end up
+        // only partly in view: bring all of it in before tapping.
+        await t.ensureVisible(
+          find.byKey(const ValueKey('agent-skills-disclosure')),
+        );
+        await t.pumpAndSettle();
         await t.tap(find.byKey(const ValueKey('agent-skills-disclosure')));
         await t.pumpAndSettle();
         await t.scrollUntilVisible(

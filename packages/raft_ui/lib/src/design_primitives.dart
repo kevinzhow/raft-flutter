@@ -2878,6 +2878,20 @@ class _RaftMenuItemState extends State<RaftMenuItem> {
   }
 }
 
+/// How a [RaftTextLink] looks.
+enum RaftTextLinkVariant {
+  /// The saved-action link: 11px, black weight, always underlined.
+  saved,
+
+  /// raft-ui `TextLink` (the default variant, `muted`): the surrounding text's
+  /// size (body unless the caller passes a style), medium weight,
+  /// `foreground-muted`, underlined on hover only.
+  muted,
+
+  /// raft-ui `TextLink` `variant="strong"`: semibold `foreground`.
+  strong,
+}
+
 class RaftTextLink extends StatelessWidget {
   const RaftTextLink({
     super.key,
@@ -2885,15 +2899,21 @@ class RaftTextLink extends StatelessWidget {
     this.onPressed,
     this.glyph,
     this.textStyle,
+    this.variant = RaftTextLinkVariant.saved,
   });
   final String label;
   final VoidCallback? onPressed;
   final RaftGlyph? glyph;
   final TextStyle? textStyle;
+  final RaftTextLinkVariant variant;
   @override
   Widget build(BuildContext context) => RaftControl(
     kind: RaftControlKind.textLink,
-    visualHeight: 16,
+    visualHeight: variant == RaftTextLinkVariant.saved ? 16 : 20,
+    flexibleHeight: variant != RaftTextLinkVariant.saved,
+    // The Web link has no touch inflation: it keeps its own box, and the
+    // caller extends the hit area (RaftTouchTarget) where a finger needs it.
+    minimumTargetSize: variant == RaftTextLinkVariant.saved ? null : 0,
     shadow: true,
     onPressed: onPressed,
     child: Row(
@@ -2903,20 +2923,76 @@ class RaftTextLink extends StatelessWidget {
           RaftIcon(glyph!, size: 12),
           const SizedBox(width: 4),
         ],
-        RaftUnderlinedText(
-          label,
-          style:
-              textStyle ??
-              TextStyle(
-                fontFamily: RaftTokens.of(context).bodyFont,
-                fontSize: 11,
-                height: 16 / 11,
-                fontWeight: RaftTypography.black(RaftTokens.of(context)),
+        variant == RaftTextLinkVariant.saved
+            ? RaftUnderlinedText(
+                label,
+                style:
+                    textStyle ??
+                    TextStyle(
+                      fontFamily: RaftTokens.of(context).bodyFont,
+                      fontSize: 11,
+                      height: 16 / 11,
+                      fontWeight: RaftTypography.black(RaftTokens.of(context)),
+                    ),
+              )
+            : _RaftWebLinkLabel(
+                label: label,
+                strong: variant == RaftTextLinkVariant.strong,
+                disabled: onPressed == null,
+                style: textStyle,
               ),
-        ),
       ],
     ),
   );
+}
+
+/// The label of a Web-style text link: underlined only while hovered (never on
+/// touch), `hover:text-foreground` for the muted variant.
+class _RaftWebLinkLabel extends StatefulWidget {
+  const _RaftWebLinkLabel({
+    required this.label,
+    required this.strong,
+    required this.disabled,
+    this.style,
+  });
+  final String label;
+  final bool strong, disabled;
+  final TextStyle? style;
+
+  @override
+  State<_RaftWebLinkLabel> createState() => _RaftWebLinkLabelState();
+}
+
+class _RaftWebLinkLabelState extends State<_RaftWebLinkLabel> {
+  bool hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final ui = RaftTokens.of(context).ui;
+    final t = RaftTokens.of(context);
+    final color = widget.disabled
+        ? ui.foregroundDisabled
+        : widget.strong || hovered
+        ? ui.foreground
+        : ui.foregroundMuted;
+    return MouseRegion(
+      onEnter: (_) => setState(() => hovered = true),
+      onExit: (_) => setState(() => hovered = false),
+      child: RaftUnderlinedText(
+        widget.label,
+        underline: hovered && !widget.disabled,
+        underlineColor: color,
+        style:
+            widget.style ??
+            t.scale(
+              // Web inherits the surrounding size (body in a card).
+              RaftTypeScale.body,
+              weight: widget.strong ? FontWeight.w600 : FontWeight.w500,
+              color: color,
+            ),
+      ),
+    );
+  }
 }
 
 class _InsetHighlightPainter extends CustomPainter {

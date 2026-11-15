@@ -58,3 +58,8 @@ flutter:
         - asset: assets/fonts/LiberationSans-BoldItalic.ttf
           weight: 700
           style: italic
+  assets:
+    # Ottie, the Now card's status illustration (raft-ui OtterIndicator art, MIT).
+    - assets/otter/wait.webp
+    - assets/otter/process.webp
+    - assets/otter/error.webp

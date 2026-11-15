@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/source_feedback_store.dart';
+import 'package:raft_flutter/features/agent_activity_pane.dart';
 import 'package:raft_flutter/features/agent_detail_view.dart';
 import 'package:raft_flutter/features/integrations_views.dart';
 import 'package:raft_flutter/features/resource_view.dart';
@@ -119,12 +120,15 @@ void main() {
         canViewPrivate: private,
       );
       await mount(t, panel(true));
-      // The profile's embedded Skills section loads eagerly (Web AgentSkills);
-      // no other tab fetches before it is visited.
+      // The profile's embedded Skills section (Web AgentSkills) and Recent
+      // activity card (Web AgentRecentActivity) load eagerly; no other tab
+      // fetches before it is visited.
       expect(
         api.calls.where(
           (r) =>
-              r.path.startsWith('/agents/a1/') && r.path != '/agents/a1/skills',
+              r.path.startsWith('/agents/a1/') &&
+              r.path != '/agents/a1/skills' &&
+              r.path != '/agents/a1/activity-summaries',
         ),
         isEmpty,
       );
@@ -156,9 +160,10 @@ void main() {
         AgentDetailTab.chat,
       );
       final dynamic activity = t.state(
-        find.byType(AgentActivityTab, skipOffstage: false),
+        find.byType(AgentActivityPane, skipOffstage: false),
       );
-      activity.scheduleReload();
+      // The pane's activity window defers its refresh while hidden.
+      unawaited(activity.source.reload() as Future<void>);
       await t.pump(const Duration(milliseconds: 600));
       await settle(t);
       expect(
@@ -171,7 +176,7 @@ void main() {
         hasLength(reads + 1),
       );
       await mount(t, panel(false));
-      expect(find.byType(AgentActivityTab), findsNothing);
+      expect(find.byType(AgentActivityPane), findsNothing);
       expect(
         t
             .widget<RaftSectionPager<AgentDetailTab>>(

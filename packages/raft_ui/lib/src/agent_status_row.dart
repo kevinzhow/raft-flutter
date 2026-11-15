@@ -5,7 +5,8 @@
 // the app decides which words, light and links apply and owns every action.
 import 'package:flutter/material.dart';
 
-import 'design_primitives.dart' show RaftTextLink, RaftTouchTarget;
+import 'design_primitives.dart'
+    show RaftTextLink, RaftTextLinkVariant, RaftTouchTarget;
 import 'interaction.dart';
 import 'localization.dart';
 import 'panel_layout.dart' show RaftCssText;
@@ -115,6 +116,8 @@ class RaftAgentStatusRow extends StatelessWidget {
         key: key,
         label: raftText(context, label),
         onPressed: onPressed,
+        // Web: the DS TextLink, quiet beside the chip.
+        variant: RaftTextLinkVariant.muted,
       );
       return touch ? RaftTouchTarget(child: button) : button;
     }

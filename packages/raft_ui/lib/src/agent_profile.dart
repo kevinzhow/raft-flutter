@@ -7,6 +7,7 @@
 import 'raft/segmented_control.dart'
     show RaftSegmentedControl, RaftSegmentedOption;
 import 'card.dart' show RaftCard;
+import 'follow_newest_list.dart' show RaftFollowNewestList;
 import 'hover_region.dart';
 import 'css_pixel_snap.dart';
 import 'anchored_popup.dart';
@@ -1123,12 +1124,29 @@ class RaftActivityLogEntry {
     this.expandable = false,
     this.linkify,
     this.detailExtra = 0,
+    this.id,
+    this.onBadgeTap,
+    this.actionLabel,
+    this.onAction,
   });
   final String time, title;
   final Color dot;
 
+  /// The entry's own stable key (Web `trajectoryEntryKey`): it stays the same
+  /// across live appends, reloads and dropping off the top at the limit, so
+  /// the row keeps its place, its expanded state and the reader's position.
+  final String? id;
+
   /// The inline Subagent badge after the title (`SubagentBadge`).
   final String? badge;
+
+  /// The badge opens that subagent (`SubagentBadge` as a button); a plain
+  /// badge when null.
+  final VoidCallback? onBadgeTap;
+
+  /// A link line under the row (`activity.subagents.openFromLog`).
+  final String? actionLabel;
+  final VoidCallback? onAction;
 
   /// Same-line secondary text (`ml-1.5`): status detail or tool input.
   final String? inlineDetail;
@@ -1157,9 +1175,21 @@ class RaftActivityLogEntry {
 /// + copy action) and AgentActivityLog rows (`flex items-start gap-2 px-3`).
 /// No rows show the Web EmptyState (the log has no loading or error state).
 class RaftActivityLogView extends StatefulWidget {
-  const RaftActivityLogView({super.key, required this.entries, this.onCopy});
+  const RaftActivityLogView({
+    super.key,
+    required this.entries,
+    this.onCopy,
+    this.newStepsLabel,
+    this.semanticLabel,
+  });
   final List<RaftActivityLogEntry> entries;
   final VoidCallback? onCopy;
+
+  /// The Back to bottom pill's text for [count] arrivals ("3 new steps").
+  final String Function(int count)? newStepsLabel;
+
+  /// The log's region name (Web `aria-label` "Activity").
+  final String? semanticLabel;
   @override
   State<RaftActivityLogView> createState() => _RaftActivityLogViewState();
 }
@@ -1219,20 +1249,22 @@ class _RaftActivityLogViewState extends State<RaftActivityLogView> {
                 icon: (context, size, color) =>
                     RaftIcon(RaftGlyph.activity, size: size, color: color),
               )
-            : ListView(
-                controller: scroll,
+            : RaftFollowNewestList(
+                rowKeys: [
+                  for (var i = 0; i < entries.length; i++)
+                    entries[i].id ?? 'row-$i',
+                ],
+                newStepsLabel: widget.newStepsLabel,
+                semanticLabel: widget.semanticLabel,
                 padding: raftScrollPadding(
                   context,
                   const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 ),
-                children: [
-                  for (var i = 0; i < entries.length; i++)
-                    _RaftWebActivityRow(
-                      entries[i],
-                      first: i == 0,
-                      last: i == entries.length - 1,
-                    ),
-                ],
+                itemBuilder: (context, i) => RaftActivityLogRow(
+                  entries[i],
+                  first: i == 0,
+                  last: i == entries.length - 1,
+                ),
               ),
       );
     }
@@ -1301,23 +1333,49 @@ class _RaftActivityLogViewState extends State<RaftActivityLogView> {
   }
 }
 
+/// Web `SubagentBadge` (AgentActivityLog.tsx): the row's subagent marker, an
+/// outline mono badge after the title. With [onPressed] it is a button that
+/// opens that subagent in the Subagents view; a plain badge otherwise.
+class RaftSubagentBadge extends StatelessWidget {
+  const RaftSubagentBadge({super.key, required this.label, this.onPressed});
+  final String label;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final badge = RaftRecipeBadge(
+      label,
+      appearance: RaftBadgeRecipeAppearance.outline,
+      variant: RaftBadgeRecipeVariant.default_,
+      mono: true,
+    );
+    if (onPressed == null) return badge;
+    return RaftInteractive(
+      onPressed: onPressed,
+      semanticLabel: label,
+      builder: (context, state) => badge,
+    );
+  }
+}
+
 /// One v1.21.23 `LogItem`: `grid grid-cols-[9px_1fr_auto] gap-x-3 py-1.5`, a
 /// square presence pixel on a hairline (`before:left-1`), the title in Space
 /// Mono 13/20 muted, the detail 2px below in mono 12/16 hint and the time on
 /// the right (mono 12/20 hint).
-class _RaftWebActivityRow extends StatefulWidget {
-  const _RaftWebActivityRow(
+class RaftActivityLogRow extends StatefulWidget {
+  const RaftActivityLogRow(
     this.entry, {
+    super.key,
     required this.first,
     required this.last,
   });
   final RaftActivityLogEntry entry;
   final bool first, last;
   @override
-  State<_RaftWebActivityRow> createState() => _RaftWebActivityRowState();
+  State<RaftActivityLogRow> createState() => _RaftActivityLogRowState();
 }
 
-class _RaftWebActivityRowState extends State<_RaftWebActivityRow> {
+class _RaftActivityLogRowState extends State<RaftActivityLogRow> {
   bool expanded = false;
   @override
   Widget build(BuildContext context) {
@@ -1343,12 +1401,7 @@ class _RaftWebActivityRowState extends State<_RaftWebActivityRow> {
         Flexible(child: RaftCssText(e.title, style: title)),
         if (e.badge != null) ...[
           const SizedBox(width: 6),
-          RaftRecipeBadge(
-            e.badge!,
-            appearance: RaftBadgeRecipeAppearance.outline,
-            variant: RaftBadgeRecipeVariant.default_,
-            mono: true,
-          ),
+          RaftSubagentBadge(label: e.badge!, onPressed: e.onBadgeTap),
         ],
         if (e.expandable) ...[
           const SizedBox(width: 4),
@@ -1403,13 +1456,44 @@ class _RaftWebActivityRowState extends State<_RaftWebActivityRow> {
                 if (detail != null && detail.isNotEmpty)
                   Padding(
                     padding: const EdgeInsets.only(top: 2),
-                    child: RaftCssText(
-                      detail,
-                      style: detailStyle,
-                      maxLines: e.expandable && !expanded ? 2 : null,
-                      overflow: e.expandable && !expanded
-                          ? TextOverflow.ellipsis
-                          : null,
+                    child: e.linkify == null
+                        ? RaftCssText(
+                            detail,
+                            style: detailStyle,
+                            maxLines: e.expandable && !expanded ? 2 : null,
+                            overflow: e.expandable && !expanded
+                                ? TextOverflow.ellipsis
+                                : null,
+                          )
+                        // Reference pills in the structured-metadata rows
+                        // (Web `RefText`).
+                        : RaftCssText.rich(
+                            TextSpan(
+                              children: e.linkify!(
+                                context,
+                                detail,
+                                detailStyle,
+                              ),
+                            ),
+                            style: detailStyle,
+                            maxLines: e.expandable && !expanded ? 2 : null,
+                            overflow: e.expandable && !expanded
+                                ? TextOverflow.ellipsis
+                                : null,
+                          ),
+                  ),
+                if (e.actionLabel != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2),
+                    child: RaftTextLink(
+                      label: e.actionLabel!,
+                      onPressed: e.onAction,
+                      textStyle: RaftTypography.mono(
+                        t,
+                        size: 12,
+                        line: 16,
+                        color: c['foreground-hint'],
+                      ),
                     ),
                   ),
               ],

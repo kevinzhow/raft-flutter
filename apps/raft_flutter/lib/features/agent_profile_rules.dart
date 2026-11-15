@@ -70,6 +70,18 @@ bool canStopThisAgentTurn({
   return canStopTurn && (!isAssistant || isAssistantOwner || isServerAdmin);
 }
 
+/// Web `canStopSubagentsOf` (stopSubagent.ts): a viewer may stop one of this
+/// agent's subagents with Stop turn's runtime authority, on a live agent whose
+/// runtime can stop a single subagent (Codex, Claude Code, Kimi, Qoder). The
+/// server checks the authority again.
+bool canStopSubagentsOf({
+  required Map agent,
+  required bool controlAgentRuntime,
+}) =>
+    controlAgentRuntime &&
+    agent['deletedAt'] == null &&
+    const {'codex', 'claude', 'kimi-sdk', 'qoder'}.contains(agent['runtime']);
+
 /// The flags [AgentDetailPanel] uses, matching Web's panel gates.
 ///
 /// A bounded projection forces the public profile even when the viewer is the

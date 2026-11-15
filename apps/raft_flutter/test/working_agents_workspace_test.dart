@@ -232,6 +232,10 @@ void main() {
       ),
       findsNothing,
     );
+    // Web v1.24 store/agentErrorRecordRefresh.ts (agentErrorRecordStale; an
+    // absent detail is "", agentActivityEvents.ts:187): the error frame
+    // re-reads the agent's record 1.5 s later; let it run.
+    await t.pump(const Duration(seconds: 2));
   });
 
   testWidgets(

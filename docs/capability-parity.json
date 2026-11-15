@@ -5350,14 +5350,14 @@
    "status": "covered",
    "webEntry": "AgentDetailPanel > 'Activity' tab (AgentActivityLog: thinking/output/tool entries, expandable) + diagnostics copy icon",
    "gate": "tab visible to canViewAgentPrivateSurfaces",
-   "flutterEntry": "agent_detail_view.dart AgentActivityTab > RaftActivityLogView (onCopy diagnostics)",
+   "flutterEntry": "agent_activity_pane.dart AgentActivityPane > agent_raw_log.dart AgentActivityLogSource (shared by the Overview, Raw log and Subagents views) > AgentRawLog > RaftActivityLogView (follows the newest step; onCopy diagnostics)",
    "flutterRefs": [
     {
-     "file": "apps/raft_flutter/lib/features/agent_detail_view.dart",
+     "file": "apps/raft_flutter/lib/features/agent_raw_log.dart",
      "needle": "/activity-log"
     },
     {
-     "file": "apps/raft_flutter/lib/features/agent_detail_view.dart",
+     "file": "apps/raft_flutter/lib/features/agent_raw_log.dart",
      "needle": "RaftActivityLogView("
     }
    ],
@@ -6430,6 +6430,34 @@
    "justification": "",
    "impact": "",
    "size": ""
+  },
+  {
+    "kind": "endpoint",
+    "id": "POST /agents/:id/subagents/:id/interrupt",
+    "area": "agents-computers-runtimes",
+    "capability": "Stop one running subagent (the agent and its other subagents keep running): 'Stop subagent' in the Activity tab's Subagents detail; outcome toast (asked to stop / not running / cannot be stopped on its own), Computer offline or too old refusals, Retry on failure",
+    "background": false,
+    "status": "covered",
+    "webEntry": "AgentActivityLog > Subagents > SubagentDetail 'Stop subagent' (stopSubagentWithFeedback)",
+    "gate": "canStopSubagentsOf: controlAgentRuntime capability (or creator) on a live agent whose runtime is codex, claude, kimi-sdk or qoder; the subagent is running and names its own task id",
+    "flutterEntry": "agent_subagents_view.dart AgentSubagentsView (onStop) > agent_subagent_stop.dart stopSubagentWithFeedback",
+    "flutterRefs": [
+      {
+        "file": "apps/raft_flutter/lib/features/agent_subagent_stop.dart",
+        "needle": "/interrupt"
+      },
+      {
+        "file": "apps/raft_flutter/lib/features/agent_subagent_stop.dart",
+        "needle": "stopSubagentWithFeedback("
+      },
+      {
+        "file": "apps/raft_flutter/lib/features/agent_profile_rules.dart",
+        "needle": "canStopSubagentsOf("
+      }
+    ],
+    "justification": "",
+    "impact": "",
+    "size": ""
   },
   {
    "kind": "endpoint",
@@ -17703,7 +17731,7 @@
    "kind": "endpoint",
    "id": "GET /agents/:id/activity-summaries",
    "area": "agents-computers-runtimes",
-   "capability": "Agent Activity overview: paged summaries of what an agent did",
+   "capability": "Agent Activity overview: paged summaries of what an agent did (newest page also carries the turn still running), and the profile's Recent activity card (newest four)",
    "background": false,
    "status": "covered",
    "webEntry": "AgentActivityOverview",
@@ -17717,6 +17745,34 @@
     {
      "file": "apps/raft_flutter/lib/features/agent_activity_pane.dart",
      "needle": "ValueKey('activity-view')"
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/agent_recent_activity.dart",
+     "needle": "/activity-summaries"
+    }
+   ],
+   "justification": "",
+   "impact": "",
+   "size": ""
+  },
+  {
+   "kind": "endpoint",
+   "id": "GET /agents/:id/operator-events",
+   "area": "agents-computers-runtimes",
+   "capability": "What people did to an agent (start, stop, restart, reset, Stop Current Turn, migration, model change) and Raft's own restarts, as thin lines between the Activity overview's turns; three or more in a row fold",
+   "background": false,
+   "status": "covered",
+   "webEntry": "AgentActivityOverview > ActivityOperatorEvents (operatorEventsTimeline.ts)",
+   "gate": "manager-only: the server refuses everyone else (403) and the overview shows the turns alone; an older server without the route does the same",
+   "flutterEntry": "agent_operator_events.dart loadOperatorEvents > agent_activity_overview.dart",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/features/agent_operator_events.dart",
+     "needle": "/operator-events"
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/agent_operator_events.dart",
+     "needle": "class OperatorEventLines"
     }
    ],
    "justification": "",

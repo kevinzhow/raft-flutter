@@ -23,6 +23,7 @@ import '../data/workspace_controller.dart';
 import '../data/workspace_entity_directory.dart';
 import 'agent_archive_requests.dart';
 import 'agent_activity_pane.dart';
+import 'agent_recent_activity.dart';
 import 'agent_apps_view.dart';
 import 'agent_diagnostic_info.dart';
 import 'feedback_attachment_preview.dart' show showFeedbackImage;
@@ -36,9 +37,8 @@ import 'agent_profile_rules.dart';
 import 'external_agent_setup.dart';
 import 'channel_form_fields.dart' show ChannelCandidateAvatar;
 import 'create_channel_dialog.dart' show ChannelMemberCandidate;
-import 'agent_activity_refs.dart';
-import 'agent_trajectory_log.dart';
-import 'tool_display.dart';
+import 'agent_raw_log.dart' show agentCachedActivityEntries;
+export 'agent_raw_log.dart' show AgentActivityTab, agentCachedActivityEntries;
 import 'runtime_usage_chip.dart';
 import 'agent_runtime_catalog.dart' show reasoningEfforts, runtimeInfos;
 import 'agent_runtime_draft.dart' show runtimeModelLabel;
@@ -749,6 +749,10 @@ class _AgentDetailPanelState extends State<AgentDetailPanel>
         activityText: _statusText(context),
         initialEntries: widget.initialTrajectoryLog,
         onOpenComputer: widget.actions.onOpenComputer,
+        canStopSubagents: canStopSubagentsOf(
+          agent: a,
+          controlAgentRuntime: _canControlRuntime,
+        ),
       ),
       AgentDetailTab.chat => AgentChatTab(
         key: ValueKey('agent-chat-$agentId'),
@@ -1047,6 +1051,41 @@ class _AgentDetailPanelState extends State<AgentDetailPanel>
       if (a['envVars'] is Map)
         for (final e in (a['envVars'] as Map).entries) '${e.key}': '${e.value}',
     };
+    // Web AgentStatusBadge (with Retry / Change model and the tool-stuck
+    // notice): the card's first line, or under the handle without the card.
+    final statusRow = a['deletedAt'] == null
+        ? Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              AgentStatusChipView(
+                key: ValueKey('agent-status-$agentId'),
+                chip: statusChip,
+                tooltip: statusChip.tooltip,
+                onRetry: _canControlRuntime ? _retryStart : null,
+                onChangeModel: widget.actions.onEditRuntime,
+                onOpenComputer: widget.actions.onOpenComputer == null
+                    ? null
+                    : () {
+                        final id = a['machineId'];
+                        if (id is String) {
+                          widget.actions.onOpenComputer!(id);
+                        }
+                      },
+              ),
+              if (toolStuck != null)
+                AgentToolStuckNotice(
+                  key: ValueKey('agent-tool-stuck-$agentId'),
+                  toolStuck: toolStuck,
+                  onStop: widget.actions.onStopHostedTurn,
+                ),
+            ],
+          )
+        : null;
+    // Web `showRecentActivity`: the profile's now card says what the agent is
+    // doing, in place of the status chip under the handle.
+    final showRecentActivity =
+        tabs.contains(AgentDetailTab.activity) && a['deletedAt'] == null;
     final buttons = <Widget>[
       if (!external) ...[
         if (_canControlRuntime) ...[
@@ -1146,38 +1185,22 @@ class _AgentDetailPanelState extends State<AgentDetailPanel>
               : null,
           avatarLabel: canEdit ? null : raftText(context, 'View avatar'),
           onEditName: canEdit ? widget.actions.onEditName : null,
-          statusRow: a['deletedAt'] == null
-              ? Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    AgentStatusChipView(
-                      key: ValueKey('agent-status-$agentId'),
-                      chip: statusChip,
-                      tooltip: statusChip.tooltip,
-                      onRetry: _canControlRuntime ? _retryStart : null,
-                      onChangeModel: widget.actions.onEditRuntime,
-                      onOpenComputer: widget.actions.onOpenComputer == null
-                          ? null
-                          : () {
-                              final id = a['machineId'];
-                              if (id is String) {
-                                widget.actions.onOpenComputer!(id);
-                              }
-                            },
-                    ),
-                    if (toolStuck != null)
-                      AgentToolStuckNotice(
-                        key: ValueKey('agent-tool-stuck-$agentId'),
-                        toolStuck: toolStuck,
-                        onStop: widget.actions.onStopHostedTurn,
-                      ),
-                  ],
-                )
-              : null,
+          // With the Recent activity card the status is its first line.
+          statusRow: statusRow == null || showRecentActivity ? null : statusRow,
           // `min-h-[66px] theme-brutal:min-h-[72px]`.
           minHeight: 66,
         ),
+        if (showRecentActivity && statusRow != null)
+          AgentRecentActivity(
+            key: ValueKey('agent-recent-activity-$agentId'),
+            controller: widget.controller,
+            agentId: agentId,
+            activity: _display.activity,
+            activityText: _statusText(context),
+            status: statusRow,
+            onOpenActivity: () => setState(() => tab = AgentDetailTab.activity),
+            clock: widget.clock,
+          ),
         // Onboarding identity adoption (the server's onboarding agent only).
         if (_canManage &&
             widget.controller.server?.string('onboardingAgentId') == agentId)
@@ -1621,20 +1644,6 @@ abstract class _AgentTabSnapshot {
   bool loaded = false;
 }
 
-class _ActivitySnapshot extends _AgentTabSnapshot {
-  List<Map<String, dynamic>> entries = [];
-}
-
-/// The agent's live activity window the Activity tab holds (Web
-/// `getActivityLog`); empty until that tab was opened.
-List<Map<String, dynamic>> agentCachedActivityEntries(
-  WorkspaceController w,
-  String agentId,
-) {
-  final snapshot = w.agentTabCache.peek('activity/$agentId');
-  return snapshot is _ActivitySnapshot ? snapshot.entries : const [];
-}
-
 class _ChatSnapshot extends _AgentTabSnapshot {
   List<Map<String, dynamic>> channels = [], dms = [];
 
@@ -1719,296 +1728,6 @@ mixin _AgentTabLoader<T extends StatefulWidget> on State<T> {
               );
       });
     }
-  }
-}
-
-/// AgentDetailPanel activity tab: `/agents/:id/activity-log` rendered as
-/// AgentActivityLog rows.
-class AgentActivityTab extends StatefulWidget {
-  const AgentActivityTab({
-    super.key,
-    required this.controller,
-    required this.agentId,
-    this.initialEntries = const [],
-  });
-  final WorkspaceController controller;
-  final String agentId;
-  final List<Map<String, dynamic>> initialEntries;
-  @override
-  State<AgentActivityTab> createState() => _AgentActivityTabState();
-}
-
-class _AgentActivityTabState extends State<AgentActivityTab>
-    with _AgentTabLoader {
-  @override
-  WorkspaceController get w => widget.controller;
-  List<Map<String, dynamic>> entries = [];
-  StreamSubscription<RaftEvent>? events;
-  Timer? reloadTimer;
-  int readRevision = 0;
-  late String openingScope;
-  late _ActivitySnapshot snapshot;
-  @override
-  bool get hasContent => snapshot.loaded;
-  String get scope =>
-      '${w.client.origin}|${w.client.generation}|${w.client.user?.id}|${w.client.serverId}|${w.server?.id}|${w.server?.string('role')}|${widget.agentId}';
-  @override
-  void initState() {
-    super.initState();
-    openingScope = scope;
-    snapshot = w.agentTabCache.putIfAbsent(
-      'activity/${widget.agentId}',
-      _ActivitySnapshot.new,
-    ) as _ActivitySnapshot;
-    entries = mergeAgentTrajectoryLog(
-      snapshot.entries,
-      admittedAgentTrajectoryRows(widget.initialEntries),
-    );
-    snapshot.entries = entries;
-    pillChannels = w.channels;
-    w.addListener(scopeChanged);
-    listenEvents();
-    reload();
-  }
-
-  void listenEvents() {
-    events = w.client.events.listen((e) {
-      if (e.name == 'connected') {
-        scheduleReload();
-        return;
-      }
-      if (e.name != 'agent:activity' ||
-          e.payload is! Map ||
-          (e.payload as Map)['agentId'] != widget.agentId) {
-        return;
-      }
-      final payload = e.payload as Map;
-      if (payload['isHeartbeat'] == true ||
-          payload['isRefreshOnly'] == true ||
-          (payload['sourceServerId'] != null &&
-              payload['sourceServerId'] != w.server?.id)) {
-        return;
-      }
-      final raw = payload['entries'];
-      if (raw is List && raw.isNotEmpty && payload['timestamp'] is num) {
-        final rows = admittedAgentTrajectoryRows([
-          for (final entry in raw.whereType<Map>())
-            {
-              'timestamp': payload['timestamp'],
-              'entry': entry,
-              for (final key in [
-                'serverSeq',
-                'launchId',
-                'clientSeq',
-                'probeId',
-              ])
-                if (payload[key] != null) key: payload[key],
-            },
-        ]);
-        if (mounted && openingScope == scope) {
-          setState(() {
-            entries = mergeAgentTrajectoryLog(entries, rows);
-            snapshot.entries = entries;
-          });
-        }
-      } else {
-        scheduleReload();
-      }
-    });
-  }
-
-  void scheduleReload() {
-    reloadTimer?.cancel();
-    reloadTimer = Timer(const Duration(milliseconds: 500), () {
-      if (mounted && openingScope == scope) reload();
-    });
-  }
-
-  /// The channel list the reference pills last resolved against.
-  List<RaftChannel>? pillChannels;
-
-  void scopeChanged() {
-    // A channel list that arrives (or changes) turns `#channel` tokens into
-    // pills; nothing else about the controller redraws the log.
-    if (!identical(pillChannels, w.channels)) {
-      pillChannels = w.channels;
-      if (mounted) setState(() {});
-    }
-    if (openingScope == scope) return;
-    openingScope = scope;
-    readRevision++;
-    reloadTimer?.cancel();
-    snapshot = w.agentTabCache.putIfAbsent(
-      'activity/${widget.agentId}',
-      _ActivitySnapshot.new,
-    ) as _ActivitySnapshot;
-    setState(() => entries = snapshot.entries);
-    reload();
-  }
-
-  @override
-  void didUpdateWidget(AgentActivityTab oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (!identical(oldWidget.controller, widget.controller) ||
-        oldWidget.agentId != widget.agentId) {
-      oldWidget.controller.removeListener(scopeChanged);
-      w.addListener(scopeChanged);
-      events?.cancel();
-      openingScope = scope;
-      readRevision++;
-      reloadTimer?.cancel();
-      snapshot = w.agentTabCache.putIfAbsent(
-        'activity/${widget.agentId}',
-        _ActivitySnapshot.new,
-      ) as _ActivitySnapshot;
-      entries = snapshot.entries;
-      listenEvents();
-      reload();
-    }
-  }
-
-  @override
-  void dispose() {
-    readRevision++;
-    w.removeListener(scopeChanged);
-    reloadTimer?.cancel();
-    events?.cancel();
-    super.dispose();
-  }
-
-  @override
-  Future<void> fetch() async {
-    final captured = scope, owner = w, revision = ++readRevision;
-    final result = await owner.query(
-      '/agents/${widget.agentId}/activity-log',
-      query: {'limit': '50'},
-    );
-    if (!mounted ||
-        revision != readRevision ||
-        captured != scope ||
-        !identical(owner, w)) {
-      return;
-    }
-    entries = mergeAgentTrajectoryLog(
-      entries,
-      admittedAgentTrajectoryRows(result),
-    );
-    snapshot
-      ..entries = entries
-      ..loaded = true;
-  }
-
-  /// Web `AgentActivityLog` `TrajectoryItem`: one row per entry kind. An entry
-  /// of an unknown kind renders nothing (the Web `switch` has no default).
-  RaftActivityLogEntry? _entry(
-    BuildContext context,
-    RaftTokens t,
-    SourceTimeFormatter f,
-    Map<String, dynamic> item,
-  ) {
-    final entry = item['entry'] is Map
-        ? Map<String, dynamic>.from(item['entry'] as Map)
-        : <String, dynamic>{};
-    final time = f.clock(item['timestamp'], seconds: true).toUpperCase();
-    final kind = entry['kind'];
-    final text = '${entry['text'] ?? ''}';
-    List<InlineSpan> linkify(BuildContext c, String s, TextStyle style) =>
-        linkifyActivityRefs(c, w, s, style);
-    // `SubagentBadge`: lineage-bearing status and tool rows only.
-    final lineage = entry['subagent'];
-    final type = lineage is Map ? lineage['subagentType'] : null;
-    final badge = lineage is! Map
-        ? null
-        : type is String && type.isNotEmpty
-        ? raftFormat(context, 'Subagent: {type}', {'type': type})
-        : raftText(context, 'Subagent');
-    return switch (kind) {
-      'status' => () {
-        final activity = '${entry['activityKind'] ?? entry['activity']}';
-        final status = agentTrajectoryStatusDisplay(
-          activity,
-          '${entry['detail'] ?? ''}',
-          entry['detailKind'] as String?,
-        );
-        return RaftActivityLogEntry(
-          time: time,
-          dot: raftActivityDotColor(t, activity),
-          title: raftText(context, status.primary),
-          badge: badge,
-          inlineDetail: status.secondary,
-          linkify: linkify,
-          compact: true,
-        );
-      }(),
-      'tool_start' =>
-        hideToolStartInActivityLog('${entry['toolName']}')
-            ? null
-            : RaftActivityLogEntry(
-                time: time,
-                dot: t.product.statusBusy,
-                title: toolLogLabel('${entry['toolName']}'),
-                badge: badge,
-                inlineDetail: '${entry['toolInput'] ?? ''}',
-                inlineMono: true,
-              ),
-      'compaction_started' || 'compaction_finished' => RaftActivityLogEntry(
-        time: time,
-        dot: kind == 'compaction_started'
-            ? t.product.brutalOrange
-            : t.product.brutalLime,
-        title: raftText(
-          context,
-          kind == 'compaction_started'
-              ? 'Context Compaction Started'
-              : 'Context Compaction Finished',
-        ),
-      ),
-      'thinking' || 'text' || 'slock_action' || 'system' => () {
-        return RaftActivityLogEntry(
-          time: time,
-          dot: switch (kind) {
-            'thinking' => t.product.statusBusy,
-            'text' => t.product.brutalCyan,
-            'slock_action' => raftBlue300,
-            _ => t.product.brutalOrange,
-          },
-          title: switch (kind) {
-            'thinking' => raftText(context, 'Thinking'),
-            'text' => raftText(context, 'Output'),
-            _ => '${entry['title'] ?? ''}',
-          },
-          // Web: a `system` row carries the subagent badge too.
-          badge: kind == 'system' ? badge : null,
-          detail: text,
-          expandable: text.length > 200,
-          // Reference pills only in the structured-metadata kinds; Output and
-          // Thinking are free-form agent text.
-          linkify: kind == 'slock_action' || kind == 'system' ? linkify : null,
-          detailExtra: kind == 'slock_action' || kind == 'system'
-              ? activityRefLineExtra(w, text)
-              : 0,
-        );
-      }(),
-      _ => null,
-    };
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
-    final f = agentTimeFormatter(context, w);
-    // Web `visibleLog` + an empty EmptyState: the log has no loading or error
-    // state of its own; before the first read and after a failed one it is the
-    // same "No activity yet" empty state.
-    return RaftActivityLogView(
-      entries: [for (final e in entries) ?_entry(context, t, f, e)],
-      onCopy: () => Clipboard.setData(
-        ClipboardData(
-          text: [for (final e in entries) '${e['timestamp']} ${e['entry']}']
-              .join('\n'),
-        ),
-      ),
-    );
   }
 }
 
