@@ -17,10 +17,6 @@ import 'system_inset.dart';
 import 'tap_slop.dart';
 import 'theme.dart';
 import 'recipes/recipe_runtime.dart' show RaftRecipeSet;
-import 'localization.dart' show raftText;
-import 'raft/button.dart' show RaftButton;
-import 'recipes/button_variants.g.dart'
-    show RaftButtonRecipeSize, RaftButtonRecipeVariant;
 
 // A form is a window with inputs and a submit button (create a channel, edit a
 // profile, rename). It is shown with `RaftPresentationPolicy.form`: a bottom
@@ -376,6 +372,11 @@ class RaftFormSheet extends StatelessWidget {
   /// Without it, and in the frozen looks, [footer] is drawn as before.
   final Widget? commit;
 
+  /// The close X of the head: the supplied [closeButton], else the scaffold's own.
+  Widget _closeAction(BuildContext context) =>
+      closeButton ??
+      RaftCloseButton(onPressed: raftGuardedClose(context, onClose));
+
   static const _closeFace = RaftMetrics.buttonSm;
   static const _titleLines = 2, _glyph = 18.0;
 
@@ -437,10 +438,7 @@ class RaftFormSheet extends StatelessWidget {
                     ),
                   ),
                 ),
-                closeButton ??
-                    RaftCloseButton(
-                      onPressed: raftGuardedClose(context, onClose),
-                    ),
+                _closeAction(context),
               ],
             ),
           ),
@@ -497,15 +495,7 @@ class RaftFormSheet extends StatelessWidget {
               child: Row(
                 spacing: RaftSpace.x2,
                 children: [
-                  closeButton ??
-                      RaftButton(
-                        tone: RaftButtonRecipeVariant.ghost,
-                        size: RaftButtonRecipeSize.iconMd,
-                        glyph: RaftGlyph.x,
-                        tooltip: raftText(context, 'Close'),
-                        onPressed: raftGuardedClose(context, onClose),
-                        foreground: t.colors['foreground-muted'],
-                      ),
+                  _closeAction(context),
                   if (titleGlyph != null)
                     RaftIcon(titleGlyph!, size: _glyph, color: t.ink),
                   Expanded(
