@@ -12,6 +12,7 @@ import '../data/server_error_code.dart';
 import '../data/user_error.dart';
 
 import '../data/workspace_controller.dart';
+import 'create_task_channel.dart';
 import 'create_task_message_dialog.dart';
 import 'message_task_actions.dart' show TaskV2ConversationsFlag;
 
@@ -32,12 +33,18 @@ class CreateTaskDialog extends StatefulWidget {
   const CreateTaskDialog({
     super.key,
     required this.controller,
-    required this.channelId,
+    this.channelId,
+    this.defaultChannelId,
     this.onCreated,
     this.sourceMessage,
   });
   final WorkspaceController controller;
-  final String channelId;
+
+  /// The channel the tasks go in; null (the Tasks page) asks for one.
+  final String? channelId;
+
+  /// Without [channelId]: the channel picked at first, if it can be picked.
+  final String? defaultChannelId;
   final Future<void> Function()? onCreated;
   final CreateTaskSourceMessage? sourceMessage;
 
@@ -45,18 +52,21 @@ class CreateTaskDialog extends StatefulWidget {
   /// (Web CreateTaskDialog picks CreateTaskMessageDialog).
   static Widget forChannel({
     required WorkspaceController controller,
-    required String channelId,
+    String? channelId,
+    String? defaultChannelId,
     Future<void> Function()? onCreated,
     CreateTaskSourceMessage? sourceMessage,
   }) => sourceMessage == null && TaskV2ConversationsFlag.of(controller).enabled
       ? CreateTaskMessageDialog(
           controller: controller,
           channelId: channelId,
+          defaultChannelId: defaultChannelId,
           onCreated: onCreated,
         )
       : CreateTaskDialog(
           controller: controller,
           channelId: channelId,
+          defaultChannelId: defaultChannelId,
           onCreated: onCreated,
           sourceMessage: sourceMessage,
         );
@@ -91,6 +101,15 @@ class _CreateTaskDialogState extends State<CreateTaskDialog> {
   ];
   bool submitting = false;
 
+  /// The channel picked when none is fixed (Web useCreateTaskChannel).
+  late String? pickedChannel = createTaskInitialChannel(
+    widget.controller,
+    widget.defaultChannelId,
+  );
+
+  /// "Pick a channel": said under the field until a channel is picked.
+  final channelRequired = CauseNotice();
+
   /// Task v2: the status the tasks start in (Web useCreateTaskStatus).
   String status = 'todo';
   bool get taskV2 => TaskV2ConversationsFlag.of(widget.controller).enabled;
@@ -123,9 +142,12 @@ class _CreateTaskDialogState extends State<CreateTaskDialog> {
     if (submitting) return;
     // The channel must still be joinable by this account; a retained submit
     // of a closed form fails instead of writing.
-    final joined = widget.controller.channels.any(
-      (c) => c.id == widget.channelId && c.joined && !c.archived,
-    );
+    final channelId = widget.channelId ?? pickedChannel;
+    final joined =
+        channelId == null ||
+        widget.controller.channels.any(
+          (c) => c.id == channelId && c.joined && !c.archived,
+        );
     if (!mounted || !joined) {
       const message = 'Channel access changed. Reopen this form.';
       if (mounted) {
@@ -148,6 +170,16 @@ class _CreateTaskDialogState extends State<CreateTaskDialog> {
       });
       return;
     }
+    if (channelId == null) {
+      setState(() {
+        error = null;
+        channelRequired.raise(
+          raftText(context, 'Pick a channel'),
+          whileTrue: () => pickedChannel == null,
+        );
+      });
+      return;
+    }
     setState(() {
       submitting = true;
       error = null;
@@ -157,7 +189,7 @@ class _CreateTaskDialogState extends State<CreateTaskDialog> {
     try {
       await widget.controller.command(
         'POST',
-        '/tasks/channel/${widget.channelId}',
+        '/tasks/channel/$channelId',
         data: {
           'tasks': [
             for (final title in nonEmpty)
@@ -190,6 +222,20 @@ class _CreateTaskDialogState extends State<CreateTaskDialog> {
     error: error ?? titleRequired.message,
     onClose: () => Navigator.of(context).maybePop(),
     onSubmit: submit,
+    channelField: widget.channelId != null
+        ? null
+        : RaftCreateTaskChannelField(
+            label: 'Channel',
+            options: createTaskChannelOptions(widget.controller),
+            value: pickedChannel,
+            error: channelRequired.message,
+            onChanged: submitting
+                ? null
+                : (id) => setState(() {
+                    pickedChannel = id;
+                    channelRequired.clear();
+                  }),
+          ),
     onAddRow: () => setState(() {
       titles.add(TextEditingController()..addListener(_changed));
     }),

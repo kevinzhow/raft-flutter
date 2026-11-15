@@ -22,7 +22,9 @@ enum RaftRoute {
 
 enum RaftMobileTab { chat, tasks, members, settings }
 
-enum RaftContentKind { channel, dm, thread, agent, human, machine }
+/// `task`: a task conversation in a list's detail slot (Web TaskContentSlot,
+/// `?open=task:<taskId>` beside `?task=<channelId>:task:<taskId>`).
+enum RaftContentKind { channel, dm, thread, agent, human, machine, task }
 
 enum RaftProfileKind { agent, human, external }
 
@@ -81,6 +83,7 @@ class RaftContentLocation {
             RaftContentKind.channel,
             RaftContentKind.dm,
             RaftContentKind.thread,
+            RaftContentKind.task,
           }.contains(kind)
           ? messageId
           : null,

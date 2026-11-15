@@ -24,6 +24,7 @@ class SourceTaskSurface extends StatefulWidget {
     this.legacyPresentation = RaftLegacyTaskPresentation.modal,
     this.page = false,
     this.compact = false,
+    this.inPlace = false,
   });
   final TaskSurfaceController owner;
 
@@ -44,6 +45,9 @@ class SourceTaskSurface extends StatefulWidget {
   final VoidCallback? onViewInThread;
   final RaftLegacyTaskPresentation legacyPresentation;
   final bool page;
+
+  /// Beside a list (Web TaskContentSlot): the dialog's frameless page.
+  final bool inPlace;
   @override
   State<SourceTaskSurface> createState() => _SourceTaskSurfaceState();
 }
@@ -146,6 +150,7 @@ class _SourceTaskSurfaceState extends State<SourceTaskSurface> {
       return RaftTaskSurface(
         conversation: v2,
         page: widget.page,
+        inPlace: widget.inPlace,
         task: o.task,
         history: o.history,
         assignees: o.assignees,

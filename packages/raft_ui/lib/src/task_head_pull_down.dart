@@ -4,6 +4,7 @@
 // head down again over the messages without losing the place in the
 // discussion. Off a phone the head stays pinned above the conversation, at
 // most 45% of the dialog (it scrolls inside itself beyond that).
+import 'package:flutter/gestures.dart' show PointerDeviceKind;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
@@ -103,6 +104,7 @@ class RaftTaskBarSummary extends StatelessWidget {
     required this.open,
     required this.onToggle,
     this.assigneeIsAgent = false,
+    this.focusNode,
   });
   final String label, status;
 
@@ -110,6 +112,10 @@ class RaftTaskBarSummary extends StatelessWidget {
   final String? assignee;
   final bool assigneeIsAgent, open;
   final VoidCallback onToggle;
+
+  /// The toggle's focus, owned by the host: closing the panel returns focus
+  /// here (Web `barRef.focus()`).
+  final FocusNode? focusNode;
 
   @override
   Widget build(BuildContext context) {
@@ -119,77 +125,80 @@ class RaftTaskBarSummary extends StatelessWidget {
       builder: (context, constraints) => Semantics(
         button: true,
         expanded: open,
-        child: GestureDetector(
-          key: const ValueKey('task-modal-bar-summary'),
-          behavior: HitTestBehavior.opaque,
-          onTap: onToggle,
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            spacing: RaftSpace.x1_5,
-            children: [
-              Flexible(
-                child: Text(
-                  label,
-                  key: const ValueKey('task-modal-bar-label'),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: t.scale(
-                    RaftTypeScale.subhead,
-                    weight: FontWeight.w700,
+        child: Focus(
+          focusNode: focusNode,
+          child: GestureDetector(
+            key: const ValueKey('task-modal-bar-summary'),
+            behavior: HitTestBehavior.opaque,
+            onTap: onToggle,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              spacing: RaftSpace.x1_5,
+              children: [
+                Flexible(
+                  child: Text(
+                    label,
+                    key: const ValueKey('task-modal-bar-label'),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: t.scale(
+                      RaftTypeScale.subhead,
+                      weight: FontWeight.w700,
+                    ),
                   ),
                 ),
-              ),
-              RaftTaskStatus(
-                key: const ValueKey('task-modal-bar-status'),
-                status: status,
-              ),
-              if (name != null)
-                // The avatar, named for screen readers; the name beside it
-                // only where the bar has room for it whole (Web `@[22rem]`).
-                Semantics(
-                  label: name,
-                  child: SizedBox.square(
-                    dimension: RaftSpace.x4,
-                    child: ExcludeSemantics(
-                      child: RaftAvatar(
-                        name: name,
-                        kind: assigneeIsAgent
-                            ? RaftAvatarKind.agent
-                            : RaftAvatarKind.human,
-                        mountedContext: RaftMountedAvatarContext.compactList,
-                        content: RaftMountedAvatarFallback(
-                          avatarContext: RaftMountedAvatarContext.compactList,
-                          identity: assigneeIsAgent
-                              ? RaftMountedAvatarIdentity.agent
-                              : RaftMountedAvatarIdentity.human,
+                RaftTaskStatus(
+                  key: const ValueKey('task-modal-bar-status'),
+                  status: status,
+                ),
+                if (name != null)
+                  // The avatar, named for screen readers; the name beside it
+                  // only where the bar has room for it whole (Web `@[22rem]`).
+                  Semantics(
+                    label: name,
+                    child: SizedBox.square(
+                      dimension: RaftSpace.x4,
+                      child: ExcludeSemantics(
+                        child: RaftAvatar(
+                          name: name,
+                          kind: assigneeIsAgent
+                              ? RaftAvatarKind.agent
+                              : RaftAvatarKind.human,
+                          mountedContext: RaftMountedAvatarContext.compactList,
+                          content: RaftMountedAvatarFallback(
+                            avatarContext: RaftMountedAvatarContext.compactList,
+                            identity: assigneeIsAgent
+                                ? RaftMountedAvatarIdentity.agent
+                                : RaftMountedAvatarIdentity.human,
+                          ),
                         ),
                       ),
                     ),
                   ),
-                ),
-              if (name != null && constraints.maxWidth >= 352)
-                Flexible(
-                  child: Text(
-                    name,
-                    key: const ValueKey('task-modal-bar-assignee-name'),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: t.scale(
-                      RaftTypeScale.callout,
-                      color: t.ui.foregroundMuted,
+                if (name != null && constraints.maxWidth >= 352)
+                  Flexible(
+                    child: Text(
+                      name,
+                      key: const ValueKey('task-modal-bar-assignee-name'),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: t.scale(
+                        RaftTypeScale.callout,
+                        color: t.ui.foregroundMuted,
+                      ),
                     ),
                   ),
+                AnimatedRotation(
+                  turns: open ? .5 : 0,
+                  duration: const Duration(milliseconds: 220),
+                  child: RaftIcon(
+                    RaftGlyph.chevronDown,
+                    size: 14,
+                    color: t.ui.foregroundMuted,
+                  ),
                 ),
-              AnimatedRotation(
-                turns: open ? .5 : 0,
-                duration: const Duration(milliseconds: 220),
-                child: RaftIcon(
-                  RaftGlyph.chevronDown,
-                  size: 14,
-                  color: t.ui.foregroundMuted,
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -199,7 +208,8 @@ class RaftTaskBarSummary extends StatelessWidget {
 
 /// Hangs [panel] from the bar ([link] is the bar's target) over the
 /// conversation while [open]: no scrim, the messages stay live under it.
-/// A press on the messages below, starting to scroll them and Escape close it.
+/// A press on the messages below, starting to scroll them, Escape and a swipe
+/// up on the panel (once its content is at its end) close it.
 Widget raftTaskPullDownHost({
   required LayerLink link,
   required bool open,
@@ -229,6 +239,9 @@ Widget raftTaskPullDownHost({
   ),
 );
 
+/// How far up (px) a drag that starts on the panel must travel to close it.
+const _swipeCloseDistance = 40.0;
+
 /// The panel: focus moves into it when it opens (so Escape closes it, not
 /// the dialog around it).
 class _PullDownPanel extends StatefulWidget {
@@ -247,6 +260,11 @@ class _PullDownPanel extends StatefulWidget {
 
 class _PullDownPanelState extends State<_PullDownPanel> {
   final focus = FocusNode(debugLabel: 'task head pull-down');
+  final scroll = ScrollController();
+  // A touch that started on the panel: where, and whether its content was at
+  // its end (up is the panel's own scroll until then).
+  Offset? swipeFrom;
+  bool swipeAtEnd = false;
 
   @override
   void initState() {
@@ -259,7 +277,24 @@ class _PullDownPanelState extends State<_PullDownPanel> {
   @override
   void dispose() {
     focus.dispose();
+    scroll.dispose();
     super.dispose();
+  }
+
+  void swipeStart(PointerDownEvent e) {
+    swipeFrom = e.kind == PointerDeviceKind.touch ? e.position : null;
+    final p = scroll.hasClients ? scroll.position : null;
+    swipeAtEnd = p == null || p.pixels >= p.maxScrollExtent - 1;
+  }
+
+  void swipeEnd(PointerUpEvent e) {
+    final from = swipeFrom;
+    swipeFrom = null;
+    if (from == null || !swipeAtEnd) return;
+    final d = e.position - from;
+    if (d.dy <= -_swipeCloseDistance && d.dy.abs() > d.dx.abs()) {
+      widget.onClose();
+    }
   }
 
   @override
@@ -272,24 +307,34 @@ class _PullDownPanelState extends State<_PullDownPanel> {
       child: ConstrainedBox(
         key: const ValueKey('task-head-pull-down'),
         constraints: BoxConstraints(maxHeight: widget.maxHeight),
-        child: RaftPopoverSurface(
-          child: SingleChildScrollView(child: widget.child),
+        child: Listener(
+          onPointerDown: swipeStart,
+          onPointerUp: swipeEnd,
+          onPointerCancel: (_) => swipeFrom = null,
+          child: RaftPopoverSurface(
+            child: SingleChildScrollView(
+              controller: scroll,
+              child: widget.child,
+            ),
+          ),
         ),
       ),
     ),
   );
 }
 
-/// The messages under the pull-down: a press or a scroll start closes it.
+/// The messages under the pull-down: a press ([onClose]: a tap puts focus
+/// where the reader meant) or a scroll start ([onScrollClose]) closes it.
 /// The wrappers stay in the tree whether or not it is open, so opening it
 /// never rebuilds (and rewinds) the messages.
 Widget raftTaskPullDownDismiss({
   required bool open,
   required VoidCallback onClose,
+  required VoidCallback onScrollClose,
   required Widget child,
 }) => NotificationListener<ScrollStartNotification>(
   onNotification: (_) {
-    if (open) onClose();
+    if (open) onScrollClose();
     return false;
   },
   child: Listener(

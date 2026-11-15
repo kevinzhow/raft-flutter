@@ -73,4 +73,9 @@ const Map<String, String> zhCatalogUpstream124Task2 = <String, String>{
   "{name} took it back · {time}": "{name} 已接回 · {time}",
   "{by} handed it back to {name} · {time}": "{by} 交回给了 {name} · {time}",
   "Message this task": "在任务里发消息",
+  "This task isn't available": "该任务不可用",
+  "Resize panel": "调整面板宽度",
+  "Post in": "发到",
+  "Pick a channel": "请选择频道",
+  "Choose a channel": "选择频道",
 };

@@ -16,6 +16,12 @@ bool hasContentSlot(RaftLocation location) =>
     location.content != null;
 
 /// The list page under a master/detail content slot (the Back destination).
+/// Closing a task shown in a list's detail slot closes the slot with it.
+Map<String, String?> taskSlotRemoval(RaftLocation location) =>
+    location.content?.kind == RaftContentKind.task
+    ? const {'open': null, 'msg': null}
+    : const {};
+
 RaftLocation contentList(RaftLocation location) =>
     _tidy(location.withQuery({'open': null, 'msg': null, 'thread': null}));
 
@@ -66,6 +72,9 @@ RaftLocation locationForPhone(RaftLocation location) {
       return at(RaftRoute.human, content.id);
     case RaftContentKind.machine:
       return at(RaftRoute.computer, content.id);
+    case RaftContentKind.task:
+      // Web TaskContentSlot on a phone: the task's page over the list.
+      return _tidy(location.withQuery({'open': null, 'msg': null}));
   }
 }
 
@@ -86,7 +95,7 @@ RaftLocation? _withoutTopOverlay(RaftLocation location) {
   if (location.channelPage != null) {
     removal = {'channelPage': null, 'channelPageAdd': null};
   } else if (location.task != null) {
-    removal = {'task': null};
+    removal = {'task': null, ...taskSlotRemoval(location)};
   } else if (location.legacyTask != null) {
     removal = {'legacyTask': null};
   } else if (location.profile != null) {

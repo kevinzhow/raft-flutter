@@ -122,7 +122,7 @@ const viewerSurfaces = <CloseSurface>[
   CloseSurface(
     'task-modern-tasks-route',
     kind: SurfaceKind.panel,
-    web: 'MainLayout.tsx:1364-1376,1172-1185 renderTaskThreadPanel: >=768 centered Modal (closeOnBackdrop, Esc) + TaskModalBar X (task-modal-close); <768 mobile-modal TaskModalBar Back',
+    web: 'MainLayout.tsx:1364-1376,1172-1185 renderTaskThreadPanel: >=768 centered Modal (closeOnBackdrop, Esc) + TaskModalBar X (task-modal-close); <768 mobile-modal TaskModalBar Back. A message-keyed / pre-v2 task, or task v2 off (TasksRoute.tsx: the status board); with task v2 a task of its own conversation opens beside the list instead (task-slot-tasks-route)',
     phone: {_back, _sys},
     fold: {_x, _esc, _scrim, _sys},
     desktop: {_x, _esc, _scrim, _sys},

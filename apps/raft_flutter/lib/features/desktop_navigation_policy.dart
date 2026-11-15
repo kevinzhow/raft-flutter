@@ -99,7 +99,7 @@ class DesktopNavigationPolicy {
 }
 
 /// Identifiers only. Private entity payloads remain owned by authorized loaders.
-enum DesktopContentKind { channel, thread, agent, human, computer }
+enum DesktopContentKind { channel, thread, agent, human, computer, task }
 
 class DesktopContentTarget {
   const DesktopContentTarget(
@@ -158,6 +158,7 @@ class DesktopNavigationState {
       RaftContentKind.agent => DesktopContentKind.agent,
       RaftContentKind.human => DesktopContentKind.human,
       RaftContentKind.machine => DesktopContentKind.computer,
+      RaftContentKind.task => DesktopContentKind.task,
     };
     return DesktopContentTarget(
       kind,

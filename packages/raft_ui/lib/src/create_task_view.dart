@@ -43,7 +43,11 @@ class RaftCreateTaskDialogView extends StatelessWidget {
     this.sourceText,
     this.status,
     this.onStatusChanged,
+    this.channelField,
   });
+
+  /// The Channel picker when the channel is not fixed (the Tasks page).
+  final Widget? channelField;
 
   /// Task v2: the status the new tasks start in (Web CreateTaskStatusField);
   /// null hides the field (before task v2).
@@ -94,6 +98,7 @@ class RaftCreateTaskDialogView extends StatelessWidget {
               gap,
             ],
             if (error != null) ...[RaftErrorBanner(error!), gap],
+            if (channelField != null) ...[channelField!, gap],
             Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -117,6 +122,10 @@ class RaftCreateTaskDialogView extends StatelessWidget {
                             }),
                             autofocus: i == 0,
                             enabled: !submitting,
+                            // Web `<form onSubmit>`: Enter submits.
+                            onSubmitted: (_) {
+                              if (!submitting) onSubmit();
+                            },
                           ),
                         ),
                         if (batch && legacy)
@@ -282,6 +291,56 @@ class _SourceMessageQuote extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Web v1.24 `CreateTaskChannelField`: the channel a create goes in, picked
+/// (the Tasks page's New task); [error] goes under the select.
+class RaftCreateTaskChannelField extends StatelessWidget {
+  const RaftCreateTaskChannelField({
+    super.key,
+    required this.label,
+    required this.options,
+    required this.value,
+    required this.onChanged,
+    this.error,
+  });
+  final String label;
+
+  /// (id, already-displayed label) of each channel that can be picked.
+  final List<({String id, String label})> options;
+  final String? value;
+  final ValueChanged<String>? onChanged;
+  final String? error;
+
+  @override
+  Widget build(BuildContext context) {
+    final text = raftText(context, label);
+    return RaftField(
+      key: const ValueKey('create-task-channel-field'),
+      label: text,
+      error: error,
+      child: RaftSelectField<String>(
+        key: const ValueKey('create-task-channel'),
+        label: text,
+        value: value,
+        invalid: error != null,
+        placeholder: raftText(context, 'Choose a channel'),
+        items: [
+          for (final option in options)
+            RaftSelectItem(
+              value: option.id,
+              label: option.label,
+              labelKey: ValueKey('create-task-channel-${option.id}'),
+            ),
+        ],
+        onChanged: onChanged == null
+            ? null
+            : (next) {
+                if (next != null) onChanged!(next);
+              },
       ),
     );
   }

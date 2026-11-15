@@ -272,7 +272,7 @@ class WorkspaceNavigation {
       final fallback = location.channelPage != null
           ? location.withQuery({'channelPage': null})
           : location.task != null
-          ? location.withQuery({'task': null})
+          ? location.withQuery({'task': null, ...taskSlotRemoval(location)})
           : location.legacyTask != null
           ? location.withQuery({'legacyTask': null})
           : location.profile != null

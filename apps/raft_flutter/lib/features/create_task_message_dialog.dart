@@ -9,8 +9,10 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:raft_ui/raft_ui.dart';
 
+import '../data/cause_notice.dart';
 import '../data/server_error_code.dart';
 import '../data/workspace_controller.dart';
+import 'create_task_channel.dart';
 import 'create_task_dialog.dart' show createTaskFailureText;
 
 /// Web `taskFromMessage`: the first line is the title, the rest (trimmed) the
@@ -41,11 +43,15 @@ class CreateTaskMessageDialog extends StatefulWidget {
   const CreateTaskMessageDialog({
     super.key,
     required this.controller,
-    required this.channelId,
+    this.channelId,
+    this.defaultChannelId,
     this.onCreated,
   });
   final WorkspaceController controller;
-  final String channelId;
+
+  /// The channel the message goes in; null (the Tasks page) asks for one.
+  final String? channelId;
+  final String? defaultChannelId;
   final Future<void> Function()? onCreated;
 
   @override
@@ -57,6 +63,13 @@ class _CreateTaskMessageDialogState extends State<CreateTaskMessageDialog> {
   final text = TextEditingController();
   String status = 'todo';
   bool submitting = false;
+  late String? pickedChannel = createTaskInitialChannel(
+    widget.controller,
+    widget.defaultChannelId,
+  );
+
+  /// "Pick a channel": said under the field until a channel is picked.
+  final channelRequired = CauseNotice();
 
   /// A failed send (the server's refusal, in the person's language where
   /// Raft has it); the next send clears it.
@@ -84,6 +97,7 @@ class _CreateTaskMessageDialogState extends State<CreateTaskMessageDialog> {
   }
 
   String? get channelLabel {
+    if (widget.channelId == null) return null;
     final w = widget.controller;
     final channel = [
       ...w.channels,
@@ -101,12 +115,22 @@ class _CreateTaskMessageDialogState extends State<CreateTaskMessageDialog> {
     final draft = taskFromMessage(text.text);
     if (submitting || draft == null) return;
     final w = widget.controller;
+    final channelId = widget.channelId ?? pickedChannel;
+    if (channelId == null) {
+      setState(
+        () => channelRequired.raise(
+          raftText(context, 'Pick a channel'),
+          whileTrue: () => pickedChannel == null,
+        ),
+      );
+      return;
+    }
     setState(() {
       submitting = true;
       error = null;
     });
     final keyText = jsonEncode([
-      widget.channelId,
+      channelId,
       draft.title,
       draft.description,
     ]);
@@ -116,7 +140,7 @@ class _CreateTaskMessageDialogState extends State<CreateTaskMessageDialog> {
     sourceKey = (text: keyText, id: key);
     Future<void> send(String randomId) => w.command(
       'POST',
-      '/tasks/channel/${widget.channelId}',
+      '/tasks/channel/$channelId',
       data: {
         'tasks': [
           {'title': draft.title, 'description': ?draft.description},
@@ -162,6 +186,20 @@ class _CreateTaskMessageDialogState extends State<CreateTaskMessageDialog> {
     onSubmit: submit,
     canSubmit: taskFromMessage(text.text) != null,
     channelLabel: channelLabel,
+    channelField: widget.channelId != null
+        ? null
+        : RaftCreateTaskChannelField(
+            label: 'Post in',
+            options: createTaskChannelOptions(widget.controller),
+            value: pickedChannel,
+            error: channelRequired.message,
+            onChanged: submitting
+                ? null
+                : (id) => setState(() {
+                    pickedChannel = id;
+                    channelRequired.clear();
+                  }),
+          ),
     error: error,
     submitting: submitting,
   );

@@ -269,7 +269,7 @@ class _WorkspaceViewState extends State<WorkspaceView>
       reload,
     );
     final legacy = row['isLegacy'] == true;
-    final next = w.location.withQuery({
+    final next = taskOpenLocation(w, row, boardIntent, wide).withQuery({
       if (boardIntent) 'profile': null,
       if (legacy || boardIntent)
         'legacyTask': legacy ? '$channelId:$itemId' : null,
@@ -2616,6 +2616,7 @@ class _WorkspaceViewState extends State<WorkspaceView>
   Widget? desktopContentDetail() {
     final target = desktopNavigation.target;
     if (target == null) return null;
+    if (target.kind == DesktopContentKind.task) return const TaskContentSlot();
     final key = ValueKey(
       'desktop-detail-$mobileAuthority-${target.kind}-${target.id}',
     );
@@ -2623,10 +2624,7 @@ class _WorkspaceViewState extends State<WorkspaceView>
     // `onBack=closeSlot` with `backButtonVisibility="always"`: Back at every
     // width. A directory / route detail keeps Back below `md` only (the phone
     // page), and nothing beside the list on wide layouts.
-    final slot = const {
-      'search',
-      'activity',
-    }.contains(desktopNavigation.masterRoute);
+    final slot = ['search', 'activity'].contains(desktopNavigation.masterRoute);
     final profile = desktopProfileDetail(
       w: w,
       key: key,

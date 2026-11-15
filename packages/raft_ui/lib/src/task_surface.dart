@@ -86,6 +86,7 @@ class RaftTaskSurface extends StatefulWidget {
     this.unresolvedBody,
     this.legacyPresentation = RaftLegacyTaskPresentation.modal,
     this.page = false,
+    this.inPlace = false,
     this.displayNameFor,
     this.onViewInThread,
     this.conversation,
@@ -117,6 +118,11 @@ class RaftTaskSurface extends StatefulWidget {
   final Widget? unresolvedBody;
   final RaftLegacyTaskPresentation legacyPresentation;
   final bool page;
+
+  /// Beside a list (Web TaskContentSlot, `TaskConversationPage
+  /// presentation="modal" page`): the dialog's frameless page filling its
+  /// column, with the desktop head and its ×.
+  final bool inPlace;
   final Future<void> Function() onRetry, onLoadAssignees;
   final Future<void> Function(String, dynamic) onUpdate;
 
@@ -153,6 +159,7 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
   /// screen, and the head pulled down from the bar once it is not.
   final headInView = RaftTaskHeadVisibility();
   final barLink = LayerLink();
+  final barFocus = FocusNode(debugLabel: 'task bar summary');
   bool headPanelOpen = false;
 
   /// Someone other than the viewer chosen in the picker: the reason step
@@ -172,6 +179,7 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
   @override
   void dispose() {
     headInView.dispose();
+    barFocus.dispose();
     assigneeSearch.dispose();
     super.dispose();
   }
@@ -185,6 +193,7 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
         legacy && widget.legacyPresentation == RaftLegacyTaskPresentation.side;
     final fullscreen =
         widget.page ||
+        widget.inPlace ||
         legacy &&
             widget.legacyPresentation == RaftLegacyTaskPresentation.mobileModal;
     final overlay = side || fullscreen;
@@ -352,8 +361,10 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
                               ),
                         assigneeIsAgent: task['claimedByType'] == 'agent',
                         open: headPanelOpen,
-                        onToggle: () =>
-                            setState(() => headPanelOpen = !headPanelOpen),
+                        focusNode: barFocus,
+                        onToggle: () => headPanelOpen
+                            ? closeHeadPanel(restoreFocus: true)
+                            : setState(() => headPanelOpen = true),
                       ),
               ),
       );
@@ -532,6 +543,14 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
   bool summarizes(bool mobile) =>
       widget.conversation != null && !widget.legacy && mobile && !widget.page;
 
+  /// Closes the pulled-down head; focus goes back to the bar unless a press
+  /// outside closed it (Web `TaskHeadPullDown`).
+  void closeHeadPanel({required bool restoreFocus}) {
+    if (!headPanelOpen) return;
+    setState(() => headPanelOpen = false);
+    if (restoreFocus) barFocus.requestFocus();
+  }
+
   /// The head pulled down from the bar, over the messages; [body] is what a
   /// press or a scroll start closes it from (never the bar itself).
   Widget pullDown(
@@ -544,7 +563,7 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
       valueListenable: headInView,
       builder: (context, inView, _) {
         final open = headPanelOpen && !inView;
-        void close() => setState(() => headPanelOpen = false);
+        void close() => closeHeadPanel(restoreFocus: true);
         return raftTaskPullDownHost(
           link: barLink,
           open: open,
@@ -553,7 +572,8 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
           child: build(
             (body) => raftTaskPullDownDismiss(
               open: open,
-              onClose: close,
+              onClose: () => closeHeadPanel(restoreFocus: false),
+              onScrollClose: close,
               child: body,
             ),
           ),

@@ -49,6 +49,7 @@ import 'create_task_dialog.dart';
 import 'desktop_navigation_policy.dart' show DesktopContentTarget;
 import 'search_home.dart';
 import 'search_snapshot.dart';
+import 'task_content_slot.dart';
 import 'task_surface.dart';
 import 'task_status_request.dart';
 import 'task_surface_controller.dart';
@@ -3014,6 +3015,8 @@ class _ResourceViewState extends State<ResourceView> {
     principal: w.client.user?.id,
   );
 
+  bool get wide => !RaftAdaptiveWorkspace.compactOf(context);
+
   Future<void> openSearchMessage(Map<String, dynamic> row, String scope) async {
     if (!accepts(scope) ||
         !rows.any((r) => identical(r, row) || r['id'] == row['id'])) {
@@ -3024,6 +3027,7 @@ class _ResourceViewState extends State<ResourceView> {
     setState(() => selectedSearchKey = 'message:$message');
     final committed = query.text;
     rememberSearchOpen(scope, queryText: committed);
+    if (openTaskFromList(w, row, wide: wide)) return;
     if (widget.onSearchMessage case final open?) {
       await open(row);
     } else {
@@ -4008,6 +4012,9 @@ class _ResourceViewState extends State<ResourceView> {
     if (!accepts(scope)) return;
     captureActivityAgentCollapse(w, widget.section, row);
     markActivityRead(row, scope);
+    if (widget.section == 'activity' && openTaskFromList(w, row, wide: wide)) {
+      return;
+    }
     if (widget.section == 'activity' && widget.onActivityItem != null) {
       await widget.onActivityItem!(Map<String, dynamic>.from(row));
       return;
@@ -5529,7 +5536,7 @@ class _ResourceViewState extends State<ResourceView> {
       final allowed = ['owner', 'admin'].contains(role)
           ? raftTaskStatuses
           : [status, ...?raftTaskTransitions[status]];
-      return RaftTaskCard(
+      final card = RaftTaskCard(
         key: ValueKey('task-${row['id']}'),
         title: name,
         number: '${row['taskNumber'] ?? row['number'] ?? ''}',
@@ -5555,6 +5562,9 @@ class _ResourceViewState extends State<ResourceView> {
                 scope,
               ),
       );
+      // Closing the task beside the list puts focus back on its card.
+      final slotKey = ValueKey('task-slot-row-${row['id']}');
+      return TaskSlotRow(key: slotKey, taskId: row['id'], child: card);
     }
     if (section == 'saved') return savedCard(row, scope, topRule: topRule);
     if (section == 'activity') {
@@ -5591,61 +5601,18 @@ class _ResourceViewState extends State<ResourceView> {
       setState(() => error = 'Join a channel before creating a task.');
       return;
     }
-    await scopedDialog<bool>(
+    await scopedDialog<void>(
       scope,
-      form: true,
-      (dialogContext) => RaftFormDialog(
-        title: 'New task',
-        submitLabel: 'New task',
-        fields: [
-          RaftFormField(
-            'channel',
-            'Channel',
-            initial: available.any((c) => c.id == w.channel?.id)
-                ? w.channel!.id
-                : available.first.id,
-            choices: {for (final c in available) c.id: '#${c.name}'},
-            localizeChoices: false,
-          ),
-          const RaftFormField('title', 'Title', required: true),
-          const RaftFormField(
-            'description',
-            'Description (Markdown)',
-            multiline: true,
-          ),
-        ],
-        onSubmit: (values) async {
-          if (!accepts(scope) ||
-              w.server?.string('role') == 'guest' ||
-              !w.channels.any(
-                (c) => c.id == values['channel'] && c.joined && !c.archived,
-              )) {
-            throw const RaftApiException(
-              'Channel access changed. Reopen this form.',
-            );
-          }
-          try {
-            await w.client.request(
-              'POST',
-              '/tasks/channel/${values['channel']}',
-              data: {
-                'tasks': [
-                  {
-                    'title': values['title'],
-                    'description': values['description'],
-                  },
-                ],
-              },
-            );
-            if (!accepts(scope)) return;
-            await w.refreshUnread();
-            if (accepts(scope)) await load(keep: rows.isNotEmpty);
-          } catch (e) {
-            fail(e, scope);
-            rethrow;
-          }
+      (dialogContext) => CreateTaskDialog.forChannel(
+        controller: w,
+        defaultChannelId: w.channel?.id,
+        onCreated: () async {
+          if (!accepts(scope)) return;
+          await w.refreshUnread();
+          if (accepts(scope)) await load(keep: rows.isNotEmpty);
         },
       ),
+      form: true,
     );
   }
 
