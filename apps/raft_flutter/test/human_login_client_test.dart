@@ -162,14 +162,22 @@ void main() {
     'the install is the authenticated POST, addressed to that server',
     () async {
       // The app is on srv-1; the person installs on srv-2.
-      await api.installMarketplaceApp('srv-2', 'app-record-1');
+      await api.installMarketplaceApp('srv-2', 'app-record-1', const {
+        'expected_scopes': ['openid'],
+        'expected_groups': <String>[],
+      });
       final call = adapter.calls.singleWhere(
         (c) => c.path == '/integrations/marketplace/app-record-1/install',
       );
       expect(call.method, 'POST');
       expect(call.headers['X-Server-Id'], 'srv-2');
       expect(call.headers['Authorization'], isNotNull);
-      expect(call.data, isNull);
+      // What the person was shown (server routes/integrations.ts:1242-1246
+      // refuses an install without it).
+      expect(call.data, {
+        'expected_scopes': ['openid'],
+        'expected_groups': <String>[],
+      });
     },
   );
 }

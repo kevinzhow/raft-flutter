@@ -156,6 +156,16 @@ class _HumanLoginSheetState extends State<HumanLoginSheet> {
     final HumanLoginChoice installed;
     try {
       installed = await installHumanLoginApp(widget.api, current);
+    } on HumanLoginPermissionsChanged catch (error) {
+      if (!mounted) return;
+      // Web: the current set replaces the shown one, so the next press
+      // confirms what the server holds now.
+      setState(() {
+        installingId = '';
+        lookupResult = lookupResult!.replaced(error.choice);
+        failure = error.text;
+      });
+      return;
     } on HumanLoginException catch (error) {
       if (!mounted) return;
       setState(() {

@@ -48,7 +48,11 @@ class FakeHumanLoginApi implements HumanLoginApi {
 
   final lookups = <({String serverId, Map<String, String> query})>[];
   final authorizations = <Map<String, Object?>>[];
-  final installs = <({String serverId, String appId})>[];
+  final installs =
+      <({String serverId, String appId, Map<String, Object?> body})>[];
+
+  /// app_prompt_text_consent for every server.
+  bool promptTextConsentOn = false;
 
   /// Every call in the order it was made: `lookup:<server>`,
   /// `install:<server>` and `authorize:<server>`.
@@ -116,8 +120,15 @@ class FakeHumanLoginApi implements HumanLoginApi {
   }
 
   @override
-  Future<dynamic> installMarketplaceApp(String serverId, String appId) async {
-    installs.add((serverId: serverId, appId: appId));
+  Future<bool> promptTextConsent(String serverId) async => promptTextConsentOn;
+
+  @override
+  Future<dynamic> installMarketplaceApp(
+    String serverId,
+    String appId,
+    Map<String, Object?> body,
+  ) async {
+    installs.add((serverId: serverId, appId: appId, body: body));
     calls.add('install:$serverId');
     await installGate?.future;
     final error = installError;

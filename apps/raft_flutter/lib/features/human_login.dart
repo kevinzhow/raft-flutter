@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:raft_client/raft_client.dart';
 
+import '../data/app_install_expectation.dart';
 import '../data/user_error.dart';
 import '../data/workspace_controller.dart' show WorkspaceController;
 import '../platform/content_links.dart';
@@ -269,6 +270,9 @@ class HumanLoginClient {
     this.canInstall = false,
     this.disallowedScopes = const [],
     this.scopeReason,
+    this.allowedScopes,
+    this.appNotificationGroups = const [],
+    this.promptTextRevisionId,
   });
 
   factory HumanLoginClient.fromJson(Map<dynamic, dynamic> json) {
@@ -306,6 +310,19 @@ class HumanLoginClient {
       scopeReason: validation is Map && validation['reason'] is String
           ? validation['reason'] as String
           : null,
+      allowedScopes: json['allowedScopes'] is List
+          ? [
+              for (final s in json['allowedScopes'] as List)
+                if (s is String) s,
+            ]
+          : null,
+      appNotificationGroups: json['appNotificationGroups'] is List
+          ? [
+              for (final g in json['appNotificationGroups'] as List)
+                if (g is String) g,
+            ]
+          : const [],
+      promptTextRevisionId: text('promptTextRevisionId'),
     );
   }
 
@@ -319,6 +336,39 @@ class HumanLoginClient {
       scopeReason;
   final bool marketplace, installRequired, canInstall;
   final List<String> disallowedScopes;
+
+  /// What an install confirms (server routes/oauth.ts:1095-1099): the app's
+  /// declared login scopes (null: the defaults), its data groups and its
+  /// prompt-text revision.
+  final List<String>? allowedScopes;
+  final List<String> appNotificationGroups;
+  final String? promptTextRevisionId;
+
+  /// The same app with the set a 409 APP_PERMISSIONS_CHANGED reported as
+  /// current (Web HumanLoginSetupPage.tsx:431-447), still waiting for the
+  /// install.
+  HumanLoginClient withPermissions({
+    required List<String> scopes,
+    required List<String> groups,
+    String? textRevisionId,
+  }) => HumanLoginClient(
+    id: id,
+    clientId: clientId,
+    name: name,
+    description: description,
+    homepageUrl: homepageUrl,
+    logoUrl: logoUrl,
+    setupUrl: setupUrl,
+    setupDescription: setupDescription,
+    marketplace: marketplace,
+    installRequired: installRequired,
+    canInstall: canInstall,
+    disallowedScopes: disallowedScopes,
+    scopeReason: scopeReason,
+    allowedScopes: scopes,
+    appNotificationGroups: groups,
+    promptTextRevisionId: textRevisionId ?? promptTextRevisionId,
+  );
 
   /// The same app once it is installed on the server: Web sets
   /// `availability: "ready"` and drops `installation`.
@@ -335,6 +385,9 @@ class HumanLoginClient {
     marketplace: true,
     disallowedScopes: disallowedScopes,
     scopeReason: scopeReason,
+    allowedScopes: allowedScopes,
+    appNotificationGroups: appNotificationGroups,
+    promptTextRevisionId: promptTextRevisionId,
   );
 
   /// Web `initialsForApp`.
@@ -425,6 +478,14 @@ class HumanLoginException implements Exception {
   String toString() => 'HumanLoginException';
 }
 
+/// The install was refused because the app's permissions or prompt text
+/// changed after the lookup (409 APP_PERMISSIONS_CHANGED). [choice] carries
+/// the current set, which the next "Install and continue" sends.
+class HumanLoginPermissionsChanged extends HumanLoginException {
+  const HumanLoginPermissionsChanged(super.text, this.choice);
+  final HumanLoginChoice choice;
+}
+
 /// What the flow needs from the signed-in app: its servers and its
 /// authenticated API client.
 abstract interface class HumanLoginApi {
@@ -448,8 +509,17 @@ abstract interface class HumanLoginApi {
 
   /// `POST /integrations/marketplace/<id>/install` on [serverId] (Web sends
   /// `X-Server-Id`): installs the Marketplace app there as the signed-in
-  /// person, who must own or administer that server.
-  Future<dynamic> installMarketplaceApp(String serverId, String appId);
+  /// person, who must own or administer that server. [body] is what the
+  /// person was shown ([AppInstallExpectation.body]).
+  Future<dynamic> installMarketplaceApp(
+    String serverId,
+    String appId,
+    Map<String, Object?> body,
+  );
+
+  /// Whether app_prompt_text_consent is on for [serverId]; false when it
+  /// can't be read.
+  Future<bool> promptTextConsent(String serverId);
 }
 
 /// The production [HumanLoginApi] over the app's session client. The server
@@ -495,11 +565,19 @@ class ClientHumanLoginApi implements HumanLoginApi {
       client.post('/oauth/authorize/human', data: body);
 
   @override
-  Future<dynamic> installMarketplaceApp(String serverId, String appId) =>
-      client.postForServer(
-        serverId,
-        '/integrations/marketplace/${Uri.encodeComponent(appId)}/install',
-      );
+  Future<dynamic> installMarketplaceApp(
+    String serverId,
+    String appId,
+    Map<String, Object?> body,
+  ) => client.postForServer(
+    serverId,
+    '/integrations/marketplace/${Uri.encodeComponent(appId)}/install',
+    data: body,
+  );
+
+  @override
+  Future<bool> promptTextConsent(String serverId) =>
+      appPromptTextConsent(client, serverId);
 }
 
 /// The signed-in session's side of Login with Raft; null while signed out.
@@ -527,6 +605,11 @@ class HumanLoginMessages {
       'This service is missing a configured return URL.';
   static const continueFailed = 'Failed to continue with Raft.';
   static const installFailed = 'Failed to install this Marketplace app.';
+
+  /// pages.humanLogin.permissionsChanged.
+  static const permissionsChanged =
+      "This app's permissions just changed. Review the current permissions "
+      'below, then install again.';
 }
 
 /// The servers [request] may use: the one its `server` parameter names (id or
@@ -680,20 +763,58 @@ HumanLoginException _refused(
   );
 }
 
-/// Web `installMarketplaceApp`: installs the app on the chosen server and
-/// returns the choice as Web leaves it, ready. Authorizes nothing. Throws
-/// [HumanLoginException] with the server's own words, else Web's text.
+/// Web `installMarketplaceApp` (HumanLoginSetupPage.tsx:388-458): installs
+/// the app on the chosen server, confirming the scopes, data groups and (with
+/// app_prompt_text_consent on there) the prompt-text revision the lookup
+/// returned, and returns the choice as Web leaves it, ready. Authorizes
+/// nothing. Throws [HumanLoginPermissionsChanged] when the server reports a
+/// newer set, else [HumanLoginException] with the server's own words or
+/// Web's text.
 Future<HumanLoginChoice> installHumanLoginApp(
   HumanLoginApi api,
   HumanLoginChoice choice,
 ) async {
-  final id = choice.client.id;
-  if (!choice.client.canInstall || id == null || id.isEmpty) {
+  final app = choice.client;
+  final id = app.id;
+  if (!app.canInstall || id == null || id.isEmpty) {
     throw const HumanLoginException(HumanLoginMessages.installFailed);
   }
+  bool consent;
   try {
-    await api.installMarketplaceApp(choice.server.id, id);
+    consent = await api.promptTextConsent(choice.server.id);
+  } on Object {
+    // Unknown counts as off, as Web's flag store before it loads.
+    consent = false;
+  }
+  final expected = AppInstallExpectation.of(
+    allowedScopes: app.allowedScopes,
+    groups: app.appNotificationGroups,
+    textRevisionId: app.promptTextRevisionId,
+    promptTextConsent: consent,
+  );
+  try {
+    await api.installMarketplaceApp(choice.server.id, id, expected.body);
   } on RaftApiException catch (error) {
+    final stale = appInstallRefusal(
+      error,
+      sentTextRevisionId: expected.textRevisionId,
+      permissionsChanged: HumanLoginMessages.permissionsChanged,
+    );
+    final current = appPermissionsChangedCurrent(error);
+    if (stale != null && current != null) {
+      throw HumanLoginPermissionsChanged(
+        stale,
+        HumanLoginChoice(
+          choice.server,
+          app.withPermissions(
+            scopes: current.scopes,
+            groups: current.groups,
+            textRevisionId: current.textRevisionId,
+          ),
+        ),
+      );
+    }
+    if (stale != null) throw HumanLoginException(stale);
     throw _refused(
       error,
       HumanLoginMessages.installFailed,

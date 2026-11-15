@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:raft_ui/raft_ui.dart';
 
+import '../data/app_install_expectation.dart';
 import '../data/device_preferences.dart';
 import '../data/user_error.dart';
 import '../data/web_error.dart';
@@ -316,6 +317,7 @@ class _IntegrationsState extends ManagementState<IntegrationsView> {
     String id,
     Future<void> Function() body, {
     required String fallback,
+    String? Function(Object error)? explain,
   }) async {
     final generation = w.client.generation, source = authority;
     // Web: every connected-app action starts with `setError("")`.
@@ -332,7 +334,8 @@ class _IntegrationsState extends ManagementState<IntegrationsView> {
       // Closed "Verify it's you": nothing changed, no error.
       if (isSecondFactorStepUpCancelled(e)) return null;
       if (invalidateDeniedMutation(e)) return null;
-      return userErrorText(e, fallback: fallback, where: 'connected apps');
+      return explain?.call(e) ??
+          userErrorText(e, fallback: fallback, where: 'connected apps');
     } finally {
       if (mounted && accepts(generation) && source == authority) {
         setState(() => savingId = null);
@@ -405,18 +408,53 @@ class _IntegrationsState extends ManagementState<IntegrationsView> {
           final homepage = listing['homepageUrl'] as String?;
           Future<void> install() async {
             setModal(() => modalError = null);
+            AppInstallExpectation? expected;
+            var changed = false;
             final failure = await _mutate(
               id,
-              // Approving an app: "Verify it's you" first (Web
-              // IntegrationsSection, reason appAccess).
-              () => withSecondFactorStepUp(
-                context,
-                w.client,
-                () => w.client.post('/integrations/marketplace/$id/install'),
-                reason: StepUpReason.appAccess,
-              ),
+              () async {
+                // Web handleInstallMarketplaceApp (IntegrationsSection.tsx:
+                // 756-771): confirm the scopes and data groups this detail
+                // shows and, with app_prompt_text_consent on, its text.
+                final serverId = w.server?.id;
+                final shown = AppInstallExpectation.of(
+                  allowedScopes: listing['allowedScopes'],
+                  groups: listing['appNotificationGroups'],
+                  textRevisionId: listing['promptTextRevisionId'],
+                  promptTextConsent:
+                      serverId != null &&
+                      await appPromptTextConsent(w.client, serverId),
+                );
+                expected = shown;
+                if (!mounted) return;
+                // Approving an app: "Verify it's you" first (Web
+                // IntegrationsSection, reason appAccess).
+                await withSecondFactorStepUp(
+                  context,
+                  w.client,
+                  () => w.client.post(
+                    '/integrations/marketplace/$id/install',
+                    data: shown.body,
+                  ),
+                  reason: StepUpReason.appAccess,
+                );
+              },
               fallback: 'Failed to install marketplace app',
+              explain: (e) {
+                changed = isAppPermissionsChanged(e);
+                return appInstallRefusal(
+                  e,
+                  sentTextRevisionId: expected?.textRevisionId,
+                  // settings.connectedApps.permissionsChanged.
+                  permissionsChanged:
+                      "This app's permissions just changed. Review the "
+                      'current permissions, then confirm again.',
+                );
+              },
             );
+            // Web: the current set replaces the shown one (it reloads when
+            // the answer lacks it), so the next Install confirms it.
+            if (changed && mounted) await reload();
             if (!modal.mounted) return;
             if (failure == null && error == null) {
               // A listing with a setup page stays open on its setup panel.

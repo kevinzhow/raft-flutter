@@ -154,6 +154,12 @@ Map<String, dynamic> _errorDetails(Map? body) {
     // A lost task edit race (PATCH /tasks/:id 409): the revision to save
     // against next (Web TaskHeadEditor `staleRevisionOf`).
     'currentRevision',
+    // APP_PERMISSIONS_CHANGED (an app install, 409): the app's current login
+    // scopes, data groups and prompt-text revision, which the next install
+    // confirms (Web `appPermissionsChangedCurrentSet`). Public app metadata.
+    'current_scopes',
+    'current_groups',
+    'current_text_revision_id',
   };
   dynamic freeze(dynamic value) {
     if (value is Map) {

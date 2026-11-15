@@ -543,7 +543,13 @@ void main() {
       () async {
         final api = FakeHumanLoginApi();
         final installed = await installHumanLoginApp(api, waiting());
-        expect(api.installs, [(serverId: 'srv-1', appId: 'app-record-1')]);
+        final install = api.installs.single;
+        expect((install.serverId, install.appId), ('srv-1', 'app-record-1'));
+        // The fake app declares no scopes or groups: the defaults.
+        expect(install.body, {
+          'expected_scopes': ['openid', 'profile', 'identity'],
+          'expected_groups': <String>[],
+        });
         expect(installed.client.installRequired, isFalse);
         expect(installed.client.canInstall, isFalse);
         expect(installed.client.clientId, 'artifact-share');
