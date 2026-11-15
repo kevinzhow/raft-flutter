@@ -4,6 +4,7 @@ import Photos
 import AVFoundation
 import ImageIO
 import CFNetwork
+import UniformTypeIdentifiers
 
 final class RaftSharingBridge: NSObject, FlutterPlugin {
   private let sessionQueue = DispatchQueue(label: "app.raft.share-access")
@@ -16,6 +17,9 @@ final class RaftSharingBridge: NSObject, FlutterPlugin {
     let files = FlutterMethodChannel(name: "app.raft/attachment-files", binaryMessenger: registrar.messenger())
     files.setMethodCallHandler { call, result in bridge.handleFiles(call, result: result) }
     let frames = FlutterMethodChannel(name: "app.raft/video-frame", binaryMessenger: registrar.messenger())
+    let clipboardChannel = FlutterMethodChannel(name: "app.raft/clipboard-attachments", binaryMessenger: registrar.messenger())
+    let clipboard = RaftClipboardAttachments(channel: clipboardChannel)
+    clipboardChannel.setMethodCallHandler { call, result in clipboard.handle(call, result) }
     let video = RaftVideoFrame()
     frames.setMethodCallHandler { call, result in video.handle(call, result) }
   }
@@ -111,6 +115,182 @@ final class RaftSharingBridge: NSObject, FlutterPlugin {
       controller.present(sheet, animated: true)
     default: result(FlutterMethodNotImplemented)
     }
+  }
+}
+
+/// Copied images and files for the message composer. Detection reads only
+/// metadata, so it never triggers the iOS paste prompt. iOS lets an app read
+/// another app's copy without a prompt only inside the system Paste action, and
+/// the engine's text view offers that action only for strings. So the Paste of
+/// that view is extended: with attachments on the clipboard it reads them and
+/// asks Dart to take them (`paste`); Dart then calls `read` for the result.
+final class RaftClipboardAttachments {
+  private static weak var shared: RaftClipboardAttachments?
+  private let channel: FlutterMethodChannel
+  private var observers: [NSObjectProtocol] = []
+  private var changeCount = -1
+  private var lastAvailable = false
+  private var pending: (id: Int, load: (@escaping ([[String: Any]]) -> Void) -> Void)?
+  private var pastes = 0
+
+  init(channel: FlutterMethodChannel) {
+    self.channel = channel
+    for name in [UIPasteboard.changedNotification, UIApplication.didBecomeActiveNotification] {
+      observers.append(NotificationCenter.default.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
+        self?.changed()
+      })
+    }
+    Self.shared = self
+    Self.installPasteHook()
+    changed()
+  }
+
+  deinit {
+    for observer in observers { NotificationCenter.default.removeObserver(observer) }
+  }
+
+  /// The type to attach from one clipboard item, or nil when the item is text.
+  /// Copied text often carries a web archive or RTFD beside its string; those
+  /// items paste as text. Images and copied files attach even with a string.
+  static func attachmentType(_ identifiers: [String]) -> String? {
+    let types = identifiers.compactMap { id in UTType(id).map { (id, $0) } }
+    if let image = types.first(where: { $0.1.conforms(to: .image) }) { return image.0 }
+    let file = identifiers.contains(UTType.fileURL.identifier)
+    if !file && types.contains(where: { $0.1.conforms(to: .text) }) { return nil }
+    if let data = types.first(where: {
+      $0.1.conforms(to: .data) && !$0.1.conforms(to: .url) && (file || !$0.1.conforms(to: .text))
+    }) { return data.0 }
+    return file ? UTType.fileURL.identifier : nil
+  }
+
+  private func available() -> Bool {
+    let board = UIPasteboard.general
+    guard board.numberOfItems > 0 else { return false }
+    return board.hasImages
+      || (board.types(forItemSet: nil) ?? []).contains { Self.attachmentType($0) != nil }
+  }
+
+  private func changed() {
+    let count = UIPasteboard.general.changeCount
+    let value = available()
+    guard count != changeCount || value != lastAvailable else { return }
+    changeCount = count
+    lastAvailable = value
+    channel.invokeMethod("changed", arguments: value)
+  }
+
+  func handle(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) {
+    switch call.method {
+    case "available": result(available())
+    case "read":
+      // The files of the last system Paste, else a direct read (Cmd+V on an
+      // iPad keyboard; iOS may ask the user first).
+      let load = pending?.load ?? Self.load(UIPasteboard.general.itemProviders)
+      pending = nil
+      load { result($0) }
+    default: result(FlutterMethodNotImplemented)
+    }
+  }
+
+  // MARK: Paste hook
+
+  private static var hooked = false
+
+  /// Extends `canPerformAction(paste:)` and `paste:` of the engine's
+  /// FlutterTextInputView. Only methods the class defines itself are changed,
+  /// never an inherited UIKit one.
+  private static func installPasteHook() {
+    guard !hooked, let view = NSClassFromString("FlutterTextInputView") else { return }
+    hooked = true
+    func own(_ selector: Selector) -> Method? {
+      guard let method = class_getInstanceMethod(view, selector) else { return nil }
+      let inherited = class_getSuperclass(view).flatMap { class_getInstanceMethod($0, selector) }
+      return inherited.map { method_getImplementation($0) } == method_getImplementation(method) ? nil : method
+    }
+    let canPerform = #selector(UIResponder.canPerformAction(_:withSender:))
+    if let method = own(canPerform) {
+      typealias Original = @convention(c) (AnyObject, Selector, Selector, Any?) -> Bool
+      let original = unsafeBitCast(method_getImplementation(method), to: Original.self)
+      let block: @convention(block) (AnyObject, Selector, Any?) -> Bool = { this, action, sender in
+        if action == #selector(UIResponderStandardEditActions.paste(_:)),
+           shared?.available() == true { return true }
+        return original(this, canPerform, action, sender)
+      }
+      method_setImplementation(method, imp_implementationWithBlock(block))
+    }
+    let paste = #selector(UIResponderStandardEditActions.paste(_:))
+    if let method = own(paste) {
+      typealias Original = @convention(c) (AnyObject, Selector, Any?) -> Void
+      let original = unsafeBitCast(method_getImplementation(method), to: Original.self)
+      let block: @convention(block) (AnyObject, Any?) -> Void = { this, sender in
+        let text = { original(this, paste, sender) }
+        if shared?.systemPaste(orElse: text) != true { text() }
+      }
+      method_setImplementation(method, imp_implementationWithBlock(block))
+    }
+  }
+
+  /// Starts reading inside the trusted Paste action; false leaves the text
+  /// paste. A focused field that takes no attachments gets [orElse].
+  private func systemPaste(orElse: @escaping () -> Void) -> Bool {
+    guard available() else { return false }
+    let providers = UIPasteboard.general.itemProviders
+    guard providers.contains(where: { Self.attachmentType($0.registeredTypeIdentifiers) != nil }) else {
+      return false
+    }
+    pastes += 1
+    let id = pastes
+    pending = (id, Self.load(providers))
+    channel.invokeMethod("paste", arguments: nil) { [weak self] taken in
+      // Dart answers after the composer read the files, or did not read them.
+      if self?.pending?.id == id { self?.pending = nil }
+      if taken as? Bool != true { orElse() }
+    }
+    return true
+  }
+
+  // MARK: Reading
+
+  /// Starts loading now and returns a function that delivers the entries once
+  /// (on the main thread, in clipboard order).
+  private static func load(_ providers: [NSItemProvider]) -> (@escaping ([[String: Any]]) -> Void) -> Void {
+    let group = DispatchGroup()
+    let lock = NSLock()
+    var entries = Array<[String: Any]?>(repeating: nil, count: providers.count)
+    for (index, provider) in providers.enumerated() {
+      guard let identifier = attachmentType(provider.registeredTypeIdentifiers) else { continue }
+      group.enter()
+      // File representations are temporary: read before the provider callback returns.
+      let consume: (URL?) -> Void = { url in
+        defer { group.leave() }
+        guard let url = url, url.isFileURL else { return }
+        let scoped = url.startAccessingSecurityScopedResource()
+        defer { if scoped { url.stopAccessingSecurityScopedResource() } }
+        // No size limit here: the upload selection applies the server's limit
+        // and tells the user, as for picked files.
+        guard let bytes = try? Data(contentsOf: url), !bytes.isEmpty else { return }
+        let type = identifier == UTType.fileURL.identifier
+          ? UTType(filenameExtension: url.pathExtension) : UTType(identifier)
+        // A copied bitmap has no name; Web and desktop call it `image.png`. Its
+        // file representation has a random temporary name, so do not use that.
+        var name = provider.suggestedName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        if name.isEmpty, identifier == UTType.fileURL.identifier { name = url.lastPathComponent }
+        if name.isEmpty || name == "." {
+          name = type?.conforms(to: .image) == true ? "image" : "attachment"
+        }
+        if (name as NSString).pathExtension.isEmpty,
+           let ext = type?.preferredFilenameExtension { name += "." + ext }
+        lock.lock()
+        entries[index] = ["name": name, "bytes": FlutterStandardTypedData(bytes: bytes)]
+        lock.unlock()
+      }
+      if identifier == UTType.fileURL.identifier {
+        provider.loadObject(ofClass: NSURL.self) { object, _ in consume(object as? URL) }
+      } else {
+        provider.loadFileRepresentation(forTypeIdentifier: identifier) { url, _ in consume(url) }
+      }
+    }
+    return { deliver in group.notify(queue: .main) { deliver(entries.compactMap { $0 }) } }
   }
 }
 

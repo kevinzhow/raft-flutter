@@ -69,6 +69,7 @@ import 'channel_footer_states.dart';
 import 'channel_footer_widgets.dart';
 import 'composer_directory.dart';
 import 'composer_attachment_input.dart';
+import '../platform/clipboard_attachments.dart';
 import 'composer_attachments_view.dart';
 import 'sender_avatar_projection.dart';
 import 'message_reaction_projection.dart';
@@ -484,6 +485,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
   @override
   void initState() {
     super.initState();
+    ClipboardAttachments.watch(); // iOS composer Paste of images and files.
     // Close the anchored reaction picker on window metric changes without a
     // MediaQuery size dependency: that dependency rebuilt the whole timeline
     // on every frame of a window resize.
@@ -3567,6 +3569,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
                       enabled && presentationActive && currentComposer(),
                   child: composer,
                 ),
+                pasteAttachmentsAvailable: ClipboardAttachments.available,
                 onPasteAttachments: () => pasteComposerAttachments(
                   context,
                   w,

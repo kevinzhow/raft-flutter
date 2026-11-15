@@ -1,6 +1,12 @@
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
+/// A system paste whose clipboard carries only attachments to take (the iOS
+/// edit menu or keyboard Paste on an image or file). No text is pasted.
+class RaftPasteAttachmentsIntent extends Intent {
+  const RaftPasteAttachmentsIntent();
+}
+
 /// Routes a paste through attachment inspection while retaining its text.
 class RaftComposerPasteAction extends ContextAction<PasteTextIntent> {
   RaftComposerPasteAction(this.handler);

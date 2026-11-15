@@ -46,6 +46,79 @@ String _text(WidgetTester tester) =>
     tester.widget<TextField>(find.byType(TextField)).controller!.text;
 
 void main() {
+  for (final available in [false, true]) {
+    for (final hasStrings in [false, true]) {
+      testWidgets(
+        'iOS native menu offers Paste for attachments: '
+        'attachments=$available strings=$hasStrings',
+        variant: TargetPlatformVariant.only(TargetPlatform.iOS),
+        (tester) async {
+          final availability = ValueNotifier<bool>(available);
+          addTearDown(availability.dispose);
+          Map<dynamic, dynamic>? shown;
+          tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+            SystemChannels.platform,
+            (call) async {
+              if (call.method == 'Clipboard.hasStrings') {
+                return {'value': hasStrings};
+              }
+              if (call.method == 'ContextMenu.showSystemContextMenu') {
+                shown = call.arguments as Map<dynamic, dynamic>;
+              }
+              return null;
+            },
+          );
+          var taken = 0;
+          await tester.pumpWidget(
+            MaterialApp(
+              theme: raftTheme(),
+              builder: (context, child) => MediaQuery(
+                data: MediaQuery.of(context)
+                    .copyWith(supportsShowingSystemContextMenu: true),
+                child: child!,
+              ),
+              home: Scaffold(
+                body: RaftComposer(
+                  initialDraft: 'draft',
+                  onSend: (_) async => true,
+                  pasteAttachmentsAvailable: availability,
+                  onPasteAttachments: () async {
+                    taken++;
+                    return true;
+                  },
+                ),
+              ),
+            ),
+          );
+          await tester.tap(find.byType(TextField));
+          await tester.pumpAndSettle();
+          await tester.longPress(find.byType(TextField));
+          await tester.pumpAndSettle();
+          expect(shown, isNotNull);
+          final types = [
+            for (final item in shown!['items'] as List)
+              (item as Map<dynamic, dynamic>)['type'],
+          ];
+          // Only the native Paste: iOS trusts it to read another app's copy.
+          expect(
+            types.where((type) => type == 'paste'),
+            hasLength(available || hasStrings ? 1 : 0),
+          );
+          expect(types, isNot(contains('custom')));
+
+          // The host's native Paste hands attachments to the focused composer.
+          final editor = tester.element(find.byType(EditableText));
+          Actions.invoke(editor, const RaftPasteAttachmentsIntent());
+          await tester.pump();
+          expect(taken, 1);
+          expect(_text(tester), 'draft');
+          await tester.pumpWidget(const SizedBox.shrink());
+          await tester.pumpAndSettle();
+        },
+      );
+    }
+  }
+
   testWidgets(
     'Ctrl/Cmd+V hands clipboard files to the host and skips the text paste',
     variant: const TargetPlatformVariant({

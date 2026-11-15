@@ -2144,6 +2144,7 @@ class RaftComposer extends StatefulWidget {
     this.onSuggestionsRequested,
     this.handle,
     this.onPasteAttachments,
+    this.pasteAttachmentsAvailable,
     this.onContentInserted,
     this.frame,
     this.previewBuilder,
@@ -2209,6 +2210,11 @@ class RaftComposer extends StatefulWidget {
   /// true when it took them as attachments; the text paste is then skipped.
   /// Otherwise the ordinary text paste runs unchanged.
   final Future<bool> Function()? onPasteAttachments;
+
+  /// Whether the clipboard has attachments, so the iOS menu offers Paste
+  /// without a string. The host's native Paste then sends
+  /// [RaftPasteAttachmentsIntent] to the focused composer.
+  final ValueListenable<bool>? pasteAttachmentsAvailable;
 
   /// Rich content committed by a software keyboard (Android IME image,
   /// GIF and sticker insertion). Null leaves the editor text-only.
@@ -3037,34 +3043,54 @@ class _RaftComposerState extends State<RaftComposer> {
 
   /// The selection toolbar's Paste follows the same host-first order as
   /// the keyboard shortcut (Web: every paste fires the paste event).
-  Widget pasteAwareMenu(BuildContext context, EditableTextState state) =>
-      SystemContextMenu.isSupportedByField(state)
-      ? RaftTextSelectionToolbar.editableText(context, state)
-      : RaftTextSelectionToolbar.buttonItems(
-          anchors: state.contextMenuAnchors,
-          buttonItems: [
-            for (final item in state.contextMenuButtonItems)
-              item.type == ContextMenuButtonType.paste
-                  ? item.copyWith(
-                      onPressed: () {
-                        state.hideToolbar();
-                        final take = widget.onPasteAttachments;
-                        if (take == null) {
-                          state.pasteText(SelectionChangedCause.toolbar);
-                          return;
-                        }
-                        unawaited(
-                          pasteComposerClipboard(
-                            state,
-                            take,
-                            cause: SelectionChangedCause.toolbar,
-                          ),
-                        );
-                      },
-                    )
-                  : item,
-          ],
-        );
+  Widget pasteAwareMenu(BuildContext context, EditableTextState state) {
+    if (SystemContextMenu.isSupportedByField(state)) {
+      // iOS offers Paste only for a string and lets an app read another
+      // app's copy without a prompt only inside its own Paste action. The host
+      // extends that action to attachments; show it for them as well.
+      final items = SystemContextMenu.getDefaultItems(state);
+      if (widget.onPasteAttachments == null ||
+          widget.pasteAttachmentsAvailable?.value != true ||
+          items.any((item) => item is IOSSystemContextMenuItemPaste)) {
+        return RaftTextSelectionToolbar.editableText(context, state);
+      }
+      final index = items.lastIndexWhere(
+        (item) =>
+            item is IOSSystemContextMenuItemCut ||
+            item is IOSSystemContextMenuItemCopy,
+      );
+      return SystemContextMenu.editableText(
+        editableTextState: state,
+        items: [...items]
+          ..insert(index + 1, const IOSSystemContextMenuItemPaste()),
+      );
+    }
+    return RaftTextSelectionToolbar.buttonItems(
+      anchors: state.contextMenuAnchors,
+      buttonItems: [
+        for (final item in state.contextMenuButtonItems)
+          item.type == ContextMenuButtonType.paste
+              ? item.copyWith(
+                  onPressed: () {
+                    state.hideToolbar();
+                    final take = widget.onPasteAttachments;
+                    if (take == null) {
+                      state.pasteText(SelectionChangedCause.toolbar);
+                      return;
+                    }
+                    unawaited(
+                      pasteComposerClipboard(
+                        state,
+                        take,
+                        cause: SelectionChangedCause.toolbar,
+                      ),
+                    );
+                  },
+                )
+              : item,
+      ],
+    );
+  }
 
   /// The inline editor's place while the expanded editor is open: the draft as
   /// static text in the same box, so the composer behind the scrim keeps its
@@ -3151,6 +3177,11 @@ class _RaftComposerState extends State<RaftComposer> {
               PasteTextIntent: RaftComposerPasteAction(
                 () => widget.onPasteAttachments,
               ),
+            if (widget.onPasteAttachments case final take?)
+              RaftPasteAttachmentsIntent:
+                  CallbackAction<RaftPasteAttachmentsIntent>(
+                    onInvoke: (_) => take(),
+                  ),
           },
           child: RaftCssLineBox(
             style: recipe.editorText,
