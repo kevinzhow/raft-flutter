@@ -26,6 +26,21 @@ enum Affordance {
 
 enum SurfaceKind { panel, page, dialog, drawer, popup, viewer, toast }
 
+/// What Web does when a pointer presses outside a dialog (Base UI
+/// `disablePointerDismissal`, Modal `closeOnBackdrop`). Web has no drag to
+/// close; a Flutter sheet's drag down is a pointer dismissal too.
+enum WebOutside {
+  /// An outside press closes it (`closeOnBackdrop`, a Popover-like dialog).
+  closes,
+
+  /// An outside press does nothing (`disablePointerDismissal`, DialogCard,
+  /// ConfirmDialog, Modal without `closeOnBackdrop`).
+  stays,
+
+  /// No Web surface to compare with (status `no-web`).
+  noWeb,
+}
+
 /// One closable surface and the affordances Web gives it, per width.
 ///
 /// [phone] is 390 wide, [fold] 816 (a wide layout: the compact cut is 768) and
@@ -44,9 +59,16 @@ class CloseSurface {
     this.status = 'ok',
     this.fix = '',
     this.none = const {},
+    this.webOutside,
   });
   final String id;
   final SurfaceKind kind;
+
+  /// Web's answer for an outside press; required for every dialog. A dialog
+  /// whose Web answer is [WebOutside.stays] may list [Affordance.scrim] or
+  /// [Affordance.drag] only as an `approved` difference; every pointer close
+  /// a dialog does not list is checked to leave it open (close_runner.dart).
+  final WebOutside? webOutside;
 
   /// What Web gives the same surface (file and affordances).
   final String web;

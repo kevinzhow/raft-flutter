@@ -62,6 +62,110 @@ void main() {
     }
   });
 
+  test('every dialog records Web\'s outside-press answer, and a Flutter '
+      'pointer close Web lacks is an approved difference', () {
+    const pointer = {Affordance.scrim, Affordance.drag};
+    final problems = <String>[];
+    for (final s in surfaces) {
+      if (s.kind != SurfaceKind.dialog) continue;
+      final web = s.webOutside;
+      if (web == null) {
+        problems.add('${s.id}: no webOutside');
+        continue;
+      }
+      final flutterPointer = {
+        for (final width in ['phone', 'fold', 'desktop'])
+          ...s.at(width).intersection(pointer),
+      };
+      switch (web) {
+        case WebOutside.stays:
+          if (flutterPointer.isNotEmpty && s.status != 'approved') {
+            problems.add(
+              '${s.id}: Web keeps it open on an outside press, Flutter closes '
+              'on ${flutterPointer.map((a) => a.name).join('/')} without an '
+              'approved status',
+            );
+          }
+        case WebOutside.closes:
+          for (final width in ['fold', 'desktop']) {
+            final set = s.at(width);
+            if (set.isNotEmpty &&
+                !set.contains(Affordance.scrim) &&
+                !set.contains(Affordance.back) &&
+                s.status != 'approved') {
+              problems.add('${s.id} @ $width: Web closes on an outside press');
+            }
+          }
+        case WebOutside.noWeb:
+          if (s.status != 'no-web') {
+            problems.add('${s.id}: webOutside noWeb needs status no-web');
+          }
+      }
+    }
+    expect(problems, isEmpty, reason: problems.join('\n'));
+  });
+
+  test('every panel-like widget the shell hosts is a listed surface', () {
+    final shell = [
+      for (final f in Directory('lib/features').listSync().whereType<File>())
+        if (RegExp(r'workspace_view[a-z_]*\.dart$').hasMatch(f.path)) f,
+    ];
+    expect(shell, isNotEmpty);
+    final built = <String>{
+      for (final f in shell)
+        for (final m in RegExp(
+          r'\b([A-Z]\w*(?:Panel|Detail|DetailView|ProfileView|FollowersView|Pane|Drawer|Sheet))\(',
+        ).allMatches(f.readAsStringSync()))
+          m.group(1)!,
+    };
+    final unlisted = built.difference({
+      ...shellHostedPanels.keys,
+      ...shellHostedContent.keys,
+    });
+    expect(
+      unlisted,
+      isEmpty,
+      reason:
+          'The shell builds these panels but neither shellHostedPanels nor '
+          'shellHostedContent lists them: register the surface that checks '
+          'their closes (docs/close-affordances.md)',
+    );
+    final byId = {for (final s in surfaces) s.id: s};
+    for (final MapEntry(key: type, value: ids) in shellHostedPanels.entries) {
+      expect(
+        built,
+        contains(type),
+        reason:
+            '$type is listed as shell-hosted but the shell no longer builds it',
+      );
+      final defining = [
+        for (final f in [
+          ...Directory('lib').listSync(recursive: true),
+          ...Directory('../../packages/raft_ui/lib/src')
+              .listSync(recursive: true),
+        ])
+          if (f is File &&
+              f.path.endsWith('.dart') &&
+              RegExp(
+                '^class $type\\b',
+                multiLine: true,
+              ).hasMatch(f.readAsStringSync()))
+            _normalize(f.path),
+      ];
+      expect(defining, hasLength(1), reason: 'where $type is defined');
+      for (final id in ids) {
+        expect(byId[id], isNotNull, reason: '$type: no surface $id');
+      }
+      expect(
+        ids.any(
+          (id) => byId[id]!.files.map(_normalize).contains(defining.single),
+        ),
+        isTrue,
+        reason: '$type (${defining.single}) is not among the files of $ids',
+      );
+    }
+  });
+
   test('every listed source file exists', () {
     for (final s in surfaces) {
       for (final f in s.files) {

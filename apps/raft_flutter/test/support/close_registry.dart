@@ -20,6 +20,31 @@ List<CloseSurface> get allCloseSurfaces => [
   ...artifactSurfaces,
 ];
 
+/// Panels the shell (lib/features/workspace_view*.dart) hosts in its side
+/// and detail columns, with the surfaces whose harnesses check their closes.
+/// Many never call an opener API themselves (the shell supplies the column,
+/// Esc and Back), so the file scan alone cannot require them; the registry
+/// test requires every panel-like widget the shell builds to be listed here
+/// or in [shellHostedContent]. The computer-detail entry belongs to COMP1
+/// (#624).
+const shellHostedPanels = <String, List<String>>{
+  'ProfileSidePanel': ['profile-human', 'profile-agent', 'profile-external'],
+  'MemberProfileView': ['directory-human-detail'],
+  'FleetDetail': ['computer-detail', 'agent-directory-detail'],
+  'ThreadAgentFollowersView': ['thread-followers'],
+  'RaftOverflowBareSheet': ['channel-members-page'],
+};
+
+/// Panel-like widgets the shell builds that are not closable layers.
+const shellHostedContent = <String, String>{
+  'ConversationPanel':
+      'the channel conversation is the shell\'s main content (Web '
+      'ChannelView), not a layer that closes',
+  'DesktopMasterDetail':
+      'the list-and-detail layout itself; the details it shows are listed '
+      'in shellHostedPanels',
+};
+
 /// Files that contain a surface API call but are not a surface themselves.
 /// Each entry says why; a new entry needs a reviewer's agreement.
 const closeScanExempt = <String, String>{

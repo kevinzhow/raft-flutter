@@ -94,11 +94,16 @@ const panelSurfaces = <CloseSurface>[
       'fold': 'wide layouts open the members dialog (channel-members-dialog) or the drawer sub-page (channel-settings)',
       'desktop': 'wide layouts open the members dialog (channel-members-dialog) or the drawer sub-page (channel-settings)',
     },
-    files: ['lib/features/channel_members.dart'],
+    files: [
+      'lib/features/channel_members.dart',
+      // The phone's bare OverflowSheet the shell hosts the page in.
+      '../../packages/raft_ui/lib/src/channel_overflow_sheet.dart',
+    ],
   ),
   CloseSurface(
     'channel-members-dialog',
     kind: SurfaceKind.dialog,
+    webOutside: WebOutside.stays,
     web: 'ChannelMembers.tsx:1090,1334 Modal (Esc, no backdrop close) + X',
     fold: {_x, _esc, _sys},
     desktop: {_x, _esc, _sys},

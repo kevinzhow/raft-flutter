@@ -984,6 +984,8 @@ void registerNoScrimTests(
   Map<String, OpenSurface> harness,
 ) {
   for (final surface in surfaces) {
+    // A dialog's close test checks this itself (expectPointerKeepsOpen).
+    if (surface.kind == SurfaceKind.dialog) continue;
     for (final (name, size) in closeSizes) {
       final affordances = surface.at(widthKey(name));
       if (affordances.isEmpty || affordances.contains(Affordance.scrim)) {

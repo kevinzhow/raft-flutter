@@ -25,6 +25,7 @@ const dialogSurfaces = <CloseSurface>[
   CloseSurface(
     'history-lower-limit-confirm',
     kind: SurfaceKind.dialog,
+    webOutside: WebOutside.stays,
     web: 'Flutter-only history action; ConfirmDialog.tsx:138-165: X + Esc, no pointer dismissal',
     phone: {_x, _esc, _sys},
     fold: {_x, _esc, _sys},
@@ -35,6 +36,7 @@ const dialogSurfaces = <CloseSurface>[
   CloseSurface(
     'confirm-dialog',
     kind: SurfaceKind.dialog,
+    webOutside: WebOutside.stays,
     web: 'ConfirmDialog.tsx:138-165 Dialog disablePointerDismissal: X + Esc, no scrim, all gated on loading',
     phone: {_x, _esc, _sys},
     fold: {_x, _esc, _sys},
@@ -70,6 +72,7 @@ const dialogSurfaces = <CloseSurface>[
   CloseSurface(
     'role-permission-help',
     kind: SurfaceKind.dialog,
+    webOutside: WebOutside.closes,
     web: 'RolePermissionHelpDialog.tsx:55-60 DialogCard closeOnBackdrop: X + Esc + backdrop',
     phone: {_x, _esc, _scrim, _sys},
     fold: {_x, _esc, _scrim, _sys},
@@ -81,6 +84,7 @@ const dialogSurfaces = <CloseSurface>[
   CloseSurface(
     'computer-release-notes',
     kind: SurfaceKind.dialog,
+    webOutside: WebOutside.closes,
     web: 'ComputerReleaseNotesAffordance.tsx DialogCard closeOnBackdrop: X + Esc + backdrop',
     phone: {_x, _esc, _scrim, _sys},
     fold: {_x, _esc, _scrim, _sys},
@@ -91,6 +95,7 @@ const dialogSurfaces = <CloseSurface>[
   CloseSurface(
     'sidebar-section-dialog',
     kind: SurfaceKind.dialog,
+    webOutside: WebOutside.closes,
     web:
         'SidebarSectionDialog.tsx:30 Modal closeOnBackdrop: X + Esc + backdrop',
     phone: {_x, _esc, _scrim, _sys, _drag},
@@ -103,6 +108,7 @@ const dialogSurfaces = <CloseSurface>[
   CloseSurface(
     'add-computer-dialog',
     kind: SurfaceKind.dialog,
+    webOutside: WebOutside.stays,
     web: 'AddMachineDialog.tsx:188 Modal (no backdrop close) + X',
     phone: {_x, _esc, _sys},
     fold: {_x, _esc, _sys},
@@ -114,6 +120,7 @@ const dialogSurfaces = <CloseSurface>[
   CloseSurface(
     'computer-bulk-model',
     kind: SurfaceKind.dialog,
+    webOutside: WebOutside.stays,
     web: 'BulkChangeModelDialog.tsx:359 DialogCard: X + Esc + Cancel, no backdrop close; applying ignores close; review Back returns to choose',
     phone: {_x, _esc, _sys, _drag},
     fold: {_x, _esc, _sys},
@@ -125,6 +132,7 @@ const dialogSurfaces = <CloseSurface>[
   CloseSurface(
     'computer-bulk-reset',
     kind: SurfaceKind.dialog,
+    webOutside: WebOutside.stays,
     web: 'MachineDetailPanel.tsx:622 DialogCard (no closeOnBackdrop): X + Esc',
     phone: {_x, _esc, _sys},
     fold: {_x, _esc, _sys},
@@ -136,6 +144,7 @@ const dialogSurfaces = <CloseSurface>[
   CloseSurface(
     'runtime-usage-sheet',
     kind: SurfaceKind.dialog,
+    webOutside: WebOutside.closes,
     web: 'RuntimeAccountUsageChip.tsx:591 BottomSheet (mobile): X, Esc, backdrop press',
     phone: {_x, _esc, _scrim, _sys},
     none: {
@@ -148,6 +157,7 @@ const dialogSurfaces = <CloseSurface>[
   CloseSurface(
     'create-channel',
     kind: SurfaceKind.dialog,
+    webOutside: WebOutside.stays,
     web: 'CreateChannelDialog.tsx:250 DialogCard: X + Esc, no backdrop close',
     phone: {_x, _esc, _scrim, _sys, _drag},
     fold: {_x, _esc, _scrim, _sys},
@@ -162,6 +172,7 @@ const dialogSurfaces = <CloseSurface>[
   CloseSurface(
     'create-task',
     kind: SurfaceKind.dialog,
+    webOutside: WebOutside.stays,
     web: 'CreateTaskDialog.tsx:59 DialogCard: X + Esc, no backdrop close',
     phone: {_x, _esc, _scrim, _sys, _drag},
     fold: {_x, _esc, _scrim, _sys},
@@ -189,6 +200,7 @@ const dialogSurfaces = <CloseSurface>[
   CloseSurface(
     'create-joint-channel',
     kind: SurfaceKind.dialog,
+    webOutside: WebOutside.stays,
     web: 'CreateJointChannelDialog.tsx:245 DialogCard: X + Esc, no backdrop close',
     phone: {_x, _esc, _scrim, _sys, _drag},
     fold: {_x, _esc, _scrim, _sys},
@@ -203,6 +215,7 @@ const dialogSurfaces = <CloseSurface>[
   CloseSurface(
     'invite-human',
     kind: SurfaceKind.dialog,
+    webOutside: WebOutside.stays,
     web: 'InviteHumanDialog.tsx:352 DialogCard: X + Esc, no backdrop close',
     phone: {_x, _esc, _scrim, _sys, _drag},
     fold: {_x, _esc, _scrim, _sys},
@@ -217,6 +230,7 @@ const dialogSurfaces = <CloseSurface>[
   CloseSurface(
     'add-members',
     kind: SurfaceKind.dialog,
+    webOutside: WebOutside.stays,
     web: 'AddMembersDialog.tsx:234 DialogCard: X + Esc, no backdrop close',
     phone: {_x, _esc, _sys},
     fold: {_x, _esc, _sys},
@@ -230,6 +244,7 @@ const dialogSurfaces = <CloseSurface>[
   CloseSurface(
     'form-dialog',
     kind: SurfaceKind.dialog,
+    webOutside: WebOutside.stays,
     web: 'DialogCard.tsx:28-40 / ConfirmDialog.tsx:138: X + Esc, no backdrop close',
     phone: {_x, _esc, _scrim, _sys, _drag},
     fold: {_x, _esc, _scrim, _sys},
@@ -267,6 +282,7 @@ const dialogSurfaces = <CloseSurface>[
   CloseSurface(
     'second-factor-step',
     kind: SurfaceKind.dialog,
+    webOutside: WebOutside.stays,
     web:
         'TwoStepVerificationSection.tsx:413 StepDialog `<Dialog disablePointerDismissal>` '
         '(also VerifyItsYouDialog.tsx:94 and the PasskeysSection.tsx dialogs): X + Esc, '
@@ -288,6 +304,7 @@ const dialogSurfaces = <CloseSurface>[
   CloseSurface(
     'sos-dialog',
     kind: SurfaceKind.dialog,
+    webOutside: WebOutside.stays,
     web: 'SOSDialog.tsx:57 DialogCard: X + Esc, no backdrop close (not gated on stopping)',
     phone: {_x, _esc, _sys},
     fold: {_x, _esc, _sys},
@@ -302,6 +319,7 @@ const dialogSurfaces = <CloseSurface>[
   CloseSurface(
     'unsaved-changes-prompt',
     kind: SurfaceKind.dialog,
+    webOutside: WebOutside.stays,
     web: 'ChannelOverflowMenu.tsx:641 Modal layer=1: Esc closes (ignored while saving), no X, no backdrop close',
     phone: {_esc, _sys},
     fold: {_esc, _sys},
@@ -316,6 +334,7 @@ const dialogSurfaces = <CloseSurface>[
   CloseSurface(
     'announcement-modal',
     kind: SurfaceKind.dialog,
+    webOutside: WebOutside.closes,
     web: 'AnnouncementModal.tsx AnnouncementDialog layer=1: X + Esc + outside press (each dismisses)',
     phone: {_x, _esc, _scrim, _sys},
     fold: {_x, _esc, _scrim, _sys},
@@ -325,6 +344,7 @@ const dialogSurfaces = <CloseSurface>[
   CloseSurface(
     'create-agent',
     kind: SurfaceKind.dialog,
+    webOutside: WebOutside.stays,
     web: 'CreateAgentDialog.tsx:1688,1727 Modal / DialogCard: X + Esc, no backdrop close',
     phone: {_x, _esc, _scrim, _sys, _drag},
     fold: {_x, _esc, _scrim, _sys},
@@ -339,6 +359,7 @@ const dialogSurfaces = <CloseSurface>[
   CloseSurface(
     'agent-avatar-dialog',
     kind: SurfaceKind.dialog,
+    webOutside: WebOutside.closes,
     web: 'AgentProfileEditDialog.tsx:187-215 Dialog: X + Esc + outside press, all through requestClose (discard prompt when dirty)',
     phone: {_x, _esc, _scrim, _sys},
     fold: {_x, _esc, _scrim, _sys},
@@ -353,6 +374,7 @@ const dialogSurfaces = <CloseSurface>[
   CloseSurface(
     'avatar-discard-confirm',
     kind: SurfaceKind.dialog,
+    webOutside: WebOutside.closes,
     web: 'AgentProfileEditDialog.tsx:319 AlertDialog: Esc + outside press keep editing (no X)',
     phone: {_esc, _scrim, _sys},
     fold: {_esc, _scrim, _sys},
@@ -362,6 +384,7 @@ const dialogSurfaces = <CloseSurface>[
   CloseSurface(
     'forward-dialog',
     kind: SurfaceKind.dialog,
+    webOutside: WebOutside.closes,
     web: 'ForwardComposerDesktop.tsx:61 Modal closeOnBackdrop (md+): X + Esc + backdrop, all inert while sending; ForwardComposerMobile.tsx:201 Back below md',
     phone: {_back, _sys},
     fold: {_x, _esc, _scrim, _sys},
@@ -376,6 +399,7 @@ const dialogSurfaces = <CloseSurface>[
   CloseSurface(
     'composer-expanded-editor',
     kind: SurfaceKind.dialog,
+    webOutside: WebOutside.noWeb,
     web: 'no Web surface: MessageInput has no expand mode. Flutter-only (GitHub #153): one route whose form follows the window width (RaftPresentationPolicy.editor): a tall bottom sheet below 768 (collapse button, Esc, scrim, back, drag the handle down) and a centered dialog from 768 (collapse button, Esc, scrim, back); every close keeps the draft',
     phone: {_x, _esc, _scrim, _sys, _drag},
     fold: {_x, _esc, _scrim, _sys},
@@ -391,6 +415,7 @@ const dialogSurfaces = <CloseSurface>[
   CloseSurface(
     'community-agreement',
     kind: SurfaceKind.dialog,
+    webOutside: WebOutside.stays,
     web: 'CommunityAgreementDialog.tsx:49,59 Modal (no backdrop close) + X',
     phone: {_x, _esc, _sys},
     fold: {_x, _esc, _sys},
@@ -403,6 +428,7 @@ const dialogSurfaces = <CloseSurface>[
   CloseSurface(
     'connected-app-detail',
     kind: SurfaceKind.dialog,
+    webOutside: WebOutside.stays,
     web: 'SettingsPanel.tsx:6643-6661 Modal (no backdrop close) + CloseButton',
     phone: {_x, _esc, _sys},
     fold: {_x, _esc, _sys},
@@ -412,6 +438,7 @@ const dialogSurfaces = <CloseSurface>[
   CloseSurface(
     'connected-app-installed-detail',
     kind: SurfaceKind.dialog,
+    webOutside: WebOutside.stays,
     web: 'SettingsPanel.tsx:6606-6625 Modal (no backdrop close) + CloseButton',
     phone: {_x, _esc, _sys},
     fold: {_x, _esc, _sys},
@@ -421,6 +448,7 @@ const dialogSurfaces = <CloseSurface>[
   CloseSurface(
     'connected-app-editor',
     kind: SurfaceKind.dialog,
+    webOutside: WebOutside.stays,
     web: 'SettingsPanel.tsx:6746-6775 Modal (no backdrop close) + CloseButton',
     phone: {_x, _esc, _sys},
     fold: {_x, _esc, _sys},
@@ -430,6 +458,7 @@ const dialogSurfaces = <CloseSurface>[
   CloseSurface(
     'provider-edit-dialog',
     kind: SurfaceKind.dialog,
+    webOutside: WebOutside.stays,
     web: 'EditProviderConnectionModal.tsx:67 DialogCard: X + Esc, no backdrop close',
     phone: {_x, _esc, _scrim, _sys, _drag},
     fold: {_x, _esc, _scrim, _sys},
@@ -445,6 +474,7 @@ const dialogSurfaces = <CloseSurface>[
   CloseSurface(
     'material-alert-dialog',
     kind: SurfaceKind.dialog,
+    webOutside: WebOutside.noWeb,
     web: 'no Web modal: the provider assigned-agents / verification result and history lists, the workspace profile card, the one-time credential and the workspace switcher are Flutter presentations (no-web); Esc / system back close, a scrim press does not discard',
     phone: {_esc, _sys},
     fold: {_esc, _sys},
@@ -460,6 +490,7 @@ const dialogSurfaces = <CloseSurface>[
   CloseSurface(
     'mention-link-dialog',
     kind: SurfaceKind.dialog,
+    webOutside: WebOutside.closes,
     web: 'MainLayout.tsx:1369,1410 task Modal closeOnBackdrop: Esc + backdrop (a task link opens the task surface on Web; Flutter shows a summary dialog)',
     phone: {_esc, _scrim, _sys},
     fold: {_esc, _scrim, _sys},
@@ -469,6 +500,7 @@ const dialogSurfaces = <CloseSurface>[
   CloseSurface(
     'workspace-switcher-dialog',
     kind: SurfaceKind.dialog,
+    webOutside: WebOutside.noWeb,
     web: 'no Web phone dialog: wide layouts use the server switcher popover (popups family); phones list the workspaces in a SimpleDialog (no-web)',
     phone: {_esc, _scrim, _sys},
     none: {
@@ -482,6 +514,7 @@ const dialogSurfaces = <CloseSurface>[
   CloseSurface(
     'channel-settings-confirm',
     kind: SurfaceKind.dialog,
+    webOutside: WebOutside.stays,
     web: 'EditChannelDialog.tsx:1579 ConfirmDialog: X + Esc, no pointer dismissal, gated on loading',
     phone: {_x, _esc, _sys},
     fold: {_x, _esc, _sys},
@@ -491,6 +524,7 @@ const dialogSurfaces = <CloseSurface>[
   CloseSurface(
     'agent-runtime-editor',
     kind: SurfaceKind.dialog,
+    webOutside: WebOutside.stays,
     web: 'AgentDetailPanel.tsx:2094 Modal layer=1 + CloseButton (closeRuntimeConfigEditor): X + Esc, no backdrop close',
     phone: {_x, _esc, _scrim, _sys, _drag},
     fold: {_x, _esc, _scrim, _sys},
@@ -507,6 +541,7 @@ const dialogSurfaces = <CloseSurface>[
   CloseSurface(
     'feedback-close-dialog',
     kind: SurfaceKind.dialog,
+    webOutside: WebOutside.noWeb,
     web: 'no Web source: the @hands feedback SDK renders the close-ticket AlertDialog (Cancel / Close ticket, no X); Esc and Back cancel, inert while closing',
     phone: {_esc, _sys},
     fold: {_esc, _sys},
@@ -517,6 +552,7 @@ const dialogSurfaces = <CloseSurface>[
   CloseSurface(
     'agent-profile-edit-dialog',
     kind: SurfaceKind.dialog,
+    webOutside: WebOutside.closes,
     web: 'AgentProfileEditDialog.tsx:187-201 Dialog: X + Esc + outside press, all through requestClose (discard prompt when dirty)',
     phone: {_x, _esc, _scrim, _sys, _drag},
     fold: {_x, _esc, _scrim, _sys},
@@ -532,6 +568,7 @@ const dialogSurfaces = <CloseSurface>[
   CloseSurface(
     'agent-reset-dialog',
     kind: SurfaceKind.dialog,
+    webOutside: WebOutside.stays,
     web: 'ResetAgentDialog.tsx:100-122 ConfirmDialog: X + Esc, no pointer dismissal, gated on loading',
     phone: {_x, _esc, _sys},
     fold: {_x, _esc, _sys},
@@ -546,6 +583,7 @@ const dialogSurfaces = <CloseSurface>[
   CloseSurface(
     'report-issue-dialog',
     kind: SurfaceKind.dialog,
+    webOutside: WebOutside.stays,
     web: 'ReportIssueDialog.tsx:552-559 DialogCard (no closeOnBackdrop): X + Esc, form and submitted states',
     phone: {_x, _esc, _scrim, _sys, _drag},
     fold: {_x, _esc, _scrim, _sys},

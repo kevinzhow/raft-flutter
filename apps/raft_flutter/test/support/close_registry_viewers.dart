@@ -145,6 +145,7 @@ const viewerSurfaces = <CloseSurface>[
   CloseSurface(
     'task-legacy-tasks-route',
     kind: SurfaceKind.dialog,
+    webOutside: WebOutside.closes,
     web: 'MainLayout.tsx:1407-1416 + LegacyTaskPanel.tsx:55,76-166: >=768 Modal (closeOnBackdrop, Esc) + X (task-close); <768 mobile-modal Back (md:hidden), no X',
     phone: {_back, _sys},
     fold: {_x, _esc, _scrim, _sys},
@@ -180,6 +181,7 @@ const viewerSurfaces = <CloseSurface>[
   CloseSurface(
     'quick-switcher',
     kind: SurfaceKind.dialog,
+    webOutside: WebOutside.closes,
     web: 'SearchOverlay.tsx:41-56 Modal closeOnBackdrop, Escape (wide); MessageSearchPage.tsx:2199 PanelHeader onMobileBack (phone page)',
     phone: {_back, _sys},
     fold: {_esc, _scrim, _sys},
