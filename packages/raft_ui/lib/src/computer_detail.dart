@@ -29,6 +29,15 @@ enum RaftComputerServiceKind {
   upgrading,
   oneClick,
   commands,
+
+  /// Too old for the web to upgrade: the notice at the top has the command.
+  reinstall,
+
+  /// Raft Desktop keeps this Computer up to date: a note, no button.
+  managedByDesktop,
+
+  /// The server says the web cannot drive this upgrade: the install command.
+  manualUpgrade,
 }
 
 /// A Computer's upgrade seen from its connection (Web
@@ -38,7 +47,15 @@ enum RaftComputerUpgradeLink { none, reconnecting, overdue }
 
 /// The line under the Computer card's buttons (and in the offline recovery
 /// card): the server's verdict on the last web upgrade, or a refused click.
-enum RaftComputerUpgradeOutcome { none, failed, noResponse, refusedUnknown }
+enum RaftComputerUpgradeOutcome {
+  none,
+  failed,
+  noResponse,
+
+  /// No response from a Computer too old to report the outcome (< 1.0.54).
+  noResponseOldComputer,
+  refusedUnknown,
+}
 
 /// MachineAgentList bulk modes.
 enum RaftComputerBulk { start, stop, restart, session, full }
@@ -50,8 +67,13 @@ class RaftComputerService {
     this.version,
     this.webUpgradeOn = false,
     this.outcome = RaftComputerUpgradeOutcome.none,
+    this.installLines = const [],
   });
   final RaftComputerServiceKind kind;
+
+  /// The manual install line(s) a [RaftComputerServiceKind.manualUpgrade]
+  /// card shows.
+  final List<RaftComputerInstallLine> installLines;
   final String sentence;
   final String? version;
   final bool webUpgradeOn;
@@ -1537,6 +1559,8 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
       context,
       failed
           ? "The upgrade didn't complete; still on v{version}. Run {command} on that machine to check."
+          : outcome == RaftComputerUpgradeOutcome.noResponseOldComputer
+          ? "This Computer's version is too old to report what happened to the upgrade: it may not be running as a service, or the installer stopped early. Run {command} on that machine; the result shows in the terminal."
           : 'The last upgrade got no response from the Computer. Run {command} on that machine to check.',
       {'version': d.computerVersion ?? ''},
     ).split('{command}');
@@ -2191,6 +2215,18 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
                 case final line?) ...[
               const SizedBox(height: 8),
               line,
+            ],
+            if (kind == RaftComputerServiceKind.manualUpgrade &&
+                (service?.installLines.isNotEmpty ?? false)) ...[
+              const SizedBox(height: 12),
+              _gapColumn(8, [
+                for (final line in service!.installLines)
+                  RaftCopyableCode(
+                    key: const ValueKey('computer-upgrade-manual'),
+                    line.command,
+                    copyLabel: line.copyLabel,
+                  ),
+              ]),
             ],
             if (upgradeCommands != null) ...[
               const SizedBox(height: 12),

@@ -21,7 +21,10 @@ RaftComputerUpgradeOutcome computerUpgradeRequestOutcome(Map machine) {
       compareComputerVersions(current, target) >= 0) {
     return RaftComputerUpgradeOutcome.none;
   }
-  return state == 'failed'
-      ? RaftComputerUpgradeOutcome.failed
+  if (state == 'failed') return RaftComputerUpgradeOutcome.failed;
+  // Below 1.0.54 a computer cannot tell why it did not answer (not a service,
+  // or an installer that stopped early): the line says so.
+  return compareComputerVersions(current.split('-').first, '1.0.54') < 0
+      ? RaftComputerUpgradeOutcome.noResponseOldComputer
       : RaftComputerUpgradeOutcome.noResponse;
 }

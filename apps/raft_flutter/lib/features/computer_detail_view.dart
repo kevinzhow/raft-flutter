@@ -531,6 +531,9 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel> {
       String? version,
     ]) => RaftComputerService(
       kind: kind,
+      installLines: kind == RaftComputerServiceKind.manualUpgrade
+          ? _installLines()
+          : const [],
       sentence: sentence,
       version: version,
       webUpgradeOn: webUpgradeOn,
@@ -545,6 +548,18 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel> {
           ? RaftComputerUpgradeOutcome.none
           : computerUpgradeRequestOutcome(m),
     );
+    // Too old for the web to upgrade: the notice at the top carries the command.
+    if (_resolvedTier().kind == ComputerTierKind.reinstall) {
+      return card(
+        RaftComputerServiceKind.reinstall,
+        raftText(
+          context,
+          "This version can't be upgraded from the web. Reinstall it with the command at the top of this page.",
+        ),
+      );
+    }
+    final managed =
+        policy is Map && policy['reasonCode'] == 'managed_by_desktop';
     return switch (fact) {
       ComputerVersionUnknown() => card(
         RaftComputerServiceKind.reading,
@@ -560,7 +575,10 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel> {
       ),
       ComputerVersionOutdated(:final available) when inFlight != null => card(
         RaftComputerServiceKind.upgrading,
-        'Upgrading to v${inFlight['targetVersion'] ?? available}. The Computer will disconnect briefly.',
+        _upgradingSentence(
+          inFlight,
+          '${inFlight['targetVersion'] ?? available}',
+        ),
         '${inFlight['targetVersion'] ?? available}',
       ),
       ComputerVersionOutdated() when submitting != null => card(
@@ -568,6 +586,11 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel> {
         'Upgrading to v$submitting. The Computer will disconnect briefly.',
         submitting,
       ),
+      ComputerVersionOutdated() when managed || upgradeRefusal == 'managed_by_desktop' =>
+        card(
+          RaftComputerServiceKind.managedByDesktop,
+          raftText(context, 'Raft Desktop keeps this Computer up to date.'),
+        ),
       ComputerVersionOutdated(:final available)
           when upgradeRefusal == 'not_allowed' =>
         card(
@@ -586,12 +609,49 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel> {
           'v$oneClickTarget is available.',
           oneClickTarget,
         ),
+      ComputerVersionOutdated(:final available)
+          when upgradeRefusal != 'web_upgrade_off' &&
+              upgradeRefusal != 'too_old' &&
+              !supported =>
+        card(
+          RaftComputerServiceKind.manualUpgrade,
+          raftFormat(
+            context,
+            "v{version} is available. This computer can't be upgraded from the web; run this on that machine instead:",
+            {'version': available},
+          ),
+          available,
+        ),
       ComputerVersionOutdated(:final available) => card(
         RaftComputerServiceKind.commands,
         'v$available is available. Run these two commands on that computer to upgrade:',
         available,
       ),
     };
+  }
+
+  /// "Waiting for N agents ... then upgrading" while the Computer drains,
+  /// else the plain "Upgrading to v..." (Web upgradeStatus.draining / inProgress).
+  String _upgradingSentence(Map inFlight, String version) {
+    final waiting = inFlight['phase'] == 'draining'
+        ? (inFlight['drainingAgentIds'] is List
+              ? (inFlight['drainingAgentIds'] as List).length
+              : 0)
+        : 0;
+    if (waiting > 0) {
+      return raftFormat(
+        context,
+        waiting == 1
+            ? 'Waiting for {count} agent on this server to finish its work, then upgrading to v{version} (up to 10 min).'
+            : 'Waiting for {count} agents on this server to finish their work, then upgrading to v{version} (up to 10 min).',
+        {'count': waiting, 'version': version},
+      );
+    }
+    return raftFormat(
+      context,
+      'Upgrading to v{version}. The Computer will disconnect briefly.',
+      {'version': version},
+    );
   }
 
   RaftComputerDetailData data() {
@@ -686,7 +746,7 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel> {
 
   /// The version-floor notice (ComputerVersionNotice), once an online
   /// Computer that reports no version has stayed silent past the grace.
-  RaftComputerVersionNoticeData? _versionNotice(RaftComputerService? service) {
+  ComputerVersionTier _resolvedTier() {
     var tier = computerVersionTier(m);
     if (tier.kind == ComputerTierKind.unreported) {
       // Not state: the timer's callback only marks the wait finished.
@@ -705,10 +765,10 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel> {
       graceTimer.cancel();
       graceWaitingFor = graceElapsedFor = null;
     }
-    if (tier.kind != ComputerTierKind.upgrade &&
-        tier.kind != ComputerTierKind.reinstall) {
-      return null;
-    }
+    return tier;
+  }
+
+  List<RaftComputerInstallLine> _installLines() {
     final c = ComputerCommands.build(
       slug: w.server?.string('slug') ?? '',
       serverUrl: w.client.origin,
@@ -738,6 +798,16 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel> {
           ));
       }
     }
+    return lines;
+  }
+
+  RaftComputerVersionNoticeData? _versionNotice(RaftComputerService? service) {
+    final tier = _resolvedTier();
+    if (tier.kind != ComputerTierKind.upgrade &&
+        tier.kind != ComputerTierKind.reinstall) {
+      return null;
+    }
+    final lines = _installLines();
     final at = tier.enforcedAt;
     return RaftComputerVersionNoticeData(
       kind: tier.kind == ComputerTierKind.upgrade
@@ -892,6 +962,7 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel> {
             'remote_upgrade_disabled' => 'web_upgrade_off',
             'computer_remote_upgrade_unsupported' => 'too_old',
             'computer_broadcast_not_eligible' => 'not_allowed',
+            'computer_managed_by_desktop' => 'managed_by_desktop',
             _ => 'unknown',
           },
         );

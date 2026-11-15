@@ -4,6 +4,20 @@
 // counts and needs-attention summary, readiness copy, Delete Computer and force unbind, the row's
 // Restart / Upgrade confirmations). ICU plurals and selects are separate English keys here.
 const Map<String, String> zhCatalogUpstream124Comp1 = <String, String>{
+  "Waiting for {count} agent on this server to finish its work, then upgrading to v{version} (up to 10 min).": "正在等待本服务器上的 {count} 个 Agent 完成手头的工作，之后升级到 v{version}（最多 10 分钟）。",
+  "Waiting for {count} agents on this server to finish their work, then upgrading to v{version} (up to 10 min).": "正在等待本服务器上的 {count} 个 Agent 完成手头的工作，之后升级到 v{version}（最多 10 分钟）。",
+  "This version can't be upgraded from the web. Reinstall it with the command at the top of this page.": "这个版本不能从网页升级，请用本页顶部的命令重新安装。",
+  "Raft Desktop keeps this Computer up to date.": "Raft Desktop 会自动更新这台 Computer。",
+  "v{version} is available. This computer can't be upgraded from the web; run this on that machine instead:": "有新版本 v{version}。这台计算机不能从网页升级，请在那台机器上运行：",
+  "v{version} is available. This computer can't be upgraded from the web; use the command at the top of this page.": "有新版本 v{version}。这台计算机不能从网页升级，请使用本页顶部的命令。",
+  "This Computer's version is too old to report what happened to the upgrade: it may not be running as a service, or the installer stopped early. Run {command} on that machine; the result shows in the terminal.": "这台 Computer 版本较旧，没能把升级结果报回来：它可能不是以服务方式运行，或者安装程序中途停了。请在那台机器上运行 {command}，结果会直接显示在终端里。",
+  "Upgrading to v{version}. The Computer will disconnect briefly.": "正在升级到 v{version}，期间 Computer 会短暂断开。",
+  "v{version} is available.": "可以升级到 v{version}。",
+  "Reading the version; check back shortly.": "正在读取版本，稍后再看能否升级。",
+  "Can't check for a new version right now. Try again later.": "暂时查不到新版本信息，稍后再看。",
+  "Up to date.": "已是最新。",
+  "This Computer can't be upgraded from the web right now.": "现在不能从网页升级这台 Computer。",
+  "v{version} is available. Run these two commands on that machine to upgrade:": "有新版本 v{version}。在那台机器上运行下面两条命令升级：",
   "Low disk space: {free} free of {total}": "磁盘空间不足：剩余 {free}，共 {total}",
   "{free} free of {total}": "剩 {free}，共 {total}",
   "Upgrade soon": "请尽快升级",
