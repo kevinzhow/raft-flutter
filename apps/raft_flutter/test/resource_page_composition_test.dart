@@ -31,6 +31,10 @@ class _Client extends RaftClient {
     bool acceptServerExit = false,
     Duration? receiveTimeout,
   }) async {
+    // The flag read is not a mutation: Web's Tasks page asks for task v2 too
+    // (v1.24 TasksRoute.tsx:88 useServerFeatureFlag, which POSTs
+    // /feature-flags/evaluate on first ask: serverFeatureFlags.ts:4-5, 589).
+    if (path == '/feature-flags/evaluate') return {'evaluations': []};
     mutations.add('$method $path');
     return {};
   }

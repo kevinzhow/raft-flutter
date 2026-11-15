@@ -24,6 +24,14 @@ class _Client extends RaftClient {
   _Client()
     : super(origin: 'https://fixture.test', sessionStore: MemorySessionStore());
   final mutations = <({String path, dynamic data})>[];
+
+  /// [mutations] without flag reads: the Tasks page asks for task v2 as Web's
+  /// does (v1.24 TasksRoute.tsx:88 useServerFeatureFlag, which POSTs
+  /// /feature-flags/evaluate on first ask: serverFeatureFlags.ts:4-5, 589).
+  List<({String path, dynamic data})> get writes => [
+    for (final m in mutations)
+      if (m.path != '/feature-flags/evaluate') m,
+  ];
   @override
   Future<dynamic> request(
     String method,
@@ -621,8 +629,8 @@ void main() {
         true,
       );
       expect(w.calls.any((r) => r.path == '/tasks/orphan/history'), true);
-      expect(c.mutations.single.path, '/tasks/orphan/status');
-      expect(c.mutations.single.data, {'status': 'done'});
+      expect(c.writes.single.path, '/tasks/orphan/status');
+      expect(c.writes.single.data, {'status': 'done'});
     },
   );
   testWidgets(
@@ -672,7 +680,7 @@ void main() {
       expect(find.byType(AlertDialog), findsNothing);
       expect(find.text('Mark done'), findsNothing);
       expect(find.text('Close Task'), findsNothing);
-      expect(c.mutations, isEmpty);
+      expect(c.writes, isEmpty);
     },
   );
 }

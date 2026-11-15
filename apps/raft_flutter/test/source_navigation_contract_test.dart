@@ -591,12 +591,15 @@ void main() {
           );
           expect(location.content?.kind, kind);
           expect(location.content?.id, 'entity');
+          // v1.24 MainLayout.tsx:2056 keeps `&msg=` for a task too: Search's
+          // hit stays the selected result (searchContentStore.ts:44-51).
           expect(
             location.content?.messageId,
             [
                   RaftContentKind.channel,
                   RaftContentKind.dm,
                   RaftContentKind.thread,
+                  RaftContentKind.task,
                 ].contains(kind)
                 ? 'message'
                 : isNull,
