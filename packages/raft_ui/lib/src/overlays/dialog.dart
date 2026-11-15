@@ -1012,12 +1012,14 @@ class RaftDialogRoute<T> extends PopupRoute<T> {
   /// The product composition owns its backdrop and layout, as Web Modal does.
   final bool modal;
 
-  // The live dialog routes, bottom first: one opened over another uses the
-  // `nested` scrim, as raft-ui does for a Dialog under another overlay.
+  // The live dialog routes, bottom first: one opened over another of the same
+  // navigator uses the `nested` scrim, as raft-ui does for a Dialog under another overlay.
   static final List<RaftDialogRoute<dynamic>> _live = [];
 
   /// Over another dialog route, or flagged [overModal] by its opener.
-  bool get nested => overModal || _live.indexOf(this) > 0;
+  bool get nested =>
+      overModal ||
+      _live.where((r) => r.navigator == navigator).toList().indexOf(this) > 0;
 
   @override
   void install() {
