@@ -250,15 +250,19 @@ class _BulkAgentModelDialogState extends State<BulkAgentModelDialog> {
       );
   List<BulkModelRow> get plan =>
       applyingPlan ??
-      planBulkModelChange([
-        for (final row in agents)
-          BulkModelAgent(
-            row,
-            running: agentRowAmbientDisplay(row).activity != 'offline',
-            targetRuntimeAllowed: allowed[row['id']],
-            phase: widget.retry?.unfinished[row['id']],
-          ),
-      ], target, restartNow: restartNow);
+      planBulkModelChange(
+        [
+          for (final row in agents)
+            BulkModelAgent(
+              row,
+              running: agentRowAmbientDisplay(row).activity != 'offline',
+              targetRuntimeAllowed: allowed[row['id']],
+              phase: widget.retry?.unfinished[row['id']],
+            ),
+        ],
+        target,
+        restartNow: restartNow,
+      );
 
   /// "Restart running agents now": off, running agents switch when next idle.
   bool restartNow = false;

@@ -86,9 +86,11 @@ void main() {
       // Web v1.24: a running agent switches when next idle unless asked.
       expect(plan.last.restarts, isFalse);
       expect(bulkRunningChangeCount(plan), 1);
-      final now = planBulkModelChange([
-        BulkModelAgent(row(), running: true, targetRuntimeAllowed: false),
-      ], target, restartNow: true);
+      final now = planBulkModelChange(
+        [BulkModelAgent(row(), running: true, targetRuntimeAllowed: false)],
+        target,
+        restartNow: true,
+      );
       expect(now.single.restarts, isTrue);
     },
   );
@@ -159,11 +161,15 @@ void main() {
       },
     );
     final result = await runner.apply(
-      planBulkModelChange([
-        BulkModelAgent(row(), running: true),
-        BulkModelAgent(row({'id': 'b'}), running: true),
-        BulkModelAgent(row({'id': 'c', 'model': 'new'}), running: false),
-      ], target, restartNow: true),
+      planBulkModelChange(
+        [
+          BulkModelAgent(row(), running: true),
+          BulkModelAgent(row({'id': 'b'}), running: true),
+          BulkModelAgent(row({'id': 'c', 'model': 'new'}), running: false),
+        ],
+        target,
+        restartNow: true,
+      ),
       target,
       now: () => DateTime.utc(2026),
       stateChanged: (_, _) {},

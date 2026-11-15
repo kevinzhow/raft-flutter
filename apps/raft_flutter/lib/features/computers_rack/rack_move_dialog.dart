@@ -40,7 +40,9 @@ bool canDragRackAgent(
   if (machineById[machineId]?['status'] != 'online') return false;
   if (w.can('editAgents')) return true;
   final me = w.client.user?.id;
-  return me != null && agent['creatorType'] == 'user' && agent['creatorId'] == me;
+  return me != null &&
+      agent['creatorType'] == 'user' &&
+      agent['creatorId'] == me;
 }
 
 /// A drop: the upgrade prompt on a plan that cannot move agents, else the move

@@ -586,7 +586,8 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel> {
         'Upgrading to v$submitting. The Computer will disconnect briefly.',
         submitting,
       ),
-      ComputerVersionOutdated() when managed || upgradeRefusal == 'managed_by_desktop' =>
+      ComputerVersionOutdated()
+          when managed || upgradeRefusal == 'managed_by_desktop' =>
         card(
           RaftComputerServiceKind.managedByDesktop,
           raftText(context, 'Raft Desktop keeps this Computer up to date.'),

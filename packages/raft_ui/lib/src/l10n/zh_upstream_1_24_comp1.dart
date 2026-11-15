@@ -4,29 +4,43 @@
 // counts and needs-attention summary, readiness copy, Delete Computer and force unbind, the row's
 // Restart / Upgrade confirmations). ICU plurals and selects are separate English keys here.
 const Map<String, String> zhCatalogUpstream124Comp1 = <String, String>{
-  "From {date}, agents on an outdated Computer stop running. Upgrade it from its page in one click.": "从 {date} 起，版本过旧的计算机上的 Agent 将停止运行。在计算机页面一键即可升级。",
+  "From {date}, agents on an outdated Computer stop running. Upgrade it from its page in one click.":
+      "从 {date} 起，版本过旧的计算机上的 Agent 将停止运行。在计算机页面一键即可升级。",
   "{count} Computers need an upgrade by {date}": "{count} 台计算机需要在 {date} 前升级",
   "{name} needs an upgrade by {date}": "{name} 需要在 {date} 前升级",
-  "Do this by {date}: after that, agents on these machines stop running. Your agents and files stay where they are.": "请在 {date} 前完成：之后这些机器上的 Agent 将停止运行。你的 Agent 和文件都会保留在原处。",
+  "Do this by {date}: after that, agents on these machines stop running. Your agents and files stay where they are.":
+      "请在 {date} 前完成：之后这些机器上的 Agent 将停止运行。你的 Agent 和文件都会保留在原处。",
   "Your agents and files stay where they are.": "你的 Agent 和文件都会保留在原处。",
-  "{count} machines need a one-time reinstall or migration": "{count} 台机器需要一次性重新安装或迁移",
-  "{count} machines need to be migrated to Raft Computer": "{count} 台机器需要迁移到 Raft Computer",
+  "{count} machines need a one-time reinstall or migration":
+      "{count} 台机器需要一次性重新安装或迁移",
+  "{count} machines need to be migrated to Raft Computer":
+      "{count} 台机器需要迁移到 Raft Computer",
   "{count} Computers need a one-time reinstall": "{count} 台 Computer 需要一次性重新安装",
   "{name} needs a one-time reinstall": "{name} 需要一次性重新安装",
-"{name} needs to be migrated to Raft Computer": "{name} 需要迁移到 Raft Computer",
+  "{name} needs to be migrated to Raft Computer": "{name} 需要迁移到 Raft Computer",
   "Restart running agents now": "立即重启运行中的 Agent",
-  "{count} running agent switches when next idle.": "{count} 个运行中的 Agent 会在下次空闲时切换。",
-  "{count} running agents switch when next idle.": "{count} 个运行中的 Agent 会在下次空闲时切换。",
-  "Waiting for {count} agent on this server to finish its work, then upgrading to v{version} (up to 10 min).": "正在等待本服务器上的 {count} 个 Agent 完成手头的工作，之后升级到 v{version}（最多 10 分钟）。",
-  "Waiting for {count} agents on this server to finish their work, then upgrading to v{version} (up to 10 min).": "正在等待本服务器上的 {count} 个 Agent 完成手头的工作，之后升级到 v{version}（最多 10 分钟）。",
-  "This version can't be upgraded from the web. Reinstall it with the command at the top of this page.": "这个版本不能从网页升级，请用本页顶部的命令重新安装。",
-  "Raft Desktop keeps this Computer up to date.": "Raft Desktop 会自动更新这台 Computer。",
-  "v{version} is available. This computer can't be upgraded from the web; run this on that machine instead:": "有新版本 v{version}。这台计算机不能从网页升级，请在那台机器上运行：",
-  "v{version} is available. This computer can't be upgraded from the web; use the command at the top of this page.": "有新版本 v{version}。这台计算机不能从网页升级，请使用本页顶部的命令。",
+  "{count} running agent switches when next idle.":
+      "{count} 个运行中的 Agent 会在下次空闲时切换。",
+  "{count} running agents switch when next idle.":
+      "{count} 个运行中的 Agent 会在下次空闲时切换。",
+  "Waiting for {count} agent on this server to finish its work, then upgrading to v{version} (up to 10 min).":
+      "正在等待本服务器上的 {count} 个 Agent 完成手头的工作，之后升级到 v{version}（最多 10 分钟）。",
+  "Waiting for {count} agents on this server to finish their work, then upgrading to v{version} (up to 10 min).":
+      "正在等待本服务器上的 {count} 个 Agent 完成手头的工作，之后升级到 v{version}（最多 10 分钟）。",
+  "This version can't be upgraded from the web. Reinstall it with the command at the top of this page.":
+      "这个版本不能从网页升级，请用本页顶部的命令重新安装。",
+  "Raft Desktop keeps this Computer up to date.":
+      "Raft Desktop 会自动更新这台 Computer。",
+  "v{version} is available. This computer can't be upgraded from the web; run this on that machine instead:":
+      "有新版本 v{version}。这台计算机不能从网页升级，请在那台机器上运行：",
+  "v{version} is available. This computer can't be upgraded from the web; use the command at the top of this page.":
+      "有新版本 v{version}。这台计算机不能从网页升级，请使用本页顶部的命令。",
   "This Computer's version is too old to report what happened to the upgrade: it may not be running as a service, or the installer stopped early. Run {command} on that machine; the result shows in the terminal.": "这台 Computer 版本较旧，没能把升级结果报回来：它可能不是以服务方式运行，或者安装程序中途停了。请在那台机器上运行 {command}，结果会直接显示在终端里。",
-  "Upgrading to v{version}. The Computer will disconnect briefly.": "正在升级到 v{version}，期间 Computer 会短暂断开。",
+  "Upgrading to v{version}. The Computer will disconnect briefly.":
+      "正在升级到 v{version}，期间 Computer 会短暂断开。",
   "v{version} is available.": "可以升级到 v{version}。",
-  "v{version} is available. Run these two commands on that machine to upgrade:": "有新版本 v{version}。在那台机器上运行下面两条命令升级：",
+  "v{version} is available. Run these two commands on that machine to upgrade:":
+      "有新版本 v{version}。在那台机器上运行下面两条命令升级：",
   "Low disk space: {free} free of {total}": "磁盘空间不足：剩余 {free}，共 {total}",
   "{free} free of {total}": "剩 {free}，共 {total}",
   "Upgrade soon": "请尽快升级",

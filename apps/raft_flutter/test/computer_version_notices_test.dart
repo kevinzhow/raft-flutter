@@ -52,10 +52,9 @@ void main() {
       'migrate',
     );
     expect(
-      run([
-        machine('d', computer: false),
-        machine('a', version: '1.0.30'),
-      ]).single.parameters['need'],
+      run([machine('d', computer: false), machine('a', version: '1.0.30')])
+          .single
+          .parameters['need'],
       'mixed',
     );
   });
@@ -68,16 +67,19 @@ void main() {
     );
   });
 
-  test('an upgradable Computer is announced only while a deadline is ahead', () {
-    expect(run([machine('a')]), isEmpty);
-    final out = run([machine('a', enforcedAt: '2026-12-01T00:00:00Z')]);
-    expect(ids(out), ['computer-upgrade-deadline']);
-    expect(out.single.parameters['date'], '2026-12-01T00:00:00.000Z');
-    expect(
-      run([machine('a', enforcedAt: '2026-12-01T00:00:00Z', enforced: true)]),
-      isEmpty,
-    );
-  });
+  test(
+    'an upgradable Computer is announced only while a deadline is ahead',
+    () {
+      expect(run([machine('a')]), isEmpty);
+      final out = run([machine('a', enforcedAt: '2026-12-01T00:00:00Z')]);
+      expect(ids(out), ['computer-upgrade-deadline']);
+      expect(out.single.parameters['date'], '2026-12-01T00:00:00.000Z');
+      expect(
+        run([machine('a', enforcedAt: '2026-12-01T00:00:00Z', enforced: true)]),
+        isEmpty,
+      );
+    },
+  );
 
   test('the fingerprint covers offline machines and survives a fix', () {
     final both = [
@@ -88,15 +90,16 @@ void main() {
     expect(first.fingerprint, 'computer-reinstall:a,b');
     expect(first.targetId, 'a', reason: 'only online machines are listed');
     // The person dismissed it, then fixed b: the dismissal still covers a.
-    final after = run([
-      machine('a', version: '1.0.30'),
-    ], dismissed: {'computer-reinstall:a,b'}).single;
+    final after = run(
+      [machine('a', version: '1.0.30')],
+      dismissed: {'computer-reinstall:a,b'},
+    ).single;
     expect(after.fingerprint, 'computer-reinstall:a,b');
     // A new machine no dismissal covered brings it back.
-    final fresh = run([
-      machine('a', version: '1.0.30'),
-      machine('c', version: '1.0.30'),
-    ], dismissed: {'computer-reinstall:a,b'}).single;
+    final fresh = run(
+      [machine('a', version: '1.0.30'), machine('c', version: '1.0.30')],
+      dismissed: {'computer-reinstall:a,b'},
+    ).single;
     expect(fresh.fingerprint, 'computer-reinstall:a,c');
   });
 }

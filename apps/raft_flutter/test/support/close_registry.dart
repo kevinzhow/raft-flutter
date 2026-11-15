@@ -21,6 +21,11 @@ List<CloseSurface> get allCloseSurfaces => [
 /// Files that contain a surface API call but are not a surface themselves.
 /// Each entry says why; a new entry needs a reviewer's agreement.
 const closeScanExempt = <String, String>{
+  'lib/features/computers_rack/rack_move_dialog.dart':
+      'Web RackMoveDialog is a thin opener: a drop shows the existing Move to '
+      'Another Computer form dialog (agent_migration_start_dialog, closes '
+      'through RaftFormDialog) or the Pro upgrade RaftConfirmDialog; it adds '
+      'no layer or close affordance of its own',
   'lib/features/computers_rack/computers_rack_view.dart':
       'the Computers overview is a top-level section page like Tasks or '
       'Activity (Web ComputersRackOverview has no Back or X); on a phone the '

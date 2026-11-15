@@ -141,7 +141,9 @@ SystemNotificationCopy systemNotificationCopy(
         unawaited(initializeDateFormatting());
         _dateSymbolsReady = true;
       }
-      final date = dateAt == null ? '' : DateFormat.yMMMd(locale).format(dateAt);
+      final date = dateAt == null
+          ? ''
+          : DateFormat.yMMMd(locale).format(dateAt);
       return SystemNotificationCopy(
         number == 1
             ? format(
@@ -150,13 +152,16 @@ SystemNotificationCopy systemNotificationCopy(
                     : '{name} needs a one-time reinstall',
                 {'name': p['name']},
               )
-            : format(switch (need) {
-                'reinstall' => '{count} Computers need a one-time reinstall',
-                'migrate' =>
-                  '{count} machines need to be migrated to Raft Computer',
-                _ =>
-                  '{count} machines need a one-time reinstall or migration',
-              }, {'count': count(number)}),
+            : format(
+                switch (need) {
+                  'reinstall' => '{count} Computers need a one-time reinstall',
+                  'migrate' =>
+                    '{count} machines need to be migrated to Raft Computer',
+                  _ =>
+                    '{count} machines need a one-time reinstall or migration',
+                },
+                {'count': count(number)},
+              ),
         dateAt == null
             ? text('Your agents and files stay where they are.')
             : format(
@@ -171,7 +176,9 @@ SystemNotificationCopy systemNotificationCopy(
         unawaited(initializeDateFormatting());
         _dateSymbolsReady = true;
       }
-      final date = dateAt == null ? '' : DateFormat.yMMMd(locale).format(dateAt);
+      final date = dateAt == null
+          ? ''
+          : DateFormat.yMMMd(locale).format(dateAt);
       return SystemNotificationCopy(
         number == 1
             ? format('{name} needs an upgrade by {date}', {

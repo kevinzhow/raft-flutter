@@ -106,8 +106,7 @@ void main() {
   }
 
   final status = find.byKey(const ValueKey('computer-upgrade-status'));
-  String statusText(WidgetTester t) =>
-      t.widget<RaftCssText>(status).data ?? '';
+  String statusText(WidgetTester t) => t.widget<RaftCssText>(status).data ?? '';
 
   testWidgets('a draining Computer says how many agents it waits for', (
     t,
@@ -200,7 +199,11 @@ void main() {
         t,
         machine(
           version: version,
-          request: {'id': 'r1', 'state': 'no_response', 'targetVersion': target},
+          request: {
+            'id': 'r1',
+            'state': 'no_response',
+            'targetVersion': target,
+          },
         ),
       );
       expect(find.textContaining(text), findsOneWidget);
