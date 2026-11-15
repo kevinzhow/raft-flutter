@@ -3833,6 +3833,12 @@
     "canonicalRegistry": "tool/ds-audit-families.json",
     "about": "Ownership registration only. The resolved scanner checks completeness. UNKNOWN/pending/history never count as current visual PASS. Existing lifecycle covered records retain their original scope.",
     "declarations": {
+      "packages/raft_ui/lib/src/upgrade_failure_hint_text.dart#method:RaftUpgradeFailureHintText._build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP1 v1.24 alignment",
+        "reason": "Source census candidate (WP-COMP1 part 3: rack slots, row tab stop, restart progress, row popovers, owner row, delete phase 2); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
       "packages/raft_ui/lib/src/computers_rack.dart#local-function:CLASS:RaftRackListHeader@9893/METHOD:build@10440/FUNCTION:heading@10587": {
         "role": "unresolved",
         "familyRefs": [],
