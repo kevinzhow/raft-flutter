@@ -74,8 +74,14 @@ void main() {
     await t.tap(search);
     await t.enterText(search, 'build');
     await t.pump(const Duration(milliseconds: 300));
-    expect(find.bySemanticsLabel('Clear search'), findsOneWidget);
-    expect(find.bySemanticsLabel('Clear all'), findsNothing);
+    // The field's own X (the toolbar's Clear all is a separate control).
+    expect(
+      find.descendant(
+        of: find.byKey(const ValueKey('computers-rack-search')),
+        matching: find.bySemanticsLabel('Clear search'),
+      ),
+      findsOneWidget,
+    );
     await t.sendKeyEvent(LogicalKeyboardKey.escape);
     await f.flush(t);
     await t.pump(const Duration(milliseconds: 300));
