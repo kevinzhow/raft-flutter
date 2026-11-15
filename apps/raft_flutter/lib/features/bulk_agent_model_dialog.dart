@@ -34,8 +34,11 @@ Future<BulkModelReceipt?> showBulkAgentModelDialog(
   final navigator = Navigator.of(context, rootNavigator: true);
   final route = raftFormRoute<BulkModelReceipt>(
     context,
-    // Web DialogCard leaves closeOnBackdrop disabled.
+    // Web DialogCard leaves closeOnBackdrop disabled (disablePointerDismissal)
+    // and its phone sheet has no drag: neither a scrim press nor a drag down
+    // closes it.
     dismissible: false,
+    dragDismissible: false,
     guardUnsaved: false,
     dialogMaxWidth: 672,
     builder: (_) => RaftModalBackdrop(
