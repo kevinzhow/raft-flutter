@@ -48,6 +48,10 @@ class RootErrorReport {
 /// text throwing because one paragraph has not been laid out yet ("does not
 /// have any constraints before it has been laid out"). Only text selection on
 /// that subtree is affected, and it sorts again with its next registration.
+///
+/// Also survived: the null check inside Flutter's semantics flush
+/// ([semanticsFlushFailure]). Only the accessibility tree is affected, and
+/// [RootErrors] rebuilds it on the next frame.
 bool rootErrorIsFatal(
   Object error, {
   String? library,
@@ -55,6 +59,7 @@ bool rootErrorIsFatal(
   StackTrace? stack,
 }) {
   if (stack != null && _selectionSortFailure(stack)) return false;
+  if (semanticsFlushFailure(error, stack)) return false;
   if (error is RaftApiException ||
       error is SocketException ||
       error is HttpException ||
@@ -81,6 +86,38 @@ bool _selectionSortFailure(StackTrace stack) {
   return trace.contains('selectable_region.dart') &&
       (trace.contains('_flushAdditions') ||
           trace.contains('_compareScreenOrder'));
+}
+
+/// Flutter bug flutter/flutter#195316 (fix: flutter/flutter#192724, not in
+/// the pinned Flutter): with an accessibility client attached (VoiceOver,
+/// TalkBack, or any macOS app using the AX API), a page whose semantics
+/// change beneath a BlockSemantics barrier (a modal route's ModalBarrier)
+/// makes PipelineOwner.flushSemantics read a stale ancestor geometry cache and
+/// throw "Null check operator used on a null value" from a
+/// _RenderObjectSemantics method. The frame is already composited; only the
+/// rest of that semantics flush is lost.
+///
+/// Matches only that null check thrown by a _RenderObjectSemantics frame
+/// under PipelineOwner.flushSemantics, not other rendering errors.
+///
+/// Remove this, its call sites and test/semantics_flush_failure_test.dart
+/// once the pinned Flutter includes flutter/flutter#192724 (that test's first
+/// case turns red then).
+bool semanticsFlushFailure(Object error, StackTrace? stack) {
+  if (error is! TypeError || stack == null) return false;
+  if (!error.toString().contains('Null check operator used on a null value')) {
+    return false;
+  }
+  final frames = stack
+      .toString()
+      .split('\n')
+      .map((line) => line.trim())
+      .where((line) => line.isNotEmpty)
+      .toList();
+  return frames.isNotEmpty &&
+      frames.first.contains('_RenderObjectSemantics.') &&
+      frames.first.contains('rendering/object.dart') &&
+      frames.any((line) => line.contains('PipelineOwner.flushSemantics'));
 }
 
 /// Collects the first fatal error of this run and tells the boundary.
@@ -112,6 +149,10 @@ class RootErrors extends ChangeNotifier {
       FlutterError.dumpErrorToConsole(details);
       final library = details.library;
       final context = details.context?.toDescription();
+      if (semanticsFlushFailure(details.exception, details.stack)) {
+        _refreshSemantics();
+        return;
+      }
       if (rootErrorIsFatal(
         details.exception,
         library: library,
@@ -142,6 +183,34 @@ class RootErrors extends ChangeNotifier {
     };
   }
 
+  bool _semanticsRefreshing = false;
+
+  /// A failed semantics flush ([semanticsFlushFailure]) dropped the dirty
+  /// nodes it had not reached yet, for example the modal's own content, and
+  /// the platform keeps their old state until they change again. After this
+  /// frame, mark every render object's semantics dirty so the next flush
+  /// rebuilds the whole tree and sends it. A failure during that refresh
+  /// frame does not schedule another, so a page that keeps tripping the bug
+  /// costs one full rebuild per failure at most, never a loop.
+  ///
+  /// Remove with [semanticsFlushFailure] (flutter/flutter#192724).
+  void _refreshSemantics() {
+    if (_semanticsRefreshing) return;
+    _semanticsRefreshing = true;
+    final binding = WidgetsBinding.instance;
+    binding.addPostFrameCallback((_) {
+      void mark(RenderObject object) {
+        object.markNeedsSemanticsUpdate();
+        object.visitChildren(mark);
+      }
+
+      binding.renderViews.forEach(mark);
+      // Clears after the refresh frame (a callback added now runs at the end
+      // of the next frame, which the dirty marks request).
+      binding.addPostFrameCallback((_) => _semanticsRefreshing = false);
+    }, debugLabel: 'RootErrors.refreshSemantics');
+  }
+
   /// Restores the handlers installed before [install] (tests).
   void uninstall() {
     if (!_installed) return;
@@ -152,6 +221,7 @@ class RootErrors extends ChangeNotifier {
     _previousFlutter = null;
     _previousPlatform = null;
     _previousBuilder = null;
+    _semanticsRefreshing = false;
   }
 
   /// Records [error] unless the fallback is already showing one. Notification
