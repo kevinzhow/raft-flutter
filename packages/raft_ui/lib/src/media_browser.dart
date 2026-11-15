@@ -682,14 +682,13 @@ class _RaftMediaStripState extends State<RaftMediaStrip> {
         : (sticker ? onHud : Colors.white).withValues(alpha: .3);
     final image = item.thumbnail;
     final thumb = _thumb;
+    final stickerRadius = t.size('radius.sticker', fallback: 4);
     Widget box(Color edge) => Container(
       width: thumb,
       height: thumb,
       clipBehavior: sticker ? Clip.antiAlias : Clip.none,
       decoration: BoxDecoration(
-        borderRadius: sticker
-            ? BorderRadius.circular(t.size('radius.sticker', fallback: 4))
-            : null,
+        borderRadius: sticker ? BorderRadius.circular(stickerRadius) : null,
         border: Border.all(color: edge, width: sticker ? 1.5 : 2),
         boxShadow: !active
             ? null

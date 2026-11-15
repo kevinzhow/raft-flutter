@@ -399,10 +399,14 @@ class _ToastAction extends StatelessWidget {
   final Color color;
   final VoidCallback? onPressed;
 
+  /// The keyboard focus outline drawn around the action label.
+  static const _focusRingWidth = 2.0;
+
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    final radius = BorderRadius.circular(t.size('radius.control', fallback: 8));
+    final controlRadius = t.size('radius.control', fallback: 8);
+    final radius = BorderRadius.circular(controlRadius);
     return RaftInteractive(
       key: const Key('toast-action'),
       onPressed: onPressed,
@@ -432,7 +436,7 @@ class _ToastAction extends StatelessWidget {
               child: IgnorePointer(
                 child: DecoratedBox(
                   decoration: BoxDecoration(
-                    border: Border.all(color: color, width: 2),
+                    border: Border.all(color: color, width: _focusRingWidth),
                   ),
                 ),
               ),
