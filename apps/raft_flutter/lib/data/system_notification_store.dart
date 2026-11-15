@@ -90,6 +90,26 @@ class SystemNotificationStore extends ChangeNotifier {
   List<PendingJointInvite> get jointInvites => _jointInvites;
   SecondFactorRecovery? _recovery;
   int _recoveryRevision = 0;
+  bool _recoveryCancelling = false;
+
+  /// Cancel reset is in flight (Web useSecondFactorRecoveryNotification
+  /// `busy`): its action is disabled, so a second press sends nothing.
+  bool get secondFactorRecoveryCancelling => _recoveryCancelling;
+
+  /// Starts a Cancel reset; false while one is already in flight.
+  bool beginSecondFactorRecoveryCancel() {
+    if (closed || _recoveryCancelling) return false;
+    _recoveryCancelling = true;
+    notifyListeners();
+    return true;
+  }
+
+  void endSecondFactorRecoveryCancel() {
+    if (!_recoveryCancelling) return;
+    _recoveryCancelling = false;
+    if (!closed) notifyListeners();
+  }
+
   final dismissed = <String>{};
   List<Map<String, dynamic>> _machines = [], _agents = [];
   List<Map<String, dynamic>> get machines =>

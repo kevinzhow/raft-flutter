@@ -219,9 +219,16 @@ RaftNotificationEntry secondFactorRecoveryEntry(
       RaftNotificationAction(
         label: raftText(context, 'Cancel reset'),
         primary: true,
+        // Web `disabled: busy`.
+        enabled: !store.secondFactorRecoveryCancelling,
         onPressed: () async {
-          if (await cancelSecondFactorRecoveryWithToast(context, client)) {
-            store.secondFactorRecoveryCancelled(scope);
+          if (!store.beginSecondFactorRecoveryCancel()) return;
+          try {
+            if (await cancelSecondFactorRecoveryWithToast(context, client)) {
+              store.secondFactorRecoveryCancelled(scope);
+            }
+          } finally {
+            store.endSecondFactorRecoveryCancel();
           }
         },
       ),

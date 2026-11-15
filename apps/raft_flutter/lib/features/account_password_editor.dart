@@ -244,6 +244,19 @@ class _AccountPasswordEditorState extends State<AccountPasswordEditor> {
             '',
             const ValueKey('account-confirm-password'),
           ),
+          // Web AccountSection `settings.account.deviceLoginNotice`
+          // (Banner intent="info" density="sm", before the errors).
+          Padding(
+            padding: const EdgeInsets.only(top: RaftSpace.x3),
+            child: RaftBanner(
+              key: const ValueKey('account-password-device-login-notice'),
+              status: RaftBannerRecipeStatus.info,
+              size: RaftBannerRecipeSize.sm,
+              description: tr(
+                "Changing your password signs you out everywhere. Computers and agent credentials set up through a device login (Raft Computer, the raft CLI) stop working too, so you'll need to log in on them again.",
+              ),
+            ),
+          ),
           if (error ?? (attempted ? problem : null) case final shown?)
             Padding(
               padding: const EdgeInsets.only(top: RaftSpace.x3),

@@ -121,4 +121,6 @@ const Map<String, String> zhCatalogUpstream124Sec = <String, String>{
       "这是你唯一的通行密钥或验证器，两步验证开着时不能删。请先再加一个通行密钥，或<turnOff>关闭两步验证</turnOff>。",
   "Enter a name of up to 64 characters.": "请输入不超过 64 个字符的名称。",
   "Only you see this name.": "只有你能看到这个名称。",
+  // Settings › Account › Change password (settings.account.deviceLoginNotice).
+  "Changing your password signs you out everywhere. Computers and agent credentials set up through a device login (Raft Computer, the raft CLI) stop working too, so you'll need to log in on them again.": "修改密码会让你在所有设备上退出登录。通过设备登录（Raft Computer、raft CLI）设置的电脑连接和 Agent 凭证也会失效，需要在这些地方重新登录。",
 };
