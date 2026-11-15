@@ -959,10 +959,13 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
         backKey: widget.backKey,
         actions: [
           if (widget.onClose case final close?)
-            RaftPanelIconButton(
+            RaftButton(
               key: const ValueKey('machine-panel-close'),
               glyph: RaftGlyph.x,
               tooltip: raftText(context, 'Close'),
+              semanticLabel: raftText(context, 'Close'),
+              tone: RaftButtonRecipeVariant.ghost,
+              size: RaftButtonRecipeSize.iconMd,
               onPressed: close,
             ),
         ],
@@ -2876,10 +2879,13 @@ class RaftComputerNotFoundPanel extends StatelessWidget {
         onBack: onBack,
         actions: [
           if (onClose != null)
-            RaftPanelIconButton(
+            RaftButton(
               key: const ValueKey('machine-panel-close'),
               glyph: RaftGlyph.x,
               tooltip: raftText(context, 'Close'),
+              semanticLabel: raftText(context, 'Close'),
+              tone: RaftButtonRecipeVariant.ghost,
+              size: RaftButtonRecipeSize.iconMd,
               onPressed: onClose,
             ),
         ],
