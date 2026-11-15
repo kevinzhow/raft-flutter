@@ -71,7 +71,7 @@ class CaptureStatusTest(unittest.TestCase):
                  mock.patch.object(parity, 'summarize', return_value=summary), \
                  mock.patch.object(parity, 'git', return_value='fixture'), \
                  mock.patch.object(parity, 'admitted_defects', return_value={}), \
-                 mock.patch.object(parity, 'repair_definition', return_value={}), \
+                 mock.patch.object(parity, 'repair_definition_for', return_value={}), \
                  mock.patch.object(parity, 'repair_annotations', return_value={}), \
                  mock.patch.object(parity, 'annotate_site'):
                 try:
