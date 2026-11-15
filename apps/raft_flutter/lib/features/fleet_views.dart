@@ -432,7 +432,10 @@ class _FleetViewState extends State<FleetView> {
         onRetry: load,
         onAdd: state.loaded && w.can('registerMachines')
             ? () {
-                if (current(captured)) showAddComputerDialog(context, w);
+                // Web AddMachineDialog's Done opens the new computer here too.
+                if (current(captured)) {
+                  showAddComputerDialog(context, w, onOpenComputer: openAdded);
+                }
               }
             : null,
         rows: [
@@ -460,6 +463,10 @@ class _FleetViewState extends State<FleetView> {
       child: fleetList(context, rows, loading, error),
     );
   }
+
+  void openAdded(String id) => openComputer(
+    w.services.entityDirectory.computer(id) ?? <String, dynamic>{'id': id},
+  );
 
   /// A computer row opens its page: the workspace's URI-owned detail, or a
   /// standalone route.

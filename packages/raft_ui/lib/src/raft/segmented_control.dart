@@ -606,13 +606,37 @@ class RaftSegmentedControl<T> extends StatefulWidget {
 
 class _RaftSegmentedControlState<T> extends State<RaftSegmentedControl<T>> {
   final _scrollController = ScrollController();
+
+  /// Tab leaves the group (raft-ui SegmentedControl is one tab stop; the
+  /// arrows move within it): a closed loop would trap Tab between segments.
   final scope = FocusScopeNode(
-    traversalEdgeBehavior: TraversalEdgeBehavior.closedLoop,
+    traversalEdgeBehavior: TraversalEdgeBehavior.parentScope,
   );
+
+  /// One node per segment: only the checked one (else the first enabled) is
+  /// a tab stop, the roving tabindex of the Web radio group.
+  final _nodes = <FocusNode>[];
+  FocusNode _node(int i) {
+    while (_nodes.length <= i) {
+      _nodes.add(FocusNode());
+    }
+    return _nodes[i];
+  }
+
+  int get _stop {
+    final checked = widget.items.indexWhere(
+      (e) => e.value == widget.value && e.enabled,
+    );
+    return checked >= 0 ? checked : widget.items.indexWhere((e) => e.enabled);
+  }
+
   @override
   void dispose() {
     _scrollController.dispose();
     scope.dispose();
+    for (final node in _nodes) {
+      node.dispose();
+    }
     super.dispose();
   }
 
@@ -630,7 +654,10 @@ class _RaftSegmentedControlState<T> extends State<RaftSegmentedControl<T>> {
             delta) %
         enabled.length;
     widget.onChanged!(enabled[next].value);
-    if (delta > 0) {
+    final index = widget.items.indexOf(enabled[next]);
+    if (index < _nodes.length) {
+      _nodes[index].requestFocus();
+    } else if (delta > 0) {
       scope.nextFocus();
     } else {
       scope.previousFocus();
@@ -675,9 +702,10 @@ class _RaftSegmentedControlState<T> extends State<RaftSegmentedControl<T>> {
     shrinkFrame: widget.shrinkFrame,
     expand: widget.expand,
     children: [
-      for (final item in widget.items)
+      for (final (i, item) in widget.items.indexed)
         RaftSegmentedItem(
           key: item.itemKey,
+          focusNode: _node(i)..skipTraversal = i != _stop,
           label: item.label,
           glyph: item.glyph,
           count: item.count,

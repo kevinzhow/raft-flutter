@@ -1003,6 +1003,7 @@ class RaftInputGroup extends StatefulWidget {
     this.flat = false,
     this.clearLabel,
     this.onClear,
+    this.clearOnEscape = false,
     this.kbd,
     this.legacy = RaftLegacyGroup.prefixed,
     this.fieldKey,
@@ -1032,6 +1033,10 @@ class RaftInputGroup extends StatefulWidget {
   /// The inline-end clear button (shown while there is text) and the `Kbd` hint after it.
   final String? clearLabel, kbd;
   final VoidCallback? onClear;
+
+  /// raft-ui FitToolbarSearch: Escape in a field that holds text runs [onClear] and stops there (it closes
+  /// nothing around the field); in an empty field, or while an IME is composing, Escape passes on.
+  final bool clearOnEscape;
 
   /// How the frozen Elegant and Brutal looks paint this group.
   final RaftLegacyGroup legacy;
@@ -1249,16 +1254,36 @@ class _RaftInputGroupState extends State<RaftInputGroup>
     );
   }
 
+  KeyEventResult _escapeClears(FocusNode _, KeyEvent event) {
+    if (event is! KeyDownEvent ||
+        event.logicalKey != LogicalKeyboardKey.escape ||
+        controller.value.composing.isValid ||
+        controller.text.isEmpty ||
+        widget.onClear == null) {
+      return KeyEventResult.ignored;
+    }
+    widget.onClear!();
+    return KeyEventResult.handled;
+  }
+
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    if (t.recipeSet == RaftRecipeSet.raft) return _buildRecipe(context, t);
-    return switch (widget.legacy) {
-      RaftLegacyGroup.prefixed => buildFrozenPrefixed(context, t),
-      RaftLegacyGroup.settings => buildFrozenSettings(context, t),
-      RaftLegacyGroup.search => buildFrozenSearch(context, t),
-      RaftLegacyGroup.handle => buildFrozenHandle(context, t),
-    };
+    final group = t.recipeSet == RaftRecipeSet.raft
+        ? _buildRecipe(context, t)
+        : switch (widget.legacy) {
+            RaftLegacyGroup.prefixed => buildFrozenPrefixed(context, t),
+            RaftLegacyGroup.settings => buildFrozenSettings(context, t),
+            RaftLegacyGroup.search => buildFrozenSearch(context, t),
+            RaftLegacyGroup.handle => buildFrozenHandle(context, t),
+          };
+    if (!widget.clearOnEscape) return group;
+    return Focus(
+      canRequestFocus: false,
+      skipTraversal: true,
+      onKeyEvent: _escapeClears,
+      child: group,
+    );
   }
 }
 

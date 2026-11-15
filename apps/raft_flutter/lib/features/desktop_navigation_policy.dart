@@ -146,7 +146,11 @@ class DesktopNavigationState {
     if (entityKind != null) {
       return DesktopContentTarget(entityKind, location.entityId!);
     }
-    if (!{RaftRoute.search, RaftRoute.activity}.contains(location.route)) {
+    if (!{
+      RaftRoute.search,
+      RaftRoute.activity,
+      RaftRoute.computers,
+    }.contains(location.route)) {
       return null;
     }
     final content = location.content;
@@ -198,7 +202,19 @@ class DesktopNavigationState {
     RaftNavigationKind kind = RaftNavigationKind.replace,
   }) {
     final current = navigation.location;
-    if (['members', 'computers'].contains(navigation.section)) {
+    // An agent opened on the Computers page (a rack slot, the computer's
+    // agent list) stays beside the rack: Web openProfile keeps /computers.
+    final besideRack =
+        navigation.section == 'computers' &&
+        value.kind == DesktopContentKind.agent;
+    if (besideRack) {
+      navigation.navigate(
+        RaftLocation.at(
+          serverSlug: current.serverSlug,
+          route: RaftRoute.computers,
+        ).withQuery({'open': 'agent:${value.id}'}),
+      );
+    } else if (['members', 'computers'].contains(navigation.section)) {
       navigation.navigate(
         RaftLocation.at(
           serverSlug: current.serverSlug,

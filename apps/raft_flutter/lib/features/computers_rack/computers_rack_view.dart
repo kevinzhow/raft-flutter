@@ -9,6 +9,7 @@ import 'dart:async';
 import 'package:flutter/widgets.dart';
 import 'package:raft_ui/raft_ui.dart';
 
+import '../../data/raft_location.dart' show RaftProfileKind;
 import '../../data/workspace_controller.dart';
 import '../../data/workspace_entity_directory.dart';
 import '../add_computer_dialog.dart';
@@ -17,6 +18,7 @@ import '../computer_detail_view.dart'
     show computerAvailableVersion, computerDiskLow, computerRunLabel;
 import '../computer_readiness_copy.dart';
 import '../page_layout.dart';
+import '../profile_preview.dart' show ProfilePreviewHoverCard;
 import '../resource_cards.dart' show resourceRelativeTime;
 import '../sender_avatar_projection.dart' show projectSenderAvatar;
 import 'computer_attention_seen.dart';
@@ -31,6 +33,7 @@ class ComputersRackView extends StatefulWidget {
     super.key,
     required this.controller,
     required this.onOpenComputer,
+    this.onOpenAgent,
     this.phone = false,
     this.selectedId,
     this.onBack,
@@ -38,6 +41,10 @@ class ComputersRackView extends StatefulWidget {
   });
   final WorkspaceController controller;
   final ValueChanged<Map<String, dynamic>> onOpenComputer;
+
+  /// An agent slot was pressed (AgentRackSlot openProfile): the side panel on
+  /// desktop, the agent's page on a phone; the workspace profile when null.
+  final ValueChanged<String>? onOpenAgent;
   final bool phone;
   final String? selectedId;
   final VoidCallback? onBack;
@@ -441,8 +448,9 @@ class _ComputersRackViewState extends State<ComputersRackView> {
         hintText: tr('Search computers'),
         semanticLabel: tr('Search computers by name, hostname or owner'),
         onChanged: prefs.setQuery,
-        clearLabel: tr('Clear all'),
+        clearLabel: tr('Clear search'),
         onClear: prefs.query.isEmpty ? null : () => prefs.setQuery(''),
+        clearOnEscape: true,
       ),
       filters: filters,
       display: display,
@@ -958,7 +966,8 @@ class _ComputersRackViewState extends State<ComputersRackView> {
   }
 
   /// AgentRackSlot: the agent's avatar with its light (AvatarSlot
-  /// context="compact-row", 27).
+  /// context="compact-row", 27), a button that opens the agent, with the
+  /// profile preview card on hover (PreviewCard delay 200, closeDelay 120).
   Widget _slot(Map<String, dynamic> a) {
     final id = '${a['id']}';
     final display = '${a['displayName'] ?? ''}';
@@ -971,10 +980,10 @@ class _ComputersRackViewState extends State<ComputersRackView> {
       members: const [],
       currentUser: w.client.user?.json,
     );
-    final slot = RaftTooltip(
-      message: name,
-      child: RaftAvatar(
-        key: ValueKey('rack-slot-$id'),
+    void open() => widget.onOpenAgent != null
+        ? widget.onOpenAgent!(id)
+        : w.openProfile(RaftProfileKind.agent, id);
+    final avatarWidget = RaftAvatar(
         name: name,
         presence: agentRowPresence(a),
         mountedContext: RaftMountedAvatarContext.compactRow,
@@ -989,6 +998,34 @@ class _ComputersRackViewState extends State<ComputersRackView> {
             identity: RaftMountedAvatarIdentity.agent,
           ),
         ),
+      );
+    final slot = ProfilePreviewHoverCard(
+      controller: w,
+      agent: true,
+      id: id,
+      fallback: a,
+      onOpenActivity: (agentId) => w.openProfile(
+        RaftProfileKind.agent,
+        agentId,
+        agentTab: 'activity',
+      ),
+      child: RaftInteractive(
+        key: ValueKey('rack-slot-$id'),
+        onPressed: open,
+        semanticLabel: name,
+        focusOnPointer: false,
+        // rounded-control, focus-visible:shadow-focus.
+        builder: (context, state) => DecoratedBox(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(
+              RaftTokens.of(context).radius,
+            ),
+            boxShadow: state.focusVisible
+                ? RaftTokens.of(context).focusShadows
+                : null,
+          ),
+          child: ExcludeSemantics(child: avatarWidget),
+        ),
       ),
     );
     if (widget.phone || !canDragRackAgent(w, a, _machineById)) return slot;
@@ -1002,7 +1039,7 @@ class _ComputersRackViewState extends State<ComputersRackView> {
       onDraggableCanceled: (_, _) {
         if (mounted) setState(() => dragAgent = null);
       },
-      feedback: Opacity(opacity: .8, child: slot),
+      feedback: Opacity(opacity: .8, child: avatarWidget),
       child: slot,
     );
   }

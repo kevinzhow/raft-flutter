@@ -8,6 +8,8 @@ import 'package:flutter/widgets.dart';
 
 import 'card.dart' show RaftCard;
 import 'design_primitives.dart';
+import 'focus_visible.dart';
+import 'hover_region.dart';
 import 'icons.dart';
 import 'adaptive_workspace.dart' show RaftPanelResizeHandle;
 import 'banner.dart';
@@ -15,7 +17,7 @@ import 'indicators.dart';
 import 'raft/avatar.dart' show RaftAvatarSize;
 import 'raft/status.dart';
 import 'theme.dart';
-import 'tokens/raft_tokens.g.dart' show RaftTypeScale, RaftTypeStyle;
+import 'tokens/raft_tokens.g.dart' show RaftRadius, RaftTypeScale, RaftTypeStyle;
 
 /// The list's three layouts: a desktop table row, a phone block, or a card.
 enum RaftRackLayout { list, phone, card }
@@ -411,9 +413,10 @@ class RaftRackListHeader extends StatelessWidget {
 }
 
 /// ComputerRackRow.tsx: one computer as a list row, a phone block or a card.
-/// The whole surface opens the computer; its slots, next step and … menu act
-/// on their own.
-class RaftRackRow extends StatelessWidget {
+/// A pointer press anywhere on it opens the computer (Web's stretched name
+/// link); the name button is the row's one tab stop and carries the focus
+/// ring around the whole row. Its slots, next step and … menu act on their own.
+class RaftRackRow extends StatefulWidget {
   const RaftRackRow({
     super.key,
     required this.computer,
@@ -433,21 +436,79 @@ class RaftRackRow extends StatelessWidget {
   final String noAgentsLabel, otherRuntimesLabel;
 
   @override
+  State<RaftRackRow> createState() => _RaftRackRowState();
+}
+
+class _RaftRackRowState extends State<RaftRackRow> {
+  final nameFocus = FocusNode();
+  bool hovered = false, ring = false;
+
+  @override
+  void initState() {
+    super.initState();
+    nameFocus.addListener(updateRing);
+    RaftFocusVisible.shared.addListener(updateRing);
+  }
+
+  @override
+  void dispose() {
+    RaftFocusVisible.shared.removeListener(updateRing);
+    nameFocus.dispose();
+    super.dispose();
+  }
+
+  void updateRing() {
+    final next = nameFocus.hasFocus && RaftFocusVisible.shared.keyboard;
+    if (mounted && next != ring) setState(() => ring = next);
+  }
+
+  /// The row's pointer surface: hover fill and a press that opens the
+  /// computer, without a tab stop or a semantics node of its own.
+  Widget surface(double radius, Widget child) => RaftHoverRegion(
+    key: ValueKey('rack-row-${widget.computer.id}'),
+    cursor: SystemMouseCursors.click,
+    onEnter: (_) => setState(() => hovered = true),
+    onExit: (_) => setState(() => hovered = false),
+    child: GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      excludeFromSemantics: true,
+      onTap: widget.onOpen,
+      child: CustomPaint(
+        foregroundPainter: ring
+            ? _RackRowRing(RaftTokens.of(context).ink, radius)
+            : null,
+        child: child,
+      ),
+    ),
+  );
+
+  @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    final c = computer;
+    final c = widget.computer;
+    final layout = widget.layout;
+    final action = widget.action, menu = widget.menu;
     final hint = _type(t, RaftTypeScale.monoMeta, mono: true, color: _hint(t));
     final orange = hint.copyWith(color: _warn(t), fontWeight: FontWeight.w700);
-    final name = Text(
-      c.name,
+    // The stretched link's button: the name, the row's tab stop.
+    final name = RaftInteractive(
       key: ValueKey('rack-row-name-${c.id}'),
-      maxLines: 1,
-      overflow: TextOverflow.ellipsis,
-      style: _type(
-        t,
-        RaftTypeScale.callout,
-        color: t.strong,
-        weight: FontWeight.w700,
+      focusNode: nameFocus,
+      onPressed: widget.onOpen,
+      semanticLabel: c.name,
+      selected: c.selected ? true : null,
+      builder: (context, _) => ExcludeSemantics(
+        child: Text(
+          c.name,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: _type(
+            t,
+            RaftTypeScale.callout,
+            color: t.strong,
+            weight: FontWeight.w700,
+          ),
+        ),
       ),
     );
     final diskLow = c.diskLowLabel == null
@@ -496,7 +557,7 @@ class RaftRackRow extends StatelessWidget {
         ? (reserve
               ? const SizedBox(height: 28)
               : Semantics(
-                  label: noAgentsLabel,
+                  label: widget.noAgentsLabel,
                   excludeSemantics: true,
                   child: Text('—', style: hint),
                 ))
@@ -531,9 +592,9 @@ class RaftRackRow extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
             style: hint,
           );
-    Color? fill(RaftInteractionState s) => c.selected
+    Color? fill() => c.selected
         ? t.colors['info-soft']
-        : s.hovered
+        : hovered
         ? t.colors['fill-muted']
         : c.offline
         ? (t.colors['fill-subtle'] ?? t.colors['layer-canvas'])
@@ -541,13 +602,10 @@ class RaftRackRow extends StatelessWidget {
 
     switch (layout) {
       case RaftRackLayout.card:
-        return RaftInteractive(
-          key: ValueKey('rack-row-${c.id}'),
-          onPressed: onOpen,
-          semanticLabel: c.name,
-          selected: c.selected,
-          builder: (context, state) => RaftCard(
-            background: fill(state),
+        return surface(
+          RaftRadius.container,
+          RaftCard(
+            background: fill(),
             padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -576,7 +634,7 @@ class RaftRackRow extends StatelessWidget {
                     Row(
                       children: [
                         Text(
-                          otherRuntimesLabel,
+                          widget.otherRuntimesLabel,
                           style: _type(
                             t,
                             RaftTypeScale.footnote,
@@ -603,13 +661,11 @@ class RaftRackRow extends StatelessWidget {
           ),
         );
       case RaftRackLayout.phone:
-        return RaftInteractive(
-          key: ValueKey('rack-row-${c.id}'),
-          onPressed: onOpen,
-          semanticLabel: c.name,
-          builder: (context, state) => DecoratedBox(
+        return surface(
+          0,
+          DecoratedBox(
             decoration: BoxDecoration(
-              color: fill(state),
+              color: fill(),
               border: Border(bottom: BorderSide(color: t.colors['line-seam']!)),
             ),
             child: Padding(
@@ -627,21 +683,18 @@ class RaftRackRow extends StatelessWidget {
                     const SizedBox(height: 8),
                     slots(),
                   ],
-                  if (action != null) ...[const SizedBox(height: 8), action!],
+                  if (action != null) ...[const SizedBox(height: 8), action],
                 ],
               ),
             ),
           ),
         );
       case RaftRackLayout.list:
-        return RaftInteractive(
-          key: ValueKey('rack-row-${c.id}'),
-          onPressed: onOpen,
-          semanticLabel: c.name,
-          selected: c.selected,
-          builder: (context, state) => DecoratedBox(
+        return surface(
+          0,
+          DecoratedBox(
             decoration: BoxDecoration(
-              color: fill(state),
+              color: fill(),
               border: Border(
                 bottom: BorderSide(color: t.colors['line-hairline']!),
               ),
@@ -713,6 +766,28 @@ class RaftRackRow extends StatelessWidget {
         );
     }
   }
+}
+
+/// The stretched name link's focus ring: `inset-ring-2 inset-ring-ink` over
+/// the whole row or card (paint only).
+class _RackRowRing extends CustomPainter {
+  const _RackRowRing(this.color, this.radius);
+  final Color color;
+  final double radius;
+  @override
+  void paint(Canvas canvas, Size size) => canvas.drawRRect(
+    RRect.fromRectAndRadius(
+      (Offset.zero & size).deflate(1),
+      Radius.circular(radius > 1 ? radius - 1 : 0),
+    ),
+    Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2
+      ..color = color,
+  );
+  @override
+  bool shouldRepaint(_RackRowRing old) =>
+      old.color != color || old.radius != radius;
 }
 
 /// RackRowSkeleton.tsx: a placeholder in a loaded row's shape.

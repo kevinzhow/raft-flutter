@@ -47,11 +47,18 @@ class _ComputersRackDesktopPageState extends State<ComputersRackDesktopPage> {
       ? widget.target!.id
       : null;
 
+  /// The panel holds a computer, or an agent opened from its rack slot (Web
+  /// AgentRackSlot openProfile: the same ProfilePanel, no row selected).
+  bool get panelOpen =>
+      widget.detail != null &&
+      (selected != null ||
+          widget.target?.kind == DesktopContentKind.agent);
+
   @override
   Widget build(BuildContext context) {
     final selected = this.selected;
     return DesktopDetailFocus(
-      open: selected != null && widget.detail != null,
+      open: panelOpen,
       builder: (scope) => RaftRackSidePanelLayout(
         width: width,
         onResize: (value) => setState(
@@ -65,6 +72,9 @@ class _ComputersRackDesktopPageState extends State<ComputersRackDesktopPage> {
         rack: ComputersRackView(
           controller: widget.controller,
           selectedId: selected,
+          onOpenAgent: (id) => widget.onSelected(
+            DesktopContentTarget(DesktopContentKind.agent, id),
+          ),
           onOpenComputer: (row) {
             final id = row['id'];
             if (id is String) {
@@ -74,9 +84,9 @@ class _ComputersRackDesktopPageState extends State<ComputersRackDesktopPage> {
             }
           },
         ),
-        panel: selected == null || widget.detail == null
-            ? null
-            : FocusScope(node: scope, child: widget.detail!),
+        panel: panelOpen
+            ? FocusScope(node: scope, child: widget.detail!)
+            : null,
       ),
     );
   }
