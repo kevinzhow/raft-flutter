@@ -99,10 +99,11 @@ void main() {
         final label = tester.getRect(find.byType(RaftFileTypeBadge));
         final header = tester.getRect(find.byType(RaftLightboxHeader));
         final text = tester.getRect(find.text('MD'));
-        // Web headerLabel is h-[22px], centred within a 56px toolbar.
+        // Web 1.24 leads the toolbar with the `h-4 w-8` type badge (raft-ui
+        // 0.7's 22px headerLabel chip is gone), centred within the toolbar.
         // Larger text grows the label, without stretching its fill to the bar.
-        if (scale == 1) expect(label.height, 22);
-        if (scale > 1) expect(label.height, greaterThan(22));
+        if (scale == 1) expect(label.height, 16);
+        if (scale > 1) expect(label.height, greaterThan(16));
         expect(label.top, greaterThan(header.top));
         expect(label.bottom, lessThan(header.bottom));
         expect(label.contains(text.topLeft), isTrue);

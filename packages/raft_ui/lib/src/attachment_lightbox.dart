@@ -4,7 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'attachment_tokens.dart';
-import 'design_primitives.dart' show RaftLightboxRecipe, RaftSpinner;
+import 'design_primitives.dart' show RaftSpinner;
+import 'raft/button.dart' show RaftButton, RaftButtonSize, RaftButtonVariant;
 import 'recipes/spinner.g.dart' show RaftSpinnerRecipeSize;
 import 'indicators.dart';
 import 'panel_layout.dart' show RaftPanelHeaderBar;
@@ -18,7 +19,7 @@ import 'status_bar.dart';
 import 'text_scaling.dart';
 import 'raft/ui_tokens.dart';
 import 'theme.dart';
-import 'tokens/tokens.dart' show RaftTypeScale;
+import 'tokens/tokens.dart' show RaftDesktopMetrics, RaftLight, RaftTypeScale;
 import 'tooltip.dart';
 
 /// Width of the comments aside (`w-80`).
@@ -52,8 +53,8 @@ class RaftFileTypeBadge extends StatelessWidget {
   final String filename;
   final Size size;
 
-  /// The toolbar's file-type label (raft-ui 0.7 lightbox `headerLabel`), not the
-  /// small badge of an attachment card.
+  /// Kept for source compatibility. raft-ui 0.7's 22px `headerLabel` chip is
+  /// gone: Web 1.24 leads the toolbar with the same `h-4 w-8` badge.
   final bool headerLabel;
   @override
   Widget build(BuildContext context) {
@@ -62,35 +63,6 @@ class RaftFileTypeBadge extends StatelessWidget {
     final extension = filename.split('.').last.toUpperCase();
     final background = component.semantics.badgeBackground(extension);
     if (background == null) return const SizedBox.shrink();
-    if (headerLabel &&
-        tokens.option('lightbox.style', or: 'recipe') == 'raft') {
-      // `headerLabel`: `h-[22px] rounded-chip bg-fill-muted px-1.5 py-0
-      // text-caption font-semibold text-foreground-muted`.
-      return Container(
-        // `h-[22px]`, a minimum so the label is never cut at larger text sizes.
-        constraints: const BoxConstraints(minHeight: 22),
-        padding: const EdgeInsets.symmetric(horizontal: 6),
-        decoration: BoxDecoration(
-          color: tokens.ui.fillMuted,
-          borderRadius: BorderRadius.circular(
-            tokens.size('radius.chip', fallback: 6),
-          ),
-        ),
-        child: Center(
-          widthFactor: 1,
-          heightFactor: 1,
-          child: Text(
-            extension,
-            maxLines: 1,
-            style: tokens.scale(
-              RaftTypeScale.caption,
-              weight: FontWeight.w600,
-              color: tokens.ui.foregroundMuted,
-            ),
-          ),
-        ),
-      );
-    }
     // A minimum box: it grows with its label above the default text size so
     // the extension is never cut.
     return ConstrainedBox(
@@ -135,21 +107,31 @@ class RaftLightboxIconAction extends StatelessWidget {
   final bool active;
   @override
   Widget build(BuildContext context) {
-    final raft =
-        RaftTokens.of(context).option('lightbox.style', or: 'recipe') == 'raft';
+    final t = RaftTokens.of(context);
+    final raft = t.option('lightbox.style', or: 'recipe') == 'raft';
+    if (raft) {
+      // raft-ui `PanelAction` as FileViewerHeader uses it: a ghost icon button
+      // (outline while the control it toggles is on), 28px with a mouse from
+      // 768dp, 44px otherwise (`md:pointer-fine`). Read from the tokens, so a
+      // wide touch screen keeps the 44px target.
+      return RaftButton(
+        label: '',
+        glyph: glyph,
+        tooltip: label,
+        semanticLabel: label,
+        uiVariant: active ? RaftButtonVariant.outline : RaftButtonVariant.ghost,
+        uiSize: t.desktop ? RaftButtonSize.iconMd : RaftButtonSize.iconLg,
+        onPressed: onPressed,
+      );
+    }
     return RaftTooltip(
       message: label,
       excludeFromSemantics: true,
       child: RaftRecipeButton(
-        // `Button size="icon-lg" variant={active ? "outline" : "ghost"}`.
-        variant: raft
-            ? (active
-                  ? RaftButtonRecipeVariant.outline
-                  : RaftButtonRecipeVariant.ghost)
-            : (active
-                  ? RaftButtonRecipeVariant.primary
-                  : RaftButtonRecipeVariant.outline),
-        size: raft ? RaftButtonRecipeSize.iconLg : RaftButtonRecipeSize.iconSm,
+        variant: active
+            ? RaftButtonRecipeVariant.primary
+            : RaftButtonRecipeVariant.outline,
+        size: RaftButtonRecipeSize.iconSm,
         glyph: glyph,
         glyphSize: 14,
         tooltip: label,
@@ -190,9 +172,15 @@ class RaftLightboxHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     final raft = t.option('lightbox.style', or: 'recipe') == 'raft';
-    final rule = borderWidth;
-    // raft-ui 0.7 `toolbar`: `border-b border-line-seam bg-layer-canvas`.
+    // raft-ui `toolbar`: `border-b border-line-seam bg-layer-canvas`, a 1px
+    // rule at every size and in both lightboxes.
+    final rule = raft ? 1.0 : borderWidth;
     final surface = raft ? t.canvas : t.panel;
+    // `h-header-height` (border box): 56 with touch or below 768dp, 44 with a
+    // mouse from 768dp.
+    final rowHeight = raft
+        ? (t.desktop ? RaftDesktopMetrics.headerHeight : RaftLight.headerHeight)
+        : raftLightboxHeaderRow + rule;
     return RaftStatusBarSource(
       color: surface,
       child: DefaultTextHeightBehavior(
@@ -211,10 +199,10 @@ class RaftLightboxHeader extends StatelessWidget {
           // sender line wrap instead of being ellipsised.
           child: ConstrainedBox(
             constraints: BoxConstraints(
-              minHeight: raftLightboxHeaderRow + rule,
+              minHeight: rowHeight,
               maxHeight: RaftScaled.grows(context)
                   ? double.infinity
-                  : raftLightboxHeaderRow + rule,
+                  : rowHeight,
             ),
             child: Padding(
               padding: EdgeInsets.fromLTRB(16, 0, 16, rule),
@@ -225,7 +213,8 @@ class RaftLightboxHeader extends StatelessWidget {
                       children: [
                         if (leading != null) ...[
                           leading!,
-                          const SizedBox(width: 8),
+                          // `headerMeta` gap-1.5 (Raft); 8 in the old looks.
+                          SizedBox(width: raft ? 6 : 8),
                         ],
                         Expanded(
                           child: Column(
@@ -280,27 +269,26 @@ class RaftLightboxHeader extends StatelessWidget {
                   ),
                   if (meta != null) ...[const SizedBox(width: 12), meta!],
                   const SizedBox(width: 12),
+                  // `actions` slot: `gap-1` (Raft), 6 in the old looks.
                   for (final action in actions) ...[
                     action,
-                    const SizedBox(width: 6),
+                    SizedBox(width: raft ? 4 : 6),
                   ],
-                  RaftTooltip(
-                    message: closeLabel,
-                    excludeFromSemantics: true,
-                    child: raft
-                        // `CloseButton size="icon-lg"` (a ghost icon button).
-                        ? RaftRecipeButton(
-                            variant: RaftButtonRecipeVariant.ghost,
-                            size: RaftButtonRecipeSize.iconLg,
-                            glyph: RaftGlyph.x,
-                            tooltip: closeLabel,
-                            onPressed: onClose,
-                          )
-                        : RaftCloseButton(
-                            onPressed: onClose,
-                            tooltip: closeLabel,
-                          ),
-                  ),
+                  if (raft)
+                    RaftLightboxIconAction(
+                      glyph: RaftGlyph.x,
+                      label: closeLabel,
+                      onPressed: onClose,
+                    )
+                  else
+                    RaftTooltip(
+                      message: closeLabel,
+                      excludeFromSemantics: true,
+                      child: RaftCloseButton(
+                        onPressed: onClose,
+                        tooltip: closeLabel,
+                      ),
+                    ),
                 ],
               ),
             ),
@@ -329,12 +317,14 @@ class RaftLightboxAside extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    final rule = borderWidth;
-    final color = t.colors['line-muted']!;
+    final raft = t.option('lightbox.style', or: 'recipe') == 'raft';
+    // Raft: `border-l border-line-seam bg-layer-canvas`.
+    final rule = raft ? 1.0 : borderWidth;
+    final color = t.colors[raft ? 'line-seam' : 'line-muted']!;
     return Container(
       width: raftLightboxAsideWidth,
       decoration: BoxDecoration(
-        color: t.panel,
+        color: raft ? t.canvas : t.panel,
         border: Border(
           left: BorderSide(color: color, width: rule),
           top: topBorder
@@ -419,8 +409,8 @@ class RaftAttachmentLightbox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    final pageRecipe = RaftLightboxRecipe(t);
     final wide = MediaQuery.sizeOf(context).width >= raftLightboxSmBreakpoint;
+    final raft = t.option('lightbox.style', or: 'recipe') == 'raft';
     Widget stage = Stack(
       children: [
         Positioned.fill(
@@ -460,10 +450,16 @@ class RaftAttachmentLightbox extends StatelessWidget {
             Positioned.fill(
               child: DecoratedBox(
                 decoration: BoxDecoration(
-                  color: t.panel,
+                  color: raft ? t.canvas : t.panel,
                   border: Border(
-                    left: BorderSide(color: t.colors['line-muted']!, width: 2),
-                    top: BorderSide(color: t.colors['line-muted']!, width: 2),
+                    left: BorderSide(
+                      color: t.colors[raft ? 'line-seam' : 'line-muted']!,
+                      width: raft ? 1 : 2,
+                    ),
+                    top: BorderSide(
+                      color: t.colors[raft ? 'line-seam' : 'line-muted']!,
+                      width: raft ? 1 : 2,
+                    ),
                   ),
                 ),
                 child: aside!,
@@ -538,7 +534,7 @@ class RaftAttachmentLightbox extends StatelessWidget {
       ),
     );
     return page
-        ? Material(color: pageRecipe.backdrop, child: content)
+        ? Material(color: t.colors['layer-backdrop']!, child: content)
         : Dialog.fullscreen(
             backgroundColor: raftLightboxBackdropOf(RaftTokens.of(context)),
             child: content,
@@ -606,10 +602,23 @@ class RaftLightboxCounter extends StatelessWidget {
   });
   final int index, count;
   @override
-  Widget build(BuildContext context) => RaftBadge(
-    label: '${index + 1} / $count',
-    variant: RaftBadgeRecipeVariant.primary,
-  );
+  Widget build(BuildContext context) {
+    final raft =
+        RaftTokens.of(context).option('lightbox.style', or: 'recipe') == 'raft';
+    final label = '${index + 1} / $count';
+    // Web: `<Badge appearance="outline" className="tabular-nums">`.
+    return raft
+        ? DefaultTextStyle.merge(
+            style: const TextStyle(
+              fontFeatures: [FontFeature.tabularFigures()],
+            ),
+            child: RaftBadge(
+              label: label,
+              appearance: RaftBadgeRecipeAppearance.outline,
+            ),
+          )
+        : RaftBadge(label: label, variant: RaftBadgeRecipeVariant.primary);
+  }
 }
 
 /// Stage placeholder while the original loads and nothing else can stand in
@@ -642,6 +651,39 @@ class RaftLightboxFailure extends StatelessWidget {
   final String title, message;
   @override
   Widget build(BuildContext context) {
+    final t = RaftTokens.of(context);
+    if (t.option('lightbox.style', or: 'recipe') == 'raft') {
+      // `size-64 flex-col items-center justify-center gap-3
+      // text-foreground-on-hud/70`: ImageOff 36, the name in callout, then the
+      // caption.
+      final ink = t.ui['foreground-on-hud'].withValues(alpha: .7);
+      return Center(
+        child: SizedBox.square(
+          dimension: 256,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              RaftIcon(RaftGlyph.imageOff, size: 36, color: ink),
+              const SizedBox(height: 12),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Text(
+                  title,
+                  textAlign: TextAlign.center,
+                  style: t.scale(RaftTypeScale.callout, color: ink),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                raftText(context, message),
+                textAlign: TextAlign.center,
+                style: t.scale(RaftTypeScale.caption, color: ink),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
     final muted = Colors.white.withValues(alpha: .4);
     return Center(
       child: SizedBox.square(

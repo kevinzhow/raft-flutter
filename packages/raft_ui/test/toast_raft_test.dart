@@ -4,6 +4,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_ui/test_themes.dart';
 
+/// The Raft toast enters and leaves over 220ms (raft-ui toast.mjs): the first
+/// frame after a change starts the motion, the second completes it.
+Future<void> _motion(WidgetTester t) async {
+  await t.pump();
+  await t.pump(const Duration(milliseconds: 240));
+}
+
 void main() {
   for (final dark in raftThemeMatrix([false, true])) {
     for (final scale in [1.0, 2.0]) {
@@ -31,10 +38,11 @@ void main() {
           void show() => controller.show(
             'Local save failed',
             actionLabel: 'Copy',
+            dismissible: true,
             onAction: () => copied++,
           );
           show();
-          await t.pump();
+          await _motion(t);
           final action = find.byKey(const Key('toast-action'));
           final close = find.byKey(const Key('toast-close'));
           // Raft HUD: the bare X and the underlined link are two separate,
@@ -45,13 +53,13 @@ void main() {
           expect(toastRect.contains(t.getRect(close).center), isTrue);
           expect(t.takeException(), isNull);
           await t.tap(action);
-          await t.pump();
+          await _motion(t);
           expect(copied, 1);
           expect(find.byType(RaftToast), findsNothing);
           show();
-          await t.pump();
+          await _motion(t);
           await t.tap(close);
-          await t.pump();
+          await _motion(t);
           expect(copied, 1);
           expect(find.byType(RaftToast), findsNothing);
         },
@@ -84,7 +92,7 @@ void main() {
         focus.requestFocus();
         await t.pump();
         controller.show('Copied', dismissible: false);
-        await t.pump();
+        await _motion(t);
         expect(
           focus.hasFocus,
           isTrue,
@@ -103,9 +111,10 @@ void main() {
           find.descendant(of: toast, matching: find.byType(Semantics)).first,
         );
         expect(live.properties.liveRegion, isTrue);
-        await t.pump(const Duration(milliseconds: 4999));
+        await t.pump(const Duration(milliseconds: 4999 - 240));
         expect(toast, findsOneWidget);
         await t.pump(const Duration(milliseconds: 1));
+        await _motion(t);
         expect(toast, findsNothing);
         expect(t.takeException(), isNull);
       },
@@ -137,6 +146,7 @@ void main() {
       await t.pump(const Duration(seconds: 4));
       expect(find.text('Latest'), findsOneWidget);
       await t.pump(const Duration(seconds: 1));
+      await _motion(t);
       expect(find.byType(RaftToast), findsNothing);
       controller.show('Clear hovered notice');
       await t.pump();
@@ -149,6 +159,7 @@ void main() {
       controller.show('New scope notice');
       await t.pump();
       await t.pump(const Duration(seconds: 5));
+      await _motion(t);
       expect(find.byType(RaftToast), findsNothing);
       controller.show('Scope feedback');
       await t.pump();
@@ -177,22 +188,27 @@ void main() {
         home: Scaffold(body: RaftToastPortal(controller: controller)),
       ),
     );
-    controller.show('Removed', actionLabel: 'Undo', onAction: () => undone++);
-    await t.pump();
+    controller.show(
+      'Removed',
+      actionLabel: 'Undo',
+      dismissible: true,
+      onAction: () => undone++,
+    );
+    await _motion(t);
     expect(find.byKey(const Key('toast-close')), findsOneWidget);
     expect(find.byKey(const Key('toast-action')), findsOneWidget);
     expect(t.getRect(find.byType(RaftToast)).right, lessThanOrEqualTo(304));
     await t.tap(find.byKey(const Key('toast-action')));
-    await t.pump();
+    await _motion(t);
     expect(undone, 1);
     expect(find.byType(RaftToast), findsNothing);
-    controller.show('Saved');
-    await t.pump();
+    controller.show('Saved', dismissible: true);
+    await _motion(t);
     await t.tap(find.byKey(const Key('toast-close')));
-    await t.pump();
+    await _motion(t);
     expect(find.byType(RaftToast), findsNothing);
     controller.show('Copied', dismissible: false);
-    await t.pump();
+    await _motion(t);
     expect(find.byKey(const Key('toast-close')), findsNothing);
     controller.clear();
   });
@@ -230,7 +246,7 @@ void main() {
         actionLabel: 'Undo',
         onAction: () {},
       );
-      await t.pump();
+      await _motion(t);
       for (final text in t.widgetList<Text>(
         find.descendant(
           of: find.byType(RaftToast),
@@ -239,18 +255,13 @@ void main() {
       )) {
         final merged = DefaultTextStyle.of(t.element(find.byWidget(text))).style
             .merge(text.style);
-        // Raft's toastAction is deliberately an underlined link; nothing else
-        // may carry the fallback debug underline.
-        if (text.data == 'Undo') {
-          expect(merged.decoration, TextDecoration.underline);
-          expect(merged.decorationColor, isNotNull);
-        } else {
-          expect(
-            merged.decoration,
-            anyOf(isNull, TextDecoration.none),
-            reason: '"${text.data}"',
-          );
-        }
+        // raft-ui 0.95.3 `hudTextAction`: the link underlines on hover only,
+        // so no text carries a decoration at rest.
+        expect(
+          merged.decoration,
+          anyOf(isNull, TextDecoration.none),
+          reason: '"${text.data}"',
+        );
       }
       controller.clear();
     },
@@ -293,8 +304,7 @@ void main() {
     Future<void> toast(WidgetTester t) async {
       final context = t.element(find.byType(RaftComposer));
       showRaftToast(context, 'Channel ID and content are required');
-      await t.pump();
-      await t.pump();
+      await _motion(t);
     }
 
     final send = find.byKey(const ValueKey('composer-submit'));
@@ -326,10 +336,17 @@ void main() {
       });
     }
 
-    testWidgets('a wide layout keeps the bottom-center placement', (t) async {
+    testWidgets('a wide layout lifts the toast above a docked composer', (
+      t,
+    ) async {
+      // Web v1.24 `--toast-viewport-bottom` (toastViewportBottom.ts) applies at
+      // every width: 1rem above the top edge of the composer at the page floor.
       await mount(t, const Size(1280, 800));
       await toast(t);
-      expect(t.getRect(find.byType(RaftToast)).bottom, 800 - 16);
+      expect(
+        t.getRect(find.byType(RaftToast)).bottom,
+        t.getRect(find.byType(RaftComposer)).top - 16,
+      );
     });
 
     testWidgets('a composer on a covered route does not lift the toast', (
@@ -341,8 +358,7 @@ void main() {
           .push(MaterialPageRoute<void>(builder: (_) => const Scaffold()));
       await t.pumpAndSettle();
       showRaftToast(t.element(find.byType(Scaffold).last), 'Saved');
-      await t.pump();
-      await t.pump();
+      await _motion(t);
       expect(t.getRect(find.byType(RaftToast)).bottom, 844 - 16);
     });
   });

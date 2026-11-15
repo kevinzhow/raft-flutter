@@ -9,11 +9,13 @@ import 'package:flutter/services.dart';
 import 'design_primitives.dart' show RaftInteractive;
 import 'icons.dart';
 import 'preview_route.dart';
+import 'raft/ui_tokens.dart';
 import 'large_content_viewer.dart';
 import 'localization.dart';
 import 'text_scaling.dart';
 import 'theme.dart';
 import 'tokens/media_motion.g.dart';
+import 'tokens/tokens.dart' show RaftTypeScale;
 import 'video_controls.dart' show raftMediaChromeFade;
 import 'window_chrome.dart';
 
@@ -670,17 +672,31 @@ class _RaftMediaStripState extends State<RaftMediaStrip> {
   Widget _thumbAt(BuildContext context, RaftTokens t, int i) {
     final item = widget.items[i];
     final active = i == widget.index;
+    // The desktop strip in the Raft look is Web's `rounded-sticker
+    // border-[1.5px]` button (ImageLightbox.tsx); the phone strip and the older
+    // looks keep their own thumbnails.
+    final sticker = t.isRaftLook && !widget.compact;
+    final onHud = t.ui['foreground-on-hud'];
     final border = active
-        ? (t.colors['accent-strong']!)
-        : Colors.white.withValues(alpha: .3);
+        ? (t.colors[sticker ? 'selected' : 'accent-strong']!)
+        : (sticker ? onHud : Colors.white).withValues(alpha: .3);
     final image = item.thumbnail;
     final thumb = _thumb;
-    Widget box = Container(
+    Widget box(Color edge) => Container(
       width: thumb,
       height: thumb,
+      clipBehavior: sticker ? Clip.antiAlias : Clip.none,
       decoration: BoxDecoration(
-        border: Border.all(color: border, width: 2),
-        boxShadow: !active ? null : t.themeShadows.sm.outer,
+        borderRadius: sticker
+            ? BorderRadius.circular(t.size('radius.sticker', fallback: 4))
+            : null,
+        border: Border.all(color: edge, width: sticker ? 1.5 : 2),
+        boxShadow: !active
+            ? null
+            : sticker
+            // `ring-[1.5px] ring-sticker-ink`.
+            ? [BoxShadow(color: t.colors['sticker-ink']!, spreadRadius: 1.5)]
+            : t.themeShadows.sm.outer,
       ),
       child: Stack(
         fit: StackFit.expand,
@@ -690,16 +706,23 @@ class _RaftMediaStripState extends State<RaftMediaStrip> {
             Image(image: image, fit: BoxFit.cover)
           else
             ColoredBox(
-              color: Colors.white.withValues(alpha: .2),
+              color: (sticker ? onHud : Colors.white).withValues(alpha: .2),
               child: Center(
                 child: Text(
                   '${i + 1}',
-                  style: TextStyle(
-                    fontFamily: t.headingFont,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white.withValues(alpha: .5),
-                  ),
+                  style: sticker
+                      // `font-mono text-mono-meta text-foreground-on-hud/70`.
+                      ? t.scale(
+                          RaftTypeScale.monoMeta,
+                          mono: true,
+                          color: onHud.withValues(alpha: .7),
+                        )
+                      : TextStyle(
+                          fontFamily: t.headingFont,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white.withValues(alpha: .5),
+                        ),
                 ),
               ),
             ),
@@ -743,13 +766,24 @@ class _RaftMediaStripState extends State<RaftMediaStrip> {
         ],
       ),
     );
-    if (!active) box = Opacity(opacity: widget.compact ? .72 : .6, child: box);
     return RaftInteractive(
       key: ValueKey('lightbox-thumbnail-$i'),
       onPressed: () => widget.onSelect(i),
       semanticLabel: item.label,
       selected: active,
-      builder: (_, _) => ExcludeSemantics(child: box),
+      builder: (_, state) {
+        // `opacity-60 hover:opacity-100 hover:border-foreground-on-hud/60`.
+        final lift = sticker && !active && state.hovered;
+        final shown = box(lift ? onHud.withValues(alpha: .6) : border);
+        return ExcludeSemantics(
+          child: active
+              ? shown
+              : Opacity(
+                  opacity: lift ? 1 : (widget.compact ? .72 : .6),
+                  child: shown,
+                ),
+        );
+      },
     );
   }
 }
