@@ -169,11 +169,16 @@ class AttachmentSaves extends ChangeNotifier {
         notifyListeners();
         return (outcome: ArtifactSaveOutcome.hidden, title: null);
       }
-      // The refusal's `reason` is not among the error details this client
-      // keeps; an upload under way is never offered a save (optimistic id).
+      // ATTACHMENT_NOT_SAVABLE {details: {reason: 'uploading' | 'too_large'}}.
+      final details = error is RaftApiException
+          ? error.details['details']
+          : null;
+      final uploading = details is Map && details['reason'] == 'uploading';
       _attempts[id] = ArtifactSaveAttempt.failed(
         code == 'ATTACHMENT_NOT_SAVABLE'
-            ? ArtifactSaveFailure.tooLarge
+            ? (uploading
+                  ? ArtifactSaveFailure.uploading
+                  : ArtifactSaveFailure.tooLarge)
             : code == 'ATTACHMENT_NOT_FOUND'
             ? ArtifactSaveFailure.notFound
             : code == 'FILE_UPLOAD_QUOTA_EXCEEDED'

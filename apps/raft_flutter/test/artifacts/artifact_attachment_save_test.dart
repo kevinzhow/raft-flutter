@@ -240,4 +240,32 @@ void main() {
     );
     expect(ArtifactSession.peek(w), isNotNull);
   });
+
+  for (final (reason, text, retry) in [
+    ('uploading', 'Wait for the upload to finish, then save it.', true),
+    ('too_large', 'This file is too large to save as an Artifact.', false),
+  ]) {
+    testWidgets('ATTACHMENT_NOT_SAVABLE $reason reads like Web', (
+      tester,
+    ) async {
+      savesAre(null);
+      client.answers['POST /artifacts/save-attachment'] = (_) =>
+          RaftApiException.response(
+            'x',
+            status: 422,
+            body: {
+              'error': 'x',
+              'code': 'ATTACHMENT_NOT_SAVABLE',
+              'details': {'attachmentId': 'att1', 'reason': reason},
+            },
+          );
+      await show(tester);
+      await save(tester);
+      expect(find.text(text), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('artifact-attachment-save-retry')),
+        retry ? findsOneWidget : findsNothing,
+      );
+    });
+  }
 }
