@@ -12,6 +12,7 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show LogicalKeyboardKey;
 
 import '../raft_ui.dart';
 import 'recipes/recipe_runtime.dart' show RaftRecipeSet;
@@ -192,8 +193,12 @@ class RaftComputerDetailData {
     this.canRescanRuntimes = false,
     this.releaseNotes,
     this.versionNotice,
+    this.deviceGlyph = RaftGlyph.monitor,
   });
   final String id, name, slug, createdLabel;
+
+  /// The device shape in the header (Web ComputerDeviceIcon).
+  final RaftGlyph deviceGlyph;
 
   /// The version-floor notice at the top of the page (Web ComputerVersionNotice).
   final RaftComputerVersionNoticeData? versionNotice;
@@ -962,7 +967,7 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
             ),
         ],
         iconSlot: RaftPanelHeaderIconTile(
-          glyph: RaftGlyph.monitor,
+          glyph: d.deviceGlyph,
           // bg-primary-soft theme-brutal:bg-soft-signal; elegant border-0
           // bg-fill-muted (`in-data-[theme=elegant]` wins).
           background: t.colors['fill-muted']!,
@@ -1199,30 +1204,30 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
         RaftDismissScope(
           onDismiss: () => setState(() => editingName = false),
           child: _gapColumn(5, [
-          RaftRecipeInput(
-            fieldKey: const ValueKey('computer-name-field'),
-            controller: nameField,
-            placeholder: 'Computer name',
-            autofocus: true,
-            onChanged: (_) {
-              if (nameError.isNotEmpty) setState(() => nameError = '');
-            },
-            onSubmitted: (_) => saveName(),
-          ),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: _saveCancel(
-              savingName,
-              saveName,
-              () => setState(() => editingName = false),
+            RaftRecipeInput(
+              fieldKey: const ValueKey('computer-name-field'),
+              controller: nameField,
+              placeholder: 'Computer name',
+              autofocus: true,
+              onChanged: (_) {
+                if (nameError.isNotEmpty) setState(() => nameError = '');
+              },
+              onSubmitted: (_) => saveName(),
             ),
-          ),
-          if (nameError.isNotEmpty)
-            RaftCssText(
-              raftText(context, nameError),
-              style: ink.body(12, 16, color: ink.orange, w: FontWeight.w700),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: _saveCancel(
+                savingName,
+                saveName,
+                () => setState(() => editingName = false),
+              ),
             ),
-        ]),
+            if (nameError.isNotEmpty)
+              RaftCssText(
+                raftText(context, nameError),
+                style: ink.body(12, 16, color: ink.orange, w: FontWeight.w700),
+              ),
+          ]),
         )
       else
         RaftCssText('${d.name}', style: ink.body(14, 20, color: ink.strong)),
@@ -1248,36 +1253,50 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
       if (manage && editingDescription)
         RaftDismissScope(
           onDismiss: () => setState(() => editingDescription = false),
-          child: _gapColumn(5, [
-          RaftRecipeTextarea(
-            fieldKey: const ValueKey('computer-description-field'),
-            controller: descriptionField,
-            placeholder: 'What is this computer used for?',
-            minHeight: 80,
-            maxLength: 500,
-            autofocus: true,
-            onChanged: (_) => setState(() => descriptionError = ''),
-          ),
-          Row(
-            children: [
-              _saveCancel(
-                savingDescription,
-                saveDescription,
-                () => setState(() => editingDescription = false),
+          // Web `save-computer-description` (Mod+Enter) saves the draft.
+          child: CallbackShortcuts(
+            bindings: {
+              const SingleActivator(LogicalKeyboardKey.enter, control: true):
+                  saveDescription,
+              const SingleActivator(LogicalKeyboardKey.enter, meta: true):
+                  saveDescription,
+            },
+            child: _gapColumn(5, [
+              RaftRecipeTextarea(
+                fieldKey: const ValueKey('computer-description-field'),
+                controller: descriptionField,
+                placeholder: 'What is this computer used for?',
+                minHeight: 80,
+                maxLength: 500,
+                autofocus: true,
+                onChanged: (_) => setState(() => descriptionError = ''),
               ),
-              const Spacer(),
-              RaftCssText(
-                '${descriptionField.text.length}/500',
-                style: ink.mono(11, 16, color: ink.muted(.4)),
+              Row(
+                children: [
+                  _saveCancel(
+                    savingDescription,
+                    saveDescription,
+                    () => setState(() => editingDescription = false),
+                  ),
+                  const Spacer(),
+                  RaftCssText(
+                    '${descriptionField.text.length}/500',
+                    style: ink.mono(11, 16, color: ink.muted(.4)),
+                  ),
+                ],
               ),
-            ],
+              if (descriptionError.isNotEmpty)
+                RaftCssText(
+                  raftText(context, descriptionError),
+                  style: ink.body(
+                    12,
+                    16,
+                    color: ink.orange,
+                    w: FontWeight.w700,
+                  ),
+                ),
+            ]),
           ),
-          if (descriptionError.isNotEmpty)
-            RaftCssText(
-              raftText(context, descriptionError),
-              style: ink.body(12, 16, color: ink.orange, w: FontWeight.w700),
-            ),
-        ]),
         )
       else
         RaftCssText(
@@ -2840,4 +2859,38 @@ class _BulkResetDialogState extends State<_BulkResetDialog> {
       ),
     );
   }
+}
+
+/// Web ProfilePanel's missing computer (`layout.main.computerNotFound`): the
+/// panel's header with its Close, and an empty state with MonitorX.
+class RaftComputerNotFoundPanel extends StatelessWidget {
+  const RaftComputerNotFoundPanel({super.key, this.onBack, this.onClose});
+  final VoidCallback? onBack, onClose;
+  @override
+  Widget build(BuildContext context) => Column(
+    key: const ValueKey('computer-not-found'),
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      RaftPanelHeaderBar(
+        title: '',
+        onBack: onBack,
+        actions: [
+          if (onClose != null)
+            RaftPanelIconButton(
+              key: const ValueKey('machine-panel-close'),
+              glyph: RaftGlyph.x,
+              tooltip: raftText(context, 'Close'),
+              onPressed: onClose,
+            ),
+        ],
+      ),
+      Expanded(
+        child: RaftEmptyState(
+          title: raftText(context, 'Computer not found'),
+          detail: '',
+          glyph: RaftGlyph.monitorX,
+        ),
+      ),
+    ],
+  );
 }

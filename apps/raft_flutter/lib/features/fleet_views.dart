@@ -1576,9 +1576,27 @@ class _FleetDetailState extends State<FleetDetail> {
           (w.services.entityDirectory.state(kind).loaded &&
               directoryRow == null));
 
+  /// Web ProfilePanel `computerNotFound`: the id is no computer this server
+  /// holds once its list has loaded (a stale link, a computer deleted
+  /// elsewhere).
+  bool get _computerGone =>
+      widget.computers &&
+      !_renderable &&
+      w.services.entityDirectory.state(kind).loaded &&
+      directoryRow == null;
+
   @override
   Widget build(BuildContext context) => !current
       ? const SizedBox.shrink()
+      : _computerGone
+      ? RaftComputerNotFoundPanel(
+          onBack: widget.onClose ?? () => Navigator.of(context).maybePop(),
+          onClose:
+              MediaQuery.sizeOf(context).width >=
+                  RaftLayoutMetrics.desktopBreakpoint
+              ? widget.onClose
+              : null,
+        )
       : !_renderable && _unavailable
       ? RaftAgentUnavailablePanel(
           onBack: widget.onClose ?? () => Navigator.of(context).maybePop(),

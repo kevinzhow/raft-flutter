@@ -635,3 +635,17 @@ RackSort? chooseRackSortKey(String key) =>
     attention: summarized && attention > 0 ? attention : null,
   );
 }
+
+/// Web `computerDeviceShape`: a recognised cloud provider wins, then laptop and
+/// server by device class; everything else is the monitor.
+String computerDeviceShape(Map m) {
+  final provider = m['hostProvider'];
+  if (provider is String && hostProviderLabels.containsKey(provider)) {
+    return 'cloud';
+  }
+  return switch (m['deviceClass']) {
+    'laptop' => 'laptop',
+    'server' => 'server',
+    _ => 'monitor',
+  };
+}

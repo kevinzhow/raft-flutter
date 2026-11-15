@@ -3,6 +3,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/device_preferences.dart';
@@ -124,7 +125,7 @@ void main() {
     await g.moveBy(Offset(dx, 0));
     await t.pump();
     await g.up();
-    await t.pump();
+    await t.pump(const Duration(milliseconds: 400));
   }
 
   testWidgets('dragging the panel edge resizes it inside 300 to 600', (
@@ -146,5 +147,43 @@ void main() {
     await open(t);
     await dragHandle(t, -60);
     expect(profilePanelWidth.value, 440);
+  });
+
+  testWidgets('keys and double click work as Web ColumnResizeHandle', (
+    t,
+  ) async {
+    w.machines = [computer('alpha')];
+    await open(t);
+    final handle = find.byKey(const ValueKey('rack-side-panel-resize-handle'));
+    // Focus the handle (a tap on it does not move it).
+    final focusNode = Focus.of(
+      t.element(find.descendant(of: handle, matching: find.byType(SizedBox)).first),
+    );
+    focusNode.requestFocus();
+    await t.pump();
+    await t.sendKeyEvent(LogicalKeyboardKey.arrowLeft);
+    await t.pump();
+    expect(
+      panelWidth(t),
+      396,
+      reason: 'the panel is on the right: left grows it by 16',
+    );
+    await t.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+    await t.pump();
+    await t.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+    await t.pump();
+    expect(panelWidth(t), 364);
+    await t.sendKeyEvent(LogicalKeyboardKey.home);
+    await t.pump();
+    expect(panelWidth(t), 300);
+    await t.sendKeyEvent(LogicalKeyboardKey.end);
+    await t.pump();
+    expect(panelWidth(t), 600);
+    // A double click restores the default width.
+    await t.tap(handle);
+    await t.pump(const Duration(milliseconds: 50));
+    await t.tap(handle);
+    await t.pump(const Duration(milliseconds: 400));
+    expect(panelWidth(t), 380);
   });
 }

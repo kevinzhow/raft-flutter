@@ -35,11 +35,57 @@ class _ComputersRackDesktopPageState extends State<ComputersRackDesktopPage> {
   /// (Web `ColumnResizeHandle column="detail"`).
   double width = profilePanelWidth.value;
 
+  /// Focus enters the panel when a computer opens and returns to the rack
+  /// row it came from when the panel closes (Web ProfilePanel.tsx:78-93).
+  final panelScope = FocusScopeNode(debugLabel: 'computers-rack-side-panel');
+  FocusNode? opener;
+
+  String? get selected => widget.target?.kind == DesktopContentKind.computer
+      ? widget.target!.id
+      : null;
+
+  @override
+  void initState() {
+    super.initState();
+    if (selected != null) _focusPanel();
+  }
+
+  @override
+  void didUpdateWidget(ComputersRackDesktopPage old) {
+    super.didUpdateWidget(old);
+    final before = old.target?.kind == DesktopContentKind.computer
+        ? old.target!.id
+        : null;
+    if (before == null && selected != null) {
+      // The row (or whatever had focus) that opened it.
+      opener = FocusManager.instance.primaryFocus;
+      _focusPanel();
+    } else if (before != null && selected == null) {
+      final back = opener;
+      opener = null;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && back != null && back.context != null) {
+          back.requestFocus();
+        }
+      });
+    }
+  }
+
+  void _focusPanel() => WidgetsBinding.instance.addPostFrameCallback((_) {
+    if (!mounted || selected == null) return;
+    panelScope.requestFocus();
+    panelScope.nextFocus();
+  });
+
+  @override
+  void dispose() {
+    panelScope.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
-    final selected = widget.target?.kind == DesktopContentKind.computer
-        ? widget.target!.id
-        : null;
+    final selected = this.selected;
     return RaftRackSidePanelLayout(
       width: width,
       onResize: (value) => setState(
@@ -47,6 +93,9 @@ class _ComputersRackDesktopPageState extends State<ComputersRackDesktopPage> {
       ),
       onResizeEnd: () => profilePanelWidth.save(width),
       resizeLabel: raftText(context, 'Resize profile'),
+      resizeMin: profilePanelWidth.min,
+      resizeMax: profilePanelWidth.max,
+      resizeDefault: profilePanelWidth.fallback,
       rack: ComputersRackView(
         controller: widget.controller,
         selectedId: selected,
@@ -59,7 +108,9 @@ class _ComputersRackDesktopPageState extends State<ComputersRackDesktopPage> {
           }
         },
       ),
-      panel: selected == null ? null : widget.detail,
+      panel: selected == null || widget.detail == null
+          ? null
+          : FocusScope(node: panelScope, child: widget.detail!),
     );
   }
 }

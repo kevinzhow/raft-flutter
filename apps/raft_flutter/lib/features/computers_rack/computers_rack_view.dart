@@ -868,6 +868,7 @@ class _ComputersRackViewState extends State<ComputersRackView> {
       id: id,
       name: '${m['name'] ?? ''}',
       dot: dot,
+      glyph: rackDeviceGlyph(m),
       dotLabel: dotLabel,
       offline: offline,
       facts: facts,
@@ -1016,3 +1017,11 @@ String? rackOsName(Map m) {
   if (platform.startsWith('win')) return 'Windows';
   return null;
 }
+
+/// The device glyph for a computer (Web ComputerDeviceIcon).
+RaftGlyph rackDeviceGlyph(Map m) => switch (computerDeviceShape(m)) {
+  'laptop' => RaftGlyph.laptop,
+  'server' => RaftGlyph.server,
+  'cloud' => RaftGlyph.cloud,
+  _ => RaftGlyph.monitor,
+};

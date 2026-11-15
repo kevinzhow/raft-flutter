@@ -83,7 +83,11 @@ class RaftRackComputer {
     this.otherRuntimes = const [],
     this.selected = false,
     this.dotLabel,
+    this.glyph = RaftGlyph.monitor,
   });
+
+  /// The device shape (Web ComputerDeviceIcon): laptop, monitor, server, cloud.
+  final RaftGlyph glyph;
   final String id, name;
   final RaftRackDot dot;
 
@@ -130,7 +134,13 @@ class RaftRackMeter {
 
 /// The device glyph with the row's light on its corner.
 class RaftRackDeviceIcon extends StatelessWidget {
-  const RaftRackDeviceIcon({super.key, required this.dot, this.label});
+  const RaftRackDeviceIcon({
+    super.key,
+    required this.dot,
+    this.label,
+    this.glyph = RaftGlyph.monitor,
+  });
+  final RaftGlyph glyph;
   final RaftRackDot dot;
   final String? label;
   @override
@@ -141,7 +151,7 @@ class RaftRackDeviceIcon extends StatelessWidget {
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          RaftIcon(RaftGlyph.monitor, size: 20, color: _muted(t)),
+          RaftIcon(glyph, size: 20, color: _muted(t)),
           Positioned(
             right: -4,
             bottom: -4,
@@ -449,7 +459,7 @@ class RaftRackRow extends StatelessWidget {
           );
     final identity = Row(
       children: [
-        RaftRackDeviceIcon(dot: c.dot, label: c.dotLabel),
+        RaftRackDeviceIcon(dot: c.dot, label: c.dotLabel, glyph: c.glyph),
         const SizedBox(width: 8),
         Flexible(child: name),
         if (layout == RaftRackLayout.phone) ...[
@@ -1147,7 +1157,13 @@ class RaftRackSidePanelLayout extends StatelessWidget {
     this.onResize,
     this.onResizeEnd,
     this.resizeLabel = 'Resize profile',
+    this.resizeMin = 300,
+    this.resizeMax = 600,
+    this.resizeDefault = 380,
   });
+
+  /// The profile panel's bounds (Web `COLUMN_BOUNDS.detail`) and default.
+  final double resizeMin, resizeMax, resizeDefault;
   final Widget rack;
   final Widget? panel;
   final double width;
@@ -1190,6 +1206,9 @@ class RaftRackSidePanelLayout extends StatelessWidget {
             reversed: true,
             onChanged: onResize!,
             onChangeEnd: onResizeEnd,
+            min: resizeMin,
+            max: resizeMax,
+            defaultValue: resizeDefault,
           ),
         ),
       ],

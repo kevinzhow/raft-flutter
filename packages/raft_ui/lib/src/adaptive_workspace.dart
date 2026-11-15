@@ -635,9 +635,16 @@ class RaftPanelResizeHandle extends StatefulWidget {
     this.onChangeStart,
     this.onChangeEnd,
     this.hairline = false,
+    this.min,
+    this.max,
+    this.defaultValue,
   });
   final String label;
   final double value;
+
+  /// Web `ColumnResizeHandle` keys: Home / End go to the [min] / [max] width
+  /// and a double click restores [defaultValue]; each is off when null.
+  final double? min, max, defaultValue;
   final ValueChanged<double> onChanged;
   final bool reversed;
 
@@ -692,12 +699,24 @@ class _ResizeHandleState extends State<RaftPanelResizeHandle> {
         onFocusChange: (value) => setState(() => focused = value),
         onKeyEvent: (_, event) {
           if (event is KeyDownEvent || event is KeyRepeatEvent) {
+            // Shift: the large step (Web KEYBOARD_STEP_LARGE).
+            final step = HardwareKeyboard.instance.isShiftPressed ? 64.0 : 16.0;
             if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
-              change(widget.reversed ? 16 : -16);
+              change(widget.reversed ? step : -step);
               return KeyEventResult.handled;
             }
             if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
-              change(widget.reversed ? -16 : 16);
+              change(widget.reversed ? -step : step);
+              return KeyEventResult.handled;
+            }
+            if (event.logicalKey == LogicalKeyboardKey.home &&
+                widget.min != null) {
+              change(widget.min! - widget.value);
+              return KeyEventResult.handled;
+            }
+            if (event.logicalKey == LogicalKeyboardKey.end &&
+                widget.max != null) {
+              change(widget.max! - widget.value);
               return KeyEventResult.handled;
             }
           }
@@ -722,6 +741,9 @@ class _ResizeHandleState extends State<RaftPanelResizeHandle> {
             },
             onHorizontalDragEnd: (_) => end(),
             onHorizontalDragCancel: end,
+            onDoubleTap: widget.defaultValue == null
+                ? null
+                : () => change(widget.defaultValue! - widget.value),
             // Web's panel resizers (MainLayout thread/sidebar/search,
             // LegacyTaskPanel, ProfilePanel) paint nothing: hover and drag
             // only change the cursor. Keyboard focus, which Web lacks, keeps

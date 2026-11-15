@@ -24,6 +24,7 @@ import 'computers_rack/computers_rack_actions.dart'
     show askComputerRestart, askComputerUpgrade;
 import 'computer_runtime_detection.dart';
 import 'computer_version_tier.dart';
+import 'computers_rack/computers_rack_view.dart' show rackDeviceGlyph;
 import 'computer_setup_commands.dart';
 import 'model_label_catalog.dart';
 import 'computer_upgrade_outcome.dart';
@@ -542,7 +543,8 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel> {
       recommendRepair:
           kind == RaftComputerServiceKind.oneClick &&
           m['installerRepairHint'] is Map &&
-          (m['installerRepairHint'] as Map)['reason'] == 'unrecovered_operation',
+          (m['installerRepairHint'] as Map)['reason'] ==
+              'unrecovered_operation',
       sentence: sentence,
       version: version,
       webUpgradeOn: webUpgradeOn,
@@ -709,6 +711,7 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel> {
     final service = isComputer && online ? this.service(fact, reconnect) : null;
     return RaftComputerDetailData(
       versionNotice: _versionNotice(service),
+      deviceGlyph: rackDeviceGlyph(m),
       runtimeDetection: detection,
       canRescanRuntimes: canRescanComputerRuntimes(w, m),
       releaseNotes: _releaseNotes(fact),
