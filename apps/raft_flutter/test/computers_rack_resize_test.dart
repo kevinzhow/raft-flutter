@@ -155,7 +155,9 @@ void main() {
     final handle = find.byKey(const ValueKey('rack-side-panel-resize-handle'));
     // Focus the handle (a tap on it does not move it).
     final focusNode = Focus.of(
-      t.element(find.descendant(of: handle, matching: find.byType(SizedBox)).first),
+      t.element(
+        find.descendant(of: handle, matching: find.byType(SizedBox)).first,
+      ),
     );
     focusNode.requestFocus();
     await t.pump();

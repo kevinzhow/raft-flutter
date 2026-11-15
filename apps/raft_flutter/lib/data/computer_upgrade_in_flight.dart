@@ -67,7 +67,8 @@ Map<String, dynamic>? computerUpgradeInFlight(
       machine['computerVersion'] == request['targetVersion']) {
     return null;
   }
-  if (nowMs >= accepted.acceptedAtMs + computerUpgradeRequestDeadlineMs(request)) {
+  if (nowMs >=
+      accepted.acceptedAtMs + computerUpgradeRequestDeadlineMs(request)) {
     return null;
   }
   return request;

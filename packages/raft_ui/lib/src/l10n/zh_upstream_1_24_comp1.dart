@@ -4,14 +4,16 @@
 // counts and needs-attention summary, readiness copy, Delete Computer and force unbind, the row's
 // Restart / Upgrade confirmations). ICU plurals and selects are separate English keys here.
 const Map<String, String> zhCatalogUpstream124Comp1 = <String, String>{
-  "An earlier installation on this computer was not finished, and upgrading from the web may fail until it is repaired. Recommended: run the install command on that machine once; it repairs the installation and installs v{version}.": "这台计算机上之前的一次安装没有完成，修复之前从网页升级可能会失败。建议在那台机器上运行一次安装命令：它会修复安装并装上 v{version}。",
+  "An earlier installation on this computer was not finished, and upgrading from the web may fail until it is repaired. Recommended: run the install command on that machine once; it repairs the installation and installs v{version}.":
+      "这台计算机上之前的一次安装没有完成，修复之前从网页升级可能会失败。建议在那台机器上运行一次安装命令：它会修复安装并装上 v{version}。",
   "Or upgrade on that machine with this command:": "也可以在那台机器上用这条命令升级：",
   "Try upgrading from the web anyway": "仍然从网页升级",
   "Try again from the web": "再从网页试一次",
   "This Computer runs under your own systemd unit {unit} (KillMode={killMode}), which stops a web upgrade on this version. On that machine: stop the unit ({stopCommand}), run the install command below once, then start the unit again ({startCommand}).": "这台 Computer 运行在你自己的 systemd 单元 {unit}（KillMode={killMode}）下，这个版本从网页升级会被它中断。请在那台机器上：先停止该单元（{stopCommand}），运行一次下面的安装命令，再重新启动该单元（{startCommand}）。",
   "This Computer runs under your own systemd unit, whose KillMode stops a web upgrade on this version. On that machine: stop the unit, run the install command below once, then start the unit again.": "这台 Computer 运行在你自己的 systemd 单元下，这个版本从网页升级会被它的 KillMode 中断。请在那台机器上：先停止该单元，运行一次下面的安装命令，再重新启动该单元。",
   "The installer can't upgrade this Computer while it runs inside your systemd unit {unit}. On that machine: stop the unit ({stopCommand}), run the install command below once, then start it again ({startCommand}).": "这台 Computer 运行在你的 systemd 单元 {unit} 里时，安装程序无法升级它。请在那台机器上：先停止该单元（{stopCommand}），运行一次下面的安装命令，再重新启动它（{startCommand}）。",
-  "The installer can't upgrade this Computer while it runs inside your systemd unit. Stop the unit, run the install command below once, then start it again.": "这台 Computer 运行在你的 systemd 单元里时，安装程序无法升级它。先停止该单元，运行一次下面的安装命令，再重新启动它。",
+  "The installer can't upgrade this Computer while it runs inside your systemd unit. Stop the unit, run the install command below once, then start it again.":
+      "这台 Computer 运行在你的 systemd 单元里时，安装程序无法升级它。先停止该单元，运行一次下面的安装命令，再重新启动它。",
   "From {date}, agents on an outdated Computer stop running. Upgrade it from its page in one click.":
       "从 {date} 起，版本过旧的计算机上的 Agent 将停止运行。在计算机页面一键即可升级。",
   "{count} Computers need an upgrade by {date}": "{count} 台计算机需要在 {date} 前升级",
