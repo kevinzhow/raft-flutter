@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:raft_flutter/features/computers_rack/rack_move_dialog.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/raft_location.dart';
@@ -860,19 +859,6 @@ void registerCloseDialogTests(TestPart part) {
         ),
       ),
     ),
-    'rack-move-dialog': (t, size) => inWorkspace(
-      t,
-      size,
-      RaftFormDialog,
-      (context, w) => unawaited(
-        showRackMoveDialog(
-          context,
-          w,
-          agent: const {'id': 'a1', 'name': 'cindy', 'machineId': 'm1'},
-          targetId: 'm2',
-        ),
-      ),
-    ),
     'form-dialog': (t, size) => inWorkspace(
       t,
       size,
@@ -887,12 +873,14 @@ void registerCloseDialogTests(TestPart part) {
     ),
   };
   // The release-notes dialog has its own file (close_release_notes_test.dart),
-  // the task delete confirmation too (close_task_dialogs_test.dart): the six
-  // parts keep their deal.
+  // the task delete confirmation too (close_task_dialogs_test.dart) and the
+  // rack's move dialog (close_rack_dialogs_test.dart): the six parts keep
+  // their deal.
   final surfaces = [
     for (final surface in dialogSurfaces)
       if (surface.id != 'computer-release-notes' &&
           surface.id != 'task-delete-confirm' &&
+          surface.id != 'rack-move-dialog' &&
           part.claim())
         surface,
   ];
