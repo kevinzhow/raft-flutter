@@ -12,6 +12,7 @@ import 'icons.dart';
 import 'adaptive_workspace.dart' show RaftPanelResizeHandle;
 import 'banner.dart';
 import 'indicators.dart';
+import 'raft/avatar.dart' show RaftAvatarSize;
 import 'raft/status.dart';
 import 'theme.dart';
 import 'tokens/raft_tokens.g.dart' show RaftTypeScale, RaftTypeStyle;
@@ -499,15 +500,27 @@ class RaftRackRow extends StatelessWidget {
                   excludeSemantics: true,
                   child: Text('—', style: hint),
                 ))
+        // RackSlotStrip: one 27px line of compact-row slots. Its 4px inset
+        // (taken back by a negative margin on Web) keeps the activity light
+        // inside the scroll box; each slot keeps its own square size.
         : SizedBox(
-            height: 28,
-            child: ListView.separated(
-              key: ValueKey('rack-slots-${c.id}'),
-              scrollDirection: Axis.horizontal,
-              itemCount: c.agents.length,
-              separatorBuilder: (_, _) => const SizedBox(width: 4),
-              itemBuilder: (_, i) =>
-                  Opacity(opacity: c.offline ? .5 : 1, child: c.agents[i]),
+            key: ValueKey('rack-slots-${c.id}'),
+            height: RaftAvatarSize.sm.extent,
+            child: OverflowBox(
+              minHeight: RaftAvatarSize.sm.extent + 8,
+              maxHeight: RaftAvatarSize.sm.extent + 8,
+              child: ListView.separated(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                scrollDirection: Axis.horizontal,
+                itemCount: c.agents.length,
+                separatorBuilder: (_, _) => const SizedBox(width: 4),
+                itemBuilder: (_, i) => Center(
+                  child: Opacity(
+                    opacity: c.offline ? .5 : 1,
+                    child: c.agents[i],
+                  ),
+                ),
+              ),
             ),
           );
     final other = c.otherRuntimes.isEmpty

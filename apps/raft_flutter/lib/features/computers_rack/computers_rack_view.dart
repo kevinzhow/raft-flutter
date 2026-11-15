@@ -957,7 +957,8 @@ class _ComputersRackViewState extends State<ComputersRackView> {
     );
   }
 
-  /// AgentRackSlot: the agent's avatar with its light.
+  /// AgentRackSlot: the agent's avatar with its light (AvatarSlot
+  /// context="compact-row", 27).
   Widget _slot(Map<String, dynamic> a) {
     final id = '${a['id']}';
     final display = '${a['displayName'] ?? ''}';
@@ -976,7 +977,7 @@ class _ComputersRackViewState extends State<ComputersRackView> {
         key: ValueKey('rack-slot-$id'),
         name: name,
         presence: agentRowPresence(a),
-        mountedContext: RaftMountedAvatarContext.compactList,
+        mountedContext: RaftMountedAvatarContext.compactRow,
         kind: RaftAvatarKind.agent,
         content: RaftAvatarContent(
           name: name,
@@ -984,7 +985,7 @@ class _ComputersRackViewState extends State<ComputersRackView> {
           uploadedUrl: avatar.uploadedUrl,
           pixelKey: avatar.pixelKey,
           fallback: const RaftMountedAvatarFallback(
-            avatarContext: RaftMountedAvatarContext.compactList,
+            avatarContext: RaftMountedAvatarContext.compactRow,
             identity: RaftMountedAvatarIdentity.agent,
           ),
         ),

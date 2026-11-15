@@ -17,6 +17,9 @@ enum RaftMountedAvatarContext {
   // the border.
   messageRow,
   compactList,
+  // AvatarSlot context="compact-row": raft-ui Avatar `sm`, 27 (a dense row:
+  // a computer's agent slots, AgentRackSlot).
+  compactRow,
   // AvatarSlot context="members-row": RAFT_AVATAR_SPEC `!size-7 !border`.
   membersRow,
   sidebarList,
@@ -82,14 +85,18 @@ class RaftMountedAvatarRecipe {
   bool get sidebarList => avatarContext == RaftMountedAvatarContext.sidebarList;
   bool get previewMini => avatarContext == RaftMountedAvatarContext.previewMini;
   bool get membersRow => avatarContext == RaftMountedAvatarContext.membersRow;
+  bool get compactRow => avatarContext == RaftMountedAvatarContext.compactRow;
   // RAFT_AVATAR_SPEC: panel-header !size-9, compact-list !size-5,
-  // sidebar-list !size-[18px], preview-mini !size-[14px]; members-row !size-7.
+  // sidebar-list !size-[18px], preview-mini !size-[14px]; members-row !size-7;
+  // compact-row raft-ui sm.
   double get extent => panelHeader
       ? 36
       : messageRow
       ? 32
       : membersRow
       ? 28
+      : compactRow
+      ? RaftAvatarSize.sm.extent
       : sidebarList
       ? tokens.size('size.avatar.sidebarList', fallback: 18)
       : previewMini
