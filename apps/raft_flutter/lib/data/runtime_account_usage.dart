@@ -1,7 +1,14 @@
 // Web utils/runtimeAccountUsageClient.ts: the private runtime-account usage
 // snapshot a Computer reports per provider. Reads are cached for 60s and
-// coalesced; refreshes share a 120s cooldown window per subject.
+// coalesced; refreshes share a 120s cooldown window per subject. v1.24: an
+// `unsupported` read (this Computer's daemon reads no usage for it), only
+// well-formed snapshots kept, a listener per landed read (the rack's meters
+// follow what a card just fetched), and a limit reset's snapshot stored.
 import 'dart:async';
+
+import 'package:raft_client/raft_client.dart';
+
+import 'runtime_auth.dart' show runtimeUsageRequestHeaders;
 
 /// RUNTIME_ACCOUNT_USAGE_PROVIDERS; `kimi-sdk` reads the `kimi` provider.
 String? runtimeUsageProvider(String runtimeId) => switch (runtimeId) {
@@ -17,21 +24,34 @@ String runtimeUsageProviderName(String provider) => switch (provider) {
   _ => 'Kimi',
 };
 
-/// `{state: missing|fresh|stale, snapshot}`.
+/// A snapshot in the shape every usage view relies on (its `accounts` a
+/// list), or null (withValidSnapshot / readResultOf).
+Map<String, dynamic>? runtimeUsageSnapshotOf(Object? value) =>
+    value is Map && value['accounts'] is List
+    ? Map<String, dynamic>.from(value)
+    : null;
+
+/// `{state: missing|unsupported|fresh|stale, snapshot}`.
 class RuntimeUsageRead {
   const RuntimeUsageRead(this.state, this.snapshot);
   factory RuntimeUsageRead.fromJson(dynamic value) {
     final map = value is Map ? value : const {};
-    final state = '${map['state'] ?? 'missing'}';
-    final snapshot = map['snapshot'];
-    return RuntimeUsageRead(
-      snapshot is Map && state != 'missing' ? state : 'missing',
-      snapshot is Map ? Map<String, dynamic>.from(snapshot) : null,
-    );
+    final state = map['state'];
+    if (state == 'unsupported') {
+      return const RuntimeUsageRead('unsupported', null);
+    }
+    final snapshot = runtimeUsageSnapshotOf(map['snapshot']);
+    if ((state == 'fresh' || state == 'stale') && snapshot != null) {
+      return RuntimeUsageRead(state as String, snapshot);
+    }
+    return const RuntimeUsageRead('missing', null);
   }
   final String state;
   final Map<String, dynamic>? snapshot;
-  bool get missing => state == 'missing' || snapshot == null;
+
+  /// No snapshot to show (missing, or `unsupported`).
+  bool get missing => snapshot == null;
+  bool get unsupported => state == 'unsupported';
 
   /// isAttention: a stale snapshot, or an account / window not `ok`.
   bool get attention {
@@ -48,17 +68,16 @@ class RuntimeUsageRead {
   }
 }
 
-/// `{accepted, state: requested|cooldown|computer_offline|fresh|timeout,
-/// snapshot?}`.
+/// `{accepted, state: requested|cooldown|computer_offline|fresh|timeout|
+/// unsupported, snapshot?}` (FLD-117 RuntimeAccountUsageRefreshResult).
 class RuntimeUsageRefresh {
   const RuntimeUsageRefresh(this.accepted, this.state, [this.snapshot]);
   factory RuntimeUsageRefresh.fromJson(dynamic value) {
     final map = value is Map ? value : const {};
-    final snapshot = map['snapshot'];
     return RuntimeUsageRefresh(
       map['accepted'] == true,
       '${map['state'] ?? 'computer_offline'}',
-      snapshot is Map ? Map<String, dynamic>.from(snapshot) : null,
+      runtimeUsageSnapshotOf(map['snapshot']),
     );
   }
   final bool accepted;
@@ -83,6 +102,32 @@ class RuntimeAccountUsageClient {
   final _reads = <String, Future<RuntimeUsageRead>>{};
   final _refreshes = <String, Future<RuntimeUsageRefresh>>{};
   final _refreshStartedAt = <String, DateTime>{};
+  final _listeners = <void Function()>{};
+
+  /// Calls [listener] whenever a read result lands in the cache.
+  void Function() subscribe(void Function() listener) {
+    _listeners.add(listener);
+    return () => _listeners.remove(listener);
+  }
+
+  void _store(String key, RuntimeUsageRead value) {
+    _cache[key] = (value, now().add(cacheFor));
+    for (final listener in [..._listeners]) {
+      listener();
+    }
+  }
+
+  /// Puts a snapshot the Computer just read (after a limit reset) into the
+  /// read cache, as a manual refresh does.
+  void storeSnapshot(
+    String server,
+    String machine,
+    String provider,
+    Map<String, dynamic> snapshot,
+  ) => _store(
+    _key(server, machine, provider),
+    RuntimeUsageRead('fresh', snapshot),
+  );
 
   static String _key(String server, String machine, String provider) =>
       '$server\u0000$machine\u0000$provider';
@@ -105,10 +150,15 @@ class RuntimeAccountUsageClient {
     if (pending != null) return pending;
     late final Future<RuntimeUsageRead> request;
     request =
-        get('/servers/$server/machines/$machine/runtime-account-usage/$provider')
+        RaftClient.runWithHeaders(
+              runtimeUsageRequestHeaders,
+              () => get(
+                '/servers/$server/machines/$machine/runtime-account-usage/$provider',
+              ),
+            )
             .then((value) {
               final read = RuntimeUsageRead.fromJson(value);
-              _cache[key] = (read, now().add(cacheFor));
+              _store(key, read);
               return read;
             })
             .whenComplete(() {
@@ -133,17 +183,17 @@ class RuntimeAccountUsageClient {
     _refreshStartedAt[key] = now();
     late final Future<RuntimeUsageRefresh> request;
     request =
-        post(
-              '/servers/$server/machines/$machine/runtime-account-usage/$provider/refresh',
-              {'reason': reason},
+        RaftClient.runWithHeaders(
+              runtimeUsageRequestHeaders,
+              () => post(
+                '/servers/$server/machines/$machine/runtime-account-usage/$provider/refresh',
+                {'reason': reason},
+              ),
             )
             .then((value) {
               final result = RuntimeUsageRefresh.fromJson(value);
               if (result.state == 'fresh' && result.snapshot != null) {
-                _cache[key] = (
-                  RuntimeUsageRead('fresh', result.snapshot),
-                  now().add(cacheFor),
-                );
+                _store(key, RuntimeUsageRead('fresh', result.snapshot));
               }
               return result;
             })
