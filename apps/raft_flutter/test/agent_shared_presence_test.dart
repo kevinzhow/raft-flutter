@@ -238,13 +238,15 @@ void main() {
         await w.entityDirectory.refresh(WorkspaceEntityKind.agents);
         await t.pumpAndSettle();
         badges(RaftAvatarActivity.thinking);
-        final identity = t.widget<RaftProfileIdentity>(
+        // Web v1.24 AgentStatusBadge: the profile's status is the chip row
+        // under the name (RaftProfileIdentity.statusRow), not a text line.
+        final status = t.widget<RaftAgentStatusRow>(
           find.descendant(
             of: find.byKey(const Key('profile')),
-            matching: find.byType(RaftProfileIdentity),
+            matching: find.byType(RaftAgentStatusRow),
           ),
         );
-        expect(identity.statusText?.toLowerCase(), contains('thinking'));
+        expect(status.text.toLowerCase(), contains('thinking'));
         expect(t.takeException(), isNull);
         await t.pumpWidget(const SizedBox.shrink());
       },

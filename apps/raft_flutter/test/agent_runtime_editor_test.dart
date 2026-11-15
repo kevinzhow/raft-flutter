@@ -414,7 +414,7 @@ void main() {
     },
   );
 
-  testWidgets('an active agent asks to restart before applying', (
+  testWidgets('an active agent saves without restartMode (Web 1.24)', (
     tester,
   ) async {
     final (_, client) = await _open(
@@ -424,21 +424,15 @@ void main() {
     await _choose(tester, 'runtime-editor-reasoning', 'Low');
     await tester.tap(_k('runtime-editor-save'));
     await tester.pumpAndSettle();
+    // No "Restart to apply" confirmation: the server applies it when idle.
+    expect(find.text('Restart to apply runtime config'), findsNothing);
     expect(find.text('Edit Runtime Config'), findsNothing);
-    expect(find.text('Restart to apply runtime config'), findsOneWidget);
-    expect(
-      find.text('Apply Reasoning and restart this agent now?'),
-      findsOneWidget,
-    );
-    expect(client.calls.where((c) => c.$1 == 'PATCH'), isEmpty);
-    await tester.tap(find.text('Restart Agent'));
-    await tester.pumpAndSettle();
     final body = client.calls.where((c) => c.$1 == 'PATCH').single.$3 as Map;
-    expect(body['restartMode'], 'restart');
+    expect(body.containsKey('restartMode'), isFalse);
     expect(body['reasoningEffort'], 'low');
   });
 
-  testWidgets('a Codex model change on an active agent resets the session', (
+  testWidgets('a Codex model change on an active agent saves without a reset', (
     tester,
   ) async {
     final bundled = runtimeModelCatalog['codex']!;
@@ -450,15 +444,9 @@ void main() {
     await _choose(tester, 'runtime-editor-model', other.label);
     await tester.tap(_k('runtime-editor-save'));
     await tester.pumpAndSettle();
-    expect(find.text('Switch model and reset session'), findsOneWidget);
-    expect(
-      find.textContaining('resets the current runtime session'),
-      findsOneWidget,
-    );
-    await tester.tap(find.text('Reset Session'));
-    await tester.pumpAndSettle();
+    expect(find.text('Switch model and reset session'), findsNothing);
     final body = client.calls.where((c) => c.$1 == 'PATCH').single.$3 as Map;
-    expect(body['restartMode'], 'session');
+    expect(body.containsKey('restartMode'), isFalse);
     expect(body['model'], other.id);
   });
 
@@ -478,8 +466,8 @@ void main() {
         ),
         findsOneWidget,
       );
-      expect(find.text('Save Runtime Change'), findsOneWidget);
-      await tester.tap(find.text('Save Runtime Change'));
+      expect(find.text('Save runtime change'), findsOneWidget);
+      await tester.tap(find.text('Save runtime change'));
       await tester.pumpAndSettle();
       final body = client.calls.where((c) => c.$1 == 'PATCH').single.$3 as Map;
       expect(body['runtime'], 'claude');

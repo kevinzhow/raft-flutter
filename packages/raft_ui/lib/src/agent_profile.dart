@@ -738,10 +738,15 @@ class RaftProfileIdentity extends StatelessWidget {
     this.avatarButton = false,
     this.statusColor,
     this.statusText,
+    this.statusRow,
     this.minHeight = 0,
     this.youLabel,
     this.avatarLabel,
   });
+
+  /// The status as a chip with its links ([RaftAgentStatusRow]); replaces the
+  /// [statusColor] / [statusText] line.
+  final Widget? statusRow;
 
   /// The avatar action's label and tooltip (default "Choose Avatar").
   final String? avatarLabel;
@@ -891,7 +896,13 @@ class RaftProfileIdentity extends StatelessWidget {
                       ],
                     ],
                   ),
-                  if (statusText != null)
+                  if (statusRow != null)
+                    // `mt-1.5 min-w-0`
+                    Padding(
+                      padding: const EdgeInsets.only(top: 6),
+                      child: statusRow,
+                    )
+                  else if (statusText != null)
                     Padding(
                       padding: const EdgeInsets.only(top: 4),
                       child: Row(

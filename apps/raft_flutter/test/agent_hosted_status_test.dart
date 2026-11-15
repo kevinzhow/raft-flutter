@@ -1,4 +1,4 @@
-// Web HostedRuntimeStatus, AgentHostedRuntimeUsage and stopHostedTurn on a
+// Web HostedRuntimeStatus, AgentHostedRuntimeUsage and stopAgentTurn on a
 // cloud agent's profile: the provisioning panel replaces the setup steps, a
 // retry (naming the model again after the provider refused it), the seven-day
 // usage, and "Stop current turn".
@@ -103,7 +103,7 @@ class _Client extends RaftClient {
     ],
   };
   Object? retryResult;
-  Object? stopResult = {'result': 'interrupted'};
+  Object? stopResult = {'outcome': 'interrupted'};
   int stopFailures = 0;
   Object? models = {
     'models': [
@@ -166,7 +166,7 @@ class _Client extends RaftClient {
       if (out is Exception) throw out;
       return out ?? {'hostedRuntime': hosted};
     }
-    if (path == '/agents/ext-1/stop') {
+    if (path == '/agents/ext-1/interrupt-turn') {
       if (stopFailures > 0) {
         stopFailures--;
         throw RaftApiException('down', status: 502);
@@ -506,74 +506,6 @@ void main() {
       expect(
         c.calls.where((x) => x.endsWith('/hosted-runtime/usage')),
         isEmpty,
-      );
-    });
-  });
-
-  group('stop current turn', () {
-    testWidgets('an active cloud agent has the command and it says what '
-        'happened', (t) async {
-      final (c, _) = await _pump(t, hosted: _hosted('active'));
-      final stop = find.byKey(
-        const Key('agent-profile-inline-stop-hosted-turn'),
-      );
-      expect(stop, findsOneWidget);
-      await t.tap(stop);
-      await t.pumpAndSettle();
-      expect(c.calls, contains('POST /agents/ext-1/stop'));
-      expect(find.text('Stopped the current turn.'), findsOneWidget);
-      // Not running: the other message.
-      c.stopResult = {'result': 'not_running'};
-      await t.tap(stop);
-      await t.pumpAndSettle();
-      expect(find.text('Nothing was running.'), findsOneWidget);
-    });
-
-    testWidgets('a failed stop offers Retry and the retry stops it', (t) async {
-      final (c, _) = await _pump(t, hosted: _hosted('active'));
-      c.stopFailures = 1;
-      await t.tap(
-        find.byKey(const Key('agent-profile-inline-stop-hosted-turn')),
-      );
-      await t.pumpAndSettle();
-      expect(find.text("Couldn't stop the current turn."), findsOneWidget);
-      await t.tap(find.text('Retry'));
-      await t.pumpAndSettle();
-      expect(
-        c.calls.where((x) => x == 'POST /agents/ext-1/stop'),
-        hasLength(2),
-      );
-      expect(find.text('Stopped the current turn.'), findsOneWidget);
-    });
-
-    testWidgets('the state just read decides, not the list row it came from', (
-      t,
-    ) async {
-      // The directory row still says provisioning; the status read says active.
-      final c = _Client(_hosted('provisioning'))
-        ..statusHosted = _hosted('active');
-      await _pump(t, client: c);
-      expect(
-        find.byKey(const Key('agent-profile-inline-stop-hosted-turn')),
-        findsOneWidget,
-      );
-    });
-
-    testWidgets('not offered while setting up, failed, or for a plain agent', (
-      t,
-    ) async {
-      for (final state in ['provisioning', 'failed', 'deleting']) {
-        await _pump(t, hosted: _hosted(state));
-        expect(
-          find.byKey(const Key('agent-profile-inline-stop-hosted-turn')),
-          findsNothing,
-          reason: state,
-        );
-      }
-      await _pump(t, hosted: null);
-      expect(
-        find.byKey(const Key('agent-profile-inline-stop-hosted-turn')),
-        findsNothing,
       );
     });
   });

@@ -181,7 +181,11 @@ class _ExternalAgentSetupState extends State<ExternalAgentSetup> {
         w.client,
         () => w.client.post(
           '/agents/${Uri.encodeComponent(id)}/credentials',
-          data: <String, dynamic>{},
+          // Web `PAGE_CREDENTIAL_NAME` (externalAgentSetup.ts): the credential
+          // made on this page is named, so a later "Create new credential"
+          // replaces only it, never a CLI login's. (`replacesCredentialId`
+          // comes with Web's "Create a new credential?" confirmation.)
+          data: <String, dynamic>{'name': 'Created on this page'},
         ),
         reason: StepUpReason.agentKey,
       );

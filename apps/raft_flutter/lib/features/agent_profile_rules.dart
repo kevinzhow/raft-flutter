@@ -48,6 +48,28 @@ bool canViewAgentPrivateSurfaces(
   bool capability,
 ) => capability || agentCreatorIsCurrentUser(agent, currentUserId);
 
+/// Web `canStopThisTurn` (AgentDetailPanel.tsx): not a bounded projection; a
+/// Computer agent, or a hosted external one that is `active`; its creator or
+/// anyone with `controlAgentRuntime`; and of a personal assistant only its
+/// owner or a server owner/admin.
+bool canStopThisAgentTurn({
+  required Map agent,
+  required String? currentUserId,
+  required bool controlAgentRuntime,
+  required bool boundedPublic,
+  required bool external,
+  bool isAssistant = false,
+  bool isAssistantOwner = false,
+  bool isServerAdmin = false,
+}) {
+  final hosted = agent['hostedRuntime'];
+  final canStopTurn =
+      !boundedPublic &&
+      (!external || (hosted is Map && hosted['state'] == 'active')) &&
+      canViewAgentPrivateSurfaces(agent, currentUserId, controlAgentRuntime);
+  return canStopTurn && (!isAssistant || isAssistantOwner || isServerAdmin);
+}
+
 /// The flags [AgentDetailPanel] uses, matching Web's panel gates.
 ///
 /// A bounded projection forces the public profile even when the viewer is the
@@ -68,9 +90,9 @@ class AgentProfileAccess {
   final bool canViewPrivate;
   final bool canControlRuntime;
 
-  /// A cloud agent, for a viewer who may control runtimes (or its creator):
-  /// the one command "Stop current turn" (the profile offers it while the
-  /// agent is up, by the status it just read).
+  /// Web `canStopThisTurn`: the one command "Stop current turn" (a Computer
+  /// agent, or a hosted external agent whose runtime is active), for a viewer
+  /// who may control runtimes (or its creator).
   final bool canStopHostedTurn;
   final String? sourceServerLabel;
 }
@@ -92,17 +114,18 @@ AgentProfileAccess agentProfileAccess({
       !bounded &&
       !external &&
       canViewAgentPrivateSurfaces(agent, currentUserId, controlAgentRuntime);
-  final hosted = agent['hostedRuntime'];
   return AgentProfileAccess(
     boundedPublic: bounded,
     canManage: canManage,
     canViewPrivate: canViewPrivate,
     canControlRuntime: canControl,
-    canStopHostedTurn:
-        !bounded &&
-        external &&
-        hosted is Map &&
-        canViewAgentPrivateSurfaces(agent, currentUserId, controlAgentRuntime),
+    canStopHostedTurn: canStopThisAgentTurn(
+      agent: agent,
+      currentUserId: currentUserId,
+      controlAgentRuntime: controlAgentRuntime,
+      boundedPublic: bounded,
+      external: external,
+    ),
     sourceServerLabel: agentSourceServerLabel(agent, currentServerId),
   );
 }

@@ -1,5 +1,6 @@
 // Agent detail panel, rebuilt from Web
-// packages/web/src/components/agent/AgentDetailPanel.tsx: PanelHeader
+// packages/web/src/features/agent/AgentDetailPanel.tsx (v1.24.0; the status
+// chip and the runtime error banner follow it, other tabs are being ported): PanelHeader
 // (back, avatar, name, overflow actions), the scrollable tab strip
 // (Profile / Activity / Chat / Reminders / Workspace / Apps / MCP) and each
 // tab's content. FleetDetail keeps the data loading, authority fencing and
@@ -40,9 +41,15 @@ import 'agent_trajectory_log.dart';
 import 'tool_display.dart';
 import 'runtime_usage_chip.dart';
 import 'agent_runtime_catalog.dart' show reasoningEfforts, runtimeInfos;
+import 'agent_runtime_draft.dart' show runtimeModelLabel;
 import 'agent_runtime_labels.dart'
     show isRuntimeDeprecated, runtimeLabelWithStatus;
 import 'agent_metadata_projection.dart';
+import 'agent_runtime_error_banner_view.dart';
+import 'agent_runtime_error_state.dart';
+import 'agent_status_chip_view.dart';
+import 'agent_status_state.dart';
+import 'agent_tool_stuck_notice.dart';
 import 'model_label_catalog.dart';
 import 'model_label_listener.dart';
 import 'mcp_views.dart';
@@ -158,7 +165,8 @@ class AgentDetailActions {
       onEditRuntime,
       onStartStop,
       onRestartReset,
-      /// A cloud agent: stop the running turn (the agent stays).
+      /// Stop the running turn (the agent stays): the link of the tool-stuck
+      /// notice under the status chip (Web `canStopThisTurn`). Null hides it.
       onStopHostedTurn,
       onDelete,
       onMessage,
@@ -265,11 +273,6 @@ class _AgentDetailPanelState extends State<AgentDetailPanel>
     return value is Map ? value : null;
   }
 
-  /// "Stop current turn": only a cloud agent that is up has a turn to stop;
-  /// the state is the freshest one the profile has read.
-  bool get _canStopHostedTurn =>
-      widget.actions.onStopHostedTurn != null &&
-      _hostedRuntime?['state'] == 'active';
   AgentAmbientDisplay get _display => agentRowAmbientDisplay(
     a,
     live: widget.liveActivity,
@@ -551,12 +554,6 @@ class _AgentDetailPanelState extends State<AgentDetailPanel>
           onPressed: widget.actions.onRestartReset,
         ),
       ],
-      if (_canStopHostedTurn)
-        RaftMenuEntry(
-          label: raftText(context, 'Stop current turn'),
-          glyph: RaftGlyph.square,
-          onPressed: widget.actions.onStopHostedTurn,
-        ),
     ];
     return LayoutBuilder(
       builder: (context, box) =>
@@ -693,13 +690,6 @@ class _AgentDetailPanelState extends State<AgentDetailPanel>
         onPressed: widget.actions.onRestartReset,
       ),
     ],
-    if (_canStopHostedTurn)
-      RaftPanelIconButton(
-        key: const Key('agent-profile-inline-stop-hosted-turn'),
-        glyph: RaftGlyph.square,
-        tooltip: raftText(context, 'Stop current turn'),
-        onPressed: widget.actions.onStopHostedTurn,
-      ),
   ];
 
   RaftPanelTab<AgentDetailTab> _tabSpec(
@@ -815,51 +805,106 @@ class _AgentDetailPanelState extends State<AgentDetailPanel>
   /// EXTERNAL_AGENT_ONLINE_WINDOW_MS (store/presenceClock.ts).
   static const _externalOnlineWindow = Duration(milliseconds: 120000);
 
-  /// Web `AgentStatusBadge` for an external agent: presence is the credential
-  /// seen within the online window, and managers also see the setup state.
-  /// While seen with a non-idle activity the badge reads like a managed
-  /// agent's (null here).
-  (Color, String)? _externalPresence(BuildContext context, RaftTokens t) {
-    if (!external) return null;
-    final seen = a['lastSeenAt'] is String
-        ? DateTime.tryParse(a['lastSeenAt'] as String)
-        : null;
-    final now = (widget.clock ?? DateTime.now)();
-    final online = seen != null && now.difference(seen) < _externalOnlineWindow;
-    final live = widget.liveActivity?['activity'];
-    if (online && live is String && live != 'online' && live != 'offline') {
+  /// Web v1.24 `AgentStatusBadge` (features/agent/AgentStatusBadge.tsx): the
+  /// profile header's chip. An external agent reads its presence (the
+  /// credential seen within the online window) and managers its setup state;
+  /// while it is seen with a non-idle activity the chip reads like a managed
+  /// agent's. A managed agent's chain is agent_status_state.dart.
+  AgentStatusChip _statusChip(BuildContext context) {
+    final display = _display;
+    final hasState = agentHasActivityState(a, live: widget.liveActivity);
+    if (external) {
+      final seen = a['lastSeenAt'] is String
+          ? DateTime.tryParse(a['lastSeenAt'] as String)
+          : null;
+      final now = (widget.clock ?? DateTime.now)();
+      final seenOnline =
+          seen != null && now.difference(seen) < _externalOnlineWindow;
+      final shown =
+          seenOnline &&
+          hasState &&
+          display.activity != 'online' &&
+          display.activity != 'offline';
+      if (!shown) {
+        // An explicit offline (the agent declared it stopped) shows at once.
+        final online =
+            seenOnline && !(hasState && display.activity == 'offline');
+        final chinese = Localizations.localeOf(context).languageCode == 'zh';
+        return resolveExternalStatusChip(
+          online: online,
+          showDetail: _canViewPrivate,
+          setupState: externalStatus?['setupState'] as String?,
+          hasStatus: externalStatus != null,
+          lastSeenRelative: !online && seen != null
+              ? resourceRelativeTime(
+                  a['lastSeenAt'] as String,
+                  now: now,
+                  chinese: chinese,
+                )
+              : null,
+          name: displayName,
+        );
+      }
+    }
+    final deleted = a['deletedAt'] != null;
+    final machineOffline = machine?['status'] == 'offline';
+    final runtime = '${a['runtime'] ?? ''}';
+    return resolveAgentStatusChip(
+      AgentStatusInput(
+        row: a,
+        activity: display.activity,
+        detailKind: display.detailKind,
+        detail: display.detail,
+        hasActivityState: hasState,
+        machineOffline: machineOffline,
+        showDetail: _canViewPrivate,
+        // The menu's Restart: whoever may control the runtime, not while the
+        // Computer is offline (a restart cannot reach it).
+        canRestart: _canControlRuntime && !deleted && !machineOffline,
+        canOpenModelSettings:
+            _canManage &&
+            !deleted &&
+            !external &&
+            widget.actions.onEditRuntime != null,
+        runtimeName: sourceRuntimeDisplayNames[runtime] ?? runtime,
+        modelLabel: (model) => runtimeModelLabel(runtime, model),
+        errorCode: agentActivityErrorCode(
+          a,
+          live: widget.liveActivity,
+          activity: display.activity,
+        ),
+        spawnFailure:
+            _canViewPrivate && display.detailKind == 'runtime_unavailable'
+            ? agentRowSpawnFailure(a)
+            : null,
+        spawnFailureText: _spawnFailureText(context),
+      ),
+    );
+  }
+
+  /// A failed start's typed reason standing in for the daemon's detail (Web
+  /// `formatSpawnFailureDetail`), for viewers who see details.
+  String? _spawnFailureText(BuildContext context) {
+    final display = _display;
+    if (!_canViewPrivate || display.detailKind != 'runtime_unavailable') {
       return null;
     }
-    final setup = externalStatus?['setupState'];
-    final detail = _canViewPrivate;
-    final color = online
-        ? t.product.brutalLime
-        : setup == 'waiting_for_login'
-        ? raftGray400
-        : t.product.brutalCyan;
-    final chinese = Localizations.localeOf(context).languageCode == 'zh';
-    final relative = !online && seen != null
-        ? resourceRelativeTime(
-            a['lastSeenAt'] as String,
-            now: now,
-            chinese: chinese,
-          )
-        : null;
-    final text = detail && setup == 'waiting_for_login'
-        ? raftText(context, 'External · Setup required')
-        : online
-        ? raftText(context, 'External · Online')
-        : relative != null
-        ? raftFormat(context, 'External · Last active {time}', {
-            'time': relative,
-          })
-        : detail && (setup == 'credential_minted' || setup == 'connected')
-        ? raftText(context, 'External · No Raft activity yet')
-        : detail && externalStatus != null
-        ? raftText(context, 'External · Not configured')
-        : raftText(context, 'External');
-    return (color, text);
+    final formatter = agentTimeFormatter(context, widget.controller);
+    final now = (widget.clock ?? DateTime.now)();
+    return spawnFailureDetailText(
+      agentRowSpawnFailure(a),
+      display.detail,
+      (source, values) => raftFormat(context, source, values),
+      retryTime: (atMs) => agentPauseRetryTime(formatter, atMs, now),
+    );
   }
+
+  /// Retry: the menu's Restart (`POST /agents/:id/reset {mode: restart}`).
+  Future<void> _retryStart() => widget.controller.command(
+    'POST',
+    '/agents/${a['id']}/reset',
+    data: const {'mode': 'restart'},
+  );
 
   /// An Info value that navigates: a hover-underlined button with the full
   /// text as its tooltip, or the plain value when nothing can open it.
@@ -910,48 +955,44 @@ class _AgentDetailPanelState extends State<AgentDetailPanel>
     });
   }
 
-  /// Web runtime error banner (`hasRuntimeError`): the agent is in `error` or
-  /// carries a `lastRuntimeError`. The error detail reaches every member over
-  /// the socket, so people who may not see private surfaces get a generic line
-  /// and no actions.
+  /// Web v1.24 runtime error banner (`hasRuntimeError`, AgentDetailPanel.tsx):
+  /// the agent is in `error` or carries a `lastRuntimeError`. The error detail
+  /// reaches every member over the socket, so people who may not see private
+  /// surfaces get the code's sentence or a generic line, and no actions.
   Widget? _runtimeErrorBanner(BuildContext context, AgentDetailTab current) {
     final display = _display;
-    final typed = a['lastRuntimeError'];
-    if (display.activity != 'error' && typed is! Map) return null;
-    final fallback = raftText(context, 'Agent encountered an error');
-    if (!_canViewPrivate) return RaftRuntimeErrorBanner(message: fallback);
-    final raw = display.activity == 'error'
-        ? display.detail
-        : '${typed is Map ? typed['message'] ?? '' : ''}';
-    final kind =
-        classifyTypedRuntimeError(typed) ??
-        (raw.isNotEmpty ? classifyRuntimeError(raw) : null);
-    final lookup = kind == RuntimeErrorKind.notInstalled
-        ? runtimeLookupDisplayForReason(agentRowSpawnLookupReason(a))
-        : null;
     final runtime = '${a['runtime'] ?? ''}';
-    final text =
-        lookup != null && lookup != RuntimeLookupDisplay.confirmedMissing
-        ? raftFormat(context, runtimeLookupText(lookup), {
-            'runtimeName':
-                runtimeInfos.where((r) => r.id == runtime).firstOrNull?.name ??
-                runtime,
-          })
-        : kind != null
-        ? raftText(context, runtimeErrorText(kind))
-        : agentActivityText(
-            'error',
-            raw,
-            null,
-            translate: (source, values) => raftFormat(context, source, values),
-          );
-    return RaftRuntimeErrorBanner(
-      message: text,
+    final spec = resolveRuntimeErrorBanner(
+      activity: display.activity,
+      activityDetail: display.detail,
+      errorCode: agentActivityErrorCode(
+        a,
+        live: widget.liveActivity,
+        activity: display.activity,
+      ),
+      lastRuntimeError: a['lastRuntimeError'],
+      canViewDetails: _canViewPrivate,
+      canOpenModelSettings:
+          _canManage &&
+          a['deletedAt'] == null &&
+          !external &&
+          widget.actions.onEditRuntime != null,
+      agentTitle: displayName,
+      runtimeName:
+          runtimeInfos.where((r) => r.id == runtime).firstOrNull?.name ??
+          runtime,
+      spawnLookupReason: agentRowSpawnLookupReason(a),
+    );
+    if (spec == null) return null;
+    return agentRuntimeErrorBanner(
+      context,
+      spec,
       copied: _errorCopied,
       onCopy: _copyErrorInfo,
       onViewLogs: current == AgentDetailTab.activity
           ? null
           : () => setState(() => tab = AgentDetailTab.activity),
+      onOpenModelSettings: widget.actions.onEditRuntime,
     );
   }
 
@@ -962,18 +1003,15 @@ class _AgentDetailPanelState extends State<AgentDetailPanel>
   /// under the head, not here.
   String _statusText(BuildContext context) {
     final display = _display;
-    final spawnText =
-        _canViewPrivate && display.detailKind == 'runtime_unavailable'
-        ? spawnFailureDetailText(
-            agentRowSpawnFailure(a),
-            display.detail,
-            (source, values) => raftFormat(context, source, values),
-          )
-        : null;
     return agentActivityText(
       display.activity,
-      _canViewPrivate ? spawnText ?? display.detail : '',
+      _canViewPrivate ? _spawnFailureText(context) ?? display.detail : '',
       _canViewPrivate ? display.detailKind : null,
+      errorCode: agentActivityErrorCode(
+        a,
+        live: widget.liveActivity,
+        activity: display.activity,
+      ),
       translate: (source, values) => raftFormat(context, source, values),
     );
   }
@@ -981,9 +1019,18 @@ class _AgentDetailPanelState extends State<AgentDetailPanel>
   Widget _profile(BuildContext context) {
     final t = RaftTokens.of(context);
     final canEdit = _canManage && a['deletedAt'] == null;
-    final status = _statusText(context);
     final agentId = '${a['id']}';
-    final externalPresence = _externalPresence(context, t);
+    final statusChip = _statusChip(context);
+    // Web AgentStatusBadge: the stuck snapshot of the live frame (a frame
+    // without one clears it) or the row's, hidden while offline or blocked.
+    final live = widget.liveActivity;
+    final toolStuck = visibleToolStuck(
+      live != null && live.containsKey('toolStuck')
+          ? AgentToolStuck.parse(live['toolStuck'])
+          : agentRowToolStuck(a),
+      isOnline: online,
+      blocked: agentBlockedStateOf(a['blockedReason']),
+    );
     final role = a['serverRole'];
     final roleChip = agentServerRoleChip(role, deletedAt: a['deletedAt']);
     final pending =
@@ -1099,10 +1146,34 @@ class _AgentDetailPanelState extends State<AgentDetailPanel>
               : null,
           avatarLabel: canEdit ? null : raftText(context, 'View avatar'),
           onEditName: canEdit ? widget.actions.onEditName : null,
-          statusColor:
-              externalPresence?.$1 ?? raftActivityDotColor(t, activity),
-          statusText: a['deletedAt'] == null
-              ? externalPresence?.$2 ?? status
+          statusRow: a['deletedAt'] == null
+              ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    AgentStatusChipView(
+                      key: ValueKey('agent-status-$agentId'),
+                      chip: statusChip,
+                      tooltip: statusChip.tooltip,
+                      onRetry: _canControlRuntime ? _retryStart : null,
+                      onChangeModel: widget.actions.onEditRuntime,
+                      onOpenComputer: widget.actions.onOpenComputer == null
+                          ? null
+                          : () {
+                              final id = a['machineId'];
+                              if (id is String) {
+                                widget.actions.onOpenComputer!(id);
+                              }
+                            },
+                    ),
+                    if (toolStuck != null)
+                      AgentToolStuckNotice(
+                        key: ValueKey('agent-tool-stuck-$agentId'),
+                        toolStuck: toolStuck,
+                        onStop: widget.actions.onStopHostedTurn,
+                      ),
+                  ],
+                )
               : null,
           // `min-h-[66px] theme-brutal:min-h-[72px]`.
           minHeight: 66,

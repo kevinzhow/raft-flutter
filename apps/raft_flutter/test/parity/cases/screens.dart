@@ -170,13 +170,20 @@ Widget _agentStack(
 /// `working / "Capturing deterministic profile state"` (VisualTestingCases
 /// agent-detail setup); the Flutter equivalent is the `agent:activity`
 /// socket event FleetDetail listens to.
-Future<void> _liveActivity(ScreenFixtureClient client, String agentId) async {
+Future<void> _liveActivity(
+  ScreenFixtureClient client,
+  String agentId, [
+  Map<String, dynamic>? frame,
+]) async {
   client.emit(
     RaftEvent('agent:activity', {
       'agentId': agentId,
-      'activity': 'working',
-      'detail': 'Capturing deterministic profile state',
-      'detailKind': 'other',
+      ...(frame ??
+          const {
+            'activity': 'working',
+            'detail': 'Capturing deterministic profile state',
+            'detailKind': 'other',
+          }),
     }),
   );
 }
@@ -188,6 +195,9 @@ ParityCase agentDetailParityCase(
   AgentDetailTab tab = AgentDetailTab.profile,
   bool machinesLoading = false,
   String notes = '',
+  Map<String, dynamic> Function(Map<String, dynamic> fixtureData)? agentPatch,
+  Map<String, dynamic>? liveFrame,
+  bool memberRole = false,
 }) {
   ScreenFixtureClient? client;
   return ParityCase(
@@ -217,6 +227,9 @@ ParityCase agentDetailParityCase(
         final seededAgent = {
           ...wire.agent(agentKey),
           'createdAgents': wire.agent('productUx')['createdAgents'],
+          // The status cases seed the stored error / the other creator the
+          // way VisualTestingCases `primeCredentialStatus` does.
+          ...?agentPatch?.call(ctx.fixtureData),
         };
         final c = ScreenFixtureClient(
           (m, p, q) => machinesLoading && p == '/servers/$_serverId/machines'
@@ -234,24 +247,27 @@ ParityCase agentDetailParityCase(
         );
         client = c;
         final w = WorkspaceController(c, mobileNavigation: true);
-        final server = RaftRecord(wire.server());
+        // A member who did not create the agent may restart it but sees no
+        // error detail (`primeCredentialStatus` member-view).
+        final server = RaftRecord({
+          ...wire.server(),
+          if (memberRole) 'role': 'member',
+        });
         w
           ..servers = [server]
           ..server = server;
         w.messageDomain.ledger.switchServer(_serverId);
         return w;
       },
-      builder: (context, w) => _agentStack(
-        ctx,
-        w,
-        ScreenWire(ctx.fixtureData).agent(agentKey),
-        tab: tab,
-      ),
+      builder: (context, w) => _agentStack(ctx, w, {
+        ...ScreenWire(ctx.fixtureData).agent(agentKey),
+        ...?agentPatch?.call(ctx.fixtureData),
+      }, tab: tab),
     ),
     interact: (t, ctx) async {
       await t.pump(const Duration(milliseconds: 50));
       final id = ScreenWire(ctx.fixtureData).agent(agentKey)['id'] as String;
-      await _liveActivity(client!, id);
+      await _liveActivity(client!, id, liveFrame);
       await t.pump(const Duration(milliseconds: 300));
       if (then != null) await then(t, ctx);
     },

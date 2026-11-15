@@ -6,9 +6,11 @@
 // `runtime_form_v2_web` flag is retired); otherwise it presents the
 // legacy Runtime / Provider / Model / Reasoning / Mode fields, which this file
 // ports for every runtime except Built-in Pi, Pi and Kimi Code (those keep
-// the v2 form here). Saving follows Web: nothing changed closes, an idle agent
-// saves in place, an active one asks first (switching runtime or a Codex
-// model change resets the session, anything else restarts).
+// the v2 form here). Saving follows Web 1.24 (AgentProfileInfo.tsx
+// `saveRuntimeFormV2Edit`): nothing changed closes; only a stopped agent's
+// runtime switch is confirmed (`restartMode: "session"`); everything else is
+// saved without `restartMode` and the server applies it when the agent is next
+// idle, which a toast says (agent_runtime_config_apply.dart).
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -18,7 +20,9 @@ import '../data/runtime_error.dart'
     show runtimeLookupDisplayForReason, runtimeLookupText;
 import '../data/user_error.dart';
 import '../data/workspace_controller.dart';
+import 'agent_metadata_projection.dart' show agentRowName;
 import 'agent_runtime_catalog.dart';
+import 'agent_runtime_config_apply.dart';
 import 'agent_runtime_labels.dart';
 import 'agent_runtime_draft.dart';
 import 'agent_runtime_model_field.dart';
@@ -351,13 +355,63 @@ class _AgentRuntimeEditorState extends State<AgentRuntimeEditor>
 
   // -------------------------------------------------------------- save
 
-  Future<void> patch(Map<String, dynamic> data, {String? restartMode}) async {
-    await w.command(
+  /// `PATCH /agents/:id`; the response carries `configApply` when no
+  /// `restartMode` was sent.
+  Future<dynamic> patch(
+    Map<String, dynamic> data, {
+    String? restartMode,
+  }) async {
+    final response = await w.command(
       'PATCH',
       '/agents/$agentId',
       data: {...data, 'restartMode': ?restartMode},
     );
     if (current) await widget.onSaved?.call();
+    return response;
+  }
+
+  /// Web `saveRuntimeFormV2Edit`'s save for a running (or any non-confirmed)
+  /// agent: no `restartMode`, close the editor, then say when it applies.
+  Future<void> saveAndAnnounce(
+    Future<dynamic> Function() save, {
+    required bool newSession,
+  }) async {
+    // The toast outlives this modal: it goes through the root navigator.
+    final host = Navigator.of(context, rootNavigator: true).context;
+    setState(() => saving = true);
+    try {
+      final response = await save();
+      if (!mounted || !current || !host.mounted) return;
+      final canRestart = canRestartAgentAfterSave(
+        agent: agent,
+        currentUserId: w.client.user?.id,
+        controlAgentRuntime: w.can('controlAgentRuntime'),
+        external: agent['external'] == true,
+      );
+      final onSaved = widget.onSaved;
+      widget.onClose();
+      announceRuntimeConfigApply(
+        host,
+        configApply: agentConfigApplyOf(response),
+        agentActive: isActive,
+        agentName: agentRowName(agent),
+        newSession: newSession,
+        restartNow: canRestart
+            ? (mode) async {
+                await w.command(
+                  'POST',
+                  '/agents/${Uri.encodeComponent(agentId)}/reset',
+                  data: {'mode': mode},
+                );
+                await onSaved?.call();
+              }
+            : null,
+      );
+    } catch (_) {
+      // Shown in the banner (the caller's save wrapper set it).
+    } finally {
+      if (mounted) setState(() => saving = false);
+    }
   }
 
   String reasoningLabel(BuildContext context) => draft.reasoning == null
@@ -387,19 +441,9 @@ class _AgentRuntimeEditorState extends State<AgentRuntimeEditor>
           : null,
     };
     final runtimeChanged = runtime != base.runtime;
-    final modelChanged = draft.model != base.model;
     final customChanged = draft.customModelMode != base.customModelMode;
-    final reasoning = supportsRuntimeReasoning(runtime)
-        ? reasoningLabel(context)
-        : tr('Not available');
-    final modelLabel = modelDisplayLabel(
-      w,
-      machineId: machineId,
-      runtime: runtime,
-      model: draft.model,
-    );
-
-    if (runtimeChanged) {
+    // A stopped agent's runtime switch is confirmed: it starts on a new session.
+    if (runtimeChanged && !isActive) {
       final from = runtimeDisplayName(base.runtime);
       final to = runtimeDisplayName(runtime);
       widget.onClose(
@@ -407,93 +451,46 @@ class _AgentRuntimeEditorState extends State<AgentRuntimeEditor>
           title: tr('Switch runtime config'),
           message: raftFormat(
             context,
-            isActive
-                ? 'This will switch the runtime from {from} to {to} and reset the active runtime session.'
-                : 'This will switch the runtime from {from} to {to}.',
+            'This will switch the runtime from {from} to {to}.',
             {'from': from, 'to': to},
           ),
-          confirmLabel: tr(
-            isActive ? 'Reset Runtime Session' : 'Save Runtime Change',
-          ),
-          cancelLabel: tr(isActive ? 'Keep Session' : 'Cancel'),
-          loadingLabel: tr(isActive ? 'Resetting…' : 'Applying…'),
+          confirmLabel: tr('Save runtime change'),
+          loadingLabel: tr('Applying…'),
           variant: RaftButtonRecipeVariant.warning,
-          operation: () => patch(fields, restartMode: 'session'),
+          operation: () async {
+            await patch(fields, restartMode: 'session');
+          },
         ),
       );
       return;
     }
-    if (!isActive) {
-      setState(() => saving = true);
-      try {
-        await patch(fields);
-        if (current) widget.onClose();
-      } catch (e) {
-        if (mounted) {
-          setState(
-            () => saveError = userErrorText(
-              e,
-              fallback: 'Runtime config is invalid.',
-              where: 'agent runtime save',
-            ),
-          );
+    // Web reconciler step 11c: a running agent is not interrupted. Saved
+    // without `restartMode`, the change applies at its next idle point.
+    await saveAndAnnounce(
+      () async {
+        try {
+          return await patch(fields);
+        } catch (e) {
+          if (mounted) {
+            setState(
+              () => saveError = userErrorText(
+                e,
+                fallback: 'Runtime config is invalid.',
+                where: 'agent runtime save',
+              ),
+            );
+          }
+          rethrow;
         }
-      } finally {
-        if (mounted) setState(() => saving = false);
-      }
-      return;
-    }
-    // A Codex model switch resets the native session (`thread/resume` pins
-    // the model).
-    if (runtime == 'codex' && (modelChanged || customChanged)) {
-      widget.onClose(
-        RuntimeEditorConfirm(
-          title: tr('Switch model and reset session'),
-          message: supportsRuntimeReasoning(runtime)
-              ? raftFormat(
-                  context,
-                  'Switching to {model} ({reasoning} reasoning) resets the current runtime session.',
-                  {'model': modelLabel, 'reasoning': reasoning},
-                )
-              : raftFormat(
-                  context,
-                  'Switching to {model} resets the current runtime session.',
-                  {'model': modelLabel},
-                ),
-          confirmLabel: tr('Reset Session'),
-          cancelLabel: tr('Keep Session'),
-          loadingLabel: tr('Resetting…'),
-          variant: RaftButtonRecipeVariant.warning,
-          operation: () => patch(fields, restartMode: 'session'),
-        ),
-      );
-      return;
-    }
-    final labels = <String>[
-      if (modelChanged || customChanged) tr('Model'),
-      if (draft.providerCustom != base.providerCustom ||
-          draft.providerApiUrl.trim() != base.providerApiUrl ||
-          draft.providerApiKey.trim() != base.providerApiKey)
-        tr('Provider'),
-      if (draft.fastMode != base.fastMode) tr('Mode'),
-      if (draft.command.trim() != base.command) tr('Command'),
-      if (draft.reasoning != base.reasoning) tr('Reasoning'),
-      if (RuntimeDraft.envChanged(draft, base)) tr('Environment variables'),
-    ];
-    widget.onClose(
-      RuntimeEditorConfirm(
-        title: tr('Restart to apply runtime config'),
-        message: raftFormat(
-          context,
-          'Apply {changes} and restart this agent now?',
-          {'changes': runtimeEditorList(context, labels)},
-        ),
-        confirmLabel: tr('Restart Agent'),
-        cancelLabel: tr('Keep Working'),
-        loadingLabel: tr('Restarting…'),
-        variant: RaftButtonRecipeVariant.information,
-        operation: () => patch(fields, restartMode: 'restart'),
-      ),
+      },
+      newSession:
+          runtimeConfigStartsNewSession(
+            runtimeSwitched: runtimeChanged,
+            runtime: runtime,
+            model: draft.model,
+            initialModel: base.model,
+          ) ||
+          (runtime == 'codex' && customChanged),
     );
   }
 
@@ -501,15 +498,13 @@ class _AgentRuntimeEditorState extends State<AgentRuntimeEditor>
   Future<void> submitV2() async {
     final f = form;
     if (f == null || f.definition == null || saving) return;
-    final context = this.context;
-    String tr(String s) => raftText(context, s);
     if (!f.valuesChanged) return widget.onClose();
     // Field errors are already shown beside the fields; nothing to send yet.
     if (f.validate().isNotEmpty) return;
     final fields = f.submission;
-    Future<void> save([String? restartMode]) async {
+    Future<dynamic> save() async {
       try {
-        await patch(fields, restartMode: restartMode);
+        return await patch(fields);
       } catch (e) {
         if (mounted) {
           // Web: `data.error ?? runtimeConfigInvalid`, and each `issues`
@@ -530,36 +525,12 @@ class _AgentRuntimeEditorState extends State<AgentRuntimeEditor>
       }
     }
 
-    if (!isActive) {
-      setState(() => saving = true);
-      try {
-        await save();
-        if (current) widget.onClose();
-      } catch (_) {
-        // Shown in the banner.
-      } finally {
-        if (mounted) setState(() => saving = false);
-      }
-      return;
-    }
-    final labels = [
-      for (final field in f.definition!.fields)
-        if (f.changedKeys.contains(field.key)) field.label,
-    ];
-    widget.onClose(
-      RuntimeEditorConfirm(
-        title: tr('Restart to apply runtime config'),
-        message: raftFormat(
-          context,
-          'Apply {changes} and restart this agent now?',
-          {'changes': runtimeEditorList(context, labels)},
-        ),
-        confirmLabel: tr('Restart Agent'),
-        cancelLabel: tr('Keep Working'),
-        loadingLabel: tr('Restarting…'),
-        variant: RaftButtonRecipeVariant.information,
-        operation: () => save('restart'),
-      ),
+    // A running agent is not interrupted (Web reconciler step 11c): the change
+    // applies at its next idle point and a toast says so. The v2 form cannot
+    // switch the runtime; a Codex model change starts a new session.
+    await saveAndAnnounce(
+      save,
+      newSession: agentRuntime == 'codex' && f.changedKeys.contains('model'),
     );
   }
 

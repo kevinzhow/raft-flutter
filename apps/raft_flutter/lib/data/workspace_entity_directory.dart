@@ -9,7 +9,9 @@ import '../features/agent_metadata_catalog.dart';
 import 'computer_release_notes.dart';
 import 'computer_upgrade_in_flight.dart';
 import 'migration_error.dart' show migrationPhase;
-import 'runtime_error.dart' show spawnFailureCarrier, spawnLookupReason;
+import '../features/agent_tool_stuck_notice.dart' show toolStuckCarrier;
+import 'runtime_error.dart'
+    show activityStatusCarriers, spawnFailureCarrier, spawnLookupReason;
 import 'workspace_agent_presence.dart';
 
 enum WorkspaceEntityKind { agents, computers, members }
@@ -114,6 +116,11 @@ typedef WorkspaceEntityDeviceWrite = void Function(
   WorkspaceEntityKind kind,
   Map<String, dynamic>? record,
 );
+
+/// An activity patch value equals the row's: typed carriers (`toolStuck`,
+/// `spawnFailure`) are maps, so a heartbeat repeating one compares by content.
+bool _sameActivityValue(Object? held, Object? next) =>
+    held == next || (held is Map && next is Map && mapEquals(held, next));
 
 /// Source store projection. Cold requests show a shell; refresh failures
 /// preserve accepted rows and carry a separate error. Every response is
@@ -918,13 +925,25 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
             detailKind,
             payload['spawnFailure'],
           ),
+          // Web updateActivity keeps `toolStuck` only when the frame carries
+          // one: a frame without it clears the stuck notice.
+          'toolStuck': toolStuckCarrier(payload['toolStuck']),
+          // Web v1.24 attachSocketTypedCarriers: held sign-in, error code,
+          // delivery / wake counts (each only on its own state).
+          ...activityStatusCarriers(
+            activity: kind,
+            detailKind: detailKind as String,
+            payload: payload,
+          ),
         };
         _activityVersions[id] = (_activityVersions[id] ?? 0) + 1;
         _activity[id] = patch;
         // A heartbeat repeating the accepted activity changes nothing.
         final row = _rows[WorkspaceEntityKind.agents]?[id];
         if (row == null ||
-            patch.entries.every((entry) => row[entry.key] == entry.value)) {
+            patch.entries.every(
+              (entry) => _sameActivityValue(row[entry.key], entry.value),
+            )) {
           return;
         }
         row.addAll(patch);

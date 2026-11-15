@@ -9,7 +9,6 @@ const Map<String, String> zhCatalogUpstream12112 = <String, String>{
       "私信和私信里的消息列有新动态时会显示在这里。",
   "{detail} — automatic restarts are paused until you change the model or API key, or restart the agent":
       "{detail}——已暂停自动重启，改了模型或 API 密钥、或手动重启 Agent 后恢复",
-  "Model \"{model}\" is not available for this runtime — it may have been renamed or removed, or its provider has no API key on this computer. Pick another model or fix the key in the agent settings": "该运行时没有可用的模型「{model}」：可能已改名或下架，或它的服务商在这台计算机上没有可用的 API 密钥——请在 Agent 设置里换模型或修正密钥",
   "The context is too large and shrinking it automatically didn't fix it. Reset the session and restart; if one message is itself very large, switch to a model with a larger context or split the content.":
       "上下文太大，自动缩减没能解决。可以重置会话后重启；如果某条消息本身很大，换一个上下文更大的模型，或把内容拆小。",
   // agent.*

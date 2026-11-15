@@ -782,5 +782,8 @@ const sourceAgentDetailKinds = <String>{
   'thinking_started',
   'thinking_end',
   'subagent_activity',
+  // Web v1.24 AGENT_ACTIVITY_DETAIL_KINDS additions.
+  'claude_root_privileges',
+  'working',
   'other',
 };

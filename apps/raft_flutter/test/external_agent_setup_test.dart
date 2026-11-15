@@ -200,7 +200,7 @@ void main() {
         };
       await _pump(tester, client: client);
       expect(find.text('Waiting for sign-in'), findsOneWidget);
-      expect(find.text('External · Setup required'), findsOneWidget);
+      expect(find.text('Set up'), findsOneWidget);
     },
   );
 

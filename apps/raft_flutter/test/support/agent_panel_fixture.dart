@@ -27,6 +27,9 @@ class AgentPanelWorkspace extends WorkspaceController {
   final Object? Function(String path)? readFile;
   final calls = <(String, String, dynamic)>[];
 
+  /// Answers a write instead of the default `{}` (a pending or failing one).
+  Future<dynamic> Function(String method, String path, dynamic data)? onCommand;
+
   @override
   Future<dynamic> query(String path, {Map<String, dynamic>? query}) async {
     if (path.endsWith('/workspace-files/read') && readFile != null) {
@@ -43,6 +46,8 @@ class AgentPanelWorkspace extends WorkspaceController {
   @override
   Future<dynamic> command(String method, String path, {dynamic data}) async {
     calls.add((method, path, data));
+    final handler = onCommand;
+    if (handler != null) return handler(method, path, data);
     return {};
   }
 }
@@ -139,6 +144,10 @@ Future<(AgentPanelWorkspace, AgentPanelClient)> pumpAgentPanel(
   bool canViewPrivate = true,
   AgentDetailTab tab = AgentDetailTab.profile,
   Size size = const Size(900, 1600),
+  List<Map<String, dynamic>> machines = agentPanelMachines,
+  TargetPlatform platform = TargetPlatform.linux,
+  bool? canControlRuntime,
+  bool toastHost = false,
 }) async {
   SharedPreferences.setMockInitialValues({});
   tester.view.physicalSize = size;
@@ -159,18 +168,21 @@ Future<(AgentPanelWorkspace, AgentPanelClient)> pumpAgentPanel(
   });
   await tester.pumpWidget(
     MaterialApp(
-      theme: raftTheme().copyWith(platform: TargetPlatform.linux),
+      theme: raftTheme().copyWith(platform: platform),
+      builder: toastHost
+          ? (context, child) => RaftToastHost(child: child!)
+          : null,
       home: Scaffold(
         body: AgentDetailPanel(
           controller: w,
           agent: agent,
-          machines: agentPanelMachines,
+          machines: machines,
           actions: actions,
           initialTab: tab,
           liveActivity: liveActivity,
           canManage: canManage,
           canViewPrivate: canViewPrivate,
-          canControlRuntime: canManage,
+          canControlRuntime: canControlRuntime ?? canManage,
         ),
       ),
     ),

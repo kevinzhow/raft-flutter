@@ -37,6 +37,11 @@ class _RenderCssPixelSnap extends RenderProxyBox {
     final child = this.child;
     if (child == null) return;
     final global = localToGlobal(Offset.zero);
+    // A panel mid-transition (scaled to nothing) has no finite position.
+    if (!global.dx.isFinite || !global.dy.isFinite) {
+      context.paintChild(child, offset);
+      return;
+    }
     final shift = Offset(
       _snap(global.dx) - global.dx,
       _snap(global.dy) - global.dy,

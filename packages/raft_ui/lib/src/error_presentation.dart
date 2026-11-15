@@ -302,6 +302,7 @@ bool showRaftToast(
   BuildContext context,
   String title, {
   RaftToastRecipeTone tone = RaftToastRecipeTone.error,
+  String? description,
   String? actionLabel,
   VoidCallback? onAction,
 }) {
@@ -309,6 +310,7 @@ bool showRaftToast(
   if (host == null) return false;
   host.show(
     raftText(context, title),
+    description: description == null ? null : raftText(context, description),
     tone: tone,
     actionLabel: actionLabel == null ? null : raftText(context, actionLabel),
     onAction: onAction,

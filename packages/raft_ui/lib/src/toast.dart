@@ -461,6 +461,8 @@ class RaftToastController extends ChangeNotifier {
   bool _paused = false;
   String? _title;
   String? get title => _title;
+  String? _description;
+  String? get description => _description;
   String? _actionLabel;
   VoidCallback? _onAction;
   String? get actionLabel => _actionLabel;
@@ -507,6 +509,7 @@ class RaftToastController extends ChangeNotifier {
   void show(
     String title, {
     Duration duration = const Duration(seconds: 5),
+    String? description,
     String? actionLabel,
     VoidCallback? onAction,
     RaftToastRecipeTone tone = RaftToastRecipeTone.success,
@@ -518,6 +521,7 @@ class RaftToastController extends ChangeNotifier {
     _timer?.cancel();
     _dismissible = dismissible;
     _title = title;
+    _description = description;
     _actionLabel = actionLabel;
     _onAction = onAction;
     _tone = tone;
@@ -549,6 +553,7 @@ class RaftToastController extends ChangeNotifier {
     _timer?.cancel();
     if (_title == null) return;
     _title = null;
+    _description = null;
     _actionLabel = null;
     _onAction = null;
     _paused = false;
@@ -680,6 +685,7 @@ class _RaftToastPortalState extends State<RaftToastPortal> {
                 },
                 child: RaftToast(
                   title: title,
+                  description: widget.controller.description,
                   tone: widget.controller.tone,
                   // LocalizedToastProvider: the icon and the close button are
                   // both on by default; the selection toast drops both.

@@ -1,6 +1,11 @@
 import 'dart:convert';
 
-import '../data/runtime_error.dart' show spawnFailureCarrier, spawnLookupReason;
+import '../data/runtime_error.dart'
+    show
+        genericRuntimeErrorMessage,
+        runtimeErrorCodeCopy,
+        spawnFailureCarrier,
+        spawnLookupReason;
 import 'agent_metadata_catalog.dart';
 
 /// Only the adapter constructs this from the current authorized workspace.
@@ -228,10 +233,14 @@ String agentActivityErrorDetail(String? detail) {
   return trimmed;
 }
 
+/// Source utils/activity.ts getActivityTextDescriptor (Web v1.24.0).
+/// [errorCode] is the error's code (`errorCode` / `activityErrorCode`), read
+/// only for an error: a coded error reads as its title for every viewer.
 AgentActivityDescriptor agentActivityDescriptor(
   String activity, [
   String? detail,
   String? detailKind,
+  String? errorCode,
 ]) {
   AgentActivityDescriptor key(String s, [Map<String, Object?> v = const {}]) =>
       (source: s, values: v, raw: false);
@@ -239,6 +248,10 @@ AgentActivityDescriptor agentActivityDescriptor(
       (source: s, values: const {}, raw: true);
   final text = detail ?? '';
   switch (detailKind) {
+    case 'claude_root_privileges':
+      return key(
+        'Claude Code cannot start with root or sudo privileges while permission checks are disabled. Run Raft Computer as a non-root user, then start the agent again.',
+      );
     case 'delivery_unconsumed':
       return key('Messages delivered, runtime not responding');
     case 'wake_crash_loop_blocked':
@@ -264,7 +277,14 @@ AgentActivityDescriptor agentActivityDescriptor(
       }
       return text.isNotEmpty ? raw(text) : key('Working…');
     case 'error':
+      // A coded error reads as its title; an uncoded one a member reads
+      // arrives as the server's fixed generic line, shown as the catalog's.
+      final code = runtimeErrorCodeCopy(errorCode);
+      if (code != null) return key(code.title);
       final error = agentActivityErrorDetail(text);
+      if (error == genericRuntimeErrorMessage) {
+        return key('Agent encountered an error');
+      }
       return error.isEmpty
           ? key('Error')
           : key('Error: {detail}', {'detail': error});
@@ -295,10 +315,11 @@ String agentActivityText(
   String activity,
   String? detail,
   String? detailKind, {
+  String? errorCode,
   String Function(String source, Map<String, Object?> values) translate =
       _plainFormat,
 }) {
-  final d = agentActivityDescriptor(activity, detail, detailKind);
+  final d = agentActivityDescriptor(activity, detail, detailKind, errorCode);
   return d.raw ? d.source : translate(d.source, d.values);
 }
 

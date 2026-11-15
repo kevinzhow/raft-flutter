@@ -131,6 +131,8 @@ class RaftBadge extends StatelessWidget {
     this.center = false,
     this.fontFamily,
     this.semanticLabel,
+    this.fill,
+    this.wrap = false,
   });
 
   final String label;
@@ -161,6 +163,14 @@ class RaftBadge extends StatelessWidget {
   /// `role="img"` + `aria-label` for a badge that means something on its own (`1 unread`).
   final String? semanticLabel;
 
+  /// The wash of a state the variant list has no name for (the Working chip,
+  /// `Badge variant="busy"`: `presence-busy-soft`). Soft appearance only.
+  final Color? fill;
+
+  /// A chip that holds a sentence (`h-auto! min-h-[22px] whitespace-normal!`):
+  /// the label wraps instead of being cut.
+  final bool wrap;
+
   @override
   Widget build(BuildContext context) {
     final interactive = onPressed != null && !disabled;
@@ -185,6 +195,9 @@ class RaftBadge extends StatelessWidget {
       hovered: hovered,
       disabled: disabled,
     );
+    final fill = this.fill != null && !disabled && !solid && !outline
+        ? this.fill!
+        : colors.fill;
     final fg = foreground != null && !disabled
         ? foreground!
         : colors.foreground;
@@ -227,9 +240,9 @@ class RaftBadge extends StatelessWidget {
             dy: baselineShift,
             child: Text(
               label,
-              maxLines: 1,
-              softWrap: false,
-              overflow: TextOverflow.clip,
+              maxLines: wrap ? null : 1,
+              softWrap: wrap,
+              overflow: wrap ? TextOverflow.visible : TextOverflow.clip,
               // Badges are fixed chrome: text growth is bounded.
               textScaler: RaftChrome.boundedScalerOf(context),
               style: style,
@@ -259,7 +272,7 @@ class RaftBadge extends StatelessWidget {
           (solid
               ? t.size('radius.sticker', fallback: 4)
               : t.size('radius.chip', fallback: 6)),
-      fill: colors.fill,
+      fill: fill,
       insetRingWidth: ringed ? 1.5 : (outline && !disabled ? 1 : 0),
       insetRingColor: ringed ? colors.ink : colors.hairline,
       rings: ringed && colors.edge != null

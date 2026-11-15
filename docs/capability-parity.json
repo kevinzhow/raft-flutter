@@ -6052,7 +6052,7 @@
    "kind": "endpoint",
    "id": "PATCH /agents/:id",
    "area": "agents-computers-runtimes",
-   "capability": "Update an agent: display name, description, server role, avatar, runtime config (runtime/model/effort/mode/provider/command), env vars",
+   "capability": "Update an agent: display name, description, server role, avatar, runtime config (runtime/model/effort/mode/provider/command), env vars. A running agent is saved without restartMode and the server applies it when idle (toast, Restart now)",
    "background": false,
    "status": "covered",
    "webEntry": "Profile pencils: display name, description, role (AgentProfileEditDialog), avatar tile, 'Edit runtime config' modal",
@@ -6066,6 +6066,10 @@
     {
      "file": "apps/raft_flutter/lib/features/agent_avatar_dialog.dart",
      "needle": "'/agents/$id'"
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/agent_runtime_config_apply.dart",
+     "needle": "announceRuntimeConfigApply("
     }
    ],
    "justification": "",
@@ -6393,13 +6397,37 @@
     {
      "file": "apps/raft_flutter/lib/features/fleet_views.dart",
      "needle": "Are you sure you want to stop"
+    }
+   ],
+   "justification": "Same as start: Members sidebar context-menu entry missing. The turn-only stop is its own row (POST /agents/:id/interrupt-turn).",
+   "impact": "",
+   "size": ""
+  },
+  {
+   "kind": "endpoint",
+   "id": "POST /agents/:id/interrupt-turn",
+   "area": "agents-computers-runtimes",
+   "capability": "Stop the current turn only (the agent stays): 'Stop current turn' in the stuck-tool notice; outcome toast (stopped / nothing running / restarted), Computer offline or too old refusals, Retry on failure",
+   "background": false,
+   "status": "covered",
+   "webEntry": "AgentToolStuckNotice 'Stop current turn' under the status chip (AgentStatusBadge onStop)",
+   "gate": "canStopThisTurn: not a bounded projection; a Computer agent or a hosted external agent whose runtime is active; controlAgentRuntime capability (or creator); a personal assistant only for its owner or a server owner/admin",
+   "flutterEntry": "agent_tool_stuck_notice.dart AgentToolStuckNotice (onStop) > agent_hosted_actions.dart stopAgentTurnWithFeedback",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/features/agent_hosted_actions.dart",
+     "needle": "/interrupt-turn"
     },
     {
      "file": "apps/raft_flutter/lib/features/agent_hosted_actions.dart",
-     "needle": "stopHostedTurnWithFeedback("
+     "needle": "stopAgentTurnWithFeedback("
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/agent_tool_stuck_notice.dart",
+     "needle": "class AgentToolStuckNotice"
     }
    ],
-   "justification": "Same as start: Members sidebar context-menu entry missing. A cloud agent has one command instead, 'Stop current turn' on its profile (agent_hosted_actions.dart stopHostedTurnWithFeedback), which stops the running turn and keeps the agent.",
+   "justification": "",
    "impact": "",
    "size": ""
   },
@@ -7563,16 +7591,20 @@
    "kind": "ui",
    "id": "ui:agents.runtime-error-banner",
    "area": "agents-computers-runtimes",
-   "capability": "Runtime error banner on the profile (classified error text, 'Copy info' diagnostics button, 'View logs' jump to Activity tab)",
+   "capability": "Runtime error banner on the profile (the error code's sentence for members and managers, scrubbed two-line detail, typed root-privileges and billing banners, 'Copy info' diagnostics button, 'View logs' jump to Activity tab)",
    "background": false,
    "status": "covered",
-   "webEntry": "AgentDetailPanel hasRuntimeError strip under header: error text + Copy info + View logs",
-   "gate": "text for all viewers (generic fallback); Copy info/View logs need canViewAgentPrivateSurfaces",
-   "flutterEntry": "agent_detail_view.dart _runtimeErrorBanner -> raft_ui RaftRuntimeErrorBanner (classified text, Copy info, View logs)",
+   "webEntry": "features/agent/AgentRuntimeErrorNotice.tsx (rendered by features/agent/AgentDetailPanel.tsx hasRuntimeError): error text + Copy info + View logs; billing banner with View model settings",
+   "gate": "text and billing banner for all viewers (code sentence or generic fallback); detail, Copy info and View logs need canViewAgentPrivateSurfaces; View model settings needs canManageAgent",
+   "flutterEntry": "agent_detail_view.dart _runtimeErrorBanner -> agent_runtime_error_state.dart resolveRuntimeErrorBanner -> raft_ui RaftRuntimeErrorBanner (headline, detail, billing, Copy info, View logs)",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/agent_detail_view.dart",
      "needle": "_runtimeErrorBanner"
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/agent_runtime_error_state.dart",
+     "needle": "resolveRuntimeErrorBanner"
     },
     {
      "file": "packages/raft_ui/lib/src/runtime_error_banner.dart",
@@ -7635,16 +7667,20 @@
    "kind": "ui",
    "id": "ui:agents.status-badge",
    "area": "agents-computers-runtimes",
-   "capability": "Agent status line under the handle: activity text with details, external presence text (Setup required / Online / Last active ...), delivery-unconsumed / wake-crash-loop details",
+   "capability": "Agent status chip under the handle: activity text with details, Computer offline / update required / access revoked (the chip opens the Computer), Likely online, invalid-credential reasons, the error code's title, Retry and Change model links, external presence (Set up / Online / Last active ...), delivery-unconsumed / wake-crash-loop details",
    "background": false,
    "status": "covered",
-   "webEntry": "AgentStatusBadge in AgentDetailPanel profile header",
-   "gate": "detail text only for canViewAgentPrivateSurfaces",
-   "flutterEntry": "agent_detail_view.dart _externalPresence + agentActivityText (agent_metadata_projection.dart)",
+   "webEntry": "features/agent/AgentStatusBadge.tsx in features/agent/AgentDetailPanel.tsx profile header (store/agentStore.ts resolveAgentDisplayState, utils/agentBlockedState.ts, utils/activity.ts)",
+   "gate": "detail text only for canViewAgentPrivateSurfaces; Retry for whoever may restart the agent (not while its Computer is offline); Change model for whoever may open the model setting",
+   "flutterEntry": "agent_detail_view.dart _statusChip -> agent_status_state.dart resolveAgentStatusChip / resolveExternalStatusChip -> agent_status_chip_view.dart AgentStatusChipView -> raft_ui RaftAgentStatusRow",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/agent_detail_view.dart",
-     "needle": "_externalPresence"
+     "needle": "_statusChip"
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/agent_status_state.dart",
+     "needle": "resolveAgentStatusChip"
     },
     {
      "file": "apps/raft_flutter/lib/features/agent_metadata_projection.dart",

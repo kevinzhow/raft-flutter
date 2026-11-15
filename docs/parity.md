@@ -132,7 +132,6 @@ React used production fonts and `--disable-lcd-text --font-render-hinting=none`
 | members.avatar-management | 5.05 | 4.55 | 0.28 | 0.23 | 0.00 | none: rasteriser and fractional border edges |
 | message-row.deleted-human | 4.37 | 3.51 | 0.47 | 0.39 | 0.00 | none visible: badge border at fractional x, `+` icon stroke coverage |
 | thread.message.row | 5.68 | 4.02 | 0.84 | 0.82 | 0.01 | `+` add-reaction icon stroke slightly heavier |
-| create-agent.dialog-onboarding | 4.34 | 2.64 | 0.82 | 0.88 | 0.85 | section borders 0.3–0.7 CSS px off (Blink snaps borders to device px) |
 | message-row.rich-content | 5.19 | 3.38 | 0.85 | 0.97 | 0.44 | link underline thickness/offset |
 | message-row.long-inline-code | 5.76 | 3.78 | 0.86 | 1.12 | 0.67 | line with the 20px unknown-task badge does not grow: flutter_markdown_plus forces a strut, Web grows the line box (+2px below) |
 | message-row.md-wrap-adjacent | 6.31 | 4.32 | 0.72 | 1.27 | 0.16 | `。` drawn by host fallback font (Noto Sans Mongolian) in Chromium |

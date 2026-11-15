@@ -75,7 +75,13 @@ Map<String, dynamic> _agent({Object? spawnFailure, bool socketFrame = false}) =>
     };
 
 void main() {
-  const installed = 'This runtime is not installed on this computer.';
+  // Web v1.24 utils/classifyRuntimeError.ts RUNTIME_LOOKUP_DISPLAY_MESSAGE_ID
+  // (confirmed_missing -> agent.runtimeError.notInstalledNamed), used by
+  // AgentDetailPanel.tsx `activityErrorText`: a confirmed miss names the
+  // runtime and the ways out.
+  const oldInstalled = 'This runtime is not installed on this computer.';
+  const installed =
+      "Codex CLI is not installed on this Computer. Install it there, move the agent to a Computer that has it, or switch the agent's runtime.";
   const unresolved =
       "Could not confirm whether Codex CLI is available on this Computer. Retry, or check this Computer's status.";
 
@@ -146,20 +152,26 @@ void main() {
         ),
       );
       expect(find.text(expected), findsOneWidget);
+      // Neither the v1.24 named copy nor the old generic one.
       expect(find.text(installed), findsNothing);
+      expect(find.text(oldInstalled), findsNothing);
     });
   }
 
   testWidgets('an old daemon (no reason) never says "install it"', (t) async {
     await show(t, _agent(spawnFailure: {'reason': 'runtime_not_found'}));
     expect(find.text(unresolved), findsOneWidget);
+    // Neither the v1.24 named copy nor the old generic one.
     expect(find.text(installed), findsNothing);
+    expect(find.text(oldInstalled), findsNothing);
   });
 
   testWidgets('nor does a row that carries no typed carrier at all', (t) async {
     await show(t, _agent());
     expect(find.text(unresolved), findsOneWidget);
+    // Neither the v1.24 named copy nor the old generic one.
     expect(find.text(installed), findsNothing);
+    expect(find.text(oldInstalled), findsNothing);
   });
 
   testWidgets(

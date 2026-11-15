@@ -8,6 +8,7 @@ import 'package:raft_ui/activity_scope_previews.dart';
 import 'package:raft_ui/activity_selected_previews.dart';
 import 'package:raft_ui/agent_avatar_picker_previews.dart';
 import 'package:raft_ui/agent_menu_previews.dart';
+import 'package:raft_ui/agent_status_previews.dart';
 import 'package:raft_ui/agent_surface_previews.dart';
 import 'package:raft_ui/announcement_previews.dart';
 import 'package:raft_ui/app_icon_previews.dart';
@@ -1628,5 +1629,23 @@ final auditSurfaces = <AuditSurface>[
     workspaceTopBarPreview,
     Size(856, 260),
     representative: true,
+  ),
+  AuditSurface(
+    'agentStatusChipPreview',
+    'Agent status chip',
+    agentStatusChipPreview,
+    Size(390, 420),
+  ),
+  AuditSurface(
+    'runtimeErrorBannerCodePreview',
+    'Runtime error banner by code',
+    runtimeErrorBannerCodePreview,
+    Size(520, 420),
+  ),
+  AuditSurface(
+    'runtimeErrorBannerBillingPreview',
+    'Runtime error banner, billing',
+    runtimeErrorBannerBillingPreview,
+    Size(520, 360),
   ),
 ];

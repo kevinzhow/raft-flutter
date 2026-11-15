@@ -1,10 +1,10 @@
 // Official cases owned by this group (default selection):
 //   components.members.create-agent.dialog
 //   components.members.create-agent.dialog-error
-//   components.members.create-agent.dialog-onboarding
 //   components.members.create-agent.claude-dialog
 //   components.members.create-agent.claude-custom-provider-dialog
 //   components.members.agent-detail.profile
+//   components.members.agent-detail.status.* (v1.24 status chip and runtime error banner, each with a .dark twin)
 //   components.channel.settings.panel
 //   components.channel.members.add-panel
 //   components.settings.root.page
@@ -45,8 +45,6 @@ import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/features/channel_members.dart';
 import 'package:raft_flutter/features/channel_settings.dart';
 import 'package:raft_flutter/features/managed_agent_launcher.dart';
-import 'package:raft_flutter/features/runtime_form_dialog.dart';
-import 'package:raft_flutter/features/create_agent_dialog.dart';
 import 'package:raft_flutter/features/workspace_settings.dart';
 import 'package:raft_flutter/platform/native_notifications.dart';
 import 'package:raft_ui/raft_ui.dart';
@@ -65,10 +63,6 @@ final Map<String, ParityCase> membersSettingsCases = {
     extraNotes:
         ' The invalid prefill reports the NAME_REGEX error from the first '
         'render (Web task #1139 E-state).',
-  ),
-  'components.members.create-agent.dialog-onboarding': _createAgent(
-    'codex',
-    onboarding: true,
   ),
   'components.members.create-agent.dialog-empty': _createAgent(
     'codex',
@@ -89,6 +83,7 @@ final Map<String, ParityCase> membersSettingsCases = {
   'components.members.create-agent.pi-provider-dialog': _createAgent('pi'),
   'components.members.create-agent.dialog-no-computer': _noComputer,
   'components.members.agent-detail.profile': _agentDetail(lifecycle: false),
+  ..._agentStatusCases,
   'components.members.avatar-management': agentDetailParityCase(
     'productUx',
     notes:
@@ -179,37 +174,27 @@ ParityCase _createAgent(
   String runtime, {
   String? name,
   bool empty = false,
-  bool onboarding = false,
   bool customProvider = false,
   String extraNotes = '',
 }) => ParityCase(
-  widgets: onboarding
-      ? const [
-          'raft_flutter:CreateAgentDialog',
-          'raft_ui:RaftCindySetupScreen',
-          'raft_ui:RaftStableField',
-        ]
-      : const [
-          'raft_flutter:CreateAgentDialog',
-          'raft_ui:RaftAgentDialogCard',
-          'raft_ui:RaftStableField',
-          'raft_ui:RaftAgentSelect',
-          'raft_ui:RaftAgentTextInput',
-          'raft_ui:RaftAgentBanner',
-          'raft_ui:RaftButton',
-        ],
-  notes: onboarding
-      ? 'CreateAgentDialog onboarding step uses the genuine Meet Cindy shell, '
-            'scoped runtime-options admission and protocol-v2 fields. Public source '
-            'fixture embeds onboardingShell=step, so no modal backdrop is added.$extraNotes'
-      : 'showManagedAgentForm → CreateAgentDialog (DialogCard, capacity '
-            'Banner from /billing/subscription, COMPUTER / NAME / DESCRIPTION '
-            'StableFields, RUNTIME select from runtime-options, then the '
-            "runtime's v2 fields; Cancel / Create Agent). Served like the "
-            'React host: visualBillingInfo, the primed machines '
-            '(Jiachengs-MacBook-Pro runtimes ${customProvider ? '[claude, codex]' : '[$runtime, ...]'} + offline studio), '
-            '${customProvider ? 'the scoped claude runtime-options catalog and the claude v2 form' : 'the React HTTP 200 fallback without runtime options, so RUNTIME stays "Select..." and the declared-Claude pre-admission MODEL picker shows the bundled catalog with the failed machine source'}.'
-            '$extraNotes',
+  widgets: const [
+    'raft_flutter:CreateAgentDialog',
+    'raft_ui:RaftAgentDialogCard',
+    'raft_ui:RaftStableField',
+    'raft_ui:RaftAgentSelect',
+    'raft_ui:RaftAgentTextInput',
+    'raft_ui:RaftAgentBanner',
+    'raft_ui:RaftButton',
+  ],
+  notes:
+      'showManagedAgentForm → CreateAgentDialog (DialogCard, capacity '
+      'Banner from /billing/subscription, COMPUTER / NAME / DESCRIPTION '
+      'StableFields, RUNTIME select from runtime-options, then the '
+      "runtime's v2 fields; Cancel / Create Agent). Served like the "
+      'React host: visualBillingInfo, the primed machines '
+      '(Jiachengs-MacBook-Pro runtimes ${customProvider ? '[claude, codex]' : '[$runtime, ...]'} + offline studio), '
+      '${customProvider ? 'the scoped claude runtime-options catalog and the claude v2 form' : 'the React HTTP 200 fallback without runtime options, so RUNTIME stays "Select..." and the declared-Claude pre-admission MODEL picker shows the bundled catalog with the failed machine source'}.'
+      '$extraNotes',
   settle: const Duration(milliseconds: 600),
   build: (ctx) {
     final fixture = MsFixture(ctx);
@@ -265,45 +250,18 @@ ParityCase _createAgent(
     }
     final (w, _) = fixture.workspace(routes);
     final props = ctx.props;
-    if (onboarding) {
-      return Scaffold(
-        // Source visual caller explicitly uses bg-white in every theme.
-        backgroundColor: Colors.white,
-        body: SingleChildScrollView(
-          child: CreateAgentDialog(
-            controller: w,
-            machines: _createAgentMachines(fixture, machineRuntimes),
-            initialMachineId: 'computer-mbp',
-            onboarding: true,
-            onSwitchServer: () {}, // Public visual fixture: navigation callback is not exercised.
-          ),
-        ),
-      );
-    }
     return _Host(
       // VisualTestingCases.tsx2493: main bg-white; modal tokens still follow theme.
       page: const Scaffold(backgroundColor: Colors.white),
-      open: (context) => onboarding
-          ? showDialog(
-              context: context,
-              builder: (_) => RuntimeFormDialog(
-                controller: w,
-                machineId: 'computer-mbp',
-                runtimeId: runtime,
-                onboarding: true,
-              ),
-            )
-          : showManagedAgentForm(
-              context,
-              w,
-              suggestedComputer: 'computer-mbp',
-              // Web: `prefilledName=""` for the empty case; only an absent
-              // prefill starts with a suggested name.
-              initialName: empty ? '' : name ?? props['name'] as String?,
-              initialDescription: empty
-                  ? null
-                  : props['description'] as String?,
-            ),
+      open: (context) => showManagedAgentForm(
+        context,
+        w,
+        suggestedComputer: 'computer-mbp',
+        // Web: `prefilledName=""` for the empty case; only an absent
+        // prefill starts with a suggested name.
+        initialName: empty ? '' : name ?? props['name'] as String?,
+        initialDescription: empty ? null : props['description'] as String?,
+      ),
     );
   },
   interact: customProvider ? _fillCustomProvider : null,
@@ -676,3 +634,142 @@ Widget _settingsPage(
     mobileRoot: root,
   );
 }
+
+// ---------------------------------------------------------------------------
+// Agent profile status (Web v1.24.0 AgentStatusBadge / AgentRuntimeErrorNotice;
+// VisualTestingCases `primeCredentialStatus` / `primeRuntimeErrorView`): the
+// same profile route with the stored error and the live activity seeded the way
+// the React host seeds its stores. Each id has a `.dark` twin.
+
+const _credentialHeldDetail =
+    'Codex CLI is not logged in on this computer. Sign in again, then restart the agent. (Reported by another agent on the same sign-in.)';
+const _credentialBillingDetail =
+    "Codex CLI reported that the provider's billing or credit balance is exhausted. Raft stopped retrying because retries cannot succeed until the balance is restored. Messages that were waiting are kept and will be delivered when the agent starts again. Add credits or switch this agent to another model or provider, then restart the agent.";
+const _runtimeErrorScrubbedDetail =
+    '429 Too Many Requests: You have hit your usage limit for this billing period (account [redacted]). Try again after the limit resets.';
+
+/// `RUNTIME_ERROR_CODE_SENTENCES.usage_limit`: what the server sends a member
+/// in place of the error's text.
+const _usageLimitMemberSentence =
+    "The agent's model provider usage limit has been reached. Wait for the limit to reset, or ask the agent's owner to switch it to another model or account.";
+
+Map<String, dynamic> _otherCreator(Map<String, dynamic> fx) => {
+  'creatorId': fx['humans']['designer']['id'],
+  'creator': {
+    'type': 'human',
+    'id': fx['humans']['designer']['id'],
+    'name': fx['humans']['designer']['name'],
+    'displayName': fx['humans']['designer']['displayName'],
+    'avatarUrl': null,
+    'gravatarHash': '',
+  },
+};
+
+ParityCase _statusCase({
+  required String note,
+  Map<String, dynamic> Function(Map<String, dynamic> fx)? patch,
+  required Map<String, dynamic> frame,
+  bool member = false,
+}) => agentDetailParityCase(
+  'productUx',
+  notes: ' $note',
+  agentPatch: patch,
+  liveFrame: frame,
+  memberRole: member,
+);
+
+final Map<String, ParityCase> _agentStatusCases = {
+  for (final dark in const ['', '.dark']) ...{
+    'components.members.agent-detail.status.credential-held-sign-in$dark':
+        _statusCase(
+          note:
+              'Idle status with credentialHold user_reauth, no stored error: '
+              '"Sign-in needed for Codex CLI" on the error light, with Retry.',
+          patch: (_) => {'lastRuntimeError': null},
+          frame: const {
+            'activity': 'online',
+            'detail': _credentialHeldDetail,
+            'detailKind': 'idle',
+            'credentialHold': {'reason': 'user_reauth'},
+          },
+        ),
+    'components.members.agent-detail.status.credential-own-billing$dark':
+        _statusCase(
+          note:
+              'Own BillingError: "Provider balance exhausted" chip with Retry '
+              'and the billing banner.',
+          patch: (fx) => {
+            'lastRuntimeError': {
+              'message': _credentialBillingDetail,
+              'at': fx['times']['recentActivityAtIso'],
+              'actionRequired': true,
+              'errorClass': 'BillingError',
+              'errorReason': 'billing_exhausted',
+              'fingerprint': '0123456789abcdef',
+              'reasonProvenance': 'runtime_error_event',
+            },
+          },
+          frame: const {
+            'activity': 'error',
+            'detail': _credentialBillingDetail,
+            'detailKind': 'runtime_error',
+          },
+        ),
+    'components.members.agent-detail.status.credential-member-view$dark':
+        _statusCase(
+          note:
+              'A member who did not create the agent: generic Error chip, '
+              'Retry, no reason.',
+          member: true,
+          patch: (fx) => {'lastRuntimeError': null, ..._otherCreator(fx)},
+          frame: const {
+            'activity': 'online',
+            'detail': _credentialHeldDetail,
+            'detailKind': 'idle',
+            'credentialHold': {'reason': 'user_reauth'},
+          },
+        ),
+    'components.members.agent-detail.status.runtime-error-code-member$dark':
+        _statusCase(
+          note:
+              'usage_limit seen by a member: the chip reads the code title, '
+              'the banner the member sentence, no copy and no logs.',
+          member: true,
+          patch: (fx) => {
+            'lastRuntimeError': {
+              'message': _usageLimitMemberSentence,
+              'code': 'usage_limit',
+              'at': fx['times']['recentActivityAtIso'],
+              'actionRequired': false,
+            },
+            ..._otherCreator(fx),
+          },
+          frame: const {
+            'activity': 'error',
+            'detail': _usageLimitMemberSentence,
+            'detailKind': 'runtime_error',
+            'errorCode': 'usage_limit',
+          },
+        ),
+    'components.members.agent-detail.status.runtime-error-code-manager$dark':
+        _statusCase(
+          note:
+              'usage_limit seen by the manager: the manager sentence over the '
+              'scrubbed two-line detail, with Copy info and View logs.',
+          patch: (fx) => {
+            'lastRuntimeError': {
+              'message': _runtimeErrorScrubbedDetail,
+              'code': 'usage_limit',
+              'at': fx['times']['recentActivityAtIso'],
+              'actionRequired': false,
+            },
+          },
+          frame: const {
+            'activity': 'error',
+            'detail': _runtimeErrorScrubbedDetail,
+            'detailKind': 'runtime_error',
+            'errorCode': 'usage_limit',
+          },
+        ),
+  },
+};
