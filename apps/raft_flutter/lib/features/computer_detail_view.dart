@@ -23,6 +23,7 @@ import 'computer_delete_dialog.dart';
 import 'computers_rack/computers_rack_actions.dart'
     show askComputerRestart, askComputerUpgrade;
 import 'computer_restart_request.dart';
+import 'computer_upgrade_hint.dart';
 import 'computer_runtime_detection.dart';
 import 'computer_version_tier.dart';
 import 'computers_rack/computers_rack_view.dart' show rackDeviceGlyph;
@@ -539,13 +540,11 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel> {
           ? _installLines()
           : const [],
       failureHint: kind == RaftComputerServiceKind.oneClick
-          ? _failureHint()
+          ? computerUpgradeFailureHint(m)
           : null,
       recommendRepair:
           kind == RaftComputerServiceKind.oneClick &&
-          m['installerRepairHint'] is Map &&
-          (m['installerRepairHint'] as Map)['reason'] ==
-              'unrecovered_operation',
+          computerRecommendRepair(m),
       sentence: sentence,
       version: version,
       webUpgradeOn: webUpgradeOn,
@@ -641,31 +640,6 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel> {
         available,
       ),
     };
-  }
-
-  /// `upgradeRequest.failureHint`, shown beside an offered Upgrade only while the
-  /// last request failed and the Computer still runs the version it failed on.
-  RaftUpgradeFailureHint? _failureHint() {
-    final request = m['upgradeRequest'];
-    if (request is! Map || request['state'] != 'failed') return null;
-    if (computerUpgradeRequestOutcome(m) != RaftComputerUpgradeOutcome.failed) {
-      return null;
-    }
-    final observed = request['observedVersion'];
-    if (observed != null && observed != m['computerVersion']) return null;
-    final hint = request['failureHint'];
-    if (hint is! Map) return null;
-    final reason = hint['reason'];
-    if (reason != 'unsafe_kill_mode' && reason != 'installation_held') {
-      return null;
-    }
-    String? text(Object? v) => v is String && v.isNotEmpty ? v : null;
-    return RaftUpgradeFailureHint(
-      unsafeKillMode: reason == 'unsafe_kill_mode',
-      unit: text(hint['unit']),
-      scope: text(hint['scope']),
-      killMode: text(hint['killMode']),
-    );
   }
 
   /// "Waiting for N agents ... then upgrading" while the Computer drains,
@@ -816,38 +790,12 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel> {
     return tier;
   }
 
-  List<RaftComputerInstallLine> _installLines() {
-    final c = ComputerCommands.build(
-      slug: w.server?.string('slug') ?? '',
-      serverUrl: w.client.origin,
-      deployment: widget.deployment,
-      windows: windows,
-    );
-    final lines = <RaftComputerInstallLine>[];
-    if (c != null) {
-      final one = windows ? null : c.installAndSetup;
-      if (one != null) {
-        lines.add((
-          label: null,
-          command: one,
-          copyLabel: 'Copy Computer CLI command',
-        ));
-      } else {
-        lines
-          ..add((
-            label: '1. Install',
-            command: c.install,
-            copyLabel: 'Copy 1. install command',
-          ))
-          ..add((
-            label: '2. Setup',
-            command: c.setup,
-            copyLabel: 'Copy 2. setup command',
-          ));
-      }
-    }
-    return lines;
-  }
+  List<RaftComputerInstallLine> _installLines() => computerInstallLines(
+    slug: w.server?.string('slug') ?? '',
+    serverUrl: w.client.origin,
+    deployment: widget.deployment,
+    windows: windows,
+  );
 
   RaftComputerVersionNoticeData? _versionNotice(RaftComputerService? service) {
     final tier = _resolvedTier();

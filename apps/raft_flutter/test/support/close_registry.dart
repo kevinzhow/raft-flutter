@@ -4,6 +4,7 @@ import 'close_registry_dialogs.dart';
 import 'close_registry_links.dart';
 import 'close_registry_panels.dart';
 import 'close_registry_popups.dart';
+import 'close_registry_rack_popovers.dart';
 import 'close_registry_raftbench.dart';
 import 'close_registry_task_slot.dart';
 import 'close_registry_viewers.dart';
@@ -16,6 +17,7 @@ List<CloseSurface> get allCloseSurfaces => [
   ...dialogSurfaces,
   ...linkSurfaces,
   ...popupSurfaces,
+  ...rackPopoverSurfaces,
   ...raftbenchSurfaces,
   ...taskSlotSurfaces,
   ...viewerSurfaces,

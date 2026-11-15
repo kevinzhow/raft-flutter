@@ -16,8 +16,10 @@ import '../computer_delete_dialog.dart';
 import '../computer_detail_view.dart' show isComputerSemver;
 import '../computer_restart_request.dart';
 import '../computer_setup_commands.dart';
+import '../computer_upgrade_hint.dart';
 import '../managed_agent_launcher.dart';
 import 'computers_rack_glyphs.dart';
+import 'rack_upgrade_popovers.dart';
 
 /// utils/canManageMachine.ts (the Computer page's own rule).
 bool canManageComputer(WorkspaceController w, Map m) {
@@ -54,15 +56,20 @@ class RackUpgrading extends RackNextStep {
 
 /// Online, one click upgrades to [version].
 class RackOneClick extends RackNextStep {
-  const RackOneClick(this.version);
+  const RackOneClick(this.version, {this.hint, this.installLines = const []});
   final String version;
+
+  /// Beside Upgrade, why the web upgrade may fail (a warning icon).
+  final RackUpgradeHint? hint;
+  final List<RaftComputerInstallLine> installLines;
 }
 
 /// Online, newer [version] but the web can't upgrade it: the install command
-/// on that machine (on the Computer page).
+/// on that machine, in the row's popover.
 class RackManualUpgrade extends RackNextStep {
-  const RackManualUpgrade(this.version);
+  const RackManualUpgrade(this.version, this.installLines);
   final String version;
+  final List<RaftComputerInstallLine> installLines;
 }
 
 RackNextStep? rackNextStep(
@@ -104,7 +111,13 @@ RackNextStep? rackNextStep(
       (m['remoteUpgradeSupported'] ??
           isComputerSemver('${m['computerVersion'] ?? ''}')) ==
       true;
-  if (!supported) return RackManualUpgrade(availableVersion);
+  List<RaftComputerInstallLine> lines() => computerInstallLines(
+    slug: w.server?.string('slug') ?? '',
+    serverUrl: w.client.origin,
+    deployment: deployment,
+    windows: windows,
+  );
+  if (!supported) return RackManualUpgrade(availableVersion, lines());
   final target = policy is Map ? policy['targetVersion'] : null;
   final gated =
       policy is Map &&
@@ -115,7 +128,18 @@ RackNextStep? rackNextStep(
       policy is Map &&
       policy['eligibility'] == 'eligible' &&
       target is String) {
-    return RackOneClick(target);
+    // One set of steps: the failure's when both apply (they include running
+    // the install command, which is also the repair).
+    final failure = computerUpgradeFailureHint(m);
+    return RackOneClick(
+      target,
+      hint: failure != null
+          ? RackUpgradeHint.failure(failure)
+          : computerRecommendRepair(m)
+          ? const RackUpgradeHint.repair()
+          : null,
+      installLines: lines(),
+    );
   }
   return null;
 }
@@ -276,25 +300,33 @@ class RackRowAction extends StatelessWidget {
         busy: true,
         onPressed: null,
       ),
-      RackOneClick(:final version) => RaftButton(
-        key: ValueKey('rack-upgrade-$machineId'),
-        label: raftFormat(context, 'Upgrade to v{version}', {
-          'version': version,
-        }),
-        glyph: rackGlyphCircleArrowUp,
-        secondary: true,
-        onPressed: onUpgrade,
-      ),
-      RackManualUpgrade(:final version) => RaftButton(
-        key: ValueKey('rack-manual-upgrade-$machineId'),
-        label: raftFormat(context, 'Upgrade to v{version}', {
-          'version': version,
-        }),
-        glyph: RaftGlyph.terminal,
-        secondary: true,
-        // The install command to run on that machine is on its page.
-        onPressed: onOpenComputer,
-      ),
+      RackOneClick(:final version, :final hint, :final installLines) => () {
+        final upgrade = RaftButton(
+          key: ValueKey('rack-upgrade-$machineId'),
+          label: raftFormat(context, 'Upgrade to v{version}', {
+            'version': version,
+          }),
+          glyph: rackGlyphCircleArrowUp,
+          secondary: true,
+          onPressed: onUpgrade,
+        );
+        if (hint == null) return upgrade;
+        return RaftRackActionPair(
+          leading: RackUpgradeHintButton(
+            machineId: machineId,
+            version: version,
+            hint: hint,
+            lines: installLines,
+          ),
+          action: upgrade,
+        );
+      }(),
+      RackManualUpgrade(:final version, :final installLines) =>
+        RackManualUpgradeButton(
+          machineId: machineId,
+          version: version,
+          lines: installLines,
+        ),
     };
   }
 }
