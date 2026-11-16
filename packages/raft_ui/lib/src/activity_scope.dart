@@ -14,8 +14,7 @@ import 'localization.dart';
 import 'select_field.dart';
 import 'text_scaling.dart' show RaftScaled;
 import 'theme.dart';
-import 'recipe_surface.dart' show RaftCssBoxDecoration, RaftRecipeBinding;
-import 'recipes/recipe_router.dart' show usesLegacyRecipes;
+import 'recipe_surface.dart' show RaftCssBoxDecoration;
 
 /// Mounted ThreadsInbox views; the application owns each accepted result scope.
 enum RaftActivityView {
@@ -75,13 +74,7 @@ class RaftActivityScopeToolbar extends StatelessWidget {
     final t = RaftTokens.of(context);
     return Container(
       key: const ValueKey('activity-enabled-toolbar'),
-      // `py-3`, or `(header-height - control-height) / 2` (a 44px bar) with a
-      // mouse from 768px; the control row inside is the same either way.
-      height: compact
-          ? null
-          : usesLegacyRecipes(t.recipeTokens)
-          ? 54
-          : (t.desktop ? 44 : 68),
+      height: compact ? null : 54,
       constraints: compact ? const BoxConstraints(minHeight: 88) : null,
       padding: EdgeInsets.symmetric(horizontal: 16, vertical: compact ? 8 : 0),
       decoration: BoxDecoration(

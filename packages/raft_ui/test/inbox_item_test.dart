@@ -349,40 +349,4 @@ void main() {
       expect(b.top - a.bottom, 2, reason: 'gap-0.5, no hairline');
     });
   }
-
-  for (final touch in [false, true]) {
-    for (final dark in [false, true]) {
-      testWidgets(
-        'activity toolbar bar height ${touch ? 'touch 856x944' : 'mouse 1440x900'} ${dark ? 'dark' : 'light'}',
-        (tester) async {
-          await _pump(
-            tester,
-            (
-              name: 'toolbar',
-              size: touch ? const Size(856, 944) : const Size(1440, 900),
-              platform: touch ? TargetPlatform.android : TargetPlatform.linux,
-              dark: dark,
-              scale: 1,
-            ),
-            SizedBox(
-              width: 1000,
-              child: RaftActivityScopeToolbar(
-                view: RaftActivityView.all,
-                compact: false,
-                onView: (_) {},
-                onOpenSwitcher: () {},
-                sort: 'desc',
-                onSort: (_) {},
-              ),
-            ),
-          );
-          expect(
-            tester.getSize(find.byType(RaftActivityScopeToolbar)).height,
-            touch ? 68 : 44,
-          );
-          expect(tester.takeException(), isNull);
-        },
-      );
-    }
-  }
 }
