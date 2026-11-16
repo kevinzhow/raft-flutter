@@ -83,12 +83,17 @@ void main() {
       await tester.pumpWidget(_host(scale, _row(continuation: true)));
       final gutter = tester.getRect(
         find
-            .ancestor(of: find.text('14:30'), matching: find.byType(SizedBox))
+            .ancestor(
+              of: find.text('14:30'),
+              matching: find.byWidgetPredicate(
+                (w) => w is SizedBox && w.width == 35,
+              ),
+            )
             .first,
       );
       final time = tester.getRect(find.text('14:30'));
       expect(time.bottom, lessThanOrEqualTo(gutter.bottom + 0.01));
-      if (scale == 1) expect(gutter.height, 14);
+      if (scale == 1) expect(gutter.height, 20); // 4 + the 16px clock line
     }
   });
 

@@ -11,10 +11,12 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 
+import 'delegated_face.dart' show RaftMessageRowFillScope;
 import 'design_primitives.dart';
 import 'font_warm_up.dart';
 import 'localization.dart';
 import 'panel_layout.dart' show RaftCssText;
+import 'message_header_mask.dart';
 import 'message_semantics.dart';
 import 'message_touch_taps.dart';
 import 'timeline_time_reveal.dart';
@@ -26,6 +28,7 @@ import 'theme.dart';
 import 'tooltip.dart' show RaftTooltip;
 import 'recipe_surface.dart' show RaftCssBoxDecoration;
 import 'raft/ui_tokens.dart';
+import 'tokens/raft_tokens.g.dart' show RaftTypeStyle;
 
 /// Where the row sits: legacy thread panels use their original inline inset.
 /// The current Raft header keeps its timestamp at the trailing edge.
@@ -55,30 +58,74 @@ enum RaftMessageSizeTier {
     lg => 'lg',
   };
 
+  /// The Raft look reads the type scale (`--text-body`, `--text-subhead`,
+  /// `--text-mono-meta`, with their desktop step at >= 768 and a fine pointer)
+  /// and moves it by the tier like Web `appearanceStore`: body +-2 / +-4, name
+  /// +-2, meta +-1. A pack that sets its own sizes and the frozen looks keep
+  /// their numbers.
+  static RaftTypeStyle? _slot(RaftTokens tokens, String name) =>
+      tokens.isRaftLook && tokens.themeOverrides == null
+      ? tokens.typeSlot(name)
+      : null;
+  int get _step => switch (this) {
+    sm => -1,
+    md => 0,
+    lg => 1,
+  };
+
   /// Resolves an existing preference tier without changing its stored value.
-  double bodySizeFor(RaftTokens tokens) => tokens.size(
-    'type.messageBody.$tokenKey.size',
-    fallback: switch (this) {
-      sm => 12,
-      md => 14,
-      lg => 16,
-    },
-  );
-  double bodyLineFor(RaftTokens tokens) => tokens.size(
-    'type.messageBody.$tokenKey.line',
-    fallback: switch (this) {
-      sm => 16,
-      md => 20,
-      lg => 24,
-    },
-  );
-  double nameFor(RaftTokens tokens) =>
-      tokens.size('type.messageSender.$tokenKey.size', fallback: name);
-  double nameLineFor(RaftTokens tokens) =>
-      tokens.size('type.messageSender.$tokenKey.line', fallback: name);
-  double metaFor(RaftTokens tokens) => this == lg
-      ? tokens.size('type.messageMeta.lg.size', fallback: meta)
-      : meta;
+  double bodySizeFor(RaftTokens tokens) {
+    final slot = _slot(tokens, 'body');
+    if (slot != null) return slot.fontSize + 2 * _step;
+    return tokens.size(
+      'type.messageBody.$tokenKey.size',
+      fallback: switch (this) {
+        sm => 12,
+        md => 14,
+        lg => 16,
+      },
+    );
+  }
+
+  double bodyLineFor(RaftTokens tokens) {
+    final slot = _slot(tokens, 'body');
+    if (slot != null) return slot.lineHeight + 4 * _step;
+    return tokens.size(
+      'type.messageBody.$tokenKey.line',
+      fallback: switch (this) {
+        sm => 16,
+        md => 20,
+        lg => 24,
+      },
+    );
+  }
+
+  double nameFor(RaftTokens tokens) {
+    final slot = _slot(tokens, 'subhead');
+    if (slot != null) return slot.fontSize + 2 * _step;
+    return tokens.size('type.messageSender.$tokenKey.size', fallback: name);
+  }
+
+  double nameLineFor(RaftTokens tokens) {
+    final slot = _slot(tokens, 'subhead');
+    if (slot != null) return slot.lineHeight + 2 * _step;
+    return tokens.size('type.messageSender.$tokenKey.line', fallback: name);
+  }
+
+  double metaFor(RaftTokens tokens) {
+    final slot = _slot(tokens, 'mono-meta');
+    if (slot != null) return slot.fontSize + _step;
+    return this == lg
+        ? tokens.size('type.messageMeta.lg.size', fallback: meta)
+        : meta;
+  }
+
+  double metaLineFor(RaftTokens tokens) {
+    final slot = _slot(tokens, 'mono-meta');
+    if (slot != null) return slot.lineHeight + _step;
+    return tokens.size('type.messageMeta.$tokenKey.line', fallback: 16);
+  }
+
   double previewFor(RaftTokens tokens) => this == lg
       ? preview
       : tokens.size('type.messagePreview.$tokenKey.size', fallback: preview);
@@ -163,6 +210,8 @@ class RaftMessageRowRecipe {
     this.focused = false,
     this.popupOpen = false,
     this.highlighted = false,
+    this.searchMatch = false,
+    this.checked = false,
     this.devicePixelRatio = 1,
   });
   final RaftTokens tokens;
@@ -173,6 +222,9 @@ class RaftMessageRowRecipe {
   final RaftMessageRowContext rowContext;
   final bool continuation, hovered, focused, popupOpen;
   final bool highlighted;
+
+  /// A search hit and a multi-select checked row: `info-soft`, hover-proof.
+  final bool searchMatch, checked;
 
   /// `data-followed-by` and `data-follows-system` on the row root.
   final RaftMessageFollowedBy? followedBy;
@@ -245,7 +297,9 @@ class RaftMessageRowRecipe {
   double get gap => mobile ? number('space.messageRowGapCompact', 12) : 12;
   double get headerReserve => number('space.messageHeaderReserve', 0);
   double get headerGap => number('space.messageHeaderGap', 6);
-  double get headerLine => number('size.messageHeaderLine', 20);
+  double get headerLine => raftToolbar
+      ? sizeTier.nameLineFor(tokens)
+      : number('size.messageHeaderLine', 20);
   double get bodyGap => continuation
       ? 0
       : mobile
@@ -283,23 +337,44 @@ class RaftMessageRowRecipe {
   /// raft-ui 0.7 `messageItem` toolbar (`messageToolbar.style`).
   bool get raftToolbar =>
       tokens.option('messageToolbar.style', or: 'recipe') == 'raft';
-  double get toolbarTop => raftToolbar ? -18 : 4;
+  // raft-ui 0.95.3 `toolbar` / `toolbarButton`: the desktop variant
+  // (`md:pointer-fine`) is 34px buttons (`size-control`, radius 8), below it
+  // 28px (`size-7`, radius chip); the bar is `-(button + 8) / 2` above the row.
+  double get toolbarTop => raftToolbar ? -(toolbarButtonExtent + 8) / 2 : 4;
 
   /// MessageHoverToolbar overrides the recipe's `right-[29px]`: `right-2`,
   /// `max-md:right-0.5` (brutal: `-right-1.5`, its narrow row wraps the
   /// padding box in extra inset).
   double get toolbarRight => raftToolbar ? 12 : (!mobile ? 8 : 2);
-  double get toolbarButtonExtent => raftToolbar ? 32 : 28;
-  double get toolbarGap => 2;
+  double get toolbarButtonExtent => raftToolbar
+      ? (tokens.desktop ? 34 : 28) // `--control-height` (desktop) / `size-7`
+      : 28;
+  double get toolbarButtonRadius => !raftToolbar
+      ? 6
+      : tokens.size(
+          tokens.desktop ? 'radius.control' : 'radius.chip',
+          fallback: tokens.desktop ? 8 : 6,
+        );
+  double get toolbarGap => raftToolbar ? 4 : 2;
   EdgeInsets get toolbarPadding => EdgeInsets.symmetric(
     horizontal: number('space.messageToolbarInline', 4),
-    vertical: number('space.messageToolbarBlock', 2),
+    vertical: number('space.messageToolbarBlock', raftToolbar ? 4 : 2),
   );
-  Color get background => highlighted
-      ? tokens.colors['info']!.withValues(alpha: .1)
-      : attention
-      ? (tokens.colors[raftToolbar ? 'fill-pressed' : 'ink-2']!)
-      : Colors.transparent;
+  Color get background {
+    if (raftToolbar) {
+      // `--mi-row-fill`: located, search match and checked win over hover.
+      if (highlighted || searchMatch || checked) {
+        return tokens.colors['info-soft']!;
+      }
+      return attention ? tokens.colors['fill-subtle']! : Colors.transparent;
+    }
+    return highlighted
+        ? tokens.colors['info']!.withValues(alpha: .1)
+        : attention
+        ? tokens.colors['ink-2']!
+        : Colors.transparent;
+  }
+
   Color get border => Colors.transparent;
   TextStyle get body => TextStyle(
     locale: tokens.textLocale,
@@ -331,9 +406,7 @@ class RaftMessageRowRecipe {
       or: 'mono',
     ),
     fontSize: sizeTier.metaFor(tokens),
-    height:
-        number('type.messageMeta.${sizeTier.tokenKey}.line', 16) /
-        sizeTier.metaFor(tokens),
+    height: sizeTier.metaLineFor(tokens) / sizeTier.metaFor(tokens),
     letterSpacing: number('type.messageMeta.tracking', 0),
     color: tokens.colors['foreground-message-meta'],
   );
@@ -341,15 +414,33 @@ class RaftMessageRowRecipe {
     fontFamily: tokens.fontFamily('font.messageSubtitle'),
     fontFamilyFallback: tokens.fontFamilyFallback('font.messageSubtitle'),
   );
-  TextStyle get continuationTime => TextStyle(
-    locale: tokens.textLocale,
-    fontFamily: tokens.monoFont,
-    fontSize: 10,
-    height: 1,
-    color: hovered
-        ? (tokens.colors['foreground-placeholder']!)
-        : Colors.transparent,
-  );
+
+  /// The `mono-meta` line of the continuation clock (Raft look): 12/18 at
+  /// >= 768 with a fine pointer, 12/16 otherwise.
+  RaftTypeStyle get continuationClockSlot => tokens.typeSlot('mono-meta');
+
+  /// Continuation clock `top`: centred on the body's first line.
+  double get continuationClockTop =>
+      (sizeTier.bodyLineFor(tokens) - continuationClockSlot.lineHeight) / 2;
+  TextStyle get continuationTime => raftToolbar
+      ? TextStyle(
+          locale: tokens.textLocale,
+          fontFamily: tokens.monoFont,
+          fontSize: continuationClockSlot.fontSize,
+          height: continuationClockSlot.height,
+          color: attention
+              ? tokens.colors['foreground-hint']!
+              : Colors.transparent,
+        )
+      : TextStyle(
+          locale: tokens.textLocale,
+          fontFamily: tokens.monoFont,
+          fontSize: 10,
+          height: 1,
+          color: hovered
+              ? (tokens.colors['foreground-placeholder']!)
+              : Colors.transparent,
+        );
   // The focus fill is translucent and the idle fill transparent: the brutal
   // shadow must paint outside the border box only (CSS `box-shadow`), never
   // through the fill as Flutter's BoxDecoration shadow does.
@@ -358,7 +449,7 @@ class RaftMessageRowRecipe {
     border: Border.all(color: border, width: borderWidth),
     boxShadow: null,
   );
-  BoxDecoration? get highlightRing => highlighted
+  BoxDecoration? get highlightRing => highlighted && !raftToolbar
       ? BoxDecoration(
           border: Border.all(
             color: tokens.colors['info']!.withValues(alpha: .5),
@@ -366,20 +457,39 @@ class RaftMessageRowRecipe {
           ),
         )
       : null;
+
+  /// The hover toolbar's width for [actions] buttons (padding, gaps, buttons).
+  /// Web measures the strip; the same number is 194 on desktop and 164 below
+  /// 768 for the five-action toolbar.
+  double toolbarWidthFor(int actions) {
+    if (actions <= 0) return mobile ? 164 : 194;
+    return actions * toolbarButtonExtent +
+        (actions - 1) * toolbarGap +
+        toolbarPadding.horizontal;
+  }
+
   BoxDecoration get toolbarDecoration => raftToolbar
       ? BoxDecoration(
           color: tokens.popover,
           borderRadius: BorderRadius.circular(
-            tokens.size('radius.control', fallback: 8),
+            tokens.size('radius.container', fallback: 10),
           ),
           boxShadow: [
-            // CSS lists the ring first (top); a BoxShadow list paints last on top.
             for (final layer in tokens.shadowLayers('shadow.float').reversed)
               if (!layer.inset) layer.toBoxShadow(),
-            BoxShadow(color: tokens.colors['line-seam']!, spreadRadius: 1),
           ],
         )
       : _legacyToolbarDecoration;
+
+  /// `ring-1 ring-line-seam ring-inset`: painted over the bar, inside its box.
+  BoxDecoration? get toolbarRing => raftToolbar
+      ? BoxDecoration(
+          borderRadius: BorderRadius.circular(
+            tokens.size('radius.container', fallback: 10),
+          ),
+          border: Border.all(color: tokens.colors['line-seam']!),
+        )
+      : null;
   BoxDecoration get _legacyToolbarDecoration => BoxDecoration(
     color: tokens.panel,
     border: Border.all(
@@ -506,6 +616,8 @@ class RaftMessageRow extends StatefulWidget {
     this.coarsePointer = false,
     this.popupOpen = false,
     this.highlighted = false,
+    this.searchMatch = false,
+    this.checked = false,
     this.semanticsLabel,
     this.semanticsText = '',
     this.semanticsActions = const [],
@@ -559,6 +671,10 @@ class RaftMessageRow extends StatefulWidget {
   final VoidCallback? onTouchTap;
   final ValueChanged<Offset>? onTouchDoubleTap;
   final bool continuation, coarsePointer, popupOpen, highlighted;
+
+  /// A search hit / a multi-select checked row: `info-soft`, not changed by
+  /// hover (Web `--mi-row-fill`).
+  final bool searchMatch, checked;
 
   /// Rhythm markers the list writes onto the row (`data-followed-by`,
   /// `data-follows-system`): which kind of row follows, and whether a system
@@ -914,6 +1030,8 @@ class _RaftMessageRowState extends State<RaftMessageRow> {
       focused: focused,
       popupOpen: widget.popupOpen,
       highlighted: widget.highlighted,
+      searchMatch: widget.searchMatch,
+      checked: widget.checked,
     );
     // One widget shape whether or not the author is linkable: a mention
     // affordance that arrives after first paint never reflows the header.
@@ -946,7 +1064,19 @@ class _RaftMessageRowState extends State<RaftMessageRow> {
     final gutterClock = widget.continuationTimestamp ?? widget.timestamp;
     final fullTimestamp = widget.timestampTooltip ?? widget.timestamp;
     final wrapHeader = RaftScaled.grows(context);
-    final header = ClipRect(
+    // `--mi-header-mask`: the header fades out under the toolbar while it
+    // shows (the time stays put and is visible unless it lies below it).
+    final toolbar = widget.toolbar;
+    final maskedWidth =
+        recipe.raftToolbar &&
+            recipe.toolbarVisible &&
+            toolbar != null &&
+            !widget.coarsePointer
+        ? recipe.toolbarWidthFor(
+            toolbar is RaftMessageToolbar ? toolbar.children.length : 0,
+          )
+        : null;
+    Widget header = ClipRect(
       clipper: const _HeaderInlineClip(),
       // Wrapped lines are never cut off; the clip only trims the 1.0x line.
       clipBehavior: wrapHeader ? Clip.none : Clip.hardEdge,
@@ -991,15 +1121,12 @@ class _RaftMessageRowState extends State<RaftMessageRow> {
             widget.timestamp,
             maxLines: 1,
             softWrap: false,
-            // `opacity-[calc(1-var(--mi-toolbar-opacity,0))]`: the time gives its
-            // place to the hover toolbar.
-            style: recipe.raftToolbar && recipe.toolbarVisible
-                ? recipe.time.copyWith(color: Colors.transparent)
-                : recipe.time,
+            style: recipe.time,
           ),
         ],
       ),
     );
+    header = RaftMessageHeaderMask(toolbarWidth: maskedWidth, child: header);
     touchTaps
       ..onTap = widget.onTouchTap
       ..onDoubleTap = widget.onTouchDoubleTap
@@ -1107,219 +1234,277 @@ class _RaftMessageRowState extends State<RaftMessageRow> {
                   // so rich-content tabs, selection and copy state survive.
                   foregroundDecoration:
                       recipe.highlightRing ?? const BoxDecoration(),
-                  child: portalBody(
-                    context,
-                    recipe,
-                    Stack(
-                      clipBehavior: Clip.none,
-                      children: [
-                        Padding(
-                          padding: recipe.padding,
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              if (widget.selectionLeading != null) ...[
-                                Padding(
-                                  padding: const EdgeInsets.only(top: 6),
-                                  child: widget.selectionLeading,
-                                ),
-                                SizedBox(width: recipe.gap),
-                              ],
-                              SizedBox(
-                                width: recipe.gutterWidth,
-                                // The hover time (10px, 4px down) grows with
-                                // the text size and stays inside its box.
-                                height: widget.continuation
-                                    ? math.max(
-                                        14,
-                                        4 +
-                                            MediaQuery.textScalerOf(context)
-                                                .scale(10),
-                                      )
-                                    : recipe.avatarExtent + recipe.avatarTop,
-                                child: widget.continuation
-                                    ? Stack(
-                                        clipBehavior: Clip.none,
-                                        children: [
-                                          Positioned(
-                                            left: 0,
-                                            right: 4,
-                                            top: 0,
-                                            bottom: 0,
-                                            child: ExcludeSemantics(
-                                              excluding: compact,
-                                              child: RaftTooltip(
-                                                message: fullTimestamp,
-                                                enabled:
-                                                    fullTimestamp !=
-                                                    gutterClock,
-                                                excludeFromSemantics: compact,
-                                                // Keep the tooltip anchor as tall
-                                                // as the gutter even when the
-                                                // clock scales down to its width.
-                                                child: Padding(
-                                                  padding:
-                                                      const EdgeInsets.only(
-                                                        top: 4,
-                                                      ),
-                                                  child: FittedBox(
-                                                    fit: BoxFit.scaleDown,
-                                                    alignment:
-                                                        Alignment.topRight,
-                                                    child: Text(
-                                                      gutterClock,
-                                                      maxLines: 1,
-                                                      softWrap: false,
-                                                      style: recipe
-                                                          .continuationTime,
+                  child: RaftMessageRowFillScope(
+                    color: recipe.background,
+                    child: portalBody(
+                      context,
+                      recipe,
+                      Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          Padding(
+                            padding: recipe.padding,
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                if (widget.selectionLeading != null) ...[
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 6),
+                                    child: widget.selectionLeading,
+                                  ),
+                                  SizedBox(width: recipe.gap),
+                                ],
+                                SizedBox(
+                                  width: recipe.gutterWidth,
+                                  // The hover time (10px, 4px down) grows with
+                                  // the text size and stays inside its box.
+                                  height: widget.continuation
+                                      ? recipe.raftToolbar
+                                            ? math.max(
+                                                14,
+                                                recipe.continuationClockTop +
+                                                    MediaQuery.textScalerOf(
+                                                      context,
+                                                    ).scale(
+                                                      recipe
+                                                          .continuationClockSlot
+                                                          .lineHeight,
                                                     ),
-                                                  ),
+                                              )
+                                            : math.max(
+                                                14,
+                                                4 +
+                                                    MediaQuery.textScalerOf(
+                                                      context,
+                                                    ).scale(10),
+                                              )
+                                      : recipe.avatarExtent + recipe.avatarTop,
+                                  child: widget.continuation
+                                      ? Stack(
+                                          clipBehavior: Clip.none,
+                                          children: [
+                                            Positioned(
+                                              left: recipe.raftToolbar
+                                                  ? null
+                                                  : 0,
+                                              right: recipe.raftToolbar ? 0 : 4,
+                                              top: recipe.raftToolbar
+                                                  ? recipe.continuationClockTop
+                                                  : 0,
+                                              bottom: recipe.raftToolbar
+                                                  ? null
+                                                  : 0,
+                                              child: ExcludeSemantics(
+                                                excluding: compact,
+                                                child: RaftTooltip(
+                                                  message: fullTimestamp,
+                                                  enabled:
+                                                      fullTimestamp !=
+                                                      gutterClock,
+                                                  excludeFromSemantics: compact,
+                                                  // Keep the tooltip anchor as tall
+                                                  // as the gutter even when the
+                                                  // clock scales down to its width.
+                                                  child: recipe.raftToolbar
+                                                      // Web `absolute right-0`: the 12px clock spills left
+                                                      // over the row padding; a larger text scale shrinks
+                                                      // it to that room rather than off the row.
+                                                      ? ConstrainedBox(
+                                                          constraints:
+                                                              BoxConstraints(
+                                                                maxWidth:
+                                                                    recipe
+                                                                        .gutterWidth +
+                                                                    recipe
+                                                                        .padding
+                                                                        .left,
+                                                              ),
+                                                          child: FittedBox(
+                                                            fit: BoxFit
+                                                                .scaleDown,
+                                                            alignment: Alignment
+                                                                .topRight,
+                                                            child: Text(
+                                                              gutterClock,
+                                                              maxLines: 1,
+                                                              softWrap: false,
+                                                              style: recipe
+                                                                  .continuationTime,
+                                                            ),
+                                                          ),
+                                                        )
+                                                      : Padding(
+                                                          padding:
+                                                              const EdgeInsets.only(
+                                                                top: 4,
+                                                              ),
+                                                          child: FittedBox(
+                                                            fit: BoxFit
+                                                                .scaleDown,
+                                                            alignment: Alignment
+                                                                .topRight,
+                                                            child: Text(
+                                                              gutterClock,
+                                                              maxLines: 1,
+                                                              softWrap: false,
+                                                              style: recipe
+                                                                  .continuationTime,
+                                                            ),
+                                                          ),
+                                                        ),
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        )
+                                      : Padding(
+                                          padding: EdgeInsets.only(
+                                            top: recipe.avatarTop,
+                                            left: recipe.avatarInset,
+                                          ),
+                                          child: OverflowBox(
+                                            alignment: Alignment.topLeft,
+                                            minWidth: recipe.avatarExtent,
+                                            maxWidth: recipe.avatarExtent,
+                                            minHeight: recipe.avatarExtent,
+                                            maxHeight: recipe.avatarExtent,
+                                            child: SizedBox.square(
+                                              dimension: recipe.avatarExtent,
+                                              child: ExcludeSemantics(
+                                                excluding: compact,
+                                                child: _AuthorMenuGesture(
+                                                  onMenu: authorMenu,
+                                                  child:
+                                                      widget.avatar ??
+                                                      const SizedBox.shrink(),
                                                 ),
                                               ),
                                             ),
                                           ),
-                                        ],
-                                      )
-                                    : Padding(
-                                        padding: EdgeInsets.only(
-                                          top: recipe.avatarTop,
-                                          left: recipe.avatarInset,
                                         ),
-                                        child: OverflowBox(
-                                          alignment: Alignment.topLeft,
-                                          minWidth: recipe.avatarExtent,
-                                          maxWidth: recipe.avatarExtent,
-                                          minHeight: recipe.avatarExtent,
-                                          maxHeight: recipe.avatarExtent,
-                                          child: SizedBox.square(
-                                            dimension: recipe.avatarExtent,
-                                            child: ExcludeSemantics(
-                                              excluding: compact,
-                                              child: _AuthorMenuGesture(
-                                                onMenu: authorMenu,
-                                                child:
-                                                    widget.avatar ??
-                                                    const SizedBox.shrink(),
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                              ),
-                              SizedBox(width: recipe.gap),
-                              Expanded(
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    if (!widget.continuation)
-                                      ExcludeSemantics(
-                                        excluding: compact,
-                                        child: header,
-                                      ),
-                                    Padding(
-                                      padding: EdgeInsets.only(
-                                        top: recipe.bodyGap,
-                                        bottom: recipe.bodyBottomGap,
-                                      ),
-                                      child: RaftMessageBodyMargin(
-                                        gap: recipe.bodyGap,
-                                        child: DefaultTextStyle.merge(
-                                          style: recipe.body,
-                                          // Only the body reports its collapse.
-                                          child: compact
-                                              ? RaftMessageSemanticsScope(
-                                                  visibleFraction:
-                                                      visibleFraction,
-                                                  child: widget.content,
-                                                )
-                                              : widget.content,
-                                        ),
-                                      ),
-                                    ),
-                                    if (widget.attachments != null)
-                                      Padding(
-                                        padding: EdgeInsets.only(
-                                          // `mt-1` collapses with the body's
-                                          // bottom margin (max, not sum).
-                                          top:
-                                              (recipe.attachmentGap -
-                                                      recipe.bodyBottomGap)
-                                                  .clamp(0.0, double.infinity),
-                                        ),
-                                        child: widget.attachments!,
-                                      ),
-                                    // `div.mt-0` keeps the content column's line
-                                    // box (20px, Elegant leading-5.25 = 21px); the
-                                    // 11px inline-flex status sits on its baseline.
-                                    if (widget.translation != null)
-                                      Container(
-                                        // The status line is a minimum height
-                                        // above the default text size.
-                                        height: wrapHeader
-                                            ? null
-                                            : recipe.translationLine,
-                                        constraints: wrapHeader
-                                            ? BoxConstraints(
-                                                minHeight:
-                                                    recipe.translationLine,
-                                              )
-                                            : null,
-                                        child: Align(
-                                          alignment: Alignment.centerLeft,
-                                          child: Padding(
-                                            padding: EdgeInsets.only(
-                                              bottom: recipe.translationLift,
-                                            ),
-                                            child: widget.translation,
-                                          ),
-                                        ),
-                                      ),
-                                    if (widget.footer != null)
-                                      Padding(
-                                        padding: EdgeInsets.only(
-                                          // Source block margins collapse: body
-                                          // bottom6 + footer top6 paint one6 gap.
-                                          top:
-                                              widget.attachments == null &&
-                                                  widget.translation == null
-                                              ? (recipe.footerGap -
-                                                        recipe.bodyBottomGap)
-                                                    .clamp(0.0, double.infinity)
-                                              : recipe.footerGap,
-                                        ),
-                                        child: widget.footer!,
-                                      ),
-                                    if (widget.inlineReplies != null)
-                                      RaftMessageSizeScope(
-                                        tier: widget.sizeTier,
-                                        child: widget.inlineReplies!,
-                                      ),
-                                    ?widget.readStatus,
-                                    // `mb-px`: the last block's frame sits one
-                                    // pixel above the baseline the followed-by
-                                    // rhythm is measured from (the reply card
-                                    // always; footer, attachments and images
-                                    // when another row follows).
-                                    if (widget.readStatus == null &&
-                                        recipe.trailingPixel(
-                                          attachments:
-                                              widget.attachments != null,
-                                          translation:
-                                              widget.translation != null,
-                                          footer: widget.footer != null,
-                                          inlineReplies:
-                                              widget.inlineReplies != null,
-                                        ))
-                                      // ignore: raft_lints/off_grid_spacing -- Web `mb-px`
-                                      const SizedBox(height: 1),
-                                  ],
                                 ),
-                              ),
-                            ],
+                                SizedBox(width: recipe.gap),
+                                Expanded(
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      if (!widget.continuation)
+                                        ExcludeSemantics(
+                                          excluding: compact,
+                                          child: header,
+                                        ),
+                                      Padding(
+                                        padding: EdgeInsets.only(
+                                          top: recipe.bodyGap,
+                                          bottom: recipe.bodyBottomGap,
+                                        ),
+                                        child: RaftMessageBodyMargin(
+                                          gap: recipe.bodyGap,
+                                          child: DefaultTextStyle.merge(
+                                            style: recipe.body,
+                                            // Only the body reports its collapse.
+                                            child: compact
+                                                ? RaftMessageSemanticsScope(
+                                                    visibleFraction:
+                                                        visibleFraction,
+                                                    child: widget.content,
+                                                  )
+                                                : widget.content,
+                                          ),
+                                        ),
+                                      ),
+                                      if (widget.attachments != null)
+                                        Padding(
+                                          padding: EdgeInsets.only(
+                                            // `mt-1` collapses with the body's
+                                            // bottom margin (max, not sum).
+                                            top:
+                                                (recipe.attachmentGap -
+                                                        recipe.bodyBottomGap)
+                                                    .clamp(
+                                                      0.0,
+                                                      double.infinity,
+                                                    ),
+                                          ),
+                                          child: widget.attachments!,
+                                        ),
+                                      // `div.mt-0` keeps the content column's line
+                                      // box (20px, Elegant leading-5.25 = 21px); the
+                                      // 11px inline-flex status sits on its baseline.
+                                      if (widget.translation != null)
+                                        Container(
+                                          // The status line is a minimum height
+                                          // above the default text size.
+                                          height: wrapHeader
+                                              ? null
+                                              : recipe.translationLine,
+                                          constraints: wrapHeader
+                                              ? BoxConstraints(
+                                                  minHeight:
+                                                      recipe.translationLine,
+                                                )
+                                              : null,
+                                          child: Align(
+                                            alignment: Alignment.centerLeft,
+                                            child: Padding(
+                                              padding: EdgeInsets.only(
+                                                bottom: recipe.translationLift,
+                                              ),
+                                              child: widget.translation,
+                                            ),
+                                          ),
+                                        ),
+                                      if (widget.footer != null)
+                                        Padding(
+                                          padding: EdgeInsets.only(
+                                            // Source block margins collapse: body
+                                            // bottom6 + footer top6 paint one6 gap.
+                                            top:
+                                                widget.attachments == null &&
+                                                    widget.translation == null
+                                                ? (recipe.footerGap -
+                                                          recipe.bodyBottomGap)
+                                                      .clamp(
+                                                        0.0,
+                                                        double.infinity,
+                                                      )
+                                                : recipe.footerGap,
+                                          ),
+                                          child: widget.footer!,
+                                        ),
+                                      if (widget.inlineReplies != null)
+                                        RaftMessageSizeScope(
+                                          tier: widget.sizeTier,
+                                          child: widget.inlineReplies!,
+                                        ),
+                                      ?widget.readStatus,
+                                      // `mb-px`: the last block's frame sits one
+                                      // pixel above the baseline the followed-by
+                                      // rhythm is measured from (the reply card
+                                      // always; footer, attachments and images
+                                      // when another row follows).
+                                      if (widget.readStatus == null &&
+                                          recipe.trailingPixel(
+                                            attachments:
+                                                widget.attachments != null,
+                                            translation:
+                                                widget.translation != null,
+                                            footer: widget.footer != null,
+                                            inlineReplies:
+                                                widget.inlineReplies != null,
+                                          ))
+                                        // ignore: raft_lints/off_grid_spacing -- Web `mb-px`
+                                        const SizedBox(height: 1),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -1410,6 +1595,7 @@ class RaftMessageToolbar extends StatelessWidget {
     );
     return Container(
       decoration: recipe.toolbarDecoration,
+      foregroundDecoration: recipe.toolbarRing,
       padding: recipe.toolbarPadding,
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -1493,7 +1679,11 @@ class _RaftMessageToolbarActionState extends State<RaftMessageToolbarAction> {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     final raft = t.option('messageToolbar.style', or: 'recipe') == 'raft';
-    final extent = raft ? 32.0 : 28.0;
+    final metrics = RaftMessageRowRecipe(
+      t,
+      viewportWidth: raftBreakpointWidth(context),
+    );
+    final extent = metrics.toolbarButtonExtent;
     final onPressed = widget.onPressed;
     final custom =
         widget.tooltip != null ||
@@ -1521,8 +1711,9 @@ class _RaftMessageToolbarActionState extends State<RaftMessageToolbarAction> {
         popupOpen: widget.popupOpen,
         pressed: widget.pressed,
         raft: raft,
+        radiusPx: metrics.toolbarButtonRadius,
       ),
-      child: SizedBox.square(dimension: raft ? 18 : 13, child: widget.icon),
+      child: SizedBox.square(dimension: raft ? 16 : 13, child: widget.icon),
     );
     if (!custom) return control;
     control = Semantics(
@@ -1573,14 +1764,14 @@ class _MessageActionRecipe extends RaftControlRecipe {
     required this.popupOpen,
     this.pressed = false,
     this.raft = false,
+    this.radiusPx = 6,
   }) : super(variant: RaftControlVariant.ghost);
   final bool active, popupOpen, pressed, raft;
+  final double radiusPx;
   @override
   bool get transformsOnInteraction => false;
   @override
-  BorderRadius get radius => BorderRadius.circular(
-    raft ? tokens.size('radius.control', fallback: 8) : 6,
-  );
+  BorderRadius get radius => BorderRadius.circular(raft ? radiusPx : 6);
   @override
   Color get foreground => foregroundFor();
   @override
@@ -1617,7 +1808,11 @@ class _MessageActionRecipe extends RaftControlRecipe {
     bool hovered = false,
     bool pressed = false,
     bool focused = false,
-  }) => (focused) ? [BoxShadow(color: focusRing, spreadRadius: .5)] : const [];
+  }) => focused
+      ? (raft
+            ? tokens.focusShadows
+            : [BoxShadow(color: focusRing, spreadRadius: .5)])
+      : const [];
 }
 
 class _MessageToolbarClip extends CustomClipper<Rect> {

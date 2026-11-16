@@ -33,7 +33,11 @@ void main() {
           );
           expect(
             row.author.height! * row.author.fontSize!,
-            native || raised ? 20 : [12, 14, 16][i],
+            native
+                ? [18, 20, 22][i]
+                : raised
+                ? 20
+                : [12, 14, 16][i],
           );
           expect(
             row.author.fontWeight,

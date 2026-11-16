@@ -78,10 +78,12 @@ void main() {
                 final paint = t.getRect(clock);
                 expect(
                   paint.left,
-                  greaterThanOrEqualTo(bounds.left - .01),
-                  reason: '$time at text scale $scale escaped the gutter',
+                  // `absolute right-0`: the 12px clock may spill left over the
+                  // row's 8px padding (Web), never beyond it.
+                  greaterThanOrEqualTo(bounds.left - 8.01),
+                  reason: '$time at text scale $scale escaped the row padding',
                 );
-                expect(paint.right, lessThanOrEqualTo(bounds.right - 4 + .01));
+                expect(paint.right, lessThanOrEqualTo(bounds.right + .01));
                 expect(t.getRect(body), initial);
                 await mouse.moveTo(const Offset(2, 300));
                 await t.pump();

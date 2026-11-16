@@ -39,7 +39,7 @@ void main() {
         expect(
           narrow.padding,
           native
-              ? const EdgeInsets.all(8)
+              ? const EdgeInsets.symmetric(horizontal: 8, vertical: 4)
               : brutal
               ? const EdgeInsets.symmetric(horizontal: 6, vertical: 4)
               : const EdgeInsets.fromLTRB(16, 8, 16, 6),
@@ -100,7 +100,14 @@ void main() {
           );
           expect(
             sized.time.fontSize! * sized.time.height!,
-            native || brutal ? 16 : tier.meta,
+            closeTo(
+              native
+                  ? [15, 16, 17][tier.index]
+                  : brutal
+                  ? 16
+                  : tier.meta,
+              .001,
+            ),
           );
         }
       });
@@ -146,7 +153,7 @@ void main() {
         expect(t.getSize(author).width, closeTo(natural, .01));
         expect(t.getTopRight(time).dx, closeTo(252, .01));
         expect(t.getTopLeft(find.byKey(const Key('source-body'))).dx, 55);
-        expect(t.getTopLeft(find.byKey(const Key('source-avatar'))).dy, 10);
+        expect(t.getTopLeft(find.byKey(const Key('source-avatar'))).dy, 14);
         expect(
           t.getSize(find.byKey(const Key('source-avatar'))),
           const Size.square(35),

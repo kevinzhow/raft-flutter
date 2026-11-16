@@ -2,6 +2,8 @@ import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
 
+import 'theme.dart' show RaftTokens;
+
 /// Mounted MessageTimeline defaults to top (Thread); ChatPanel selects bottom.
 enum RaftTimelineSparseAnchor { top, bottom }
 
@@ -29,7 +31,21 @@ class RaftTimelineCompositionRecipe {
   /// brutal), so the Web itself lands the avatar on 20 next to the header
   /// buttons on a phone. This replaces the owner decision of 2026-10-12, which
   /// removed the wrapper inset on phones to reach the same 20.
-  EdgeInsets messageInsetFor(double viewportWidth) => messageInset;
+  ///
+  /// [desktop]: the Raft look in a window of 768 or more with a fine pointer
+  /// (`RaftTokens.desktop`): the wrapper is `--page-inset - 8` = 8 there, so
+  /// the avatar sits on 16 (composerHost.ts).
+  EdgeInsets messageInsetFor(double viewportWidth, {bool desktop = false}) =>
+      desktop && viewportWidth >= 768
+      ? const EdgeInsets.symmetric(horizontal: 8)
+      : messageInset;
+
+  /// [messageInsetFor] for the window and input of [context].
+  EdgeInsets messageInsetOf(BuildContext context) {
+    final tokens = RaftTokens.of(context);
+    return messageInsetFor(tokens.viewportWidth ?? 0, desktop: tokens.desktop);
+  }
+
   double get sentinelExtent => 1;
   EdgeInsets get channelHeaderInset =>
       const EdgeInsets.only(left: 12, right: 12, top: 12);

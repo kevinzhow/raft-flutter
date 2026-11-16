@@ -39,16 +39,26 @@ void main() {
               );
               final clock = find.text('14:30');
               final anchor = tester.getRect(
-                find.ancestor(of: clock, matching: find.byType(SizedBox)).first,
+                find
+                    .ancestor(
+                      of: clock,
+                      matching: find.byWidgetPredicate(
+                        (w) => w is SizedBox && w.width == 35,
+                      ),
+                    )
+                    .first,
               );
               final paint = tester.getRect(clock);
               expect(
                 anchor.height,
-                (4 + 10 * scale).clamp(14, double.infinity),
+                // Top (24 - 16) / 2 plus the 12/16 mono-meta line of the clock.
+                (4 + 16 * scale).clamp(14, double.infinity),
               );
               expect(paint.top, greaterThanOrEqualTo(anchor.top + 4 - .01));
               expect(paint.bottom, lessThanOrEqualTo(anchor.bottom + .01));
-              expect(paint.left, greaterThanOrEqualTo(anchor.left - .01));
+              // `absolute right-0`, no FittedBox: the 12px clock may spill left
+              // over the row's 8px padding, never past the row.
+              expect(paint.left, greaterThanOrEqualTo(anchor.left - 8.01));
               expect(paint.right, lessThanOrEqualTo(anchor.right + .01));
               expect(tester.takeException(), isNull);
             }

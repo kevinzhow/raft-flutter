@@ -149,7 +149,7 @@ void main() {
         await tester.pumpWidget(host(dark: dark));
         // Web v1.21.23 px-2/gap-3 and its default 35px avatar/slot.
         expect(tester.getSize(find.byKey(avatarKey)), const Size(35, 35));
-        expect(tester.getTopLeft(find.byKey(avatarKey)), const Offset(8, 10));
+        expect(tester.getTopLeft(find.byKey(avatarKey)), const Offset(8, 14));
         expect(tester.getTopLeft(find.byKey(bodyKey)).dx, 55);
         final body = tester.widget<Text>(find.byKey(bodyKey));
         expect(body.style, isNull);
@@ -171,7 +171,7 @@ void main() {
     ) async {
       await tester.pumpWidget(host(dark: dark, width: 1280));
       expect(tester.getSize(find.byKey(avatarKey)), const Size(35, 35));
-      expect(tester.getTopLeft(find.byKey(avatarKey)), const Offset(8, 10));
+      expect(tester.getTopLeft(find.byKey(avatarKey)), const Offset(8, 14));
       expect(tester.getTopLeft(find.byKey(bodyKey)).dx, 55);
       expect(tester.takeException(), isNull);
     });
@@ -197,7 +197,7 @@ void main() {
       expect(strip().opacity, 1);
       final button = find.byKey(actionKey);
       // raft-ui 0.7 messageItem `toolbarButton`: `size-8`.
-      expect(tester.getSize(button), Size.square(32));
+      expect(tester.getSize(button), Size.square(28));
       await mouse.moveTo(const Offset(2, 300));
       await tester.pump();
       expect(find.byType(RaftMessageToolbar), findsNothing);
@@ -230,7 +230,7 @@ void main() {
       expect(find.byKey(avatarKey), findsNothing);
       expect(find.text('Public Agent'), findsNothing);
       expect(find.text('14:30'), findsOneWidget);
-      expect(tester.getTopLeft(find.byKey(bodyKey)), const Offset(55, 0));
+      expect(tester.getTopLeft(find.byKey(bodyKey)), const Offset(55, 4));
       expect(tester.takeException(), isNull);
     },
   );
@@ -300,10 +300,14 @@ void main() {
               );
               expect(
                 recipe.padding,
-                EdgeInsets.fromLTRB(8, continuation ? 0 : 8, 8, 8),
+                const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 reason: label,
               );
-              expect(recipe.margin, EdgeInsets.zero, reason: label);
+              expect(
+                recipe.margin,
+                EdgeInsets.only(top: continuation ? 0 : 8),
+                reason: label,
+              );
               expect(recipe.gap, 12, reason: label);
               expect(recipe.minimumHeight, 0, reason: label);
               expect(recipe.borderWidth, 0, reason: label);
