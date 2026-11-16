@@ -10,7 +10,7 @@ import 'raft/switch.dart';
 import 'system_inset.dart';
 import 'theme.dart';
 
-/// One configurable bottom-bar tab (everything except the fixed Settings tab).
+/// One configurable bottom-bar tab (everything except the server tab).
 @immutable
 class RaftMobileTabOption {
   const RaftMobileTabOption({
@@ -23,7 +23,7 @@ class RaftMobileTabOption {
 }
 
 /// Pure state of the mobile bottom-bar configuration: the order of every
-/// configurable tab and which of them are on. Settings is not part of it; it is
+/// configurable tab and which of them are on. The server tab is not part of it; it is
 /// always shown and always last. The caller owns persistence.
 @immutable
 class RaftMobileTabbarConfig {
@@ -33,7 +33,7 @@ class RaftMobileTabbarConfig {
     this.maxTabs = defaultMaxTabs,
   });
 
-  /// Most tabs the bar holds, Settings included. Five fit 360dp with the
+  /// Most tabs the bar holds, the server tab included. Five fit 360dp with the
   /// Brutal bar's equal-width cells (72dp each, "Computers" needs ~58dp) and is
   /// the platform tab-bar convention.
   static const defaultMaxTabs = 5;
@@ -42,7 +42,7 @@ class RaftMobileTabbarConfig {
   final Set<String> enabled;
   final int maxTabs;
 
-  /// Tabs on in the bar, Settings included.
+  /// Tabs on in the bar, the server tab included.
   int get total => enabled.length + 1;
   bool get atLimit => total >= maxTabs;
   bool get atMinimum => enabled.length <= 1;
@@ -76,7 +76,7 @@ class RaftMobileTabbarConfig {
 }
 
 /// "Bottom bar" settings page body: the configurable tab list (switch +
-/// reorder handle per row, Settings locked last) above a pinned live preview of
+/// reorder handle per row, the server tab locked last) above a pinned live preview of
 /// the resulting [RaftMobileNav]. The settings row pattern is the Labs card
 /// (RaftServerLabsSection): title + switch rows divided by `divide-black/10`.
 class RaftMobileTabbarConfigView extends StatelessWidget {
@@ -175,7 +175,7 @@ class RaftMobileTabbarConfigView extends StatelessWidget {
     final notice = config.atLimit && !config.atMinimum
         ? 'Limit reached. Turn one off to add another.'
         : config.atMinimum
-        ? 'Keep at least one tab besides Settings.'
+        ? 'Keep at least one tab besides the server tab.'
         : null;
     final nav = RaftMobileNav(
       selectedId: config.visible.firstOrNull ?? settingsTab.id,
@@ -213,7 +213,7 @@ class RaftMobileTabbarConfigView extends StatelessWidget {
               Text(
                 raftText(
                   context,
-                  'Choose which tabs appear in the bottom bar and in what order. Settings is always shown, at the end.',
+                  'Choose which tabs appear in the bottom bar and in what order. The server tab is always shown, at the end.',
                 ),
                 style: text.description,
               ),
@@ -307,9 +307,11 @@ class RaftMobileTabbarConfigView extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                raftFormat(context, 'Up to {count} tabs, including Settings.', {
-                  'count': config.maxTabs,
-                }),
+                raftFormat(
+                  context,
+                  'Up to {count} tabs, including the server tab.',
+                  {'count': config.maxTabs},
+                ),
                 style: text.description,
               ),
               if (notice != null)
