@@ -37,11 +37,9 @@ void main() {
         expect(sheet.code.color, tokens.strong);
         expect(sheet.code.backgroundColor, tokens.colors['fill-muted']);
 
-        // Tailwind 4 `text-blue-700` / `dark:text-blue-300`.
-        expect(
-          sheet.link.color,
-          dark ? const Color(0xff8ec5ff) : const Color(0xff1447e6),
-        );
+        // Web v1.24 raft-ui `MarkdownLink`: `text-foreground-link` (was
+        // Tailwind `text-blue-700` / `dark:text-blue-300` before v1.24).
+        expect(sheet.link.color, tokens.colors['foreground-link']);
       },
     );
   }
