@@ -691,6 +691,8 @@ class _RaftConfirmDialogState extends State<RaftConfirmDialog> {
         ? widget.maxWidth
         : RaftDialogSlots.of(context, size: widget.size!).content.maxWidth ??
               widget.maxWidth;
+    // Frozen looks pin the pack height; the Raft look takes `lg` = h-control
+    // (44 by touch, 34 with a mouse at >=768), as Web's ConfirmDialog does.
     final actionHeight = t.size('size.confirmAction', fallback: 44);
     final actionSize = widget.actionSize == null
         ? actionHeight <= t.size('size.control.sm', fallback: 32)
@@ -762,7 +764,9 @@ class _RaftConfirmDialogState extends State<RaftConfirmDialog> {
               label: widget.cancelLabel,
               focusNode: widget.initialFocusCancel ? _cancelFocus : null,
               uiSize: actionSize,
-              physicalHeight: widget.actionSize == null ? actionHeight : null,
+              physicalHeight: legacy && widget.actionSize == null
+                  ? actionHeight
+                  : null,
               uiVariant:
                   !legacy ||
                       t.option('dialog.cancelSurface', or: 'outline') == 'ghost'
@@ -788,7 +792,9 @@ class _RaftConfirmDialogState extends State<RaftConfirmDialog> {
                   : null,
               tone: widget.confirmVariant,
               uiSize: actionSize,
-              physicalHeight: widget.actionSize == null ? actionHeight : null,
+              physicalHeight: legacy && widget.actionSize == null
+                  ? actionHeight
+                  : null,
               onPressed: enabled && !loading ? confirm : null,
             ),
           ),

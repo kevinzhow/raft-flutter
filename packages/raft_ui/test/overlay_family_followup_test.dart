@@ -307,6 +307,39 @@ void main() {
     }
   });
 
+  group('ConfirmDialog actions are lg = h-control (Web 34 with a mouse)', () {
+    for (final (name, size, platform, height) in [
+      ('1440x900 Linux', const Size(1440, 900), TargetPlatform.linux, 34.0),
+      ('856x944 Android', const Size(856, 944), TargetPlatform.android, 44.0),
+      ('944x856 Android', const Size(944, 856), TargetPlatform.android, 44.0),
+      ('390x844 Linux', const Size(390, 844), TargetPlatform.linux, 44.0),
+    ]) {
+      testWidgets(name, (t) async {
+        _view(t, size);
+        await t.pumpWidget(
+          _host(
+            Center(
+              child: RaftConfirmDialog(
+                title: 'Hide #all',
+                message: 'Hide this channel from the sidebar.',
+                confirmLabel: 'Hide',
+                cancelLabel: 'Cancel',
+              ),
+            ),
+            platform,
+          ),
+        );
+        for (final label in ['Hide', 'Cancel']) {
+          final button = find.ancestor(
+            of: find.text(label),
+            matching: find.byType(RaftButton),
+          );
+          expect(t.getSize(button.first).height, height, reason: label);
+        }
+      });
+    }
+  });
+
   testWidgets(
     'DialogCard title takes no decoration from a Material-less route',
     (t) async {

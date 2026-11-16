@@ -36693,7 +36693,7 @@
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
-      "packages/raft_ui/lib/src/settings_controls.dart#local-function:CLASS:RaftServerProfileTile@32257/METHOD:_tile@34307/FUNCTION:image@34386": {
+      "packages/raft_ui/lib/src/settings_controls.dart#local-function:CLASS:RaftServerProfileTile@32504/METHOD:_tile@34554/FUNCTION:image@34633": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
@@ -41780,8 +41780,8 @@
         "sourceBindings": [
           {
             "file": "packages/raft_ui/lib/src/settings_controls.dart",
-            "bytes": 44685,
-            "sha256": "8157e05af47ed17e5ddf46085cad91bc710b392a6e7b117f71e14ef1ecaa2b0d"
+            "bytes": 44932,
+            "sha256": "9f36083b56f7a48d0850d5a2f8d3d9fbf2ec77f621be1ee4b8b4990dd5f283bf"
           }
         ],
         "reviewDecision": "Source reviewed at fixed Choice/P1 combination: this declaration is in an explicit frozen part/helper or a frozen Dialog class, selected only by the existing non-Raft/legacy recipe branch. The whole-file binding is refreshed after exact raw declaration-body comparison with ae852; surrounding current-look edits do not imply a change to this frozen body.",
@@ -41794,8 +41794,8 @@
         "sourceBindings": [
           {
             "file": "packages/raft_ui/lib/src/settings_controls.dart",
-            "bytes": 44685,
-            "sha256": "8157e05af47ed17e5ddf46085cad91bc710b392a6e7b117f71e14ef1ecaa2b0d"
+            "bytes": 44932,
+            "sha256": "9f36083b56f7a48d0850d5a2f8d3d9fbf2ec77f621be1ee4b8b4990dd5f283bf"
           }
         ],
         "reviewDecision": "Source reviewed at fixed Choice/P1 combination: this declaration is in an explicit frozen part/helper or a frozen Dialog class, selected only by the existing non-Raft/legacy recipe branch. The whole-file binding is refreshed after exact raw declaration-body comparison with ae852; surrounding current-look edits do not imply a change to this frozen body.",
@@ -41808,8 +41808,8 @@
         "sourceBindings": [
           {
             "file": "packages/raft_ui/lib/src/settings_controls.dart",
-            "bytes": 44685,
-            "sha256": "8157e05af47ed17e5ddf46085cad91bc710b392a6e7b117f71e14ef1ecaa2b0d"
+            "bytes": 44932,
+            "sha256": "9f36083b56f7a48d0850d5a2f8d3d9fbf2ec77f621be1ee4b8b4990dd5f283bf"
           }
         ],
         "reviewDecision": "Source reviewed at fixed Choice/P1 combination: this declaration is in an explicit frozen part/helper or a frozen Dialog class, selected only by the existing non-Raft/legacy recipe branch. The whole-file binding is refreshed after exact raw declaration-body comparison with ae852; surrounding current-look edits do not imply a change to this frozen body.",
@@ -41850,8 +41850,8 @@
         "sourceBindings": [
           {
             "file": "packages/raft_ui/lib/src/settings_controls.dart",
-            "bytes": 44685,
-            "sha256": "8157e05af47ed17e5ddf46085cad91bc710b392a6e7b117f71e14ef1ecaa2b0d"
+            "bytes": 44932,
+            "sha256": "9f36083b56f7a48d0850d5a2f8d3d9fbf2ec77f621be1ee4b8b4990dd5f283bf"
           }
         ],
         "reviewDecision": "Source reviewed at fixed Choice/P1 combination: this declaration is in an explicit frozen part/helper or a frozen Dialog class, selected only by the existing non-Raft/legacy recipe branch. The whole-file binding is refreshed after exact raw declaration-body comparison with ae852; surrounding current-look edits do not imply a change to this frozen body.",
@@ -41864,8 +41864,8 @@
         "sourceBindings": [
           {
             "file": "packages/raft_ui/lib/src/settings_controls.dart",
-            "bytes": 44685,
-            "sha256": "8157e05af47ed17e5ddf46085cad91bc710b392a6e7b117f71e14ef1ecaa2b0d"
+            "bytes": 44932,
+            "sha256": "9f36083b56f7a48d0850d5a2f8d3d9fbf2ec77f621be1ee4b8b4990dd5f283bf"
           }
         ],
         "reviewDecision": "Source reviewed at fixed Choice/P1 combination: this declaration is in an explicit frozen part/helper or a frozen Dialog class, selected only by the existing non-Raft/legacy recipe branch. The whole-file binding is refreshed after exact raw declaration-body comparison with ae852; surrounding current-look edits do not imply a change to this frozen body.",
