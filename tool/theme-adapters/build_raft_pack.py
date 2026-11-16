@@ -176,6 +176,8 @@ GEOMETRY_RAFT = {
     'stroke.mobileNavSticker': 1.5,
     'stroke.mobileNavStickerRing': 1.5,
     'size.mobileNavSafeMax': 34,
+    # raft-ui 0.95.3 mobile-nav.mjs:12 pb-[max(8px,min(env(safe-area-inset-bottom),34px))].
+    'size.mobileNavSafeMin': 8,
 
     # Shared Button source metrics, Cindy a0741fbf/c1ec691c.
     'size.control.xs': 32,

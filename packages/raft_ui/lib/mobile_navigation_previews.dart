@@ -74,40 +74,34 @@ class _NavigationState extends State<_Navigation> {
             ),
           ),
         ),
-        SafeArea(
-          top: false,
-          left: false,
-          right: false,
-          child: RaftMobileNav(
-            viewportHeight: widget.height,
-            bottomInset: 0,
-            selectedId: selected,
-            onSelected: (id) => setState(() => selected = id),
-            items: const [
-              RaftMobileNavItem(
-                id: 'chat',
-                label: 'Home',
-                glyph: RaftGlyph.home,
-              ),
-              RaftMobileNavItem(
-                id: 'tasks',
-                label: 'Tasks',
-                glyph: RaftGlyph.squareCheck,
-              ),
-              RaftMobileNavItem(
-                id: 'members',
-                label: 'Members',
-                glyph: RaftGlyph.users,
-              ),
-              RaftMobileNavItem(
-                id: 'settings',
-                label: 'Settings',
-                glyph: RaftGlyph.settings,
-                attention: true,
-              ),
-            ],
-          ),
+        // The host paints the system inset below the bar, as the app shell
+        // does; the bar still sees it (its 8px floor counts it).
+        RaftMobileNav(
+          viewportHeight: widget.height,
+          bottomInset: 0,
+          selectedId: selected,
+          onSelected: (id) => setState(() => selected = id),
+          items: const [
+            RaftMobileNavItem(id: 'chat', label: 'Home', glyph: RaftGlyph.home),
+            RaftMobileNavItem(
+              id: 'tasks',
+              label: 'Tasks',
+              glyph: RaftGlyph.squareCheck,
+            ),
+            RaftMobileNavItem(
+              id: 'members',
+              label: 'Members',
+              glyph: RaftGlyph.users,
+            ),
+            RaftMobileNavItem(
+              id: 'settings',
+              label: 'Settings',
+              glyph: RaftGlyph.settings,
+              attention: true,
+            ),
+          ],
         ),
+        SizedBox(height: MediaQuery.paddingOf(context).bottom),
       ],
     ),
   );

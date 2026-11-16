@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -49,11 +51,16 @@ void main() {
           expect(t.getRect(nav).bottom, screen.height - inset);
           final navHeight = t.getSize(nav).height;
           if (pack == raftThemePackId) {
+            // raft-ui 0.95.3 mobile-nav.mjs:12: pb max(8, min(inset, 34)); the
+            // system inset below the preview counts toward the 8.
             expect(
               navHeight,
-              52,
+              52 + math.max(0, 8 - inset),
               reason: 'Preview matches the real docked bar; no capsule gap.',
             );
+          }
+          if (pack == brutalThemePackId && !floating) {
+            expect(navHeight, 55, reason: 'Frozen look: no 8px floor.');
           }
           expect(
             t

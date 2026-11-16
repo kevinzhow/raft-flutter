@@ -36,7 +36,8 @@ Widget _host({
   ),
 );
 void main() {
-  // Web v1.21.23 MainLayout.MobileTabBar + computed raft-ui 0.7.0 recipe.
+  // Web v1.24 MainLayout.MobileTabBar + raft-ui 0.95.3 mobile-nav.mjs:12:
+  // 1 + 6 + 45 + pb max(8, min(inset, 34)) = 60 at a zero inset.
   for (final dark in [false, true]) {
     testWidgets(
       'docked bar matches source bounds and visible labels dark=$dark',
@@ -52,7 +53,7 @@ void main() {
             ),
           ),
         );
-        expect(tester.getSize(find.byType(RaftMobileNav)), const Size(390, 52));
+        expect(tester.getSize(find.byType(RaftMobileNav)), const Size(390, 60));
         for (final item in _items) {
           expect(find.text(item.label), findsOneWidget);
         }
@@ -112,7 +113,7 @@ void main() {
         ),
       );
       final bar = tester.getRect(find.byType(RaftMobileNav));
-      expect(bar.size, Size(size.width, 52));
+      expect(bar.size, Size(size.width, 60));
       for (final item in _items) {
         final control = find.byWidgetPredicate(
           (w) =>
