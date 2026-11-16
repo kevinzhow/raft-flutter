@@ -182,9 +182,10 @@ void main() {
               'iconInk': actualInk,
             },
             {
-              'rowHeight': compact ? 32.0 : 36.0,
+              'rowHeight': compact ? 32.0 : 34.0,
               'fontSize': 14.0,
-              'lineHeight': closeTo(20 / 14, .0001),
+              // Desktop `text-control` is 14/22.
+              'lineHeight': closeTo(22 / 14, .0001),
               'fontWeight': FontWeight.w500,
               // Web v1.24 MenuItem fixes the leading SVG to size-4 (16px).
               'iconSize': const Size.square(16),

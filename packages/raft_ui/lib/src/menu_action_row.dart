@@ -37,6 +37,7 @@ class RaftMenuActionRow extends StatelessWidget {
     final viewport = MediaQuery.sizeOf(context);
     final states = t
         .recipeStates(
+          responsive: true,
           hovered: enabled && hovered,
           focusVisible: enabled && focusVisible,
           disabled: !enabled,

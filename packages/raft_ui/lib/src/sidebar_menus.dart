@@ -195,7 +195,7 @@ class _RaftSidebarContextMenuState extends State<RaftSidebarContextMenu> {
     final t = RaftTokens.of(menuContext);
     final content = RaftContextMenuRecipe.resolve(
       theme: t.recipeTheme,
-      states: t.recipeStates(),
+      states: t.recipeStates(responsive: true),
       tokens: RaftRecipeTokens(t),
     ).content;
     final origin = main.localToGlobal(Offset.zero, ancestor: overlay);
@@ -236,7 +236,7 @@ class _RaftSidebarContextMenuState extends State<RaftSidebarContextMenu> {
     final resolver = RaftRecipeTokens(t);
     final s = RaftContextMenuRecipe.resolve(
       theme: t.recipeTheme,
-      states: t.recipeStates(),
+      states: t.recipeStates(responsive: true),
       tokens: resolver,
     );
     final content = s.content;

@@ -2527,7 +2527,7 @@ class RaftMenuPanel extends StatelessWidget {
       final rt = t.recipeTokens;
       final selection = RaftWebSelectionPanelRecipe.resolve(
         tokens: rt,
-        states: t.recipeStates(),
+        states: t.recipeStates(responsive: true),
       );
       final minimumWidth =
           selection.root.minWidth ??
@@ -2556,12 +2556,12 @@ class RaftMenuPanel extends StatelessWidget {
           ? RaftDropdownMenuRecipe.resolve(
               theme: t.recipeTheme,
               tokens: rt,
-              states: t.recipeStates(),
+              states: t.recipeStates(responsive: true),
             ).content
           : RaftPopoverRecipe.resolve(
               theme: t.recipeTheme,
               tokens: rt,
-              states: t.recipeStates(),
+              states: t.recipeStates(responsive: true),
             ).content;
       panel = SizedBox(
         // CSS min-width wins over a narrower authored width; the placement
@@ -2771,6 +2771,7 @@ class _RaftMenuItemState extends State<RaftMenuItem> {
                       tokens: t.recipeTokens,
                       states: t
                           .recipeStates(
+                            responsive: true,
                             disabled: !enabled,
                             extra: [
                               if (!enabled) 'data-disabled',
@@ -2795,6 +2796,7 @@ class _RaftMenuItemState extends State<RaftMenuItem> {
                         disabled: !enabled,
                         italic: widget.italic,
                         states: t.recipeStates(
+                          responsive: true,
                           hovered: enabled && hovered,
                           focusVisible: enabled && focused,
                           disabled: !enabled,

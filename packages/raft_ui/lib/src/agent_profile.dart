@@ -312,6 +312,9 @@ class RaftAvatarSlot extends StatelessWidget {
             'size.avatar.panelHeader',
             fallback: slot.size,
           ),
+          // AvatarSlot `mention-card` is the `lg` step: 51 (8n + two 1.5px
+          // edges); the frozen looks keep their `!size-12`.
+          RaftAvatarSlotContext.mentionCard when t.isRaftLook => 51,
           _ => slot.size,
         };
     final sticker = t.option('sticker.ring', or: 'none') == 'dieCut';

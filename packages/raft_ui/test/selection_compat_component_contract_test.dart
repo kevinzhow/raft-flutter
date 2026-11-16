@@ -116,9 +116,9 @@ void main() {
         try {
           await tester.pumpWidget(_host(_compatRows(calls), dark: dark));
           final tokens = raftTheme(dark: dark).extension<RaftTokens>()!;
-          expect(tester.getRect(find.byKey(_plainRow)).height, 36);
+          expect(tester.getRect(find.byKey(_plainRow)).height, 34);
           expect(_style(tester, 'Ordinary').fontSize, 14);
-          expect(_style(tester, 'Ordinary').height, 20 / 14);
+          expect(_style(tester, 'Ordinary').height, 22 / 14);
           expect(_style(tester, 'Ordinary').fontWeight, FontWeight.w500);
           expect(_style(tester, 'Selected').fontWeight, FontWeight.w700);
           expect(

@@ -8,7 +8,9 @@ import 'icons.dart';
 import 'indicators.dart';
 import 'localization.dart';
 import 'recipe_surface.dart';
+import 'raft/ui_tokens.dart';
 import 'theme.dart';
+import 'tokens/tokens.dart' show RaftTypeScale;
 import 'tooltip.dart';
 
 /// One `<dt>/<dd>` pair of the agent card facts grid.
@@ -112,12 +114,17 @@ class RaftProfilePreviewCard extends StatelessWidget {
     TextStyle mono(double size, double line, Color color) => raftCssText.merge(
       RaftTypography.mono(t, size: size, line: line, color: color),
     );
-    Widget line(String text, TextStyle style, {bool tooltip = false}) {
+    Widget line(
+      String text,
+      TextStyle style, {
+      bool tooltip = false,
+      int maxLines = 1,
+    }) {
       final label = Text(
         text,
-        maxLines: 1,
+        maxLines: maxLines,
         overflow: TextOverflow.ellipsis,
-        softWrap: false,
+        softWrap: maxLines > 1,
         style: style,
       );
       return tooltip
@@ -130,9 +137,32 @@ class RaftProfilePreviewCard extends StatelessWidget {
           : label;
     }
 
-    final rule = t.colors['line-muted']!;
-    final factStyle = mono(11, 11 * 1.25, muted);
-    final factLabel = mono(11, 11 * 1.25, t.colors['foreground-placeholder']!);
+    // Raft look: ProfilePreviewCardContent's type styles (`text-headline`,
+    // `text-callout`, `text-mono-meta`, `text-caption`, `text-footnote`) follow
+    // the desktop / touch scale; the frozen looks keep their authored sizes.
+    final raft = t.isRaftLook;
+    final hint = t.colors['foreground-hint']!;
+    final nameStyle = raft
+        ? t.scale(RaftTypeScale.headline, color: t.colors['foreground'])
+        : sans(14, 20, strong, FontWeight.w700);
+    final monoMeta = raft
+        ? t.scale(RaftTypeScale.monoMeta, mono: true, color: muted)
+        : mono(12, 16, muted);
+    final statusStyle = raft
+        ? t.scale(RaftTypeScale.callout, color: hint)
+        : mono(12, 16, muted);
+    final bodyStyle = raft
+        ? t.scale(RaftTypeScale.callout, color: muted)
+        : sans(12, 16, muted);
+    final rule = raft ? t.colors['line-hairline']! : t.colors['line-muted']!;
+    final ruleWidth = raft ? 1.0 : 2.0;
+    final factStyle = raft ? monoMeta : mono(11, 11 * 1.25, muted);
+    final factLabel = raft
+        ? t.scale(RaftTypeScale.caption, color: hint)
+        : mono(11, 11 * 1.25, t.colors['foreground-placeholder']!);
+    final factMinHeight = raft
+        ? (factLabel.height! * factLabel.fontSize!)
+        : 11 * 1.25;
     // Raft look: raft-ui `px-4 pt-4 pb-3 last:pb-4` (16 under the avatar row
     // when nothing follows, 12 above a description or activity section).
     final last =
@@ -159,23 +189,23 @@ class RaftProfilePreviewCard extends StatelessWidget {
                 // `flex items-center gap-1.5`: the truncating name and status
                 // text shrink in proportion to their width; the dot is fixed.
                 if (status == null)
-                  line(name, sans(14, 20, strong, FontWeight.w700))
+                  line(name, nameStyle)
                 else
                   RaftFlexShrinkRow(
                     gap: 6,
                     truncating: true,
                     fixed: const {1},
                     children: [
-                      line(name, sans(14, 20, strong, FontWeight.w700)),
+                      line(name, nameStyle),
                       RaftStatusDot(
                         activity: status!.activity,
                         external: status!.external,
                         size: RaftStatusDotSize.sm,
                       ),
-                      line(status!.text, mono(12, 16, muted)),
+                      line(status!.text, statusStyle),
                     ],
                   ),
-                if (subtitle != null) line(subtitle!, mono(12, 16, muted)),
+                if (subtitle != null) line(subtitle!, monoMeta),
                 for (final note in notes)
                   Padding(
                     padding: const EdgeInsets.only(top: 4),
@@ -190,7 +220,9 @@ class RaftProfilePreviewCard extends StatelessWidget {
                     padding: const EdgeInsets.only(top: 8),
                     decoration: BoxDecoration(
                       border: Border(
-                        top: BorderSide(color: t.colors['line-muted']!),
+                        top: BorderSide(
+                          color: raft ? rule : t.colors['line-muted']!,
+                        ),
                       ),
                     ),
                     child: Table(
@@ -205,12 +237,13 @@ class RaftProfilePreviewCard extends StatelessWidget {
                             children: [
                               Padding(
                                 padding: EdgeInsets.only(
-                                  right: 8,
+                                  // `gap-x-3` (frozen: 8).
+                                  right: raft ? 12 : 8,
                                   top: i == 0 ? 0 : 4,
                                 ),
                                 child: ConstrainedBox(
-                                  constraints: const BoxConstraints(
-                                    minHeight: 11 * 1.25,
+                                  constraints: BoxConstraints(
+                                    minHeight: factMinHeight,
                                   ),
                                   child: Text(fact.label, style: factLabel),
                                 ),
@@ -218,8 +251,8 @@ class RaftProfilePreviewCard extends StatelessWidget {
                               Padding(
                                 padding: EdgeInsets.only(top: i == 0 ? 0 : 4),
                                 child: ConstrainedBox(
-                                  constraints: const BoxConstraints(
-                                    minHeight: 11 * 1.25,
+                                  constraints: BoxConstraints(
+                                    minHeight: factMinHeight,
                                   ),
                                   child: line(
                                     fact.capitalize && fact.value.isNotEmpty
@@ -242,7 +275,7 @@ class RaftProfilePreviewCard extends StatelessWidget {
         ],
       ),
     );
-    final section = BorderSide(color: rule, width: 2);
+    final section = BorderSide(color: rule, width: ruleWidth);
     return Column(
       key: const ValueKey('profile-preview-card'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -252,25 +285,32 @@ class RaftProfilePreviewCard extends StatelessWidget {
         if (description != null && description!.isNotEmpty)
           Container(
             key: const ValueKey('profile-preview-description'),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            // Raft look `line-clamp-2 px-4 py-3 last:pb-4 text-callout`.
+            padding: raft
+                ? EdgeInsets.fromLTRB(16, 12, 16, activity.isEmpty ? 16 : 12)
+                : const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(border: Border(top: section)),
             child: line(
               description!.replaceAll('\n', ' '),
-              sans(12, 16, muted),
+              bodyStyle,
               tooltip: true,
+              maxLines: raft ? 2 : 1,
             ),
           ),
         if (activity.isNotEmpty)
           Container(
             key: const ValueKey('profile-preview-activity'),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            // Raft look `px-4 py-3 last:pb-4`, heading `mb-2`, rows `stack-y-1.5`.
+            padding: raft
+                ? const EdgeInsets.fromLTRB(16, 12, 16, 16)
+                : const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(border: Border(top: section)),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
                 _ActivityHeading(onPressed: onOpenActivity),
-                const SizedBox(height: 6),
+                SizedBox(height: raft ? 8 : 6),
                 for (final (i, row) in activity.indexed)
                   Padding(
                     padding: EdgeInsets.only(top: i == 0 ? 0 : 6),
@@ -279,22 +319,24 @@ class RaftProfilePreviewCard extends StatelessWidget {
                       children: [
                         Text(
                           row.time,
-                          style: mono(
-                            10,
-                            15,
-                            t.colors['foreground-placeholder']!,
-                          ),
+                          style: raft
+                              ? monoMeta.copyWith(color: hint)
+                              : mono(
+                                  10,
+                                  15,
+                                  t.colors['foreground-placeholder']!,
+                                ),
                         ),
-                        const SizedBox(width: 6),
+                        SizedBox(width: raft ? 8 : 6),
                         RaftStatusDot(
                           activity: row.activity,
                           size: RaftStatusDotSize.sm,
                         ),
-                        const SizedBox(width: 6),
+                        SizedBox(width: raft ? 8 : 6),
                         Expanded(
                           child: line(
                             row.text,
-                            sans(12, 16, muted),
+                            raft ? monoMeta : sans(12, 16, muted),
                             tooltip: true,
                           ),
                         ),
@@ -321,7 +363,17 @@ class _ActivityHeading extends StatelessWidget {
     TextStyle style(bool hovered) {
       final color = hovered
           ? (t.colors['foreground-strong']!)
+          : t.isRaftLook
+          ? t.colors['foreground-hint']!
           : t.colors['foreground-muted']!;
+      if (t.isRaftLook) {
+        // `text-footnote font-bold text-foreground-hint`.
+        return t.scale(
+          RaftTypeScale.footnote,
+          weight: FontWeight.w700,
+          color: hovered ? t.colors['foreground-strong']! : color,
+        );
+      }
       return raftCssText.merge(
         RaftTypography.body(
           t,
@@ -354,7 +406,11 @@ class _ActivityHeading extends StatelessWidget {
               underline: state.hovered || state.focusVisible,
             ),
             const SizedBox(width: 2),
-            RaftIcon(RaftGlyph.chevronRight, size: 10, color: s.color),
+            RaftIcon(
+              RaftGlyph.chevronRight,
+              size: t.isRaftLook ? 14 : 10,
+              color: s.color,
+            ),
           ],
         );
       },

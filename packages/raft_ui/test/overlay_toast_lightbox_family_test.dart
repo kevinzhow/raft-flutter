@@ -100,11 +100,9 @@ void main() {
       final box = t.getRect(find.byType(RaftToast));
       expect(box.height, 44);
       expect(box.width, greaterThanOrEqualTo(112));
-      // `justify-self-center`: the label sits in the middle of the 7rem box.
-      expect(
-        t.getRect(find.text('Copied')).center.dx,
-        closeTo(box.center.dx, .5),
-      );
+      // Three grid tracks: the label starts 16 from the left, the two empty
+      // tracks keep 12 + 12 on the right (see overlay_family_followup_test).
+      expect(t.getRect(find.text('Copied')).left - box.left, 16);
       expect(t.getRect(find.text('Copied')).top - box.top, 12);
       c.clear();
     });

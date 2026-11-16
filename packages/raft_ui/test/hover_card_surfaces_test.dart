@@ -181,6 +181,10 @@ void main() {
     testWidgets('agent card: status, handle, facts, description, activity', (
       tester,
     ) async {
+      // The v1.24 card is taller (337 with these rows): give it the room.
+      tester.view.physicalSize = const Size(800, 1000);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
       var opened = 0;
       await tester.pumpWidget(
         surfaceHost(
