@@ -4129,6 +4129,24 @@
         "owner": "design-system alignment",
         "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
       },
+      "packages/raft_ui/lib/src/covered_pane.dart#class:RaftCoveredPane": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/covered_pane.dart#method:RaftCoveredPane.of": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/covered_pane.dart#method:RaftCoveredPane.updateShouldNotify": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
+      },
       "packages/raft_ui/lib/src/create_task_view.dart#class:_SourceMessageQuote": {
         "role": "unresolved",
         "familyRefs": [],
@@ -18651,19 +18669,19 @@
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
-      "packages/raft_ui/lib/src/adaptive_workspace.dart#local-function:CLASS:_RaftAdaptiveWorkspaceState@7692/METHOD:conversation@8717/FUNCTION:panel@10095": {
+      "packages/raft_ui/lib/src/adaptive_workspace.dart#local-function:CLASS:_RaftAdaptiveWorkspaceState@7720/METHOD:conversation@8745/FUNCTION:panel@10220": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
-      "packages/raft_ui/lib/src/adaptive_workspace.dart#local-function:CLASS:_RaftAdaptiveWorkspaceState@7692/METHOD:conversation@8717/FUNCTION:profile@10015": {
+      "packages/raft_ui/lib/src/adaptive_workspace.dart#local-function:CLASS:_RaftAdaptiveWorkspaceState@7720/METHOD:conversation@8745/FUNCTION:profile@10140": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
-      "packages/raft_ui/lib/src/adaptive_workspace.dart#local-function:CLASS:_RaftAdaptiveWorkspaceState@7692/METHOD:conversation@8717/FUNCTION:thread@9686": {
+      "packages/raft_ui/lib/src/adaptive_workspace.dart#local-function:CLASS:_RaftAdaptiveWorkspaceState@7720/METHOD:conversation@8745/FUNCTION:thread@9714": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
@@ -29278,6 +29296,12 @@
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/message_row_recipe.dart#method:_RaftMessageRowState.didChangeDependencies": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
       },
       "packages/raft_ui/lib/src/message_row_recipe.dart#method:_RaftMessageRowState.didUpdateWidget": {
         "role": "unresolved",
@@ -46573,7 +46597,7 @@
         "owner": "design-system alignment",
         "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
       },
-      "packages/raft_ui/lib/src/adaptive_workspace.dart#local-function:CLASS:_MobileKeyboardLayout@42835/METHOD:build@43295/FUNCTION:withoutRailInset@43533": {
+      "packages/raft_ui/lib/src/adaptive_workspace.dart#local-function:CLASS:_MobileKeyboardLayout@43207/METHOD:build@43667/FUNCTION:withoutRailInset@43905": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
