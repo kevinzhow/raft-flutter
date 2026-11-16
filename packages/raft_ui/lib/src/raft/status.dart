@@ -1,4 +1,4 @@
-// raft-ui 0.7.1 `Status` (dist `status`): a square presence pixel, `bg-(--status-color) rounded-[2px]
+// raft-ui 0.95.3 `Status` (dist `status`): a square presence pixel, `bg-(--status-color) rounded-[2px]
 // border-[1.5px] border-sticker-ink`. The five presence lights have fixed meanings (online green, busy yellow,
 // error orange, offline stone, external cyan); the `variant` axis paints the brand / status colours instead.
 // `RaftStatusDot` and `RaftAttentionDot` (the older call-site names) draw the same pixel.
@@ -35,7 +35,7 @@ enum RaftStatusVariant {
   /// The `--status-color` token of the variant (`[--status-color:var(--color-*)]`).
   String get token => switch (this) {
     default_ => 'presence-offline',
-    primary => 'brand-400',
+    primary => 'presence-busy',
     information => 'info',
     muted => 'palette-stone-400',
     accent => 'attention-400',
@@ -45,11 +45,11 @@ enum RaftStatusVariant {
   };
 }
 
-/// `size` axis of `status`: `size-1.5` (1px border, 1px radius), `size-2`, `size-[9px]`, `size-[11px]`.
+/// `size` axis of `status`: `size-1.5` (1px border, 1px radius), `size-2`, `size-2.5` (10px, the default), `size-[11px]`.
 enum RaftStatusSize {
   xs(6, 1, 1),
   sm(8, 2, 1.5),
-  md(9, 2, 1.5),
+  md(10, 2, 1.5),
   lg(11, 2, 1.5);
 
   const RaftStatusSize(this.px, this.radius, this.border);
@@ -114,7 +114,7 @@ enum RaftStatusDotSize {
   /// `size-2`
   sm(RaftStatusSize.sm),
 
-  /// `size-[9px]` (the pixel's default; was `size-2.5`)
+  /// `size-2.5` (10px, the pixel's default)
   md(RaftStatusSize.md),
 
   /// `size-[11px]`

@@ -65,7 +65,7 @@ void main() {
               .first,
         );
         final decoration = box.decoration as BoxDecoration;
-        expect(decoration.borderRadius, BorderRadius.circular(4));
+        expect(decoration.borderRadius, BorderRadius.circular(8));
         expect(decoration.shape, BoxShape.rectangle);
         return decoration.color!;
       }

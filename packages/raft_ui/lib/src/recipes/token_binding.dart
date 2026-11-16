@@ -77,8 +77,18 @@ class RaftRecipeTokens extends RaftThemeRecipeTokens {
       'fieldFontWeight' => m.fieldFontWeight,
       'fieldLineHeight' => m.fieldLineHeight,
       'cardTitleFontSize' => m.cardTitleFontSize,
-      'cardTitleFontWeight' => m.cardTitleFontWeight,
-      'cardTitleLineHeight' => m.cardTitleLineHeight,
+      // raft-ui 0.95.3 foundation.css: `--card-title-*` is 16 / 600 / 24 (14 / 22 on desktop); the theme metric
+      // keeps the 0.7.1 500 / 22 that the frozen looks and the field scale are pinned to.
+      'cardTitleFontWeight' =>
+        tokens.recipeSet == RaftRecipeSet.raft
+            ? RaftLight.metrics['card-title-font-weight'] ??
+                  m.cardTitleFontWeight
+            : m.cardTitleFontWeight,
+      'cardTitleLineHeight' =>
+        tokens.recipeSet == RaftRecipeSet.raft && !tokens.desktop
+            ? RaftLight.metrics['card-title-line-height'] ??
+                  m.cardTitleLineHeight
+            : m.cardTitleLineHeight,
       _ =>
         super.number(name) ??
             (tokens.recipeSet == RaftRecipeSet.raft

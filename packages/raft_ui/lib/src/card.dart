@@ -8,6 +8,7 @@ import 'hover_region.dart';
 
 import 'package:flutter/material.dart';
 
+import 'card_parts.dart' show RaftCardScope;
 import 'dialog_card.dart' show raftRecipeThemeOf;
 import 'design_primitives.dart' show RaftInteractive;
 import 'raft/ui_tokens.dart';
@@ -115,11 +116,14 @@ class _RaftCardState extends State<RaftCard> {
           : EdgeInsets.zero);
 
   @override
-  Widget build(BuildContext context) => widget._item
-      ? _buildItem(context)
-      : widget.variant == RaftCardRecipeVariant.option
-      ? _buildOption(context)
-      : _buildPlain(context);
+  Widget build(BuildContext context) => RaftCardScope(
+    variant: widget.variant,
+    child: widget._item
+        ? _buildItem(context)
+        : widget.variant == RaftCardRecipeVariant.option
+        ? _buildOption(context)
+        : _buildPlain(context),
+  );
 
   Widget _buildPlain(BuildContext context) {
     final t = RaftTokens.of(context);

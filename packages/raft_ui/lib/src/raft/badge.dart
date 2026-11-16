@@ -1,14 +1,16 @@
-// raft-ui 0.7.1 `Badge` (dist `badge`): three appearances.
+// raft-ui 0.95.3 `Badge` (dist `badge`): three appearances.
 //   solid    a 20px sticker (ink inset ring, die-cut outer ring) for the unread count and the @ marker;
-//   soft     a 22px chip on the `*-soft` fill, semibold text (agent state chips hold a Status here);
-//   outline  a 22px mono chip with a hairline inset ring.
+//   soft     a 22px chip (20px sticker with a mouse from 768) on the `*-soft` fill, semibold text (agent state chips hold a Status here);
+//   outline  a 22px mono chip (same desktop rule) with a hairline inset ring.
 // Hover lays the pressed overlay over the resting fill; a disabled badge reads `fill-muted`.
 import 'package:flutter/material.dart';
 
 import '../control_typography.dart';
 import '../design_primitives.dart';
 import '../icons.dart';
+import '../recipe_surface.dart';
 import '../recipes/badge.g.dart';
+import '../recipes/recipe_runtime.dart';
 import '../text_scaling.dart' show RaftChrome;
 import '../theme.dart';
 import '../tokens/tokens.dart';
@@ -113,6 +115,17 @@ class RaftBadgeColors {
   }
 }
 
+/// The two `variant` arms of raft-ui 0.95.3 that the frozen looks' variant enum does not have: `you` (what is
+/// addressed to you, `bg-you` when solid) and `busy` (the Working chip: `bg-presence-busy` solid,
+/// `bg-presence-busy-soft` soft). Their fills are read from the Raft badge recipe.
+enum RaftBadgeStateVariant {
+  you,
+  busy;
+
+  /// Variant value as written in the raft-ui source.
+  String get css => name;
+}
+
 /// raft-ui `Badge`. A count or an @ marker is a solid badge ([label] or [glyph]); [leading] sits before the
 /// label with a 4px gap (a [RaftStatus] in an agent state chip).
 class RaftBadge extends StatelessWidget {
@@ -133,7 +146,12 @@ class RaftBadge extends StatelessWidget {
     this.semanticLabel,
     this.fill,
     this.wrap = false,
+    this.stateVariant,
   });
+
+  /// The `you` / `busy` arm; replaces [variant] in the Raft look (the frozen looks have neither and keep
+  /// [variant]).
+  final RaftBadgeStateVariant? stateVariant;
 
   final String label;
   final RaftBadgeRecipeAppearance appearance;
@@ -188,13 +206,41 @@ class RaftBadge extends StatelessWidget {
     final ui = t.ui;
     final solid = appearance == RaftBadgeRecipeAppearance.solid;
     final outline = appearance == RaftBadgeRecipeAppearance.outline;
-    final colors = RaftBadgeColors.resolve(
+    var colors = RaftBadgeColors.resolve(
       ui,
       appearance,
       variant,
       hovered: hovered,
       disabled: disabled,
     );
+    // Height and corner radius come from the recipe (`md:pointer-fine:h-5 md:pointer-fine:rounded-sticker` on
+    // soft and outline, `h-5 rounded-sticker` solid, `h-[22px] rounded-chip` otherwise); so do the `you` /
+    // `busy` fills. The frozen looks keep their literals.
+    final raftLook = t.isRaftLook;
+    final RaftSlotStyle? recipe = raftLook
+        ? RaftBadgeRecipe.resolveProps(
+            {
+              'appearance': appearance.css,
+              'variant': stateVariant?.css ?? variant.css,
+            },
+            states: t.recipeStates(responsive: true),
+            tokens: t.recipeTokens,
+          )['root']
+        : null;
+    if (recipe != null && stateVariant != null && !outline && !disabled) {
+      final wash = recipe.backgroundColor?.resolve(t.recipeTokens);
+      final base = wash == null
+          ? const Color(0x00000000)
+          : (wash.a < 1 ? raftChromeBlend(wash, ui.layerCanvas) : wash);
+      colors = RaftBadgeColors(
+        fill: hovered && wash != null
+            ? Color.alphaBlend(solid ? ui.stickerPressed : ui.fillPressed, base)
+            : base,
+        foreground: colors.foreground,
+        ink: colors.ink,
+        edge: colors.edge,
+      );
+    }
     final fill = this.fill != null && !disabled && !solid && !outline
         ? this.fill!
         : colors.fill;
@@ -269,6 +315,7 @@ class RaftBadge extends StatelessWidget {
     final box = RaftCssBox(
       radius:
           radius ??
+          recipe?.borderRadius?.topLeft.x ??
           (solid
               ? t.size('radius.sticker', fallback: 4)
               : t.size('radius.chip', fallback: 6)),
@@ -285,7 +332,7 @@ class RaftBadge extends StatelessWidget {
         child: ConstrainedBox(
           constraints: BoxConstraints(
             minWidth: solid ? 8 : 0,
-            minHeight: solid ? 20 : 22,
+            minHeight: recipe?.height ?? (solid ? 20 : 22),
           ),
           child: Center(widthFactor: 1, heightFactor: 1, child: row),
         ),

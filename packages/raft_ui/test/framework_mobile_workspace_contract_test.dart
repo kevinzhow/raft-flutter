@@ -57,7 +57,7 @@ void main() {
               matching: find.byType(RaftControl),
             );
             expect(t.widget<RaftControl>(control).visualHeight, 36);
-            expect(t.getSize(find.byType(RaftAttentionDot)), const Size(9, 9));
+            expect(t.getSize(find.byType(RaftAttentionDot)), const Size(10, 10));
             final label = t.widget<Text>(find.text('Visual Server'));
             expect(label.style!.fontSize, 17);
             expect(label.style!.height, 22 / 17);
@@ -75,7 +75,7 @@ void main() {
               // to .01px. Keep that precision allowance separate from pixels.
               expect(t.getRect(selector).width, closeTo(129.55, .02));
               final dot = t.getRect(find.byType(RaftAttentionDot));
-              expect(dot.left, closeTo(140.55, .02));
+              expect(dot.left, closeTo(139.55, .02));
               expect(dot.top, 1.5);
             }
             await t.sendKeyEvent(LogicalKeyboardKey.tab);

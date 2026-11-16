@@ -3,7 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_ui/test_themes.dart';
 
-// raft-ui 0.7.1 `Status`: a square presence pixel (size-1.5 / 2 / 9px / 11px, 2px radius, 1.5px ink border), the
+// raft-ui 0.7.1 `Status`: a square presence pixel (size-1.5 / 2 / 10px / 11px, 2px radius, 1.5px ink border), the
 // five presence lights per mode, the variant colours, and RaftStatusDot / RaftAttentionDot as the same pixel.
 Widget _app(bool dark, Widget child) => MaterialApp(
   theme: raftTheme(dark: dark),
@@ -26,7 +26,7 @@ void main() {
       for (final (size, px, radius) in [
         (RaftStatusSize.xs, 6.0, 1.0),
         (RaftStatusSize.sm, 8.0, 2.0),
-        (RaftStatusSize.md, 9.0, 2.0),
+        (RaftStatusSize.md, 10.0, 2.0),
         (RaftStatusSize.lg, 11.0, 2.0),
       ]) {
         await tester.pumpWidget(_app(dark, RaftStatus(size: size)));
@@ -37,7 +37,7 @@ void main() {
       }
       // The default is the md pixel in the offline light.
       await tester.pumpWidget(_app(dark, const RaftStatus()));
-      expect(tester.getSize(find.byType(RaftStatus)), const Size.square(9));
+      expect(tester.getSize(find.byType(RaftStatus)), const Size.square(10));
       expect(_box(tester).fill, ui.presence('offline'));
     });
 
@@ -55,7 +55,7 @@ void main() {
       tester,
     ) async {
       final expected = {
-        RaftStatusVariant.primary: ui['brand-400'],
+        RaftStatusVariant.primary: ui['presence-busy'],
         RaftStatusVariant.accent: ui['attention-400'],
         RaftStatusVariant.information: ui['info'],
         RaftStatusVariant.success: ui['success'],
@@ -107,7 +107,7 @@ void main() {
       );
       expect(tester.getSize(find.byType(RaftBadge)).height, 22);
       expect(find.byType(RaftStatus), findsOneWidget);
-      // 6px padding, the 9px pixel, a 4px gap, then the label.
+      // 6px padding, the 10px pixel, a 4px gap, then the label.
       expect(
         tester.getTopLeft(find.byType(RaftStatus)).dx -
             tester.getTopLeft(find.byType(RaftBadge)).dx,
@@ -128,7 +128,7 @@ void main() {
         );
         expect(
           tester.getSize(find.byType(RaftStatusDot)),
-          const Size.square(9),
+          const Size.square(10),
         );
         expect(_box(tester).fill, ui.presence('busy'));
         expect(_box(tester).radius, 2);
@@ -158,7 +158,7 @@ void main() {
         expect(_box(tester).fill, ui['attention-400']);
         expect(
           tester.getSize(find.byType(RaftAttentionDot)),
-          const Size.square(9),
+          const Size.square(10),
         );
         await tester.pumpWidget(
           _app(dark, const RaftAttentionDot(compact: true)),

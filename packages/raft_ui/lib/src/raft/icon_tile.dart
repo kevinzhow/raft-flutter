@@ -1,5 +1,5 @@
-// raft-ui 0.7.1 `IconTile` (dist `iconTile`): a flat square holding a Lucide glyph, sized like an avatar
-// (19 / 27 / 35 / 51). `rounded-sticker`, no border. Decorative unless it carries a [semanticLabel]
+// raft-ui 0.95.3 `IconTile` (dist `icon-tile`): a flat square holding a Lucide glyph, sized like an avatar
+// (19 / 27 / 35 / 51). Radius by size (sticker / chip / control / container), no border. Decorative unless it carries a [semanticLabel]
 // (`role="img"` + `aria-label`).
 import 'package:flutter/material.dart';
 
@@ -59,10 +59,21 @@ class RaftIconTile extends StatelessWidget {
         ui.foreground,
       ),
     };
+    final t = RaftTokens.of(context);
+    // `rounded-sticker` for xs, `rounded-chip` sm, `rounded-control` md, `rounded-container` lg (raft-ui
+    // 0.95.3 icon-tile). The frozen looks keep the 4px they always drew.
+    final radius = !t.isRaftLook
+        ? 4.0
+        : switch (size) {
+            RaftIconTileSize.xs => t.size('radius.sticker', fallback: 4),
+            RaftIconTileSize.sm => t.size('radius.chip', fallback: 6),
+            RaftIconTileSize.md => t.size('radius.control', fallback: 8),
+            RaftIconTileSize.lg => t.size('radius.container', fallback: 10),
+          };
     final tile = DecoratedBox(
       decoration: BoxDecoration(
         color: fill,
-        borderRadius: BorderRadius.circular(4),
+        borderRadius: BorderRadius.circular(radius),
       ),
       child: SizedBox.square(
         dimension: size.extent,

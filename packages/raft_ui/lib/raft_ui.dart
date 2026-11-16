@@ -370,3 +370,4 @@ export 'src/recipes/spinner.g.dart' show RaftSpinnerRecipeSize;
 
 export 'src/window_chrome.dart';
 export 'src/raft/list_row_action.dart';
+export 'src/card_parts.dart' hide RaftCardScope;
