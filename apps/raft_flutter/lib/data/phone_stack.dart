@@ -134,17 +134,25 @@ List<RaftLocation> phoneStackFor(
   final base = levels.last;
   final stack = <RaftLocation>[];
   final isRoot = WorkspaceNavigation.rootTabOf(base, tabs) != null;
-  final from = isRoot || (list ?? source)?.uri == base.uri
+  final candidate = isRoot || (list ?? source)?.uri == base.uri
       ? null
       : list ?? source;
+  // A page the reader came back from (a Settings page above the Settings
+  // list, an agent above Members) is not under the one now shown.
+  final from = candidate != null && _standsOn(candidate, base)
+      ? null
+      : candidate;
   if (isRoot) {
     stack.add(base);
-  } else if (from != null &&
-      WorkspaceNavigation.rootTabOf(from, tabs) != null) {
+  } else if (from != null) {
+    // A root the reader came from is the only page under; any other page
+    // brings the pages it stands on.
+    if (WorkspaceNavigation.rootTabOf(from, tabs) == null) {
+      stack.addAll(_pagesUnder(from, tabs));
+    }
     stack.add(from);
   } else {
-    stack.add(WorkspaceNavigation.tabHomeOf(base, tabs));
-    if (from != null) stack.add(from);
+    stack.addAll(_pagesUnder(base, tabs));
   }
   // A thread opened straight from a list (Activity thread row) has no
   // conversation page under it: Back returns to the list.
@@ -163,6 +171,34 @@ List<RaftLocation> phoneStackFor(
   return stack.length > phonePageLimit
       ? stack.sublist(stack.length - phonePageLimit)
       : stack;
+}
+
+/// Whether [page] is [base] or one of the pages above it.
+bool _standsOn(RaftLocation page, RaftLocation base) {
+  for (
+    RaftLocation? up = page;
+    up != null;
+    up = WorkspaceNavigation.parentPageOf(up)
+  ) {
+    if (up.uri == base.uri) return true;
+  }
+  return false;
+}
+
+/// The pages a non-root [page] stands on, root first: its parent pages (agent
+/// -> Members, settings page -> Settings), then the root tab. A pushed page
+/// (Members, Computers, Settings) and any other page with no parent stand on
+/// Home.
+List<RaftLocation> _pagesUnder(RaftLocation page, Set<String> tabs) {
+  final parent = WorkspaceNavigation.parentPageOf(page);
+  if (parent != null) {
+    return [
+      if (WorkspaceNavigation.rootTabOf(parent, tabs) == null)
+        ..._pagesUnder(parent, tabs),
+      parent,
+    ];
+  }
+  return [WorkspaceNavigation.tabHomeOf(page, tabs)];
 }
 
 /// The non-hierarchical Back destination: the page observed immediately before

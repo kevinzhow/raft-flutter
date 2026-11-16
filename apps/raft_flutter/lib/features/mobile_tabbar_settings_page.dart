@@ -24,30 +24,28 @@ class MobileTabbarSettingsPage extends StatelessWidget {
       glyph: RaftGlyph.home,
     ),
     RaftMobileTabOption(
-      id: MobileTabs.tasks,
-      label: 'Tasks',
-      glyph: RaftGlyph.checkSquare,
-    ),
-    RaftMobileTabOption(
-      id: MobileTabs.members,
-      label: 'Members',
-      glyph: RaftGlyph.users,
-    ),
-    RaftMobileTabOption(
-      id: MobileTabs.computers,
-      label: 'Computers',
-      glyph: RaftGlyph.monitor,
-    ),
-    RaftMobileTabOption(
       id: MobileTabs.activity,
       label: 'Activity',
       glyph: RaftGlyph.activity,
     ),
+    RaftMobileTabOption(
+      id: MobileTabs.tasks,
+      label: 'Tasks',
+      glyph: RaftGlyph.listTodo,
+    ),
+    RaftMobileTabOption(
+      id: MobileTabs.search,
+      label: 'Search',
+      glyph: RaftGlyph.search,
+    ),
   ];
+
+  /// The bar's last cell, the server tab: always shown, last, not
+  /// configurable (it was Settings before Web v1.24).
   static const settingsTab = RaftMobileTabOption(
     id: MobileTabs.settings,
-    label: 'Settings',
-    glyph: RaftGlyph.settings,
+    label: 'Server',
+    glyph: RaftGlyph.server,
   );
 
   @override

@@ -7,6 +7,7 @@ import 'close_registry_panels.dart';
 import 'close_registry_popups.dart';
 import 'close_registry_rack_popovers.dart';
 import 'close_registry_raftbench.dart';
+import 'close_registry_server_tab.dart';
 import 'close_registry_task_slot.dart';
 import 'close_registry_viewers.dart';
 import 'close_surface.dart';
@@ -21,6 +22,7 @@ List<CloseSurface> get allCloseSurfaces => [
   ...popupSurfaces,
   ...rackPopoverSurfaces,
   ...raftbenchSurfaces,
+  ...serverTabSurfaces,
   ...taskSlotSurfaces,
   ...viewerSurfaces,
   ...artifactSurfaces,

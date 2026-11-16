@@ -7,6 +7,7 @@ import 'package:raft_flutter/data/raft_location.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import 'app_global_server_selector_test.dart' show RootFixture;
+import 'support/server_tab.dart';
 
 // Mounted ports of Source MobileTabBar / useMobileNav.selectTab on the actual
 // RaftApp at a phone viewport. Taps go through the visible tab bar controls.
@@ -53,9 +54,11 @@ void main() {
         await settleRoute(t);
         expect(w.location.toString(), '/s/alpha');
 
-        // Settings sub-page: Appearance hides the tab bar.
-        await tapTab('settings');
+        // Settings is pushed from the server tab (v1.24): no bar; Appearance
+        // is one more page above it.
+        await openServerPage(t, 'settings', flush: f.flush);
         expect(w.location.toString(), '/s/alpha/settings');
+        expect(find.byKey(tabBar), findsNothing);
         await t.tap(
           find.byKey(const ValueKey('workspace-settings-nav-appearance')),
         );
@@ -67,6 +70,10 @@ void main() {
         await f.flush(t);
         await settleRoute(t);
         expect(w.location.toString(), '/s/alpha/settings');
+        await t.tap(find.byKey(const Key('server-page-mobile-back')));
+        await f.flush(t);
+        await settleRoute(t);
+        expect(w.location.toString(), '/s/alpha');
 
         // Inactive Tasks tab: PUSH to its root.
         var index = w.navigation.index;
@@ -84,16 +91,17 @@ void main() {
         expect(find.byType(RaftChannelHeader), findsNothing);
         expect(find.byKey(tabBar), findsOneWidget);
 
-        // Active Home tab: still the root, and still a new history entry.
+        // Active Home tab (v1.24, reverses v1.21 T18): no navigation, no new
+        // history entry.
         index = w.navigation.index;
         await tapTab('home');
         expect(w.location.toString(), '/s/alpha');
-        expect(w.navigation.index, index + 1);
+        expect(w.navigation.index, index);
         expect(find.byKey(const Key('workspace-mobile-home')), findsOneWidget);
 
-        // Inactive Settings tab lands on the Settings list, not Appearance.
+        // Settings from the server tab lands on the Settings list.
         index = w.navigation.index;
-        await tapTab('settings');
+        await openServerPage(t, 'settings', flush: f.flush);
         expect(w.location.toString(), '/s/alpha/settings');
         expect(w.location.settingsPath, isEmpty);
         expect(w.navigation.index, index + 1);
@@ -102,7 +110,11 @@ void main() {
           findsOneWidget,
         );
         expect(find.byKey(const Key('mobile-settings-back')), findsNothing);
-        expect(find.byKey(tabBar), findsOneWidget);
+        expect(find.byKey(tabBar), findsNothing);
+        expect(await t.binding.handlePopRoute(), isTrue);
+        await f.flush(t);
+        await settleRoute(t);
+        expect(w.location.toString(), '/s/alpha');
 
         // OWNER DECISION 2026-10-11 (intended difference from Web): at a
         // mobile tab root system Back is handed to the system (Android moves
@@ -111,7 +123,7 @@ void main() {
         final rootIndex = w.navigation.index;
         expect(await t.binding.handlePopRoute(), isFalse);
         await f.flush(t);
-        expect(w.location.toString(), '/s/alpha/settings');
+        expect(w.location.toString(), '/s/alpha');
         expect(w.navigation.index, rootIndex);
         await f.close(t);
       },
@@ -119,8 +131,9 @@ void main() {
   }
 
   for (final theme in ['light']) {
-    // MainLayout.tsx:227–330 [S34]: the bar shows only on the four tab roots;
-    // channel/DM, member details/graph, Search, Activity, Saved, Computers,
+    // MainLayout.tsx MobileTabBar (v1.24): the bar shows only on the four tab
+    // roots (Home, Activity, Tasks, Search); channel/DM, member details/graph,
+    // Members, Settings, Saved, Computers,
     // computer detail, settings sub-pages, release notes, an open thread and an
     // open Search/Activity content slot all hide it; guests have no Members.
     for (final guest in [false, true]) {
@@ -161,8 +174,8 @@ void main() {
           final roots = {
             '/s/alpha': 'chat',
             '/s/alpha/tasks': 'tasks',
-            if (!guest) '/s/alpha/members': 'members',
-            '/s/alpha/settings': 'settings',
+            '/s/alpha/activity': 'activity',
+            '/s/alpha/search': 'search',
           };
           for (final MapEntry(key: path, value: tab) in roots.entries) {
             await visit(path);
@@ -174,23 +187,18 @@ void main() {
             );
             expect(find.byKey(const Key('mobile-tab-home')), findsOneWidget);
             expect(find.byKey(const Key('mobile-tab-tasks')), findsOneWidget);
-            expect(
-              find.byKey(const Key('mobile-tab-members')),
-              guest ? findsNothing : findsOneWidget,
-              reason: path,
-            );
-            expect(
-              find.byKey(const Key('mobile-tab-settings')),
-              findsOneWidget,
-            );
+            expect(find.byKey(const Key('mobile-tab-server')), findsOneWidget);
+            expect(find.byKey(const Key('mobile-tab-members')), findsNothing);
+            expect(find.byKey(const Key('mobile-tab-settings')), findsNothing);
           }
           for (final path in [
             '/s/alpha/channel/ca',
             '/s/alpha/dm/dm-peer',
-            '/s/alpha/search',
             '/s/alpha/search?q=needle&open=channel:ca&msg=ma',
-            '/s/alpha/activity',
             '/s/alpha/activity?open=channel:ca&msg=ma',
+            // Pushed from the server tab (v1.24), not tab roots.
+            '/s/alpha/settings',
+            if (!guest) '/s/alpha/members',
             '/s/alpha/saved',
             if (!guest) ...[
               '/s/alpha/agent/agent-1',

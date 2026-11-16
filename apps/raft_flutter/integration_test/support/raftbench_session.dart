@@ -1,5 +1,7 @@
 // Shared by the RaftBench integration tests: sign in to the local test stack
 // through the real login screen, open Settings > RaftBench, capture the app.
+import 'server_tab.dart';
+
 import 'dart:convert';
 import 'dart:io';
 import 'dart:ui' as ui;
@@ -153,11 +155,13 @@ Future<void> openSettingsTab(WidgetTester t, String tab) async {
     }
   }
   if (row.evaluate().isEmpty) {
-    final entry = phone(t)
-        ? find.byKey(const Key('mobile-tab-settings'))
-        : find.byKey(const ValueKey('rail-settings'));
-    await t.tap(entry);
-    await t.pumpAndSettle();
+    if (phone(t)) {
+      // v1.24: Settings is pushed from the server tab.
+      await openServerPage(t, 'settings');
+    } else {
+      await t.tap(find.byKey(const ValueKey('rail-settings')));
+      await t.pumpAndSettle();
+    }
   }
   await until(
     t,

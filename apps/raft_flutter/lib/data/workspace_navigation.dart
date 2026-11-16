@@ -407,32 +407,45 @@ class WorkspaceNavigation {
 
   String get section => sectionFor(location);
 
-  /// Tabs the mobile bottom bar shows besides the always-root Home, Tasks,
-  /// Members and Settings. A location of a tab listed here is a tab root;
-  /// otherwise Computers is a Settings sub-page and Activity a pushed page.
+  /// The tabs besides the always-root Home and Tasks: the bottom bar's
+  /// Activity and Search (Web v1.24), or with the left rail the destinations it
+  /// lists (Activity, Members, Computers, Settings). A location of a tab
+  /// listed here is a tab root; otherwise it is a pushed page with Back.
   Set<String> mobileTabs = const {};
 
   String? get mobileRootTab => mobileRootTabOf(location);
 
-  /// The semantic root a cold detail returns to: its own tab root when the
-  /// bar has one for it, otherwise the route's usual tab.
+  /// The page a cold detail returns to: its parent page when it has one
+  /// (agent -> Members, computer -> Computers, settings page -> Settings),
+  /// otherwise Home or the route's usual tab.
   RaftLocation mobileTabHome(RaftLocation location) =>
       tabHomeOf(location, mobileTabs);
 
-  static RaftLocation tabHomeOf(RaftLocation location, Set<String> tabs) {
-    final tab = switch (location.route) {
-      RaftRoute.computers || RaftRoute.computer => 'computers',
-      RaftRoute.activity => 'activity',
+  /// The page one level above [location] in its own family, or null.
+  static RaftLocation? parentPageOf(RaftLocation location) {
+    RaftLocation page(RaftRoute route) =>
+        RaftLocation.at(serverSlug: location.serverSlug, route: route);
+    return switch (location.route) {
+      RaftRoute.agent || RaftRoute.human => page(RaftRoute.members),
+      RaftRoute.computer => page(RaftRoute.computers),
+      RaftRoute.settings when location.settingsPath.isNotEmpty => page(
+        RaftRoute.settings,
+      ),
+      RaftRoute.releaseNotes => page(RaftRoute.settings),
       _ => null,
     };
-    return tab == null || !tabs.contains(tab)
-        ? location.tabHome()
-        : RaftLocation.at(
-            serverSlug: location.serverSlug,
-            route: tab == 'computers'
-                ? RaftRoute.computers
-                : RaftRoute.activity,
-          );
+  }
+
+  static RaftLocation tabHomeOf(RaftLocation location, Set<String> tabs) {
+    final parent = parentPageOf(location);
+    if (parent != null) return parent;
+    return switch (location.route) {
+      // Members, Computers and Settings are pushed pages (Web v1.24 server
+      // tab): without a page they were opened from, Back is Home.
+      RaftRoute.members || RaftRoute.computers || RaftRoute.settings =>
+        RaftLocation.at(serverSlug: location.serverSlug, route: RaftRoute.home),
+      _ => location.tabHome(),
+    };
   }
 
   String? mobileRootTabOf(RaftLocation location) =>
@@ -447,10 +460,13 @@ class WorkspaceNavigation {
     return switch (location.route) {
       RaftRoute.home => 'chat',
       RaftRoute.tasks => 'tasks',
-      RaftRoute.members => 'members',
+      RaftRoute.members when tabs.contains('members') => 'members',
       RaftRoute.computers when tabs.contains('computers') => 'computers',
       RaftRoute.activity when tabs.contains('activity') => 'activity',
-      RaftRoute.settings when location.settingsPath.isEmpty => 'settings',
+      RaftRoute.search when tabs.contains('search') => 'search',
+      RaftRoute.settings
+          when tabs.contains('settings') && location.settingsPath.isEmpty =>
+        'settings',
       _ => null,
     };
   }

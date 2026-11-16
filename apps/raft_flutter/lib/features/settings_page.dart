@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import '../data/navigation_registry.dart';
+import 'pushed_server_page.dart';
 
 /// SettingsPanel / Sidebar(mobileInline) SettingsSidebarList composition.
 /// Account transport and platform notification ownership are supplied by the
@@ -191,7 +192,11 @@ class _RaftSettingsPageState extends State<RaftSettingsPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const RaftMobileRootHeader(title: 'Settings'),
+                RaftMobileRootHeader(
+                  title: 'Settings',
+                  onBack: widget.onBack,
+                  backKey: pushedServerPageBackKey,
+                ),
                 Expanded(child: list(null)),
               ],
             ),

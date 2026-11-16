@@ -134,8 +134,19 @@ void main() {
       ]) {
         expect(navigation(path).mobileRootTab, isNull, reason: path);
       }
-      expect(navigation('/s/demo/settings').mobileRootTab, 'settings');
-      expect(navigation('/s/demo/members').mobileRootTab, 'members');
+      // v1.24: pushed from the server tab, roots only beside the rail.
+      expect(navigation('/s/demo/settings').mobileRootTab, isNull);
+      expect(navigation('/s/demo/members').mobileRootTab, isNull);
+      expect(
+        (navigation(
+          '/s/demo/settings',
+        )..mobileTabs = {'settings'}).mobileRootTab,
+        'settings',
+      );
+      expect(
+        (navigation('/s/demo/members')..mobileTabs = {'members'}).mobileRootTab,
+        'members',
+      );
     },
   );
 }

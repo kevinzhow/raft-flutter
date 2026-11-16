@@ -438,11 +438,14 @@ void main() {
 
       Future<void> openActivity() async {
         if (form == 'mobile') {
-          if (find.byKey(const ValueKey('nav-activity')).evaluate().isEmpty) {
+          if (find
+              .byKey(const ValueKey('mobile-tab-activity'))
+              .evaluate()
+              .isEmpty) {
             await t.tap(find.byTooltip('Back').first);
             await t.pump();
           }
-          await t.tap(find.byKey(const ValueKey('nav-activity')));
+          await t.tap(find.byKey(const ValueKey('mobile-tab-activity')));
         } else {
           await t.tap(find.byKey(const ValueKey('rail-activity')));
         }
@@ -510,7 +513,7 @@ void main() {
         if (form == 'mobile') {
           await t.tap(find.byTooltip('Back').first);
           await t.pump();
-          await t.tap(find.byKey(const ValueKey('nav-activity')));
+          await t.tap(find.byKey(const ValueKey('mobile-tab-activity')));
         } else {
           await t.tap(find.byKey(const ValueKey('rail-activity')));
         }

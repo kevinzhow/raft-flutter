@@ -111,8 +111,7 @@ void main() {
     await f.mount(t, 'light', 390, uri: Uri.parse('/s/alpha/tasks'));
     await settle(t);
     expect(find.byType(ResourceView), findsOneWidget);
-    await t.tap(find.byKey(const Key('mobile-tab-settings')));
-    await f.flush(t);
+    await openServerPage(t, 'settings', flush: f.flush);
     await settle(t);
     expect(
       find.descendant(

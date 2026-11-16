@@ -77,7 +77,7 @@ void main() {
             );
             Future<void> openActivity() async {
               if (mobile) {
-                await tester.tap(find.byKey(const Key('nav-activity')));
+                await tester.tap(find.byKey(const Key('mobile-tab-activity')));
               } else {
                 await tester.tap(find.byKey(const ValueKey('rail-activity')));
               }

@@ -106,19 +106,20 @@ void main() {
         expect(w.navigation.entries, hasLength(1));
         expect(w.navigation.index, 0);
 
-        expect(await t.binding.handlePopRoute(), isTrue);
+        // Search is a tab root (Web v1.24): Back there is handed to the
+        // system like at every other root; nothing moves, no loop.
+        expect(await t.binding.handlePopRoute(), isFalse);
         await f.flush(t);
         await finishBackTransition(t);
-        expect(exits, isEmpty);
-        expect(w.location.toString(), '/s/alpha');
-        expect(find.byKey(const Key('workspace-mobile-home')), findsOneWidget);
+        expect(w.location.route, RaftRoute.search);
+        expect(w.navigation.index, root + 1);
         expect(
           find.byKey(const Key('workspace-mobile-navigation')),
           findsOneWidget,
         );
-        expect(find.byType(RaftChannelHeader), findsNothing);
-        expect(w.navigation.entries, hasLength(1));
-        expect(w.navigation.index, 0);
+        // The forward branch is still Search → channel, untouched.
+        expect(w.navigation.entries[root + 1].route, RaftRoute.search);
+        expect(w.navigation.entries[root + 2].route, RaftRoute.channel);
         await f.close(t);
       },
     );
@@ -129,7 +130,7 @@ void main() {
     // typed query (REPLACE) → result channel (PUSH); Back twice returns to the
     // exact search query and then Home, never looping back into the channel.
     testWidgets(
-      '[N12] actual RaftApp $theme Home → Search query → result channel: Back returns to the query, then Home',
+      '[N12] actual RaftApp $theme Home → Search query → result channel: Back returns to the query, then the system',
       (t) async {
         final f = RootFixture();
         f.overrides['GET /messages/search'] = (o) => {
@@ -169,7 +170,7 @@ void main() {
         expect(w.location.toString(), '/s/alpha');
         final root = w.navigation.index;
 
-        await t.tap(find.byKey(const Key('nav-search')));
+        await t.tap(find.byKey(const Key('mobile-tab-search')));
         await f.flush(t);
         expect(w.location.route, RaftRoute.search);
         expect(w.navigation.index, root + 1);

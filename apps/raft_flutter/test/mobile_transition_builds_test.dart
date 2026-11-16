@@ -12,6 +12,7 @@ import 'package:raft_ui/raft_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'support/app_services_fixture.dart';
+import 'support/server_tab.dart';
 
 class _Client extends RaftClient {
   _Client()
@@ -208,12 +209,12 @@ void main() {
 
         final toMembers = await _rebuilds(
           tester,
-          () => tester.tap(find.byKey(const Key('mobile-tab-members'))),
+          () => openServerPage(tester, 'members'),
         );
         expect(
           toMembers['ConversationPanel'] ?? 0,
           0,
-          reason: 'a tab switch does not mount an unrelated chat page',
+          reason: 'opening Members does not mount an unrelated chat page',
         );
         expect(toMembers['RaftChatView'] ?? 0, 0);
         final notified = await _rebuilds(tester, () async => w.setError(null));
@@ -238,7 +239,9 @@ void main() {
         // workspace notification rebuilds the visible detail.
         final inDetail = await _rebuilds(tester, () async => w.setError(null));
         expect(inDetail['DesktopDirectoryView'] ?? 0, 0);
-        expect(inDetail['RaftNavItem'] ?? 0, 0);
+        // v1.24: Home stays mounted under the pushed Members page; its Saved
+        // row listens to the workspace itself. No directory row rebuilds.
+        expect(inDetail['RaftNavItem'] ?? 0, lessThanOrEqualTo(1));
         expect(inDetail['RaftChatView'] ?? 0, 0);
 
         // Going back shows the directory again, built from the current widget.
@@ -414,7 +417,7 @@ void main() {
       expect(top('c'), lessThan(top('d')));
       // The memoized activity scan must be invalidated by new messages even
       // across navigation, which re-projects the sidebar without other changes.
-      await tester.tap(find.byKey(const Key('mobile-tab-members')));
+      await tester.tap(find.byKey(const Key('mobile-tab-tasks')));
       await settle();
       c.stream.add(
         RaftEvent('message:new', message('m-d2', 'd', '2026-10-08T02:00:00Z')),

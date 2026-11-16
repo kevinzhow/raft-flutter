@@ -3256,7 +3256,8 @@ class _ResourceViewState extends State<ResourceView> {
             title: raftText(context, 'Search'),
             background: plain ? t.canvas : null,
             titleSlot: row,
-            onBack: widget.onBack ?? () {},
+            // Search is a tab root (Web v1.24): no Back beside the bottom bar.
+            onBack: widget.mobileRoot ? null : widget.onBack ?? () {},
             backTooltip: raftText(context, 'Back'),
           )
         : Container(

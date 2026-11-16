@@ -111,7 +111,9 @@ class PosterLab {
       return json({'ok': true});
     }
     if (path == '/__strip') {
-      final marker = File('${(await getApplicationSupportDirectory()).path}/strip');
+      final marker = File(
+        '${(await getApplicationSupportDirectory()).path}/strip',
+      );
       request.uri.queryParameters['on'] == '1'
           ? marker.writeAsStringSync('1')
           : (marker.existsSync() ? marker.deleteSync() : null);
@@ -312,9 +314,8 @@ Future<void> main() async {
     getApplicationCacheDirectory,
   );
   unawaited(AttachmentDiskCache.installed!.warm());
-  final strip = File(
-    '${(await getApplicationSupportDirectory()).path}/strip',
-  ).existsSync();
+  final strip = File('${(await getApplicationSupportDirectory()).path}/strip')
+      .existsSync();
   final images = await LabImages.start();
   final posters = [for (var i = 0; i < 6; i++) await _png(320, 180, 20 + i)];
   final thumbs = [for (var i = 0; i < 8; i++) await _png(320, 240, 50 + i)];
@@ -434,8 +435,8 @@ Future<void> main() async {
     enabled: {
       MobileTabs.home,
       MobileTabs.tasks,
-      MobileTabs.members,
-      MobileTabs.computers,
+      MobileTabs.activity,
+      MobileTabs.search,
     },
   );
   SharedPreferences.setMockInitialValues({

@@ -831,8 +831,10 @@ void main() {
     ) async {
       await setup(tester);
       for (final (key, route) in [
-        ('nav-search', RaftRoute.search),
-        ('nav-activity', RaftRoute.activity),
+        // v1.24: Search and Activity are bottom-bar tabs (Home has no second
+        // entry for them); Saved stays a Home entry.
+        ('mobile-tab-search', RaftRoute.search),
+        ('mobile-tab-activity', RaftRoute.activity),
         ('nav-saved', RaftRoute.saved),
       ]) {
         w.setSection('home');

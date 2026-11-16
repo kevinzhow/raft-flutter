@@ -32,6 +32,8 @@ import 'integrations_views.dart';
 import 'labs_view.dart';
 import 'locale_settings_page.dart';
 import 'mobile_tabbar_settings_page.dart';
+import 'feedback_unread.dart';
+import 'pushed_server_page.dart';
 import 'management_support.dart'
     show
         cachedServerFlag,
@@ -126,15 +128,13 @@ class WorkspaceSettings extends StatefulWidget {
 }
 
 class _WorkspaceSettingsState extends State<WorkspaceSettings> {
-  /// FeedbackUnreadDot: the account's `unread_total` from
-  /// GET /product-feedback/tickets?limit=1, refreshed by the inbox.
-  late int feedbackUnread =
-      readPageSnapshot(widget.controller, _unreadKey)?['count'] as int? ?? 0;
-  static const _unreadKey = 'settings:feedback-unread';
+  late int feedbackUnread = cachedFeedbackUnread(widget.controller);
 
   void _setUnread(int count) {
     final w = widget.controller;
-    writePageSnapshot(w, _unreadKey, pageIdentity(w), {'count': count});
+    writePageSnapshot(w, feedbackUnreadSnapshotKey, pageIdentity(w), {
+      'count': count,
+    });
     if (mounted && count != feedbackUnread) {
       setState(() => feedbackUnread = count);
     }
@@ -187,19 +187,9 @@ class _WorkspaceSettingsState extends State<WorkspaceSettings> {
   }
 
   Future<void> loadFeedbackUnread() async {
-    final w = widget.controller;
-    if (w.server == null || w.client.user == null) return;
-    final identity = pageIdentity(w);
-    try {
-      final page = await w.client.get(
-        '/product-feedback/tickets',
-        query: {'limit': 1},
-      );
-      final unread = page is Map ? page['unread_total'] : null;
-      if (!mounted || identity != pageIdentity(w) || unread is! int) return;
-      _setUnread(unread < 0 ? 0 : unread);
-    } catch (_) {
-      // The dot is an accelerator; a failed read shows none.
+    final count = await fetchFeedbackUnread(widget.controller);
+    if (mounted && count != null && count != feedbackUnread) {
+      setState(() => feedbackUnread = count);
     }
   }
 
@@ -212,6 +202,8 @@ class _WorkspaceSettingsState extends State<WorkspaceSettings> {
     return RaftSettingsPage(
       initialTab: widget.initialTab,
       mobileRoot: widget.mobileRoot,
+      // Pushed from the server tab (Web v1.24): Back, no bottom bar.
+      onBack: pushedServerPageBack(context, w),
       mobileResetRevision: widget.mobileResetRevision,
       onMobileDetailChanged: widget.onMobileDetailChanged,
       onMobileLocationChanged: widget.onMobileLocationChanged,
@@ -389,13 +381,9 @@ class _WorkspaceSettingsState extends State<WorkspaceSettings> {
               scroll: false,
             ),
           // Desktop has a dedicated Computers rail mode; the Settings
-          // sub-nav lists it on mobile only (Sidebar.tsx mobileInline). A
-          // Computers tab in the bottom bar replaces this entry.
-          if (!guest &&
-              widget.mobileTabbar?.settings
-                      .effective(guest: guest, can: w.can)
-                      .contains(MobileTabs.computers) !=
-                  true)
+          // sub-nav lists it on mobile only (Sidebar.tsx mobileInline); the
+          // server tab opens it as well.
+          if (!guest)
             RaftSettingsDestination.action(
               'computers',
               'Computers',

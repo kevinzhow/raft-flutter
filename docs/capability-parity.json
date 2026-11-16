@@ -16520,12 +16520,12 @@
    "kind": "ui",
    "id": "ui:global-ui.mobile-bottom-tabs",
    "area": "global-ui",
-   "capability": "Phone bottom tab bar: Chat, Tasks, Members, Settings (Activity/Computers fold under Home/Settings)",
+   "capability": "Phone bottom tab bar (v1.24): Home, Activity, Tasks, Search and the server tab; Members, Computers and Settings are pages the server tab pushes",
    "background": false,
    "status": "covered",
-   "webEntry": "store/mobileNavStore.ts MOBILE_TAB_IDS + components/layout/MobileBottomBarStack.tsx",
+   "webEntry": "store/mobileNavStore.ts + components/layout/MainLayout.tsx MobileTabBar + components/layout/MobileServerTab.tsx",
    "gate": "",
-   "flutterEntry": "mobile_workspace_navigation.dart WorkspaceMobileTabBar (chat, tasks, members, activity, computers, settings) with configurable order/visibility in mobile_tabbar_settings_page.dart (Flutter-only 'Bottom bar' setting)",
+   "flutterEntry": "mobile_workspace_navigation.dart WorkspaceMobileTabBar (home, activity, tasks, search + the server tab of mobile_server_tab.dart) with configurable order/visibility of the four tabs in mobile_tabbar_settings_page.dart (Flutter-only 'Bottom bar' setting)",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/mobile_workspace_navigation.dart",
@@ -16534,9 +16534,13 @@
     {
      "file": "apps/raft_flutter/lib/features/mobile_tabbar_settings_page.dart",
      "needle": "class MobileTabbarSettingsPage"
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/mobile_server_tab.dart",
+     "needle": "class MobileServerTab"
     }
    ],
-   "justification": "Flutter offers a superset (configurable tabs); recorded DIFF in docs/navigation-audit.md.",
+   "justification": "Flutter keeps the device-local Bottom bar setting (order and visibility of the four tabs); recorded DIFF in docs/navigation-audit.md. The server tab's pages row shows Members, Computers and Settings; Artifacts and Apps join it with their pages (Web owners see five destinations in a 3-column grid).",
    "impact": "",
    "size": ""
   },

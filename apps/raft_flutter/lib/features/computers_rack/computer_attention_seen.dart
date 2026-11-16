@@ -138,3 +138,31 @@ bool computerAttentionDotFor(WorkspaceController w) {
     machines: directory.rows(WorkspaceEntityKind.computers),
   );
 }
+
+/// Opening Computers from the phone's server tab sees every current attention
+/// pair (the Fleet page has no rack to do it on mount).
+void markComputerAttentionSeenFor(WorkspaceController w) {
+  final directory = w.services.entityDirectory;
+  markComputerAttentionSeen(
+    userId: w.client.user?.id,
+    serverId: w.server?.id,
+    guest: w.server?.string('role') == 'guest',
+    loaded:
+        directory.state(WorkspaceEntityKind.computers).loaded &&
+        directory.settled(WorkspaceEntityKind.computers),
+    machines: directory.rows(WorkspaceEntityKind.computers),
+  );
+}
+
+/// How many of the server's computers are in an attention state, and how many
+/// there are (the dot's name: "{count} of {total} needs attention").
+({int count, int total}) computerAttentionCounts(WorkspaceController w) {
+  final machines = w.services.entityDirectory
+      .rows(WorkspaceEntityKind.computers)
+      .toList();
+  final ids = {
+    for (final pair in computerAttentionPairs(machines))
+      pair.split(_pairSeparator).first,
+  };
+  return (count: ids.length, total: machines.length);
+}

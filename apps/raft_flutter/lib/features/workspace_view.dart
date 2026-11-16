@@ -1,4 +1,5 @@
-import 'workspace_desktop_window.dart';
+import 'mobile_server_tab.dart';
+import 'server_menu_model.dart';
 import 'agent_lounge.dart' show AgentLoungeFlag;
 import 'agent_runtime_labels.dart' show runtimeDisplayNameOf;
 
@@ -461,17 +462,7 @@ class _WorkspaceViewState extends State<WorkspaceView>
         (w.server?.string('role') == 'guest' || !w.can('viewMembers'))) {
       return;
     }
-    if (tab != 'settings' && !mobileTabIds.contains(tab)) return;
-    if (![
-      'chat',
-      'tasks',
-      'members',
-      'computers',
-      'activity',
-      'settings',
-    ].contains(tab)) {
-      return;
-    }
+    if (!serverPageNames.contains(tab) && !mobileTabIds.contains(tab)) return;
     mainSelection.dismiss();
     threadSelection.dismiss();
     w.closeThread(navigate: false);
@@ -528,6 +519,7 @@ class _WorkspaceViewState extends State<WorkspaceView>
           MobileTabs.tasks,
           if (w.can('viewMembers')) MobileTabs.members,
           if (w.can('viewMachines')) MobileTabs.computers,
+          MobileTabs.settings,
         ]
       : mobileTabbar.settings.effective(
           guest: w.server?.string('role') == 'guest',
@@ -1587,7 +1579,8 @@ class _WorkspaceViewState extends State<WorkspaceView>
                   }
                   openTaskSurface(row, reload);
                 },
-                mobileRoot: !wide && rootTab == 'activity',
+                mobileRoot:
+                    !wide && (rootTab == 'activity' || rootTab == 'search'),
                 activitySidebarEnabled:
                     route == 'activity' && activityFlag.enabled,
                 compactActivitySidebar:
@@ -2872,9 +2865,7 @@ class _WorkspaceViewState extends State<WorkspaceView>
       mobile: mobile,
       topBar: topBar,
       publicPageLive: serverPublicPageLive(w),
-      attention: w.servers.any(
-        (s) => s.id != w.server?.id && (activityCountOf(s.id) ?? 0) > 0,
-      ),
+      attention: otherServerUnread(w, activityCountOf),
       headerActions: mobile
           ? [
               RaftWideHeaderAction(child: workingSummary()),
@@ -2893,53 +2884,15 @@ class _WorkspaceViewState extends State<WorkspaceView>
         w.server?.json['avatarUrl'] as String?,
       ),
       label: tr('Switch Server'),
-      rows: [
-        for (final server in w.servers)
-          RaftServerMenuRow(
-            id: server.id,
-            name: server.name,
-            slug: server.string('slug'),
-            avatarUrl: raftPublicAvatarUrl(
-              w.client.origin,
-              server.json['avatarUrl'] as String?,
-            ),
-            current: server.id == w.server?.id,
-            activityUnreadCount: activityCountOf(server.id),
-            pushMuted: serverUnread[server.id]?.pushMuted ?? false,
-            onSelected: () =>
-                unawaited(selectMenuServer(server, scope, mobile: mobile)),
-            onAuxiliary: serverWindowAction(context, w, server),
-            onOpenWindow: nativeServerWindowAction(context, w, server),
-          ),
-      ],
-      actions: [
-        if (!w.servers.any((server) => server.string('slug') == 'community'))
-          RaftMenuEntry(
-            label: tr('Join community'),
-            glyph: RaftGlyph.plus,
-            onPressed: joiningCommunityFromHelp
-                ? null
-                : () => unawaited(openCommunityFromHelp()),
-          ),
-        RaftMenuEntry(
-          label: tr('Switch or create server'),
-          glyph: RaftGlyph.plus,
-          onPressed: widget.onChooseServer == null
-              ? null
-              : () {
-                  if (mounted && scope == mobileAuthority) {
-                    widget.onChooseServer!();
-                  }
-                },
-        ),
-        if (w.can('inviteMembers'))
-          RaftServerMenuAction(
-            tone: RaftServerMenuActionTone.invite,
-            label: tr('Invite human'),
-            glyph: RaftGlyph.userPlus,
-            onPressed: () => unawaited(inviteFromServerMenu(scope)),
-          ),
-      ],
+      rows: serverMenuRows(
+        context,
+        w,
+        activityCountOf: activityCountOf,
+        serverUnread: serverUnread,
+        onSelect: (server) =>
+            unawaited(selectMenuServer(server, scope, mobile: mobile)),
+      ),
+      actions: serverMenuActionList(scope).all,
       onReorder: (from, to) => unawaited(reorderMenuServers(from, to, scope)),
     );
   }
@@ -3160,12 +3113,47 @@ class _WorkspaceViewState extends State<WorkspaceView>
       selectedId: selectedId,
       tabs: mobileTabIds,
       activityUnread: activityUnread,
-      appUpdate: appUpdate,
       // Native tab bars consume the system inset once, outside the nav recipe.
       bottomInset: 0,
       onSelected: (tab) => selectMobileTab(tab, scope),
+      onReselected: (tab) =>
+          tab == 'search' ? searchFocusRequests.value++ : null,
+      serverTab: MobileServerTab(
+        controller: w,
+        appUpdate: appUpdate,
+        otherServerUnread: otherServerUnread(w, activityCountOf),
+        rows: serverMenuRows(
+          context,
+          w,
+          activityCountOf: activityCountOf,
+          serverUnread: serverUnread,
+          onSelect: (server) =>
+              unawaited(selectMenuServer(server, scope, mobile: true)),
+        ),
+        actions: serverMenuActionList(scope),
+        onReorder: (from, to) => unawaited(reorderMenuServers(from, to, scope)),
+        onOpenPage: (page) => openServerPage(page, scope),
+      ),
     );
   }
+
+  void openServerPage(ServerPage page, String scope) {
+    if (page == ServerPage.computers) markComputerAttentionSeenFor(w);
+    selectMobileTab(page.name, scope);
+  }
+
+  ServerMenuActions serverMenuActionList(String scope) => serverMenuActions(
+    context,
+    w,
+    joiningCommunity: joiningCommunityFromHelp,
+    onJoinCommunity: () => unawaited(openCommunityFromHelp()),
+    onChoose: widget.onChooseServer == null
+        ? null
+        : () => mounted && scope == mobileAuthority
+              ? widget.onChooseServer!()
+              : null,
+    onInvite: () => unawaited(inviteFromServerMenu(scope)),
+  );
 
   Widget channelHeader({bool mobile = false}) => NativeChannelWorkingAgents(
     controller: w,
@@ -3682,7 +3670,8 @@ class _WorkspaceViewState extends State<WorkspaceView>
                         ),
                         sliver: SliverMainAxisGroup(
                           slivers: [
-                            if (mobileHome)
+                            if (mobileHome &&
+                                !mobileTabIds.contains(MobileTabs.search))
                               SliverToBoxAdapter(
                                 child: RaftNavItem(
                                   key: const Key('nav-search'),

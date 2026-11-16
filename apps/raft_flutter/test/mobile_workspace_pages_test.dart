@@ -30,7 +30,7 @@ void main() {
     expect(mobilePageEntries(navigation), hasLength(2));
     navigation.navigate(navigation.location.withQuery({'task': 'one:task'}));
     expect(mobilePageEntries(navigation), hasLength(3));
-    navigation.navigate(location(RaftRoute.settings));
+    navigation.navigate(location(RaftRoute.tasks));
     expect(mobilePageEntries(navigation), hasLength(1));
     navigation.navigate(location(RaftRoute.settings, settings: ['account']));
     expect(mobilePageEntries(navigation), hasLength(2));
@@ -91,7 +91,7 @@ void main() {
       expect(navigation.location.route, RaftRoute.home);
       expect(mountCount, 2);
       expect(tester.takeException(), isNull);
-      rebuild(() => navigation.navigate(location(RaftRoute.settings)));
+      rebuild(() => navigation.navigate(location(RaftRoute.tasks)));
       await tester.pump();
       final tabContext = tester.element(find.byType(_LivePage));
       expect(ModalRoute.of(tabContext)?.animation?.value, 1);

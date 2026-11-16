@@ -12,6 +12,7 @@ import 'package:raft_flutter/platform/desktop_title_bar.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import 'app_global_server_selector_test.dart' show RootFixture;
+import 'support/server_tab.dart';
 
 enum _EntryInput { touch, mouse, keyboard }
 
@@ -26,14 +27,15 @@ final _preferences = {
 };
 
 void _assertSettingsBar(WidgetTester t, {required bool pointer}) {
-  // The covered root still paints during the platform transition, then stays
+  // Web v1.24: Settings is pushed over Home, whose bar stays under it. The
+  // covered root still paints during the platform transition, then stays
   // offstage for Back. Inspect its actual widgets in both phases.
   final bar = find.byKey(_barKey, skipOffstage: false);
   expect(bar, findsOneWidget);
-  expect(t.widget<RaftMobileNav>(bar).selectedId, 'settings');
+  expect(t.widget<RaftMobileNav>(bar).selectedId, 'chat');
   final home = find.byKey(const Key('mobile-tab-home'), skipOffstage: false);
   final settings = find.byKey(
-    const Key('mobile-tab-settings'),
+    const Key('mobile-tab-server'),
     skipOffstage: false,
   );
   bool? selected(Finder target) {
@@ -43,8 +45,8 @@ void _assertSettingsBar(WidgetTester t, {required bool pointer}) {
     throw StateError('Unexpected mobile navigation control: $control');
   }
 
-  expect(selected(home), isFalse);
-  expect(selected(settings), isTrue);
+  expect(selected(home), isTrue);
+  expect(settings, findsOneWidget);
   final homeFocus = t.widget<FocusableActionDetector>(
     find
         .descendant(
@@ -136,18 +138,21 @@ void main() {
   ]) {
     testWidgets(
       '$platform/$input/$theme entering and returning from Notifications '
-      'never selects Home on the retained Settings root',
+      'keeps Home selected and unfocused under the pushed Settings page',
       (t) async {
         final f = RootFixture();
         await f.mount(
           t,
           theme,
           390,
-          uri: Uri.parse('/s/alpha/settings'),
+          uri: Uri.parse('/s/alpha'),
           preferences: _preferences,
         );
         t.view.physicalSize = const Size(390, 844);
         await f.flush(t);
+        // Settings is pushed from the server tab over Home (Web v1.24).
+        await openServerPage(t, 'settings', flush: f.flush);
+        await _transitionFrames(t, f, () {});
         var observed = 0;
         void observe() {
           _assertSettingsBar(t, pointer: input != _EntryInput.keyboard);
@@ -157,24 +162,8 @@ void main() {
         observe();
         f.onFrame = observe;
         try {
-          if (input == _EntryInput.keyboard) {
-            final settings = find.byKey(const Key('mobile-tab-settings'));
-            await _activate(t, settings, input);
-            await f.flush(t);
-            final outlines = t.widgetList<CustomPaint>(
-              find.descendant(of: settings, matching: find.byType(CustomPaint)),
-            );
-            expect(
-              outlines
-                  .map((w) => w.foregroundPainter)
-                  .whereType<RaftCssFocusOutline>()
-                  .any((painter) => painter.enabled),
-              isTrue,
-              reason: 'Real keyboard activation keeps its visible focus ring.',
-            );
-          }
           // Settings rows currently support pointer activation; keyboard
-          // coverage uses the real tab above and Escape on the pushed route.
+          // coverage is Escape on the pushed route.
           await _activate(
             t,
             find.byKey(_notificationsKey),

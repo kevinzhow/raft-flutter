@@ -44,6 +44,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../parity_harness.dart';
 import 'screens/screen_fixture.dart';
 import '../../support/app_services_fixture.dart';
+import '../../support/server_tab.dart';
 
 final Map<String, ParityCase> screenCases = {
   'screens.auth.login.signing': _loginSigning,
@@ -340,8 +341,7 @@ final ParityCase _serverDangerModal = ParityCase(
   ),
   interact: (t, ctx) async {
     await t.pump(const Duration(milliseconds: 300));
-    await t.tap(find.byKey(const Key('mobile-tab-settings')));
-    await t.pump(const Duration(milliseconds: 300));
+    await openServerPage(t, 'settings');
     await t.tap(find.byKey(const Key('workspace-settings-nav-server')));
     await t.pump(const Duration(milliseconds: 300));
     await t.tap(find.byKey(const Key('server-danger-delete-button')));

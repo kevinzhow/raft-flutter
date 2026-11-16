@@ -1,6 +1,8 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:raft_flutter/features/mobile_server_tab.dart';
+import 'package:raft_flutter/features/server_menu_model.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_flutter/data/raft_location.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
@@ -14,6 +16,7 @@ import 'workspace_source_location_contract_test.dart' show pageFixture;
 import 'flutter_test_config.dart' show leakDebt;
 import 'support/app_update_fixture.dart';
 import 'support/memory_storage.dart';
+import 'support/server_tab.dart';
 
 /// Both layouts of the one real host: the desktop shell and the phone shell
 /// (a page stack of mirror controllers, see mobile_workspace_route.dart). A
@@ -39,10 +42,46 @@ Future<void> _openSettings(
   await t.pumpAndSettle();
 }
 
-/// The attention dot on the entry to Settings: the rail icon or the tab.
-bool _entryDot(WidgetTester t, double width) => _phone(width)
-    ? _tabAttention(t)
-    : _railDotIn(find.byKey(const Key('rail-settings'))).evaluate().isNotEmpty;
+/// The attention dot on the entry to Settings: the rail icon, or the Settings
+/// button of the phone's server tab popover (v1.24: Settings is not a tab). On
+/// the phone it is read from Home: a Settings page already open is left and
+/// opened again around the read.
+Future<bool> _entryDot(
+  WidgetTester t,
+  WorkspaceController w,
+  double width,
+) async {
+  if (!_phone(width)) {
+    return _railDotIn(find.byKey(const Key('rail-settings')))
+        .evaluate()
+        .isNotEmpty;
+  }
+  final onSettings = find
+      .byKey(const Key('server-page-mobile-back'))
+      .evaluate()
+      .isNotEmpty;
+  if (onSettings || find.byKey(serverTabKey).evaluate().isEmpty) {
+    // The bar is on the tab roots: read it from Home.
+    w.navigation.navigate(RaftLocation.parse('/s/demo'));
+    w.notifyListeners();
+    await t.pumpAndSettle();
+  }
+  final lit = await _serverTabSettingsDot(t);
+  if (onSettings) await _openSettings(t, w, width);
+  return lit;
+}
+
+/// Opens the server tab's popover, reads Settings' attention pixel, closes it.
+Future<bool> _serverTabSettingsDot(WidgetTester t) async {
+  await openServerPopover(t);
+  final lit = find
+      .byKey(const Key('settings-attention-dot'))
+      .evaluate()
+      .isNotEmpty;
+  await t.tap(find.byKey(serverTabKey));
+  await t.pump(const Duration(milliseconds: 200));
+  return lit;
+}
 
 Future<void> _openDestination(WidgetTester t, String id) async {
   final row = find.byKey(ValueKey('workspace-settings-nav-$id'));
@@ -91,12 +130,6 @@ void _expectDanger(WidgetTester t, Finder of) {
   expect(_fills(of), isNot(contains(tokens.accentFill)));
 }
 
-bool _tabAttention(WidgetTester t) => t
-    .widget<RaftMobileNav>(find.byKey(const Key('workspace-mobile-navigation')))
-    .items
-    .firstWhere((i) => i.id == 'settings')
-    .attention;
-
 void main() {
   // Leak debt (other): see docs/development.md, Leak tracking.
   leakDebt(const ['ValueNotifier<bool>']);
@@ -108,10 +141,10 @@ void main() {
         addTearDown(update.dispose);
         await t.runAsync(update.start);
         final w = await mountAppUpdateWorkspace(t, update, width: width);
-        if (!_phone(width)) expect(_entryDot(t, width), isTrue);
+        expect(await _entryDot(t, w, width), isTrue);
 
         await _openSettings(t, w, width);
-        expect(_entryDot(t, width), isTrue);
+        expect(await _entryDot(t, w, width), isTrue);
         final about = find.byType(RaftSettingsSidebarList);
         expect(find.text('About'), findsOneWidget);
         expect(_dotIn(about), findsOneWidget);
@@ -136,7 +169,7 @@ void main() {
           await t.pageBack();
           await t.pumpAndSettle();
         }
-        expect(_entryDot(t, width), isFalse);
+        expect(await _entryDot(t, w, width), isFalse);
         expect(_dotIn(find.byType(RaftSettingsSidebarList)), findsNothing);
         if (!_phone(width)) {
           // The row stays so the user can still act on it.
@@ -167,7 +200,7 @@ void main() {
       update.markSeen();
       final w = await mountAppUpdateWorkspace(t, update, width: width);
       await _openSettings(t, w, width);
-      expect(_entryDot(t, width), isFalse);
+      expect(await _entryDot(t, w, width), isFalse);
       expect(_dotIn(find.byType(RaftSettingsSidebarList)), findsNothing);
       await t.pumpWidget(const SizedBox());
     });
@@ -179,7 +212,7 @@ void main() {
       await t.runAsync(current.start);
       var w = await mountAppUpdateWorkspace(t, current, width: width);
       await _openSettings(t, w, width);
-      expect(_entryDot(t, width), isFalse);
+      expect(await _entryDot(t, w, width), isFalse);
       await _openDestination(t, 'about');
       expect(find.textContaining('New version available'), findsNothing);
       // Up to date is still answered: the Updates card never goes away.
@@ -192,7 +225,7 @@ void main() {
 
       w = await mountAppUpdateWorkspace(t, null, width: width);
       await _openSettings(t, w, width);
-      expect(_entryDot(t, width), isFalse);
+      expect(await _entryDot(t, w, width), isFalse);
       await _openDestination(t, 'about');
       expect(find.byKey(const ValueKey('settings-about-update')), findsNothing);
       await t.pumpWidget(const SizedBox());
@@ -247,7 +280,7 @@ void main() {
             );
           }
           await _openSettings(t, w, width);
-          expect(_entryDot(t, width), isTrue);
+          expect(await _entryDot(t, w, width), isTrue);
           _expectDanger(t, _dotIn(find.byType(RaftSettingsSidebarList)));
           await t.pumpWidget(const SizedBox());
         },
@@ -259,39 +292,49 @@ void main() {
     ('elegant light', false),
     ('elegant dark', true),
   ]) {
-    testWidgets('phone: Settings tab dot keeps the attention colour in $name', (
-      t,
-    ) async {
-      final update = appUpdateFixture();
-      addTearDown(update.dispose);
-      await t.runAsync(update.start);
-      final (w, _) = await pageFixture(t, section: 'chat');
-      await t.pumpWidget(
-        MaterialApp(
-          theme: raftTheme(dark: dark),
-          home: Scaffold(
-            body: const SizedBox(),
-            bottomNavigationBar: WorkspaceMobileTabBar(
-              controller: w,
-              selectedId: 'home',
-              onSelected: (_) {},
-              appUpdate: update,
+    testWidgets(
+      'phone: the server tab\'s Settings dot keeps the attention colour in $name',
+      (t) async {
+        final update = appUpdateFixture();
+        addTearDown(update.dispose);
+        await t.runAsync(update.start);
+        final (w, _) = await pageFixture(t, section: 'chat');
+        await t.pumpWidget(
+          MaterialApp(
+            theme: raftTheme(dark: dark),
+            home: Scaffold(
+              body: const SizedBox(),
+              bottomNavigationBar: WorkspaceMobileTabBar(
+                controller: w,
+                selectedId: 'chat',
+                onSelected: (_) {},
+                serverTab: MobileServerTab(
+                  controller: w,
+                  appUpdate: update,
+                  rows: const [],
+                  actions: const ServerMenuActions(
+                    choose: RaftMenuEntry(label: 'Switch or create server'),
+                  ),
+                  onReorder: (_, _) {},
+                  onOpenPage: (_) {},
+                  otherServerUnread: false,
+                ),
+              ),
             ),
           ),
-        ),
-      );
-      expect(_tabAttention(t), isTrue);
-      final tokens = RaftTokens.of(
-        t.element(find.byType(WorkspaceMobileTabBar)),
-      );
-      final tab = find.byKey(const Key('mobile-tab-settings'));
-      expect(_fills(tab), contains(tokens.accentFill));
-      expect(_fills(tab), isNot(contains(tokens.semantic.danger)));
-      update.markSeen();
-      await t.pumpAndSettle();
-      expect(_tabAttention(t), isFalse);
-      await t.pumpWidget(const SizedBox());
-    });
+        );
+        await openServerPopover(t);
+        final dot = find.byKey(const Key('settings-attention-dot'));
+        expect(dot, findsOneWidget);
+        final tokens = RaftTokens.of(t.element(dot));
+        expect(_fills(dot), isNotEmpty);
+        expect(_fills(dot), isNot(contains(tokens.semantic.danger)));
+        update.markSeen();
+        await t.pumpAndSettle();
+        expect(dot, findsNothing);
+        await t.pumpWidget(const SizedBox());
+      },
+    );
   }
   // The phone shell renders every page inside _MobileWorkspaceContent, a
   // WorkspaceView sharing the root's AppServicesScope; the update service must
@@ -322,8 +365,7 @@ void main() {
       final f = RootFixture();
       await f.mount(t, 'light', 390, uri: Uri.parse('/s/alpha'), appUpdate: s);
       await t.runAsync(s.start);
-      await t.tap(find.byKey(const Key('mobile-tab-settings')));
-      await f.flush(t);
+      await openServerPage(t, 'settings', flush: f.flush);
       return f;
     }
 
@@ -331,7 +373,6 @@ void main() {
       final update = android();
       addTearDown(update.dispose);
       final f = await openSettings(t, update);
-      expect(_tabAttention(t), isTrue);
       await t.tap(find.byKey(const ValueKey('workspace-settings-nav-about')));
       await f.flush(t);
       for (var i = 0; i < 10; i++) {

@@ -1873,7 +1873,9 @@ share-mode captures come from `apps/raft_flutter/tool/captures/share_forward_cap
 Full table and guard design: `docs/navigation-audit.md`. Intended differences recorded there:
 
 * Settings > Bottom bar and the Settings > Computers row exist on the phone only (device preference;
-  Web's desktop has the Computers rail).
+  Web's desktop has the Computers rail). Web v1.24 has no tab customisation; the Bottom bar setting keeps
+  the order and visibility of the four tabs (Home, Activity, Tasks, Search); the server tab is always the
+  last cell. Its pages row shows Members, Computers and Settings until the Artifacts and Apps pages exist.
 * System notices for computers open the Computers detail / attention list in a pushed page; Web
   navigates to `/computer/:id` and `/computers?filter=attention`.
 * Channel settings and Channel members open as full-width pages on a phone (Web: phone drawer) and

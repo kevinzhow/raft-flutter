@@ -405,36 +405,36 @@ void main() {
       final rest = r.lift;
       r.keyboard(true);
       await tester.pump(const Duration(milliseconds: 300));
-      await tester.tap(find.byKey(const Key('mobile-tab-members')));
+      await tester.tap(find.byKey(const Key('mobile-tab-tasks')));
       await r.settle();
-      debugPrint('members tab, keyboard up lift=${r.lift}');
+      debugPrint('tasks tab, keyboard up lift=${r.lift}');
       r.keyboard(false);
       await r.settle();
-      debugPrint('members tab, keyboard down lift=${r.lift}');
+      debugPrint('tasks tab, keyboard down lift=${r.lift}');
       expect(r.lift, closeTo(rest, .5));
       await tester.tap(find.byKey(const Key('mobile-tab-home')));
       await r.settle();
       expect(r.lift, closeTo(rest, .5));
     });
 
-    testWidgets('keyboard ups and downs across Search push and pop', (
-      tester,
-    ) async {
+    testWidgets('keyboard ups and downs across the Search tab', (tester) async {
       final r = _Rig(tester);
       await r.start();
       final rest = r.lift;
-      await tester.tap(find.byKey(const Key('nav-search')));
+      // Search is a tab root (v1.24): the bar stays, and a keyboard that
+      // comes up on it and goes down again with the next tab tap leaves the
+      // bar where it was.
+      await tester.tap(find.byKey(const Key('mobile-tab-search')));
       await r.settle();
-      expect(r.bar, findsNothing);
+      expect(r.bar, findsOneWidget);
       r.keyboard(true);
       await r.settle();
-      await tester.binding.handlePopRoute();
-      await tester.pump(const Duration(milliseconds: 100));
+      await tester.tap(find.byKey(const Key('mobile-tab-home')));
       await r.settle();
-      debugPrint('after search pop (kbd up) lift=${r.lift}');
+      debugPrint('after search tab (kbd up) lift=${r.lift}');
       r.keyboard(false);
       await r.settle();
-      debugPrint('after search pop (kbd down) lift=${r.lift}');
+      debugPrint('after search tab (kbd down) lift=${r.lift}');
       expect(r.lift, closeTo(rest, .5));
     });
   });

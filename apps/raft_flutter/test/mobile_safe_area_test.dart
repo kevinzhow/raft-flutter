@@ -47,7 +47,13 @@ void main() {
 
           void expectBarClearance() {
             expect(t.getRect(nav).bottom, closeTo(screenBottom - inset, .01));
-            for (final id in ['home', 'tasks', 'members', 'settings']) {
+            for (final id in [
+              'home',
+              'activity',
+              'tasks',
+              'search',
+              'server',
+            ]) {
               expect(
                 t.getRect(find.byKey(Key('mobile-tab-$id'))).bottom,
                 lessThanOrEqualTo(screenBottom - inset),
@@ -94,7 +100,7 @@ void main() {
           await t.pump();
           expectBarClearance();
 
-          for (final root in ['tasks', 'members', 'settings']) {
+          for (final root in ['tasks', 'activity', 'search']) {
             await t.tap(find.byKey(Key('mobile-tab-$root')));
             await f.flush(t);
             await t.pump(const Duration(milliseconds: 500));

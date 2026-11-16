@@ -32,62 +32,53 @@ void main() {
       return f;
     }
 
-    testWidgets('$theme the Activity tab shows the shared unread count', (
+    const dot = Key('mobile-tab-activity-unread-dot');
+
+    testWidgets('$theme the Activity tab shows a dot for the shared unread', (
       t,
     ) async {
       final f = await mount(t, unread: 3, bar: withActivity);
-      expect(
-        find.descendant(
-          of: find.byKey(const ValueKey('mobile-nav-badge-activity')),
-          matching: find.text('3'),
-        ),
-        findsOneWidget,
-      );
-      expect(find.byKey(const ValueKey('mobile-nav-badge-chat')), findsNothing);
-      expect(
-        t
-            .widget<Semantics>(
-              find.byKey(const ValueKey('mobile-nav-badge-activity')),
-            )
-            .properties
-            .label,
-        '3 unread',
-      );
-      await f.close(t);
-    });
-
-    testWidgets('$theme the count caps at 99+', (t) async {
-      final f = await mount(t, unread: 120, bar: withActivity);
-      expect(
-        find.descendant(
-          of: find.byKey(const ValueKey('mobile-nav-badge-activity')),
-          matching: find.text('99+'),
-        ),
-        findsOneWidget,
-      );
-      await f.close(t);
-    });
-
-    testWidgets('$theme no unread, no badge', (t) async {
-      final f = await mount(t, unread: 0, bar: withActivity);
+      // Web v1.24: a dot, never a number.
+      expect(find.byKey(dot), findsOneWidget);
       expect(
         find.byKey(const ValueKey('mobile-nav-badge-activity')),
         findsNothing,
       );
+      expect(find.byKey(const ValueKey('mobile-nav-badge-chat')), findsNothing);
       await f.close(t);
     });
 
-    testWidgets('$theme Home drops its Activity entry only while it is a tab', (
-      t,
-    ) async {
-      var f = await mount(t, unread: 3, bar: withActivity);
-      expect(find.byKey(const Key('workspace-mobile-home')), findsOneWidget);
-      expect(find.byKey(const Key('nav-activity')), findsNothing);
-      expect(find.byKey(const Key('nav-search')), findsOneWidget);
-      await f.close(t);
-      f = await mount(t, unread: 3);
-      expect(find.byKey(const Key('nav-activity')), findsOneWidget);
+    testWidgets('$theme a large unread count is still only a dot', (t) async {
+      final f = await mount(t, unread: 120, bar: withActivity);
+      expect(find.byKey(dot), findsOneWidget);
+      expect(find.text('99+'), findsNothing);
       await f.close(t);
     });
+
+    testWidgets('$theme no unread, no dot', (t) async {
+      final f = await mount(t, unread: 0, bar: withActivity);
+      expect(find.byKey(dot), findsNothing);
+      await f.close(t);
+    });
+
+    testWidgets(
+      '$theme Home drops its Activity and Search entries only while they are tabs',
+      (t) async {
+        var f = await mount(t, unread: 3, bar: withActivity);
+        expect(find.byKey(const Key('workspace-mobile-home')), findsOneWidget);
+        expect(find.byKey(const Key('nav-activity')), findsNothing);
+        expect(find.byKey(const Key('nav-search')), findsOneWidget);
+        await f.close(t);
+        f = await mount(t, unread: 3, bar: '["chat","tasks"]');
+        expect(find.byKey(const Key('nav-activity')), findsOneWidget);
+        expect(find.byKey(const Key('nav-search')), findsOneWidget);
+        await f.close(t);
+        // Web v1.24's bar has both: Home lists neither.
+        f = await mount(t, unread: 3);
+        expect(find.byKey(const Key('nav-activity')), findsNothing);
+        expect(find.byKey(const Key('nav-search')), findsNothing);
+        await f.close(t);
+      },
+    );
   }
 }

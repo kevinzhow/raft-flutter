@@ -76,7 +76,7 @@ void main() {
       await tester.tap(find.byKey(const Key('mobile-detail-back')));
       await f.flush(tester);
       await finishBackTransition(tester);
-      await tester.tap(find.byKey(const Key('nav-activity')));
+      await tester.tap(find.byKey(const Key('mobile-tab-activity')));
       await f.flush(tester);
       await finishBackTransition(tester);
       expect(source.location.route.name, 'activity');
@@ -89,11 +89,13 @@ void main() {
       await tester.pump();
       await expectDraft('Edited through Activity 活动');
       tester.testTextInput.hide();
-      for (var level = 0; level < 2; level++) {
-        await tester.binding.handlePopRoute();
-        await f.flush(tester);
-        await finishBackTransition(tester);
-      }
+      // Activity is a tab root (v1.24): one Back returns to it, Home is a tab.
+      await tester.binding.handlePopRoute();
+      await f.flush(tester);
+      await finishBackTransition(tester);
+      await tester.tap(find.byKey(const Key('mobile-tab-home')));
+      await f.flush(tester);
+      await finishBackTransition(tester);
       await tester.tap(find.byKey(const ValueKey('sidebar-channel-ca')));
       await f.flush(tester);
       await finishBackTransition(tester);

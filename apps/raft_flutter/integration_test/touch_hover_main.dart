@@ -26,12 +26,29 @@ Future<void> main() async {
   await NativeSystemFonts.instance.initialize();
   await initializeSourceTimeFormatting();
   await DevicePreferences.load();
-  final channel = LabChannel('kb', [for (var i = 0; i < 8; i++) ...['plain', 'markdown', 'reactions', 'attachments', 'image']]);
+  final channel = LabChannel('kb', [
+    for (var i = 0; i < 8; i++) ...[
+      'plain',
+      'markdown',
+      'reactions',
+      'attachments',
+      'image',
+    ],
+  ]);
   final images = await LabImages.start();
-  final (seed, api, client) = await labWorkspace([channel], images, mobile: true, ownsClient: false);
+  final (seed, api, client) = await labWorkspace(
+    [channel],
+    images,
+    mobile: true,
+    ownsClient: false,
+  );
   seed.dispose();
   api.routes['GET /auth/me'] = (_) => {
-    'id': 'alice', 'name': 'Alice Zhang', 'email': 'alice@example.invalid', 'emailVerified': true, 'displayLanguage': 'en',
+    'id': 'alice',
+    'name': 'Alice Zhang',
+    'email': 'alice@example.invalid',
+    'emailVerified': true,
+    'displayLanguage': 'en',
   };
   api.routes['GET /servers'] = (_) => [
     {'id': 's1', 'name': 'Lab', 'slug': 'lab', 'role': 'owner'},
@@ -39,29 +56,50 @@ Future<void> main() async {
   api.routes['GET /channels/public'] = (_) => <dynamic>[];
   api.routes['GET /channels/kb'] = (_) => channel.record.json;
   api.routes['GET /channels/inbox'] = (_) => {'items': <dynamic>[]};
-  api.routes['GET /channels/saved'] = (_) => {'globalTotal': 0, 'saved': <dynamic>[]};
-  api.routes['GET /channels/threads/followed'] = (_) => {'threads': <dynamic>[]};
-  api.routes['GET /announcements/active'] = (_) => {'announcements': <dynamic>[]};
-  api.routes['GET /product-feedback/tickets'] = (_) => {'unread_total': 0, 'tickets': <dynamic>[]};
+  api.routes['GET /channels/saved'] = (_) => {
+    'globalTotal': 0,
+    'saved': <dynamic>[],
+  };
+  api.routes['GET /channels/threads/followed'] = (_) => {
+    'threads': <dynamic>[],
+  };
+  api.routes['GET /announcements/active'] = (_) => {
+    'announcements': <dynamic>[],
+  };
+  api.routes['GET /product-feedback/tickets'] = (_) => {
+    'unread_total': 0,
+    'tickets': <dynamic>[],
+  };
   api.routes['GET /tasks/server'] = (_) => {'tasks': <dynamic>[]};
   const tabs = MobileTabbarSettings(
     order: MobileTabs.configurable,
-    enabled: {MobileTabs.home, MobileTabs.tasks, MobileTabs.members, MobileTabs.computers},
+    enabled: {
+      MobileTabs.home,
+      MobileTabs.tasks,
+      MobileTabs.activity,
+      MobileTabs.search,
+    },
   );
   SharedPreferences.setMockInitialValues({
     'raft.origin': client.origin,
     'raft.mode': 'light',
-    'raft.light': const String.fromEnvironment('KB_THEME', defaultValue: 'brutal'),
+    'raft.light': const String.fromEnvironment(
+      'KB_THEME',
+      defaultValue: 'brutal',
+    ),
     MobileTabbarStore.preferenceKey: tabs.encode(),
   });
   final dir = await Directory.systemTemp.createTemp('raft-keyboard-repro-');
-  runApp(app.RaftApp(
-    services: const AppServices.updatesDisabledForTestOrPreview(),
-    sessionStore: client.sessionStore,
-    createClient: (_, _, _) => client,
-    initialLocation: Uri(path: '/s/lab'),
-    nativeContent: LabNavigationContent(),
-    nativeSharing: NativeSharing(supported: false),
-    openWorkspaceCache: () async => LabNavigationCache(File('${dir.path}/workspace.sqlite')),
-  ));
+  runApp(
+    app.RaftApp(
+      services: const AppServices.updatesDisabledForTestOrPreview(),
+      sessionStore: client.sessionStore,
+      createClient: (_, _, _) => client,
+      initialLocation: Uri(path: '/s/lab'),
+      nativeContent: LabNavigationContent(),
+      nativeSharing: NativeSharing(supported: false),
+      openWorkspaceCache: () async =>
+          LabNavigationCache(File('${dir.path}/workspace.sqlite')),
+    ),
+  );
 }

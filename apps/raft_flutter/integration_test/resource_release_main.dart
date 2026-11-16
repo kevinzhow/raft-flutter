@@ -193,8 +193,8 @@ Future<Widget> buildResourceReleaseApp({
     enabled: {
       MobileTabs.home,
       MobileTabs.tasks,
-      MobileTabs.members,
-      MobileTabs.computers,
+      MobileTabs.activity,
+      MobileTabs.search,
     },
   );
   SharedPreferences.setMockInitialValues({
