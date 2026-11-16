@@ -92,11 +92,12 @@ class _DockedNavGeometry {
       scaler = MediaQuery.textScalerOf(context),
       touch = RaftDensityScope.of(context) == RaftDensity.touch,
       viewportHeight = viewportHeight,
-      inset = inset;
+      inset = inset,
+      outside = math.max(0.0, _systemBottomInset(context) - inset);
   final RaftTokens t;
   final TextScaler scaler;
   final bool touch;
-  final double viewportHeight, inset;
+  final double viewportHeight, inset, outside;
   double n(String name, double value) => t.size(name, fallback: value);
   bool get labels =>
       t.option('mobileNav.labels', or: 'withLabels') == 'withLabels';
@@ -106,7 +107,13 @@ class _DockedNavGeometry {
   double get top => n('space.mobileNavTop', 6);
   double get lineTop => n('stroke.mobileNavTop', 1);
   double get lineBottom => n('stroke.mobileNavBottom', 0);
-  double get safe => math.min(inset, n('size.mobileNavSafeMax', 34));
+  // raft-ui 0.95.3: pb max(8, min(inset, 34)), counted together with the
+  // system inset its host paints below the bar (`outside`). Frozen looks set
+  // no floor (0).
+  double get safe => math.max(
+    n('size.mobileNavSafeMin', 0) - outside,
+    math.min(inset, n('size.mobileNavSafeMax', 34)),
+  );
   double get height {
     final size = n('type.mobileNavLabel.size', 10);
     final content =
@@ -369,4 +376,14 @@ class _DockedNavItem extends StatelessWidget {
             ),
     );
   }
+}
+
+/// The system bottom inset: the view's own (hosts that paint it below the bar
+/// may have removed it from MediaQuery), or MediaQuery's when that is larger.
+double _systemBottomInset(BuildContext context) {
+  final view = View.maybeOf(context);
+  return math.max(
+    view == null ? 0.0 : view.viewPadding.bottom / view.devicePixelRatio,
+    MediaQuery.viewPaddingOf(context).bottom,
+  );
 }

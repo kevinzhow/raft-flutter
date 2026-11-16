@@ -584,6 +584,7 @@ const Set<String> raftGeometryTokens = {
   'size.mobileNavItem',
   'size.mobileNavItemCompact',
   'size.mobileNavSafeMax',
+  'size.mobileNavSafeMin',
   'size.mobileNavStickerHeight',
   'size.mobileNavStickerWidth',
   'size.mobileWorkspaceCompact',

@@ -144,6 +144,7 @@ GEOMETRY_ELEGANT = {
     'stroke.mobileNavSticker': 0,
     'stroke.mobileNavStickerRing': 0,
     'size.mobileNavSafeMax': 34,
+    'size.mobileNavSafeMin': 0,  # frozen: no raft-ui 0.95.3 8px floor
 
     'size.fieldInput': 38, 'size.fieldSelect': 36,
     'type.fieldLabel.size': 14, 'type.fieldLabel.line': 20, 'type.fieldLabel.weight': 700,
@@ -333,6 +334,7 @@ GEOMETRY_BRUTAL = {
     'stroke.mobileNavSticker': 0,
     'stroke.mobileNavStickerRing': 0,
     'size.mobileNavSafeMax': 34,
+    'size.mobileNavSafeMin': 0,  # frozen: no raft-ui 0.95.3 8px floor
 
     'size.fieldInput': 44, 'size.fieldSelect': 44,
     'type.fieldLabel.size': 14, 'type.fieldLabel.line': 20, 'type.fieldLabel.weight': 700,
