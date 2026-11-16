@@ -17,7 +17,7 @@ import '../../../../packages/raft_ui/test/task_typography_test.dart'
 import '../../test/app_global_server_selector_test.dart' show RootFixture;
 import '../../test/support/server_tab.dart';
 
-/// Evidence renders of the real app (zh, 390x844): written only when
+/// Evidence renders of the real app (zh or en, 390 wide, light and dark): written only when
 /// RAFT_TABBAR_EVIDENCE_DIR is set, otherwise a no-op.
 final evidence = Platform.environment['RAFT_TABBAR_EVIDENCE_DIR'];
 
@@ -102,7 +102,7 @@ Future<void> capture(WidgetTester t, String name) async {
 }
 
 void main() {
-  for (final theme in ['brutal', 'elegant-light']) {
+  for (final theme in ['light', 'dark']) {
     testWidgets('$theme tab bar evidence', (t) async {
       final missingFonts = missingTestFontReason(cjkTestFonts());
       if (missingFonts != null) {
@@ -129,8 +129,12 @@ void main() {
           await (FontLoader(alias)..addFont(rootBundle.load(asset))).load();
         }
       });
-      t.platformDispatcher.localesTestValue = const [Locale('zh', 'CN')];
-      t.platformDispatcher.localeTestValue = const Locale('zh', 'CN');
+      // RAFT_TABBAR_LOCALE=en matches the Web reference captures (English).
+      final locale = Platform.environment['RAFT_TABBAR_LOCALE'] == 'en'
+          ? const Locale('en', 'US')
+          : const Locale('zh', 'CN');
+      t.platformDispatcher.localesTestValue = [locale];
+      t.platformDispatcher.localeTestValue = locale;
       addTearDown(t.platformDispatcher.clearAllTestValues);
 
       Future<RootFixture> mount(
@@ -160,7 +164,9 @@ void main() {
           uri: Uri.parse(path),
           preferences: {MobileTabbarStore.preferenceKey: bar},
         );
-        t.view.padding = const FakeViewPadding(top: 24, bottom: 16);
+        // Web reference: 390x844 viewport, no safe-area insets.
+        t.view.padding = FakeViewPadding.zero;
+        t.view.physicalSize = const Size(390, 844);
         addTearDown(t.view.resetPadding);
         await t.pump(const Duration(seconds: 3));
         await f.flush(t);
