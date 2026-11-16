@@ -457,23 +457,15 @@ void registerCloseViewerTests(TestPart part) {
       );
     },
     'quick-switcher': (t, size) async {
-      final w = await mountAt(t, size, '/s/demo');
-      if (size.width >= 768) {
-        await t.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
-        await t.sendKeyEvent(LogicalKeyboardKey.keyK);
-        await t.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
-        await frames(t, 20);
-        return SurfaceProbe(
-          isOpen: () => find.byType(QuickSwitcher).evaluate().isNotEmpty,
-          scrim: const Offset(4, 4),
-        );
-      }
-      w.navigation.navigate(RaftLocation.parse('/s/demo/search'));
-      w.notifyListeners();
-      await frames(t, 25);
+      // Wide only: on a phone /search is the Search tab root (registry none).
+      await mountAt(t, size, '/s/demo');
+      await t.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+      await t.sendKeyEvent(LogicalKeyboardKey.keyK);
+      await t.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+      await frames(t, 20);
       return SurfaceProbe(
-        isOpen: () => w.location.route == RaftRoute.search,
-        back: find.byTooltip('Back'),
+        isOpen: () => find.byType(QuickSwitcher).evaluate().isNotEmpty,
+        scrim: const Offset(4, 4),
       );
     },
     'computer-detail': (t, size) async {
