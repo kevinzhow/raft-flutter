@@ -101,6 +101,8 @@ void main() {
                 : switch (tone) {
                     RaftListRowTone.muted => ui.foregroundMuted,
                     RaftListRowTone.away => ui.foregroundHint,
+                    RaftListRowTone.warning => ui['warning-strong'],
+                    RaftListRowTone.danger => ui['danger-strong'],
                     _ => ui.foreground,
                   },
           );

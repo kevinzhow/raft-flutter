@@ -68,20 +68,20 @@ void main() {
     final ui = RaftUiColors.of(dark);
 
     testWidgets(
-      '$mode a conversation row is 70px: py-3 around a 24 + 2 + 20 body',
+      '$mode a conversation row is 62px on touch: py-2 around a 24 + 2 + 20 body',
       (tester) async {
         await tester.pumpWidget(
           _app(dark, _conversation(key: const ValueKey('r'))),
         );
         expect(
           tester.getSize(find.byKey(const ValueKey('r'))),
-          const Size(358, 70),
+          const Size(358, 62), // touch (Android test platform): py 8, not 12
         );
       },
     );
 
     testWidgets(
-      '$mode default rows are at least 64px, plain and entry rows 48px',
+      '$mode default rows are at least 56px on touch, plain and entry rows 48px',
       (tester) async {
         Future<double> height(RaftListRowVariant variant) async {
           await tester.pumpWidget(
@@ -100,7 +100,10 @@ void main() {
           return tester.getSize(find.byKey(const ValueKey('r'))).height;
         }
 
-        expect(await height(RaftListRowVariant.standard), 64);
+        expect(
+          await height(RaftListRowVariant.standard),
+          56,
+        ); // pointer-coarse:min-h-14
         expect(await height(RaftListRowVariant.plain), 48);
         expect(await height(RaftListRowVariant.entry), 48);
       },

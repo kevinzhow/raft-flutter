@@ -6,10 +6,13 @@ import 'package:flutter/material.dart';
 import 'package:raft_theme/recipes/recipe_utilities.g.dart' as source;
 
 import '../design_primitives.dart';
+import '../indicators.dart';
+import '../interaction.dart';
 import '../icons.dart';
 import '../localization.dart';
 import '../recipe_surface.dart';
 import '../recipes/list_row.g.dart';
+import '../recipes/list_row_skeleton.g.dart';
 import '../recipes/recipe_runtime.dart';
 import '../theme.dart';
 import '../tokens/tokens.dart';
@@ -20,7 +23,7 @@ import 'ui_tokens.dart';
 enum RaftListRowVariant { standard, plain, entry }
 
 /// `tone` axis: `unread` bolds the title and inks the description, `muted` and `away` fade the row.
-enum RaftListRowTone { normal, unread, muted, away }
+enum RaftListRowTone { normal, unread, muted, away, warning, danger }
 
 /// The three inks a row hands to its parts (`--list-row-ink`, `-ink-2`, `-ink-3`).
 @immutable
@@ -41,7 +44,9 @@ class RaftListRowInk {
       );
     }
     return switch (tone) {
-      RaftListRowTone.normal => RaftListRowInk(
+      RaftListRowTone.normal ||
+      RaftListRowTone.warning ||
+      RaftListRowTone.danger => RaftListRowInk(
         ui.foreground,
         ui.foregroundMuted,
         ui.foregroundHint,
@@ -192,6 +197,8 @@ class RaftListRow extends StatelessWidget {
     this.disabled = false,
     this.onPressed,
     this.topRule = false,
+    this.attached = false,
+    this.afterTarget = false,
     this.focusNode,
     this.semanticLabel,
   });
@@ -209,10 +216,20 @@ class RaftListRow extends StatelessWidget {
   /// The hairline above the row (`[data-slot=list-row]+&` / `li+li>&`): drawn from the rule start to the right
   /// edge. [RaftListRowGroup] and [RaftListRowList] set it on every row after the first.
   final bool topRule;
+
+  /// `attached`: the row belongs to the interactive row above it (an inset
+  /// settings panel under its switch). It has no hairline above and, when
+  /// `plain`, no top padding.
+  final bool attached;
+
+  /// Set by [RaftListRowList]: the row above is interactive and not attached
+  /// (`[[data-slot=list-row][data-interactive]:not([data-attached])+&]`), the
+  /// only case where a display-only attached row keeps its rule and top pad.
+  final bool afterTarget;
   final FocusNode? focusNode;
   final String? semanticLabel;
 
-  RaftListRow copyWith({bool? topRule}) => RaftListRow(
+  RaftListRow copyWith({bool? topRule, bool? afterTarget}) => RaftListRow(
     key: key,
     variant: variant,
     tone: tone,
@@ -221,6 +238,8 @@ class RaftListRow extends StatelessWidget {
     disabled: disabled,
     onPressed: onPressed,
     topRule: topRule ?? this.topRule,
+    attached: attached,
+    afterTarget: afterTarget ?? this.afterTarget,
     focusNode: focusNode,
     semanticLabel: semanticLabel,
     children: children,
@@ -237,12 +256,16 @@ class RaftListRow extends StatelessWidget {
       pressed: interaction.pressed,
       focusVisible: interaction.focusVisible,
       disabled: disabled,
+      responsive: true,
+      pointerCoarse: RaftInteraction.of(context).touch,
       extra: {
         if (selected) 'data-selected',
         if (tone != RaftListRowTone.normal) 'data-tone=${tone.name}',
         if (tone != RaftListRowTone.normal)
           'group/list-row:data-tone=${tone.name}',
-        if (topRule) 'ancestor:data-slot=list-row',
+        if (topRule && !attached) 'ancestor:data-slot=list-row',
+        if (topRule && attached && afterTarget)
+          'ancestor:data-slot=list-row+data-interactive+not:data-attached',
       },
     );
     final recipe = RaftListRowRecipe.resolve(
@@ -252,6 +275,7 @@ class RaftListRow extends StatelessWidget {
         RaftListRowVariant.entry => RaftListRowRecipeVariant.entry,
       },
       interactive: interactive,
+      attached: attached,
       states: states,
       tokens: tokens,
     );
@@ -428,20 +452,43 @@ class RaftListRowBody extends StatelessWidget {
 }
 
 Widget _line(BuildContext context, List<Widget> children) {
+  // A `truncate` meta is capped at the line (non-flex Row children are unbounded).
   final slot = _modern(context)
       ? _part(context, (recipe) => recipe.line)
       : null;
-  final row = Row(
+  final gap = slot?.columnGap ?? 8;
+  Widget cell(Widget child, double? lineWidth) => switch (child) {
+    RaftListRowTitle() ||
+    RaftListRowSubtitle() ||
+    RaftListRowDescription() => Expanded(child: child),
+    _SkeletonText(expands: true) => Expanded(child: child),
+    // `min-w-0 truncate`: the title gives way first, then the time is cut.
+    RaftListRowMeta() when slot != null && lineWidth != null => ConstrainedBox(
+      constraints: BoxConstraints(
+        maxWidth: (lineWidth - gap * (children.length - 1)).clamp(
+          0,
+          double.infinity,
+        ),
+      ),
+      child: child,
+    ),
+    _ => child,
+  };
+  Widget build(double? lineWidth) => Row(
     crossAxisAlignment: CrossAxisAlignment.center,
     children: [
       for (var i = 0; i < children.length; i++) ...[
-        if (i > 0) SizedBox(width: slot?.columnGap ?? 8),
-        children[i] is RaftListRowTitle || children[i] is RaftListRowDescription
-            ? Expanded(child: children[i])
-            : children[i],
+        if (i > 0) SizedBox(width: gap),
+        cell(children[i], lineWidth),
       ],
     ],
   );
+  final row = slot == null
+      ? build(null)
+      : LayoutBuilder(
+          builder: (context, c) =>
+              build(c.maxWidth.isFinite ? c.maxWidth : null),
+        );
   return slot == null
       ? row
       : RaftRecipeBox(
@@ -504,6 +551,31 @@ class RaftListRowTitle extends StatelessWidget {
   }
 }
 
+/// `ListRowSubtitle`: data about the row's subject under the title (an agent's
+/// description, a role, a byline): footnote 400 in the row ink, one line.
+class RaftListRowSubtitle extends StatelessWidget {
+  const RaftListRowSubtitle(this.text, {super.key});
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final style = _modern(context)
+        ? _partText(context, _part(context, (recipe) => recipe.subtitle))
+        : RaftTokens.of(context).scale(
+            RaftTypeScale.footnote,
+            weight: FontWeight.w400,
+            color: _inkOf(context).ink,
+          );
+    return Text(
+      raftText(context, text),
+      maxLines: 1,
+      softWrap: false,
+      overflow: TextOverflow.ellipsis,
+      style: style,
+    );
+  }
+}
+
 /// `ListRowDescription`: 14/20 in ink-2; [wrap] lets it take several lines.
 class RaftListRowDescription extends StatelessWidget {
   const RaftListRowDescription(this.text, {super.key, this.wrap = false});
@@ -545,6 +617,7 @@ class RaftListRowMeta extends StatelessWidget {
         text,
         maxLines: 1,
         softWrap: false,
+        overflow: TextOverflow.ellipsis,
         style: _partText(context, _part(context, (recipe) => recipe.meta)),
       );
     }
@@ -677,9 +750,15 @@ Widget _recipeIcon(
 List<Widget> _withRules(List<Widget> children) => [
   for (var i = 0; i < children.length; i++)
     children[i] is RaftListRow && i > 0 && children[i - 1] is RaftListRow
-        ? (children[i] as RaftListRow).copyWith(topRule: true)
+        ? (children[i] as RaftListRow).copyWith(
+            topRule: true,
+            afterTarget: _isTarget(children[i - 1] as RaftListRow),
+          )
         : children[i],
 ];
+
+/// `[data-slot=list-row][data-interactive]:not([data-attached])`.
+bool _isTarget(RaftListRow row) => row.interactive && !row.attached;
 
 /// A plain stack of rows (a `div` of `ListRow`s): the rule above every row after the first.
 class RaftListRowList extends StatelessWidget {
@@ -730,5 +809,136 @@ class RaftListRowGroup extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+/// `ListRowSkeleton`: a display-only [RaftListRow] of the same [variant] with a
+/// bar in its title, its time and its description, so it is the loaded row's
+/// height and its rule sits in the same place. Bars take `45 / 35 / 55%`
+/// (title) and `75 / 60 / 70%` (description) by the row's [index] in its list
+/// (`nth-[3n+2]`, `nth-[3n]`). Hidden from assistive technology.
+class RaftListRowSkeleton extends StatelessWidget {
+  const RaftListRowSkeleton({
+    super.key,
+    this.variant = RaftListRowVariant.standard,
+    this.index = 0,
+    this.leading,
+    this.description,
+  });
+
+  final RaftListRowVariant variant;
+
+  /// Position in the list; picks the bar widths.
+  final int index;
+
+  /// A leading block: the 35px avatar (`default`) or 20px icon. Defaults to
+  /// on for the `default` variant, as in raft-ui.
+  final bool? leading;
+
+  /// The description bar. Defaults to on for the `default` variant.
+  final bool? description;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = RaftTokens.of(context);
+    final recipe = RaftListRowSkeletonRecipe.resolve(
+      states: t.recipeStates(
+        extra: [
+          if (index % 3 == 1) 'nth-child(3n+2)',
+          if (index % 3 == 2) 'nth-child(3n)',
+        ],
+      ),
+      tokens: t.recipeTokens,
+    );
+    double percent(String property) {
+      final v = recipe.row[property];
+      return v is CssNum ? v.value / 100 : 1;
+    }
+
+    final standard = variant == RaftListRowVariant.standard;
+    final lead = standard ? recipe.avatar : recipe.icon;
+    return ExcludeSemantics(
+      child: RaftListRow(
+        variant: variant,
+        interactive: false,
+        children: [
+          if (leading ?? standard)
+            RaftSkeleton(
+              key: const ValueKey('list-row-skeleton-leading'),
+              fromRecipe: true,
+              width: lead.width,
+              height: lead.height,
+            ),
+          RaftListRowBody(
+            children: [
+              RaftListRowTop(
+                children: [
+                  _SkeletonText(
+                    slot: (r) => r.title,
+                    fraction: percent('--list-row-skeleton-title'),
+                    barKey: const ValueKey('list-row-skeleton-title'),
+                  ),
+                  if (standard)
+                    _SkeletonText(
+                      slot: (r) => r.meta,
+                      width: recipe.metaBar.width,
+                      barKey: const ValueKey('list-row-skeleton-meta'),
+                    ),
+                ],
+              ),
+              if (description ?? standard)
+                RaftListRowBottom(
+                  children: [
+                    _SkeletonText(
+                      slot: (r) => r.description,
+                      fraction: percent('--list-row-skeleton-description'),
+                      barKey: const ValueKey('list-row-skeleton-description'),
+                    ),
+                  ],
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// One text line of a skeleton: the part's own line box, holding a bar
+/// `inline-block h-[0.75em] max-w-full align-middle` of a fraction of the box
+/// or a fixed width.
+class _SkeletonText extends StatelessWidget {
+  const _SkeletonText({
+    required this.slot,
+    required this.barKey,
+    this.fraction,
+    this.width,
+  });
+  final RaftSlotStyle Function(RaftListRowRecipeStyle) slot;
+  final Key barKey;
+  final double? fraction, width;
+
+  bool get expands => width == null;
+
+  @override
+  Widget build(BuildContext context) {
+    final style = _partText(context, _part(context, slot));
+    final em = MediaQuery.textScalerOf(context).scale(style.fontSize ?? 16);
+    Widget text(double? boxWidth) => Text.rich(
+      WidgetSpan(
+        alignment: PlaceholderAlignment.middle,
+        child: RaftSkeleton(
+          key: barKey,
+          variant: RaftSkeletonVariant.line,
+          fromRecipe: true,
+          width: width ?? (boxWidth ?? 0) * (fraction ?? 1),
+          height: em * .75,
+        ),
+      ),
+      maxLines: 1,
+      style: style,
+    );
+    if (!expands) return text(null);
+    return LayoutBuilder(builder: (context, c) => text(c.maxWidth));
   }
 }

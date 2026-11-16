@@ -44,6 +44,11 @@ extension RaftRecipeBinding on RaftTokens {
     /// `pointer-fine` and the window's breakpoint band, so `md:pointer-fine:`
     /// rules (34px controls, 14px field text) apply. Opt-in per family.
     bool responsive = false,
+
+    /// `@media (pointer: coarse)`: the input is a finger. Callers pass
+    /// `RaftInteraction.of(context).touch` (never a width) for the families
+    /// whose recipes carry `pointer-coarse:` utilities.
+    bool pointerCoarse = false,
   }) => RaftRecipeStates({
     if (dark) RaftRecipeStates.dark,
     if (hovered) RaftRecipeStates.hover,
@@ -56,6 +61,7 @@ extension RaftRecipeBinding on RaftTokens {
     if (ariaDisabled) RaftRecipeStates.ariaDisabled,
     if (checked) RaftRecipeStates.checked,
     if (responsive && desktop) 'pointer-fine',
+    if (pointerCoarse) 'pointer-coarse',
     ...extra,
   }, responsive && desktop ? viewportWidth : null);
 }
