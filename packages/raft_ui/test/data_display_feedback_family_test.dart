@@ -1,10 +1,7 @@
-import 'dart:ui' show SemanticsRole;
-
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
-import 'package:raft_ui/src/raft/ui_tokens.dart';
 
 /// The feedback / text part of the data-display families at raft-ui 0.95.3
 /// (Web v1.24): Banner, EmptyState, Progress, TextLink, SectionEyebrow /
