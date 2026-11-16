@@ -53,7 +53,8 @@ void main() {
         );
         expect(tester.getSize(find.byType(RaftActionCard)).width, 640);
         final badge = find.byKey(const ValueKey('action-success-badge'));
-        expect(tester.getTopRight(badge).dx, closeTo(626, .1));
+        // MessageEmbed `item`: 400 wide, a 1px hairline and the 12px inset.
+        expect(tester.getTopRight(badge).dx, closeTo(387, .1));
         final container = tester.widget<Container>(badge);
         final context = tester.element(find.byType(RaftActionCard));
         final recipe = ActionSnapshotRecipe(RaftTokens.of(context));
@@ -95,18 +96,9 @@ void main() {
         );
         await tester.pumpAndSettle();
         final bundle = find.byType(RaftForwardedBundle);
-        expect(tester.getSize(bundle).width, 544);
-        final cardContext = tester.element(find.byType(RaftForwardedBundle));
-        final headerRecipe = ForwardedSnapshotRecipe(
-          RaftTokens.of(cardContext),
-          devicePixelRatio: MediaQuery.devicePixelRatioOf(cardContext),
-        );
-        final headerInset =
-            headerRecipe
-                .headerInset(MediaQuery.sizeOf(cardContext).width)
-                .right +
-            headerRecipe.inset.right +
-            headerRecipe.border.width;
+        expect(tester.getSize(bundle).width, 560);
+        // MessageEmbed header `px-3` inside the 1px hairline.
+        const headerInset = 12.0 + 1;
         expect(
           tester.getTopRight(find.text('from #design')).dx,
           closeTo(tester.getTopRight(bundle).dx - headerInset, .1),
@@ -167,18 +159,9 @@ void main() {
           final source = find.text('from $target');
           final sourceRect = tester.getRect(source);
           final labelRect = tester.getRect(find.text('Forwarded'));
-          final cardContext = tester.element(find.byType(RaftForwardedBundle));
-          final headerRecipe = ForwardedSnapshotRecipe(
-            RaftTokens.of(cardContext),
-            devicePixelRatio: MediaQuery.devicePixelRatioOf(cardContext),
-          );
-          final headerInset =
-              headerRecipe
-                  .headerInset(MediaQuery.sizeOf(cardContext).width)
-                  .right +
-              headerRecipe.inset.right +
-              headerRecipe.border.width;
-          expect(bundle.width, width < 544 ? width : 544);
+          // MessageEmbed header `px-3` inside the 1px hairline.
+          const headerInset = 12.0 + 1;
+          expect(bundle.width, width < 560 ? width : 560);
           expect(sourceRect.right, closeTo(bundle.right - headerInset, .1));
           expect(sourceRect.left, greaterThan(labelRect.right));
           expect(sourceRect.width, greaterThan(0));
@@ -270,9 +253,9 @@ void main() {
     );
   }
   for (final (width, density, expectedHeight) in [
-    (320.0, RaftDensity.desktop, 16.0),
+    (320.0, RaftDensity.desktop, 18.0),
     // Original ui/ShowMoreToggle has no touch min-height/padding.
-    (1200.0, RaftDensity.touch, 16.0),
+    (1200.0, RaftDensity.touch, 18.0),
   ]) {
     testWidgets(
       'toggle density follows input contract at width $width/$density',

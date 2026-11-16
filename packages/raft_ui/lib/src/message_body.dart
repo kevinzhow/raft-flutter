@@ -5,6 +5,7 @@ import 'interaction.dart';
 import 'idle_work.dart';
 import 'hover_region.dart';
 import 'mermaid_toolbar_recipe.dart';
+import 'message_content_family.dart';
 import 'message_markdown.dart';
 import 'message_touch_taps.dart';
 import 'markdown_scrollbar.dart';
@@ -653,6 +654,9 @@ class RaftMessageBody extends StatelessWidget {
                       onCopy: onCopyCode,
                       exportMode: exportMode,
                       fontSize: fontSize,
+                      lineHeight: recipe.body.height == null
+                          ? null
+                          : recipe.body.height! * recipe.body.fontSize!,
                       joinsSelection: proseSelection,
                     ),
                   ),
@@ -1059,6 +1063,7 @@ class _RaftMarkdownState extends State<MarkdownWidget>
   _RaftMarkdown get markdown => widget as _RaftMarkdown;
   List<Widget>? children;
   final recognizers = <GestureRecognizer>[];
+  final underlines = GlobalKey();
 
   @override
   void didChangeDependencies() {
@@ -1180,7 +1185,24 @@ class _RaftMarkdownState extends State<MarkdownWidget>
               context.findRenderObject()?.markNeedsPaint();
               return false;
             },
-            child: RaftUnderlines(child: body),
+            child:
+                recognizers.any(
+                  (r) => r is MessageLinkRecognizer && r.faintUnderline,
+                )
+                // raft-ui `MarkdownLink`: the underline turns full under a mouse.
+                ? MouseRegion(
+                    opaque: false,
+                    onHover: (e) => raftUpdateLinkHover(
+                      underlines.currentContext?.findRenderObject(),
+                      e.position,
+                    ),
+                    onExit: (_) => raftUpdateLinkHover(
+                      underlines.currentContext?.findRenderObject(),
+                      null,
+                    ),
+                    child: RaftUnderlines(key: underlines, child: body),
+                  )
+                : RaftUnderlines(key: underlines, child: body),
           )
         : body;
   }
@@ -1751,6 +1773,9 @@ class _MessageInlineCodeBuilder extends MarkdownElementBuilder {
     return Text.rich(
       RaftBackgroundSpan(
         background: style.backgroundColor ?? Colors.transparent,
+        // raft-ui `InlineCode`: `rounded-sticker` 4 and `py-px` (Raft look).
+        radius: raftContentLook(RaftTokens.of(context)) ? 4 : 0,
+        verticalInset: raftContentLook(RaftTokens.of(context)) ? 1 : 0,
         children: [
           padding(),
           highlight.isEmpty
@@ -1874,15 +1899,23 @@ class _MessageLinkBuilder extends MarkdownElementBuilder {
       );
     }
     final linkStyle = base.merge(preferredStyle);
-    final recognizer = MessageLinkRecognizer()
-      ..onTap = onLink == null ? null : () => onLink!(href);
-    recognizers?.add(recognizer);
     final children = (element.children as List?) ?? const [];
-    final style = linkStyle.copyWith(decoration: TextDecoration.none);
     // A thread-search mark is a piece of its own (see
     // [_highlightSearchNodes]); it stays a link and a single leaf span, which
     // flutter_markdown keeps as it is.
     final only = children.length == 1 ? children[0] : null;
+    // raft-ui `MarkdownLink` (Raft look): `text-foreground-link`, a faint
+    // underline that turns full under a mouse.
+    final tokens = RaftTokens.of(context);
+    final raft = raftContentLook(tokens);
+    final faint = raft && !(only is md.Element && only.tag == 'mark');
+    final recognizer = MessageLinkRecognizer(faintUnderline: faint)
+      ..onTap = onLink == null ? null : () => onLink!(href);
+    recognizers?.add(recognizer);
+    final style = linkStyle.copyWith(
+      decoration: TextDecoration.none,
+      color: raft ? tokens.colors['foreground-link'] : null,
+    );
     if (only is md.Element && only.tag == 'mark') {
       return Text.rich(
         _searchMarkSpan(
@@ -2078,10 +2111,15 @@ class RaftCodeBlock extends StatefulWidget {
     this.onCopy,
     this.exportMode = false,
     this.fontSize = 14,
+    this.lineHeight,
     this.joinsSelection = false,
   });
   final String code;
   final String? language;
+
+  /// The message body's line height (Web: `[line-height:inherit]`); Raft look
+  /// only, null keeps the code recipe's own line.
+  final double? lineHeight;
 
   /// The block sits inside a message selection area: its text is a plain
   /// selectable run of that selection (Web selects through a code block with
@@ -2098,6 +2136,8 @@ class RaftCodeBlock extends StatefulWidget {
 class _RaftCodeBlockState extends State<RaftCodeBlock> {
   bool hovered = false, focused = false, copied = false;
   bool buttonHovered = false;
+  // The horizontal scroller overflows: it is then a labelled Tab stop.
+  bool overflows = false;
   // ignore: raft_lints/avoid_imperative_notice_state -- Code block copy message: cleared by a successful copy and when the code changes.
   String? error;
   int revision = 0;
@@ -2152,9 +2192,18 @@ class _RaftCodeBlockState extends State<RaftCodeBlock> {
   Widget buildCodeBox(RaftTokens t) {
     final touch = RaftInteraction.of(context).touch;
     final recipe = RaftCodeRecipe(t);
+    final raft = raftContentLook(t);
+    final line = widget.lineHeight;
     final textStyle = recipe.textStyle.copyWith(
       fontSize: widget.fontSize,
-      color: recipe.foreground,
+      // Web `text-code-foreground` (#24292e / #f0f3f6) and the message
+      // body's line height; the frozen looks keep their recipe.
+      color: raft
+          ? (t.dark ? _darkCodeTokenTheme : _lightCodeTokenTheme)['root']
+                    ?.color ??
+                recipe.foreground
+          : recipe.foreground,
+      height: raft && line != null ? line / widget.fontSize : null,
     );
     final key = (
       widget.code,
@@ -2179,19 +2228,34 @@ class _RaftCodeBlockState extends State<RaftCodeBlock> {
             style: textStyle,
             textAlign: TextAlign.left,
           );
-    final scroll = SingleChildScrollView(
+    Widget scroll = SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: text,
     );
+    if (raft) {
+      scroll = RaftCodeScrollRegion(
+        onOverflowChanged: (value) {
+          if (mounted) setState(() => overflows = value);
+        },
+        child: scroll,
+      );
+    }
     return codeBox = Container(
       key: const ValueKey('code-container'),
       width: double.infinity,
-      decoration: BoxDecoration(
-        color: recipe.background,
-        border: Border.all(color: recipe.border, width: t.border),
-        borderRadius: recipe.radius,
-      ),
-      padding: const EdgeInsets.fromLTRB(12, 12, 48, 12),
+      constraints: raft && !widget.exportMode
+          ? const BoxConstraints(minHeight: RaftCodeBlockFrame.minHeight)
+          : null,
+      decoration: raft
+          ? RaftCodeBlockFrame.decoration(t)
+          : BoxDecoration(
+              color: recipe.background,
+              border: Border.all(color: recipe.border, width: t.border),
+              borderRadius: recipe.radius,
+            ),
+      padding: raft
+          ? RaftCodeBlockFrame.padding
+          : const EdgeInsets.fromLTRB(12, 12, 48, 12),
       // Android SelectableText eagerly wins a horizontal finger drag even
       // when its read-only EditableText does nothing with the drag. A touch
       // selection region keeps long-press/copy and lets the viewport pan.
@@ -2204,6 +2268,7 @@ class _RaftCodeBlockState extends State<RaftCodeBlock> {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
+    final raft = raftContentLook(t);
     final block = Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: RaftHoverRegion(
@@ -2219,33 +2284,49 @@ class _RaftCodeBlockState extends State<RaftCodeBlock> {
                   buildCodeBox(t),
                   if (!widget.exportMode)
                     Positioned(
-                      right: 8,
-                      top: 8,
+                      right: raft ? RaftCodeBlockFrame.actionInset : 8,
+                      top: raft ? RaftCodeBlockFrame.actionInset : 8,
                       // index.css `.r-code-copy`: hidden; row hover or
                       // focus-visible .55; its own hover or copied 1;
                       // `@media (hover: none)` (touch) always .55.
-                      child: RaftHoverRegion(
-                        onEnter: (_) => setState(() => buttonHovered = true),
-                        onExit: (_) => setState(() => buttonHovered = false),
-                        child: Opacity(
-                          opacity: copied || buttonHovered
-                              ? 1
-                              : hovered ||
-                                    focused ||
-                                    RaftDensityScope.of(context) ==
-                                        RaftDensity.touch
-                              ? .55
-                              : 0,
-                          child: RaftIconButton(
-                            glyph: copied ? RaftGlyph.check : RaftGlyph.copy,
-                            tooltip: copied ? 'Copied' : 'Copy Code',
-                            onPressed: widget.code.isEmpty ? null : copy,
-                            visualSize: RaftMetrics.buttonXs,
-                            minimumTargetSize: RaftInteraction.of(context).touch
-                                ? RaftMetrics.touchTarget
-                                : RaftMetrics.buttonXs,
-                            glyphSize: RaftMetrics.iconSm,
-                            variant: RaftControlVariant.ghost,
+                      child: ExcludeSemantics(
+                        excluding: raft && overflows,
+                        child: RaftHoverRegion(
+                          onEnter: (_) => setState(() => buttonHovered = true),
+                          onExit: (_) => setState(() => buttonHovered = false),
+                          child: Opacity(
+                            opacity: copied || buttonHovered
+                                ? 1
+                                : hovered ||
+                                      focused ||
+                                      RaftDensityScope.of(context) ==
+                                          RaftDensity.touch
+                                ? .55
+                                : 0,
+                            child: raft
+                                ? RaftCodeBlockFrame.copyButton(
+                                    copied: copied,
+                                    tooltip: copied ? 'Copied' : 'Copy Code',
+                                    onPressed: widget.code.isEmpty
+                                        ? null
+                                        : copy,
+                                  )
+                                : RaftIconButton(
+                                    glyph: copied
+                                        ? RaftGlyph.check
+                                        : RaftGlyph.copy,
+                                    tooltip: copied ? 'Copied' : 'Copy Code',
+                                    onPressed: widget.code.isEmpty
+                                        ? null
+                                        : copy,
+                                    visualSize: RaftMetrics.buttonXs,
+                                    minimumTargetSize:
+                                        RaftInteraction.of(context).touch
+                                        ? RaftMetrics.touchTarget
+                                        : RaftMetrics.buttonXs,
+                                    glyphSize: RaftMetrics.iconSm,
+                                    variant: RaftControlVariant.ghost,
+                                  ),
                           ),
                         ),
                       ),
@@ -2277,7 +2358,9 @@ class _RaftCodeBlockState extends State<RaftCodeBlock> {
       liveRegion: error != null || copied,
       onTap: canCopy ? copy : null,
       onTapHint: canCopy ? raftText(context, 'Copy Code') : null,
-      excludeSemantics: true,
+      // An overflowing Raft block keeps its labelled `Code` region node (the
+      // text and the copy button are excluded inside it).
+      excludeSemantics: !(raft && overflows),
       child: block,
     );
   }

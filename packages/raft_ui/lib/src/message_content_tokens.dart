@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:raft_theme/recipes.dart' show RaftRecipeSet;
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 
 import 'design_primitives.dart';
 import 'message_table_border.dart';
 import 'message_row_recipe.dart' show RaftMessageSizeTier;
+import 'raft/ui_tokens.dart' show RaftTokensUi;
 import 'theme.dart';
 import 'tokens/tokens.dart';
 
@@ -23,14 +25,20 @@ abstract final class MessageContentPrimitive {
 class MessageContentSemantic {
   const MessageContentSemantic(this.tokens);
   final RaftTokens tokens;
-  Color get link => tokens.dark
+  // WP-DS3: the Raft look reads the product tokens (raft-ui `MarkdownLink`
+  // `text-foreground-link`, blockquote `border-line-seam`, ShowMoreToggle
+  // `TextLink` muted); the frozen looks keep the pinned Web 26f77ef values.
+  bool get _raft => tokens.recipeSet == RaftRecipeSet.raft;
+  Color get link => _raft
+      ? tokens.colors['foreground-link']!
+      : tokens.dark
       ? MessageContentPrimitive.linkDark
       : MessageContentPrimitive.linkLight;
   Color get quote => tokens.muted;
-  Color get quoteEdge => tokens.colors['line-muted']!;
+  Color get quoteEdge => tokens.colors[_raft ? 'line-seam' : 'line-muted']!;
   Color get collapseFade => tokens.panel;
-  Color get toggleHover => tokens.strong;
-  Color get toggle => tokens.muted;
+  Color get toggleHover => _raft ? tokens.colors['foreground']! : tokens.strong;
+  Color get toggle => _raft ? tokens.colors['foreground-muted']! : tokens.muted;
 }
 
 class MessageContentRecipe {
@@ -86,7 +94,15 @@ class MessageContentRecipe {
                   tokens.size('type.messageBody.tracking', fallback: -.01)
             : 0,
       );
-  TextStyle get toggle => RaftTypography.body(
+  // Web ShowMoreToggle: raft-ui `TextLink` muted, `text-footnote font-medium`.
+  TextStyle get toggle => semantic._raft
+      ? tokens.scale(
+          RaftTypeScale.footnote,
+          weight: FontWeight.w500,
+          color: semantic.toggle,
+        )
+      : _legacyToggle;
+  TextStyle get _legacyToggle => RaftTypography.body(
     tokens,
     size: MessageContentPrimitive.toggleSize,
     line: 16,
@@ -179,65 +195,70 @@ class MessageContentRecipe {
   EdgeInsets get tableOuterInset =>
       const EdgeInsets.symmetric(vertical: 4) +
       EdgeInsets.all(collapsedTableHalfStroke);
-  MarkdownStyleSheet stylesheet(
-    BuildContext context,
-  ) => MarkdownStyleSheet.fromTheme(Theme.of(context)).copyWith(
-    p: body,
-    // `border-t border-line-muted`; brutal `border-t-2 border-black`.
-    horizontalRuleDecoration: BoxDecoration(
-      border: Border(top: BorderSide(color: tokens.colors['line-muted']!)),
-    ),
-    blockSpacing: document
-        ? MessageContentPrimitive.documentGap
-        : MessageContentPrimitive.compactGap,
-    listIndent: document
-        ? MessageContentPrimitive.documentListIndent
-        : MessageContentPrimitive.compactListIndent,
-    listBulletPadding: EdgeInsets.zero,
-    listBullet: body,
-    h1: heading(1),
-    h2: heading(2),
-    h3: heading(3),
-    h4: heading(4),
-    h5: heading(5),
-    h6: heading(6),
-    h1Padding: EdgeInsets.only(top: document ? 12 : 8, bottom: 0),
-    h2Padding: EdgeInsets.only(top: document ? 8 : 4, bottom: 0),
-    h3Padding: EdgeInsets.only(top: 4, bottom: 0),
-    h4Padding: const EdgeInsets.only(top: 0, bottom: 0),
-    h5Padding: const EdgeInsets.only(top: 0, bottom: 0),
-    h6Padding: const EdgeInsets.only(top: 0, bottom: 0),
-    blockquote: body.copyWith(
-      color: semantic.quote,
-      fontStyle: FontStyle.italic,
-    ),
-    blockquotePadding: const EdgeInsets.only(left: 12),
-    blockquoteDecoration: BoxDecoration(
-      border: Border(left: BorderSide(color: semantic.quoteEdge, width: 2)),
-    ),
-    tableHead: body.copyWith(fontWeight: FontWeight.w700, color: tokens.strong),
-    tableHeadAlign: TextAlign.left,
-    tableBody: body,
-    tableColumnWidth: const IntrinsicColumnWidth(),
-    tablePadding: tableOuterInset,
-    tableHeadCellsDecoration: BoxDecoration(color: tokens.colors['info-soft']),
-    tableCellsPadding: tableCellInset,
-    tableHeadCellsPadding: tableCellInset,
-    tableBorder: MessageCollapsedTableBorder(
-      color: tokens.colors['line-muted']!,
-      width: tokens.border,
-    ),
-    // The link underline is painted by RaftUnderlines (message_body).
-    a: body.copyWith(color: semantic.link),
-    // raft-ui InlineCode appearance="message": brutal `bg-black/5
-    // text-black`, elegant `bg-fill-muted text-foreground-strong`.
-    code: RaftTypography.mono(
-      tokens,
-      size: fontSize * MessageContentPrimitive.inlineCodeScale,
-      line: fontSize * MessageContentPrimitive.inlineCodeScale * 1.3,
-      color: tokens.strong,
-    ).copyWith(backgroundColor: tokens.colors['fill-muted']),
-  );
+  MarkdownStyleSheet stylesheet(BuildContext context) =>
+      MarkdownStyleSheet.fromTheme(Theme.of(context)).copyWith(
+        p: body,
+        // `border-t border-line-muted`; brutal `border-t-2 border-black`.
+        horizontalRuleDecoration: BoxDecoration(
+          border: Border(top: BorderSide(color: tokens.colors['line-muted']!)),
+        ),
+        blockSpacing: document
+            ? MessageContentPrimitive.documentGap
+            : MessageContentPrimitive.compactGap,
+        listIndent: document
+            ? MessageContentPrimitive.documentListIndent
+            : MessageContentPrimitive.compactListIndent,
+        listBulletPadding: EdgeInsets.zero,
+        listBullet: body,
+        h1: heading(1),
+        h2: heading(2),
+        h3: heading(3),
+        h4: heading(4),
+        h5: heading(5),
+        h6: heading(6),
+        h1Padding: EdgeInsets.only(top: document ? 12 : 8, bottom: 0),
+        h2Padding: EdgeInsets.only(top: document ? 8 : 4, bottom: 0),
+        h3Padding: EdgeInsets.only(top: 4, bottom: 0),
+        h4Padding: const EdgeInsets.only(top: 0, bottom: 0),
+        h5Padding: const EdgeInsets.only(top: 0, bottom: 0),
+        h6Padding: const EdgeInsets.only(top: 0, bottom: 0),
+        blockquote: body.copyWith(
+          color: semantic.quote,
+          fontStyle: semantic._raft ? FontStyle.normal : FontStyle.italic,
+        ),
+        // Web `border-l-2 border-line-seam pl-2.5 not-italic`.
+        blockquotePadding: EdgeInsets.only(left: semantic._raft ? 10 : 12),
+        blockquoteDecoration: BoxDecoration(
+          border: Border(left: BorderSide(color: semantic.quoteEdge, width: 2)),
+        ),
+        tableHead: body.copyWith(
+          fontWeight: FontWeight.w700,
+          color: tokens.strong,
+        ),
+        tableHeadAlign: TextAlign.left,
+        tableBody: body,
+        tableColumnWidth: const IntrinsicColumnWidth(),
+        tablePadding: tableOuterInset,
+        tableHeadCellsDecoration: BoxDecoration(
+          color: tokens.colors[semantic._raft ? 'fill-muted' : 'info-soft'],
+        ),
+        tableCellsPadding: tableCellInset,
+        tableHeadCellsPadding: tableCellInset,
+        tableBorder: MessageCollapsedTableBorder(
+          color: tokens.colors['line-muted']!,
+          width: tokens.border,
+        ),
+        // The link underline is painted by RaftUnderlines (message_body).
+        a: body.copyWith(color: semantic.link),
+        // raft-ui InlineCode appearance="message": brutal `bg-black/5
+        // text-black`, elegant `bg-fill-muted text-foreground-strong`.
+        code: RaftTypography.mono(
+          tokens,
+          size: fontSize * MessageContentPrimitive.inlineCodeScale,
+          line: fontSize * MessageContentPrimitive.inlineCodeScale * 1.3,
+          color: tokens.strong,
+        ).copyWith(backgroundColor: tokens.colors['fill-muted']),
+      );
 }
 
 /// AttachmentPreviewSurfaces table/text reader component recipe.

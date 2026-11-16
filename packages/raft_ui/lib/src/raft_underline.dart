@@ -8,7 +8,27 @@ import 'theme.dart';
 
 /// Link identity survives Markdown's TextSpan flattening. The Markdown state
 /// owns and disposes this recognizer, including non-interactive export links.
-class MessageLinkRecognizer extends TapGestureRecognizer {}
+class MessageLinkRecognizer extends TapGestureRecognizer {
+  MessageLinkRecognizer({this.faintUnderline = false});
+
+  /// raft-ui `MarkdownLink` (Raft look): the underline is the link colour at
+  /// 40% at rest and full while [hover] is true (a mouse over the link).
+  final bool faintUnderline;
+  final ValueNotifier<bool> hover = ValueNotifier(false);
+  bool _disposed = false;
+
+  /// A mouse-region callback can arrive after the Markdown tree rebuilt.
+  void setHover(bool value) {
+    if (!_disposed) hover.value = value;
+  }
+
+  @override
+  void dispose() {
+    _disposed = true;
+    hover.dispose();
+    super.dispose();
+  }
+}
 
 /// An inline underlined run. [color] overrides the text colour (a recipe's
 /// `decoration-*`); [active] is false for a hover-only underline at rest.
@@ -82,14 +102,24 @@ class RaftBackgroundSpan extends TextSpan {
     super.recognizer,
     super.mouseCursor,
     required this.background,
+    this.radius = 0,
+    this.verticalInset = 0,
   });
 
   final Color background;
 
+  /// Corner radius and extra top/bottom height of the fill (raft-ui
+  /// `InlineCode`: `rounded-sticker` 4, `py-px`). The search `mark` stays
+  /// square.
+  final double radius, verticalInset;
+
   @override
   RenderComparison compareTo(InlineSpan other) {
     final base = super.compareTo(other);
-    if (other is RaftBackgroundSpan && other.background != background) {
+    if (other is RaftBackgroundSpan &&
+        (other.background != background ||
+            other.radius != radius ||
+            other.verticalInset != verticalInset)) {
       return base.index < RenderComparison.paint.index
           ? RenderComparison.paint
           : base;
@@ -101,10 +131,13 @@ class RaftBackgroundSpan extends TextSpan {
   bool operator ==(Object other) =>
       super == other &&
       other is RaftBackgroundSpan &&
-      other.background == background;
+      other.background == background &&
+      other.radius == radius &&
+      other.verticalInset == verticalInset;
 
   @override
-  int get hashCode => Object.hash(super.hashCode, background);
+  int get hashCode =>
+      Object.hash(super.hashCode, background, radius, verticalInset);
 }
 
 /// A standalone `Text` with the unified underline. [underline] false is the
@@ -223,12 +256,14 @@ class _RenderRaftUnderlines extends RenderProxyBox {
 
   /// Background rects in their paragraph's coordinates with its global origin.
   @visibleForTesting
-  List<({Rect rect, Color color, Offset origin})> get debugBackgrounds => [
+  List<({Rect rect, Color color, double radius, Offset origin})>
+  get debugBackgrounds => [
     for (final lines in _paragraphs ??= collectStrokes())
       for (final shape in lines.backgrounds)
         (
           rect: shape.rect,
           color: shape.paint.color,
+          radius: shape.radius,
           origin: lines.owner.localToGlobal(Offset.zero),
         ),
   ];
@@ -236,6 +271,43 @@ class _RenderRaftUnderlines extends RenderProxyBox {
   void invalidate() {
     _paragraphs = null;
     markNeedsPaint();
+  }
+
+  /// Mouse over [global] (null: the pointer left): every faint-underline link
+  /// run under it is hovered. Spans' own `onEnter` does not survive Markdown's
+  /// span rebuild, so the underline layer hit-tests its own link boxes.
+  void updateHover(Offset? global) {
+    final paragraphs = _paragraphs ??= collectStrokes();
+    final hovered = <MessageLinkRecognizer>{};
+    if (global != null) {
+      for (final lines in paragraphs) {
+        final local = lines.owner.globalToLocal(global);
+        for (final link in lines.links) {
+          if (link.rect.contains(local)) hovered.add(link.link);
+        }
+      }
+    }
+    for (final lines in paragraphs) {
+      for (final link in lines.links) {
+        link.link.setHover(hovered.contains(link.link));
+      }
+    }
+  }
+
+  // Links whose hover changes the underline colour repaint this object.
+  final Set<MessageLinkRecognizer> _watched = {};
+  void _watch(MessageLinkRecognizer link) {
+    if (_watched.add(link)) link.hover.addListener(invalidate);
+  }
+
+  @override
+  void detach() {
+    for (final link in _watched) {
+      link.hover.removeListener(invalidate);
+    }
+    _watched.clear();
+    _paragraphs = null;
+    super.detach();
   }
 
   @override
@@ -253,14 +325,16 @@ class _RenderRaftUnderlines extends RenderProxyBox {
       context,
       offset,
       paragraphs,
-      (lines) => [for (final b in lines.backgrounds) (b.rect, b.paint)],
+      (lines) => [
+        for (final b in lines.backgrounds) (b.rect, b.paint, b.radius),
+      ],
     );
     super.paint(context, offset);
     paintShapes(
       context,
       offset,
       paragraphs,
-      (lines) => [for (final s in lines.strokes) (s.rect, s.paint)],
+      (lines) => [for (final s in lines.strokes) (s.rect, s.paint, 0.0)],
     );
   }
 
@@ -268,7 +342,7 @@ class _RenderRaftUnderlines extends RenderProxyBox {
     PaintingContext context,
     Offset offset,
     List<_ParagraphUnderlines> paragraphs,
-    List<(Rect, Paint)> Function(_ParagraphUnderlines) shapes,
+    List<(Rect, Paint, double)> Function(_ParagraphUnderlines) shapes,
   ) {
     for (final lines in paragraphs) {
       final list = shapes(lines);
@@ -289,7 +363,15 @@ class _RenderRaftUnderlines extends RenderProxyBox {
         );
       }
       for (final shape in list) {
-        context.canvas.drawRect(shape.$1.shift(origin), shape.$2);
+        final rect = shape.$1.shift(origin);
+        if (shape.$3 > 0) {
+          context.canvas.drawRRect(
+            RRect.fromRectAndRadius(rect, Radius.circular(shape.$3)),
+            shape.$2,
+          );
+        } else {
+          context.canvas.drawRect(rect, shape.$2);
+        }
       }
       if (lines.clips.isNotEmpty) context.canvas.restore();
     }
@@ -305,7 +387,8 @@ class _RenderRaftUnderlines extends RenderProxyBox {
       if (object is _RenderRaftUnderlines && object != this) return;
       if (object is RenderParagraph) {
         final strokes = <({Rect rect, Paint paint, double baseline})>[];
-        collectRuns(strokes, object);
+        final links = <({Rect rect, MessageLinkRecognizer link})>[];
+        collectRuns(strokes, links, object);
         final backgrounds = collectBackgrounds(object);
         if (strokes.isNotEmpty || backgrounds.isNotEmpty) {
           final clips = <({RenderObject parent, RenderObject child})>[];
@@ -318,7 +401,7 @@ class _RenderRaftUnderlines extends RenderProxyBox {
             child = parent;
           }
           paragraphs.add(
-            _ParagraphUnderlines(object, strokes, backgrounds, clips),
+            _ParagraphUnderlines(object, strokes, backgrounds, clips, links),
           );
         }
       }
@@ -331,10 +414,10 @@ class _RenderRaftUnderlines extends RenderProxyBox {
 
   /// One rect per line for every [RaftBackgroundSpan], outer spans first so an
   /// inner background paints over its parent's.
-  List<({Rect rect, Paint paint})> collectBackgrounds(
+  List<({Rect rect, Paint paint, double radius})> collectBackgrounds(
     RenderParagraph paragraph,
   ) {
-    final out = <({Rect rect, Paint paint})>[];
+    final out = <({Rect rect, Paint paint, double radius})>[];
     var position = 0;
     void visit(InlineSpan span) {
       final start = position;
@@ -362,7 +445,19 @@ class _RenderRaftUnderlines extends RenderProxyBox {
             }
           }
           out.insertAll(index, [
-            for (final r in rects) (rect: r, paint: paint),
+            for (final r in rects)
+              (
+                rect: span.verticalInset == 0
+                    ? r
+                    : Rect.fromLTRB(
+                        r.left,
+                        r.top - span.verticalInset,
+                        r.right,
+                        r.bottom + span.verticalInset,
+                      ),
+                paint: paint,
+                radius: span.radius,
+              ),
           ]);
         }
       } else if (span is PlaceholderSpan) {
@@ -376,6 +471,7 @@ class _RenderRaftUnderlines extends RenderProxyBox {
 
   void collectRuns(
     List<({Rect rect, Paint paint, double baseline})> strokes,
+    List<({Rect rect, MessageLinkRecognizer link})> links,
     RenderParagraph paragraph,
   ) {
     var position = 0;
@@ -387,6 +483,7 @@ class _RenderRaftUnderlines extends RenderProxyBox {
             Color? color,
             double? offset,
             double? thickness,
+            MessageLinkRecognizer? link,
           })
         >[];
     // A marker covers its text and its children's; an inner marker inside an
@@ -403,12 +500,26 @@ class _RenderRaftUnderlines extends RenderProxyBox {
         position += span.text?.length ?? 0;
         span.children?.forEach((c) => visit(c, style, covered || paints));
         if (paints && position > start) {
+          final link = span.recognizer;
+          Color? faint;
+          if (link is MessageLinkRecognizer && link.faintUnderline) {
+            _watch(link);
+            final base = style.color;
+            if (base != null) {
+              faint = link.hover.value
+                  ? base
+                  : base.withValues(alpha: base.a * .4);
+            }
+          }
           runs.add((
             range: TextSelection(baseOffset: start, extentOffset: position),
             style: style,
-            color: span is RaftUnderlineSpan ? span.color : null,
+            color: span is RaftUnderlineSpan ? span.color : faint,
             offset: span is RaftUnderlineSpan ? span.offset : null,
             thickness: span is RaftUnderlineSpan ? span.thickness : null,
+            link: link is MessageLinkRecognizer && link.faintUnderline
+                ? link
+                : null,
           ));
         }
       } else if (span is PlaceholderSpan) {
@@ -445,6 +556,7 @@ class _RenderRaftUnderlines extends RenderProxyBox {
       Rect? segment;
       void drawSegment() {
         if (segment == null) return;
+        if (run.link != null) links.add((rect: segment, link: run.link!));
         final baseline = firstBaseline + segment.top;
         final top = (baseline + (run.offset ?? _metrics.offset) * scale)
             .roundToDouble();
@@ -482,9 +594,19 @@ class _ParagraphUnderlines {
     this.strokes,
     this.backgrounds,
     this.clips,
+    this.links,
   );
+  final List<({Rect rect, MessageLinkRecognizer link})> links;
   final RenderParagraph owner;
   final List<({Rect rect, Paint paint, double baseline})> strokes;
-  final List<({Rect rect, Paint paint})> backgrounds;
+  final List<({Rect rect, Paint paint, double radius})> backgrounds;
   final List<({RenderObject parent, RenderObject child})> clips;
+}
+
+/// Mouse hover of the faint-underline links under a [RaftUnderlines] render
+/// object (see [_RenderRaftUnderlines.updateHover]); null [global] clears it.
+void raftUpdateLinkHover(RenderObject? underlines, Offset? global) {
+  if (underlines is _RenderRaftUnderlines && underlines.attached) {
+    underlines.updateHover(global);
+  }
 }

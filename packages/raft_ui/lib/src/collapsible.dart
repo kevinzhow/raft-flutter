@@ -1,8 +1,10 @@
+import 'interaction.dart';
 import 'hover_region.dart';
 
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:raft_theme/recipes.dart' show RaftRecipeSet;
 
 import 'localization.dart';
 import 'raft_underline.dart';
@@ -688,7 +690,7 @@ class RaftShowMoreToggle extends StatefulWidget {
     this.icon,
     this.style,
     this.underline = true,
-    this.visualHeight = 16,
+    this.visualHeight,
     this.expanded,
   });
   final String label;
@@ -703,7 +705,10 @@ class RaftShowMoreToggle extends StatefulWidget {
   /// Web ShowMoreToggle is underlined; one themed recipe (Brutal rich cards)
   /// keeps the label plain.
   final bool underline;
-  final double visualHeight;
+
+  /// The control's height; null is the label's own line (16 for the frozen
+  /// looks, the footnote line 18 for the Raft look).
+  final double? visualHeight;
   @override
   State<RaftShowMoreToggle> createState() => _RaftShowMoreToggleState();
 }
@@ -713,7 +718,10 @@ class _RaftShowMoreToggleState extends State<RaftShowMoreToggle> {
   @override
   Widget build(BuildContext context) {
     final tokens = RaftTokens.of(context);
+    final raft = tokens.recipeSet == RaftRecipeSet.raft;
+    final mouse = RaftInteraction.of(context).pointer;
     final style = widget.style ?? MessageContentRecipe(tokens).toggle;
+    final visualHeight = widget.visualHeight ?? (raft ? 18.0 : 16.0);
     final color = hovered
         ? MessageContentSemantic(tokens).toggleHover
         : style.color;
@@ -725,10 +733,10 @@ class _RaftShowMoreToggleState extends State<RaftShowMoreToggle> {
         child: RaftControl(
           kind: RaftControlKind.textLink,
           shadow: true,
-          visualHeight: widget.visualHeight,
-          // Web ShowMoreToggle is the bare 11px text on touch too: no
+          visualHeight: visualHeight,
+          // Web ShowMoreToggle is the bare text on touch too: no
           // touch-target expansion that would push the content below it.
-          minimumTargetSize: widget.visualHeight,
+          minimumTargetSize: visualHeight,
           padding: EdgeInsets.zero,
           semanticLabel: widget.label,
           onPressed: widget.onPressed,
@@ -743,7 +751,13 @@ class _RaftShowMoreToggleState extends State<RaftShowMoreToggle> {
               ExcludeSemantics(
                 child: RaftUnderlinedText(
                   widget.label,
-                  underline: widget.underline,
+                  // raft-ui `TextLink`: underlined only while a mouse hovers
+                  // it (1.5px, offset 3); the frozen looks underline at rest.
+                  underline: raft
+                      ? widget.underline && hovered && mouse
+                      : widget.underline,
+                  underlineOffset: raft ? 3 : null,
+                  underlineThickness: raft ? 1.5 : null,
                   style: style.copyWith(color: color),
                 ),
               ),
