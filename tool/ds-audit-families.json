@@ -602,6 +602,19 @@
           "role": "placement_part"
         }
       }
+    },
+    "mobile_nav_server": {
+      "canonical": [
+        "RaftMobileNavServerTab"
+      ],
+      "note": "The phone tab bar's server tab (RaftMobileNav.trailing) and its popover parts (list, group, separator, row, destinations, destination). One implementation of raft-ui 0.95.3 mobile-nav-server; the popover is hosted by RaftMobileNavServerTab itself because it anchors to the whole bar, not to its trigger.",
+      "deprecated": {},
+      "canonicalBindings": {
+        "RaftMobileNavServerTab": {
+          "declarationId": "packages/raft_ui/lib/src/mobile_nav_server.dart#class:RaftMobileNavServerTab",
+          "role": "public_api"
+        }
+      }
     }
   },
   "recipes": {
@@ -2508,10 +2521,10 @@
       "axes": {}
     },
     "mobileNavServer": {
-      "family": null,
-      "decision": "unresolved",
+      "family": "mobile_nav_server",
+      "decision": "existing",
       "owner": "WP-DS4 shell/navigation",
-      "reason": "Published raft-ui0.95.3 source recipe; downstream canonical API and visual acceptance remain pending. This registration is source ownership only.",
+      "reason": "Existing family linkage is a source ownership record, not a current visual acceptance.",
       "generatedFile": "packages/raft_theme/lib/recipes/mobile_nav_server.g.dart",
       "axes": {}
     },

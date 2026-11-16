@@ -51090,6 +51090,366 @@
         "familyRefs": [],
         "owner": "WP-DS5 data-display family",
         "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/mobile_nav_server_previews.dart#function:_avatar": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/mobile_nav_server_previews.dart#function:_content": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/mobile_nav_server_previews.dart#function:_frame": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/mobile_nav_server_previews.dart#function:mobileNavServerPopoverGridPreview": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/mobile_nav_server_previews.dart#function:mobileNavServerPopoverRowPreview": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/mobile_nav_server_previews.dart#function:mobileNavServerTabPreview": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/mobile_nav_server.dart#class:RaftMobileNavServerTab": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/mobile_nav_server.dart#class:_BarAnchorScope": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/mobile_nav_server.dart#class:_DockedCellScope": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/mobile_nav_server.dart#class:_MobileNavBarAnchor": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/mobile_nav_server.dart#class:_MobileNavBarAnchorState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/mobile_nav_server.dart#class:_PopoverSizer": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/mobile_nav_server.dart#class:_RaftMobileNavServerTabState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/mobile_nav_server.dart#class:_RenderPopoverSizer": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/mobile_nav_server.dart#class:_ServerPopoverScope": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/mobile_nav_server.dart#method:RaftMobileNavServerTab.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/mobile_nav_server.dart#method:_BarAnchorScope.maybeOf": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/mobile_nav_server.dart#method:_BarAnchorScope.updateShouldNotify": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/mobile_nav_server.dart#method:_DockedCellScope.maybeOf": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/mobile_nav_server.dart#method:_DockedCellScope.updateShouldNotify": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/mobile_nav_server.dart#method:_MobileNavBarAnchor.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/mobile_nav_server.dart#method:_MobileNavBarAnchorState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/mobile_nav_server.dart#method:_RaftMobileNavServerTabState._avatar": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/mobile_nav_server.dart#method:_RaftMobileNavServerTabState._capsuleCell": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/mobile_nav_server.dart#method:_RaftMobileNavServerTabState._cell": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/mobile_nav_server.dart#method:_RaftMobileNavServerTabState._dockedCell": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/mobile_nav_server.dart#method:_RaftMobileNavServerTabState._openFill": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/mobile_nav_server.dart#method:_RaftMobileNavServerTabState._popover": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/mobile_nav_server.dart#method:_RaftMobileNavServerTabState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/mobile_nav_server.dart#method:_RaftMobileNavServerTabState.pointerDown": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/mobile_nav_server.dart#method:_RaftMobileNavServerTabState.press": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/mobile_nav_server.dart#method:_ServerPopoverScope.maybeOf": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/mobile_nav_server.dart#method:_ServerPopoverScope.updateShouldNotify": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/mobile_nav_server_content.dart#class:RaftMobileNavServerPopoverDestination": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/mobile_nav_server_content.dart#class:RaftMobileNavServerPopoverDestinations": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/mobile_nav_server_content.dart#class:RaftMobileNavServerPopoverGroup": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/mobile_nav_server_content.dart#class:RaftMobileNavServerPopoverList": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/mobile_nav_server_content.dart#class:RaftMobileNavServerPopoverRow": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/mobile_nav_server_content.dart#class:RaftMobileNavServerPopoverSeparator": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/mobile_nav_server_content.dart#class:_BudgetList": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/mobile_nav_server_content.dart#class:_RaftMobileNavServerPopoverListState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/mobile_nav_server_content.dart#class:_RaftMobileNavServerPopoverRowState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/mobile_nav_server_content.dart#class:_RenderBudgetList": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/mobile_nav_server_content.dart#class:_ReorderItem": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/mobile_nav_server_content.dart#function:_serverRecipe": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/mobile_nav_server_content.dart#local-function:CLASS:RaftMobileNavServerPopoverDestinations@13852/METHOD:build@14217/FUNCTION:line@14488": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/mobile_nav_server_content.dart#method:RaftMobileNavServerPopoverDestination.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/mobile_nav_server_content.dart#method:RaftMobileNavServerPopoverDestinations.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/mobile_nav_server_content.dart#method:RaftMobileNavServerPopoverGroup.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/mobile_nav_server_content.dart#method:RaftMobileNavServerPopoverList.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/mobile_nav_server_content.dart#method:RaftMobileNavServerPopoverRow.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/mobile_nav_server_content.dart#method:RaftMobileNavServerPopoverSeparator.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/mobile_nav_server_content.dart#method:_RaftMobileNavServerPopoverListState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/mobile_nav_server_content.dart#method:_RaftMobileNavServerPopoverListState.scheduleShow": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/mobile_nav_server_content.dart#method:_RaftMobileNavServerPopoverListState.showCurrent": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/mobile_nav_server_content.dart#method:_RaftMobileNavServerPopoverRowState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/mobile_nav_server_content.dart#method:_ReorderItem.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/mobile_navigation.dart#local-function:CLASS:RaftMobileNav@7339/METHOD:_bar@9294/FUNCTION:badged@9638": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/mobile_navigation.dart#local-function:CLASS:RaftMobileNav@7339/METHOD:_bar@9294/FUNCTION:item@10357": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/mobile_navigation.dart#method:RaftMobileNav._bar0": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
       }
     },
     "entries": {
@@ -54171,6 +54531,33 @@
         ],
         "mountStatus": "unresolved",
         "reason": "Resolved function owns a surface call (WP-COMP2 Claude limit resets); actual target, route and state are not yet observed."
+      },
+      "surface:packages/raft_ui/lib/src/mobile_nav_server.dart#method:_RaftMobileNavServerTabState.pointerDown": {
+        "owner": "design-system alignment",
+        "kind": "surface_factory_candidate",
+        "declarationRefs": [
+          "packages/raft_ui/lib/src/mobile_nav_server.dart#method:_RaftMobileNavServerTabState.pointerDown"
+        ],
+        "mountStatus": "unresolved",
+        "reason": "Resolved function owns a surface call; actual target, route and state are not yet observed."
+      },
+      "surface:packages/raft_ui/lib/src/mobile_nav_server.dart#method:_RaftMobileNavServerTabState.press": {
+        "owner": "design-system alignment",
+        "kind": "surface_factory_candidate",
+        "declarationRefs": [
+          "packages/raft_ui/lib/src/mobile_nav_server.dart#method:_RaftMobileNavServerTabState.press"
+        ],
+        "mountStatus": "unresolved",
+        "reason": "Resolved function owns a surface call; actual target, route and state are not yet observed."
+      },
+      "surface:packages/raft_ui/lib/src/mobile_nav_server_content.dart#method:_RaftMobileNavServerPopoverListState.scheduleShow": {
+        "owner": "design-system alignment",
+        "kind": "surface_factory_candidate",
+        "declarationRefs": [
+          "packages/raft_ui/lib/src/mobile_nav_server_content.dart#method:_RaftMobileNavServerPopoverListState.scheduleShow"
+        ],
+        "mountStatus": "unresolved",
+        "reason": "Resolved function owns a surface call; actual target, route and state are not yet observed."
       }
     },
     "requirements": {
@@ -59923,6 +60310,41 @@
         "applicability": "unknown",
         "owner": "WP-DS5 data-display family",
         "reason": "Resolved state atom use added with the WP-DS5 data-display alignment (raft-ui 0.95.3); look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/mobile_nav_server.dart#method:_RaftMobileNavServerTabState._openFill|state:data-popup-open": {
+        "applicability": "unknown",
+        "owner": "design-system alignment",
+        "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/mobile_nav_server_content.dart#method:RaftMobileNavServerPopoverDestination.build|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:focusVisible": {
+        "applicability": "unknown",
+        "owner": "design-system alignment",
+        "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/mobile_nav_server_content.dart#method:RaftMobileNavServerPopoverDestination.build|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:hovered": {
+        "applicability": "unknown",
+        "owner": "design-system alignment",
+        "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/mobile_nav_server_content.dart#method:RaftMobileNavServerPopoverDestination.build|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:pressed": {
+        "applicability": "unknown",
+        "owner": "design-system alignment",
+        "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/mobile_nav_server_content.dart#method:_RaftMobileNavServerPopoverRowState.build|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:focusVisible": {
+        "applicability": "unknown",
+        "owner": "design-system alignment",
+        "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/mobile_nav_server_content.dart#method:_RaftMobileNavServerPopoverRowState.build|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:hovered": {
+        "applicability": "unknown",
+        "owner": "design-system alignment",
+        "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/mobile_nav_server_content.dart#method:_RaftMobileNavServerPopoverRowState.build|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:pressed": {
+        "applicability": "unknown",
+        "owner": "design-system alignment",
+        "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
       }
     },
     "evidence": {},
