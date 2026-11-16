@@ -50813,13 +50813,13 @@
         "owner": "WP-DS5 data-display family",
         "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
-      "packages/raft_ui/lib/src/computers_rack.dart#local-function:CLASS:RaftRackListHeader@10838/METHOD:build@11530/FUNCTION:heading@11677": {
+      "packages/raft_ui/lib/src/computers_rack.dart#local-function:CLASS:RaftRackListHeader@10883/METHOD:build@11575/FUNCTION:heading@11722": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "WP-DS5 data-display family",
         "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
-      "packages/raft_ui/lib/src/computers_rack.dart#local-function:CLASS:_RaftRackRowState@15589/METHOD:build@17235/FUNCTION:slots@19656": {
+      "packages/raft_ui/lib/src/computers_rack.dart#local-function:CLASS:_RaftRackRowState@15634/METHOD:build@17280/FUNCTION:slots@19701": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "WP-DS5 data-display family",
