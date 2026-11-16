@@ -34,6 +34,9 @@ import 'package:raft_ui/composer_expand_previews.dart';
 import 'package:raft_ui/computer_connection_previews.dart';
 import 'package:raft_ui/conversation_card_previews.dart';
 import 'package:raft_ui/fit_toolbar_previews.dart';
+import 'package:raft_ui/delegated_face_previews.dart';
+import 'package:raft_ui/inbox_item_previews.dart';
+import 'package:raft_ui/message_list_end_fade_previews.dart';
 import 'package:raft_ui/css_recipe_radius_previews.dart';
 import 'package:raft_ui/desktop_title_bar_previews.dart';
 import 'package:raft_ui/dialog_previews.dart';
@@ -472,6 +475,24 @@ final auditSurfaces = <AuditSurface>[
     'Fit toolbar, rack, search collapsed',
     fitToolbarCollapsedPreview,
     Size(200, 120),
+  ),
+  AuditSurface(
+    'delegatedFacePreview',
+    'Delegated assistant face',
+    delegatedFacePreview,
+    Size(260, 90),
+  ),
+  AuditSurface(
+    'inboxItemStatesPreview',
+    'Inbox item states',
+    inboxItemStatesPreview,
+    Size(380, 340),
+  ),
+  AuditSurface(
+    'messageListEndFadePreview',
+    'Message list end fade',
+    messageListEndFadePreview,
+    Size(390, 160),
   ),
   AuditSurface(
     'listRowTonesPreview',

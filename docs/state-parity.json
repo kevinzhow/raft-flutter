@@ -18441,18 +18441,6 @@
         "owner": "design-system alignment",
         "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
       },
-      "packages/raft_ui/lib/src/action_card.dart#local-function:CLASS:RaftActionCard@654/METHOD:_titleLine@2051/FUNCTION:item@2243": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
-      },
-      "packages/raft_ui/lib/src/action_card.dart#local-function:CLASS:RaftActionCard@654/METHOD:_titleLine@2051/FUNCTION:items@2499": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
-      },
       "packages/raft_ui/lib/src/action_card.dart#method:RaftActionCard._titleLine": {
         "role": "unresolved",
         "familyRefs": [],
@@ -20567,18 +20555,6 @@
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
-      },
-      "packages/raft_ui/lib/src/attachment_card.dart#local-function:CLASS:RaftAttachmentCard@591/METHOD:_card@3931/FUNCTION:sized@5830": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
-      },
-      "packages/raft_ui/lib/src/attachment_card.dart#local-function:CLASS:RaftAttachmentCard@591/METHOD:_card@3931/FUNCTION:title@4536": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
       "packages/raft_ui/lib/src/attachment_card.dart#method:RaftAttachmentCard._card": {
         "role": "unresolved",
@@ -39036,12 +39012,6 @@
         "owner": "design-system alignment",
         "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
       },
-      "packages/raft_ui/lib/src/timeline_bottom_button.dart#local-function:CLASS:RaftThreadUnreadJumpPill@1831/METHOD:build@2287/FUNCTION:segment@2415": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
-      },
       "packages/raft_ui/lib/src/timeline_bottom_button.dart#method:RaftThreadUnreadJumpPill.build": {
         "role": "unresolved",
         "familyRefs": [],
@@ -40757,8 +40727,8 @@
         "sourceBindings": [
           {
             "file": "packages/raft_ui/lib/src/design_primitives.dart",
-            "bytes": 124162,
-            "sha256": "0f15086a660d9f333a1571b39ea621479d6591fc01e59decde5eca120ac83bd7"
+            "bytes": 127072,
+            "sha256": "0fa08843a65d45d4244812ee18136e6498819d22531091bfca4dfa52dbf52d12"
           }
         ],
         "reviewDecision": "Source reviewed at fixed Choice/P1 combination: this declaration is in an explicit frozen part/helper or a frozen Dialog class, selected only by the existing non-Raft/legacy recipe branch. The whole-file binding is refreshed after exact raw declaration-body comparison with ae852; surrounding current-look edits do not imply a change to this frozen body. Current final125 whole-file binding refreshed after raw declaration-body equality with ae852; surrounding Dropdown changes are not a whole-file or visual equality claim. WP-AGENT PR 2 refreshed the binding again after adding RaftTextLinkVariant, the muted/strong link label and the hover-only underline above RaftTextLink: the git diff of design_primitives.dart has no hunk inside this declaration, so its body is unchanged. WP-AGENT PR 3 refreshed it after adding the optional RaftTextLink scale (hunks at lines 2900-2998 only, none inside this declaration). WP-COMP2 refreshed the binding again after adding RaftTextLink.trailingGlyph and a Flexible label: the git diff of design_primitives.dart has no hunk inside this declaration, so its body is unchanged.",
@@ -45003,12 +44973,6 @@
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
       "apps/raft_flutter/lib/features/message_timeline.dart#local-function:CLASS:_RaftMessageTimelineState@4173/METHOD:build@15949/FUNCTION:row@16703/FUNCTION:buildRow@16757": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
-      },
-      "packages/raft_ui/lib/src/forwarded_bundle.dart#local-function:CLASS:_RaftForwardedBundleState@7983/METHOD:_source@8874/FUNCTION:text@9567": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
@@ -51682,6 +51646,458 @@
         ],
         "owner": "P1 dialogs / canonical Choice integration",
         "reason": "Resolved builder composes the current render/state/input path; it owns 4 resolved paint use(s) and 1 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
+      },
+      "packages/raft_ui/lib/delegated_face_previews.dart#function:delegatedFacePreview": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS3 message family",
+        "reason": "Source census candidate (WP-DS3, raft-ui 0.95.3 message family: message row, toolbar, delegated face, system message, inline replies, date divider, jump pills, end fade, code block, markdown, cards, attachments, composer values, inbox item); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/delegated_face_previews.dart#local-function:FUNCTION:delegatedFacePreview@356/FUNCTION:<anonymous>@402/FUNCTION:owner@463": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS3 message family",
+        "reason": "Source census candidate (WP-DS3, raft-ui 0.95.3 message family: message row, toolbar, delegated face, system message, inline replies, date divider, jump pills, end fade, code block, markdown, cards, attachments, composer values, inbox item); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/inbox_item_previews.dart#function:_row": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS3 message family",
+        "reason": "Source census candidate (WP-DS3, raft-ui 0.95.3 message family: message row, toolbar, delegated face, system message, inline replies, date divider, jump pills, end fade, code block, markdown, cards, attachments, composer values, inbox item); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/inbox_item_previews.dart#function:inboxItemStatesPreview": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS3 message family",
+        "reason": "Source census candidate (WP-DS3, raft-ui 0.95.3 message family: message row, toolbar, delegated face, system message, inline replies, date divider, jump pills, end fade, code block, markdown, cards, attachments, composer values, inbox item); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/message_list_end_fade_previews.dart#function:messageListEndFadePreview": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS3 message family",
+        "reason": "Source census candidate (WP-DS3, raft-ui 0.95.3 message family: message row, toolbar, delegated face, system message, inline replies, date divider, jump pills, end fade, code block, markdown, cards, attachments, composer values, inbox item); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/action_card.dart#class:_ActionFrame": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS3 message family",
+        "reason": "Source census candidate (WP-DS3, raft-ui 0.95.3 message family: message row, toolbar, delegated face, system message, inline replies, date divider, jump pills, end fade, code block, markdown, cards, attachments, composer values, inbox item); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/action_card.dart#local-function:CLASS:RaftActionCard@689/METHOD:_titleLine@2086/FUNCTION:item@2278": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/action_card.dart#local-function:CLASS:RaftActionCard@689/METHOD:_titleLine@2086/FUNCTION:items@2534": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/action_card.dart#method:_ActionFrame.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS3 message family",
+        "reason": "Source census candidate (WP-DS3, raft-ui 0.95.3 message family: message row, toolbar, delegated face, system message, inline replies, date divider, jump pills, end fade, code block, markdown, cards, attachments, composer values, inbox item); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/activity_scope.dart#local-function:CLASS:_RenderActivityToolbarControls@6860/METHOD:_layout@7414/FUNCTION:place@8743": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/attachment_card.dart#local-function:CLASS:RaftAttachmentCard@591/METHOD:_card@4050/FUNCTION:sized@5918": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/attachment_card.dart#local-function:CLASS:RaftAttachmentCard@591/METHOD:_card@4050/FUNCTION:title@4655": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/chat_composition.dart#method:RaftConversationDateHeader._buildFrozen": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS3 message family",
+        "reason": "Source census candidate (WP-DS3, raft-ui 0.95.3 message family: message row, toolbar, delegated face, system message, inline replies, date divider, jump pills, end fade, code block, markdown, cards, attachments, composer values, inbox item); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/components.dart#local-function:CLASS:RaftNavItem@28188/METHOD:_build@35193/FUNCTION:row@42124": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/components.dart#local-function:CLASS:RaftNavItem@28188/METHOD:_build@35193/FUNCTION:titleContent@38298": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/components.dart#local-function:CLASS:RaftNavItem@28188/METHOD:_build@35193/FUNCTION:titleWithIndicators@41354": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/components.dart#local-function:CLASS:RaftNavItem@28188/METHOD:_build@35193/FUNCTION:wrappedTitle@37157": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/delegated_face.dart#class:RaftAvatarCorner": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS3 message family",
+        "reason": "Source census candidate (WP-DS3, raft-ui 0.95.3 message family: message row, toolbar, delegated face, system message, inline replies, date divider, jump pills, end fade, code block, markdown, cards, attachments, composer values, inbox item); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/delegated_face.dart#class:RaftDelegatedFace": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS3 message family",
+        "reason": "Source census candidate (WP-DS3, raft-ui 0.95.3 message family: message row, toolbar, delegated face, system message, inline replies, date divider, jump pills, end fade, code block, markdown, cards, attachments, composer values, inbox item); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/delegated_face.dart#class:RaftMessageRowFillScope": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS3 message family",
+        "reason": "Source census candidate (WP-DS3, raft-ui 0.95.3 message family: message row, toolbar, delegated face, system message, inline replies, date divider, jump pills, end fade, code block, markdown, cards, attachments, composer values, inbox item); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/delegated_face.dart#method:RaftAvatarCorner.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS3 message family",
+        "reason": "Source census candidate (WP-DS3, raft-ui 0.95.3 message family: message row, toolbar, delegated face, system message, inline replies, date divider, jump pills, end fade, code block, markdown, cards, attachments, composer values, inbox item); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/delegated_face.dart#method:RaftDelegatedFace.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS3 message family",
+        "reason": "Source census candidate (WP-DS3, raft-ui 0.95.3 message family: message row, toolbar, delegated face, system message, inline replies, date divider, jump pills, end fade, code block, markdown, cards, attachments, composer values, inbox item); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/delegated_face.dart#method:RaftMessageRowFillScope.of": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS3 message family",
+        "reason": "Source census candidate (WP-DS3, raft-ui 0.95.3 message family: message row, toolbar, delegated face, system message, inline replies, date divider, jump pills, end fade, code block, markdown, cards, attachments, composer values, inbox item); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/delegated_face.dart#method:RaftMessageRowFillScope.updateShouldNotify": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS3 message family",
+        "reason": "Source census candidate (WP-DS3, raft-ui 0.95.3 message family: message row, toolbar, delegated face, system message, inline replies, date divider, jump pills, end fade, code block, markdown, cards, attachments, composer values, inbox item); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/design_primitives.dart#class:_RaftLinkWithMark": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS3 message family",
+        "reason": "Source census candidate (WP-DS3, raft-ui 0.95.3 message family: message row, toolbar, delegated face, system message, inline replies, date divider, jump pills, end fade, code block, markdown, cards, attachments, composer values, inbox item); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/design_primitives.dart#local-function:CLASS:_RaftDropdownMenuState@69035/METHOD:build@75445/FUNCTION:toggle@75675": {
+        "role": "unresolved",
+        "familyRefs": [
+          "menu"
+        ],
+        "owner": "task289 final125 scoped source registration",
+        "reason": "Actual resolved surface_factory at this current lexical position. Family/real-entry applicability, state closure and paired visual acceptance remain unreviewed; no thin-wrapper or style exemption is granted."
+      },
+      "packages/raft_ui/lib/src/design_primitives.dart#method:RaftTextLink._build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS3 message family",
+        "reason": "Source census candidate (WP-DS3, raft-ui 0.95.3 message family: message row, toolbar, delegated face, system message, inline replies, date divider, jump pills, end fade, code block, markdown, cards, attachments, composer values, inbox item); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/design_primitives.dart#method:_RaftLinkWithMark.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS3 message family",
+        "reason": "Source census candidate (WP-DS3, raft-ui 0.95.3 message family: message row, toolbar, delegated face, system message, inline replies, date divider, jump pills, end fade, code block, markdown, cards, attachments, composer values, inbox item); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/forwarded_bundle.dart#class:_BundleFrame": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS3 message family",
+        "reason": "Source census candidate (WP-DS3, raft-ui 0.95.3 message family: message row, toolbar, delegated face, system message, inline replies, date divider, jump pills, end fade, code block, markdown, cards, attachments, composer values, inbox item); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/forwarded_bundle.dart#local-function:CLASS:_RaftForwardedBundleState@8100/METHOD:_source@8991/FUNCTION:text@9942": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/forwarded_bundle.dart#method:_BundleFrame.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS3 message family",
+        "reason": "Source census candidate (WP-DS3, raft-ui 0.95.3 message family: message row, toolbar, delegated face, system message, inline replies, date divider, jump pills, end fade, code block, markdown, cards, attachments, composer values, inbox item); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/message_body.dart#local-function:CLASS:RaftMessageBody@13171/METHOD:build@17311/FUNCTION:anchoredOther@20406": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/message_body.dart#local-function:CLASS:RaftMessageBody@13171/METHOD:build@17311/FUNCTION:compactProse@19929": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/message_body.dart#local-function:CLASS:RaftMessageBody@13171/METHOD:build@17311/FUNCTION:selectable@20291": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/message_body.dart#local-function:CLASS:_MarkdownImageState@35120/METHOD:build@35702/FUNCTION:failed@35858": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/message_body.dart#local-function:CLASS:_MermaidToolbar@52279/METHOD:build@52775/FUNCTION:<anonymous>@52884/FUNCTION:control@54121": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/message_content_family.dart#class:RaftCodeScrollRegion": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS3 message family",
+        "reason": "Source census candidate (WP-DS3, raft-ui 0.95.3 message family: message row, toolbar, delegated face, system message, inline replies, date divider, jump pills, end fade, code block, markdown, cards, attachments, composer values, inbox item); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/message_content_family.dart#class:_RaftCodeScrollRegionState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS3 message family",
+        "reason": "Source census candidate (WP-DS3, raft-ui 0.95.3 message family: message row, toolbar, delegated face, system message, inline replies, date divider, jump pills, end fade, code block, markdown, cards, attachments, composer values, inbox item); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/message_content_family.dart#method:RaftCodeBlockFrame.copyButton": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS3 message family",
+        "reason": "Source census candidate (WP-DS3, raft-ui 0.95.3 message family: message row, toolbar, delegated face, system message, inline replies, date divider, jump pills, end fade, code block, markdown, cards, attachments, composer values, inbox item); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/message_content_family.dart#method:RaftCodeScrollRegion.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS3 message family",
+        "reason": "Source census candidate (WP-DS3, raft-ui 0.95.3 message family: message row, toolbar, delegated face, system message, inline replies, date divider, jump pills, end fade, code block, markdown, cards, attachments, composer values, inbox item); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/message_content_family.dart#method:_RaftCodeScrollRegionState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS3 message family",
+        "reason": "Source census candidate (WP-DS3, raft-ui 0.95.3 message family: message row, toolbar, delegated face, system message, inline replies, date divider, jump pills, end fade, code block, markdown, cards, attachments, composer values, inbox item); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/message_embed_frame.dart#class:RaftMessageEmbedFrame": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS3 message family",
+        "reason": "Source census candidate (WP-DS3, raft-ui 0.95.3 message family: message row, toolbar, delegated face, system message, inline replies, date divider, jump pills, end fade, code block, markdown, cards, attachments, composer values, inbox item); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/message_embed_frame.dart#function:raftMessageEmbedSlots": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS3 message family",
+        "reason": "Source census candidate (WP-DS3, raft-ui 0.95.3 message family: message row, toolbar, delegated face, system message, inline replies, date divider, jump pills, end fade, code block, markdown, cards, attachments, composer values, inbox item); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/message_embed_frame.dart#method:RaftMessageEmbedFrame._frame": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS3 message family",
+        "reason": "Source census candidate (WP-DS3, raft-ui 0.95.3 message family: message row, toolbar, delegated face, system message, inline replies, date divider, jump pills, end fade, code block, markdown, cards, attachments, composer values, inbox item); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/message_embed_frame.dart#method:RaftMessageEmbedFrame.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS3 message family",
+        "reason": "Source census candidate (WP-DS3, raft-ui 0.95.3 message family: message row, toolbar, delegated face, system message, inline replies, date divider, jump pills, end fade, code block, markdown, cards, attachments, composer values, inbox item); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/message_header_mask.dart#class:RaftMessageHeaderMask": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS3 message family",
+        "reason": "Source census candidate (WP-DS3, raft-ui 0.95.3 message family: message row, toolbar, delegated face, system message, inline replies, date divider, jump pills, end fade, code block, markdown, cards, attachments, composer values, inbox item); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/message_header_mask.dart#class:_RenderHeaderMask": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS3 message family",
+        "reason": "Source census candidate (WP-DS3, raft-ui 0.95.3 message family: message row, toolbar, delegated face, system message, inline replies, date divider, jump pills, end fade, code block, markdown, cards, attachments, composer values, inbox item); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/message_list_end_fade.dart#class:RaftMessageListEndFade": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS3 message family",
+        "reason": "Source census candidate (WP-DS3, raft-ui 0.95.3 message family: message row, toolbar, delegated face, system message, inline replies, date divider, jump pills, end fade, code block, markdown, cards, attachments, composer values, inbox item); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/message_list_end_fade.dart#method:RaftMessageListEndFade.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS3 message family",
+        "reason": "Source census candidate (WP-DS3, raft-ui 0.95.3 message family: message row, toolbar, delegated face, system message, inline replies, date divider, jump pills, end fade, code block, markdown, cards, attachments, composer values, inbox item); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/message_rule_row.dart#class:RaftMessageRuleRow": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS3 message family",
+        "reason": "Source census candidate (WP-DS3, raft-ui 0.95.3 message family: message row, toolbar, delegated face, system message, inline replies, date divider, jump pills, end fade, code block, markdown, cards, attachments, composer values, inbox item); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/message_rule_row.dart#local-function:CLASS:RaftMessageRuleRow@411/METHOD:build@891/FUNCTION:rule@932": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS3 message family",
+        "reason": "Source census candidate (WP-DS3, raft-ui 0.95.3 message family: message row, toolbar, delegated face, system message, inline replies, date divider, jump pills, end fade, code block, markdown, cards, attachments, composer values, inbox item); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/message_rule_row.dart#method:RaftMessageRuleRow.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS3 message family",
+        "reason": "Source census candidate (WP-DS3, raft-ui 0.95.3 message family: message row, toolbar, delegated face, system message, inline replies, date divider, jump pills, end fade, code block, markdown, cards, attachments, composer values, inbox item); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/quoted_message_card.dart#local-function:CLASS:_RaftQuotedMessageSkeletonState@14783/METHOD:build@15726/FUNCTION:bar@15767": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/quoted_message_card_raft.dart#class:RaftQuotedMessageCardRaft": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS3 message family",
+        "reason": "Source census candidate (WP-DS3, raft-ui 0.95.3 message family: message row, toolbar, delegated face, system message, inline replies, date divider, jump pills, end fade, code block, markdown, cards, attachments, composer values, inbox item); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/quoted_message_card_raft.dart#class:_Shell": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS3 message family",
+        "reason": "Source census candidate (WP-DS3, raft-ui 0.95.3 message family: message row, toolbar, delegated face, system message, inline replies, date divider, jump pills, end fade, code block, markdown, cards, attachments, composer values, inbox item); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/quoted_message_card_raft.dart#local-function:CLASS:_Shell@7236/METHOD:build@7521/FUNCTION:frame@7621": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS3 message family",
+        "reason": "Source census candidate (WP-DS3, raft-ui 0.95.3 message family: message row, toolbar, delegated face, system message, inline replies, date divider, jump pills, end fade, code block, markdown, cards, attachments, composer values, inbox item); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/quoted_message_card_raft.dart#method:RaftQuotedMessageCardRaft.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS3 message family",
+        "reason": "Source census candidate (WP-DS3, raft-ui 0.95.3 message family: message row, toolbar, delegated face, system message, inline replies, date divider, jump pills, end fade, code block, markdown, cards, attachments, composer values, inbox item); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/quoted_message_card_raft.dart#method:_Shell.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS3 message family",
+        "reason": "Source census candidate (WP-DS3, raft-ui 0.95.3 message family: message row, toolbar, delegated face, system message, inline replies, date divider, jump pills, end fade, code block, markdown, cards, attachments, composer values, inbox item); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/raft/inbox_item.dart#class:RaftInboxItem": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS3 message family",
+        "reason": "Source census candidate (WP-DS3, raft-ui 0.95.3 message family: message row, toolbar, delegated face, system message, inline replies, date divider, jump pills, end fade, code block, markdown, cards, attachments, composer values, inbox item); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/raft/inbox_item.dart#class:RaftInboxItemListGroup": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS3 message family",
+        "reason": "Source census candidate (WP-DS3, raft-ui 0.95.3 message family: message row, toolbar, delegated face, system message, inline replies, date divider, jump pills, end fade, code block, markdown, cards, attachments, composer values, inbox item); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/raft/inbox_item.dart#class:RaftInboxItemSkeleton": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS3 message family",
+        "reason": "Source census candidate (WP-DS3, raft-ui 0.95.3 message family: message row, toolbar, delegated face, system message, inline replies, date divider, jump pills, end fade, code block, markdown, cards, attachments, composer values, inbox item); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/raft/inbox_item.dart#class:_Leading": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS3 message family",
+        "reason": "Source census candidate (WP-DS3, raft-ui 0.95.3 message family: message row, toolbar, delegated face, system message, inline replies, date divider, jump pills, end fade, code block, markdown, cards, attachments, composer values, inbox item); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/raft/inbox_item.dart#class:_RaftInboxItemState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS3 message family",
+        "reason": "Source census candidate (WP-DS3, raft-ui 0.95.3 message family: message row, toolbar, delegated face, system message, inline replies, date divider, jump pills, end fade, code block, markdown, cards, attachments, composer values, inbox item); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/raft/inbox_item.dart#function:_resolve": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS3 message family",
+        "reason": "Source census candidate (WP-DS3, raft-ui 0.95.3 message family: message row, toolbar, delegated face, system message, inline replies, date divider, jump pills, end fade, code block, markdown, cards, attachments, composer values, inbox item); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/raft/inbox_item.dart#local-function:CLASS:RaftInboxItemSkeleton@16693/METHOD:build@16842/FUNCTION:line@17600": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS3 message family",
+        "reason": "Source census candidate (WP-DS3, raft-ui 0.95.3 message family: message row, toolbar, delegated face, system message, inline replies, date divider, jump pills, end fade, code block, markdown, cards, attachments, composer values, inbox item); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/raft/inbox_item.dart#local-function:CLASS:_RaftInboxItemState@3140/METHOD:build@3327/FUNCTION:content@4423": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS3 message family",
+        "reason": "Source census candidate (WP-DS3, raft-ui 0.95.3 message family: message row, toolbar, delegated face, system message, inline replies, date divider, jump pills, end fade, code block, markdown, cards, attachments, composer values, inbox item); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/raft/inbox_item.dart#method:RaftInboxItem.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS3 message family",
+        "reason": "Source census candidate (WP-DS3, raft-ui 0.95.3 message family: message row, toolbar, delegated face, system message, inline replies, date divider, jump pills, end fade, code block, markdown, cards, attachments, composer values, inbox item); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/raft/inbox_item.dart#method:RaftInboxItemListGroup.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS3 message family",
+        "reason": "Source census candidate (WP-DS3, raft-ui 0.95.3 message family: message row, toolbar, delegated face, system message, inline replies, date divider, jump pills, end fade, code block, markdown, cards, attachments, composer values, inbox item); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/raft/inbox_item.dart#method:RaftInboxItemSkeleton.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS3 message family",
+        "reason": "Source census candidate (WP-DS3, raft-ui 0.95.3 message family: message row, toolbar, delegated face, system message, inline replies, date divider, jump pills, end fade, code block, markdown, cards, attachments, composer values, inbox item); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/raft/inbox_item.dart#method:_Leading.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS3 message family",
+        "reason": "Source census candidate (WP-DS3, raft-ui 0.95.3 message family: message row, toolbar, delegated face, system message, inline replies, date divider, jump pills, end fade, code block, markdown, cards, attachments, composer values, inbox item); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/raft/inbox_item.dart#method:_RaftInboxItemState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS3 message family",
+        "reason": "Source census candidate (WP-DS3, raft-ui 0.95.3 message family: message row, toolbar, delegated face, system message, inline replies, date divider, jump pills, end fade, code block, markdown, cards, attachments, composer values, inbox item); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/settings_applications.dart#local-function:CLASS:RaftAppPermissionsSummary@47860/METHOD:build@48342/FUNCTION:column@49123": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/settings_applications.dart#local-function:CLASS:_RaftOAuthScopeSummaryState@42967/METHOD:build@43076/FUNCTION:chip@43381": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/system_message.dart#method:RaftSystemMessage._buildFrozen": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS3 message family",
+        "reason": "Source census candidate (WP-DS3, raft-ui 0.95.3 message family: message row, toolbar, delegated face, system message, inline replies, date divider, jump pills, end fade, code block, markdown, cards, attachments, composer values, inbox item); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/timeline_bottom_button.dart#local-function:CLASS:RaftThreadUnreadJumpPill@2490/METHOD:build@2946/FUNCTION:segment@3222": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       }
     },
     "entries": {
@@ -54790,6 +55206,14 @@
         ],
         "mountStatus": "unresolved",
         "reason": "Resolved function owns a surface call; actual target, route and state are not yet observed."
+      },
+      "wp-ds3.census.dropdown-toggle.position": {
+        "owner": "task289 menu source registration",
+        "mountStatus": "unresolved",
+        "declarationRefs": [
+          "packages/raft_ui/lib/src/design_primitives.dart#local-function:CLASS:_RaftDropdownMenuState@69035/METHOD:build@75445/FUNCTION:toggle@75675"
+        ],
+        "reason": "Actual resolved dropdown toggle surface factory at the new final125 lexical position. Earlier entries and IDs remain historical; real mounted-entry/state/input and paired visual acceptance are still unreviewed. Re-keyed for WP-DS3 (design_primitives.dart grew above the dropdown by the RaftTextLink external mark and format-only lines; the toggle body is unchanged)."
       }
     },
     "requirements": {
@@ -60577,6 +61001,91 @@
         "applicability": "unknown",
         "owner": "design-system alignment",
         "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/chat_composition.dart#method:RaftConversationDateHeader.build|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+        "applicability": "unknown",
+        "owner": "WP-DS3 message family",
+        "reason": "Resolved state atom use (WP-DS3 message family); look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/forwarded_bundle_style.dart#class:RaftForwardedBundleStyle|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:hovered": {
+        "applicability": "unknown",
+        "owner": "WP-DS3 message family",
+        "reason": "Resolved state atom use (WP-DS3 message family); look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/forwarded_bundle_style.dart#class:RaftForwardedBundleStyle|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+        "applicability": "unknown",
+        "owner": "WP-DS3 message family",
+        "reason": "Resolved state atom use (WP-DS3 message family); look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/message_embed_frame.dart#function:raftMessageEmbedSlots|state:active": {
+        "applicability": "unknown",
+        "owner": "WP-DS3 message family",
+        "reason": "Resolved state atom use (WP-DS3 message family); look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/message_embed_frame.dart#function:raftMessageEmbedSlots|state:dark": {
+        "applicability": "unknown",
+        "owner": "WP-DS3 message family",
+        "reason": "Resolved state atom use (WP-DS3 message family); look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/message_embed_frame.dart#function:raftMessageEmbedSlots|state:data-interactive=true": {
+        "applicability": "unknown",
+        "owner": "WP-DS3 message family",
+        "reason": "Resolved state atom use (WP-DS3 message family); look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/message_embed_frame.dart#function:raftMessageEmbedSlots|state:focus-visible": {
+        "applicability": "unknown",
+        "owner": "WP-DS3 message family",
+        "reason": "Resolved state atom use (WP-DS3 message family); look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/message_embed_frame.dart#function:raftMessageEmbedSlots|state:hover": {
+        "applicability": "unknown",
+        "owner": "WP-DS3 message family",
+        "reason": "Resolved state atom use (WP-DS3 message family); look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/quoted_message_card_raft.dart#method:RaftQuotedMessageCardRaft.build|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+        "applicability": "unknown",
+        "owner": "WP-DS3 message family",
+        "reason": "Resolved state atom use (WP-DS3 message family); look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/raft/inbox_item.dart#function:_resolve|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:hovered": {
+        "applicability": "unknown",
+        "owner": "WP-DS3 message family",
+        "reason": "Resolved state atom use (WP-DS3 message family); look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/raft/inbox_item.dart#function:_resolve|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:pointerCoarse": {
+        "applicability": "unknown",
+        "owner": "WP-DS3 message family",
+        "reason": "Resolved state atom use (WP-DS3 message family); look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/raft/inbox_item.dart#function:_resolve|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:pressed": {
+        "applicability": "unknown",
+        "owner": "WP-DS3 message family",
+        "reason": "Resolved state atom use (WP-DS3 message family); look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/raft/inbox_item.dart#function:_resolve|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+        "applicability": "unknown",
+        "owner": "WP-DS3 message family",
+        "reason": "Resolved state atom use (WP-DS3 message family); look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/raft/inbox_item.dart#function:_resolve|state:data-active=true": {
+        "applicability": "unknown",
+        "owner": "WP-DS3 message family",
+        "reason": "Resolved state atom use (WP-DS3 message family); look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/raft/inbox_item.dart#method:RaftInboxItemSkeleton.build|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:pointerCoarse": {
+        "applicability": "unknown",
+        "owner": "WP-DS3 message family",
+        "reason": "Resolved state atom use (WP-DS3 message family); look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/raft/inbox_item.dart#method:RaftInboxItemSkeleton.build|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+        "applicability": "unknown",
+        "owner": "WP-DS3 message family",
+        "reason": "Resolved state atom use (WP-DS3 message family); look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/system_message.dart#method:RaftSystemMessage.build|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+        "applicability": "unknown",
+        "owner": "WP-DS3 message family",
+        "reason": "Resolved state atom use (WP-DS3 message family); look/input/real-entry applicability remains unreviewed."
       }
     },
     "evidence": {},
