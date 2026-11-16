@@ -86,9 +86,10 @@ void main() {
       );
       final text = t.getRect(find.text('Reconnect to send'));
       final action = t.getRect(find.byKey(const ValueKey('retry')));
-      // raft-ui 0.7 `BannerAction`: a row under the copy, from its left edge.
-      expect(action.top, greaterThanOrEqualTo(text.bottom));
-      expect(action.left, text.left);
+      // raft-ui 0.95.3 `BannerAction`: 700px is wider than 452, so the action
+      // sits beside the one-line copy, ending on the banner's padding.
+      expect(action.left, greaterThan(text.right));
+      expect(action.right, 700 - 14);
       if (glyph != null) expect(t.getRect(find.byType(RaftIcon)).top, text.top);
     });
   }
@@ -123,7 +124,8 @@ void main() {
                 key: ValueKey('banner'),
                 status: RaftBannerRecipeStatus.destructive,
                 glyph: RaftGlyph.octagonAlert,
-                description: 'Several lines of explanation must keep the icon at the start of the paragraph.',
+                description:
+                    'Several lines of explanation must keep the icon at the start of the paragraph.',
               ),
             ),
           ),

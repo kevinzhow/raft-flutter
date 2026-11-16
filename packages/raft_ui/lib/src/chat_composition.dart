@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'design_primitives.dart';
+import 'indicators.dart' show RaftSkeleton, RaftSkeletonVariant;
+import 'recipes/recipe_runtime.dart' show RaftRecipeSet;
 import 'raft/tabs.dart';
 import 'raft/checkbox.dart';
 import 'viewport_breakpoints.dart';
@@ -302,7 +304,16 @@ class _LoadingRowsState extends State<RaftChatSidebarLoadingRows>
   }
 
   @override
-  Widget build(BuildContext context) => ExcludeSemantics(
+  Widget build(BuildContext context) {
+    // Web v1.24 `SidebarRowsSkeleton`: a 19px `Skeleton` block and a 128px
+    // `SkeletonTextBar` (0.75em of the 14px row text), both painted by the
+    // skeleton recipe. The row height stays the one below (34) until the
+    // sidebar row metrics (38 / 44) are ported with the rows themselves.
+    final raft = RaftTokens.of(context).recipeSet == RaftRecipeSet.raft;
+    return _build(raft);
+  }
+
+  Widget _build(bool raft) => ExcludeSemantics(
     child: FadeTransition(
       opacity: opacity,
       child: Column(
@@ -310,35 +321,51 @@ class _LoadingRowsState extends State<RaftChatSidebarLoadingRows>
         children: [
           for (var index = 0; index < widget.rows; index++)
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-              child: Row(
-                children: [
-                  Container(
-                    width: 18,
-                    height: 18,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.black.withValues(alpha: .05),
-                      border: Border.all(color: Colors.black, width: 2),
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: FractionallySizedBox(
-                        widthFactor: .6,
-                        child: Container(
-                          height: 12,
-                          // Match the source CSS black/10 alpha byte, as the
-                          // shared Skeleton primitive does (26/255).
-                          color: Colors.black.withAlpha(26),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
+              padding: EdgeInsets.symmetric(
+                horizontal: 8,
+                vertical: raft ? 7.5 : 8,
               ),
+              child: raft
+                  ? const Row(
+                      children: [
+                        RaftSkeleton(fromRecipe: true, width: 19, height: 19),
+                        SizedBox(width: 6),
+                        RaftSkeleton(
+                          variant: RaftSkeletonVariant.line,
+                          fromRecipe: true,
+                          width: 128,
+                          height: 10.5,
+                        ),
+                      ],
+                    )
+                  : Row(
+                      children: [
+                        Container(
+                          width: 18,
+                          height: 18,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.black.withValues(alpha: .05),
+                            border: Border.all(color: Colors.black, width: 2),
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: FractionallySizedBox(
+                              widthFactor: .6,
+                              child: Container(
+                                height: 12,
+                                // Match the source CSS black/10 alpha byte, as the
+                                // shared Skeleton primitive does (26/255).
+                                color: Colors.black.withAlpha(26),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
             ),
         ],
       ),

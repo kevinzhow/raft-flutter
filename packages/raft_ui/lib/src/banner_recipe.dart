@@ -7,8 +7,9 @@ RaftBannerRecipeStyle raftBannerSlots(
   RaftTokens t,
   RaftBannerRecipeStyle source,
   RaftBannerRecipeSize size,
-  RaftBannerRecipeStatus status,
-) {
+  RaftBannerRecipeStatus status, {
+  bool hasButton = false,
+}) {
   final foreground = t.colors['foreground-banner-body'] ?? t.muted;
   final desc = {
     ...source.description.properties,
@@ -34,12 +35,18 @@ RaftBannerRecipeStyle raftBannerSlots(
   // raft-ui `banner` sizes: `sm` px-3 py-2 gap-x-2 text-footnote (13/18),
   // `md` px-3.5 py-3, `lg` px-4 py-3.5; only `sm` changes the text.
   final small = size == RaftBannerRecipeSize.sm;
-  final footnote = t.typeSlot('footnote');
-  final bodySize = small
-      ? footnote.fontSize
+  // raft-ui 0.95.3: the root is `text-callout` at every density (14/20 by
+  // touch, 14/22 with a mouse from 768), `sm` only tightens the padding.
+  final callout = t.typeSlot('callout');
+  final bodySize = byToken
+      ? callout.fontSize
+      : small
+      ? t.typeSlot('footnote').fontSize
       : t.size('type.bannerBody.size', fallback: 13);
-  final bodyLine = small
-      ? footnote.lineHeight
+  final bodyLine = byToken
+      ? callout.lineHeight
+      : small
+      ? t.typeSlot('footnote').lineHeight
       : t.size('type.bannerBody.line', fallback: 16);
   desc['font-size'] = CssNum(bodySize, 'px');
   desc['line-height'] = CssNum(bodyLine, 'px');
@@ -68,7 +75,10 @@ RaftBannerRecipeStyle raftBannerSlots(
               _ => t.size('space.bannerInline', fallback: 12),
             }
           : switch (size) {
-              RaftBannerRecipeSize.sm when byToken => 8,
+              // `has-[>banner-action,>banner-close]:py-[calc((--banner-button
+              // - 1lh)/2 + 4px)]`, --banner-button 32 (34 with a mouse).
+              RaftBannerRecipeSize.sm when byToken =>
+                hasButton ? ((t.desktop ? 34 : 32) - bodyLine) / 2 + 4 : 8,
               RaftBannerRecipeSize.lg when byToken => 14,
               _ => 12,
             },
@@ -91,7 +101,7 @@ RaftBannerRecipeStyle raftBannerSlots(
     'px',
   );
   root['font-size'] = CssNum(bodySize, 'px');
-  root['line-height'] = CssNum(small ? footnote.lineHeight : 20, 'px');
+  root['line-height'] = CssNum(byToken || small ? bodyLine : 20, 'px');
   root['letter-spacing'] = CssNum(
     t.size('type.bannerBody.tracking', fallback: 0),
     'px',

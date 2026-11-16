@@ -223,6 +223,8 @@ class RaftRackResource extends StatelessWidget {
         : RaftProgressBar(
             value: used.clamp(0, 1) * 100,
             size: RaftProgressRecipeSize.sm,
+            // Web RackResource `holdToneWhenFull`: a full disk is not "done".
+            holdToneWhenFull: true,
             tone: meter.warn
                 ? RaftProgressRecipeVariant.warning
                 : RaftProgressRecipeVariant.information,

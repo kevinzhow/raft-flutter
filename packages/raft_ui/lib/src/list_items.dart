@@ -314,10 +314,22 @@ class RaftSectionHeader extends StatelessWidget {
                     const WidgetSpan(child: SizedBox(width: 8)),
                     TextSpan(
                       text: '$count',
-                      style: TextStyle(
-                        fontFamily: t.monoFont,
-                        color: t.semantic.foregroundPlaceholder,
-                      ),
+                      style: t.recipeSet == RaftRecipeSet.raft
+                          // `font-mono text-mono-meta font-normal
+                          // text-foreground-hint` (12/16, 12/18 with a mouse).
+                          ? TextStyle(
+                              fontFamily: t.monoFont,
+                              fontSize: t.typeSlot('mono-meta').fontSize,
+                              height:
+                                  t.typeSlot('mono-meta').lineHeight /
+                                  t.typeSlot('mono-meta').fontSize,
+                              fontWeight: FontWeight.w400,
+                              color: t.colors['foreground-hint'],
+                            )
+                          : TextStyle(
+                              fontFamily: t.monoFont,
+                              color: t.semantic.foregroundPlaceholder,
+                            ),
                     ),
                   ],
           ),

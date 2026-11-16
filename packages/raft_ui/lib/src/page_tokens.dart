@@ -23,10 +23,15 @@ extension RaftPageTokens on RaftTokens {
 
   /// SectionEyebrow (`text-footnote font-bold text-foreground-hint`).
   TextStyle sectionEyebrow({Color? color}) => TextStyle(
-    fontSize: size('type.sectionEyebrow.size', fallback: 13),
-    height:
-        size('type.sectionEyebrow.line', fallback: 18) /
-        size('type.sectionEyebrow.size', fallback: 13),
+    // `text-footnote` is 12/18 with a mouse from 768 (the frozen looks never
+    // switch).
+    fontSize: desktop
+        ? typeSlot('footnote').fontSize
+        : size('type.sectionEyebrow.size', fallback: 13),
+    height: desktop
+        ? typeSlot('footnote').lineHeight / typeSlot('footnote').fontSize
+        : size('type.sectionEyebrow.line', fallback: 18) /
+              size('type.sectionEyebrow.size', fallback: 13),
     fontWeight: FontWeight.w700,
     color: color ?? colors['foreground-eyebrow'],
   );

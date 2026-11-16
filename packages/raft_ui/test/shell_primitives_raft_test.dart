@@ -45,7 +45,7 @@ void main() {
     );
 
     testWidgets(
-      'Banner action is a row under the copy at any width ${dark ? 'dark' : 'light'}',
+      'Banner action is a row under the copy, end aligned, under 452px ${dark ? 'dark' : 'light'}',
       (tester) async {
         // raft-ui 0.7: the action is `mt-2 flex flex-wrap`, in the text column
         // under the copy, wide or narrow.
@@ -66,10 +66,12 @@ void main() {
           );
           final action = tester.getTopLeft(find.byKey(const Key('action')));
           expect(action.dy, greaterThanOrEqualTo(text.dy), reason: '$width');
-          expect(action.dx, closeTo(text.dx, 0.5), reason: '$width');
+          // raft-ui 0.95.3 `BannerAction` is `justify-end`; below 452px of
+          // content it takes its own row, ending on the banner's padding.
           expect(
             tester.getTopRight(find.byKey(const Key('action'))).dx,
-            lessThanOrEqualTo(width),
+            closeTo(width - 14, 0.5),
+            reason: '$width',
           );
         }
       },

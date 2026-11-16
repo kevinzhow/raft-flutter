@@ -125,6 +125,8 @@ void main() {
     final pack = _user(
       type: {
         'footnote': [20, 26, 400, 0],
+        // raft-ui 0.95.3: the Banner is `text-callout` at every density.
+        'callout': [20, 26, 400, 0],
       },
     );
     await _mount(
@@ -145,8 +147,9 @@ void main() {
         pack,
         Builder(
           builder: (context) {
-            section = RaftTokens.of(context)
-                .formSectionTitle(const TextStyle(fontSize: 16));
+            section = RaftTokens.of(
+              context,
+            ).formSectionTitle(const TextStyle(fontSize: 16));
             return const SizedBox();
           },
         ),
@@ -164,7 +167,8 @@ void main() {
         ),
       ),
     );
-    expect(_titleSize(t, 'Short banner'), 13);
+    // text-callout (14) at every density; sm was text-footnote (13).
+    expect(_titleSize(t, 'Short banner'), 14);
     await _mount(
       t,
       _host(

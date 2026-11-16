@@ -2950,6 +2950,8 @@ class RaftTextLink extends StatelessWidget {
     this.textStyle,
     this.variant = RaftTextLinkVariant.saved,
     this.scale,
+    this.typeStyle,
+    this.underlineAtRest = false,
   });
   final String label;
   final VoidCallback? onPressed;
@@ -2964,6 +2966,14 @@ class RaftTextLink extends StatelessWidget {
   /// text than body: Web inherits the surrounding size, so a link in a field
   /// description is caption-sized. Null keeps body.
   final RaftTypeStyle? scale;
+
+  /// The font, size and line of a link that sits in text of its own (the auth
+  /// pages' heading-family 14/13px links). Unlike [textStyle] it keeps the
+  /// variant's colour (muted, strong, disabled) and weight unless it sets one.
+  final TextStyle? typeStyle;
+
+  /// raft-ui `TextLink` inside a sentence: keep the underline at rest.
+  final bool underlineAtRest;
   @override
   Widget build(BuildContext context) => RaftControl(
     kind: RaftControlKind.textLink,
@@ -2972,6 +2982,8 @@ class RaftTextLink extends StatelessWidget {
     // The Web link has no touch inflation: it keeps its own box, and the
     // caller extends the hit area (RaftTouchTarget) where a finger needs it.
     minimumTargetSize: variant == RaftTextLinkVariant.saved ? null : 0,
+    // raft-ui `disabled:text-foreground-disabled`: the colour, not a dimming.
+    inertWhenDisabled: variant != RaftTextLinkVariant.saved,
     shadow: true,
     onPressed: onPressed,
     child: Row(
@@ -3002,6 +3014,8 @@ class RaftTextLink extends StatelessWidget {
                   disabled: onPressed == null,
                   style: textStyle,
                   scale: scale,
+                  typeStyle: typeStyle,
+                  underlineAtRest: underlineAtRest,
                 ),
         ),
         if (trailingGlyph != null) ...[
@@ -3022,9 +3036,12 @@ class _RaftWebLinkLabel extends StatefulWidget {
     required this.disabled,
     this.style,
     this.scale,
+    this.typeStyle,
+    this.underlineAtRest = false,
   });
   final String label;
-  final bool strong, disabled;
+  final bool strong, disabled, underlineAtRest;
+  final TextStyle? typeStyle;
   final TextStyle? style;
   final RaftTypeStyle? scale;
 
@@ -3049,10 +3066,19 @@ class _RaftWebLinkLabelState extends State<_RaftWebLinkLabel> {
       onExit: (_) => setState(() => hovered = false),
       child: RaftUnderlinedText(
         widget.label,
-        underline: hovered && !widget.disabled,
+        underline: (hovered || widget.underlineAtRest) && !widget.disabled,
         underlineColor: color,
+        // raft-ui `decoration-[1.5px] underline-offset-[3px]`.
+        underlineOffset: 3,
+        underlineThickness: 1.5,
         style:
             widget.style ??
+            widget.typeStyle?.copyWith(
+              color: color,
+              fontWeight:
+                  widget.typeStyle!.fontWeight ??
+                  (widget.strong ? FontWeight.w600 : FontWeight.w500),
+            ) ??
             t.scale(
               // Web inherits the surrounding size (body in a card).
               widget.scale ?? RaftTypeScale.body,

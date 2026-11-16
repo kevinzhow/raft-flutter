@@ -58,6 +58,7 @@ class RaftProgressBar extends StatelessWidget {
     this.label,
     this.showPercent = false,
     this.size = RaftProgressRecipeSize.md,
+    this.holdToneWhenFull = false,
   });
 
   /// 0–100; null = indeterminate.
@@ -70,6 +71,11 @@ class RaftProgressBar extends StatelessWidget {
   final bool showPercent;
   final RaftProgressRecipeSize size;
 
+  /// Web `ProgressBar holdToneWhenFull`: keep [tone] at 100% instead of turning
+  /// success ("done"), for a level that is not a task, such as a disk or memory
+  /// that is full.
+  final bool holdToneWhenFull;
+
   /// raft-ui 0.7 `progress` under the product `ProgressBar`: `mb-1.5` header
   /// (`text-footnote font-semibold` label, `font-mono text-mono-meta
   /// text-foreground-hint` value), an 8px `fill-muted` sticker-radius track and
@@ -79,12 +85,16 @@ class RaftProgressBar extends StatelessWidget {
     final indeterminate = value == null || value!.isNaN;
     final pct = indeterminate ? 0.0 : value!.clamp(0, 100).toDouble();
     final radius = BorderRadius.circular(t.size('radius.sticker', fallback: 4));
-    final fill = switch (tone) {
-      RaftProgressRecipeVariant.success => ui.success,
-      RaftProgressRecipeVariant.warning => ui.warning,
-      RaftProgressRecipeVariant.danger => ui.danger,
-      _ => ui.info,
-    };
+    // `data-complete:[--progress-indicator:var(--success)]`
+    final complete = !indeterminate && pct >= 100 && !holdToneWhenFull;
+    final fill = complete
+        ? ui.success
+        : switch (tone) {
+            RaftProgressRecipeVariant.success => ui.success,
+            RaftProgressRecipeVariant.warning => ui.warning,
+            RaftProgressRecipeVariant.danger => ui.danger,
+            _ => ui.info,
+          };
     final height = switch (size) {
       RaftProgressRecipeSize.sm => 6.0,
       RaftProgressRecipeSize.lg => 10.0,
@@ -185,7 +195,7 @@ class RaftProgressBar extends StatelessWidget {
       states: t.recipeStates(
         extra: [
           'group/progress:data-size=${size.css}',
-          if (pct >= 100) 'group/progress:data-complete',
+          if (pct >= 100 && !holdToneWhenFull) 'group/progress:data-complete',
         ],
       ),
       tokens: rt,
@@ -198,7 +208,7 @@ class RaftProgressBar extends StatelessWidget {
       t.recipeStates(
         extra: [
           'group/progress:data-size=${size.css}',
-          if (pct >= 100) 'group/progress:data-complete',
+          if (pct >= 100 && !holdToneWhenFull) 'group/progress:data-complete',
         ],
       ),
       rt,

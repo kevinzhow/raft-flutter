@@ -50,9 +50,10 @@ void main() {
       tester.getTopLeft(find.byKey(const ValueKey(1))) - origin,
       const Offset(64, 11),
     );
+    // `justify-end`: the lone item on the second run ends at the right edge.
     expect(
       tester.getTopLeft(find.byKey(const ValueKey(2))) - origin,
-      const Offset(7, 44),
+      const Offset(64, 44),
     );
     expect(tester.getSize(find.byType(RaftBannerActionSlot)).height, 69);
   });

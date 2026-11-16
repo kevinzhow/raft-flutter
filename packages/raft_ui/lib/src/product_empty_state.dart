@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'empty_state.dart' show raftEmptyStateMetrics;
 import 'panel_layout.dart' show RaftCssText;
 import 'recipe_surface.dart';
 import 'recipes/empty_state.g.dart';
@@ -24,8 +25,11 @@ class RaftProductEmptyState extends StatelessWidget {
     required this.icon,
     this.description,
     this.action,
+    this.titleHeading = false,
   });
 
+  /// Web `titleHeading`: the title is the heading of the area.
+  final bool titleHeading;
   final String title;
   final String? description;
   final Widget? action;
@@ -40,12 +44,13 @@ class RaftProductEmptyState extends StatelessWidget {
     // keep the recipe of a57b9dab (emptyState.look).
     if (t.option('emptyState.look', or: 'plain') == 'plain') {
       final base = DefaultTextStyle.of(context).style;
+      final m = raftEmptyStateMetrics(t);
       final contentMax = t.size('size.emptyContentMax', fallback: 384);
       final descriptionMax = t.size('size.emptyDescriptionMax', fallback: 300);
       return Center(
         child: Padding(
           padding: EdgeInsets.symmetric(
-            horizontal: t.size('space.emptyInline', fallback: 24),
+            horizontal: m.inline,
             vertical: t.size('space.emptyBlock', fallback: 48),
           ),
           child: ConstrainedBox(
@@ -64,17 +69,20 @@ class RaftProductEmptyState extends StatelessWidget {
                   ),
                 ),
                 SizedBox(height: t.size('space.emptyIconAfter', fallback: 16)),
-                RaftCssText(
-                  title,
-                  key: const ValueKey('empty-state-title'),
-                  textAlign: TextAlign.center,
-                  style: RaftTypography.body(
-                    t,
-                    size: t.size('type.emptyTitle.size', fallback: 17),
-                    line: t.size('type.emptyTitle.line', fallback: 22),
-                    weight: FontWeight.w700,
-                    color: t.colors['foreground-muted'],
-                  ).copyWith(fontFamily: base.fontFamily),
+                Semantics(
+                  header: titleHeading,
+                  child: RaftCssText(
+                    title,
+                    key: const ValueKey('empty-state-title'),
+                    textAlign: TextAlign.center,
+                    style: RaftTypography.body(
+                      t,
+                      size: m.titleSize,
+                      line: m.titleLine,
+                      weight: FontWeight.w700,
+                      color: t.colors['foreground-muted'],
+                    ).copyWith(fontFamily: base.fontFamily),
+                  ),
                 ),
                 if (description != null) ...[
                   const SizedBox(height: 8),
@@ -89,8 +97,8 @@ class RaftProductEmptyState extends StatelessWidget {
                       textAlign: TextAlign.center,
                       style: RaftTypography.body(
                         t,
-                        size: t.size('type.emptyBody.size', fallback: 14),
-                        line: t.size('type.emptyBody.line', fallback: 20),
+                        size: m.bodySize,
+                        line: m.bodyLine,
                         color: t.colors['foreground-hint'],
                       ).copyWith(fontFamily: base.fontFamily),
                     ),
@@ -144,11 +152,14 @@ class RaftProductEmptyState extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 spacing: content.rowGap ?? 8,
                 children: [
-                  RaftCssText(
-                    title,
-                    key: const ValueKey('empty-state-title'),
-                    textAlign: TextAlign.center,
-                    style: recipe.title.text(rt, base: base),
+                  Semantics(
+                    header: titleHeading,
+                    child: RaftCssText(
+                      title,
+                      key: const ValueKey('empty-state-title'),
+                      textAlign: TextAlign.center,
+                      style: recipe.title.text(rt, base: base),
+                    ),
                   ),
                   if (description != null)
                     ConstrainedBox(
@@ -184,8 +195,10 @@ class RaftProductEmptyPanel extends StatelessWidget {
     required this.icon,
     this.description,
     this.action,
+    this.titleHeading = false,
   });
 
+  final bool titleHeading;
   final String title;
   final String? description;
   final Widget? action;
@@ -205,6 +218,7 @@ class RaftProductEmptyPanel extends StatelessWidget {
             title: title,
             description: description,
             action: action,
+            titleHeading: titleHeading,
             icon: icon,
           ),
         ),

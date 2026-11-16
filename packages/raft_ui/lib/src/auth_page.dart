@@ -855,6 +855,7 @@ class RaftAuthTextLink extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
+    if (t.textLinksUnderlined) return _build124(context, t);
     // RaftInteractive: hover / pressed / focus-visible states and, on touch
     // density, a 48dp hit area around the unchanged Web text box.
     final link = RaftInteractive(
@@ -910,6 +911,43 @@ class RaftAuthTextLink extends StatelessWidget {
       );
     }
     if (centered) return _touchLine(context, Center(child: link));
+    return link;
+  }
+
+  /// raft-ui 0.95.3 `TextLink` (Web v1.24 mounts it directly): `primary` is the
+  /// `strong` variant (semibold, foreground), the rest `muted` (medium,
+  /// foreground-muted, foreground on hover); disabled is the
+  /// `foreground-disabled` colour, never an opacity; the underline shows on
+  /// hover only, or at rest for an [inline] link.
+  Widget _build124(BuildContext context, RaftTokens t) {
+    final size = small ? 13.0 : 14.0;
+    final line = small ? 18.0 : 20.0;
+    final weight = bold
+        ? FontWeight.w700
+        : primary
+        ? FontWeight.w600
+        : FontWeight.w500;
+    final base = sans
+        ? RaftTypography.body(t, size: size, line: line, weight: weight)
+        : RaftTypography.heading(t, size: size, line: line, weight: weight);
+    Widget link = RaftTextLink(
+      label: label,
+      onPressed: onTap,
+      variant: primary ? RaftTextLinkVariant.strong : RaftTextLinkVariant.muted,
+      typeStyle: base,
+      underlineAtRest: inline,
+    );
+    if (centeredLine) {
+      return _touchLine(
+        context,
+        SizedBox(height: 24, child: Center(child: link)),
+      );
+    }
+    if (centered) return _touchLine(context, Center(child: link));
+    // On touch density a 48dp hit area around the unchanged text box.
+    if (RaftDensityScope.of(context) == RaftDensity.touch) {
+      link = RaftTouchTarget(child: link);
+    }
     return link;
   }
 }
