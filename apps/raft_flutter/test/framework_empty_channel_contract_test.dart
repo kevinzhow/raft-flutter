@@ -59,8 +59,10 @@ void main() {
           expect(glyph.glyph, RaftGlyph.messageSquare);
           expect(glyph.size, 36);
           final title = tester.widget<Text>(find.text('No messages yet'));
-          expect(title.style!.fontSize, 17);
-          expect(title.style!.height, 22 / 17);
+          // raft-ui 0.95.3 `text-headline` with a mouse at 768px or wider:
+          // 16/24 (Web v1.24 measured h2 16px / 24px).
+          expect(title.style!.fontSize, 16);
+          expect(title.style!.height, 24 / 16);
         }
         expect(w.channel!.id, 'c1');
         expect(find.byType(RaftComposer), findsOneWidget);
