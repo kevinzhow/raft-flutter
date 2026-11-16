@@ -49767,7 +49767,7 @@
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
-      "packages/raft_ui/lib/src/agent_profile.dart#local-function:CLASS:RaftWorkspaceTreeView@78578/METHOD:build@80050/FUNCTION:message@83635": {
+      "packages/raft_ui/lib/src/agent_profile.dart#local-function:CLASS:RaftWorkspaceTreeView@78784/METHOD:build@80256/FUNCTION:message@83841": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
