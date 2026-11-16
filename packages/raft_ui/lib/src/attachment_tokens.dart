@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import 'theme.dart';
 import 'design_primitives.dart';
+import 'raft/ui_tokens.dart';
 
 /// raft-ui 0.5.52 FilePreviewBadge and message-image-gallery primitives.
 /// OKLCH roles are resolved by the actual Chromium renderer and retained in
@@ -12,6 +13,14 @@ abstract final class AttachmentPrimitive {
   static const badgeSize = Size(28, 14);
   static const badgeGap = 6.0;
   static const galleryGap = 8.0;
+
+  /// `--control-embedded-inset`: the Raft card's right padding is this minus
+  /// the 1px border (`pr-[calc(var(--control-embedded-inset)-1px)]`).
+  static const embeddedInset = 6.0;
+
+  /// Raft `message-image-gallery`: `gap-1`, root `max-w-[min(360px,100%)]`,
+  /// and the `@min-[360px]` container step.
+  static const raftGalleryGap = 4.0, raftGalleryMaxWidth = 360.0;
   static const wideAspect = 2.2, tallAspect = .55;
   static const compactRowHeight = 128.0, regularRowHeight = 144.0;
   static const compactThreeRowHeight = 112.0, regularThreeRowHeight = 128.0;
@@ -72,9 +81,14 @@ class AttachmentSemantic {
     'mov': 'blue',
   };
   String? kind(String extension) => kinds[extension.toLowerCase()];
+
+  /// raft-ui 0.95.3 FilePreviewBadge is neutral: one `fill-muted` chip for
+  /// every known extension; the frozen looks keep the per-kind colours.
+  bool get neutral => tokens.isRaftLook;
   Color? badgeBackground(String extension) {
     final role = kind(extension);
     if (role == null) return null;
+    if (neutral) return tokens.colors['fill-muted'];
     if (role == 'neutral') {
       return tokens.dark ? tokens.colors['fill-strong']! : tokens.ink;
     }
@@ -85,6 +99,7 @@ class AttachmentSemantic {
 
   Color badgeForeground(String extension) {
     final role = kind(extension);
+    if (neutral) return tokens.colors['foreground-muted']!;
     if (role == 'neutral') {
       return tokens.dark ? tokens.strong : tokens.colors['foreground-inverse']!;
     }
@@ -100,25 +115,74 @@ class AttachmentComponentRecipe {
   final RaftTokens tokens;
   final RaftAttachmentRecipe file;
   final AttachmentSemantic semantics;
+  bool get _raft => tokens.isRaftLook;
+
+  /// Raft: `py-2 pl-2.5 pr-[embedded-inset - 1px]` inside the 1px border.
   EdgeInsets get contentInset =>
-      AttachmentPrimitive.bodyInset + EdgeInsets.all(file.border().width);
-  TextStyle badgeLabel(String extension) => RaftTypography.mono(
-    tokens,
-    size: 9,
-    line: 9,
-    color: semantics.badgeForeground(extension),
-  ).copyWith(fontWeight: FontWeight.w600);
+      (_raft
+          ? const EdgeInsets.fromLTRB(
+              10,
+              8,
+              AttachmentPrimitive.embeddedInset - 1,
+              8,
+            )
+          : AttachmentPrimitive.bodyInset) +
+      EdgeInsets.all(file.border().width);
+  TextStyle badgeLabel(String extension) => _raft
+      // `font-mono text-[10px] leading-none font-bold text-foreground-muted`.
+      ? RaftTypography.mono(
+          tokens,
+          size: 10,
+          line: 10,
+          color: semantics.badgeForeground(extension),
+        ).copyWith(fontWeight: FontWeight.w700)
+      : RaftTypography.mono(
+          tokens,
+          size: 9,
+          line: 9,
+          color: semantics.badgeForeground(extension),
+        ).copyWith(fontWeight: FontWeight.w600);
   BorderRadius get badgeRadius => BorderRadius.circular(4);
   Border? get badgeBorder => null;
 
-  /// FilePreviewBadge brutal `shadow-raft-sm`; elegant has none.
-  List<BoxShadow>? get badgeShadows => null;
-  TextStyle get metadata => RaftTypography.body(
-    tokens,
-    size: 10,
-    line: 20,
-    color: tokens.colors['foreground-placeholder'],
-  );
+  /// FilePreviewBadge brutal `shadow-raft-sm`; elegant has none. Raft: the
+  /// `ring-1 ring-line-hairline` (outside the box, like a CSS ring).
+  List<BoxShadow>? get badgeShadows => _raft
+      ? [BoxShadow(color: tokens.colors['line-hairline']!, spreadRadius: 1)]
+      : null;
+
+  /// The card's corner: `rounded-container` in the Raft look.
+  BorderRadius get cardRadius => _raft
+      ? BorderRadius.circular(tokens.size('radius.container', fallback: 10))
+      : file.radius;
+
+  /// Raft: the hairline stays on hover and focus (the fill and the focus ring
+  /// carry those states); the frozen looks darken the border.
+  BorderSide cardBorder({bool hovered = false, bool focused = false}) =>
+      _raft ? file.border() : file.border(hovered: hovered, focused: focused);
+
+  /// `text-callout font-semibold` (14/20, 14/22 on desktop); frozen: 12/16 bold.
+  TextStyle get cardTitle => _raft
+      ? tokens.scale(
+          tokens.typeSlot('callout'),
+          weight: FontWeight.w600,
+          color: tokens.ui.foreground,
+        )
+      : file.title.copyWith(fontWeight: FontWeight.w700);
+
+  /// Meta and summary lines: `font-mono text-mono-meta text-foreground-hint`.
+  TextStyle get metadata => _raft
+      ? tokens.scale(
+          tokens.typeSlot('mono-meta'),
+          mono: true,
+          color: tokens.ui.foregroundHint,
+        )
+      : RaftTypography.body(
+          tokens,
+          size: 10,
+          line: 20,
+          color: tokens.colors['foreground-placeholder'],
+        );
   Color get actionForeground => tokens.colors['foreground-icon']!;
   Size imageSize({
     required double viewportWidth,

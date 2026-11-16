@@ -61,7 +61,7 @@ void main() {
         expect(image.size, Size.square(size));
         expect(file.size, Size.square(size));
         expect(send.size, const Size.square(32));
-        expect(file.left - image.right, 8);
+        expect(file.left - image.right, 6);
         expect(
           tester
               .getSize(find.byKey(const ValueKey('composer-toolbar-slot')))

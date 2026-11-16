@@ -110,7 +110,8 @@ void _badgeShadowTests() {
     final tokens = raftTheme().extension<RaftTokens>()!;
     final recipe = AttachmentComponentRecipe(tokens);
     // brutal `border-2 border-black shadow-raft-sm`; elegant `px-1` only.
-    expect(recipe.badgeShadows, isNull);
+    // raft-ui 0.95.3 neutral badge: `ring-1 ring-line-hairline` (Raft look).
+    expect(recipe.badgeShadows, hasLength(1));
   });
 }
 

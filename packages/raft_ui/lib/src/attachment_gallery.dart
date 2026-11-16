@@ -69,12 +69,22 @@ class RaftAttachmentGallery extends StatelessWidget {
         );
         return itemBuilder(0, size, BoxFit.contain);
       }
+      // raft-ui `message-image-gallery`: the root is `max-w-[min(360px,100%)]`
+      // and everything below follows the root's own width (a container query),
+      // never the viewport; `gap-1` between cells and rows. The frozen looks
+      // keep the 0.5.52 viewport rules and 8px gap.
+      final raft = RaftTokens.of(context).isRaftLook;
+      final gap = raft
+          ? AttachmentPrimitive.raftGalleryGap
+          : AttachmentPrimitive.galleryGap;
       final width = math
           .max(
             1.0,
             math.min(
               available,
-              viewport >= AttachmentPrimitive.columnsBreakpoint
+              raft
+                  ? AttachmentPrimitive.raftGalleryMaxWidth
+                  : viewport >= AttachmentPrimitive.columnsBreakpoint
                   ? AttachmentPrimitive.desktopGalleryMaxWidth
                   : math.min(
                       AttachmentPrimitive.mobileGalleryMaxWidth,
@@ -83,6 +93,9 @@ class RaftAttachmentGallery extends StatelessWidget {
             ),
           )
           .toDouble();
+      final regularRows = raft
+          ? width >= AttachmentPrimitive.raftGalleryMaxWidth
+          : viewport >= AttachmentPrimitive.rowBreakpoint;
       final rows = raftImageGalleryRows(dimensions);
       return SizedBox(
         width: width,
@@ -90,31 +103,28 @@ class RaftAttachmentGallery extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             for (var row = 0; row < rows.length; row++) ...[
-              if (row > 0)
-                const SizedBox(height: AttachmentPrimitive.galleryGap),
+              if (row > 0) SizedBox(height: gap),
               Wrap(
-                spacing: AttachmentPrimitive.galleryGap,
-                runSpacing: AttachmentPrimitive.galleryGap,
+                spacing: gap,
+                runSpacing: gap,
                 children: [
                   for (final index in rows[row])
                     Builder(
                       builder: (context) {
                         final count = rows[row].length;
                         final columns =
-                            count == 3 &&
+                            !raft &&
+                                count == 3 &&
                                 viewport < AttachmentPrimitive.columnsBreakpoint
                             ? 2
                             : count;
                         final extent = Size(
-                          (width -
-                                  (columns - 1) *
-                                      AttachmentPrimitive.galleryGap) /
-                              columns,
+                          (width - (columns - 1) * gap) / columns,
                           count == 3
-                              ? (viewport >= AttachmentPrimitive.rowBreakpoint
+                              ? (regularRows
                                     ? AttachmentPrimitive.regularThreeRowHeight
                                     : AttachmentPrimitive.compactThreeRowHeight)
-                              : (viewport >= AttachmentPrimitive.rowBreakpoint
+                              : (regularRows
                                     ? AttachmentPrimitive.regularRowHeight
                                     : AttachmentPrimitive.compactRowHeight),
                         );

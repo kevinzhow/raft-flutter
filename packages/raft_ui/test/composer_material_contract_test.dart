@@ -32,7 +32,7 @@ void main() {
           expect(
             recipe.shellInset,
             native
-                ? const EdgeInsets.fromLTRB(12, 12, 12, 8)
+                ? const EdgeInsets.fromLTRB(12, 12, 12, 5)
                 : raised
                 ? const EdgeInsets.all(8)
                 : EdgeInsets.zero,

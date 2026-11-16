@@ -104,7 +104,11 @@ class RaftAttachmentCard extends StatelessWidget {
         type != 'application/pdf';
   }
 
-  static double metaLineHeight(RaftTokens t) => 21 / 10;
+  static double metaLineHeight(RaftTokens t) {
+    if (!t.isRaftLook) return 21 / 10;
+    final slot = t.typeSlot('mono-meta');
+    return slot.lineHeight / slot.fontSize;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -151,7 +155,7 @@ class RaftAttachmentCard extends StatelessWidget {
               // being cut.
               maxLines: grows ? null : 1,
               overflow: grows ? TextOverflow.clip : TextOverflow.ellipsis,
-              style: recipe.title.copyWith(fontWeight: FontWeight.w700),
+              style: component.cardTitle,
             ),
           ),
         ),
@@ -216,8 +220,8 @@ class RaftAttachmentCard extends StatelessWidget {
                     overflow: grows ? TextOverflow.clip : TextOverflow.ellipsis,
                     style: component.metadata.copyWith(
                       height: metaLineHeight(t),
-                      fontWeight: FontWeight.w500,
-                      color: t.colors['foreground-muted'],
+                      fontWeight: t.isRaftLook ? null : FontWeight.w500,
+                      color: t.isRaftLook ? null : t.colors['foreground-muted'],
                     ),
                   ),
                 ),
@@ -340,6 +344,7 @@ class RaftAttachmentCard extends StatelessWidget {
       width: cardWidth,
       child: _AttachmentSurface(
         recipe: recipe,
+        component: component,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -391,32 +396,79 @@ class RaftAttachmentCard extends StatelessWidget {
 /// One shared surface state controls the source file border. The card itself
 /// is the only action (open); Download lives in the viewer it opens.
 class _AttachmentSurface extends StatefulWidget {
-  const _AttachmentSurface({required this.recipe, required this.child});
+  const _AttachmentSurface({
+    required this.recipe,
+    required this.component,
+    required this.child,
+  });
   final RaftAttachmentRecipe recipe;
+  final AttachmentComponentRecipe component;
   final Widget child;
   @override
   State<_AttachmentSurface> createState() => _AttachmentSurfaceState();
 }
 
 class _AttachmentSurfaceState extends State<_AttachmentSurface> {
-  bool hovered = false, focused = false;
+  bool hovered = false, focused = false, pressed = false;
   @override
-  Widget build(BuildContext context) => RaftHoverRegion(
-    onEnter: (_) => setState(() => hovered = true),
-    onExit: (_) => setState(() => hovered = false),
-    child: Focus(
-      onFocusChange: (value) => setState(() => focused = value),
-      child: Material(
-        color: widget.recipe.background,
-        clipBehavior: Clip.antiAlias,
-        shape: RoundedRectangleBorder(
-          side: widget.recipe.border(hovered: hovered, focused: focused),
-          borderRadius: widget.recipe.radius,
-        ),
-        child: widget.child,
+  Widget build(BuildContext context) {
+    final t = widget.component.tokens;
+    final raft = t.isRaftLook;
+    final radius = widget.component.cardRadius;
+    // Raft: `hover:overlay-subtle active:overlay-medium`, and the keyboard
+    // ring is `focus-visible:shadow-focus`; the border never changes.
+    final overlay = !raft
+        ? null
+        : pressed
+        ? t.colors['fill-medium']
+        : hovered
+        ? t.colors['fill-subtle']
+        : null;
+    final ring =
+        raft &&
+        focused &&
+        FocusManager.instance.highlightMode == FocusHighlightMode.traditional;
+    Widget surface = Material(
+      color: widget.recipe.background,
+      clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(
+        side: widget.component.cardBorder(hovered: hovered, focused: focused),
+        borderRadius: radius,
       ),
-    ),
-  );
+      child: overlay == null
+          ? widget.child
+          : Stack(
+              children: [
+                widget.child,
+                Positioned.fill(
+                  child: IgnorePointer(child: ColoredBox(color: overlay)),
+                ),
+              ],
+            ),
+    );
+    if (ring) {
+      surface = DecoratedBox(
+        decoration: BoxDecoration(
+          borderRadius: radius,
+          boxShadow: t.focusShadows,
+        ),
+        child: surface,
+      );
+    }
+    return RaftHoverRegion(
+      onEnter: (_) => setState(() => hovered = true),
+      onExit: (_) => setState(() => hovered = false),
+      child: Listener(
+        onPointerDown: (_) => setState(() => pressed = true),
+        onPointerUp: (_) => setState(() => pressed = false),
+        onPointerCancel: (_) => setState(() => pressed = false),
+        child: Focus(
+          onFocusChange: (value) => setState(() => focused = value),
+          child: surface,
+        ),
+      ),
+    );
+  }
 }
 
 /// `mt-auto flex items-center justify-between gap-1.5 text-[10px]`:
