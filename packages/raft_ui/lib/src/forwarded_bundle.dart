@@ -5,6 +5,8 @@ import 'collapsible.dart';
 import 'design_primitives.dart' show RaftInteractive;
 import 'icons.dart';
 import 'theme.dart';
+import 'forwarded_bundle_style.dart';
+import 'message_embed_frame.dart';
 import 'rich_card_tokens.dart';
 import 'localization.dart';
 import 'message_body.dart';
@@ -250,8 +252,11 @@ class _RaftForwardedBundleState extends State<RaftForwardedBundle> {
     BuildContext context,
     RaftForwardedItem first,
     ForwardedSnapshotRecipe recipe,
+    RaftForwardedBundleStyle? raft,
   ) {
-    final style = widget.headerLine == null
+    final style = raft != null
+        ? raft.source
+        : widget.headerLine == null
         ? recipe.source
         : recipe.source.copyWith(height: widget.headerLine! / 11);
     final label = first.taskTitle != null
@@ -286,7 +291,9 @@ class _RaftForwardedBundleState extends State<RaftForwardedBundle> {
         semanticLabel: hint,
         builder: (_, state) => text(
           state.hovered
-              ? style.copyWith(decoration: TextDecoration.underline)
+              ? (raft?.sourceHover ?? style).copyWith(
+                  decoration: TextDecoration.underline,
+                )
               : style,
         ),
       ),
@@ -295,10 +302,22 @@ class _RaftForwardedBundleState extends State<RaftForwardedBundle> {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = RaftTokens.of(context);
     final recipe = ForwardedSnapshotRecipe(
-      RaftTokens.of(context),
+      tokens,
       devicePixelRatio: MediaQuery.devicePixelRatioOf(context),
     );
+    final raft = tokens.isRaftLook
+        ? RaftForwardedBundleStyle.of(context)
+        : null;
+    final collapsedHeight = raft?.collapsedHeight ?? recipe.collapsedHeight;
+    final itemPadding = raft?.itemPadding ?? recipe.itemInset;
+    final authorStyle = raft?.author ?? recipe.author;
+    final metaStyle = raft?.meta ?? recipe.metadata;
+    final prose = raft?.foreground ?? recipe.semantic.prose;
+    final fade = raft?.fade ?? recipe.semantic.content;
+    final metaGap = raft?.metaGap ?? 6.0;
+    final metaBottom = raft?.metaBottom ?? 4.0;
     final items = raftForwardedItems(widget.metadata);
     if (items.isEmpty) {
       return Text(raftText(context, 'Forwarded messages unavailable.'));
@@ -306,7 +325,7 @@ class _RaftForwardedBundleState extends State<RaftForwardedBundle> {
     final foldable =
         bodyHeights.length == items.length &&
         bodyHeights.values.fold<double>(0, (a, b) => a + b) >
-            recipe.collapsedHeight + 1;
+            collapsedHeight + 1;
     final collapsed =
         bodyHeights.length == items.length && !expanded && !widget.exportMode;
     final first = items.first;
@@ -315,7 +334,7 @@ class _RaftForwardedBundleState extends State<RaftForwardedBundle> {
       children: [
         for (var index = 0; index < items.length; index++)
           Padding(
-            padding: recipe.itemInset,
+            padding: itemPadding,
             child: Builder(
               builder: (context) {
                 final item = items[index];
@@ -323,21 +342,21 @@ class _RaftForwardedBundleState extends State<RaftForwardedBundle> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Wrap(
-                      spacing: 6,
+                      spacing: metaGap,
                       runSpacing: 2,
                       children: [
                         // A Text rounds a fractional line (15.71px) up; the
                         // box keeps Web's exact height.
                         metaLine(
-                          recipe.author,
+                          authorStyle,
                           item.author.isEmpty
                               ? raftText(context, 'Unknown author')
                               : item.author,
                         ),
                         if (item.createdAt != null) ...[
-                          metaLine(recipe.metadata, '·'),
+                          metaLine(metaStyle, '·'),
                           metaLine(
-                            recipe.metadata,
+                            metaStyle,
                             widget.formatTimestamp?.call(item.createdAt!) ??
                                 TimeOfDay.fromDateTime(
                                   item.createdAt!.toLocal(),
@@ -346,7 +365,7 @@ class _RaftForwardedBundleState extends State<RaftForwardedBundle> {
                         ],
                       ],
                     ),
-                    const SizedBox(height: 4),
+                    SizedBox(height: metaBottom),
                     RaftContentMeasure(
                       onSize: (size) {
                         if (mounted &&
@@ -360,14 +379,14 @@ class _RaftForwardedBundleState extends State<RaftForwardedBundle> {
                                     0,
                                     (a, b) => a + b,
                                   ) <=
-                                  recipe.collapsedHeight + 1;
+                                  collapsedHeight + 1;
                             }
                           });
                         }
                       },
                       child: RaftMessageBody(
                         content: item.content,
-                        foregroundColor: recipe.semantic.prose,
+                        foregroundColor: prose,
                         exportMode: widget.exportMode,
                       ),
                     ),
@@ -405,18 +424,19 @@ class _RaftForwardedBundleState extends State<RaftForwardedBundle> {
     );
     final viewportWidth = MediaQuery.sizeOf(context).width;
     final body = DecoratedBox(
-      decoration: recipe.contentDecoration,
+      // The Raft look has no second box: the items sit on the frame.
+      decoration: raft != null
+          ? const BoxDecoration()
+          : recipe.contentDecoration,
       child: collapsed
           ? ClipRRect(
-              borderRadius: BorderRadius.circular(
-                RichCardPrimitive.contentRadius,
-              ),
+              borderRadius: raft != null
+                  ? BorderRadius.zero
+                  : BorderRadius.circular(RichCardPrimitive.contentRadius),
               child: Stack(
                 children: [
                   ConstrainedBox(
-                    constraints: BoxConstraints(
-                      maxHeight: recipe.collapsedHeight,
-                    ),
+                    constraints: BoxConstraints(maxHeight: collapsedHeight),
                     child: SingleChildScrollView(
                       primary: false,
                       physics: const NeverScrollableScrollPhysics(),
@@ -435,9 +455,9 @@ class _RaftForwardedBundleState extends State<RaftForwardedBundle> {
                             begin: Alignment.bottomCenter,
                             end: Alignment.topCenter,
                             colors: [
-                              recipe.semantic.content,
-                              recipe.semantic.content.withValues(alpha: .8),
-                              recipe.semantic.content.withValues(alpha: 0),
+                              fade,
+                              fade.withValues(alpha: .8),
+                              fade.withValues(alpha: 0),
                             ],
                           ),
                         ),
@@ -452,103 +472,133 @@ class _RaftForwardedBundleState extends State<RaftForwardedBundle> {
     return Padding(
       // `mt-1` collapses with the message body's own margin.
       padding: EdgeInsets.only(top: RaftMessageBodyMargin.collapse(context, 4)),
-      child: ConstrainedBox(
-        constraints: BoxConstraints(maxWidth: recipe.maxWidth),
-        child: Container(
-          decoration: recipe.decoration,
-          padding: recipe.inset,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Container(
-                decoration: recipe.headerDecoration,
-                padding: recipe.headerInset(viewportWidth),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Flexible(
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          RaftIcon(
-                            RaftGlyph.forward,
-                            size: 12,
-                            color: recipe.header.color,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            raftText(context, 'Forwarded'),
-                            style: recipe.header,
-                          ),
-                          const SizedBox(width: 8),
-                          Flexible(
-                            child: Text(
-                              // message.forward.bundleCount: `one {message}`
-                              // (no number), `other {# messages}`.
-                              items.length == 1
-                                  ? raftText(context, 'message')
-                                  : raftFormat(context, '{count} messages', {
-                                      'count': items.length,
-                                    }),
-                              style: widget.headerLine == null
-                                  ? recipe.count
-                                  : recipe.count.copyWith(
-                                      height: widget.headerLine! / 11,
-                                    ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    if (first.sourceLabel != null) ...[
-                      const SizedBox(width: 8),
-                      Flexible(child: _source(context, first, recipe)),
-                    ],
-                  ],
-                ),
-              ),
-              body,
-              if (!widget.exportMode && foldable)
-                Container(
-                  decoration: recipe.footerDecoration,
-                  padding: recipe.footerInset(viewportWidth),
-                  // The footer is a block whose 24px line box holds the
-                  // inline-flex 11px button.
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(minHeight: 24),
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: RaftShowMoreToggle(
-                        label: expanded
-                            ? raftText(context, 'Collapse')
-                            : raftFormat(
-                                context,
-                                items.length == 1
-                                    ? 'View All {count} Message'
-                                    : 'View All {count} Messages',
-                                {'count': items.length},
-                              ),
-                        onPressed: () => setState(() {
-                          touched = true;
-                          expanded = !expanded;
-                        }),
-                        style: recipe.showMore,
-                        underline: recipe.showMoreUnderlined,
-                        visualHeight: 20,
-                        icon: RaftIcon(
-                          expanded
-                              ? RaftGlyph.chevronUp
-                              : RaftGlyph.chevronRight,
-                          size: 12,
+      child: _BundleFrame(
+        raft: raft != null,
+        recipe: recipe,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Container(
+              decoration: recipe.headerDecoration,
+              padding: raft?.headerPadding ?? recipe.headerInset(viewportWidth),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Flexible(
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        RaftIcon(
+                          RaftGlyph.forward,
+                          // `[&_svg]:size-3.5` of the header label.
+                          size: raft != null ? 14 : 12,
+                          color: (raft?.label ?? recipe.header).color,
                         ),
+                        const SizedBox(width: 4),
+                        Text(
+                          raftText(context, 'Forwarded'),
+                          style: raft?.label ?? recipe.header,
+                        ),
+                        SizedBox(width: raft?.headerGap ?? 8),
+                        Flexible(
+                          child: Text(
+                            // message.forward.bundleCount: `one {message}`
+                            // (no number), `other {# messages}`.
+                            items.length == 1
+                                ? raftText(context, 'message')
+                                : raftFormat(context, '{count} messages', {
+                                    'count': items.length,
+                                  }),
+                            style: raft != null
+                                ? raft.count
+                                : widget.headerLine == null
+                                ? recipe.count
+                                : recipe.count.copyWith(
+                                    height: widget.headerLine! / 11,
+                                  ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (first.sourceLabel != null) ...[
+                    const SizedBox(width: 8),
+                    Flexible(child: _source(context, first, recipe, raft)),
+                  ],
+                ],
+              ),
+            ),
+            body,
+            if (!widget.exportMode && foldable)
+              Container(
+                decoration: recipe.footerDecoration,
+                padding:
+                    raft?.footerPadding ?? recipe.footerInset(viewportWidth),
+                // The footer is a block whose 24px line box holds the
+                // inline-flex 11px button.
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(minHeight: 24),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: RaftShowMoreToggle(
+                      label: expanded
+                          ? raftText(context, 'Collapse')
+                          : raftFormat(
+                              context,
+                              items.length == 1
+                                  ? 'View All {count} Message'
+                                  : 'View All {count} Messages',
+                              {'count': items.length},
+                            ),
+                      onPressed: () => setState(() {
+                        touched = true;
+                        expanded = !expanded;
+                      }),
+                      style: raft?.footer ?? recipe.showMore,
+                      underline: raft != null || recipe.showMoreUnderlined,
+                      visualHeight: 20,
+                      icon: RaftIcon(
+                        expanded ? RaftGlyph.chevronUp : RaftGlyph.chevronRight,
+                        size: 12,
                       ),
                     ),
                   ),
                 ),
-            ],
-          ),
+              ),
+          ],
         ),
+      ),
+    );
+  }
+}
+
+/// The bundle's frame: the raft-ui `MessageEmbed` (size `content`) in the Raft
+/// look, the 0.5.52 inset double frame in the frozen looks.
+class _BundleFrame extends StatelessWidget {
+  const _BundleFrame({
+    required this.raft,
+    required this.recipe,
+    required this.child,
+  });
+  final bool raft;
+  final ForwardedSnapshotRecipe recipe;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    if (raft) {
+      return RaftMessageEmbedFrame(
+        size: RaftMessageEmbedSize.content,
+        child: child,
+      );
+    }
+    return ConstrainedBox(
+      constraints: BoxConstraints(maxWidth: recipe.maxWidth),
+      child: Container(
+        decoration: recipe.decoration,
+        padding: recipe.inset,
+        child: child,
       ),
     );
   }

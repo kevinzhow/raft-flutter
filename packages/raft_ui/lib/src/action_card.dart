@@ -8,6 +8,7 @@ import 'localization.dart';
 import 'space.dart';
 import 'theme.dart';
 import 'icons.dart';
+import 'message_embed_frame.dart';
 import 'message_row_recipe.dart' show RaftMessageBodyMargin;
 import 'rich_card_tokens.dart';
 import 'text_measure.dart';
@@ -142,13 +143,12 @@ class RaftActionCard extends StatelessWidget {
         padding: EdgeInsets.only(
           top: RaftMessageBodyMargin.collapse(context, recipe.topGap),
         ),
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: recipe.background,
-            border: Border.fromBorderSide(recipe.border),
-          ),
+        child: _ActionFrame(
+          recipe: recipe,
           child: Padding(
-            padding: recipe.inset + EdgeInsets.all(recipe.border.width),
+            padding: t.isRaftLook
+                ? recipe.inset
+                : recipe.inset + EdgeInsets.all(recipe.border.width),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -455,6 +455,32 @@ class RaftActionScopeList extends StatelessWidget {
           ...footer,
         ],
       ),
+    );
+  }
+}
+
+/// The card's frame. The Raft look is the raft-ui `MessageEmbed` (size `item`:
+/// radius 10, one hairline, `layer-card`, 400 wide); the frozen looks keep the
+/// 0.5.52 bordered panel.
+class _ActionFrame extends StatelessWidget {
+  const _ActionFrame({required this.recipe, required this.child});
+  final ActionSnapshotRecipe recipe;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    if (RaftTokens.of(context).isRaftLook) {
+      return RaftMessageEmbedFrame(
+        size: RaftMessageEmbedSize.item,
+        child: child,
+      );
+    }
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: recipe.background,
+        border: Border.fromBorderSide(recipe.border),
+      ),
+      child: child,
     );
   }
 }

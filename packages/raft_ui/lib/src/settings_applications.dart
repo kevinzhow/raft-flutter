@@ -997,13 +997,15 @@ class RaftConnectedAppUrlLink extends StatelessWidget {
           return Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              RaftIcon(RaftGlyph.externalLink, size: 12, color: color),
-              const SizedBox(width: 6),
               Flexible(
                 child: RaftUnderlinedText(
                   visible,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
+                  // `decoration-[1.5px] underline-offset-[3px]`: the line
+                  // stops before the arrow.
+                  underlineOffset: 3,
+                  underlineThickness: 1.5,
                   style: RaftTypography.mono(
                     t,
                     size: 12,
@@ -1011,6 +1013,14 @@ class RaftConnectedAppUrlLink extends StatelessWidget {
                     color: color,
                   ).copyWith(fontWeight: FontWeight.w700),
                 ),
+              ),
+              // raft-ui `TextLinkExternalIcon`: ArrowUpRight, 0.857em, 2px
+              // after the text.
+              const SizedBox(width: 2),
+              RaftIcon(
+                RaftGlyph.arrowUpRight,
+                size: MediaQuery.textScalerOf(context).scale(12) * 0.857,
+                color: color,
               ),
             ],
           );

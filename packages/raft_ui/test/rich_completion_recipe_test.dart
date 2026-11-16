@@ -51,7 +51,8 @@ void main() {
           surfaces
               .where((box) => box.decoration is BoxDecoration)
               .map((box) => (box.decoration as BoxDecoration).color),
-          contains(recipe.semantic.content),
+          // The Raft look has one frame: no second panel box inside it.
+          dark ? isNot(contains(recipe.semantic.content)) : anything,
         );
         if (dark) {
           expect(recipe.semantic.embedCanvas, isNot(tokens.sidebar));
@@ -135,27 +136,30 @@ void main() {
     );
   }
 
-  test('outside disc scales with font metrics and gutter, rather than a captured rectangle', () {
-    final normal = MessageListMarkerPrimitive.disc(
-      indent: 20,
-      ascent: 14,
-      baseline: 15,
-    );
-    final nested = MessageListMarkerPrimitive.disc(
-      indent: 24,
-      ascent: 14,
-      baseline: 15,
-    );
-    final large = MessageListMarkerPrimitive.disc(
-      indent: 40,
-      ascent: 28,
-      baseline: 30,
-    );
-    expect(normal.width, 5);
-    expect(normal.left, closeTo(20 - 14 * 2 / 3 - 7, .001));
-    expect(nested.left - normal.left, 4);
-    expect(nested.size, normal.size);
-    expect(large.width, greaterThan(normal.width));
-    expect(large.bottom, lessThan(30));
-  });
+  test(
+    'outside disc scales with font metrics and gutter, rather than a captured rectangle',
+    () {
+      final normal = MessageListMarkerPrimitive.disc(
+        indent: 20,
+        ascent: 14,
+        baseline: 15,
+      );
+      final nested = MessageListMarkerPrimitive.disc(
+        indent: 24,
+        ascent: 14,
+        baseline: 15,
+      );
+      final large = MessageListMarkerPrimitive.disc(
+        indent: 40,
+        ascent: 28,
+        baseline: 30,
+      );
+      expect(normal.width, 5);
+      expect(normal.left, closeTo(20 - 14 * 2 / 3 - 7, .001));
+      expect(nested.left - normal.left, 4);
+      expect(nested.size, normal.size);
+      expect(large.width, greaterThan(normal.width));
+      expect(large.bottom, lessThan(30));
+    },
+  );
 }

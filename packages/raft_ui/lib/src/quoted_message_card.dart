@@ -13,6 +13,7 @@ import 'icons.dart';
 import 'indicators.dart';
 import 'message_row_recipe.dart' show RaftBodyTrailingBleed;
 import 'localization.dart';
+import 'quoted_message_card_raft.dart';
 import 'theme.dart';
 import 'tokens/tokens.dart' show RaftRadius;
 
@@ -109,6 +110,7 @@ class RaftQuotedMessageCard extends StatefulWidget {
     this.authorDelegatedBy,
     this.unavailableText,
     this.attachmentLabel,
+    this.notice,
     this.onTap,
   });
   final String channelName, timestamp, authorName, content;
@@ -122,6 +124,11 @@ class RaftQuotedMessageCard extends StatefulWidget {
   /// The quote is one muted line instead (Web `unavailable`: a retracted
   /// message is never quoted with its old words).
   final String? unavailableText;
+
+  /// A line in place of the message text (the header stays), e.g. a message
+  /// older than the plan's history window: the card is not tappable then and
+  /// its attachments are hidden (Web `notice`).
+  final Widget? notice;
   final VoidCallback? onTap;
 
   @override
@@ -134,6 +141,7 @@ class _RaftQuotedMessageCardState extends State<RaftQuotedMessageCard> {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
+    if (t.isRaftLook) return RaftQuotedMessageCardRaft(card: widget);
     final wide = MediaQuery.sizeOf(context).width >= 640;
     final hint = t.colors['foreground-hint']!;
     final placeholder = t.colors['foreground-placeholder']!;
@@ -295,19 +303,29 @@ class _RaftQuotedMessageCardState extends State<RaftQuotedMessageCard> {
         Text(widget.timestamp, style: stamp),
       ],
     );
-    final body = RaftUnderlines(
-      child: Text.rich(
-        raftInlineMarkdownSpan(
-          widget.content,
-          text,
-          linkColor: t.dark ? const Color(0xFF93C5FD) : const Color(0xFF1D4ED8),
-          code: text.copyWith(fontFamily: t.monoFont),
-        ),
-        maxLines: 2,
-        overflow: TextOverflow.ellipsis,
-      ),
-    );
-    final attachment = widget.attachmentLabel == null
+    final notice = widget.notice;
+    final body = notice != null
+        ? DefaultTextStyle.merge(
+            style: text,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            child: notice,
+          )
+        : RaftUnderlines(
+            child: Text.rich(
+              raftInlineMarkdownSpan(
+                widget.content,
+                text,
+                linkColor: t.dark
+                    ? const Color(0xFF93C5FD)
+                    : const Color(0xFF1D4ED8),
+                code: text.copyWith(fontFamily: t.monoFont),
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          );
+    final attachment = widget.attachmentLabel == null || widget.notice != null
         ? null
         : Padding(
             padding: const EdgeInsets.only(top: 8),
@@ -376,7 +394,7 @@ class _RaftQuotedMessageCardState extends State<RaftQuotedMessageCard> {
         child: GestureDetector(
           key: const Key('quoted-message-card'),
           behavior: HitTestBehavior.opaque,
-          onTap: widget.onTap,
+          onTap: widget.notice != null ? null : widget.onTap,
           child: Container(
             width: double.infinity,
             decoration: BoxDecoration(

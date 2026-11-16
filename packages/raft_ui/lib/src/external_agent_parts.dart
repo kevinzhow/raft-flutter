@@ -523,12 +523,9 @@ class RaftExternalSetupSteps extends StatelessWidget {
                     weight: FontWeight.w600,
                     color: t.ui.foreground,
                   ),
+                  // Web `TextLinkExternalIcon`: the link leaves Raft.
+                  external: true,
                   onPressed: onOpenSdkGuide,
-                ),
-                RaftIcon(
-                  RaftGlyph.externalLink,
-                  size: 12,
-                  color: t.ui.foreground,
                 ),
               ],
             ),
