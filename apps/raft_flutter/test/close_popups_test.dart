@@ -326,7 +326,8 @@ void main() {
             RaftToastPortal(controller: toast),
             RaftButton(
               label: 'Show toast',
-              onPressed: () => toast.show('Saved the thing'),
+              onPressed: () =>
+                  toast.show('Saved the thing', dismissible: true),
             ),
           ],
         ),
