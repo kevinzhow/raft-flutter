@@ -17,6 +17,8 @@ import 'recipes/button_variants.g.dart'
 import 'recipes/recipe_runtime.dart' show RaftRecipeSet;
 import 'theme.dart';
 import 'system_inset.dart';
+import 'raft/ui_tokens.dart' show RaftTokensUi;
+import 'tokens/tokens.dart';
 
 /// `border-t border-line-muted bg-layer-panel` / brutal `border-t-2 border-black bg-white`.
 BoxDecoration _footerDecoration(RaftTokens t, {Color? color}) => BoxDecoration(
@@ -199,6 +201,61 @@ class RaftChannelJoinFooter extends StatelessWidget {
               ),
             ),
         ],
+      ),
+    );
+  }
+}
+
+/// `ReadOnlyComposer` (components/message/ReadOnlyComposer.tsx): the composer's
+/// stand-in where nobody can write: a disabled field that reads
+/// "Chat is unavailable", with no typing, attachments or send. ChatPanel shows
+/// it for a Lounge the viewer may read but not post in.
+class RaftChannelReadOnlyComposer extends StatelessWidget {
+  const RaftChannelReadOnlyComposer({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final t = RaftTokens.of(context);
+    final decoration = BoxDecoration(
+      color: t.colors['layer-canvas'] ?? t.panel,
+    );
+    final radius = t.size('radius.container', fallback: 10);
+    return RaftBottomInsetSurface(
+      key: const ValueKey('channel-read-only-composer'),
+      decoration: decoration,
+      // `px-3 pt-2 pb-3`.
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+      child: MouseRegion(
+        cursor: SystemMouseCursors.forbidden,
+        child: Semantics(
+          container: true,
+          textField: true,
+          enabled: false,
+          child: ConstrainedBox(
+            // `min-h-11`: the box is a minimum and grows with the text size.
+            constraints: const BoxConstraints(minHeight: 44),
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: t.colors['fill-muted'],
+                borderRadius: BorderRadius.circular(radius),
+                border: Border.all(color: t.colors['line-hairline']!),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: Text(
+                    raftText(context, 'Chat is unavailable'),
+                    style: t.scale(
+                      RaftTypeScale.body,
+                      color: t.colors['foreground-disabled'],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }

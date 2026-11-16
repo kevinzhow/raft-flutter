@@ -14,7 +14,6 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
-import 'agent_profile.dart' show RaftPanelText;
 import 'collapsible.dart' show RaftShowMoreToggle;
 import 'dialog_card.dart' show RaftTextSteps, raftCssTextStyle;
 import 'error_presentation.dart' show RaftErrorBanner;
@@ -132,11 +131,8 @@ class _RaftAgentChatViewState extends State<RaftAgentChatView> {
                   ),
                 ),
                 child: RaftProductEmptyState(
+                  // v1.24 drops the description: the title says it.
                   title: raftText(context, 'No chats yet'),
-                  description: raftText(
-                    context,
-                    'When this agent joins channels or has agent-to-agent DM activity, those chat surfaces will appear here.',
-                  ),
                   icon: (context, size, color) => Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -162,26 +158,11 @@ class _RaftAgentChatViewState extends State<RaftAgentChatView> {
     );
   }
 
-  Widget _header(
-    BuildContext context,
-    RaftTokens t,
-    String label,
-    String text,
-  ) => Padding(
-    // `px-5 py-3`
+  /// `px-5 py-3` with the heading alone: "The heading and the list say it: no
+  /// line describing the list" (v1.24 AgentChatTab).
+  Widget _header(String label) => Padding(
     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        RaftSectionHeader(label: label),
-        const SizedBox(height: 4),
-        RaftCssText(
-          text,
-          style: RaftPanelText.caption(t)
-              .copyWith(color: t.colors['foreground-muted']),
-        ),
-      ],
-    ),
+    child: RaftSectionHeader(label: label),
   );
 
   Widget _errorRow(String message) => Padding(
@@ -250,15 +231,7 @@ class _RaftAgentChatViewState extends State<RaftAgentChatView> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _header(
-          context,
-          t,
-          raftText(context, 'Channels'),
-          raftText(
-            context,
-            'Channels where this agent can read or participate.',
-          ),
-        ),
+        _header(raftText(context, 'Channels')),
         if (widget.channelsError != null)
           _errorRow(widget.channelsError!)
         else if (widget.channels.isEmpty)
@@ -320,8 +293,14 @@ class _RaftAgentChatViewState extends State<RaftAgentChatView> {
               children: [
                 Row(
                   children: [
+                    // Web `ChannelIcon` by kind: # (channel), lock (private),
+                    // branch (joint).
                     RaftIcon(
-                      c.type == 'private' ? RaftGlyph.lock : RaftGlyph.hash,
+                      switch (c.type) {
+                        'private' => RaftGlyph.lock,
+                        'joint' => RaftGlyph.gitBranch,
+                        _ => RaftGlyph.hash,
+                      },
                       size: 14,
                       color: placeholder,
                     ),
@@ -386,12 +365,7 @@ class _RaftAgentChatViewState extends State<RaftAgentChatView> {
   Widget _dms(BuildContext context, RaftTokens t) => Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
-      _header(
-        context,
-        t,
-        raftText(context, 'Agent DMs'),
-        raftText(context, 'Direct conversations involving this agent.'),
-      ),
+      _header(raftText(context, 'Agent DMs')),
       if (widget.dmsError != null)
         _errorRow(widget.dmsError!)
       else if (widget.dms.isEmpty)

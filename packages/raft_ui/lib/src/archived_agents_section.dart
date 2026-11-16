@@ -7,9 +7,9 @@ import 'package:flutter/material.dart';
 
 import 'agent_profile.dart' show RaftAvatarSlot, RaftAvatarSlotContext;
 import 'css_pixel_snap.dart';
+import 'design_primitives.dart' show RaftTextLink, RaftTextLinkVariant;
 import 'icons.dart';
 import 'localization.dart';
-import 'raft_underline.dart';
 import 'recipes/button_variants.g.dart';
 import 'settings_controls.dart';
 import 'settings_layout.dart';
@@ -87,7 +87,7 @@ class RaftArchivedAgentsSection extends StatelessWidget {
     final view = RaftSettingsRecipeButton(
       key: ValueKey('archived-agent-workspace-${row.id}'),
       label: 'View workspace',
-      size: RaftButtonRecipeSize.sm,
+      size: RaftButtonRecipeSize.md,
       expand: !wide,
       semanticLabel: raftFormat(context, 'View the workspace of {name}', {
         'name': row.name,
@@ -112,19 +112,20 @@ class RaftArchivedAgentsSection extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Web v1.24: the raft-ui TextLink (underlined on hover only), not
+              // a hand-made underlined button.
               Semantics(
                 button: true,
                 label: raftFormat(context, 'Open {name}', {'name': row.name}),
                 excludeSemantics: true,
-                child: GestureDetector(
-                  key: ValueKey('archived-agent-open-${row.id}'),
-                  behavior: HitTestBehavior.opaque,
-                  onTap: () => onOpen(row.id),
-                  child: RaftUnderlinedText(
-                    row.name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: text.title.copyWith(color: t.muted),
+                child: Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: RaftTextLink(
+                    key: ValueKey('archived-agent-open-${row.id}'),
+                    label: row.name,
+                    variant: RaftTextLinkVariant.muted,
+                    textStyle: text.title.copyWith(color: t.muted),
+                    onPressed: () => onOpen(row.id),
                   ),
                 ),
               ),

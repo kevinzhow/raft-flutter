@@ -5109,16 +5109,24 @@
    "kind": "endpoint",
    "id": "DELETE /agents/:id/connections/:id",
    "area": "agents-computers-runtimes",
-   "capability": "Detach the GitHub connection from the agent ('Remove from this agent' + confirm)",
+   "capability": "Remove the GitHub connection from the agent (⋯ > 'Remove from {agent}': no confirm with an Undo toast when the viewer can assign it again, else a confirm naming the creator; DELETE 204, or 200 {revokeOnGithub} which shows the revoke hint; failure disconnect_not_cleared has Retry)",
    "background": false,
    "status": "covered",
-   "webEntry": "AgentDetailPanel > Profile tab > External setup section > 'Connected accounts' (AgentConnections.tsx; only for hosted external agents whose hosted runtime state is active)",
+   "webEntry": "AgentProfileInfo.tsx > 'Connected accounts' (components/agent/AgentConnections.tsx, GithubConnectionDetails.tsx, GithubRevokeHint.tsx, GithubConnectAccountDialog.tsx, agentConnectionApi.ts; shown for a hosted external agent whose hosted runtime state is active, canManageAgent and not app-managed) | handleDetachClick / detach / reattach / GithubRevokeHint",
    "gate": "external agent + canManageAgent (editAgents capability or agent creator) + hostedRuntime.state=active; section hides itself on 4xx",
-   "flutterEntry": "agent_connections_section.dart _confirmDetach() / _detach()",
+   "flutterEntry": "agent_connections_section.dart _onDetachPressed() > _detach() (Undo toast through _reattach()) or _confirmDetach(); agent_connection_views.dart AgentConnectionRevokeHint",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/agent_connections_section.dart",
      "needle": "_confirmDetach("
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/agent_connections_section.dart",
+     "needle": "_reattach("
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/agent_connection_views.dart",
+     "needle": "class AgentConnectionRevokeHint"
     }
    ],
    "justification": "",
@@ -5129,12 +5137,12 @@
    "kind": "endpoint",
    "id": "DELETE /agents/:id/connections/:id/connectors/:id",
    "area": "agents-computers-runtimes",
-   "capability": "Disconnect the whole GitHub connector ('Disconnect this connection' + confirm, with partial-failure Retry)",
+   "capability": "Disconnect the whole GitHub connector for every agent (⋯ > 'Disconnect for all agents' + confirm naming the creator and date; 502 partial: Retry; the revoke hint waits for the retry that completes it)",
    "background": false,
    "status": "covered",
-   "webEntry": "AgentDetailPanel > Profile tab > External setup section > 'Connected accounts' (AgentConnections.tsx; only for hosted external agents whose hosted runtime state is active)",
+   "webEntry": "AgentProfileInfo.tsx > 'Connected accounts' (components/agent/AgentConnections.tsx, GithubConnectionDetails.tsx, GithubRevokeHint.tsx, GithubConnectAccountDialog.tsx, agentConnectionApi.ts; shown for a hosted external agent whose hosted runtime state is active, canManageAgent and not app-managed) | ConnectionActionsMenu > disconnectConnector / runDisconnect / retryDisconnect",
    "gate": "external agent + canManageAgent (editAgents capability or agent creator) + hostedRuntime.state=active; section hides itself on 4xx; current connector canManage",
-   "flutterEntry": "agent_connections_section.dart _confirmDisconnect() / _disconnect() with the partial-disconnect Retry",
+   "flutterEntry": "agent_connections_section.dart _confirmDisconnect() / _disconnectConnector() with the partial-disconnect Retry (_retryDisconnect())",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/data/agent_connections.dart",
@@ -5180,7 +5188,7 @@
    "capability": "Delete a provider connection (blocked while agents assigned)",
    "background": false,
    "status": "covered",
-   "webEntry": "Settings > 'Provider connections' (ProviderConnectionsSettings.tsx) > row trash 'Delete connection' (confirm)",
+   "webEntry": "settings/ManagedConnectionRow.tsx (api.delete /provider-connections/:id) from ProviderConnectionsSettings.tsx ConnectionRow trash 'Delete connection' (confirm); the section renders only while the AI provider feature is on (featureEnabled)",
    "gate": "manageExternalAuth capability for add/edit/test/verify/enable/delete",
    "flutterEntry": "provider_views.dart 'Delete connection' confirm",
    "flutterRefs": [
@@ -5204,7 +5212,7 @@
    "capability": "Detach a deleted agent from a provider connection (Assigned agents panel)",
    "background": false,
    "status": "covered",
-   "webEntry": "Settings > 'Provider connections' (ProviderConnectionsSettings.tsx) > row > assigned agents expander > deleted agent 'Detach'",
+   "webEntry": "settings/ManagedConnectionRow.tsx (api.delete /provider-connections/:id/agents/:id) from ProviderConnectionsSettings.tsx AssignedAgentsPanel deleted agent 'Detach'",
    "gate": "manageExternalAuth capability for add/edit/test/verify/enable/delete",
    "flutterEntry": "provider_views.dart assigned() > 'Detach deleted agent'",
    "flutterRefs": [
@@ -5417,16 +5425,20 @@
    "kind": "endpoint",
    "id": "GET /agents/:id/connections/:id",
    "area": "agents-computers-runtimes",
-   "capability": "Load an agent's GitHub connection status, available connectors and scopes",
+   "capability": "Load an agent's GitHub connection status: connectors with oauthStatus, lastCheckError, lastCheckedAt, scopes, requestedScopes, assignable, createdAt, creator, canManage, and status.canConnectNew",
    "background": false,
    "status": "covered",
-   "webEntry": "AgentDetailPanel > Profile tab > External setup section > 'Connected accounts' (AgentConnections.tsx; only for hosted external agents whose hosted runtime state is active) | AgentConnectionCallbackPage (foreign-user status read)",
+   "webEntry": "AgentProfileInfo.tsx > 'Connected accounts' (components/agent/AgentConnections.tsx, GithubConnectionDetails.tsx, GithubRevokeHint.tsx, GithubConnectAccountDialog.tsx, agentConnectionApi.ts; shown for a hosted external agent whose hosted runtime state is active, canManageAgent and not app-managed) | AgentConnections load() | AgentConnectionCallbackPage (foreign-user status read)",
    "gate": "external agent + canManageAgent (editAgents capability or agent creator) + hostedRuntime.state=active; section hides itself on 4xx",
-   "flutterEntry": "agent_connections_section.dart AgentConnectionsSection._read()",
+   "flutterEntry": "agent_connections_section.dart AgentConnectionsSection._read(); data/agent_connections.dart AgentConnectionStatus.parse / AgentConnector.parse",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/data/agent_connections.dart",
      "needle": "String agentConnectionPath("
+    },
+    {
+     "file": "apps/raft_flutter/lib/data/agent_connections.dart",
+     "needle": "lastCheckedAt"
     },
     {
      "file": "apps/raft_flutter/lib/features/agent_detail_view.dart",
@@ -5541,8 +5553,8 @@
    "capability": "Hosted-runtime 7-day token/tool-call/top-model usage block",
    "background": false,
    "status": "covered",
-   "webEntry": "AgentDetailPanel > Profile > External setup > 'Usage (last 7 days)' (AgentHostedRuntimeUsage.tsx)",
-   "gate": "external agent + canManageAgent + hostedRuntime active; hidden on 4xx",
+   "webEntry": "features/agent/AgentDetailPanel.tsx > Profile (features/agent/AgentProfileInfo.tsx:633-637) > 'Usage (last 7 days)' (components/agent/AgentHostedRuntimeUsage.tsx)",
+   "gate": "external agent + canManageAgent + not app-install managed + hostedRuntime active; hidden on 4xx",
    "flutterEntry": "agent_hosted_usage.dart AgentHostedRuntimeUsage (Profile > Usage (last 7 days), cost by UTC day)",
    "flutterRefs": [
     {
@@ -5665,7 +5677,7 @@
    "capability": "Browse the agent's workspace file tree (root and lazily-expanded folders), refresh, show/hide hidden files, copy path",
    "background": false,
    "status": "covered",
-   "webEntry": "AgentDetailPanel > 'Workspace' tab (AgentWorkspace.tsx): tree, 'Refresh', hidden-files toggle, copy-path button (not shown for hosted agents)",
+   "webEntry": "features/agent/AgentDetailPanel.tsx:961 > 'Workspace' tab (components/agent/AgentWorkspace.tsx:395,422,516): tree, 'Refresh', hidden-files toggle, copy-path button (not shown for hosted agents)",
    "gate": "tab visible to canViewAgentPrivateSurfaces",
    "flutterEntry": "agent_detail_view.dart AgentWorkspaceTab -> RaftWorkspaceTreeView(showPath: !widget.hosted); regular workspace refresh/hidden-files/tree/preview behavior is retained",
    "flutterRefs": [
@@ -5745,7 +5757,7 @@
    "capability": "List agents assigned to a provider connection (with open-agent link)",
    "background": false,
    "status": "covered",
-   "webEntry": "Settings > 'Provider connections' (ProviderConnectionsSettings.tsx) > row > 'N agents' expander (AssignedAgentsPanel; row button opens the agent)",
+   "webEntry": "settings/ProviderConnectionsSettings.tsx AssignedAgentsPanel (api.get /provider-connections/:id/agents): 'N agents' expander; the row opens the agent profile (useProfileStore.openProfile)",
    "gate": "manageExternalAuth capability for add/edit/test/verify/enable/delete",
    "flutterEntry": "provider_views.dart Assigned agents dialog: active agent row opens the profile after closing the dialog; deleted agents retain the detach action",
    "flutterRefs": [
@@ -5773,7 +5785,7 @@
    "capability": "Load a provider connection's model list for Verify (and Test) pickers, with refresh",
    "background": false,
    "status": "covered",
-   "webEntry": "Settings > 'Provider connections' (ProviderConnectionsSettings.tsx) > 'Test connection' model select 'Refresh models' | 'Verify on a computer' model select",
+   "webEntry": "settings/ProviderConnectionsSettings.tsx VerifyProviderConnectionModal model select 'Refresh models' (api.get /provider-connections/:id/models)",
    "gate": "manageExternalAuth capability for add/edit/test/verify/enable/delete",
    "flutterEntry": "provider_views.dart verify dialog model picker",
    "flutterRefs": [
@@ -6079,7 +6091,7 @@
    "capability": "Edit a provider connection (name, endpoint, image input, new API key) and Enable/Disable it",
    "background": false,
    "status": "covered",
-   "webEntry": "Settings > 'Provider connections' (ProviderConnectionsSettings.tsx) > row pencil 'Edit connection' (EditProviderConnectionModal) | row toggle 'Enable connection'/'Disable connection' | also reachable from the agent runtime-config editor ('Edit saved provider')",
+   "webEntry": "settings/EditProviderConnectionModal.tsx (api.patch name, endpoint, image input, new key) | settings/ManagedConnectionRow.tsx (api.patch {enabled}) | also reachable from the agent runtime-config editor ('Edit saved provider')",
    "gate": "manageExternalAuth capability for add/edit/test/verify/enable/delete",
    "flutterEntry": "provider_edit_dialog.dart EditProviderConnectionDialog from provider_views.dart 'Edit connection'; provider_views.dart 'Enable connection' / 'Disable connection' (PATCH {enabled}); 'Edit saved provider' beside the saved-provider picker of the v2 form (runtime_form_dialog.dart)",
    "flutterRefs": [
@@ -6180,16 +6192,20 @@
    "kind": "endpoint",
    "id": "POST /agents/:id/connections/:id",
    "area": "agents-computers-runtimes",
-   "capability": "Start a GitHub connection for an agent ('Connect' / 'Connect a new GitHub account', optional 'Include private repositories' checkbox, then 'Continue to GitHub')",
+   "capability": "Start or reconnect a GitHub connection ('Connect new account' in the card or the ⋯ menu, 'Reconnect' on the reconnect and scope-short banners; the 'Reconnect {account}' / 'Connect new account' dialog picks Public repos only or Public and private repos, body {access?, connectorId?}, then 'Continue to GitHub' opens the provider URL)",
    "background": false,
    "status": "covered",
-   "webEntry": "AgentDetailPanel > Profile tab > External setup section > 'Connected accounts' (AgentConnections.tsx; only for hosted external agents whose hosted runtime state is active)",
+   "webEntry": "AgentProfileInfo.tsx > 'Connected accounts' (components/agent/AgentConnections.tsx, GithubConnectionDetails.tsx, GithubRevokeHint.tsx, GithubConnectAccountDialog.tsx, agentConnectionApi.ts; shown for a hosted external agent whose hosted runtime state is active, canManageAgent and not app-managed) | start() / ConnectAccountDialog",
    "gate": "external agent + canManageAgent (editAgents capability or agent creator) + hostedRuntime.state=active; section hides itself on 4xx",
-   "flutterEntry": "agent_connections_section.dart _start() then _continue() (system browser)",
+   "flutterEntry": "agent_connections_section.dart _openConnect() > _start() (system browser); back from the browser the status is read again",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/agent_connections_section.dart",
-     "needle": "_continue()"
+     "needle": "_openConnect("
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/agent_connections_section.dart",
+     "needle": "_start("
     }
    ],
    "justification": "",
@@ -6462,7 +6478,7 @@
    "capability": "Add a provider connection (name, provider, endpoint for gateways, API key, image input)",
    "background": false,
    "status": "covered",
-   "webEntry": "Settings > 'Provider connections' (ProviderConnectionsSettings.tsx) > 'Add provider connection' (CreateProviderConnectionModal)",
+   "webEntry": "settings/ProviderConnectionsSettings.tsx CreateProviderConnectionModal (api.post /provider-connections), 'Add provider connection'",
    "gate": "manageExternalAuth capability for add/edit/test/verify/enable/delete; disabled when no provider options",
    "flutterEntry": "provider_views.dart create form 'Add'",
    "flutterRefs": [
@@ -6486,7 +6502,7 @@
    "capability": "Verify a provider connection on a computer (pick computer + model, run probe, see latency/reply, 'Verify again')",
    "background": false,
    "status": "covered",
-   "webEntry": "Settings > 'Provider connections' (ProviderConnectionsSettings.tsx) > row 'Verify' icon (VerifyProviderConnectionModal) + 'Verified on' chip",
+   "webEntry": "settings/ProviderConnectionsSettings.tsx VerifyProviderConnectionModal (api.post /provider-connections/:id/probes) + 'Verified on' chip",
    "gate": "manageExternalAuth capability for add/edit/test/verify/enable/delete",
    "flutterEntry": "provider_views.dart 'Verify on computer' + 'Verification history' (extra)",
    "flutterRefs": [
@@ -6510,7 +6526,7 @@
    "capability": "Send a test message through a provider connection ('Test connection' > model + message > 'Send test')",
    "background": false,
    "status": "na",
-   "webEntry": "ProviderConnectionsSettings.tsx ConnectionRow shows the 'Test connection' button only while legacyTestVisible (= !featureEnabled), but the whole section returns null when !featureEnabled, so the button can never be on screen",
+   "webEntry": "settings/ProviderConnectionsSettings.tsx TestProviderConnectionModal (api.post /provider-connections/:id/test) is only reachable through ConnectionRow's 'Test connection' button while legacyTestVisible (= !featureEnabled), but ProviderConnectionsSettings returns null when !featureEnabled (line 148), so the button can never be on screen (re-read at v1.24.0)",
    "gate": "manageExternalAuth capability for add/edit/test/verify/enable/delete",
    "flutterEntry": "",
    "flutterRefs": [],
@@ -6685,16 +6701,20 @@
    "kind": "endpoint",
    "id": "PUT /agents/:id/connections/:id",
    "area": "agents-computers-runtimes",
-   "capability": "Assign an existing GitHub connector to the agent ('Use GitHub connection' select)",
+   "capability": "Assign an existing GitHub connector to the agent ('GitHub connection' select; rows say state, access, 'Created by {creator} · {date}' and why a row is forbidden; canManage=false and assignable=false rows are not selectable) and the Undo of a removal",
    "background": false,
    "status": "covered",
-   "webEntry": "AgentDetailPanel > Profile tab > External setup section > 'Connected accounts' (AgentConnections.tsx; only for hosted external agents whose hosted runtime state is active)",
+   "webEntry": "AgentProfileInfo.tsx > 'Connected accounts' (components/agent/AgentConnections.tsx, GithubConnectionDetails.tsx, GithubRevokeHint.tsx, GithubConnectAccountDialog.tsx, agentConnectionApi.ts; shown for a hosted external agent whose hosted runtime state is active, canManageAgent and not app-managed) | assign() / reattach() / ConnectorOption",
    "gate": "external agent + canManageAgent (editAgents capability or agent creator) + hostedRuntime.state=active; section hides itself on 4xx; connector.canManage per option",
-   "flutterEntry": "agent_connections_section.dart _assign()",
+   "flutterEntry": "agent_connections_section.dart _assign() and _reattach()",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/agent_connections_section.dart",
      "needle": "_assign("
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/agent_connections_section.dart",
+     "needle": "_reattach("
     }
    ],
    "justification": "",
@@ -7346,8 +7366,8 @@
    "capability": "Hosted-runtime Model card: searchable model list with 'Default ({label})', admin-default note, saving / saved / hint line",
    "background": false,
    "status": "covered",
-   "webEntry": "components/agent/AgentHostedRuntimeModel.tsx in the agent profile Info section",
-   "gate": "external agent + canManageAgent + hostedRuntime.state active",
+   "webEntry": "components/agent/AgentHostedRuntimeModel.tsx, mounted by features/agent/AgentProfileInfo.tsx:635 in the agent profile Info section",
+   "gate": "external agent + canManageAgent + not app-install managed + hostedRuntime.state active",
    "flutterEntry": "agent_hosted_model.dart AgentHostedRuntimeModel mounted from agent_detail_view.dart",
    "flutterRefs": [
     {
@@ -7679,7 +7699,7 @@
      "needle": "AgentSkillsSection"
     },
     {
-     "file": "apps/raft_flutter/lib/features/agent_detail_view.dart",
+     "file": "apps/raft_flutter/lib/features/agent_skills_section.dart",
      "needle": "/skills"
     }
    ],
@@ -8178,13 +8198,17 @@
    "capability": "Report Issue dialog on an agent: describe the issue, choose what to include (recent DMs, live activity, activity history, runtime transcript request, machine log tail), consent, upload bundle, copy report reference, open feedback ticket",
    "background": false,
    "status": "covered",
-   "webEntry": "components/agent/ReportIssueDialog.tsx, feedback/agentIssueTicket.ts, utils/feedbackExportBundle.ts (slock-feedback-export-v2)",
+   "webEntry": "components/agent/ReportIssueDialog.tsx, feedback/agentIssueTicket.ts, feedback/transcriptRequestState.ts (feedback_report:session_record answer), utils/feedbackExportBundle.ts (slock-feedback-export-v2)",
    "gate": "Build names a feedback export worker (VITE_FEEDBACK_EXPORT_URL)",
    "flutterEntry": "report_issue.dart (only offered when RAFT_FEEDBACK_EXPORT_URL is set at build)",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/report_issue.dart",
      "needle": "reportIssueBuildUrl"
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/report_issue.dart",
+     "needle": "feedback_report:session_record"
     }
    ],
    "justification": "Gated by build config on both clients; confirm release builds define RAFT_FEEDBACK_EXPORT_URL or the entry disappears.",
@@ -17822,7 +17846,7 @@
    "capability": "List archived agents (Settings > Archived agents)",
    "background": false,
    "status": "covered",
-   "webEntry": "components/settings/ArchivedAgentsSection.tsx",
+   "webEntry": "components/settings/ArchivedAgentsSection.tsx (mounted by features/settings/server/ServerTabContent.tsx:15)",
    "gate": "server members (not guests)",
    "flutterEntry": "archived_agents_section.dart (rendered by server_views.dart)",
    "flutterRefs": [
@@ -17862,7 +17886,7 @@
    "capability": "Confirm moving an agent to the hosted runtime after review",
    "background": false,
    "status": "covered",
-   "webEntry": "components/agentMigration/HostedMigrationReview.tsx (flag agent_migration_hosted)",
+   "webEntry": "components/agentMigration/HostedMigrationReview.tsx:75 (flag agent_migration_hosted_v0, shared featureFlags.ts:9)",
    "gate": "none",
    "flutterEntry": "agent_migration_hosted_review.dart AgentMigrationHostedReview._confirm()",
    "flutterRefs": [

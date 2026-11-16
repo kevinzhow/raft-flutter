@@ -3,7 +3,9 @@ import 'package:test/test.dart';
 
 void main() {
   test('server role grants match the pinned closed matrix', () {
-    expect(raftServerCapabilities, hasLength(41));
+    // Web v1.24 shared/serverPermissions.ts SERVER_CAPABILITY_KEYS added
+    // stopAgents (owner and admin; not in MEMBER_SERVER_CAPABILITIES).
+    expect(raftServerCapabilities, hasLength(42));
     for (final capability in raftServerCapabilities) {
       expect(raftCan('owner', capability), isTrue);
       expect(raftCan('admin', capability), capability != 'manageBilling');

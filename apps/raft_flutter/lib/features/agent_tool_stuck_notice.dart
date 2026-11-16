@@ -101,6 +101,23 @@ AgentToolStuck? visibleToolStuck(
   required Object? blocked,
 }) => stuck != null && isOnline && blocked == null ? stuck : null;
 
+/// Web `useToolStuckText`: "Stuck on {tool} · no output for {minutes} min ·
+/// N message(s) waiting" at [nowMs]. The notice under the profile's status chip
+/// and the DM header's status line (`AgentDMStatus`) both say it this way.
+String agentToolStuckText(
+  BuildContext context,
+  AgentToolStuck stuck,
+  int nowMs,
+) => icuText(
+  context,
+  'Stuck on {tool} · no output for {minutes} min{queued, plural, =0 {} one { · # message waiting} other { · # messages waiting}}',
+  {
+    'tool': stuck.toolName,
+    'minutes': toolStuckMinutes(stuck, nowMs),
+    'queued': stuck.queuedMessages,
+  },
+);
+
 /// The "Stuck on {tool} · no output for {minutes} min · N message(s) waiting"
 /// line, re-rendered once a minute while it shows (no timer otherwise; it
 /// pauses while the app is in the background).
@@ -146,17 +163,8 @@ class _AgentToolStuckNoticeState extends State<AgentToolStuckNotice> {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    final stuck = widget.toolStuck;
     final now = widget.nowMs?.call() ?? DateTime.now().millisecondsSinceEpoch;
-    final text = icuText(
-      context,
-      'Stuck on {tool} · no output for {minutes} min{queued, plural, =0 {} one { · # message waiting} other { · # messages waiting}}',
-      {
-        'tool': stuck.toolName,
-        'minutes': toolStuckMinutes(stuck, now),
-        'queued': stuck.queuedMessages,
-      },
-    );
+    final text = agentToolStuckText(context, widget.toolStuck, now);
     return LayoutBuilder(
       builder: (context, constraints) => Wrap(
         key: const ValueKey('agent-tool-stuck'),

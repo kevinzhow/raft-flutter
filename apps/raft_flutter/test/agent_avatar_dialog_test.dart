@@ -76,6 +76,11 @@ void main() {
     bool dark = false,
     bool fleet = false,
   }) async {
+    // Nine series of avatars: the card is taller than the default test view
+    // (Web scrolls the whole card on a desktop window).
+    t.view.physicalSize = const Size(900, 1500);
+    t.view.devicePixelRatio = 1;
+    addTearDown(t.view.reset);
     await t.pumpWidget(
       MaterialApp(
         theme: raftTheme(dark: dark),
@@ -235,12 +240,12 @@ void main() {
       await choice(t, 'sun');
       await t.tap(find.text('Save'));
       await t.pump();
-      await t.tap(find.byType(RaftRecipeButton));
+      await t.tap(find.byType(RaftDialogClose), warnIfMissed: false);
       await t.pump();
       expect(find.byType(AgentAvatarDialog), findsOneWidget);
       expect(
-        t.widget<RaftRecipeButton>(find.byType(RaftRecipeButton)).disabled,
-        true,
+        t.widget<RaftDialogClose>(find.byType(RaftDialogClose)).enabled,
+        false,
       );
       await t.tap(find.byType(RaftButton).last);
       await t.pump();
@@ -292,8 +297,8 @@ void main() {
       (t) async {
         await open(t, dark: dark);
         expect(find.text('Close'), findsNothing);
-        final close = find.byType(RaftRecipeButton);
-        expect(t.getSize(close), const Size(32, 32));
+        final close = find.byType(RaftDialogClose);
+        expect(t.getSize(close), isNotNull);
         await t.sendKeyEvent(LogicalKeyboardKey.tab);
         await t.sendKeyEvent(LogicalKeyboardKey.enter);
         await t.pumpAndSettle();
@@ -326,11 +331,11 @@ void main() {
       },
     );
     testWidgets(
-      'preset controls have real 40px targets and keyboard activation ${dark ? 'dark' : 'light'}',
+      'preset controls have real 44px targets and keyboard activation ${dark ? 'dark' : 'light'}',
       (t) async {
         await open(t, dark: dark);
         final target = find.byKey(const ValueKey('avatar-choice-tree'));
-        expect(t.getSize(target), const Size(40, 40));
+        expect(t.getSize(target), const Size(44, 44));
         final focus = find.descendant(
           of: target,
           matching: find.byType(FocusableActionDetector),

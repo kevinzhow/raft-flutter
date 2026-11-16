@@ -8,8 +8,18 @@
 // shared PLAN_CONFIG maxChannels is -1 for every plan, so Web never reaches it.
 import '../data/source_time_formatter.dart';
 import '../data/workspace_controller.dart';
+import 'agent_lounge.dart' show isLoungeChannel;
 
-enum ChannelFooterKind { composer, archived, jointLocked, guestReadOnly, join }
+enum ChannelFooterKind {
+  composer,
+  archived,
+  jointLocked,
+  guestReadOnly,
+  join,
+
+  /// An agent's Lounge the viewer may read but not post in (`canPost` false).
+  loungeReadOnly,
+}
 
 /// Source isJointChannelReadOnly: the server flag, or the grace deadline passed.
 bool jointChannelReadOnly(Map<String, dynamic> channel, DateTime now) {
@@ -34,10 +44,15 @@ ChannelFooterKind? channelFooterKind(WorkspaceController w, DateTime now) {
   final channel = w.channel;
   if (channel == null) return null;
   final json = channel.json;
+  // Agent Lounge v0: like a DM there is nothing to join first (the first post
+  // joins you, the server does it) and nothing to post where `canPost` is false.
+  final lounge = isLoungeChannel(channel);
+  if (lounge && !channel.canPost) return ChannelFooterKind.loungeReadOnly;
   if (channel.archived) return ChannelFooterKind.archived;
   if (jointChannelReadOnly(json, now)) return ChannelFooterKind.jointLocked;
   final guest = w.server?.string('role') == 'guest';
-  final implicitlyJoined = const ['dm', 'thread'].contains(channel.type);
+  final implicitlyJoined =
+      lounge || const ['dm', 'thread'].contains(channel.type);
   final joined = implicitlyJoined ? true : channel.joined;
   final guestJoinable = json['guestJoinable'] == true;
   if (guest && (joined || !guestJoinable)) {

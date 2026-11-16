@@ -16,6 +16,8 @@ import 'package:flutter/material.dart';
 
 import 'package:flutter/rendering.dart';
 
+import 'agent_info_list.dart' show RaftInfoRowBody;
+import 'tokens/tokens.dart' show RaftTypeScale;
 import 'raft_underline.dart';
 import 'control_typography.dart';
 import 'design_primitives.dart' hide RaftPanelHeaderRecipe;
@@ -126,9 +128,61 @@ class RaftInfoRow extends StatelessWidget {
     ),
   );
 
+  /// The term in the active look: the Raft look's DescriptionList term
+  /// (footnote, medium, hint), else the frozen [labelStyle].
+  static TextStyle termStyleOf(BuildContext context) {
+    final t = RaftTokens.of(context);
+    return t.isRaftLook
+        ? raftCssText.merge(
+            t.scale(
+              RaftTypeScale.footnote,
+              weight: FontWeight.w500,
+              color: t.ui.foregroundHint,
+            ),
+          )
+        : labelStyle(t);
+  }
+
+  /// The details in the active look: the Raft look's DescriptionList details
+  /// (callout, regular, foreground), else the frozen muted [valueStyle].
+  static TextStyle detailsStyleOf(BuildContext context) {
+    final t = RaftTokens.of(context);
+    return t.isRaftLook
+        ? raftCssText.merge(
+            t.scale(
+              RaftTypeScale.callout,
+              weight: FontWeight.w400,
+              color: t.ui.foreground,
+            ),
+          )
+        : valueStyle(t);
+  }
+
+  /// [detailsStyleOf] in the mono face (`font-mono`).
+  static TextStyle monoStyleOf(BuildContext context) =>
+      detailsStyleOf(context)
+          .copyWith(fontFamily: RaftTokens.of(context).monoFont);
+
+  /// [detailsStyleOf] in `text-foreground-muted`.
+  static TextStyle mutedStyleOf(BuildContext context) {
+    final t = RaftTokens.of(context);
+    return t.isRaftLook
+        ? detailsStyleOf(context).copyWith(color: t.ui.foregroundMuted)
+        : valueStyle(t);
+  }
+
+  /// [detailsStyleOf] in `text-foreground-hint`.
+  static TextStyle hintStyleOf(BuildContext context) {
+    final t = RaftTokens.of(context);
+    return t.isRaftLook
+        ? detailsStyleOf(context).copyWith(color: t.ui.foregroundHint)
+        : valueStyle(t);
+  }
+
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
+    if (t.isRaftLook) return RaftInfoRowBody(row: this);
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

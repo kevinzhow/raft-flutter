@@ -247,7 +247,7 @@ class _AgentArchiveSectionState extends State<AgentArchiveSection> {
             key: const ValueKey('agent-archive-delete-workspace-button'),
             label: raftText(context, 'Delete workspace from computer'),
             tone: RaftButtonRecipeVariant.outline,
-            size: RaftButtonRecipeSize.sm,
+            size: RaftButtonRecipeSize.md,
             expand: true,
             onPressed: _confirmDeleteWorkspace,
           ),

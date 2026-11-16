@@ -3,6 +3,7 @@ import 'dart:convert';
 import '../data/runtime_error.dart'
     show
         genericRuntimeErrorMessage,
+        isRuntimeErrorCode,
         runtimeErrorCodeCopy,
         spawnFailureCarrier,
         spawnLookupReason;
@@ -56,9 +57,19 @@ class AgentAmbientDisplay {
     required this.deactivated,
     required this.detailKind,
     required this.detail,
+    this.heldText,
+    this.errorCode,
   });
   final String activity, detailKind, detail;
   final bool online, external, deactivated;
+
+  /// The status words that replace the activity text while the agent is held
+  /// (Web `AgentDisplayState` `blocked` / `likelyOnline` / `paused`), as the
+  /// English catalog key; null when none applies.
+  final String? heldText;
+
+  /// The error's code while the activity is an error (Web `activityErrorCode`).
+  final String? errorCode;
   bool get showPresence => !deactivated;
 }
 
@@ -176,12 +187,13 @@ AgentAmbientDisplay agentRowAmbientDisplay(
       detail: live['detail'] is String ? live['detail'] as String : '',
     );
   }
-  return resolveAgentAmbientDisplay(
+  final external = row['external'] == true || row['runtime'] == 'external';
+  final base = resolveAgentAmbientDisplay(
     identity: AgentPresentationIdentity(
       id: '${row['id']}',
       status: status,
       runtime: row['runtime'] as String?,
-      external: row['external'] == true || row['runtime'] == 'external',
+      external: external,
       deleted: row['deletedAt'] != null,
       lastSeenAt: row['lastSeenAt'] is String
           ? DateTime.tryParse(row['lastSeenAt'] as String)
@@ -189,6 +201,45 @@ AgentAmbientDisplay agentRowAmbientDisplay(
     ),
     now: now ?? DateTime.now(),
     current: current,
+  );
+  bool known(Map? m) =>
+      m != null &&
+      (sourceAgentActivities.contains(m['activityKind']) ||
+          sourceAgentActivities.contains(m['activity']));
+  // Web resolveAgentDisplayState: a paused assistant first; an external agent
+  // is never held or "likely online"; then the server's blockedReason; then
+  // an active agent with no activity state yet.
+  final held = row['assistantPausedAt'] != null
+      ? 'Paused'
+      : external
+      ? null
+      : switch (row['blockedReason']) {
+          'computer_access_revoked' => 'Computer access revoked: move the agent to another computer (re-attaching adds a new one)',
+          'computer_version_unsupported' ||
+          'computer_version_unknown' => 'Computer update required',
+          _ =>
+            !known(live) && !known(row) && status == 'active'
+                ? 'Likely online'
+                : null,
+        };
+  final code = row['activityErrorCode'] ?? row['errorCode'];
+  final liveCode =
+      live != null &&
+          (live.containsKey('activityErrorCode') ||
+              live.containsKey('errorCode'))
+      ? live['activityErrorCode'] ?? live['errorCode']
+      : code;
+  return AgentAmbientDisplay(
+    activity: base.activity,
+    online: base.online,
+    external: base.external,
+    deactivated: base.deactivated,
+    detailKind: base.detailKind,
+    detail: base.detail,
+    heldText: held,
+    errorCode: base.activity == 'error' && isRuntimeErrorCode(liveCode)
+        ? liveCode as String
+        : null,
   );
 }
 
@@ -334,6 +385,8 @@ String agentDisplayText(
   String Function(String source, Map<String, Object?> values) translate =
       _plainFormat,
 }) {
+  final held = display.heldText;
+  if (held != null) return translate(held, const {});
   if (display.external && !display.online && lastSeenAt != null) {
     final time = relativeTime?.call(lastSeenAt) ?? '';
     if (time.isNotEmpty) return translate('Last active {time}', {'time': time});
@@ -343,6 +396,7 @@ String agentDisplayText(
           display.activity,
           display.detail,
           display.detailKind,
+          errorCode: display.errorCode,
           translate: translate,
         )
       : agentActivityText(display.activity, '', null, translate: translate);

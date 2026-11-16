@@ -56,7 +56,12 @@ class RaftReportIssueReceipt {
     this.ticketId,
     this.issueDescription,
     this.transcriptAttachmentRequested = false,
+    this.serverSlug,
   });
+
+  /// `feedbackTicketPath` links into `/s/<slug>/settings/feedback`: without a
+  /// slug the ticket has no link and the dialog offers no View ticket button.
+  final String? serverSlug;
 
   /// Null when the bundle uploaded but filing the ticket failed.
   final String? ticketId;
@@ -70,16 +75,36 @@ class RaftReportIssueReceipt {
     ticketId: id,
     issueDescription: issueDescription,
     transcriptAttachmentRequested: transcriptAttachmentRequested,
+    serverSlug: serverSlug,
   );
 }
 
-/// `TranscriptRequestState`: only the HTTP result of the app's own request.
+/// `TranscriptRequestState` (feedback/transcriptRequestState.ts): the first
+/// four are about the app's own request and claim nothing about the record;
+/// [attached] and [notAttached] are what the agent's computer answered (the
+/// `feedback_report:session_record` push).
 enum RaftTranscriptRequestState {
   pending,
   requested,
   requestFailed,
   requestUnconfirmed,
+  attached,
+  notAttached;
+
+  /// Whether this is the agent's computer's answer.
+  bool get isAnswer => this == attached || this == notAttached;
 }
+
+/// `nextTranscriptRequestState`: an answer from the agent's computer is final.
+/// The push can arrive before the app has processed its own request's 202 (or
+/// before the cap fires), and a request state that comes after it must not
+/// replace it.
+RaftTranscriptRequestState raftNextTranscriptRequestState(
+  RaftTranscriptRequestState? current,
+  RaftTranscriptRequestState incoming,
+) => current != null && current.isAnswer && !incoming.isAnswer
+    ? current
+    : incoming;
 
 /// A step failure with the message the dialog shows (Web `stepError`).
 class RaftReportIssueFailure extends RaftUserError {
@@ -295,7 +320,6 @@ class _RaftReportIssueDialogState extends State<RaftReportIssueDialog> {
       key: const ValueKey('report-issue-dialog'),
       title: 'Report issue',
       footerGap: 0,
-      titleGlyph: RaftGlyph.bug,
       maxWidth: 384,
       onClose: widget.onClose,
       child: Column(
@@ -363,24 +387,6 @@ class _RaftReportIssueDialogState extends State<RaftReportIssueDialog> {
                   tr('Include'),
                   padding: const EdgeInsets.only(bottom: 4),
                 ),
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: RaftCssText(
-                    tr(
-                      "These are included by default — untick anything you don't want to send.",
-                    ),
-                    style: muted12,
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: RaftCssText(
-                    tr(
-                      'The computer summary sent with every report (versions, failure counts, trace fields) is structured data with no free text.',
-                    ),
-                    style: muted12,
-                  ),
-                ),
                 // `flex flex-col gap-1.5`
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -413,15 +419,17 @@ class _RaftReportIssueDialogState extends State<RaftReportIssueDialog> {
                           : (v) => setState(() => includeTrajectoryLog = v),
                       label: tr('Activity tab history'),
                     ),
-                    _checkRow(
-                      t,
-                      key: const ValueKey('report-issue-transcript'),
-                      value: includeSessionTranscript,
-                      onChanged: loading || !widget.hasMachine
-                          ? null
-                          : (v) => setState(() => includeSessionTranscript = v),
-                      label: tr('Runtime session transcript'),
-                    ),
+                    if (widget.hasMachine)
+                      _checkRow(
+                        t,
+                        key: const ValueKey('report-issue-transcript'),
+                        value: includeSessionTranscript,
+                        onChanged: loading
+                            ? null
+                            : (v) =>
+                                  setState(() => includeSessionTranscript = v),
+                        label: tr('Runtime session transcript'),
+                      ),
                     if (includeSessionTranscript && widget.hasMachine)
                       Padding(
                         // `ml-6 text-xs`
@@ -443,20 +451,20 @@ class _RaftReportIssueDialogState extends State<RaftReportIssueDialog> {
                             ? null
                             : (v) => setState(() => machineLogTailChoice = v),
                         label: tr(
-                          'Computer runner log tail (your own computer only)',
+                          'Machine runner log tail (your own machine only)',
                         ),
                         labelWidget: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             RaftCssText(
                               tr(
-                                'Computer runner log tail (your own computer only)',
+                                'Machine runner log tail (your own machine only)',
                               ),
                               style: _text(t, color: t.ink),
                             ),
                             RaftCssText(
                               tr(
-                                "Last lines of this computer's runner log — free text, including lines from other agents on it. Size-bounded; visible to everyone who can read this report, including agents. Secret masking covers known credential shapes only — a floor, not a guarantee. Requires the runtime transcript above.",
+                                "The last lines of this computer's log. They may include lines from other agents on it.",
                               ),
                               style: muted12,
                             ),
@@ -465,16 +473,6 @@ class _RaftReportIssueDialogState extends State<RaftReportIssueDialog> {
                       ),
                   ],
                 ),
-                if (!widget.hasMachine)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 4),
-                    child: RaftCssText(
-                      tr(
-                        'Runtime transcript upload is unavailable until the agent is assigned to a computer.',
-                      ),
-                      style: muted12,
-                    ),
-                  ),
               ],
             ),
           ),
@@ -504,9 +502,7 @@ class _RaftReportIssueDialogState extends State<RaftReportIssueDialog> {
                     onChanged: loading
                         ? null
                         : (v) => setState(() => consented = v),
-                    label: tr(
-                      'I understand that everyone in the Botiverse server, including agents, can read this report and its selected diagnostic data, and I consent to submit it.',
-                    ),
+                    label: tr('I agree to send this report to the Raft team.'),
                     // No colour class: the label inherits the banner's text.
                     style: _text(
                       t,
@@ -549,7 +545,7 @@ class _RaftReportIssueDialogState extends State<RaftReportIssueDialog> {
           ),
           RaftRecipeButton(
             key: const ValueKey('report-issue-submit'),
-            label: tr(loading ? 'Submitting…' : 'Report issue'),
+            label: tr(loading ? 'Submitting…' : 'Report'),
             variant: RaftButtonRecipeVariant.accent,
             size: RaftButtonRecipeSize.sm,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -649,6 +645,9 @@ class _RaftReportIssueDialogState extends State<RaftReportIssueDialog> {
                                 RaftTranscriptRequestState.requestFailed =>
                                   'Session record request failed.',
                                 RaftTranscriptRequestState.requestUnconfirmed => "Couldn't confirm that the session record request reached the server.",
+                                RaftTranscriptRequestState.attached =>
+                                  'Session record attached.',
+                                RaftTranscriptRequestState.notAttached => "Sent without a session record: the agent's computer didn't provide one.",
                               }),
                               style: muted12,
                             ),
@@ -662,10 +661,12 @@ class _RaftReportIssueDialogState extends State<RaftReportIssueDialog> {
             spacing: 8,
             runSpacing: 8,
             children: [
-              if (ticket != null && widget.onViewTicket != null)
+              if (ticket != null &&
+                  r.serverSlug != null &&
+                  widget.onViewTicket != null)
                 RaftRecipeButton(
                   key: const ValueKey('report-issue-view-ticket'),
-                  label: tr('View Ticket'),
+                  label: tr('View ticket'),
                   variant: RaftButtonRecipeVariant.outline,
                   size: RaftButtonRecipeSize.sm,
                   padding: const EdgeInsets.symmetric(
@@ -759,7 +760,7 @@ class _RaftReportIssueDialogState extends State<RaftReportIssueDialog> {
             children: [
               RaftRecipeButton(
                 key: const ValueKey('report-issue-copy-reference'),
-                label: tr(referenceCopied ? 'Copied' : 'Copy Report Reference'),
+                label: tr(referenceCopied ? 'Copied' : 'Copy report reference'),
                 variant: RaftButtonRecipeVariant.outline,
                 size: RaftButtonRecipeSize.sm,
                 padding: const EdgeInsets.symmetric(
@@ -771,7 +772,7 @@ class _RaftReportIssueDialogState extends State<RaftReportIssueDialog> {
               ),
               RaftRecipeButton(
                 key: const ValueKey('report-issue-retry-ticket'),
-                label: tr(ticketRetrying ? 'Retrying…' : 'Retry Ticket'),
+                label: tr(ticketRetrying ? 'Retrying…' : 'Retry ticket'),
                 variant: RaftButtonRecipeVariant.outline,
                 size: RaftButtonRecipeSize.sm,
                 padding: const EdgeInsets.symmetric(

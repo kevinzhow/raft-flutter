@@ -48,7 +48,8 @@ const fallback = ColoredBox(key: Key('clean-placeholder'), color: Colors.grey);
 
 void main() {
   test('canonical preset palette and every eight-by-eight row stay valid', () {
-    expect(raftPixelAvatarPresets.length, 18);
+    // 9 series of 8, plus the reserved finch, mug and ottie.
+    expect(raftPixelAvatarPresets.length, 75);
     expect(raftDefaultPixelAvatarKey, 'robot');
     for (final preset in raftPixelAvatarPresets.values) {
       expect(preset.rows.length, 8);
@@ -57,8 +58,12 @@ void main() {
         expect(row.split('').every(raftPixelAvatarPalette.containsKey), isTrue);
       }
     }
-    expect(raftPixelAvatarData('unknown-key'), isNull);
-    expect(raftPixelAvatarData('mug')!.background, '#F8EEDF');
+    // A key this build does not know draws the default avatar.
+    expect(
+      raftPixelAvatarData('unknown-key'),
+      same(raftPixelAvatarPresets['robot']),
+    );
+    expect(raftPixelAvatarData('mug').background, '#F8EEDF');
   });
   test(
     'random output matches actual transpiled source including UTF16 astral seeds',
@@ -158,7 +163,7 @@ void main() {
         ),
       };
       for (final entry in source.entries) {
-        final actual = raftPixelAvatarData('random:${entry.key}')!;
+        final actual = raftPixelAvatarData('random:${entry.key}');
         expect(actual.background, entry.value.$1, reason: entry.key);
         expect(actual.rows, entry.value.$2, reason: entry.key);
         expect(
@@ -313,7 +318,7 @@ void main() {
     },
   );
   testWidgets(
-    'pixel agents make no network provider; invalid key stays source-empty',
+    'pixel agents make no network provider; unknown key draws the default avatar',
     (tester) async {
       var requests = 0;
       await tester.pumpWidget(
@@ -341,6 +346,7 @@ void main() {
         ),
       );
       expect(find.byType(Image), findsNothing);
+      expect(find.byType(RaftPixelAvatar), findsOneWidget);
     },
   );
   testWidgets(

@@ -144,8 +144,8 @@ class ParityThreadFixture {
   Map<String, dynamic> _ownerMember() {
     final o = human('owner');
     return {
-      'id': o['memberId'],
-      'userId': o['memberId'],
+      'id': o['memberId'] ?? o['id'],
+      'userId': o['memberId'] ?? o['id'],
       'serverId': server['id'],
       'name': o['name'],
       'displayName': o['displayName'],

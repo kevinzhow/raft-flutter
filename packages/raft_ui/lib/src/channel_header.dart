@@ -304,6 +304,7 @@ List<Widget> raftConversationHeaderActions({
   required String settingsLabel,
   VoidCallback? onSearch,
   VoidCallback? onSettings,
+  List<Widget> middleActions = const [],
 }) => [
   _ConversationHeaderAction(
     key: const ValueKey('channel-topbar-search'),
@@ -311,6 +312,7 @@ List<Widget> raftConversationHeaderActions({
     tooltip: searchLabel,
     onPressed: onSearch,
   ),
+  ...middleActions,
   _ConversationHeaderAction(
     key: const ValueKey('channel-overflow-trigger'),
     glyph: RaftGlyph.settings,
@@ -318,6 +320,20 @@ List<Widget> raftConversationHeaderActions({
     onPressed: onSettings,
   ),
 ];
+
+/// One of those topbar triggers (`OverflowMenuTrigger`), for the buttons a
+/// conversation adds between Search and Settings ([RaftDmHeader.middleActions]).
+Widget raftConversationHeaderAction({
+  Key? key,
+  required RaftGlyph glyph,
+  required String tooltip,
+  VoidCallback? onPressed,
+}) => _ConversationHeaderAction(
+  key: key,
+  glyph: glyph,
+  tooltip: tooltip,
+  onPressed: onPressed,
+);
 
 class _ConversationHeaderAction extends StatelessWidget {
   const _ConversationHeaderAction({
@@ -722,6 +738,8 @@ class RaftDmHeader extends StatelessWidget {
     this.searchLabel = 'Search This Channel',
     this.settingsLabel = 'Channel Settings',
     this.mutedLabel = 'Activity muted',
+    this.middleActions = const [],
+    this.activityTextWarning = false,
   });
 
   final String name;
@@ -739,6 +757,14 @@ class RaftDmHeader extends StatelessWidget {
   final String backLabel, searchLabel, settingsLabel, mutedLabel;
   final String? avatarSemanticLabel;
 
+  /// The conversation head's own buttons between Search and Settings (an agent
+  /// DM's Lounge, `useChannelHeadToggles`). Empty keeps the head as it was.
+  final List<Widget> middleActions;
+
+  /// [activityText] in `warning-strong` (a tool call the agent is stuck on,
+  /// AgentDMStatus `text-warning-strong`) instead of the hint colour.
+  final bool activityTextWarning;
+
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
@@ -753,7 +779,9 @@ class RaftDmHeader extends StatelessWidget {
       t,
       size: 14,
       line: 20,
-      color: t.colors['foreground-muted'],
+      color: activityTextWarning
+          ? t.colors['warning-strong']
+          : t.colors['foreground-muted'],
     ).copyWith(leadingDistribution: TextLeadingDistribution.even);
     final status = activityText;
     final headerAvatar = onAvatarTap == null
@@ -803,6 +831,7 @@ class RaftDmHeader extends StatelessWidget {
         settingsLabel: settingsLabel,
         onSearch: onSearch,
         onSettings: onSettings,
+        middleActions: middleActions,
       ),
     );
   }

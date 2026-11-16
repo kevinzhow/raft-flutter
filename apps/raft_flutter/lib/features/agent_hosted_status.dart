@@ -184,11 +184,15 @@ class _AgentHostedRuntimeStatusState extends State<AgentHostedRuntimeStatus> {
               label: tr(describe.label),
               appearance: RaftBadgeRecipeAppearance.soft,
               variant: switch (describe.tone) {
-                HostedStateTone.primary => RaftBadgeRecipeVariant.primary,
+                // Web v1.24 `variant="busy"`: the Working chip's wash.
+                HostedStateTone.primary => RaftBadgeRecipeVariant.accent,
                 HostedStateTone.success => RaftBadgeRecipeVariant.success,
                 HostedStateTone.warning => RaftBadgeRecipeVariant.warning,
                 HostedStateTone.muted => RaftBadgeRecipeVariant.muted,
               },
+              fill: describe.tone == HostedStateTone.primary
+                  ? RaftTokens.of(context).ui['presence-busy-soft']
+                  : null,
               leading: RaftStatusDot(
                 activity: switch (describe.presence) {
                   HostedStatePresence.busy => RaftActivityTone.working,
@@ -265,7 +269,7 @@ class _AgentHostedRuntimeStatusState extends State<AgentHostedRuntimeStatus> {
                         })
                       : tr('Retry'),
                   variant: RaftButtonRecipeVariant.outline,
-                  size: RaftButtonRecipeSize.sm,
+                  size: RaftButtonRecipeSize.md,
                   onPressed:
                       _retrying ||
                           (needsModel &&

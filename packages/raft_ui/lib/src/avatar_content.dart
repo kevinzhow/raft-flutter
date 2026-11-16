@@ -98,6 +98,20 @@ class RaftAvatarContent extends StatelessWidget {
       final pixel = RaftPixelAvatar(
         avatarKey: pixelKey ?? raftDefaultPixelAvatarKey,
       );
+      // `pixel:ottie` is every personal assistant's avatar: the otter art, with
+      // the sprite as the fallback (AgentAvatar in PixelAvatar.tsx).
+      if (pixelKey == raftOttieAvatarKey) {
+        return RaftSizedImage(
+          // ignore: raft_lints/avoid_raw_image_decode -- Bundled brand art handed straight to RaftSizedImage, so it decodes at the display size.
+          image: const AssetImage('assets/otter/wave.webp', package: 'raft_ui'),
+          avatar: true,
+          fit: BoxFit.cover,
+          width: double.infinity,
+          height: double.infinity,
+          excludeFromSemantics: true,
+          errorBuilder: (context, error, stack) => pixel,
+        );
+      }
       return _publicUrl(uploadedUrl)
           ? _image(uploadedUrl!, pixel, () => pixel)
           : pixel;
@@ -116,20 +130,18 @@ class RaftAvatarContent extends StatelessWidget {
   }
 }
 
-/// Source eight-by-eight artwork. Unknown explicit keys remain empty, exactly
-/// as PixelAvatar.tsx; only a missing key selects the source default.
+/// Source eight-by-eight artwork. A key this build does not know (an avatar
+/// added after it shipped) draws the default avatar rather than nothing.
 class RaftPixelAvatar extends StatelessWidget {
   const RaftPixelAvatar({super.key, required this.avatarKey});
   final String avatarKey;
   @override
   Widget build(BuildContext context) {
     final data = raftPixelAvatarData(avatarKey);
-    return data == null
-        ? const SizedBox.shrink()
-        : CustomPaint(
-            painter: _PixelPainter(data),
-            child: const SizedBox.expand(),
-          );
+    return CustomPaint(
+      painter: _PixelPainter(data),
+      child: const SizedBox.expand(),
+    );
   }
 }
 

@@ -37,8 +37,6 @@ import 'management_support.dart'
     show pageIdentity, readPageSnapshot, writePageSnapshot;
 import '../data/resource_snapshot_cache.dart' show stableValue;
 
-import 'package:raft_ui/recipes.dart';
-
 export 'agent_detail_view.dart' show AgentDetailTab;
 
 /// A client generation does not change for every membership/account projection.
@@ -1310,7 +1308,18 @@ class _FleetDetailState extends State<FleetDetail> {
     final target = upgradeTarget();
     if (!mounted) return;
     if (!widget.computers && command == 'start') {
-      await w.command('POST', '$base/start', data: {});
+      try {
+        await w.command('POST', '$base/start', data: {});
+      } on RaftApiException catch (e) {
+        // Web `noteMachineOfflineRefusal`: the Computer is offline, so the
+        // profile's offline card takes Start's place; no error strip.
+        final machineId = row['machineId'];
+        if (e.details['code'] == 'machine_offline' && machineId is String) {
+          w.services.entityDirectory.markComputerOfflineFromRefusal(machineId);
+          return;
+        }
+        rethrow;
+      }
       if (current) await load();
       return;
     }
@@ -1329,6 +1338,7 @@ class _FleetDetailState extends State<FleetDetail> {
         variant: RaftButtonRecipeVariant.warning,
         operation: () async {
           require('controlAgentRuntime');
+          require('stopAgents');
           await withWebError(
             'Failed to stop agent',
             () => w.command('POST', '$base/stop', data: {}),
@@ -1439,20 +1449,12 @@ class _FleetDetailState extends State<FleetDetail> {
         row['deletedAt'] == null &&
         allowed('editAgents');
     if (!valid() || busy) return;
-    final rt = RaftRecipeTokens(RaftTokens.of(context));
-    final overlay = RaftDialogRecipe.resolve(
-      theme: raftRecipeTheme(RaftTokens.of(context)),
-      states: RaftRecipeStates({
-        if (RaftTokens.of(context).dark) RaftRecipeStates.dark,
-      }),
-      tokens: rt,
-    ).overlay;
-    final route = DialogRoute<void>(
-      context: context,
-      barrierColor: overlay.backgroundColor?.resolve(rt),
-      // Web `Dialog`: an outside press runs `requestClose` (the PopScope in
-      // the dialog asks before discarding a staged change).
-      barrierDismissible: true,
+    // Web NarrowDialogContent `narrow="sheet"` for the avatar field: a bottom
+    // sheet on a narrow window, the centred card otherwise. The dialog guards
+    // its own staged change, so the route does not.
+    final route = raftFormRoute<void>(
+      context,
+      guardUnsaved: false,
       builder: (_) => AgentAvatarDialog(
         controller: w,
         agent: row,
@@ -1488,6 +1490,7 @@ class _FleetDetailState extends State<FleetDetail> {
       currentUserId: w.client.user?.id,
       editAgents: allowed('editAgents'),
       controlAgentRuntime: allowed('controlAgentRuntime'),
+      stopAgents: allowed('stopAgents'),
       external: external,
     );
     final managed = access.canManage && !busy;
@@ -1504,6 +1507,7 @@ class _FleetDetailState extends State<FleetDetail> {
       canManage: access.canManage,
       canViewPrivate: access.canViewPrivate,
       canControlRuntime: access.canControlRuntime,
+      canStopAgent: access.canStopAgent,
       actions: AgentDetailActions(
         onEditAvatar: managed ? editAvatar : null,
         onBack: widget.onClose ?? () => Navigator.of(context).maybePop(),
@@ -1516,20 +1520,29 @@ class _FleetDetailState extends State<FleetDetail> {
             ? editRuntime
             : null,
         onStartStop: () {
-          final starting = agentRowAmbientDisplay(row).activity == 'offline';
+          // Web `agentRuntimeControls`: Stop also for an agent waiting on its
+          // offline Computer; Start otherwise.
+          final starting = !agentRuntimeControls(
+            canControl: true,
+            canStop: true,
+            isOnline: agentRowAmbientDisplay(row).activity != 'offline',
+            computerOffline: isAgentComputerOffline(row, machines),
+            stoppedByPerson: row['status'] == 'stopped',
+          ).stop;
           unawaited(
             action(
               () => runtimeCommand(starting ? 'start' : 'stop'),
-              // Web handleStop: `agent.detail.stopAgentFailed`.
+              // Web handleStop: `agent.detail.stopAgentFailed`; a refused
+              // Start without words: `agent.detail.startAgentFailed`.
               fallback: starting
-                  ? raftGenericErrorText
+                  ? "Couldn't start the agent. Try again."
                   : 'Failed to stop agent',
             ),
           );
         },
         onRestartReset: () => action(restartReset),
         onStopHostedTurn: access.canStopHostedTurn && !busy
-            ? () => unawaited(stopHostedTurnWithFeedback(context, w, id))
+            ? () => unawaited(stopAgentTurnWithFeedback(context, w, id))
             : null,
         onDelete: access.canManage && allowed('deleteAgents') ? remove : null,
         canArchive: !access.boundedPublic && allowed('deleteAgents'),

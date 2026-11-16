@@ -115,10 +115,13 @@ class ChannelRepository {
             else if (held[c.id] != null)
               held[c.id]!,
         ];
-        // A row added after this read started keeps its held position.
+        // A row added after this read started keeps its held position. So does
+        // an agent's Lounge: GET /channels is not meant to list Lounges (Web
+        // keeps them in their own slice), so the list never retires one.
         for (var i = 0; i < current.length; i++) {
           final c = current[i];
-          if (newer.contains(c.id) && !fetchedIds.contains(c.id)) {
+          if ((newer.contains(c.id) || c.loungeAgentId != null) &&
+              !fetchedIds.contains(c.id)) {
             next.insert(i < next.length ? i : next.length, c);
           }
         }

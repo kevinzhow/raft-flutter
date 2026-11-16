@@ -1,4 +1,5 @@
 import 'workspace_desktop_window.dart';
+import 'agent_lounge.dart' show AgentLoungeFlag;
 import 'agent_runtime_labels.dart' show runtimeDisplayNameOf;
 
 import 'dart:async';
@@ -703,6 +704,8 @@ class _WorkspaceViewState extends State<WorkspaceView>
   void initState() {
     super.initState();
     LayoutHold.count.addListener(layoutHoldChanged);
+    // The server's Lounge flag is evaluated once here, not by each agent page.
+    AgentLoungeFlag.of(w).evaluate();
     adoptHostSearchEntry();
     mobileAppBadge = SourceMobileAppBadge()..addListener(chatSelectionChanged);
     // Starts recording visits to conversations from the first frame.

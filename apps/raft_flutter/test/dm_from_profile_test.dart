@@ -211,14 +211,11 @@ void main() {
       await t.tap(avatar('ma'));
       await frames(t, 20);
       expect(find.byKey(const Key('profile-panel')), findsOneWidget);
-      final inline = find.byKey(const Key('agent-profile-inline-message'));
-      if (inline.evaluate().isNotEmpty) {
-        await t.tap(inline);
-      } else {
-        await t.tap(find.byKey(const Key('agent-profile-overflow-trigger')));
-        await frames(t, 10);
-        await t.tap(find.text('Direct message'));
-      }
+      // Web v1.24 AgentProfileOverflowMenu: Direct Message is its own header
+      // button at every width (not an overflow item).
+      final dmButton = find.byKey(const Key('agent-profile-message'));
+      expect(dmButton, findsOneWidget);
+      await t.tap(dmButton);
       await frames(t, 30);
       expect(w.channel?.id, 'dm1');
       expect(w.location.route, RaftRoute.dm);

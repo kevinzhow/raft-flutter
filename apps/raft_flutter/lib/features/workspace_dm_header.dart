@@ -4,7 +4,9 @@ import 'package:raft_ui/raft_ui.dart';
 
 import '../data/raft_location.dart';
 import '../data/workspace_controller.dart';
+import 'agent_dm_header_extras.dart';
 import 'agent_hosted_cindy_banner.dart';
+import 'agent_tool_stuck_notice.dart' show agentToolStuckText;
 import 'agent_metadata_projection.dart';
 import 'resource_cards.dart' show resourceRelativeTime;
 
@@ -55,50 +57,58 @@ class WorkspaceDmHeader extends StatelessWidget {
             _ => RaftActivityTone.offline,
           };
     final peerId = channel.string('peerId');
-    final header = RaftDmHeader(
-      key: headerKey,
-      name: name,
-      avatar: avatar,
-      activity: activity,
-      external: agent && profile?['runtime'] == 'external',
-      activityText: activity == null
-          ? null
-          : display == null
-          ? raftText(context, 'Offline')
-          : agentDisplayText(
-              display,
-              lastSeenAt: DateTime.tryParse('${profile?['lastSeenAt']}'),
-              relativeTime: (seen) => resourceRelativeTime(
-                seen.toIso8601String(),
-                chinese: Localizations.localeOf(context).languageCode == 'zh',
+    final stuck = dmToolStuck(profile, display);
+    final header = AgentStuckMinuteClock(
+      active: stuck != null,
+      builder: (context, nowMs) => RaftDmHeader(
+        key: headerKey,
+        name: name,
+        avatar: avatar,
+        activity: activity,
+        external: agent && profile?['runtime'] == 'external',
+        activityText: stuck != null
+            ? agentToolStuckText(context, stuck, nowMs)
+            : activity == null
+            ? null
+            : display == null
+            ? raftText(context, 'Offline')
+            : agentDisplayText(
+                display,
+                lastSeenAt: DateTime.tryParse('${profile?['lastSeenAt']}'),
+                relativeTime: (seen) => resourceRelativeTime(
+                  seen.toIso8601String(),
+                  chinese: Localizations.localeOf(context).languageCode == 'zh',
+                ),
+                translate: (source, values) =>
+                    raftFormat(context, source, values),
               ),
-              translate: (source, values) =>
-                  raftFormat(context, source, values),
-            ),
-      muted: channel.flag('activityMuted'),
-      mutedLabel: raftText(
-        context,
-        'Activity muted. Direct mentions can still notify you.',
+        muted: channel.flag('activityMuted'),
+        mutedLabel: raftText(
+          context,
+          'Activity muted. Direct mentions can still notify you.',
+        ),
+        onBack: onBack,
+        backKey: backKey,
+        backLabel: raftText(
+          context,
+          selectionActive() ? 'Exit Selection' : 'Back',
+        ),
+        onSearch: onSearch,
+        onSettings: onSettings,
+        onAvatarTap: peerId.isEmpty
+            ? null
+            : () {
+                if (selectionActive()) return;
+                controller.openProfile(
+                  agent ? RaftProfileKind.agent : RaftProfileKind.human,
+                  peerId,
+                );
+              },
+        searchLabel: raftText(context, 'Search This Channel'),
+        settingsLabel: raftText(context, 'Channel Details and Settings'),
+        activityTextWarning: stuck != null,
+        middleActions: agentDmLoungeActions(context, controller, profile),
       ),
-      onBack: onBack,
-      backKey: backKey,
-      backLabel: raftText(
-        context,
-        selectionActive() ? 'Exit Selection' : 'Back',
-      ),
-      onSearch: onSearch,
-      onSettings: onSettings,
-      onAvatarTap: peerId.isEmpty
-          ? null
-          : () {
-              if (selectionActive()) return;
-              controller.openProfile(
-                agent ? RaftProfileKind.agent : RaftProfileKind.human,
-                peerId,
-              );
-            },
-      searchLabel: raftText(context, 'Search This Channel'),
-      settingsLabel: raftText(context, 'Channel Details and Settings'),
     );
     final cloud = profile;
     // A cloud Cindy that could not start says so under her header.

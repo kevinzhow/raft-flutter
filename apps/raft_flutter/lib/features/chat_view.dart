@@ -47,6 +47,8 @@ import 'message_hover_toolbar.dart';
 import 'external_sender.dart';
 import 'delegated_message.dart';
 import 'agent_typing_line_host.dart';
+import 'channel_composer_hint.dart';
+import 'lounge_channel_presentation.dart';
 import 'message_context_menu_sections.dart';
 import '../data/reaction_favorite.dart';
 import 'message_task_actions.dart';
@@ -3512,6 +3514,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
               onStep: search.step,
               onClose: search.close,
             ),
+          ?loungeAudienceNotice(context, w, thread: thread),
           Expanded(
             child: Stack(
               fit: StackFit.expand,
@@ -3660,17 +3663,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
                       ),
                 hint: thread
                     ? threadComposerHint(context, widget.hideThreadParent)
-                    : w.channel?.type == 'dm'
-                    // Web ChatPanel: a DM composer reads `Message @<peer>`.
-                    ? raftFormat(context, 'Message @{name}', {
-                        'name': w.channel!.string(
-                          'peerDisplayName',
-                          w.channel!.string('peerName', w.channel!.name),
-                        ),
-                      })
-                    : raftFormat(context, 'Message #{name}', {
-                        'name': w.channel?.name ?? '',
-                      }),
+                    : channelComposerHint(context, w),
                 enabled:
                     presentationActive &&
                     (thread

@@ -214,9 +214,9 @@ class ScreenWire {
       },
   ];
 
-  /// GET /servers/visual-server/members/visual-human-1/profile
+  /// GET /servers/visual-server/members/`owner id`/profile
   Map<String, dynamic> ownerProfile() => {
-    'userId': _owner['memberId'],
+    'userId': (_owner['memberId'] ?? _owner['id']),
     'serverId': _server['id'],
     'email': _owner['email'],
     'gravatarHash': '',
@@ -330,7 +330,8 @@ class ScreenWire {
         ],
       };
     }
-    if (path == '/servers/$sid/members/${_owner['memberId']}/profile') {
+    if (path ==
+        '/servers/$sid/members/${(_owner['memberId'] ?? _owner['id'])}/profile') {
       return ownerProfile();
     }
     if (path == '/servers/$sid/sidebar-order') {

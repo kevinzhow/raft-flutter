@@ -90,8 +90,9 @@ void main() {
         );
       },
     );
-    // The dialog title and the submit button share the label.
-    expect(find.text('Report issue'), findsNWidgets(2));
+    // The title is `Report issue`; the submit button is `Report`.
+    expect(find.text('Report issue'), findsOneWidget);
+    expect(find.text('Report'), findsOneWidget);
     expect(find.text('Product UX Designer'), findsOneWidget);
     expect(_enabled(tester, 'report-issue-submit'), isFalse);
     await tester.tap(_key('report-issue-submit'));
@@ -137,7 +138,7 @@ void main() {
       find.text('Create report upload failed: HTTP 500: boom'),
       findsOneWidget,
     );
-    expect(find.text('Report issue'), findsNWidgets(2));
+    expect(find.text('Report issue'), findsOneWidget);
     expect(_enabled(tester, 'report-issue-submit'), isTrue);
   });
 
@@ -152,66 +153,20 @@ void main() {
     expect(find.text('Failed to submit issue report'), findsOneWidget);
   });
 
-  testWidgets('without a machine the transcript box is disabled', (
+  testWidgets('without a machine the transcript box is not offered', (
     tester,
   ) async {
     await _pump(tester, hasMachine: false);
+    expect(_key('report-issue-transcript'), findsNothing);
+    expect(find.text('Runtime session transcript'), findsNothing);
     expect(
-      find.text(
-        'Runtime transcript upload is unavailable until the agent is assigned to a computer.',
-      ),
-      findsOneWidget,
+      find.textContaining('Runtime transcript upload is unavailable'),
+      findsNothing,
     );
     expect(
       find.text("Taken from the agent's computer; it may not have one."),
       findsNothing,
     );
-    final box = tester.widget<RaftCheckbox>(
-      find.descendant(
-        of: _key('report-issue-transcript'),
-        matching: find.byType(RaftCheckbox),
-      ),
-    );
-    expect(box.value, isFalse);
-    expect(box.onChanged, isNull);
-  });
-
-  testWidgets('the machine log tail follows ownership and the transcript box', (
-    tester,
-  ) async {
-    RaftReportIssueOptions? sent;
-    await _pump(
-      tester,
-      canIncludeMachineLog: true,
-      onSubmit: (o) async {
-        sent = o;
-        return const RaftReportIssueReceipt(reportId: 'r', serverId: 's');
-      },
-    );
-    RaftCheckbox tail() => tester.widget<RaftCheckbox>(
-      find.descendant(
-        of: _key('report-issue-machine-log'),
-        matching: find.byType(RaftCheckbox),
-      ),
-    );
-    // Defaults on for the reporter's own machine.
-    expect(tail().value, isTrue);
-    await tester.tap(_key('report-issue-transcript'));
-    await tester.pump();
-    // Requires the runtime transcript above.
-    expect(tail().onChanged, isNull);
-    await tester.tap(_key('report-issue-transcript'));
-    await tester.pump();
-    await tester.tap(_key('report-issue-machine-log'));
-    await tester.pump();
-    expect(tail().value, isFalse);
-    await tester.tap(_key('report-issue-machine-log'));
-    await tester.pump();
-    await tester.tap(_key('report-issue-consent'));
-    await tester.pump();
-    await tester.tap(_key('report-issue-submit'));
-    await tester.pumpAndSettle();
-    expect(sent!.includeMachineLogTail, isTrue);
   });
 
   testWidgets('a missing ticket offers the reference, copy and retry', (
@@ -225,6 +180,7 @@ void main() {
       onSubmit: (_) async => const RaftReportIssueReceipt(
         reportId: 'report-9',
         serverId: 'server-3',
+        serverSlug: 'slug',
       ),
       onRetryTicket: (r) async {
         retries++;

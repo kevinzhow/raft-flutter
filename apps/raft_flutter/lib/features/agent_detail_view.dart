@@ -30,10 +30,16 @@ import 'feedback_attachment_preview.dart' show showFeedbackImage;
 import 'agent_archive_section.dart';
 import 'agent_connections_section.dart';
 import 'agent_hosted_model.dart';
+import 'agent_lounge_button.dart';
 import 'agent_identity_adoption.dart';
 import 'agent_hosted_usage.dart';
 import 'agent_migration_section.dart';
+import 'agent_chat_peer.dart';
+import 'agent_computer_offline_card.dart';
 import 'agent_profile_rules.dart';
+import 'agent_task_open.dart';
+import 'agent_skills_section.dart';
+export 'agent_skills_section.dart' show AgentSkillsSection;
 import 'external_agent_setup.dart';
 import 'channel_form_fields.dart' show ChannelCandidateAvatar;
 import 'create_channel_dialog.dart' show ChannelMemberCandidate;
@@ -210,6 +216,7 @@ class AgentDetailPanel extends StatefulWidget {
     this.canManage = false,
     this.canViewPrivate = false,
     this.canControlRuntime = false,
+    this.canStopAgent,
     this.busy = false,
     this.error,
     this.onDismissError,
@@ -229,6 +236,10 @@ class AgentDetailPanel extends StatefulWidget {
   final List<Map<String, dynamic>> initialTrajectoryLog;
   final AgentDetailTab initialTab;
   final bool canManage, canViewPrivate, canControlRuntime, busy;
+
+  /// Web `canStopAgent`: Stop Agent on top of runtime control (`stopAgents` or
+  /// the creator). Null follows [canControlRuntime].
+  final bool? canStopAgent;
   final String? error;
 
   /// The `startError` strip's dismiss `X`.
@@ -258,9 +269,13 @@ SourceTimeFormatter agentTimeFormatter(
 class _AgentDetailPanelState extends State<AgentDetailPanel>
     with
         ModelLabelCatalogListener<AgentDetailPanel>,
-        RuntimeDeprecatedHereState<AgentDetailPanel> {
+        RuntimeDeprecatedHereState<AgentDetailPanel>,
+        AgentLoungeListener<AgentDetailPanel> {
   @override
   WorkspaceController get runtimeCatalogWorkspace => widget.controller;
+
+  @override
+  WorkspaceController get loungeWorkspace => widget.controller;
 
   @override
   WorkspaceController? get modelLabelWorkspace =>
@@ -294,6 +309,17 @@ class _AgentDetailPanelState extends State<AgentDetailPanel>
   bool get _canManage => widget.canManage && !_bounded;
   bool get _canViewPrivate => widget.canViewPrivate && !_bounded;
   bool get _canControlRuntime => widget.canControlRuntime && !_bounded;
+
+  /// Web `agentRuntimeControls` for this agent: no Start or Restart / Reset
+  /// while its Computer is offline, Stop stays unless a person stopped it.
+  ({bool start, bool stop, bool restartReset}) get _controls =>
+      agentRuntimeControls(
+        canControl: _canControlRuntime && !external,
+        canStop: widget.canStopAgent ?? widget.canControlRuntime,
+        isOnline: online,
+        computerOffline: isAgentComputerOffline(a, widget.machines),
+        stoppedByPerson: a['status'] == 'stopped',
+      );
   bool get _canMessage => !_bounded && widget.actions.onMessage != null;
 
   /// AGENT_PANEL_TABS filtered by visibility, then ordered like raft-ui
@@ -541,25 +567,24 @@ class _AgentDetailPanelState extends State<AgentDetailPanel>
     }
     final visible = tabs;
     final current = visible.contains(tab) ? tab : AgentDetailTab.profile;
+    final controls = _controls;
     final menu = <RaftMenuEntry>[
-      if (_canMessage)
+      ?(_bounded ? null : agentLoungeMenuEntry(context, widget.controller, a)),
+      if (controls.start || controls.stop)
         RaftMenuEntry(
-          label: raftText(context, 'Direct message'),
-          leading: const RaftDirectMessageIcon(size: 14),
-          onPressed: widget.actions.onMessage,
-        ),
-      if (_canControlRuntime && !external) ...[
-        RaftMenuEntry(
-          label: raftText(context, online ? 'Stop agent' : 'Start agent'),
-          glyph: online ? RaftGlyph.square : RaftGlyph.play,
+          label: raftText(
+            context,
+            controls.stop ? 'Stop agent' : 'Start agent',
+          ),
+          glyph: controls.stop ? RaftGlyph.square : RaftGlyph.play,
           onPressed: widget.actions.onStartStop,
         ),
+      if (controls.restartReset)
         RaftMenuEntry(
           label: raftText(context, 'Restart / reset'),
           glyph: RaftGlyph.rotateCcw,
           onPressed: widget.actions.onRestartReset,
         ),
-      ],
     ];
     return LayoutBuilder(
       builder: (context, box) =>
@@ -602,6 +627,16 @@ class _AgentDetailPanelState extends State<AgentDetailPanel>
               slot: RaftAvatarSlotContext.panelHeader,
             ),
             actions: [
+              // Web v1.24 AgentProfileOverflowMenu: Direct Message is its own
+              // button at every width, before the other commands.
+              if (a['deletedAt'] == null && _canMessage)
+                RaftPanelIconButton(
+                  key: const Key('agent-profile-message'),
+                  icon: (size, color) =>
+                      RaftDirectMessageIcon(size: size, color: color),
+                  tooltip: raftText(context, 'Direct message'),
+                  onPressed: widget.actions.onMessage,
+                ),
               if (a['deletedAt'] == null && menu.isNotEmpty)
                 // AgentProfileOverflowMenu `responsive`: the inline command
                 // buttons while the panel is wider than 480px (container
@@ -675,27 +710,24 @@ class _AgentDetailPanelState extends State<AgentDetailPanel>
   }
 
   List<Widget> _inlineActions(BuildContext context) => [
-    if (_canMessage)
-      RaftPanelIconButton(
-        key: const Key('agent-profile-inline-message'),
-        icon: (size, color) => RaftDirectMessageIcon(size: size, color: color),
-        tooltip: raftText(context, 'Direct message'),
-        onPressed: widget.actions.onMessage,
-      ),
-    if (_canControlRuntime && !external) ...[
+    ?(_bounded ? null : agentLoungeInlineAction(context, widget.controller, a)),
+    if (_controls.start || _controls.stop)
       RaftPanelIconButton(
         key: const Key('agent-profile-inline-start-stop'),
-        glyph: online ? RaftGlyph.square : RaftGlyph.play,
-        tooltip: raftText(context, online ? 'Stop agent' : 'Start agent'),
+        glyph: _controls.stop ? RaftGlyph.square : RaftGlyph.play,
+        tooltip: raftText(
+          context,
+          _controls.stop ? 'Stop agent' : 'Start agent',
+        ),
         onPressed: widget.actions.onStartStop,
       ),
+    if (_controls.restartReset)
       RaftPanelIconButton(
         key: const Key('agent-profile-inline-restart-reset'),
         glyph: RaftGlyph.rotateCcw,
         tooltip: raftText(context, 'Restart / reset'),
         onPressed: widget.actions.onRestartReset,
       ),
-    ],
   ];
 
   RaftPanelTab<AgentDetailTab> _tabSpec(
@@ -755,6 +787,8 @@ class _AgentDetailPanelState extends State<AgentDetailPanel>
         activityText: _statusText(context),
         initialEntries: widget.initialTrajectoryLog,
         onOpenComputer: widget.actions.onOpenComputer,
+        onOpenTask: (channelId, number) =>
+            openAgentActivityTask(context, w, channelId, number),
         canStopSubagents: canStopSubagentsOf(
           agent: a,
           controlAgentRuntime: _canControlRuntime,
@@ -797,11 +831,45 @@ class _AgentDetailPanelState extends State<AgentDetailPanel>
   }
 
   /// components/machine MachineRunLabel descriptor.
-  String runLabel(Map<String, dynamic> m) {
+  String runLabel(Map<String, dynamic> m, BuildContext context) {
+    if (RaftTokens.of(context).isRaftLook) {
+      // Web v1.24 AgentProfileInfo.tsx:125-130: the version only (a legacy
+      // daemon's too, no "legacy" word); offline or unknown is a dash.
+      final v = m['status'] != 'online'
+          ? null
+          : m['isComputer'] == true
+          ? m['computerVersion']
+          : m['daemonVersion'];
+      return v == null ? '—' : 'v$v';
+    }
     if (m['status'] != 'online') return 'Offline';
     return m['isComputer'] == true && m['computerVersion'] != null
         ? 'v${m['computerVersion']}'
         : 'legacy v${m['daemonVersion'] ?? '?'}';
+  }
+
+  /// An Info value that the old looks draw as a pill and v1.24 as plain text.
+  Widget _legacyInline(RaftTokens t, Widget badge, {String? plain}) =>
+      !t.isRaftLook
+      ? RaftInlineBadge(badge: badge)
+      : plain == null
+      ? badge
+      : RaftCssText(plain);
+
+  /// Web v1.24 AgentProfileInfo.tsx:658-660: the role is plain text.
+  Widget _roleValue(BuildContext context, ({String label, bool known}) chip) {
+    final text = chip.known
+        ? raftText(context, chip.label == 'admin' ? 'Admin' : 'Member')
+        : chip.label;
+    if (RaftTokens.of(context).isRaftLook) return RaftCssText(text);
+    return RaftInlineBadge(
+      badge: RaftRecipeBadge(
+        text,
+        variant: chip.label == 'admin'
+            ? RaftBadgeRecipeVariant.accent
+            : RaftBadgeRecipeVariant.muted,
+      ),
+    );
   }
 
   String createdDate(BuildContext context) {
@@ -884,7 +952,8 @@ class _AgentDetailPanelState extends State<AgentDetailPanel>
         showDetail: _canViewPrivate,
         // The menu's Restart: whoever may control the runtime, not while the
         // Computer is offline (a restart cannot reach it).
-        canRestart: _canControlRuntime && !deleted && !machineOffline,
+        canRestart:
+            restartResetOffered(_canControlRuntime, machineOffline) && !deleted,
         canOpenModelSettings:
             _canManage &&
             !deleted &&
@@ -1051,19 +1120,23 @@ class _AgentDetailPanelState extends State<AgentDetailPanel>
     String model,
     String runtime,
   ) {
-    final badge = RaftInlineBadge(
-      badge: RaftRecipeBadge(
-        model.isEmpty
-            ? raftText(context, 'Default')
-            : modelDisplayLabel(
-                widget.controller,
-                machineId: a['machineId'] as String?,
-                runtime: runtime,
-                model: model,
-              ),
-        variant: RaftBadgeRecipeVariant.accent,
-      ),
-    );
+    final label = model.isEmpty
+        ? raftText(context, 'Default')
+        : modelDisplayLabel(
+            widget.controller,
+            machineId: a['machineId'] as String?,
+            runtime: runtime,
+            model: model,
+          );
+    // v1.24: plain `font-mono` text (v1.21: an accent badge).
+    final badge = RaftTokens.of(context).isRaftLook
+        ? RaftCssText(label, style: RaftInfoRow.monoStyleOf(context))
+        : RaftInlineBadge(
+            badge: RaftRecipeBadge(
+              label,
+              variant: RaftBadgeRecipeVariant.accent,
+            ),
+          );
     final hint = _runningSwitchesHint(context, a, config);
     if (hint == null) return badge;
     return RaftGapColumn(
@@ -1188,27 +1261,29 @@ class _AgentDetailPanelState extends State<AgentDetailPanel>
     // doing, in place of the status chip under the handle.
     final showRecentActivity =
         tabs.contains(AgentDetailTab.activity) && a['deletedAt'] == null;
+    final controls = _controls;
     final buttons = <Widget>[
-      if (!external) ...[
-        if (_canControlRuntime) ...[
-          RaftButton(
-            label: raftText(context, online ? 'Stop agent' : 'Start agent'),
-            glyph: online ? RaftGlyph.square : RaftGlyph.play,
-            tone: RaftButtonRecipeVariant.outline,
-            size: RaftButtonRecipeSize.md,
-            expand: true,
-            onPressed: widget.busy ? null : widget.actions.onStartStop,
+      if (controls.start || controls.stop)
+        RaftButton(
+          label: raftText(
+            context,
+            controls.stop ? 'Stop agent' : 'Start agent',
           ),
-          RaftButton(
-            label: raftText(context, 'Restart / reset'),
-            glyph: RaftGlyph.rotateCcw,
-            tone: RaftButtonRecipeVariant.outline,
-            size: RaftButtonRecipeSize.md,
-            expand: true,
-            onPressed: widget.busy ? null : widget.actions.onRestartReset,
-          ),
-        ],
-      ],
+          glyph: controls.stop ? RaftGlyph.square : RaftGlyph.play,
+          tone: RaftButtonRecipeVariant.outline,
+          size: RaftButtonRecipeSize.md,
+          expand: true,
+          onPressed: widget.busy ? null : widget.actions.onStartStop,
+        ),
+      if (controls.restartReset)
+        RaftButton(
+          label: raftText(context, 'Restart / reset'),
+          glyph: RaftGlyph.rotateCcw,
+          tone: RaftButtonRecipeVariant.outline,
+          size: RaftButtonRecipeSize.md,
+          expand: true,
+          onPressed: widget.busy ? null : widget.actions.onRestartReset,
+        ),
       // AgentDetailPanel Actions: `CopyButton` "Copy diagnostic info" (outline,
       // Clipboard / Check icon), between Restart / Reset and Archive.
       RaftButton(
@@ -1292,6 +1367,17 @@ class _AgentDetailPanelState extends State<AgentDetailPanel>
           // `min-h-[66px] theme-brutal:min-h-[72px]`.
           minHeight: 66,
         ),
+        // Web `AgentComputerOfflineCard`: in place of Start while the Computer
+        // is offline.
+        if (a['deletedAt'] == null && !external && !_bounded)
+          AgentComputerOfflineCard(
+            controller: widget.controller,
+            machine: machine,
+            formatter: agentTimeFormatter(context, widget.controller),
+            onOpenComputer: widget.actions.onOpenComputer == null
+                ? null
+                : () => widget.actions.onOpenComputer!('${a['machineId']}'),
+          ),
         if (showRecentActivity && statusRow != null)
           AgentRecentActivity(
             key: ValueKey('agent-recent-activity-$agentId'),
@@ -1347,11 +1433,14 @@ class _AgentDetailPanelState extends State<AgentDetailPanel>
             controller: widget.controller,
             agentId: agentId,
           ),
-          AgentConnectionsSection(
-            key: ValueKey('connections-$agentId'),
-            controller: widget.controller,
-            agentId: agentId,
-          ),
+          // Web AgentProfileInfo.tsx:633: not for an app-managed agent.
+          if (a['managedByAppInstallId'] == null)
+            AgentConnectionsSection(
+              key: ValueKey('connections-$agentId'),
+              controller: widget.controller,
+              agentId: agentId,
+              agentName: '${a['displayName'] ?? a['name'] ?? ''}',
+            ),
           AgentHostedRuntimeUsage(
             key: ValueKey('usage-$agentId'),
             controller: widget.controller,
@@ -1362,136 +1451,144 @@ class _AgentDetailPanelState extends State<AgentDetailPanel>
           RaftPanelSection(
             children: [
               RaftSectionEyebrow(raftText(context, 'Info')),
-              RaftInfoRow(
-                label: raftText(context, 'Role'),
-                actions: [
-                  RaftInlineIconButton(
-                    key: const ValueKey('agent-role-help'),
-                    glyph: RaftGlyph.circleHelp,
-                    tooltip: raftText(context, 'Agent Roles'),
-                    onPressed: () =>
-                        showRaftRolePermissionHelp(context, agent: true),
-                  ),
-                  if (canEdit && roleChip != null && role != 'owner')
-                    RaftInlineIconButton(
-                      key: const ValueKey('agent-edit-role'),
-                      glyph: RaftGlyph.pencil,
-                      tooltip: raftText(context, 'Edit Role'),
-                      onPressed: widget.actions.onEditRole,
-                    ),
-                ],
-                child: roleChip == null
-                    ? const SizedBox.shrink()
-                    : RaftInlineBadge(
-                        badge: RaftRecipeBadge(
-                          roleChip.known
-                              ? raftText(
-                                  context,
-                                  roleChip.label == 'admin'
-                                      ? 'Admin'
-                                      : 'Member',
-                                )
-                              : roleChip.label,
-                          variant: roleChip.label == 'admin'
-                              ? RaftBadgeRecipeVariant.accent
-                              : RaftBadgeRecipeVariant.muted,
-                        ),
+              RaftInfoList(
+                children: [
+                  RaftInfoRow(
+                    label: raftText(context, 'Role'),
+                    actions: [
+                      RaftInlineIconButton(
+                        key: const ValueKey('agent-role-help'),
+                        glyph: RaftGlyph.circleHelp,
+                        tooltip: raftText(context, 'Agent Roles'),
+                        onPressed: () =>
+                            showRaftRolePermissionHelp(context, agent: true),
                       ),
-              ),
-              RaftInfoRow(
-                label: raftText(context, 'Computer'),
-                child: external
-                    ? RaftCssText(
-                        raftText(context, 'External runtime'),
-                        style: RaftPanelText.muted(t),
-                      )
-                    : pending
-                    ? const SizedBox.shrink()
-                    : m != null
-                    ? _profileLink(
-                        key: const ValueKey('agent-computer-link'),
-                        onPressed: widget.actions.onOpenComputer == null
-                            ? null
-                            : () =>
-                                  widget.actions.onOpenComputer!('${m['id']}'),
-                        tooltip: '${m['name']}',
-                        child: RaftCssText(
-                          '${m['name']}',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          // v1.21.12: the machine link is plain `text-sm
-                          // text-foreground-muted` (no `font-mono font-semibold`).
-                          style: RaftPanelText.profileValue(t),
+                      if (canEdit && roleChip != null && role != 'owner')
+                        RaftInlineIconButton(
+                          key: const ValueKey('agent-edit-role'),
+                          glyph: RaftGlyph.pencil,
+                          tooltip: raftText(context, 'Edit Role'),
+                          onPressed: widget.actions.onEditRole,
                         ),
-                      )
-                    : archivedMachine != null
-                    // An archived agent has no Computer; say where it last ran.
-                    ? RaftCssText(
-                        raftFormat(context, 'Last on {name}', {
-                          'name': archivedMachine,
-                        }),
-                        key: const ValueKey('agent-archived-last-computer'),
-                        style: RaftPanelText.muted(t),
-                      )
-                    : RaftCssText(
-                        raftText(context, 'No computer assigned'),
-                        style: RaftPanelText.muted(t),
-                      ),
-              ),
-              if (!external && m != null) ...[
-                RaftInfoRow(
-                  label: raftText(context, 'Computer status'),
-                  child: RaftConnectionValue(online: m['status'] == 'online'),
-                ),
-                RaftInfoRow(
-                  label: raftText(context, 'Raft Computer version'),
-                  child: RaftCssText(
-                    runLabel(m),
-                    style: RaftPanelText.profileMono(t),
+                    ],
+                    child: roleChip == null
+                        ? const SizedBox.shrink()
+                        : _roleValue(context, roleChip),
                   ),
-                ),
-              ],
-              RaftInfoRow(
-                label: raftText(context, 'Created'),
-                // `tabular-nums theme-brutal:font-mono`.
-                child: RaftCssText(
-                  createdDate(context),
-                  style: RaftPanelText.profileValue(t).copyWith(
-                    fontFeatures: const [FontFeature.tabularFigures()],
-                  ),
-                ),
-              ),
-              RaftInfoRow(
-                label: raftText(context, 'Creator'),
-                child: creator is Map
-                    ? _profileLink(
-                        key: const ValueKey('agent-creator-link'),
-                        onPressed:
-                            widget.actions.onOpenCreator == null ||
-                                creator['id'] is! String
-                            ? null
-                            : () => widget.actions.onOpenCreator!(
-                                creator['type'] == 'human' ? 'human' : 'agent',
-                                creator['id'] as String,
-                              ),
-                        tooltip: nonEmptyOr(
-                          creator['displayName'],
-                          creator['name'],
-                        ),
-                        child: RaftCreatorLink(
-                          name: nonEmptyOr(
-                            creator['displayName'],
-                            creator['name'],
+                  RaftInfoRow(
+                    label: raftText(context, 'Computer'),
+                    child: external
+                        ? RaftCssText(
+                            raftText(context, 'External runtime'),
+                            style: RaftInfoRow.mutedStyleOf(context),
+                          )
+                        : pending
+                        ? const SizedBox.shrink()
+                        : m != null
+                        ? _profileLink(
+                            key: const ValueKey('agent-computer-link'),
+                            onPressed: widget.actions.onOpenComputer == null
+                                ? null
+                                : () => widget.actions.onOpenComputer!(
+                                    '${m['id']}',
+                                  ),
+                            tooltip: '${m['name']}',
+                            child: RaftCssText(
+                              '${m['name']}',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              // v1.24: `font-mono text-foreground` (v1.21.12: plain).
+                              style: t.isRaftLook
+                                  ? RaftInfoRow.monoStyleOf(context)
+                                  : RaftPanelText.profileValue(t),
+                            ),
+                          )
+                        : archivedMachine != null
+                        // An archived agent has no Computer; say where it last ran.
+                        ? RaftCssText(
+                            raftFormat(context, 'Last on {name}', {
+                              'name': archivedMachine,
+                            }),
+                            key: const ValueKey('agent-archived-last-computer'),
+                            style: RaftInfoRow.mutedStyleOf(context),
+                          )
+                        : RaftCssText(
+                            raftText(context, 'No computer assigned'),
+                            style: RaftInfoRow.hintStyleOf(context),
                           ),
-                          handle: '${creator['name']}',
-                          human: creator['type'] == 'human',
-                          avatarUrl: creator['avatarUrl'] as String?,
-                        ),
-                      )
-                    : RaftCssText(
-                        raftText(context, 'No creator'),
-                        style: RaftPanelText.muted(t),
+                  ),
+                  if (!external && m != null) ...[
+                    RaftInfoRow(
+                      label: raftText(context, 'Computer status'),
+                      child: RaftConnectionValue(
+                        online: m['status'] == 'online',
                       ),
+                    ),
+                    RaftInfoRow(
+                      label: raftText(
+                        context,
+                        t.isRaftLook
+                            ? 'Computer version'
+                            : 'Raft Computer version',
+                      ),
+                      child: RaftCssText(
+                        runLabel(m, context),
+                        style: t.isRaftLook
+                            ? RaftInfoRow.monoStyleOf(context)
+                            : RaftPanelText.profileMono(t),
+                      ),
+                    ),
+                  ],
+                  RaftInfoRow(
+                    label: raftText(context, 'Created'),
+                    // `tabular-nums theme-brutal:font-mono`.
+                    child: RaftCssText(
+                      createdDate(context),
+                      // v1.24: `font-mono`.
+                      style: t.isRaftLook
+                          ? RaftInfoRow.monoStyleOf(context)
+                          : RaftPanelText.profileValue(t).copyWith(
+                              fontFeatures: const [
+                                FontFeature.tabularFigures(),
+                              ],
+                            ),
+                    ),
+                  ),
+                  RaftInfoRow(
+                    label: raftText(context, 'Creator'),
+                    child: creator is Map
+                        ? _profileLink(
+                            key: const ValueKey('agent-creator-link'),
+                            onPressed:
+                                widget.actions.onOpenCreator == null ||
+                                    creator['id'] is! String
+                                ? null
+                                : () => widget.actions.onOpenCreator!(
+                                    creator['type'] == 'human'
+                                        ? 'human'
+                                        : 'agent',
+                                    creator['id'] as String,
+                                  ),
+                            tooltip: nonEmptyOr(
+                              creator['displayName'],
+                              creator['name'],
+                            ),
+                            child: RaftCreatorLink(
+                              name: nonEmptyOr(
+                                creator['displayName'],
+                                creator['name'],
+                              ),
+                              handle: '${creator['name']}',
+                              human: creator['type'] == 'human',
+                              avatarUrl: creator['avatarUrl'] as String?,
+                            ),
+                          )
+                        : RaftCssText(
+                            raftText(context, 'No creator'),
+                            style: RaftInfoRow.hintStyleOf(context),
+                          ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -1504,100 +1601,125 @@ class _AgentDetailPanelState extends State<AgentDetailPanel>
                 editLabel: raftText(context, 'Edit Runtime Config'),
                 editKey: const ValueKey('agent-edit-runtime'),
               ),
-              RaftInfoRow(
-                label: raftText(context, 'Runtime'),
-                child: RaftInlineBadge(
-                  // RuntimeAccountUsageGateChip: the agent's Computer usage.
-                  badge: runtimeUsageGateChip(
-                    controller: widget.controller,
-                    enabled: canViewRuntimeUsage(widget.controller, machine),
-                    runtimeId: runtime,
-                    machineId: '${machine?['id'] ?? ''}',
-                    label: runtimeLabelWithStatus(
-                      context,
-                      runtime,
-                      deprecated: deprecatedHere(runtime),
-                    ),
-                    runtimeVersion: machine?['runtimeVersions'] is Map
-                        ? (machine!['runtimeVersions'] as Map)[runtime]
-                              as String?
-                        : null,
-                    chip: (status) => RaftRecipeBadge(
-                      runtimeLabelWithStatus(
-                        context,
-                        runtime,
-                        deprecated: deprecatedHere(runtime),
-                      ),
-                      appearance: RaftBadgeRecipeAppearance.solid,
-                      variant: RaftBadgeRecipeVariant.information,
-                      trailing: status,
-                    ),
-                  ),
-                ),
-              ),
-              // Web `currentRuntimeDeprecated` (AgentProfileInfo.tsx:233): the
-              // agent keeps running, but new agents cannot select this runtime.
-              if (deprecatedHere(runtime))
-                RaftBanner(
-                  status: RaftBannerRecipeStatus.warning,
-                  size: RaftBannerRecipeSize.sm,
-                  descriptionWeight: FontWeight.w700,
-                  description: raftText(
-                    context,
-                    'This agent uses a deprecated runtime. It can keep running, but new agents cannot select this runtime.',
-                  ),
-                ),
-              RaftInfoRow(
-                label: raftText(context, 'Model'),
-                child: _modelValue(context, a, config, model, runtime),
-              ),
-              if (config.supportsReasoning)
-                RaftInfoRow(
-                  label: raftText(context, 'Reasoning'),
-                  child: RaftInlineBadge(
-                    badge: RaftRecipeBadge(
-                      raftText(
-                        context,
-                        _reasoningEffortLabel(config.reasoningEffort),
-                      ),
-                      variant: RaftBadgeRecipeVariant.primary,
-                    ),
-                  ),
-                ),
-              if (config.supportsFastMode)
-                RaftInfoRow(
-                  label: raftText(context, 'Mode'),
-                  child: RaftInlineBadge(
-                    badge: RaftRecipeBadge(
-                      raftText(
-                        context,
-                        config.fastMode ? 'Fast mode' : 'Default',
-                      ),
-                      variant: RaftBadgeRecipeVariant.warning,
-                    ),
-                  ),
-                ),
-              // Web (Claude only): the custom provider's API URL and the
-              // command override, in machine type, else "Default".
-              if (runtime == 'claude') ...[
-                for (final (label, value) in [
-                  ('Provider', config.providerApiUrl),
-                  ('Command', config.commandText),
-                ])
+              RaftInfoList(
+                children: [
                   RaftInfoRow(
-                    key: ValueKey('agent-runtime-${label.toLowerCase()}'),
-                    label: raftText(context, label),
-                    child: value.isEmpty
-                        ? RaftCssText(
-                            raftText(context, 'Default'),
-                            style: RaftPanelText.muted(t),
-                          )
-                        : RaftCssText(
-                            value,
-                            style: RaftPanelText.profileMono(t),
+                    label: raftText(context, 'Runtime'),
+                    child: _legacyInline(
+                      t,
+                      // RuntimeAccountUsageGateChip: the agent's Computer usage.
+                      runtimeUsageGateChip(
+                        controller: widget.controller,
+                        enabled: canViewRuntimeUsage(
+                          widget.controller,
+                          machine,
+                        ),
+                        runtimeId: runtime,
+                        machineId: '${machine?['id'] ?? ''}',
+                        label: runtimeLabelWithStatus(
+                          context,
+                          runtime,
+                          deprecated: deprecatedHere(runtime),
+                        ),
+                        runtimeVersion: machine?['runtimeVersions'] is Map
+                            ? (machine!['runtimeVersions'] as Map)[runtime]
+                                  as String?
+                            : null,
+                        chip: (status) => RaftRecipeBadge(
+                          runtimeLabelWithStatus(
+                            context,
+                            runtime,
+                            deprecated: deprecatedHere(runtime),
                           ),
+                          // v1.24: `soft information` in machine type
+                          // (RUNTIME_CHIP_CLASS); the old looks keep the solid chip.
+                          appearance: t.isRaftLook
+                              ? RaftBadgeRecipeAppearance.soft
+                              : RaftBadgeRecipeAppearance.solid,
+                          variant: RaftBadgeRecipeVariant.information,
+                          mono: t.isRaftLook,
+                          trailing: status,
+                        ),
+                      ),
+                    ),
                   ),
-              ],
+                  // Web `currentRuntimeDeprecated` (AgentProfileInfo.tsx:233): the
+                  // agent keeps running, but new agents cannot select this runtime.
+                  if (deprecatedHere(runtime))
+                    RaftBanner(
+                      status: RaftBannerRecipeStatus.warning,
+                      size: RaftBannerRecipeSize.sm,
+                      descriptionWeight: FontWeight.w700,
+                      description: raftText(
+                        context,
+                        'This agent uses a deprecated runtime. It can keep running, but new agents cannot select this runtime.',
+                      ),
+                    ),
+                  RaftInfoRow(
+                    label: raftText(context, 'Model'),
+                    child: _modelValue(context, a, config, model, runtime),
+                  ),
+                  if (config.supportsReasoning)
+                    RaftInfoRow(
+                      label: raftText(context, 'Reasoning'),
+                      child: _legacyInline(
+                        t,
+                        RaftRecipeBadge(
+                          raftText(
+                            context,
+                            _reasoningEffortLabel(config.reasoningEffort),
+                          ),
+                          variant: RaftBadgeRecipeVariant.primary,
+                        ),
+                        plain: raftText(
+                          context,
+                          _reasoningEffortLabel(config.reasoningEffort),
+                        ),
+                      ),
+                    ),
+                  if (config.supportsFastMode)
+                    RaftInfoRow(
+                      label: raftText(context, 'Mode'),
+                      child: _legacyInline(
+                        t,
+                        RaftRecipeBadge(
+                          raftText(
+                            context,
+                            config.fastMode ? 'Fast mode' : 'Default',
+                          ),
+                          variant: RaftBadgeRecipeVariant.warning,
+                        ),
+                        plain: raftText(
+                          context,
+                          config.fastMode ? 'Fast mode' : 'Default',
+                        ),
+                      ),
+                    ),
+                  // Web (Claude only): the custom provider's API URL and the
+                  // command override, in machine type, else "Default".
+                  if (runtime == 'claude') ...[
+                    for (final (label, value) in [
+                      ('Provider', config.providerApiUrl),
+                      ('Command', config.commandText),
+                    ])
+                      RaftInfoRow(
+                        key: ValueKey('agent-runtime-${label.toLowerCase()}'),
+                        label: raftText(context, label),
+                        child: value.isEmpty
+                            ? RaftCssText(
+                                raftText(context, 'Default'),
+                                style: RaftInfoRow.hintStyleOf(context),
+                              )
+                            : RaftCssText(
+                                value,
+                                style: t.isRaftLook
+                                    ? RaftInfoRow.monoStyleOf(context)
+                                    : RaftPanelText.profileMono(t),
+                              ),
+                      ),
+                  ],
+                ],
+              ),
               // Web `agent.modelLimits?.defaultsReported &&
               // <AgentModelLimitsWarning className="mt-3" />`.
               if (RaftAgentFields(a).modelDefaultsReported == true)
@@ -1655,89 +1777,6 @@ class _AgentDetailPanelState extends State<AgentDetailPanel>
 }
 
 // ---------------------------------------------------------------- tabs
-
-class _SkillsSnapshot extends _AgentTabSnapshot {
-  List<Map<String, dynamic>> global = [], workspace = [];
-}
-
-/// Web AgentSkills `embedded`: `GET /agents/:id/skills` ({global, workspace})
-/// as a "Skills" section of the profile, grouped by source path.
-class AgentSkillsSection extends StatefulWidget {
-  const AgentSkillsSection({
-    super.key,
-    required this.controller,
-    required this.agentId,
-  });
-  final WorkspaceController controller;
-  final String agentId;
-  @override
-  State<AgentSkillsSection> createState() => _AgentSkillsSectionState();
-}
-
-class _AgentSkillsSectionState extends State<AgentSkillsSection>
-    with _AgentTabLoader {
-  @override
-  WorkspaceController get w => widget.controller;
-  late _SkillsSnapshot snapshot = _snapshot();
-  _SkillsSnapshot _snapshot() => w.agentTabCache.putIfAbsent(
-    'skills/${widget.agentId}',
-    _SkillsSnapshot.new,
-  ) as _SkillsSnapshot;
-  @override
-  String get loadFailedFallback => 'Failed to load skills';
-
-  @override
-  bool get hasContent => snapshot.loaded;
-
-  @override
-  void initState() {
-    super.initState();
-    reload();
-  }
-
-  @override
-  void didUpdateWidget(AgentSkillsSection oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.agentId != widget.agentId) {
-      snapshot = _snapshot();
-      reload();
-    }
-  }
-
-  List<Map<String, dynamic>> _rows(Object? v) => [
-    for (final r in (v is List ? v : const []))
-      if (r is Map) Map<String, dynamic>.from(r),
-  ];
-
-  @override
-  Future<void> fetch() async {
-    final result = await w.query('/agents/${widget.agentId}/skills');
-    final data = result is Map ? result : const {};
-    snapshot.global = _rows(data['global']);
-    snapshot.workspace = _rows(data['workspace']);
-    snapshot.loaded = true;
-  }
-
-  List<RaftSkillItem> _items(List<Map<String, dynamic>> rows) => [
-    for (final s in rows)
-      RaftSkillItem(
-        name: '${s['name'] ?? ''}',
-        displayName: '${s['displayName'] ?? s['name'] ?? ''}',
-        description: '${s['description'] ?? ''}',
-        sourcePath: '${s['sourcePath'] ?? ''}',
-        userInvocable: s['userInvocable'] == true,
-      ),
-  ];
-
-  @override
-  Widget build(BuildContext context) => RaftSkillsSection(
-    global: _items(snapshot.global),
-    workspace: _items(snapshot.workspace),
-    loading: loading,
-    error: loadError,
-    onRetry: reload,
-  );
-}
 
 /// Last accepted data of one agent tab, kept in the controller's
 /// server-identity-bound cache. A tab opens with it at its first frame, a
@@ -1934,6 +1973,14 @@ class _AgentChatTabState extends State<AgentChatTab> with _AgentTabLoader {
     }
     final origin = w.client.origin;
     final chinese = Localizations.localeOf(context).languageCode == 'zh';
+    // The peers' faces are read live from the agent directory.
+    return ListenableBuilder(
+      listenable: w.services.entityDirectory,
+      builder: (context, _) => _chatView(origin, chinese),
+    );
+  }
+
+  Widget _chatView(String origin, bool chinese) {
     return RaftAgentChatView(
       channelsError: snapshot.channelsError,
       dmsError: snapshot.dmsError,
@@ -1965,7 +2012,7 @@ class _AgentChatTabState extends State<AgentChatTab> with _AgentTabLoader {
                 id: '${d['peerId'] ?? d['id']}',
                 name: '${d['peerName'] ?? ''}',
                 displayName: d['peerDisplayName'] as String?,
-                avatarUrl: d['peerAvatarUrl'] as String?,
+                avatarUrl: liveAgentDmPeerAvatarUrl(w, d),
               ),
               avatarContext: RaftMountedAvatarContext.previewMini,
               origin: origin,
@@ -2180,11 +2227,14 @@ class _AgentWorkspaceTabState extends State<AgentWorkspaceTab>
   String? errorCode;
 
   /// `isFinalLoadError`: nothing to retry and no Computer path to show.
-  bool get errorFinal => errorCode == 'archive_workspace_unavailable';
+  bool get errorFinal =>
+      errorCode == 'archive_workspace_unavailable' ||
+      errorCode == 'computer_access_revoked';
 
   String get errorText => switch (errorCode) {
     'archive_workspace_unavailable' => 'This workspace was deleted from its Computer, so there is nothing to browse.',
     'machine_offline' || 'daemon_offline' => 'The Computer that holds this workspace is offline. Files can be browsed again when it reconnects.',
+    'computer_access_revoked' => 'Computer access revoked: move the agent to another computer (re-attaching adds a new one)',
     _ => 'Failed to load files',
   };
 
@@ -2365,6 +2415,10 @@ class _AgentWorkspaceTabState extends State<AgentWorkspaceTab>
         bold: f['name'] == 'memory.md',
         hidden: f['isHidden'] == true,
         selected: f['isDirectory'] != true && openFile == f['path'],
+        // Web `node.isSymlink`: shown, never opened.
+        symlinkLabel: f['isDirectory'] != true && f['isSymlink'] == true
+            ? raftText(context, 'Link — not opened in the workspace viewer')
+            : null,
         onTap: () => f['isDirectory'] == true
             ? toggle('${f['path']}')
             : open('${f['path']}'),

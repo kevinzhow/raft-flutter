@@ -394,7 +394,10 @@ class ReportIssueSession {
     final transcriptRequested =
         options.includeSessionTranscript && machineIdValue != null;
     if (transcriptRequested) {
-      // Started before the ticket and never awaited by the submission.
+      // Started before the ticket and never awaited by the submission. The
+      // answer push is matched to this report from here on: it can arrive
+      // before the request's 202.
+      _listenForAnswer(reportId);
       _startTranscriptRequest(
         () => controller.command(
           'POST',
@@ -424,6 +427,10 @@ class ReportIssueSession {
       ticketId: ticketId,
       issueDescription: description.isEmpty ? null : description,
       transcriptAttachmentRequested: transcriptRequested,
+      serverSlug: switch (server.json['slug']) {
+        final String slug when slug.isNotEmpty => slug,
+        _ => null,
+      },
     );
     _tickets[receipt.reportId] = ticketRequest;
     return receipt;
@@ -462,12 +469,10 @@ class ReportIssueSession {
   /// after the cap without an answer, a later answer still updates the state.
   void _startTranscriptRequest(Future<dynamic> Function() send) {
     if (_disposed) return;
-    transcriptState.value = RaftTranscriptRequestState.pending;
+    _accept(RaftTranscriptRequestState.pending);
     var answered = false;
     final timer = Timer(confirmCap, () {
-      if (!answered && !_disposed) {
-        transcriptState.value = RaftTranscriptRequestState.requestUnconfirmed;
-      }
+      if (!answered) _accept(RaftTranscriptRequestState.requestUnconfirmed);
     });
     Future<dynamic> sent;
     try {
@@ -488,9 +493,50 @@ class ReportIssueSession {
           .then((state) {
             answered = true;
             timer.cancel();
-            if (!_disposed) transcriptState.value = state;
+            _accept(state);
           }),
     );
+  }
+
+  /// Web `acceptTranscriptRequestState`: an answer from the computer is final.
+  void _accept(RaftTranscriptRequestState incoming) {
+    if (_disposed) return;
+    transcriptState.value = raftNextTranscriptRequestState(
+      transcriptState.value,
+      incoming,
+    );
+  }
+
+  StreamSubscription<RaftEvent>? _answers;
+
+  /// Web `sessionRecordAnswerFor`: the answer a `feedback_report:session_record`
+  /// push carries for [requestedReportId]; null for another report, none
+  /// requested, or a payload that is not a known answer.
+  static RaftTranscriptRequestState? sessionRecordAnswerFor(
+    Object? payload,
+    String? requestedReportId,
+  ) {
+    if (requestedReportId == null ||
+        payload is! Map ||
+        payload['feedbackReportId'] != requestedReportId) {
+      return null;
+    }
+    return switch (payload['sessionRecord']) {
+      'attached' => RaftTranscriptRequestState.attached,
+      'not_attached' => RaftTranscriptRequestState.notAttached,
+      _ => null,
+    };
+  }
+
+  /// Listens for the computer's answer from [reportId] on, until the session is
+  /// disposed (the dialog or its result closing).
+  void _listenForAnswer(String reportId) {
+    unawaited(_answers?.cancel());
+    _answers = controller.client.events.listen((event) {
+      if (event.name != 'feedback_report:session_record') return;
+      final answer = sessionRecordAnswerFor(event.payload, reportId);
+      if (answer != null) _accept(answer);
+    });
   }
 
   /// Web `handleCopyReportReference`.
@@ -507,6 +553,7 @@ class ReportIssueSession {
   bool _disposed = false;
   void dispose() {
     _disposed = true;
+    unawaited(_answers?.cancel());
     transcriptState.dispose();
   }
 }

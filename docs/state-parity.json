@@ -1969,23 +1969,25 @@
         },
         {
           "state": "loading",
-          "variant": "skills loading / error / empty",
+          "variant": "skills loading / error / empty / stale / unavailable",
           "web": "yes",
           "flutter": "yes",
           "parityCase": [],
           "status": "gap",
-          "justification": "Embedded skills block (AgentSkills): \"Loading skills…\", \"Failed to load skills\" + Retry, \"No global skills installed on this computer\", \"No skills in this agent's workspace\". The populated list is collapsed by default (owner decision 2026-10-18), so a case must expand it before comparing cards; no case drives the loading / error / empty copy yet.",
+          "justification": "Embedded skills block (AgentSkills): \"Loading skills…\", \"Failed to load skills\" + Retry, \"No global skills installed on this computer\", \"No skills in this agent's workspace\". The populated list is collapsed by default (owner decision 2026-10-18), so a case must expand it before comparing cards; no case drives the loading / error / empty copy yet. Web v1.24 AgentSkills also reads ok | stale | unavailable: a stale list says so and offers Retry, an unavailable one is an error with Retry; both are widget-tested (agent_skills_state_test.dart), no case drives them.",
           "size": "S",
           "gapKind": "case-missing"
         },
         {
           "state": "loading",
-          "variant": "hosted runtime usage / connections",
+          "variant": "hosted runtime usage / connections banners",
           "web": "yes",
-          "flutter": "missing",
+          "flutter": "partial",
           "parityCase": [],
-          "status": "intentional",
-          "justification": "Hosted-runtime surfaces (HostedRuntimeStatus, AgentConnections, AgentHostedRuntimeUsage: usage loading / \"Failed to load usage\" / \"No usage in the last 7 days\") are gated on hostedRuntime.state == active (staged, docs/parity-ext inventory 7.22 excluded flag-off); no Flutter counterpart exists at all."
+          "status": "gap",
+          "justification": "Hosted-runtime usage (loading / \"Failed to load usage\" / \"No usage in the last 7 days\") and the connections card (Not connected, Needs reconnecting with Reconnect, GitHub granted less, forbidden reason, revoke hint, remove with Undo) are implemented (agent_hosted_usage.dart, agent_connections_section.dart) and widget-tested (agent_connections_test.dart, agent_connections_mount_test.dart). They are gated on hostedRuntime.state == active (staged); no case drives them.",
+          "gapKind": "case-missing",
+          "size": "S"
         },
         {
           "state": "error",
@@ -2013,6 +2015,18 @@
           "justification": "Held-by-Computer chips (the chip opens the Computer), the wrapping revoked-access sentence and Likely online are widget-tested (agent_status_chip_test.dart); no official case drives them.",
           "size": "S",
           "gapKind": "case-missing"
+        },
+        {
+          "state": "partial",
+          "variant": "Computer offline card (Start and Restart held, runtime permissions)",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [
+            "screens.members.agent-detail.profile.computer-offline"
+          ],
+          "status": "covered",
+          "justification": "The card replaces Start / Restart while the agent's Computer is offline (Web AgentDetailPanel); controls are widget-tested (agent_profile_runtime_controls_test.dart).",
+          "caseValidity": "unchecked"
         }
       ]
     },
@@ -3890,6 +3904,54 @@
           "gapKind": "case-missing"
         }
       ]
+    },
+    {
+      "id": "agent.lounge",
+      "title": "Agent Lounge channel (notice, read-only composer, DM toggle)",
+      "webEntry": "packages/web/src/features/channel/ChatPanel.tsx",
+      "flutterEntry": "apps/raft_flutter/lib/features/lounge_channel_presentation.dart",
+      "states": [
+        {
+          "state": "loading",
+          "web": "no",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "na",
+          "justification": "The Lounge row comes from POST /agents/:id/lounge answering with the channel; the channel then loads like any public channel (screens covered by the channel page entries)."
+        },
+        {
+          "state": "empty",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "gap",
+          "gapKind": "case-missing",
+          "size": "S",
+          "justification": "The audience notice (\"Members of this server can take part. Other agents can read it.\") above an empty timeline; widget-tested in agent_lounge_shell_test.dart at fold and narrow desktop sizes."
+        },
+        {
+          "state": "error",
+          "variant": "failed open with Retry, archived Lounge with Unarchive",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "gap",
+          "gapKind": "case-missing",
+          "size": "S",
+          "justification": "A failed DM Lounge toggle says so and a retry resolves it; an archived Lounge unarchives in place and the composer returns (agent_lounge_shell_test.dart)."
+        },
+        {
+          "state": "partial",
+          "variant": "read-only composer where canPost is false",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "gap",
+          "gapKind": "case-missing",
+          "size": "S",
+          "justification": "Disabled stand-in composer; widget-tested in agent_lounge_shell_test.dart. No official case drives a Lounge channel."
+        }
+      ]
     }
   ],
   "navigationCoverage": {
@@ -5392,12 +5454,6 @@
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
-      },
-      "apps/raft_flutter/lib/features/agent_connections_section.dart#method:_AgentConnectionsSectionState._row": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
       "apps/raft_flutter/lib/features/agent_connections_section.dart#method:_AgentConnectionsSectionState.build": {
         "role": "unresolved",
@@ -21352,7 +21408,7 @@
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
-      "packages/raft_ui/lib/src/avatar_content.dart#local-function:CLASS:RaftAvatarContent@424/METHOD:build@2635/FUNCTION:gravatar@3855": {
+      "packages/raft_ui/lib/src/avatar_content.dart#local-function:CLASS:RaftAvatarContent@424/METHOD:build@2635/FUNCTION:gravatar@4545": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
@@ -41523,7 +41579,7 @@
         "reviewDecision": "Source reviewed at fixed Choice/P1 combination: this declaration is in an explicit frozen part/helper or a frozen Dialog class, selected only by the existing non-Raft/legacy recipe branch.",
         "reason": "Renderer selected only by an explicit Elegant/Brutal branch; this records source ownership, without claiming migration identity, exempting style findings or asserting pixel equivalence."
       },
-      "packages/raft_ui/lib/src/report_issue_dialog.dart#local-function:CLASS:_RaftReportIssueDialogState@3963/METHOD:_reference@26140/FUNCTION:term@26292": {
+      "packages/raft_ui/lib/src/report_issue_dialog.dart#local-function:CLASS:_RaftReportIssueDialogState@5024/METHOD:_reference@26067/FUNCTION:term@26219": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "P1 dialogs / canonical Choice integration",
@@ -48241,7 +48297,7 @@
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
-      "apps/raft_flutter/lib/features/fleet_views.dart#local-function:FUNCTION:showCredential@3869/FUNCTION:builder@4154": {
+      "apps/raft_flutter/lib/features/fleet_views.dart#local-function:FUNCTION:showCredential@3829/FUNCTION:builder@4114": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
@@ -49003,6 +49059,462 @@
         "owner": "WP-DS1 task-board family",
         "reason": "Source census candidate (WP-DS1 part 2, raft-ui 0.95.3 task board: column chevron, drop state of the lane box, keyboard-focusable trigger and card open area); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
+      "apps/raft_flutter/lib/features/agent_connection_views.dart#class:AgentConnectionAccessLine": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/agent_connection_views.dart#class:AgentConnectionAccessOption": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/agent_connection_views.dart#class:AgentConnectionActionsMenu": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/agent_connection_views.dart#class:AgentConnectionHealthDetail": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/agent_connection_views.dart#class:AgentConnectionRevokeHint": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/agent_connection_views.dart#class:AgentConnectionStateChip": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/agent_connection_views.dart#class:_AgentConnectionRevokeHintState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/agent_connection_views.dart#method:AgentConnectionAccessLine.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/agent_connection_views.dart#method:AgentConnectionAccessOption.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/agent_connection_views.dart#method:AgentConnectionActionsMenu.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/agent_connection_views.dart#method:AgentConnectionHealthDetail.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/agent_connection_views.dart#method:AgentConnectionRevokeHint.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/agent_connection_views.dart#method:AgentConnectionStateChip.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/agent_connection_views.dart#method:_AgentConnectionRevokeHintState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/agent_connections_section.dart#class:_ConnectContent": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/agent_connections_section.dart#method:_AgentConnectionsSectionState._button": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/agent_connections_section.dart#method:_AgentConnectionsSectionState._card": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/agent_connections_section.dart#method:_AgentConnectionsSectionState._copyDetails": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/agent_connections_section.dart#method:_AgentConnectionsSectionState._detach": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/agent_connections_section.dart#method:_AgentConnectionsSectionState._errorBanner": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/agent_connections_section.dart#method:_AgentConnectionsSectionState._openConnect": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/agent_connections_section.dart#method:_AgentConnectionsSectionState._reattach": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/agent_connections_section.dart#method:_ConnectContent.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/agent_dm_header_extras.dart#class:AgentStuckMinuteClock": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/agent_dm_header_extras.dart#class:_AgentStuckMinuteClockState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/agent_dm_header_extras.dart#function:agentDmLoungeActions": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/agent_dm_header_extras.dart#method:AgentStuckMinuteClock.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/agent_dm_header_extras.dart#method:_AgentStuckMinuteClockState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/agent_dm_header_extras.dart#method:_AgentStuckMinuteClockState.didUpdateWidget": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/agent_lounge.dart#function:openAgentLounge": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/agent_lounge_button.dart#function:agentLoungeInlineAction": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/lounge_channel_presentation.dart#function:loungeAudienceNotice": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/lounge_channel_presentation.dart#function:loungeHeaderFor": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/lounge_channel_presentation.dart#function:unarchiveLounge": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/agent_lounge_previews.dart#class:_LoungePreview": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/agent_lounge_previews.dart#function:agentLoungePreview": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/agent_lounge_previews.dart#method:_LoungePreview.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/channel_footer.dart#class:RaftChannelReadOnlyComposer": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/channel_footer.dart#method:RaftChannelReadOnlyComposer.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/channel_header.dart#function:raftConversationHeaderAction": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/channel_header.dart#local-function:CLASS:_RaftCssShrinkRow@28686/METHOD:build@29010/FUNCTION:<anonymous>@29653/FUNCTION:text@29933": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/lounge_avatar.dart#class:RaftLoungeAvatar": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/lounge_avatar.dart#method:RaftLoungeAvatar.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/agent_computer_offline_card.dart#class:AgentComputerOfflineCard": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/agent_computer_offline_card.dart#method:AgentComputerOfflineCard.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/agent_detail_view.dart#method:_AgentChatTabState._chatView": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/agent_skills_section.dart#class:AgentSkillsSection": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/agent_skills_section.dart#class:_AgentSkillsSectionState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/agent_skills_section.dart#method:AgentSkillsSection.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/agent_skills_section.dart#method:_AgentSkillsSectionState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/agent_skills_section.dart#method:_AgentSkillsSectionState.didUpdateWidget": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/agent_task_open.dart#function:openAgentActivityTask": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@5000/METHOD:attachmentGallery@66410/FUNCTION:view@67564": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@5000/METHOD:buildTimeline@114781/FUNCTION:timelineFor@118280": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@5000/METHOD:senderAvatar@78988/FUNCTION:avatar@81463": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5606/METHOD:buildWorkspace@47938/FUNCTION:<anonymous>@48176/FUNCTION:conversation@51290": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5606/METHOD:buildWorkspace@47938/FUNCTION:<anonymous>@48176/FUNCTION:workspace@64561": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5606/METHOD:settingsRailAction@108712/FUNCTION:action@108746": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/agent_computer_offline_previews.dart#function:agentComputerOfflinePreview": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/agent_computer_offline_card.dart#class:RaftAgentComputerOfflineCard": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/agent_computer_offline_card.dart#local-function:CLASS:RaftAgentComputerOfflineCard@774/METHOD:build@1708/FUNCTION:step@1928": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/agent_computer_offline_card.dart#method:RaftAgentComputerOfflineCard.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/agent_detail_view.dart#method:_AgentDetailPanelState._legacyInline": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/agent_detail_view.dart#method:_AgentDetailPanelState._roleValue": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/agent_info_list_previews.dart#function:agentInfoListPreview": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/agent_info_list.dart#class:RaftInfoColumnScope": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/agent_info_list.dart#class:RaftInfoList": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/agent_info_list.dart#class:RaftInfoRowBody": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/agent_info_list.dart#function:raftInfoTermWidth": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/agent_info_list.dart#local-function:CLASS:RaftInfoList@777/METHOD:build@928/FUNCTION:flush@1214": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/agent_info_list.dart#method:RaftInfoColumnScope.maybeOf": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/agent_info_list.dart#method:RaftInfoColumnScope.updateShouldNotify": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/agent_info_list.dart#method:RaftInfoList.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/agent_info_list.dart#method:RaftInfoRowBody.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/agent_profile.dart#local-function:CLASS:RaftWorkspaceTreeView@78578/METHOD:build@80050/FUNCTION:message@83635": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/agent_profile.dart#method:_RaftSkillsSectionState._staleCaption": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
       "apps/raft_flutter/lib/features/computers_rack/computers_rack_runtime_usage.dart#class:RackUsageCellView": {
         "role": "unresolved",
         "familyRefs": [],
@@ -49722,6 +50234,54 @@
         "familyRefs": [],
         "owner": "WP-COMP2 runtime chips",
         "reason": "Source census candidate (WP-COMP2 Computer page runtime chips, MachineRuntimeChips); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/create_agent_dialog.dart#local-function:CLASS:_CreateAgentDialogState@5201/METHOD:build@25468/FUNCTION:fields@33636": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/agent_create_form.dart#local-function:CLASS:RaftAgentMoreDisclosure@27812/METHOD:build@28146/FUNCTION:row@28258": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/form_controls.dart#class:_RaftEmptyHidden": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved widget; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/form_controls.dart#class:_RenderEmptyHidden": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved paint_owner; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@38741/METHOD:_buildRecipe@40011/FUNCTION:addon@41501": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@38741/METHOD:_buildRecipe@40011/FUNCTION:box@41191": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@38741/METHOD:_buildRecipe@40011/FUNCTION:resolve@40197": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/form_controls.dart#method:RaftField._withBelowDescription": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       }
     },
     "entries": {
@@ -52687,6 +53247,68 @@
         ],
         "mountStatus": "unresolved",
         "reason": "Resolved function owns a surface call (WP-COMP1 part 3); actual target, route and state are not yet observed."
+      },
+      "surface:apps/raft_flutter/lib/features/agent_connections_section.dart#method:_AgentConnectionsSectionState._copyDetails": {
+        "owner": "design-system alignment",
+        "kind": "surface_factory_candidate",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/agent_connections_section.dart#method:_AgentConnectionsSectionState._copyDetails"
+        ],
+        "mountStatus": "unresolved",
+        "reason": "Resolved function owns a surface call; actual target, route and state are not yet observed."
+      },
+      "surface:apps/raft_flutter/lib/features/agent_connections_section.dart#method:_AgentConnectionsSectionState._detach": {
+        "owner": "design-system alignment",
+        "kind": "surface_factory_candidate",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/agent_connections_section.dart#method:_AgentConnectionsSectionState._detach"
+        ],
+        "mountStatus": "unresolved",
+        "reason": "Resolved function owns a surface call; actual target, route and state are not yet observed."
+      },
+      "surface:apps/raft_flutter/lib/features/agent_connections_section.dart#method:_AgentConnectionsSectionState._openConnect": {
+        "owner": "design-system alignment",
+        "kind": "surface_factory_candidate",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/agent_connections_section.dart#method:_AgentConnectionsSectionState._openConnect"
+        ],
+        "mountStatus": "unresolved",
+        "reason": "Resolved function owns a surface call; actual target, route and state are not yet observed."
+      },
+      "surface:apps/raft_flutter/lib/features/agent_connections_section.dart#method:_AgentConnectionsSectionState._reattach": {
+        "owner": "design-system alignment",
+        "kind": "surface_factory_candidate",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/agent_connections_section.dart#method:_AgentConnectionsSectionState._reattach"
+        ],
+        "mountStatus": "unresolved",
+        "reason": "Resolved function owns a surface call; actual target, route and state are not yet observed."
+      },
+      "surface:apps/raft_flutter/lib/features/agent_lounge.dart#function:openAgentLounge": {
+        "owner": "design-system alignment",
+        "kind": "surface_factory_candidate",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/agent_lounge.dart#function:openAgentLounge"
+        ],
+        "mountStatus": "unresolved",
+        "reason": "Resolved function owns a surface call; actual target, route and state are not yet observed."
+      },
+      "surface:apps/raft_flutter/lib/features/lounge_channel_presentation.dart#function:unarchiveLounge": {
+        "owner": "design-system alignment",
+        "kind": "surface_factory_candidate",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/lounge_channel_presentation.dart#function:unarchiveLounge"
+        ],
+        "mountStatus": "unresolved",
+        "reason": "Resolved function owns a surface call; actual target, route and state are not yet observed."
+      },
+      "screen:agent.lounge": {
+        "owner": "design-system alignment",
+        "kind": "route_or_panel_candidate",
+        "lifecycleScreenId": "agent.lounge",
+        "declarationRefs": [],
+        "mountStatus": "unresolved",
+        "reason": "Existing lifecycle screen record; exact builder/family composition and current mounted state are not yet established."
       },
       "surface:apps/raft_flutter/lib/features/computer_runtime_limit_reset_dialog.dart#function:showComputerRuntimeLimitResetDialog": {
         "owner": "WP-COMP2 runtime usage card",
@@ -58263,6 +58885,36 @@
         "applicability": "unknown",
         "owner": "WP-DS1 task-board family",
         "reason": "Resolved state use added with the raft-ui 0.95.3 task board (responsive recipe states: pointer-fine and the window band; the collapsed column's allowed-drop outline); look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@38741/METHOD:_buildRecipe@40011/FUNCTION:resolve@40197|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:disabled": {
+        "applicability": "unknown",
+        "owner": "design-system alignment",
+        "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@38741/METHOD:_buildRecipe@40011/FUNCTION:resolve@40197|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:hovered": {
+        "applicability": "unknown",
+        "owner": "design-system alignment",
+        "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@38741/METHOD:_buildRecipe@40011/FUNCTION:resolve@40197|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+        "applicability": "unknown",
+        "owner": "design-system alignment",
+        "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@38741/METHOD:_buildRecipe@40011/FUNCTION:resolve@40197|state:focus-within": {
+        "applicability": "unknown",
+        "owner": "design-system alignment",
+        "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@38741/METHOD:_buildRecipe@40011/FUNCTION:resolve@40197|state:has:data-slot=input-group-control+data-invalid": {
+        "applicability": "unknown",
+        "owner": "design-system alignment",
+        "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@38741/METHOD:_buildRecipe@40011/FUNCTION:resolve@40197|state:has:data-slot=input-group-control+disabled": {
+        "applicability": "unknown",
+        "owner": "design-system alignment",
+        "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
       }
     },
     "evidence": {},

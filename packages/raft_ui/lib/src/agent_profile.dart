@@ -30,6 +30,7 @@ import 'profile_link.dart';
 import 'inline_badge_editor.dart';
 import 'localization.dart';
 import 'panel_layout.dart';
+import 'raft/status.dart' show RaftStatus, RaftPresence;
 import 'design_primitives.dart' hide RaftPanelHeaderRecipe;
 import 'recipes/avatar.g.dart';
 import 'recipes/badge.g.dart';
@@ -973,6 +974,7 @@ class RaftCreatorLink extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             // Web v1.21.12 drops `font-medium`: the name is regular weight.
+            style: t.isRaftLook ? RaftInfoRow.detailsStyleOf(context) : null,
           ),
         ),
         const SizedBox(width: 8),
@@ -1000,6 +1002,24 @@ class RaftConnectionValue extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
+    if (t.isRaftLook) {
+      // Web v1.24 AgentProfileInfo.tsx:718-726: `<span className="flex
+      // items-center gap-1.5">` the Status pixel and "Online" / "Offline".
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          RaftStatus(
+            presence: online ? RaftPresence.online : RaftPresence.offline,
+          ),
+          const SizedBox(width: 6),
+          Flexible(
+            child: RaftCssText(
+              raftText(context, online ? 'Online' : 'Offline'),
+            ),
+          ),
+        ],
+      );
+    }
     return Row(
       children: [
         RaftActivityDot(color: online ? t.product.brutalLime : raftGray400),
@@ -1795,6 +1815,7 @@ class RaftSkillsSection extends StatefulWidget {
     this.loading = false,
     this.error,
     this.onRetry,
+    this.stale = false,
     this.initiallyExpanded = false,
     this.expanded,
     this.onExpandedChanged,
@@ -1803,6 +1824,11 @@ class RaftSkillsSection extends StatefulWidget {
   final bool loading;
   final String? error;
   final VoidCallback? onRetry;
+
+  /// Web `state: "stale"`: the Computer did not answer in time and the list is
+  /// its last one. A caption with a Retry link ([onRetry]) sits under the
+  /// header.
+  final bool stale;
 
   /// Opens the list on its first frame (a caller that remembers the choice).
   final bool initiallyExpanded;
@@ -1905,6 +1931,46 @@ class _RaftSkillsSectionState extends State<RaftSkillsSection> {
     ),
   );
 
+  /// `data-testid="agent-skills-stale"`: `border-l border-line-hairline pl-2
+  /// text-caption text-foreground-muted` with a strong TextLink Retry.
+  Widget _staleCaption(BuildContext context, RaftTokens t) {
+    final caption = RaftTypography.body(
+      t,
+      size: 12,
+      line: 16,
+      color: t.colors['foreground-muted'],
+    );
+    return Container(
+      key: const ValueKey('agent-skills-stale'),
+      padding: const EdgeInsetsDirectional.only(start: 8),
+      decoration: BoxDecoration(
+        border: BorderDirectional(
+          start: BorderSide(color: t.colors['line-hairline']!),
+        ),
+      ),
+      child: Wrap(
+        crossAxisAlignment: WrapCrossAlignment.center,
+        spacing: 4,
+        children: [
+          RaftCssText(
+            raftText(
+              context,
+              'This Computer did not answer in time, so this skill list may be out of date.',
+            ),
+            style: caption,
+          ),
+          RaftTextLink(
+            key: const ValueKey('agent-skills-stale-retry'),
+            label: raftText(context, 'Retry'),
+            variant: RaftTextLinkVariant.strong,
+            textStyle: caption,
+            onPressed: widget.onRetry,
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
@@ -1925,12 +1991,14 @@ class _RaftSkillsSectionState extends State<RaftSkillsSection> {
       return RaftLoadError(widget.error!, onRetry: widget.onRetry);
     }
     final total = widget.global.length + widget.workspace.length;
+    final staleCaption = widget.stale ? _staleCaption(context, t) : null;
     // Web renders the header alone (with its 0) when nothing is installed;
     // with nothing to disclose the header stays a plain label.
     if (total == 0) {
       return RaftPanelSection(
         children: [
           RaftSectionHeader(label: raftText(context, 'Skills'), count: total),
+          ?staleCaption,
         ],
       );
     }
@@ -1945,6 +2013,9 @@ class _RaftSkillsSectionState extends State<RaftSkillsSection> {
           disclosureKey: const ValueKey('agent-skills-disclosure'),
           gap: 16,
           children: [
+            // Under the header when the list is open; while it is closed the
+            // notice stays visible below the header instead.
+            if (expanded) ?staleCaption,
             _group(
               context,
               t,
@@ -1963,6 +2034,7 @@ class _RaftSkillsSectionState extends State<RaftSkillsSection> {
             ),
           ],
         ),
+        if (!expanded) ?staleCaption,
       ],
     );
   }
@@ -2206,6 +2278,7 @@ class RaftWorkspaceNode {
     this.bold = false,
     this.hidden = false,
     this.selected = false,
+    this.symlinkLabel,
     this.onTap,
   }) : loading = false,
        hint = false;
@@ -2219,6 +2292,7 @@ class RaftWorkspaceNode {
       bold = false,
       hidden = false,
       selected = false,
+      symlinkLabel = null,
       loading = true,
       hint = false,
       onTap = null;
@@ -2231,6 +2305,7 @@ class RaftWorkspaceNode {
       bold = false,
       hidden = false,
       selected = false,
+      symlinkLabel = null,
       loading = false,
       hint = true,
       onTap = null;
@@ -2243,6 +2318,11 @@ class RaftWorkspaceNode {
   /// The open file's row (`bg-accent-soft`, Brutal `bg-brutal-pink/20` with a
   /// pink right rule).
   final bool selected;
+
+  /// A link in the workspace (`FileNode.isSymlink`): shown with a link icon,
+  /// never opened ("Link — not opened in the workspace viewer"). The daemon
+  /// never follows a link, so the row takes no tap. Null for every other row.
+  final String? symlinkLabel;
   final VoidCallback? onTap;
 }
 
@@ -2609,6 +2689,7 @@ class RaftWorkspaceTreeView extends StatelessWidget {
             : RaftCssText(n.name, style: style),
       );
     }
+    final linkLabel = n.symlinkLabel;
     final weight = n.directory
         ? FontWeight.w500
         : n.bold
@@ -2636,9 +2717,9 @@ class RaftWorkspaceTreeView extends StatelessWidget {
     final folder = web
         ? t.colors['foreground-muted']!
         : (t.colors['warning-strong'] ?? t.strong);
-    return GestureDetector(
+    final row = GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTap: n.onTap,
+      onTap: linkLabel == null ? n.onTap : null,
       child: Container(
         decoration: n.selected
             ? (web
@@ -2676,7 +2757,13 @@ class RaftWorkspaceTreeView extends StatelessWidget {
                 size: 14,
                 color: folder,
               ),
-            ] else
+            ] else if (linkLabel != null)
+              RaftIcon(
+                RaftGlyph.fileSymlink,
+                size: 14,
+                color: t.colors['foreground-hint'],
+              )
+            else
               RaftIcon(
                 RaftGlyph.fileText,
                 size: 14,
@@ -2696,6 +2783,14 @@ class RaftWorkspaceTreeView extends StatelessWidget {
           ],
         ),
       ),
+    );
+    if (linkLabel == null) return row;
+    // `title` + sr-only text: the link is shown but not opened.
+    return Semantics(
+      container: true,
+      label: '${n.name}, $linkLabel',
+      excludeSemantics: true,
+      child: RaftTooltip(message: linkLabel, child: row),
     );
   }
 }
@@ -2853,16 +2948,24 @@ class _RaftWorkspaceFilePreviewState extends State<RaftWorkspaceFilePreview> {
                   value: preview,
                   onChanged: (value) => setState(() => preview = value),
                   items: [
-                    RaftSegmentedOption(
-                      value: false,
-                      label: raftText(context, 'Raw'),
-                      itemKey: const ValueKey('workspace-file-view-raw'),
-                    ),
-                    RaftSegmentedOption(
-                      value: true,
-                      label: raftText(context, 'Preview'),
-                      itemKey: const ValueKey('workspace-file-view-preview'),
-                    ),
+                    // Web v1.24 lists Preview first; the frozen looks keep
+                    // v1.21.23's Raw, Preview.
+                    for (final previewOption
+                        in web ? const [true, false] : const [false, true])
+                      if (previewOption)
+                        RaftSegmentedOption(
+                          value: true,
+                          label: raftText(context, 'Preview'),
+                          itemKey: const ValueKey(
+                            'workspace-file-view-preview',
+                          ),
+                        )
+                      else
+                        RaftSegmentedOption(
+                          value: false,
+                          label: raftText(context, 'Raw'),
+                          itemKey: const ValueKey('workspace-file-view-raw'),
+                        ),
                   ],
                 ),
               ],

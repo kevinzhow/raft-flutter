@@ -141,6 +141,13 @@ Map<String, dynamic> _errorDetails(Map? body) {
     // A cloud agent's provider refused a GitHub connection step: its own
     // plain-text reason (`providerMessage`), shown as "The provider refused:".
     'providerMessage',
+    // Its code and status (a server from before the `details` envelope writes
+    // them at the top level), shown only by Copy details; and the 502
+    // partial disconnect's word that a copy of the credential can only be
+    // revoked on GitHub.
+    'providerCode',
+    'providerStatus',
+    'revokeOnGithub',
     // Agent migration start refusals: which computer lacks which runtime
     // (COMPUTER_CAPABILITY_INSUFFICIENT) or needs a Raft Computer update
     // (MIGRATION_RESUMABLE_CAPABILITY_REQUIRED); the view validates the shape.
@@ -194,11 +201,14 @@ Map<String, dynamic> _errorDetails(Map? body) {
       'email',
       'expiresAt',
       'providerMessage',
+      'providerCode',
       'error_description',
       'lockedUntil',
     }.contains(key)) {
       return value is String ? value : null;
     }
+    if (key == 'providerStatus') return value is int ? value : null;
+    if (key == 'revokeOnGithub') return value == true ? true : null;
     if (key == 'methods') {
       return [
         if (value is List)

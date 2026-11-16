@@ -6,26 +6,32 @@ import 'package:flutter/material.dart';
 
 import '../raft_ui.dart';
 import '../recipes.dart';
+import 'avatar_pixel_data.dart' show raftPixelAvatarSeries;
 
-const raftAgentAvatarChoices = <String>[
-  'robot',
-  'cat',
-  'ghost',
-  'skull',
-  'alien',
-  'heart',
-  'star',
-  'flame',
-  'diamond',
-  'mushroom',
-  'eye',
-  'crown',
-  'cloud',
-  'sun',
-  'bell',
-  'tree',
+/// The avatars a picker offers, in picker order (every series of the shared
+/// pixelAvatars.json, reserved keys excluded).
+final raftAgentAvatarChoices = <String>[
+  for (final series in raftPixelAvatarSeries) ...series.$2,
 ];
 
+/// Heading of each avatar series (`agent.avatar.series.*`).
+String raftAvatarSeriesTitle(String key) => switch (key) {
+  'bots' => 'Bot family',
+  'critters' => 'Critters',
+  'space' => 'Space',
+  'desk' => 'Desk',
+  'food' => 'Food',
+  'quest' => 'Quest',
+  'weather' => 'Weather',
+  'plants' => 'Plants',
+  'spooky' => 'Spooky',
+  _ => key,
+};
+
+/// AgentProfileEditDialog.tsx, avatar field: the preview and the upload tile
+/// on one row, then one group per series (eight tiles, or two rows of four
+/// when the body is narrower than eight tiles). The card is the Dialog family
+/// card, so a narrow window presents it as the sheet.
 class RaftAgentAvatarPicker extends StatelessWidget {
   const RaftAgentAvatarPicker({
     super.key,
@@ -48,144 +54,131 @@ class RaftAgentAvatarPicker extends StatelessWidget {
   final VoidCallback? onUpload, onClose, onSave;
   final bool busy, dirty, uploadSelected;
 
+  /// A body narrower than this wraps each series into two rows of four
+  /// (`@min-[408px]:grid-cols-8`: eight 44px tiles and seven 8px gaps).
+  static const wideBodyWidth = 408.0;
+
   @override
   Widget build(BuildContext context) {
-    final t = RaftTokens.of(context),
-        rt = RaftRecipeTokens(RaftTokens.of(context));
-    final states = RaftRecipeStates({
-      if (t.dark) RaftRecipeStates.dark,
-    }, MediaQuery.sizeOf(context).width);
-    final slots = RaftDialogRecipe.resolve(
-      theme: raftRecipeTheme(t),
-      states: states,
-      tokens: rt,
+    final t = RaftTokens.of(context);
+    String tr(String s) => raftText(context, s);
+    final heading = t.scale(
+      RaftTypeScale.footnote,
+      weight: FontWeight.w700,
+      color: t.colors['foreground-hint'],
     );
-    return Material(
-      type: MaterialType.transparency,
-      child: Center(
-        child: SizedBox(
-          width: math.min(512, MediaQuery.sizeOf(context).width - 32),
-          child: RaftRecipeBox(
-            style: slots.content,
-            tokens: rt,
-            applyTransform: false,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                RaftRecipeBox(
-                  style: slots.header,
-                  tokens: rt,
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: RaftCssText(
-                          raftText(context, 'Change avatar'),
-                          style: slots.title.textStyle(rt),
-                        ),
-                      ),
-                      RaftRecipeButton(
-                        tooltip: raftText(context, 'Close'),
-                        glyphSize: 20,
-                        glyph: RaftGlyph.x,
-                        size: RaftButtonRecipeSize.iconMd,
-                        variant: RaftButtonRecipeVariant.outline,
-                        disabled: busy,
-                        onPressed: busy ? null : onClose,
-                      ),
-                    ],
-                  ),
+    final card = RaftDialog.card(
+      key: const ValueKey('agent-avatar-picker'),
+      title: 'Change avatar',
+      maxWidth: 512,
+      closeEnabled: !busy,
+      onClose: onClose ?? () {},
+      footer: Wrap(
+        alignment: WrapAlignment.end,
+        spacing: 8,
+        runSpacing: 8,
+        children: [
+          RaftButton(
+            label: tr('Cancel'),
+            uiVariant: RaftButtonVariant.ghost,
+            uiSize: RaftButtonSize.lg,
+            onPressed: busy ? null : onClose,
+          ),
+          RaftButton(
+            label: tr('Save'),
+            uiVariant: RaftButtonVariant.accent,
+            uiSize: RaftButtonSize.lg,
+            busy: busy,
+            onPressed: dirty && !busy ? onSave : null,
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            spacing: 16,
+            children: [
+              SizedBox(width: 64, height: 64, child: preview),
+              _AvatarChoice(
+                key: const ValueKey('avatar-upload'),
+                label: tr('Upload image'),
+                selected: uploadSelected,
+                upload: true,
+                onPressed: busy ? null : onUpload,
+                child: RaftIcon(
+                  RaftGlyph.upload,
+                  size: 18,
+                  color: t.colors['foreground-muted']!,
                 ),
-                SizedBox(height: slots.content.rowGap ?? 0),
-                Flexible(
-                  child: SingleChildScrollView(
-                    child: RaftRecipeBox(
-                      style: slots.body,
-                      tokens: rt,
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          LayoutBuilder(
+            builder: (context, box) {
+              final columns = box.maxWidth >= wideBodyWidth ? 8 : 4;
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                spacing: 12,
+                children: [
+                  for (final series in raftPixelAvatarSeries)
+                    Semantics(
+                      container: true,
+                      label: tr(raftAvatarSeriesTitle(series.$1)),
                       child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        key: ValueKey('avatar-series-${series.$1}'),
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        spacing: 6,
                         children: [
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              SizedBox(width: 64, height: 64, child: preview),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: Wrap(
-                                  spacing: 8,
-                                  runSpacing: 8,
-                                  children: [
-                                    _AvatarChoice(
-                                      key: const ValueKey('avatar-upload'),
-                                      label: raftText(context, 'Upload Image'),
-                                      selected: uploadSelected,
-                                      onPressed: busy ? null : onUpload,
-                                      child: RaftIcon(
-                                        RaftGlyph.upload,
-                                        size: 16,
-                                        color: t.colors['foreground-muted']!,
-                                      ),
-                                    ),
-                                    for (final key in raftAgentAvatarChoices)
-                                      _AvatarChoice(
-                                        key: ValueKey('avatar-choice-$key'),
-                                        label: key,
-                                        selected: key == selectedKey,
-                                        onPressed: busy
-                                            ? null
-                                            : () => onChoice?.call(key),
-                                        child: RaftAvatarSlot(
-                                          name: name,
-                                          avatarUrl: 'pixel:$key',
-                                          slot:
-                                              RaftAvatarSlotContext.panelHeader,
-                                        ),
-                                      ),
-                                  ],
-                                ),
-                              ),
-                            ],
+                          Semantics(
+                            header: true,
+                            child: RaftCssText(
+                              tr(raftAvatarSeriesTitle(series.$1)),
+                              style: heading,
+                            ),
                           ),
-                          if (error != null) ...[
-                            const SizedBox(height: 20),
-                            // Web `<Banner status="warning" size="sm" role="alert">`.
-                            RaftErrorBanner(error!, small: true),
-                          ],
+                          for (var at = 0; at < series.$2.length; at += columns)
+                            Row(
+                              spacing: 8,
+                              children: [
+                                for (final key
+                                    in series.$2.skip(at).take(columns))
+                                  _AvatarChoice(
+                                    key: ValueKey('avatar-choice-$key'),
+                                    label: key,
+                                    selected: key == selectedKey,
+                                    onPressed: busy
+                                        ? null
+                                        : () => onChoice?.call(key),
+                                    child: RaftAvatarSlot(
+                                      name: name,
+                                      avatarUrl: 'pixel:$key',
+                                      slot: RaftAvatarSlotContext.panelHeader,
+                                    ),
+                                  ),
+                              ],
+                            ),
                         ],
                       ),
                     ),
-                  ),
-                ),
-                SizedBox(height: slots.content.rowGap ?? 0),
-                RaftRecipeBox(
-                  style: slots.footer,
-                  tokens: rt,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      RaftButton(
-                        label: raftText(context, 'Cancel'),
-                        size: RaftButtonRecipeSize.sm,
-                        tone: RaftButtonRecipeVariant.outline,
-                        onPressed: busy ? null : onClose,
-                      ),
-                      const SizedBox(width: 12),
-                      RaftButton(
-                        label: raftText(context, 'Save'),
-                        size: RaftButtonRecipeSize.sm,
-                        tone: RaftButtonRecipeVariant.accent,
-                        busy: busy,
-                        onPressed: dirty && !busy ? onSave : null,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
+                ],
+              );
+            },
           ),
-        ),
+          if (error != null) ...[
+            const SizedBox(height: 20),
+            // Web `<Banner status="warning" size="sm" role="alert">`.
+            RaftErrorBanner(error!, small: true),
+          ],
+        ],
       ),
+    );
+    return Material(
+      type: MaterialType.transparency,
+      // A presented window (sheet or dialog route) centres its own card.
+      child: RaftFormFrame.framedOf(context) ? card : Center(child: card),
     );
   }
 }
@@ -197,9 +190,10 @@ class _AvatarChoice extends StatefulWidget {
     required this.selected,
     required this.onPressed,
     required this.child,
+    this.upload = false,
   });
   final String label;
-  final bool selected;
+  final bool selected, upload;
   final VoidCallback? onPressed;
   final Widget child;
   @override
@@ -211,12 +205,18 @@ class _AvatarChoiceState extends State<_AvatarChoice> {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
+    // `presetButtonClass`: a selected tile has the sticker ink border on the
+    // selected fill; the upload tile is dashed; the rest have no border.
     final color = widget.selected
-        ? (t.colors['accent']!)
-        : hovered
+        ? t.ui.stickerInk
+        : widget.upload
         ? t.colors['line-strong']!
-        : t.colors['line-muted']!;
-    final fill = widget.selected ? (t.colors['accent-soft']!) : null;
+        : t.colors['line-muted']!.withValues(alpha: 0);
+    final fill = widget.selected
+        ? t.colors['selected']
+        : hovered
+        ? t.colors['fill-medium']
+        : null;
     return RaftTooltip(
       message: widget.label,
       child: FocusableActionDetector(
@@ -241,12 +241,12 @@ class _AvatarChoiceState extends State<_AvatarChoice> {
             child: GestureDetector(
               onTap: widget.onPressed,
               child: Container(
-                width: 40,
-                height: 40,
+                width: 44,
+                height: 44,
                 decoration: RaftCssBoxDecoration(
                   color: fill,
                   borderRadius: BorderRadius.circular(6),
-                  border: Border.all(color: color, width: 1),
+                  border: Border.all(color: color, width: 1.5),
                   boxShadow: focused
                       ? [
                           BoxShadow(

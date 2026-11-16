@@ -8,6 +8,7 @@
 // (`restartMode: "session"`); everything else is saved without `restartMode`
 // and the server applies it when the agent is next idle, which a toast says
 // (agent_runtime_config_apply.dart).
+
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -23,6 +24,8 @@ import 'agent_runtime_config_apply.dart';
 import 'agent_runtime_labels.dart';
 import 'private_route_guard.dart';
 import 'runtime_form_dialog.dart';
+import 'computer_runtime_sign_in_notice.dart';
+import 'runtime_usage_chip.dart' show canViewRuntimeUsage;
 import 'runtime_options_request.dart';
 
 /// A confirmation the profile shows after the modal closes (Web
@@ -464,6 +467,18 @@ class _AgentRuntimeEditorState extends State<AgentRuntimeEditor> {
       final runtimeField = RaftStableField(
         label: 'Runtime',
         required: true,
+        // Web `runtimeBelowDescription`: the agent's Computer, the draft
+        // runtime; signed out is said, never enforced (Save stays as it is).
+        belowDescription: RuntimeSignInNotice(
+          controller: w,
+          serverId: w.server?.id,
+          machineId: machineId,
+          machineName:
+              widget.machine?['name'] as String? ??
+              raftText(context, 'this Computer'),
+          runtimeId: draftRuntime,
+          enabled: canViewRuntimeUsage(w, widget.machine),
+        ),
         child: RaftAgentSelect<String>(
           key: const ValueKey('runtime-editor-runtime'),
           value: draftRuntime,

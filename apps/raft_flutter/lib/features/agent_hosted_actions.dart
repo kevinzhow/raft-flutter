@@ -77,11 +77,3 @@ Future<void> stopAgentTurnWithFeedback(
     );
   }
 }
-
-/// The fleet row's entry (`onStopHostedTurn`) keeps its name; it is the same
-/// command.
-Future<void> stopHostedTurnWithFeedback(
-  BuildContext context,
-  WorkspaceController w,
-  String agentId,
-) => stopAgentTurnWithFeedback(context, w, agentId);

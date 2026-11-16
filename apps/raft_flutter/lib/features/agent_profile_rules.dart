@@ -48,6 +48,71 @@ bool canViewAgentPrivateSurfaces(
   bool capability,
 ) => capability || agentCreatorIsCurrentUser(agent, currentUserId);
 
+/// Web `agentRuntimePermissions` (agentVisibility.ts): who may run an agent's
+/// runtime controls, the one rule the profile and the Members menu share.
+/// Runtime control is `controlAgentRuntime` or the creator's, never an external
+/// agent's (no managed runtime); Stop Agent is also `stopAgents` or the
+/// creator's (members keep start and restart); Full reset is
+/// `resetAgentWorkspace` or the creator's. A bounded public projection gets none.
+({bool canControlAgentRuntime, bool canStopAgent, bool canResetAgentWorkspace})
+agentRuntimePermissions({
+  required Map agent,
+  required String? currentUserId,
+  required bool controlAgentRuntime,
+  required bool stopAgents,
+  required bool resetAgentWorkspace,
+  required bool external,
+  bool boundedPublic = false,
+}) {
+  final managed = !boundedPublic && !external;
+  final control =
+      managed &&
+      canViewAgentPrivateSurfaces(agent, currentUserId, controlAgentRuntime);
+  return (
+    canControlAgentRuntime: control,
+    canStopAgent:
+        control &&
+        canViewAgentPrivateSurfaces(agent, currentUserId, stopAgents),
+    canResetAgentWorkspace:
+        managed &&
+        canViewAgentPrivateSurfaces(agent, currentUserId, resetAgentWorkspace),
+  );
+}
+
+/// Web `agentRuntimeControls` (agentBlockedState.ts): which runtime controls an
+/// agent offers. While its Computer is offline, whatever the agent's own
+/// state: no Start and no Restart / Reset (they need the Computer). Stop stays
+/// for a running agent and for one waiting to come back with its Computer (not
+/// one a person stopped). Start and Stop never both hold.
+({bool start, bool stop, bool restartReset}) agentRuntimeControls({
+  required bool canControl,
+  required bool canStop,
+  required bool isOnline,
+  required bool computerOffline,
+  required bool stoppedByPerson,
+}) => (
+  start: canControl && !isOnline && !computerOffline,
+  stop:
+      canControl &&
+      canStop &&
+      (isOnline || (computerOffline && !stoppedByPerson)),
+  restartReset: restartResetOffered(canControl, computerOffline),
+);
+
+/// Web `restartResetOffered`: Restart / Reset alone depends only on runtime
+/// control and the Computer, not on the agent's state.
+bool restartResetOffered(bool canControl, bool computerOffline) =>
+    canControl && !computerOffline;
+
+/// Web `isMachineOffline`: the agent's Computer is known and offline. Unknown
+/// (not loaded, a guest) is not offline.
+bool isAgentComputerOffline(Map agent, List<Map>? machines) {
+  final id = agent['machineId'];
+  if (id is! String || id.isEmpty || machines == null) return false;
+  return machines.where((m) => m['id'] == id).firstOrNull?['status'] ==
+      'offline';
+}
+
 /// Web `canStopThisTurn` (AgentDetailPanel.tsx): not a bounded projection; a
 /// Computer agent, or a hosted external one that is `active`; its creator or
 /// anyone with `controlAgentRuntime`; and of a personal assistant only its
@@ -95,12 +160,17 @@ class AgentProfileAccess {
     required this.canControlRuntime,
     required this.sourceServerLabel,
     this.canStopHostedTurn = false,
+    this.canStopAgent = false,
   });
 
   final bool boundedPublic;
   final bool canManage;
   final bool canViewPrivate;
   final bool canControlRuntime;
+
+  /// Web `canStopAgent`: Stop Agent, which needs `stopAgents` (or the creator)
+  /// on top of runtime control.
+  final bool canStopAgent;
 
   /// Web `canStopThisTurn`: the one command "Stop current turn" (a Computer
   /// agent, or a hosted external agent whose runtime is active), for a viewer
@@ -116,17 +186,25 @@ AgentProfileAccess agentProfileAccess({
   required bool editAgents,
   required bool controlAgentRuntime,
   required bool external,
+  bool stopAgents = false,
 }) {
   final bounded = isBoundedPublicAgent(agent, currentServerId);
   final canManage =
       !bounded && canViewAgentPrivateSurfaces(agent, currentUserId, editAgents);
   final canViewPrivate =
       !bounded && canViewAgentPrivateSurfaces(agent, currentUserId, canManage);
-  final canControl =
-      !bounded &&
-      !external &&
-      canViewAgentPrivateSurfaces(agent, currentUserId, controlAgentRuntime);
+  final permissions = agentRuntimePermissions(
+    agent: agent,
+    currentUserId: currentUserId,
+    controlAgentRuntime: controlAgentRuntime,
+    stopAgents: stopAgents,
+    resetAgentWorkspace: false,
+    external: external,
+    boundedPublic: bounded,
+  );
+  final canControl = permissions.canControlAgentRuntime;
   return AgentProfileAccess(
+    canStopAgent: permissions.canStopAgent,
     boundedPublic: bounded,
     canManage: canManage,
     canViewPrivate: canViewPrivate,

@@ -8,6 +8,7 @@ import 'hover_region.dart';
 import 'tap_slop.dart';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 
 import 'icons.dart';
@@ -37,8 +38,6 @@ import 'design_primitives.dart'
 import 'panel_layout.dart' show raftRecipeTheme, RaftCssText;
 import 'dialog_card.dart'
     show raftRecipeThemeOf, raftCssTextStyle, RaftTextSteps;
-
-import 'package:flutter/rendering.dart' show OverflowBoxFit;
 
 import 'text_scaling.dart' show RaftScaled;
 
@@ -81,6 +80,7 @@ class RaftField extends StatelessWidget {
     this.counter,
     this.reserveMessage = false,
     this.belowControl = const [],
+    this.belowDescription,
     this.legacy = RaftLegacyField.form,
     this.labelWeight,
     this.family,
@@ -116,6 +116,11 @@ class RaftField extends StatelessWidget {
   /// Nodes after the control, inside the field (status lines, inline retry actions).
   final List<Widget> belowControl;
 
+  /// Web `StableField` `belowDescription` (`pb-4 empty:hidden`): a notice after
+  /// the message row. A notice that renders nothing leaves no box and no gap
+  /// behind; shown, it keeps 16 below so the next field holds its distance.
+  final Widget? belowDescription;
+
   /// How the frozen looks paint this field and the knobs only they read (the Raft look draws the `field`
   /// recipe for every one of them).
   final RaftLegacyField legacy;
@@ -123,17 +128,35 @@ class RaftField extends StatelessWidget {
   final String? family;
   final bool helperHint, helperRecipe, surface;
 
+  Widget _withBelowDescription(Widget field, double gap) {
+    final below = belowDescription;
+    if (below == null) return field;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        field,
+        _RaftEmptyHidden(
+          key: const ValueKey('field-below-description'),
+          top: gap,
+          bottom: _tw * 4,
+          child: below,
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     if (t.recipeSet != RaftRecipeSet.raft) {
-      return switch (legacy) {
+      return _withBelowDescription(switch (legacy) {
         RaftLegacyField.form => buildFrozenForm(context),
         RaftLegacyField.product => buildFrozenProduct(context),
         RaftLegacyField.settings => buildFrozenSettings(context),
         RaftLegacyField.stable => buildFrozenStable(context),
         RaftLegacyField.auth => buildFrozenAuth(context),
-      };
+      }, t.size('space.fieldGap', fallback: 0));
     }
     final rt = t.recipeTokens;
     final states = t.recipeStates(
@@ -283,9 +306,98 @@ class RaftField extends StatelessWidget {
           Semantics(liveRegion: error != null, child: messageRow),
       ],
     );
-    return labelAction == null
-        ? column
-        : FocusTraversalGroup(policy: OrderedTraversalPolicy(), child: column);
+    return _withBelowDescription(
+      labelAction == null
+          ? column
+          : FocusTraversalGroup(
+              policy: OrderedTraversalPolicy(),
+              child: column,
+            ),
+      f.root.rowGap ?? 0,
+    );
+  }
+}
+
+/// `empty:hidden` with padding: [top] above and [bottom] below the child, both
+/// gone when the child lays out to no height.
+class _RaftEmptyHidden extends SingleChildRenderObjectWidget {
+  const _RaftEmptyHidden({
+    super.key,
+    required this.top,
+    required this.bottom,
+    required super.child,
+  });
+  final double top, bottom;
+
+  @override
+  RenderObject createRenderObject(BuildContext context) =>
+      _RenderEmptyHidden(top, bottom);
+
+  @override
+  void updateRenderObject(BuildContext context, _RenderEmptyHidden r) {
+    r
+      ..top = top
+      ..bottom = bottom;
+  }
+}
+
+class _RenderEmptyHidden extends RenderShiftedBox {
+  _RenderEmptyHidden(this._top, this._bottom) : super(null);
+  double _top, _bottom;
+  set top(double v) {
+    if (v == _top) return;
+    _top = v;
+    markNeedsLayout();
+  }
+
+  set bottom(double v) {
+    if (v == _bottom) return;
+    _bottom = v;
+    markNeedsLayout();
+  }
+
+  @override
+  void performLayout() {
+    final c = child;
+    if (c == null) {
+      size = constraints.constrain(Size.zero);
+      return;
+    }
+    c.layout(constraints.loosen(), parentUsesSize: true);
+    final empty = c.size.height == 0;
+    final pad = empty ? 0.0 : _top + _bottom;
+    size = constraints.constrain(
+      Size(
+        constraints.hasBoundedWidth ? constraints.maxWidth : c.size.width,
+        c.size.height + pad,
+      ),
+    );
+    (c.parentData! as BoxParentData).offset = Offset(0, empty ? 0 : _top);
+  }
+
+  @override
+  double computeMinIntrinsicHeight(double width) {
+    final h = child?.getMinIntrinsicHeight(width) ?? 0;
+    return h == 0 ? 0 : h + _top + _bottom;
+  }
+
+  @override
+  double computeMaxIntrinsicHeight(double width) {
+    final h = child?.getMaxIntrinsicHeight(width) ?? 0;
+    return h == 0 ? 0 : h + _top + _bottom;
+  }
+
+  @override
+  Size computeDryLayout(BoxConstraints constraints) {
+    final c = child;
+    if (c == null) return constraints.constrain(Size.zero);
+    final s = c.getDryLayout(constraints.loosen());
+    return constraints.constrain(
+      Size(
+        constraints.hasBoundedWidth ? constraints.maxWidth : s.width,
+        s.height == 0 ? 0 : s.height + _top + _bottom,
+      ),
+    );
   }
 }
 

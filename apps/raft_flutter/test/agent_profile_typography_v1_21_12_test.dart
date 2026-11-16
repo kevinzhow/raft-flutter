@@ -15,6 +15,7 @@ void main() {
     WidgetTester tester,
     Widget child, {
     bool dark = false,
+    bool elegant = false,
   }) async {
     // A normal phone viewport; 600px-tall windows use the compact header.
     tester.view.devicePixelRatio = 1;
@@ -24,7 +25,10 @@ void main() {
     addTearDown(() => tester.pumpWidget(const SizedBox()));
     await tester.pumpWidget(
       MaterialApp(
-        theme: raftTheme(dark: dark),
+        theme: raftTheme(
+          dark: dark,
+          pack: elegant ? packForThemeId(elegantThemePackId) : null,
+        ),
         home: Scaffold(
           body: Builder(
             builder: (context) {
@@ -48,30 +52,33 @@ void main() {
     return paragraph.text.style!;
   }
 
-  testWidgets('info row: 124px term in 13px hint ink, muted 14px value', (
-    tester,
-  ) async {
-    final t = await host(
-      tester,
-      const RaftInfoRow(label: 'Computer', child: Text('Mac')),
-    );
-    final label = styleOf(tester, 'Computer');
-    expect(label.fontSize, 13);
-    expect(label.color, t.colors['foreground-hint']);
-    // Term column 7.75rem + gap-x-4: the value starts at 124 + 16.
-    expect(tester.getTopLeft(find.text('Mac')).dx, 140);
-    final value = styleOf(tester, 'Mac');
-    expect(value.fontSize, 14);
-    expect(value.color, t.colors['foreground-muted']);
-  });
+  testWidgets(
+    'elegant info row: 124px term in 13px hint ink, muted 14px value',
+    (tester) async {
+      final t = await host(
+        tester,
+        const RaftInfoRow(label: 'Computer', child: Text('Mac')),
+        elegant: true,
+      );
+      final label = styleOf(tester, 'Computer');
+      expect(label.fontSize, 13);
+      expect(label.color, t.colors['foreground-hint']);
+      // Term column 7.75rem + gap-x-4: the value starts at 124 + 16.
+      expect(tester.getTopLeft(find.text('Mac')).dx, 140);
+      final value = styleOf(tester, 'Mac');
+      expect(value.fontSize, 14);
+      expect(value.color, t.colors['foreground-muted']);
+    },
+  );
 
-  testWidgets('dark info row keeps its 13px term and muted value', (
+  testWidgets('dark elegant info row keeps its 13px term and muted value', (
     tester,
   ) async {
     final t = await host(
       tester,
       const RaftInfoRow(label: 'Computer', child: Text('Mac')),
       dark: true,
+      elegant: true,
     );
     expect(styleOf(tester, 'Computer').fontSize, 13);
     expect(styleOf(tester, 'Mac').color, t.colors['foreground-muted']);

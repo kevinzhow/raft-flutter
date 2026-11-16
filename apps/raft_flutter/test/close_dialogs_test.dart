@@ -686,7 +686,15 @@ void registerCloseDialogTests(TestPart part) {
       await frames(t, 30);
       await t.tap(find.byKey(const ValueKey('agent-profile-avatar-trigger')));
       await frames(t, 25);
-      await t.tap(find.byKey(const ValueKey('avatar-choice-heart')));
+      // The picker is grouped by series (Web v1.24): on a phone the choice
+      // sits below the fold of the sheet. Scroll only then: a scroll of the
+      // page under the desktop popover would close it.
+      final heart = find.byKey(const ValueKey('avatar-choice-heart'));
+      if (heart.hitTestable().evaluate().isEmpty) {
+        await t.ensureVisible(heart);
+        await frames(t, 5);
+      }
+      await t.tap(heart);
       await frames(t, 5);
       await t.tap(
         find

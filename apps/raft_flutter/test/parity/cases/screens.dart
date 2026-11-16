@@ -211,7 +211,9 @@ ParityCase agentDetailParityCase(
         'FleetDetail renders AgentDetailPanel (agent_detail_view.dart), '
         'opened on the ${tab.name} tab like Web ?agentTab=. Live activity is '
         'pushed as an agent:activity socket event, standing in for the React '
-        'host agent-store seed.$notes',
+        'host agent-store seed. Web v1.24 marks these cases capture.fullLength; '
+        'this harness captures the 390x844 viewport, so rows below the first '
+        'screen are not compared.$notes',
     settle: const Duration(milliseconds: 700),
     build: (ctx) => ScreenWorkspaceHost(
       create: () {
@@ -274,14 +276,18 @@ ParityCase agentDetailParityCase(
   );
 }
 
-ParityCase _agentProfile(String agentKey, {bool machinesLoading = false}) =>
-    agentDetailParityCase(
-      agentKey,
-      machinesLoading: machinesLoading,
-      notes: machinesLoading
-          ? ' GET /servers/visual-server/machines held in flight like React.'
-          : '',
-    );
+ParityCase _agentProfile(
+  String agentKey, {
+  bool machinesLoading = false,
+}) => agentDetailParityCase(
+  agentKey,
+  machinesLoading: machinesLoading,
+  notes: machinesLoading
+      ? ' GET /servers/visual-server/machines held in flight like React.'
+      : agentKey == 'daemonOnly'
+      ? ' Version segment reads "legacy vX" since Web #7823 (was "daemon vX").'
+      : '',
+);
 
 final ParityCase _humanProfile = ParityCase(
   widgets: const [
@@ -291,12 +297,15 @@ final ParityCase _humanProfile = ParityCase(
   notes:
       'MemberProfileView rebuilt from Web HumanDetailPanel.tsx, mounted as '
       'the mobile human route (onBack = PanelHeader mobile back). Loads the '
-      'same /servers/visual-server/members/visual-human-1/profile payload.',
+      'same /servers/visual-server/members/<owner id>/profile payload.',
   build: (ctx) => ScreenWorkspaceHost(
     create: () => _workspace(ctx),
     builder: (context, w) => MemberProfileView(
       controller: w,
-      userId: ctx.fixtureData['humans']['owner']['memberId'] as String,
+      userId:
+          (ctx.fixtureData['humans']['owner']['memberId'] ??
+                  ctx.fixtureData['humans']['owner']['id'])
+              as String,
       onClose: () {},
       onBack: () {},
       onMessage: () async {},

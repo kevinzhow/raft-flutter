@@ -219,6 +219,11 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
     },
   );
   final _offlineObservedAt = <String, int>{};
+
+  /// Computers held offline only because the server refused a Start with
+  /// `machine_offline` (Web `computerOfflineFromRefusal`): no "offline since"
+  /// is known for them. Cleared by the next status event or computer list.
+  final _offlineFromRefusal = <String>{};
   final _upgradeDeadlines = <String, int>{};
   Timer? _upgradeTimer;
   final _dirty = <WorkspaceEntityKind>{}, _queued = <WorkspaceEntityKind>{};
@@ -257,6 +262,7 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
     _upgradeSubmitting.clear();
     computerRestartProgress.clearAll();
     _offlineObservedAt.clear();
+    _offlineFromRefusal.clear();
     _upgradeDeadlines.clear();
     _upgradeTimer?.cancel();
     _upgradeTimer = null;
@@ -278,6 +284,28 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
     _queued.clear();
     _restoring = next == null ? Future.value() : _restore(next, _epoch);
     return true;
+  }
+
+  /// When this client saw the live online to offline change of Computer [id]
+  /// (Web `computerOfflineObservedAt`); null when it did not see one.
+  int? computerOfflineObservedAtMs(String id) => _offlineObservedAt[id];
+
+  /// Whether Computer [id] is offline only on a refused Start's word.
+  bool computerOfflineFromRefusal(String id) =>
+      _offlineFromRefusal.contains(id);
+
+  /// A Start the server refused with `machine_offline` (Web
+  /// `markMachineOfflineFromRefusal`): the Computer reads offline until its next
+  /// status event or list, so the status chip, the card and Start agree even
+  /// when this client missed the offline push. No "offline since" is recorded.
+  void markComputerOfflineFromRefusal(String id) {
+    final row = _rows[WorkspaceEntityKind.computers]?[id];
+    if (_disposed || row == null || row['status'] != 'online') return;
+    row['status'] = 'offline';
+    _offlineFromRefusal.add(id);
+    _computerRevision++;
+    notifyListeners();
+    _scheduleReload(const {WorkspaceEntityKind.computers});
   }
 
   /// Whether [machine] is restarting for an upgrade (see
@@ -828,6 +856,7 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
           final latest = value is Map ? value['latestComputerVersion'] : null;
           _latestComputerVersion = latest is String ? latest : null;
           _latestComputerReleaseNotes = computerReleaseNotesOf(value);
+          _offlineFromRefusal.clear();
         }
         if (kind == WorkspaceEntityKind.agents) {
           _tombstones
@@ -1085,6 +1114,7 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
           return;
         }
         final wasOnline = row['status'] == 'online';
+        _offlineFromRefusal.remove(id);
         row['status'] = status;
         if (version is int) row['statusVersion'] = version;
         if (status == 'offline' && wasOnline) {

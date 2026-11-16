@@ -7,6 +7,9 @@ import 'package:flutter/widgets.dart';
 import 'package:raft_ui/activity_scope_previews.dart';
 import 'package:raft_ui/activity_selected_previews.dart';
 import 'package:raft_ui/agent_avatar_picker_previews.dart';
+import 'package:raft_ui/agent_computer_offline_previews.dart';
+import 'package:raft_ui/agent_info_list_previews.dart';
+import 'package:raft_ui/agent_lounge_previews.dart';
 import 'package:raft_ui/agent_menu_previews.dart';
 import 'package:raft_ui/agent_now_previews.dart';
 import 'package:raft_ui/agent_status_previews.dart';
@@ -418,6 +421,24 @@ final auditSurfaces = <AuditSurface>[
     representative: true,
   ),
   AuditSurface('dmHeaderPreview', 'DM header', dmHeaderPreview, Size(960, 160)),
+  AuditSurface(
+    'agentComputerOfflinePreview',
+    'Agent Computer offline card',
+    agentComputerOfflinePreview,
+    Size(390, 340),
+  ),
+  AuditSurface(
+    'agentInfoListPreview',
+    'Agent profile Info list',
+    agentInfoListPreview,
+    Size(390, 260),
+  ),
+  AuditSurface(
+    'agentLoungePreview',
+    'Agent Lounge',
+    agentLoungePreview,
+    Size(390, 300),
+  ),
   AuditSurface(
     'workingAgentsPhoneHomePreview',
     'Working agents · phone Home',

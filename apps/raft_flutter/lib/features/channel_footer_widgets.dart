@@ -5,7 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import '../data/workspace_controller.dart';
+import 'agent_lounge.dart' show isLoungeChannel;
 import 'channel_footer_states.dart';
+import 'lounge_channel_presentation.dart' show unarchiveLounge;
 import 'raftbench_service_notice.dart';
 
 /// Null shows the composer. The RaftBench service agent's DM comes first: it
@@ -24,12 +26,18 @@ Widget? channelFooterReplacement(
   final guest = w.server?.string('role') == 'guest';
   return switch (channelFooterKind(w, now)) {
     null || ChannelFooterKind.composer => null,
+    ChannelFooterKind.loungeReadOnly => const RaftChannelReadOnlyComposer(),
     ChannelFooterKind.archived => RaftChannelArchivedFooter(
       message: 'This channel is archived.',
-      linkLabel: w.can('archiveChannels') && onOpenChannelSettings != null
+      // A Lounge has no settings page: its banner unarchives in place.
+      linkLabel:
+          w.can('archiveChannels') &&
+              (isLoungeChannel(channel) || onOpenChannelSettings != null)
           ? 'Unarchive'
           : null,
-      onLink: onOpenChannelSettings,
+      onLink: isLoungeChannel(channel)
+          ? () => unarchiveLounge(context, w)
+          : onOpenChannelSettings,
     ),
     ChannelFooterKind.jointLocked => RaftChannelBannerFooter(
       message: "This Joint Channel is read-only because it has more than 2 free servers. It becomes writable again when one server's admin upgrades or a free server leaves.",

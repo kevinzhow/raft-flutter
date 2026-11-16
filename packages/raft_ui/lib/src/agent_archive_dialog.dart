@@ -80,7 +80,7 @@ class _RaftAgentArchiveDialogState extends State<RaftAgentArchiveDialog> {
       surfaceKey: const ValueKey('agent-dialog'),
       title: raftFormat(context, 'Archive {name}?', {'name': widget.agentName}),
       maxWidth: 448,
-      confirmLabel: raftText(context, 'Archive agent'),
+      confirmLabel: raftText(context, 'Archive'),
       loadingLabel: raftText(context, 'Archiving…'),
       confirmGlyph: RaftGlyph.archive,
       confirmKey: const ValueKey('agent-archive-confirm'),

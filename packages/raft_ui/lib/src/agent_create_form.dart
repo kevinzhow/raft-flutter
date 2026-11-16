@@ -386,6 +386,7 @@ class RaftStableField extends StatelessWidget {
     this.counter,
     this.labelAccessory,
     this.belowControl = const [],
+    this.belowDescription,
     this.hintBuilder,
   });
   final String label;
@@ -394,6 +395,9 @@ class RaftStableField extends StatelessWidget {
   final String? hint, error, counter;
   final Widget? labelAccessory;
   final List<Widget> belowControl;
+
+  /// See [RaftField.belowDescription].
+  final Widget? belowDescription;
 
   /// A hint with inline links: see [RaftField.hintBuilder].
   final Widget Function(BuildContext context, TextStyle style)? hintBuilder;
@@ -407,6 +411,7 @@ class RaftStableField extends StatelessWidget {
     counter: counter,
     labelAccessory: labelAccessory,
     belowControl: belowControl,
+    belowDescription: belowDescription,
     hintBuilder: hintBuilder,
     reserveMessage: true,
     legacy: RaftLegacyField.stable,

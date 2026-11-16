@@ -132,6 +132,9 @@ List<String> _externalLines({
       'pushLastDeliveryAtUtc: ${_isoString(push['lastDeliveryAt'])}',
       'pushLastAttemptAtUtc: ${_isoString(push['lastAttemptAt'])}',
       'pushLastError: ${push['lastError'] ?? 'none'}',
+      // Web v1.24: the recovery state is added only when the server sent one.
+      if (push['recovery'] case final String recovery when recovery.isNotEmpty)
+        'pushRecovery: $recovery',
     ]);
   }
   lines.addAll([

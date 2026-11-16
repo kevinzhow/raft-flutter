@@ -2,6 +2,7 @@
 // (DialogCard, capacity Banner, COMPUTER / NAME / DESCRIPTION StableFields,
 // RuntimeConfigFields: the grouped RUNTIME select + the runtime's protocol-v2
 // fields, Cancel / Create footer) and its zero-computer branch.
+
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -22,6 +23,8 @@ import 'delete_server_confirm.dart';
 import 'private_route_guard.dart';
 import 'runtime_options_request.dart';
 import 'runtime_form_dialog.dart';
+import 'computer_runtime_sign_in_notice.dart';
+import 'runtime_usage_chip.dart' show canViewRuntimeUsage;
 import 'runtime_picker_rows.dart';
 
 /// shared MAX_AGENT_DESCRIPTION_LENGTH.
@@ -892,6 +895,16 @@ class _CreateAgentDialogState extends State<CreateAgentDialog> {
       RaftStableField(
         label: 'Runtime',
         required: true,
+        // Web `runtimeBelowDescription`: signed out is said, never enforced.
+        belowDescription: RuntimeSignInNotice(
+          controller: w,
+          serverId: w.server?.id,
+          machineId: machineId,
+          machineName:
+              machine?['name'] as String? ?? raftText(context, 'this Computer'),
+          runtimeId: runtime ?? '',
+          enabled: canViewRuntimeUsage(w, machine),
+        ),
         labelAccessory: widget.onboarding
             ? RaftRecipeButton(
                 key: const Key('cindy-rescan-runtimes'),

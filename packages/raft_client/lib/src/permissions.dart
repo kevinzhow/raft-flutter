@@ -27,6 +27,7 @@ const raftServerCapabilities = <String>{
   'createAgents',
   'editAgents',
   'controlAgentRuntime',
+  'stopAgents',
   'resetAgentWorkspace',
   'deleteAgents',
   'migrateAgents',

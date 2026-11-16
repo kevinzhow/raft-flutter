@@ -50,6 +50,7 @@ class HostedCindyFailedBanner extends StatefulWidget {
 class _HostedCindyFailedBannerState extends State<HostedCindyFailedBanner> {
   WorkspaceController get w => widget.controller;
   RaftForegroundPeriodic? _poll;
+  AppLifecycleListener? _shown;
   bool _failed = false, _dialogOpen = false, _disposed = false;
   int _request = 0;
 
@@ -62,6 +63,8 @@ class _HostedCindyFailedBannerState extends State<HostedCindyFailedBanner> {
       hostedCindyRecheck,
       () => unawaited(_recheck()),
     );
+    // Web startVisiblePoll: one recheck when the page shows again.
+    _shown = AppLifecycleListener(onResume: () => unawaited(_recheck()));
     unawaited(_recheck());
   }
 
@@ -78,6 +81,7 @@ class _HostedCindyFailedBannerState extends State<HostedCindyFailedBanner> {
   void dispose() {
     _disposed = true;
     _poll?.dispose();
+    _shown?.dispose();
     super.dispose();
   }
 
@@ -139,7 +143,7 @@ class _HostedCindyFailedBannerState extends State<HostedCindyFailedBanner> {
       action: RaftRecipeButton(
         key: const ValueKey('hosted-cindy-connect-computer'),
         label: raftText(context, 'Connect a computer'),
-        size: RaftButtonRecipeSize.sm,
+        size: RaftButtonRecipeSize.md,
         onPressed: _dialogOpen ? null : () => unawaited(_connectComputer()),
       ),
     );
