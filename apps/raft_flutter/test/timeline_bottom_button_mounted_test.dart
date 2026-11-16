@@ -51,7 +51,7 @@ void main() {
         final control = tester.getRect(
           find.ancestor(
             of: find.text('Back to Bottom'),
-            matching: find.byType(RaftRecipeButton),
+            matching: find.byType(RaftTimelineBottomButtonBody),
           ),
         );
         // Centered on the timeline, floating 12px above the composer edge.
@@ -139,7 +139,7 @@ void main() {
         final control = tester.getRect(
           find.ancestor(
             of: find.text('Back to Bottom'),
-            matching: find.byType(RaftRecipeButton),
+            matching: find.byType(RaftTimelineBottomButtonBody),
           ),
         );
         expect(control.center.dx, closeTo(timeline.center.dx, .5));

@@ -204,10 +204,17 @@ class RaftLoadError extends StatelessWidget {
     );
     return expand
         ? Center(child: body)
-        : Padding(
-            // `px-5 py-4` block: the height hugs the message and button.
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-            child: Center(heightFactor: 1, child: body),
+        // In a box shorter than the block (an image tile) the Web host is
+        // `overflow-hidden`: the block is clipped, it never overflows.
+        : ConstraintsTransformBox(
+            constraintsTransform: (c) =>
+                c.copyWith(minHeight: 0, maxHeight: double.infinity),
+            clipBehavior: Clip.hardEdge,
+            child: Padding(
+              // `px-5 py-4` block: the height hugs the message and button.
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              child: Center(heightFactor: 1, child: body),
+            ),
           );
   }
 }

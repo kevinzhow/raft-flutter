@@ -89,9 +89,7 @@ void main() {
           filename: 'x',
           mimeType: mime,
           metaLabel: 'meta',
-          // 12px mono meta: a short size keeps the row inside 176px under
-          // the 1em-wide test font.
-          sizeBytes: 20,
+          sizeBytes: 2048,
           commentCount: count,
           onOpen: () {},
         ),
@@ -103,7 +101,7 @@ void main() {
     ) async {
       await card(tester, 'text/csv', 3);
       expect(find.text('3'), findsOneWidget);
-      expect(find.text('20 B'), findsOneWidget);
+      expect(find.text('2.0 KB'), findsOneWidget);
     });
 
     testWidgets('no count for none, images or PDFs', (tester) async {

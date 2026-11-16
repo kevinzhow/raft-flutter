@@ -435,22 +435,27 @@ class _AttachmentSurfaceState extends State<_AttachmentSurface> {
         side: widget.component.cardBorder(hovered: hovered, focused: focused),
         borderRadius: radius,
       ),
-      child: overlay == null
+      // One tree in every state: hover and press repaint the overlay, they
+      // never remount the card content (its focus and gestures stay).
+      child: !raft
           ? widget.child
           : Stack(
+              fit: StackFit.passthrough,
               children: [
                 widget.child,
                 Positioned.fill(
-                  child: IgnorePointer(child: ColoredBox(color: overlay)),
+                  child: IgnorePointer(
+                    child: overlay == null ? null : ColoredBox(color: overlay),
+                  ),
                 ),
               ],
             ),
     );
-    if (ring) {
+    if (raft) {
       surface = DecoratedBox(
         decoration: BoxDecoration(
           borderRadius: radius,
-          boxShadow: t.focusShadows,
+          boxShadow: ring ? t.focusShadows : null,
         ),
         child: surface,
       );
@@ -497,38 +502,67 @@ class _WebMeta extends StatelessWidget {
   final TextStyle style;
   final Color separator, glyphColor;
   final RaftGlyph glyph;
+
   @override
-  Widget build(BuildContext context) => Row(
-    children: [
-      // The label is `flex-1 truncate`: it takes the free width, so the
-      // separator and size sit just before the affordance.
-      Expanded(
-        child: Text(
-          label,
-          maxLines: wrap ? null : 1,
-          overflow: wrap ? TextOverflow.clip : TextOverflow.ellipsis,
-          style: style,
+  Widget build(BuildContext context) {
+    final text = Text(
+      label,
+      maxLines: wrap ? null : 1,
+      overflow: wrap ? TextOverflow.clip : TextOverflow.ellipsis,
+      style: style,
+    );
+    return Row(
+      children: [
+        // `AttachmentMetaText` is `metaStart` (`min-w-0 flex-1 truncate`): the
+        // label is `flex-1 truncate` and the separator and size sit just after
+        // it; when even they do not fit, the block clips them (never the
+        // comment count or the affordance).
+        Expanded(
+          child: size == null
+              ? text
+              : LayoutBuilder(
+                  builder: (context, box) => Row(
+                    children: [
+                      Expanded(child: text),
+                      ConstrainedBox(
+                        constraints: BoxConstraints(maxWidth: box.maxWidth),
+                        child: ConstraintsTransformBox(
+                          constraintsTransform:
+                              ConstraintsTransformBox.widthUnconstrained,
+                          alignment: AlignmentDirectional.centerStart,
+                          clipBehavior: Clip.hardEdge,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const SizedBox(width: 6),
+                              Text(
+                                '·',
+                                style: style.copyWith(color: separator),
+                              ),
+                              const SizedBox(width: 6),
+                              Text(size!, maxLines: 1, style: style),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
         ),
-      ),
-      if (size != null) ...[
+        if (commentCount > 0) ...[
+          const SizedBox(width: 4),
+          Text('·', style: style.copyWith(color: separator)),
+          const SizedBox(width: 4),
+          RaftIcon(RaftGlyph.messageSquare, size: 12, color: style.color),
+          const SizedBox(width: 4),
+          Text('$commentCount', maxLines: 1, style: style),
+        ],
         const SizedBox(width: 6),
-        Text('·', style: style.copyWith(color: separator)),
-        const SizedBox(width: 6),
-        Text(size!, maxLines: 1, style: style),
+        SizedBox.square(
+          dimension: 12,
+          child: Center(child: RaftIcon(glyph, size: 10, color: glyphColor)),
+        ),
       ],
-      if (commentCount > 0) ...[
-        const SizedBox(width: 4),
-        Text('·', style: style.copyWith(color: separator)),
-        const SizedBox(width: 4),
-        RaftIcon(RaftGlyph.messageSquare, size: 12, color: style.color),
-        const SizedBox(width: 4),
-        Text('$commentCount', maxLines: 1, style: style),
-      ],
-      const SizedBox(width: 6),
-      SizedBox.square(
-        dimension: 12,
-        child: Center(child: RaftIcon(glyph, size: 10, color: glyphColor)),
-      ),
-    ],
-  );
+    );
+  }
 }

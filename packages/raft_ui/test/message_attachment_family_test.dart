@@ -343,4 +343,61 @@ void main() {
     );
     expect(tester.getSize(find.byType(RaftFileTypeBadge)).height, 0);
   });
+
+  testWidgets('hover and press repaint the overlay without remounting the '
+      'card content', (tester) async {
+    await _pump(tester, _card(), size: const Size(1440, 900), touch: false);
+    final before = tester.element(find.text('report.pdf'));
+    await _hover(tester, find.byType(RaftAttachmentCard));
+    expect(identical(tester.element(find.text('report.pdf')), before), isTrue);
+    final press = await tester.startGesture(
+      tester.getCenter(find.byType(RaftAttachmentCard)),
+      kind: PointerDeviceKind.mouse,
+    );
+    await tester.pump();
+    expect(identical(tester.element(find.text('report.pdf')), before), isTrue);
+    await press.up();
+    await tester.pump();
+    expect(identical(tester.element(find.text('report.pdf')), before), isTrue);
+  });
+
+  testWidgets('meta: label and size truncate as one metaStart block, the '
+      'comment count and affordance keep their width', (tester) async {
+    await _pump(
+      tester,
+      RaftAttachmentCard(
+        filename: 'notes.txt',
+        mimeType: 'text/plain',
+        sizeBytes: 4096,
+        metaLabel: 'Text',
+        commentCount: 2,
+        onOpen: () {},
+      ),
+      size: const Size(1280, 800),
+      touch: false,
+    );
+    // The test font is 12px a glyph: the Web `min-w-0 flex-1 truncate`
+    // start block gives way (clipped) before the line overflows.
+    expect(tester.takeException(), isNull);
+    expect(find.text('2'), findsOneWidget);
+  });
+
+  testWidgets('an image tile load error clips like the Web tile '
+      '(overflow-hidden) instead of overflowing', (tester) async {
+    await _pump(
+      tester,
+      const SizedBox(
+        height: 144,
+        child: RaftLoadError(
+          'Preview unavailable. Download the original file.',
+          expand: false,
+        ),
+      ),
+      size: const Size(1000, 900),
+      touch: false,
+      width: 178,
+    );
+    expect(tester.takeException(), isNull);
+    expect(tester.getSize(find.byType(RaftLoadError)), const Size(178, 144));
+  });
 }
