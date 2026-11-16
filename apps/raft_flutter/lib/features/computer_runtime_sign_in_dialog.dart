@@ -473,18 +473,22 @@ class _SignInState extends State<ComputerRuntimeSignInView> {
         ),
         key: const ValueKey('runtime-sign-in-hint'),
       ),
-      RaftButton(
-        key: const ValueKey('runtime-sign-in-open-page'),
-        label: raftText(context, 'Open sign-in page'),
-        // LeavingRaftMark: a link that leaves Raft says so after its label.
-        semanticLabel:
-            '${raftText(context, 'Open sign-in page')} ${raftText(context, '(opens in a new tab)')}',
-        trailingGlyph: RaftGlyph.arrowUpRight,
-        tone: codeEntered
-            ? RaftButtonRecipeVariant.default_
-            : RaftButtonRecipeVariant.accent,
-        size: RaftButtonRecipeSize.lg,
-        onPressed: () => unawaited(openSignInPage(authUrl!)),
+      // Typing the code hands the pink button to Submit: this rebuilds on it.
+      ListenableBuilder(
+        listenable: code,
+        builder: (context, _) => RaftButton(
+          key: const ValueKey('runtime-sign-in-open-page'),
+          label: raftText(context, 'Open sign-in page'),
+          // LeavingRaftMark: a link that leaves Raft says so after its label.
+          semanticLabel:
+              '${raftText(context, 'Open sign-in page')} ${raftText(context, '(opens in a new tab)')}',
+          trailingGlyph: RaftGlyph.arrowUpRight,
+          tone: codeEntered
+              ? RaftButtonRecipeVariant.default_
+              : RaftButtonRecipeVariant.accent,
+          size: RaftButtonRecipeSize.lg,
+          onPressed: () => unawaited(openSignInPage(authUrl!)),
+        ),
       ),
     ],
   );

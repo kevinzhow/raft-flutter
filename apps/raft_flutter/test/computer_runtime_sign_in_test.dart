@@ -320,6 +320,28 @@ void main() {
     await t.pump(const Duration(milliseconds: 1500));
   });
 
+  testWidgets('typing the code hands the primary button from Open sign-in '
+      'page to Submit', (t) async {
+    final fake = FakeAuth();
+    final h = await signIn(t, fake);
+    await h.push({'kind': 'auth_url', 'url': 'https://claude.ai/oauth'});
+    await h.push({'kind': 'code_prompt'});
+    RaftButtonRecipeVariant? tone(String key) =>
+        t.widget<RaftButton>(find.byKey(ValueKey(key))).tone;
+    expect(tone('runtime-sign-in-open-page'), RaftButtonRecipeVariant.accent);
+    expect(
+      tone('runtime-sign-in-submit-code'),
+      RaftButtonRecipeVariant.default_,
+    );
+    await t.enterText(find.byKey(const ValueKey('runtime-sign-in-code')), 'a');
+    await h.settle();
+    expect(tone('runtime-sign-in-open-page'), RaftButtonRecipeVariant.default_);
+    expect(tone('runtime-sign-in-submit-code'), RaftButtonRecipeVariant.accent);
+    await t.enterText(find.byKey(const ValueKey('runtime-sign-in-code')), '');
+    await h.settle();
+    expect(tone('runtime-sign-in-open-page'), RaftButtonRecipeVariant.accent);
+  });
+
   testWidgets('a pasted code is sent once and cleared; retry asks again', (
     t,
   ) async {
