@@ -40727,8 +40727,8 @@
         "sourceBindings": [
           {
             "file": "packages/raft_ui/lib/src/design_primitives.dart",
-            "bytes": 127072,
-            "sha256": "0fa08843a65d45d4244812ee18136e6498819d22531091bfca4dfa52dbf52d12"
+            "bytes": 127060,
+            "sha256": "5edfd90ab4d7b7427065b461bb3a85134d27e0eb74fd2571a217946991a2a658"
           }
         ],
         "reviewDecision": "Source reviewed at fixed Choice/P1 combination: this declaration is in an explicit frozen part/helper or a frozen Dialog class, selected only by the existing non-Raft/legacy recipe branch. The whole-file binding is refreshed after exact raw declaration-body comparison with ae852; surrounding current-look edits do not imply a change to this frozen body. Current final125 whole-file binding refreshed after raw declaration-body equality with ae852; surrounding Dropdown changes are not a whole-file or visual equality claim. WP-AGENT PR 2 refreshed the binding again after adding RaftTextLinkVariant, the muted/strong link label and the hover-only underline above RaftTextLink: the git diff of design_primitives.dart has no hunk inside this declaration, so its body is unchanged. WP-AGENT PR 3 refreshed it after adding the optional RaftTextLink scale (hunks at lines 2900-2998 only, none inside this declaration). WP-COMP2 refreshed the binding again after adding RaftTextLink.trailingGlyph and a Flexible label: the git diff of design_primitives.dart has no hunk inside this declaration, so its body is unchanged.",
@@ -51979,12 +51979,6 @@
         "owner": "WP-DS3 message family",
         "reason": "Source census candidate (WP-DS3, raft-ui 0.95.3 message family: message row, toolbar, delegated face, system message, inline replies, date divider, jump pills, end fade, code block, markdown, cards, attachments, composer values, inbox item); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
-      "packages/raft_ui/lib/src/quoted_message_card_raft.dart#local-function:CLASS:_Shell@7236/METHOD:build@7521/FUNCTION:frame@7621": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "WP-DS3 message family",
-        "reason": "Source census candidate (WP-DS3, raft-ui 0.95.3 message family: message row, toolbar, delegated face, system message, inline replies, date divider, jump pills, end fade, code block, markdown, cards, attachments, composer values, inbox item); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
-      },
       "packages/raft_ui/lib/src/quoted_message_card_raft.dart#method:RaftQuotedMessageCardRaft.build": {
         "role": "unresolved",
         "familyRefs": [],
@@ -52098,6 +52092,12 @@
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/quoted_message_card_raft.dart#local-function:CLASS:_Shell@7239/METHOD:build@7524/FUNCTION:frame@7624": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS3 message family",
+        "reason": "Source census candidate (WP-DS3, raft-ui 0.95.3 message family: message row, toolbar, delegated face, system message, inline replies, date divider, jump pills, end fade, code block, markdown, cards, attachments, composer values, inbox item); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       }
     },
     "entries": {
