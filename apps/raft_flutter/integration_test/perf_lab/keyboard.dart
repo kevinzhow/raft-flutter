@@ -64,9 +64,7 @@ Future<Future<void> Function()> mountKeyboardChat(
   api.routes['GET /channels/kb'] = (_) => channel.record.json;
   api.routes['GET /channels/inbox'] = (_) => {'items': <dynamic>[]};
   api.routes['GET /channels/public'] = (_) => <dynamic>[];
-  api.routes['GET /announcements/active'] = (_) => {
-    'announcements': <dynamic>[],
-  };
+  api.routes['GET /announcements/active'] = (_) => {'announcements': <dynamic>[]};
   api.routes['GET /servers/unread-summary'] = (_) => <dynamic>[];
   api.routes['GET /product-feedback/tickets'] = (_) => {
     'unread_total': 0,
@@ -75,12 +73,7 @@ Future<Future<void> Function()> mountKeyboardChat(
   api.routes['GET /tasks/server'] = (_) => {'tasks': <dynamic>[]};
   const tabs = MobileTabbarSettings(
     order: MobileTabs.configurable,
-    enabled: {
-      MobileTabs.home,
-      MobileTabs.tasks,
-      MobileTabs.activity,
-      MobileTabs.search,
-    },
+    enabled: {MobileTabs.home, MobileTabs.tasks, MobileTabs.activity, MobileTabs.search},
   );
   SharedPreferences.setMockInitialValues({
     'raft.origin': client.origin,
@@ -91,69 +84,43 @@ Future<Future<void> Function()> mountKeyboardChat(
   final content = LabNavigationContent();
   await NativeSystemFonts.instance.initialize();
   final rootApp = app.RaftApp(
-    key: const ValueKey('lab-keyboard'),
-    services: const AppServices.updatesDisabledForTestOrPreview(),
-    sessionStore: client.sessionStore,
-    createClient: (_, _, _) => client,
-    initialLocation: Uri(path: '/s/lab'),
-    nativeContent: content,
-    nativeSharing: NativeSharing(supported: false),
-    openWorkspaceCache: () async =>
-        LabNavigationCache(File('${dir.path}/workspace.sqlite')),
-  );
-  await t.pumpWidget(
-    useTestViewport
-        ? MediaQuery.fromView(view: t.view, child: rootApp)
-        : rootApp,
-  );
+      key: const ValueKey('lab-keyboard'),
+      services: const AppServices.updatesDisabledForTestOrPreview(),
+      sessionStore: client.sessionStore,
+      createClient: (_, _, _) => client,
+      initialLocation: Uri(path: '/s/lab'),
+      nativeContent: content,
+      nativeSharing: NativeSharing(supported: false),
+      openWorkspaceCache: () async => LabNavigationCache(File('${dir.path}/workspace.sqlite')),
+    );
+  await t.pumpWidget(useTestViewport
+      ? MediaQuery.fromView(view: t.view, child: rootApp) : rootApp);
   await idle(const Duration(seconds: 2));
   if (useTestViewport) {
-    await waitUntil(
-      () =>
-          find.text('lab-kb', findRichText: true).evaluate().isNotEmpty ||
-          find
-              .text('/lab', findRichText: true)
-              .hitTestable()
-              .evaluate()
-              .isNotEmpty,
-      limit: const Duration(seconds: 15),
-    );
+    await waitUntil(() => find.text('lab-kb', findRichText: true).evaluate().isNotEmpty ||
+        find.text('/lab', findRichText: true).hitTestable().evaluate().isNotEmpty,
+        limit: const Duration(seconds: 15));
     if (find.text('lab-kb', findRichText: true).evaluate().isEmpty &&
-        find
-            .text('/lab', findRichText: true)
-            .hitTestable()
-            .evaluate()
-            .isNotEmpty) {
+        find.text('/lab', findRichText: true).hitTestable().evaluate().isNotEmpty) {
       await t.tap(find.text('/lab', findRichText: true));
     }
   }
-  if (await waitUntil(
-        () => find.text('lab-kb', findRichText: true).evaluate().isNotEmpty,
-        limit: const Duration(seconds: 15),
-      ) <
-      0) {
+  if (await waitUntil(() => find.text('lab-kb', findRichText: true).evaluate().isNotEmpty,
+      limit: const Duration(seconds: 15)) < 0) {
     final root = t.element(find.byType(app.RaftApp));
     final actualView = View.of(root);
-    final text = find
-        .byType(RichText)
-        .evaluate()
-        .map((e) => (e.widget as RichText).text.toPlainText())
-        .take(30)
-        .join(' | ');
+    final text = find.byType(RichText).evaluate().map((e) => (e.widget as RichText).text.toPlainText()).take(30).join(' | ');
     final media = MediaQuery.sizeOf(t.element(find.byType(Scaffold).first));
-    throw StateError(
-      'keyboard channel not listed; appView=${actualView.physicalSize.width}x${actualView.physicalSize.height}; '
-      'testView=${t.view.physicalSize.width}x${t.view.physicalSize.height}; media=${media.width}x${media.height}; '
-      'text=$text; requests=${api.hits}; misses=${api.misses}',
-    );
+    throw StateError('keyboard channel not listed; appView=${actualView.physicalSize.width}x${actualView.physicalSize.height}; '
+        'testView=${t.view.physicalSize.width}x${t.view.physicalSize.height}; media=${media.width}x${media.height}; '
+        'text=$text; requests=${api.hits}; misses=${api.misses}');
   }
   await t.tap(find.text('lab-kb', findRichText: true));
   final opened = await waitUntil(
     () => find.byType(RaftComposer).evaluate().isNotEmpty,
     limit: const Duration(seconds: 15),
   );
-  if (opened < 0)
-    throw StateError('keyboard scene: lab-kb never showed its composer');
+  if (opened < 0) throw StateError('keyboard scene: lab-kb never showed its composer');
   await idle(const Duration(milliseconds: 600));
   return () async {
     await t.pumpWidget(const SizedBox());
@@ -171,10 +138,7 @@ Future<Future<void> Function()> mountKeyboardChat(
 /// animation windows. Each window carries the UI thread's on-CPU time.
 /// Profile switches record one timeline event per build, layout and paint
 /// so the summary can count them; they are restored before returning.
-Future<Map<String, Object?>> keyboardOpenClose(
-  WidgetTester t, {
-  bool profilePhases = true,
-}) async {
+Future<Map<String, Object?>> keyboardOpenClose(WidgetTester t, {bool profilePhases = true}) async {
   final builds = debugProfileBuildsEnabled;
   final layouts = debugProfileLayoutsEnabled;
   final paints = debugProfilePaintsEnabled;
@@ -196,8 +160,7 @@ Future<Map<String, Object?>> _keyboardOpenClose(WidgetTester t) async {
     of: find.descendant(of: chat, matching: find.byType(RaftComposer)),
     matching: find.byType(EditableText),
   );
-  if (field.evaluate().isEmpty)
-    throw StateError('keyboard scene: composer is not on screen');
+  if (field.evaluate().isEmpty) throw StateError('keyboard scene: composer is not on screen');
   await t.tap(field);
   await idle(const Duration(milliseconds: 300));
 
@@ -218,9 +181,8 @@ Future<Map<String, Object?>> _keyboardOpenClose(WidgetTester t) async {
   return {'keyboard': episodes, 'keyboardCycles': keyboardCycles};
 }
 
-List<double> _steps(double from, double to) => [
-  for (var i = 1; i <= 8; i++) from + (to - from) * i / 8,
-];
+List<double> _steps(double from, double to) =>
+    [for (var i = 1; i <= 8; i++) from + (to - from) * i / 8];
 
 Future<Map<String, Object?>> _slide(
   TestFlutterView view,

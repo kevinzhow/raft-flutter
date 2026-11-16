@@ -4746,11 +4746,11 @@
    "status": "covered",
    "webEntry": "Server switcher menu 'Invite human' (server-switcher-invite) and Sidebar entry",
    "gate": "inviteMembers",
-   "flutterEntry": "workspace_view.dart server menu action 'Invite human'",
+   "flutterEntry": "server_menu_model.dart server menu action 'Invite human'",
    "flutterRefs": [
     {
-     "file": "apps/raft_flutter/lib/features/workspace_view.dart",
-     "needle": "label: tr('Invite human')"
+     "file": "apps/raft_flutter/lib/features/server_menu_model.dart",
+     "needle": "raftText(context, 'Invite human')"
     }
    ],
    "justification": "",
@@ -4766,10 +4766,10 @@
    "status": "covered",
    "webEntry": "Server switcher > 'Switch or create server'",
    "gate": "",
-   "flutterEntry": "workspace_view.dart server menu action 'Switch or Create Server' -> global_server_selector.dart (+ Create workspace / Join workspace)",
+   "flutterEntry": "server_menu_model.dart server menu action 'Switch or Create Server' -> global_server_selector.dart (+ Create workspace / Join workspace)",
    "flutterRefs": [
     {
-     "file": "apps/raft_flutter/lib/features/workspace_view.dart",
+     "file": "apps/raft_flutter/lib/features/server_menu_model.dart",
      "needle": "Switch or create server"
     },
     {
@@ -4790,14 +4790,14 @@
    "status": "covered",
    "webEntry": "Server switcher menu rows (SortableServerRow): unread badge, muted tooltip",
    "gate": "",
-   "flutterEntry": "workspace_view.dart workspaceServerMenu RaftServerMenuRow(activityUnreadCount, pushMuted)",
+   "flutterEntry": "server_menu_model.dart serverMenuRows RaftServerMenuRow(activityUnreadCount, pushMuted)",
    "flutterRefs": [
     {
-     "file": "apps/raft_flutter/lib/features/workspace_view.dart",
+     "file": "apps/raft_flutter/lib/features/server_menu_model.dart",
      "needle": "pushMuted: serverUnread"
     },
     {
-     "file": "apps/raft_flutter/lib/features/workspace_view.dart",
+     "file": "apps/raft_flutter/lib/features/server_menu_model.dart",
      "needle": "activityUnreadCount: activityCountOf(server.id)"
     }
    ],
@@ -17157,12 +17157,12 @@
      "needle": "reorderMenuServers"
     },
     {
-     "file": "apps/raft_flutter/lib/features/workspace_view.dart",
-     "needle": "tr('Switch or create server')"
+     "file": "apps/raft_flutter/lib/features/server_menu_model.dart",
+     "needle": "raftText(context, 'Switch or create server')"
     },
     {
-     "file": "apps/raft_flutter/lib/features/workspace_view.dart",
-     "needle": "tr('Join community')"
+     "file": "apps/raft_flutter/lib/features/server_menu_model.dart",
+     "needle": "raftText(context, 'Join community')"
     }
    ],
    "justification": "",

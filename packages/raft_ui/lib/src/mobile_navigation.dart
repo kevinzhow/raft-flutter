@@ -32,7 +32,7 @@ import 'recipes/recipe_runtime.dart' show RaftRecipeStates, RaftSlotStyle;
 import 'raft/status.dart' show RaftStatus, RaftStatusSize, RaftStatusVariant;
 
 import 'raft/blink_snap.dart';
-import 'raft/css_box.dart' show raftControlBorderPx;
+import 'raft/css_box.dart' show RaftCssBox, raftControlBorderPx;
 import 'raft/ui_tokens.dart' show RaftTokensUi;
 import 'panel_layout.dart' show RaftCssText, RaftCssFocusOutline;
 
@@ -679,24 +679,22 @@ class _SelectorPainter extends CustomPainter {
       old.recipe.tokens != recipe.tokens;
 }
 
-/// The tab's attention pixel (Web v1.24 `ActivityTabUnreadDot`): a 10px square
-/// with the 2px radius and ink edge every status pixel has.
+/// The tab's attention pixel (Web v1.24 `ActivityTabUnreadDot`): a 10px status
+/// pixel (the `lg` status size's radius and edge, the ink border) in the accent.
 class _AttentionDot extends StatelessWidget {
   const _AttentionDot(this.tokens, {super.key, this.label});
   final RaftTokens tokens;
   final String? label;
   @override
   Widget build(BuildContext context) {
-    final dot = DecoratedBox(
-      decoration: BoxDecoration(
-        color: tokens.ui[RaftStatusVariant.accent.token],
-        borderRadius: BorderRadius.circular(2),
-        border: Border.all(
-          color: tokens.ui.stickerInk,
-          width: raftControlBorderPx(context, 1.5),
-        ),
-      ),
-      child: const SizedBox.square(dimension: 10),
+    const size = RaftStatusSize.lg;
+    final dot = RaftCssBox(
+      radius: size.radius,
+      fill: tokens.ui[RaftStatusVariant.accent.token],
+      borderWidth: raftControlBorderPx(context, size.border),
+      borderColor: tokens.ui.stickerInk,
+      width: 10,
+      height: 10,
     );
     return label == null
         ? ExcludeSemantics(child: dot)

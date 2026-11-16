@@ -4,6 +4,7 @@ import 'package:raft_flutter/features/mobile_resource_direct.dart';
 import 'package:raft_flutter/features/resource_view.dart';
 
 import 'app_global_server_selector_test.dart' show RootFixture;
+import 'support/server_tab.dart';
 
 Future<void> settle(WidgetTester t) async {
   for (var i = 0; i < 8; i++) {

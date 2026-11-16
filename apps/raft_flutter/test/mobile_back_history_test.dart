@@ -106,20 +106,19 @@ void main() {
         expect(w.navigation.entries, hasLength(1));
         expect(w.navigation.index, 0);
 
-        // Search is a tab root (Web v1.24): Back there is handed to the
-        // system like at every other root; nothing moves, no loop.
-        expect(await t.binding.handlePopRoute(), isFalse);
+        expect(await t.binding.handlePopRoute(), isTrue);
         await f.flush(t);
         await finishBackTransition(t);
-        expect(w.location.route, RaftRoute.search);
-        expect(w.navigation.index, root + 1);
+        expect(exits, isEmpty);
+        expect(w.location.toString(), '/s/alpha');
+        expect(find.byKey(const Key('workspace-mobile-home')), findsOneWidget);
         expect(
           find.byKey(const Key('workspace-mobile-navigation')),
           findsOneWidget,
         );
-        // The forward branch is still Search → channel, untouched.
-        expect(w.navigation.entries[root + 1].route, RaftRoute.search);
-        expect(w.navigation.entries[root + 2].route, RaftRoute.channel);
+        expect(find.byType(RaftChannelHeader), findsNothing);
+        expect(w.navigation.entries, hasLength(1));
+        expect(w.navigation.index, 0);
         await f.close(t);
       },
     );
@@ -211,18 +210,18 @@ void main() {
         expect(t.widget<TextField>(field).controller!.text, 'needle');
         expect(find.byType(RaftSearchResultSurface), findsWidgets);
 
-        expect(await t.binding.handlePopRoute(), isTrue);
+        // Search is a tab root (Web v1.24): Back there is handed to the
+        // system like at every other root; nothing moves, no loop.
+        expect(await t.binding.handlePopRoute(), isFalse);
         await f.flush(t);
         await finishBackTransition(t);
-        expect(exits, isEmpty);
-        expect(w.location.toString(), '/s/alpha');
-        expect(w.navigation.index, root);
-        expect(find.byKey(const Key('workspace-mobile-home')), findsOneWidget);
+        expect(w.location.route, RaftRoute.search);
+        expect(w.navigation.index, root + 1);
         expect(
           find.byKey(const Key('workspace-mobile-navigation')),
           findsOneWidget,
         );
-        // No loop: the forward branch is still Search → channel, untouched.
+        // The forward branch is still Search → channel, untouched.
         expect(w.navigation.entries[root + 1].route, RaftRoute.search);
         expect(w.navigation.entries[root + 2].route, RaftRoute.channel);
         await f.close(t);

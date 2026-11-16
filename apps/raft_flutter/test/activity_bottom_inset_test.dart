@@ -93,7 +93,15 @@ void main() {
           final list = _list('all');
           expect(list, findsOneWidget);
           final viewport = t.getRect(list);
-          expect(viewport.bottom, closeTo(size.height, .01));
+          // A phone tab root (v1.24) has the bar; a docked bar ends the list.
+          final bar = find.byKey(const Key('workspace-mobile-navigation'));
+          expect(
+            viewport.bottom,
+            anyOf([
+              closeTo(size.height, .01),
+              if (bar.evaluate().isNotEmpty) closeTo(t.getRect(bar).top, .01),
+            ]),
+          );
           expect(viewport.left, greaterThanOrEqualTo(left));
 
           // Hold the appended page so the actual footer remains available to
@@ -108,9 +116,16 @@ void main() {
           final footer = find.widgetWithText(RaftButton, 'Load more');
           expect(footer, findsOneWidget);
           final button = t.getRect(footer);
+          // Activity is a phone tab root (v1.24): the final control clears the
+          // bottom bar, which itself clears the system bar once.
           expect(
             button.bottom,
-            closeTo(viewport.bottom - bottom, .01),
+            closeTo(
+              bar.evaluate().isEmpty
+                  ? viewport.bottom - bottom
+                  : t.getRect(bar).top,
+              .01,
+            ),
             reason: 'The final control must clear the system bar exactly once.',
           );
           expect(button.left, greaterThanOrEqualTo(left));
