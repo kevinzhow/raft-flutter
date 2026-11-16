@@ -87,7 +87,13 @@ class _CardDialogPartsState extends State<_CardDialogParts> {
         scrollbarInset;
     Widget titleContent = Text(
       raftText(context, d.title! as String),
-      style: title.text(tokens, base: DefaultTextStyle.of(context).style),
+      // A route without a Material ancestor hands down Flutter's fallback
+      // style (double yellow underline): the title never inherits a decoration.
+      style: title.text(
+        tokens,
+        base: DefaultTextStyle.of(context).style
+            .copyWith(decoration: TextDecoration.none),
+      ),
     );
     if (d.titleGlyph case final glyph?) {
       titleContent = Row(

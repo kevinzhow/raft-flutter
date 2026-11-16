@@ -446,7 +446,7 @@ class RaftServerMenuPanel extends StatelessWidget {
     final style = RaftPopoverRecipe.resolve(
       theme: t.recipeTheme,
       tokens: t.recipeTokens,
-      states: t.recipeStates(),
+      states: t.recipeStates(responsive: true),
     ).content;
     final panel = legacy
         ? RaftSlotStyle(
@@ -475,7 +475,7 @@ class RaftServerMenuPanel extends StatelessWidget {
     final separator = RaftContextMenuRecipe.resolve(
       theme: t.recipeTheme,
       tokens: t.recipeTokens,
-      states: t.recipeStates(),
+      states: t.recipeStates(responsive: true),
     ).separator;
     return RaftRecipeBox(
       key: const Key('server-switcher-menu'),

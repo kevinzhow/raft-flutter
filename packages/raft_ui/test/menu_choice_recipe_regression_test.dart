@@ -72,10 +72,11 @@ void main() {
           final surface = tester.getRect(find.byType(RaftSelectionPopover));
           final row = tester.getRect(find.byKey(_choice));
           // Web v1.24 SelectionPopover.tsx: no surface padding; the ScrollArea content is p-1 (4px) around an
-          // h-(--option-height) (36px) row.
-          expect(surface.size, const Size(310, 44));
+          // h-(--option-height) row: 34 with a mouse from 768 (this host is
+          // desktop), 36 by touch.
+          expect(surface.size, const Size(310, 42));
           expect(row.topLeft - surface.topLeft, const Offset(4, 4));
-          expect(row.size, const Size(302, 36));
+          expect(row.size, const Size(302, 34));
           expect(tester.takeException(), isNull);
         } finally {
           await _retire(tester);
@@ -262,7 +263,7 @@ void main() {
             );
             final tokens = raftTheme(dark: dark).extension<RaftTokens>()!;
             final first = find.bySemanticsLabel('To do');
-            expect(tester.getRect(first).height, height <= 600 ? 32 : 36);
+            expect(tester.getRect(first).height, height <= 600 ? 32 : 34);
             expect(_labelStyle(tester, 'To do').fontWeight, FontWeight.w500);
             expect(
               _labelStyle(tester, 'Unavailable').color,

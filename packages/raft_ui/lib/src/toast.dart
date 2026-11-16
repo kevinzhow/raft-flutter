@@ -363,10 +363,20 @@ class RaftToast extends StatelessWidget {
                 ? math.max(0, (s.content.minWidth ?? 112) - padding.horizontal)
                 : 0,
           ),
-          // Title-only: the body is `justify-self-center` in the 7rem column.
+          // LocalizedToastProvider's `grid-cols-[auto_minmax(0,1fr)_auto]
+          // gap-x-3` keeps three tracks: a title-only body sits in the first
+          // (auto) one at the start, the two empty tracks leave their 12px
+          // gaps on the right (text 16 from the left, 40 from the right), and
+          // the 7rem minimum widens the `1fr` track.
           child: _ToastSnapWidth(
             child: titleOnly
-                ? Center(widthFactor: 1, heightFactor: 1, child: body)
+                ? Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Flexible(child: body),
+                      SizedBox(width: (s.content.columnGap ?? 12) * 2),
+                    ],
+                  )
                 : row,
           ),
         ),

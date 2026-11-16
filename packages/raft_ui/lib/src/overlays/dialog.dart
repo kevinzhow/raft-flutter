@@ -110,6 +110,7 @@ class RaftDialogSlots {
     final t = RaftTokens.of(context);
     final rt = t.recipeTokens;
     final states = t.recipeStates(
+      responsive: true,
       extra: [
         if (first) 'first-child',
         // The generated selector atom describes the source's adjacent header.

@@ -57,7 +57,7 @@ class RaftContextMenuContent extends StatelessWidget {
     final resolver = RaftRecipeTokens(t);
     final content = RaftContextMenuRecipe.resolve(
       theme: t.recipeTheme,
-      states: t.recipeStates(),
+      states: t.recipeStates(responsive: true),
       tokens: resolver,
     ).content;
     final gap = content.rowGap ?? 0;
@@ -143,11 +143,46 @@ class _Separator extends StatelessWidget {
     final resolver = RaftRecipeTokens(t);
     final style = RaftContextMenuRecipe.resolve(
       theme: t.recipeTheme,
-      states: t.recipeStates(),
+      states: t.recipeStates(responsive: true),
       tokens: resolver,
     ).separator;
-    return RaftRecipeBox(style: style, tokens: resolver, applyText: false);
+    if (!t.isRaftLook) {
+      return RaftRecipeBox(style: style, tokens: resolver, applyText: false);
+    }
+    // `-mx-1 my-1 h-px bg-line-hairline`: the rule bleeds through the popup's
+    // `p-1` inset to both edges (a recipe box would keep the margin inside).
+    final margin = style.margin;
+    return Padding(
+      padding: EdgeInsets.only(top: margin.top, bottom: margin.bottom),
+      child: CustomPaint(
+        size: Size(double.infinity, style.height ?? 1),
+        painter: _SeparatorPainter(
+          style.backgroundColor?.resolve(resolver) ??
+              t.colors['line-hairline']!,
+          left: margin.left,
+          right: margin.right,
+        ),
+      ),
+    );
   }
+}
+
+class _SeparatorPainter extends CustomPainter {
+  const _SeparatorPainter(
+    this.color, {
+    required this.left,
+    required this.right,
+  });
+  final Color color;
+  final double left, right;
+  @override
+  void paint(Canvas canvas, Size size) => canvas.drawRect(
+    Rect.fromLTRB(left, 0, size.width - right, size.height),
+    Paint()..color = color,
+  );
+  @override
+  bool shouldRepaint(_SeparatorPainter old) =>
+      old.color != color || old.left != left || old.right != right;
 }
 
 class _Item extends StatelessWidget {
@@ -169,6 +204,7 @@ class _Item extends StatelessWidget {
           final slot = RaftContextMenuRecipe.resolve(
             theme: t.recipeTheme,
             states: t.recipeStates(
+              responsive: true,
               hovered: st.hovered && enabled,
               pressed: st.pressed,
               focusVisible: st.focusVisible,

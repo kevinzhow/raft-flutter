@@ -1534,6 +1534,7 @@ class _RaftSelectionRow extends StatelessWidget {
           disabled: o.disabled,
           italic: o.italic,
           states: t.recipeStates(
+            responsive: true,
             hovered: !o.disabled && state.hovered,
             focusVisible: !o.disabled && state.focusVisible,
             disabled: o.disabled,
