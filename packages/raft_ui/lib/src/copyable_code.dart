@@ -25,6 +25,7 @@ class RaftCopyableCode extends StatefulWidget {
     this.copyLabel = 'Copy Command',
     this.codeKey,
     this.onCopied,
+    this.codeStyle,
   });
 
   final String command;
@@ -35,6 +36,10 @@ class RaftCopyableCode extends StatefulWidget {
   /// Key of the code box (Web `data-testid` on CopyableCode).
   final Key? codeKey;
   final VoidCallback? onCopied;
+
+  /// Callsite text classes on the code (`text-title tracking-widest`),
+  /// merged over the recipe's style.
+  final TextStyle? codeStyle;
 
   @override
   State<RaftCopyableCode> createState() => _RaftCopyableCodeState();
@@ -70,7 +75,7 @@ class _RaftCopyableCodeState extends State<RaftCopyableCode> {
             style: s.code.withCssUsedBorderWidths(),
             tokens: rt,
             width: double.infinity,
-            child: Text(_breakAll(widget.command)),
+            child: Text(_breakAll(widget.command), style: widget.codeStyle),
           ),
         ),
         SizedBox(width: s.root.columnGap ?? 8),
@@ -129,7 +134,12 @@ class _RaftCopyableCodeState extends State<RaftCopyableCode> {
             vertical: 8,
           ),
           color: inner.backgroundColor?.resolve(rt),
-          child: Text(_breakAll(widget.command), style: text),
+          child: Text(
+            _breakAll(widget.command),
+            style: widget.codeStyle == null
+                ? text
+                : text.merge(widget.codeStyle),
+          ),
         ),
       ),
     );

@@ -320,6 +320,37 @@ void main() {
     await t.pump(const Duration(milliseconds: 1500));
   });
 
+  testWidgets('the device-code step: the page link is strong with its arrow '
+      'after the text, the code is large, bold and spaced', (t) async {
+    final fake = FakeAuth();
+    final h = await signIn(t, fake, runtime: 'codex', runtimeId: 'codex');
+    fake.event({
+      'kind': 'device_code',
+      'userCode': 'ABCD-1234',
+      'verificationUri': 'https://auth.openai.com/device',
+    }, runtime: 'codex');
+    await h.settle();
+    final link = t.widget<RaftTextLink>(
+      find.byKey(const ValueKey('runtime-sign-in-device-link')),
+    );
+    expect(link.variant, RaftTextLinkVariant.strong);
+    expect(link.glyph, isNull);
+    expect(link.trailingGlyph, RaftGlyph.arrowUpRight);
+    final code = t.widget<Text>(
+      find.descendant(
+        of: find.byKey(const ValueKey('runtime-sign-in-device-code')),
+        matching: find.byType(Text),
+      ),
+    );
+    final style = DefaultTextStyle.of(
+      t.element(find.byKey(const ValueKey('runtime-sign-in-device-code'))),
+    ).style.merge(code.style);
+    expect(style.fontSize, RaftTypeScale.title.fontSize);
+    expect(style.fontWeight, FontWeight.w700);
+    expect(style.letterSpacing, RaftTypeScale.title.fontSize * .1);
+    await t.pump(const Duration(milliseconds: 100));
+  });
+
   testWidgets('typing the code hands the primary button from Open sign-in '
       'page to Submit', (t) async {
     final fake = FakeAuth();

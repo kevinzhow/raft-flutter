@@ -516,7 +516,14 @@ class _SignInState extends State<ComputerRuntimeSignInView> {
             child: RaftTextLink(
               key: const ValueKey('runtime-sign-in-device-link'),
               label: device.uri,
-              glyph: RaftGlyph.arrowUpRight,
+              // `variant="strong" text-subhead`, the external mark after it.
+              variant: RaftTextLinkVariant.strong,
+              textStyle: t.scale(
+                RaftTypeScale.subhead,
+                weight: FontWeight.w600,
+                color: t.ui.foreground,
+              ),
+              trailingGlyph: RaftGlyph.arrowUpRight,
               onPressed: () => unawaited(openSignInPage(device.uri)),
             ),
           ),
@@ -525,6 +532,13 @@ class _SignInState extends State<ComputerRuntimeSignInView> {
           device.userCode,
           copyLabel: raftText(context, 'Copy code'),
           codeKey: const ValueKey('runtime-sign-in-device-code'),
+          // `text-title tracking-widest`: the code is what the person types.
+          codeStyle: TextStyle(
+            fontSize: RaftTypeScale.title.fontSize,
+            height: RaftTypeScale.title.height,
+            fontWeight: FontWeight.w700,
+            letterSpacing: RaftTypeScale.title.fontSize * .1,
+          ),
         ),
         if (expires != null)
           Text(

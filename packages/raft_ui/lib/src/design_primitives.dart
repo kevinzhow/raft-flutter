@@ -2898,6 +2898,7 @@ class RaftTextLink extends StatelessWidget {
     required this.label,
     this.onPressed,
     this.glyph,
+    this.trailingGlyph,
     this.textStyle,
     this.variant = RaftTextLinkVariant.saved,
     this.scale,
@@ -2905,6 +2906,9 @@ class RaftTextLink extends StatelessWidget {
   final String label;
   final VoidCallback? onPressed;
   final RaftGlyph? glyph;
+
+  /// A glyph after the label (`TextLinkExternalIcon`).
+  final RaftGlyph? trailingGlyph;
   final TextStyle? textStyle;
   final RaftTextLinkVariant variant;
 
@@ -2929,25 +2933,33 @@ class RaftTextLink extends StatelessWidget {
           RaftIcon(glyph!, size: 12),
           const SizedBox(width: 4),
         ],
-        variant == RaftTextLinkVariant.saved
-            ? RaftUnderlinedText(
-                label,
-                style:
-                    textStyle ??
-                    TextStyle(
-                      fontFamily: RaftTokens.of(context).bodyFont,
-                      fontSize: 11,
-                      height: 16 / 11,
-                      fontWeight: RaftTypography.black(RaftTokens.of(context)),
-                    ),
-              )
-            : _RaftWebLinkLabel(
-                label: label,
-                strong: variant == RaftTextLinkVariant.strong,
-                disabled: onPressed == null,
-                style: textStyle,
-                scale: scale,
-              ),
+        Flexible(
+          child: variant == RaftTextLinkVariant.saved
+              ? RaftUnderlinedText(
+                  label,
+                  style:
+                      textStyle ??
+                      TextStyle(
+                        fontFamily: RaftTokens.of(context).bodyFont,
+                        fontSize: 11,
+                        height: 16 / 11,
+                        fontWeight: RaftTypography.black(
+                          RaftTokens.of(context),
+                        ),
+                      ),
+                )
+              : _RaftWebLinkLabel(
+                  label: label,
+                  strong: variant == RaftTextLinkVariant.strong,
+                  disabled: onPressed == null,
+                  style: textStyle,
+                  scale: scale,
+                ),
+        ),
+        if (trailingGlyph != null) ...[
+          const SizedBox(width: 4),
+          RaftIcon(trailingGlyph!, size: 12),
+        ],
       ],
     ),
   );
