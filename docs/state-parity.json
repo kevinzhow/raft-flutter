@@ -51450,6 +51450,36 @@
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/mobile_nav_server.dart#local-function:CLASS:_RaftMobileNavServerTabState@5542/METHOD:_popover@14511/FUNCTION:barrier@15822": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/mobile_nav_server.dart#method:_RaftMobileNavServerTabState._popoverBody": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/mobile_nav_server_content.dart#local-function:CLASS:RaftMobileNavServerPopoverDestinations@14274/METHOD:build@14639/FUNCTION:line@14910": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/mobile_navigation.dart#local-function:CLASS:RaftMobileNav@7354/METHOD:_bar@9309/FUNCTION:badged@9653": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/mobile_navigation.dart#local-function:CLASS:RaftMobileNav@7354/METHOD:_bar@9309/FUNCTION:item@10372": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
       }
     },
     "entries": {
