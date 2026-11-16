@@ -238,9 +238,10 @@ void main() {
         expect(await t.binding.handlePopRoute(), isTrue);
         await f.flush(t);
         expect(w.location.toString(), '/s/alpha/settings');
+        // Settings is a page pushed from the server tab (v1.24): no bar.
         expect(
           find.byKey(const Key('workspace-mobile-navigation')),
-          findsOneWidget,
+          findsNothing,
         );
         expect(exits, isEmpty);
         expect(t.takeException(), isNull);
@@ -249,7 +250,7 @@ void main() {
     );
 
     testWidgets(
-      '$theme cold Computer link has safe header and Settings fallback',
+      '$theme cold Computer link has safe header and Computers fallback',
       (t) async {
         final f = fixture();
         await loadComputerPageFonts(t);
@@ -271,7 +272,8 @@ void main() {
         final exits = watchAppExit(t);
         await t.tap(find.byKey(const Key('computer-mobile-back')));
         await f.flush(t);
-        expect(f.workspace(t).location.toString(), '/s/alpha/settings');
+        // v1.24: Computers is a page above Home; the computer's parent.
+        expect(f.workspace(t).location.toString(), '/s/alpha/computers');
         expect(exits, isEmpty);
         expect(t.takeException(), isNull);
         await f.close(t);

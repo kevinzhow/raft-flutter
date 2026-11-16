@@ -109,7 +109,8 @@ void main() {
     await finishBackTransition(t);
     expect(w.location.route, RaftRoute.search, reason: '${w.location}');
     expect(find.text('Channel is no longer available'), findsNothing);
-    expect(find.byTooltip('Back').hitTestable(), findsWidgets);
+    // Search is a tab root (v1.24): the bar is its way out, no Back.
+    expect(find.byTooltip('Back').hitTestable(), findsNothing);
     expect(field.hitTestable(), findsOneWidget);
     await f.close(t);
   });
