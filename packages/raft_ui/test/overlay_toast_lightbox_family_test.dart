@@ -195,6 +195,39 @@ void main() {
       await expectLasts(const Duration(seconds: 2));
     });
 
+    testWidgets('a toast shown by the action still closes after its 5s', (
+      t,
+    ) async {
+      // The pressed action keeps focus while the old toast fades out; the
+      // next toast must not inherit that focus pause.
+      final c = await _toastHost(t, platform: TargetPlatform.android);
+      c.show(
+        'Could not copy',
+        actionLabel: 'Copy',
+        onAction: () async {
+          await Future<void>.value();
+          c.show('Copied');
+        },
+      );
+      await _settle(t);
+      await t.tap(find.byKey(const Key('toast-action')));
+      await t.pump();
+      await t.pump();
+      expect(find.text('Copied'), findsOneWidget);
+      await t.pump(const Duration(milliseconds: 5100));
+      await _settle(t);
+      expect(find.byType(RaftToast), findsNothing);
+      // The same when the action shows the next toast at once.
+      c.show('Removed', actionLabel: 'Undo', onAction: () => c.show('Undone'));
+      await _settle(t);
+      await t.tap(find.byKey(const Key('toast-action')));
+      await t.pump();
+      expect(find.text('Undone'), findsOneWidget);
+      await t.pump(const Duration(milliseconds: 5100));
+      await _settle(t);
+      expect(find.byType(RaftToast), findsNothing);
+    });
+
     testWidgets('action underlines on hover only and tints when pressed', (
       t,
     ) async {

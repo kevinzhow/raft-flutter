@@ -751,6 +751,15 @@ class _RaftToastPortalState extends State<RaftToastPortal>
   final portal = OverlayPortalController();
   bool hovered = false, focused = false;
 
+  /// The toast's focus subtree: a pressed action keeps focus while the toast
+  /// fades out, so closing hands it back and resumes the timer.
+  final FocusNode _focus = FocusNode(debugLabel: 'RaftToast');
+
+  /// True until a newly shown toast has drawn its first frame: focus that
+  /// lands before then is the pressed action's late request on the toast it
+  /// replaced (Web mounts a new element, so focus does not carry over).
+  bool _fresh = false;
+
   /// Enter and exit: `opacity` and `scale` over 220ms on
   /// `cubic-bezier(.22,1,.36,1)` (toast.mjs inline root).
   late final AnimationController _motion = AnimationController(
@@ -811,6 +820,8 @@ class _RaftToastPortalState extends State<RaftToastPortal>
   void changed() {
     if (widget.controller.title == null) {
       hovered = focused = false;
+      widget.controller.pause(false);
+      if (_focus.hasFocus) _focus.unfocus();
       _held = 0;
       _drag = Offset.zero;
       if (_hud &&
@@ -838,6 +849,8 @@ class _RaftToastPortalState extends State<RaftToastPortal>
       _exiting = false;
       portal.show();
       if (entering) {
+        _fresh = true;
+        WidgetsBinding.instance.addPostFrameCallback((_) => _fresh = false);
         if (!_hud || MediaQuery.disableAnimationsOf(context)) {
           _motion.value = 1;
         } else {
@@ -866,6 +879,7 @@ class _RaftToastPortalState extends State<RaftToastPortal>
     widget.controller.removeListener(changed);
     // Only this owner's controller is affected, never another toast host.
     widget.controller.pause(false);
+    _focus.dispose();
     curved.dispose();
     _motion.dispose();
     super.dispose();
@@ -979,8 +993,16 @@ class _RaftToastPortalState extends State<RaftToastPortal>
             child: IgnorePointer(
               ignoring: _exiting,
               child: Focus(
+                focusNode: _focus,
                 onKeyEvent: _key,
                 onFocusChange: (value) {
+                  // Focus landing on a closing or replaced toast (the pressed
+                  // action's request arrives a microtask late) is handed back.
+                  if (value &&
+                      (_exiting || _fresh || widget.controller.title == null)) {
+                    _focus.unfocus();
+                    return;
+                  }
                   focused = value;
                   widget.controller.pause(hovered || focused);
                 },
