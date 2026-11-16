@@ -186,6 +186,7 @@ export 'src/appearance_picker.dart';
 
 export 'src/notification_center.dart';
 
+export 'src/message_list_end_fade.dart';
 export 'src/system_message.dart';
 
 export 'src/composer_recipe.dart';
@@ -205,6 +206,7 @@ export 'src/sized_image.dart';
 export 'src/message_row_recipe.dart';
 export 'src/message_touch_taps.dart';
 export 'src/timeline_time_reveal.dart';
+export 'src/delegated_face.dart';
 export 'src/message_saved_indicator.dart';
 export 'src/message_read_status.dart';
 export 'src/selected_text_quote.dart';
@@ -372,3 +374,4 @@ export 'src/window_chrome.dart';
 export 'src/raft/list_row_action.dart';
 export 'src/card_parts.dart' hide RaftCardScope;
 export 'src/raft/fit_toolbar.dart';
+export 'src/raft/inbox_item.dart';

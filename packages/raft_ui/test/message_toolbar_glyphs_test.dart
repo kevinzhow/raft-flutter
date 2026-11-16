@@ -13,8 +13,8 @@ Future<Uint8List> raster(WidgetTester tester) async {
   return (await tester.runAsync(() async {
     final image = await boundary.toImage(pixelRatio: 1);
     try {
-      expect(image.width, 13);
-      expect(image.height, 13);
+      expect(image.width, 16);
+      expect(image.height, 16);
       return (await image.toByteData(
         format: ui.ImageByteFormat.rawRgba,
       ))!.buffer.asUint8List();
@@ -27,7 +27,7 @@ Future<Uint8List> raster(WidgetTester tester) async {
 void main() {
   for (final reaction in [false, true]) {
     testWidgets(
-      'source glyph stays13 and follows inherited control foreground: reaction=$reaction',
+      'source glyph stays16 and follows inherited control foreground: reaction=$reaction',
       (tester) async {
         Widget host(Color color) => MaterialApp(
           home: Center(

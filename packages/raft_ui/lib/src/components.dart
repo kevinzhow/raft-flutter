@@ -1,4 +1,5 @@
 import 'raft/button.dart';
+import 'delegated_face.dart' show RaftAvatarCorner;
 export 'empty_state.dart';
 
 import 'raft/css_box.dart' show raftControlBorderPx;
@@ -183,9 +184,14 @@ class RaftAvatar extends StatelessWidget {
     this.presence,
     this.deactivated = false,
     this.muted = false,
+    this.corner,
   });
   final String name;
   final double size;
+
+  /// `AvatarSlot corner`: a badge-sized widget (the delegated face) pinned to
+  /// the bottom-right like an `AvatarBadge`.
+  final Widget? corner;
 
   /// raft-ui size class; wins over [size].
   final RaftAvatarSize? uiSize;
@@ -218,7 +224,7 @@ class RaftAvatar extends StatelessWidget {
         identity: identity,
         initials: name,
       );
-      return RaftMountedAvatarFrame(
+      final mounted = RaftMountedAvatarFrame(
         name: name,
         avatarContext: mountedRole,
         identity: identity,
@@ -235,6 +241,9 @@ class RaftAvatar extends StatelessWidget {
                     errorBuilder: (_, _, _) => fallback,
                   )),
       );
+      return corner == null
+          ? mounted
+          : RaftAvatarCorner(avatar: mounted, corner: corner!);
     }
     final sizeClass = uiSize ?? RaftAvatarSize.nearest(size);
     final identity = switch (kind) {
@@ -276,6 +285,13 @@ class RaftAvatar extends StatelessWidget {
                 )),
     );
     if (muted) avatar = Opacity(opacity: .6, child: avatar);
+    if (corner != null) {
+      avatar = RaftAvatarCorner(
+        avatar: avatar,
+        corner: corner!,
+        size: sizeClass,
+      );
+    }
     return Semantics(
       label: name,
       image: true,
@@ -3354,9 +3370,7 @@ class _RaftComposerState extends State<RaftComposer> {
                             // CSS's first-action negative margin must also be
                             // in the parent's hit bounds; a paint translation
                             // alone hides the leftmost five pixels from taps.
-                            padding: recipe.shellInset.copyWith(
-                              left: recipe.shellInset.left + firstActionOffset,
-                            ),
+                            padding: recipe.shellPadding(firstActionOffset),
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
                               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -3400,10 +3414,8 @@ class _RaftComposerState extends State<RaftComposer> {
                                   child: RaftComposerExpandable(
                                     text: controller.text,
                                     recipe: recipe,
-                                    editorInset: recipe.editorInset.copyWith(
-                                      left:
-                                          recipe.editorInset.left -
-                                          firstActionOffset,
+                                    editorInset: recipe.editorInsetFor(
+                                      firstActionOffset,
                                     ),
                                     onExpand: widget.enabled && !busy
                                         ? openExpanded

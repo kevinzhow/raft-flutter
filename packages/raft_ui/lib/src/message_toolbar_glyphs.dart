@@ -4,7 +4,7 @@ import 'icons.dart' show RaftIconViewport;
 
 /// Exact pinned raft-ui ThreadIcon (18-unit viewport; mixed stroke/fill).
 class RaftMessageThreadGlyph extends StatelessWidget {
-  const RaftMessageThreadGlyph({super.key, this.size = 13, this.color});
+  const RaftMessageThreadGlyph({super.key, this.size = 16, this.color});
   final double size;
   final Color? color;
   @override
@@ -72,7 +72,7 @@ class _ThreadPainter extends CustomPainter {
 
 /// Exact installed Lucide SmilePlus (24-unit viewport; two-unit round strokes).
 class RaftMessageAddReactionGlyph extends StatelessWidget {
-  const RaftMessageAddReactionGlyph({super.key, this.size = 13, this.color});
+  const RaftMessageAddReactionGlyph({super.key, this.size = 16, this.color});
   final double size;
   final Color? color;
   @override

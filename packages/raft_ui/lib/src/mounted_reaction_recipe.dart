@@ -38,7 +38,8 @@ class RaftMountedReactionRecipe extends RaftControlRecipe {
       BorderRadius.circular(raft ? tokens.size('radius.chip', fallback: 6) : 4);
   @override
   EdgeInsets get padding => raft
-      ? const EdgeInsets.only(left: 6, right: 8)
+      // ignore: raft_lints/off_grid_spacing -- raft-ui 0.95.3 messageReaction `px-[7px]`.
+      ? const EdgeInsets.symmetric(horizontal: 7)
       : const EdgeInsets.symmetric(horizontal: 6);
   @override
   Color get foreground => tokens.strong;
@@ -71,8 +72,9 @@ class RaftMountedReactionRecipe extends RaftControlRecipe {
   @override
   TextStyle get textStyle => TextStyle(
     fontFamily: tokens.headingFont,
-    fontSize: 12,
-    height: raft ? 16 / 12 : 1,
+    // Raft: count is `font-mono text-mono-meta font-bold`.
+    fontSize: raft ? tokens.typeSlot('mono-meta').fontSize : 12,
+    height: raft ? tokens.typeSlot('mono-meta').height : 1,
     fontWeight: FontWeight.w700,
     color: foreground,
   );

@@ -17,6 +17,16 @@ class RaftMessageSavedIndicator extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     final label = raftText(context, 'Saved');
+    final slot = RaftMessageFooterRecipe.resolve(
+      theme: t.recipeTheme,
+      tokens: t.recipeTokens,
+    ).savedIndicator;
+    final svgKey = slot.targets.keys
+        .where((k) => k.contains('svg'))
+        .firstOrNull;
+    final svg = svgKey == null ? null : slot.target(svgKey);
+    // `[&_svg]:size-3.5`.
+    final iconSize = svg?.length('width') ?? 14;
     return RaftInteractive(
       key: const Key('message-saved-badge'),
       onPressed: onPressed,
@@ -34,7 +44,7 @@ class RaftMessageSavedIndicator extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const RaftIcon(RaftGlyph.bookmark, size: 10, filled: true),
+            RaftIcon(RaftGlyph.bookmark, size: iconSize, filled: true),
             const SizedBox(width: 4),
             Flexible(
               child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),

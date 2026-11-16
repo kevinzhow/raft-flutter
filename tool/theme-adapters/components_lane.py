@@ -29,9 +29,9 @@ _GEOMETRY = {
     'stroke.skeletonAvatar': (0, 2),
     'opacity.skeleton': (1, 26 / 255),
     'opacity.skeletonAvatar': (1, .05), 'opacity.skeletonThemed': (1, .08),
-    # messageItem toolbar p-[3px], frozen recipe 4px inline / 2px block.
-    'space.messageToolbarInline': (3, 4),
-    'space.messageToolbarBlock': (3, 2),
+    # raft-ui 0.95.3 messageItem toolbar `p-1`, frozen recipe 4px inline / 2px block.
+    'space.messageToolbarInline': (4, 4),
+    'space.messageToolbarBlock': (4, 2),
     # FeedbackComposer uses raft-ui 0.7.0 ComposerMeta `gap-2`: computed DOM
     # and both adjacent child gaps are 8px in the light/dark 390px form.
     # a57b9dab feedback_workspace.dart used `t.brutal ? 12 : 16`; its dark
