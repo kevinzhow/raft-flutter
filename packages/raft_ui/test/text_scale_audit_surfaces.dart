@@ -59,6 +59,7 @@ import 'package:raft_ui/message_row_previews.dart';
 import 'package:raft_ui/message_translation_previews.dart';
 import 'package:raft_ui/mobile_computer_previews.dart';
 import 'package:raft_ui/mobile_detail_previews.dart';
+import 'package:raft_ui/mobile_nav_server_previews.dart';
 import 'package:raft_ui/mobile_navigation_previews.dart';
 import 'package:raft_ui/mobile_page_header_previews.dart';
 import 'package:raft_ui/mobile_tabbar_config_previews.dart';
@@ -919,6 +920,24 @@ final auditSurfaces = <AuditSurface>[
     'Source mobile navigation system inset',
     sourceMobileNavigationSystemInsetPreview,
     Size(390, 844),
+  ),
+  AuditSurface(
+    'mobileNavServerTabPreview',
+    'Mobile nav server tab',
+    mobileNavServerTabPreview,
+    Size(390, 140),
+  ),
+  AuditSurface(
+    'mobileNavServerPopoverGridPreview',
+    'Mobile nav server popover grid',
+    mobileNavServerPopoverGridPreview,
+    Size(390, 520),
+  ),
+  AuditSurface(
+    'mobileNavServerPopoverRowPreview',
+    'Mobile nav server popover row',
+    mobileNavServerPopoverRowPreview,
+    Size(390, 420),
   ),
   AuditSurface(
     'mobilePageHeaderPreview',

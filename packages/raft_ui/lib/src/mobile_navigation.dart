@@ -1,6 +1,10 @@
+import 'dart:async';
 import 'dart:math' as math;
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 
 import 'mobile_page_header.dart';
 import 'status_bar.dart';
@@ -19,12 +23,21 @@ import 'tokens/tokens.dart';
 import 'theme.dart';
 import 'text_scaling.dart';
 import 'large_content_viewer.dart';
+import 'dismiss_scope.dart';
+import 'interaction.dart';
+import 'popover_surface.dart';
+import 'recipes/mobile_nav_server.g.dart';
+import 'recipes/popover.g.dart';
+import 'recipes/recipe_runtime.dart' show RaftRecipeStates;
+import 'raft/status.dart' show RaftStatus, RaftStatusSize, RaftStatusVariant;
 
 import 'raft/blink_snap.dart';
 import 'raft/css_box.dart' show raftControlBorderPx;
 import 'panel_layout.dart' show RaftCssText, RaftCssFocusOutline;
 
 part 'mobile_navigation_docked.dart';
+part 'mobile_nav_server.dart';
+part 'mobile_nav_server_content.dart';
 part 'mobile_workspace_header.dart';
 
 @immutable
@@ -230,16 +243,26 @@ class RaftMobileNav extends StatelessWidget {
     required this.onSelected,
     this.bottomInset,
     this.viewportHeight,
+    this.trailing,
   });
   final List<RaftMobileNavItem> items;
   final String selectedId;
   final ValueChanged<String> onSelected;
   final double? bottomInset, viewportHeight;
+
+  /// One more equal-width cell after [items]: the server tab
+  /// ([RaftMobileNavServerTab]). It is never selected and owns its own press.
+  final Widget? trailing;
   @override
   Widget build(BuildContext context) {
     if (items.isEmpty) {
       return const SizedBox.shrink();
     }
+    // The whole bar is what the server popover anchors to.
+    return _MobileNavBarAnchor(child: _bar0(context));
+  }
+
+  Widget _bar0(BuildContext context) {
     final t = RaftTokens.of(context);
     final recipe = RaftMobileNavRecipe(
       t,
@@ -251,6 +274,7 @@ class RaftMobileNav extends StatelessWidget {
         child: RaftLargeContentScope(
           child: _DockedMobileNav(
             items: items,
+            trailing: trailing,
             selectedId: selectedId,
             onSelected: onSelected,
             bottomInset: inset,
@@ -339,9 +363,10 @@ class RaftMobileNav extends StatelessWidget {
       return control;
     }
 
+    final cells = items.length + (trailing == null ? 0 : 1);
     final bar = Container(
       key: const ValueKey('mobile-nav-source-capsule'),
-      width: recipe.capsuleWidth(items.length),
+      width: recipe.capsuleWidth(cells),
       height: recipe.capsuleHeight,
       padding: EdgeInsets.zero,
       decoration: BoxDecoration(
@@ -363,6 +388,17 @@ class RaftMobileNav extends StatelessWidget {
               width: touch ? 48 : 44,
               height: touch ? 48 : 44,
               child: item(items[index], index),
+            ),
+          if (trailing != null)
+            Positioned(
+              left:
+                  recipe.capsuleInset +
+                  items.length * (44 + recipe.itemGap) -
+                  (touch ? 2 : 0),
+              top: recipe.capsuleInset - (touch ? 2 : 0),
+              width: touch ? 48 : 44,
+              height: touch ? 48 : 44,
+              child: trailing!,
             ),
         ],
       ),

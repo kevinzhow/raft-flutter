@@ -9,8 +9,10 @@ class _DockedMobileNav extends StatelessWidget {
     required this.onSelected,
     required this.bottomInset,
     required this.viewportHeight,
+    this.trailing,
   });
   final List<RaftMobileNavItem> items;
+  final Widget? trailing;
   final String selectedId;
   final ValueChanged<String> onSelected;
   final double bottomInset, viewportHeight;
@@ -43,7 +45,8 @@ class _DockedMobileNav extends StatelessWidget {
         ),
         child: LayoutBuilder(
           builder: (context, constraints) {
-            final width = constraints.maxWidth / items.length;
+            final cells = items.length + (trailing == null ? 0 : 1);
+            final width = constraints.maxWidth / cells;
             return Stack(
               clipBehavior: Clip.none,
               children: [
@@ -59,7 +62,19 @@ class _DockedMobileNav extends StatelessWidget {
                       onSelected: onSelected,
                       geometry: g,
                       width: width,
-                      last: index == items.length - 1,
+                      last: index == cells - 1,
+                    ),
+                  ),
+                if (trailing != null)
+                  Positioned(
+                    left: items.length * width,
+                    top: g.targetTop,
+                    width: width,
+                    height: g.targetHeight,
+                    child: _DockedCellScope(
+                      geometry: g,
+                      width: width,
+                      child: trailing!,
                     ),
                   ),
               ],

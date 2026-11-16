@@ -130,6 +130,7 @@ in `apps/raft_flutter`.
 | `custom-protocol-link-confirm` | dialog | esc sysback | esc sysback | esc sysback | CustomProtocolLink.tsx AlertDialog: Cancel + Esc, no X, no outside press | ok |  |
 | `artifact-viewer` | viewer | back esc sysback | x esc sysback | x esc sysback | Flutter-only: Web opens an artifact link in a browser tab; the in-app browser follows the attachment preview (page below 768, full-bleed dialog above): Back / X, Esc, system back | no-web |  |
 | `human-login-sheet` | dialog | x esc scrim sysback drag | x esc scrim sysback | x esc scrim sysback | Flutter-only: Web does this step in a page (HumanLoginSetupPage, /login-with-raft/setup); the in-app browser shows it as a form window (sheet below 768, dialog above): X, Esc, scrim, system back, drag | no-web |  |
+| `mobile-nav-server-popover` | popup | esc scrim sysback | esc scrim sysback | esc scrim sysback | raft-ui mobile-nav-server.mjs MobileNavServerPopoverContent (Popover, side top over the tab bar): Esc, outside press, focus back to the server tab; MobileServerTab.tsx | ok |  |
 | `select-field` | popup | esc scrim sysback | esc scrim sysback | esc scrim sysback | ui/FormField.tsx:1 native <select> / SelectContent: Esc, outside press | ok |  |
 | `dropdown-menu` | popup | esc scrim sysback | esc scrim sysback | esc scrim sysback | layout/Sidebar.tsx:1566 (create-agent menu Esc) + outside press | ok |  |
 | `sidebar-context-menu` | popup | esc scrim sysback | esc scrim sysback | esc scrim sysback | layout/Sidebar.tsx:1761 (Esc) + DismissBackdrop (outside press) | ok |  |
