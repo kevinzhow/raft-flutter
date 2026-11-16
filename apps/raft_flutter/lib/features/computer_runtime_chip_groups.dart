@@ -1,10 +1,11 @@
 // Web v1.24 shared runtimeCatalog getMachineRuntimeDisplayOptions() and
 // components/machine/MachineRuntimeChips.tsx machineRuntimeChipGroups(): which
 // runtimes the Computer page's Detected runtimes row lists and where each
-// stands on this Computer. The generated agent_runtime_catalog.dart is the
-// v1.21 list (no Qwen Code, Qoder, CodeBuddy), so the display list lives here.
+// stands on this Computer, from the generated agent_runtime_catalog.dart.
 import 'package:flutter/widgets.dart';
 import 'package:raft_ui/raft_ui.dart' show raftText;
+
+import 'agent_runtime_catalog.dart' show runtimeInfos;
 
 /// A runtime of the machine display options: supported and not deprecated, in
 /// catalog order. [inProcess] is `binary == ''` (nothing to install on the
@@ -16,23 +17,15 @@ typedef ComputerRuntimeOption = ({
   bool experimental,
 });
 
-const computerRuntimeOptions = <ComputerRuntimeOption>[
-  (id: 'claude', name: 'Claude Code', inProcess: false, experimental: false),
-  (id: 'codex', name: 'Codex CLI', inProcess: false, experimental: false),
-  (id: 'grok', name: 'Grok Build', inProcess: false, experimental: false),
-  (id: 'builtin', name: 'Built-in Pi', inProcess: true, experimental: false),
-  (id: 'kimi-sdk', name: 'Kimi Code', inProcess: true, experimental: false),
-  (id: 'cursor', name: 'Cursor CLI', inProcess: false, experimental: false),
-  (id: 'opencode', name: 'OpenCode', inProcess: false, experimental: false),
-  (id: 'pi', name: 'Pi', inProcess: false, experimental: false),
-  (id: 'qwen', name: 'Qwen Code', inProcess: false, experimental: true),
-  (id: 'qoder', name: 'Qoder', inProcess: false, experimental: true),
-  (
-    id: 'codebuddy',
-    name: 'CodeBuddy Code',
-    inProcess: false,
-    experimental: true,
-  ),
+final List<ComputerRuntimeOption> computerRuntimeOptions = [
+  for (final r in runtimeInfos)
+    if (r.supported && !r.deprecated)
+      (
+        id: r.id,
+        name: r.name,
+        inProcess: r.binary.isEmpty,
+        experimental: r.experimental,
+      ),
 ];
 
 /// Where each display runtime stands on one Computer, from what it reports.

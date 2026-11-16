@@ -11,17 +11,14 @@ void main() {
   test('Copilot CLI is deprecated and not a detected-runtime chip', () {
     expect(isRuntimeDeprecated('copilot'), isTrue);
     expect(computerRuntimeOptions.map((r) => r.id), isNot(contains('copilot')));
-    // The display options are the supported, non-deprecated runtimes; v1.24
-    // adds the OAR-only Qwen Code, Qoder and CodeBuddy after them (the
-    // generated v1.21 catalog does not carry those three).
-    expect(computerRuntimeOptions.map((r) => r.id).toList(), [
-      ...runtimeInfos
+    // The display options are exactly the supported, non-deprecated runtimes.
+    expect(
+      computerRuntimeOptions.map((r) => r.id).toList(),
+      runtimeInfos
           .where((r) => r.supported && !isRuntimeDeprecated(r.id))
-          .map((r) => r.id),
-      'qwen',
-      'qoder',
-      'codebuddy',
-    ]);
+          .map((r) => r.id)
+          .toList(),
+    );
   });
 
   test('Copilot CLI is not creatable', () {
