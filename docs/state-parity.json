@@ -46573,6 +46573,12 @@
         "owner": "design-system alignment",
         "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
       },
+      "packages/raft_ui/lib/src/adaptive_workspace.dart#local-function:CLASS:_MobileKeyboardLayout@42835/METHOD:build@43295/FUNCTION:withoutRailInset@43533": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
+      },
       "packages/raft_ui/lib/src/announcement_markdown.dart#local-function:CLASS:_MarkdownBlocks@5227/METHOD:blocks@5648/FUNCTION:flushInline@5875": {
         "role": "unresolved",
         "familyRefs": [],
@@ -47277,7 +47283,19 @@
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
+      "packages/raft_ui/lib/src/task_surface.dart#local-function:CLASS:_RaftTaskSurfaceState@5304/METHOD:_historyDetail@46102/FUNCTION:badge@46499": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
       "packages/raft_ui/lib/src/task_surface.dart#local-function:CLASS:_RaftTaskSurfaceState@5304/METHOD:assigneePanel@40021/FUNCTION:avatar@40380": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/task_surface.dart#local-function:CLASS:_RaftTaskSurfaceState@5304/METHOD:assigneePanel@40243/FUNCTION:avatar@40602": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
@@ -49575,7 +49593,19 @@
         "owner": "WP-COMP2 rack runtime usage",
         "reason": "Source census candidate (WP-COMP2 rack runtime usage columns: usage cells, headings, Other cell, usage reads); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
+      "packages/raft_ui/lib/src/computers_rack.dart#local-function:CLASS:RaftRackListHeader@10768/METHOD:build@11460/FUNCTION:heading@11607": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 rack runtime usage",
+        "reason": "Source census candidate (WP-COMP2 rack runtime usage columns: usage cells, headings, Other cell, usage reads); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
       "packages/raft_ui/lib/src/computers_rack.dart#local-function:CLASS:_RaftRackRowState@15474/METHOD:build@17120/FUNCTION:slots@19541": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 rack runtime usage",
+        "reason": "Source census candidate (WP-COMP2 rack runtime usage columns: usage cells, headings, Other cell, usage reads); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/computers_rack.dart#local-function:CLASS:_RaftRackRowState@15519/METHOD:build@17165/FUNCTION:slots@19586": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "WP-COMP2 rack runtime usage",
