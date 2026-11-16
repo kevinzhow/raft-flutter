@@ -3,10 +3,17 @@ import 'dart:math' as math;
 import 'hover_region.dart';
 
 import 'package:flutter/material.dart';
+// `closeButton` is a Raft-only drawer slot, so the router leaves it out.
+import 'package:raft_theme/recipes/drawer.g.dart' as raft_drawer;
 
+import 'icons.dart';
+import 'localization.dart';
+import 'raft/button.dart' show RaftButton;
 import 'recipe_surface.dart';
+import 'recipes/button_variants.g.dart';
 import 'recipes/drawer.g.dart';
-import 'recipes/recipe_runtime.dart' show RaftShadowLayers, RaftSlotStyle;
+import 'recipes/recipe_runtime.dart'
+    show CssNum, RaftShadowLayers, RaftSlotStyle;
 import 'settings_layout.dart' show RaftSpace;
 import 'system_inset.dart';
 import 'theme.dart';
@@ -257,6 +264,68 @@ class RaftSheetHandle extends StatelessWidget {
 ///
 /// A sheet whose content manages its own scrolling (an editor) uses
 /// [RaftSheet.fixed] instead.
+/// raft-ui `DrawerClose` (drawer.mjs:110-131): a ghost `icon-lg` Button sized
+/// by the drawer `closeButton` slot (`size-(--bar-button-size)`, 44 at radius
+/// 10; 28 at radius 6 with a mouse from 768) with an `X` from the `closeIcon`
+/// slot (`size-control-icon`: 22, or 18). The caller places it; Web's
+/// select-text drawer puts it on the title row. The frozen looks (which had
+/// no sheet X) get the ghost `icon-lg` X of their own button recipe.
+class RaftSheetClose extends StatelessWidget {
+  const RaftSheetClose({
+    super.key,
+    required this.onPressed,
+    this.tooltip = 'Close',
+  });
+  final VoidCallback? onPressed;
+  final String tooltip;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = RaftTokens.of(context);
+    if (!t.isRaftLook) {
+      return RaftButton(
+        tone: RaftButtonRecipeVariant.ghost,
+        size: RaftButtonRecipeSize.iconLg,
+        glyph: RaftGlyph.x,
+        semanticLabel: raftText(context, tooltip),
+        onPressed: onPressed,
+      );
+    }
+    final slots = raft_drawer.RaftDrawerRecipe.resolve(
+      side: raft_drawer.RaftDrawerRecipeSide.down,
+      axis: raft_drawer.RaftDrawerRecipeAxis.y,
+      states: t.recipeStates(responsive: true),
+      tokens: t.recipeTokens,
+    );
+    final box = slots.closeButton.width ?? 44;
+    final radius = slots.closeButton.borderRadius?.topLeft.x ?? 10;
+    final icon = slots.closeIcon.width ?? 22;
+    return RaftButton(
+      tone: RaftButtonRecipeVariant.ghost,
+      size: RaftButtonRecipeSize.iconLg,
+      glyph: RaftGlyph.x,
+      iconBuilder: (_, color) =>
+          RaftIcon(RaftGlyph.x, size: icon, color: color),
+      semanticLabel: raftText(context, tooltip),
+      onPressed: onPressed,
+      physicalHeight: box,
+      visualWidth: box,
+      styleBuilder: (context, state, style) => style.copyWith(
+        properties: {
+          ...style.properties,
+          for (final corner in [
+            'top-left',
+            'top-right',
+            'bottom-left',
+            'bottom-right',
+          ])
+            'border-$corner-radius': CssNum(radius, 'px'),
+        },
+      ),
+    );
+  }
+}
+
 class RaftSheet extends StatelessWidget {
   const RaftSheet({
     super.key,

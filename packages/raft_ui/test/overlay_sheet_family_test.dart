@@ -466,4 +466,75 @@ void main() {
       expect(find.byType(RaftFormSheet), findsNothing);
     });
   });
+
+  // raft-ui `DrawerClose` (drawer.mjs:110-131, recipe closeButton/closeIcon):
+  // a ghost bar button, 44 with radius 10 and a 22px X by touch or in a narrow
+  // window, 28 / radius 6 / 18px X with a mouse from 768. The caller places it
+  // (Web MessageSelectTextDrawer: on the title row).
+  group('drawer close', () {
+    for (final (name, size, platform, box, icon) in [
+      (
+        '856x944 touch',
+        const Size(856, 944),
+        TargetPlatform.android,
+        44.0,
+        22.0,
+      ),
+      (
+        '944x856 touch',
+        const Size(944, 856),
+        TargetPlatform.android,
+        44.0,
+        22.0,
+      ),
+      ('390x844 mouse', const Size(390, 844), TargetPlatform.linux, 44.0, 22.0),
+      (
+        '1280x800 mouse',
+        const Size(1280, 800),
+        TargetPlatform.linux,
+        28.0,
+        18.0,
+      ),
+    ]) {
+      testWidgets('$name: a ${box.toInt()}px button with a ${icon.toInt()}px X '
+          'that closes', (tester) async {
+        _size(tester, size);
+        var closed = 0;
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: raftTheme().copyWith(platform: platform),
+            home: Scaffold(
+              body: Center(child: RaftSheetClose(onPressed: () => closed++)),
+            ),
+          ),
+        );
+        final close = find.byType(RaftSheetClose);
+        expect(tester.getSize(close), Size(box, box));
+        final x = tester.widget<RaftIcon>(
+          find.descendant(of: close, matching: find.byType(RaftIcon)),
+        );
+        expect(x.glyph, RaftGlyph.x);
+        expect(x.size, icon);
+        expect(find.bySemanticsLabel('Close'), findsOneWidget);
+        await tester.tap(close);
+        expect(closed, 1);
+      });
+    }
+
+    testWidgets('a frozen look gets its own ghost X button', (tester) async {
+      _size(tester, const Size(390, 844));
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: raftTheme(pack: packForThemeId(elegantThemePackId)),
+          home: Scaffold(
+            body: Center(child: RaftSheetClose(onPressed: () {})),
+          ),
+        ),
+      );
+      final button = tester.widget<RaftButton>(find.byType(RaftButton));
+      expect(button.glyph, RaftGlyph.x);
+      expect(button.tone, RaftButtonRecipeVariant.ghost);
+      expect(find.bySemanticsLabel('Close'), findsOneWidget);
+    });
+  });
 }

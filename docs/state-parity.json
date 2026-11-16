@@ -48291,6 +48291,18 @@
         "owner": "WP-DS2 overlay family",
         "reason": "Source census candidate added with the raft-ui 0.95.3 overlay-family alignment (sheet, menu, dialog, toast, lightbox and selection-shortcut families); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
+      "packages/raft_ui/lib/src/sheet.dart#class:RaftSheetClose": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS2 overlay family",
+        "reason": "Source census candidate added with the raft-ui 0.95.3 overlay-family alignment (sheet, menu, dialog, toast, lightbox and selection-shortcut families); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/sheet.dart#method:RaftSheetClose.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS2 overlay family",
+        "reason": "Source census candidate added with the raft-ui 0.95.3 overlay-family alignment (sheet, menu, dialog, toast, lightbox and selection-shortcut families); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
       "packages/raft_ui/lib/src/stacked_actions.dart#class:RaftActionRow": {
         "role": "unresolved",
         "familyRefs": [],
@@ -59236,6 +59248,11 @@
         "applicability": "unknown",
         "owner": "WP-DS2 overlay family",
         "reason": "State use added with the raft-ui 0.95.3 overlay-family alignment (responsive recipe states, data-has-* slots, stacked-actions and last-child selectors); look/input/real-entry applicability remains unreviewed. No exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/sheet.dart#method:RaftSheetClose.build|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+        "applicability": "unknown",
+        "owner": "WP-DS2 overlay family",
+        "reason": "State use added with the WP-DS2 drawer close (raft-ui DrawerClose: 44 / 28 with a mouse from 768, from the drawer closeButton/closeIcon slots); look/input/real-entry applicability remains unreviewed. No exemption or visual acceptance."
       },
       "packages/raft_ui/lib/src/task_reason_popover.dart#method:RaftTaskReasonPanelState._panel|state:last-child": {
         "applicability": "unknown",
