@@ -269,13 +269,48 @@
     },
     "card": {
       "canonical": [
-        "RaftCard"
+        "RaftCard",
+        "RaftCardSectionHeader",
+        "RaftCardTitle",
+        "RaftCardDescription",
+        "RaftCardLeading",
+        "RaftCardTrailing",
+        "RaftCardContent",
+        "RaftCardFooter"
       ],
-      "note": "RaftRecipeCard, RaftSurfaceListItem and RaftChoiceCard were merged into RaftCard (P6) and no longer exist.",
+      "note": "RaftRecipeCard, RaftSurfaceListItem and RaftChoiceCard were merged into RaftCard (P6) and no longer exist. RaftCardSectionHeader/Title/Description/Leading/Trailing/Content/Footer (card_parts.dart, WP-DS5) are the raft-ui 0.95.3 Card parts read from the card recipe slots; they compose inside RaftCard.",
       "deprecated": {},
       "canonicalBindings": {
         "RaftCard": {
           "declarationId": "packages/raft_ui/lib/src/card.dart#class:RaftCard",
+          "role": "public_api"
+        },
+        "RaftCardSectionHeader": {
+          "declarationId": "packages/raft_ui/lib/src/card_parts.dart#class:RaftCardSectionHeader",
+          "role": "public_api"
+        },
+        "RaftCardTitle": {
+          "declarationId": "packages/raft_ui/lib/src/card_parts.dart#class:RaftCardTitle",
+          "role": "public_api"
+        },
+        "RaftCardDescription": {
+          "declarationId": "packages/raft_ui/lib/src/card_parts.dart#class:RaftCardDescription",
+          "role": "public_api"
+        },
+        "RaftCardLeading": {
+          "declarationId": "packages/raft_ui/lib/src/card_parts.dart#class:RaftCardLeading",
+          "role": "public_api"
+        },
+        "RaftCardTrailing": {
+          "declarationId": "packages/raft_ui/lib/src/card_parts.dart#class:RaftCardTrailing",
+          "role": "public_api"
+        },
+        "RaftCardContent": {
+          "declarationId": "packages/raft_ui/lib/src/card_parts.dart#class:RaftCardContent",
+          "role": "public_api"
+        },
+        "RaftCardFooter": {
+          "declarationId": "packages/raft_ui/lib/src/card_parts.dart#class:RaftCardFooter",
           "role": "public_api"
         }
       }
@@ -308,6 +343,19 @@
       "canonicalBindings": {
         "RaftListRow": {
           "declarationId": "packages/raft_ui/lib/src/raft/list_row.dart#class:RaftListRow",
+          "role": "public_api"
+        }
+      }
+    },
+    "fit_toolbar": {
+      "canonical": [
+        "RaftFitToolbar"
+      ],
+      "note": "raft-ui 0.95.3 FitToolbar (WP-DS5, audit R14): RaftFitToolbar with RaftFitGroup / RaftFitSearch and the items RaftFitButton, RaftFitPicker, RaftFitMore, RaftFitChild; the collapse order is the pure raftFitPlan (fit_toolbar_plan.dart). No app call site uses it yet; RaftRackToolbar (computers_rack.dart) is the hand-built two-layout toolbar it replaces when the rack owner migrates.",
+      "deprecated": {},
+      "canonicalBindings": {
+        "RaftFitToolbar": {
+          "declarationId": "packages/raft_ui/lib/src/raft/fit_toolbar.dart#class:RaftFitToolbar",
           "role": "public_api"
         }
       }
@@ -2397,10 +2445,10 @@
       }
     },
     "fitToolbar": {
-      "family": null,
-      "decision": "unresolved",
-      "owner": "WP-DS5 text/content/scrolling",
-      "reason": "Published raft-ui0.95.3 source recipe; downstream canonical API and visual acceptance remain pending. This registration is source ownership only.",
+      "family": "fit_toolbar",
+      "decision": "existing",
+      "owner": "WP-DS5 data-display family",
+      "reason": "Published raft-ui 0.95.3 source recipe consumed by RaftFitToolbar (fit_toolbar.dart); existing family linkage is a source ownership record, not a current visual acceptance.",
       "generatedFile": "packages/raft_theme/lib/recipes/fit_toolbar.g.dart",
       "axes": {
         "count": [
