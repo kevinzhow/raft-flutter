@@ -30920,7 +30920,7 @@
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
-      "packages/raft_ui/lib/src/profile_preview_card.dart#local-function:CLASS:RaftProfilePreviewCard@1454/METHOD:build@2735/FUNCTION:line@3360": {
+      "packages/raft_ui/lib/src/profile_preview_card.dart#local-function:CLASS:RaftProfilePreviewCard@1532/METHOD:build@2813/FUNCTION:line@3438": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
@@ -37752,7 +37752,7 @@
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
-      "packages/raft_ui/lib/src/sidebar_menus.dart#local-function:CLASS:_RaftSidebarContextMenuState@4030/METHOD:_menu@7284/FUNCTION:divider@8201": {
+      "packages/raft_ui/lib/src/sidebar_menus.dart#local-function:CLASS:_RaftSidebarContextMenuState@4030/METHOD:_menu@7300/FUNCTION:divider@8233": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
@@ -42362,8 +42362,8 @@
         "sourceBindings": [
           {
             "file": "packages/raft_ui/lib/src/overlays/dialog.dart",
-            "bytes": 41320,
-            "sha256": "75c99943d69b2969078097cd3d77321e04493f8dbcae1ed95fdafc4137075dcb"
+            "bytes": 41344,
+            "sha256": "408211894d03c2e3a6ccf4e278b1c89b818978d86065666a00aeb476fd715bf3"
           }
         ]
       },
@@ -42588,7 +42588,7 @@
         "owner": "task289 scoped source registration",
         "reason": "Actual resolved declaration in the exact Mac preparation runtime subset. Independent paint/delegation/state/real-entry closure remains unresolved; no thin-wrapper or style exemption is granted."
       },
-      "packages/raft_ui/lib/src/menu_action_row.dart#local-function:CLASS:RaftMenuSlotRow@2463/METHOD:build@2996/FUNCTION:iconSlot@3227": {
+      "packages/raft_ui/lib/src/menu_action_row.dart#local-function:CLASS:RaftMenuSlotRow@2491/METHOD:build@3024/FUNCTION:iconSlot@3255": {
         "role": "unresolved",
         "familyRefs": [
           "menu"
@@ -42734,7 +42734,7 @@
         "owner": "task289 whole-source ownership review",
         "reason": "Current resolved surface_factory at the exact source identity. Family hints do not establish canonical delegation, real-entry applicability, mounted state or visual acceptance; those decisions remain pending."
       },
-      "packages/raft_ui/lib/src/inline_badge_editor.dart#local-function:CLASS:_RaftInlineBadgeEditorState@2794/METHOD:build@4628/FUNCTION:statusTrigger@6146": {
+      "packages/raft_ui/lib/src/inline_badge_editor.dart#local-function:CLASS:_RaftInlineBadgeEditorState@2794/METHOD:build@4628/FUNCTION:statusTrigger@6142": {
         "role": "unresolved",
         "familyRefs": [
           "menu"
@@ -42742,7 +42742,7 @@
         "owner": "task289 whole-source ownership review",
         "reason": "Current resolved builder at the exact source identity. Family hints do not establish canonical delegation, real-entry applicability, mounted state or visual acceptance; those decisions remain pending."
       },
-      "packages/raft_ui/lib/src/inline_badge_editor.dart#local-function:CLASS:_RaftInlineBadgeEditorState@2794/METHOD:build@4628/FUNCTION:trigger@7556": {
+      "packages/raft_ui/lib/src/inline_badge_editor.dart#local-function:CLASS:_RaftInlineBadgeEditorState@2794/METHOD:build@4628/FUNCTION:trigger@7552": {
         "role": "unresolved",
         "familyRefs": [
           "menu"
@@ -42750,7 +42750,7 @@
         "owner": "task289 whole-source ownership review",
         "reason": "Current resolved builder at the exact source identity. Family hints do not establish canonical delegation, real-entry applicability, mounted state or visual acceptance; those decisions remain pending."
       },
-      "packages/raft_ui/lib/src/message_context_menu.dart#local-function:CLASS:RaftMessageContextMenu@1047/METHOD:build@1595/FUNCTION:divider@1918": {
+      "packages/raft_ui/lib/src/message_context_menu.dart#local-function:CLASS:RaftMessageContextMenu@1047/METHOD:build@1595/FUNCTION:divider@1934": {
         "role": "unresolved",
         "familyRefs": [
           "menu"
@@ -45074,7 +45074,7 @@
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
-      "packages/raft_ui/lib/src/overlays/dialog_card_parts.dart#local-function:CLASS:_CardDialogPartsState@238/METHOD:build@488/FUNCTION:card@5217": {
+      "packages/raft_ui/lib/src/overlays/dialog_card_parts.dart#local-function:CLASS:_CardDialogPartsState@238/METHOD:build@488/FUNCTION:card@5453": {
         "role": "internal_wrapper",
         "familyRefs": [
           "dialog"
@@ -45085,7 +45085,7 @@
         ],
         "reason": "Resolved constructor/function calls delegate to the registered canonical owner(s); this declaration owns no scanner-detected paint. This is source delegation, not runtime mount or visual evidence."
       },
-      "packages/raft_ui/lib/src/overlays/dialog_card_parts.dart#local-function:CLASS:_CardDialogPartsState@238/METHOD:build@488/FUNCTION:scrollingContent@4785": {
+      "packages/raft_ui/lib/src/overlays/dialog_card_parts.dart#local-function:CLASS:_CardDialogPartsState@238/METHOD:build@488/FUNCTION:scrollingContent@5021": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "P1 dialogs / canonical Choice integration",
@@ -47583,7 +47583,7 @@
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
-      "packages/raft_ui/lib/src/agent_profile.dart#local-function:CLASS:RaftWorkspaceTreeView@75749/METHOD:build@77221/FUNCTION:message@80806": {
+      "packages/raft_ui/lib/src/agent_profile.dart#local-function:CLASS:RaftWorkspaceTreeView@75955/METHOD:build@77427/FUNCTION:message@81012": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
@@ -48261,7 +48261,7 @@
         "owner": "WP-DS2 overlay family",
         "reason": "Source census candidate added with the raft-ui 0.95.3 overlay-family alignment (sheet, menu, dialog, toast, lightbox and selection-shortcut families); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
-      "packages/raft_ui/lib/src/selected_text_quote.dart#local-function:EXTENSION:<anonymous>@6107/METHOD:_raft@6464/FUNCTION:item@7124": {
+      "packages/raft_ui/lib/src/selected_text_quote.dart#local-function:EXTENSION:<anonymous>@6107/METHOD:_raft@6464/FUNCTION:item@7118": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "WP-DS2 overlay family",
@@ -49316,6 +49316,12 @@
         "familyRefs": [],
         "owner": "WP-DS1 task-board family",
         "reason": "Source census candidate (WP-DS1 part 2, raft-ui 0.95.3 task board: column chevron, drop state of the lane box, keyboard-focusable trigger and card open area); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/context_menu_content.dart#class:_SeparatorPainter": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS2 overlay family",
+        "reason": "Source census candidate added with the WP-DS2 overlay-family followup (context-menu separator bleeding through the popup inset like the dropdown separator); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
       "apps/raft_flutter/lib/features/agent_connection_views.dart#class:AgentConnectionAccessLine": {
         "role": "unresolved",
@@ -59070,6 +59076,66 @@
         "applicability": "unknown",
         "owner": "WP-DS1 form controls",
         "reason": "Resolved state use added with the responsive recipe states (pointer-fine and the window band); look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/context_menu_content.dart#method:RaftContextMenuContent.build|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+        "applicability": "unknown",
+        "owner": "WP-DS2 overlay family",
+        "reason": "State use added with the WP-DS2 overlay-family followup (responsive recipe states for the 34px desktop menu rows and the 16px / 24px desktop dialog inset); look/input/real-entry applicability remains unreviewed. No exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/context_menu_content.dart#method:_Item.build|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+        "applicability": "unknown",
+        "owner": "WP-DS2 overlay family",
+        "reason": "State use added with the WP-DS2 overlay-family followup (responsive recipe states for the 34px desktop menu rows and the 16px / 24px desktop dialog inset); look/input/real-entry applicability remains unreviewed. No exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/context_menu_content.dart#method:_Separator.build|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+        "applicability": "unknown",
+        "owner": "WP-DS2 overlay family",
+        "reason": "State use added with the WP-DS2 overlay-family followup (responsive recipe states for the 34px desktop menu rows and the 16px / 24px desktop dialog inset); look/input/real-entry applicability remains unreviewed. No exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/design_primitives.dart#method:RaftMenuPanel.build|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+        "applicability": "unknown",
+        "owner": "WP-DS2 overlay family",
+        "reason": "State use added with the WP-DS2 overlay-family followup (responsive recipe states for the 34px desktop menu rows and the 16px / 24px desktop dialog inset); look/input/real-entry applicability remains unreviewed. No exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/design_primitives.dart#method:_RaftMenuItemState.build|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+        "applicability": "unknown",
+        "owner": "WP-DS2 overlay family",
+        "reason": "State use added with the WP-DS2 overlay-family followup (responsive recipe states for the 34px desktop menu rows and the 16px / 24px desktop dialog inset); look/input/real-entry applicability remains unreviewed. No exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/list_items.dart#method:_RaftSelectionRow.build|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+        "applicability": "unknown",
+        "owner": "WP-DS2 overlay family",
+        "reason": "State use added with the WP-DS2 overlay-family followup (responsive recipe states for the 34px desktop menu rows and the 16px / 24px desktop dialog inset); look/input/real-entry applicability remains unreviewed. No exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/menu_action_row.dart#method:RaftMenuActionRow.build|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+        "applicability": "unknown",
+        "owner": "WP-DS2 overlay family",
+        "reason": "State use added with the WP-DS2 overlay-family followup (responsive recipe states for the 34px desktop menu rows and the 16px / 24px desktop dialog inset); look/input/real-entry applicability remains unreviewed. No exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/message_context_menu.dart#method:RaftMessageContextMenu.build|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+        "applicability": "unknown",
+        "owner": "WP-DS2 overlay family",
+        "reason": "State use added with the WP-DS2 overlay-family followup (responsive recipe states for the 34px desktop menu rows and the 16px / 24px desktop dialog inset); look/input/real-entry applicability remains unreviewed. No exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/overlays/dialog.dart#class:RaftDialogSlots|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+        "applicability": "unknown",
+        "owner": "WP-DS2 overlay family",
+        "reason": "State use added with the WP-DS2 overlay-family followup (responsive recipe states for the 34px desktop menu rows and the 16px / 24px desktop dialog inset); look/input/real-entry applicability remains unreviewed. No exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/server_switcher.dart#method:RaftServerMenuPanel.build|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+        "applicability": "unknown",
+        "owner": "WP-DS2 overlay family",
+        "reason": "State use added with the WP-DS2 overlay-family followup (responsive recipe states for the 34px desktop menu rows and the 16px / 24px desktop dialog inset); look/input/real-entry applicability remains unreviewed. No exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/sidebar_menus.dart#method:_RaftSidebarContextMenuState._menu|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+        "applicability": "unknown",
+        "owner": "WP-DS2 overlay family",
+        "reason": "State use added with the WP-DS2 overlay-family followup (responsive recipe states for the 34px desktop menu rows and the 16px / 24px desktop dialog inset); look/input/real-entry applicability remains unreviewed. No exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/sidebar_menus.dart#method:_RaftSidebarContextMenuState._submenu|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+        "applicability": "unknown",
+        "owner": "WP-DS2 overlay family",
+        "reason": "State use added with the WP-DS2 overlay-family followup (responsive recipe states for the 34px desktop menu rows and the 16px / 24px desktop dialog inset); look/input/real-entry applicability remains unreviewed. No exemption or visual acceptance."
       },
       "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35175/METHOD:_buildRecipe@36445/FUNCTION:resolve@36631|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:disabled": {
         "applicability": "unknown",
