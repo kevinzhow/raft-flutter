@@ -10,7 +10,7 @@
 /// docs/android-cjk-control-typography.md.
 abstract final class RaftControlTypographyTokens {
   /// `control.androidChineseLineHeight`: `TextStyle.height` factor.
-  static const double androidChineseLineHeight = 1.3;
+  static const double androidChineseLineHeight = 1.35;
   /// `control.windowsChineseLineHeight`: `TextStyle.height` factor.
   static const double windowsChineseLineHeight = 1.2;
 }

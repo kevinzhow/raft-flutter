@@ -49,7 +49,7 @@ void main() {
 
     test('the line height comes from the generated token', () {
       expect(RaftControlTypography.androidChineseLineHeight, profileHeight);
-      expect(profileHeight, 1.3);
+      expect(profileHeight, 1.35);
     });
 
     test('Android + Chinese changes only height and leading distribution', () {

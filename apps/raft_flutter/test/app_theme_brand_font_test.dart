@@ -26,30 +26,43 @@ void main() {
     });
   }
 
-  test('Android app theme falls back to the locale CJK face by name', () {
+  // Android's fonts.xml registers the CJK faces as unnamed `lang=` fallback
+  // families, so the engine cannot find 'Noto Sans CJK SC' by name (emulator
+  // probe, API 36): the regional face is chosen by the text style's locale.
+  // The theme's text styles must therefore carry the device locale, and the
+  // fallback list must end in the generic 'sans-serif'.
+  test('Android app theme picks the regional CJK face through the locale', () {
     debugDefaultTargetPlatformOverride = TargetPlatform.android;
     addTearDown(() => debugDefaultTargetPlatformOverride = null);
-    void leads(Locale locale, String face) {
-      final list = tokensFor(locale).fontFallback;
-      expect(list, contains(face), reason: '$locale');
-      expect(list.indexOf(face), lessThan(list.indexOf('sans-serif')));
+    for (final locale in const [
+      Locale.fromSubtags(
+        languageCode: 'zh',
+        scriptCode: 'Hans',
+        countryCode: 'CN',
+      ),
+      Locale.fromSubtags(
+        languageCode: 'zh',
+        scriptCode: 'Hant',
+        countryCode: 'TW',
+      ),
+      Locale('ja', 'JP'),
+      Locale('ko', 'KR'),
+    ]) {
+      final theme = raftAppTheme(
+        dark: false,
+        appearance: const RaftAppearance(),
+        locale: const Locale('zh', 'CN'),
+        textLocale: locale,
+      );
+      for (final style in [
+        theme.textTheme.bodyMedium!,
+        theme.textTheme.labelLarge!,
+        theme.textTheme.titleMedium!,
+      ]) {
+        expect(style.locale, locale, reason: '$locale');
+        expect(style.fontFamily, brand, reason: '$locale');
+        expect(style.fontFamilyFallback, contains('sans-serif'));
+      }
     }
-
-    leads(const Locale('zh', 'CN'), 'Noto Sans CJK SC');
-    leads(const Locale('zh', 'TW'), 'Noto Sans CJK TC');
-    leads(const Locale('ja'), 'Noto Sans CJK JP');
-    leads(const Locale('ko'), 'Noto Sans CJK KR');
-    expect(
-      tokensFor(const Locale('ja')).fontFallback.first,
-      'Noto Sans CJK JP',
-    );
-    expect(
-      tokensFor(const Locale('ko')).fontFallback.first,
-      'Noto Sans CJK KR',
-    );
-    expect(
-      tokensFor(const Locale('zh', 'TW')).fontFallback.first,
-      'Noto Sans CJK TC',
-    );
   });
 }
