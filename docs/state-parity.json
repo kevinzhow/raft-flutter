@@ -40727,11 +40727,11 @@
         "sourceBindings": [
           {
             "file": "packages/raft_ui/lib/src/design_primitives.dart",
-            "bytes": 127060,
-            "sha256": "5edfd90ab4d7b7427065b461bb3a85134d27e0eb74fd2571a217946991a2a658"
+            "bytes": 126834,
+            "sha256": "59e366f599a1686e4683f308248143371fc944d80f35e0d604269bab8f9e1940"
           }
         ],
-        "reviewDecision": "Source reviewed at fixed Choice/P1 combination: this declaration is in an explicit frozen part/helper or a frozen Dialog class, selected only by the existing non-Raft/legacy recipe branch. The whole-file binding is refreshed after exact raw declaration-body comparison with ae852; surrounding current-look edits do not imply a change to this frozen body. Current final125 whole-file binding refreshed after raw declaration-body equality with ae852; surrounding Dropdown changes are not a whole-file or visual equality claim. WP-AGENT PR 2 refreshed the binding again after adding RaftTextLinkVariant, the muted/strong link label and the hover-only underline above RaftTextLink: the git diff of design_primitives.dart has no hunk inside this declaration, so its body is unchanged. WP-AGENT PR 3 refreshed it after adding the optional RaftTextLink scale (hunks at lines 2900-2998 only, none inside this declaration). WP-COMP2 refreshed the binding again after adding RaftTextLink.trailingGlyph and a Flexible label: the git diff of design_primitives.dart has no hunk inside this declaration, so its body is unchanged.",
+        "reviewDecision": "Source reviewed at fixed Choice/P1 combination: this declaration is in an explicit frozen part/helper or a frozen Dialog class, selected only by the existing non-Raft/legacy recipe branch. The whole-file binding is refreshed after exact raw declaration-body comparison with ae852; surrounding current-look edits do not imply a change to this frozen body. Current final125 whole-file binding refreshed after raw declaration-body equality with ae852; surrounding Dropdown changes are not a whole-file or visual equality claim. WP-AGENT PR 2 refreshed the binding again after adding RaftTextLinkVariant, the muted/strong link label and the hover-only underline above RaftTextLink: the git diff of design_primitives.dart has no hunk inside this declaration, so its body is unchanged. WP-AGENT PR 3 refreshed it after adding the optional RaftTextLink scale (hunks at lines 2900-2998 only, none inside this declaration). WP-COMP2 refreshed the binding again after adding RaftTextLink.trailingGlyph and a Flexible label: the git diff of design_primitives.dart has no hunk inside this declaration, so its body is unchanged. The Android brand-font change refreshed it after removing the systemFonts branches (RaftTypography.black and two fontFamilyFallback sites, above this declaration): no hunk inside this declaration, so its body is unchanged.",
         "reason": "Renderer selected only by an explicit Elegant/Brutal branch; this records source ownership, without claiming migration identity, exempting style findings or asserting pixel equivalence."
       },
       "packages/raft_ui/lib/src/design_primitives.dart#local-function:CLASS:_RaftDropdownMenuState@66470/METHOD:build@71981/FUNCTION:toggle@72166": {
@@ -42558,7 +42558,7 @@
         "owner": "task289 scoped source registration",
         "reason": "Actual resolved declaration in the exact Mac preparation runtime subset. Independent paint/delegation/state/real-entry closure remains unresolved; no thin-wrapper or style exemption is granted."
       },
-      "packages/raft_ui/lib/src/feedback_workspace.dart#local-function:CLASS:_RaftFeedbackCloseSplitState@38982/METHOD:build@40831/FUNCTION:part@41861": {
+      "packages/raft_ui/lib/src/feedback_workspace.dart#local-function:CLASS:_RaftFeedbackCloseSplitState@38895/METHOD:build@40744/FUNCTION:part@41774": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "task289 scoped source registration",
@@ -42959,7 +42959,7 @@
         "owner": "task289 task-filter adapter",
         "reason": "Actual caller adapter selects RaftPopoverAnchor only for current Raft and non-combobox, forwarding the existing owner/controller/focus/builder/content. Frozen and combobox retain MenuAnchor. Business authority stays with TaskSelectionFilter; no thin-wrapper exemption, state closure or visual acceptance."
       },
-      "packages/raft_ui/lib/src/design_primitives.dart#local-function:CLASS:_RaftDropdownMenuState@69023/METHOD:build@75433/FUNCTION:toggle@75663": {
+      "packages/raft_ui/lib/src/design_primitives.dart#local-function:CLASS:_RaftDropdownMenuState@68870/METHOD:build@75280/FUNCTION:toggle@75510": {
         "role": "unresolved",
         "familyRefs": [
           "menu"
@@ -54633,7 +54633,7 @@
         "owner": "task289 menu source registration",
         "mountStatus": "unresolved",
         "declarationRefs": [
-          "packages/raft_ui/lib/src/design_primitives.dart#local-function:CLASS:_RaftDropdownMenuState@69023/METHOD:build@75433/FUNCTION:toggle@75663"
+          "packages/raft_ui/lib/src/design_primitives.dart#local-function:CLASS:_RaftDropdownMenuState@68870/METHOD:build@75280/FUNCTION:toggle@75510"
         ],
         "reason": "Actual resolved dropdown toggle surface factory at the new final125 lexical position. Earlier entries and IDs remain historical; real mounted-entry/state/input and paired visual acceptance are still unreviewed."
       },
