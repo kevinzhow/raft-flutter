@@ -66,7 +66,9 @@ void main() {
       row(cta: {'label': 'Read more', 'href': 'https://example.com/update'}),
     );
     expect(find.text('Read more'), findsOneWidget);
-    expect(find.text('Got it'), findsOneWidget);
+    // Web v1.24 AnnouncementModal.tsx l.164-170: one button, the CTA or Got
+    // it; with a CTA the header X closes it.
+    expect(find.text('Got it'), findsNothing);
     await t.tap(find.byKey(const ValueKey('announcement-ok')));
     await host.settle(t);
     expect(opened, ['https://example.com/update']);
@@ -86,12 +88,17 @@ void main() {
     expect(f.count('POST /announcements/a1/dismiss'), 1);
   });
 
-  testWidgets('Got it dismisses without opening the CTA', (t) async {
+  testWidgets('the close X dismisses without opening the CTA', (t) async {
     final (f, opened) = await mount(
       t,
       row(cta: {'label': 'Read more', 'href': 'https://example.com'}),
     );
-    await t.tap(find.byKey(const ValueKey('announcement-dismiss')));
+    await t.tap(
+      find.descendant(
+        of: find.byKey(const ValueKey('announcement-header')),
+        matching: find.byType(RaftDialogClose),
+      ),
+    );
     await host.settle(t);
     expect(opened, isEmpty);
     expect(f.count('POST /announcements/a1/dismiss'), 1);

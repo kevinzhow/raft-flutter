@@ -167,8 +167,9 @@ void main() {
         expect(find.text('Could not join this channel.'), findsOneWidget);
         expect(find.text(_joinFailed), findsNothing);
         expect(w.error, isNull);
-        // The toast closes by itself after Web's 5 s.
-        await tester.pump(const Duration(seconds: 6));
+        // The toast closes by itself after Web's 8 s for an error
+        // (toastBridge.ts: TOAST_ACTION_TIMEOUT_MS for type "error").
+        await tester.pump(const Duration(seconds: 9));
         await tester.pumpAndSettle();
         expect(find.text('Could not join this channel.'), findsNothing);
 
