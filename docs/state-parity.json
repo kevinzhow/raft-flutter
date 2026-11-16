@@ -50547,19 +50547,19 @@
         "owner": "design-system alignment",
         "reason": "Resolved paint_owner; real-entry/family/state mapping remains unreviewed."
       },
-      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@38741/METHOD:_buildRecipe@40011/FUNCTION:addon@41501": {
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@38951/METHOD:_buildRecipe@40221/FUNCTION:addon@41979": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
-      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@38741/METHOD:_buildRecipe@40011/FUNCTION:box@41191": {
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@38951/METHOD:_buildRecipe@40221/FUNCTION:box@41669": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
-      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@38741/METHOD:_buildRecipe@40011/FUNCTION:resolve@40197": {
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@38951/METHOD:_buildRecipe@40221/FUNCTION:resolve@40407": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
@@ -50820,24 +50820,6 @@
         "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
       "packages/raft_ui/lib/src/computers_rack.dart#local-function:CLASS:_RaftRackRowState@15589/METHOD:build@17235/FUNCTION:slots@19656": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "WP-DS5 data-display family",
-        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
-      },
-      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35856/METHOD:_buildRecipe@37126/FUNCTION:addon@38884": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "WP-DS5 data-display family",
-        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
-      },
-      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35856/METHOD:_buildRecipe@37126/FUNCTION:box@38574": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "WP-DS5 data-display family",
-        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
-      },
-      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35856/METHOD:_buildRecipe@37126/FUNCTION:resolve@37312": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "WP-DS5 data-display family",
@@ -59867,62 +59849,32 @@
         "owner": "design-system alignment",
         "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
       },
-      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@38741/METHOD:_buildRecipe@40011/FUNCTION:resolve@40197|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:hovered": {
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@38951/METHOD:_buildRecipe@40221/FUNCTION:resolve@40407|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:hovered": {
         "applicability": "unknown",
         "owner": "design-system alignment",
         "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
       },
-      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@38741/METHOD:_buildRecipe@40011/FUNCTION:resolve@40197|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@38951/METHOD:_buildRecipe@40221/FUNCTION:resolve@40407|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
         "applicability": "unknown",
         "owner": "design-system alignment",
         "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
       },
-      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@38741/METHOD:_buildRecipe@40011/FUNCTION:resolve@40197|state:focus-within": {
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@38951/METHOD:_buildRecipe@40221/FUNCTION:resolve@40407|state:focus-within": {
         "applicability": "unknown",
         "owner": "design-system alignment",
         "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
       },
-      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@38741/METHOD:_buildRecipe@40011/FUNCTION:resolve@40197|state:has:data-slot=input-group-control+data-invalid": {
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@38951/METHOD:_buildRecipe@40221/FUNCTION:resolve@40407|state:has:data-slot=input-group-control+data-invalid": {
         "applicability": "unknown",
         "owner": "design-system alignment",
         "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
       },
-      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@38741/METHOD:_buildRecipe@40011/FUNCTION:resolve@40197|state:has:data-slot=input-group-control+disabled": {
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@38951/METHOD:_buildRecipe@40221/FUNCTION:resolve@40407|state:has:data-slot=input-group-control+disabled": {
         "applicability": "unknown",
         "owner": "design-system alignment",
         "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
       },
       "packages/raft_ui/lib/src/card_parts.dart#function:_resolve|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
-        "applicability": "unknown",
-        "owner": "WP-DS5 data-display family",
-        "reason": "Resolved state atom use added with the WP-DS5 data-display alignment (raft-ui 0.95.3); look/input/real-entry applicability remains unreviewed."
-      },
-      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35856/METHOD:_buildRecipe@37126/FUNCTION:resolve@37312|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:disabled": {
-        "applicability": "unknown",
-        "owner": "WP-DS5 data-display family",
-        "reason": "Resolved state atom use added with the WP-DS5 data-display alignment (raft-ui 0.95.3); look/input/real-entry applicability remains unreviewed."
-      },
-      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35856/METHOD:_buildRecipe@37126/FUNCTION:resolve@37312|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:hovered": {
-        "applicability": "unknown",
-        "owner": "WP-DS5 data-display family",
-        "reason": "Resolved state atom use added with the WP-DS5 data-display alignment (raft-ui 0.95.3); look/input/real-entry applicability remains unreviewed."
-      },
-      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35856/METHOD:_buildRecipe@37126/FUNCTION:resolve@37312|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
-        "applicability": "unknown",
-        "owner": "WP-DS5 data-display family",
-        "reason": "Resolved state atom use added with the WP-DS5 data-display alignment (raft-ui 0.95.3); look/input/real-entry applicability remains unreviewed."
-      },
-      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35856/METHOD:_buildRecipe@37126/FUNCTION:resolve@37312|state:focus-within": {
-        "applicability": "unknown",
-        "owner": "WP-DS5 data-display family",
-        "reason": "Resolved state atom use added with the WP-DS5 data-display alignment (raft-ui 0.95.3); look/input/real-entry applicability remains unreviewed."
-      },
-      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35856/METHOD:_buildRecipe@37126/FUNCTION:resolve@37312|state:has:data-slot=input-group-control+data-invalid": {
-        "applicability": "unknown",
-        "owner": "WP-DS5 data-display family",
-        "reason": "Resolved state atom use added with the WP-DS5 data-display alignment (raft-ui 0.95.3); look/input/real-entry applicability remains unreviewed."
-      },
-      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35856/METHOD:_buildRecipe@37126/FUNCTION:resolve@37312|state:has:data-slot=input-group-control+disabled": {
         "applicability": "unknown",
         "owner": "WP-DS5 data-display family",
         "reason": "Resolved state atom use added with the WP-DS5 data-display alignment (raft-ui 0.95.3); look/input/real-entry applicability remains unreviewed."
