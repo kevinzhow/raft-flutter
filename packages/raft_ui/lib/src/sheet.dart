@@ -6,8 +6,7 @@ import 'package:flutter/material.dart';
 
 import 'recipe_surface.dart';
 import 'recipes/drawer.g.dart';
-import 'recipes/recipe_runtime.dart'
-    show RaftRecipeTheme, RaftShadowLayers, RaftSlotStyle;
+import 'recipes/recipe_runtime.dart' show RaftShadowLayers, RaftSlotStyle;
 import 'settings_layout.dart' show RaftSpace;
 import 'system_inset.dart';
 import 'theme.dart';
