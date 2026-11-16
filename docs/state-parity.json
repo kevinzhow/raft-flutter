@@ -50631,7 +50631,7 @@
         "owner": "WP-DS5 data-display family",
         "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
-      "packages/raft_ui/lib/src/auth_page.dart#local-function:CLASS:RaftAuthPrompt@32477/METHOD:build@32712/FUNCTION:run@33254": {
+      "packages/raft_ui/lib/src/auth_page.dart#local-function:CLASS:RaftAuthPrompt@31543/METHOD:build@31778/FUNCTION:run@32320": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "WP-DS5 data-display family",
