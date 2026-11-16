@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/test_themes.dart';
 
 // raft-ui 0.95.3 InboxItem (compact, the only density Web v1.24 mounts):
 // Web measures a 379x60 row with padding 8/16, a 36x36 leading tile, a cell
@@ -15,38 +16,23 @@ typedef _Env = ({
   double scale,
 });
 
+const _sizes = [
+  // Index 0 is the phone: the gate keeps every theme/scale variant there.
+  ('linux 390x844', Size(390, 844), TargetPlatform.linux),
+  ('linux 1440x900', Size(1440, 900), TargetPlatform.linux),
+  ('android 856x944', Size(856, 944), TargetPlatform.android),
+  ('android 944x856', Size(944, 856), TargetPlatform.android),
+];
+const _variants = [(false, 1.0), (true, 1.0), (false, 2.0), (true, 2.0)];
+
+// matrix: nightly-full -- the gate runs light 1.0x at every size and the dark
+// and 2.0x variants on the phone size (raftMatrixCell); RAFT_TEST_TIER=full
+// runs every size x variant.
 final _envs = <_Env>[
-  for (final dark in [false, true])
-    for (final scale in [1.0, 2.0]) ...[
-      (
-        name: 'linux 1440x900',
-        size: const Size(1440, 900),
-        platform: TargetPlatform.linux,
-        dark: dark,
-        scale: scale,
-      ),
-      (
-        name: 'linux 390x844',
-        size: const Size(390, 844),
-        platform: TargetPlatform.linux,
-        dark: dark,
-        scale: scale,
-      ),
-      (
-        name: 'android 856x944',
-        size: const Size(856, 944),
-        platform: TargetPlatform.android,
-        dark: dark,
-        scale: scale,
-      ),
-      (
-        name: 'android 944x856',
-        size: const Size(944, 856),
-        platform: TargetPlatform.android,
-        dark: dark,
-        scale: scale,
-      ),
-    ],
+  for (final (v, (dark, scale)) in _variants.indexed)
+    for (final (i, (name, size, platform)) in _sizes.indexed)
+      if (raftMatrixCell(theme: v, size: i))
+        (name: name, size: size, platform: platform, dark: dark, scale: scale),
 ];
 
 String _label(_Env e) =>
@@ -61,9 +47,8 @@ Future<void> _pump(WidgetTester tester, _Env e, Widget child) async {
       debugShowCheckedModeBanner: false,
       theme: raftTheme(dark: e.dark).copyWith(platform: e.platform),
       builder: (context, child) => MediaQuery(
-        data: MediaQuery.of(
-          context,
-        ).copyWith(textScaler: TextScaler.linear(e.scale)),
+        data: MediaQuery.of(context)
+            .copyWith(textScaler: TextScaler.linear(e.scale)),
         child: child!,
       ),
       home: Scaffold(
@@ -124,9 +109,9 @@ double _opacityOf(WidgetTester tester, Finder f) => tester
     )
     .opacity;
 
-TextStyle _styleOf(WidgetTester tester, String text) => DefaultTextStyle.of(
-  tester.element(find.text(text)),
-).style.merge(tester.widget<Text>(find.text(text)).style);
+TextStyle _styleOf(WidgetTester tester, String text) =>
+    DefaultTextStyle.of(tester.element(find.text(text))).style
+        .merge(tester.widget<Text>(find.text(text)).style);
 
 void main() {
   for (final e in _envs) {

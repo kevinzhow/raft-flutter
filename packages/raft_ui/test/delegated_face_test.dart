@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
-import 'package:raft_ui/src/raft/css_box.dart';
-import 'package:raft_ui/test_themes.dart';
 
 // raft-ui 0.95.3 message-item-delegated: a 19px face (radius sticker 4) on the
 // owner's avatar, ringed in the row's current fill (1.5px light, 3px dark).

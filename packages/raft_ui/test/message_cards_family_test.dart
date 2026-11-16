@@ -206,9 +206,8 @@ void main() {
       final style = tester
           .widget<Text>(find.text('View All 3 Messages'))
           .style!;
-      final ui = RaftTokens.of(
-        tester.element(find.byType(RaftForwardedBundle)),
-      ).ui;
+      final ui = RaftTokens.of(tester.element(find.byType(RaftForwardedBundle)))
+          .ui;
       expect(style.fontWeight, FontWeight.w600);
       expect(style.color, ui.foreground);
       expect(style.fontSize, 12);

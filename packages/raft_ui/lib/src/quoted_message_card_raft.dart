@@ -4,6 +4,7 @@
 // (only a tappable, non-muted preview), keyboard focus the focus ring. The
 // frozen looks keep the 0.5.52 card in quoted_message_card.dart.
 import 'token_geometry.dart';
+
 import 'package:flutter/material.dart';
 
 import 'design_primitives.dart' show RaftInteractive, RaftInteractionState;
@@ -16,7 +17,9 @@ import 'quoted_message_card.dart';
 import 'raft/ui_tokens.dart';
 import 'raft_underline.dart';
 import 'recipe_surface.dart';
+
 import 'package:raft_theme/recipes/message_quoted_preview.g.dart';
+
 import 'theme.dart';
 
 class RaftQuotedMessageCardRaft extends StatelessWidget {

@@ -108,8 +108,7 @@ void main() {
               body: SizedBox(
                 width: 640,
                 child: RaftMessageBody(
-                  content:
-                      '| Status | Count |\n|---|---|\n|Ready|3|\n\n[link](https://example.com)',
+                  content: '| Status | Count |\n|---|---|\n|Ready|3|\n\n[link](https://example.com)',
                 ),
               ),
             ),

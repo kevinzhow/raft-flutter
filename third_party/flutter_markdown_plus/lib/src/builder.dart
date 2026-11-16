@@ -822,9 +822,7 @@ class MarkdownBuilder implements md.NodeVisitor {
     // If the span is not a TextSpan or it has no children, return the span.
     // Raft patch: a TextSpan subclass (raft_ui's RaftBackgroundSpan, which
     // paints inline code's fill) is kept whole; flattening it drops the fill.
-    if (span is! TextSpan ||
-        span.runtimeType != TextSpan ||
-        span.children == null) {
+    if (span is! TextSpan || span.runtimeType != TextSpan || span.children == null) {
       return <InlineSpan>[span];
     }
 
@@ -990,10 +988,8 @@ class MarkdownBuilder implements md.NodeVisitor {
       final InlineSpan nextChild = textSpans[index];
 
       // Raft patch: TextSpan subclasses never merge (see _getInlineSpansFromSpan).
-      final bool previousIsTextSpan =
-          previous is TextSpan && previous.runtimeType == TextSpan;
-      final bool nextIsTextSpan =
-          nextChild is TextSpan && nextChild.runtimeType == TextSpan;
+      final bool previousIsTextSpan = previous is TextSpan && previous.runtimeType == TextSpan;
+      final bool nextIsTextSpan = nextChild is TextSpan && nextChild.runtimeType == TextSpan;
       if (!previousIsTextSpan || !nextIsTextSpan) {
         mergedSpans.addAll(<InlineSpan>[previous, nextChild]);
         continue;

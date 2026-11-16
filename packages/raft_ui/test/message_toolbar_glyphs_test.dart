@@ -15,9 +15,9 @@ Future<Uint8List> raster(WidgetTester tester) async {
     try {
       expect(image.width, 16);
       expect(image.height, 16);
-      return (await image.toByteData(
-        format: ui.ImageByteFormat.rawRgba,
-      ))!.buffer.asUint8List();
+      return (await image.toByteData(format: ui.ImageByteFormat.rawRgba))!
+          .buffer
+          .asUint8List();
     } finally {
       image.dispose();
     }
@@ -59,9 +59,8 @@ void main() {
           isTrue,
         );
         expect(
-          [
-            for (var i = 0; i < blue.length; i += 4) blue[i],
-          ].every((v) => v == 0),
+          [for (var i = 0; i < blue.length; i += 4) blue[i]]
+              .every((v) => v == 0),
           isTrue,
         );
         expect(red, isNot(orderedEquals(blue)));

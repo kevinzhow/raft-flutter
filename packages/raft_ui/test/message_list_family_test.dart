@@ -152,9 +152,9 @@ void main() {
         );
         expect(tester.widget<RaftIcon>(find.byType(RaftIcon)).size, 16);
         expect(
-          DefaultTextStyle.of(
-            tester.element(find.text('Back to bottom')),
-          ).style.fontSize,
+          DefaultTextStyle.of(tester.element(find.text('Back to bottom')))
+              .style
+              .fontSize,
           touch || size.width < 768 ? 13 : 14,
         );
       });

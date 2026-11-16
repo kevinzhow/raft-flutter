@@ -2,9 +2,6 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
-import 'package:raft_ui/src/message_row_recipe.dart';
-import 'package:raft_ui/src/theme.dart';
-import 'package:raft_ui/test_themes.dart';
 
 // raft-ui 0.95.3 message-item `toolbar` / `toolbarButton`: a mouse from 768px
 // (`md:pointer-fine`) draws 34px buttons (radius 8) in a 42px bar, below that
