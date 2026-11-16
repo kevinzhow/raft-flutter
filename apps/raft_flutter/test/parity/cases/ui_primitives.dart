@@ -24,15 +24,9 @@ final Map<String, ParityCase> uiPrimitiveCases = {
   'components.ui.checkbox.states': _checkbox,
   'components.ui.typography.specimen': _typography,
   'components.ui.check-marker.states': _checkMarker,
-  'components.ui.attention-dot.states': _attentionDot,
-  'components.ui.status-dot.states': _statusDot,
   'components.ui.badge.states': _badge,
-  'components.ui.progress-bar.states': _progressBar,
   'components.ui.skeleton.states': _skeleton,
-  'components.ui.spinner.states': _spinner,
   'components.ui.slug-input.states': _slugInput,
-  'components.ui.section-eyebrow.states': _sectionEyebrow,
-  'components.ui.section-header.states': _sectionHeader,
   'components.ui.selection-popover.states': _selectionPopover,
   'components.ui.menu-item.states': _menuItem,
   'components.ui.select.states': _select,
@@ -42,7 +36,16 @@ final Map<String, ParityCase> uiPrimitiveCases = {
 
 // Retired from the current Web official manifest. The frozen look suite keeps
 // their original builders and reference images independently of that manifest.
+// v1.24.0-source.1 sharedCases.json no longer lists the attention-dot,
+// status-dot, progress-bar, spinner, section-eyebrow and section-header
+// cases (the components themselves remain).
 final Map<String, ParityCase> uiFrozenPrimitiveCases = {
+  'components.ui.attention-dot.states': _attentionDot,
+  'components.ui.status-dot.states': _statusDot,
+  'components.ui.progress-bar.states': _progressBar,
+  'components.ui.spinner.states': _spinner,
+  'components.ui.section-eyebrow.states': _sectionEyebrow,
+  'components.ui.section-header.states': _sectionHeader,
   'components.ui.button.states.elegant': _button,
   'components.ui.card.states.elegant': _card,
   'components.ui.form-field.states.elegant': _formField,
