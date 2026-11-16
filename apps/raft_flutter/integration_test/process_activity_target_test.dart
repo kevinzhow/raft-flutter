@@ -438,7 +438,10 @@ void main() {
 
       Future<void> openActivity() async {
         if (form == 'mobile') {
-          if (find.byKey(const ValueKey('mobile-tab-activity')).evaluate().isEmpty) {
+          if (find
+              .byKey(const ValueKey('mobile-tab-activity'))
+              .evaluate()
+              .isEmpty) {
             await t.tap(find.byTooltip('Back').first);
             await t.pump();
           }

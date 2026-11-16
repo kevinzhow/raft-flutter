@@ -1,6 +1,7 @@
 // Shared by the RaftBench integration tests: sign in to the local test stack
 // through the real login screen, open Settings > RaftBench, capture the app.
 import 'server_tab.dart';
+
 import 'dart:convert';
 import 'dart:io';
 import 'dart:ui' as ui;

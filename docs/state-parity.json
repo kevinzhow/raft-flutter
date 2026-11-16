@@ -51128,10 +51128,12 @@
         "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
       },
       "packages/raft_ui/lib/src/mobile_nav_server.dart#class:RaftMobileNavServerTab": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+        "role": "canonical_component",
+        "familyRefs": [
+          "mobile_nav_server"
+        ],
+        "owner": "design-system canonical registry",
+        "reason": "Actual resolved Widget bound by canonicalBindings; registering ownership does not establish current visual acceptance."
       },
       "packages/raft_ui/lib/src/mobile_nav_server.dart#class:_BarAnchorScope": {
         "role": "unresolved",
