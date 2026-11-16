@@ -48435,13 +48435,13 @@
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
-      "packages/raft_ui/lib/src/menu_action_row.dart#local-function:CLASS:RaftMenuSlotRow@2463/METHOD:build@3255/FUNCTION:iconSlot@3486": {
+      "packages/raft_ui/lib/src/menu_action_row.dart#local-function:CLASS:RaftMenuSlotRow@2491/METHOD:build@3283/FUNCTION:iconSlot@3514": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
-      "packages/raft_ui/lib/src/menu_action_row.dart#local-function:CLASS:RaftMenuSlotRow@2463/METHOD:build@3255/FUNCTION:line@4578": {
+      "packages/raft_ui/lib/src/menu_action_row.dart#local-function:CLASS:RaftMenuSlotRow@2491/METHOD:build@3283/FUNCTION:line@4606": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
