@@ -111,7 +111,7 @@ const popupSurfaces = <CloseSurface>[
   CloseSurface(
     'toast',
     kind: SurfaceKind.toast,
-    web: 'LocalizedToastProvider.tsx:35,61-69 ToastClose unless hasClose === false',
+    web: 'LocalizedToastProvider.tsx:100 ToastClose only when hasClose === true (Web v1.24; forwardToast.ts:31 dismissible opt-in, e.g. desktopOAuth.ts:375); otherwise Esc while focused or a swipe',
     phone: {_x},
     fold: {_x},
     desktop: {_x},
@@ -121,7 +121,7 @@ const popupSurfaces = <CloseSurface>[
       'lib/features/thread_agent_followers_view.dart',
     ],
     status: 'fixed',
-    fix: 'RaftToastPortal renders the Web default toast (icon + close + action); close was ignored in the icon-less layout',
+    fix: 'RaftToastPortal draws the close only for an opt-in toast (show(dismissible: true)), as Web v1.24; the harness opens one',
   ),
   CloseSurface(
     'selection-toast',

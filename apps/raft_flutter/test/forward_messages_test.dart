@@ -219,8 +219,10 @@ void main() {
         ),
         findsWidgets,
       );
-      // Web forwardToast.error: the same sentence also shows as a toast.
-      expect(find.byKey(const Key('toast-close')), findsOneWidget);
+      // Web forwardToast.error: the same sentence also shows as a toast,
+      // without a close (v1.24 forwardToast.ts: hasClose only when dismissible).
+      expect(find.byType(RaftToast), findsOneWidget);
+      expect(find.byKey(const Key('toast-close')), findsNothing);
       await tester.tap(find.byKey(const Key('composer-submit')));
       await tester.pump(const Duration(milliseconds: 500));
       await tester.pump(const Duration(milliseconds: 500));
