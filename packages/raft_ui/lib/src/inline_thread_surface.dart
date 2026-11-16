@@ -38,56 +38,118 @@ class RaftInlineThreadRecipe {
   /// The reader's message size: the sender, preview and time classes
   /// (`getMessagePreviewSizeClass`, `getMessagePreviewTimeSizeClass`).
   final RaftMessageSizeTier sizeTier;
+
+  /// The Raft look draws raft-ui 0.95.3 `messageReplies` (`mt-2 gap-1 px-2.5
+  /// py-2 bg-fill-muted`, no border or radius); the frozen looks keep the
+  /// 0.5.52 bordered card below.
+  bool get raft => tokens.isRaftLook;
   EdgeInsets get padding =>
       const EdgeInsets.symmetric(horizontal: 10, vertical: 8);
-  double get topGap => 6;
+  double get topGap => raft ? 8 : 6;
   double get rowGap => 4;
-  double get summaryBottomGap => 6;
-  BorderRadius get radius => BorderRadius.circular(6);
-  BorderSide get border => BorderSide(
-    color: tokens.dark ? Colors.transparent : tokens.colors['line-muted']!,
-    width: .5,
+  double get summaryBottomGap => raft ? 0 : 6;
+  BorderRadius get radius =>
+      raft ? BorderRadius.zero : BorderRadius.circular(6);
+  BorderSide get border => raft
+      ? BorderSide.none
+      : BorderSide(
+          color: tokens.dark
+              ? Colors.transparent
+              : tokens.colors['line-muted']!,
+          width: .5,
+        );
+  Color get normal => raft ? tokens.colors['fill-muted']! : tokens.card;
+
+  /// `hover:overlay-subtle`: the subtle fill laid over the block.
+  Color get hover => Color.alphaBlend(
+    tokens.colors['fill-subtle']!,
+    tokens.colors['fill-muted']!,
   );
-  Color get normal => tokens.card;
-  Color get muted => tokens.muted;
+  Color get muted => raft ? tokens.colors['foreground-muted']! : tokens.muted;
+  Color get hint => raft ? tokens.colors['foreground-hint']! : muted;
+
+  /// `text-footnote` / `text-caption` at the reader's size: -1 / 0 / +1
+  /// (`getMessagePreviewSizeClass`, `getMessagePreviewTimeSizeClass`).
+  double get _tierStep => switch (sizeTier) {
+    RaftMessageSizeTier.sm => -1,
+    RaftMessageSizeTier.md => 0,
+    RaftMessageSizeTier.lg => 1,
+  };
+
+  TextStyle _slot(String slot, {double step = 0, FontWeight? weight}) {
+    final spec = tokens.typeSlot(slot);
+    return TextStyle(
+      fontFamily: tokens.bodyFont,
+      fontFamilyFallback: tokens.systemFonts ? tokens.fontFallback : null,
+      fontSize: spec.fontSize + step,
+      height: spec.lineHeight / (spec.fontSize + step),
+      fontWeight: weight,
+      leadingDistribution: TextLeadingDistribution.even,
+    );
+  }
 
   /// `messageReplies.summary`: brutal 12.5/700 black/55; elegant 12/500
-  /// foreground-muted on a 1.3333 line.
-  TextStyle get summary => TextStyle(
-    fontFamily: tokens.bodyFont,
-    fontFamilyFallback: tokens.systemFonts ? tokens.fontFallback : null,
-    fontSize: 12,
-    height: 16 / 12,
-    fontWeight: FontWeight.w500,
-    color: muted,
-  );
-  TextStyle get sender => TextStyle(
-    fontFamily: tokens.bodyFont,
-    fontFamilyFallback: tokens.systemFonts ? tokens.fontFallback : null,
-    fontSize: sizeTier.previewFor(tokens),
-    height: 1.25,
-    fontWeight: FontWeight.w600,
-    // `messageReplies.sender`: brutal black/70, elegant foreground-muted.
-    color: muted,
-  );
-  TextStyle get preview => sender.copyWith(
-    fontWeight: FontWeight.w400,
-    // `messageReplies.content`: brutal black/60, elegant muted at 80%.
-    color: muted.withValues(alpha: muted.a * .8),
-  );
+  /// foreground-muted on a 1.3333 line; Raft `text-footnote font-bold`.
+  TextStyle get summary => raft
+      ? _slot('footnote', weight: FontWeight.w700).copyWith(color: muted)
+      : TextStyle(
+          fontFamily: tokens.bodyFont,
+          fontFamilyFallback: tokens.systemFonts ? tokens.fontFallback : null,
+          fontSize: 12,
+          height: 16 / 12,
+          fontWeight: FontWeight.w500,
+          color: muted,
+        );
+  TextStyle get sender => raft
+      ? _slot(
+          'footnote',
+          step: _tierStep,
+          weight: FontWeight.w600,
+        ).copyWith(color: muted)
+      : TextStyle(
+          fontFamily: tokens.bodyFont,
+          fontFamilyFallback: tokens.systemFonts ? tokens.fontFallback : null,
+          fontSize: sizeTier.previewFor(tokens),
+          height: 1.25,
+          fontWeight: FontWeight.w600,
+          // `messageReplies.sender`: brutal black/70, elegant foreground-muted.
+          color: muted,
+        );
+  TextStyle get preview => raft
+      ? sender.copyWith(fontWeight: FontWeight.w400, color: hint)
+      : sender.copyWith(
+          fontWeight: FontWeight.w400,
+          // `messageReplies.content`: brutal black/60, elegant muted at 80%.
+          color: muted.withValues(alpha: muted.a * .8),
+        );
 
-  /// `messageReplies.time` (raft-ui 0.5.45: elegant sans, brutal mono) with
-  /// the host's colour: elegant light `oklch(0.52 0 0)`, dark placeholder,
-  /// brutal black/40.
-  TextStyle get clock => TextStyle(
-    fontFamily: tokens.bodyFont,
-    fontSize: sizeTier.previewTimeFor(tokens),
-    height: 1.25,
-    color: tokens.dark
-        ? tokens.colors['foreground-placeholder']
-        : const Color(0xFF696969),
-    fontFeatures: const [FontFeature.tabularFigures()],
-  );
+  /// `messageReplies.time`: Raft `font-mono text-mono-meta tabular-nums
+  /// text-foreground-hint` at caption -1 / 0 / +1; (raft-ui 0.5.45: elegant sans,
+  /// brutal mono) with the host's colour: elegant light `oklch(0.52 0 0)`, dark
+  /// placeholder, brutal black/40.
+  TextStyle get clock {
+    if (raft) {
+      final spec = tokens.typeSlot('caption');
+      final size = spec.fontSize + _tierStep;
+      return TextStyle(
+        fontFamily: tokens.monoFont,
+        fontSize: size,
+        height: spec.lineHeight / size,
+        color: hint,
+        leadingDistribution: TextLeadingDistribution.even,
+        fontFeatures: const [FontFeature.tabularFigures()],
+      );
+    }
+    return TextStyle(
+      fontFamily: tokens.bodyFont,
+      fontSize: sizeTier.previewTimeFor(tokens),
+      height: 1.25,
+      color: tokens.dark
+          ? tokens.colors['foreground-placeholder']
+          : const Color(0xFF696969),
+      fontFeatures: const [FontFeature.tabularFigures()],
+    );
+  }
 }
 
 /// One parent-thread button, including every preview. System events never
@@ -156,10 +218,11 @@ class _RaftInlineThreadSurfaceState extends State<RaftInlineThreadSurface> {
       padding: recipe.padding,
       decoration: RaftCssBoxDecoration(
         color: hovered
-            ? widget.hoverBackground ?? recipe.normal
+            ? widget.hoverBackground ??
+                  (recipe.raft ? recipe.hover : recipe.normal)
             : recipe.normal,
-        border: Border.fromBorderSide(recipe.border),
-        borderRadius: recipe.radius,
+        border: recipe.raft ? null : Border.fromBorderSide(recipe.border),
+        borderRadius: recipe.raft ? null : recipe.radius,
         boxShadow: hovered ? widget.hoverShadows : widget.normalShadows,
       ),
       child: DefaultTextStyle(

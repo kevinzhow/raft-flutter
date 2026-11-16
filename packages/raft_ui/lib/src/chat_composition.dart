@@ -6,11 +6,14 @@ import 'package:flutter/services.dart';
 
 import 'design_primitives.dart';
 import 'indicators.dart' show RaftSkeleton, RaftSkeletonVariant;
+import 'recipe_surface.dart';
+import 'recipes/message_list.g.dart';
 import 'recipes/recipe_runtime.dart' show RaftRecipeSet;
 import 'raft/tabs.dart';
 import 'raft/checkbox.dart';
 import 'viewport_breakpoints.dart';
 import 'icons.dart';
+import 'message_rule_row.dart';
 import 'panel_layout.dart' show RaftCssText;
 import 'sidebar_section.dart';
 import 'separator.dart';
@@ -833,6 +836,44 @@ class RaftConversationDateHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
+    if (!t.isRaftLook) return _buildFrozen(context, t);
+    // raft-ui 0.95.3 `MessageListDateDivider`: `flex items-center gap-2 px-4
+    // pt-[calc(24-4-lh/2)] pb-[calc(24-12-lh/2)]`, `font-mono text-mono-meta
+    // text-foreground-hint whitespace-nowrap`, flex-1 hairline rules.
+    final tokens = t.recipeTokens;
+    final recipe = RaftMessageListRecipe.resolve(
+      theme: t.recipeTheme,
+      tokens: tokens,
+      states: t.recipeStates(responsive: true),
+    );
+    final text = recipe.dateDividerChip.text(
+      tokens,
+      base: DefaultTextStyle.of(context).style,
+    );
+    return Semantics(
+      header: true,
+      label: label,
+      excludeSemantics: true,
+      child: Padding(
+        padding: recipe.dateDividerRoot.padding,
+        child: RaftMessageRuleRow(
+          gap: recipe.dateDividerRoot.columnGap ?? 8,
+          ruleColor: t.colors['line-hairline']!,
+          naturalWidth: raftMessageTextWidth(context, label, text),
+          child: Text(
+            label,
+            style: text,
+            maxLines: 1,
+            softWrap: false,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// The frozen Elegant and Brutal looks keep their 0.5.52 divider.
+  Widget _buildFrozen(BuildContext context, RaftTokens t) {
     final text = RaftTypography.mono(
       t,
       size: 11,

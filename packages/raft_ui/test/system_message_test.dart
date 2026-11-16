@@ -40,11 +40,10 @@ void main() {
         expect(title.overflow, TextOverflow.ellipsis);
         expect(title.style!.fontSize, 12);
         final clock = t.widget<Text>(find.text('12:34'));
-        expect(clock.style!.fontSize, 11);
-        // Web v1.21.12 (raft-ui 0.5.52): the note owns a `pt-[3px]` (brutal
-        // `pt-0`) lead-in and no bottom padding; the next row completes the
-        // seam (`data-follows-system`). 0.5.27 had py-1.5 plus mb-1.
-        expect(t.getSize(find.byType(RaftSystemMessage)).height, 21);
+        expect(clock.style!.fontSize, 12);
+        // raft-ui 0.95.3: `pt-timeline-lead(12) pb-timeline-row(4)` around one
+        // 16px mono-meta line.
+        expect(t.getSize(find.byType(RaftSystemMessage)).height, 32);
         expect(t.takeException(), isNull);
         await t.pumpWidget(
           MaterialApp(

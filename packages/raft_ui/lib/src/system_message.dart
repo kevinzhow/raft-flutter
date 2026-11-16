@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'design_primitives.dart';
 import 'icons.dart';
+import 'message_rule_row.dart';
 import 'recipe_surface.dart';
 import 'recipes/message_system.g.dart';
 import 'theme.dart';
@@ -60,8 +61,69 @@ class RaftSystemMessage extends StatelessWidget {
   final String? tooltip;
   @override
   Widget build(BuildContext context) {
+    final t = RaftTokens.of(context);
+    if (!t.isRaftLook) return _buildFrozen(context, t);
+    // raft-ui 0.95.3 `SystemMessage`: `flex items-center justify-center gap-2
+    // px-4 pt-timeline-lead pb-timeline-row font-mono text-mono-meta
+    // text-foreground-hint` with a flex-1 hairline before and after.
+    final tokens = t.recipeTokens;
+    final recipe = RaftMessageSystemRecipe.resolve(
+      theme: t.recipeTheme,
+      tokens: tokens,
+      states: t.recipeStates(responsive: true),
+    );
+    // The time and content slots inherit `font-mono text-mono-meta
+    // text-foreground-hint` from the root.
+    final base = recipe.systemRoot.text(
+      tokens,
+      base: DefaultTextStyle.of(context).style,
+    );
+    final gap = recipe.systemRoot.columnGap ?? 8;
+    final timeStyle = recipe.systemTime.text(tokens, base: base);
+    final contentStyle = recipe.systemContent.text(tokens, base: base);
+    // `in-data-[slot=system-message-group-panel]:py-1.5`; the group host
+    // re-asserts the lead (`pt-1`, SystemMessageGroupDisclosure.tsx).
+    final inGroup = _SystemGroupScope.of(context);
+    return Padding(
+      padding: inGroup
+          ? recipe.systemRoot.padding.copyWith(top: 4, bottom: 6)
+          : recipe.systemRoot.padding,
+      child: RaftMessageRuleRow(
+        gap: gap,
+        ruleColor: t.colors['line-hairline']!,
+        beforeKey: const ValueKey('system-message-rule-before'),
+        afterKey: const ValueKey('system-message-rule-after'),
+        naturalWidth:
+            raftMessageTextWidth(context, timestamp, timeStyle) +
+            gap +
+            raftMessageTextWidth(context, content, contentStyle),
+        child: Row(
+          children: [
+            Text(timestamp, style: timeStyle),
+            SizedBox(width: gap),
+            Flexible(
+              // The line already says it; the full text only helps when cut.
+              child: RaftTooltip(
+                message: tooltip ?? content,
+                onlyWhenTruncated: tooltip == null,
+                child: Text(
+                  content,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: contentStyle,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// The frozen Elegant and Brutal looks keep the 0.5.52 note.
+  Widget _buildFrozen(BuildContext context, RaftTokens t) {
     final recipe = RaftSystemMessageRecipe(
-      RaftTokens.of(context),
+      t,
       inGroup: _SystemGroupScope.of(context),
     );
     return Padding(

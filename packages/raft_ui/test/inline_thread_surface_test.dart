@@ -92,7 +92,7 @@ void main() {
           find.byKey(const ValueKey('inline-reply-two')),
         );
         expect(second.dy - first.dy, 24);
-        expect(first.dx, 10.5);
+        expect(first.dx, 10);
         await tester.tap(find.text('Looks good'));
         await tester.pump();
         expect(calls, 1);

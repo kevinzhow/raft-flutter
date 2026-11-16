@@ -43,17 +43,33 @@ class RaftTimelineBottomButtonBody extends StatelessWidget {
   final VoidCallback? onPressed;
 
   @override
-  Widget build(BuildContext context) => RaftRecipeButton(
-    label: label,
-    glyph: RaftGlyph.arrowDown,
-    glyphSize: 12,
-    variant: RaftButtonRecipeVariant.outline,
-    size: RaftButtonRecipeSize.sm,
-    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-    textStep: (12, 16),
-    gap: 6,
-    onPressed: onPressed,
-  );
+  Widget build(BuildContext context) {
+    // raft-ui `MessageListJumpPill`: Button `outline` `md` (text-control, svg
+    // 16). The frozen looks keep the 0.5.52 `sm` pill.
+    if (!RaftTokens.of(context).isRaftLook) {
+      return RaftRecipeButton(
+        label: label,
+        glyph: RaftGlyph.arrowDown,
+        glyphSize: 12,
+        variant: RaftButtonRecipeVariant.outline,
+        size: RaftButtonRecipeSize.sm,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        textStep: (12, 16),
+        gap: 6,
+        onPressed: onPressed,
+      );
+    }
+    return RaftRecipeButton(
+      label: label,
+      glyph: RaftGlyph.arrowDown,
+      glyphSize: 16,
+      variant: RaftButtonRecipeVariant.outline,
+      // raft-ui 0.95.3 gives `sm` and `md` the same `textMd` class list
+      // (h-8, md:pointer-fine:h-control); Flutter's `md` is the 40px tier.
+      size: RaftButtonRecipeSize.sm,
+      onPressed: onPressed,
+    );
+  }
 }
 
 /// Web `ThreadUnreadJumpPill`: one pill for the unread followed threads of a
@@ -81,6 +97,9 @@ class RaftThreadUnreadJumpPill extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     final muted = t.colors['foreground-muted']!;
+    // Same Button as "Back to bottom": `outline` `md`, svg 16 (frozen looks
+    // keep the 0.5.52 `sm` 12px pill).
+    final raft = t.isRaftLook;
     Widget segment({
       required Widget child,
       required EdgeInsets padding,
@@ -107,7 +126,7 @@ class RaftThreadUnreadJumpPill extends StatelessWidget {
       size: RaftButtonRecipeSize.sm,
       padding: EdgeInsets.zero,
       fontWeight: FontWeight.w700,
-      textStep: (12, 16),
+      textStep: raft ? null : (12, 16),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -121,7 +140,7 @@ class RaftThreadUnreadJumpPill extends StatelessWidget {
               children: [
                 RaftIcon(
                   up ? RaftGlyph.arrowUp : RaftGlyph.arrowDown,
-                  size: 12,
+                  size: raft ? 16 : 12,
                 ),
                 const SizedBox(width: 6),
                 Flexible(
@@ -139,7 +158,7 @@ class RaftThreadUnreadJumpPill extends StatelessWidget {
             padding: const EdgeInsets.only(left: 4, right: 10),
             onPressed: onDismiss,
             semanticLabel: dismissLabel,
-            child: RaftIcon(RaftGlyph.x, size: 14, color: muted),
+            child: RaftIcon(RaftGlyph.x, size: raft ? 16 : 14, color: muted),
           ),
         ],
       ),

@@ -137,21 +137,24 @@ void main() {
           width: 1000,
           density: RaftDensity.desktop,
         );
-        final rules = find.byType(RaftSeparator);
+        final rules = find.descendant(
+          of: find.byType(RaftConversationDateHeader),
+          matching: find.byType(ColoredBox),
+        );
         final label = find.text('Today');
         expect(rules, findsNWidgets(2));
         final first = tester.getRect(rules.at(0));
         final second = tester.getRect(rules.at(1));
         final text = tester.getRect(label);
         final outer = tester.getRect(find.byType(RaftConversationDateHeader));
-        expect(first.left, outer.left + 12);
-        expect(second.right, outer.right - 12);
+        expect(first.left, outer.left + 16);
+        expect(second.right, outer.right - 16);
         expect(text.left - first.right, closeTo(8, .001));
         expect(second.left - text.right, closeTo(8, .001));
         expect(first.width, closeTo(second.width, .001));
         expect(
           first.width + second.width + text.width + 16,
-          closeTo(616, .001),
+          closeTo(608, .001),
         );
         expect(first.width, greaterThan(200));
         expect(tester.takeException(), isNull);

@@ -52,7 +52,7 @@ void main() {
         expect(find.text('Cindy joined'), findsOneWidget);
         // Inside an expanded group the host re-asserts the note's lead:
         // `pt-1` elegant, `pt-1.5` brutal (a lone note has `pt-[3px]` / 0).
-        expect(t.getSize(find.byType(RaftSystemMessage)).height, 4 + 18);
+        expect(t.getSize(find.byType(RaftSystemMessage)).height, 4 + 16 + 6);
         await t.tap(find.byKey(const ValueKey('toggle')));
         await t.pump();
         expect(find.text('Cindy joined'), findsNothing);
