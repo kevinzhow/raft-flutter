@@ -246,19 +246,29 @@ void main() {
     );
   });
 
-  test('macOS opens Artifacts in the browser while semantics are on', () {
+  test('macOS opens Artifacts in the browser only while VoiceOver is on', () {
+    // Another accessibility client (semantics on, VoiceOver off) keeps the frame: the viewer
+    // passes VoiceOver alone, never semantics.
     expect(artifactFrameSupportFor('macos'), ArtifactFrameSupport.webView);
     expect(
-      artifactFrameSupportFor('macos', semantics: true),
+      artifactFrameSupportFor('macos', voiceOver: false),
+      ArtifactFrameSupport.webView,
+    );
+    expect(
+      artifactFrameSupportFor('macos', voiceOver: true),
       ArtifactFrameSupport.browser,
     );
     expect(
-      artifactFrameSupportFor('ios', semantics: true),
+      artifactFrameSupportFor('ios', voiceOver: true),
       ArtifactFrameSupport.webView,
     );
     expect(
-      artifactFrameSupportFor('android', semantics: true),
+      artifactFrameSupportFor('android', voiceOver: true),
       ArtifactFrameSupport.webView,
+    );
+    expect(
+      artifactFrameSupportFor('linux', voiceOver: false),
+      ArtifactFrameSupport.browser,
     );
   });
 }

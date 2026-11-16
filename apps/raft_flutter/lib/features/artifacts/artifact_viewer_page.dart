@@ -11,14 +11,15 @@
 import 'dart:async';
 import 'dart:io' show Platform;
 
+import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/material.dart';
-import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:webview_flutter_platform_interface/webview_flutter_platform_interface.dart'
     show WebViewPlatform;
 
 import '../../data/workspace_controller.dart';
+import '../../platform/macos_voice_over.dart';
 import '../../platform/system_bars.dart';
 import '../private_route_guard.dart' show workspaceAuthority;
 import 'artifact_api.dart';
@@ -89,7 +90,7 @@ class ArtifactWorkspaceViewer extends StatefulWidget {
     this.save,
     this.openExternal,
     this.operatingSystem,
-    this.semantics,
+    this.voiceOver,
     this.hostScript,
   });
 
@@ -107,7 +108,7 @@ class ArtifactWorkspaceViewer extends StatefulWidget {
   final ArtifactSaveBytes? save;
   final Future<bool> Function(Uri)? openExternal;
   final String? operatingSystem;
-  final bool? semantics;
+  final ValueListenable<bool>? voiceOver;
   final Future<String> Function()? hostScript;
 
   @override
@@ -150,7 +151,7 @@ class _ArtifactWorkspaceViewerState extends State<ArtifactWorkspaceViewer> {
     super.initState();
     pinned = widget.target.version;
     frame.addListener(_frameChanged);
-    SemanticsBinding.instance.addSemanticsEnabledListener(_semanticsChanged);
+    _voiceOver.addListener(_voiceOverChanged);
     deployment = widget.session.deployment;
     if (deployment == null) {
       unawaited(
@@ -169,7 +170,7 @@ class _ArtifactWorkspaceViewerState extends State<ArtifactWorkspaceViewer> {
   @override
   void dispose() {
     poll?.dispose();
-    SemanticsBinding.instance.removeSemanticsEnabledListener(_semanticsChanged);
+    _voiceOver.removeListener(_voiceOverChanged);
     frame.removeListener(_frameChanged);
     frame.dispose();
     super.dispose();
@@ -181,7 +182,10 @@ class _ArtifactWorkspaceViewerState extends State<ArtifactWorkspaceViewer> {
     setState(() {});
   }
 
-  void _semanticsChanged() {
+  /// VoiceOver turning on while a frame is mounted rebuilds now, so the platform view is gone
+  /// before this frame's semantics flush (build runs first): the crash path in
+  /// `artifactFrameSupportFor`.
+  void _voiceOverChanged() {
     if (mounted) setState(() {});
   }
 
@@ -256,13 +260,13 @@ class _ArtifactWorkspaceViewerState extends State<ArtifactWorkspaceViewer> {
     }
   }
 
-  bool get _semanticsOn =>
-      widget.semantics ?? SemanticsBinding.instance.semanticsEnabled;
+  late final ValueListenable<bool> _voiceOver =
+      widget.voiceOver ?? MacosVoiceOver.instance;
 
   String get _os => widget.operatingSystem ?? Platform.operatingSystem;
 
   bool get _webView =>
-      artifactFrameSupportFor(_os, semantics: _semanticsOn) ==
+      artifactFrameSupportFor(_os, voiceOver: _voiceOver.value) ==
           ArtifactFrameSupport.webView &&
       (widget.webViewBuilder != null || WebViewPlatform.instance != null) &&
       deployment?.contentDomain != null;

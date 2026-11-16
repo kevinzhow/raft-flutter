@@ -21,6 +21,7 @@ class MainFlutterWindow: NSWindow, RaftPreferencesWindow, RaftPasteWindow, RaftU
   private(set) var canCheckForUpdates = false
   private var videoFrameChannel: FlutterMethodChannel?
   private let videoFrame = RaftVideoFrame()
+  private var voiceOverChannel: RaftVoiceOverChannel?
   private struct HeaderMouseSequence {
     let controller: FlutterViewController
     let down: NSEvent
@@ -436,6 +437,9 @@ class MainFlutterWindow: NSWindow, RaftPreferencesWindow, RaftPasteWindow, RaftU
       videoFrame.handle(call, result)
     }
 
+    voiceOverChannel = RaftVoiceOverChannel(
+      messenger: flutterViewController.engine.binaryMessenger)
+
     // The app draws the title strip (rail colours, no text) under the
     // transparent system title bar; see docs/desktop-title-bar.md.
     titleBar = RaftTitleBar(
@@ -467,6 +471,35 @@ class MainFlutterWindow: NSWindow, RaftPreferencesWindow, RaftPasteWindow, RaftU
     return dark
       ? NSColor(srgbRed: 20.0 / 255.0, green: 20.0 / 255.0, blue: 17.0 / 255.0, alpha: 1)
       : NSColor.white
+  }
+}
+
+/// Channel `app.raft/voiceover` (lib/platform/macos_voice_over.dart): whether VoiceOver itself
+/// is on, and a `changed` push on each toggle. The Artifact viewer swaps its WKWebView for the
+/// browser fallback while it is on (artifact_frame_bridge.dart `artifactFrameSupportFor`).
+final class RaftVoiceOverChannel {
+  private let channel: FlutterMethodChannel
+  private var observation: NSKeyValueObservation?
+
+  init(messenger: FlutterBinaryMessenger) {
+    channel = FlutterMethodChannel(name: "app.raft/voiceover", binaryMessenger: messenger)
+    channel.setMethodCallHandler { call, result in
+      if call.method == "isEnabled" {
+        result(NSWorkspace.shared.isVoiceOverEnabled)
+      } else {
+        result(FlutterMethodNotImplemented)
+      }
+    }
+    observation = NSWorkspace.shared.observe(\.isVoiceOverEnabled, options: [.new]) {
+      [weak self] workspace, _ in
+      let on = workspace.isVoiceOverEnabled
+      DispatchQueue.main.async { self?.channel.invokeMethod("changed", arguments: on) }
+    }
+  }
+
+  deinit {
+    observation?.invalidate()
+    channel.setMethodCallHandler(nil)
   }
 }
 
@@ -1087,6 +1120,7 @@ final class RaftChildWindow: NSObject, RaftPreferencesWindow, RaftPasteWindow, N
   private var titleBar: RaftTitleBar?
   private var channels: [FlutterMethodChannel] = []
   private var attachment: AttachmentFilesChannel?
+  private var voiceOver: RaftVoiceOverChannel?
   private let frame = RaftVideoFrame()
   private var closeObserver: NSObjectProtocol?
   private var closePending = false
@@ -1147,6 +1181,7 @@ final class RaftChildWindow: NSObject, RaftPreferencesWindow, RaftPasteWindow, N
     window.title = "Raft"
     host.titleBar = RaftTitleBar(window: window, messenger: messenger)
     host.attachment = AttachmentFilesChannel(messenger: messenger)
+    host.voiceOver = RaftVoiceOverChannel(messenger: messenger)
     host.brokerChannel = brokerHost(controller: controller, window: window)
     host.channels.append(host.brokerChannel!)
     window.delegate = host

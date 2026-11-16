@@ -46959,7 +46959,7 @@
         "owner": "Artifact viewer",
         "reason": "WP-ART1 Artifact viewer, cards and attachment save (Web v1.24); compositions of raft_ui parts, real-entry mapping stays with the viewer owner."
       },
-      "apps/raft_flutter/lib/features/artifacts/artifact_viewer_page.dart#local-function:FUNCTION:openWorkspaceArtifact@1647/FUNCTION:viewer@1843": {
+      "apps/raft_flutter/lib/features/artifacts/artifact_viewer_page.dart#local-function:FUNCTION:openWorkspaceArtifact@1716/FUNCTION:viewer@1912": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "Artifact viewer",

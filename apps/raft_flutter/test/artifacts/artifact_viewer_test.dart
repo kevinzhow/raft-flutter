@@ -1,9 +1,10 @@
-import 'dart:typed_data';
-
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
+import 'package:raft_flutter/features/artifacts/artifact_frame_view.dart';
 import 'package:raft_flutter/features/artifacts/artifact_models.dart';
 import 'package:raft_flutter/features/artifacts/artifact_session.dart';
 import 'package:raft_flutter/features/artifacts/artifact_viewer_page.dart';
@@ -34,10 +35,16 @@ void main() {
 
   tearDown(() => w.dispose());
 
+  ValueNotifier<bool> notifier(bool on) {
+    final value = ValueNotifier(on);
+    addTearDown(value.dispose);
+    return value;
+  }
+
   Future<void> open(
     WidgetTester tester, {
     String os = 'android',
-    bool semantics = false,
+    ValueListenable<bool>? voiceOver,
     ArtifactLinkTarget target = const ArtifactLinkTarget(artifactId),
     Size size = const Size(390, 844),
   }) async {
@@ -54,7 +61,7 @@ void main() {
             page: size.width < 768,
             onClose: () {},
             operatingSystem: os,
-            semantics: semantics,
+            voiceOver: voiceOver ?? notifier(false),
             hostScript: () async => '/* host */',
             save: (bytes, name, mime) async {
               saved.add((name, mime, bytes.length));
@@ -128,16 +135,69 @@ void main() {
     ]);
   });
 
-  testWidgets('macOS with semantics on falls back to the browser', (
+  testWidgets('macOS with VoiceOver on falls back to the browser', (
     tester,
   ) async {
     answerViewer(artifactViewerJson());
-    await open(tester, os: 'macos', semantics: true);
+    await open(tester, os: 'macos', voiceOver: notifier(true));
     expect(FakeArtifactWebView.html, isNull);
     expect(
       find.byKey(const ValueKey('artifact-open-in-browser')),
       findsOneWidget,
     );
+  });
+
+  testWidgets('macOS with another accessibility client (semantics on, '
+      'VoiceOver off) frames the Artifact in the app', (tester) async {
+    final semantics = tester.ensureSemantics();
+    answerViewer(artifactViewerJson());
+    await open(tester, os: 'macos', voiceOver: notifier(false));
+    expect(SemanticsBinding.instance.semanticsEnabled, isTrue);
+    expect(FakeArtifactWebView.html, isNotNull);
+    expect(find.byType(ArtifactFrameView), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('artifact-open-in-browser')),
+      findsNothing,
+    );
+    semantics.dispose();
+  });
+
+  testWidgets('VoiceOver turning on while a frame is mounted unmounts it in '
+      'the next frame, and turning off frames it again', (tester) async {
+    final semantics = tester.ensureSemantics();
+    final voiceOver = notifier(false);
+    answerViewer(artifactViewerJson());
+    await open(tester, os: 'macos', voiceOver: voiceOver);
+    expect(find.byType(ArtifactFrameView), findsOneWidget);
+
+    voiceOver.value = true;
+    // One frame: build runs before that frame's semantics flush, so the platform view is gone
+    // from the tree the flush sends.
+    await tester.pump();
+    expect(find.byType(ArtifactFrameView), findsNothing);
+    expect(
+      find.byKey(const ValueKey('artifact-open-in-browser')),
+      findsOneWidget,
+    );
+
+    // Mounting again spends a new frame ticket: the first one was spent.
+    final frames = client.requests.where((r) => r.contains('/frame')).length;
+    client.answers['POST /artifacts/$artifactId/frame'] = (_) =>
+        artifactFrameJson('w');
+    voiceOver.value = false;
+    for (var i = 0; i < 6; i++) {
+      await tester.pump();
+    }
+    expect(find.byType(ArtifactFrameView), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('artifact-open-in-browser')),
+      findsNothing,
+    );
+    expect(
+      client.requests.where((r) => r.contains('/frame')).length,
+      frames + 1,
+    );
+    semantics.dispose();
   });
 
   testWidgets('version history: a pinned version, then Back to latest', (
