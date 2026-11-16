@@ -304,7 +304,9 @@ void main() {
         };
         await mountWorkspace(t, w, dark);
         await t.tap(
-          find.text(section == 'members' ? 'Public human' : 'Public agent').first,
+          find
+              .text(section == 'members' ? 'Public human' : 'Public agent')
+              .first,
         );
         for (var i = 0; i < 12; i++) {
           await t.pump(const Duration(milliseconds: 50));

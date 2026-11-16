@@ -111,8 +111,7 @@ const panelEdgeSurfaces = <PanelEdgeSurface>[
   ),
   PanelEdgeSurface(
     'search-detail',
-    web:
-        'ShellSidebarColumn ownBorder `border-r border-line-seam` (Search)',
+    web: 'ShellSidebarColumn ownBorder `border-r border-line-seam` (Search)',
     files: ['lib/features/desktop_master_detail.dart'],
     style: RaftPanelEdgeStyle.attachedPanel,
   ),
