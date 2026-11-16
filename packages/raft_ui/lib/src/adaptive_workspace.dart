@@ -1,5 +1,6 @@
 import 'raft/button.dart';
 import 'hover_region.dart';
+import 'covered_pane.dart';
 
 import 'dart:math' as math;
 
@@ -237,7 +238,10 @@ class _RaftAdaptiveWorkspaceState extends State<RaftAdaptiveWorkspace> {
             split && widget.focusScope != null && widget.profile == null
             ? toggleFocus
             : null,
-        child: widget.thread!,
+        child: RaftCoveredPane(
+          covered: widget.profile != null && !both,
+          child: widget.thread!,
+        ),
       ),
     );
     Widget profile() => KeyedSubtree(key: profileSlot, child: widget.profile!);
@@ -280,7 +284,10 @@ class _RaftAdaptiveWorkspaceState extends State<RaftAdaptiveWorkspace> {
                     child: Visibility(
                       visible: false,
                       maintainState: true,
-                      child: widget.content,
+                      child: RaftCoveredPane(
+                        covered: false,
+                        child: widget.content,
+                      ),
                     ),
                   ),
                 ),
@@ -292,7 +299,10 @@ class _RaftAdaptiveWorkspaceState extends State<RaftAdaptiveWorkspace> {
                   child: Visibility(
                     visible: !hideMain,
                     maintainState: true,
-                    child: widget.content,
+                    child: RaftCoveredPane(
+                      covered: folded && widget.profile != null,
+                      child: widget.content,
+                    ),
                   ),
                 ),
               ),

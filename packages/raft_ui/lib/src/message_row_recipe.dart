@@ -1,4 +1,6 @@
 import 'hover_region.dart';
+import 'covered_pane.dart';
+import 'focus_visible.dart';
 
 import 'dart:async';
 import 'dart:math' as math;
@@ -574,8 +576,16 @@ class RaftMessageRow extends StatefulWidget {
 }
 
 class _RaftMessageRowState extends State<RaftMessageRow> {
-  bool hovered = false, toolbarHovered = false, focused = false;
+  bool hovered = false, toolbarHovered = false, focusWithin = false;
   bool scrollSuppressed = false;
+
+  /// A panel of this route covers the row's pane ([RaftCoveredPane]).
+  bool covered = false;
+
+  /// Focus shows the strip only as keyboard focus (focus-visible): a click that
+  /// leaves focus on the avatar or a strip button does not hold the strip over
+  /// the profile it opened once the pointer has gone.
+  bool get focused => focusWithin && RaftFocusVisible.shared.keyboard;
   bool secondaryDown = false;
   bool authorMenuHandled = false;
   final portal = OverlayPortalController();
@@ -600,6 +610,7 @@ class _RaftMessageRowState extends State<RaftMessageRow> {
   final visibleFraction = ValueNotifier<double?>(null);
   bool get toolbarActive =>
       tickerEnabled &&
+      !covered &&
       !scrollSuppressed &&
       !widget.coarsePointer &&
       widget.toolbar != null &&
@@ -609,6 +620,7 @@ class _RaftMessageRowState extends State<RaftMessageRow> {
   void initState() {
     super.initState();
     RaftPointerIntent.install();
+    RaftFocusVisible.shared.acquire();
     if (toolbarActive) portal.show();
   }
 
@@ -619,6 +631,13 @@ class _RaftMessageRowState extends State<RaftMessageRow> {
     RaftFontWarmUp.schedule(context);
     position = Scrollable.maybeOf(context)?.position;
     tickerEnabled = TickerMode.valuesOf(context).enabled;
+    final nowCovered = RaftCoveredPane.of(context);
+    if (nowCovered && !covered) {
+      // The panel took the pointer; uncovering re-enters the row if it is
+      // still under it.
+      hovered = toolbarHovered = false;
+    }
+    covered = nowCovered;
     syncPortal();
   }
 
@@ -664,6 +683,14 @@ class _RaftMessageRowState extends State<RaftMessageRow> {
     syncPortal();
   }
 
+  /// A key press inside the row makes its focus visible; a click hides it.
+  void focusModeChanged() {
+    if (!mounted) return;
+    attentionChanged(() {
+      if (focused) scrollSuppressed = false;
+    });
+  }
+
   void retireForScroll() {
     if (!mounted || !toolbarActive) return;
     // The old floating strip must retire before a retained row leaves the
@@ -700,6 +727,8 @@ class _RaftMessageRowState extends State<RaftMessageRow> {
     if (listeningScrollSignal) {
       RaftPointerIntent.unlistenScroll(retireForScroll);
     }
+    if (focusWithin) RaftFocusVisible.shared.removeListener(focusModeChanged);
+    RaftFocusVisible.shared.release();
     touchTaps.dispose();
     toolbarProxy.dispose();
     toolbarGroup.dispose();
@@ -1011,12 +1040,16 @@ class _RaftMessageRowState extends State<RaftMessageRow> {
         canRequestFocus: false,
         includeSemantics: !compact,
         onFocusChange: (value) {
-          if (focused != value) {
-            attentionChanged(() {
-              focused = value;
-              if (value) scrollSuppressed = false;
-            });
+          if (focusWithin == value) return;
+          if (value) {
+            RaftFocusVisible.shared.addListener(focusModeChanged);
+          } else {
+            RaftFocusVisible.shared.removeListener(focusModeChanged);
           }
+          attentionChanged(() {
+            focusWithin = value;
+            if (focused) scrollSuppressed = false;
+          });
         },
         child: RaftHoverRegion(
           onEnter: (_) {
