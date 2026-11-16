@@ -17,6 +17,7 @@ import 'recipes/recipe_runtime.dart';
 import 'recipes/token_binding.dart';
 import 'space.dart';
 import 'theme.dart';
+import 'tokens/tokens.dart' show RaftTypeScale;
 
 class RaftCopyableCode extends StatefulWidget {
   const RaftCopyableCode(
@@ -25,7 +26,7 @@ class RaftCopyableCode extends StatefulWidget {
     this.copyLabel = 'Copy Command',
     this.codeKey,
     this.onCopied,
-    this.codeStyle,
+    this.large = false,
   });
 
   final String command;
@@ -37,9 +38,9 @@ class RaftCopyableCode extends StatefulWidget {
   final Key? codeKey;
   final VoidCallback? onCopied;
 
-  /// Callsite text classes on the code (`text-title tracking-widest`),
-  /// merged over the recipe's style.
-  final TextStyle? codeStyle;
+  /// The callsite `text-title tracking-widest` on the code (a short code a
+  /// person reads and types): title size, bold, spaced out.
+  final bool large;
 
   @override
   State<RaftCopyableCode> createState() => _RaftCopyableCodeState();
@@ -66,6 +67,7 @@ class _RaftCopyableCodeState extends State<RaftCopyableCode> {
     RaftTokens t,
     RaftTokenResolver rt,
     RaftCopyableCodeRecipeStyle s,
+    TextStyle? codeStyle,
   ) {
     return Row(
       children: [
@@ -75,7 +77,7 @@ class _RaftCopyableCodeState extends State<RaftCopyableCode> {
             style: s.code.withCssUsedBorderWidths(),
             tokens: rt,
             width: double.infinity,
-            child: Text(_breakAll(widget.command), style: widget.codeStyle),
+            child: Text(_breakAll(widget.command), style: codeStyle),
           ),
         ),
         SizedBox(width: s.root.columnGap ?? 8),
@@ -96,13 +98,23 @@ class _RaftCopyableCodeState extends State<RaftCopyableCode> {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     final rt = RaftRecipeTokens(t);
+    final codeStyle = widget.large
+        ? RaftTypography.mono(
+            t,
+            size: RaftTypeScale.title.fontSize,
+            line: RaftTypeScale.title.lineHeight,
+          ).copyWith(
+            fontWeight: FontWeight.w700,
+            letterSpacing: RaftTypeScale.title.fontSize * .1,
+          )
+        : null;
     final s = RaftCopyableCodeRecipe.resolve(
       theme: raftRecipeTheme(t),
       size: RaftCopyableCodeRecipeSize.md,
       states: RaftRecipeStates({if (t.dark) RaftRecipeStates.dark}),
       tokens: rt,
     );
-    if (t.recipeSet == RaftRecipeSet.raft) return _raft(t, rt, s);
+    if (t.recipeSet == RaftRecipeSet.raft) return _raft(t, rt, s, codeStyle);
     // Callsite `text-xs` (12/16) wins over the recipe's `leading-5` on the
     // brutal code box; elegant keeps `leading-5` on the inner span.
     final line = 20.0;
@@ -136,9 +148,7 @@ class _RaftCopyableCodeState extends State<RaftCopyableCode> {
           color: inner.backgroundColor?.resolve(rt),
           child: Text(
             _breakAll(widget.command),
-            style: widget.codeStyle == null
-                ? text
-                : text.merge(widget.codeStyle),
+            style: codeStyle == null ? text : text.merge(codeStyle),
           ),
         ),
       ),

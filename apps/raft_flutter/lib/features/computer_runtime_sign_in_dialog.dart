@@ -533,12 +533,7 @@ class _SignInState extends State<ComputerRuntimeSignInView> {
           copyLabel: raftText(context, 'Copy code'),
           codeKey: const ValueKey('runtime-sign-in-device-code'),
           // `text-title tracking-widest`: the code is what the person types.
-          codeStyle: TextStyle(
-            fontSize: RaftTypeScale.title.fontSize,
-            height: RaftTypeScale.title.height,
-            fontWeight: FontWeight.w700,
-            letterSpacing: RaftTypeScale.title.fontSize * .1,
-          ),
+          large: true,
         ),
         if (expires != null)
           Text(
