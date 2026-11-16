@@ -13,7 +13,7 @@ void main() {
 
   tearDown(() {
     debugDefaultTargetPlatformOverride = null;
-    ClipboardAttachments.available.value = false;
+    ClipboardAttachments.debugResetWatch();
     messenger.setMockMethodCallHandler(channel, null);
   });
 

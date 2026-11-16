@@ -33,19 +33,20 @@ class ClipboardAttachments {
   static const channel = MethodChannel('app.raft/clipboard-attachments');
   // ignore: raft_lints/avoid_unreleased_resource -- Process-wide clipboard state lives for the lifetime of the app.
   static final ValueNotifier<bool> available = _ClipboardAvailability();
-  static bool _watching = false;
+  // The running watcher; one per process, cleared only by [debugResetWatch].
+  static Object? _watcher;
 
   /// Observes attachment availability without reading clipboard contents,
   /// and hands a system Paste of attachments to the focused composer (iOS).
   /// Android only reports availability: its toolbar Paste is the composer's.
   static void watch() {
     if (kIsWeb ||
-        _watching ||
+        _watcher != null ||
         (defaultTargetPlatform != TargetPlatform.iOS &&
             defaultTargetPlatform != TargetPlatform.android)) {
       return;
     }
-    _watching = true;
+    final watcher = _watcher = Object();
     var changed = false;
     channel.setMethodCallHandler((call) async {
       switch (call.method) {
@@ -74,9 +75,19 @@ class ClipboardAttachments {
         () async => await channel.invokeMethod<bool>('available') ?? false,
         false,
       );
-      // A change pushed meanwhile is newer than this first answer.
-      if (!changed) available.value = value;
+      // A change pushed meanwhile is newer than this first answer; a reset
+      // watcher's late answer belongs to nobody.
+      if (!changed && identical(_watcher, watcher)) available.value = value;
     }());
+  }
+
+  /// Stops the process-wide watcher so the next [watch] starts afresh: tests
+  /// that each start one must not inherit an earlier test's watcher.
+  @visibleForTesting
+  static void debugResetWatch() {
+    _watcher = null;
+    channel.setMethodCallHandler(null);
+    available.value = false;
   }
 
   static Future<List<ComposerFile>> _readNative() async {
