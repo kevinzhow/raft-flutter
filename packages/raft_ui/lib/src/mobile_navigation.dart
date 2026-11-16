@@ -28,7 +28,7 @@ import 'interaction.dart';
 import 'popover_surface.dart';
 import 'recipes/mobile_nav_server.g.dart';
 import 'recipes/popover.g.dart';
-import 'recipes/recipe_runtime.dart' show RaftRecipeStates;
+import 'recipes/recipe_runtime.dart' show RaftRecipeStates, RaftSlotStyle;
 import 'raft/status.dart' show RaftStatus, RaftStatusSize, RaftStatusVariant;
 
 import 'raft/blink_snap.dart';

@@ -83,6 +83,10 @@ class _ServerPopoverHandle {
   /// opens on.
   FocusNode? currentFocus;
   BuildContext? currentRow;
+
+  /// The open logic put the focus on the current row: it shows its
+  /// focus-visible fill whatever the input, as on Web.
+  bool focusedByOpen = false;
 }
 
 class _ServerPopoverScope extends InheritedWidget {
@@ -208,6 +212,7 @@ class _RaftMobileNavServerTabState extends State<RaftMobileNavServerTab>
       if (!mounted || !open) return;
       final row = handle.currentFocus;
       if (row != null && row.canRequestFocus) {
+        handle.focusedByOpen = true;
         row.requestFocus();
       } else {
         popoverFocus.requestFocus();
@@ -220,6 +225,7 @@ class _RaftMobileNavServerTabState extends State<RaftMobileNavServerTab>
     setState(() => open = false);
     portal.hide();
     handle.currentFocus = null;
+    handle.focusedByOpen = false;
     handle.currentRow = null;
     widget.onOpenChanged?.call(false);
     focus.requestFocus();
@@ -468,41 +474,84 @@ class _RaftMobileNavServerTabState extends State<RaftMobileNavServerTab>
     // `--available-height`: the room above the bar between the 8px gap and
     // the 8px collision padding, less the top safe area.
     final available = math.max(0.0, rect.top - gap - collision - safeTop);
+    // A transparent barrier over everything but the bar: a tap outside closes
+    // the popover and is absorbed; the bar stays live (another tab navigates,
+    // the server tab closes).
+    Widget barrier(Rect r) => Positioned.fromRect(
+      rect: r,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTapDown: (_) => close(),
+        onSecondaryTapDown: (_) => close(),
+      ),
+    );
+    final screen = Offset.zero & Size(view.width, view.height);
     return RaftBackDismiss(
       onDismiss: close,
-      child: CustomSingleChildLayout(
-        delegate: _ServerPopoverPlacement(rect, gap),
-        child: TapRegion(
-          groupId: this,
-          child: RaftDismissScope(
-            onDismiss: close,
-            child: Focus(
-              focusNode: popoverFocus,
-              child: KeyedSubtree(
-                key: widget.popoverKey,
-                // The popover is content, not chrome: it follows the system
-                // text size even though the bar caps its own.
-                child: MediaQuery(
-                  data: MediaQuery.of(
-                    context,
-                  ).copyWith(textScaler: RaftChrome.contentScalerOf(context)),
-                  child: RaftPopoverSurface(
-                    surfaceStyle: surface,
-                    padding: EdgeInsets.zero,
-                    child: _ServerPopoverScope(
-                      handle: handle,
-                      child: ConstrainedBox(
-                        constraints: BoxConstraints(maxHeight: available),
-                        child: SingleChildScrollView(
-                          primary: false,
-                          child: _PopoverSizer(
-                            metrics: handle.metrics,
-                            preferred:
-                                view.height *
-                                (style.content.maxHeight == null ? .6 : .6),
-                            available: available,
-                            child: widget.contentBuilder(context, close),
-                          ),
+      child: Stack(
+        children: [
+          barrier(Rect.fromLTRB(0, 0, screen.right, rect.top)),
+          barrier(Rect.fromLTRB(0, rect.top, rect.left, rect.bottom)),
+          barrier(
+            Rect.fromLTRB(rect.right, rect.top, screen.right, rect.bottom),
+          ),
+          barrier(Rect.fromLTRB(0, rect.bottom, screen.right, screen.bottom)),
+          Positioned.fill(
+            child: _popoverBody(
+              context,
+              rect,
+              gap,
+              surface,
+              style,
+              view,
+              available,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _popoverBody(
+    BuildContext context,
+    Rect rect,
+    double gap,
+    RaftSlotStyle surface,
+    RaftMobileNavServerRecipeStyle style,
+    Size view,
+    double available,
+  ) {
+    return CustomSingleChildLayout(
+      delegate: _ServerPopoverPlacement(rect, gap),
+      child: TapRegion(
+        groupId: this,
+        child: RaftDismissScope(
+          onDismiss: close,
+          child: Focus(
+            focusNode: popoverFocus,
+            child: KeyedSubtree(
+              key: widget.popoverKey,
+              // The popover is content, not chrome: it follows the system
+              // text size even though the bar caps its own.
+              child: MediaQuery(
+                data: MediaQuery.of(context)
+                    .copyWith(textScaler: RaftChrome.contentScalerOf(context)),
+                child: RaftPopoverSurface(
+                  surfaceStyle: surface,
+                  padding: EdgeInsets.zero,
+                  child: _ServerPopoverScope(
+                    handle: handle,
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(maxHeight: available),
+                      child: SingleChildScrollView(
+                        primary: false,
+                        child: _PopoverSizer(
+                          metrics: handle.metrics,
+                          preferred:
+                              view.height *
+                              (style.content.maxHeight == null ? .6 : .6),
+                          available: available,
+                          child: widget.contentBuilder(context, close),
                         ),
                       ),
                     ),

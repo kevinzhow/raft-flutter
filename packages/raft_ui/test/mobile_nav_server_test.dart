@@ -804,6 +804,90 @@ void main() {
     });
   });
 
+  group('outside barrier', () {
+    testWidgets('an outside tap closes and is absorbed; the bar stays live', (
+      t,
+    ) async {
+      await _size(t, const Size(390, 844));
+      final fx = _Fixture();
+      var behind = 0;
+      final selected = <String>[];
+      await t.pumpWidget(
+        MaterialApp(
+          theme: raftTheme(),
+          home: Scaffold(
+            body: Column(
+              children: [
+                Expanded(
+                  child: Align(
+                    alignment: Alignment.topLeft,
+                    child: TextButton(
+                      key: const ValueKey('behind'),
+                      onPressed: () => behind++,
+                      child: const Text('Behind'),
+                    ),
+                  ),
+                ),
+                RaftMobileNav(
+                  items: _items,
+                  selectedId: 'chat',
+                  onSelected: selected.add,
+                  trailing: RaftMobileNavServerTab(
+                    label: 'Raft Studio',
+                    avatar: const SizedBox.expand(),
+                    popoverKey: _popover,
+                    contentBuilder: (context, close) => _content(fx),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+      await t.tap(_tab);
+      await _settle(t);
+      expect(_pop, findsOneWidget);
+      await t.tapAt(t.getCenter(find.byKey(const ValueKey('behind'))));
+      await _settle(t);
+      expect(_pop, findsNothing);
+      expect(behind, 0, reason: '(a) the tap is absorbed');
+      await t.tap(_tab);
+      await _settle(t);
+      await t.tap(find.byKey(const ValueKey('mobile-nav-sticker-tasks')));
+      await _settle(t);
+      expect(_pop, findsNothing);
+      expect(selected, ['tasks'], reason: '(b) the bar stays live');
+      await t.tap(_tab);
+      await _settle(t);
+      await t.tap(_tab);
+      await _settle(t);
+      expect(_pop, findsNothing, reason: '(c) the server tab closes it');
+    });
+
+    testWidgets('the current row shows its focus fill after a touch open', (
+      t,
+    ) async {
+      await _size(t, const Size(390, 844));
+      final fx = _Fixture();
+      await t.pumpWidget(_app(fx));
+      final tokens = RaftTokens.of(t.element(_tab));
+      await t.tap(_tab);
+      await _settle(t);
+      List<Color?> fills(String text) => [
+        for (final b in t.widgetList<DecoratedBox>(
+          find.descendant(
+            of: find.widgetWithText(RaftMobileNavServerPopoverRow, text),
+            matching: find.byType(DecoratedBox),
+          ),
+        ))
+          if (b.decoration is BoxDecoration)
+            (b.decoration as BoxDecoration).color,
+      ];
+      expect(fills('Server 1'), contains(tokens.colors['brand-soft']));
+      expect(fills('Server 0'), isNot(contains(tokens.colors['brand-soft'])));
+    });
+  });
+
   group('previews', () {
     for (final dark in raftThemeMatrix([false, true])) {
       testWidgets('render in ${dark ? 'dark' : 'light'} without errors', (

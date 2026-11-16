@@ -319,6 +319,14 @@ class _RaftMobileNavServerPopoverRowState
   final focus = FocusNode(debugLabel: 'server row');
 
   @override
+  void initState() {
+    super.initState();
+    focus.addListener(() {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
   void dispose() {
     focus.dispose();
     super.dispose();
@@ -351,7 +359,13 @@ class _RaftMobileNavServerPopoverRowState
             states: t.recipeStates(
               hovered: state.hovered && pointer,
               pressed: state.pressed,
-              focusVisible: state.focusVisible,
+              // The focus the open logic gave the current row shows whatever
+              // the input (Web: the focus-visible fill).
+              focusVisible:
+                  state.focusVisible ||
+                  (widget.current &&
+                      focus.hasFocus &&
+                      (handle?.focusedByOpen ?? false)),
             ),
           );
           final leading = widget.leading;
