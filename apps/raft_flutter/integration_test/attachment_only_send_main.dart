@@ -40,10 +40,7 @@ void log(String text) => debugPrint('attach-only: $text');
 class ProofAdapter extends LabAdapter {
   var uploads = 0, messages = 0;
   final stored = <String, Map<String, dynamic>>{};
-  final holdMs = const int.fromEnvironment(
-    'UPLOAD_HOLD_MS',
-    defaultValue: 15000,
-  );
+  final holdMs = const int.fromEnvironment('UPLOAD_HOLD_MS', defaultValue: 15000);
 
   ResponseBody json(int status, Object body) => ResponseBody.fromString(
     jsonEncode(body),
@@ -74,17 +71,12 @@ class ProofAdapter extends LabAdapter {
       // it is still in flight.
       if (n == 1) await Future<void>.delayed(Duration(milliseconds: holdMs));
       final name =
-          RegExp(
-            r'filename="([^"]+)"',
-          ).firstMatch(latin1.decode(head.toBytes(), allowInvalid: true))?[1] ??
-          'file.bin';
+          RegExp(r'filename="([^"]+)"').firstMatch(latin1.decode(head.toBytes(), allowInvalid: true))?[1] ?? 'file.bin';
       final meta = {
         'id': '00000000-0000-4000-8000-${n.toString().padLeft(12, '0')}',
         'channelId': 'ps',
         'filename': name,
-        'mimeType': name.endsWith('.mp4')
-            ? 'video/mp4'
-            : 'application/octet-stream',
+        'mimeType': name.endsWith('.mp4') ? 'video/mp4' : 'application/octet-stream',
         'sizeBytes': total,
       };
       stored[meta['id']! as String] = meta;
@@ -96,15 +88,16 @@ class ProofAdapter extends LabAdapter {
     if (o.method == 'POST' && o.path == '/v2/messages') {
       final body = Map<String, dynamic>.from(o.data as Map);
       final content = body['content'];
-      final ids =
-          (body['attachmentIds'] as List?)?.cast<String>() ?? const <String>[];
+      final ids = (body['attachmentIds'] as List?)?.cast<String>() ?? const <String>[];
       final n = ++messages;
       log(
         'POST /v2/messages #$n content=${jsonEncode(content)} '
         'attachmentIds=${jsonEncode(ids)} channelId=${body['channelId']}',
       );
       // packages/server messages.ts createHumanMessage: `!channelId || !content`.
-      if (body['channelId'] == null || content is! String || content.isEmpty) {
+      if (body['channelId'] == null ||
+          content is! String ||
+          content.isEmpty) {
         log('-> 400 Channel ID and content are required');
         return json(400, {'error': 'Channel ID and content are required'});
       }
@@ -161,10 +154,7 @@ Future<void> main() async {
     'name': 'Alice Zhang',
     'email': 'alice@example.invalid',
     'emailVerified': true,
-    'displayLanguage': const String.fromEnvironment(
-      'PROOF_LANG',
-      defaultValue: 'en',
-    ),
+    'displayLanguage': const String.fromEnvironment('PROOF_LANG', defaultValue: 'en'),
   };
   api.routes['GET /servers'] = (_) => [
     {'id': 's1', 'name': 'Lab', 'slug': 'lab', 'role': 'owner'},
@@ -205,10 +195,7 @@ Future<void> main() async {
   SharedPreferences.setMockInitialValues({
     'raft.origin': client.origin,
     'raft.mode': 'light',
-    'raft.light': const String.fromEnvironment(
-      'PROOF_THEME',
-      defaultValue: 'brutal',
-    ),
+    'raft.light': const String.fromEnvironment('PROOF_THEME', defaultValue: 'brutal'),
     MobileTabbarStore.preferenceKey: tabs.encode(),
   });
   final dir = await Directory.systemTemp.createTemp('raft-attach-only-');

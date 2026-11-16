@@ -1,8 +1,15 @@
+import 'dart:ui' show PointerDeviceKind;
+
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_flutter/data/mobile_tabbar_preferences.dart';
 import 'package:raft_flutter/data/phone_stack.dart';
 import 'package:raft_flutter/data/raft_location.dart';
 import 'package:raft_flutter/data/workspace_navigation.dart';
+
+import 'app_global_server_selector_test.dart' show RootFixture;
+import 'support/server_tab.dart';
 
 RaftLocation at(
   RaftRoute route, {
@@ -191,5 +198,65 @@ void main() {
         '/agent/a1',
       ]);
     });
+  });
+
+  group('layout and input', () {
+    Future<void> remount(RootFixture f, WidgetTester t, Size size) async {
+      await f.mount(t, 'light', size.width, uri: Uri.parse('/s/alpha'));
+      t.view.physicalSize = size;
+      await f.flush(t);
+    }
+
+    // The phone bar follows the width, not the device: an unfolded fold is as
+    // wide as a desktop window and has the rail instead (RaftAdaptiveWorkspace).
+    for (final size in const [Size(856, 944), Size(944, 856)]) {
+      testWidgets(
+        'an unfolded Android ${size.width.toInt()}x${size.height.toInt()} has '
+        'the rail, no bar and no server tab',
+        (t) async {
+          final f = RootFixture();
+          await remount(f, t, size);
+          expect(
+            find.byKey(const Key('workspace-mobile-navigation')),
+            findsNothing,
+          );
+          expect(find.byKey(serverTabKey), findsNothing);
+          expect(find.byKey(const Key('rail-settings')), findsOneWidget);
+          await f.close(t);
+        },
+        variant: TargetPlatformVariant.only(TargetPlatform.android),
+      );
+    }
+
+    testWidgets('a narrow Linux window keeps the bar and opens it by mouse', (
+      t,
+    ) async {
+      final f = RootFixture();
+      await remount(f, t, const Size(390, 844));
+      expect(
+        find.byKey(const Key('workspace-mobile-navigation')),
+        findsOneWidget,
+      );
+      final mouse = await t.startGesture(
+        t.getCenter(find.byKey(serverTabKey)),
+        kind: PointerDeviceKind.mouse,
+      );
+      await mouse.up();
+      await f.flush(t);
+      expect(find.byKey(serverPopoverKey), findsOneWidget);
+      // Escape closes it, as it does a menu.
+      await t.sendKeyEvent(LogicalKeyboardKey.escape);
+      await f.flush(t);
+      expect(find.byKey(serverPopoverKey), findsNothing);
+      await f.close(t);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.linux));
+
+    testWidgets('a folded Android phone (touch) opens it by tap', (t) async {
+      final f = RootFixture();
+      await remount(f, t, const Size(390, 844));
+      await openServerPopover(t, flush: f.flush);
+      expect(find.byKey(serverPopoverKey), findsOneWidget);
+      await f.close(t);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.android));
   });
 }

@@ -61,63 +61,14 @@ class VideoClip {
 
 /// The clips of the manual parity harness (`video_parity_main.dart`).
 const parityClips = [
-  VideoClip(
-    'vp-portrait',
-    'portrait.mp4',
-    'kevin.mp4',
-    size: 5416578,
-    text: 'Portrait phone clip (720x1280, H.264 + AAC)',
-  ),
-  VideoClip(
-    'vp-landscape',
-    'landscape.mp4',
-    'landscape.mp4',
-    size: 4846435,
-    text: 'Landscape clip',
-  ),
-  VideoClip(
-    'vp-corrupt',
-    'corrupt.mp4',
-    'broken.mp4',
-    size: 200000,
-    text: 'A clip that cannot be decoded',
-  ),
-  VideoClip(
-    'vp-landscape2',
-    'landscape.mp4',
-    'landscape2.mp4',
-    size: 4846435,
-    text: 'Second landscape clip (one at a time)',
-  ),
-  VideoClip(
-    'vp-hevc4k',
-    'hevc4k.mp4',
-    'hevc4k.mp4',
-    size: 41607413,
-    text: '4K HEVC Main 8-bit bt709 30 fps',
-  ),
-  VideoClip(
-    'vp-dolby',
-    'dolby.mp4',
-    'dolby.mp4',
-    size: 22924840,
-    text: 'Dolby Vision 8.4 (HLG base), HEVC Main 10, 4K',
-  ),
-  VideoClip(
-    'vp-hevc1080',
-    'hevc1080.mp4',
-    'hevc1080.mp4',
-    size: 3762953,
-    text: '1080p HEVC Main',
-  ),
-  VideoClip(
-    'vp-tone',
-    'tone.wav',
-    'tone.wav',
-    size: 264678,
-    mime: 'audio/wav',
-    text: 'Audio only (WAV)',
-  ),
+  VideoClip('vp-portrait', 'portrait.mp4', 'kevin.mp4', size: 5416578, text: 'Portrait phone clip (720x1280, H.264 + AAC)'),
+  VideoClip('vp-landscape', 'landscape.mp4', 'landscape.mp4', size: 4846435, text: 'Landscape clip'),
+  VideoClip('vp-corrupt', 'corrupt.mp4', 'broken.mp4', size: 200000, text: 'A clip that cannot be decoded'),
+  VideoClip('vp-landscape2', 'landscape.mp4', 'landscape2.mp4', size: 4846435, text: 'Second landscape clip (one at a time)'),
+  VideoClip('vp-hevc4k', 'hevc4k.mp4', 'hevc4k.mp4', size: 41607413, text: '4K HEVC Main 8-bit bt709 30 fps'),
+  VideoClip('vp-dolby', 'dolby.mp4', 'dolby.mp4', size: 22924840, text: 'Dolby Vision 8.4 (HLG base), HEVC Main 10, 4K'),
+  VideoClip('vp-hevc1080', 'hevc1080.mp4', 'hevc1080.mp4', size: 3762953, text: '1080p HEVC Main'),
+  VideoClip('vp-tone', 'tone.wav', 'tone.wav', size: 264678, mime: 'audio/wav', text: 'Audio only (WAV)'),
 ];
 
 /// The app and the fixture handles a test needs.
@@ -131,8 +82,7 @@ class VideoFixture {
   /// reads (`GET /attachments/<id>/url`, what a re-sign uses) plus the batch
   /// reads the cards coalesce into (`POST /attachments/urls`).
   int urlRequests(String id) =>
-      (api.hits['GET /attachments/$id/url'] ?? 0) +
-      (api.hits['POST /attachments/urls'] ?? 0);
+      (api.hits['GET /attachments/$id/url'] ?? 0) + (api.hits['POST /attachments/urls'] ?? 0);
 }
 
 Future<int?> _length(String base, String file) async {
@@ -168,13 +118,10 @@ Future<VideoFixture> buildVideoFixture({
     for (final clip in clips)
       clip.id: clip.size ?? await _length(base, clip.file) ?? 1,
   };
-  Map<String, dynamic> row(
-    int n,
-    String text,
-    List<Map<String, dynamic>> attachments,
-  ) => labRow('vp', 'plain', n)
-    ..['content'] = text
-    ..['attachments'] = attachments;
+  Map<String, dynamic> row(int n, String text, List<Map<String, dynamic>> attachments) =>
+      labRow('vp', 'plain', n)
+        ..['content'] = text
+        ..['attachments'] = attachments;
   final channel = LabChannel('vp', const []);
   // One message per clip, or per group of clips (the media browser pages
   // through the images and videos of one message).
@@ -197,12 +144,7 @@ Future<VideoFixture> buildVideoFixture({
           },
       ]),
   ]);
-  final (seed, api, client) = await labWorkspace(
-    [channel],
-    images,
-    mobile: mobile,
-    ownsClient: false,
-  );
+  final (seed, api, client) = await labWorkspace([channel], images, mobile: mobile, ownsClient: false);
   seed.dispose();
   api.routes['GET /auth/me'] = (_) => {
     'id': 'alice',
@@ -217,47 +159,26 @@ Future<VideoFixture> buildVideoFixture({
   api.routes['GET /channels/public'] = (_) => <dynamic>[];
   api.routes['GET /channels/vp'] = (_) => channel.record.json;
   api.routes['GET /channels/inbox'] = (_) => {'items': <dynamic>[]};
-  api.routes['GET /channels/saved'] = (_) => {
-    'globalTotal': 0,
-    'saved': <dynamic>[],
-  };
-  api.routes['GET /channels/threads/followed'] = (_) => {
-    'threads': <dynamic>[],
-  };
-  api.routes['GET /announcements/active'] = (_) => {
-    'announcements': <dynamic>[],
-  };
-  api.routes['GET /product-feedback/tickets'] = (_) => {
-    'unread_total': 0,
-    'tickets': <dynamic>[],
-  };
+  api.routes['GET /channels/saved'] = (_) => {'globalTotal': 0, 'saved': <dynamic>[]};
+  api.routes['GET /channels/threads/followed'] = (_) => {'threads': <dynamic>[]};
+  api.routes['GET /announcements/active'] = (_) => {'announcements': <dynamic>[]};
+  api.routes['GET /product-feedback/tickets'] = (_) => {'unread_total': 0, 'tickets': <dynamic>[]};
   api.routes['GET /tasks/server'] = (_) => {'tasks': <dynamic>[]};
-  api.routes['GET /messages/attachment-preview/enabled'] = (_) => {
-    'enabled': true,
-  };
+  api.routes['GET /messages/attachment-preview/enabled'] = (_) => {'enabled': true};
   final byId = {for (final clip in clips) clip.id: clip};
   api.patterns.insert(0, (
-    (o) =>
-        o.method == 'GET' &&
-        o.path.startsWith('/attachments/vp-') &&
-        o.path.endsWith('/url'),
+    (o) => o.method == 'GET' && o.path.startsWith('/attachments/vp-') && o.path.endsWith('/url'),
     (o) {
       final clip = byId[o.path.split('/')[2]]!;
       final rate = clip.rate == null ? '' : '&rate=${clip.rate}';
       return {
-        'url':
-            '$base/${clip.file}?X-Amz-Expires=3600&X-Amz-Signature=fixture$rate',
+        'url': '$base/${clip.file}?X-Amz-Expires=3600&X-Amz-Signature=fixture$rate',
       };
     },
   ));
   const tabs = MobileTabbarSettings(
     order: MobileTabs.configurable,
-    enabled: {
-      MobileTabs.home,
-      MobileTabs.tasks,
-      MobileTabs.activity,
-      MobileTabs.search,
-    },
+    enabled: {MobileTabs.home, MobileTabs.tasks, MobileTabs.activity, MobileTabs.search},
   );
   SharedPreferences.setMockInitialValues({
     'raft.origin': client.origin,
@@ -274,8 +195,7 @@ Future<VideoFixture> buildVideoFixture({
       initialLocation: Uri(path: location),
       nativeContent: LabNavigationContent(),
       nativeSharing: NativeSharing(supported: false),
-      openWorkspaceCache: () async =>
-          LabNavigationCache(File('${dir.path}/workspace.sqlite')),
+      openWorkspaceCache: () async => LabNavigationCache(File('${dir.path}/workspace.sqlite')),
     ),
     api,
     base,
