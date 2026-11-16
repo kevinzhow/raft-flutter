@@ -428,11 +428,12 @@ void main() {
       expect(h.dialog, findsNothing);
     });
 
-    testWidgets('Cancel closes without a request', (t) async {
+    testWidgets('the close X (Cancel) closes without a request', (t) async {
       final h = _Owner(ownerUserId: 'bob', owner: _bob);
       await h.open(t);
       await h.openDialog(t);
-      await t.tap(h.inDialog(find.text('Cancel')));
+      // 390 wide: the NarrowDialog sheet head, where the X is Cancel.
+      await t.tap(h.inDialog(find.byType(RaftCloseButton)));
       await h.f.flush(t);
       expect(h.dialog, findsNothing);
       expect(h.puts, isEmpty);

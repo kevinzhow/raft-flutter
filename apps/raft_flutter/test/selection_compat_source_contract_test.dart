@@ -161,10 +161,9 @@ void main() {
           await tester.tap(find.text('Sort'));
           await tester.pumpAndSettle();
           final popup = find.byKey(const Key('sidebar-sort-popover'));
-          // Source surface py-1.5 + ScrollArea content p-1 + three options.
-          // DS0 retains the 36px public option helper; desktop source 34px
-          // width/pointer consumption remains the explicitly deferred DS1 work.
-          expect(tester.getRect(popup).size, const Size(160, 12 + 8 + 3 * 36));
+          // Source surface py-1.5 + ScrollArea content p-1 + three options,
+          // 34px each with a mouse from 768 (`h-(--option-height)`).
+          expect(tester.getRect(popup).size, const Size(160, 12 + 8 + 3 * 34));
           expect(
             tester.getRect(popup).right,
             tester.getRect(find.byKey(anchor)).right,
@@ -225,15 +224,17 @@ void main() {
           final input = tester.widget<EditableText>(find.byType(EditableText));
           final tokens = raftTheme(dark: dark).extension<RaftTokens>()!;
           expect(input.style.fontSize, 14);
-          expect(input.style.height, 20 / 14);
+          // `text-callout`: 20px, 22px with a mouse from 768.
+          expect(input.style.height, 22 / 14);
           expect(input.style.fontFamily, tokens.bodyFont);
           expect(
             tester.getRect(find.byType(EditableText)).center.dy -
                 tester.getRect(find.text('Assignee')).center.dy,
-            // Source header: pt10 + text16 + pb4. Search: h40 with a
-            // layout-reserving 1px bottom hairline, so content center49.5
-            // minus title center18 is31.5 (not the border-box center32).
-            31.5,
+            // Source header: pt10 + text16 + pb4. Search: h40, h34 with a
+            // mouse from 768 (`md:pointer-fine:h-control`), with a
+            // layout-reserving 1px bottom hairline, so content center46.5
+            // minus title center18 is28.5 (not the border-box center29).
+            28.5,
           );
           final searchIcons = tester
               .widgetList<RaftIcon>(find.byType(RaftIcon))
