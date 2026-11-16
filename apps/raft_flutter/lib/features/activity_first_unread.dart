@@ -147,9 +147,13 @@ Widget activityHeaderJump(
         ),
       );
 
-/// The phone Activity tab root's header, with the task #164 notice under it.
-Widget activityRootHeader(WorkspaceController w) =>
-    activityStaleNotice(w, const RaftMobileRootHeader(title: 'Activity'));
+/// The phone Activity tab root's header (Web TabRootBar: the name and the
+/// counts line), with the task #164 notice under it.
+Widget activityRootHeader(WorkspaceController w, String subtitle) =>
+    activityStaleNotice(
+      w,
+      RaftMobileRootHeader(title: 'Activity', subtitle: subtitle),
+    );
 
 /// ThreadsInbox: the Activity notice of task #164 sits under the head.
 Widget activityStaleNotice(WorkspaceController w, Widget header) => Column(

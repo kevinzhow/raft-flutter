@@ -3778,8 +3778,10 @@ class _ResourceViewState extends State<ResourceView> {
     final mobile =
         MediaQuery.sizeOf(context).width < RaftLayoutMetrics.desktopBreakpoint;
     final count = totalCount ?? rows.length;
+    final activityCounts =
+        '$count ${raftText(context, 'active')}${(totalUnreadCount ?? 0) > 0 ? ' · $totalUnreadCount ${raftText(context, 'unread')}' : ''}';
     if (widget.mobileRoot && mobile && widget.section == 'activity') {
-      return activityRootHeader(w);
+      return activityRootHeader(w, activityCounts);
     }
     final header = RaftPageHeader(
       background: widget.section == 'activity' || widget.section == 'saved'
@@ -3796,8 +3798,7 @@ class _ResourceViewState extends State<ResourceView> {
         'tasks' => '$count ${raftText(context, 'channel tasks')}',
         'saved' =>
           '$count ${raftText(context, count == 1 ? 'saved item' : 'saved items')}',
-        'activity' =>
-          '$count ${raftText(context, 'active')}${(totalUnreadCount ?? 0) > 0 ? ' · $totalUnreadCount ${raftText(context, 'unread')}' : ''}',
+        'activity' => activityCounts,
         _ => null,
       },
       height: raftPageHeaderHeight(context),

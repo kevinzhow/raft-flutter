@@ -56,9 +56,9 @@ void main() {
         await t.pump(const Duration(seconds: 2));
         expect(find.textContaining('Background session'), findsNothing);
         expect(find.textContaining('Please retry'), findsNothing);
-        // Activity is a tab root (v1.24) with the bare title; the loaded row
-        // proves the list.
+        // Activity is a tab root (v1.24): TabRootBar's name and counts line.
         expect(find.byType(RaftMobileRootHeader), findsOneWidget);
+        expect(find.text('1 active · 1 unread'), findsOneWidget);
         expect(
           find.byKey(const ValueKey('activity-channel-ch0')),
           findsOneWidget,

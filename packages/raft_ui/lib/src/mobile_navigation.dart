@@ -750,6 +750,7 @@ class RaftMobileRootHeader extends StatelessWidget {
     this.workspace = false,
     this.onBack,
     this.backKey,
+    this.subtitle,
   });
 
   /// The phone Home workspace header has natural-width frame actions.
@@ -761,6 +762,10 @@ class RaftMobileRootHeader extends StatelessWidget {
   final Key? backKey;
   final Widget? leading;
   final String? title;
+
+  /// Web TabRootBar's one line under the name (Activity's counts), already
+  /// localised; styled like the Tasks root's count line.
+  final String? subtitle;
   final List<Widget> actions;
   final double? viewportHeight;
   final double inset;
@@ -787,16 +792,39 @@ class RaftMobileRootHeader extends StatelessWidget {
       backKey: backKey,
       title: Align(
         alignment: AlignmentDirectional.centerStart,
-        child:
-            leading ??
-            Text(
-              raftText(context, title ?? ''),
-              style: recipe.title,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
+        child: leading ?? _titleBlock(context, recipe),
       ),
       actions: actions,
+    );
+  }
+
+  Widget _titleBlock(BuildContext context, RaftMobileRootHeaderRecipe recipe) {
+    final name = Text(
+      raftText(context, title ?? ''),
+      style: recipe.title,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+    );
+    if (subtitle?.isNotEmpty != true) return name;
+    final t = recipe.tokens;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        name,
+        Text(
+          subtitle!,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: t.option('listGroup.frame', or: 'framed') == 'plain'
+              ? t.scale(
+                  RaftTypeScale.caption,
+                  weight: FontWeight.w500,
+                  color: t.colors['foreground-on-frame-muted'],
+                )
+              : RaftTypography.mono(t, color: t.muted),
+        ),
+      ],
     );
   }
 }
