@@ -174,8 +174,7 @@ void main() {
     await t.pumpWidget(
       frame(
         false,
-        ctaLabel:
-            'Read the full migration guide and the list of changes for every runtime',
+        ctaLabel: 'Read the full migration guide and the list of changes for every runtime',
       ),
     );
     await t.pump();

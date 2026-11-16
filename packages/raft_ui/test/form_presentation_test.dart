@@ -16,9 +16,8 @@ Widget _app({
 }) => MaterialApp(
   theme: raftTheme(),
   builder: (context, home) => MediaQuery(
-    data: MediaQuery.of(
-      context,
-    ).copyWith(viewInsets: EdgeInsets.only(bottom: keyboard)),
+    data: MediaQuery.of(context)
+        .copyWith(viewInsets: EdgeInsets.only(bottom: keyboard)),
     child: home!,
   ),
   home: Builder(
