@@ -419,7 +419,7 @@ final scenarios = <Scenario>[
     '06-settings-root-scrolled-end',
     '/s/alpha/settings',
     act: scrollToEnd,
-    root: true,
+    // Pushed from the server tab (v1.24): no bottom bar.
   ),
   const Scenario(
     '07-home-root-scrolled-end',
@@ -427,8 +427,9 @@ final scenarios = <Scenario>[
     act: scrollToEnd,
     root: true,
   ),
-  const Scenario('03-members-root', '/s/alpha/members', root: true),
-  const Scenario('04-settings-root', '/s/alpha/settings', root: true),
+  // Members and Settings are pushed pages (v1.24): no bottom bar.
+  const Scenario('03-members-root', '/s/alpha/members'),
+  const Scenario('04-settings-root', '/s/alpha/settings'),
   const Scenario(
     '10-channel-chat',
     '/s/alpha',

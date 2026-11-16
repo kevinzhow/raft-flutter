@@ -208,8 +208,9 @@ void main() {
     await resize(t, f, phone);
     expect(where(f, t), '/channel/ca');
     expect(history(f, t), ['', '/activity', '/channel/ca']);
-    expect(mountedPages(t), 3, reason: 'Home, Activity, conversation');
-    expect(await backWalk(t, f), ['/activity', '']);
+    // Activity is a tab root (v1.24): Home is not under it.
+    expect(mountedPages(t), 2, reason: 'Activity, conversation');
+    expect(await backWalk(t, f), ['/activity']);
   });
 
   scenario('R2d wide Search result slot, fold: Back returns to Search', (
@@ -218,7 +219,7 @@ void main() {
     final f = await mount(t, wide, '/s/alpha/search?open=channel:ca&msg=m2');
     await resize(t, f, phone);
     expect(where(f, t), '/channel/ca?msg=m2');
-    expect(await backWalk(t, f), ['/search', '']);
+    expect(await backWalk(t, f), ['/search']);
   });
 
   // R3: the layout follows the live width even with a route above it.
