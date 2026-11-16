@@ -59,7 +59,8 @@ class RaftAnnouncementLabels {
 ///
 /// * The primary button reads [ctaLabel] and calls [onCta] when the
 ///   announcement has a CTA, else it reads "Got it" and calls [onDismiss].
-///   With a CTA a "Got it" link beside it calls [onDismiss].
+///   In the frozen looks a "Got it" link beside a CTA calls [onDismiss]; the
+///   Raft look has the one button (Web v1.24), and ✕ closes.
 /// * ✕, Escape and a press on the scrim dismiss (closing counts as read).
 /// * Enter acts like the primary button wherever focus is in the dialog (Web:
 ///   a capture-phase window listener, so a focused link does not swallow it).
