@@ -81,11 +81,15 @@ void main() {
           final bytes = (await tester.runAsync(
             () => image.toByteData(format: ui.ImageByteFormat.rawRgba),
           ))!;
+          // Raft look link: `foreground-link` (was `link-fg` #1447e6 / #8ec5ff),
+          // its underline at rest 40% alpha (raft-ui `decoration-foreground-link/40`);
+          // the boundary has no backdrop, so the alpha byte is the stroke's own.
           final color = dark
-              ? const Color(0xff8ec5ff)
-              : const Color(0xff1447e6);
+              ? const Color(0xff6da7ec)
+              : const Color(0xff184f95);
           final strokeTop = (origin.dy + _baseline(paragraph) + 2 * scale)
               .roundToDouble();
+          var faintPixels = 0;
           for (
             var y = strokeTop.ceil();
             y < (strokeTop + 2 * scale).floor();
@@ -98,11 +102,19 @@ void main() {
             ) {
               final pixel = (y * image.width + x) * 4;
 
-              expect(bytes.getUint8(pixel), (color.r * 255).round());
-              expect(bytes.getUint8(pixel + 1), (color.g * 255).round());
-              expect(bytes.getUint8(pixel + 2), (color.b * 255).round());
+              // Premultiplied RGBA: the faint stroke alone is 40% alpha; where
+              // the same-coloured glyph ink overlaps it the pixel is opaque.
+              final alpha = bytes.getUint8(pixel + 3);
+              expect(alpha, anyOf(closeTo(102, 1), 255));
+              if (alpha == 102) faintPixels++;
+              for (var c = 0; c < 3; c++) {
+                final channel = [color.r, color.g, color.b][c] * alpha;
+                expect(bytes.getUint8(pixel + c), closeTo(channel, 1));
+              }
             }
           }
+          // The underline at rest is the faint one, not a full-colour stroke.
+          expect(faintPixels, greaterThan(100));
           image.dispose();
           await tester.tapAt(
             paragraph.localToGlobal(
@@ -290,73 +302,76 @@ void main() {
     },
   );
 
-  testWidgets(
-    'table underline stays clipped and follows horizontal scrolling',
-    (tester) async {
-      final key = GlobalKey();
-      await tester.pumpWidget(
-        MaterialApp(
-          theme: raftTheme(),
-          home: Scaffold(
-            body: Align(
-              alignment: Alignment.topLeft,
-              child: RepaintBoundary(
-                key: key,
-                child: Row(
-                  children: [
-                    const SizedBox(
-                      width: 140,
-                      child: RaftMessageBody(
-                        content: '| Link | Wide column |\n|---|---|\n| [Quest Machine 官方手册](https://example.invalid/manual) | ALongUnbrokenColumnThatRequiresHorizontalScrolling |',
-                      ),
+  testWidgets('table underline stays clipped and follows horizontal scrolling', (
+    tester,
+  ) async {
+    final key = GlobalKey();
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: raftTheme(),
+        home: Scaffold(
+          body: Align(
+            alignment: Alignment.topLeft,
+            child: RepaintBoundary(
+              key: key,
+              child: Row(
+                children: [
+                  const SizedBox(
+                    width: 140,
+                    child: RaftMessageBody(
+                      content:
+                          '| Link | Wide column |\n|---|---|\n| [Quest Machine 官方手册](https://example.invalid/manual) | ALongUnbrokenColumnThatRequiresHorizontalScrolling |',
                     ),
-                    const SizedBox(width: 160, height: 80),
-                  ],
-                ),
+                  ),
+                  const SizedBox(width: 160, height: 80),
+                ],
               ),
             ),
           ),
         ),
-      );
-      final rich = find.byWidgetPredicate(
-        (w) => w is RichText && w.text.toPlainText().startsWith(_label),
-      );
-      final paragraph = tester.renderObject<RenderParagraph>(rich);
-      final boundary =
-          key.currentContext!.findRenderObject()! as RenderRepaintBoundary;
-      final y =
-          (paragraph.localToGlobal(Offset.zero, ancestor: boundary).dy +
-                  _baseline(paragraph) +
-                  3)
-              .round();
-      Future<int> bluePixels(int left, int right) async {
-        final image = (await tester.runAsync(() => boundary.toImage()))!;
-        final bytes = (await tester.runAsync(
-          () => image.toByteData(format: ui.ImageByteFormat.rawRgba),
-        ))!;
-        var count = 0;
-        for (var x = left; x < right; x++) {
-          final p = (y * image.width + x) * 4;
-          if (bytes.getUint8(p) == 20 &&
-              bytes.getUint8(p + 1) == 71 &&
-              bytes.getUint8(p + 2) == 230)
-            count++;
-        }
-        image.dispose();
-        return count;
+      ),
+    );
+    final rich = find.byWidgetPredicate(
+      (w) => w is RichText && w.text.toPlainText().startsWith(_label),
+    );
+    final paragraph = tester.renderObject<RenderParagraph>(rich);
+    final boundary =
+        key.currentContext!.findRenderObject()! as RenderRepaintBoundary;
+    final y =
+        (paragraph.localToGlobal(Offset.zero, ancestor: boundary).dy +
+                _baseline(paragraph) +
+                3)
+            .round();
+    Future<int> bluePixels(int left, int right) async {
+      final image = (await tester.runAsync(() => boundary.toImage()))!;
+      final bytes = (await tester.runAsync(
+        () => image.toByteData(format: ui.ImageByteFormat.rawRgba),
+      ))!;
+      var count = 0;
+      for (var x = left; x < right; x++) {
+        final p = (y * image.width + x) * 4;
+        // foreground-link #184f95 at the 40% resting underline alpha
+        // (premultiplied: 24, 79, 149 x 102/255).
+        if ((bytes.getUint8(p) - 10).abs() <= 1 &&
+            (bytes.getUint8(p + 1) - 32).abs() <= 1 &&
+            (bytes.getUint8(p + 2) - 60).abs() <= 1 &&
+            (bytes.getUint8(p + 3) - 102).abs() <= 1)
+          count++;
       }
+      image.dispose();
+      return count;
+    }
 
-      expect(await bluePixels(0, 140), greaterThan(20));
-      expect(await bluePixels(142, 298), 0);
-      final dynamic render = tester.renderObject(find.byType(RaftUnderlines));
-      final position = tester
-          .state<ScrollableState>(find.byType(Scrollable))
-          .position;
-      position.jumpTo(position.maxScrollExtent);
-      await tester.pump();
-      expect(await bluePixels(0, 140), 0);
-      expect(render.debugGeometryBuildCount, 1);
-      expect(tester.takeException(), isNull);
-    },
-  );
+    expect(await bluePixels(0, 140), greaterThan(20));
+    expect(await bluePixels(142, 298), 0);
+    final dynamic render = tester.renderObject(find.byType(RaftUnderlines));
+    final position = tester
+        .state<ScrollableState>(find.byType(Scrollable))
+        .position;
+    position.jumpTo(position.maxScrollExtent);
+    await tester.pump();
+    expect(await bluePixels(0, 140), 0);
+    expect(render.debugGeometryBuildCount, 1);
+    expect(tester.takeException(), isNull);
+  });
 }

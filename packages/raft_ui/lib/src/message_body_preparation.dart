@@ -17,10 +17,7 @@ class RaftMessageBodyRequest {
          knownTaskNumber,
        ),
        _dark = tokens.dark,
-       _codeStyle = RaftCodeRecipe(tokens).textStyle.copyWith(
-         fontSize: fontSize,
-         color: RaftCodeRecipe(tokens).foreground,
-       );
+       _codeStyle = raftCodeSpanStyle(tokens, fontSize);
   final String content;
   final _ReferencesKey _references;
   final bool _dark;

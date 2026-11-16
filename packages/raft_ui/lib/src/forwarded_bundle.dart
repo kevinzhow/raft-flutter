@@ -12,6 +12,7 @@ import 'localization.dart';
 import 'message_body.dart';
 import 'message_row_recipe.dart' show RaftMessageBodyMargin;
 import 'tooltip.dart' show RaftTooltip;
+import 'text_scaling.dart' show RaftScaled;
 
 /// Only recipient-projected fields are retained. Source pointers, capability
 /// URLs and internal attachment projection IDs never become displayed text.
@@ -271,12 +272,15 @@ class _RaftForwardedBundleState extends State<RaftForwardedBundle> {
                 : 'from {target}',
             {'target': first.sourceLabel!},
           );
+    // Raft look at a larger text size: the source label wraps instead of
+    // being cut by its own one-line box.
+    final wraps = raft != null && RaftScaled.grows(context);
     Text text(TextStyle style) => Text(
       label,
       style: style,
       textAlign: TextAlign.right,
-      maxLines: 1,
-      overflow: TextOverflow.ellipsis,
+      maxLines: wraps ? null : 1,
+      overflow: wraps ? TextOverflow.clip : TextOverflow.ellipsis,
     );
     final open = widget.onOpenSource;
     if (open == null || !first.openable || widget.exportMode) {

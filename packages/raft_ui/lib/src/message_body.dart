@@ -461,11 +461,7 @@ class RaftMessageBody extends StatelessWidget {
       content,
       () => _splitBody(content),
     );
-    final code = RaftCodeRecipe(tokens);
-    final style = code.textStyle.copyWith(
-      fontSize: fontSize,
-      color: code.foreground,
-    );
+    final style = raftCodeSpanStyle(tokens, fontSize);
     for (final chunk in chunks) {
       if (chunk.markdown) {
         _parseMarkdown(chunk.text, inputs);
@@ -2016,6 +2012,22 @@ final _codeLanguageAliases = <String, String>{
 final raftCodeSpanCache =
     RaftLruCache<(String, String?, TextStyle, bool), TextSpan>(512);
 
+/// The base style of a highlighted code span: Web `text-code-foreground`
+/// (#24292e / #f0f3f6) in the Raft look, the recipe's foreground in the frozen
+/// looks. Prepared bodies and mounted code blocks must agree on it (the cache
+/// key), so both read it here.
+TextStyle raftCodeSpanStyle(RaftTokens t, double fontSize) {
+  final recipe = RaftCodeRecipe(t);
+  return recipe.textStyle.copyWith(
+    fontSize: fontSize,
+    color: raftContentLook(t)
+        ? (t.dark ? _darkCodeTokenTheme : _lightCodeTokenTheme)['root']
+                  ?.color ??
+              recipe.foreground
+        : recipe.foreground,
+  );
+}
+
 TextSpan raftCodeSpan(
   String code,
   String? language,
@@ -2194,15 +2206,10 @@ class _RaftCodeBlockState extends State<RaftCodeBlock> {
     final recipe = RaftCodeRecipe(t);
     final raft = raftContentLook(t);
     final line = widget.lineHeight;
-    final textStyle = recipe.textStyle.copyWith(
-      fontSize: widget.fontSize,
-      // Web `text-code-foreground` (#24292e / #f0f3f6) and the message
-      // body's line height; the frozen looks keep their recipe.
-      color: raft
-          ? (t.dark ? _darkCodeTokenTheme : _lightCodeTokenTheme)['root']
-                    ?.color ??
-                recipe.foreground
-          : recipe.foreground,
+    // The cached span carries the colour and size only (what a prepared body
+    // also has); the line height reaches it through the Text style.
+    final spanStyle = raftCodeSpanStyle(t, widget.fontSize);
+    final textStyle = spanStyle.copyWith(
       height: raft && line != null ? line / widget.fontSize : null,
     );
     final key = (
@@ -2218,7 +2225,7 @@ class _RaftCodeBlockState extends State<RaftCodeBlock> {
     final span = raftCodeSpan(
       widget.code,
       widget.language,
-      textStyle,
+      spanStyle,
       dark: t.dark,
     );
     final text = widget.joinsSelection || touch

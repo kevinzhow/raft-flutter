@@ -758,18 +758,21 @@ class _RaftShowMoreToggleState extends State<RaftShowMoreToggle> {
                 widget.icon!,
                 const SizedBox(width: 4),
               ],
-              // The control's semantic label already announces it once.
-              ExcludeSemantics(
-                child: RaftUnderlinedText(
-                  widget.label,
-                  // raft-ui `TextLink`: underlined only while a mouse hovers
-                  // it (1.5px, offset 3); the frozen looks underline at rest.
-                  underline: raft
-                      ? widget.underline && hovered && mouse
-                      : widget.underline,
-                  underlineOffset: raft ? 3 : null,
-                  underlineThickness: raft ? 1.5 : null,
-                  style: style.copyWith(color: color),
+              // The control's semantic label already announces it once. The
+              // label shrinks to the row and wraps at large text sizes.
+              Flexible(
+                child: ExcludeSemantics(
+                  child: RaftUnderlinedText(
+                    widget.label,
+                    // raft-ui `TextLink`: underlined only while a mouse hovers
+                    // it (1.5px, offset 3); the frozen looks underline at rest.
+                    underline: raft
+                        ? widget.underline && hovered && mouse
+                        : widget.underline,
+                    underlineOffset: raft ? 3 : null,
+                    underlineThickness: raft ? 1.5 : null,
+                    style: style.copyWith(color: color),
+                  ),
                 ),
               ),
             ],
