@@ -40733,8 +40733,8 @@
         "sourceBindings": [
           {
             "file": "packages/raft_ui/lib/src/design_primitives.dart",
-            "bytes": 121523,
-            "sha256": "6191ad7b970bfe85056d1f0ec615c050a8410ab147dc1662c45b0714952f2af3"
+            "bytes": 123021,
+            "sha256": "81f29f54c152a4c0a9e74a767918e5875ce5cf16e39dd4f431c4bf8928139950"
           }
         ],
         "reviewDecision": "Source reviewed at fixed Choice/P1 combination: this declaration is in an explicit frozen part/helper or a frozen Dialog class, selected only by the existing non-Raft/legacy recipe branch. The whole-file binding is refreshed after exact raw declaration-body comparison with ae852; surrounding current-look edits do not imply a change to this frozen body. Current final125 whole-file binding refreshed after raw declaration-body equality with ae852; surrounding Dropdown changes are not a whole-file or visual equality claim. WP-AGENT PR 2 refreshed the binding again after adding RaftTextLinkVariant, the muted/strong link label and the hover-only underline above RaftTextLink: the git diff of design_primitives.dart has no hunk inside this declaration, so its body is unchanged. WP-AGENT PR 3 refreshed it after adding the optional RaftTextLink scale (hunks at lines 2900-2998 only, none inside this declaration). WP-COMP2 refreshed the binding again after adding RaftTextLink.trailingGlyph and a Flexible label: the git diff of design_primitives.dart has no hunk inside this declaration, so its body is unchanged.",
