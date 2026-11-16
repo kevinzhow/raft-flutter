@@ -18,7 +18,12 @@ Widget _rack(double width) => SizedBox(
       RaftFitGroup(
         scroll: true,
         wrapOrder: 30,
-        end: RaftTextButton(label: 'Clear all', onPressed: () {}),
+        end: RaftButton(
+          uiVariant: RaftButtonVariant.ghost,
+          uiSize: RaftButtonSize.md,
+          label: 'Clear all',
+          onPressed: () {},
+        ),
         items: [
           RaftFitPicker(
             label: 'Status',

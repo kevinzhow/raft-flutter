@@ -19,6 +19,9 @@ import 'css_box.dart';
 import 'text_baseline.dart';
 import 'ui_tokens.dart';
 
+/// A badge with no fill paints nothing (Web `bg-transparent`).
+const Color _clearFill = Color(0x00000000);
+
 /// Resolved paint of one appearance and variant in one state.
 @immutable
 class RaftBadgeColors {
@@ -47,7 +50,7 @@ class RaftBadgeColors {
     bool hovered = false,
     bool disabled = false,
   }) {
-    const clear = Color(0x00000000);
+    const clear = _clearFill;
     if (disabled) {
       return RaftBadgeColors(
         fill: ui.fillMuted,
@@ -230,7 +233,7 @@ class RaftBadge extends StatelessWidget {
     if (recipe != null && stateVariant != null && !outline && !disabled) {
       final wash = recipe.backgroundColor?.resolve(t.recipeTokens);
       final base = wash == null
-          ? const Color(0x00000000)
+          ? _clearFill
           : (wash.a < 1 ? raftChromeBlend(wash, ui.layerCanvas) : wash);
       colors = RaftBadgeColors(
         fill: hovered && wash != null

@@ -1062,6 +1062,10 @@ class _FitScrollGroupState extends State<_FitScrollGroup> {
         ),
       ),
     );
+    // An alpha mask (dstIn): only the alpha of these stops matters, so any
+    // theme colour made opaque / clear will do.
+    final shown = RaftTokens.of(context).ink.withValues(alpha: 1);
+    final hidden = shown.withValues(alpha: 0);
     final masked = ShaderMask(
       blendMode: BlendMode.dstIn,
       shaderCallback: (rect) {
@@ -1069,10 +1073,10 @@ class _FitScrollGroupState extends State<_FitScrollGroup> {
         return LinearGradient(
           stops: [0, f, 1 - f, 1],
           colors: [
-            _atStart ? Colors.black : Colors.transparent,
-            Colors.black,
-            Colors.black,
-            _atEnd ? Colors.black : Colors.transparent,
+            _atStart ? shown : hidden,
+            shown,
+            shown,
+            _atEnd ? shown : hidden,
           ],
         ).createShader(rect);
       },
