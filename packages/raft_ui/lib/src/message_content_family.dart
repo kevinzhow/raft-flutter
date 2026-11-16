@@ -1,6 +1,7 @@
 // WP-DS3 content family, Raft look only (raft-ui 0.95.3 / Web v1.24): the code
 // block frame and its keyboard region, the markdown link run, and the pieces
 // they share. The frozen looks (Elegant, Brutal) never reach this file.
+import 'token_geometry.dart';
 import 'package:flutter/material.dart';
 import 'package:raft_theme/recipes.dart' show RaftRecipeSet;
 
@@ -17,10 +18,8 @@ bool raftContentLook(RaftTokens t) => t.recipeSet == RaftRecipeSet.raft;
 abstract final class RaftCodeBlockFrame {
   static BoxDecoration decoration(RaftTokens t) => BoxDecoration(
     color: t.colors['layer-code'],
-    border: Border.all(color: t.colors['line-hairline']!, width: 1),
-    borderRadius: BorderRadius.circular(
-      t.size('radius.container', fallback: 10),
-    ),
+    border: Border.all(color: t.colors['line-hairline']!, width: t.border),
+    borderRadius: t.corner('radius.container', fallback: 10),
   );
 
   /// The text column keeps clear of the copy button: Web `px-3` (12) plus the
@@ -113,7 +112,7 @@ class _RaftCodeScrollRegionState extends State<RaftCodeScrollRegion> {
                       decoration: BoxDecoration(
                         border: Border.all(
                           color: t.colors['foreground']!,
-                          width: 2,
+                          width: t.border * 2,
                         ),
                       ),
                     ),

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart' show Colors;
 import 'design_primitives.dart' show RaftInteractive;
 import 'dialog_card.dart';
 import 'icons.dart';
+import 'raft/button.dart' show RaftButton;
 import 'recipes/button_variants.g.dart';
 import 'theme.dart';
 
@@ -59,14 +60,14 @@ class RaftTimelineBottomButtonBody extends StatelessWidget {
         onPressed: onPressed,
       );
     }
-    return RaftRecipeButton(
+    return RaftButton(
       label: label,
       glyph: RaftGlyph.arrowDown,
-      glyphSize: 16,
-      variant: RaftButtonRecipeVariant.outline,
+      tone: RaftButtonRecipeVariant.outline,
       // raft-ui 0.95.3 gives `sm` and `md` the same `textMd` class list
       // (h-8, md:pointer-fine:h-control); Flutter's `md` is the 40px tier.
       size: RaftButtonRecipeSize.sm,
+      iconInlineStart: false,
       onPressed: onPressed,
     );
   }

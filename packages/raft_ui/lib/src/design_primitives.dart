@@ -2999,64 +2999,64 @@ class RaftTextLink extends StatelessWidget {
     return _build(context, markGlyph);
   }
 
-  Widget _build(BuildContext context, RaftGlyph? markGlyph) => RaftControl(
-    kind: RaftControlKind.textLink,
-    visualHeight: variant == RaftTextLinkVariant.saved ? 16 : 20,
-    flexibleHeight: variant != RaftTextLinkVariant.saved,
-    // The Web link has no touch inflation: it keeps its own box, and the
-    // caller extends the hit area (RaftTouchTarget) where a finger needs it.
-    minimumTargetSize: variant == RaftTextLinkVariant.saved ? null : 0,
-    // raft-ui `disabled:text-foreground-disabled`: the colour, not a dimming.
-    inertWhenDisabled: variant != RaftTextLinkVariant.saved,
-    shadow: true,
-    onPressed: onPressed,
-    child: Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        if (glyph != null) ...[
-          RaftIcon(glyph!, size: 12),
-          const SizedBox(width: 4),
-        ],
-        Flexible(
-          child: variant == RaftTextLinkVariant.saved
-              ? _RaftLinkWithMark(
-                  mark: markGlyph,
-                  markLabel: externalLabel,
-                  fontSize: textStyle?.fontSize ?? 11,
-                  color: (textStyle ?? const TextStyle()).color,
-                  child: RaftUnderlinedText(
-                    label,
-                    style:
-                        textStyle ??
-                        TextStyle(
-                          fontFamily: RaftTokens.of(context).bodyFont,
-                          fontSize: 11,
-                          height: 16 / 11,
-                          fontWeight: RaftTypography.black(
-                            RaftTokens.of(context),
-                          ),
-                        ),
+  Widget _build(BuildContext context, RaftGlyph? markGlyph) {
+    // The saved link's own face (Web `text-[11px] leading-4`), read once so the
+    // mark sizes from the text it follows.
+    final savedStyle =
+        textStyle ??
+        TextStyle(
+          fontFamily: RaftTokens.of(context).bodyFont,
+          fontSize: RaftTypeScale.label.fontSize,
+          height: 16 / RaftTypeScale.label.fontSize,
+          fontWeight: RaftTypography.black(RaftTokens.of(context)),
+        );
+    return RaftControl(
+      kind: RaftControlKind.textLink,
+      visualHeight: variant == RaftTextLinkVariant.saved ? 16 : 20,
+      flexibleHeight: variant != RaftTextLinkVariant.saved,
+      // The Web link has no touch inflation: it keeps its own box, and the
+      // caller extends the hit area (RaftTouchTarget) where a finger needs it.
+      minimumTargetSize: variant == RaftTextLinkVariant.saved ? null : 0,
+      // raft-ui `disabled:text-foreground-disabled`: the colour, not a dimming.
+      inertWhenDisabled: variant != RaftTextLinkVariant.saved,
+      shadow: true,
+      onPressed: onPressed,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (glyph != null) ...[
+            RaftIcon(glyph!, size: 12),
+            const SizedBox(width: 4),
+          ],
+          Flexible(
+            child: variant == RaftTextLinkVariant.saved
+                ? _RaftLinkWithMark(
+                    mark: markGlyph,
+                    markLabel: externalLabel,
+                    fontSize: savedStyle.fontSize!,
+                    color: savedStyle.color,
+                    child: RaftUnderlinedText(label, style: savedStyle),
+                  )
+                : _RaftWebLinkLabel(
+                    mark: markGlyph,
+                    markLabel: externalLabel,
+                    label: label,
+                    strong: variant == RaftTextLinkVariant.strong,
+                    disabled: onPressed == null,
+                    style: textStyle,
+                    scale: scale,
+                    typeStyle: typeStyle,
+                    underlineAtRest: underlineAtRest,
                   ),
-                )
-              : _RaftWebLinkLabel(
-                  mark: markGlyph,
-                  markLabel: externalLabel,
-                  label: label,
-                  strong: variant == RaftTextLinkVariant.strong,
-                  disabled: onPressed == null,
-                  style: textStyle,
-                  scale: scale,
-                  typeStyle: typeStyle,
-                  underlineAtRest: underlineAtRest,
-                ),
-        ),
-        if (trailingGlyph != null) ...[
-          const SizedBox(width: 4),
-          RaftIcon(trailingGlyph!, size: 12),
+          ),
+          if (trailingGlyph != null) ...[
+            const SizedBox(width: 4),
+            RaftIcon(trailingGlyph!, size: 12),
+          ],
         ],
-      ],
-    ),
-  );
+      ),
+    );
+  }
 }
 
 /// The label of a Web-style text link: underlined only while hovered (never on

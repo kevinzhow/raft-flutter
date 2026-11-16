@@ -183,7 +183,10 @@ class _RaftInboxItemState extends State<RaftInboxItem> {
                   child: DecoratedBox(
                     decoration: BoxDecoration(
                       borderRadius: radius,
-                      border: Border.all(color: foreground, width: 2),
+                      border: Border.all(
+                        color: foreground,
+                        width: t.border * 2,
+                      ),
                     ),
                   ),
                 ),
@@ -355,6 +358,8 @@ class _Leading extends StatelessWidget {
     final slot = style.itemLeading;
     final badgeSlot = style.itemLeadingBadge;
     final ring = badgeSlot.length('outline-width') ?? 2;
+    final badgeCorner =
+        (badgeSlot.length('border-top-left-radius') ?? 3) + ring;
     return SizedBox(
       key: const ValueKey('inbox-item-leading'),
       width: slot.width ?? 36,
@@ -372,9 +377,7 @@ class _Leading extends StatelessWidget {
               child: DecoratedBox(
                 decoration: BoxDecoration(
                   color: badgeSlot.outlineColor?.resolve(tokens),
-                  borderRadius: BorderRadius.circular(
-                    (badgeSlot.length('border-top-left-radius') ?? 3) + ring,
-                  ),
+                  borderRadius: BorderRadius.circular(badgeCorner),
                 ),
                 child: Padding(
                   padding: EdgeInsets.all(ring),
@@ -475,6 +478,7 @@ class RaftInboxItemSkeleton extends StatelessWidget {
     final headingHeight = style.itemTitle.lineHeightPx ?? 22;
     final lineHeight = style.itemLine.height ?? 22;
     final bar = skeleton.bar.length('height');
+    final defaultLineFont = t.typeSlot('callout').fontSize;
     Widget line(double fraction, TextStyle text) => LayoutBuilder(
       builder: (context, constraints) => Align(
         alignment: AlignmentDirectional.centerStart,
@@ -483,7 +487,7 @@ class RaftInboxItemSkeleton extends StatelessWidget {
           height: RaftScaled.extent(
             context,
             bar ?? 10.5,
-            fontSize: text.fontSize ?? 14,
+            fontSize: text.fontSize ?? defaultLineFont,
           ),
           child: const RaftSkeleton(
             variant: RaftSkeletonVariant.line,

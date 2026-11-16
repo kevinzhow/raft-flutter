@@ -1,3 +1,4 @@
+import 'token_geometry.dart';
 import 'package:flutter/material.dart';
 
 import 'css_recipe_decoration.dart' show RaftRecipeDecoration;
@@ -183,9 +184,7 @@ class RaftComposerRecipe {
   BoxDecoration get suggestionDecoration => _raft
       ? BoxDecoration(
           color: tokens.popover,
-          borderRadius: BorderRadius.circular(
-            tokens.size('radius.container', fallback: 10),
-          ),
+          borderRadius: tokens.corner('radius.container', fallback: 10),
           // `ring-1 ring-line-seam shadow-float`; CSS lists the ring first.
           boxShadow: [
             for (final layer in tokens.shadowLayers('shadow.float').reversed)
@@ -447,8 +446,7 @@ class _ComposerSubmitRecipe extends RaftControlRecipe {
   BorderSide side({bool hovered = false}) =>
       BorderSide(color: colors().border, width: stroke);
   @override
-  BorderRadius get radius =>
-      BorderRadius.circular(tokens.size('radius.control', fallback: 8));
+  BorderRadius get radius => tokens.corner('radius.control', fallback: 8);
   @override
   EdgeInsets get padding => EdgeInsets.zero;
   @override

@@ -32,7 +32,7 @@ void main() {
           ),
         );
         final timeline = tester.getRect(find.byKey(const Key('timeline')));
-        final button = tester.getRect(find.byType(RaftRecipeButton));
+        final button = tester.getRect(find.byType(RaftButton));
         expect(button.center.dx, timeline.center.dx);
         expect(button.bottom, timeline.bottom - 12);
         await tester.tap(find.text('3 New Messages'));

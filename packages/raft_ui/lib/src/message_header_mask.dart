@@ -1,7 +1,11 @@
 import 'dart:ui' as ui;
 
 import 'package:flutter/rendering.dart';
+import 'package:flutter/material.dart' show Colors;
 import 'package:flutter/widgets.dart';
+
+/// The mask's opaque stop: only its alpha matters (`dstIn`).
+final _opaque = Colors.transparent.withValues(alpha: 1);
 
 /// raft-ui `--mi-header-mask`: while the hover toolbar shows, the header fades
 /// out under it, `linear-gradient(to left, transparent toolbarW+8,
@@ -54,7 +58,7 @@ class _RenderHeaderMask extends RenderProxyBox {
     final shader = ui.Gradient.linear(
       Offset(size.width, 0),
       Offset(size.width - fade, 0),
-      const [Color(0x00000000), Color(0x00000000), Color(0xFF000000)],
+      [Colors.transparent, Colors.transparent, _opaque],
       [0, (width + 8) / fade, 1],
     );
     final layer = (_handle.layer ??= ShaderMaskLayer(

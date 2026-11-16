@@ -3,6 +3,7 @@
 // hairline, `layer-card`); hover lays `overlay-subtle`, press `overlay-medium`
 // (only a tappable, non-muted preview), keyboard focus the focus ring. The
 // frozen looks keep the 0.5.52 card in quoted_message_card.dart.
+import 'token_geometry.dart';
 import 'package:flutter/material.dart';
 
 import 'design_primitives.dart' show RaftInteractive, RaftInteractionState;
@@ -30,9 +31,7 @@ class RaftQuotedMessageCardRaft extends StatelessWidget {
       states: t.recipeStates(responsive: true),
       tokens: t.recipeTokens,
     );
-    final radius = BorderRadius.circular(
-      t.size('radius.container', fallback: 10),
-    );
+    final radius = t.corner('radius.container', fallback: 10);
     final unavailable = card.unavailableText;
     if (unavailable != null) {
       return _Shell(
@@ -159,6 +158,7 @@ class RaftQuotedMessageCardRaft extends StatelessWidget {
             ),
           );
     final attachment = card.attachmentLabel;
+    final attachmentCorner = slots.attachment.borderRadius?.topLeft.x ?? 6;
     return _Shell(
       key: const Key('quoted-message-card'),
       radius: radius,
@@ -183,9 +183,7 @@ class RaftQuotedMessageCardRaft extends StatelessWidget {
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
                     color: t.ui.fillMuted,
-                    borderRadius: BorderRadius.circular(
-                      slots.attachment.borderRadius?.topLeft.x ?? 6,
-                    ),
+                    borderRadius: BorderRadius.circular(attachmentCorner),
                   ),
                   child: Text(attachment, style: chip),
                 ),

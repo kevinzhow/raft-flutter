@@ -1,3 +1,4 @@
+import 'token_geometry.dart';
 import 'hover_region.dart';
 import 'covered_pane.dart';
 import 'focus_visible.dart';
@@ -471,9 +472,7 @@ class RaftMessageRowRecipe {
   BoxDecoration get toolbarDecoration => raftToolbar
       ? BoxDecoration(
           color: tokens.popover,
-          borderRadius: BorderRadius.circular(
-            tokens.size('radius.container', fallback: 10),
-          ),
+          borderRadius: tokens.corner('radius.container', fallback: 10),
           boxShadow: [
             for (final layer in tokens.shadowLayers('shadow.float').reversed)
               if (!layer.inset) layer.toBoxShadow(),
@@ -484,9 +483,7 @@ class RaftMessageRowRecipe {
   /// `ring-1 ring-line-seam ring-inset`: painted over the bar, inside its box.
   BoxDecoration? get toolbarRing => raftToolbar
       ? BoxDecoration(
-          borderRadius: BorderRadius.circular(
-            tokens.size('radius.container', fallback: 10),
-          ),
+          borderRadius: tokens.corner('radius.container', fallback: 10),
           border: Border.all(color: tokens.colors['line-seam']!),
         )
       : null;

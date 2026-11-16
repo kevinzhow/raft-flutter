@@ -1,3 +1,4 @@
+import 'token_geometry.dart';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -152,9 +153,8 @@ class AttachmentComponentRecipe {
       : null;
 
   /// The card's corner: `rounded-container` in the Raft look.
-  BorderRadius get cardRadius => _raft
-      ? BorderRadius.circular(tokens.size('radius.container', fallback: 10))
-      : file.radius;
+  BorderRadius get cardRadius =>
+      _raft ? tokens.corner('radius.container', fallback: 10) : file.radius;
 
   /// Raft: the hairline stays on hover and focus (the fill and the focus ring
   /// carry those states); the frozen looks darken the border.

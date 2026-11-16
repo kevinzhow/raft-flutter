@@ -23,7 +23,10 @@ Widget _row({
   marks: const [Text('2')],
   actions: actions
       ? [
-          RaftIconButton(
+          RaftButton(
+            label: '',
+            uiVariant: RaftButtonVariant.ghost,
+            uiSize: RaftButtonSize.iconMd,
             glyph: RaftGlyph.checkCircle2,
             semanticLabel: 'Done',
             onPressed: () {},
