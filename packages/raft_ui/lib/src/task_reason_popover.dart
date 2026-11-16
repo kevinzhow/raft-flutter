@@ -207,9 +207,8 @@ class RaftTaskReasonPanelState extends State<RaftTaskReasonPanel> {
         );
     final slots = resolve(t.recipeStates());
     // `last:pb-4`: the actions are the popover's last child.
-    final actionsSlot = resolve(
-      t.recipeStates(extra: const ['last-child']),
-    ).actions;
+    final actionsSlot = resolve(t.recipeStates(extra: const ['last-child']))
+        .actions;
     return Column(
       key: key,
       mainAxisSize: MainAxisSize.min,

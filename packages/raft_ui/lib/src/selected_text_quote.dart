@@ -195,9 +195,8 @@ extension on RaftSelectionShortcutBar {
     final rest = recipe();
     final toolbarText = rest.toolbar.text(
       rt,
-      base: DefaultTextStyle.of(
-        context,
-      ).style.copyWith(decoration: TextDecoration.none),
+      base: DefaultTextStyle.of(context).style
+          .copyWith(decoration: TextDecoration.none),
     );
     Widget item(Key key, String label, RaftGlyph glyph, VoidCallback onTap) =>
         RaftInteractive(

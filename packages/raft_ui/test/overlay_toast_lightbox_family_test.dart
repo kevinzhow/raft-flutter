@@ -438,9 +438,8 @@ void main() {
         MaterialApp(
           theme: _theme(platform: platform, dark: dark),
           builder: (context, child) => MediaQuery(
-            data: MediaQuery.of(
-              context,
-            ).copyWith(textScaler: TextScaler.linear(scale)),
+            data: MediaQuery.of(context)
+                .copyWith(textScaler: TextScaler.linear(scale)),
             child: child!,
           ),
           home: Scaffold(
@@ -693,9 +692,9 @@ void main() {
         expect(opacity(), 1);
         expect(
           (decorationOf(t, 0).border! as Border).top.color,
-          RaftTokens.of(
-            t.element(find.byType(RaftMediaStrip)),
-          ).ui['foreground-on-hud'].withValues(alpha: .6),
+          RaftTokens.of(t.element(find.byType(RaftMediaStrip)))
+              .ui['foreground-on-hud']
+              .withValues(alpha: .6),
         );
         await mouse.removePointer();
       });
