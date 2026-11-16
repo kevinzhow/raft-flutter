@@ -635,6 +635,7 @@ class RaftPanelResizeHandle extends StatefulWidget {
     this.onChangeStart,
     this.onChangeEnd,
     this.hairline = false,
+    this.seamLine = false,
     this.min,
     this.max,
     this.defaultValue,
@@ -659,6 +660,15 @@ class RaftPanelResizeHandle extends StatefulWidget {
   /// (`group-hover:bg-foreground`, Brutal black) centred on the strip, always
   /// painted. The signed-in shell's resizers paint nothing.
   final bool hairline;
+
+  /// On a column seam (Web ColumnResizeHandle SEAM_CLASS): nothing at rest, a
+  /// 1px foreground-muted line on hover and while dragging. The line is the
+  /// strip's pixel right of its centre ([seamOffset]), so a host puts the
+  /// strip [seamOffset] left of the seam's pixel and the line lies on it.
+  final bool seamLine;
+
+  /// Where a [seamLine] handle's line lies in its [hitExtent] strip.
+  static const double seamOffset = hitExtent / 2;
 
   @override
   State<RaftPanelResizeHandle> createState() => _ResizeHandleState();
@@ -744,22 +754,40 @@ class _ResizeHandleState extends State<RaftPanelResizeHandle> {
             onDoubleTap: widget.defaultValue == null
                 ? null
                 : () => change(widget.defaultValue! - widget.value),
-            // Web's panel resizers (MainLayout thread/sidebar/search,
-            // LegacyTaskPanel, ProfilePanel) paint nothing: hover and drag
-            // only change the cursor. Keyboard focus, which Web lacks, keeps
-            // a 1px foreground rule so the focused handle is findable.
+            // A [seamLine] handle lights its seam on hover and drag (Web
+            // SEAM_CLASS); the others paint nothing there, only the cursor
+            // changes. Keyboard focus keeps a 1px foreground rule so the
+            // focused handle is findable.
             child: SizedBox(
               width: 8,
-              child: Center(
-                child: Container(
-                  width: 1,
-                  color: widget.hairline
-                      ? _hairline(t, hovering || dragValue != null)
-                      : focused && !hovering && dragValue == null
-                      ? (t.colors['foreground']!)
-                      : Colors.transparent,
-                ),
-              ),
+              child: widget.seamLine
+                  ? Stack(
+                      children: [
+                        Positioned(
+                          left: RaftPanelResizeHandle.seamOffset,
+                          top: 0,
+                          bottom: 0,
+                          width: 1,
+                          child: ColoredBox(
+                            color: hovering || dragValue != null
+                                ? t.colors['foreground-muted']!
+                                : focused
+                                ? t.colors['foreground']!
+                                : Colors.transparent,
+                          ),
+                        ),
+                      ],
+                    )
+                  : Center(
+                      child: Container(
+                        width: 1,
+                        color: widget.hairline
+                            ? _hairline(t, hovering || dragValue != null)
+                            : focused && !hovering && dragValue == null
+                            ? (t.colors['foreground']!)
+                            : Colors.transparent,
+                      ),
+                    ),
             ),
           ),
         ),

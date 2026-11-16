@@ -584,12 +584,9 @@ class _DesktopDirectoryViewState extends State<DesktopDirectoryView> {
       viewportHeight: size.height,
       variant: RaftSidebarVariant.mountedProduct,
     );
-    // SidebarRoot: `border-r border-line-muted theme-brutal:border-r-2
-    // theme-brutal:border-black` inside the 240px column (desktop only).
+    // Web v1.24 Members / Agents are the row's main column, not a sidebar:
+    // no edge of their own; a profile opened beside them draws the seam.
     final frame = RaftMountedSidebarFrame(
-      // The edge is drawn by the frame so the column's colour and divider both
-      // continue under the status bar.
-      trailingEdge: !widget.mobileRoot,
       header: widget.mobileRoot
           ? RaftMobileRootHeader(
               title: widget.computers ? 'Computers' : 'Members',

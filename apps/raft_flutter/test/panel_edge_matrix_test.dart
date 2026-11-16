@@ -272,7 +272,7 @@ void main() {
         return leftOf(t, find.byKey(const Key('desktop-content-detail')));
       },
     };
-    for (final surface in panelEdgeSurfaces) {
+    for (final surface in panelEdgeSurfaces.where((s) => !s.pixels)) {
       for (final width in widths) {
         testWidgets(
           '[edge] ${surface.id}/${dark ? 'dark' : 'light'} @$width: '

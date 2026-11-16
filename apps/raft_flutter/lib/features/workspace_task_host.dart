@@ -506,25 +506,25 @@ class _WorkspaceTaskHostState extends State<WorkspaceTaskHost> {
               width: width,
               child: SafeArea(
                 left: false,
+                // TaskContentSlot `edge="attached"`: the slot's own seam,
+                // over the task's opaque page.
                 child: DecoratedBox(
+                  position: DecorationPosition.foreground,
                   decoration: BoxDecoration(
-                    border: Border(
-                      left: BorderSide(
-                        color: RaftTokens.of(context).colors['line-seam']!,
-                      ),
-                    ),
+                    border: RaftPanelEdge.left(context),
                   ),
                   child: const TaskContentSlot(),
                 ),
               ),
             ),
             Positioned(
-              right: edge + width - RaftPanelResizeHandle.hitExtent / 2,
+              right: edge + width - RaftPanelResizeHandle.seamOffset,
               top: 0,
               bottom: 0,
               width: RaftPanelResizeHandle.hitExtent,
               child: RaftPanelResizeHandle(
                 key: const Key('tasks-route-detail-resize'),
+                seamLine: true,
                 label: 'Resize panel',
                 value: width,
                 reversed: true,

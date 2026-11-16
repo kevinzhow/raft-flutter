@@ -13,6 +13,7 @@ import 'focus_visible.dart';
 import 'hover_region.dart';
 import 'icons.dart';
 import 'adaptive_workspace.dart' show RaftPanelResizeHandle;
+import 'panel_edge.dart' show RaftPanelEdge;
 import 'banner.dart';
 import 'indicators.dart';
 import 'raft/avatar.dart' show RaftAvatarSize;
@@ -1381,13 +1382,17 @@ class RaftRackSidePanelLayout extends StatelessWidget {
       children: [
         Expanded(child: rack),
         if (panel != null)
-          DecoratedBox(
+          // Web ProfilePanel `edge="attached"`: the panel's own 1px seam,
+          // painted over its content (the computer page is an opaque
+          // Scaffold, which covered a background border).
+          Container(
             key: const ValueKey('computers-rack-side-panel'),
-            decoration: BoxDecoration(
-              color: t.panel,
-              border: Border(left: BorderSide(color: t.colors['line-muted']!)),
+            width: width,
+            color: t.panel,
+            foregroundDecoration: BoxDecoration(
+              border: RaftPanelEdge.left(context),
             ),
-            child: SizedBox(width: width, child: panel),
+            child: panel,
           ),
       ],
     );
@@ -1398,12 +1403,13 @@ class RaftRackSidePanelLayout extends StatelessWidget {
         row,
         // The handle overlays the seam; its hit strip takes no layout width.
         Positioned(
-          right: width - RaftPanelResizeHandle.hitExtent / 2,
+          right: width - RaftPanelResizeHandle.seamOffset,
           top: 0,
           bottom: 0,
           width: RaftPanelResizeHandle.hitExtent,
           child: RaftPanelResizeHandle(
             key: const ValueKey('rack-side-panel-resize-handle'),
+            seamLine: true,
             label: resizeLabel,
             value: width,
             reversed: true,

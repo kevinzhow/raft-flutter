@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'design_primitives.dart';
+import 'raft/ui_tokens.dart';
 import 'status_bar.dart';
 import 'theme.dart';
 
@@ -19,9 +20,10 @@ enum RaftPanelPresentation {
 
 /// The Web line a surface draws at its left edge.
 enum RaftPanelEdgeStyle {
-  /// `Panel edge="attached"`: Brutal `border-l-2 border-black`, Elegant
-  /// `border-l border-line-muted` (thread / profile / settings panels, the
-  /// task thread inside its modal).
+  /// `Panel edge="attached"`: raft-ui 0.95 `border-l border-line-seam`
+  /// (panel.recipe), Elegant `border-l border-line-muted` (thread / profile /
+  /// settings panels, the task thread inside its modal, a detail beside a
+  /// list).
   attachedPanel,
 
   /// ThreadsInbox `ActivityInboxPanel`: Elegant `border-l`, Brutal `!border-l`
@@ -60,11 +62,17 @@ abstract final class RaftPanelEdge {
   static bool drawsEdge(RaftPanelPresentation presentation) =>
       presentation == RaftPanelPresentation.attached;
 
+  /// The line between columns: raft-ui `--line-seam` (45% ink; `line-muted`
+  /// is the 15% hairline inside a surface). The frozen legacy looks keep
+  /// their own `line-muted`.
+  static Color seam(RaftTokens t) =>
+      t.isRaftLook ? t.ui.lineSeam : t.colors['line-muted']!;
+
   /// The edge line for [style] in theme [t], or null when the theme has none.
   static BorderSide? side(RaftTokens t, RaftPanelEdgeStyle style) {
     switch (style) {
       case RaftPanelEdgeStyle.attachedPanel:
-        return BorderSide(color: t.colors['line-muted']!, width: 1);
+        return BorderSide(color: seam(t), width: 1);
       case RaftPanelEdgeStyle.activityInbox:
         final width = t.size('stroke.activityInboxEdge', fallback: 1);
         return width == 0 ? null : BorderSide(color: t.line, width: width);
@@ -109,13 +117,13 @@ abstract final class RaftPanelEdge {
     return line == null ? null : Border(left: line);
   }
 
-  /// Web master/detail (`MainLayout` col-2 wrapper `border-r border-line-muted`): the
-  /// divider between the list and the detail beside it. It is the same edge as
-  /// the detail's left edge, drawn inside the master's width like Web does.
+  /// Web master/detail (Search / Activity: `ShellSidebarColumn ownBorder`,
+  /// `border-r border-line-seam`): the divider between the list and the
+  /// detail beside it, drawn inside the master's width like Web does.
   static Border? masterRight(BuildContext context) {
     if (!drawsEdge(presentationOf(context))) return null;
     final t = RaftTokens.of(context);
-    return Border(right: BorderSide(color: t.colors['line-muted']!, width: 1));
+    return Border(right: BorderSide(color: seam(t), width: 1));
   }
 }
 

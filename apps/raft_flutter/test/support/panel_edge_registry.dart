@@ -13,7 +13,10 @@ import 'package:raft_ui/raft_ui.dart';
 ///   foldable (816, 841) and desktop (1280) in each theme and asserts the line
 ///   is painted (absent only on the phone page).
 /// - A new panel: add an entry here and a mount in the matrix test, or the
-///   static check fails.
+///   static check fails. A detail beside a list ([pixels]) is mounted in
+///   `detail_panel_seam_test.dart` instead, which reads the rendered image:
+///   the matrix finds a decoration's border even where an opaque child covers
+///   it.
 class PanelEdgeSurface {
   const PanelEdgeSurface(
     this.id, {
@@ -21,6 +24,7 @@ class PanelEdgeSurface {
     required this.files,
     required this.style,
     this.elegantDraws = true,
+    this.pixels = false,
   });
 
   /// Stable name; the matrix test mounts the surface under this id.
@@ -36,6 +40,9 @@ class PanelEdgeSurface {
 
   /// False when the Elegant theme has no such edge (the rounded drawer card).
   final bool elegantDraws;
+
+  /// Mounted by `detail_panel_seam_test.dart` (painted pixels), not the matrix.
+  final bool pixels;
 }
 
 const _ui = '../../packages/raft_ui/lib/src';
@@ -97,18 +104,38 @@ const panelEdgeSurfaces = <PanelEdgeSurface>[
   PanelEdgeSurface(
     'activity-thread-detail',
     web:
-        'MainLayout col-2 wrapper `border-r border-line-muted '
-        'theme-brutal:border-black` (Activity: 1px), thread detail in col 3',
+        'ShellSidebarColumn ownBorder `border-r border-line-seam` '
+        '(Activity), thread detail in col 3',
     files: ['lib/features/desktop_master_detail.dart'],
     style: RaftPanelEdgeStyle.attachedPanel,
   ),
   PanelEdgeSurface(
     'search-detail',
     web:
-        'MainLayout col-2 wrapper `border-r border-line-muted '
-        'theme-brutal:border-r-2 theme-brutal:border-black` (Search)',
+        'ShellSidebarColumn ownBorder `border-r border-line-seam` (Search)',
     files: ['lib/features/desktop_master_detail.dart'],
     style: RaftPanelEdgeStyle.attachedPanel,
+  ),
+  PanelEdgeSurface(
+    'list-profile-detail',
+    web: 'ProfilePanel `edge="attached"` beside Members / Agents',
+    files: ['lib/features/desktop_master_detail.dart'],
+    style: RaftPanelEdgeStyle.attachedPanel,
+    pixels: true,
+  ),
+  PanelEdgeSurface(
+    'computers-rack-panel',
+    web: 'ProfilePanel `edge="attached"` (computer) beside the rack',
+    files: ['$_ui/computers_rack.dart'],
+    style: RaftPanelEdgeStyle.attachedPanel,
+    pixels: true,
+  ),
+  PanelEdgeSurface(
+    'tasks-route-slot',
+    web: 'TaskContentSlot beside the Tasks list',
+    files: ['lib/features/workspace_task_host.dart'],
+    style: RaftPanelEdgeStyle.attachedPanel,
+    pixels: true,
   ),
 ];
 

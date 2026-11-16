@@ -182,10 +182,17 @@ class _DesktopMasterDetailState extends State<DesktopMasterDetail> {
                       key: const Key('desktop-content-detail'),
                       child: FocusScope(
                         node: scope,
+                        // Web ProfilePanel `edge="attached"`: the profile
+                        // draws the seam on its own left edge, over its
+                        // opaque page.
                         child: panelMode
-                            ? KeyedSubtree(
+                            ? DecoratedBox(
                                 key: const ValueKey('desktop-profile-detail'),
-                                child: widget.detail!,
+                                position: DecorationPosition.foreground,
+                                decoration: BoxDecoration(
+                                  border: RaftPanelEdge.left(context),
+                                ),
+                                child: widget.detail,
                               )
                             : widget.detail!,
                       ),
@@ -196,12 +203,18 @@ class _DesktopMasterDetailState extends State<DesktopMasterDetail> {
             ),
             if (split && !folded)
               Positioned(
-                left: width - 4,
+                // The handle's line lies on the seam: the profile's first
+                // pixel, or the list's last one (its own right border).
+                left:
+                    width -
+                    RaftPanelResizeHandle.seamOffset -
+                    (!panelMode && widget.masterEdge ? 1 : 0),
                 top: 0,
                 bottom: 0,
-                width: 8,
+                width: RaftPanelResizeHandle.hitExtent,
                 child: RaftPanelResizeHandle(
                   key: const Key('desktop-master-resize-handle'),
+                  seamLine: panelMode || widget.masterEdge,
                   label: panelMode
                       ? raftText(context, 'Resize profile')
                       : 'Resize results',

@@ -241,12 +241,16 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
                 // its column starts 2px / 1px inside the modal frame, in the
                 // modal. The shared rule (RaftPanelEdge) leaves the full-width
                 // phone page without it. LegacyTaskPanel keeps its own
-                // side-presentation border (`framed` below).
+                // side-presentation border (`framed` below). Beside a list
+                // (TaskContentSlot) the column draws the seam: Web's page
+                // has no edge of its own there.
                 child: legacy
                     ? body
                     : Container(
                         decoration: BoxDecoration(
-                          border: RaftPanelEdge.left(context),
+                          border: widget.inPlace
+                              ? null
+                              : RaftPanelEdge.left(context),
                         ),
                         child: dismissable(body),
                       ),
