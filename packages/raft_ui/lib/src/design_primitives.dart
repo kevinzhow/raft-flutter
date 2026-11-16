@@ -2952,10 +2952,24 @@ class RaftTextLink extends StatelessWidget {
     this.scale,
     this.typeStyle,
     this.underlineAtRest = false,
+    this.external = false,
+    this.download = false,
+    this.externalLabel,
   });
   final String label;
   final VoidCallback? onPressed;
   final RaftGlyph? glyph;
+
+  /// raft-ui `TextLinkExternalIcon`: the link leaves Raft, so it ends in the
+  /// lucide ArrowUpRight (0.857em, stroke 2, 2px after the text, centred on the
+  /// cap height, outside the underline).
+  final bool external;
+
+  /// raft-ui `TextLinkDownloadIcon`: the same mark with the lucide Download.
+  final bool download;
+
+  /// The screen-reader text after the mark ("opens in a new tab").
+  final String? externalLabel;
 
   /// A glyph after the label (`TextLinkExternalIcon`).
   final RaftGlyph? trailingGlyph;
@@ -2975,7 +2989,16 @@ class RaftTextLink extends StatelessWidget {
   /// raft-ui `TextLink` inside a sentence: keep the underline at rest.
   final bool underlineAtRest;
   @override
-  Widget build(BuildContext context) => RaftControl(
+  Widget build(BuildContext context) {
+    final markGlyph = download
+        ? RaftGlyph.download
+        : external
+        ? RaftGlyph.arrowUpRight
+        : null;
+    return _build(context, markGlyph);
+  }
+
+  Widget _build(BuildContext context, RaftGlyph? markGlyph) => RaftControl(
     kind: RaftControlKind.textLink,
     visualHeight: variant == RaftTextLinkVariant.saved ? 16 : 20,
     flexibleHeight: variant != RaftTextLinkVariant.saved,
@@ -2995,20 +3018,28 @@ class RaftTextLink extends StatelessWidget {
         ],
         Flexible(
           child: variant == RaftTextLinkVariant.saved
-              ? RaftUnderlinedText(
-                  label,
-                  style:
-                      textStyle ??
-                      TextStyle(
-                        fontFamily: RaftTokens.of(context).bodyFont,
-                        fontSize: 11,
-                        height: 16 / 11,
-                        fontWeight: RaftTypography.black(
-                          RaftTokens.of(context),
+              ? _RaftLinkWithMark(
+                  mark: markGlyph,
+                  markLabel: externalLabel,
+                  fontSize: textStyle?.fontSize ?? 11,
+                  color: (textStyle ?? const TextStyle()).color,
+                  child: RaftUnderlinedText(
+                    label,
+                    style:
+                        textStyle ??
+                        TextStyle(
+                          fontFamily: RaftTokens.of(context).bodyFont,
+                          fontSize: 11,
+                          height: 16 / 11,
+                          fontWeight: RaftTypography.black(
+                            RaftTokens.of(context),
+                          ),
                         ),
-                      ),
+                  ),
                 )
               : _RaftWebLinkLabel(
+                  mark: markGlyph,
+                  markLabel: externalLabel,
                   label: label,
                   strong: variant == RaftTextLinkVariant.strong,
                   disabled: onPressed == null,
@@ -3038,8 +3069,12 @@ class _RaftWebLinkLabel extends StatefulWidget {
     this.scale,
     this.typeStyle,
     this.underlineAtRest = false,
+    this.mark,
+    this.markLabel,
   });
   final String label;
+  final RaftGlyph? mark;
+  final String? markLabel;
   final bool strong, disabled, underlineAtRest;
   final TextStyle? typeStyle;
   final TextStyle? style;
@@ -3061,31 +3096,86 @@ class _RaftWebLinkLabelState extends State<_RaftWebLinkLabel> {
         : widget.strong || hovered
         ? ui.foreground
         : ui.foregroundMuted;
+    final style =
+        widget.style ??
+        widget.typeStyle?.copyWith(
+          color: color,
+          fontWeight:
+              widget.typeStyle!.fontWeight ??
+              (widget.strong ? FontWeight.w600 : FontWeight.w500),
+        ) ??
+        t.scale(
+          // Web inherits the surrounding size (body in a card).
+          widget.scale ?? RaftTypeScale.body,
+          weight: widget.strong ? FontWeight.w600 : FontWeight.w500,
+          color: color,
+        );
     return MouseRegion(
       onEnter: (_) => setState(() => hovered = true),
       onExit: (_) => setState(() => hovered = false),
-      child: RaftUnderlinedText(
-        widget.label,
-        underline: (hovered || widget.underlineAtRest) && !widget.disabled,
-        underlineColor: color,
-        // raft-ui `decoration-[1.5px] underline-offset-[3px]`.
-        underlineOffset: 3,
-        underlineThickness: 1.5,
-        style:
-            widget.style ??
-            widget.typeStyle?.copyWith(
-              color: color,
-              fontWeight:
-                  widget.typeStyle!.fontWeight ??
-                  (widget.strong ? FontWeight.w600 : FontWeight.w500),
-            ) ??
-            t.scale(
-              // Web inherits the surrounding size (body in a card).
-              widget.scale ?? RaftTypeScale.body,
-              weight: widget.strong ? FontWeight.w600 : FontWeight.w500,
-              color: color,
-            ),
+      child: _RaftLinkWithMark(
+        mark: widget.mark,
+        markLabel: widget.markLabel,
+        fontSize: style.fontSize ?? 14,
+        color: style.color ?? color,
+        child: RaftUnderlinedText(
+          widget.label,
+          underline: (hovered || widget.underlineAtRest) && !widget.disabled,
+          underlineColor: color,
+          // raft-ui `decoration-[1.5px] underline-offset-[3px]`.
+          underlineOffset: 3,
+          underlineThickness: 1.5,
+          style: style,
+        ),
       ),
+    );
+  }
+}
+
+/// A link label with raft-ui's trailing mark (`TextLinkExternalIcon` /
+/// `TextLinkDownloadIcon`): `size-[0.857em] ml-0.5`, stroke 2, centred on the
+/// cap height (`align-[calc(0.7em/2-0.857em/2)]`), after the underlined text.
+class _RaftLinkWithMark extends StatelessWidget {
+  const _RaftLinkWithMark({
+    required this.child,
+    required this.mark,
+    required this.fontSize,
+    required this.color,
+    this.markLabel,
+  });
+  final Widget child;
+  final RaftGlyph? mark;
+  final String? markLabel;
+  final double fontSize;
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) {
+    final glyph = mark;
+    if (glyph == null) return child;
+    // `em` is the scaled font size, as the Web link's computed one.
+    final em = MediaQuery.textScalerOf(context).scale(fontSize);
+    final size = em * 0.857;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.baseline,
+      textBaseline: TextBaseline.alphabetic,
+      children: [
+        Flexible(child: child),
+        const SizedBox(width: 2),
+        // The icon's top is 0.35em (half the cap height) plus half its own
+        // height above the baseline.
+        Baseline(
+          baseline: em * 0.35 + size / 2,
+          baselineType: TextBaseline.alphabetic,
+          child: RaftIcon(
+            glyph,
+            size: size,
+            color: color,
+            semanticLabel: markLabel,
+          ),
+        ),
+      ],
     );
   }
 }
