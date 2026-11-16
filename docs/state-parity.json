@@ -25219,7 +25219,7 @@
         "owner": "design-system alignment",
         "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
       },
-      "packages/raft_ui/lib/src/empty_state.dart#local-function:CLASS:RaftEmptyState@584/METHOD:build@879/FUNCTION:text@1803": {
+      "packages/raft_ui/lib/src/empty_state.dart#local-function:CLASS:RaftEmptyState@1669/METHOD:build@2164/FUNCTION:text@2996": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
@@ -42279,7 +42279,7 @@
         "owner": "design-system alignment",
         "reason": "Registered by the current resolved runtime census. Exact family/part ownership and real-entry applicability still require review; this creates no mount or visual acceptance claim."
       },
-      "packages/raft_ui/lib/src/raft/list_row.dart#local-function:CLASS:RaftListRow@5946/METHOD:_recipeBody@7319/FUNCTION:ink@8320": {
+      "packages/raft_ui/lib/src/raft/list_row.dart#local-function:CLASS:RaftListRow@6133/METHOD:_recipeBody@8124/FUNCTION:ink@9368": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
@@ -50570,6 +50570,528 @@
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/card_parts_previews.dart#class:_CardParts": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS5 data-display family",
+        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/card_parts_previews.dart#function:cardPartsPreview": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS5 data-display family",
+        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/card_parts_previews.dart#method:_CardParts.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS5 data-display family",
+        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/fit_toolbar_previews.dart#function:_rack": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS5 data-display family",
+        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/fit_toolbar_previews.dart#function:fitToolbarCollapsedPreview": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS5 data-display family",
+        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/fit_toolbar_previews.dart#function:fitToolbarMediumPreview": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS5 data-display family",
+        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/fit_toolbar_previews.dart#function:fitToolbarNarrowPreview": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS5 data-display family",
+        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/fit_toolbar_previews.dart#function:fitToolbarWidePreview": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS5 data-display family",
+        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/list_row_previews.dart#function:listRowSkeletonPreview": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS5 data-display family",
+        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/list_row_previews.dart#function:listRowTonesPreview": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS5 data-display family",
+        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/auth_page.dart#local-function:CLASS:RaftAuthPrompt@32477/METHOD:build@32712/FUNCTION:run@33254": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS5 data-display family",
+        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/auth_page.dart#method:RaftAuthTextLink._build124": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS5 data-display family",
+        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/banner.dart#local-function:CLASS:RaftBanner@1029/METHOD:build@5238/FUNCTION:bannerBox@11993": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS5 data-display family",
+        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/banner.dart#local-function:CLASS:RaftBanner@1029/METHOD:build@5238/FUNCTION:box@10571": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS5 data-display family",
+        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/banner.dart#method:RaftBanner._close": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS5 data-display family",
+        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/banner_action_slot.dart#class:RaftBannerBody": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS5 data-display family",
+        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/banner_action_slot.dart#class:RaftOverhang": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS5 data-display family",
+        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/banner_action_slot.dart#class:_RenderBannerBody": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS5 data-display family",
+        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/banner_action_slot.dart#class:_RenderOverhang": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS5 data-display family",
+        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/card_parts.dart#class:RaftCardContent": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS5 data-display family",
+        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/card_parts.dart#class:RaftCardDescription": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS5 data-display family",
+        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/card_parts.dart#class:RaftCardFooter": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS5 data-display family",
+        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/card_parts.dart#class:RaftCardLeading": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS5 data-display family",
+        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/card_parts.dart#class:RaftCardScope": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS5 data-display family",
+        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/card_parts.dart#class:RaftCardSectionHeader": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS5 data-display family",
+        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/card_parts.dart#class:RaftCardTitle": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS5 data-display family",
+        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/card_parts.dart#class:RaftCardTrailing": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS5 data-display family",
+        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/card_parts.dart#function:_resolve": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS5 data-display family",
+        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/card_parts.dart#method:RaftCardContent.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS5 data-display family",
+        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/card_parts.dart#method:RaftCardDescription.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS5 data-display family",
+        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/card_parts.dart#method:RaftCardFooter.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS5 data-display family",
+        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/card_parts.dart#method:RaftCardLeading.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS5 data-display family",
+        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/card_parts.dart#method:RaftCardScope.of": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS5 data-display family",
+        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/card_parts.dart#method:RaftCardScope.updateShouldNotify": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS5 data-display family",
+        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/card_parts.dart#method:RaftCardSectionHeader.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS5 data-display family",
+        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/card_parts.dart#method:RaftCardTitle.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS5 data-display family",
+        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/card_parts.dart#method:RaftCardTrailing.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS5 data-display family",
+        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/chat_composition.dart#method:_LoadingRowsState._build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS5 data-display family",
+        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/computers_rack.dart#local-function:CLASS:RaftRackListHeader@10838/METHOD:build@11530/FUNCTION:heading@11677": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS5 data-display family",
+        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/computers_rack.dart#local-function:CLASS:_RaftRackRowState@15589/METHOD:build@17235/FUNCTION:slots@19656": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS5 data-display family",
+        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35856/METHOD:_buildRecipe@37126/FUNCTION:addon@38884": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS5 data-display family",
+        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35856/METHOD:_buildRecipe@37126/FUNCTION:box@38574": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS5 data-display family",
+        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35856/METHOD:_buildRecipe@37126/FUNCTION:resolve@37312": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS5 data-display family",
+        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/indicators.dart#local-function:CLASS:RaftProgressBar@2352/METHOD:build@6729/FUNCTION:inheritRoot@7885": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS5 data-display family",
+        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/input_group_size.dart#function:resolveSizedInputGroup": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS5 data-display family",
+        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/raft/fit_toolbar.dart#class:RaftFitToolbar": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS5 data-display family",
+        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/raft/fit_toolbar.dart#class:_FitScrollGroup": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS5 data-display family",
+        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/raft/fit_toolbar.dart#class:_FitScrollGroupState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS5 data-display family",
+        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/raft/fit_toolbar.dart#class:_FitSearchSlot": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS5 data-display family",
+        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/raft/fit_toolbar.dart#class:_FitSearchSlotState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS5 data-display family",
+        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/raft/fit_toolbar.dart#class:_MeasureProbe": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS5 data-display family",
+        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/raft/fit_toolbar.dart#class:_MoreMarker": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS5 data-display family",
+        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/raft/fit_toolbar.dart#class:_RaftFitToolbarState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS5 data-display family",
+        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/raft/fit_toolbar.dart#class:_RenderMeasureProbe": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS5 data-display family",
+        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/raft/fit_toolbar.dart#function:_fitStyle": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS5 data-display family",
+        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/raft/fit_toolbar.dart#local-function:CLASS:RaftFitMore@7996/METHOD:buildForm@8186/FUNCTION:trigger@8338": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS5 data-display family",
+        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/raft/fit_toolbar.dart#local-function:CLASS:RaftFitPicker@5577/METHOD:buildForm@6122/FUNCTION:trigger@6506": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS5 data-display family",
+        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/raft/fit_toolbar.dart#local-function:CLASS:_RaftFitToolbarState@11654/METHOD:_live@20032/FUNCTION:leafWidget@22764": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS5 data-display family",
+        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/raft/fit_toolbar.dart#local-function:CLASS:_RaftFitToolbarState@11654/METHOD:_live@20032/FUNCTION:slotWidget@23496": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS5 data-display family",
+        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/raft/fit_toolbar.dart#local-function:CLASS:_RaftFitToolbarState@11654/METHOD:build@16684/FUNCTION:probe@16855": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS5 data-display family",
+        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/raft/fit_toolbar.dart#method:RaftFitButton.buildForm": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS5 data-display family",
+        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/raft/fit_toolbar.dart#method:RaftFitChild.buildForm": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS5 data-display family",
+        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/raft/fit_toolbar.dart#method:RaftFitItem.buildForm": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS5 data-display family",
+        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/raft/fit_toolbar.dart#method:RaftFitMore.buildForm": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS5 data-display family",
+        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/raft/fit_toolbar.dart#method:RaftFitPicker.buildForm": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS5 data-display family",
+        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/raft/fit_toolbar.dart#method:RaftFitToolbar.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS5 data-display family",
+        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/raft/fit_toolbar.dart#method:_FitScrollGroup.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS5 data-display family",
+        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/raft/fit_toolbar.dart#method:_FitScrollGroupState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS5 data-display family",
+        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/raft/fit_toolbar.dart#method:_FitSearchSlot.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS5 data-display family",
+        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/raft/fit_toolbar.dart#method:_FitSearchSlotState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS5 data-display family",
+        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/raft/fit_toolbar.dart#method:_FitSearchSlotState.didUpdateWidget": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS5 data-display family",
+        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/raft/fit_toolbar.dart#method:_MoreMarker.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS5 data-display family",
+        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/raft/fit_toolbar.dart#method:_RaftFitToolbarState._focusChanged": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS5 data-display family",
+        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/raft/fit_toolbar.dart#method:_RaftFitToolbarState._live": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS5 data-display family",
+        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/raft/fit_toolbar.dart#method:_RaftFitToolbarState._searchButton": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS5 data-display family",
+        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/raft/fit_toolbar.dart#method:_RaftFitToolbarState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS5 data-display family",
+        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/raft/list_row.dart#class:RaftListRowSkeleton": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS5 data-display family",
+        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/raft/list_row.dart#class:RaftListRowSubtitle": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS5 data-display family",
+        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/raft/list_row.dart#class:_SkeletonText": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS5 data-display family",
+        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/raft/list_row.dart#function:_isTarget": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS5 data-display family",
+        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/raft/list_row.dart#local-function:CLASS:RaftListRow@6133/METHOD:build@11189/FUNCTION:body@11417": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS5 data-display family",
+        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/raft/list_row.dart#local-function:CLASS:_SkeletonText@28721/METHOD:build@29050/FUNCTION:text@29228": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS5 data-display family",
+        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/raft/list_row.dart#local-function:FUNCTION:_line@14647/FUNCTION:build@15527": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS5 data-display family",
+        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/raft/list_row.dart#local-function:FUNCTION:_line@14647/FUNCTION:cell@14923": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS5 data-display family",
+        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/raft/list_row.dart#method:RaftListRowSkeleton.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS5 data-display family",
+        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/raft/list_row.dart#method:RaftListRowSubtitle.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS5 data-display family",
+        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/raft/list_row.dart#method:_SkeletonText.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS5 data-display family",
+        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       }
     },
     "entries": {
@@ -59353,6 +59875,86 @@
         "applicability": "unknown",
         "owner": "design-system alignment",
         "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/card_parts.dart#function:_resolve|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+        "applicability": "unknown",
+        "owner": "WP-DS5 data-display family",
+        "reason": "Resolved state atom use added with the WP-DS5 data-display alignment (raft-ui 0.95.3); look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35856/METHOD:_buildRecipe@37126/FUNCTION:resolve@37312|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:disabled": {
+        "applicability": "unknown",
+        "owner": "WP-DS5 data-display family",
+        "reason": "Resolved state atom use added with the WP-DS5 data-display alignment (raft-ui 0.95.3); look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35856/METHOD:_buildRecipe@37126/FUNCTION:resolve@37312|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:hovered": {
+        "applicability": "unknown",
+        "owner": "WP-DS5 data-display family",
+        "reason": "Resolved state atom use added with the WP-DS5 data-display alignment (raft-ui 0.95.3); look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35856/METHOD:_buildRecipe@37126/FUNCTION:resolve@37312|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+        "applicability": "unknown",
+        "owner": "WP-DS5 data-display family",
+        "reason": "Resolved state atom use added with the WP-DS5 data-display alignment (raft-ui 0.95.3); look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35856/METHOD:_buildRecipe@37126/FUNCTION:resolve@37312|state:focus-within": {
+        "applicability": "unknown",
+        "owner": "WP-DS5 data-display family",
+        "reason": "Resolved state atom use added with the WP-DS5 data-display alignment (raft-ui 0.95.3); look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35856/METHOD:_buildRecipe@37126/FUNCTION:resolve@37312|state:has:data-slot=input-group-control+data-invalid": {
+        "applicability": "unknown",
+        "owner": "WP-DS5 data-display family",
+        "reason": "Resolved state atom use added with the WP-DS5 data-display alignment (raft-ui 0.95.3); look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/form_controls.dart#local-function:CLASS:_RaftInputGroupState@35856/METHOD:_buildRecipe@37126/FUNCTION:resolve@37312|state:has:data-slot=input-group-control+disabled": {
+        "applicability": "unknown",
+        "owner": "WP-DS5 data-display family",
+        "reason": "Resolved state atom use added with the WP-DS5 data-display alignment (raft-ui 0.95.3); look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/indicators.dart#local-function:CLASS:RaftProgressBar@2352/METHOD:build@6729/FUNCTION:inheritRoot@7885|state:group/progress:data-complete": {
+        "applicability": "unknown",
+        "owner": "WP-DS5 data-display family",
+        "reason": "Resolved state atom use added with the WP-DS5 data-display alignment (raft-ui 0.95.3); look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/raft/badge.dart#method:RaftBadge._body|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+        "applicability": "unknown",
+        "owner": "WP-DS5 data-display family",
+        "reason": "Resolved state atom use added with the WP-DS5 data-display alignment (raft-ui 0.95.3); look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/raft/fit_toolbar.dart#function:_fitStyle|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+        "applicability": "unknown",
+        "owner": "WP-DS5 data-display family",
+        "reason": "Resolved state atom use added with the WP-DS5 data-display alignment (raft-ui 0.95.3); look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/raft/list_row.dart#method:RaftListRow._recipeBody|state:ancestor:data-slot=list-row+data-interactive+not:data-attached": {
+        "applicability": "unknown",
+        "owner": "WP-DS5 data-display family",
+        "reason": "Resolved state atom use added with the WP-DS5 data-display alignment (raft-ui 0.95.3); look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/raft/list_row.dart#method:RaftListRow._recipeBody|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:pointerCoarse": {
+        "applicability": "unknown",
+        "owner": "WP-DS5 data-display family",
+        "reason": "Resolved state atom use added with the WP-DS5 data-display alignment (raft-ui 0.95.3); look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/raft/list_row.dart#method:RaftListRow._recipeBody|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+        "applicability": "unknown",
+        "owner": "WP-DS5 data-display family",
+        "reason": "Resolved state atom use added with the WP-DS5 data-display alignment (raft-ui 0.95.3); look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/raft/list_row.dart#method:RaftListRowSkeleton.build|state:nth-child(3n)": {
+        "applicability": "unknown",
+        "owner": "WP-DS5 data-display family",
+        "reason": "Resolved state atom use added with the WP-DS5 data-display alignment (raft-ui 0.95.3); look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/raft/list_row.dart#method:RaftListRowSkeleton.build|state:nth-child(3n+2)": {
+        "applicability": "unknown",
+        "owner": "WP-DS5 data-display family",
+        "reason": "Resolved state atom use added with the WP-DS5 data-display alignment (raft-ui 0.95.3); look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates|state:pointer-coarse": {
+        "applicability": "unknown",
+        "owner": "WP-DS5 data-display family",
+        "reason": "Resolved state atom use added with the WP-DS5 data-display alignment (raft-ui 0.95.3); look/input/real-entry applicability remains unreviewed."
       }
     },
     "evidence": {},
