@@ -92,6 +92,7 @@ final Finder anyX = find.byWidgetPredicate(
       w is RaftAgentCloseButton ||
       w is RaftDialogClose ||
       (w is RaftRecipeButton && w.glyph == RaftGlyph.x) ||
+      (w is RaftButton && w.glyph == RaftGlyph.x) ||
       w.key == const Key('confirm-dialog-close'),
 );
 

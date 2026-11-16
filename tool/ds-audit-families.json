@@ -223,8 +223,8 @@
           "sourceBindings": [
             {
               "file": "packages/raft_ui/lib/src/overlays/dialog.dart",
-              "bytes": 36959,
-              "sha256": "871d9b187a1edb05d856d10ddfdb2151a3cbb6730d30298c25610cb8bd050eb9"
+              "bytes": 41320,
+              "sha256": "75c99943d69b2969078097cd3d77321e04493f8dbcae1ed95fdafc4137075dcb"
             }
           ],
           "reason": "Data/options/slot metadata or callback signature; does not extend Widget/State/RenderObject. This record grants no style exemption, mount or visual acceptance."
