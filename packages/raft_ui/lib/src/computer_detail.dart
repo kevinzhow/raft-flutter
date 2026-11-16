@@ -270,6 +270,7 @@ class RaftComputerDetailActions {
     this.openAgent,
     this.createAgent,
     this.runtimeChip,
+    this.runtimeChips,
     this.changeModel,
     this.rescanRuntimes,
     this.openCreator,
@@ -311,6 +312,10 @@ class RaftComputerDetailActions {
   /// Detected Runtimes chip [index] with its usage hover card
   /// (RuntimeAccountUsageGateChip); null keeps the plain chip.
   final Widget? Function(int index)? runtimeChip;
+
+  /// The whole Detected runtimes row (MachineRuntimeChips groups with "Show
+  /// all supported"); replaces the [RaftComputerDetailData.runtimes] chips.
+  final Widget Function()? runtimeChips;
 
   /// Opens the two-step model chooser. True means it finished (including a
   /// partial result), so the view leaves selection mode just like Web.
@@ -1430,15 +1435,17 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
           ),
         RaftKeyValueRow.child(
           label: 'Detected runtimes',
-          child: Wrap(
-            spacing: 6,
-            runSpacing: 6,
-            children: [
-              for (final (i, (label, detected)) in d.runtimes.indexed)
-                widget.actions.runtimeChip?.call(i) ??
-                    RaftRuntimeChip(label: label, detected: detected),
-            ],
-          ),
+          child:
+              widget.actions.runtimeChips?.call() ??
+              Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: [
+                  for (final (i, (label, detected)) in d.runtimes.indexed)
+                    widget.actions.runtimeChip?.call(i) ??
+                        RaftRuntimeChip(label: label, detected: detected),
+                ],
+              ),
         ),
         // `flex flex-wrap gap-x-8 gap-y-3`.
         Wrap(

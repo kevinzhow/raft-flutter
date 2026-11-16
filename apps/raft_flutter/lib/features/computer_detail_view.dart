@@ -26,6 +26,7 @@ import 'computers_rack/computers_rack_actions.dart'
     show askComputerRestart, askComputerUpgrade;
 import 'computer_restart_request.dart';
 import 'computer_upgrade_hint.dart';
+import 'computer_runtime_chip_groups.dart';
 import 'computer_runtime_detection.dart';
 import 'computer_version_tier.dart';
 import 'computers_rack/computers_rack_view.dart' show rackDeviceGlyph;
@@ -40,22 +41,6 @@ import 'management_support.dart'
 import '../data/runtime_account_usage.dart';
 
 // ------------------------------------------------------------------ model
-
-/// packages/shared runtimeCatalog getMachineRuntimeDisplayOptions(): the
-/// supported, non-deprecated runtimes; `binary == ''` = in-process runtime.
-const computerRuntimeOptions = <(String, String, bool)>[
-  ('claude', 'Claude Code', false),
-  ('codex', 'Codex CLI', false),
-  ('grok', 'Grok Build', false),
-  ('builtin', 'Built-in Pi', true),
-  ('kimi-sdk', 'Kimi Code', true),
-  ('cursor', 'Cursor CLI', false),
-  ('opencode', 'OpenCode', false),
-  ('pi', 'Pi', false),
-  ('qwen', 'Qwen Code', false),
-  ('qoder', 'Qoder', false),
-  ('codebuddy', 'CodeBuddy Code', false),
-];
 
 final _semver = RegExp(r'^(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z.-]+))?$');
 
@@ -680,9 +665,6 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel>
       m,
       w.services.entityDirectory.latestComputerVersion,
     );
-    final runtimes = [
-      for (final r in (m['runtimes'] as List? ?? const [])) '$r',
-    ];
     final created = DateTime.tryParse('${m['createdAt'] ?? ''}');
     final creator = m['creator'];
     final disk = computerDiskLow(m);
@@ -726,15 +708,7 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel>
         ComputerVersionOutdated() => RaftComputerVersionKind.outdated,
       },
       availableVersion: fact is ComputerVersionOutdated ? fact.available : null,
-      runtimes: [
-        for (final (rid, name, inProcess) in computerRuntimeOptions)
-          (
-            runtimes.contains(rid)
-                ? name
-                : '$name${inProcess ? ' (update computer)' : ' (not installed)'}',
-            runtimes.contains(rid),
-          ),
-      ],
+      runtimes: const [],
       createdLabel: created == null
           ? ''
           : DateFormat.yMMMd('en').format(created.toUtc()),
@@ -1077,7 +1051,7 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel>
       bulk: _bulk,
       openAgent: widget.onOpenAgent,
       createAgent: widget.onCreateAgent,
-      runtimeChip: _runtimeChip,
+      runtimeChips: _runtimeChips,
       changeModel: canManage ? _changeModels : null,
       rescanRuntimes: _rescanRuntimes,
       openOwner: computerOwnerActions(context, w, m).openOwner,
@@ -1093,17 +1067,83 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel>
     ),
   );
 
-  /// MachineRuntimeChips RuntimeAccountUsageGateChip: every detected runtime
-  /// with usage or a sign-in from here opens its card (usage, sign-in state
-  /// and actions) for viewers allowed to inspect it; the gate draws the plain
-  /// chip otherwise.
-  Widget? _runtimeChip(int index) {
-    if (index >= computerRuntimeOptions.length) return null;
-    final (rid, name, _) = computerRuntimeOptions[index];
-    final detected = [
+  /// MachineRuntimeChips: the detected runtimes (each with its usage or
+  /// sign-in card for viewers allowed to inspect it), the in-process runtimes
+  /// this Computer predates, and the rest behind "Show all supported".
+  Widget _runtimeChips() {
+    final groups = computerRuntimeChipGroups([
       for (final r in (m['runtimes'] as List? ?? const [])) '$r',
-    ].contains(rid);
-    if (!detected) return null;
+    ]);
+    final suffix = raftText(context, ' (update required)');
+    final notInstalled = raftText(context, ' (not installed)');
+    return RaftRuntimeChipsRow(
+      key: ValueKey('machine-runtime-chips-$id'),
+      detected: [for (final r in groups.detected) _detectedChip(r)],
+      updateComputer: [
+        for (final r in groups.updateComputer)
+          RaftRuntimeUpdateComputerChip(
+            key: ValueKey('machine-runtime-chip-${r.id}'),
+            label: '${computerRuntimeLabel(context, r)}$suffix',
+            runtimeName: r.name,
+            description: raftFormat(
+              context,
+              'Update Raft Computer to use {runtime}.',
+              {'runtime': r.name},
+            ),
+            upgradeKey: ValueKey('machine-runtime-upgrade-${r.id}'),
+            upgradeLabel: _runtimeUpgradeLabel(),
+            onUpgrade: _runtimeUpgrade(),
+          ),
+      ],
+      notInstalled: [
+        for (final r in groups.notInstalled)
+          RaftBadge(
+            key: ValueKey('machine-runtime-chip-${r.id}'),
+            label: '${computerRuntimeLabel(context, r)}$notInstalled',
+            appearance: RaftBadgeRecipeAppearance.soft,
+            variant: RaftBadgeRecipeVariant.muted,
+          ),
+      ],
+    );
+  }
+
+  /// MachineDetailPanel runtimeChipsUpgradeAction: the page's own one-click
+  /// Upgrade, offered as the Actions card offers it.
+  String? _runtimeUpgradeLabel() {
+    final version = _oneClickUpgradeVersion();
+    return version == null
+        ? null
+        : raftFormat(context, 'Upgrade to v{version}', {'version': version});
+  }
+
+  VoidCallback? _runtimeUpgrade() {
+    final version = _oneClickUpgradeVersion();
+    if (version == null) return null;
+    return () async {
+      final ok = await askComputerUpgrade(
+        context,
+        m,
+        version: version,
+        agentCount: agents.length,
+      );
+      if (ok && mounted) await _upgrade(version);
+    };
+  }
+
+  String? _oneClickUpgradeVersion() {
+    if (!canManage || !isComputer || !online) return null;
+    final reconnect = w.services.entityDirectory.upgradeReconnect(m);
+    final fact = computerVersionFact(
+      m,
+      w.services.entityDirectory.latestComputerVersion,
+    );
+    final card = service(fact, reconnect);
+    return card.kind == RaftComputerServiceKind.oneClick ? card.version : null;
+  }
+
+  Widget _detectedChip(ComputerRuntimeOption option) {
+    final rid = option.id;
+    final label = computerRuntimeLabel(context, option);
     final provider = runtimeUsageProvider(rid);
     final versions = m['runtimeVersions'];
     return runtimeUsageGateChip(
@@ -1113,10 +1153,10 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel>
       machineId: id,
       // Web aria-label: the chip's children (label + availability suffix)
       // are not one string here, so it reads the provider name.
-      label: provider == null ? name : runtimeUsageProviderName(provider),
+      label: provider == null ? label : runtimeUsageProviderName(provider),
       runtimeVersion: versions is Map ? versions[rid] as String? : null,
       chip: (status) =>
-          RaftRuntimeChip(label: name, detected: true, trailing: status),
+          RaftRuntimeChip(label: label, detected: true, trailing: status),
     );
   }
 }

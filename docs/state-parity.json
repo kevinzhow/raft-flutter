@@ -49632,6 +49632,78 @@
         "familyRefs": [],
         "owner": "WP-COMP2 runtime usage card",
         "reason": "Source census candidate (WP-COMP2 Claude limit resets list and confirm dialogs); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computer_detail_view.dart#method:_ComputerDetailPanelState._detectedChip": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 runtime chips",
+        "reason": "Source census candidate (WP-COMP2 Computer page runtime chips, MachineRuntimeChips); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/computer_detail_view.dart#method:_ComputerDetailPanelState._runtimeChips": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 runtime chips",
+        "reason": "Source census candidate (WP-COMP2 Computer page runtime chips, MachineRuntimeChips); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/computer_detail.dart#local-function:CLASS:_RaftComputerDetailViewState@17277/METHOD:_agentsSection@62906/FUNCTION:row@64975": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 runtime chips",
+        "reason": "Source census candidate (WP-COMP2 Computer page runtime chips, MachineRuntimeChips); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/computer_detail.dart#local-function:CLASS:_RaftComputerDetailViewState@17277/METHOD:_infoSection@45676/FUNCTION:versionValue@45813": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 runtime chips",
+        "reason": "Source census candidate (WP-COMP2 Computer page runtime chips, MachineRuntimeChips); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/computer_detail.dart#local-function:CLASS:_RaftComputerDetailViewState@17277/METHOD:_recoveryGuide@87795/FUNCTION:step@88090": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 runtime chips",
+        "reason": "Source census candidate (WP-COMP2 Computer page runtime chips, MachineRuntimeChips); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/computer_detail.dart#local-function:CLASS:_RaftComputerDetailViewState@17277/METHOD:_upgradeAdvice@85778/FUNCTION:lines@86300": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 runtime chips",
+        "reason": "Source census candidate (WP-COMP2 Computer page runtime chips, MachineRuntimeChips); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/computer_runtime_chips.dart#class:RaftRuntimeChipsRow": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 runtime chips",
+        "reason": "Source census candidate (WP-COMP2 Computer page runtime chips, MachineRuntimeChips); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/computer_runtime_chips.dart#class:RaftRuntimeUpdateComputerChip": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 runtime chips",
+        "reason": "Source census candidate (WP-COMP2 Computer page runtime chips, MachineRuntimeChips); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/computer_runtime_chips.dart#class:_RaftRuntimeChipsRowState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 runtime chips",
+        "reason": "Source census candidate (WP-COMP2 Computer page runtime chips, MachineRuntimeChips); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/computer_runtime_chips.dart#method:RaftRuntimeChipsRow.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 runtime chips",
+        "reason": "Source census candidate (WP-COMP2 Computer page runtime chips, MachineRuntimeChips); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/computer_runtime_chips.dart#method:RaftRuntimeUpdateComputerChip.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 runtime chips",
+        "reason": "Source census candidate (WP-COMP2 Computer page runtime chips, MachineRuntimeChips); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/computer_runtime_chips.dart#method:_RaftRuntimeChipsRowState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 runtime chips",
+        "reason": "Source census candidate (WP-COMP2 Computer page runtime chips, MachineRuntimeChips); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       }
     },
     "entries": {
