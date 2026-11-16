@@ -104,6 +104,7 @@ export 'src/recipes/button_variants.g.dart'
 
 export 'src/icons.dart';
 export 'src/recipes/toast_styles.g.dart' show RaftToastRecipeTone;
+export 'src/recipes/choice_list.g.dart' show RaftChoiceListRecipe;
 export 'src/brand.dart';
 export 'src/auth_account_link.dart';
 export 'src/auth_legal_page.dart';

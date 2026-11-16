@@ -445,6 +445,30 @@ void main() {
       );
     });
 
+    testWidgets('the rows sit in a bordered frame and a disabled row reads '
+        'disabled', (t) async {
+      api.answers[readPath] = (body) => read(available);
+      await view0(t);
+      final frame = key('claude-limit-resets-frame');
+      expect(frame, findsOneWidget);
+      expect(
+        find.descendant(of: frame, matching: key('claude-limit-resets-list')),
+        findsOneWidget,
+      );
+      final tokens = RaftTokens.of(t.element(frame));
+      Color? colorOf(String text) => t
+          .widget<Text>(find.descendant(of: frame, matching: find.text(text)))
+          .style
+          ?.color;
+      // Weekly is on offer; "None" (the full reset) is not.
+      expect(
+        colorOf('2 left · use by Nov 20'),
+        isNot(tokens.ui.foregroundDisabled),
+      );
+      expect(colorOf('None'), tokens.ui.foregroundDisabled);
+      expect(colorOf('Not on this account'), tokens.ui.foregroundDisabled);
+    });
+
     testWidgets('legacy program: nothing to list, and at the 5-hour limit the '
         'card keeps only Use 5-hour reset', (t) async {
       await mount(t, usage: claudeUsage(atLimit: true));

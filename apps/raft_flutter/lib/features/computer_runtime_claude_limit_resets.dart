@@ -729,6 +729,68 @@ class _ClaudeLimitResetsDialogState extends State<_ClaudeLimitResetsDialog> {
     if (closed && mounted) Navigator.of(context).pop();
   }
 
+  /// ChoiceList: the rows sit in a hairline frame (`rounded-container border
+  /// border-line-hairline bg-layer-card`, `p-1` scroller); a disabled row's
+  /// label and meta read `foreground-disabled`.
+  Widget _list(RaftTokens t, TextStyle foot) {
+    final frame = RaftChoiceListRecipe.resolve(
+      scroll: true,
+      states: t.recipeStates(),
+      tokens: t.recipeTokens,
+    ).frame;
+    return RaftRecipeBox(
+      key: const ValueKey('claude-limit-resets-frame'),
+      style: frame,
+      tokens: t.recipeTokens,
+      child: Padding(
+        padding: const EdgeInsets.all(RaftSpace.x1),
+        child: RaftRadioGroup<String>(
+          key: const ValueKey('claude-limit-resets-list'),
+          value: selected,
+          semanticLabel: raftText(context, 'Limit resets'),
+          spacing: 0,
+          onChanged: (v) => setState(() => selected = v),
+          children: [
+            for (final reset in items)
+              _row(t, foot, reset, enabled: enabledKind(reset)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _row(
+    RaftTokens t,
+    TextStyle foot,
+    Map reset, {
+    required bool enabled,
+  }) => RaftRadioGroupItem<String>(
+    key: ValueKey('claude-limit-reset-${reset['kind']}'),
+    value: '${reset['kind']}',
+    enabled: enabled,
+    minHeight: 44,
+    padding: const EdgeInsets.symmetric(vertical: RaftSpace.x1_5),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          claudeKindName(context, '${reset['kind']}'),
+          style: RaftTypography.body(
+            t,
+            size: 14,
+            line: 20,
+            color: enabled ? t.strong : t.ui.foregroundDisabled,
+            weight: FontWeight.w600,
+          ),
+        ),
+        Text(
+          claudeKindMeta(context, reset),
+          style: enabled ? foot : foot.copyWith(color: t.ui.foregroundDisabled),
+        ),
+      ],
+    ),
+  );
+
   void close() => Navigator.of(context).pop();
 
   @override
@@ -840,42 +902,7 @@ class _ClaudeLimitResetsDialogState extends State<_ClaudeLimitResetsDialog> {
               key: const ValueKey('claude-limit-resets-legacy'),
               style: muted,
             ),
-          if (items.isNotEmpty)
-            RaftRadioGroup<String>(
-              key: const ValueKey('claude-limit-resets-list'),
-              value: selected,
-              semanticLabel: raftText(context, 'Limit resets'),
-              spacing: 0,
-              onChanged: (v) => setState(() => selected = v),
-              children: [
-                for (final reset in items)
-                  RaftRadioGroupItem<String>(
-                    key: ValueKey('claude-limit-reset-${reset['kind']}'),
-                    value: '${reset['kind']}',
-                    enabled: enabledKind(reset),
-                    minHeight: 44,
-                    padding: const EdgeInsets.symmetric(
-                      vertical: RaftSpace.x1_5,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          claudeKindName(context, '${reset['kind']}'),
-                          style: RaftTypography.body(
-                            t,
-                            size: 14,
-                            line: 20,
-                            color: t.strong,
-                            weight: FontWeight.w600,
-                          ),
-                        ),
-                        Text(claudeKindMeta(context, reset), style: foot),
-                      ],
-                    ),
-                  ),
-              ],
-            ),
+          if (items.isNotEmpty) _list(t, foot),
           if (items.isNotEmpty && !widget.canUse)
             Text(
               raftText(
