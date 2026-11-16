@@ -275,16 +275,18 @@ abstract final class ArtifactHostCalls {
 /// Linux and Windows don't (this app ships none there), so they open it in the browser.
 enum ArtifactFrameSupport { webView, browser }
 
-/// [semantics]: the platform accessibility tree is on (VoiceOver, a screen reader, or a test
-/// that turned it on). On macOS, Flutter's AccessibilityBridge crashed (SIGSEGV in
-/// `CreateRemoveReparentedNodesUpdate`) while a WKWebView platform view was mounted with
-/// semantics on (CodexMac, 2026-11-15). Until that is reproduced and fixed, macOS opens the
-/// Artifact in the browser whenever semantics are on, as Linux and Windows always do.
+/// [voiceOver]: macOS VoiceOver is on (`MacosVoiceOver`). Flutter's macOS AccessibilityBridge
+/// crashed (SIGSEGV in `CreateRemoveReparentedNodesUpdate`) while a WKWebView platform view was
+/// mounted with semantics on (CodexMac, 2026-11-15); that crash is still open (not reproduced or
+/// fixed). macOS first opened Artifacts in the browser whenever semantics were on, but any
+/// accessibility client turns them on (window managers, launchers, password managers), so since
+/// the VoiceOver gate (Kevin, option 2) only VoiceOver itself sends them to the browser, as Linux
+/// and Windows always do. Other accessibility clients keep the frame and the crash risk.
 ArtifactFrameSupport artifactFrameSupportFor(
   String operatingSystem, {
-  bool semantics = false,
+  bool voiceOver = false,
 }) => switch (operatingSystem) {
-  'macos' when semantics => ArtifactFrameSupport.browser,
+  'macos' when voiceOver => ArtifactFrameSupport.browser,
   'android' || 'ios' || 'macos' => ArtifactFrameSupport.webView,
   _ => ArtifactFrameSupport.browser,
 };
