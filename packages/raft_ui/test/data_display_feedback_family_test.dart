@@ -150,36 +150,33 @@ void main() {
 
     // A 390px window cannot hold a 452px container: it is always below.
     for (final context in [_desktop, _foldable]) {
-      testWidgets(
-        'action: below the text, end aligned, under 452px; beside it from 452px '
-        '(${context.$2}, ${context.$1.width.toInt()})',
-        (t) async {
-          // md padding is 14 a side; the container query measures the content.
-          await _mount(
-            t,
-            _banner(action: true),
-            context: context,
-            width: 451 + 28,
-          );
-          var banner = t.getRect(find.byKey(const ValueKey('banner')));
-          var action = t.getRect(find.byKey(const ValueKey('action')));
-          final text = t.getRect(find.text('Reconnect to send'));
-          expect(action.top, greaterThanOrEqualTo(text.bottom), reason: '451');
-          expect(action.right, banner.right - 14, reason: '451 end aligned');
-          await _mount(
-            t,
-            _banner(action: true),
-            context: context,
-            width: 452 + 28,
-          );
-          banner = t.getRect(find.byKey(const ValueKey('banner')));
-          action = t.getRect(find.byKey(const ValueKey('action')));
-          final beside = t.getRect(find.text('Reconnect to send'));
-          expect(action.center.dy, closeTo(beside.center.dy, 1), reason: '452');
-          expect(action.left, greaterThan(beside.right), reason: '452');
-          expect(action.right, banner.right - 14, reason: '452 end aligned');
-        },
-      );
+      testWidgets('action: below the text, end aligned, under 452px; beside it from 452px '
+          '(${context.$2}, ${context.$1.width.toInt()})', (t) async {
+        // md padding is 14 a side; the container query measures the content.
+        await _mount(
+          t,
+          _banner(action: true),
+          context: context,
+          width: 451 + 28,
+        );
+        var banner = t.getRect(find.byKey(const ValueKey('banner')));
+        var action = t.getRect(find.byKey(const ValueKey('action')));
+        final text = t.getRect(find.text('Reconnect to send'));
+        expect(action.top, greaterThanOrEqualTo(text.bottom), reason: '451');
+        expect(action.right, banner.right - 14, reason: '451 end aligned');
+        await _mount(
+          t,
+          _banner(action: true),
+          context: context,
+          width: 452 + 28,
+        );
+        banner = t.getRect(find.byKey(const ValueKey('banner')));
+        action = t.getRect(find.byKey(const ValueKey('action')));
+        final beside = t.getRect(find.text('Reconnect to send'));
+        expect(action.center.dy, closeTo(beside.center.dy, 1), reason: '452');
+        expect(action.left, greaterThan(beside.right), reason: '452');
+        expect(action.right, banner.right - 14, reason: '452 end aligned');
+      });
     }
 
     testWidgets('narrow window: the action is always under the text', (

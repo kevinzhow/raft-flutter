@@ -72,7 +72,10 @@ class RaftCardSectionHeader extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         if (title != null || trailing != null)
-          Row(crossAxisAlignment: CrossAxisAlignment.center, children: titleRow),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: titleRow,
+          ),
         if (description != null) ...[
           if (title != null || trailing != null) SizedBox(height: rowGap),
           description!,
@@ -109,7 +112,10 @@ class RaftCardTitle extends StatelessWidget {
   Widget build(BuildContext context) {
     final r = _resolve(context);
     return DefaultTextStyle.merge(
-      style: r.slots.title.text(r.tokens, base: DefaultTextStyle.of(context).style),
+      style: r.slots.title.text(
+        r.tokens,
+        base: DefaultTextStyle.of(context).style,
+      ),
       maxLines: maxLines,
       overflow: overflow,
       child: title,

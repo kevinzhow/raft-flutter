@@ -85,18 +85,15 @@ void main() {
                   find.byType(RaftRecipeButton),
                 ], reason: 'legacy Elegant RaftErrorBanner small=$small');
               } else {
-                // raft-ui 0.7 `BannerAction` is `col-start-(--banner-text-col) mt-2`:
-                // a row under the copy, starting at its left edge.
-                expect(
-                  tester.getTopLeft(find.byType(RaftRecipeButton)).dy,
-                  greaterThanOrEqualTo(
-                    tester.getBottomLeft(find.text('Could not load')).dy,
-                  ),
-                );
-                expect(
-                  tester.getTopLeft(find.byType(RaftRecipeButton)).dx,
-                  tester.getTopLeft(find.text('Could not load')).dx,
-                );
+                // raft-ui 0.95.3 `BannerAction`: in a banner of 452px or more
+                // whose copy is one line, the action sits after the copy on
+                // its last line (`@min-[452px]:not-data-wrap:col-start-…
+                // row-start-(--banner-last-row) h-lh self-end`).
+                final action = tester.getRect(find.byType(RaftRecipeButton));
+                final copy = tester.getRect(find.text('Could not load'));
+                expect(action.left, greaterThanOrEqualTo(copy.right));
+                expect(action.center.dy, greaterThanOrEqualTo(copy.top));
+                expect(action.center.dy, lessThanOrEqualTo(copy.bottom));
               }
             }
           },

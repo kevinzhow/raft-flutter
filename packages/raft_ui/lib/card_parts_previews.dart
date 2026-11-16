@@ -27,7 +27,9 @@ class _CardParts extends StatelessWidget {
                 aboveContent: true,
                 leading: RaftCardLeading(RaftIcon(RaftGlyph.bell, size: 16)),
                 title: RaftCardTitle(Text('Notifications')),
-                description: RaftCardDescription(Text('Choose what reaches you')),
+                description: RaftCardDescription(
+                  Text('Choose what reaches you'),
+                ),
                 trailing: RaftCardTrailing(Text('Edit')),
               ),
               RaftCardContent(child: Text('Card content')),

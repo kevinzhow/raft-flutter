@@ -147,9 +147,8 @@ void main() {
         pack,
         Builder(
           builder: (context) {
-            section = RaftTokens.of(
-              context,
-            ).formSectionTitle(const TextStyle(fontSize: 16));
+            section = RaftTokens.of(context)
+                .formSectionTitle(const TextStyle(fontSize: 16));
             return const SizedBox();
           },
         ),

@@ -50686,28 +50686,36 @@
         "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
       "packages/raft_ui/lib/src/card_parts.dart#class:RaftCardContent": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "WP-DS5 data-display family",
-        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+        "role": "canonical_component",
+        "familyRefs": [
+          "card"
+        ],
+        "owner": "design-system canonical registry",
+        "reason": "Actual resolved Widget bound by canonicalBindings; registering ownership does not establish current visual acceptance."
       },
       "packages/raft_ui/lib/src/card_parts.dart#class:RaftCardDescription": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "WP-DS5 data-display family",
-        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+        "role": "canonical_component",
+        "familyRefs": [
+          "card"
+        ],
+        "owner": "design-system canonical registry",
+        "reason": "Actual resolved Widget bound by canonicalBindings; registering ownership does not establish current visual acceptance."
       },
       "packages/raft_ui/lib/src/card_parts.dart#class:RaftCardFooter": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "WP-DS5 data-display family",
-        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+        "role": "canonical_component",
+        "familyRefs": [
+          "card"
+        ],
+        "owner": "design-system canonical registry",
+        "reason": "Actual resolved Widget bound by canonicalBindings; registering ownership does not establish current visual acceptance."
       },
       "packages/raft_ui/lib/src/card_parts.dart#class:RaftCardLeading": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "WP-DS5 data-display family",
-        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+        "role": "canonical_component",
+        "familyRefs": [
+          "card"
+        ],
+        "owner": "design-system canonical registry",
+        "reason": "Actual resolved Widget bound by canonicalBindings; registering ownership does not establish current visual acceptance."
       },
       "packages/raft_ui/lib/src/card_parts.dart#class:RaftCardScope": {
         "role": "unresolved",
@@ -50716,22 +50724,28 @@
         "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
       "packages/raft_ui/lib/src/card_parts.dart#class:RaftCardSectionHeader": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "WP-DS5 data-display family",
-        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+        "role": "canonical_component",
+        "familyRefs": [
+          "card"
+        ],
+        "owner": "design-system canonical registry",
+        "reason": "Actual resolved Widget bound by canonicalBindings; registering ownership does not establish current visual acceptance."
       },
       "packages/raft_ui/lib/src/card_parts.dart#class:RaftCardTitle": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "WP-DS5 data-display family",
-        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+        "role": "canonical_component",
+        "familyRefs": [
+          "card"
+        ],
+        "owner": "design-system canonical registry",
+        "reason": "Actual resolved Widget bound by canonicalBindings; registering ownership does not establish current visual acceptance."
       },
       "packages/raft_ui/lib/src/card_parts.dart#class:RaftCardTrailing": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "WP-DS5 data-display family",
-        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+        "role": "canonical_component",
+        "familyRefs": [
+          "card"
+        ],
+        "owner": "design-system canonical registry",
+        "reason": "Actual resolved Widget bound by canonicalBindings; registering ownership does not establish current visual acceptance."
       },
       "packages/raft_ui/lib/src/card_parts.dart#function:_resolve": {
         "role": "unresolved",
@@ -50842,10 +50856,12 @@
         "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
       "packages/raft_ui/lib/src/raft/fit_toolbar.dart#class:RaftFitToolbar": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "WP-DS5 data-display family",
-        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+        "role": "canonical_component",
+        "familyRefs": [
+          "fit_toolbar"
+        ],
+        "owner": "design-system canonical registry",
+        "reason": "Actual resolved Widget bound by canonicalBindings; registering ownership does not establish current visual acceptance."
       },
       "packages/raft_ui/lib/src/raft/fit_toolbar.dart#class:_FitScrollGroup": {
         "role": "unresolved",

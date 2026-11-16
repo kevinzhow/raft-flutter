@@ -124,8 +124,7 @@ void main() {
                 key: ValueKey('banner'),
                 status: RaftBannerRecipeStatus.destructive,
                 glyph: RaftGlyph.octagonAlert,
-                description:
-                    'Several lines of explanation must keep the icon at the start of the paragraph.',
+                description: 'Several lines of explanation must keep the icon at the start of the paragraph.',
               ),
             ),
           ),

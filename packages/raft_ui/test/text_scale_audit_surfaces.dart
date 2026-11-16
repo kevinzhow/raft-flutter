@@ -22,6 +22,7 @@ import 'package:raft_ui/attachment_previews.dart';
 import 'package:raft_ui/banner_previews.dart';
 import 'package:raft_ui/button_previews.dart';
 import 'package:raft_ui/basic_component_previews.dart';
+import 'package:raft_ui/card_parts_previews.dart';
 import 'package:raft_ui/channel_header_previews.dart';
 import 'package:raft_ui/channel_management_previews.dart';
 import 'package:raft_ui/channel_resolution_previews.dart';
@@ -32,6 +33,7 @@ import 'package:raft_ui/collapsible_section_previews.dart';
 import 'package:raft_ui/composer_expand_previews.dart';
 import 'package:raft_ui/computer_connection_previews.dart';
 import 'package:raft_ui/conversation_card_previews.dart';
+import 'package:raft_ui/fit_toolbar_previews.dart';
 import 'package:raft_ui/css_recipe_radius_previews.dart';
 import 'package:raft_ui/desktop_title_bar_previews.dart';
 import 'package:raft_ui/dialog_previews.dart';
@@ -46,6 +48,7 @@ import 'package:raft_ui/html_previews.dart';
 import 'package:raft_ui/html_region_comment_previews.dart';
 import 'package:raft_ui/inline_badge_previews.dart';
 import 'package:raft_ui/inline_thread_surface_previews.dart';
+import 'package:raft_ui/list_row_previews.dart';
 import 'package:raft_ui/language_settings_previews.dart';
 import 'package:raft_ui/legacy_input_previews.dart';
 import 'package:raft_ui/media_browser_previews.dart';
@@ -438,6 +441,48 @@ final auditSurfaces = <AuditSurface>[
     'Agent Lounge',
     agentLoungePreview,
     Size(390, 300),
+  ),
+  AuditSurface(
+    'cardPartsPreview',
+    'Card parts',
+    cardPartsPreview,
+    Size(420, 520),
+  ),
+  AuditSurface(
+    'fitToolbarWidePreview',
+    'Fit toolbar, rack, wide',
+    fitToolbarWidePreview,
+    Size(1200, 120),
+  ),
+  AuditSurface(
+    'fitToolbarMediumPreview',
+    'Fit toolbar, rack, medium',
+    fitToolbarMediumPreview,
+    Size(560, 120),
+  ),
+  AuditSurface(
+    'fitToolbarNarrowPreview',
+    'Fit toolbar, rack, narrow',
+    fitToolbarNarrowPreview,
+    Size(300, 120),
+  ),
+  AuditSurface(
+    'fitToolbarCollapsedPreview',
+    'Fit toolbar, rack, search collapsed',
+    fitToolbarCollapsedPreview,
+    Size(200, 120),
+  ),
+  AuditSurface(
+    'listRowTonesPreview',
+    'List row tones and subtitle',
+    listRowTonesPreview,
+    Size(380, 360),
+  ),
+  AuditSurface(
+    'listRowSkeletonPreview',
+    'List row skeleton',
+    listRowSkeletonPreview,
+    Size(380, 260),
   ),
   AuditSurface(
     'workingAgentsPhoneHomePreview',

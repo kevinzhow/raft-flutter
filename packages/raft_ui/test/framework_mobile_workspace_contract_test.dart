@@ -57,7 +57,10 @@ void main() {
               matching: find.byType(RaftControl),
             );
             expect(t.widget<RaftControl>(control).visualHeight, 36);
-            expect(t.getSize(find.byType(RaftAttentionDot)), const Size(10, 10));
+            expect(
+              t.getSize(find.byType(RaftAttentionDot)),
+              const Size(10, 10),
+            );
             final label = t.widget<Text>(find.text('Visual Server'));
             expect(label.style!.fontSize, 17);
             expect(label.style!.height, 22 / 17);

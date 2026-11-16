@@ -23,6 +23,7 @@ const _interior = {
   'RaftExternalSetupFooter':
       'The create-external-agent dialog frame owns its insets.',
   'RaftDialogFooter': 'The dialog presentation frame owns its insets.',
+  'RaftCardFooter': 'The footer slot sits inside a RaftCard; the card is never a screen edge.',
 };
 
 Directory _sourceDirectory() {
