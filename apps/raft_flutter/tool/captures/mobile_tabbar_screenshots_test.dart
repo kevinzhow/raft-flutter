@@ -79,20 +79,21 @@ final fullBar = jsonEncode({
 const activityBar = '["chat","tasks","activity"]';
 
 Future<void> capture(WidgetTester t, String name) async {
+  // The outermost full-screen boundary, so overlays (the server popover) are in.
   RenderObject? object = t
       .element(find.byKey(const Key('workspace-mobile-navigation')))
       .findRenderObject();
-  while (object != null &&
-      !(object is RenderRepaintBoundary &&
-          object.hasSize &&
-          object.size.height >= 800)) {
-    object = object.parent;
+  RenderRepaintBoundary? screen;
+  for (; object != null; object = object.parent) {
+    if (object is RenderRepaintBoundary &&
+        object.hasSize &&
+        object.size.height >= 800) {
+      screen = object;
+    }
   }
-  expect(object, isA<RenderRepaintBoundary>());
+  expect(screen, isNotNull);
   await t.runAsync(() async {
-    final image = await (object! as RenderRepaintBoundary).toImage(
-      pixelRatio: 2,
-    );
+    final image = await screen!.toImage(pixelRatio: 2);
     final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
     final file = File('$evidence/$name.png');
     await file.parent.create(recursive: true);

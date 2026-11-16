@@ -523,6 +523,8 @@ class RaftMobileNavServerPopoverDestination extends StatelessWidget {
           style: r.destination,
           tokens: rt,
           child: Stack(
+            // Web `items-center`: icon and label sit on the cell's centre.
+            alignment: Alignment.topCenter,
             clipBehavior: Clip.none,
             children: [
               Column(

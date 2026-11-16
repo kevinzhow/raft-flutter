@@ -545,6 +545,16 @@ void main() {
       );
       expect(ddot.top, closeTo(dest.top + 4, .01));
       expect(ddot.left, closeTo(dest.center.dx + 6, .01));
+      // Web v1.24 popover: the cell centres its icon (items-center) and the
+      // dot sits on the icon's top-right (dot.left = icon.right - 4).
+      final icon = t.getRect(
+        find.descendant(
+          of: find.byKey(const ValueKey('dest-0')),
+          matching: find.byType(RaftIcon),
+        ),
+      );
+      expect(icon.center.dx, closeTo(dest.center.dx, .01));
+      expect(ddot.left, closeTo(icon.right - 4, .01));
       expect(
         find.descendant(
           of: find.byKey(const ValueKey('dest-1')),
