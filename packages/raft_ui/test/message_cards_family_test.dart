@@ -3,6 +3,7 @@
 import 'dart:ui' show PointerDeviceKind;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show RenderParagraph;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_ui/src/message_embed_frame.dart';
@@ -185,6 +186,43 @@ void main() {
       final left = tester.getTopLeft(bundle).dx;
       // 1px border + px-3 on the item.
       expect(tester.getTopLeft(find.text('@Author0')).dx, left + 1 + 12);
+    });
+
+    testWidgets('header keeps the whole count on a phone (flex-wrap)', (
+      tester,
+    ) async {
+      // Web: `flex-wrap justify-between gap-2`: the label group and the
+      // source keep their own widths and wrap; neither is cut while it fits.
+      await _size(tester, 390, 844);
+      await tester.pumpWidget(
+        _app(
+          SizedBox(
+            width: 366,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [RaftForwardedBundle(metadata: _snapshot())],
+            ),
+          ),
+          platform: TargetPlatform.android,
+        ),
+      );
+      await tester.pumpAndSettle();
+      RenderParagraph paragraph(String text) => tester.renderObject(
+        find.descendant(
+          of: find.byType(RaftForwardedBundle),
+          matching: find.byWidgetPredicate(
+            (w) => w is RichText && w.text.toPlainText() == text,
+          ),
+        ),
+      );
+      final count = paragraph('3 messages');
+      expect(count.didExceedMaxLines, isFalse);
+      expect(
+        count.size.width,
+        greaterThanOrEqualTo(count.getMaxIntrinsicWidth(double.infinity) - .5),
+        reason: 'the count is laid out whole, not ellipsised',
+      );
+      expect(tester.takeException(), isNull);
     });
 
     testWidgets('footer action is footnote semibold foreground', (

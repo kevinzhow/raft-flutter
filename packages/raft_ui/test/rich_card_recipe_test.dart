@@ -163,7 +163,14 @@ void main() {
           const headerInset = 12.0 + 1;
           expect(bundle.width, width < 560 ? width : 560);
           expect(sourceRect.right, closeTo(bundle.right - headerInset, .1));
-          expect(sourceRect.left, greaterThan(labelRect.right));
+          if (RaftTokens.of(tester.element(source)).isRaftLook) {
+            // raft-ui `flex-wrap justify-between`: a source wider than what
+            // is left of the line moves to its own line and truncates there
+            // (label and count are `shrink-0`).
+            expect(sourceRect.top, greaterThanOrEqualTo(labelRect.bottom));
+          } else {
+            expect(sourceRect.left, greaterThan(labelRect.right));
+          }
           expect(sourceRect.width, greaterThan(0));
           final sourceText = tester.widget<Text>(source);
           expect(sourceText.maxLines, 1);

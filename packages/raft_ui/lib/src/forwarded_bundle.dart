@@ -473,6 +473,11 @@ class _RaftForwardedBundleState extends State<RaftForwardedBundle> {
             )
           : contents,
     );
+    // message.forward.bundleCount: `one {message}` (no number),
+    // `other {# messages}`.
+    final countLabel = items.length == 1
+        ? raftText(context, 'message')
+        : raftFormat(context, '{count} messages', {'count': items.length});
     return Padding(
       // `mt-1` collapses with the message body's own margin.
       padding: EdgeInsets.only(top: RaftMessageBodyMargin.collapse(context, 4)),
@@ -485,53 +490,88 @@ class _RaftForwardedBundleState extends State<RaftForwardedBundle> {
             Container(
               decoration: recipe.headerDecoration,
               padding: raft?.headerPadding ?? recipe.headerInset(viewportWidth),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Flexible(
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
+              child: raft != null
+                  // raft-ui `flex-wrap justify-between gap-2`: the label
+                  // group and the source keep their own widths and wrap.
+                  ? Wrap(
+                      alignment: WrapAlignment.spaceBetween,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      spacing: 8,
+                      runSpacing: 8,
                       children: [
-                        RaftIcon(
-                          RaftGlyph.forward,
-                          // `[&_svg]:size-3.5` of the header label.
-                          size: raft != null ? 14 : 12,
-                          color: (raft?.label ?? recipe.header).color,
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            RaftIcon(
+                              RaftGlyph.forward,
+                              // `[&_svg]:size-3.5` of the header label.
+                              size: 14,
+                              color: raft.label.color,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              raftText(context, 'Forwarded'),
+                              style: raft.label,
+                            ),
+                            SizedBox(width: raft.headerGap),
+                            Text(countLabel, style: raft.count),
+                          ],
                         ),
-                        const SizedBox(width: 4),
-                        Text(
-                          raftText(context, 'Forwarded'),
-                          style: raft?.label ?? recipe.header,
-                        ),
-                        SizedBox(width: raft?.headerGap ?? 8),
+                        if (first.sourceLabel != null)
+                          _source(context, first, recipe, raft),
+                      ],
+                    )
+                  : Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
                         Flexible(
-                          child: Text(
-                            // message.forward.bundleCount: `one {message}`
-                            // (no number), `other {# messages}`.
-                            items.length == 1
-                                ? raftText(context, 'message')
-                                : raftFormat(context, '{count} messages', {
-                                    'count': items.length,
-                                  }),
-                            style: raft != null
-                                ? raft.count
-                                : widget.headerLine == null
-                                ? recipe.count
-                                : recipe.count.copyWith(
-                                    height: widget.headerLine! / 11,
-                                  ),
-                            overflow: TextOverflow.ellipsis,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              RaftIcon(
+                                RaftGlyph.forward,
+                                // `[&_svg]:size-3.5` of the header label.
+                                size: raft != null ? 14 : 12,
+                                color: (raft?.label ?? recipe.header).color,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                raftText(context, 'Forwarded'),
+                                style: raft?.label ?? recipe.header,
+                              ),
+                              SizedBox(width: raft?.headerGap ?? 8),
+                              Flexible(
+                                child: Text(
+                                  // message.forward.bundleCount: `one {message}`
+                                  // (no number), `other {# messages}`.
+                                  items.length == 1
+                                      ? raftText(context, 'message')
+                                      : raftFormat(
+                                          context,
+                                          '{count} messages',
+                                          {'count': items.length},
+                                        ),
+                                  style: raft != null
+                                      ? raft.count
+                                      : widget.headerLine == null
+                                      ? recipe.count
+                                      : recipe.count.copyWith(
+                                          height: widget.headerLine! / 11,
+                                        ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
+                        if (first.sourceLabel != null) ...[
+                          const SizedBox(width: 8),
+                          Flexible(
+                            child: _source(context, first, recipe, raft),
+                          ),
+                        ],
                       ],
                     ),
-                  ),
-                  if (first.sourceLabel != null) ...[
-                    const SizedBox(width: 8),
-                    Flexible(child: _source(context, first, recipe, raft)),
-                  ],
-                ],
-              ),
             ),
             body,
             if (!widget.exportMode && foldable)
