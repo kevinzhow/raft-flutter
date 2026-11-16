@@ -721,7 +721,18 @@ class _RaftShowMoreToggleState extends State<RaftShowMoreToggle> {
     final raft = tokens.recipeSet == RaftRecipeSet.raft;
     final mouse = RaftInteraction.of(context).pointer;
     final style = widget.style ?? MessageContentRecipe(tokens).toggle;
-    final visualHeight = widget.visualHeight ?? (raft ? 18.0 : 16.0);
+    // Raft look: the footnote line (18 at 1.0x) grows with the text scale so
+    // a large type size wraps the label instead of overflowing the control.
+    final fontSize = style.fontSize ?? 13;
+    final visualHeight =
+        widget.visualHeight ??
+        (raft
+            ? math.max(
+                18.0,
+                MediaQuery.textScalerOf(context).scale(fontSize) *
+                    (style.height ?? 18 / fontSize),
+              )
+            : 16.0);
     final color = hovered
         ? MessageContentSemantic(tokens).toggleHover
         : style.color;

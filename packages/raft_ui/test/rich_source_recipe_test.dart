@@ -108,7 +108,8 @@ void main() {
               body: SizedBox(
                 width: 640,
                 child: RaftMessageBody(
-                  content: '| Status | Count |\n|---|---|\n|Ready|3|\n\n[link](https://example.com)',
+                  content:
+                      '| Status | Count |\n|---|---|\n|Ready|3|\n\n[link](https://example.com)',
                 ),
               ),
             ),
@@ -136,9 +137,14 @@ void main() {
           closeTo(textWidth('Status') + textWidth('Count') + 32, 2),
         );
         expect(body.styleSheet!.tableHeadAlign, TextAlign.left);
+        // Raft look: Web v1.24 raft-ui MarkdownLink `text-foreground-link`;
+        // the frozen looks keep the Tailwind blue-700 / blue-300 link.
+        final tokens = raftTheme(dark: dark).extension<RaftTokens>()!;
         expect(
           body.styleSheet!.a!.color,
-          dark
+          tokens.isRaftLook
+              ? tokens.colors['foreground-link']
+              : dark
               ? MessageContentPrimitive.linkDark
               : MessageContentPrimitive.linkLight,
         );
