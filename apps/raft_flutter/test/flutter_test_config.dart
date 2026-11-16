@@ -124,7 +124,6 @@ void _enableLeakTracking() {
     classes: const [
       // Process-wide singletons (static `shared` / `instance`).
       'RaftFocusVisible',
-      'NativeSystemFonts',
       'NativeAppIcon',
       'AppUpdater',
       'InviteRequests',

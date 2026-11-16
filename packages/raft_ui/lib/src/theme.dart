@@ -80,19 +80,6 @@ Map<String, Color> raftColorMap(RaftTokenSet set) => Map.unmodifiable({
   ...set.components.toCssMap(),
 });
 
-@immutable
-class RaftFontFamilies {
-  const RaftFontFamilies({
-    this.body = 'sans-serif',
-    this.heading = 'sans-serif',
-    this.mono = 'monospace',
-    this.fallback = const [],
-  });
-
-  final String body, heading, mono;
-  final List<String> fallback;
-}
-
 /// Offset and thickness of the shared underline (see [RaftUnderlines]).
 @immutable
 class RaftUnderlineMetrics {
@@ -124,8 +111,6 @@ class RaftTokens extends ThemeExtension<RaftTokens> {
     RaftTokenSet? tokens,
     RaftModeValues? mode,
     this.themeOverrides,
-    this.systemFonts = false,
-    this.systemFontFamilies = const RaftFontFamilies(),
     this.textLocale,
     this.recipeSet = RaftRecipeSet.raft,
     this.desktop = false,
@@ -142,8 +127,6 @@ class RaftTokens extends ThemeExtension<RaftTokens> {
   factory RaftTokens.theme({
     bool dark = false,
     RaftThemePack? pack,
-    bool systemFonts = false,
-    RaftFontFamilies systemFontFamilies = const RaftFontFamilies(),
     Locale? textLocale,
   }) {
     final themePack = pack ?? builtInRaftTheme;
@@ -171,8 +154,6 @@ class RaftTokens extends ThemeExtension<RaftTokens> {
       themeOverrides: themePack.builtIn
           ? null
           : (dark ? themePack.dark : themePack.light),
-      systemFonts: systemFonts,
-      systemFontFamilies: systemFontFamilies,
       textLocale: textLocale,
       recipeSet: themePack.recipeSet,
     );
@@ -199,8 +180,6 @@ class RaftTokens extends ThemeExtension<RaftTokens> {
 
   /// The Raft look (the raft-ui 0.7.0 recipe set), not a frozen Elegant or Brutal.
   bool get isRaftLook => recipeSet == RaftRecipeSet.raft;
-  final bool systemFonts;
-  final RaftFontFamilies systemFontFamilies;
 
   /// Locale for regional glyphs, independently of the UI translation locale.
   final Locale? textLocale;
@@ -254,49 +233,40 @@ class RaftTokens extends ThemeExtension<RaftTokens> {
   Color get accentSoft => colors['accent-soft']!;
   Color get accentFill => colors['accent']!;
   Color get primaryFill => colors['primary']!;
-  String get bodyFont =>
-      systemFonts ? systemFontFamilies.body : metrics.sansFont;
-  String get headingFont =>
-      systemFonts ? systemFontFamilies.heading : metrics.headingFont;
-  String get monoFont =>
-      systemFonts ? systemFontFamilies.mono : metrics.monoFont;
-  List<String> get fontFallback => systemFonts
-      ? systemFontFamilies.fallback
-      : switch (textLocale?.languageCode) {
-          'zh'
-              when textLocale?.scriptCode == 'Hant' ||
-                  textLocale?.scriptCode != 'Hans' &&
-                      const [
-                        'TW',
-                        'HK',
-                        'MO',
-                      ].contains(textLocale?.countryCode) =>
-            const [
-              'Noto Sans CJK TC',
-              'Noto Sans CJK SC',
-              'Noto Sans CJK JP',
-              'sans-serif',
-            ],
-          'zh' => const [
-            ..._raftCjkChain,
-            'Noto Sans CJK SC',
-            'Noto Sans CJK JP',
-            'sans-serif',
-          ],
-          'ko' => const [
-            'Noto Sans CJK KR',
-            'Noto Sans CJK JP',
-            'Noto Sans CJK SC',
-            'sans-serif',
-          ],
-          'ja' => const ['Noto Sans CJK JP', 'Noto Sans CJK SC', 'sans-serif'],
-          _ => const [
-            ..._raftCjkChain,
-            'Noto Sans CJK JP',
-            'Noto Sans CJK SC',
-            'sans-serif',
-          ],
-        };
+  String get bodyFont => metrics.sansFont;
+  String get headingFont => metrics.headingFont;
+  String get monoFont => metrics.monoFont;
+  List<String> get fontFallback => switch (textLocale?.languageCode) {
+    'zh'
+        when textLocale?.scriptCode == 'Hant' ||
+            textLocale?.scriptCode != 'Hans' &&
+                const ['TW', 'HK', 'MO'].contains(textLocale?.countryCode) =>
+      const [
+        'Noto Sans CJK TC',
+        'Noto Sans CJK SC',
+        'Noto Sans CJK JP',
+        'sans-serif',
+      ],
+    'zh' => const [
+      ..._raftCjkChain,
+      'Noto Sans CJK SC',
+      'Noto Sans CJK JP',
+      'sans-serif',
+    ],
+    'ko' => const [
+      'Noto Sans CJK KR',
+      'Noto Sans CJK JP',
+      'Noto Sans CJK SC',
+      'sans-serif',
+    ],
+    'ja' => const ['Noto Sans CJK JP', 'Noto Sans CJK SC', 'sans-serif'],
+    _ => const [
+      ..._raftCjkChain,
+      'Noto Sans CJK JP',
+      'Noto Sans CJK SC',
+      'sans-serif',
+    ],
+  };
 
   /// Radii and stroke widths come from the theme's numeric tokens, so a theme
   /// that squares the corners reaches every control. The fallbacks are the
@@ -358,8 +328,7 @@ class RaftTokens extends ThemeExtension<RaftTokens> {
   String option(String name, {required String or}) =>
       _mode?.options[name] ?? or;
 
-  /// Resolve a component font reference through the active mode. System font
-  /// preferences apply to the referenced body/heading/mono family as usual.
+  /// Resolve a component font reference through the active mode.
   String fontFamily(String token, {String or = 'sans'}) =>
       switch (_mode?.fontRefs[token] ?? or) {
         'mono' => monoFont,
@@ -368,9 +337,7 @@ class RaftTokens extends ThemeExtension<RaftTokens> {
       };
 
   List<String> fontFamilyFallback(String token, {String or = 'sans'}) =>
-      systemFonts
-      ? fontFallback
-      : (_mode?.fontRefs[token] ?? or) == 'mono'
+      (_mode?.fontRefs[token] ?? or) == 'mono'
       ? const ['monospace']
       : fontFallback;
 
@@ -436,8 +403,6 @@ class RaftTokens extends ThemeExtension<RaftTokens> {
       tokens: _tokens,
       mode: _mode,
       themeOverrides: themeOverrides,
-      systemFonts: systemFonts,
-      systemFontFamilies: systemFontFamilies,
       textLocale: textLocale,
       recipeSet: recipeSet,
       desktop: true,
@@ -457,19 +422,12 @@ class RaftTokens extends ThemeExtension<RaftTokens> {
           tokens: _tokens,
           mode: _mode,
           themeOverrides: themeOverrides,
-          systemFonts: systemFonts,
-          systemFontFamilies: systemFontFamilies,
           textLocale: textLocale ?? this.textLocale,
           recipeSet: recipeSet,
           desktop: desktop,
           viewportWidth: viewportWidth,
         )
-      : RaftTokens.theme(
-          dark: dark,
-          systemFonts: systemFonts,
-          systemFontFamilies: systemFontFamilies,
-          textLocale: textLocale ?? this.textLocale,
-        );
+      : RaftTokens.theme(dark: dark, textLocale: textLocale ?? this.textLocale);
   @override
   RaftTokens lerp(covariant RaftTokens? other, double t) =>
       other == null || t < .5 ? this : other;
@@ -637,8 +595,6 @@ ThemeData raftTheme({
   /// The theme to paint with. Defaults to the built-in Raft pack, which is
   /// identical to the look the app had before themes became data.
   RaftThemePack? pack,
-  bool systemFonts = false,
-  RaftFontFamilies systemFontFamilies = const RaftFontFamilies(),
 
   /// The UI locale. With [platform] it selects [RaftControlTypography] for the
   /// Material control families (buttons, chips, segments, menus, nav labels);
@@ -650,13 +606,7 @@ ThemeData raftTheme({
   Locale? textLocale,
   TargetPlatform? platform,
 }) {
-  final t = RaftTokens.theme(
-    dark: dark,
-    pack: pack,
-    systemFonts: systemFonts,
-    systemFontFamilies: systemFontFamilies,
-    textLocale: textLocale,
-  );
+  final t = RaftTokens.theme(dark: dark, pack: pack, textLocale: textLocale);
   RoundedRectangleBorder shape(
     double radius, {
     BorderSide side = BorderSide.none,

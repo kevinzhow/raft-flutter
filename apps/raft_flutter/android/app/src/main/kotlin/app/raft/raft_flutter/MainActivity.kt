@@ -9,7 +9,6 @@ import android.webkit.CookieManager
 import android.webkit.WebStorage
 import android.Manifest
 import android.content.pm.PackageManager
-import android.content.res.Configuration
 import android.os.Bundle
 import androidx.core.content.IntentCompat
 import java.util.ArrayDeque
@@ -83,7 +82,6 @@ class MainActivity : FlutterActivity() {
         setIntent(intent)
         consumeShare(intent)
     }
-    private var systemFonts: NativeSystemFontsBridge? = null
     private var systemProxy: NativeProxyBridge? = null
     private var artifactDownloads: ArtifactDownloadBridge? = null
     private var saveResult: MethodChannel.Result? = null
@@ -124,7 +122,6 @@ class MainActivity : FlutterActivity() {
         sharing = NativeSharingBridge(this, flutterEngine, ::shareReceiverAttached)
         imageClipboard = NativeImageClipboardBridge(this, flutterEngine)
         clipboardAttachments = NativeClipboardAttachmentsBridge(this, flutterEngine)
-        systemFonts = NativeSystemFontsBridge(this, flutterEngine)
         systemProxy = NativeProxyBridge(this, flutterEngine)
         NativeBatteryBridge(this, flutterEngine)
         NativePermissionBridge(this, flutterEngine)
@@ -416,11 +413,6 @@ class MainActivity : FlutterActivity() {
         dispatchNewIntent(intent)
     }
 
-    override fun onConfigurationChanged(newConfig: Configuration) {
-        super.onConfigurationChanged(newConfig)
-        systemFonts?.configurationChanged()
-    }
-
     /** Adds an image to the public gallery (MediaStore); off the UI thread. */
     private fun writeToGallery(path: String, filename: String, mimeType: String, result: MethodChannel.Result) {
         Thread {
@@ -509,7 +501,6 @@ class MainActivity : FlutterActivity() {
     override fun onDestroy() {
         earlyShares.clear()
         sharing?.dispose()
-        systemFonts?.dispose()
         systemProxy?.dispose()
         localNetworkResults.forEach { it.success(false) }
         localNetworkResults.clear()

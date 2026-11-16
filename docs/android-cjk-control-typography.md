@@ -59,9 +59,10 @@ Both profiles are selected by UI locale. English UI labels retain their
 existing line metrics; mixed-language labels inside Chinese UI follow that
 UI's control profile. Font family, fallback order, size and weight are kept.
 
-On Android `systemFonts` is on (`apps/raft_flutter/lib/main.dart`): every label
-uses the device's own sans family and falls back to the device CJK font. The
-bundled Hanken Grotesk / Geist / Inter faces only render on other platforms.
+Android uses the bundled Space Grotesk / Space Mono like every other platform:
+Latin text is set in the brand face and other scripts fall back through the
+locale CJK chain (`RaftTokens.fontFallback`, with `TextStyle.locale` choosing
+the regional face).
 
 ## Where it is applied (centrally, in the primitives)
 

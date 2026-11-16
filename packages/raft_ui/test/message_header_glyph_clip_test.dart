@@ -35,15 +35,22 @@ Future<void> _loadFonts() async {
     } on FlutterError {
       data = await rootBundle.load('assets/fonts/$name.ttf');
     }
+    await (FontLoader(
+      'packages/raft_ui/$name',
+    )..addFont(Future.value(data))).load();
     await (FontLoader(name)..addFont(Future.value(data))).load();
   }
   if (!_cjkFont.existsSync()) return;
   final cjk = _cjkFont.readAsBytesSync().buffer.asByteData();
-  await (FontLoader('ProxyCJK')..addFont(Future.value(cjk))).load();
+  // The zh fallback chain names these (Android resolves them through its own
+  // font manager; the test engine has none).
+  for (final family in const ['Noto Sans CJK SC', 'sans-serif']) {
+    await (FontLoader(family)..addFont(Future.value(cjk))).load();
+  }
 }
 
-/// Stand-in for PingFang SC (macOS), whose metrics are also taller than the
-/// bundled Latin faces. Only the CJK cases need it.
+/// The CJK fallback face (taller than the bundled Latin faces). Only the CJK
+/// cases need it.
 final _cjkFont = File('/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc');
 
 /// Vertical ink extent (logical px, top/bottom edge) of everything that
@@ -81,26 +88,18 @@ void main() {
     for (final (label, author, timestamp, cjk) in const [
       ('latin descenders', 'tygg', '23:16 gypq', false),
       ('cjk author', '张三丰丽', '23:16', true),
-      ('tall latin descenders', 'Cindy gy', '23:16 gypq', true),
+      ('latin descenders with cjk fallback', 'Cindy 张gy', '23:16 gypq', true),
     ]) {
       testWidgets(
         'header glyph ink is not clipped $label ${dark ? 'dark' : 'light'}',
         (t) async {
           if (cjk && !_cjkFont.existsSync()) return;
           await t.runAsync(_loadFonts);
-          // Flutter's test engine has no system font fallback. The CJK cases
-          // use the taller proxy face for all glyphs, including Latin, and
-          // retain it as fallback for every control's text.
-          final primary = cjk ? 'ProxyCJK' : 'Geist';
+          // Bundled Space Grotesk / Space Mono; the CJK cases render their
+          // ideographs through the zh textLocale fallback chain.
           final theme = raftTheme(
             dark: dark,
-            systemFonts: cjk,
-            systemFontFamilies: RaftFontFamilies(
-              body: primary,
-              heading: primary,
-              mono: 'GeistMono',
-              fallback: const ['ProxyCJK'],
-            ),
+            textLocale: cjk ? const Locale('zh', 'CN') : null,
           );
           final tokens = theme.extension<RaftTokens>()!;
           final recipe = RaftMessageRowRecipe(tokens, viewportWidth: 800);
@@ -112,7 +111,7 @@ void main() {
               backgroundColor: bg,
               body: DefaultTextStyle.merge(
                 style: TextStyle(
-                  fontFamilyFallback: cjk ? const ['ProxyCJK'] : null,
+                  fontFamilyFallback: cjk ? tokens.fontFallback : null,
                 ),
                 child: RepaintBoundary(
                   key: key,

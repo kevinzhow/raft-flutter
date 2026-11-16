@@ -18,7 +18,6 @@ import 'package:raft_flutter/data/device_preferences.dart';
 import 'package:raft_flutter/data/source_time_formatter.dart';
 import 'package:raft_flutter/features/attachment_view.dart';
 import 'package:raft_flutter/platform/memory_release.dart';
-import 'package:raft_flutter/platform/system_fonts.dart';
 
 import 'resource_release_main.dart';
 
@@ -43,7 +42,6 @@ Map<String, int> _memory() {
 void main() {
   final binding = IntegrationTestWidgetsFlutterBinding.ensureInitialized();
   testWidgets('resource release scenario', (tester) async {
-    await NativeSystemFonts.instance.initialize();
     await initializeSourceTimeFormatting();
     await DevicePreferences.load();
     Future<void> settle(int seconds) async {

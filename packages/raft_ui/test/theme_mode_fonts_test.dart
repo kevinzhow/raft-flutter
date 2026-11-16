@@ -24,39 +24,6 @@ void main() {
     expect(brutal.metrics.monoFontStack, elegant.metrics.monoFontStack);
   });
 
-  test('explicit system fonts remain ahead of mode fonts', () {
-    for (final id in [raftThemePackId, elegantThemePackId, brutalThemePackId]) {
-      for (final dark in [false, true]) {
-        final t = RaftTokens.theme(
-          pack: packForThemeId(id),
-          dark: dark,
-          systemFonts: true,
-          systemFontFamilies: const RaftFontFamilies(
-            body: 'User Body',
-            heading: 'User Heading',
-            mono: 'User Mono',
-            fallback: ['User CJK'],
-          ),
-        );
-        expect(t.headingFont, 'User Heading');
-        expect(t.bodyFont, 'User Body');
-        expect(t.monoFont, 'User Mono');
-        final native = id == raftThemePackId;
-        final brutalLight = id == brutalThemePackId && !dark;
-        expect(
-          t.fontFamily('font.messageTime'),
-          native || brutalLight ? 'User Mono' : 'User Body',
-        );
-        expect(
-          t.fontFamily('font.messageSubtitle'),
-          brutalLight ? 'User Mono' : 'User Body',
-        );
-        expect(t.fontFamilyFallback('font.messageTime'), ['User CJK']);
-        expect(t.fontFamilyFallback('font.messageSubtitle'), ['User CJK']);
-      }
-    }
-  });
-
   testWidgets('the first Brutal dark frame uses Elegant typography', (
     tester,
   ) async {

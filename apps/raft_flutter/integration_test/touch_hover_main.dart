@@ -15,7 +15,6 @@ import 'package:raft_flutter/data/source_time_formatter.dart';
 import 'package:raft_flutter/main.dart' as app;
 import 'package:raft_flutter/platform/native_sharing.dart';
 import 'package:raft_flutter/platform/android_performance_hint.dart';
-import 'package:raft_flutter/platform/system_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'perf_lab/fixtures.dart';
@@ -23,7 +22,6 @@ import 'perf_lab/navigation_host.dart';
 
 Future<void> main() async {
   RaftWidgetsFlutterBinding.ensureInitialized();
-  await NativeSystemFonts.instance.initialize();
   await initializeSourceTimeFormatting();
   await DevicePreferences.load();
   final channel = LabChannel('kb', [for (var i = 0; i < 8; i++) ...['plain', 'markdown', 'reactions', 'attachments', 'image']]);

@@ -40,7 +40,7 @@ abstract final class RaftFontWarmUp {
 
   static final _done = <_FontKey>{};
   static final _queue = Queue<TextStyle>();
-  static final _themes = <(bool, bool, Locale?)>{};
+  static final _themes = <(bool, Locale?)>{};
   static final _positions = <WeakReference<ScrollPosition>>[];
   static final _watched = Expando<bool>('raftFontWarmUp');
   // Ambient animation does not hold the warm-up back (see the class comment),
@@ -82,7 +82,6 @@ abstract final class RaftFontWarmUp {
     final tokens = theme.extension<RaftTokens>();
     if (!_themes.add((
       tokens?.dark ?? theme.brightness == Brightness.dark,
-      tokens?.systemFonts ?? false,
       tokens?.textLocale,
     ))) {
       return;

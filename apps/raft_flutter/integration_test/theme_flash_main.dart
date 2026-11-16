@@ -26,7 +26,6 @@ import 'package:raft_flutter/platform/app_icon.dart';
 import 'package:raft_flutter/platform/native_sharing.dart';
 import 'package:raft_ui/raft_ui.dart' show RaftAppIconPalette;
 import 'package:raft_flutter/platform/android_performance_hint.dart';
-import 'package:raft_flutter/platform/system_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -39,7 +38,6 @@ final _boot = Stopwatch()..start();
 
 Future<void> main() async {
   RaftWidgetsFlutterBinding.ensureInitialized();
-  await NativeSystemFonts.instance.initialize();
   await initializeSourceTimeFormatting();
   _boot.start();
   final seed = File(_seedFile);

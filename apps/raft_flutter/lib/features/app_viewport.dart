@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
@@ -9,8 +8,8 @@ import '../data/workspace_controller.dart';
 import '../data/workspace_cache.dart';
 import '../platform/app_services.dart';
 import '../platform/app_window.dart';
-import '../platform/system_fonts.dart';
 import 'app_root_router.dart';
+import 'app_theme.dart';
 import 'workspace_host_scope.dart';
 import '../platform/desktop_title_bar.dart';
 import '../platform/keyboard_inset_guard.dart';
@@ -79,11 +78,9 @@ Widget buildRaftApplication({
 }) {
   final workspace = session.$2;
   final textLocale = WidgetsBinding.instance.platformDispatcher.locale;
-  ThemeData themed({bool dark = false}) => raftTheme(
+  ThemeData themed({bool dark = false}) => raftAppTheme(
     dark: dark,
-    pack: appearance.pack,
-    systemFonts: !kIsWeb && defaultTargetPlatform == TargetPlatform.android,
-    systemFontFamilies: NativeSystemFonts.instance.value,
+    appearance: appearance,
     locale: locale,
     textLocale: textLocale,
   );

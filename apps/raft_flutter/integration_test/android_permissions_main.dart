@@ -30,7 +30,6 @@ import 'package:raft_flutter/platform/app_services.dart';
 import 'package:raft_flutter/platform/file_selection.dart'
     show configureAndroidPhotoPicker;
 import 'package:raft_flutter/platform/native_sharing.dart';
-import 'package:raft_flutter/platform/system_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'perf_lab/fixtures.dart';
@@ -69,7 +68,6 @@ class _ResumeProbe with WidgetsBindingObserver {
 Future<void> main() async {
   RaftWidgetsFlutterBinding.ensureInitialized();
   configureAndroidPhotoPicker();
-  await NativeSystemFonts.instance.initialize();
   await initializeSourceTimeFormatting();
   await DevicePreferences.load();
   final alpha = LabChannel('alpha', List.filled(6, 'plain'));

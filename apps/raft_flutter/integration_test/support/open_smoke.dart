@@ -13,7 +13,6 @@ import 'package:raft_flutter/data/mobile_tabbar_preferences.dart';
 import 'package:raft_flutter/data/source_time_formatter.dart';
 import 'package:raft_flutter/main.dart' as app;
 import 'package:raft_flutter/platform/native_sharing.dart';
-import 'package:raft_flutter/platform/system_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../perf_lab/fixtures.dart';
@@ -155,7 +154,6 @@ class SmokeFixture {
 SmokeFixture? lastFixture;
 
 Future<void> prepareBindings() async {
-  await NativeSystemFonts.instance.initialize();
   await initializeSourceTimeFormatting();
   await DevicePreferences.load();
 }

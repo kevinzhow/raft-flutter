@@ -9,7 +9,6 @@ import 'platform/clipboard_attachments.dart';
 import 'platform/file_selection.dart' show configureAndroidPhotoPicker;
 import 'platform/memory_budgets.dart';
 import 'platform/system_proxy_bootstrap.dart';
-import 'platform/system_fonts.dart';
 
 export 'app_root.dart';
 
@@ -21,7 +20,6 @@ Future<void> main([List<String> args = const []]) async {
   // Composer paste of copied files and images. Started before any text field
   // exists: iOS takes a system Paste of attachments only once Dart listens.
   ClipboardAttachments.watch();
-  await NativeSystemFonts.instance.initialize();
   await initializeSourceTimeFormatting();
   // First frames read saved layout choices synchronously from this.
   await DevicePreferences.load();

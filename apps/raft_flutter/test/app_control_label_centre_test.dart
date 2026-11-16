@@ -396,16 +396,6 @@ void main() {
             final theme = raftTheme(
               locale: profile.locale,
               platform: profile.platform,
-              // As app_root.dart does on Android: the device's sans family
-              // with its CJK fallback (the harness maps both to Noto Sans
-              // CJK, the face the Android Chinese profile was measured on).
-              systemFonts: android,
-              systemFontFamilies: android
-                  ? const RaftFontFamilies(
-                      mono: 'packages/raft_ui/GeistMono',
-                      fallback: ['Noto Sans CJK SC'],
-                    )
-                  : const RaftFontFamilies(),
               textLocale: profile.locale,
             );
             await t.pumpWidget(

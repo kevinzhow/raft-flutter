@@ -26,13 +26,7 @@ void main() {
                 theme: raftTheme(
                   pack: packForThemeId(id),
                   dark: dark,
-                  systemFonts: true,
-                  systemFontFamilies: const RaftFontFamilies(
-                    body: 'User Body',
-                    heading: 'User Heading',
-                    mono: 'User Mono',
-                    fallback: ['User CJK'],
-                  ),
+                  textLocale: const Locale('zh', 'CN'),
                 ),
                 home: Scaffold(
                   body: Center(
@@ -53,8 +47,8 @@ void main() {
             final style = DefaultTextStyle.of(t.element(label)).style;
             final tokens = RaftTokens.of(t.element(label));
             final native = id == raftThemePackId;
-            expect(style.fontFamily, 'User Body');
-            expect(style.fontFamilyFallback, ['User CJK']);
+            expect(style.fontFamily, tokens.bodyFont);
+            expect(style.fontFamilyFallback, tokens.fontFallback);
             expect(
               style.fontSize,
               axis == RaftButtonSize.inline

@@ -80,7 +80,6 @@ class RaftInlineThreadRecipe {
     final spec = tokens.typeSlot(slot);
     return TextStyle(
       fontFamily: tokens.bodyFont,
-      fontFamilyFallback: tokens.systemFonts ? tokens.fontFallback : null,
       fontSize: spec.fontSize + step,
       height: spec.lineHeight / (spec.fontSize + step),
       fontWeight: weight,
@@ -94,7 +93,6 @@ class RaftInlineThreadRecipe {
       ? _slot('footnote', weight: FontWeight.w700).copyWith(color: muted)
       : TextStyle(
           fontFamily: tokens.bodyFont,
-          fontFamilyFallback: tokens.systemFonts ? tokens.fontFallback : null,
           fontSize: 12,
           height: 16 / 12,
           fontWeight: FontWeight.w500,
@@ -108,7 +106,6 @@ class RaftInlineThreadRecipe {
         ).copyWith(color: muted)
       : TextStyle(
           fontFamily: tokens.bodyFont,
-          fontFamilyFallback: tokens.systemFonts ? tokens.fontFallback : null,
           fontSize: sizeTier.previewFor(tokens),
           height: 1.25,
           fontWeight: FontWeight.w600,

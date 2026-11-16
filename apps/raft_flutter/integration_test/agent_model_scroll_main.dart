@@ -7,7 +7,6 @@ import 'package:flutter/material.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/features/managed_agent_launcher.dart';
-import 'package:raft_flutter/platform/system_fonts.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import '../test/fixtures/long_model_form.dart';
@@ -75,7 +74,6 @@ class _Workspace extends WorkspaceController {
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await NativeSystemFonts.instance.initialize();
   runApp(const _Harness());
 }
 

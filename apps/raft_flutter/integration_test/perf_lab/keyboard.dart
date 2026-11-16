@@ -18,7 +18,6 @@ import 'package:raft_flutter/features/chat_view.dart';
 import 'package:raft_flutter/main.dart' as app;
 import 'package:raft_flutter/platform/app_services.dart';
 import 'package:raft_flutter/platform/native_sharing.dart';
-import 'package:raft_flutter/platform/system_fonts.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -82,7 +81,6 @@ Future<Future<void> Function()> mountKeyboardChat(
   });
   final dir = await Directory.systemTemp.createTemp('raft-lab-keyboard-');
   final content = LabNavigationContent();
-  await NativeSystemFonts.instance.initialize();
   final rootApp = app.RaftApp(
       key: const ValueKey('lab-keyboard'),
       services: const AppServices.updatesDisabledForTestOrPreview(),

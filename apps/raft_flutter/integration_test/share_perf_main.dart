@@ -30,7 +30,6 @@ import 'package:raft_flutter/features/root_error_boundary.dart';
 import 'package:raft_flutter/main.dart' as app;
 import 'package:raft_flutter/platform/android_performance_hint.dart';
 import 'package:raft_flutter/platform/native_sharing.dart';
-import 'package:raft_flutter/platform/system_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'perf_lab/navigation_host.dart';
@@ -360,7 +359,6 @@ void _watch() {
 Future<void> main() async {
   RaftWidgetsFlutterBinding.ensureInitialized();
   RootErrors.instance.install();
-  await NativeSystemFonts.instance.initialize();
   await initializeSourceTimeFormatting();
   await DevicePreferences.load();
   _dir = await Directory.systemTemp.createTemp('raft-share-perf-');

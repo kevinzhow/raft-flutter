@@ -64,10 +64,7 @@ class RaftFeedbackPortalTheme extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     if (!t.dark) return child;
-    final light = raftTheme(
-      systemFonts: t.systemFonts,
-      systemFontFamilies: t.systemFontFamilies,
-    );
+    final light = raftTheme();
     return Theme(
       data: light,
       child: DefaultTextStyle.merge(

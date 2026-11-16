@@ -25,9 +25,7 @@ import 'package:raft_flutter/features/page_alignment_fixtures.dart';
 import 'package:raft_flutter/main.dart' as app;
 import 'package:raft_flutter/platform/native_sharing.dart';
 import 'package:raft_flutter/platform/android_performance_hint.dart';
-import 'package:raft_flutter/platform/system_fonts.dart';
-import 'package:raft_ui/raft_ui.dart'
-    show RaftControlTypography, RaftFontFamilies;
+import 'package:raft_ui/raft_ui.dart' show RaftControlTypography;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'perf_lab/fixtures.dart';
@@ -37,7 +35,6 @@ const _theme = String.fromEnvironment('CJK_THEME', defaultValue: 'elegant');
 const _lang = String.fromEnvironment('CJK_LANG', defaultValue: 'en');
 // Optional CJK font file readable by the app (adb push to /data/local/tmp):
 // registered as the first fallback family, to compare font metrics.
-const _font = String.fromEnvironment('CJK_FONT');
 const _port = int.fromEnvironment('CJK_PORT', defaultValue: 8765);
 
 const _textScaleKinds = [
@@ -54,16 +51,6 @@ final _content = LabNavigationContent();
 
 Future<void> main() async {
   RaftWidgetsFlutterBinding.ensureInitialized();
-  await NativeSystemFonts.instance.initialize();
-  if (_font.isNotEmpty) {
-    final bytes = await File(_font).readAsBytes();
-    await (FontLoader(
-      'CjkProbe',
-    )..addFont(Future.value(ByteData.sublistView(bytes)))).load();
-    NativeSystemFonts.instance.value = const RaftFontFamilies(
-      fallback: ['CjkProbe'],
-    );
-  }
   await initializeSourceTimeFormatting();
   await DevicePreferences.load();
   final channel = LabChannel('kb', _textScaleKinds);

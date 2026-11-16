@@ -343,9 +343,8 @@ abstract final class RaftTypography {
   /// `wght@300..700` / `400..700` @font-face ranges, so Chromium clamps 900
   /// to the 700 instance. Flutter's bundled faces go to 900 (and a 900
   /// request pinned to wght 700 is synthetically emboldened), so render the
-  /// 700 instance the Web shows. System fonts keep their own heavy face.
-  static FontWeight black(RaftTokens t) =>
-      t.systemFonts ? FontWeight.w900 : FontWeight.w700;
+  /// 700 instance the Web shows.
+  static FontWeight black(RaftTokens t) => FontWeight.w700;
 
   static TextStyle heading(
     RaftTokens t, {
@@ -666,7 +665,6 @@ class RaftControlRecipe {
   TextStyle get textStyle => TextStyle(
     locale: tokens.textLocale,
     fontFamily: tokens.bodyFont,
-    fontFamilyFallback: tokens.systemFonts ? tokens.fontFallback : null,
     fontSize: kind == RaftControlKind.segmentedButton
         ? 12
         : kind == RaftControlKind.tab
@@ -3270,7 +3268,6 @@ class RaftTaskSectionRecipe {
   TextStyle get documentStyle => TextStyle(
     locale: tokens.textLocale,
     fontFamily: tokens.headingFont,
-    fontFamilyFallback: tokens.systemFonts ? tokens.fontFallback : null,
     fontSize: 16,
     height: 1.5,
     leadingDistribution: TextLeadingDistribution.even,

@@ -29,7 +29,6 @@ import 'package:raft_flutter/features/mobile_workspace_pages.dart';
 import 'package:raft_flutter/features/layout_hold.dart';
 import 'package:raft_flutter/main.dart' as app;
 import 'package:raft_flutter/platform/native_sharing.dart';
-import 'package:raft_flutter/platform/system_fonts.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -1332,7 +1331,6 @@ void main() {
           await cacheDirectory.delete(recursive: true);
         });
         final content = LabNavigationContent();
-        await NativeSystemFonts.instance.initialize();
         final navigationApp = app.RaftApp(
           services: const AppServices.updatesDisabledForTestOrPreview(),
           sessionStore: nclient.sessionStore,

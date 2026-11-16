@@ -55,7 +55,6 @@ import 'platform/ios_share_session.dart';
 import 'platform/incoming_share_staging.dart';
 import 'platform/content_coordinator.dart';
 import 'platform/workspace_cache.dart';
-import 'platform/system_fonts.dart';
 import 'platform/desktop_window_exit.dart';
 import 'platform/desktop_windows.dart';
 import 'platform/app_services.dart';
@@ -230,7 +229,6 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
     bindCacheExit(() => prepareDesktopExit(desktopWindows, cache?.close));
     RaftMemoryRelease.instance.install();
-    NativeSystemFonts.instance.addListener(rebuildRoot);
     appearance.addListener(rebuildRoot);
     removeShareReceiver = sharing.registerReceiver(receiveSharedContent);
     content.onPrivateAppInvite = (location) async {
@@ -2094,7 +2092,6 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
         unawaited(held.retrySession());
       }
       unawaited(sharing.resume());
-      unawaited(NativeSystemFonts.instance.refresh());
       // The network (and its proxy) often changed while the app was away.
       unawaited(SystemProxy.instance.refresh());
       // At most once per 6 h; a no-op for dev builds and in tests.
@@ -2135,7 +2132,6 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
     RaftMemoryRelease.instance.uninstall();
     WidgetsBinding.instance.removeObserver(this);
     bindCacheExit(null);
-    NativeSystemFonts.instance.removeListener(rebuildRoot);
     appearance.removeListener(rebuildRoot);
     appearance.dispose();
     content.onPrivateAppInvite = null;

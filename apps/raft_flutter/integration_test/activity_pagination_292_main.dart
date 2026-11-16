@@ -16,7 +16,6 @@ import 'package:raft_flutter/main.dart' as app;
 import 'package:raft_flutter/platform/android_performance_hint.dart';
 import 'package:raft_flutter/platform/app_services.dart';
 import 'package:raft_flutter/platform/native_sharing.dart';
-import 'package:raft_flutter/platform/system_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'perf_lab/fixtures.dart';
@@ -301,7 +300,6 @@ Future<void> main() async {
     'raft.light': 'elegant',
   });
   await DevicePreferences.load();
-  await NativeSystemFonts.instance.initialize();
   await initializeSourceTimeFormatting();
   final channels = [
     for (var i = 0; i < _rowCount; i++) LabChannel(_id(i), ['plain']),
