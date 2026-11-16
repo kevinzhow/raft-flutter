@@ -783,6 +783,34 @@ class RaftMobileRootHeader extends StatelessWidget {
         actions: actions,
       );
     }
+    final name = Text(
+      raftText(context, title ?? ''),
+      style: recipe.title,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+    );
+    final t = recipe.tokens;
+    final titleBlock = subtitle?.isNotEmpty != true
+        ? name
+        : Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              name,
+              Text(
+                subtitle!,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: t.option('listGroup.frame', or: 'framed') == 'plain'
+                    ? t.scale(
+                        RaftTypeScale.caption,
+                        weight: FontWeight.w500,
+                        color: t.colors['foreground-on-frame-muted'],
+                      )
+                    : RaftTypography.mono(t, color: t.muted),
+              ),
+            ],
+          );
     return RaftMobilePageHeader(
       background: recipe.background,
       border: recipe.border,
@@ -792,39 +820,9 @@ class RaftMobileRootHeader extends StatelessWidget {
       backKey: backKey,
       title: Align(
         alignment: AlignmentDirectional.centerStart,
-        child: leading ?? _titleBlock(context, recipe),
+        child: leading ?? titleBlock,
       ),
       actions: actions,
-    );
-  }
-
-  Widget _titleBlock(BuildContext context, RaftMobileRootHeaderRecipe recipe) {
-    final name = Text(
-      raftText(context, title ?? ''),
-      style: recipe.title,
-      maxLines: 1,
-      overflow: TextOverflow.ellipsis,
-    );
-    if (subtitle?.isNotEmpty != true) return name;
-    final t = recipe.tokens;
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        name,
-        Text(
-          subtitle!,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: t.option('listGroup.frame', or: 'framed') == 'plain'
-              ? t.scale(
-                  RaftTypeScale.caption,
-                  weight: FontWeight.w500,
-                  color: t.colors['foreground-on-frame-muted'],
-                )
-              : RaftTypography.mono(t, color: t.muted),
-        ),
-      ],
     );
   }
 }
