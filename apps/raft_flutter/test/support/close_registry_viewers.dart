@@ -182,8 +182,10 @@ const viewerSurfaces = <CloseSurface>[
     'quick-switcher',
     kind: SurfaceKind.dialog,
     webOutside: WebOutside.closes,
-    web: 'SearchOverlay.tsx:41-56 Modal closeOnBackdrop, Escape (wide); MessageSearchPage.tsx:2199 PanelHeader onMobileBack (phone page)',
-    phone: {_back, _sys},
+    web: 'SearchOverlay.tsx:41-56 Modal closeOnBackdrop, Escape (wide); phone: v1.24 /search is the Search tab root (SearchPageHeader.tsx:53-55 TabRootBar, no Back)',
+    none: {
+      'phone': 'Web v1.24: Search is a tab root (SearchPageHeader.tsx:53-55, no Back); Back at a tab root goes to the system',
+    },
     fold: {_esc, _scrim, _sys},
     desktop: {_esc, _scrim, _sys},
     files: [
