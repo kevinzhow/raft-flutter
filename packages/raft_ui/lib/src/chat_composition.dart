@@ -323,20 +323,25 @@ class _LoadingRowsState extends State<RaftChatSidebarLoadingRows>
             Padding(
               padding: EdgeInsets.symmetric(
                 horizontal: 8,
-                vertical: raft ? 7.5 : 8,
+                vertical: raft ? 0 : 8,
               ),
               child: raft
-                  ? const Row(
-                      children: [
-                        RaftSkeleton(fromRecipe: true, width: 19, height: 19),
-                        SizedBox(width: 6),
-                        RaftSkeleton(
-                          variant: RaftSkeletonVariant.line,
-                          fromRecipe: true,
-                          width: 128,
-                          height: 10.5,
-                        ),
-                      ],
+                  // The 34px row (18 + 2 * 8 in the frozen drawing) centres
+                  // the 19px block: no text in it, so the height is fixed.
+                  ? const SizedBox(
+                      height: 34,
+                      child: Row(
+                        children: [
+                          RaftSkeleton(fromRecipe: true, width: 19, height: 19),
+                          SizedBox(width: 6),
+                          RaftSkeleton(
+                            variant: RaftSkeletonVariant.line,
+                            fromRecipe: true,
+                            width: 128,
+                            height: 10.5,
+                          ),
+                        ],
+                      ),
                     )
                   : Row(
                       children: [
