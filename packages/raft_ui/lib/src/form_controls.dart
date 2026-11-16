@@ -17,6 +17,7 @@ import 'recipe_surface.dart';
 import 'recipes/field.g.dart' as gen;
 import 'recipes/input.g.dart';
 import 'recipes/input_group.g.dart';
+import 'input_group_size.dart';
 import 'recipes/kbd.g.dart';
 import 'recipes/label.g.dart';
 import 'kbd.dart';
@@ -1128,8 +1129,11 @@ class RaftInputGroup extends StatefulWidget {
     this.kbd,
     this.legacy = RaftLegacyGroup.prefixed,
     this.fieldKey,
+    this.size,
   });
 
+  /// `InputGroup size`: the recipe default is `lg` (the forms' 44px); FitToolbarSearch is `md` (32px, 34px with a mouse).
+  final RaftInputGroupRecipeSize? size;
   final RaftInputGroupAddon? leading, trailing;
 
   /// `variant="container"` addons are a muted block with a hairline seam (`SlugInput`); the default ones sit on
@@ -1211,24 +1215,35 @@ class _RaftInputGroupState extends State<RaftInputGroup>
     final rt = t.recipeTokens;
     final focused = focus.hasFocus;
     final disabled = !widget.enabled;
-    RaftInputGroupRecipeStyle resolve(RaftInputGroupRecipeAlign align) =>
-        RaftInputGroupRecipe.resolve(
-          theme: t.recipeTheme,
-          align: align,
-          variant: widget.variant,
-          states: t.recipeStates(
-            responsive: true,
-            hovered: hovered,
-            disabled: disabled,
-            extra: [
-              if (focused) RaftRecipeStates.focusWithin,
-              if (widget.invalid)
-                'has:data-slot=input-group-control+data-invalid',
-              if (disabled) 'has:data-slot=input-group-control+disabled',
-            ],
-          ),
-          tokens: rt,
-        );
+    RaftInputGroupRecipeStyle resolve(RaftInputGroupRecipeAlign align) {
+      final states = t.recipeStates(
+        responsive: true,
+        hovered: hovered,
+        disabled: disabled,
+        extra: [
+          if (focused) RaftRecipeStates.focusWithin,
+          if (widget.invalid) 'has:data-slot=input-group-control+data-invalid',
+          if (disabled) 'has:data-slot=input-group-control+disabled',
+        ],
+      );
+      final size = widget.size;
+      return size == null
+          ? RaftInputGroupRecipe.resolve(
+              theme: t.recipeTheme,
+              align: align,
+              variant: widget.variant,
+              states: states,
+              tokens: rt,
+            )
+          : resolveSizedInputGroup(
+              size: size,
+              align: align,
+              variant: widget.variant,
+              states: states,
+              tokens: rt,
+            );
+    }
+
     final start = resolve(RaftInputGroupRecipeAlign.inlineStart);
     final end = resolve(RaftInputGroupRecipeAlign.inlineEnd);
     final container = widget.variant == RaftInputGroupRecipeVariant.container;
