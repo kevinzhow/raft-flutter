@@ -483,12 +483,16 @@ class RaftMobileNavServerPopoverDestination extends StatelessWidget {
     required this.glyph,
     required this.label,
     this.attention = false,
+    this.attentionKey,
     this.semanticLabel,
     this.onPressed,
   });
   final RaftGlyph glyph;
   final String label;
   final bool attention;
+
+  /// Key of the accent pixel while [attention] is on.
+  final Key? attentionKey;
   final String? semanticLabel;
   final VoidCallback? onPressed;
 
@@ -554,7 +558,8 @@ class RaftMobileNavServerPopoverDestination extends StatelessWidget {
                       alignment: Alignment.topCenter,
                       child: Padding(
                         padding: const EdgeInsets.only(left: 20),
-                        child: const RaftStatus(
+                        child: RaftStatus(
+                          key: attentionKey,
                           size: RaftStatusSize.sm,
                           variant: RaftStatusVariant.accent,
                         ),

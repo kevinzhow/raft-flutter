@@ -121,6 +121,7 @@ class RaftMobileNavServerTab extends StatefulWidget {
     required this.contentBuilder,
     this.semanticLabel,
     this.attention = false,
+    this.attentionKey,
     this.onOpenChanged,
     this.focusNode,
     this.popoverKey,
@@ -137,6 +138,9 @@ class RaftMobileNavServerTab extends StatefulWidget {
 
   /// The accent pixel on the avatar's top-right corner.
   final bool attention;
+
+  /// Key of that pixel while [attention] is on.
+  final Key? attentionKey;
 
   /// Builds the popover's content. [close] closes the popover and returns the
   /// focus to the tab.
@@ -330,11 +334,12 @@ class _RaftMobileNavServerTabState extends State<RaftMobileNavServerTab>
         SizedBox.square(dimension: px, child: widget.avatar),
         if (widget.attention)
           // Centred on the avatar's top-right corner: (100%, 0).
-          const Positioned(
+          Positioned(
             top: -4,
             right: -4,
             child: ExcludeSemantics(
               child: RaftStatus(
+                key: widget.attentionKey,
                 size: RaftStatusSize.sm,
                 variant: RaftStatusVariant.accent,
               ),

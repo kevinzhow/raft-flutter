@@ -33,6 +33,7 @@ import 'raft/status.dart' show RaftStatus, RaftStatusSize, RaftStatusVariant;
 
 import 'raft/blink_snap.dart';
 import 'raft/css_box.dart' show raftControlBorderPx;
+import 'raft/ui_tokens.dart' show RaftTokensUi;
 import 'panel_layout.dart' show RaftCssText, RaftCssFocusOutline;
 
 part 'mobile_navigation_docked.dart';
@@ -48,12 +49,20 @@ class RaftMobileNavItem {
     required this.glyph,
     this.enabled = true,
     this.attention = false,
+    this.attentionKey,
+    this.attentionLabel,
     this.badgeCount = 0,
     this.key,
   });
   final String id, label;
   final RaftGlyph glyph;
   final bool enabled, attention;
+
+  /// Web v1.24 Activity tab: the accent pixel at the icon's top-right is a dot,
+  /// never a number. [attentionKey] / [attentionLabel] name it for tests and
+  /// assistive technology ("Unread activity").
+  final Key? attentionKey;
+  final String? attentionLabel;
 
   /// Positive unread total shown as the sidebar count badge on the glyph
   /// (Sidebar.tsx SidebarItemCount accent, capped at 99+). Zero shows none.
@@ -348,7 +357,15 @@ class RaftMobileNav extends StatelessWidget {
             children: [
               badged(i, RaftIcon(i.glyph, size: 18)),
               if (i.attention)
-                Positioned(top: -4, right: -4, child: _AttentionDot(t)),
+                Positioned(
+                  top: -4,
+                  right: -4,
+                  child: _AttentionDot(
+                    t,
+                    key: i.attentionKey,
+                    label: i.attentionLabel,
+                  ),
+                ),
             ],
           ),
         ),
@@ -662,15 +679,29 @@ class _SelectorPainter extends CustomPainter {
       old.recipe.tokens != recipe.tokens;
 }
 
+/// The tab's attention pixel (Web v1.24 `ActivityTabUnreadDot`): a 10px square
+/// with the 2px radius and ink edge every status pixel has.
 class _AttentionDot extends StatelessWidget {
-  const _AttentionDot(this.tokens);
+  const _AttentionDot(this.tokens, {super.key, this.label});
   final RaftTokens tokens;
+  final String? label;
   @override
-  Widget build(BuildContext context) => Container(
-    width: 10,
-    height: 10,
-    decoration: BoxDecoration(shape: BoxShape.circle, color: tokens.accentFill),
-  );
+  Widget build(BuildContext context) {
+    final dot = DecoratedBox(
+      decoration: BoxDecoration(
+        color: tokens.ui[RaftStatusVariant.accent.token],
+        borderRadius: BorderRadius.circular(2),
+        border: Border.all(
+          color: tokens.ui.stickerInk,
+          width: raftControlBorderPx(context, 1.5),
+        ),
+      ),
+      child: const SizedBox.square(dimension: 10),
+    );
+    return label == null
+        ? ExcludeSemantics(child: dot)
+        : Semantics(label: raftText(context, label!), image: true, child: dot);
+  }
 }
 
 /// Web mobile TAB ROOT navbar. Home / Members / Settings render it in
@@ -719,10 +750,17 @@ class RaftMobileRootHeader extends StatelessWidget {
     this.viewportHeight,
     this.inset = 16,
     this.workspace = false,
+    this.onBack,
+    this.backKey,
   });
 
   /// The phone Home workspace header has natural-width frame actions.
   final bool workspace;
+
+  /// A pushed server page (Members, Settings) shows Back before the title;
+  /// tab roots have none.
+  final VoidCallback? onBack;
+  final Key? backKey;
   final Widget? leading;
   final String? title;
   final List<Widget> actions;
@@ -747,6 +785,8 @@ class RaftMobileRootHeader extends StatelessWidget {
       border: recipe.border,
       headerHeight: recipe.height,
       inset: recipe.inset,
+      onBack: onBack,
+      backKey: backKey,
       title: Align(
         alignment: AlignmentDirectional.centerStart,
         child:

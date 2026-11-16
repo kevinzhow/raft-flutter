@@ -258,7 +258,25 @@ class _DockedNavItem extends StatelessWidget {
           ],
         ),
       ),
-      if (item.attention) Positioned(top: 4, right: 8, child: _AttentionDot(t)),
+      if (item.attention)
+        // `ActivityTabUnreadDot`: 10px square at the icon's top-right, x =
+        // icon.right - 6, y = icon.top - 2.
+        Positioned(
+          top: n('space.mobileNavItemTop', 4) - 2,
+          left: 0,
+          right: 0,
+          child: Align(
+            alignment: Alignment.topCenter,
+            child: Padding(
+              padding: const EdgeInsets.only(left: 20),
+              child: _AttentionDot(
+                t,
+                key: item.attentionKey,
+                label: item.attentionLabel,
+              ),
+            ),
+          ),
+        ),
     ],
   );
 
