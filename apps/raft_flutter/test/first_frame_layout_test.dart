@@ -10,6 +10,7 @@ import 'package:raft_ui/raft_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'support/app_services_fixture.dart';
+import 'support/server_tab.dart';
 
 /// First frame final: layout that depends on device preferences or on the
 /// last evaluated feature flags is already right on the first frame, and the
@@ -203,8 +204,7 @@ void main() {
       flags: () => held.future,
     );
     await _frames(t, () {}, 3);
-    await t.tap(find.byKey(const Key('mobile-tab-settings')));
-    await _frames(t, () {}, 3);
+    await openServerPage(t, 'settings', flush: (t) => _frames(t, () {}, 3));
     final entry = find.byKey(
       const ValueKey('workspace-settings-nav-im-bridges'),
     );
@@ -231,8 +231,7 @@ void main() {
       mobile: true,
       flags: () async => _evaluations({'slack_bridge_v0': true}),
     );
-    await t.tap(find.byKey(const Key('mobile-tab-settings')));
-    await _frames(t, () {});
+    await openServerPage(t, 'settings', flush: (t) => _frames(t, () {}));
     expect(
       find.byKey(const ValueKey('workspace-settings-nav-im-bridges')),
       findsOneWidget,
@@ -275,8 +274,7 @@ void main() {
       section: 'home',
       mobile: true,
     );
-    await t.tap(find.byKey(const Key('mobile-tab-settings')));
-    await _frames(t, () {});
+    await openServerPage(t, 'settings', flush: (t) => _frames(t, () {}));
     expect(c.calls, contains('GET:/channels/saved'));
     await t.pumpWidget(const SizedBox());
   });

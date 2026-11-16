@@ -362,26 +362,21 @@ void main() {
               find.byType(RaftThreadHeader),
               thread ? findsOneWidget : findsNothing,
             );
-            expect(
-              find.byKey(const Key('workspace-mobile-navigation')),
-              findsNothing,
-            );
           }
+          // Activity is a tab root (v1.24): its bar stays with the covered
+          // page, so the bar is no longer absent from the tree here; the
+          // detail itself shows none (mobile_tab_bar_root_test N21).
           expect(w.navigation.entries.length, before + 1);
           await tester.tap(find.byKey(const Key('mobile-detail-back')));
           await tester.pump();
           expect(w.location.toString(), original);
           expect(w.threadIdentity, isNull);
-          expect(
-            find.byKey(const Key('workspace-mobile-navigation')),
-            findsNothing,
-          );
-          // Activity is an auxiliary Source page; its own Back reaches Home.
-          // The popped channel page stays live (with its own Back) until the
-          // platform transition completes; only Activity's Back remains.
+          // Activity is a tab root (v1.24): Back lands on it with its bar, and
+          // Home is one tab tap away. The popped channel page stays live (with
+          // its own Back) until the platform transition completes.
           await tester.pump(const Duration(milliseconds: 500));
-          expect(find.byType(RaftPanelAction), findsOneWidget);
-          await tester.tap(find.byType(RaftPanelAction));
+          expect(find.byType(RaftPanelAction), findsNothing);
+          await tester.tap(find.byKey(const Key('mobile-tab-home')));
           await tester.pump();
           expect(w.location.route, RaftRoute.home);
           // Mobile details are platform routes: let the popped Activity route

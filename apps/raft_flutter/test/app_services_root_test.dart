@@ -11,6 +11,7 @@ import 'package:raft_flutter/platform/app_update.dart';
 
 import 'app_global_server_selector_test.dart' show RootFixture;
 import 'flutter_test_config.dart' show leakDebt;
+import 'support/server_tab.dart';
 import 'support/tracked_app_update.dart';
 
 Future<void> _replaceServices(
@@ -79,11 +80,11 @@ void main() {
         // The fixture borrows by default; production explicitly transfers release
         // responsibility. Updating the root must keep the same app/session state.
         await _replaceServices(t, a, owns: true);
-        await t.tap(
-          find.byKey(
-            Key(width < 768 ? 'mobile-tab-settings' : 'rail-settings'),
-          ),
-        );
+        if (width < 768) {
+          await openServerPage(t, 'settings', flush: f.flush);
+        } else {
+          await t.tap(find.byKey(const Key('rail-settings')));
+        }
         await f.flush(t);
         final settings = find.byType(WorkspaceSettings, skipOffstage: false);
         expect(settings, findsOneWidget);

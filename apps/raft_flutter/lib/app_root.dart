@@ -14,6 +14,7 @@ import 'platform/cache_hygiene.dart' show purgeAccountCaches;
 import 'platform/device_timezone.dart' show readDeviceTimezone;
 import 'data/device_preferences.dart';
 import 'data/public_server_route.dart';
+import 'data/server_switch_uri.dart';
 import 'data/device_display_preferences.dart';
 import 'data/workspace_controller.dart';
 import 'data/workspace_messages.dart';
@@ -1549,7 +1550,9 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
     final remembered =
         serverSurfaces[selected.id]?.toString() ??
         prefs.getString('$serverMemoryKey.${selected.id}');
-    var uri = Uri(path: '/s/${selected.string('slug')}');
+    var uri = replaceWithHome
+        ? serverSwitchUri(w.location, selected.string('slug'))
+        : Uri(path: '/s/${selected.string('slug')}');
     if (!replaceWithHome && remembered != null) {
       final candidate = Uri.tryParse(remembered);
       if (candidate != null &&

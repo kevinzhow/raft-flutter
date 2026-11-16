@@ -33,6 +33,7 @@ class SmokeCase {
   String get url => json['url'] as String;
   String? get thumb => json['thumb'] as String?;
   bool get expireFirst => json['expireFirst'] == true;
+
   /// The preview service answers HTTP 200 `{status: unsupported, reason}` instead of a preview.
   String? get previewRefusal => json['previewRefusal'] as String?;
 
@@ -44,10 +45,15 @@ class SmokeCase {
 
   /// Text that must be on screen once the document is shown.
   String? get shows => json['shows'] as String?;
-  Map<String, dynamic>? get preview => (json['preview'] as Map?)?.cast<String, dynamic>();
+  Map<String, dynamic>? get preview =>
+      (json['preview'] as Map?)?.cast<String, dynamic>();
 
   /// The attachment object of a message in [channel].
-  Map<String, dynamic> metadata(String base, String channel, {bool channelId = true}) => {
+  Map<String, dynamic> metadata(
+    String base,
+    String channel, {
+    bool channelId = true,
+  }) => {
     'id': attachmentId,
     if (channelId) 'channelId': channel,
     'filename': filename,
@@ -56,16 +62,22 @@ class SmokeCase {
     if (json['width'] != null) 'width': json['width'],
     if (json['height'] != null) 'height': json['height'],
     if (thumb != null)
-      'thumbnailUrl': '$base/${const {'ok': 'thumb', 'missing': 'thumb-missing', 'expired': 'thumb-expired'}[thumb]}/${json['thumbFile']}',
+      'thumbnailUrl':
+          '$base/${const {'ok': 'thumb', 'missing': 'thumb-missing', 'expired': 'thumb-expired'}[thumb]}/${json['thumbFile']}',
   };
 }
 
 Future<List<SmokeCase>> fetchManifest(String base) async {
   final client = HttpClient()..connectionTimeout = const Duration(seconds: 5);
   try {
-    final response = await (await client.getUrl(Uri.parse('$base/__manifest'))).close();
-    final body = jsonDecode(await utf8.decodeStream(response)) as Map<String, dynamic>;
-    return [for (final c in body['cases'] as List) SmokeCase((c as Map).cast<String, dynamic>())];
+    final response = await (await client.getUrl(Uri.parse('$base/__manifest')))
+        .close();
+    final body =
+        jsonDecode(await utf8.decodeStream(response)) as Map<String, dynamic>;
+    return [
+      for (final c in body['cases'] as List)
+        SmokeCase((c as Map).cast<String, dynamic>()),
+    ];
   } finally {
     client.close(force: true);
   }
@@ -74,8 +86,10 @@ Future<List<SmokeCase>> fetchManifest(String base) async {
 Future<Map<String, dynamic>> serverGet(String base, String path) async {
   final client = HttpClient()..connectionTimeout = const Duration(seconds: 5);
   try {
-    final response = await (await client.getUrl(Uri.parse('$base$path'))).close();
-    return jsonDecode(await utf8.decodeStream(response)) as Map<String, dynamic>;
+    final response = await (await client.getUrl(Uri.parse('$base$path')))
+        .close();
+    return jsonDecode(await utf8.decodeStream(response))
+        as Map<String, dynamic>;
   } finally {
     client.close(force: true);
   }
@@ -112,7 +126,11 @@ class FakeSigner {
   /// Ids whose next signature is an expired one (set by a test).
   final expireNext = <String>{};
 
-  ({String url, String? expiresAt}) sign(String attachmentId, {String? disposition, bool batch = false}) {
+  ({String url, String? expiresAt}) sign(
+    String attachmentId, {
+    String? disposition,
+    bool batch = false,
+  }) {
     final c = cases[attachmentId]!;
     final n = signs[attachmentId] = (signs[attachmentId] ?? 0) + 1;
     final bad = (c.expireFirst && n == 1) || expireNext.remove(attachmentId);
@@ -123,7 +141,12 @@ class FakeSigner {
           '$base/storage/${c.file}?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=${_amzDate(now)}&X-Amz-Expires=300'
           '&X-Amz-Signature=${bad ? 'expired' : 'ok'}'
           '${download ? '&response-content-disposition=attachment' : ''}';
-      return (url: url, expiresAt: batch ? null : now.add(const Duration(seconds: 300)).toUtc().toIso8601String());
+      return (
+        url: url,
+        expiresAt: batch
+            ? null
+            : now.add(const Duration(seconds: 300)).toUtc().toIso8601String(),
+      );
     }
     // Server-streamed (`stream`) or redirecting to storage (`redirect`): the bearer token travels in the query.
     final inlinePreview = const {'pdf', 'video', 'audio'}.contains(c.kind);
@@ -141,7 +164,13 @@ class FakeSigner {
 
 /// A fully built app on a fixture workspace.
 class SmokeFixture {
-  SmokeFixture(this.app, this.api, this.signer, this.client, {this.startsAtList = false});
+  SmokeFixture(
+    this.app,
+    this.api,
+    this.signer,
+    this.client, {
+    this.startsAtList = false,
+  });
 
   /// The app starts on the workspace list and the test opens the channel (phone layout).
   final bool startsAtList;
@@ -179,7 +208,13 @@ Future<SmokeFixture> buildSmokeFixture({
   final images = _images!;
   final channel = LabChannel(channelId, const []);
   channel.rows.addAll(rows);
-  final (seed, api, client) = await labWorkspace([channel], images, mobile: mobile, ownsClient: false, origin: base);
+  final (seed, api, client) = await labWorkspace(
+    [channel],
+    images,
+    mobile: mobile,
+    ownsClient: false,
+    origin: base,
+  );
   seed.dispose();
   final signer = FakeSigner(base, {for (final c in all) c.attachmentId: c});
   api.routes['GET /auth/me'] = (_) => {
@@ -193,20 +228,39 @@ Future<SmokeFixture> buildSmokeFixture({
     {'id': 's1', 'name': 'Lab', 'slug': 'lab', 'role': 'owner'},
   ];
   api.routes['GET /channels/public'] = (_) => <dynamic>[];
-  api.routes['GET /channels/$channelId'] = (_) => channelRecord ?? channel.record.json;
+  api.routes['GET /channels/$channelId'] = (_) =>
+      channelRecord ?? channel.record.json;
   api.routes['GET /channels/inbox'] = (_) => {'items': <dynamic>[]};
-  api.routes['GET /channels/saved'] = (_) => {'globalTotal': 0, 'saved': <dynamic>[]};
-  api.routes['GET /channels/threads/followed'] = (_) => {'threads': <dynamic>[]};
-  api.routes['GET /announcements/active'] = (_) => {'announcements': <dynamic>[]};
-  api.routes['GET /product-feedback/tickets'] = (_) => {'unread_total': 0, 'tickets': <dynamic>[]};
+  api.routes['GET /channels/saved'] = (_) => {
+    'globalTotal': 0,
+    'saved': <dynamic>[],
+  };
+  api.routes['GET /channels/threads/followed'] = (_) => {
+    'threads': <dynamic>[],
+  };
+  api.routes['GET /announcements/active'] = (_) => {
+    'announcements': <dynamic>[],
+  };
+  api.routes['GET /product-feedback/tickets'] = (_) => {
+    'unread_total': 0,
+    'tickets': <dynamic>[],
+  };
   api.routes['GET /tasks/server'] = (_) => {'tasks': <dynamic>[]};
-  api.routes['GET /messages/attachment-preview/enabled'] = (_) => {'enabled': true};
+  api.routes['GET /messages/attachment-preview/enabled'] = (_) => {
+    'enabled': true,
+  };
   // The fake server's attachment routes (packages/server/src/routes/attachments.ts).
   api.patterns.insert(0, (
-    (o) => o.method == 'GET' && o.path.startsWith('/attachments/aos-') && o.path.endsWith('/url'),
+    (o) =>
+        o.method == 'GET' &&
+        o.path.startsWith('/attachments/aos-') &&
+        o.path.endsWith('/url'),
     (o) {
       final id = o.path.split('/')[2];
-      final signed = signer.sign(id, disposition: o.queryParameters['disposition'] as String?);
+      final signed = signer.sign(
+        id,
+        disposition: o.queryParameters['disposition'] as String?,
+      );
       return {'url': signed.url, 'expiresAt': signed.expiresAt};
     },
   ));
@@ -224,7 +278,10 @@ Future<SmokeFixture> buildSmokeFixture({
     };
   };
   api.patterns.insert(0, (
-    (o) => o.method == 'GET' && o.path.startsWith('/attachments/aos-') && o.path.endsWith('/preview'),
+    (o) =>
+        o.method == 'GET' &&
+        o.path.startsWith('/attachments/aos-') &&
+        o.path.endsWith('/preview'),
     (o) {
       final c = signer.cases[o.path.split('/')[2]]!;
       final refusal = c.previewRefusal;
@@ -233,21 +290,37 @@ Future<SmokeFixture> buildSmokeFixture({
     },
   ));
   api.patterns.insert(0, (
-    (o) => o.method == 'GET' && o.path.startsWith('/attachments/aos-') && o.path.endsWith('/html-preview-url'),
+    (o) =>
+        o.method == 'GET' &&
+        o.path.startsWith('/attachments/aos-') &&
+        o.path.endsWith('/html-preview-url'),
     (o) {
       final id = o.path.split('/')[2];
-      return {'url': '$base/api/attachments/$id/html-preview?previewToken=fixture', 'expiresAt': null};
+      return {
+        'url': '$base/api/attachments/$id/html-preview?previewToken=fixture',
+        'expiresAt': null,
+      };
     },
   ));
   api.patterns.insert(0, (
-    (o) => o.method == 'GET' && o.path.startsWith('/attachments/aos-') && o.path.endsWith('/comments'),
+    (o) =>
+        o.method == 'GET' &&
+        o.path.startsWith('/attachments/aos-') &&
+        o.path.endsWith('/comments'),
     (_) => {'comments': <dynamic>[]},
   ));
-  api.routes['GET /attachments/comments/counts'] = (_) => {'counts': <String, dynamic>{}};
+  api.routes['GET /attachments/comments/counts'] = (_) => {
+    'counts': <String, dynamic>{},
+  };
   extra?.call(api);
   const tabs = MobileTabbarSettings(
     order: MobileTabs.configurable,
-    enabled: {MobileTabs.home, MobileTabs.tasks, MobileTabs.members, MobileTabs.computers},
+    enabled: {
+      MobileTabs.home,
+      MobileTabs.tasks,
+      MobileTabs.activity,
+      MobileTabs.search,
+    },
   );
   SharedPreferences.setMockInitialValues({
     'raft.origin': client.origin,
@@ -264,7 +337,8 @@ Future<SmokeFixture> buildSmokeFixture({
       initialLocation: Uri.parse(listStart ? '/s/lab' : location),
       nativeContent: LabNavigationContent(),
       nativeSharing: NativeSharing(supported: false),
-      openWorkspaceCache: () async => LabNavigationCache(File('${dir.path}/workspace.sqlite')),
+      openWorkspaceCache: () async =>
+          LabNavigationCache(File('${dir.path}/workspace.sqlite')),
     ),
     api,
     signer,
@@ -274,7 +348,15 @@ Future<SmokeFixture> buildSmokeFixture({
 }
 
 /// A chat message row in [channel] carrying [cases]' attachments.
-Map<String, dynamic> smokeRow(String base, String channel, int n, String text, List<SmokeCase> cases, {bool channelId = true}) =>
-    labRow(channel, 'plain', n)
-      ..['content'] = text
-      ..['attachments'] = [for (final c in cases) c.metadata(base, channel, channelId: channelId)];
+Map<String, dynamic> smokeRow(
+  String base,
+  String channel,
+  int n,
+  String text,
+  List<SmokeCase> cases, {
+  bool channelId = true,
+}) => labRow(channel, 'plain', n)
+  ..['content'] = text
+  ..['attachments'] = [
+    for (final c in cases) c.metadata(base, channel, channelId: channelId),
+  ];

@@ -18,6 +18,7 @@ import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_ui/test_themes.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'support/server_tab.dart';
 import 'support/app_services_fixture.dart';
 
 /// Phone layout navigation placement: the bottom tab bar on ordinary tall
@@ -387,8 +388,7 @@ void main() {
     testWidgets('bottom bar keeps its Settings Bottom bar row', (tester) async {
       final r = _Rig(tester, size: const Size(390, 844));
       await r.start();
-      await tester.tap(find.byKey(const Key('mobile-tab-settings')));
-      await r.settle();
+      await openServerPage(tester, 'settings', flush: (_) => r.settle());
       expect(
         find.byKey(const ValueKey('workspace-settings-nav-bottom-bar')),
         findsOneWidget,
@@ -729,16 +729,18 @@ void main() {
       Future<_Rig> open(Size size, {bool rtl = false}) async {
         final r = _Rig(tester, size: size, rtl: rtl, railSide: RailSideStore());
         await r.start();
-        await tester.tap(
-          find.byKey(
-            size.width < 768 && size.height / size.width >= 1.75
-                ? const Key('mobile-tab-settings')
-                : _rail('settings').evaluate().isNotEmpty
-                ? const ValueKey('rail-settings')
-                : const Key('rail-settings'),
-          ),
-        );
-        await r.settle();
+        if (size.width < 768 && size.height / size.width >= 1.75) {
+          await openServerPage(tester, 'settings', flush: (_) => r.settle());
+        } else {
+          await tester.tap(
+            find.byKey(
+              _rail('settings').evaluate().isNotEmpty
+                  ? const ValueKey('rail-settings')
+                  : const Key('rail-settings'),
+            ),
+          );
+          await r.settle();
+        }
         await tester.tap(
           find.byKey(const ValueKey('workspace-settings-nav-appearance')),
         );
@@ -764,14 +766,12 @@ void main() {
     });
 
     Future<void> openAppearance(WidgetTester tester, _Rig r) async {
-      await tester.tap(
-        find.byKey(
-          r.size.width < 768 && r.size.height / r.size.width >= 1.75
-              ? const Key('mobile-tab-settings')
-              : const Key('rail-settings'),
-        ),
-      );
-      await r.settle();
+      if (r.size.width < 768 && r.size.height / r.size.width >= 1.75) {
+        await openServerPage(tester, 'settings', flush: (_) => r.settle());
+      } else {
+        await tester.tap(find.byKey(const Key('rail-settings')));
+        await r.settle();
+      }
       await tester.tap(
         find.byKey(const ValueKey('workspace-settings-nav-appearance')),
       );

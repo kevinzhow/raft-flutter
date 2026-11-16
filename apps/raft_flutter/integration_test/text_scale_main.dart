@@ -174,8 +174,8 @@ Future<void> main() async {
     enabled: {
       MobileTabs.home,
       MobileTabs.tasks,
-      MobileTabs.members,
-      MobileTabs.computers,
+      MobileTabs.activity,
+      MobileTabs.search,
     },
   );
   SharedPreferences.setMockInitialValues({

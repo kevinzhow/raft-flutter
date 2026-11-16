@@ -31,17 +31,24 @@ void main() {
 
   group('phoneStackFor', () {
     test('tab roots are a single page', () {
-      for (final route in [
-        RaftRoute.home,
-        RaftRoute.tasks,
-        RaftRoute.members,
-        RaftRoute.settings,
-      ]) {
+      for (final route in [RaftRoute.home, RaftRoute.tasks]) {
         final root = at(route);
         expect(stack(root), [root], reason: '$route');
       }
       expect(stack(at(RaftRoute.activity), tabs: {'activity'}), hasLength(1));
-      expect(stack(at(RaftRoute.computers), tabs: {'computers'}), hasLength(1));
+      expect(stack(at(RaftRoute.search), tabs: {'search'}), hasLength(1));
+      // v1.24: Members, Computers and Settings are roots only beside the rail.
+      for (final route in [
+        RaftRoute.members,
+        RaftRoute.computers,
+        RaftRoute.settings,
+      ]) {
+        expect(
+          stack(at(route), tabs: {'members', 'computers', 'settings'}),
+          hasLength(1),
+          reason: '$route',
+        );
+      }
     });
 
     test(
@@ -83,7 +90,7 @@ void main() {
       ]) {
         final root = at(route);
         for (final slot in ['task', 'legacyTask']) {
-          final s = stack(root.withQuery({slot: 'c:t'}));
+          final s = stack(root.withQuery({slot: 'c:t'}), tabs: {'members'});
           expect(s, hasLength(2));
           expect(s.first.uri, root.uri);
         }
@@ -91,16 +98,20 @@ void main() {
     });
 
     test('detail routes have their tab root under them', () {
+      // v1.24: Members / Computers / Settings are pushed pages over Home.
       expect(paths(stack(at(RaftRoute.agent, id: 'a1'))), [
+        '',
         '/members',
         '/agent/a1',
       ]);
       expect(paths(stack(at(RaftRoute.human, id: 'bob'))), [
+        '',
         '/members',
         '/human/bob',
       ]);
       expect(paths(stack(at(RaftRoute.computer, id: 'm1'))), [
-        '/settings',
+        '',
+        '/computers',
         '/computer/m1',
       ]);
       expect(
@@ -108,10 +119,12 @@ void main() {
         ['/computers', '/computer/m1'],
       );
       expect(paths(stack(at(RaftRoute.settings, settings: ['appearance']))), [
+        '',
         '/settings',
         '/settings/appearance',
       ]);
       expect(paths(stack(at(RaftRoute.releaseNotes))), [
+        '',
         '/settings',
         '/release-notes',
       ]);

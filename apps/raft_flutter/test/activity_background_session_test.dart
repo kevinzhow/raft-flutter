@@ -5,6 +5,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_flutter/platform/session_owner.dart';
+import 'package:raft_ui/raft_ui.dart';
 
 import 'activity_incremental_refresh_test.dart' show channelRow;
 import 'app_global_server_selector_test.dart' show RootFixture;
@@ -50,12 +51,18 @@ void main() {
           cachedSession: true,
           preferences: {'$_memory.last': 'alpha', '$_memory.a': '/s/alpha'},
         );
-        await t.tap(find.byKey(const Key('nav-activity')));
+        await t.tap(find.byKey(const Key('mobile-tab-activity')));
         await f.flush(t);
         await t.pump(const Duration(seconds: 2));
         expect(find.textContaining('Background session'), findsNothing);
         expect(find.textContaining('Please retry'), findsNothing);
-        expect(find.text('1 active · 1 unread'), findsOneWidget);
+        // Activity is a tab root (v1.24) with the bare title; the loaded row
+        // proves the list.
+        expect(find.byType(RaftMobileRootHeader), findsOneWidget);
+        expect(
+          find.byKey(const ValueKey('activity-channel-ch0')),
+          findsOneWidget,
+        );
         expect(find.text('No conversations'), findsNothing);
         await f.close(t);
       },

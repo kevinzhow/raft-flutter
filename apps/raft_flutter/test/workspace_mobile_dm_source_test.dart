@@ -51,7 +51,7 @@ void main() {
         expect(label.style!.height, 24 / 16);
         expect(label.style!.fontWeight, FontWeight.w600);
         expect(find.byKey(const Key('workspace-mobile-home')), findsOneWidget);
-        expect(find.byKey(const Key('mobile-tab-members')), findsOneWidget);
+        expect(find.byKey(const Key('mobile-tab-server')), findsOneWidget);
         await retire(t);
       },
     );

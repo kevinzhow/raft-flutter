@@ -15,6 +15,7 @@ import 'package:raft_flutter/data/mobile_tabbar_preferences.dart';
 import '../../../../packages/raft_ui/test/task_typography_test.dart'
     show loadTaskFonts;
 import '../../test/app_global_server_selector_test.dart' show RootFixture;
+import '../../test/support/server_tab.dart';
 
 /// Evidence renders of the real app (zh, 390x844): written only when
 /// RAFT_TABBAR_EVIDENCE_DIR is set, otherwise a no-op.
@@ -72,8 +73,8 @@ const computer = <String, dynamic>{
 };
 
 final fullBar = jsonEncode({
-  'order': ['chat', 'tasks', 'activity', 'computers', 'members'],
-  'enabled': ['chat', 'tasks', 'activity', 'computers'],
+  'order': ['chat', 'activity', 'tasks', 'search'],
+  'enabled': ['chat', 'activity', 'tasks', 'search'],
 });
 const activityBar = '["chat","tasks","activity"]';
 
@@ -175,13 +176,15 @@ void main() {
       }
 
       if (evidence == null) return;
-      // Wired bar: Home, Tasks, Activity, Computers, Settings.
+      // Wired bar (Web v1.24): Home, Activity, Tasks, Search + the server tab.
       var f = await mount(fullBar);
       await capture(t, '$theme-01-bar-home');
       await tap(f, 'activity');
       await capture(t, '$theme-02-activity-root');
-      await tap(f, 'computers');
-      await capture(t, '$theme-03-computers-root');
+      await tap(f, 'search');
+      await capture(t, '$theme-03-search-root');
+      await openServerPopover(t, flush: f.flush);
+      await capture(t, '$theme-04-server-popover');
       await f.close(t);
 
       // Badge / Home entry design for Kevin.

@@ -16,6 +16,7 @@ import 'create_external_agent_dialog.dart';
 import 'fleet_views.dart' show showFleetRegistration;
 import 'managed_agent_launcher.dart';
 import 'member_row_menu.dart';
+import 'pushed_server_page.dart';
 import 'sender_avatar_projection.dart';
 import 'workspace_menu_invite.dart';
 
@@ -590,6 +591,8 @@ class _DesktopDirectoryViewState extends State<DesktopDirectoryView> {
       header: widget.mobileRoot
           ? RaftMobileRootHeader(
               title: widget.computers ? 'Computers' : 'Members',
+              onBack: pushedServerPageBack(context, w),
+              backKey: pushedServerPageBackKey,
             )
           : RaftChatSidebarHeading(
               label: widget.computers ? 'Computers' : 'Members',

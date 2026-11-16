@@ -4,6 +4,8 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
+import 'package:raft_flutter/data/device_preferences.dart';
+import 'package:raft_flutter/data/mobile_tabbar_preferences.dart';
 import 'package:raft_flutter/data/user_error.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/features/create_joint_channel_dialog.dart';
@@ -35,7 +37,13 @@ void main() {
     Set<String> mentions = const {},
     List<Map<String, dynamic>>? serverSummary,
   }) async {
-    SharedPreferences.setMockInitialValues({});
+    // Home lists the Search and Activity rows only while they are no tabs
+    // (Web v1.24): this file's Home is the bar without them.
+    SharedPreferences.setMockInitialValues({
+      MobileTabbarStore.preferenceKey: '["chat","tasks"]',
+    });
+    await DevicePreferences.load();
+    addTearDown(DevicePreferences.reset);
     tester.view.physicalSize = const Size(390, 844);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);

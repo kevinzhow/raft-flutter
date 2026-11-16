@@ -60,7 +60,7 @@ Source 用 React Router 的 location 表达当前表面，结构为 `pathname + 
 4. 浏览器多步 Back/Forward 依据实际 idx 记录，不假定每个 POP 只减少一层。Forward 不丢历史记录；从较早位置 PUSH 才丢其后的分支。同步 store 导航在 Router render 前登记；后续 commit 必须幂等，不能重复增加 entry。同 key 但 idx 变化仍是真 POP。
 5. 任务 sheet 的 Back 先关任务槽，再消费打开时的 PUSH；检查 idx 已回到来源，不能只比 URL，因为关闭时的 REPLACE 与原入口可以拥有相同字符串。View in channel 桌面 PUSH、移动 REPLACE，均同步关 thread 并拒绝旧 query effect。
 6. 桌面 rail 记忆按 server+mode 保存完整位置，并校验其归属。Search/Activity 入口总是新 landing，不恢复旧 query；Search 不写 chat memory。保存最后 server surface 和每 rail mode memory 是不同用途。
-7. 移动每次点击 tab，无论 active/inactive，都 PUSH 到根页并丢目标 tab 的子页记忆。`mobileNavStore` 顶部旧注释的“inactive 恢复 top”已经被实际 `useMobileNav.selectTab` 覆盖；不能照旧注释实现。store 仍做临时 hydration/归属记录，换 server 清空；它不驱动 Back fallback。**有意差异（产品负责人决定 2026-10-11）：** 手机 App 在 tab 根页按系统 Back 时交还系统（Android 退到后台），不像 Web 那样回退已访问的 tab 根页；tab 点击仍总是 PUSH 根页、不恢复子页。
+7. 移动点击 inactive tab PUSH 到根页并丢目标 tab 的子页记忆；v1.24 点击已选中的 tab 不导航（Search 聚焦输入框；Web 的 Home/Tasks 滚到顶与 Activity 跳到下一条未读在 Flutter 里只留 `WorkspaceMobileTabBar.onReselected` 挂钩，尚未接）。`mobileNavStore` 顶部旧注释的“inactive 恢复 top”已经被实际 `useMobileNav.selectTab` 覆盖；不能照旧注释实现。store 仍做临时 hydration/归属记录，换 server 清空；它不驱动 Back fallback。**有意差异（产品负责人决定 2026-10-11）：** 手机 App 在 tab 根页按系统 Back 时交还系统（Android 退到后台），不像 Web 那样回退已访问的 tab 根页；tab 点击仍总是 PUSH 根页、不恢复子页。
 
 依据：[useAppNavigate.ts:50–109][S19]、[192–315][S20]、[363–400][S21]；[rightPanelUrlSync.ts:139–208][S22]、[509–549][S10]；[MainLayout.tsx:1153–1159][S23]；[useSidebarTab.ts:55–84][S3]、[useTabRouteMemory.ts:12–36及101–172][S17]；[useMobileNav.ts:30–109][S24]、[mobileNavStore.ts:120–183][S25]。
 
@@ -77,7 +77,7 @@ Source 用 React Router 的 location 表达当前表面，结构为 `pathname + 
 
 依据：[MainLayout.tsx:1691–1715][S26]、[1287–1335][S14]、[1954–2008][S27]、[2170–2173][S28]；[ThreadsInbox.tsx:572–574][S29]；[workspaceGridDemoConfig.ts:12–25][S30]；[index.css:857–979][S31]；[MainLayout.tsx:1772–1796][S32]、[masterDetailPanelSizing.ts:1–24][S33]。
 
-移动 tab 根页为 `/s/<slug>`、`/tasks`、`/members`、`/settings`。频道/DM、成员详情/graph、Search、Activity、Saved、Computers、电脑详情、设置子页与 release-notes 隐藏 tab；已有 thread 或内容槽也隐藏。guest 没 Members tab，host-shell embed 从第一帧就不渲染全局 tab。这里 Source 用负向详情列表判定并在剩余路径返回 true；纯模型应测试已挂载路由，不把注释的“仅根页”误当成未知路由已验证行为。[MainLayout.tsx:227–330][S34]
+移动 tab 根页（v1.24）为 `/s/<slug>`、`/activity`、`/tasks`、`/search`（无选中内容）；Members、Computers、Settings 由服务器 tab 的弹层打开，是带 Back、无 tab 栏的 PUSH 页，Back 回到打开它们的 tab 根页。频道/DM、成员详情/graph、Saved、电脑详情、设置子页与 release-notes 隐藏 tab；已有 thread 或内容槽也隐藏。guest 没 Members/Computers 入口，host-shell embed 从第一帧就不渲染全局 tab。这里 Source 用负向详情列表判定并在剩余路径返回 true；纯模型应测试已挂载路由，不把注释的“仅根页”误当成未知路由已验证行为。[MainLayout.tsx:227–330][S34]
 
 Electron Search 与普通宽屏 Web 要分开：Electron 普通 `/search` 是浮层，其背景依次取同 server 的显式 backgroundLocation、searchFrom、上次非 search 位置、server home；拒绝跨 server 或 search 背景。`presentation=page` 才显示完整页。普通 Web 忽略这些背景 state。浮层期间停止内容槽同步，保留背景现有 picked entity/thread；server home 背景禁止自动首频道重定向。[searchOverlayLocation.ts:15–175][S13]、[MainLayout.tsx:1533–1539][S15]
 

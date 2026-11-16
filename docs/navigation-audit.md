@@ -67,7 +67,8 @@ difference), GAP (Web has it, Flutter does not; not a fallback).
 | Sidebar Saved row (:3386) | `select('saved')` | Saved page | Saved page | toSaved | OK | tested |
 | Rail buttons (:2433) | search, chat, activity, tasks, members, computers | n/a (bottom bar) | pages | LeftRail | OK | registry |
 | Rail Settings (:2506), Cmd/Ctrl+, (:2112), phone fallback page header (:2909) | `select('settings')` | Settings root list | Account | toSettings | OK | tested |
-| Bottom bar tabs (`selectMobileTab` :319) | home, tasks, members, computers, activity, settings | tab roots | n/a | MobileTabBar | OK | registry |
+| Bottom bar tabs (`selectMobileTab`) | home, activity, tasks, search | tab roots | n/a | MobileTabBar | OK | registry |
+| Server tab popover pages (`openServerPage`, mobile_server_tab.dart) | members, computers, settings | pushed pages (Back, no bar; Back returns to the tab root they came from) | n/a | MobileServerTab (also Artifacts, Apps) | DIFF (Artifacts and Apps pages not built yet) | tested |
 | Search this channel (:293), Cmd/Ctrl+K (:2122, :2134), quick switcher "search all" (:381), page header (:2904) | `select('search')` | Search page | overlay / page | SearchOverlay | OK | tested |
 | Notification bell Upgrade, chat banners, thread banners, home header (`onViewBilling` / `onBilling`, :1153, :1683, :2337, :2344, :2443, :2528, :3307) | `select('billing')` | Settings > Plan & Billing | same | toSettings("billing") | OK (needs viewBilling; Web shows Account without it) | tested |
 | Invite human sent (:2739) | `select('administration')` | Settings > Administration | same | toSettings("administration") | OK | tested |
@@ -83,7 +84,7 @@ difference), GAP (Web has it, Flutter does not; not a fallback).
 | Settings rows (`workspace_settings.dart`) | account, language-region, appearance, bottom-bar, notifications, server, billing, administration, im-bridges, integrations, labs, mcp, providers, about, network (native-only), feedback, release-notes | tab page via `onMobileLocationChanged` (:3662) | in-panel tab | SettingsNavList | OK | tested row by row |
 | Settings row Computers (`workspace_settings.dart:275`) | `selectSection('computers')` | Computers route | row hidden (Computers rail) | navigate(/computers) | OK | declared `wide: false` |
 | Settings row Documentation | external URL | opens browser | opens browser | link | OK | declared `page: false` |
-| Settings row Bottom bar | `bottom-bar` | page | hidden | none | DIFF (phone-only device preference) | declared `wide: false` |
+| Settings row Bottom bar | `bottom-bar` | page | hidden | none | DIFF (phone-only device preference; the four tabs Home, Activity, Tasks, Search) | declared `wide: false` |
 | Settings tab not in the page | any other id | Account | Account | normalizeSettingsTab -> account | FIXED (loud in debug) | `reportFallback('settings tab')` |
 | `select('joint-channels')` (removed by c88601bc) | settings joint-channels | Account | Account | no page | FIXED | `unsupportedSections`; the unreachable `JointChannelsView` page was removed (accept lives in the notification center, manage in the channel settings drawer) |
 | `select('sidebar-settings')` | settings sidebar-settings | Account | Account | no page | FIXED | `unsupportedSections`; no caller left |

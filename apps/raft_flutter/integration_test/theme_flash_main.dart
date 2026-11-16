@@ -34,7 +34,9 @@ import 'perf_lab/fixtures.dart';
 import 'perf_lab/navigation_host.dart';
 
 // Android: pushed with adb. Desktop: THEME_FLASH_SEED=<file> in the environment.
-final _seedFile = Platform.environment['THEME_FLASH_SEED'] ?? '/data/local/tmp/raft-theme-flash.txt';
+final _seedFile =
+    Platform.environment['THEME_FLASH_SEED'] ??
+    '/data/local/tmp/raft-theme-flash.txt';
 final _boot = Stopwatch()..start();
 
 Future<void> main() async {
@@ -53,11 +55,17 @@ Future<void> main() async {
     // stored Appearance-section choices (font size, hidden empty sections...).
     final presentation = Platform.environment['THEME_FLASH_PRESENTATION'];
     if (presentation != null) {
-      await p.setString('raft:presentation:["https://example.invalid","alice"]', presentation);
+      await p.setString(
+        'raft:presentation:["https://example.invalid","alice"]',
+        presentation,
+      );
     }
     // `nodefer` skips deferFirstFrame: shows what any path that paints before
     // the stored appearance is known would put on screen.
-    await p.setBool('theme_flash.nodefer', parts.length > 3 && parts[3] == 'nodefer');
+    await p.setBool(
+      'theme_flash.nodefer',
+      parts.length > 3 && parts[3] == 'nodefer',
+    );
     if (parts.length > 2 && Platform.isAndroid) {
       // The launcher icon (and so the native splash colour) of the isolated package.
       final icon = NativeAppIcon.instance;
@@ -67,7 +75,12 @@ Future<void> main() async {
     }
     final tabs = const MobileTabbarSettings(
       order: MobileTabs.configurable,
-      enabled: {MobileTabs.home, MobileTabs.tasks, MobileTabs.members, MobileTabs.computers},
+      enabled: {
+        MobileTabs.home,
+        MobileTabs.tasks,
+        MobileTabs.activity,
+        MobileTabs.search,
+      },
     );
     await p.setString(MobileTabbarStore.preferenceKey, tabs.encode());
   }
@@ -76,10 +89,19 @@ Future<void> main() async {
 
   final channel = LabChannel('kb', List.filled(40, 'plain'));
   final images = await LabImages.start();
-  final (wsSeed, api, client) = await labWorkspace([channel], images, mobile: true, ownsClient: false);
+  final (wsSeed, api, client) = await labWorkspace(
+    [channel],
+    images,
+    mobile: true,
+    ownsClient: false,
+  );
   wsSeed.dispose();
   api.routes['GET /auth/me'] = (_) => {
-    'id': 'alice', 'name': 'Alice Zhang', 'email': 'alice@example.invalid', 'emailVerified': true, 'displayLanguage': 'en',
+    'id': 'alice',
+    'name': 'Alice Zhang',
+    'email': 'alice@example.invalid',
+    'emailVerified': true,
+    'displayLanguage': 'en',
   };
   api.routes['GET /servers'] = (_) => [
     {'id': 's1', 'name': 'Lab', 'slug': 'lab', 'role': 'owner'},
@@ -87,10 +109,20 @@ Future<void> main() async {
   api.routes['GET /channels/public'] = (_) => <dynamic>[];
   api.routes['GET /channels/kb'] = (_) => channel.record.json;
   api.routes['GET /channels/inbox'] = (_) => {'items': <dynamic>[]};
-  api.routes['GET /channels/saved'] = (_) => {'globalTotal': 0, 'saved': <dynamic>[]};
-  api.routes['GET /channels/threads/followed'] = (_) => {'threads': <dynamic>[]};
-  api.routes['GET /announcements/active'] = (_) => {'announcements': <dynamic>[]};
-  api.routes['GET /product-feedback/tickets'] = (_) => {'unread_total': 0, 'tickets': <dynamic>[]};
+  api.routes['GET /channels/saved'] = (_) => {
+    'globalTotal': 0,
+    'saved': <dynamic>[],
+  };
+  api.routes['GET /channels/threads/followed'] = (_) => {
+    'threads': <dynamic>[],
+  };
+  api.routes['GET /announcements/active'] = (_) => {
+    'announcements': <dynamic>[],
+  };
+  api.routes['GET /product-feedback/tickets'] = (_) => {
+    'unread_total': 0,
+    'tickets': <dynamic>[],
+  };
   api.routes['GET /tasks/server'] = (_) => {'tasks': <dynamic>[]};
   // THEME_FLASH_CACHE=<dir> keeps the workspace cache between launches, so the
   // second cold start paints from the on-device cache (cache-first start).
@@ -101,7 +133,8 @@ Future<void> main() async {
 
   // === Same sequence as lib/main.dart main() from here. ===
   RootErrors.instance.install();
-  final defer = DevicePreferences.current?.getBool('theme_flash.nodefer') != true;
+  final defer =
+      DevicePreferences.current?.getBool('theme_flash.nodefer') != true;
   if (defer) WidgetsBinding.instance.deferFirstFrame();
   var firstFrameAllowed = !defer;
   void allowFirstFrame() {
@@ -118,8 +151,10 @@ Future<void> main() async {
   RootErrors.instance.addListener(releaseOnError);
   WidgetsBinding.instance.addTimingsCallback((timings) {
     for (final t in timings) {
-      print('theme-flash: frame raster-finish t=${_boot.elapsedMilliseconds}ms '
-          'build=${t.buildDuration.inMicroseconds}us');
+      print(
+        'theme-flash: frame raster-finish t=${_boot.elapsedMilliseconds}ms '
+        'build=${t.buildDuration.inMicroseconds}us',
+      );
     }
   });
   runApp(
@@ -132,7 +167,8 @@ Future<void> main() async {
           initialLocation: Uri(path: '/s/lab'),
           nativeContent: LabNavigationContent(),
           nativeSharing: NativeSharing(supported: false),
-          openWorkspaceCache: () async => LabNavigationCache(File('${dir.path}/workspace.sqlite')),
+          openWorkspaceCache: () async =>
+              LabNavigationCache(File('${dir.path}/workspace.sqlite')),
           onStartupReady: allowFirstFrame,
         ),
       ),

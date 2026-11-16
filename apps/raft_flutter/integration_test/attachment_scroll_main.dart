@@ -69,10 +69,14 @@ Future<Uint8List> _png(int w, int h, int seed) async {
   canvas.drawRect(
     ui.Rect.fromLTWH(0, 0, w.toDouble(), h.toDouble()),
     ui.Paint()
-      ..shader = ui.Gradient.linear(ui.Offset.zero, ui.Offset(w.toDouble(), h.toDouble()), [
-        ui.Color(0xff000000 | random.nextInt(0xffffff)),
-        ui.Color(0xff000000 | random.nextInt(0xffffff)),
-      ]),
+      ..shader = ui.Gradient.linear(
+        ui.Offset.zero,
+        ui.Offset(w.toDouble(), h.toDouble()),
+        [
+          ui.Color(0xff000000 | random.nextInt(0xffffff)),
+          ui.Color(0xff000000 | random.nextInt(0xffffff)),
+        ],
+      ),
   );
   for (var i = 0; i < 40; i++) {
     canvas.drawCircle(
@@ -98,7 +102,11 @@ class ScrollLab {
   Future<Map<String, dynamic>> Function()? select;
 
   Future<void> start() async {
-    final server = await HttpServer.bind(InternetAddress.loopbackIPv4, _port, shared: true);
+    final server = await HttpServer.bind(
+      InternetAddress.loopbackIPv4,
+      _port,
+      shared: true,
+    );
     server.listen(_serve);
   }
 
@@ -112,9 +120,14 @@ class ScrollLab {
     }
 
     if (path == '/__stats') {
-      final thumbRequests = hits.entries.where((e) => e.key.startsWith('/t/') || e.key.endsWith('/thumbnail')).fold<int>(0, (a, e) => a + e.value);
-      final originalRequests = hits.entries.where((e) => e.key.startsWith('/o/')).fold<int>(0, (a, e) => a + e.value);
-      final urlRequests = (apiCounts['GET url'] ?? 0) + (apiCounts['POST urls'] ?? 0);
+      final thumbRequests = hits.entries
+          .where((e) => e.key.startsWith('/t/') || e.key.endsWith('/thumbnail'))
+          .fold<int>(0, (a, e) => a + e.value);
+      final originalRequests = hits.entries
+          .where((e) => e.key.startsWith('/o/'))
+          .fold<int>(0, (a, e) => a + e.value);
+      final urlRequests =
+          (apiCounts['GET url'] ?? 0) + (apiCounts['POST urls'] ?? 0);
       return json({
         'thumbnailRequests': thumbRequests,
         'originalRequests': originalRequests,
@@ -131,17 +144,24 @@ class ScrollLab {
       return json({'ok': true});
     }
     if (path == '/__config') {
-      _delayMs = int.tryParse(request.uri.queryParameters['delay'] ?? '') ?? _delayMs;
-      _apiDelayMs = int.tryParse(request.uri.queryParameters['api'] ?? '') ?? _apiDelayMs;
+      _delayMs =
+          int.tryParse(request.uri.queryParameters['delay'] ?? '') ?? _delayMs;
+      _apiDelayMs =
+          int.tryParse(request.uri.queryParameters['api'] ?? '') ?? _apiDelayMs;
       return json({'storageDelayMs': _delayMs, 'apiDelayMs': _apiDelayMs});
     }
     if (path == '/__probe') return json(probe());
-    if (path == '/__select') return json(await (select?.call() ?? Future.value({'error': 'not ready'})));
+    if (path == '/__select')
+      return json(
+        await (select?.call() ?? Future.value({'error': 'not ready'})),
+      );
     if (path == '/__fling') {
-      final result = await (fling?.call() ?? Future.value({'error': 'not ready'}));
+      final result =
+          await (fling?.call() ?? Future.value({'error': 'not ready'}));
       return json(result);
     }
-    final match = RegExp(r'^/(?:t|o)/(\d+)\.png$').firstMatch(path) ??
+    final match =
+        RegExp(r'^/(?:t|o)/(\d+)\.png$').firstMatch(path) ??
         RegExp(r'^/api/attachments/[^/]+/thumbnail$').firstMatch(path);
     if (match == null) {
       response.statusCode = 404;
@@ -149,11 +169,16 @@ class ScrollLab {
       return;
     }
     final isThumb = path.startsWith('/t/') || path.endsWith('/thumbnail');
-    final n = match.groupCount > 0 ? int.tryParse(match.group(1) ?? '') ?? 0 : request.uri.path.hashCode.abs();
-    final body = isThumb ? thumbs[n % thumbs.length] : originals[n % originals.length];
+    final n = match.groupCount > 0
+        ? int.tryParse(match.group(1) ?? '') ?? 0
+        : request.uri.path.hashCode.abs();
+    final body = isThumb
+        ? thumbs[n % thumbs.length]
+        : originals[n % originals.length];
     hits[path] = (hits[path] ?? 0) + 1;
     debugPrint('attach-scroll: storage GET $path');
-    if (_delayMs > 0) await Future<void>.delayed(Duration(milliseconds: _delayMs));
+    if (_delayMs > 0)
+      await Future<void>.delayed(Duration(milliseconds: _delayMs));
     try {
       response.headers.contentType = ContentType('image', 'png');
       response.headers.contentLength = body.length;
@@ -166,7 +191,12 @@ class ScrollLab {
 
   /// What the screen shows: every image card whose box intersects the window.
   Map<String, dynamic> probe() {
-    var visible = 0, withImage = 0, pending = 0, failed = 0, connecting = 0, other = 0;
+    var visible = 0,
+        withImage = 0,
+        pending = 0,
+        failed = 0,
+        connecting = 0,
+        other = 0;
     final root = WidgetsBinding.instance.rootElement;
     final view = WidgetsBinding.instance.platformDispatcher.views.first;
     final screen = Offset.zero & (view.physicalSize / view.devicePixelRatio);
@@ -235,13 +265,17 @@ ScrollPosition? _chatPosition() {
 Future<Map<String, dynamic>> _flingAndCheck(ScrollLab lab) async {
   final position = _chatPosition();
   if (position == null) return {'error': 'no scrollable'};
-  debugPrint('attach-scroll: scrollable extent ${position.minScrollExtent}..${position.maxScrollExtent} pixels ${position.pixels} viewport ${position.viewportDimension}');
+  debugPrint(
+    'attach-scroll: scrollable extent ${position.minScrollExtent}..${position.maxScrollExtent} pixels ${position.pixels} viewport ${position.viewportDimension}',
+  );
   final started = DateTime.now();
   Future<void> sweep(double to) async {
     const step = Duration(milliseconds: 50);
     const perStep = 700.0;
     while ((position.pixels - to).abs() > perStep) {
-      position.jumpTo(position.pixels + (to > position.pixels ? perStep : -perStep));
+      position.jumpTo(
+        position.pixels + (to > position.pixels ? perStep : -perStep),
+      );
       await Future<void>.delayed(step);
     }
     position.jumpTo(to);
@@ -249,14 +283,18 @@ Future<Map<String, dynamic>> _flingAndCheck(ScrollLab lab) async {
 
   await sweep(position.minScrollExtent);
   await sweep(position.maxScrollExtent);
-  await sweep(position.minScrollExtent + (position.maxScrollExtent - position.minScrollExtent) * 0.5);
+  await sweep(
+    position.minScrollExtent +
+        (position.maxScrollExtent - position.minScrollExtent) * 0.5,
+  );
   final restedAt = DateTime.now();
   Map<String, dynamic> last = lab.probe();
   Duration? settled;
   while (DateTime.now().difference(restedAt) < const Duration(seconds: 20)) {
     await Future<void>.delayed(const Duration(milliseconds: 250));
     last = lab.probe();
-    if ((last['visibleImageTiles'] as int) > 0 && last['withImage'] == last['visibleImageTiles']) {
+    if ((last['visibleImageTiles'] as int) > 0 &&
+        last['withImage'] == last['visibleImageTiles']) {
       settled = DateTime.now().difference(restedAt);
       break;
     }
@@ -276,11 +314,15 @@ Future<void> main() async {
   await NativeSystemFonts.instance.initialize();
   await initializeSourceTimeFormatting();
   await DevicePreferences.load();
-  AttachmentDiskCache.installed ??= AttachmentDiskCache(getApplicationCacheDirectory);
+  AttachmentDiskCache.installed ??= AttachmentDiskCache(
+    getApplicationCacheDirectory,
+  );
   unawaited(AttachmentDiskCache.installed!.warm());
   final images = await LabImages.start();
   final thumbs = [for (var i = 0; i < 8; i++) await _png(320, 240, 50 + i)];
-  final originals = [for (var i = 0; i < 4; i++) await _png(1600, 1200, 90 + i)];
+  final originals = [
+    for (var i = 0; i < 4; i++) await _png(1600, 1200, 90 + i),
+  ];
   final apiCounts = <String, int>{};
   final lab = ScrollLab(thumbs, originals, apiCounts);
   await lab.start();
@@ -292,7 +334,9 @@ Future<void> main() async {
     final thumbed = n.isEven;
     channel.rows.add(
       labRow('sc', 'plain', n)
-        ..['content'] = thumbed ? 'Photo $n with a thumbnail' : 'Photo $n without a thumbnail'
+        ..['content'] = thumbed
+            ? 'Photo $n with a thumbnail'
+            : 'Photo $n without a thumbnail'
         ..['attachments'] = [
           {
             'id': id,
@@ -310,7 +354,12 @@ Future<void> main() async {
         ],
     );
   }
-  final (seed, api, client) = await labWorkspace([channel], images, mobile: true, ownsClient: false);
+  final (seed, api, client) = await labWorkspace(
+    [channel],
+    images,
+    mobile: true,
+    ownsClient: false,
+  );
   seed.dispose();
   api.routes['GET /auth/me'] = (_) => {
     'id': 'alice',
@@ -325,12 +374,24 @@ Future<void> main() async {
   api.routes['GET /channels/public'] = (_) => <dynamic>[];
   api.routes['GET /channels/sc'] = (_) => channel.record.json;
   api.routes['GET /channels/inbox'] = (_) => {'items': <dynamic>[]};
-  api.routes['GET /channels/saved'] = (_) => {'globalTotal': 0, 'saved': <dynamic>[]};
-  api.routes['GET /channels/threads/followed'] = (_) => {'threads': <dynamic>[]};
-  api.routes['GET /announcements/active'] = (_) => {'announcements': <dynamic>[]};
-  api.routes['GET /product-feedback/tickets'] = (_) => {'unread_total': 0, 'tickets': <dynamic>[]};
+  api.routes['GET /channels/saved'] = (_) => {
+    'globalTotal': 0,
+    'saved': <dynamic>[],
+  };
+  api.routes['GET /channels/threads/followed'] = (_) => {
+    'threads': <dynamic>[],
+  };
+  api.routes['GET /announcements/active'] = (_) => {
+    'announcements': <dynamic>[],
+  };
+  api.routes['GET /product-feedback/tickets'] = (_) => {
+    'unread_total': 0,
+    'tickets': <dynamic>[],
+  };
   api.routes['GET /tasks/server'] = (_) => {'tasks': <dynamic>[]};
-  api.routes['GET /messages/attachment-preview/enabled'] = (_) => {'enabled': true};
+  api.routes['GET /messages/attachment-preview/enabled'] = (_) => {
+    'enabled': true,
+  };
   void count(String key, [int by = 1]) {
     apiCounts[key] = (apiCounts[key] ?? 0) + by;
     debugPrint('attach-scroll: api $key (total ${apiCounts[key]})');
@@ -338,10 +399,14 @@ Future<void> main() async {
 
   int originalIndex(String id) => int.tryParse(id.split('-').last) ?? 0;
   api.patterns.insert(0, (
-    (o) => o.method == 'GET' && o.path.startsWith('/attachments/pic-') && o.path.endsWith('/url'),
+    (o) =>
+        o.method == 'GET' &&
+        o.path.startsWith('/attachments/pic-') &&
+        o.path.endsWith('/url'),
     (o) async {
       count('GET url');
-      if (originalIndex(o.path.split('/')[2]).isEven) count('GET url of thumbnailed image');
+      if (originalIndex(o.path.split('/')[2]).isEven)
+        count('GET url of thumbnailed image');
       await Future<void>.delayed(Duration(milliseconds: _apiDelayMs));
       return {'url': '${base()}/o/${originalIndex(o.path.split('/')[2])}.png'};
     },
@@ -352,10 +417,18 @@ Future<void> main() async {
     await Future<void>.delayed(Duration(milliseconds: _apiDelayMs));
     count('POST urls ids', ids.length);
     // Images with a thumbnail are the even ones: signing them is speculative.
-    count('POST urls ids of thumbnailed images', ids.where((id) => originalIndex(id).isEven).length);
+    count(
+      'POST urls ids of thumbnailed images',
+      ids.where((id) => originalIndex(id).isEven).length,
+    );
     return {
       'urls': [
-        for (final id in ids) {'id': id, 'url': '${base()}/o/${originalIndex(id)}.png', 'expiresAt': null},
+        for (final id in ids)
+          {
+            'id': id,
+            'url': '${base()}/o/${originalIndex(id)}.png',
+            'expiresAt': null,
+          },
       ],
     };
   };
@@ -392,11 +465,20 @@ Future<void> main() async {
 
     final root = WidgetsBinding.instance.rootElement;
     if (root != null) visit(root);
-    return {'hits': api.hits.keys.where((k) => k.contains('messages')).toList(), 'misses': api.misses, 'chat': info};
+    return {
+      'hits': api.hits.keys.where((k) => k.contains('messages')).toList(),
+      'misses': api.misses,
+      'chat': info,
+    };
   };
   const tabs = MobileTabbarSettings(
     order: MobileTabs.configurable,
-    enabled: {MobileTabs.home, MobileTabs.tasks, MobileTabs.members, MobileTabs.computers},
+    enabled: {
+      MobileTabs.home,
+      MobileTabs.tasks,
+      MobileTabs.activity,
+      MobileTabs.search,
+    },
   );
   SharedPreferences.setMockInitialValues({
     'raft.origin': client.origin,
@@ -434,7 +516,9 @@ Future<void> main() async {
         apiCounts.clear();
         lab.hits.clear();
         final result = await _flingAndCheck(lab);
-        debugPrint('attach-scroll: auto done ${jsonEncode(result)} stats api=${jsonEncode(apiCounts)}');
+        debugPrint(
+          'attach-scroll: auto done ${jsonEncode(result)} stats api=${jsonEncode(apiCounts)}',
+        );
       }),
     );
   }

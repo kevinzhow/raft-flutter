@@ -91,18 +91,14 @@ void main() {
           of: find.byKey(Key(key)),
           matching: find.byType(RaftControl),
         );
-        final search = t.getRect(control('nav-search'));
-        final activity = control('nav-activity');
+        // Web v1.24: Search and Activity are bottom-bar tabs, Home lists
+        // neither (SidebarHomeEntries: Saved, Drafts, the assistant).
+        expect(find.byKey(const Key('nav-search')), findsNothing);
+        expect(find.byKey(const Key('nav-activity')), findsNothing);
         final saved = t.getRect(control('nav-saved'));
         // Source Sidebar.tsx's block-flow my-px: adjacent margins collapse
         // to one pixel. Tall rows are 46, short rows are 44.
-        final step = height <= 600 ? 45.0 : 47.0;
-        if (activity.evaluate().isNotEmpty) {
-          expect(t.getRect(activity).top - search.top, step);
-          expect(saved.top - search.top, step * 2);
-        } else {
-          expect(saved.top - search.top, step);
-        }
+        expect(saved.height, height <= 600 ? 44.0 : 46.0);
         await t.pumpWidget(const SizedBox.shrink());
       }, variant: TargetPlatformVariant.only(TargetPlatform.android));
       testWidgets('phone Home $height/$dark places the full frame bell', (

@@ -83,14 +83,16 @@ void main() {
             expect(find.byType(RaftThreadHeader), findsOneWidget);
             expect(find.byType(RaftChannelHeader), findsNothing);
             expect(find.byType(RaftChatView), findsOneWidget);
+          });
+          if (width == 390) {
+            // The covered Search page (a tab root with its bar, v1.24) is a
+            // live page until the push settles.
+            await tester.pump(const Duration(milliseconds: 500));
+            await tester.pump();
             expect(
               find.byKey(const Key('workspace-mobile-navigation')),
               findsNothing,
             );
-          });
-          if (width == 390) {
-            // The covered Search page is a live page until the push settles.
-            await tester.pump(const Duration(milliseconds: 500));
             expect(find.byType(ResourceView), findsNothing);
             expect(find.byKey(const Key('thread-back')), findsOneWidget);
             expect(

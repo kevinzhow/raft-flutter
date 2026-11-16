@@ -13,12 +13,16 @@ abstract final class MobileTabs {
       members = 'members',
       computers = 'computers',
       activity = 'activity',
+      search = 'search',
       settings = 'settings';
 
-  /// Every tab the user can place in the bar. Settings is always shown, last.
-  static const configurable = [home, tasks, members, computers, activity];
+  /// Every tab the user can place in the bar (Web v1.24 MobileTabBar: Home,
+  /// Activity, Tasks, Search). The server tab always closes the bar and is
+  /// not part of the choice. Members, Computers and Settings are pages the
+  /// server tab opens; they only stay tab roots with the left rail.
+  static const configurable = [home, activity, tasks, search];
 
-  /// Most tabs the bar holds, Settings included.
+  /// Most tabs the bar holds, the server tab included.
   static const maxTabs = 5;
 
   /// Most configurable tabs on at once.
@@ -26,15 +30,20 @@ abstract final class MobileTabs {
 }
 
 /// The device-local bottom-bar choice: the order of every configurable tab and
-/// which of them are on. Settings is not part of it.
+/// which of them are on. The server tab is not part of it.
 @immutable
 class MobileTabbarSettings {
   const MobileTabbarSettings({required this.order, required this.enabled});
 
-  /// Today's bar: Home, Tasks, Members (+ Settings).
+  /// Web's bar: Home, Activity, Tasks, Search (+ the server tab).
   static const defaults = MobileTabbarSettings(
     order: MobileTabs.configurable,
-    enabled: {MobileTabs.home, MobileTabs.tasks, MobileTabs.members},
+    enabled: {
+      MobileTabs.home,
+      MobileTabs.activity,
+      MobileTabs.tasks,
+      MobileTabs.search,
+    },
   );
 
   /// Every configurable id exactly once.
@@ -53,8 +62,11 @@ class MobileTabbarSettings {
   /// Stored form: `{"order": [...], "enabled": [...]}` (ids in bar order).
   String encode() => jsonEncode({'order': order, 'enabled': visible});
 
-  /// Reads a stored value. Unknown or removed ids are dropped and the rest is
-  /// kept; anything unreadable (or leaving no tab on) is the default. A bare
+  /// Reads a stored value. Unknown or removed ids (the Members and Computers
+  /// tabs of the previous release) are dropped and the rest is kept. A tab
+  /// that did not exist when the value was written (Search) is turned on while
+  /// there is room, so the upgrade leaves the choice as it was plus Web's new
+  /// tab. Anything unreadable (or leaving no tab on) is the default. A bare
   /// JSON list is read as the ordered enabled ids.
   static MobileTabbarSettings parse(String? raw) {
     if (raw == null) return defaults;
@@ -85,6 +97,16 @@ class MobileTabbarSettings {
       if (on.length < MobileTabs.maxConfigurable) on.add(id);
     }
     if (on.isEmpty) return defaults;
+    if (decoded is Map) {
+      final stored = decoded['order'] is List
+          ? (decoded['order'] as List).whereType<String>().toSet()
+          : <String>{};
+      for (final id in MobileTabs.configurable) {
+        if (!stored.contains(id) && on.length < MobileTabs.maxConfigurable) {
+          on.add(id);
+        }
+      }
+    }
     final complete = <String>[];
     for (final id in [...order, ...enabled, ...MobileTabs.configurable]) {
       if (!complete.contains(id)) complete.add(id);
@@ -94,7 +116,7 @@ class MobileTabbarSettings {
 
   /// Tabs the bar shows for this account: the enabled ones the account may
   /// open, in order, at most [MobileTabs.maxConfigurable]. Without any, the bar
-  /// shows Home next to Settings.
+  /// shows Home next to the server tab.
   List<String> effective({
     required bool guest,
     required bool Function(String capability) can,

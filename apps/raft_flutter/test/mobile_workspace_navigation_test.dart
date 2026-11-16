@@ -15,6 +15,7 @@ import 'package:raft_ui/test_themes.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'support/app_services_fixture.dart';
+import 'support/server_tab.dart';
 
 class _Client extends RaftClient {
   _Client()
@@ -150,12 +151,7 @@ class _Notifications extends NativeNotificationService {
 
 void main() {
   test('only tab roots show navigation; details return to the owning root', () {
-    for (final entry in {
-      'home': 'chat',
-      'tasks': 'tasks',
-      'members': 'members',
-      'settings': 'settings',
-    }.entries) {
+    for (final entry in {'home': 'chat', 'tasks': 'tasks'}.entries) {
       expect(
         mobileWorkspaceRootTab(
           entry.key,
@@ -173,6 +169,9 @@ void main() {
       'computers',
       'agents',
       'workspace-settings',
+      // v1.24: pushed from the server tab, not tab roots.
+      'members',
+      'settings',
     ]) {
       expect(
         mobileWorkspaceRootTab(
@@ -710,10 +709,9 @@ void main() {
           tester.element(find.byKey(const Key('workspace-mobile-home'))),
         ).canvas,
       );
-      expect(
-        tester.getTopLeft(find.byKey(const Key('nav-search'))).dy,
-        lessThan(tester.getTopLeft(find.byKey(const Key('nav-activity'))).dy),
-      );
+      // Search and Activity are bottom-bar tabs (v1.24): Home lists neither.
+      expect(find.byKey(const Key('nav-search')), findsNothing);
+      expect(find.byKey(const Key('nav-activity')), findsNothing);
       final sidebar = tester.widget<CustomScrollView>(
         find.byKey(const Key('workspace-sidebar')),
       );
@@ -757,7 +755,7 @@ void main() {
 
       expect(find.byKey(const Key('nav-tasks')), findsNothing);
       expect(find.byKey(const Key('account-navigation')), findsNothing);
-      expect(find.byKey(const Key('mobile-tab-members')), findsOneWidget);
+      expect(find.byKey(const Key('mobile-tab-server')), findsOneWidget);
       final section = find.byKey(
         const ValueKey('sidebar-section-system:channels'),
       );
@@ -808,12 +806,14 @@ void main() {
       await tester.pumpAndSettle();
       expect(w.section, 'home');
       expect(w.location.toString(), '/s/s');
-      await tester.tap(find.byKey(const Key('mobile-tab-settings')));
+      // v1.24: Settings is pushed from the server tab (Back, no bar).
+      await openServerPage(tester, 'settings');
       await tester.pumpAndSettle();
       expect(
         find.byKey(const ValueKey('workspace-settings-nav-account')),
         findsOneWidget,
       );
+      expect(find.byKey(const Key('server-page-mobile-back')), findsOneWidget);
       await tester.tap(
         find.byKey(const ValueKey('workspace-settings-nav-appearance')),
       );
@@ -825,29 +825,25 @@ void main() {
       expect(w.location.settingsPath, ['appearance']);
       await tester.tap(find.byKey(const Key('mobile-settings-back')));
       await tester.pumpAndSettle();
+      // Back from a Settings page lands on the pushed Settings root: still no
+      // bar. Back from that returns to Home and its bar.
       expect(
         find.byKey(const Key('workspace-mobile-navigation')),
-        findsOneWidget,
+        findsNothing,
       );
       expect(w.location.settingsPath, isEmpty);
-      final rootIndex = w.navigation.index;
-      // Tapping active Settings repeats the source reset-to-root contract.
-      await tester.tap(find.byKey(const Key('mobile-tab-settings')));
-      await tester.pumpAndSettle();
-      expect(
-        find.byKey(const ValueKey('workspace-settings-nav-appearance')),
-        findsOneWidget,
-      );
-      expect(w.navigation.index, rootIndex + 1);
       final retained = tester
           .widget<RaftMobileNav>(
-            find.byKey(const Key('workspace-mobile-navigation')),
+            find.byKey(
+              const Key('workspace-mobile-navigation'),
+              skipOffstage: false,
+            ),
           )
           .onSelected;
       w.server = RaftRecord({'id': 's', 'name': 'Fixture', 'role': 'guest'});
       w.notifyListeners();
       await tester.pumpAndSettle();
-      expect(find.byKey(const Key('mobile-tab-members')), findsNothing);
+      // A covered bar's callback is inert once the authority changed.
       retained('tasks');
       await tester.pumpAndSettle();
       expect(w.section, 'settings');
