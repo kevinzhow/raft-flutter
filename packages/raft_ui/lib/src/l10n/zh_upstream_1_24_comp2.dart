@@ -458,26 +458,10 @@ const Map<String, String> zhCatalogUpstream124Comp2 = <String, String>{
   // machine.runtimeUsage.claudeReset.notAvailableYet
   "Your {kind} isn't available for this account on this Computer yet. No reset was used.":
       "这台 Computer 上的这个账号暂时还不能使用{kind}。未使用重置。",
-  // runtime.availability.experimental
-  " (experimental)": "（实验性）",
   // runtime.availability.notSignedIn
   " (not signed in)": "（未登录）",
-  // runtime.availability.showAllSupported
-  "Show all supported": "显示所有支持的运行时",
-  // runtime.availability.showInstalledOnly
-  "Show installed only": "只显示已安装的运行时",
   // runtime.availability.needsNewerComputer
   "Update Raft Computer to use {runtime}.": "更新 Raft Computer 即可使用 {runtime}。",
-  // runtime.picker.group.current
-  "Current runtime": "当前运行时",
-  // runtime.picker.group.ready
-  "Ready on this computer": "这台 Computer 上可用",
-  // runtime.picker.group.needsComputerUpdate
-  "Needs a Raft Computer update": "需要更新 Raft Computer",
-  // runtime.picker.group.notAvailable
-  "Not available on this server": "本服务器上不可用",
-  // runtime.picker.group.notInstalled
-  "Not installed on this computer": "这台 Computer 上未安装",
   // runtime.picker.notSignedIn
   "{runtime} is not signed in on {computer}.": "{runtime} 在 {computer} 上没有登录。",
 };
