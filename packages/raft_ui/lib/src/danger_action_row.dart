@@ -9,7 +9,6 @@ import 'recipes/button_variants.g.dart'
     show RaftButtonRecipeSize, RaftButtonRecipeVariant;
 import 'settings_controls.dart' show RaftSettingsRecipeButton;
 import 'space.dart';
-import 'theme.dart';
 
 /// `DangerActionRow`. [warning] is Leave Server's tone; the default `danger`
 /// (red) is for what can't be undone, such as Delete Server.

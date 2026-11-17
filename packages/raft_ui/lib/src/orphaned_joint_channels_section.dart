@@ -12,7 +12,6 @@ import 'recipes/button_variants.g.dart'
     show RaftButtonRecipeSize, RaftButtonRecipeVariant;
 import 'settings_controls.dart' show RaftSettingsRecipeButton;
 import 'settings_layout.dart';
-import 'space.dart';
 import 'theme.dart';
 
 /// One orphaned joint channel; [metadata] and [disconnectLabel] are formatted
