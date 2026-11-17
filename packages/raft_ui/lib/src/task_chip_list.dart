@@ -11,6 +11,7 @@ import 'task.dart' show raftTaskStatusLabel;
 import 'task_status_badge.dart';
 import 'theme.dart';
 import 'tokens/tokens.dart';
+import 'viewport_breakpoints.dart' show raftBreakpointWidth;
 
 /// One task row of [RaftTaskChipList]: facts the app resolved (the list never
 /// reads a store or requests anything).
@@ -113,16 +114,65 @@ class RaftTaskChipList extends StatelessWidget {
   }
 }
 
+/// The `plain` variant of Web v1.24 `TaskChipList`: the rows of the channel
+/// Tasks card (ChannelTasksPanel's CompactStatusGroup). Full width with no
+/// box of its own, hairlines inset like the content (`--compact-row-inset`:
+/// 20px, 16px on a phone), no status badge (the lane names it) and a chevron
+/// at the end of each row.
+class RaftTaskCardList extends StatelessWidget {
+  const RaftTaskCardList({
+    super.key,
+    required this.tasks,
+    required this.onOpen,
+  });
+  final List<RaftTaskChipRow> tasks;
+  final ValueChanged<RaftTaskChipRow>? onOpen;
+
+  /// `--compact-row-inset`: `1rem` on a phone, `md:1.25rem`.
+  static double insetOf(BuildContext context) =>
+      raftBreakpointWidth(context) >= 768 ? 20 : 16;
+
+  @override
+  Widget build(BuildContext context) {
+    if (tasks.isEmpty) return const SizedBox.shrink();
+    final inset = insetOf(context);
+    return Column(
+      key: const ValueKey('channel-tasks-list'),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (var i = 0; i < tasks.length; i++)
+          _TaskChipListRow(
+            key: ValueKey('message-task-chip-${tasks[i].id}'),
+            task: tasks[i],
+            divider: i > 0,
+            inset: inset,
+            plain: true,
+            onOpen: onOpen == null ? null : () => onOpen!(tasks[i]),
+          ),
+      ],
+    );
+  }
+}
+
 class _TaskChipListRow extends StatelessWidget {
   const _TaskChipListRow({
     super.key,
     required this.task,
     required this.divider,
     required this.onOpen,
+    this.inset = 12,
+    this.plain = false,
   });
   final RaftTaskChipRow task;
   final bool divider;
   final VoidCallback? onOpen;
+
+  /// The row's inline padding; the hairline of a plain row starts and ends
+  /// where the content does.
+  final double inset;
+
+  /// The Tasks card's row: no status badge, a chevron at the end.
+  final bool plain;
 
   @override
   Widget build(BuildContext context) {
@@ -150,51 +200,63 @@ class _TaskChipListRow extends StatelessWidget {
                 )
               : null,
           border: Border(
-            top: divider
+            top: divider && !plain
                 ? BorderSide(color: t.ui.lineHairline)
                 : BorderSide.none,
           ),
         ),
         child: ExcludeSemantics(
-          child: ConstrainedBox(
-            // `min-h-11` (44) by touch, the 36px row with a fine pointer.
-            constraints: BoxConstraints(minHeight: touch ? 44 : 36),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              child: Row(
-                spacing: 8,
-                children: [
-                  Text('#${task.number}', style: mono),
-                  Flexible(
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      spacing: 6,
-                      children: [
-                        Flexible(
-                          child: Text(
-                            task.title,
-                            key: const ValueKey('message-task-chip-title'),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: t.scale(
-                              RaftTypeScale.callout,
-                              weight: FontWeight.w400,
-                              color: t.ui.foreground,
+          child: _InsetDivider(
+            show: divider && plain,
+            inset: inset,
+            color: t.ui.lineHairline,
+            child: ConstrainedBox(
+              // `min-h-11` (44) by touch, the 36px row with a fine pointer.
+              constraints: BoxConstraints(minHeight: touch ? 44 : 36),
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: inset, vertical: 6),
+                child: Row(
+                  spacing: 8,
+                  children: [
+                    Text('#${task.number}', style: mono),
+                    Flexible(
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        spacing: 6,
+                        children: [
+                          Flexible(
+                            child: Text(
+                              task.title,
+                              key: const ValueKey('message-task-chip-title'),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: t.scale(
+                                RaftTypeScale.callout,
+                                weight: FontWeight.w400,
+                                color: t.ui.foreground,
+                              ),
                             ),
                           ),
-                        ),
-                        if (task.replyCount > 0 || task.unread)
-                          _ReplyCount(task: task, style: mono),
-                      ],
+                          if (task.replyCount > 0 || task.unread)
+                            _ReplyCount(task: task, style: mono),
+                        ],
+                      ),
                     ),
-                  ),
-                  const Spacer(),
-                  if (task.assigneeName != null) _Assignee(task: task),
-                  RaftTaskStatusBadge(
-                    status: raftTaskStatusOf(task.status),
-                    label: statusLabel,
-                  ),
-                ],
+                    const Spacer(),
+                    if (task.assigneeName != null) _Assignee(task: task),
+                    if (plain)
+                      RaftIcon(
+                        RaftGlyph.chevronRight,
+                        size: 14,
+                        color: t.ui.foregroundHint,
+                      )
+                    else
+                      RaftTaskStatusBadge(
+                        status: raftTaskStatusOf(task.status),
+                        label: statusLabel,
+                      ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -202,6 +264,38 @@ class _TaskChipListRow extends StatelessWidget {
       ),
     );
   }
+}
+
+/// The hairline above a row, inset from both edges (a side card's list has
+/// no edge of its own: its lines run where the content does).
+class _InsetDivider extends StatelessWidget {
+  const _InsetDivider({
+    required this.show,
+    required this.inset,
+    required this.color,
+    required this.child,
+  });
+  final bool show;
+  final double inset;
+  final Color color;
+  final Widget child;
+  @override
+  Widget build(BuildContext context) => !show
+      ? child
+      : Stack(
+          fit: StackFit.passthrough,
+          children: [
+            child,
+            Positioned(
+              top: 0,
+              left: inset,
+              right: inset,
+              child: IgnorePointer(
+                child: SizedBox(height: 1, child: ColoredBox(color: color)),
+              ),
+            ),
+          ],
+        );
 }
 
 class _ReplyCount extends StatelessWidget {
