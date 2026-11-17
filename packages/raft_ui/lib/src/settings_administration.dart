@@ -1456,9 +1456,10 @@ class RaftPublicVisibilityCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // `text-subhead font-semibold text-foreground`.
               RaftCssText(
                 raftText(context, title),
-                style: RaftSettingsText(t).title.copyWith(color: t.strong),
+                style: RaftSettingsText(t, semanticTypography: true).title,
               ),
               const SizedBox(height: 4),
               RaftCssText(
@@ -1551,9 +1552,10 @@ class RaftPublicVisibilityCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                // `mb-2 text-subhead font-semibold text-foreground`.
                 RaftCssText(
                   raftText(context, 'Channels visible to anyone'),
-                  style: eyebrow,
+                  style: RaftSettingsText(t, semanticTypography: true).title,
                 ),
                 const SizedBox(height: 8),
                 if (loading)

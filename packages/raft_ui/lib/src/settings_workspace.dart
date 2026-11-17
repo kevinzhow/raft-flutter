@@ -187,9 +187,10 @@ class RaftServerLabsSection extends StatelessWidget {
           if (labs.isEmpty)
             Text(
               raftText(context, 'No Labs available for this server'),
+              // `text-footnote text-foreground-hint`.
               style: description.copyWith(
-                fontStyle: FontStyle.italic,
                 height: 16 / 12,
+                color: t.colors['foreground-hint'],
               ),
             )
           else
