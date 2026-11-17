@@ -530,8 +530,11 @@ class _RaftSettingsSearchResultRowState
     final t = RaftTokens.of(context);
     final tokens = RaftRecipeTokens(t);
     final size = MediaQuery.sizeOf(context);
+    // `SidebarItem wrap` holding a stacked `SidebarItemContent`: the item's own
+    // type (size, weight) under the title and subtitle slots' colour and size.
     final recipe = RaftSidebarItemRecipe.resolve(
       wrap: true,
+      stacked: true,
       states: RaftRecipeStates(
         {
           if (hovered) RaftRecipeStates.hover,
@@ -550,25 +553,16 @@ class _RaftSettingsSearchResultRowState
       ),
       tokens: tokens,
     );
-    final stacked = RaftSidebarItemRecipe.resolve(
-      wrap: true,
-      stacked: true,
-      states: RaftRecipeStates(
-        {if (t.dark) RaftRecipeStates.dark},
-        size.width,
-        size.height,
-      ),
-      tokens: tokens,
-    );
     final s = recipe.sidebarItem;
     final before = s.before;
+    final base = s.textStyle(tokens);
     final titleStyle = RaftControlTypography.of(
       context,
-      stacked.sidebarItemTitle.textStyle(tokens),
+      base.merge(recipe.sidebarItemTitle.textStyle(tokens)),
     );
     final subtitleStyle = RaftControlTypography.of(
       context,
-      stacked.sidebarItemSubtitle.textStyle(tokens),
+      base.merge(recipe.sidebarItemSubtitle.textStyle(tokens)),
     );
     return Semantics(
       button: true,
