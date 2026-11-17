@@ -524,5 +524,49 @@ void main() {
         );
       });
     });
+    testWidgets('an item that grows with no rebuild of the toolbar is fitted '
+        'again (the fit follows the measured width, not the first one)', (
+      t,
+    ) async {
+      final room = ValueNotifier<double>(10);
+      addTearDown(room.dispose);
+      await mount(
+        t,
+        SizedBox(
+          width: 400,
+          child: RaftFitToolbar(
+            semanticLabel: 'x',
+            children: [
+              RaftFitGroup(
+                firstLine: true,
+                items: [
+                  RaftFitChild(
+                    child: ValueListenableBuilder<double>(
+                      valueListenable: room,
+                      builder: (_, w, _) => SizedBox(width: w, height: 20),
+                    ),
+                  ),
+                  const RaftFitButton(
+                    key: ValueKey('add'),
+                    label: 'New task',
+                    glyph: RaftGlyph.plus,
+                    plusOrder: 40,
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      );
+      final full = t.getSize(find.byKey(const ValueKey('add'))).width;
+      room.value = 300;
+      await t.pump();
+      await t.pump();
+      expect(find.byKey(const ValueKey('add')), findsOneWidget);
+      expect(
+        t.getSize(find.byKey(const ValueKey('add'))).width,
+        lessThan(full),
+      );
+    });
   });
 }

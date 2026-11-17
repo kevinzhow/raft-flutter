@@ -530,8 +530,9 @@ class _RaftFitToolbarState extends State<RaftFitToolbar> {
       next.requestFocus();
       final c = next.context;
       if (c != null)
-        Scrollable.maybeOf(c)?.position
-            .ensureVisible(c.findRenderObject()!, alignment: .5);
+        Scrollable.maybeOf(
+          c,
+        )?.position.ensureVisible(c.findRenderObject()!, alignment: .5);
     }
     return KeyEventResult.handled;
   }
@@ -548,7 +549,12 @@ class _RaftFitToolbarState extends State<RaftFitToolbar> {
             child: ExcludeSemantics(
               child: TickerMode(
                 enabled: false,
-                child: _MeasureProbe(name: key, sizes: _sizes, child: child),
+                child: _MeasureProbe(
+                  name: key,
+                  sizes: _sizes,
+                  onChanged: _refit,
+                  child: child,
+                ),
               ),
             ),
           ),
@@ -627,6 +633,20 @@ class _RaftFitToolbarState extends State<RaftFitToolbar> {
         ),
       ),
     );
+  }
+
+  bool _refitQueued = false;
+
+  /// A form measured differently from the last time (a font arrived, a count
+  /// changed inside an item): the live layout was fitted to the old widths,
+  /// so it is fitted again, as if the toolbar had been built with these.
+  void _refit() {
+    if (_refitQueued) return;
+    _refitQueued = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _refitQueued = false;
+      if (mounted) setState(() {});
+    });
   }
 
   Size _size(String key) => _sizes[key] ?? Size.zero;
@@ -1121,14 +1141,16 @@ class _MeasureProbe extends SingleChildRenderObjectWidget {
   const _MeasureProbe({
     required this.name,
     required this.sizes,
+    required this.onChanged,
     required super.child,
   });
   final String name;
   final Map<String, Size> sizes;
+  final VoidCallback onChanged;
 
   @override
   RenderObject createRenderObject(BuildContext context) =>
-      _RenderMeasureProbe(name, sizes);
+      _RenderMeasureProbe(name, sizes, onChanged);
 
   @override
   void updateRenderObject(
@@ -1137,14 +1159,16 @@ class _MeasureProbe extends SingleChildRenderObjectWidget {
   ) {
     renderObject
       ..name = name
-      ..sizes = sizes;
+      ..sizes = sizes
+      ..onChanged = onChanged;
   }
 }
 
 class _RenderMeasureProbe extends RenderProxyBox {
-  _RenderMeasureProbe(this.name, this.sizes);
+  _RenderMeasureProbe(this.name, this.sizes, this.onChanged);
   String name;
   Map<String, Size> sizes;
+  VoidCallback onChanged;
 
   @override
   void performLayout() {
@@ -1154,7 +1178,9 @@ class _RenderMeasureProbe extends RenderProxyBox {
       return;
     }
     c.layout(const BoxConstraints(), parentUsesSize: true);
+    final before = sizes[name];
     sizes[name] = c.size;
+    if (before != null && before != c.size) onChanged();
     size = constraints.constrain(c.size);
   }
 }
