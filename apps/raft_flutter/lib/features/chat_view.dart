@@ -25,7 +25,6 @@ import '../data/message_history_memory.dart';
 import '../data/message_history_positions.dart';
 import 'row_extents.dart';
 
-import '../data/plan_history.dart';
 import '../data/raft_location.dart';
 import '../data/raft_permalink.dart';
 import '../data/thread_search.dart';
@@ -73,6 +72,7 @@ import 'composer_directory.dart';
 import 'composer_attachment_input.dart';
 import '../platform/clipboard_attachments.dart';
 import 'composer_attachments_view.dart';
+import 'history_paywall_view.dart';
 import 'sender_avatar_projection.dart';
 import 'message_reaction_projection.dart';
 import 'message_agent_presentation.dart';
@@ -2836,46 +2836,12 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
   );
 
   /// ChatPanel `contextLoadError` banner above the history state: the jump
-  /// target is missing ("Message not found") or hidden by the plan cutoff.
-  Widget? contextLoadBanner() {
-    final error = _messages.contextLoadError;
-    if (error == null) return null;
-    if (error == MessageContextLoadError.beyondHistory) {
-      final limit = planHistoryLimit(w.server?.string('plan'));
-      return RaftHistoryLimitBanner(
-        message: raftFormat(
-          context,
-          'This message is older than the {days}-day history available on the {plan} plan. Upgrade to view it.',
-          {'days': limit.days, 'plan': limit.plan},
-        ),
-        linkLabel: widget.onViewBilling == null
-            ? null
-            : raftText(context, 'View billing'),
-        onLink: widget.onViewBilling,
-      );
-    }
-    return RaftHistoryLimitBanner(
-      message: raftText(context, 'Message not found'),
-    );
-  }
-
-  /// Web HistoryLimitBanner: the plan message-history cutoff notice with a
-  /// billing link, shared by the channel list and the thread panel.
-  Widget historyLimitBanner({bool inset = false}) {
-    final limit = planHistoryLimit(w.server?.string('plan'));
-    return RaftHistoryLimitBanner(
-      inset: inset,
-      message: raftFormat(
-        context,
-        'Message history is limited to {days} days on the {plan} plan.',
-        {'days': limit.days, 'plan': limit.plan},
-      ),
-      linkLabel: widget.onViewBilling == null
-          ? null
-          : raftText(context, 'View billing'),
-      onLink: widget.onViewBilling,
-    );
-  }
+  /// target is missing. One hidden by the plan cutoff is the history paywall.
+  Widget? contextLoadBanner() =>
+      _messages.contextLoadError == MessageContextLoadError.notFound &&
+          !RaftHistoryPaywallView.showsTarget(w)
+      ? RaftHistoryLimitBanner(message: raftText(context, 'Message not found'))
+      : null;
 
   Widget threadTopSliver({bool loading = false, bool showSummary = true}) =>
       RaftThreadTimelineTopSliver(
@@ -2891,6 +2857,11 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
         historyLimitedLabel: raftText(
           context,
           'Older replies are limited by the current plan',
+        ),
+        historyLimitedChild: RaftHistoryPaywallView(
+          controller: w,
+          thread: true,
+          recentDivider: rows.isNotEmpty,
         ),
         beginningLabel: raftText(context, 'Beginning of replies'),
         replyCountLabel: raftFormat(context, '{count} replies', {
@@ -3166,7 +3137,15 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
             // Every reply sits behind the plan cutoff: the thread is hidden,
             // not empty (Web shows the banner instead of "No replies yet").
             child: _messages.state.threadHistoryLimited
-                ? Center(child: historyLimitBanner(inset: true))
+                ? Align(
+                    alignment: Alignment.topCenter,
+                    child: RaftHistoryPaywallView(
+                      controller: w,
+                      thread: true,
+                      allHidden: true,
+                      inset: true,
+                    ),
+                  )
                 : RaftProductEmptyState(
                     title: raftText(context, 'No replies yet'),
                     icon: (context, size, color) =>
@@ -3182,36 +3161,34 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
         RaftTimelineSparseFill(
           child: Align(
             alignment: Alignment.topCenter,
-            child: empty && _messages.contextLoadError == null
-                ? const SizedBox.shrink()
+            child: empty
+                ? contextLoadBanner() ?? const SizedBox.shrink()
                 : Padding(
                     padding: recipe.channelHeaderInset,
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         ?contextLoadBanner(),
-                        if (!empty)
-                          !_messages.state.hasMore &&
-                                  _messages.state.historyLimited
-                              ? historyLimitBanner()
-                              : RaftThreadHistoryTopState(
-                                  hasMore: _messages.state.hasMore,
-                                  historyLimited:
-                                      _messages.state.historyLimited,
-                                  loadingOlder: _messages.state.loadingOlder,
-                                  loadingOlderLabel: raftText(
-                                    context,
-                                    'Loading older messages...',
-                                  ),
-                                  historyLimitedLabel: raftText(
-                                    context,
-                                    'Older messages are limited by the current plan',
-                                  ),
-                                  beginningLabel: raftText(
-                                    context,
-                                    'Beginning of messages',
-                                  ),
-                                ),
+                        if (RaftHistoryPaywallView.atTop(w))
+                          RaftHistoryPaywallView(controller: w)
+                        else
+                          RaftThreadHistoryTopState(
+                            hasMore: _messages.state.hasMore,
+                            historyLimited: _messages.state.historyLimited,
+                            loadingOlder: _messages.state.loadingOlder,
+                            loadingOlderLabel: raftText(
+                              context,
+                              'Loading older messages...',
+                            ),
+                            historyLimitedLabel: raftText(
+                              context,
+                              'Older messages are limited by the current plan',
+                            ),
+                            beginningLabel: raftText(
+                              context,
+                              'Beginning of messages',
+                            ),
+                          ),
                       ],
                     ),
                   ),
@@ -3334,6 +3311,12 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
                           line: 20,
                         ),
                       ),
+                    )
+                  : RaftHistoryPaywallView.hidesAll(w)
+                  ? RaftHistoryPaywallView(
+                      controller: w,
+                      allHidden: true,
+                      fill: true,
                     )
                   : RaftEmptyState(
                       title: raftText(context, 'No messages yet'),

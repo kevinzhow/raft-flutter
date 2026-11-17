@@ -190,12 +190,7 @@ class MessageHistoryPages {
       ),
       focused: true,
       target: target,
-      remote: () async => Map<String, dynamic>.from(
-        await w.transport.client.get(
-          '/messages/context/$target',
-          query: {'channelId': id},
-        ),
-      ),
+      remote: () => w.transport.client.messageContext(id, target),
     );
   }
 

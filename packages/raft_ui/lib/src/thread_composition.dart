@@ -586,6 +586,7 @@ class RaftThreadTimelineTopSliver extends StatelessWidget {
     required this.historyLimitedLabel,
     required this.beginningLabel,
     required this.replyCountLabel,
+    this.historyLimitedChild,
     this.parent,
     this.parentSlot,
     this.parentKey,
@@ -594,6 +595,10 @@ class RaftThreadTimelineTopSliver extends StatelessWidget {
 
   final bool hasMore, historyLimited, loadingOlder;
   final String loadingOlderLabel, historyLimitedLabel, beginningLabel;
+
+  /// What stands in for the one-line cutoff notice once the replies reach the
+  /// start of what the plan shows (Web's history paywall); null keeps the line.
+  final Widget? historyLimitedChild;
 
   /// Web ThreadPanel renders the history state and the reply count only in
   /// its timeline header; a thread with no replies (not loading) shows the
@@ -633,14 +638,22 @@ class RaftThreadTimelineTopSliver extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  RaftThreadHistoryTopState(
-                    hasMore: hasMore,
-                    historyLimited: historyLimited,
-                    loadingOlder: loadingOlder,
-                    loadingOlderLabel: loadingOlderLabel,
-                    historyLimitedLabel: historyLimitedLabel,
-                    beginningLabel: beginningLabel,
-                  ),
+                  if (historyLimitedChild != null &&
+                      raftThreadHistoryState(
+                            hasMore: hasMore,
+                            historyLimited: historyLimited,
+                          ) ==
+                          RaftThreadHistoryState.limited)
+                    historyLimitedChild!
+                  else
+                    RaftThreadHistoryTopState(
+                      hasMore: hasMore,
+                      historyLimited: historyLimited,
+                      loadingOlder: loadingOlder,
+                      loadingOlderLabel: loadingOlderLabel,
+                      historyLimitedLabel: historyLimitedLabel,
+                      beginningLabel: beginningLabel,
+                    ),
                   Padding(
                     padding: const EdgeInsets.only(bottom: 4),
                     child: Container(

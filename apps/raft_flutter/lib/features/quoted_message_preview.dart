@@ -5,6 +5,7 @@ import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import 'delegated_message.dart';
+import 'history_paywall_view.dart' show historyPaywallDays, openHistoryUpgrade;
 
 import '../data/raft_permalink.dart';
 import '../data/workspace_controller.dart';
@@ -71,6 +72,9 @@ class _QuotedMessagePermalinkPreviewState
     extends State<QuotedMessagePermalinkPreview> {
   WorkspaceController get w => widget.controller;
   RaftMessage? target;
+
+  /// Behind the plan's history window: who sent it and when, not what.
+  HiddenHistoryMessage? older;
   bool archived = false, unavailable = false;
   int ticket = 0;
 
@@ -104,14 +108,27 @@ class _QuotedMessagePermalinkPreviewState
     } else {
       setState(() {
         target = null;
+        older = null;
         unavailable = false;
       });
     }
     try {
       final result = await cache.load(link);
       if (result != null && mounted && mine == ticket) show(result);
-    } catch (_) {
-      if (mounted && mine == ticket) show((target: null, archived: false));
+    } catch (e) {
+      if (!mounted || mine != ticket) return;
+      // Older than the plan's history window: the quote keeps its header and
+      // says so, with the upgrade (Web readHistoryLimitedError).
+      final hidden = HiddenTarget.fromError(e)?.target;
+      if (hidden == null) {
+        show((target: null, archived: false));
+        return;
+      }
+      setState(() {
+        target = null;
+        older = hidden;
+        unavailable = false;
+      });
     }
   }
 
@@ -120,6 +137,7 @@ class _QuotedMessagePermalinkPreviewState
     if (gone && unavailable) return;
     setState(() {
       target = result.target;
+      older = null;
       archived = result.archived;
       unavailable = gone;
     });
@@ -129,7 +147,20 @@ class _QuotedMessagePermalinkPreviewState
   @override
   Widget build(BuildContext context) {
     if (unavailable) return const SizedBox.shrink();
-    final message = target;
+    final hidden = older;
+    final message =
+        target ??
+        (hidden == null
+            ? null
+            : RaftMessage({
+                'id': hidden.id,
+                'channelId': widget.permalink.channelId,
+                'senderId': hidden.senderId,
+                'senderType': hidden.senderType,
+                'senderName': hidden.senderName ?? '',
+                'senderAvatarUrl': hidden.senderAvatarUrl,
+                'createdAt': hidden.createdAt,
+              }));
     if (message == null) return const RaftQuotedMessageSkeleton();
     final link = widget.permalink;
     final channel = [
@@ -166,18 +197,29 @@ class _QuotedMessagePermalinkPreviewState
           : widget.formatTimestamp(created).replaceFirst(',', ' ·'),
       authorName: name,
       avatar: widget.avatar(message),
-      authorSubtitle: widget.subtitle(message),
+      authorSubtitle: hidden == null ? widget.subtitle(message) : null,
       authorDelegatedBy: delegatedByLabel(context, message, continuation: true),
       unavailableText: message.retracted
           ? raftText(context, 'This message was retracted.')
           : null,
-      content: message.content,
+      content: hidden == null ? message.content : '',
+      notice: hidden == null
+          ? null
+          : RaftOlderMessageNotice(
+              label: raftFormat(
+                context,
+                'This message is older than {days} days.',
+                {'days': historyPaywallDays(w)},
+              ),
+              upgradeLabel: raftText(context, 'Upgrade to Pro'),
+              onUpgrade: () => openHistoryUpgrade(context, w),
+            ),
       attachmentLabel: attachments == null
           ? null
           : attachments.count == null
           ? raftText(context, attachments.key)
           : raftFormat(context, attachments.key, {'count': attachments.count}),
-      onTap: () => widget.onOpen(link),
+      onTap: hidden == null ? () => widget.onOpen(link) : null,
     );
   }
 }

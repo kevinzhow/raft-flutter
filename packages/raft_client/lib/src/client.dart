@@ -9,6 +9,7 @@ import 'package:uuid/uuid.dart';
 
 import 'account_link.dart';
 import 'client_config.dart';
+import 'hidden_history.dart';
 import 'legal_acceptance.dart';
 import 'models.dart';
 import 'rate_limit_governor.dart';
@@ -172,6 +173,9 @@ Map<String, dynamic> _errorDetails(Map? body) {
     // agents on the Computer, each with its owner and reminder times, which
     // Delete Computer lists with Notify owner (Web othersAgentsApi.ts).
     'agents',
+    // The context route's `history_limited` 404: the message behind the plan's
+    // history cutoff (ids, names and short previews the viewer may read).
+    'hiddenTarget',
   };
   dynamic freeze(dynamic value) {
     if (value is Map) {
@@ -2237,21 +2241,55 @@ class RaftClient {
     dm ? '/channels/dm' : '/channels',
     query: dm ? null : {'archived': 'include'},
   ) as List).map((e) => RaftChannel(Map<String, dynamic>.from(e))).toList();
+  /// What the plan's history cutoff hides, as the message pages and a jump's
+  /// context 404 reported it (Web `useHiddenHistoryStore`).
+  final hiddenHistory = HiddenHistoryStore();
+
   Future<Map<String, dynamic>> messagePage(
     String id, {
     BigInt? before,
     BigInt? after,
     int limit = 50,
-  }) async => Map<String, dynamic>.from(
-    await get(
-      '/messages/channel/$id',
-      query: {
-        'limit': limit,
-        if (before != null) 'before': before.toString(),
-        if (after != null) 'after': after.toString(),
-      },
-    ),
-  );
+  }) async {
+    final page = Map<String, dynamic>.from(
+      await get(
+        '/messages/channel/$id',
+        query: {
+          'limit': limit,
+          if (before != null) 'before': before.toString(),
+          if (after != null) 'after': after.toString(),
+        },
+      ),
+    );
+    hiddenHistory.recordPage(id, page);
+    return page;
+  }
+
+  /// `GET /messages/context/:target`. A target behind the cutoff answers 404
+  /// `history_limited` with the hidden target's preview, kept for the paywall.
+  Future<Map<String, dynamic>> messageContext(
+    String id,
+    String target,
+  ) async {
+    try {
+      final page = Map<String, dynamic>.from(
+        await get('/messages/context/$target', query: {'channelId': id}),
+      );
+      hiddenHistory
+        ..recordPage(id, page)
+        ..clearTarget(id);
+      return page;
+    } on RaftApiException catch (e) {
+      final hidden = HiddenTarget.fromError(e);
+      if (hidden != null) {
+        hiddenHistory.recordTarget(id, hidden);
+      } else {
+        hiddenHistory.clearTarget(id);
+      }
+      rethrow;
+    }
+  }
+
   String newRandomId() => const Uuid().v4();
 
   /// The Content-Type of an upload's file part: what a browser sends for the

@@ -3,6 +3,7 @@ library;
 export 'src/account_link.dart';
 export 'src/client.dart';
 export 'src/client_config.dart';
+export 'src/hidden_history.dart';
 export 'src/legal_acceptance.dart';
 export 'src/models.dart';
 export 'src/permissions.dart';

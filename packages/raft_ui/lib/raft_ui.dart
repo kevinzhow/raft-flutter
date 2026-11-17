@@ -221,6 +221,7 @@ export 'src/message_toolbar_glyphs.dart';
 export 'src/mounted_reaction_recipe.dart';
 
 export 'src/inline_thread_surface.dart';
+export 'src/history_paywall.dart';
 
 export 'src/mounted_avatar_recipe.dart';
 
