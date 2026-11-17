@@ -181,25 +181,6 @@ class RaftTaskReasonPanelState extends State<RaftTaskReasonPanel> {
     required List<Widget> actions,
   }) {
     final t = RaftTokens.of(context);
-    final actionRow = Wrap(
-      alignment: WrapAlignment.end,
-      crossAxisAlignment: WrapCrossAlignment.center,
-      spacing: RaftSpace.x2,
-      runSpacing: RaftSpace.x2,
-      children: actions,
-    );
-    if (!t.isRaftLook) {
-      return Padding(
-        key: key,
-        padding: const EdgeInsets.all(RaftSpace.x3),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          spacing: RaftSpace.x3,
-          children: [...body, actionRow],
-        ),
-      );
-    }
     raft_popover.RaftPopoverRecipeStyle resolve(RaftRecipeStates states) =>
         raft_popover.RaftPopoverRecipe.resolve(
           states: states,

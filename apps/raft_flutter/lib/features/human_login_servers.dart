@@ -71,7 +71,7 @@ Text _boldText(
 /// The Raft Server field. A Marketplace app lists every server the account can
 /// use, with a search over more than five and each server's state (Web
 /// `MarketplaceServerRow`); any other app lists the servers that have it, as
-/// a canonical Select in Raft and the original choice cards in Frozen.
+/// a canonical Select.
 class HumanLoginServerField extends StatefulWidget {
   const HumanLoginServerField({
     super.key,
@@ -135,60 +135,29 @@ class _HumanLoginServerFieldState extends State<HumanLoginServerField> {
     );
   }
 
-  /// Servers that have the app: canonical Select; Frozen keeps its choice cards.
+  /// Servers that have the app: canonical Select.
   Widget _plain(BuildContext context) {
-    final t = RaftTokens.of(context);
     final choices = widget.lookup.choices;
-    if (t.isRaftLook) {
-      return RaftSelectField<String>(
-        key: const ValueKey('human-login-server-select'),
-        label: raftText(context, 'Raft server'),
-        placeholder: raftText(context, 'Raft server'),
-        value: widget.selectedId.isEmpty ? null : widget.selectedId,
-        items: [
-          for (final choice in choices)
-            RaftSelectItem(
-              value: choice.server.id,
-              label: choice.server.label,
-              labelKey: ValueKey('human-login-server-${choice.server.id}'),
-            ),
-        ],
-        onChanged: widget.enabled
-            ? (value) {
-                if (value != null) {
-                  widget.onSelect(value);
-                }
-              }
-            : null,
-      );
-    }
-    final several = choices.length > 1;
-    Widget label(String text) => Text(
-      text,
-      style: _body(t, weight: FontWeight.w600, color: t.ink),
-    );
-    return RaftRadioGroup<String>(
-      value: widget.selectedId,
-      onChanged: widget.enabled && several ? widget.onSelect : null,
-      spacing: RaftSpace.x1_5,
-      children: [
+    return RaftSelectField<String>(
+      key: const ValueKey('human-login-server-select'),
+      label: raftText(context, 'Raft server'),
+      placeholder: raftText(context, 'Raft server'),
+      value: widget.selectedId.isEmpty ? null : widget.selectedId,
+      items: [
         for (final choice in choices)
-          RaftCard(
-            variant: RaftCardRecipeVariant.option,
-            key: ValueKey('human-login-server-${choice.server.id}'),
-            onTap: widget.enabled && several
-                ? () => widget.onSelect(choice.server.id)
-                : null,
-            padding: const EdgeInsets.all(RaftSpace.x3),
-            child: several
-                ? RaftRadioGroupItem<String>(
-                    value: choice.server.id,
-                    gap: RaftSpace.x2,
-                    child: label(choice.server.label),
-                  )
-                : label(choice.server.label),
+          RaftSelectItem(
+            value: choice.server.id,
+            label: choice.server.label,
+            labelKey: ValueKey('human-login-server-${choice.server.id}'),
           ),
       ],
+      onChanged: widget.enabled
+          ? (value) {
+              if (value != null) {
+                widget.onSelect(value);
+              }
+            }
+          : null,
     );
   }
 

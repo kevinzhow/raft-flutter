@@ -9,7 +9,6 @@ import 'localization.dart';
 import 'kbd.dart';
 import 'recipe_surface.dart';
 import 'recipes/search_trigger.g.dart';
-import 'raft/css_box.dart' show raftControlBorderPx;
 import 'shortcut_platform.dart';
 import 'status_bar.dart';
 import 'tap_slop.dart';
@@ -191,98 +190,50 @@ class RaftWorkspaceSearchTrigger extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    if (t.isRaftLook) {
-      final control = RaftInteractive(
-        key: const Key('topbar-search'),
-        semanticLabel: raftText(context, 'Search'),
-        onPressed: onPressed,
-        builder: (context, state) {
-          final rt = t.recipeTokens;
-          final slots = RaftSearchTriggerRecipe.resolve(
-            tokens: rt,
-            states: t.recipeStates(
-              hovered: state.hovered,
-              pressed: state.pressed,
-              focusVisible: state.focusVisible,
-            ),
-          );
-          final glyph = slots.root.target("& > svg:not([class*='size-'])")!;
-          return RaftRecipeBox(
-            style: slots.root.withCssUsedBorderWidths(),
-            tokens: rt,
-            controlLabel: true,
-            child: Row(
-              spacing: slots.root.columnGap ?? 0,
-              children: [
-                RaftIcon(RaftGlyph.search, size: glyph.width!),
-                Expanded(
-                  child: RaftRecipeBox(
-                    style: slots.label,
-                    tokens: rt,
-                    child: Text(
-                      raftText(context, 'Search'),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ),
-                if (RaftInteraction.of(context).pointer)
-                  RaftRecipeBox(
-                    style: slots.shortcut,
-                    tokens: rt,
-                    child: RaftKbd(globalSearchShortcutLabel()),
-                  ),
-              ],
-            ),
-          );
-        },
-      );
-      return RaftInteraction.of(context).touch
-          ? RaftTapSlopAnchor(
-              minSize: const Size.square(RaftMetrics.touchTarget),
-              child: control,
-            )
-          : control;
-    }
-    final control = RaftControl(
+    final control = RaftInteractive(
       key: const Key('topbar-search'),
-      recipe: _WorkspaceSearchRecipe(t, raftControlBorderPx(context, 1.5)),
-      visualHeight: 36,
-      minimumTargetSize: 36,
       semanticLabel: raftText(context, 'Search'),
       onPressed: onPressed,
-      child: Row(
-        children: [
-          const RaftIcon(RaftGlyph.search, size: 18, strokeWidth: 2),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              raftText(context, 'Search'),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
+      builder: (context, state) {
+        final rt = t.recipeTokens;
+        final slots = RaftSearchTriggerRecipe.resolve(
+          tokens: rt,
+          states: t.recipeStates(
+            hovered: state.hovered,
+            pressed: state.pressed,
+            focusVisible: state.focusVisible,
           ),
-          if (RaftInteraction.of(context).pointer)
-            DecoratedBox(
-              decoration: BoxDecoration(
-                border: Border.all(color: t.colors['line-hairline']!),
-                borderRadius: BorderRadius.circular(3),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                child: Text(
-                  globalSearchShortcutLabel(),
-                  style: RaftTypography.mono(
-                    t,
-                    size: 12,
-                    line: 16,
-                    color: t.colors['foreground-hint'],
+        );
+        final glyph = slots.root.target("& > svg:not([class*='size-'])")!;
+        return RaftRecipeBox(
+          style: slots.root.withCssUsedBorderWidths(),
+          tokens: rt,
+          controlLabel: true,
+          child: Row(
+            spacing: slots.root.columnGap ?? 0,
+            children: [
+              RaftIcon(RaftGlyph.search, size: glyph.width!),
+              Expanded(
+                child: RaftRecipeBox(
+                  style: slots.label,
+                  tokens: rt,
+                  child: Text(
+                    raftText(context, 'Search'),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ),
-            ),
-        ],
-      ),
+              if (RaftInteraction.of(context).pointer)
+                RaftRecipeBox(
+                  style: slots.shortcut,
+                  tokens: rt,
+                  child: RaftKbd(globalSearchShortcutLabel()),
+                ),
+            ],
+          ),
+        );
+      },
     );
     return RaftInteraction.of(context).touch
         ? RaftTapSlopAnchor(
@@ -291,35 +242,4 @@ class RaftWorkspaceSearchTrigger extends StatelessWidget {
           )
         : control;
   }
-}
-
-class _WorkspaceSearchRecipe extends RaftControlRecipe {
-  const _WorkspaceSearchRecipe(super.tokens, this.usedBorder);
-  final double usedBorder;
-  @override
-  bool get transformsOnInteraction => false;
-  @override
-  Gradient? get overlayGradient => null;
-  @override
-  double get insetHighlightAlpha => 0;
-  @override
-  Color get background => tokens.colors['layer-card']!;
-  @override
-  Color get foreground => tokens.colors['foreground-hint']!;
-  @override
-  EdgeInsets get padding => const EdgeInsets.symmetric(horizontal: 12);
-  @override
-  BorderRadius get radius => BorderRadius.circular(tokens.radius);
-  @override
-  BorderSide side({bool hovered = false}) =>
-      BorderSide(color: tokens.colors['line-strong']!, width: usedBorder);
-  @override
-  List<BoxShadow> shadows({
-    bool hovered = false,
-    bool pressed = false,
-    bool focused = false,
-  }) => const [];
-  @override
-  TextStyle get textStyle =>
-      RaftTypography.body(tokens, size: 16, line: 24, weight: FontWeight.w400);
 }

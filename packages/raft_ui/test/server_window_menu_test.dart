@@ -5,17 +5,10 @@ import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_ui/test_themes.dart';
 
 void main() {
-  for (final (id, dark) in raftThemeMatrix(
-    [
-      (raftThemePackId, false),
-      (raftThemePackId, true),
-      (elegantThemePackId, false),
-      (elegantThemePackId, true),
-      (brutalThemePackId, false),
-    ],
-    look: (v) => raftLookOf(v.$1),
-    dark: (v) => v.$2,
-  )) {
+  for (final (id, dark) in raftThemeMatrix([
+    (raftThemePackId, false),
+    (raftThemePackId, true),
+  ], dark: (v) => v.$2)) {
     for (final touch in [false, true]) {
       testWidgets(
         'server window menu $id ${dark ? 'dark' : 'light'} ${touch ? 'fold touch' : 'narrow desktop'} follows input mode and is accessible',

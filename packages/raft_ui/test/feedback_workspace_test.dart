@@ -115,7 +115,7 @@ void main() {
           final title = reason == RaftFeedbackCloseReason.completed
               ? 'Issue resolved — close this ticket?'
               : 'No longer need help — close this ticket?';
-          // Brutal dialog titles are upper-cased by the recipe.
+          // Compare case-insensitively: recipes may upper-case dialog titles.
           expect(
             find.byWidgetPredicate(
               (w) => w is Text && w.data?.toLowerCase() == title.toLowerCase(),

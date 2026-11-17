@@ -2,11 +2,9 @@
 // `ConversationPanelFooter` chain): the bordered footer frame shared by the
 // archived notice, the read-only banners and the Join CTA, and the joint
 // over-limit grace banner above the composer. The app decides which one shows.
-import 'hover_region.dart';
 
 import 'package:flutter/material.dart';
 
-import 'raft_underline.dart';
 import 'banner.dart';
 import 'design_primitives.dart';
 import 'dialog_card.dart' show RaftRecipeButton;
@@ -14,13 +12,12 @@ import 'icons.dart';
 import 'localization.dart';
 import 'recipes/button_variants.g.dart'
     show RaftButtonRecipeVariant, RaftButtonRecipeSize;
-import 'recipes/recipe_runtime.dart' show RaftRecipeSet;
 import 'theme.dart';
 import 'system_inset.dart';
 import 'raft/ui_tokens.dart' show RaftTokensUi;
 import 'tokens/tokens.dart';
 
-/// `border-t border-line-muted bg-layer-panel` / brutal `border-t-2 border-black bg-white`.
+/// `border-t border-line-muted bg-layer-panel`.
 BoxDecoration _footerDecoration(RaftTokens t, {Color? color}) => BoxDecoration(
   color: color ?? t.panel,
   border: t.size('stroke.channelFooter', fallback: 1) > 0
@@ -89,10 +86,9 @@ class RaftChannelBannerFooter extends StatelessWidget {
   }
 }
 
-/// `This channel is archived.` + `Unarchive`. The Raft look is the Web's
+/// `This channel is archived.` + `Unarchive`: the Web's
 /// `<Banner status="warning" className="justify-center text-center font-bold">`
-/// in a `p-3` host ([RaftChannelBannerFooter]); the frozen looks keep their
-/// `bg-warning-soft` / brutal `bg-brutal-orange/20` strip.
+/// in a `p-3` host ([RaftChannelBannerFooter]).
 class RaftChannelArchivedFooter extends StatelessWidget {
   const RaftChannelArchivedFooter({
     super.key,
@@ -106,41 +102,11 @@ class RaftChannelArchivedFooter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
-    if (t.recipeSet == RaftRecipeSet.raft) {
-      return RaftChannelBannerFooter(
-        key: const ValueKey('channel-archived-footer'),
-        message: message,
-        linkLabel: linkLabel,
-        onLink: onLink,
-      );
-    }
-    final color = t.colors['warning-strong'];
-    final text = RaftTypography.heading(t, size: 14, line: 20, color: color);
-    final decoration = _footerDecoration(t, color: t.colors['warning-soft']);
-    return RaftBottomInsetSurface(
+    return RaftChannelBannerFooter(
       key: const ValueKey('channel-archived-footer'),
-      decoration: decoration,
-      padding: _footerPadding(context, decoration),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        spacing: 8,
-        children: [
-          Flexible(child: Text(raftText(context, message), style: text)),
-          if (linkLabel != null)
-            GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: onLink,
-              child: RaftHoverRegion(
-                cursor: SystemMouseCursors.click,
-                child: RaftUnderlinedText(
-                  raftText(context, linkLabel!),
-                  style: text.copyWith(color: t.strong),
-                ),
-              ),
-            ),
-        ],
-      ),
+      message: message,
+      linkLabel: linkLabel,
+      onLink: onLink,
     );
   }
 }

@@ -74,8 +74,7 @@ Color raftActivityDotColor(RaftTokens t, String? activity) =>
 /// [sans] is Web v1.21.12's `font-sans` on the profile panels' root
 /// (`ProfilePanelBody className="... font-sans"` in AgentDetailPanel,
 /// HumanDetailPanel and ExternalIdentityDetailPanel): text that names no
-/// family of its own switches from Inter to Geist in elegant (brutal's
-/// heading and sans families are both Hanken Grotesk).
+/// family of its own switches from Inter to Geist.
 class RaftPanelTextScope extends StatelessWidget {
   const RaftPanelTextScope({super.key, required this.child, this.sans = false});
   final Widget child;
@@ -153,7 +152,6 @@ class RaftRecipeBadge extends StatelessWidget {
     final t = RaftTokens.of(context);
     final rt = RaftRecipeTokens(t);
     final s = RaftBadgeRecipe.resolve(
-      theme: raftRecipeTheme(t),
       appearance: appearance,
       variant: variant,
       states: RaftRecipeStates({
@@ -221,7 +219,6 @@ class RaftInlineBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     final s = RaftBadgeRecipe.resolve(
-      theme: raftRecipeTheme(t),
       states: RaftRecipeStates({
         if (t.dark) RaftRecipeStates.dark,
       }, MediaQuery.sizeOf(context).width),
@@ -239,7 +236,7 @@ class RaftInlineBadge extends StatelessWidget {
         line: (s.lineHeight ?? 1) * (s.fontSize ?? 10),
         weight: FontWeight.w700,
       ),
-      // Elegant badges size to their content (`py-0.5` + 1px border).
+      // Badges size to their content (`py-0.5` + 1px border).
       height:
           s.height ??
           (s.lineHeight ?? 1) * (s.fontSize ?? 10) + s.padding.vertical + 2,
@@ -281,7 +278,6 @@ class RaftAvatarSlot extends StatelessWidget {
     this.server = false,
   });
 
-  /// AvatarSlot `type="server"`: Brutal adds `bg-soft-signal text-black`.
   final bool server;
   final double? sizeOverride;
   final Widget? content;
@@ -313,15 +309,14 @@ class RaftAvatarSlot extends StatelessWidget {
             fallback: slot.size,
           ),
           // AvatarSlot `mention-card` is the `lg` step: 51 (8n + two 1.5px
-          // edges); the frozen looks keep their `!size-12`.
-          RaftAvatarSlotContext.mentionCard when t.isRaftLook => 51,
+          // edges).
+          RaftAvatarSlotContext.mentionCard => 51,
           _ => slot.size,
         };
     final sticker = t.option('sticker.ring', or: 'none') == 'dieCut';
     final square = t.option('avatar.shape', or: 'circle') == 'square';
     final inkBorder = t.option('control.edge', or: 'ring') == 'inkBorder';
     final s = RaftAvatarRecipe.resolve(
-      theme: inkBorder ? RaftRecipeTheme.brutal : RaftRecipeTheme.elegant,
       type_: agent ? RaftAvatarRecipeType.agent : RaftAvatarRecipeType.human,
       size: RaftAvatarRecipeSize.xl,
       tokens: rt,
@@ -341,7 +336,7 @@ class RaftAvatarSlot extends StatelessWidget {
     final radius = square
         ? BorderRadius.circular(t.size('radius.avatar', fallback: 0))
         : BorderRadius.circular(extent / 2);
-    // Elegant `border-2 border-transparent bg-clip-padding`: the fill stops
+    // `border-2 border-transparent bg-clip-padding`: the fill stops
     // at the padding box, so the transparent border shows the surface behind
     // (a BoxDecoration colour would also paint under the border).
     final clipPadding =
@@ -419,7 +414,7 @@ class RaftAvatarSlot extends StatelessWidget {
             : clipPadding
             ? Colors.transparent
             : null,
-        // `rounded-full` in Elegant at every AvatarSlot size.
+        // `rounded-full` at every AvatarSlot size.
         borderRadius: radius,
         border: Border.all(
           color: s.root.borderColor?.resolve(rt) ?? Colors.black,
@@ -471,7 +466,6 @@ class _RaftRecipeTextButtonState extends State<RaftRecipeTextButton> {
     final t = RaftTokens.of(context);
     final rt = RaftRecipeTokens(t);
     final s = RaftButtonRecipe.resolve(
-      theme: raftRecipeTheme(t),
       variant: widget.variant,
       size: widget.size,
       states: RaftRecipeStates({
@@ -513,7 +507,7 @@ class _RaftRecipeTextButtonState extends State<RaftRecipeTextButton> {
             child: Transform.translate(
               offset: s.translate ?? Offset.zero,
               // The recipe box paints the `::before` sheen and inset shadows
-              // (Elegant solid buttons carry a vertical gradient).
+              // (solid buttons carry a vertical gradient).
               child: RaftRecipeBox(
                 style: s,
                 tokens: rt,
@@ -793,7 +787,6 @@ class RaftProfileIdentity extends StatelessWidget {
       // `<Button variant="outline" className="size-16 !p-0">` contributes
       // the outline shadow around the tile.
       final button = RaftButtonRecipe.resolve(
-        theme: raftRecipeTheme(t),
         variant: RaftButtonRecipeVariant.outline,
         size: RaftButtonRecipeSize.md,
         tokens: rt,
@@ -827,14 +820,14 @@ class RaftProfileIdentity extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Web v1.21.12 `PanelTitle` (the detail-block name follows the
-                  // panel-title spec): elegant 17 / semibold / heading family
-                  // in `text-foreground-muted`; brutal `text-lg` (18) black.
-                  // The recipe's `leading-tight` is a 22.5px (brutal) line
-                  // box; Flutter rounds a paragraph's height to whole pixels,
-                  // so the line box is sized explicitly.
-                  // The row is 22.5px tall in both themes (measured on the Web
-                  // render: the handle starts there), the name at its top and
-                  // the pencil centred (`flex items-center gap-2`).
+                  // panel-title spec): 17 / semibold / heading family
+                  // in `text-foreground-muted`.
+                  // The recipe's `leading-tight` is a 22.5px line box;
+                  // Flutter rounds a paragraph's height to whole pixels, so
+                  // the line box is sized explicitly.
+                  // The row is 22.5px tall (measured on the Web render: the
+                  // handle starts there), the name at its top and the pencil
+                  // centred (`flex items-center gap-2`).
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -977,7 +970,7 @@ class RaftCreatorLink extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             // Web v1.21.12 drops `font-medium`: the name is regular weight.
-            style: t.isRaftLook ? RaftInfoRow.detailsStyleOf(context) : null,
+            style: RaftInfoRow.detailsStyleOf(context),
           ),
         ),
         const SizedBox(width: 8),
@@ -1004,33 +997,17 @@ class RaftConnectionValue extends StatelessWidget {
   final bool online;
   @override
   Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
-    if (t.isRaftLook) {
-      // Web v1.24 AgentProfileInfo.tsx:718-726: `<span className="flex
-      // items-center gap-1.5">` the Status pixel and "Online" / "Offline".
-      return Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          RaftStatus(
-            presence: online ? RaftPresence.online : RaftPresence.offline,
-          ),
-          const SizedBox(width: 6),
-          Flexible(
-            child: RaftCssText(
-              raftText(context, online ? 'Online' : 'Offline'),
-            ),
-          ),
-        ],
-      );
-    }
+    // Web v1.24 AgentProfileInfo.tsx:718-726: `<span className="flex
+    // items-center gap-1.5">` the Status pixel and "Online" / "Offline".
     return Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        RaftActivityDot(color: online ? t.product.brutalLime : raftGray400),
+        RaftStatus(
+          presence: online ? RaftPresence.online : RaftPresence.offline,
+        ),
         const SizedBox(width: 6),
-        // v1.21.12 `<span className="flex items-center gap-1.5 font-mono">`.
-        RaftCssText(
-          raftText(context, online ? 'Connected' : 'Offline'),
-          style: RaftPanelText.profileMono(t),
+        Flexible(
+          child: RaftCssText(raftText(context, online ? 'Online' : 'Offline')),
         ),
       ],
     );
@@ -1297,7 +1274,7 @@ class _RaftActivityLogViewState extends State<RaftActivityLogView> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Container(
-            // `px-5 py-2`; the elegant ghost copy action sits in an inline
+            // `px-5 py-2`; the ghost copy action sits in an inline
             // `<span>` whose line box is 1px taller than the 24px button.
             padding: EdgeInsets.symmetric(
               horizontal: 20,
@@ -1316,8 +1293,8 @@ class _RaftActivityLogViewState extends State<RaftActivityLogView> {
                     raftText(context, 'Activity Diagnostics'),
                   ),
                 ),
-                // `CopyableCodeAction` of a `CopyableCodeRoot size="sm"`: the
-                // outline icon button on Brutal, a ghost 24px one on Elegant.
+                // `CopyableCodeAction` of a `CopyableCodeRoot size="sm"`: a
+                // ghost 24px icon button.
                 RaftRecipeButton(
                   variant: RaftButtonRecipeVariant.ghost,
                   size: RaftButtonRecipeSize.iconXs,
@@ -1570,7 +1547,6 @@ class _RaftActivityRowState extends State<_RaftActivityRow> {
   /// The outline badge's box height (recipe height, else line + padding + border).
   double _badgeHeight(RaftTokens t) {
     final s = RaftBadgeRecipe.resolve(
-      theme: raftRecipeTheme(t),
       appearance: RaftBadgeRecipeAppearance.outline,
       variant: RaftBadgeRecipeVariant.default_,
       tokens: RaftRecipeTokens(t),
@@ -1624,7 +1600,7 @@ class _RaftActivityRowState extends State<_RaftActivityRow> {
             color: raftPanelInk(t, .6, t.colors['foreground-muted']!),
           );
     final badgeH = e.badge == null ? 0.0 : _badgeHeight(t);
-    // The badge centre sits 11.55 (Brutal) / 11.17 (Elegant) below the line top.
+    // The badge centre sits 11.17 below the line top.
     final badgeTop = math.max(0.0, (11.17) - badgeH / 2);
     // CSS grows the line box when the middle-aligned badge ends below it;
     // [RaftCssText] keeps whole 20px lines, so the row takes the difference.
@@ -2318,8 +2294,7 @@ class RaftWorkspaceNode {
   /// `-1` depth is the root hint (`indent={8}`).
   final bool directory, open, bold, hidden, loading, hint;
 
-  /// The open file's row (`bg-accent-soft`, Brutal `bg-brutal-pink/20` with a
-  /// pink right rule).
+  /// The open file's row (`bg-accent-soft`).
   final bool selected;
 
   /// A link in the workspace (`FileNode.isSymlink`): shown with a link icon,
@@ -2494,7 +2469,7 @@ class RaftWorkspaceTreeView extends StatelessWidget {
             ? [message('Loading files…')]
             : error != null
             // AgentWorkspace.tsx: `px-3 py-4 text-center` AlertTriangle
-            // (warning-strong / brutal-orange), the mono muted message
+            // (warning-strong), the mono muted message
             // and an outline Retry.
             ? [
                 Padding(
@@ -2582,7 +2557,7 @@ class RaftWorkspaceTreeView extends StatelessWidget {
     // `md:` split: full-width path bar, a 256px tree column (`border-r`) and
     // the file pane on `bg-layer-canvas-muted`.
     return ColoredBox(
-      // `bg-layer-canvas-muted` (Brutal paints the cream here).
+      // `bg-layer-canvas-muted`.
       color: pane,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -2675,7 +2650,6 @@ class RaftWorkspaceTreeView extends StatelessWidget {
                     child: RaftSpinner(
                       size:
                           RaftSpinnerRecipe.resolve(
-                            theme: raftRecipeTheme(t),
                             size: RaftSpinnerRecipeSize.xs,
                             tokens: RaftRecipeTokens(t),
                           ).root.width ??
@@ -2951,8 +2925,7 @@ class _RaftWorkspaceFilePreviewState extends State<RaftWorkspaceFilePreview> {
                   value: preview,
                   onChanged: (value) => setState(() => preview = value),
                   items: [
-                    // Web v1.24 lists Preview first; the frozen looks keep
-                    // v1.21.23's Raw, Preview.
+                    // Web v1.24 lists Preview first.
                     for (final previewOption
                         in web ? const [true, false] : const [false, true])
                       if (previewOption)
@@ -3250,8 +3223,7 @@ class RaftGapRow extends StatelessWidget {
 }
 
 /// AgentDetailPanel `startError` strip: `border-b bg-warning-soft px-5 py-2`
-/// (brutal `border-b-2 border-black bg-brutal-orange/20`) with the message
-/// (`text-sm font-bold`, truncated) and a dismiss `X`.
+/// with the message (`text-sm font-bold`, truncated) and a dismiss `X`.
 class RaftPanelErrorStrip extends StatelessWidget {
   const RaftPanelErrorStrip(this.message, {super.key, this.onDismiss});
   final String message;
@@ -3646,7 +3618,7 @@ class _ProfileAvatarActionState extends State<_ProfileAvatarAction> {
   );
 }
 
-/// Elegant desktop PanelHeader icon tile: 36px `fill-muted` square, `rounded-md`,
+/// Desktop PanelHeader icon tile: 36px `fill-muted` square, `rounded-md`,
 /// 18px `foreground-icon` glyph.
 class RaftPanelHeaderMutedTile extends StatelessWidget {
   const RaftPanelHeaderMutedTile({super.key, required this.icon});

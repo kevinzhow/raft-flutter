@@ -6,7 +6,7 @@
 //
 // The insets differ BY DESIGN and are reproduced as such: strip / section
 // headers `px-5` (20), channel cards `px-4` (16) + `space-y-3`, DM list `p-4`,
-// DM card `p-3` with its own border (1px line-muted, brutal 2px black/30)
+// DM card `p-3` with its own border (1px line-muted)
 // that is not the SurfaceListItem border.
 import 'card.dart' show RaftCard;
 
@@ -124,7 +124,6 @@ class _RaftAgentChatViewState extends State<RaftAgentChatView> {
                     0,
                     56 -
                         RaftEmptyStateRecipe.resolve(
-                          theme: t.recipeTheme,
                           states: t.recipeStates(),
                           tokens: t.recipeTokens,
                         ).root.padding.top,
@@ -397,8 +396,7 @@ class _RaftAgentChatViewState extends State<RaftAgentChatView> {
 }
 
 /// `ConversationPreviewCard` (non-interactive): `relative flex w-full items-start
-/// gap-3 rounded-md border p-3`, border-line-muted bg-layer-panel; brutal
-/// `rounded-none border-2 border-black/30 bg-white`.
+/// gap-3 rounded-md border p-3`, border-line-muted bg-layer-panel.
 class RaftConversationPreviewCard extends StatelessWidget {
   const RaftConversationPreviewCard({
     super.key,

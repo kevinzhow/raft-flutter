@@ -82,16 +82,9 @@ class ParityContext {
     required this.caseJson,
     required this.fixtures,
     required this.dark,
-    this.againstWeb = false,
   });
 
   final Map<String, dynamic> caseJson;
-
-  /// The capture is compared with the Web render (the Raft look), not with the
-  /// frozen a57b9dab image of Elegant / Brutal. Only for fixes of a case's own
-  /// defects that the frozen reference shares (it was captured with the same
-  /// harness), which would otherwise move those looks away from it.
-  final bool againstWeb;
 
   /// shared/*.json keyed by file stem, e.g. `fixtureData`, `tasksFixture`.
   final Map<String, dynamic> fixtures;
@@ -161,24 +154,26 @@ class ParityContext {
 
 /// Which theme pack and mode a case renders with.
 ///
-/// This used to return only a `dark` bool, after the single-look rewrite dropped
-/// the family. The effect was silent and total: every case rendered the built-in
-/// Raft pack, so a "brutal" or "elegant" capture differed from Raft only by
-/// darkness. The P2 baseline at a57b9dab passed the family through, which is why
-/// those images really are Brutal and Elegant.
-///
-/// An official case renders Raft unless a supplemental run overrides it; the
-/// extension suite names its theme explicitly in `props.parityTheme`.
+/// Raft is the only look, so the pack is always [raftThemePackId]; the names
+/// only choose the brightness. The extension suite names its theme in
+/// `props.parityTheme`: the retired family names (`elegant`, `brutal`) still
+/// select light and `elegant-dark`, `brutal-dark`, `dark` select dark, so the
+/// case ids stay stable.
 ({String pack, bool dark}) parityThemeFor(
   Map<String, dynamic> visualCase, {
   String? override,
 }) {
   ({String pack, bool dark}) named(String name) => switch (name) {
-    'brutal-light' || 'brutal' => (pack: brutalThemePackId, dark: false),
-    'brutal-dark' => (pack: brutalThemePackId, dark: true),
-    'elegant-light' || 'elegant' => (pack: elegantThemePackId, dark: false),
-    'elegant-dark' || 'dark' => (pack: elegantThemePackId, dark: true),
-    'light' || 'raft' || 'raft-light' => (pack: raftThemePackId, dark: false),
+    'brutal-light' ||
+    'brutal' ||
+    'elegant-light' ||
+    'elegant' ||
+    'light' ||
+    'raft' ||
+    'raft-light' => (pack: raftThemePackId, dark: false),
+    'brutal-dark' ||
+    'elegant-dark' ||
+    'dark' ||
     'raft-dark' => (pack: raftThemePackId, dark: true),
     _ => throw ArgumentError.value(name, 'override', 'Unknown parity theme'),
   };
@@ -186,10 +181,8 @@ class ParityContext {
       ((visualCase['variants'] as List?)?.firstOrNull as Map?)?['props']
           as Map?;
   final extTheme = props?['parityTheme'];
-  // `<look>-case` (raft-case, elegant-case, brutal-case): the look is forced,
-  // the brightness still follows the case's own `parityTheme` (a name that ends
-  // in `dark` renders dark). The coverage runner uses it to render one case
-  // list in every look (tool/parity-ext/run --theme).
+  // `<look>-case` (raft-case): the brightness follows the case's own
+  // `parityTheme` (a name that ends in `dark` renders dark).
   if (override != null && override.endsWith('-case')) {
     final look = override.substring(0, override.length - '-case'.length);
     final dark = extTheme is String && extTheme.endsWith('dark');
@@ -309,8 +302,6 @@ Future<Map<String, dynamic>> captureParityCase(
     caseJson: visualCase,
     fixtures: fixtures,
     dark: dark,
-    // The Raft look is the one scored against the Web render.
-    againstWeb: selection.pack == raftThemePackId,
   );
   try {
     final size = Size(ctx.width, ctx.height);

@@ -37,7 +37,7 @@ void main() {
     (t) async {
       final f = RootFixture();
       final network = f.network = _Blocked();
-      await f.mount(t, 'elegant-light', 390);
+      await f.mount(t, 'light', 390);
       expect(find.byType(SessionRecoveryView), findsOneWidget);
       expect(find.text('Local network access is off'), findsOneWidget);
       expect(

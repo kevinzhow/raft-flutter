@@ -17,7 +17,6 @@ class RaftKbd extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context), rt = t.recipeTokens;
     final root = RaftKbdRecipe.resolve(
-      theme: t.recipeTheme,
       states: t.recipeStates(responsive: true),
       tokens: rt,
     ).root;
@@ -40,7 +39,6 @@ class RaftKbdGroup extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context), rt = t.recipeTokens;
     final group = RaftKbdRecipe.resolve(
-      theme: t.recipeTheme,
       states: t.recipeStates(responsive: true),
       tokens: rt,
     ).group;

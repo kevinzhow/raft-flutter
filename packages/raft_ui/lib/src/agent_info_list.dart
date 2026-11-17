@@ -3,14 +3,12 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import 'panel_layout.dart' show RaftCssText, RaftInfoRow, RaftInlineIconButton;
-import 'theme.dart';
 
 /// raft-ui `DescriptionList direction="horizontal"` as the agent profile's
 /// Info and Runtime config lists use it (Web v1.24 `features/agent/InfoRow.tsx`,
 /// `AgentProfileInfo.tsx` `<DescriptionList direction="horizontal">`): one term
 /// column per list, as wide as its widest term (88px at least, 160px at most),
-/// 16px before the details, 2px between the rows. The Elegant and Brutal looks
-/// keep the frozen 124px term grid of Web v1.21.12.
+/// 16px before the details, 2px between the rows.
 ///
 /// Rows are real [RaftInfoRow]s; any other child (a banner) ends one run of
 /// rows and starts the next, as Web's `col-span-full` item does.
@@ -20,12 +18,6 @@ class RaftInfoList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (!RaftTokens.of(context).isRaftLook) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: children,
-      );
-    }
     final out = <Widget>[];
     var run = <RaftInfoRow>[];
     var first = true;

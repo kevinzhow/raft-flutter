@@ -56,7 +56,6 @@ class RaftPickerTriggerButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    if (!t.isRaftLook) return _frozen(context, t);
     final rt = t.recipeTokens;
     final canActivate = enabled && onPressed != null;
     final button = RaftInteractive(
@@ -68,7 +67,6 @@ class RaftPickerTriggerButton extends StatelessWidget {
       ].join(' '),
       builder: (context, st) {
         var style = RaftPickerTriggerButtonRecipe.resolve(
-          theme: t.recipeTheme,
           states: t.recipeStates(
             responsive: true,
             hovered: st.hovered,
@@ -129,17 +127,4 @@ class RaftPickerTriggerButton extends StatelessWidget {
         ? button
         : RaftTooltip(message: raftText(context, tooltip!), child: button);
   }
-
-  /// The pre-theme paint: the original PickerTriggerButton recipe on a `RaftControl` (design_primitives.dart).
-  Widget _frozen(BuildContext context, RaftTokens t) =>
-      raftFrozenPickerTriggerButton(
-        context,
-        label: label,
-        onPressed: enabled ? onPressed : null,
-        glyph: glyph,
-        trailingGlyph: trailingGlyph,
-        selected: selected,
-        tooltip: tooltip,
-        focusNode: focusNode,
-      );
 }

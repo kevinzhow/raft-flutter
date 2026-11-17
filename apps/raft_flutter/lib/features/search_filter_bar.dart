@@ -87,7 +87,6 @@ class SearchFilterBar extends StatelessWidget {
       selection: selected,
       valid: valid,
       closeOnSelect: single,
-      picker: true,
       combobox: field == 'Channel',
       onToggle: (key) {
         if (!valid()) return;

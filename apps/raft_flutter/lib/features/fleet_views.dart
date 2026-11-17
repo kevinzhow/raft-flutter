@@ -76,7 +76,7 @@ Future<T?> _fleetDialog<T>(
   bool guardUnsaved = true,
 }) async {
   if (!context.mounted || !authorized()) return null;
-  // Web `Dialog` layer: the recipe overlay (Brutal black/65, Elegant backdrop + blur).
+  // Web `Dialog` layer: the recipe overlay.
   final navigator = Navigator.of(context, rootNavigator: true);
   final Route<T> route = form
       // A form with inputs: a bottom sheet on a phone, a dialog from 768.
@@ -121,7 +121,6 @@ Future<void> showCredential(
   bool valid() => context.mounted && (authorized?.call() ?? true);
   if (!valid()) return;
   Widget builder(BuildContext dialog) => RaftAlertDialog(
-    legacy: RaftLegacyAlert.material,
     title: Text(raftText(context, 'Save this credential')),
     content: SizedBox(
       width: 480,
@@ -154,11 +153,7 @@ Future<void> showCredential(
   if (controller != null) {
     await _fleetDialog<void>(context, controller, valid, builder);
   } else {
-    await showRaftDialog<void>(
-      legacyMaterial: true,
-      context: context,
-      builder: builder,
-    );
+    await showRaftDialog<void>(context: context, builder: builder);
   }
 }
 
@@ -1821,7 +1816,6 @@ class _FleetInspectionState extends State<FleetInspection> {
       w,
       () => current && ticket == fileRequest,
       (dialog) => RaftAlertDialog(
-        legacy: RaftLegacyAlert.material,
         title: Text('${row['name']}'),
         content: SizedBox(
           width: 600,

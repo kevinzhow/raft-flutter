@@ -31,50 +31,26 @@ class RaftTooltipRecipe {
   Duration get transition => const Duration(milliseconds: 150);
   Curve get curve => const Cubic(.22, 1, .36, 1);
   bool get hasArrow => true;
-  bool get _raft => tokens.isRaftLook;
 
-  /// Raft look: raft-ui `bg-layer-hud text-foreground-on-hud` in both modes.
-  // tooltip recipe `content` brutal background-color: token(primary400).
-  Color get background => _raft
-      ? tokens.colors['layer-hud']!
-      : tokens.dark
-      ? tokens.popover
-      // foundation.css311 oklch(.263 .009 294.9), converted to sRGB.
-      : tokens.colors['layer-hud'] ?? const Color(0xff252429);
-  Color get foreground => _raft
-      ? tokens.colors['foreground-on-hud']!
-      : tokens.dark
-      ? tokens.ink
-      // foundation.css312 oklch(.965 .002 286), converted to sRGB.
-      : tokens.colors['layer-hud-foreground'] ?? const Color(0xfff3f3f5);
+  /// raft-ui `bg-layer-hud text-foreground-on-hud` in both modes.
+  Color get background => tokens.colors['layer-hud']!;
+  Color get foreground => tokens.colors['foreground-on-hud']!;
 
-  /// Raft look: the generated `body` slot (`text-footnote`: 13/18, 12/18 with
-  /// a mouse from 768 via the desktop tokens), no tracking.
+  /// The generated `body` slot (`text-footnote`: 13/18, 12/18 with a mouse
+  /// from 768 via the desktop tokens), no tracking.
   TextStyle get text {
-    if (_raft) {
-      final slot = generated.RaftTooltipRecipe.resolve(
-        theme: tokens.recipeTheme,
-        states: tokens.recipeStates(responsive: true),
-        tokens: tokens.recipeTokens,
-      ).body;
-      return slot
-          .textStyle(tokens.recipeTokens)
-          .copyWith(
-            fontFamily: tokens.bodyFont,
-            fontFamilyFallback: tokens.fontFallback,
-            fontWeight: slot.fontWeight ?? FontWeight.w500,
-            color: foreground,
-          );
-    }
-    return TextStyle(
-      fontFamily: tokens.bodyFont,
-      fontFamilyFallback: tokens.fontFallback,
-      fontSize: 13,
-      height: 18 / 13,
-      fontWeight: FontWeight.w500,
-      letterSpacing: -.065,
-      color: foreground,
-    );
+    final slot = generated.RaftTooltipRecipe.resolve(
+      states: tokens.recipeStates(responsive: true),
+      tokens: tokens.recipeTokens,
+    ).body;
+    return slot
+        .textStyle(tokens.recipeTokens)
+        .copyWith(
+          fontFamily: tokens.bodyFont,
+          fontFamilyFallback: tokens.fontFallback,
+          fontWeight: slot.fontWeight ?? FontWeight.w500,
+          color: foreground,
+        );
   }
 
   List<BoxShadow> get shadows => [
@@ -693,50 +669,11 @@ class _TooltipSurface extends StatelessWidget {
       borderRadius: BorderRadius.circular(recipe.radius),
       boxShadow: recipe.shadows,
     ),
-    child: CustomPaint(
-      foregroundPainter: recipe.tokens.dark && !recipe.tokens.isRaftLook
-          ? _TooltipInset(recipe.radius)
-          : null,
-      child: Padding(
-        // CSS border-box: the brutal border sits outside the padding.
-        padding: recipe.padding + EdgeInsets.all(0),
-        child: Text(message, style: recipe.text),
-      ),
+    child: Padding(
+      padding: recipe.padding + EdgeInsets.all(0),
+      child: Text(message, style: recipe.text),
     ),
   );
-}
-
-class _TooltipInset extends CustomPainter {
-  const _TooltipInset(this.radius);
-  final double radius;
-  @override
-  void paint(Canvas canvas, Size size) {
-    const white = Color(0xfffafaf7); // foundation.css489 .985 .004 106.42.
-    final shape = RRect.fromRectAndRadius(
-      (Offset.zero & size).deflate(.5),
-      Radius.circular(radius),
-    );
-    canvas.save();
-    canvas.clipRRect(shape);
-    canvas.drawRRect(
-      shape,
-      Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1
-        ..color = white.withValues(alpha: .04),
-    );
-    canvas.drawLine(
-      const Offset(0, .5),
-      Offset(size.width, .5),
-      Paint()
-        ..strokeWidth = 1
-        ..color = white.withValues(alpha: .06),
-    );
-    canvas.restore();
-  }
-
-  @override
-  bool shouldRepaint(_TooltipInset old) => radius != old.radius;
 }
 
 class _TooltipArrow extends CustomPainter {
@@ -755,15 +692,6 @@ class _TooltipArrow extends CustomPainter {
       ..lineTo(11, 0)
       ..lineTo(6, 5.25)
       ..close();
-    if (recipe.tokens.dark && !recipe.tokens.isRaftLook) {
-      canvas.save();
-      canvas.translate(0, 1);
-      canvas.drawPath(
-        path,
-        Paint()..color = Colors.black.withValues(alpha: .55),
-      );
-      canvas.restore();
-    }
     canvas.drawPath(path, Paint()..color = recipe.background);
     canvas.restore();
   }

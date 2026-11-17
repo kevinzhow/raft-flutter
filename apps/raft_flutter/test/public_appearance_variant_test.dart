@@ -6,14 +6,7 @@ import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_ui/test_themes.dart';
 
 void main() {
-  for (final theme in raftThemeMatrix(
-    ['raft-light', 'raft-dark', 'elegantLight', 'elegantDark', 'brutal'],
-    look: (s) => s.startsWith('raft')
-        ? 'raft'
-        : s.startsWith('elegant')
-        ? 'elegant'
-        : 'brutal',
-  )) {
+  for (final theme in raftThemeMatrix(['raft-light', 'raft-dark'])) {
     for (final size in [
       const Size(390, 844),
       const Size(856, 944),
@@ -28,20 +21,14 @@ void main() {
             addTearDown(t.view.reset);
             final semantics = t.ensureSemantics();
             try {
-              final pack = theme.startsWith('raft')
-                  ? raftThemePackId
-                  : theme.startsWith('elegant')
-                  ? elegantThemePackId
-                  : brutalThemePackId;
               var value = RaftAppearance(
                 mode: theme.toLowerCase().endsWith('dark')
                     ? ThemeMode.dark
                     : ThemeMode.light,
-                themeId: pack,
               );
               await t.pumpWidget(
                 MaterialApp(
-                  theme: raftTheme(pack: packForThemeId(pack)),
+                  theme: raftTheme(),
                   builder: (context, child) => MediaQuery(
                     data: MediaQuery.of(context)
                         .copyWith(textScaler: TextScaler.linear(scale)),

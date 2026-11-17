@@ -26,8 +26,8 @@ One page for adding or fixing a surface in the extension suite
 ## Levels and looks
 
 Every case belongs to a level (frame / page / component, `tool/parity-ext/levels.py`: add your surface there) and renders in
-three looks. Cases name their old theme (`brutal`, `elegant`, `elegant-dark`); on the Web all three light names are the one Raft
-page and `elegant-dark` is its dark mode, so the Raft look reads one light and one dark name per case. Slice runs:
+the Raft look. Case ids still end in their old theme name (`.brutal`, `.elegant`, `.elegant-dark`); the light names are all the one Raft
+page and `.elegant-dark` is its dark mode, so a case reads one light and one dark name. Slice runs:
 `tool/parity-ext/run regress --level page --theme raft --mode light` (docs/parity.md "Visual suite levels and looks").
 A new whole-window page case belongs in an existing family when the route is already there (e.g. `build-members-pages.py`
 `window.*`); a new family needs a `host/<Area>Cases.tsx`, a builder and `cases/ext_<area>.dart` as above.
@@ -60,7 +60,7 @@ render flags. Edit a host/fixture/case and only its cases recapture; Flutter edi
 
 ## Theme sampling
 
-brutal-light (the default theme) runs every case. elegant-light and elegant-dark run 1-2 cases per surface
+The `brutal-light` name (the default) runs every case. `elegant-light` and `elegant-dark` run 1-2 cases per surface
 (`components.<area>.<surface>`): the first case in builder order plus one dense case (name with a density word such as
 `long`, `many`, `mixed`, `gallery`, `filled`, `full`, `rich`, `multi`, `batch`, else the last case of the surface);
 rule and word list in `tool/parity-ext/sampling.py`. Write your builder so the surface's FIRST case is its default
@@ -69,7 +69,7 @@ sampling dropped (`PARITY_EXT_ALL_DARK=1` keeps every elegant-dark case; elegant
 
 ## Page inventory
 
-The page inventory lists every Web page / modal / state and which have a brutal-light case (official id or extension id)
+The page inventory lists every Web page / modal / state and which have a `brutal-light` case (official id or extension id)
 or none. It is **generated on demand and not committed**:
 
 ```bash
@@ -89,27 +89,3 @@ malformed globs and on globs matching the other platform's cases, not on documen
 - No full-suite runs (`run run` without `--cases`) and no `tool/check-project` per task; the lead runs them per batch.
 - Run your cases once per change, read the output once. No polling or sleep loops; no sub-agents.
 - Do not publish; do not touch the raft-source checkout; do not commit `build/`.
-
-## Scoring against the P2 (a57b9dab) baseline
-
-`tool/p2-score.mjs` compares a fresh capture against the pre-theme baseline images
-with the **official** metric, not a lookalike: it calls the same
-`pixelPerfectSimilarity` / `rgbSimilarity` arithmetic as
-`raft-source/packages/visual-testing/src/sharp-image-overlay.mjs`, so a number here
-means the same thing as a number in the parity report.
-
-```bash
-node tool/p2-score.mjs <baseline-android-dir> <current-android-dir> out.json
-```
-
-Both directories hold `<case>.png` plus `<case>.metadata.json`; the comparison box is
-the baseline's own `crop.rect`. The table it writes is the "never drops" reference for
-each migration batch — keep it outside the repository.
-
-Why it exists: the parity run measures a case against the React reference, while
-Elegant and Brutal are supposed to match the *pre-theme Flutter* build. Those are
-different references, so this scores the Flutter-vs-Flutter pair directly.
-
-`tool/tests/test_p2_score.py` pins the property that makes the numbers trustworthy: an
-image scored against itself must be exactly 100%, and a mutated copy must score below
-it. Both skip when the baseline data is not on the machine.

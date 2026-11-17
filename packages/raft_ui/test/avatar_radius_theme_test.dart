@@ -1,13 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
-import 'package:raft_ui/test_themes.dart';
 
 /// Avatar shape comes from the theme.
 ///
-/// Each look has its own reference: Raft from the official raft-ui specimen,
-/// Elegant and Brutal from a57b9dab. (The pre-theme tree had only those two
-/// looks — there was no "old Raft" — so Raft is never compared against it.)
+/// The reference is the official raft-ui specimen.
 RaftTokens _tokens(String id) => RaftTokens.theme(pack: packForThemeId(id));
 
 Widget _host(String id, Widget child) => MaterialApp(
@@ -44,19 +41,6 @@ void main() {
       expect(t.size('radius.avatarInner', fallback: 2), 2);
     });
 
-    test('Elegant is circular, inside and out', () {
-      // a57b9dab rounds outer and inner with the same size/2 expression.
-      final t = _tokens(elegantThemePackId);
-      expect(t.size('radius.avatar', fallback: 4), 999);
-      expect(t.size('radius.avatarInner', fallback: 2), 999);
-    }, skip: raftLookSkip(raftLookElegant));
-
-    test('Brutal is square, inside and out', () {
-      final t = _tokens(brutalThemePackId);
-      expect(t.size('radius.avatar', fallback: 4), 0);
-      expect(t.size('radius.avatarInner', fallback: 2), 0);
-    }, skip: raftLookSkip(raftLookBrutal));
-
     test('the inner radius is its own token, not outer minus inset', () {
       // The official specimen insets the image by 1px per side and still rounds
       // it to 2, so outer - inset would give 3. Pinned so nobody "simplifies"
@@ -72,15 +56,5 @@ void main() {
       final radii = await _paintedRadii(tester, raftThemePackId);
       expect(radii, (4.0, 2.0));
     });
-
-    testWidgets('Elegant paints a full circle outside and inside', (
-      tester,
-    ) async {
-      expect(await _paintedRadii(tester, elegantThemePackId), (999.0, 999.0));
-    }, skip: raftLookSkip(raftLookElegant));
-
-    testWidgets('Brutal paints square outside and inside', (tester) async {
-      expect(await _paintedRadii(tester, brutalThemePackId), (0.0, 0.0));
-    }, skip: raftLookSkip(raftLookBrutal));
   });
 }

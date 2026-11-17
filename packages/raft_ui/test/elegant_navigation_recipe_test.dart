@@ -1,8 +1,4 @@
-import 'dart:ui' as ui;
-
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_ui/recipes.dart';
@@ -120,7 +116,6 @@ void main() {
           ),
         );
         final expected = RaftAppRailRecipe.resolve(
-          theme: tokens.recipeTheme,
           states: tokens.recipeStates(),
           tokens: tokens.recipeTokens,
         ).itemBadge;
@@ -160,85 +155,6 @@ void main() {
         );
         expect(tester.takeException(), isNull);
       },
-    );
-
-    testWidgets(
-      '[K09d] ${dark ? 'dark' : 'light'} actual conversation tabs retain Source heights and painted underline through keyboard selection',
-      (tester) async {
-        for (final width in [390.0, 1280.0]) {
-          final boundary = GlobalKey();
-          var selected = RaftConversationTabId.chat;
-          await mount(
-            tester,
-            Column(
-              children: [
-                RepaintBoundary(
-                  key: boundary,
-                  child: StatefulBuilder(
-                    builder: (context, update) => RaftConversationTabs(
-                      tabs: const [
-                        RaftConversationTab(
-                          id: RaftConversationTabId.chat,
-                          label: 'Chat',
-                        ),
-                        RaftConversationTab(
-                          id: RaftConversationTabId.files,
-                          label: 'Files',
-                        ),
-                      ],
-                      value: selected,
-                      onChanged: (value) => update(() => selected = value),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            width: width,
-            pack: packForThemeId(elegantThemePackId),
-          );
-          final strip = find.byType(RaftConversationTabs);
-          final mobile = width < 768;
-          expect(tester.getSize(strip).height, mobile ? 41 : 48);
-          final chat = find.byKey(const ValueKey('panel-tab-chat'));
-          // raft-ui 0.7.1 underline tab: as tall as the strip.
-          expect(tester.getSize(chat).height, mobile ? 40 : 48);
-          // The selected underline tab's 2px bar is `foreground`.
-          final primary = RaftTokens.of(tester.element(strip)).ui.foreground
-              .toARGB32();
-          final render =
-              boundary.currentContext!.findRenderObject()!
-                  as RenderRepaintBoundary;
-          final x = tester.getRect(chat).center.dx.toInt();
-          await tester.runAsync(() async {
-            final image = await render.toImage();
-            final bytes = (await image.toByteData(
-              format: ui.ImageByteFormat.rawRgba,
-            ))!;
-            final border = mobile ? 1 : 0;
-            const height = 2;
-            for (
-              var row = image.height - border - height;
-              row < image.height - border;
-              row++
-            ) {
-              final p = (row * image.width + x) * 4;
-              expect(bytes.getUint8(p), primary >> 16 & 255);
-              expect(bytes.getUint8(p + 1), primary >> 8 & 255);
-              expect(bytes.getUint8(p + 2), primary & 255);
-            }
-            image.dispose();
-          });
-
-          await tester.tap(chat);
-          await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
-          await tester.pumpAndSettle();
-          expect(selected, RaftConversationTabId.files);
-          expect(tester.getSize(strip).height, mobile ? 41 : 48);
-          expect(tester.takeException(), isNull);
-          await tester.pumpWidget(const SizedBox());
-        }
-      },
-      skip: raftLookSkip(raftLookElegant),
     );
   }
 }

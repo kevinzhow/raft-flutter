@@ -29,7 +29,6 @@ class RaftCardScope extends InheritedWidget {
   final tokens = t.recipeTokens;
   return (
     slots: RaftCardRecipe.resolve(
-      theme: t.recipeTheme,
       variant: RaftCardScope.of(context),
       states: t.recipeStates(responsive: true),
       tokens: tokens,

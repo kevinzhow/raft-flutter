@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../design_primitives.dart';
 import '../recipe_surface.dart';
-import '../recipes/recipe_router.dart';
 import '../theme.dart';
 import '../recipes/recipes.g.dart';
 import 'button_color_transition.dart';
@@ -48,52 +47,41 @@ class RaftListRowAction extends StatelessWidget {
     builder: (context, state) {
       if (!decorate) return child;
       final tokens = RaftTokens.of(context);
-      if (!usesLegacyRecipes(tokens.recipeTokens)) {
-        final recipe = RaftListRowRecipe.resolve(
-          variant: RaftListRowRecipeVariant.entry,
-          interactive: state.enabled,
-          states: tokens.recipeStates(
-            hovered: state.hovered,
-            pressed: state.pressed,
-            focusVisible: state.focusVisible,
-            disabled: !state.enabled,
-            extra: [if (selected == true) 'data-selected=true'],
-          ),
+      final recipe = RaftListRowRecipe.resolve(
+        variant: RaftListRowRecipeVariant.entry,
+        interactive: state.enabled,
+        states: tokens.recipeStates(
+          hovered: state.hovered,
+          pressed: state.pressed,
+          focusVisible: state.focusVisible,
+          disabled: !state.enabled,
+          extra: [if (selected == true) 'data-selected=true'],
+        ),
+        tokens: tokens.recipeTokens,
+      ).root;
+      final paintOnly = recipe.copyWith(
+        properties: {
+          for (final entry in recipe.properties.entries)
+            if (entry.key.startsWith('--') ||
+                entry.key.startsWith('background-') ||
+                entry.key.startsWith('outline-') ||
+                entry.key.startsWith('transition-') ||
+                entry.key == 'box-shadow')
+              entry.key: entry.value,
+        },
+      );
+      return RaftButtonColorTransition(
+        style: paintOnly,
+        tokens: tokens.recipeTokens,
+        builder: (context, style) => RaftRecipeBox(
+          style: style,
           tokens: tokens.recipeTokens,
-        ).root;
-        final paintOnly = recipe.copyWith(
-          properties: {
-            for (final entry in recipe.properties.entries)
-              if (entry.key.startsWith('--') ||
-                  entry.key.startsWith('background-') ||
-                  entry.key.startsWith('outline-') ||
-                  entry.key.startsWith('transition-') ||
-                  entry.key == 'box-shadow')
-                entry.key: entry.value,
-          },
-        );
-        return RaftButtonColorTransition(
-          style: paintOnly,
-          tokens: tokens.recipeTokens,
-          builder: (context, style) => RaftRecipeBox(
-            style: style,
-            tokens: tokens.recipeTokens,
-            applyText: false,
-            applyOpacity: false,
-            applyTransform: false,
-            child: child,
-          ),
-        );
-      }
-      final theme = Theme.of(context);
-      final fill = state.pressed
-          ? theme.highlightColor
-          : state.focusVisible
-          ? theme.focusColor
-          : state.hovered
-          ? theme.hoverColor
-          : Colors.transparent;
-      return ColoredBox(color: fill, child: child);
+          applyText: false,
+          applyOpacity: false,
+          applyTransform: false,
+          child: child,
+        ),
+      );
     },
   );
 }

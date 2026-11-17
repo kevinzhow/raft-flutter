@@ -1,23 +1,19 @@
 import '../raft/button.dart';
 
 // raft-ui Dialog / AlertDialog (`dialog`, `alertDialog` recipes): overlay
-// (layer-backdrop, elegant blur(2px)), centered content (calc(100% - 32px),
+// (layer-backdrop, blur(2px)), centered content (calc(100% - 32px),
 // max-width per size), Header (title + corner close), Body, Footer, Title,
-// Description. Current centred dialogs have no motion; frozen looks retain
-// their original transition.
+// Description. Centred dialogs have no motion.
 import 'dart:ui' show ImageFilter, SemanticsRole;
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
-import '../design_primitives.dart';
 import '../dialog_slots.dart';
 import '../dialog_surface.dart';
 import '../form_presentation.dart';
 import '../stacked_actions.dart';
-import '../dialog_card.dart'
-    show RaftModalBackdrop, RaftModalCardCap, buildFrozenDialogCard;
-import '../settings_controls.dart' show buildFrozenDialogShell;
+import '../dialog_card.dart' show RaftModalBackdrop, RaftModalCardCap;
 import '../tap_slop.dart';
 import '../text_scaling.dart';
 import '../dismiss_scope.dart';
@@ -30,7 +26,6 @@ import '../recipes/dialog.g.dart';
 import '../recipes/web_dialog_card.g.dart';
 import '../recipes/dialog_surface.g.dart';
 import '../recipes/recipe_runtime.dart';
-import '../recipes/recipe_router.dart';
 import '../components.dart';
 import '../theme.dart';
 import '../tokens/tokens.dart' show RaftDesktopMetrics;
@@ -57,35 +52,6 @@ enum RaftDialogSize {
 
 /// Which recipe a dialog's parts resolve against.
 enum RaftDialogKind { dialog, alert }
-
-/// The frozen renderer of an existing call site. The current Raft look always
-/// uses the same source AlertDialog slots, including migrated Material calls.
-enum RaftLegacyAlert { source, material }
-
-/// One unchanged child and action from a frozen Material choice dialog.
-@immutable
-class RaftFrozenChoiceDialogOption {
-  const RaftFrozenChoiceDialogOption({
-    required this.child,
-    required this.onPressed,
-  });
-
-  final Widget child;
-  final VoidCallback onPressed;
-}
-
-/// Preserves the existing SimpleDialog tree for Elegant and Brutal adapters.
-/// The caller chooses the frozen branch and retains route/result ownership.
-Widget buildFrozenChoiceDialog({
-  required Widget title,
-  required List<RaftFrozenChoiceDialogOption> options,
-}) => SimpleDialog(
-  title: title,
-  children: [
-    for (final option in options)
-      SimpleDialogOption(onPressed: option.onPressed, child: option.child),
-  ],
-);
 
 /// Resolved slots shared by Dialog and AlertDialog parts.
 class RaftDialogSlots {
@@ -122,13 +88,9 @@ class RaftDialogSlots {
       ],
     );
     if (kind == RaftDialogKind.alert) {
-      final s = RaftAlertDialogRecipe.resolve(
-        theme: t.recipeTheme,
-        states: states,
-        tokens: rt,
-      );
+      final s = RaftAlertDialogRecipe.resolve(states: states, tokens: rt);
       RaftSlotStyle bind(RaftSlotStyle style, String slot) =>
-          usesLegacyRecipes(rt) ? style : raftDialogSlot(t, style, slot);
+          raftDialogSlot(t, style, slot);
       return RaftDialogSlots._(
         s.overlay,
         bind(s.content, 'content'),
@@ -140,13 +102,7 @@ class RaftDialogSlots {
       );
     }
     final slots = RaftDialogRecipe.resolveProps(
-      {
-        'theme': t.recipeTheme.name,
-        'size': usesLegacyRecipes(rt) && size == RaftDialogSize.wide
-            ? RaftDialogSize.lg.name
-            : size.name,
-        'bar': bar.toString(),
-      },
+      {'size': size.name, 'bar': bar.toString()},
       states: states,
       tokens: rt,
     );
@@ -221,9 +177,8 @@ class _DialogPartKey extends ValueKey<Key> {
 /// the [title] / [content] / [actions] shorthand (Material `AlertDialog`
 /// shape, for mechanical migration).
 class RaftDialog extends StatelessWidget {
-  /// Compatibility call shape for the former agent/runtime form shell. The
-  /// current look uses [RaftDialog.card]; only frozen looks retain the former
-  /// plain-card and backdrop composition.
+  /// Compatibility call shape for the former agent/runtime form shell, built
+  /// on [RaftDialog.card].
   static Widget agent({
     Key? key,
     required String title,
@@ -375,38 +330,8 @@ class RaftDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
-    final rt = t.recipeTokens;
-    if (_shell) {
-      if (usesLegacyRecipes(rt)) {
-        return buildFrozenDialogShell(
-          title: title! as String,
-          body: content!,
-          footer: actions!,
-          onClose: onClose,
-          maxWidth: maxWidth!,
-          surfaceKey: contentKey,
-          outlineClose: outlineClose,
-        );
-      }
-      return _ShellDialogParts(dialog: this);
-    }
-    if (_card) {
-      if (usesLegacyRecipes(rt)) {
-        return buildFrozenDialogCard(
-          title: title! as String,
-          onClose: onClose!,
-          maxWidth: maxWidth ?? 448,
-          titleGlyph: titleGlyph,
-          actions: cardActions,
-          footer: footer,
-          footerGap: footerGap ?? 16,
-          showClose: showClose,
-          child: child!,
-        );
-      }
-      return _CardDialogParts(dialog: this);
-    }
+    if (_shell) return _ShellDialogParts(dialog: this);
+    if (_card) return _CardDialogParts(dialog: this);
     return _DialogScope(
       kind: kind,
       size: size,
@@ -416,39 +341,26 @@ class RaftDialog extends StatelessWidget {
           final s = _slots(context);
           final media = MediaQuery.of(context);
           final viewport = media.size;
-          final legacy = usesLegacyRecipes(rt);
           final available = Size(
             viewport.width,
             math.max(0, viewport.height - media.viewInsets.bottom),
           );
           final width =
-              (legacy
-                      ? viewport.width - 32
-                      : _dialogLength(
-                              s.content['width'],
-                              available,
-                              horizontal: true,
-                            ) ??
-                            available.width)
+              (_dialogLength(s.content['width'], available, horizontal: true) ??
+                      available.width)
                   .clamp(0.0, maxWidth ?? s.content.maxWidth ?? 448.0)
                   .toDouble();
           final maxHeight = math.max(
             0.0,
-            legacy
-                ? viewport.height - 32 - media.viewInsets.bottom
-                : _dialogLength(s.content['max-height'], available) ??
-                      available.height,
+            _dialogLength(s.content['max-height'], available) ??
+                available.height,
           );
-          final height = legacy
-              ? null
-              : _dialogLength(s.content['height'], available);
+          final height = _dialogLength(s.content['height'], available);
           // A CSS portal inherits the document typography, outside the
-          // trigger's decorated text ancestry. Frozen consumers keep theirs.
-          final base = legacy
-              ? raftCssText.merge(DefaultTextStyle.of(context).style)
-              : raftCssText
-                    .merge(Theme.of(context).textTheme.bodyMedium)
-                    .copyWith(decoration: TextDecoration.none);
+          // trigger's decorated text ancestry.
+          final base = raftCssText
+              .merge(Theme.of(context).textTheme.bodyMedium)
+              .copyWith(decoration: TextDecoration.none);
           Widget body =
               child ??
               Column(
@@ -469,7 +381,7 @@ class RaftDialog extends StatelessWidget {
                     RaftDialogFooter(children: actions!),
                 ],
               );
-          if (!usesLegacyRecipes(t.recipeTokens) && body is Column) {
+          if (body is Column) {
             final column = body;
             body = _copyDialogColumn(
               column,
@@ -510,28 +422,19 @@ class RaftDialog extends StatelessWidget {
                     type: MaterialType.transparency,
                     textStyle: base,
                     child: RaftTapSlopHost(
-                      child: usesLegacyRecipes(rt)
-                          ? RaftRecipeBox(
-                              key: contentKey,
-                              style: s.content,
-                              tokens: rt,
-                              width: width,
-                              clip: true,
-                              child: _Gapped(gap: gap, child: body),
-                            )
-                          : RaftDialogSurface(
-                              key: contentKey,
-                              surfaceStyle: s.content,
-                              child: Material(
-                                type: MaterialType.transparency,
-                                child: height == null
-                                    ? _Gapped(gap: gap, child: body)
-                                    : SizedBox(
-                                        height: math.min(height, maxHeight),
-                                        child: _Gapped(gap: gap, child: body),
-                                      ),
-                              ),
-                            ),
+                      child: RaftDialogSurface(
+                        key: contentKey,
+                        surfaceStyle: s.content,
+                        child: Material(
+                          type: MaterialType.transparency,
+                          child: height == null
+                              ? _Gapped(gap: gap, child: body)
+                              : SizedBox(
+                                  height: math.min(height, maxHeight),
+                                  child: _Gapped(gap: gap, child: body),
+                                ),
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -583,30 +486,15 @@ class RaftAlertDialog extends StatelessWidget {
     this.actions,
     this.child,
     this.semanticLabel,
-    this.legacy = RaftLegacyAlert.source,
   });
   final Object? title;
   final Widget? content;
   final List<Widget>? actions;
   final Widget? child;
   final String? semanticLabel;
-  final RaftLegacyAlert legacy;
 
   @override
   Widget build(BuildContext context) {
-    if (legacy == RaftLegacyAlert.material &&
-        usesLegacyRecipes(RaftTokens.of(context).recipeTokens)) {
-      return AlertDialog(
-        title: title is Widget
-            ? title as Widget
-            : title == null
-            ? null
-            : Text('$title'),
-        content: content ?? child,
-        actions: actions,
-        semanticLabel: semanticLabel,
-      );
-    }
     return RaftDialog(
       kind: RaftDialogKind.alert,
       title: title,
@@ -713,8 +601,7 @@ class RaftDialogBody extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     final s = _slots(context).body;
-    if ((_DialogScope.of(context)?.bar ?? false) &&
-        !usesLegacyRecipes(t.recipeTokens)) {
+    if (_DialogScope.of(context)?.bar ?? false) {
       return RaftRecipeBox(
         style: s,
         tokens: t.recipeTokens,
@@ -737,19 +624,10 @@ class RaftDialogFooter extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     final s = _slots(context).footer;
-    final gap = s.columnGap ?? 12;
     return RaftRecipeBox(
       style: s,
       tokens: t.recipeTokens,
-      child: usesLegacyRecipes(t.recipeTokens)
-          ? Wrap(
-              alignment: WrapAlignment.end,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              spacing: gap,
-              runSpacing: gap,
-              children: children,
-            )
-          : children.length == 1 && children.first is RaftDialogActions
+      child: children.length == 1 && children.first is RaftDialogActions
           ? children.first
           : RaftDialogActions(children: children),
     );
@@ -758,29 +636,18 @@ class RaftDialogFooter extends StatelessWidget {
 
 /// The footer's row of actions (raft-ui `stacked-actions`): one `justify-end`
 /// row, or, when it does not fit, a full-width column with the commit on top
-/// and the ghost Cancel framed. The frozen looks keep a wrapping row.
+/// and the ghost Cancel framed.
 class RaftDialogActions extends StatelessWidget {
   const RaftDialogActions({super.key, required this.children});
   final List<Widget> children;
   @override
   Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
     final s = _slots(context).footer;
-    if (usesLegacyRecipes(t.recipeTokens)) {
-      return Wrap(
-        alignment: WrapAlignment.end,
-        crossAxisAlignment: WrapCrossAlignment.center,
-        spacing: s.columnGap ?? 0,
-        runSpacing: s.rowGap ?? 0,
-        children: children,
-      );
-    }
     return RaftActionRow(children: children, gap: s.columnGap ?? 0);
   }
 }
 
-/// `DialogClose` default rendering: brutal `Button outline icon-md` with an
-/// X `size-5`; elegant `Button ghost icon-sm` + `p-0
+/// `DialogClose` default rendering: `Button ghost icon-sm` + `p-0
 /// text-foreground-placeholder hover:bg-transparent
 /// hover:text-foreground-strong` with an X `size-4`.
 class RaftDialogClose extends StatelessWidget {
@@ -807,99 +674,75 @@ class RaftDialogClose extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    if (!usesLegacyRecipes(t.recipeTokens)) {
-      // Both X variants pull from the DialogCard close margin (`-my-1.5` and
-      // the icon bar end pull: 7px by touch, 5px with a mouse at >=768) and
-      // take the `icon-md` side from the Button recipe (32, 28 with a mouse).
-      final product = RaftWebDialogCardRecipe.resolve(
-        states: t.recipeStates(responsive: true),
-        tokens: t.recipeTokens,
-      );
-      final sized =
-          t.themeOverrides?.geometry.containsKey('size.dialogClose') == true;
-      // With a mouse at >=768 the X is the 28px bar button at radius 6
-      // (`BAR_BUTTON_DESKTOP`), as [RaftCloseButton] draws it.
-      final barSize = !sized && t.desktop
-          ? RaftDesktopMetrics.barButtonSize
-          : null;
-      final extent = sized
-          ? null
-          : barSize ??
-                RaftButtonRecipe.resolve(
-                  theme: t.recipeTheme,
-                  variant: RaftButtonRecipeVariant.ghost,
-                  size: RaftButtonRecipeSize.iconMd,
-                  states: t.recipeStates(responsive: true),
-                  tokens: t.recipeTokens,
-                ).root.width;
-      return RaftDialogCloseOutset(
-        extent: extent,
-        verticalOutset: bar && !_product ? 0 : -product.close.margin.top,
-        endOutset: -product.close.margin.right,
-        child: RaftButton(
-          label: '',
-          glyph: RaftGlyph.x,
-          semanticLabel: raftText(context, semanticLabel),
-          tooltip: raftText(context, semanticLabel),
-          uiVariant:
-              this.outlined ||
-                  t.option('dialog.close', or: 'ghost') == 'outline'
-              ? RaftButtonVariant.outline
-              : RaftButtonVariant.ghost,
-          uiSize: _product ? RaftButtonSize.iconSm : RaftButtonSize.iconMd,
-          physicalHeight: barSize,
-          visualWidth: barSize,
-          styleBuilder: barSize == null
-              ? null
-              : (context, state, style) => style.copyWith(
-                  properties: {
-                    ...style.properties,
-                    for (final corner in [
-                      'top-left',
-                      'top-right',
-                      'bottom-left',
-                      'bottom-right',
-                    ])
-                      'border-$corner-radius': const CssNum(
-                        RaftDesktopMetrics.barButtonRadius,
-                        'px',
-                      ),
-                  },
-                ),
-          metricsKey:
-              t.themeOverrides?.geometry.containsKey('size.dialogClose') == true
-              ? 'dialogClose'
-              : null,
-          glyphSize:
-              t.themeOverrides?.geometry['size.dialogCloseGlyph'] ??
-              (_product ? product.glyph.width : null) ??
-              t.size('size.dialogCloseGlyph', fallback: 18),
-          foreground:
-              t.themeOverrides?.colors.containsKey('foreground-dialog-close') ==
-                  true
-              ? t.colors['foreground-dialog-close']
-              : null,
-          onPressed: enabled
-              ? onPressed ?? () => Navigator.of(context).maybePop()
-              : null,
-        ),
-      );
-    }
-    final outlined =
-        this.outlined || t.option('dialog.close', or: 'ghost') == 'outline';
+    // Both X variants pull from the DialogCard close margin (`-my-1.5` and
+    // the icon bar end pull: 7px by touch, 5px with a mouse at >=768) and
+    // take the `icon-md` side from the Button recipe (32, 28 with a mouse).
+    final product = RaftWebDialogCardRecipe.resolve(
+      states: t.recipeStates(responsive: true),
+      tokens: t.recipeTokens,
+    );
+    final sized =
+        t.themeOverrides?.geometry.containsKey('size.dialogClose') == true;
+    // With a mouse at >=768 the X is the 28px bar button at radius 6
+    // (`BAR_BUTTON_DESKTOP`), as [RaftCloseButton] draws it.
+    final barSize = !sized && t.desktop
+        ? RaftDesktopMetrics.barButtonSize
+        : null;
+    final extent = sized
+        ? null
+        : barSize ??
+              RaftButtonRecipe.resolve(
+                variant: RaftButtonRecipeVariant.ghost,
+                size: RaftButtonRecipeSize.iconMd,
+                states: t.recipeStates(responsive: true),
+                tokens: t.recipeTokens,
+              ).root.width;
     return RaftDialogCloseOutset(
-      child: RaftGlyphButton(
+      extent: extent,
+      verticalOutset: bar && !_product ? 0 : -product.close.margin.top,
+      endOutset: -product.close.margin.right,
+      child: RaftButton(
+        label: '',
         glyph: RaftGlyph.x,
         semanticLabel: raftText(context, semanticLabel),
-        tone: outlined
-            ? RaftButtonRecipeVariant.outline
-            : RaftButtonRecipeVariant.ghost,
-        size: outlined
-            ? RaftButtonRecipeSize.iconMd
-            : RaftButtonRecipeSize.iconSm,
-        glyphSize: t.size('size.dialogCloseGlyph', fallback: 16),
-        quiet: !outlined,
-        restColor: t.colors['foreground-dialog-close'],
+        tooltip: raftText(context, semanticLabel),
+        uiVariant:
+            this.outlined || t.option('dialog.close', or: 'ghost') == 'outline'
+            ? RaftButtonVariant.outline
+            : RaftButtonVariant.ghost,
+        uiSize: _product ? RaftButtonSize.iconSm : RaftButtonSize.iconMd,
+        physicalHeight: barSize,
+        visualWidth: barSize,
+        styleBuilder: barSize == null
+            ? null
+            : (context, state, style) => style.copyWith(
+                properties: {
+                  ...style.properties,
+                  for (final corner in [
+                    'top-left',
+                    'top-right',
+                    'bottom-left',
+                    'bottom-right',
+                  ])
+                    'border-$corner-radius': const CssNum(
+                      RaftDesktopMetrics.barButtonRadius,
+                      'px',
+                    ),
+                },
+              ),
+        metricsKey:
+            t.themeOverrides?.geometry.containsKey('size.dialogClose') == true
+            ? 'dialogClose'
+            : null,
+        glyphSize:
+            t.themeOverrides?.geometry['size.dialogCloseGlyph'] ??
+            (_product ? product.glyph.width : null) ??
+            t.size('size.dialogCloseGlyph', fallback: 18),
+        foreground:
+            t.themeOverrides?.colors.containsKey('foreground-dialog-close') ==
+                true
+            ? t.colors['foreground-dialog-close']
+            : null,
         onPressed: enabled
             ? onPressed ?? () => Navigator.of(context).maybePop()
             : null,
@@ -918,8 +761,6 @@ class RaftGlyphButton extends StatelessWidget {
     this.tone = RaftButtonRecipeVariant.ghost,
     this.size = RaftButtonRecipeSize.iconSm,
     this.glyphSize,
-    this.quiet = false,
-    this.restColor,
     this.tooltip,
   });
   final RaftGlyph glyph;
@@ -929,10 +770,6 @@ class RaftGlyphButton extends StatelessWidget {
   final RaftButtonRecipeSize size;
   final double? glyphSize;
 
-  /// Elegant DialogClose overrides: no padding/background, placeholder ink
-  /// that turns foreground-strong on hover.
-  final bool quiet;
-  final Color? restColor;
   final String? tooltip;
 
   @override
@@ -944,50 +781,10 @@ class RaftGlyphButton extends StatelessWidget {
     semanticLabel: semanticLabel,
     tooltip: tooltip,
     onPressed: onPressed,
-    legacyBuilder: _paintLegacy,
   );
-
-  Widget _paintLegacy(BuildContext context, RaftInteractionState st) {
-    final t = RaftTokens.of(context);
-    final rt = t.recipeTokens;
-    final s = RaftButtonRecipe.resolve(
-      theme: t.recipeTheme,
-      variant: tone,
-      size: size,
-      states: t.recipeStates(
-        hovered: st.hovered,
-        pressed: st.pressed,
-        focusVisible: st.focusVisible,
-        disabled: onPressed == null,
-      ),
-      tokens: rt,
-    ).root;
-    final svg = s.target("& svg:not([class*='size-'])");
-    final color = quiet
-        ? (st.hovered
-              ? t.semantic.foregroundStrong
-              : restColor ?? t.semantic.foregroundPlaceholder)
-        : null;
-    return RaftRecipeBox(
-      style: s,
-      tokens: rt,
-      padding: quiet ? EdgeInsets.zero : null,
-      alignment: Alignment.center,
-      decorationOverride: quiet
-          ? (d) => d.copyWith(color: Colors.transparent)
-          : null,
-      child: Builder(
-        builder: (context) => RaftIcon(
-          glyph,
-          size: glyphSize ?? svg?.width ?? 16,
-          color: color ?? DefaultTextStyle.of(context).style.color,
-        ),
-      ),
-    );
-  }
 }
 
-/// The dialog route: `layer-backdrop` overlay (elegant `backdrop-blur 2px`)
+/// The dialog route: `layer-backdrop` overlay (`backdrop-blur 2px`)
 /// fading in `duration-150 ease-out`; content fades/scales from 0.98.
 class RaftDialogRoute<T> extends PopupRoute<T> {
   RaftDialogRoute({
@@ -1100,7 +897,7 @@ class RaftDialogRoute<T> extends PopupRoute<T> {
 }
 
 /// The scrim behind a dialog, side panel or sheet: `layer-backdrop` fading in,
-/// with the elegant 2px blur. One scrim for every floating window.
+/// with the 2px blur. One scrim for every floating window.
 class RaftDialogBarrier extends StatelessWidget {
   const RaftDialogBarrier({
     required this.animation,
@@ -1124,38 +921,16 @@ class RaftDialogBarrier extends StatelessWidget {
     Builder(
       builder: (context) {
         final t = RaftTokens.of(context);
-        final s = RaftDialogSlots.of(context).overlay;
-        final color =
-            s.backgroundColor?.resolve(t.recipeTokens) ??
-            t.semantic.layerBackdrop;
-        // Brutal `--layer-backdrop` is black at alpha 0.650858 (its 0.0007
-        // channel tint quantizes to 0 in Chromium). Over another Modal's
-        // black/60 scrim (102) Chromium lands on 35 where Skia's float blend
-        // rounds 35.6 up to 36 and the tint tips two channels: pure black at
-        // 0.6525 gives 35 there. Only for dialogs stacked on a Modal; over a
-        // page the tinted token already matches.
-        Widget layer;
-        if (usesLegacyRecipes(t.recipeTokens)) {
-          final blur = t.size('blur.dialogBackdrop', fallback: 2);
-          layer = ColoredBox(color: color, child: const SizedBox.expand());
-          if (blur > 0) {
-            layer = BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
-              child: layer,
-            );
-          }
-        } else {
-          layer = RaftDialogBackdrop(
-            nested: nested,
-            child: const SizedBox.expand(),
+        Widget layer = RaftDialogBackdrop(
+          nested: nested,
+          child: const SizedBox.expand(),
+        );
+        final blur = t.size('blur.dialogBackdrop', fallback: 0);
+        if (blur > 0) {
+          layer = BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
+            child: layer,
           );
-          final blur = t.size('blur.dialogBackdrop', fallback: 0);
-          if (blur > 0) {
-            layer = BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
-              child: layer,
-            );
-          }
         }
         return FadeTransition(
           opacity: animation.drive(CurveTween(curve: Curves.easeOut)),
@@ -1186,39 +961,8 @@ Future<T?> showRaftDialog<T>({
   RouteSettings? routeSettings,
   bool overModal = false,
   bool modal = false,
-  bool legacyMaterial = false,
-  bool legacyModal = false,
-  Color? legacyBarrierColor,
 }) {
   final navigator = Navigator.of(context, rootNavigator: useRootNavigator);
-  if (legacyMaterial &&
-      usesLegacyRecipes(RaftTokens.of(context).recipeTokens)) {
-    return showDialog<T>(
-      context: context,
-      builder: builder,
-      barrierDismissible: barrierDismissible,
-      barrierColor: legacyBarrierColor,
-      useRootNavigator: useRootNavigator,
-      barrierLabel: barrierLabel,
-      routeSettings: routeSettings,
-    );
-  }
-  if (legacyModal && usesLegacyRecipes(RaftTokens.of(context).recipeTokens)) {
-    return showGeneralDialog<T>(
-      context: context,
-      useRootNavigator: useRootNavigator,
-      routeSettings: routeSettings,
-      barrierDismissible: barrierDismissible,
-      barrierLabel:
-          barrierLabel ??
-          MaterialLocalizations.of(context).modalBarrierDismissLabel,
-      barrierColor: RaftTokens.of(context).colors['layer-backdrop']!,
-      transitionDuration: const Duration(milliseconds: 150),
-      transitionBuilder: (context, animation, _, child) =>
-          FadeTransition(opacity: animation, child: child),
-      pageBuilder: (context, _, _) => RaftDismissScope(child: builder(context)),
-    );
-  }
   return navigator.push(
     RaftDialogRoute<T>(
       builder: builder,
@@ -1226,10 +970,7 @@ Future<T?> showRaftDialog<T>({
       label: barrierLabel,
       overModal: overModal,
       modal: modal,
-      motionDuration:
-          !modal && usesLegacyRecipes(RaftTokens.of(context).recipeTokens)
-          ? const Duration(milliseconds: 150)
-          : Duration.zero,
+      motionDuration: Duration.zero,
       settings: routeSettings,
       capturedThemes: InheritedTheme.capture(
         from: context,
@@ -1256,21 +997,17 @@ Future<bool> showRaftAlertDialog({
     context: context,
     barrierDismissible: barrierDismissible,
     builder: (context) {
-      final legacy = usesLegacyRecipes(RaftTokens.of(context).recipeTokens);
       return RaftAlertDialog(
         title: title,
         content:
             content ??
             (description == null ? null : RaftDialogDescription(description)),
         actions: [
-          // AlertDialogCancel `size="lg"` (ghost) + AlertDialogAction `lg`; the
-          // frozen looks keep their outline / md pair.
+          // AlertDialogCancel `size="lg"` (ghost) + AlertDialogAction `lg`.
           RaftButton(
             label: cancelLabel,
-            tone: legacy
-                ? RaftButtonRecipeVariant.outline
-                : RaftButtonRecipeVariant.ghost,
-            size: legacy ? RaftButtonRecipeSize.md : RaftButtonRecipeSize.lg,
+            tone: RaftButtonRecipeVariant.ghost,
+            size: RaftButtonRecipeSize.lg,
             onPressed: () => Navigator.of(context).pop(false),
           ),
           RaftButton(
@@ -1278,7 +1015,7 @@ Future<bool> showRaftAlertDialog({
             tone: destructive
                 ? RaftButtonRecipeVariant.danger
                 : RaftButtonRecipeVariant.accent,
-            size: legacy ? RaftButtonRecipeSize.md : RaftButtonRecipeSize.lg,
+            size: RaftButtonRecipeSize.lg,
             onPressed: () => Navigator.of(context).pop(true),
           ),
         ],

@@ -103,7 +103,6 @@ class _EditorCard extends StatelessWidget {
     final t = RaftTokens.of(context);
     final tokens = t.recipeTokens;
     final root = RaftCardRecipe.resolve(
-      theme: t.recipeTheme,
       states: t.recipeStates(),
       tokens: tokens,
     ).root;
@@ -342,7 +341,6 @@ class _RaftConnectedAppEditorCardState
       final selected = s.id == active;
       final key = railKeys.putIfAbsent(s.id, GlobalKey.new);
       final radius = RaftButtonRecipe.resolve(
-        theme: t.recipeTheme,
         variant: RaftButtonRecipeVariant.ghost,
         size: RaftButtonRecipeSize.sm,
         states: t.recipeStates(),
@@ -1192,7 +1190,6 @@ class RaftAppPermissionsTable extends StatelessWidget {
     final t = RaftTokens.of(context);
     final tokens = t.recipeTokens;
     final recipe = RaftTableRecipe.resolve(
-      theme: t.recipeTheme,
       states: t.recipeStates(),
       tokens: tokens,
     );

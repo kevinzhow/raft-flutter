@@ -15,7 +15,7 @@ LOADER = importlib.machinery.SourceFileLoader('prepare_handoff_pr', str(TOOL / '
 ph = importlib.util.module_from_spec(importlib.util.spec_from_loader('prepare_handoff_pr', LOADER))
 LOADER.exec_module(ph)
 
-LINE = 'handoff: cindy/x abc1234 (contains origin/cindy/integration def5678); check-project PASSED (themes: sampled); sourceHash 0123456789ab'
+LINE = 'handoff: cindy/x abc1234 (contains origin/cindy/integration def5678); check-project PASSED (tier: gate); sourceHash 0123456789ab'
 
 
 def done(args, code=0, out='', err=''):
@@ -198,7 +198,7 @@ class MainFlowTests(Common):
     def run_main(self, passed, script=None, *extra, preflight=True):
         root = self.tmp / 'repo'
         (root / '.local').mkdir(parents=True)
-        (root / '.local/engineering-run.json').write_text(json.dumps({'themes': 'sampled', 'sourceHash': '0123456789abcdef'}))
+        (root / '.local/engineering-run.json').write_text(json.dumps({'tier': 'gate', 'sourceHash': '0123456789abcdef'}))
         results = {'status': '', 'branch': 'cindy/x', 'rev-parse': 'abc1234'}
         fake = self.patch_run({('git', 'rebase'): (0, ''), ('gh', 'auth', 'status'): (0, 'Logged in'),
                                ('git', 'rev-parse', '--verify'): (1, ''), ('gh', 'pr', 'list'): (0, '[]'),

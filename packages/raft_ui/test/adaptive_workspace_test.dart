@@ -191,8 +191,8 @@ void main() {
     final thread = tester
         .getSize(find.byKey(const Key('workspace-thread-panel')))
         .width;
-    // Elegant's source rail is 56 px; Brutal's is 64 px. Measure the
-    // rendered regions so the conversation bound is independent of that recipe.
+    // Measure the rendered regions so the conversation bound is independent of the
+    // rail recipe.
     final rail = tester.getSize(find.text('Rail')).width;
     final sidebar = tester
         .getSize(find.byKey(const Key('workspace-sidebar-panel')))

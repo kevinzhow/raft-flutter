@@ -3,12 +3,10 @@
 // `list`, `item`, `itemIndicator` slots) in an overlay anchored below the
 // trigger.
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter/semantics.dart' show SemanticsRole;
 import 'package:raft_theme/recipes/select.g.dart' as raft_select;
 
 import 'design_primitives.dart';
-import 'hover_region.dart';
 import 'anchored_popup.dart';
 import 'dismiss_scope.dart';
 import 'icons.dart';
@@ -23,10 +21,7 @@ import 'recipes/select.g.dart';
 import 'agent_profile.dart' show RaftInlineBadge, RaftRecipeBadge;
 import 'form_controls.dart' show RaftField;
 import 'theme.dart';
-import 'tokens/tokens.dart' show RaftCssShadow;
 import 'raft/css_box.dart' show raftSnapBorder;
-
-part 'select_field_frozen.dart';
 
 /// `cn(a, b)` for two resolved slots: later declarations win (the class
 /// list order raft-ui passes to tailwind-merge).
@@ -158,8 +153,7 @@ class RaftSelectItem<T> {
       '$label${badge == null ? '' : ' $badge'}${suffix ?? ''}';
 }
 
-/// A [RaftSelectField] under its label (`Field` + `FieldLabel` + `Select`). The Raft look draws the canonical field
-/// and select; the Elegant and Brutal looks keep the Material labelled dropdown they always drew.
+/// A [RaftSelectField] under its label (`Field` + `FieldLabel` + `Select`): the canonical field and select.
 class RaftLabeledSelect<T> extends StatelessWidget {
   const RaftLabeledSelect({
     super.key,
@@ -174,14 +168,11 @@ class RaftLabeledSelect<T> extends StatelessWidget {
   final List<RaftSelectItem<T>> items;
   final ValueChanged<T?>? onChanged;
 
-  /// Key of the select (the frozen looks rebuild their dropdown when it changes).
+  /// Key of the select.
   final Key? fieldKey;
 
   @override
   Widget build(BuildContext context) {
-    if (!RaftTokens.of(context).isRaftLook) {
-      return _frozenLabeledSelect<T>(context, this);
-    }
     return RaftField(
       label: raftText(context, label),
       child: RaftSelectField<T>(
@@ -283,7 +274,6 @@ class _RaftSelectFieldState<T> extends State<RaftSelectField<T>> {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     final enabled = widget.onChanged != null;
-    final fieldChrome = widget.chrome == RaftSelectRecipeChrome.field;
     final selected = widget.items
         .where(
           (e) => !e.isAction && e.value == widget.value && widget.value != null,
@@ -298,24 +288,14 @@ class _RaftSelectFieldState<T> extends State<RaftSelectField<T>> {
       semanticLabel: widget.label == null
           ? null
           : raftText(context, widget.label!),
-      builder: (context, st) => t.isRaftLook
-          ? _raftTrigger(
-              context,
-              t,
-              st,
-              enabled: enabled,
-              selected: selected,
-              hasValue: hasValue,
-            )
-          : _frozenTrigger(
-              context,
-              t,
-              st,
-              enabled: enabled,
-              fieldChrome: fieldChrome,
-              selected: selected,
-              hasValue: hasValue,
-            ),
+      builder: (context, st) => _raftTrigger(
+        context,
+        t,
+        st,
+        enabled: enabled,
+        selected: selected,
+        hasValue: hasValue,
+      ),
     );
     return CompositedTransformTarget(
       key: anchorKey,
@@ -362,14 +342,12 @@ class _RaftSelectFieldState<T> extends State<RaftSelectField<T>> {
       ],
     );
     final button = RaftButtonRecipe.resolve(
-      theme: t.recipeTheme,
       variant: RaftButtonRecipeVariant.outline,
       size: RaftButtonRecipeSize.md,
       states: states,
       tokens: rt,
     ).root;
     final sel = RaftSelectRecipe.resolve(
-      theme: t.recipeTheme,
       chrome: widget.chrome,
       states: states,
       tokens: rt,
@@ -410,7 +388,6 @@ class _RaftSelectFieldState<T> extends State<RaftSelectField<T>> {
   Widget _raftPopup(BuildContext context, RaftTokens t) {
     final rt = t.recipeTokens;
     final base = RaftSelectRecipe.resolve(
-      theme: t.recipeTheme,
       chrome: widget.chrome,
       states: t.recipeStates(responsive: true),
       tokens: rt,
@@ -507,13 +484,11 @@ class _RaftSelectFieldState<T> extends State<RaftSelectField<T>> {
                     // Row state is already a complete recipe input, so no
                     // option lookup (including a sentinel lookup) is needed.
                     final sel = RaftSelectRecipe.resolve(
-                      theme: t.recipeTheme,
                       chrome: widget.chrome,
                       states: states,
                       tokens: rt,
                     );
-                    // The Raft-only slots of the grouped / described / action
-                    // rows (the router's legacy class has none of them).
+                    // The slots of the grouped / described / action rows.
                     final more = !needsExtras
                         ? null
                         : raft_select.RaftSelectRecipe.resolve(
@@ -569,192 +544,6 @@ class _RaftSelectFieldState<T> extends State<RaftSelectField<T>> {
     // after build, since OverlayPortal forbids hide during persistent callbacks.
     if (widget.onChanged == null || widget.items.isEmpty)
       return const SizedBox.shrink();
-    if (t.isRaftLook) return _raftPopup(context, t);
-    final rt = t.recipeTokens;
-    final sel = RaftSelectRecipe.resolve(
-      theme: t.recipeTheme,
-      chrome: widget.chrome,
-      states: t.recipeStates(responsive: true),
-      tokens: rt,
-    );
-    final items = [
-      for (var i = 0; i < widget.items.length; i++)
-        _SelectItem<T>(
-          item: widget.items[i],
-          selected:
-              !widget.items[i].isAction &&
-              widget.items[i].value == widget.value,
-          chrome: widget.chrome,
-          last: i == widget.items.length - 1,
-          autofocus:
-              widget.items[i].value == widget.value ||
-              (widget.value == null && i == 0),
-          onSelect: () {
-            if (widget.items[i].onAction case final action?) {
-              action();
-              return;
-            }
-            widget.onChanged?.call(widget.items[i].value);
-            close();
-          },
-        ),
-    ];
-    return Positioned.fill(
-      child: TapRegion(
-        onTapOutside: (_) => close(),
-        // Escape closes even while focus is still on the trigger.
-        child: RaftDismissScope(
-          onDismiss: close,
-          takeFocus: true,
-          child: Stack(
-            children: [
-              RaftAnchoredPopup(
-                anchorKey: anchorKey,
-                movement: Scrollable.maybeOf(this.context)?.position,
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(
-                    minWidth: triggerSize.width,
-                    maxWidth: triggerSize.width,
-                  ),
-                  child: RaftRecipeBox(
-                    style: sel.content,
-                    tokens: rt,
-                    clip: true,
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(
-                        maxHeight: sel.list.maxHeight ?? 256,
-                      ),
-                      child: FocusTraversalGroup(
-                        key: const ValueKey('raft-select-popup'),
-                        child: SingleChildScrollView(
-                          padding: sel.list.padding,
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              for (var i = 0; i < items.length; i++) ...[
-                                if (i > 0)
-                                  SizedBox(height: sel.list.rowGap ?? 0),
-                                items[i],
-                              ],
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
+    return _raftPopup(context, t);
   }
 }
-
-class _SelectItem<T> extends StatefulWidget {
-  const _SelectItem({
-    super.key,
-    required this.item,
-    required this.selected,
-    required this.chrome,
-    required this.last,
-    required this.autofocus,
-    required this.onSelect,
-  });
-  final RaftSelectItem<T> item;
-  final bool selected, last, autofocus;
-  final RaftSelectRecipeChrome chrome;
-  final VoidCallback onSelect;
-  @override
-  State<_SelectItem<T>> createState() => _SelectItemState<T>();
-}
-
-class _SelectItemState<T> extends State<_SelectItem<T>> {
-  bool hovered = false, highlighted = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
-    final rt = t.recipeTokens;
-    final enabled = widget.item.enabled;
-    final sel = RaftSelectRecipe.resolve(
-      theme: t.recipeTheme,
-      chrome: widget.chrome,
-      states: t.recipeStates(
-        responsive: true,
-        hovered: hovered && enabled && RaftHoverScope.of(context),
-        extra: [
-          if (!enabled) 'data-disabled',
-          if (widget.selected) 'data-selected',
-          if (highlighted && enabled) 'data-highlighted',
-          if (widget.last) 'last-child',
-        ],
-      ),
-      tokens: rt,
-    );
-    return Semantics(
-      selected: widget.selected,
-      enabled: enabled,
-      button: true,
-      child: FocusableActionDetector(
-        enabled: enabled,
-        autofocus: widget.autofocus && enabled,
-        onShowFocusHighlight: (v) => setState(() => highlighted = v),
-        onShowHoverHighlight: (v) =>
-            setState(() => hovered = v && RaftHoverScope.of(context)),
-        mouseCursor: SystemMouseCursors.basic,
-        shortcuts: const {
-          SingleActivator(LogicalKeyboardKey.arrowDown): NextFocusIntent(),
-          SingleActivator(LogicalKeyboardKey.arrowUp): PreviousFocusIntent(),
-        },
-        actions: {
-          ActivateIntent: CallbackAction<ActivateIntent>(
-            onInvoke: (_) {
-              widget.onSelect();
-              return null;
-            },
-          ),
-        },
-        child: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: enabled ? widget.onSelect : null,
-          child: RaftRecipeBox(
-            style: sel.item,
-            tokens: rt,
-            child: Row(
-              children: [
-                Expanded(
-                  child: DefaultTextStyle.merge(
-                    maxLines: 1,
-                    softWrap: false,
-                    overflow: TextOverflow.ellipsis,
-                    child: widget.item.listChild,
-                  ),
-                ),
-                if (widget.selected) ...[
-                  SizedBox(width: sel.item.columnGap ?? 8),
-                  RaftIcon(
-                    RaftGlyph.check,
-                    size: 14,
-                    color: sel.itemIndicator.color?.resolve(rt),
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-CssValue _selectShadow(RaftCssShadow layer) => CssSeq([
-  if (layer.inset) const CssKeyword('inset'),
-  CssNum(layer.offset.dx, 'px'),
-  CssNum(layer.offset.dy, 'px'),
-  CssNum(layer.blur, 'px'),
-  CssNum(layer.spread, 'px'),
-  CssColor(layer.color.toARGB32(), null, layer.color),
-]);

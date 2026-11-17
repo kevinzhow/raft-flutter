@@ -4,11 +4,7 @@ import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_ui/test_themes.dart';
 
 void main() {
-  for (final themeId in raftThemeMatrix([
-    raftThemePackId,
-    elegantThemePackId,
-    brutalThemePackId,
-  ], look: raftLookOf)) {
+  for (final themeId in raftThemeMatrix([raftThemePackId])) {
     testWidgets('$themeId preserves fallback copy and reload action', (
       tester,
     ) async {

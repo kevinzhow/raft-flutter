@@ -11005,11 +11005,11 @@
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/resource_view.dart",
-     "needle": "Created by Me"
+     "needle": "Created by me"
     },
     {
      "file": "apps/raft_flutter/lib/features/resource_view.dart",
-     "needle": "Assigned to Me"
+     "needle": "Assigned to me"
     }
    ],
    "justification": "",
@@ -13950,20 +13950,20 @@
    "kind": "ui",
    "id": "ui:appearance.theme-picker",
    "area": "account-profile",
-   "capability": "Pick appearance mode (Light / Dark / System) and a theme per mode",
+   "capability": "Pick appearance mode (Light / Dark / System)",
    "background": false,
    "status": "covered",
    "webEntry": "Settings > Appearance > Theme card (AppearanceThemePicker)",
    "gate": "",
-   "flutterEntry": "appearance_section.dart RaftAppearancePicker (local, saved on device)",
+   "flutterEntry": "appearance_section.dart RaftAppearanceModeCards (local, saved on device)",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/appearance_section.dart",
-     "needle": "RaftAppearancePicker"
+     "needle": "RaftAppearanceModeCards("
     },
     {
      "file": "packages/raft_ui/lib/src/appearance_picker.dart",
-     "needle": "System follows your device"
+     "needle": "class RaftAppearanceModeCards"
     }
    ],
    "justification": "",
@@ -16730,20 +16730,20 @@
    "kind": "ui",
    "id": "ui:global-ui.pref-theme",
    "area": "global-ui",
-   "capability": "Appearance: colour mode Light/Dark/System with separate Light-theme and Dark-theme choices (Brutal or Elegant), saved on this device",
+   "capability": "Appearance: colour mode Light/Dark/System, saved on this device",
    "background": false,
    "status": "covered",
    "webEntry": "theme/appTheme.ts (localStorage slock-theme-preferences-v2) + components/settings/AppearanceThemePicker.tsx (settings.appearance.*)",
    "gate": "",
-   "flutterEntry": "appearance_section.dart RaftAppearanceSection + raft_ui appearance_picker.dart RaftAppearancePicker; persisted in device prefs (raft.mode / raft.light)",
+   "flutterEntry": "appearance_section.dart RaftAppearanceSection + raft_ui appearance_picker.dart RaftAppearanceModeCards; persisted in device prefs (raft.mode)",
    "flutterRefs": [
     {
      "file": "packages/raft_ui/lib/src/appearance_picker.dart",
-     "needle": "Color mode"
+     "needle": "class RaftAppearanceModeCards"
     },
     {
      "file": "apps/raft_flutter/lib/features/appearance_section.dart",
-     "needle": "RaftAppearancePicker("
+     "needle": "RaftAppearanceModeCards("
     }
    ],
    "justification": "",

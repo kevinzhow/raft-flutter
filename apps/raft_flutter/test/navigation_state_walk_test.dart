@@ -187,12 +187,7 @@ Future<RootFixture> mount(WidgetTester t, Size dp) async {
     'hasMore': false,
     'totalUnreadCount': 4,
   };
-  await f.mount(
-    t,
-    'elegant-light',
-    dp.width,
-    uri: Uri.parse('/s/alpha/activity'),
-  );
+  await f.mount(t, 'light', dp.width, uri: Uri.parse('/s/alpha/activity'));
   t.view.devicePixelRatio = dpr;
   t.view.physicalSize = dp * dpr;
   const top = 40 * dpr;

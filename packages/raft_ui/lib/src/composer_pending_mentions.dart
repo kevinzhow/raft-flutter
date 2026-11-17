@@ -92,8 +92,7 @@ class RaftPendingMentionActionStrip extends StatelessWidget {
     return Container(
       key: const ValueKey('pending-mention-action-strip'),
       // `rounded-lg border border-line-muted bg-layer-panel px-3 py-2
-      // shadow-raft-xs`; brutal `rounded-none border-2 border-black
-      // bg-brutal-cream shadow-brutal-sm`.
+      // shadow-raft-xs`.
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         color: t.colors['layer-panel'],
@@ -161,8 +160,7 @@ class RaftPendingMentionActionStrip extends StatelessWidget {
       ),
     };
     Widget done(String label) => Container(
-      // `rounded-md border bg-fill-muted px-2 py-0.5 text-[12px] font-bold`;
-      // brutal `border-2 border-black/20 bg-black/[0.04] text-black/40`.
+      // `rounded-md border bg-fill-muted px-2 py-0.5 text-[12px] font-bold`.
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
         color: t.colors['fill-muted'],
@@ -350,8 +348,7 @@ class RaftPendingMentionSlot extends StatelessWidget {
             padding: const EdgeInsets.only(bottom: 8),
             // Web `mentionActionNotice`: `rounded-md border border-line-muted
             // bg-fill-muted/50 px-2 py-1 text-[11px] font-bold leading-4
-            // text-foreground-muted`; brutal `rounded-none border-2
-            // border-black/35 bg-black/[0.04] text-black/70`.
+            // text-foreground-muted`.
             child: Semantics(
               liveRegion: true,
               child: Container(
@@ -461,8 +458,8 @@ class RaftComposerNotice extends StatelessWidget {
           description: message,
           descriptionWeight: FontWeight.w700,
           size: RaftBannerRecipeSize.sm,
-          // Measured on Web: the `icon-xs` button is 24px in Brutal but 16px in
-          // Elegant (the recipe resolves 24 for both); its 12px glyph stays.
+          // Measured on Web: the `icon-xs` button is 16px (the recipe resolves
+          // 24); its 12px glyph stays.
           action: SizedBox.square(
             dimension: 16,
             child: RaftRecipeButton(
@@ -480,9 +477,6 @@ class RaftComposerNotice extends StatelessWidget {
     }
     final resolver = RaftRecipeTokens(t);
     final s = RaftBannerRecipe.resolve(
-      theme: t.option('press.effect', or: 'scale') == 'offsetShadow'
-          ? RaftRecipeTheme.brutal
-          : RaftRecipeTheme.elegant,
       status: RaftBannerRecipeStatus.warning,
       size: RaftBannerRecipeSize.sm,
       states: RaftRecipeStates({if (t.dark) RaftRecipeStates.dark}),

@@ -79,9 +79,7 @@ class FeatureFlagMemory {
 }
 
 /// The key that held the old theme family (`brutal` | `elegant`), retired when the
-/// app briefly had a single look. Theme choice is back, but under
-/// [appearanceThemeKey] with theme-pack ids, so this key is dropped rather than
-/// read: its values name families, not packs.
+/// app briefly had a single look. It is dropped rather than read.
 const retiredAppearanceThemeKey = 'raft.light';
 
 /// The mode a stored `raft.mode` value means. Besides `light` | `dark` | `system`
@@ -97,9 +95,9 @@ ThemeMode? storedThemeMode(String? value) => switch (value) {
 /// The appearance stored by the Appearance settings (`raft.mode`), read
 /// synchronously so the very first built MaterialApp already uses the chosen
 /// mode. A missing, unknown or unavailable value falls back to the default
-/// (System). The retired `raft.light` family key is ignored: every earlier
-/// family (Brutal, Elegant) is the one Raft look now, and `raft.mode` already
-/// said Light, Dark or System.
+/// (System). The retired `raft.light` family key and the retired theme id
+/// ([appearanceThemeKey], `raft.theme`) are ignored: Raft is the only look, and
+/// `raft.mode` already said Light, Dark or System.
 RaftAppearance storedAppearance([SharedPreferences? preferences]) {
   final p = preferences ?? DevicePreferences.current;
   String? read(String key) {
@@ -111,24 +109,16 @@ RaftAppearance storedAppearance([SharedPreferences? preferences]) {
   }
 
   const defaults = RaftAppearance();
-  final storedTheme = read(appearanceThemeKey);
   return RaftAppearance(
     mode: storedThemeMode(read('raft.mode')) ?? defaults.mode,
-    // An id naming no built-in theme is kept as written and resolved to the
-    // Raft look at paint time, so a returning user sees their stored choice
-    // rather than having it silently rewritten to 'raft'.
-    themeId: storedTheme == null || storedTheme.isEmpty
-        ? defaults.themeId
-        : storedTheme,
   );
 }
 
-/// The stored theme id (`raft.theme`): which built-in theme to paint with,
-/// independent of the Light / Dark / System choice in `raft.mode`.
+/// The retired theme id key (`raft.theme`), which once chose a theme pack. It
+/// is never read; [saveAppearance] removes it.
 const appearanceThemeKey = 'raft.theme';
 
-/// Writes the appearance the settings page chose: the light/dark mode and the
-/// theme id on their own keys, so choosing one never rewrites the other.
+/// Writes the appearance the settings page chose: the light/dark mode.
 ///
 /// Kept here, next to [storedAppearance] and the retired-key cleanup, so the app
 /// root only calls it; `app_root.dart` is a size-capped hotspot and this
@@ -138,8 +128,9 @@ Future<void> saveAppearance(
   RaftAppearance appearance,
 ) async {
   await preferences.setString('raft.mode', appearance.mode.name);
-  await preferences.setString(appearanceThemeKey, appearance.themeId);
-  // The retired `raft.light` key must not come back; the native splash reads it.
+  // The retired theme id and `raft.light` keys must not come back; the native
+  // splash reads `raft.light`.
+  await preferences.remove(appearanceThemeKey);
   await preferences.remove(retiredAppearanceThemeKey);
 }
 

@@ -8,7 +8,6 @@ import 'page_recipes.dart';
 import 'popover_surface.dart';
 import 'recipe_surface.dart';
 import 'recipes/search.g.dart' as gen;
-import 'recipes/recipe_runtime.dart' show RaftRecipeSet;
 import 'recipes/search_entity.g.dart';
 import 'dialog_card.dart';
 import 'search_input.dart';
@@ -78,7 +77,6 @@ class RaftQuickSwitcherFrame extends StatelessWidget {
     final hint = recipe.metadata.copyWith(fontSize: 11);
     final rt = t.recipeTokens;
     final shell = gen.RaftSearchRecipe.resolve(
-      theme: t.recipeTheme,
       states: t.recipeStates(),
       tokens: rt,
     );
@@ -168,8 +166,8 @@ class RaftQuickSwitcherField extends StatelessWidget {
   final VoidCallback onClear;
   @override
   Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
-    final search = RaftSearchInput(
+    // The Web's search field carries its own icon (an InputGroup addon).
+    return RaftSearchInput(
       key: const Key('quick-switcher-input'),
       controller: controller,
       focusNode: focusNode,
@@ -177,15 +175,6 @@ class RaftQuickSwitcherField extends StatelessWidget {
       clearLabel: clearLabel,
       showEscape: true,
       onClear: onClear,
-    );
-    // The Web's search field carries its own icon (an InputGroup addon).
-    if (t.recipeSet == RaftRecipeSet.raft) return search;
-    return Row(
-      spacing: 8,
-      children: [
-        RaftIcon(RaftGlyph.search, size: 16, color: t.muted),
-        Expanded(child: search),
-      ],
     );
   }
 }
@@ -206,7 +195,6 @@ class RaftQuickSwitcherList extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     final viewport = gen.RaftSearchRecipe.resolve(
-      theme: t.recipeTheme,
       states: t.recipeStates(),
       tokens: t.recipeTokens,
     ).viewport;
@@ -257,7 +245,6 @@ class RaftQuickSwitcherSection extends StatelessWidget {
     final t = RaftTokens.of(context);
     final rt = t.recipeTokens;
     final slots = gen.RaftSearchRecipe.resolve(
-      theme: t.recipeTheme,
       states: t.recipeStates(),
       tokens: rt,
     );
@@ -327,10 +314,8 @@ class RaftQuickSwitcherIconBox extends StatelessWidget {
       width: RaftQuickSwitcherMetrics.leadingExtent,
       height: RaftQuickSwitcherMetrics.leadingExtent,
       alignment: Alignment.center,
-      decoration: RaftSearchEntityRecipe.resolve(
-        theme: t.recipeTheme,
-        tokens: rt,
-      ).entityIcon.decoration(rt),
+      decoration: RaftSearchEntityRecipe.resolve(tokens: rt).entityIcon
+          .decoration(rt),
       child: RaftIcon(glyph, size: 14, color: t.colors['foreground-icon']),
     );
   }

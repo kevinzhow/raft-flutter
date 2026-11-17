@@ -5,47 +5,17 @@ import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_ui/test_themes.dart';
 
 void main() {
-  for (final id in raftThemeMatrix([
-    raftThemePackId,
-    elegantThemePackId,
-    brutalThemePackId,
-  ], look: raftLookOf)) {
+  for (final id in raftThemeMatrix([raftThemePackId])) {
     for (final dark in [false, true]) {
       testWidgets('actual button size and label from source $id/$dark', (
         t,
       ) async {
         addTearDown(() => t.pumpWidget(const SizedBox()));
-        final native = id == raftThemePackId;
-        final elegant = id == elegantThemePackId || (!native && dark);
         final expected = <RaftButtonRecipeSize, (double, double, FontWeight)>{
-          RaftButtonRecipeSize.xs: (
-            native ? 32 : 24,
-            native ? 13 : 11,
-            elegant ? FontWeight.w500 : FontWeight.w700,
-          ),
-          RaftButtonRecipeSize.sm: (
-            native ? 32 : 28,
-            native ? 13 : 12,
-            elegant ? FontWeight.w500 : FontWeight.w700,
-          ),
-          RaftButtonRecipeSize.md: (
-            32,
-            native ? 13 : 14,
-            elegant ? FontWeight.w500 : FontWeight.w700,
-          ),
-          RaftButtonRecipeSize.lg: (
-            native
-                ? 44
-                : elegant
-                ? 36
-                : 40,
-            native
-                ? 15
-                : elegant
-                ? 16
-                : 14,
-            elegant ? FontWeight.w500 : FontWeight.w700,
-          ),
+          RaftButtonRecipeSize.xs: (32, 13, FontWeight.w700),
+          RaftButtonRecipeSize.sm: (32, 13, FontWeight.w700),
+          RaftButtonRecipeSize.md: (32, 13, FontWeight.w700),
+          RaftButtonRecipeSize.lg: (44, 15, FontWeight.w700),
         };
         for (final entry in expected.entries) {
           await t.pumpWidget(
@@ -116,64 +86,4 @@ void main() {
       expect((decoration.border! as Border).top.width, 2);
     },
   );
-  for (final id in raftThemeMatrix([
-    elegantThemePackId,
-    brutalThemePackId,
-  ], look: raftLookOf)) {
-    for (final dark in [false, true]) {
-      testWidgets('button disabled fades but busy stays opaque $id/$dark', (
-        t,
-      ) async {
-        addTearDown(() => t.pumpWidget(const SizedBox()));
-        Widget app({bool busy = false}) => MaterialApp(
-          theme: raftTheme(pack: packForThemeId(id), dark: dark),
-          home: MediaQuery(
-            data: const MediaQueryData(disableAnimations: true),
-            child: Scaffold(
-              body: RaftButton(
-                label: 'Send',
-                busy: busy,
-                size: RaftButtonRecipeSize.sm,
-              ),
-            ),
-          ),
-        );
-        await t.pumpWidget(app());
-        final fade = find.descendant(
-          of: find.byType(RaftButton),
-          matching: find.byType(Opacity),
-        );
-        expect(fade, findsOneWidget);
-        expect(t.widget<Opacity>(fade).opacity, .4);
-        await t.pumpWidget(app(busy: true));
-        await t.pumpAndSettle();
-        expect(t.widget<Opacity>(fade).opacity, 1);
-        expect(find.byType(RaftSpinner), findsOneWidget);
-        expect(find.byType(RaftPixelSpinner), findsNothing);
-        expect(t.hasRunningAnimations, isFalse);
-      });
-    }
-  }
-  testWidgets('button honors caller alpha-filter compositing', (t) async {
-    addTearDown(() => t.pumpWidget(const SizedBox()));
-    await t.pumpWidget(
-      MaterialApp(
-        theme: raftTheme(pack: packForThemeId(elegantThemePackId)),
-        home: const Scaffold(
-          body: Center(
-            child: RaftButton(
-              label: 'Continue',
-              opacityCompositing: RaftOpacityCompositing.alphaFilter,
-            ),
-          ),
-        ),
-      ),
-    );
-    final opacity = find.descendant(
-      of: find.byType(RaftButton),
-      matching: find.byType(RaftCssOpacity),
-    );
-    expect(opacity, findsOneWidget);
-    expect(t.widget<RaftCssOpacity>(opacity).opacity, .4);
-  }, skip: raftLookSkip(raftLookElegant));
 }

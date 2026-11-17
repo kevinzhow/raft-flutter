@@ -6,7 +6,6 @@
 /// ```dart
 /// final tokens = /* RaftTokenResolver bound to the token ThemeExtension */;
 /// final style = RaftButtonRecipe.resolve(
-///   theme: RaftRecipeTheme.elegant,
 ///   variant: RaftButtonRecipeVariant.primary,
 ///   size: RaftButtonRecipeSize.md,
 ///   states: RaftRecipeStates({

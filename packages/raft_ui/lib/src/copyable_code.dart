@@ -6,16 +6,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'design_primitives.dart' hide RaftPanelHeaderRecipe;
-import 'dialog_card.dart';
 import 'icons.dart';
-import 'panel_layout.dart' show raftRecipeTheme;
-import 'recipe_surface.dart' show raftCssText, RaftRecipeBox, RaftSlotPaint;
+import 'recipe_surface.dart' show RaftRecipeBox, RaftSlotPaint;
 import 'raft/button.dart' show RaftButton, RaftButtonSize, RaftButtonVariant;
-import 'recipes/button_variants.g.dart';
 import 'recipes/copyable_code.g.dart';
 import 'recipes/recipe_runtime.dart';
 import 'recipes/token_binding.dart';
-import 'space.dart';
 import 'theme.dart';
 import 'tokens/tokens.dart' show RaftTypeScale;
 
@@ -109,93 +105,14 @@ class _RaftCopyableCodeState extends State<RaftCopyableCode> {
           )
         : null;
     final s = RaftCopyableCodeRecipe.resolve(
-      theme: raftRecipeTheme(t),
       size: RaftCopyableCodeRecipeSize.md,
       states: RaftRecipeStates({if (t.dark) RaftRecipeStates.dark}),
       tokens: rt,
     );
-    if (t.recipeSet == RaftRecipeSet.raft) return _raft(t, rt, s, codeStyle);
-    // Callsite `text-xs` (12/16) wins over the recipe's `leading-5` on the
-    // brutal code box; elegant keeps `leading-5` on the inner span.
-    final line = 20.0;
-    final text = raftCssText.merge(
-      RaftTypography.mono(
-        t,
-        size: 12,
-        line: line,
-      ).merge(s.code.textStyle(rt).copyWith(fontSize: 12, height: line / 12)),
-    );
-    // Callsite `px-3 py-2` wins over the recipe padding (tailwind-merge);
-    // elegant keeps its `py-0` code box and pads the dashed inner span.
-    // Inner span: `border-x border-dashed border-ink-10 bg-layer-panel px-1
-    // py-2 leading-5` (only the x borders exist; the generic decoration
-    // would invent CSS-medium top/bottom borders).
-    final inner = s.codeInner;
-    final dash =
-        inner.borderColorOf('left')?.resolve(rt) ?? t.colors['line-muted']!;
-    Widget code = Container(
-      key: widget.codeKey,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: s.code.withCssUsedBorderWidths().decoration(rt),
-      child: CustomPaint(
-        foregroundPainter: _DashedSides(dash),
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(
-            horizontal: RaftSpace.x1 + RaftSpace.hairline,
-            vertical: 8,
-          ),
-          color: inner.backgroundColor?.resolve(rt),
-          child: Text(
-            _breakAll(widget.command),
-            style: codeStyle == null ? text : text.merge(codeStyle),
-          ),
-        ),
-      ),
-    );
-    final action = RaftRecipeButton(
-      variant: RaftButtonRecipeVariant.ghost,
-      size: RaftButtonRecipeSize.iconXs,
-      glyph: copied ? RaftGlyph.check : RaftGlyph.copy,
-      glyphSize: 12,
-      tooltip: widget.copyLabel,
-      foreground: t.colors['foreground-muted'],
-      onPressed: copy,
-    );
-    return Row(
-      children: [
-        Expanded(child: code),
-        SizedBox(width: s.root.columnGap ?? 8),
-        action,
-      ],
-    );
+    return _raft(t, rt, s, codeStyle);
   }
 }
 
 /// CSS `break-all`: a line may break between any two characters. The copy
 /// action still copies [RaftCopyableCode.command] verbatim.
 String _breakAll(String value) => value.characters.join('\u200B');
-
-/// 1px dashed left/right borders (CSS `border-dashed`: 3px dashes for 1px).
-class _DashedSides extends CustomPainter {
-  const _DashedSides(this.color);
-  final Color color;
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..strokeWidth = 1;
-    for (final x in [.5, size.width - .5]) {
-      for (var y = 0.0; y < size.height; y += 6) {
-        canvas.drawLine(
-          Offset(x, y),
-          Offset(x, (y + 3).clamp(0, size.height)),
-          paint,
-        );
-      }
-    }
-  }
-
-  @override
-  bool shouldRepaint(_DashedSides old) => old.color != color;
-}

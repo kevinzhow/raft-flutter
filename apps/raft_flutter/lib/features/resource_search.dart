@@ -424,8 +424,8 @@ class ResourceSearchResults extends StatelessWidget {
         : (null, null);
     final t = RaftTokens.of(context);
     // v1.21.23 MessageSearchPage: a warning AppBanner (`mx-4`, icon, title,
-    // body and an outline sm button); the pre-theme looks keep the plain card
-    // shared with the quick switcher (search.failure).
+    // body and an outline sm button); the plain card shared with the quick
+    // switcher is the `search.failure` alternative.
     if (t.option('search.failure', or: 'banner') == 'banner') {
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: RaftSpace.x4),
@@ -484,7 +484,6 @@ class ResourceSearchResults extends StatelessWidget {
     // SearchResultsSectionHeading / SearchResultsList (MessageSearchPage.tsx).
     final rt = rui.RaftRecipeTokens(t);
     final slots = rui.RaftSearchRecipe.resolve(
-      theme: rui.RaftRecipeTheme.elegant,
       states: rui.RaftRecipeStates({
         if (t.dark) rui.RaftRecipeStates.dark,
       }, MediaQuery.sizeOf(context).width),
@@ -703,10 +702,9 @@ class ResourceSearchResults extends StatelessWidget {
                             // SearchEntityResultIcon (searchEntity entityIcon).
                             decoration: plain
                                 ? recipe.flatEntityIconSurface
-                                : rui.RaftSearchEntityRecipe.resolve(
-                                    theme: rui.RaftRecipeTheme.elegant,
-                                    tokens: rt,
-                                  ).entityIcon.decoration(rt),
+                                : rui.RaftSearchEntityRecipe.resolve(tokens: rt)
+                                      .entityIcon
+                                      .decoration(rt),
                             child: RaftIcon(
                               entity.kind == 'channel'
                                   ? RaftGlyph.hash

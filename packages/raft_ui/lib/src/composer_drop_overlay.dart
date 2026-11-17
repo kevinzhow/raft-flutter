@@ -12,11 +12,9 @@ import 'localization.dart';
 import 'theme.dart';
 
 /// `absolute inset-0 z-30 flex items-center justify-center border-2
-/// border-dashed border-accent-strong bg-accent-soft/50` (Brutal:
-/// `border-brutal-pink bg-brutal-pink/15`) with a centered label chip
-/// `rounded-md border border-line-strong bg-layer-panel px-3 py-1.5 text-sm
-/// font-bold text-foreground-strong shadow-raft-sm` (Brutal: square, 2px
-/// black border, white fill, black text, brutal shadow).
+/// border-dashed border-accent-strong bg-accent-soft/50` with a centered
+/// label chip `rounded-md border border-line-strong bg-layer-panel px-3
+/// py-1.5 text-sm font-bold text-foreground-strong shadow-raft-sm`.
 ///
 /// Decorative (`aria-hidden`): it never takes pointer input, so the drop
 /// target beneath keeps receiving the drag.
@@ -80,7 +78,7 @@ class RaftComposerDropOverlay extends StatelessWidget {
           : (t.accentSoft.a * 255 * .5).ceilToDouble() / 255,
     );
     // `absolute inset-0` resolves against the composer root's padding box,
-    // below its `border-t` (2px Brutal, 1px Elegant).
+    // below its `border-t` (1px).
     return IgnorePointer(
       child: ExcludeSemantics(
         child: Padding(

@@ -160,11 +160,6 @@ class RaftHtmlPreview extends StatelessWidget {
                           child: Semantics(
                             link: true,
                             child: RaftButton.text(
-                              legacyStyle: ButtonStyle(
-                                minimumSize: WidgetStatePropertyAll(
-                                  const Size(48, 48),
-                                ),
-                              ),
                               onPressed: onLink == null
                                   ? null
                                   : () => onLink!(href),

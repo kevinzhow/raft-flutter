@@ -49,10 +49,9 @@ void main() {
       final fills = _backgrounds(tester);
       // One fill per inline code run, both on the first line.
       expect(fills, hasLength(2));
-      final t = RaftTokens.of(tester.element(find.byType(RaftMessageBody)));
       for (final fill in fills) {
         expect(fill.color, isNot(Colors.transparent));
-        if (t.isRaftLook) expect(fill.radius, 4);
+        expect(fill.radius, 4);
       }
     });
 

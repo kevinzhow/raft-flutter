@@ -209,8 +209,7 @@ class ApplyImpactTierTests(unittest.TestCase):
         self.assertIn(f'impact {APP}: selected 2 of 8 (selector 1, guards 1, changed tests 0)', text)
         self.assertIn('test-impact: stale map raft_flutter', text)
         with unittest.mock.patch.object(check, 'root', self.top), unittest.mock.patch.object(check, 'app_dir', self.app), \
-                unittest.mock.patch.object(check, 'discover_tests', return_value=self.files), \
-                unittest.mock.patch.object(check.theme_looks, 'guard', return_value=[]):
+                unittest.mock.patch.object(check, 'discover_tests', return_value=self.files):
             lines, numbers = check.plan_report({'RAFT_TEST_TIER': 'impact'}, changed=[f'{APP}/lib/a.dart'], reach=lambda c: set(), select=lambda: (sel, None))
         self.assertIn('tier impact', lines[0])
         self.assertIn(f'    impact, runs: {APP}/test/a_test.dart', lines)
@@ -219,10 +218,9 @@ class ApplyImpactTierTests(unittest.TestCase):
 
 
 class TierModeTests(unittest.TestCase):
-    def test_impact_is_a_tier_and_all_themes_still_forces_full(self):
+    def test_impact_is_a_tier(self):
         self.assertEqual(check.tier_mode({'RAFT_TEST_TIER': 'impact'}), 'impact')
         self.assertEqual(check.tier_mode({'RAFT_TEST_TIER': ' Impact '}), 'impact')
-        self.assertEqual(check.tier_mode({'RAFT_TEST_TIER': 'impact', 'RAFT_TEST_ALL_THEMES': '1'}), 'full')
         with self.assertRaises(SystemExit):
             check.tier_mode({'RAFT_TEST_TIER': 'quick'})
 
@@ -243,22 +241,22 @@ class ImpactCacheTests(unittest.TestCase):
         self.tree = git(self.repo, 'rev-parse', 'HEAD^{tree}')
 
     def record(self, tier):
-        return check.record_pass(self.tree, 'abc', {'passed': True}, 'raft', {'tier': tier}, env=self.env, now=time.gmtime(0), tier=tier)
+        return check.record_pass(self.tree, 'abc', {'passed': True}, {'tier': tier}, env=self.env, now=time.gmtime(0), tier=tier)
 
     def test_an_impact_pass_is_recorded_as_impact_and_satisfies_only_impact(self):
         path = self.record('impact')
         self.assertEqual(json.loads(path.read_text())['tier'], 'impact')
-        self.assertIsNotNone(check.reusable_pass('raft', self.repo, self.env, tier='impact'))
-        self.assertIsNone(check.reusable_pass('raft', self.repo, self.env, tier='gate'))
-        self.assertIsNone(check.reusable_pass('raft', self.repo, self.env, tier='full'))
+        self.assertIsNotNone(check.reusable_pass(self.repo, self.env, tier='impact'))
+        self.assertIsNone(check.reusable_pass(self.repo, self.env, tier='gate'))
+        self.assertIsNone(check.reusable_pass(self.repo, self.env, tier='full'))
 
     def test_a_gate_or_full_pass_satisfies_impact(self):
         self.record('gate')
-        self.assertIsNotNone(check.reusable_pass('raft', self.repo, self.env, tier='impact'))
-        self.assertIsNone(check.reusable_pass('raft', self.repo, self.env, tier='full'))
+        self.assertIsNotNone(check.reusable_pass(self.repo, self.env, tier='impact'))
+        self.assertIsNone(check.reusable_pass(self.repo, self.env, tier='full'))
         self.record('full')
         for tier in check.TIERS:
-            self.assertIsNotNone(check.reusable_pass('raft', self.repo, self.env, tier=tier), tier)
+            self.assertIsNotNone(check.reusable_pass(self.repo, self.env, tier=tier), tier)
 
     def test_an_impact_pass_never_replaces_a_gate_record(self):
         self.record('gate')
@@ -268,10 +266,10 @@ class ImpactCacheTests(unittest.TestCase):
         self.assertEqual(check.read_pass_record(self.tree, self.env)['tier'], 'full')
 
     def test_pass_covers_ranks_the_tiers(self):
-        self.assertFalse(check.pass_covers({'themes': 'raft', 'tier': 'impact'}, 'raft', 'gate'))
-        self.assertTrue(check.pass_covers({'themes': 'raft', 'tier': 'gate'}, 'raft', 'impact'))
-        self.assertTrue(check.pass_covers({'themes': 'raft'}, 'raft', 'impact'))  # an old record without a tier ran every file
-        self.assertFalse(check.pass_covers({'themes': 'raft', 'tier': 'weird'}, 'raft', 'impact'))
+        self.assertFalse(check.pass_covers({'tier': 'impact'}, 'gate'))
+        self.assertTrue(check.pass_covers({'tier': 'gate'}, 'impact'))
+        self.assertTrue(check.pass_covers({}, 'impact'))  # an old record without a tier ran every file
+        self.assertFalse(check.pass_covers({'tier': 'weird'}, 'impact'))
 
 
 if __name__ == '__main__':

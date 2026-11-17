@@ -241,12 +241,10 @@ class AttachmentLightboxImageState extends State<AttachmentLightboxImage> {
       failure is! AttachmentImageDecodeUnavailable;
 
   String get _failureMessage => switch (failure) {
-    AttachmentImageBudgetExceeded() =>
-      'Not enough memory to preview this image. Download it to open in another app.',
+    AttachmentImageBudgetExceeded() => 'Not enough memory to preview this image. Download it to open in another app.',
     AttachmentImageDecodeFailed() =>
       'Cannot decode this image. Download it to open in another app.',
-    AttachmentImageDecodeUnavailable() =>
-      'Cannot prepare this image preview right now. Try again or download it to open in another app.',
+    AttachmentImageDecodeUnavailable() => 'Cannot prepare this image preview right now. Try again or download it to open in another app.',
     _ => 'Failed to load image',
   };
 
@@ -460,7 +458,7 @@ class AttachmentLightboxImageState extends State<AttachmentLightboxImage> {
                   child: _transferOverlay(context, thumbnail),
                 ),
               ),
-            if (full == null && RaftTokens.of(context).isRaftLook)
+            if (full == null)
               Positioned.fill(
                 child: IgnorePointer(
                   child: _withAddressPhase(
@@ -485,7 +483,7 @@ class AttachmentLightboxImageState extends State<AttachmentLightboxImage> {
 
   Widget _withAddressPhase(BuildContext context, Widget Function() builder) {
     final progress = lease?.lease.progress;
-    if (!RaftTokens.of(context).isRaftLook || progress == null) {
+    if (progress == null) {
       return builder();
     }
     return ValueListenableBuilder<AttachmentTransferProgress?>(
@@ -496,7 +494,7 @@ class AttachmentLightboxImageState extends State<AttachmentLightboxImage> {
 
   Widget _addressPlaceholder(BuildContext context) => _withAddressPhase(
     context,
-    () => RaftTokens.of(context).isRaftLook && _waitingForAddress
+    () => _waitingForAddress
         ? const SizedBox.shrink()
         : const RaftTransferPlaceholder(onDark: true),
   );
@@ -504,7 +502,7 @@ class AttachmentLightboxImageState extends State<AttachmentLightboxImage> {
   Widget _transferOverlay(BuildContext context, ImageProvider? thumbnail) =>
       _withAddressPhase(
         context,
-        () => RaftTokens.of(context).isRaftLook && _waitingForAddress
+        () => _waitingForAddress
             ? const SizedBox.shrink()
             : _transferOverlayBody(context, thumbnail),
       );

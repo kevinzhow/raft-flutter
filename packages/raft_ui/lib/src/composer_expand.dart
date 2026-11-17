@@ -1,7 +1,7 @@
 import 'card.dart' show RaftCard;
 
 import 'raft/segmented_control.dart'
-    show RaftSegmentedControl, RaftSegmentedOption, RaftSegmentedStyle;
+    show RaftSegmentedControl, RaftSegmentedOption;
 
 import 'package:flutter/material.dart';
 
@@ -564,7 +564,6 @@ class _RaftComposerExpandedViewState extends State<RaftComposerExpandedView> {
                 collapse: collapse,
                 title: title,
                 segmented: RaftSegmentedControl<bool>(
-                  legacyStyle: RaftSegmentedStyle.recipe,
                   value: pagePreview,
                   items: [
                     RaftSegmentedOption(

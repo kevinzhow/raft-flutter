@@ -227,7 +227,6 @@ class _DesignFieldsState extends State<_DesignFields> {
           label: 'Open Form',
           secondary: true,
           onPressed: () => showRaftDialog<void>(
-            legacyMaterial: true,
             context: context,
             builder: (_) => RaftFormDialog(
               title: 'Create Channel',

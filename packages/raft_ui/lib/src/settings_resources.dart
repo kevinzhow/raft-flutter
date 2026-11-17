@@ -503,7 +503,6 @@ class RaftReleaseNoteCard extends StatelessWidget {
     final t = RaftTokens.of(context);
     final rt = t.recipeTokens;
     final root = RaftCardRecipe.resolve(
-      theme: t.recipeTheme,
       states: t.recipeStates(),
       tokens: rt,
     ).root.withCssUsedBorderWidths();

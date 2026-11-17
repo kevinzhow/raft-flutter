@@ -3,12 +3,8 @@ import 'package:raft_ui/raft_ui.dart';
 
 import 'parity/parity_harness.dart';
 
-/// Which look a parity case renders with.
-///
-/// This used to return only a `dark` bool, so every case painted the built-in
-/// Raft pack and a "brutal" capture differed from Raft only by darkness. The
-/// tests below therefore check the *pack*, not just the brightness -- brightness
-/// alone cannot tell the three looks apart.
+/// Which pack and brightness a parity case renders with. Raft is the only
+/// look; a theme name only selects the brightness.
 void main() {
   final official = <String, dynamic>{'id': 'components.ui.button.states'};
   final elegantNamed = <String, dynamic>{
@@ -25,20 +21,12 @@ void main() {
     expect(parityThemeFor(official).dark, isFalse);
   });
 
-  test('supplemental runs select all three looks', () {
-    expect(byName('brutal-light'), (pack: brutalThemePackId, dark: false));
-    expect(byName('brutal-dark'), (pack: brutalThemePackId, dark: true));
-    expect(byName('elegant-light'), (pack: elegantThemePackId, dark: false));
-    expect(byName('elegant-dark'), (pack: elegantThemePackId, dark: true));
+  test('supplemental runs select the brightness in the Raft pack', () {
+    expect(byName('brutal-light'), (pack: raftThemePackId, dark: false));
+    expect(byName('brutal-dark'), (pack: raftThemePackId, dark: true));
+    expect(byName('elegant-light'), (pack: raftThemePackId, dark: false));
+    expect(byName('elegant-dark'), (pack: raftThemePackId, dark: true));
     expect(() => byName('elegant-black'), throwsArgumentError);
-  });
-
-  test('the two light looks are distinguishable, not just light', () {
-    // The bug: both came back as "light" with no way to tell them apart.
-    final brutal = byName('brutal-light');
-    final elegant = byName('elegant-light');
-    expect(brutal.dark, elegant.dark);
-    expect(brutal.pack, isNot(elegant.pack));
   });
 
   test('extension cases name their theme', () {
@@ -50,7 +38,7 @@ void main() {
         },
       ],
     };
-    expect(parityThemeFor(dark).pack, elegantThemePackId);
+    expect(parityThemeFor(dark).pack, raftThemePackId);
     expect(parityThemeFor(dark).dark, isTrue);
 
     final brutal = <String, dynamic>{
@@ -61,9 +49,10 @@ void main() {
         },
       ],
     };
-    expect(parityThemeFor(brutal).pack, brutalThemePackId);
+    expect(parityThemeFor(brutal).pack, raftThemePackId);
+    expect(parityThemeFor(brutal).dark, isFalse);
   });
-  test('explicit Raft specimen modes never select the Elegant dark pack', () {
+  test('explicit Raft specimen modes select the Raft pack', () {
     for (final dark in [false, true]) {
       final visualCase = <String, dynamic>{
         'id': 'components.raft-ui.switch.states.${dark ? 'dark' : 'light'}',
@@ -76,19 +65,11 @@ void main() {
       expect(parityThemeFor(visualCase), (pack: raftThemePackId, dark: dark));
     }
   });
-  test('capture labels retain the actual selected pack and brightness', () {
+  test('capture labels retain the selected pack and brightness', () {
     expect(
       parityThemeLabel((pack: raftThemePackId, dark: false)),
       'raft-light',
     );
     expect(parityThemeLabel((pack: raftThemePackId, dark: true)), 'raft-dark');
-    expect(
-      parityThemeLabel((pack: brutalThemePackId, dark: false)),
-      'brutal-light',
-    );
-    expect(
-      parityThemeLabel((pack: elegantThemePackId, dark: true)),
-      'elegant-dark',
-    );
   });
 }

@@ -96,7 +96,6 @@ Future<bool> forwardMessages(
     return showForwardComposerPage(context, controller, messages);
   }
   return await showRaftDialog<bool>(
-        legacyMaterial: true,
         context: context,
         builder: (_) => ForwardComposerPage(
           controller: controller,

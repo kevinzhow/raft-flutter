@@ -8,7 +8,6 @@ import 'design_primitives.dart';
 import 'indicators.dart' show RaftSkeleton, RaftSkeletonVariant;
 import 'recipe_surface.dart';
 import 'recipes/message_list.g.dart';
-import 'recipes/recipe_runtime.dart' show RaftRecipeSet;
 import 'raft/tabs.dart';
 import 'raft/checkbox.dart';
 import 'viewport_breakpoints.dart';
@@ -16,7 +15,6 @@ import 'icons.dart';
 import 'message_rule_row.dart';
 import 'panel_layout.dart' show RaftCssText;
 import 'sidebar_section.dart';
-import 'separator.dart';
 import 'theme.dart';
 import 'status_bar.dart';
 import 'text_scaling.dart';
@@ -312,73 +310,38 @@ class _LoadingRowsState extends State<RaftChatSidebarLoadingRows>
     // `SkeletonTextBar` (0.75em of the 14px row text), both painted by the
     // skeleton recipe. The row height stays the one below (34) until the
     // sidebar row metrics (38 / 44) are ported with the rows themselves.
-    final raft = RaftTokens.of(context).recipeSet == RaftRecipeSet.raft;
-    return _build(raft);
-  }
-
-  Widget _build(bool raft) => ExcludeSemantics(
-    child: FadeTransition(
-      opacity: opacity,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          for (var index = 0; index < widget.rows; index++)
-            Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: 8,
-                vertical: raft ? 0 : 8,
-              ),
-              child: raft
-                  // The 34px row (18 + 2 * 8 in the frozen drawing) centres
-                  // the 19px block: no text in it, so the height is fixed.
-                  ? const SizedBox(
-                      height: 34,
-                      child: Row(
-                        children: [
-                          RaftSkeleton(fromRecipe: true, width: 19, height: 19),
-                          SizedBox(width: 6),
-                          RaftSkeleton(
-                            variant: RaftSkeletonVariant.line,
-                            fromRecipe: true,
-                            width: 128,
-                            height: 10.5,
-                          ),
-                        ],
+    return ExcludeSemantics(
+      child: FadeTransition(
+        opacity: opacity,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            for (var index = 0; index < widget.rows; index++)
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 8),
+                // The 34px row centres the 19px block: no text in it, so the
+                // height is fixed.
+                child: SizedBox(
+                  height: 34,
+                  child: Row(
+                    children: [
+                      RaftSkeleton(fromRecipe: true, width: 19, height: 19),
+                      SizedBox(width: 6),
+                      RaftSkeleton(
+                        variant: RaftSkeletonVariant.line,
+                        fromRecipe: true,
+                        width: 128,
+                        height: 10.5,
                       ),
-                    )
-                  : Row(
-                      children: [
-                        Container(
-                          width: 18,
-                          height: 18,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Colors.black.withValues(alpha: .05),
-                            border: Border.all(color: Colors.black, width: 2),
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        Expanded(
-                          child: Align(
-                            alignment: Alignment.centerLeft,
-                            child: FractionallySizedBox(
-                              widthFactor: .6,
-                              child: Container(
-                                height: 12,
-                                // Match the source CSS black/10 alpha byte, as the
-                                // shared Skeleton primitive does (26/255).
-                                color: Colors.black.withAlpha(26),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-            ),
-        ],
+                    ],
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
-    ),
-  );
+    );
+  }
 }
 
 enum RaftConversationTabId { chat, tasks, files }
@@ -442,8 +405,7 @@ class _ConversationTabControlRecipe extends RaftControlRecipe {
   bool get transformsOnInteraction => false;
   @override
   Color get background => Colors.transparent;
-  // Product direct-child bg-white selector overrides the lower-specificity
-  // generic Brutal tab hover background. Active hover stays primary.
+  // Active hover stays primary.
   @override
   Color backgroundFor({bool hovered = false}) => background;
   @override
@@ -583,7 +545,7 @@ class _ConversationTabsState extends State<RaftConversationTabs> {
           width: double.infinity,
           decoration: BoxDecoration(
             color: recipe.background,
-            // Elegant desktop tabs have no rule (`border-b-0`); a zero-width
+            // Desktop tabs have no rule (`border-b-0`); a zero-width
             // Flutter BorderSide would still paint a hairline.
             border: Border(
               bottom: recipe.outerBottomBorder == 0
@@ -836,13 +798,11 @@ class RaftConversationDateHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    if (!t.isRaftLook) return _buildFrozen(context, t);
     // raft-ui 0.95.3 `MessageListDateDivider`: `flex items-center gap-2 px-4
     // pt-[calc(24-4-lh/2)] pb-[calc(24-12-lh/2)]`, `font-mono text-mono-meta
     // text-foreground-hint whitespace-nowrap`, flex-1 hairline rules.
     final tokens = t.recipeTokens;
     final recipe = RaftMessageListRecipe.resolve(
-      theme: t.recipeTheme,
       tokens: tokens,
       states: t.recipeStates(responsive: true),
     );
@@ -866,77 +826,6 @@ class RaftConversationDateHeader extends StatelessWidget {
             maxLines: 1,
             softWrap: false,
             overflow: TextOverflow.ellipsis,
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// The frozen Elegant and Brutal looks keep their 0.5.52 divider.
-  Widget _buildFrozen(BuildContext context, RaftTokens t) {
-    final text = RaftTypography.mono(
-      t,
-      size: 11,
-      line: 16.5,
-      color: t.muted,
-    ).copyWith(fontFamily: t.monoFont, fontWeight: FontWeight.w400);
-    final line = RaftSeparator(
-      thickness: 1,
-      color: t.colors[t.dark ? 'ink-4' : 'line-hairline'],
-    );
-    return Semantics(
-      header: true,
-      label: label,
-      excludeSemantics: true,
-      child: Opacity(
-        opacity: .7,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final labelText = label;
-              final painter = TextPainter(
-                text: TextSpan(text: labelText, style: text),
-                textDirection: Directionality.of(context),
-                textScaler: MediaQuery.textScalerOf(context),
-              )..layout(maxWidth: math.max(0.0, constraints.maxWidth - 16));
-              final labelWidth = math.min(
-                painter.maxIntrinsicWidth,
-                math.max(0.0, constraints.maxWidth - 16),
-              );
-              painter.dispose();
-              // RUI MessageListDateDivider has two flex-1 rules around an
-              // intrinsic-width chip. A flex6 label reserves unused middle
-              // space even when its text is short, shortening both rules.
-              return Row(
-                children: [
-                  Expanded(
-                    child: Transform.translate(
-                      offset: Offset(0, 0),
-                      child: line,
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    child: SizedBox(
-                      width: labelWidth,
-                      child: Text(
-                        labelText,
-                        style: text,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ),
-                  Expanded(
-                    child: Transform.translate(
-                      offset: Offset(0, 0),
-                      child: line,
-                    ),
-                  ),
-                ],
-              );
-            },
           ),
         ),
       ),

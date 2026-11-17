@@ -119,7 +119,7 @@ class MobileTabbarFiveItems extends StatelessWidget {
   Widget build(BuildContext context) => RaftMobileNav(
     selectedId: 'chat',
     bottomInset: 0,
-    // A phone-height viewport: Brutal drops glyphs below 600dp.
+    // A phone-height viewport.
     viewportHeight: 844,
     onSelected: (_) {},
     items: [

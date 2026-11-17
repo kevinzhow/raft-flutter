@@ -6,11 +6,7 @@ import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_ui/test_themes.dart';
 
 void main() {
-  for (final id in raftThemeMatrix([
-    raftThemePackId,
-    elegantThemePackId,
-    brutalThemePackId,
-  ], look: raftLookOf)) {
+  for (final id in raftThemeMatrix([raftThemePackId])) {
     for (final dark in [false, true]) {
       testWidgets(
         'confirm error uses source gap and retry clears it $id/$dark',
@@ -90,8 +86,7 @@ void main() {
           expect(find.byType(RaftConfirmDialog), findsNothing);
 
           // Web ConfirmDialog.tsx: the warning error Banner uses `mt-3`.
-          // Frozen Elegant/Brutal keep their existing `mt-4` layout.
-          expect(gap, id == raftThemePackId ? 12 : 16);
+          expect(gap, 12);
         },
       );
     }

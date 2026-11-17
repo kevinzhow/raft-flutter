@@ -40,7 +40,7 @@ class ProbeNameTests(unittest.TestCase):
         for path in [
             'packages/raft_ui/test/button_metrics_theme_test.dart',
             'apps/raft_flutter/test/startup_appearance_test.dart',
-            'packages/raft_theme/test/family_packs_test.dart',
+            'packages/raft_theme/test/theme_pack_test.dart',
         ]:
             self.assertFalse(guard.is_probe_test(path), path)
 

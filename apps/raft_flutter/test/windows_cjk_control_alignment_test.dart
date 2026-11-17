@@ -65,7 +65,7 @@ void main() {
     final failures = <String>[];
     var improved = 0;
     for (final (theme, scale) in [
-      for (final theme in ['raft', 'elegant', 'brutal'])
+      for (final theme in ['raft'])
         for (final scale in [1.0, 1.3, 2.0]) (theme, scale),
     ]) {
       final boundary = GlobalKey();
@@ -74,7 +74,6 @@ void main() {
         await tester.pumpWidget(
           MaterialApp(
             theme: raftTheme(
-              pack: packForThemeId(theme),
               locale: const Locale('zh', 'CN'),
               platform: TargetPlatform.windows,
             ).copyWith(platform: TargetPlatform.windows),
@@ -196,13 +195,12 @@ void main() {
         (TargetPlatform.linux, const Locale('zh', 'CN')),
         (TargetPlatform.windows, const Locale('en')),
       ]) {
-        for (final theme in ['raft', 'elegant', 'brutal']) {
+        for (final theme in ['raft']) {
           Future<InkSnapshot> mount(bool disabled) async {
             RaftControlTypography.debugDisabled = disabled;
             await tester.pumpWidget(
               MaterialApp(
                 theme: raftTheme(
-                  pack: packForThemeId(theme),
                   locale: locale,
                   platform: platform,
                 ).copyWith(platform: platform),

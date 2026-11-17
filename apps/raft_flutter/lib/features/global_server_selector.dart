@@ -253,35 +253,18 @@ class _GlobalServerSelectorState extends State<GlobalServerSelector> {
             )
           else ...[
             if (widget.servers.isNotEmpty) ...[
-              if (RaftTokens.of(context).isRaftLook)
-                RaftListRowGroup(
-                  key: const ValueKey('server-selector-list'),
-                  children: [
-                    for (final server in widget.servers)
-                      _serverListRow(
-                        server: server,
-                        onPressed: widget.loading
-                            ? null
-                            : () => widget.onSelect(server),
-                      ),
-                  ],
-                )
-              else
-                Column(
-                  key: const ValueKey('server-selector-list'),
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    for (final (i, server) in widget.servers.indexed) ...[
-                      if (i > 0) const SizedBox(height: RaftSpace.x2),
-                      _ServerOption(
-                        server: server,
-                        onPressed: widget.loading
-                            ? null
-                            : () => widget.onSelect(server),
-                      ),
-                    ],
-                  ],
-                ),
+              RaftListRowGroup(
+                key: const ValueKey('server-selector-list'),
+                children: [
+                  for (final server in widget.servers)
+                    _serverListRow(
+                      server: server,
+                      onPressed: widget.loading
+                          ? null
+                          : () => widget.onSelect(server),
+                    ),
+                ],
+              ),
               const SizedBox(height: RaftSpace.x6), // mb-6
             ],
             if (widget.error != null) ...[
@@ -344,44 +327,3 @@ RaftListRow _serverListRow({
     const RaftListRowChevron(),
   ],
 );
-
-/// ServerSelector option: `Card variant="option" gap-0 p-3` with the server
-/// name (`font-bold text-foreground-strong`) over `/slug` (`text-sm
-/// font-normal text-foreground-muted`).
-class _ServerOption extends StatelessWidget {
-  const _ServerOption({required this.server, required this.onPressed});
-  final RaftRecord server;
-  final VoidCallback? onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
-    return RaftCard(
-      variant: RaftCardRecipeVariant.option,
-      key: ValueKey('global-server-${server.id}'),
-      onTap: onPressed,
-      semanticLabel: server.string('name'),
-      child: SizedBox(
-        width: double.infinity,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              server.string('name'),
-              style: RaftTypography.heading(t, size: 16, line: 24),
-            ),
-            Text(
-              '/${server.string('slug')}',
-              style: RaftTypography.heading(
-                t,
-                size: 14,
-                line: 20,
-                weight: FontWeight.w400,
-              ).copyWith(color: t.muted),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}

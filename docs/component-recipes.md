@@ -11,7 +11,7 @@ after cascade and `var()` resolution: lengths in logical px, `token(x)` = founda
 Authoritative data: `build/recipes/recipes.json`; Dart: `packages/raft_theme/lib/recipes/`.
 The stable and WIP module graphs are both read. Responsive custom properties retain their source conditions: width-only margins, desktop width + pointer density, and dark rules.
 Product compositions include SelectionPopover content/trigger width and DialogCard centered/sheet × description, including the scrolling body padding. Keyboard viewport behavior remains a family adapter concern.
-This generated inventory proves source coverage, not product visual parity. Family adapters still own current states, named-container context and pack bindings; Elegant/Brutal use the untouched frozen 0.5.52 recipe set.
+This generated inventory proves source coverage, not product visual parity. Family adapters still own current states, named-container context and pack bindings.
 
 ## Coverage
 

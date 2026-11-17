@@ -3,16 +3,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_ui/test_themes.dart';
 
-Widget host(
-  Widget child, {
-  bool dark = false,
-  String? legacy,
-  double scale = 1,
-}) => MaterialApp(
-  theme: raftTheme(
-    dark: dark,
-    pack: legacy == null ? null : packForThemeId(legacy),
-  ),
+Widget host(Widget child, {bool dark = false, double scale = 1}) => MaterialApp(
+  theme: raftTheme(dark: dark),
   home: MediaQuery(
     data: MediaQueryData(textScaler: TextScaler.linear(scale)),
     child: Scaffold(
@@ -57,7 +49,6 @@ void main() {
       await t.pumpWidget(
         host(
           RaftSegmentedControl<String>(
-            legacyStyle: RaftSegmentedStyle.recipe,
             value: 'public',
             items: const [
               RaftSegmentedOption(
@@ -137,7 +128,6 @@ void main() {
     await t.pumpWidget(
       host(
         RaftSegmentedControl<String>(
-          legacyStyle: RaftSegmentedStyle.recipe,
           value: 'public',
           items: const [RaftSegmentedOption(value: 'public', label: 'Public')],
           onChanged: (_) {},
@@ -218,25 +208,4 @@ void main() {
     expect(t.takeException(), isNull);
     await t.pumpWidget(const SizedBox.shrink());
   });
-
-  for (final (id, look) in [
-    (elegantThemePackId, raftLookElegant),
-    (brutalThemePackId, raftLookBrutal),
-  ]) {
-    testWidgets(
-      'frozen $look picker keeps its legacy selection implementation',
-      (t) async {
-        final search = TextEditingController();
-        addTearDown(search.dispose);
-        await t.pumpWidget(
-          host(SizedBox(width: 408, child: picker(search)), legacy: id),
-        );
-        expect(find.byType(RaftCheckboxIndicator), findsNothing);
-        expect(find.text('Agent A'), findsOneWidget);
-        expect(t.takeException(), isNull);
-        await t.pumpWidget(const SizedBox.shrink());
-      },
-      skip: raftLookSkip(look),
-    );
-  }
 }

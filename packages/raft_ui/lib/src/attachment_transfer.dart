@@ -310,8 +310,7 @@ class RaftTransferPlaceholder extends StatelessWidget {
   }
 }
 
-/// Small overlay label: brutal = white box with a hard border; elegant = dark
-/// translucent pill. Danger variant is filled with the danger color.
+/// Small overlay label: a dark translucent pill. Danger variant is filled with the danger color.
 class RaftTransferChip extends StatelessWidget {
   const RaftTransferChip({
     super.key,

@@ -538,7 +538,11 @@ void main() {
         'body is scrolled', (tester) async {
       _size(tester, phone);
       await tester.pumpWidget(
-        _app(policy: RaftPresentationPolicy.form, content: tall, initialSize: .6),
+        _app(
+          policy: RaftPresentationPolicy.form,
+          content: tall,
+          initialSize: .6,
+        ),
       );
       await _open(tester);
       scroll(tester).position.jumpTo(200);
@@ -672,7 +676,7 @@ void main() {
       });
     });
 
-    testWidgets('brutal and elegant dark draw a handle and stay in the '
+    testWidgets('dark draws a handle and stays in the '
         'window', (tester) async {
       for (final (dark) in raftThemeMatrix([(true)])) {
         _size(tester, phone);

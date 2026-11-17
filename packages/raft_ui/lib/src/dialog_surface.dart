@@ -5,13 +5,11 @@ import 'recipe_background_scope.dart';
 import 'dialog_slots.dart';
 import 'recipes/dialog.g.dart';
 import 'recipes/dialog_surface.g.dart';
-import 'recipes/recipe_router.dart' show usesLegacyRecipes;
 import 'recipes/recipe_runtime.dart';
 import 'theme.dart';
 
 /// The published DialogSurface: paint and clipping only. The dialog family
-/// owns content and placement. Frozen-look compositions keep their existing
-/// renderers; this source component is used by the Raft look.
+/// owns content and placement.
 class RaftDialogSurface extends StatelessWidget {
   const RaftDialogSurface({super.key, required this.child, this.surfaceStyle});
 
@@ -64,20 +62,17 @@ class RaftDialogBackdrop extends StatelessWidget {
   final Widget child;
   final bool? nested;
 
-  /// The scrim slot, `nested` or not: the router has no `nested` axis for the
-  /// frozen looks, so those keep the plain overlay.
+  /// The scrim slot, `nested` or not.
   static RaftSlotStyle overlayOf(BuildContext context, {bool? nested}) {
     final t = RaftTokens.of(context);
-    if ((nested ?? RaftDialogNested.of(context)) &&
-        !usesLegacyRecipes(t.recipeTokens)) {
+    if (nested ?? RaftDialogNested.of(context)) {
       return RaftDialogRecipe.resolveProps(
-        {'theme': t.recipeTheme.name, 'nested': 'true'},
+        {'nested': 'true'},
         states: t.recipeStates(),
         tokens: t.recipeTokens,
       )['overlay']!;
     }
     return RaftDialogRecipe.resolve(
-      theme: t.recipeTheme,
       states: t.recipeStates(),
       tokens: t.recipeTokens,
     ).overlay;

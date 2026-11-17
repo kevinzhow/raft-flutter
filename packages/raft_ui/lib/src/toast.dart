@@ -11,15 +11,26 @@ import 'package:flutter/widgets.dart';
 import 'design_primitives.dart'
     show RaftInteractive, RaftLayoutMetrics, RaftTouchTarget;
 import 'interaction.dart';
-import 'dialog_card.dart';
 import 'icons.dart';
 import 'raft/ui_tokens.dart';
 import 'localization.dart';
 import 'recipe_surface.dart';
-import 'recipes/button_variants.g.dart';
 import 'recipes/toast_styles.g.dart';
 import 'theme.dart';
 import 'tokens/tokens.dart' show RaftTypeScale;
+
+/// Tone of a toast (raft-ui `toastStyles` `tone`): picks the leading glyph.
+enum RaftToastRecipeTone {
+  info('info'),
+  success('success'),
+  warning('warning'),
+  error('error');
+
+  const RaftToastRecipeTone(this.css);
+
+  /// Variant value as written in the raft-ui source.
+  final String css;
+}
 
 /// The mounted Web selection toast: inline, title-only, without an icon or
 /// dismiss button (ChatPanel/ThreadPanel SELECTION_TOAST_OPTIONS). Paint comes
@@ -55,201 +66,19 @@ class RaftToast extends StatelessWidget {
   /// button in the trailing grid cell.
   final VoidCallback? onClose;
 
-  @override
-  Widget build(BuildContext context) {
-    final t = RaftTokens.of(context), rt = t.recipeTokens;
-    if (t.option('toast.style', or: 'recipe') == 'hud') {
-      return _buildHud(context, t);
-    }
-    final hasClose = onClose != null;
-    final s = RaftToastRecipe.resolve(
-      theme: t.recipeTheme,
-      layout: RaftToastRecipeLayout.inline,
-      tone: tone,
-      states: t.recipeStates(
-        extra: [
-          // The base content rules moved from `:has([data-slot=...])` to
-          // `data-has-*` attributes on the content element in 0.5.52; the
-          // per-theme blocks still use `:has()`. Negatives are explicit: the
-          // resolver does not infer them.
-          icon ? 'data-has-icon' : 'not:data-has-icon',
-          hasClose ? 'data-has-actions' : 'not:data-has-actions',
-          description != null
-              ? 'data-has-description'
-              : 'not:data-has-description',
-          if (icon)
-            'has:data-slot=toast-icon'
-          else
-            'not:has:data-slot=toast-icon',
-          if (hasClose)
-            'has:data-slot=toast-actions'
-          else
-            'not:has:data-slot=toast-actions',
-          if (description != null)
-            'has:data-slot=toast-description'
-          else
-            'not:has:data-slot=toast-description',
-        ],
-      ),
-      tokens: rt,
-    );
-    final titleStyle = s.title.text(rt).copyWith(fontWeight: FontWeight.w400);
-    // Elegant (light) tone compound variants: `**:data-[slot=toast-icon]:
-    // text-info / text-success / text-warning / text-brutal-red` (dark keeps
-    // `text-foreground-muted`, brutal keeps `text-foreground-strong`).
-    final iconColor = !t.dark
-        ? switch (tone) {
-            RaftToastRecipeTone.info => t.colors['info'],
-            RaftToastRecipeTone.success => t.colors['success'],
-            RaftToastRecipeTone.warning => t.colors['warning'],
-            RaftToastRecipeTone.error => t.product.brutalRed,
-          }
-        : null;
-    final glyph = switch (tone) {
-      RaftToastRecipeTone.success => RaftGlyph.checkCircle2,
-      RaftToastRecipeTone.info => RaftGlyph.info,
-      _ => RaftGlyph.alertTriangle,
-    };
-    // `!grid-cols-[auto_minmax(0,1fr)_auto] !gap-x-3`: three tracks, so the
-    // two column gaps (24px) stay even when a track is empty.
-    final body = Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(title, style: titleStyle),
-        if (description != null)
-          Text(description!, style: s.description.text(rt)),
-      ],
-    );
-    final Widget row = icon
-        ? LayoutBuilder(
-            // `grid-cols-[auto_minmax(0,1fr)_auto]`: when the content has a
-            // min width (elegant `min-w-[18rem]`) the body track takes the
-            // extra space and the close button stays at the trailing edge.
-            builder: (context, c) => Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                SizedBox.square(
-                  dimension: 20,
-                  child: Center(
-                    child: RaftIcon(
-                      glyph,
-                      size: 18,
-                      // `[&_svg]:stroke-[2.5]` (brutal) / `stroke-[1.5]` (elegant).
-                      strokeWidth: 1.5,
-                      color: iconColor ?? s.icon.textStyle(rt).color,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Flexible(
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(
-                      minWidth: actionLabel == null
-                          ? math.max(
-                              0,
-                              c.minWidth - 20 - 12 - 12 - (hasClose ? 32 : 0),
-                            )
-                          : 0,
-                    ),
-                    child: body,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                if (actionLabel != null) ...[
-                  RaftRecipeButton(
-                    key: const Key('toast-action'),
-                    variant: RaftButtonRecipeVariant.outline,
-                    size: RaftButtonRecipeSize.sm,
-                    label: actionLabel,
-                    onPressed: onAction,
-                  ),
-                  if (hasClose) const SizedBox(width: 4),
-                ],
-                if (hasClose)
-                  Semantics(
-                    button: true,
-                    label: raftText(context, 'Close'),
-                    child: _ToastPaintSnap(
-                      child: GestureDetector(
-                        key: const Key('toast-close'),
-                        onTap: onClose,
-                        child: RaftRecipeBox(
-                          style: s.close,
-                          tokens: rt,
-                          width: 32,
-                          height: 32,
-                          child: Center(
-                            child: RaftIcon(
-                              RaftGlyph.x,
-                              size: 14,
-                              color: s.close.textStyle(rt).color,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-          )
-        : Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Flexible(child: body),
-              if (actionLabel != null) ...[
-                const SizedBox(width: 12),
-                RaftRecipeButton(
-                  key: const Key('toast-action'),
-                  variant: RaftButtonRecipeVariant.outline,
-                  size: RaftButtonRecipeSize.sm,
-                  label: actionLabel,
-                  onPressed: onAction,
-                ),
-              ],
-              const SizedBox(width: 24),
-            ],
-          );
-    Widget root = RaftRecipeBox(
-      style: s.root,
-      tokens: rt,
-      child: RaftRecipeBox(
-        style: s.content,
-        tokens: rt,
-        child: _ToastSnapWidth(child: row),
-      ),
-    );
-    // Elegant root `saturate-150` (`dark:saturate-100`): a CSS filter over the
-    // whole toast (fill, icon and text), standard sRGB saturate matrix.
-    if (!t.dark) {
-      root = ColorFiltered(colorFilter: _saturate(1.5), child: root);
-    }
-    // The host's overlay sits above the router, outside any Material or
-    // Scaffold, where the WidgetsApp fallback text style (yellow double
-    // underline, monospace) would reach every unstyled Text. Give the toast
-    // its own base so it renders the same from any context.
-    return DefaultTextStyle(
-      style: titleStyle.copyWith(decoration: TextDecoration.none),
-      child: Semantics(
-        liveRegion: true,
-        container: true,
-        child: _ToastPaintSnap(child: root),
-      ),
-    );
-  }
-
   /// raft-ui 0.95.3 `toastStyles` (`layout: inline`) as the Web wraps it
   /// (LocalizedToastProvider): the neutral HUD. Root, content, icon, title and
   /// description read the recipe slots; the leading mark is the tone's Lucide
   /// glyph (16px) in a 20px cell, and the dismiss control is a bare 16px `X`
   /// the caller opts into (`hasClose === true`).
-  Widget _buildHud(BuildContext context, RaftTokens t) {
+  @override
+  Widget build(BuildContext context) {
+    final t = RaftTokens.of(context);
     final ui = t.ui, rt = t.recipeTokens;
     final hasClose = onClose != null;
     final hasAction = actionLabel != null;
     final hasDescription = description != null;
     final s = RaftToastRecipe.resolve(
-      theme: t.recipeTheme,
       layout: RaftToastRecipeLayout.inline,
       states: t.recipeStates(
         extra: [
@@ -539,30 +368,6 @@ class _RenderToastPaintSnap extends RenderProxyBox {
       );
 }
 
-/// CSS `saturate(amount)` as a colour matrix.
-ColorFilter _saturate(double a) => ColorFilter.matrix([
-  0.213 + 0.787 * a,
-  0.715 - 0.715 * a,
-  0.072 - 0.072 * a,
-  0,
-  0,
-  0.213 - 0.213 * a,
-  0.715 + 0.285 * a,
-  0.072 - 0.072 * a,
-  0,
-  0,
-  0.213 - 0.213 * a,
-  0.715 - 0.715 * a,
-  0.072 + 0.928 * a,
-  0,
-  0,
-  0,
-  0,
-  0,
-  1,
-  0,
-]);
-
 /// UI-owned transient feedback. No payload persistence or app/API dependency.
 /// A new notice replaces this owner's old notice and restarts its timeout.
 class RaftToastController extends ChangeNotifier {
@@ -583,15 +388,11 @@ class RaftToastController extends ChangeNotifier {
   bool? _dismissible;
   bool? _icon;
 
-  /// Elegant and Brutal (frozen v1.21 looks): the mark and the close button
-  /// are both on unless `dismissible: false`.
-  bool get dismissible => _dismissible ?? true;
-
-  /// Raft look, Web v1.24 `hasClose === true`: the close `X` is shown only
+  /// Web v1.24 `hasClose === true`: the close `X` is shown only
   /// when the caller opted in with `dismissible: true`.
   bool get hasClose => _dismissible == true;
 
-  /// Raft look, Web `hasIcon !== false`: the tone glyph. An explicit
+  /// Web `hasIcon !== false`: the tone glyph. An explicit
   /// `dismissible: false` (the selection toast, which predates the separate
   /// flag) also drops it unless [icon] says otherwise.
   bool get hasIcon => _icon ?? _dismissible != false;
@@ -647,13 +448,12 @@ class RaftToastController extends ChangeNotifier {
     VoidCallback? onAction,
     RaftToastRecipeTone tone = RaftToastRecipeTone.success,
 
-    /// Raft look (Web `hasClose`): the close `X` shows only with `true`
-    /// (default off). An explicit `false` also hides the mark unless [icon]
-    /// says otherwise, so the selection toasts stay bare. The frozen looks
-    /// keep close and mark on unless `false`.
+    /// Web `hasClose`: the close `X` shows only with `true` (default off). An
+    /// explicit `false` also hides the mark unless [icon] says otherwise, so
+    /// the selection toasts stay bare.
     bool? dismissible,
 
-    /// Raft look (Web `hasIcon !== false`): the tone glyph before the text.
+    /// Web `hasIcon !== false`: the tone glyph before the text.
     /// Null follows [dismissible].
     bool? icon,
   }) {
@@ -779,21 +579,6 @@ class _RaftToastPortalState extends State<RaftToastPortal>
   /// The tallest floor seen while this toast is up (toastViewportBottom.ts).
   double _held = 0;
 
-  /// The Raft look's HUD toast. The frozen looks keep the v1.21 toast: mark
-  /// and close together, no motion, lifted above the composer only when narrow.
-  bool _hud = true;
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    final hud =
-        RaftTokens.of(context).option('toast.style', or: 'recipe') == 'hud';
-    if (hud != _hud) {
-      _hud = hud;
-      if (_content != null && widget.controller.title != null) _snapshot();
-    }
-  }
-
   @override
   void initState() {
     super.initState();
@@ -811,8 +596,8 @@ class _RaftToastPortalState extends State<RaftToastPortal>
       title: c.title!,
       description: c.description,
       tone: c.tone,
-      icon: _hud ? c.hasIcon : c.dismissible,
-      close: _hud ? c.hasClose : c.dismissible,
+      icon: c.hasIcon,
+      close: c.hasClose,
       actionLabel: c.actionLabel,
     );
   }
@@ -824,8 +609,7 @@ class _RaftToastPortalState extends State<RaftToastPortal>
       if (_focus.hasFocus) _focus.unfocus();
       _held = 0;
       _drag = Offset.zero;
-      if (_hud &&
-          _content != null &&
+      if (_content != null &&
           !_exiting &&
           _motion.value > 0 &&
           !MediaQuery.disableAnimationsOf(context)) {
@@ -851,7 +635,7 @@ class _RaftToastPortalState extends State<RaftToastPortal>
       if (entering) {
         _fresh = true;
         WidgetsBinding.instance.addPostFrameCallback((_) => _fresh = false);
-        if (!_hud || MediaQuery.disableAnimationsOf(context)) {
+        if (MediaQuery.disableAnimationsOf(context)) {
           _motion.value = 1;
         } else {
           _motion.value = 0;
@@ -898,15 +682,13 @@ class _RaftToastPortalState extends State<RaftToastPortal>
       if (overlay is! RenderBox || !overlay.hasSize) return 0;
       final m = MediaQuery.of(context);
       final wide = m.size.width >= RaftLayoutMetrics.desktopBreakpoint;
-      // Frozen looks: a wide layout keeps the bottom-centre placement.
-      if (wide && !_hud) return 0;
       final top = widget.controller.avoidedTop(
         overlay,
         reachesBottom: wide
             ? math.max(m.padding.bottom, m.viewInsets.bottom) + 1
             : null,
       );
-      return top == null ? 0 : overlay.size.height - top + (_hud ? 16 : 8);
+      return top == null ? 0 : overlay.size.height - top + 16;
     }
 
     final clearance = math.max(_held, measure());

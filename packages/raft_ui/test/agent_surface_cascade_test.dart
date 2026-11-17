@@ -8,10 +8,28 @@ import 'package:raft_ui/agent_surface_previews.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_ui/test_themes.dart';
 
-import 'selection_popover_surface_test.dart' as selection;
-
 Future<void> loadFonts(WidgetTester tester) async {
-  await selection.loadFonts(tester);
+  await tester.runAsync(() async {
+    for (final name in [
+      'SpaceGrotesk',
+      'SpaceMono',
+      'HankenGrotesk',
+      'Inter',
+      'GeistMono',
+    ]) {
+      ByteData bytes;
+      try {
+        bytes = await rootBundle.load(
+          'packages/raft_ui/assets/fonts/$name.ttf',
+        );
+      } on FlutterError {
+        bytes = await rootBundle.load('assets/fonts/$name.ttf');
+      }
+      await (FontLoader(
+        'packages/raft_ui/$name',
+      )..addFont(Future.value(bytes))).load();
+    }
+  });
   await tester.runAsync(() async {
     ByteData bytes;
     try {
@@ -34,48 +52,6 @@ Widget host(ThemeData theme, Widget child) => MaterialApp(
 
 void main() {
   for (final dark in raftThemeMatrix([false, true])) {
-    testWidgets(
-      '${dark ? 'dark' : 'light'} legacy Elegant portal font and label cascade',
-      (tester) async {
-        await loadFonts(tester);
-        final theme = raftTheme(
-              pack: packForThemeId(elegantThemePackId),
-              dark: dark,
-            ),
-            tokens = theme.extension<RaftTokens>()!,
-            controller = TextEditingController(text: 'Product');
-        await tester.pumpWidget(
-          host(
-            theme,
-            RaftAgentDialogCard(
-              title: 'Create Agent',
-              onClose: () {},
-              children: [
-                RaftStableField(
-                  label: 'Name',
-                  child: RaftAgentTextInput(controller: controller),
-                ),
-              ],
-            ),
-          ),
-        );
-        await tester.pumpAndSettle();
-        expect(
-          DefaultTextStyle.of(tester.element(find.byType(RaftStableField)))
-              .style
-              .fontFamily,
-          tokens.bodyFont,
-        );
-        expect(
-          tester.widget<Text>(find.text('Name')).style!.color,
-          dark ? tokens.colors['foreground-hint'] : tokens.strong,
-        );
-        expect(tester.takeException(), isNull);
-        await tester.pumpWidget(const SizedBox());
-        controller.dispose();
-      },
-      skip: raftLookSkip(raftLookElegant),
-    );
     testWidgets(
       '${dark ? 'dark' : 'light'} form repaint keeps real IME, selection and input hit',
       (tester) async {

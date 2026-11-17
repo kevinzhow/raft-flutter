@@ -832,16 +832,16 @@ ParityCase _mdCase({
   notes:
       'Both providers receive the complete public task projection. '
       'A current-Web-only correction uses its separately declared public '
-      'fixture; legacy message bodies and widths remain frozen.',
+      'fixture.',
   afterAlign: (t, ctx) {
-    if (ctx.againstWeb && currentWebFixture != null) {
+    if (currentWebFixture != null) {
       final toggle = find.byType(RaftShowMoreToggle);
       expect(toggle, findsOneWidget);
       expect(t.widget<RaftShowMoreToggle>(toggle).expanded, isFalse);
     }
   },
   stage: (ctx) {
-    final synthetic = ctx.againstWeb && currentWebFixture != null
+    final synthetic = currentWebFixture != null
         ? ctx.fixtures[currentWebFixture] as Map<String, dynamic>
         : null;
     final webMessage = synthetic?['message'] as Map?;

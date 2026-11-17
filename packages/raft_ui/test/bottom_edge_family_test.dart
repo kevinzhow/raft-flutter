@@ -19,9 +19,6 @@ typedef _Look = ({String id, bool dark});
 const _looks = <_Look>[
   (id: raftThemePackId, dark: false),
   (id: raftThemePackId, dark: true),
-  (id: elegantThemePackId, dark: false),
-  (id: elegantThemePackId, dark: true),
-  (id: brutalThemePackId, dark: false),
 ];
 
 Widget _child(_Family family, VoidCallback action) => switch (family) {
@@ -185,11 +182,7 @@ Future<void> _captureZeroInsets(
 }
 
 void main() {
-  for (final look in raftThemeMatrix(
-    _looks,
-    look: (value) => raftLookOf(value.id),
-    dark: (value) => value.dark,
-  )) {
+  for (final look in raftThemeMatrix(_looks, dark: (value) => value.dark)) {
     for (final family in _Family.values) {
       testWidgets(
         '${family.name} owns remaining bottom edge (${look.id}, dark=${look.dark})',

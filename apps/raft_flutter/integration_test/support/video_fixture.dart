@@ -107,7 +107,6 @@ Future<VideoFixture> buildVideoFixture({
   required List<VideoClip> clips,
   String location = '/s/lab/channel/vp',
   String mode = 'light',
-  String theme = 'brutal',
 }) async {
   await initializeSourceTimeFormatting();
   await DevicePreferences.load();
@@ -181,7 +180,6 @@ Future<VideoFixture> buildVideoFixture({
   SharedPreferences.setMockInitialValues({
     'raft.origin': client.origin,
     'raft.mode': mode,
-    'raft.light': theme,
     MobileTabbarStore.preferenceKey: tabs.encode(),
   });
   final dir = await Directory.systemTemp.createTemp('raft-video-parity-');

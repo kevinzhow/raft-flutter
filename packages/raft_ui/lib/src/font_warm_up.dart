@@ -8,7 +8,6 @@ import 'package:flutter/services.dart';
 import 'design_primitives.dart';
 import 'idle_work.dart';
 import 'inline_thread_surface.dart' show RaftInlineThreadRecipe;
-import 'dialog_card.dart' show raftRecipeThemeOf;
 import 'message_content_tokens.dart';
 import 'message_row_recipe.dart';
 import 'recipes/button_variants.g.dart';
@@ -171,19 +170,21 @@ List<TextStyle> raftFontWarmUpStyles(ThemeData theme) {
       RaftTokens.theme(dark: theme.brightness == Brightness.dark);
   final ambient = theme.textTheme.bodyMedium ?? const TextStyle();
   final recipeTokens = RaftRecipeTokens(t);
-  final recipeTheme = raftRecipeThemeOf(t);
   const bold = TextStyle(fontWeight: FontWeight.w700);
   const italic = TextStyle(fontStyle: FontStyle.italic);
   final row = RaftMessageRowRecipe(t, viewportWidth: 1280);
   final declared = <TextStyle>[
+    // Every variant and size except `on-frame` and `xl`, the combinations
+    // warmed so far.
     for (final variant in RaftButtonRecipeVariant.values)
       for (final size in RaftButtonRecipeSize.values)
-        RaftButtonRecipe.resolve(
-          theme: recipeTheme,
-          variant: variant,
-          size: size,
-          tokens: recipeTokens,
-        ).root.textStyle(recipeTokens),
+        if (variant != RaftButtonRecipeVariant.onFrame &&
+            size != RaftButtonRecipeSize.xl)
+          RaftButtonRecipe.resolve(
+            variant: variant,
+            size: size,
+            tokens: recipeTokens,
+          ).root.textStyle(recipeTokens),
     RaftTooltipRecipe(t).text,
     // Inline thread replies under a message (the first one scrolled in used
     // to resolve these combinations during layout).

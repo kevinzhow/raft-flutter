@@ -16,7 +16,6 @@ import 'recipe_surface.dart';
 import 'panel_layout.dart' show RaftCssText, raftCssBaseline;
 import '../recipes.dart';
 import 'theme.dart';
-import 'raft/ui_tokens.dart';
 
 /// One option of a [RaftInlineBadgeEditor] menu.
 @immutable
@@ -153,13 +152,11 @@ class _RaftInlineBadgeEditorState extends State<RaftInlineBadgeEditor> {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     final rt = RaftRecipeTokens(t);
-    final theme = RaftRecipeTheme.elegant;
     // Badge (appearance soft, variant from caller) merged with the editor's
     // className: `mt-0.5 inline-flex items-center gap-1
     // theme-brutal:border-2 theme-brutal:border-black px-2 py-0.5 text-xs
     // font-bold theme-brutal:text-black`.
     final badge = RaftBadgeRecipe.resolve(
-      theme: theme,
       appearance: RaftBadgeRecipeAppearance.soft,
       tokens: rt,
     ).root;
@@ -511,81 +508,24 @@ class _RaftInlineBadgeMenuState extends State<RaftInlineBadgeMenu> {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     final rt = RaftRecipeTokens(t);
-    if (t.isRaftLook) {
-      final content = RaftDropdownMenuRecipe.resolve(
-        theme: t.recipeTheme,
-        states: t.recipeStates(),
-        tokens: rt,
-      ).content;
-      // InlineBadgeEditor supplies its own dropdownMinWidth. This is a source
-      // width composition, not a second surface or row treatment.
-      final surface = RaftSlotStyle(
-        {...content.properties, 'min-width': CssNum(widget.minWidth, 'px')},
-        content.targets,
-        content.classes,
-        rt,
-      );
-      return FocusScope(
-        onKeyEvent: keyEvent,
-        child: Semantics(
-          role: SemanticsRole.menu,
-          child: RaftPopoverSurface(
-            surfaceStyle: surface,
-            child: IntrinsicWidth(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  for (final option in widget.options)
-                    _InlineBadgeMenuRow(
-                      key: ValueKey(option.id),
-                      option: option,
-                      selected: option.id == widget.selectedId,
-                      // ignore: raft_lints/avoid_render_index_assertion -- updateNodes() synchronizes every live option before build.
-                      focusNode: nodes[option.id]!,
-                      onPressed: () {
-                        if (!mounted ||
-                            !widget.options.any(
-                              (o) => o.id == option.id && !o.disabled,
-                            )) {
-                          return;
-                        }
-                        widget.onSelect(option.id);
-                      },
-                    ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      );
-    }
-    final plain = t.option('listGroup.frame', or: 'framed') == 'plain';
     final content = RaftDropdownMenuRecipe.resolve(
-      theme: RaftRecipeTheme.elegant,
-      states: RaftRecipeStates({if (t.dark) RaftRecipeStates.dark}),
+      states: t.recipeStates(),
       tokens: rt,
     ).content;
+    // InlineBadgeEditor supplies its own dropdownMinWidth. This is a source
+    // width composition, not a second surface or row treatment.
+    final surface = RaftSlotStyle(
+      {...content.properties, 'min-width': CssNum(widget.minWidth, 'px')},
+      content.targets,
+      content.classes,
+      rt,
+    );
     return FocusScope(
       onKeyEvent: keyEvent,
       child: Semantics(
         role: SemanticsRole.menu,
-        child: Container(
-          constraints: BoxConstraints(minWidth: widget.minWidth),
-          decoration: plain
-              ? BoxDecoration(
-                  color: t.popover,
-                  borderRadius: BorderRadius.circular(
-                    t.size('radius.container', fallback: 10),
-                  ),
-                  boxShadow: [
-                    ...t.themeShadows.xl.paintOrder,
-                    BoxShadow(color: t.ui.lineSeam, spreadRadius: 1),
-                  ],
-                )
-              : content.decoration(rt),
-          padding: plain ? const EdgeInsets.all(6) : null,
-          clipBehavior: Clip.hardEdge,
+        child: RaftPopoverSurface(
+          surfaceStyle: surface,
           child: IntrinsicWidth(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -596,7 +536,7 @@ class _RaftInlineBadgeMenuState extends State<RaftInlineBadgeMenu> {
                     key: ValueKey(option.id),
                     option: option,
                     selected: option.id == widget.selectedId,
-                    // ignore: raft_lints/avoid_render_index_assertion -- updateNodes() runs in initState and didUpdateWidget, before build, for every widget.options entry.
+                    // ignore: raft_lints/avoid_render_index_assertion -- updateNodes() synchronizes every live option before build.
                     focusNode: nodes[option.id]!,
                     onPressed: () {
                       if (!mounted ||
@@ -661,64 +601,11 @@ class _InlineBadgeMenuRowState extends State<_InlineBadgeMenuRow> {
 
   @override
   Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
-    final rt = RaftRecipeTokens(t);
-    final plain = t.option('listGroup.frame', or: 'framed') == 'plain';
     return RaftInteractive(
       focusNode: widget.focusNode,
       button: false,
       onPressed: widget.option.disabled ? null : widget.onPressed,
       builder: (context, state) {
-        if (t.isRaftLook) {
-          return Semantics(
-            role: SemanticsRole.menuItem,
-            selected: widget.selected,
-            label: widget.option.label,
-            enabled: !widget.option.disabled,
-            focusable: !widget.option.disabled,
-            focused: widget.option.disabled ? null : widget.focusNode.hasFocus,
-            excludeSemantics: true,
-            child: RaftMenuActionRow(
-              label: widget.option.label,
-              enabled: !widget.option.disabled,
-              hovered: state.hovered,
-              focusVisible: state.focusVisible,
-              trailing: Opacity(
-                opacity: widget.selected ? 1 : 0,
-                // InlineBadgeMenuItem.tsx: `<Check size={16} />`.
-                child: const RaftIcon(RaftGlyph.check, size: 16),
-              ),
-            ),
-          );
-        }
-        final button = RaftButtonRecipe.resolve(
-          theme: RaftRecipeTheme.elegant,
-          variant: RaftButtonRecipeVariant.ghost,
-          size: RaftButtonRecipeSize.sm,
-          states: t.recipeStates(
-            hovered: state.hovered,
-            pressed: state.pressed,
-            focusVisible: state.focusVisible,
-            disabled: widget.option.disabled,
-          ),
-          tokens: rt,
-        ).root;
-        final rowStyle = plain
-            ? RaftSlotStyle(
-                {
-                  ...button.properties,
-                  'min-height': CssNum(
-                    MediaQuery.sizeOf(context).height <= 600 ? 32 : 36,
-                    'px',
-                  ),
-                }..remove('height'),
-                button.targets,
-                button.classes,
-                rt,
-              )
-            : button;
-        final foreground = widget.option.disabled ? t.muted : t.strong;
-        final hoverFill = t.colors['fill-muted']!;
         return Semantics(
           role: SemanticsRole.menuItem,
           selected: widget.selected,
@@ -727,53 +614,15 @@ class _InlineBadgeMenuRowState extends State<_InlineBadgeMenuRow> {
           focusable: !widget.option.disabled,
           focused: widget.option.disabled ? null : widget.focusNode.hasFocus,
           excludeSemantics: true,
-          child: RaftRecipeBox(
-            style: rowStyle,
-            tokens: rt,
-            padding: plain
-                ? const EdgeInsets.symmetric(horizontal: 10, vertical: 6)
-                : const EdgeInsets.symmetric(horizontal: 12),
-            decorationOverride: (d) => d.copyWith(
-              color: state.hovered || state.focusVisible
-                  ? (plain ? t.ui['brand-soft'] : hoverFill)
-                  : null,
-              borderRadius: plain
-                  ? BorderRadius.circular(t.size('radius.control', fallback: 8))
-                  : d.borderRadius,
-            ),
-            child: DefaultTextStyle.merge(
-              style: button
-                  .textStyle(rt)
-                  .copyWith(
-                    fontFamily: t.bodyFont,
-                    fontSize: 14,
-                    height: 20 / 14,
-                    fontWeight: plain && widget.selected
-                        ? FontWeight.w700
-                        : FontWeight.w500,
-                    color: foreground,
-                    decoration: TextDecoration.none,
-                  ),
-              child: Row(
-                spacing: 8,
-                children: [
-                  Expanded(
-                    child: Text(
-                      widget.option.label,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  Opacity(
-                    opacity: widget.selected ? 1 : 0,
-                    child: RaftIcon(
-                      RaftGlyph.check,
-                      size: plain ? 16 : 14,
-                      color: foreground,
-                    ),
-                  ),
-                ],
-              ),
+          child: RaftMenuActionRow(
+            label: widget.option.label,
+            enabled: !widget.option.disabled,
+            hovered: state.hovered,
+            focusVisible: state.focusVisible,
+            trailing: Opacity(
+              opacity: widget.selected ? 1 : 0,
+              // InlineBadgeMenuItem.tsx: `<Check size={16} />`.
+              child: const RaftIcon(RaftGlyph.check, size: 16),
             ),
           ),
         );

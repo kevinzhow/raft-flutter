@@ -16,8 +16,7 @@ class RaftConversationSurfaceRecipe {
   const RaftConversationSurfaceRecipe(this.tokens);
   final RaftTokens tokens;
 
-  /// Web v1.21.23 paints ThreadPanel root/content on the canvas. Its component
-  /// role lets legacy packs retain their a57 dark card layer independently.
+  /// Web v1.21.23 paints ThreadPanel root/content on the canvas.
   Color background(RaftConversationSurfaceRole role) => switch (role) {
     RaftConversationSurfaceRole.threadTimeline =>
       tokens.colors['layer-conversation-content']!,

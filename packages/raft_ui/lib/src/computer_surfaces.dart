@@ -12,8 +12,8 @@ import 'error_presentation.dart' show RaftErrorBanner;
 import 'icons.dart';
 import 'localization.dart';
 import 'indicators.dart' show RaftBadge, RaftSkeletonRow;
-import 'panel_layout.dart' show raftRecipeTheme, RaftCssText;
-import 'recipe_surface.dart' show raftCssText, RaftCssOverflowY, RaftRecipeBox;
+import 'panel_layout.dart' show RaftCssText;
+import 'recipe_surface.dart' show raftCssText, RaftRecipeBox;
 import 'recipes/badge.g.dart';
 import 'recipes/card.g.dart';
 import 'recipes/panel_header.g.dart';
@@ -40,7 +40,6 @@ class RaftPanelHeaderIconTile extends StatelessWidget {
     final t = RaftTokens.of(context);
     final rt = RaftRecipeTokens(t);
     final s = RaftPanelHeaderRecipe.resolve(
-      theme: raftRecipeTheme(t),
       states: RaftRecipeStates({if (t.dark) RaftRecipeStates.dark}),
       tokens: rt,
     ).headerIcon;
@@ -67,8 +66,8 @@ class RaftPanelHeaderIconTile extends StatelessWidget {
 
 /// MachineDetailPanel "Detected runtimes" chip: raft-ui Badge (solid,
 /// default variant) with the callsite fill — detected
-/// `bg-info-soft text-info-strong theme-brutal:bg-brutal-cyan
-/// theme-brutal:text-black`, otherwise `bg-fill-muted text-foreground-muted`.
+/// `bg-info-soft text-info-strong`, otherwise `bg-fill-muted
+/// text-foreground-muted`.
 class RaftRuntimeChip extends StatelessWidget {
   const RaftRuntimeChip({
     super.key,
@@ -83,67 +82,15 @@ class RaftRuntimeChip extends StatelessWidget {
   final Widget? trailing;
   @override
   Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
     // The Web draws the runtime tags with raft-ui's Badge: soft information
     // when detected, soft muted when not.
-    if (t.recipeSet == RaftRecipeSet.raft) {
-      return RaftBadge(
-        label: label,
-        appearance: RaftBadgeRecipeAppearance.soft,
-        variant: detected
-            ? RaftBadgeRecipeVariant.information
-            : RaftBadgeRecipeVariant.muted,
-        trailing: trailing,
-      );
-    }
-    final rt = RaftRecipeTokens(t);
-    final s = RaftBadgeRecipe.resolve(
-      theme: raftRecipeTheme(t),
-      appearance: RaftBadgeRecipeAppearance.solid,
-      variant: RaftBadgeRecipeVariant.default_,
-      states: RaftRecipeStates({if (t.dark) RaftRecipeStates.dark}),
-      tokens: rt,
-    ).root;
-    final fill = detected ? (t.colors['info-soft']!) : t.colors['fill-muted']!;
-    final ink = detected
-        ? (t.colors['info-strong']!)
-        : t.colors['foreground-muted']!;
-    final text = RaftCssText(
-      label,
-      maxLines: 1,
-      controlLabel: true,
-      style: raftCssText.merge(
-        RaftTypography.body(
-          t,
-          size: 10,
-          line: 10,
-        ).merge(s.textStyle(rt)).copyWith(color: ink),
-      ),
-    );
-    return Container(
-      // The recipe height is a minimum: a taller line box (Android Chinese
-      // control profile, larger text) grows the chip instead of clipping, and
-      // RaftCssOverflowY keeps a label that meets a tighter parent centred.
-      constraints: BoxConstraints(minHeight: s.height ?? 0),
-      padding: s.padding,
-      decoration: s.decoration(rt).copyWith(color: fill),
-      child: Center(
-        widthFactor: 1,
-        child: RaftCssOverflowY(
-          child: trailing == null
-              ? text
-              // Badge root `inline-flex items-center gap-1` (elegant gap-1.5):
-              // the health Status carries only its own `ml-1` (the caller).
-              : Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    text,
-                    SizedBox(width: s.columnGap ?? s.length('gap') ?? 4),
-                    trailing!,
-                  ],
-                ),
-        ),
-      ),
+    return RaftBadge(
+      label: label,
+      appearance: RaftBadgeRecipeAppearance.soft,
+      variant: detected
+          ? RaftBadgeRecipeVariant.information
+          : RaftBadgeRecipeVariant.muted,
+      trailing: trailing,
     );
   }
 }
@@ -194,11 +141,10 @@ class RaftOptionCard extends StatelessWidget {
       final t = RaftTokens.of(context);
       final rt = RaftRecipeTokens(t);
       final root = RaftCardRecipe.resolve(
-        theme: raftRecipeTheme(t),
         states: RaftRecipeStates({if (t.dark) RaftRecipeStates.dark}),
         tokens: rt,
       ).root;
-      // Elegant Card root `border-[0.5px] … dark:border-transparent`: the
+      // Card root `border-[0.5px] … dark:border-transparent`: the
       // callsite `border-line-muted` / `hover:border-line-strong` do not
       // override the `dark:` variant.
       final border = t.dark
@@ -208,7 +154,7 @@ class RaftOptionCard extends StatelessWidget {
           : state.hovered
           ? (t.colors['line-strong']!)
           : (t.colors['line-muted']!);
-      // RaftRecipeBox keeps the recipe's inset layers (elegant dark
+      // RaftRecipeBox keeps the recipe's inset layers (dark
       // `shadow-raft-xs` top light, `inset 0 1px 0`) above the fill.
       return RaftRecipeBox(
         style: root,
@@ -217,8 +163,7 @@ class RaftOptionCard extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         applyText: false,
         decorationOverride: (base) => base.copyWith(
-          // A translucent tint (`bg-brutal-cyan/20`) composites over the
-          // dialog surface.
+          // A translucent tint composites over the dialog surface.
           color: selected
               ? Color.alphaBlend(selectedFill, t.colors['layer-panel']!)
               : t.colors['layer-panel'],
@@ -309,7 +254,7 @@ class RaftComputerSidebarHeading extends StatelessWidget {
 
 /// Sidebar.tsx `ComputerRow`: SidebarItem `variant="accent"` +
 /// `mb-1.5 gap-2.5 px-2.5 py-2 border theme-brutal:border-2` (the recipe's
-/// `md:py-1` / elegant `md:py-1.5` win at desktop width), a size-9 Card with
+/// `md:py-1.5` wins at desktop width), a size-9 Card with
 /// Monitor 18 and a status dot at `-right-1 -top-1`, name (`text-sm
 /// font-bold`), optional description (`mt-0.5 text-[11px] leading-tight`),
 /// and the mono meta line (run label, `→ vX`, Low disk).
@@ -348,10 +293,9 @@ class RaftComputerRow extends StatelessWidget {
     builder: (context, state) {
       final t = RaftTokens.of(context);
       final hover = state.hovered && !selected;
-      // Selected `border-line-strong bg-fill-muted shadow-raft-sm` /
-      // brutal `border-black bg-brutal-pink shadow-brutal-sm`; hover the same
-      // frame on `bg-white` (brutal). Elegant `data-active` = `bg-layer-panel
-      // shadow-raft-sm ring-1 ring-line-muted/45`.
+      // Selected `border-line-strong bg-fill-muted shadow-raft-sm`;
+      // `data-active` = `bg-layer-panel shadow-raft-sm ring-1
+      // ring-line-muted/45`.
       Color? fill;
       Color border;
       List<BoxShadow>? shadow;
@@ -384,8 +328,7 @@ class RaftComputerRow extends StatelessWidget {
       final muted = mobile
           ? t.colors['foreground-hint']!
           : t.colors['foreground-muted']!;
-      // Text inherits the item's line box: brutal `text-sm` (20/14),
-      // elegant `text-[13px]` (19.5/13 = 1.5).
+      // Text inherits the item's line box: `text-[13px]` (19.5/13 = 1.5).
       final metaLine = mobile ? 16.5 : 11 * 1.5;
       final meta = raftCssText.merge(
         RaftTypography.mono(
@@ -400,7 +343,6 @@ class RaftComputerRow extends StatelessWidget {
         fontWeight: FontWeight.w700,
       );
       final cardRoot = RaftCardRecipe.resolve(
-        theme: raftRecipeTheme(t),
         states: RaftRecipeStates({if (t.dark) RaftRecipeStates.dark}),
         tokens: RaftRecipeTokens(t),
       ).root;
@@ -431,7 +373,7 @@ class RaftComputerRow extends StatelessWidget {
           ),
       ];
       return Container(
-        // 40px icon tile + 2 x p-3 + the border box (Brutal 2px, Elegant 1px).
+        // 40px icon tile + 2 x p-3 + the border box (1px).
         constraints: mobile ? BoxConstraints(minHeight: 66) : null,
         transform: mobile && (state.pressed || hover)
             ? Matrix4.translationValues(
@@ -440,7 +382,7 @@ class RaftComputerRow extends StatelessWidget {
                 0,
               )
             : null,
-        // The list owns `mb-1.5` and elegant's 6px bleed.
+        // The list owns `mb-1.5` and the 6px bleed.
         padding: mobile
             ? const EdgeInsets.all(12)
             : EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -726,7 +668,7 @@ class _DashedBorder extends CustomPainter {
 }
 
 /// Sidebar.tsx computers mode body: `px-2 py-3` scroll column with the
-/// heading, [rows] (`mb-1.5` each; Elegant rows shifted by
+/// heading, [rows] (`mb-1.5` each; rows shifted by
 /// `-mx-(--sidebar-row-inset-x,6px)` under the callsite `w-full`), and the
 /// SidebarRowsSkeleton / "No computers yet" states.
 class RaftComputerSidebarList extends StatelessWidget {

@@ -8,7 +8,6 @@ import 'icons.dart';
 import 'localization.dart';
 import 'recipe_surface.dart';
 import 'recipes/notification_center.g.dart';
-import 'recipes/recipe_router.dart' show usesLegacyRecipes;
 import 'theme.dart';
 
 /// Pure status roles from raft-ui 0.5.52; the mounted app emits the first three.
@@ -265,7 +264,6 @@ class _RaftNotificationCenterState extends State<RaftNotificationCenter> {
     final t = RaftTokens.of(context);
     final r = RaftNotificationRecipe(t);
     final popup = RaftNotificationCenterRecipe.resolve(
-      theme: t.recipeTheme,
       states: t.recipeStates(),
       tokens: t.recipeTokens,
     ).popup;
@@ -299,11 +297,8 @@ class _RaftNotificationCenterState extends State<RaftNotificationCenter> {
               height: widget.height,
               child: ClipRRect(
                 // The surface's own corner (`rounded-container`): a smaller clip
-                // lets the opaque rows paint over the ring at the corners. The
-                // frozen looks keep their authored 6px.
-                borderRadius: usesLegacyRecipes(t.recipeTokens)
-                    ? r.radius
-                    : (popup.borderRadius ?? r.radius),
+                // lets the opaque rows paint over the ring at the corners.
+                borderRadius: popup.borderRadius ?? r.radius,
                 child: Column(
                   children: [
                     Container(

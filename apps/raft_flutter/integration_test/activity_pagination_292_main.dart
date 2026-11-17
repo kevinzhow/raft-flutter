@@ -297,7 +297,6 @@ Future<void> main() async {
   SharedPreferences.setMockInitialValues({
     'raft.origin': 'https://activity292.example.invalid',
     'raft.mode': 'light',
-    'raft.light': 'elegant',
   });
   await DevicePreferences.load();
   await initializeSourceTimeFormatting();

@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/menu_popup_backend_previews.dart';
 import 'package:raft_ui/raft_ui.dart';
-import 'package:raft_ui/test_themes.dart';
 
 void main() {
   testWidgets(
@@ -50,6 +49,5 @@ void main() {
         await tester.pumpAndSettle();
       }
     },
-    skip: raftLookSkip(raftLookRaft),
   );
 }

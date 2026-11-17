@@ -66,7 +66,6 @@ class RaftLabel extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context), rt = t.recipeTokens;
     final recipe = RaftLabelRecipe.resolve(
-      theme: t.recipeTheme,
       size: size,
       states: t.recipeStates(extra: [if (disabled) 'data-disabled']),
       tokens: rt,

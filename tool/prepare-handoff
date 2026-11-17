@@ -21,11 +21,9 @@
    script says so and exits non-zero before fetching, rebasing or running anything;
    it never logs in or uses another credential.
 
-Usage: tool/prepare-handoff [--base origin/cindy/integration] [--no-check] [--skip-preflight] [--all-themes]
+Usage: tool/prepare-handoff [--base origin/cindy/integration] [--no-check] [--skip-preflight]
                             [--pr --pr-body FILE [--pr-title TITLE]]
 
-Default gate tests the Raft look only; the legacy looks are tool/theme-suite (run it when the diff touches the
-theme engine: the gate prints a notice). --all-themes (or RAFT_TEST_ALL_THEMES=1) runs every look and variant.
 check-project inherits RAFT_TEST_TIER: `RAFT_TEST_TIER=impact tool/prepare-handoff` runs the merge-check tier
 (every static check, the tests the diff touches plus the guards); the result line names the tier that passed.
 """
@@ -167,8 +165,8 @@ def run_check(command, state):
     return subprocess.CompletedProcess(command, child.returncode, out, err)
 
 
-def run_gate(emit, state, all_themes=False):
-    command = [sys.executable, str(root / 'tool/check-project')] + (['--all-themes'] if all_themes else [])
+def run_gate(emit, state):
+    command = [sys.executable, str(root / 'tool/check-project')]
     gate_lock.parent.mkdir(parents=True, exist_ok=True)
     with gate_lock.open('a+b') as lock:
         if os.name == 'nt':
@@ -216,8 +214,6 @@ def run_gate(emit, state, all_themes=False):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--base', default='origin/cindy/integration')
-    parser.add_argument('--all-themes', action='store_true',
-                        help='run the full theme matrix (also set by RAFT_TEST_ALL_THEMES=1)')
     parser.add_argument('--skip-preflight', action='store_true',
                         help='go straight to the full check without running tool/preflight first')
     parser.add_argument('--no-check', action='store_true',
@@ -262,7 +258,7 @@ def main():
     state = {'child': False}
     gate_events.raise_on_signals()
     try:
-        gate = run_gate(emit, state, args.all_themes)
+        gate = run_gate(emit, state)
     except BaseException as error:
         # Once check-project runs it logs its own terminal event; before that (waiting for the lock) we do.
         if not state['child'] and not (isinstance(error, SystemExit) and error.code in (0, None)):
@@ -282,7 +278,7 @@ def main():
         passed = False
     run_info = json.loads((root / '.local/engineering-run.json').read_text())
     line = (f'handoff: {branch} {head} (contains {args.base} {base}); '
-            f'check-project {"PASSED" if passed else "FAILED"} (themes: {run_info.get("themes", "?")}, tier: {run_info.get("tier", "?")}); sourceHash {run_info.get("sourceHash", "?")[:12]}')
+            f'check-project {"PASSED" if passed else "FAILED"} (tier: {run_info.get("tier", "?")}); sourceHash {run_info.get("sourceHash", "?")[:12]}')
     print(line)
     if passed and args.pr:
         publish_pr(branch, args.pr_body, line, args.pr_title)

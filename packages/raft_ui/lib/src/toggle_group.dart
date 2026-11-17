@@ -73,7 +73,6 @@ class RaftToggleGroup<T> extends StatelessWidget {
     final t = RaftTokens.of(context);
     final rt = t.recipeTokens;
     final root = RaftToggleGroupRecipe.resolve(
-      theme: t.recipeTheme,
       states: t.recipeStates(responsive: true),
       tokens: rt,
     ).root;
@@ -112,7 +111,6 @@ class RaftToggleGroup<T> extends StatelessWidget {
       onPressed: enabled ? () => _toggle(item.value) : null,
       builder: (context, st) {
         final style = RaftToggleGroupRecipe.resolve(
-          theme: t.recipeTheme,
           states: t.recipeStates(
             responsive: true,
             hovered: st.hovered,

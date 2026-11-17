@@ -29,7 +29,6 @@ RaftSwitchRecipeStyle _recipe(
 }) {
   final t = _tokens(dark);
   return RaftSwitchRecipe.resolve(
-    theme: t.recipeTheme,
     tokens: t.recipeTokens,
     states: t.recipeStates(
       focusVisible: focus,

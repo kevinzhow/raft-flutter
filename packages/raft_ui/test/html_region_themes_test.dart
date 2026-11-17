@@ -5,13 +5,8 @@ import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_ui/test_themes.dart';
 
 void main() {
-  for (final id in raftThemeMatrix([
-    raftThemePackId,
-    elegantThemePackId,
-    brutalThemePackId,
-  ], look: raftLookOf)) {
+  for (final id in raftThemeMatrix([raftThemePackId])) {
     for (final dark in [false, true]) {
-      if (id == brutalThemePackId && dark) continue;
       for (final scale in [1.0, 2.0, 3.1]) {
         testWidgets(
           '$id/$dark/$scale HTML region HUD and marker fit narrow pointer viewport',

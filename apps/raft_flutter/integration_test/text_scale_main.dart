@@ -31,7 +31,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'perf_lab/fixtures.dart';
 import 'perf_lab/navigation_host.dart';
 
-const _theme = String.fromEnvironment('CJK_THEME', defaultValue: 'elegant');
 const _lang = String.fromEnvironment('CJK_LANG', defaultValue: 'en');
 // Optional CJK font file readable by the app (adb push to /data/local/tmp):
 // registered as the first fallback family, to compare font metrics.
@@ -168,7 +167,6 @@ Future<void> main() async {
   SharedPreferences.setMockInitialValues({
     'raft.origin': client.origin,
     'raft.mode': 'light',
-    'raft.light': _theme,
     MobileTabbarStore.preferenceKey: tabs.encode(),
   });
   runApp(

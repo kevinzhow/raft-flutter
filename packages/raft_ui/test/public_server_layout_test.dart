@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
-import 'package:raft_ui/test_themes.dart';
 
 // Web v1.21.12 public server page: the channel column is the signed-in
 // Sidebar's parts (PublicServerSidebarFrame + accent rows), the channel header
@@ -45,60 +44,6 @@ void main() {
     ),
   );
 
-  for (final (dark, header) in [(false, 56.0), (true, 56.0)]) {
-    testWidgets('[$dark] channel column frame', (tester) async {
-      await mount(tester, sidebar(), dark: dark, pack: elegantThemePackId);
-      final t = RaftTokens.of(
-        tester.element(find.byType(RaftPublicChannelSidebar)),
-      );
-      final frame = find.byKey(const ValueKey('public-server-channel-sidebar'));
-      expect(tester.getSize(frame).width, 240);
-      final fill =
-          (tester.widget<Container>(frame).decoration! as BoxDecoration).color;
-      expect(
-        fill,
-        t.colors['layer-canvas-muted'],
-        reason: 'SidebarRoot bg, not the old layer-inset',
-      );
-      // `h-panel-header` follows the shell's header height, not a fixed 62.
-      final title = tester.getRect(find.text('Raft Design'));
-      expect(title.center.dy, closeTo(header / 2, 2));
-      // The label row and the rows share the signed-in Sidebar parts.
-      expect(find.text('PUBLIC CHANNELS'), findsOneWidget);
-      expect(find.byType(RaftNavItem), findsNWidgets(2));
-      final selected = tester.widget<RaftNavItem>(
-        find.byKey(const ValueKey('public-channel-a')),
-      );
-      expect(selected.selected, isTrue);
-      expect(selected.conversationKind, RaftConversationNavKind.channel);
-      expect(
-        tester
-            .widget<RaftNavItem>(find.byKey(const ValueKey('public-channel-b')))
-            .selected,
-        isFalse,
-      );
-    }, skip: raftLookSkip(raftLookElegant));
-  }
-
-  testWidgets('below sm the column is 144 wide and the label wraps', (
-    tester,
-  ) async {
-    await mount(
-      tester,
-      sidebar(),
-      size: const Size(500, 800),
-      pack: elegantThemePackId,
-    );
-    expect(
-      tester
-          .getSize(find.byKey(const ValueKey('public-server-channel-sidebar')))
-          .width,
-      144,
-    );
-    expect(find.text('PUBLIC CHANNELS'), findsOneWidget);
-    expect(tester.takeException(), isNull);
-  }, skip: raftLookSkip(raftLookElegant));
-
   testWidgets('selecting a row reports its id', (tester) async {
     String? picked;
     await mount(
@@ -119,37 +64,6 @@ void main() {
     await tester.tap(find.text('general'));
     expect(picked, 'a');
   });
-
-  testWidgets('Elegant channel header is a canvas-muted strip with a rule', (
-    tester,
-  ) async {
-    await mount(
-      tester,
-      const RaftPublicChannelHeader(name: 'general', description: 'News'),
-      pack: elegantThemePackId,
-    );
-    final t = RaftTokens.of(
-      tester.element(find.byType(RaftPublicChannelHeader)),
-    );
-    final strip = tester
-        .widgetList<DecoratedBox>(
-          find.descendant(
-            of: find.byType(RaftPublicChannelHeader),
-            matching: find.byType(DecoratedBox),
-          ),
-        )
-        .map((b) => b.decoration)
-        .whereType<BoxDecoration>();
-    expect(
-      strip.any(
-        (d) =>
-            d.color == t.colors['layer-canvas-muted'] &&
-            d.border is Border &&
-            (d.border! as Border).bottom.color == t.colors['line-muted'],
-      ),
-      isTrue,
-    );
-  }, skip: raftLookSkip(raftLookElegant));
 
   testWidgets('the loading page is a centred spinner, not a word', (
     tester,

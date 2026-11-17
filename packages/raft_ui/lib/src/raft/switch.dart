@@ -3,7 +3,7 @@
 // off, `brand` with the `sticker-edge` ring on, `foreground-disabled` ink when disabled, `shadow-focus` on keyboard
 // focus) and the thumb slot the 22px disc with its own `0 0 0 1.5px` ring that translates 20px when checked. Sizes,
 // colours, rings, translate and the transition durations and curves are read from the resolved slots; nothing here
-// restates them. The frozen Elegant and Brutal paint lives in switch_frozen.dart.
+// restates them. The ring-edge / square-shape paint of a user theme pack lives in switch_frozen.dart.
 import 'package:flutter/material.dart';
 
 import '../design_primitives.dart';
@@ -90,15 +90,15 @@ class _RaftSwitchState extends State<RaftSwitch> {
       focusNode: focusNode,
       semanticLabel: semanticLabel,
       builder: (context, st) {
-        // These explicit user options previously selected a different switch
-        // appearance, including its colours and inset shadows. Preserve that
-        // contract with the existing frozen painter; the default Raft look and
-        // geometry-only overrides continue through the generated recipe.
+        // These explicit user options select a different switch appearance,
+        // including its colours and inset shadows, with the painter in
+        // switch_frozen.dart; the default look and geometry-only overrides
+        // continue through the generated recipe.
         final options = t.themeOverrides?.options;
         final customPaint =
             options?['control.edge'] == 'ring' ||
             options?['switch.shape'] == 'square';
-        final Widget control = t.isRaftLook && !customPaint
+        final Widget control = !customPaint
             ? _RecipeSwitch(
                 tokens: t,
                 size: size,
@@ -119,7 +119,7 @@ class _RaftSwitchState extends State<RaftSwitch> {
                 min: min,
                 semanticDescription: semanticDescription,
               );
-        if (!t.isRaftLook || customPaint) return control;
+        if (customPaint) return control;
         Widget result = Semantics(
           toggled: value,
           hint: semanticDescription,
@@ -229,7 +229,6 @@ class _RecipeSwitch extends StatelessWidget {
     final rt = tokens.recipeTokens;
     generated.RaftSwitchRecipeStyle resolve(bool checked) =>
         generated.RaftSwitchRecipe.resolve(
-          theme: tokens.recipeTheme,
           states: tokens.recipeStates(
             responsive: true,
             focusVisible: focusVisible,

@@ -189,7 +189,6 @@ class RaftProgressBar extends StatelessWidget {
     final indeterminate = value == null || value!.isNaN;
     final pct = indeterminate ? 0.0 : value!.clamp(0, 100).toDouble();
     final s = RaftProgressRecipe.resolve(
-      theme: t.recipeTheme,
       variant: tone,
       size: size,
       states: t.recipeStates(
@@ -432,7 +431,6 @@ class _RaftSkeletonState extends State<RaftSkeleton>
       return ExcludeSemantics(
         child: RaftRecipeBox(
           style: RaftSkeletonRecipe.resolve(
-            theme: t.recipeTheme,
             variant: variant,
             states: t.recipeStates(extra: ['data-variant=${variant.css}']),
             tokens: rt,

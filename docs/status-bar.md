@@ -61,8 +61,8 @@ the same widgets publish the same way on every layout.
 
 `apps/raft_flutter/test/statusbar_standard_test.dart` renders every route of
 the statusbar audit page list plus every `NavigationRegistry` section and
-settings page, at 390x844, 816x900 and 1280x800 in brutal, elegant-light and
-elegant-dark (simulated 40dp inset). For each column it samples the band at the
+settings page, at 390x844, 816x900 and 1280x800 in Raft light and
+dark (simulated 40dp inset). For each column it samples the band at the
 column centre and on its divider and asserts it equals the pixel just below the
 inset. `RAFT_STATUSBAR_STANDARD_DIR=<dir>` writes the top 120dp of each render
 (`<dir>/<size>/<theme>/<page>.png`) for contact sheets (`tool/statusbar-sheet.py`).
@@ -71,7 +71,7 @@ headerless pages) and the breakpoint resize checks.
 
 ## Header heights
 
-Web `h-panel-header` is `--shell-header-height`: 56 px Elegant, 62 px Brutal,
+Web `h-panel-header` is `--shell-header-height`: 56 px (62 px in the deleted Brutal look),
 48 px when the viewport is 600 px tall or less (measured in the React parity
 captures at 1280x800: sidebar header border rows 55 / 60). The width does not
 matter, so a foldable at ~816 dp is the same. The Flutter shell header

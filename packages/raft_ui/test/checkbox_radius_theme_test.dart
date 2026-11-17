@@ -21,7 +21,7 @@ Widget _host(String id, {RaftCheckboxShape shape = RaftCheckboxShape.square}) =>
     );
 
 /// Both painted radii for one theme in its own tree. The Raft look paints recipe boxes, whose `rounded-full` radius
-/// exceeds the box and is clamped to half of it when painted; the frozen looks paint [RaftCssBox]es.
+/// exceeds the box and is clamped to half of it when painted.
 ///
 /// A fresh tree per theme: reusing one leaves the previous theme's values in the
 /// element and the comparison then passes for the wrong reason.
@@ -32,27 +32,23 @@ Future<(double, double)> _painted(
 }) async {
   await tester.pumpWidget(_host(id, shape: shape));
   await tester.pump();
-  if (id == raftThemePackId) {
-    final radii = [
-      for (final c in tester.widgetList<Container>(
-        find.descendant(
-          of: find.byType(RaftCheckbox),
-          matching: find.byType(Container),
+  final radii = [
+    for (final c in tester.widgetList<Container>(
+      find.descendant(
+        of: find.byType(RaftCheckbox),
+        matching: find.byType(Container),
+      ),
+    ))
+      if (c.decoration is BoxDecoration)
+        math.min(
+          (c.decoration! as BoxDecoration).borderRadius!
+              .resolve(TextDirection.ltr)
+              .topLeft
+              .x,
+          10.0,
         ),
-      ))
-        if (c.decoration is BoxDecoration)
-          math.min(
-            (c.decoration! as BoxDecoration).borderRadius!
-                .resolve(TextDirection.ltr)
-                .topLeft
-                .x,
-            10.0,
-          ),
-    ];
-    return (radii.first, radii.last);
-  }
-  final boxes = tester.widgetList<RaftCssBox>(find.byType(RaftCssBox)).toList();
-  return (boxes.first.radius, boxes.last.radius);
+  ];
+  return (radii.first, radii.last);
 }
 
 void main() {
@@ -61,25 +57,13 @@ void main() {
       expect(await _painted(tester, raftThemePackId), (4.0, 4.0));
     });
 
-    testWidgets('Elegant uses its sticker corner', (tester) async {
-      expect(await _painted(tester, elegantThemePackId), (3.0, 3.0));
-    }, skip: raftLookSkip(raftLookElegant));
-
-    testWidgets('Brutal squares it', (tester) async {
-      expect(await _painted(tester, brutalThemePackId), (0.0, 0.0));
-    }, skip: raftLookSkip(raftLookBrutal));
-
     testWidgets('the circle form stays a true circle in every theme', (
       tester,
     ) async {
-      // `rounded-full` is size/2 regardless of theme, so the three looks agree
+      // `rounded-full` is size/2 regardless of theme, so every theme agrees
       // here. If this started varying by theme it would mean the circle had been
       // wrongly routed through the sticker token.
-      for (final id in raftThemeMatrix([
-        raftThemePackId,
-        elegantThemePackId,
-        brutalThemePackId,
-      ], look: raftLookOf)) {
+      for (final id in raftThemeMatrix([raftThemePackId])) {
         final (root, indicator) = await _painted(
           tester,
           id,

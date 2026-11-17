@@ -8,7 +8,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_flutter/platform/system_bars.dart';
 import 'package:raft_flutter/features/auth_view.dart';
 import 'package:raft_ui/raft_ui.dart';
-import 'package:raft_ui/test_themes.dart';
 
 // Full theme matrix on purpose (theme/token/recipe test): never sampled, see
 // package:raft_ui/test_themes.dart.
@@ -27,13 +26,7 @@ void main() {
       debugDefaultTargetPlatformOverride = null;
     });
     for (final theme in [
-      for (final id in raftThemeMatrix([
-        raftThemePackId,
-        elegantThemePackId,
-        brutalThemePackId,
-      ], look: raftLookOf))
-        for (final dark in [false, true])
-          raftTheme(pack: packForThemeId(id), dark: dark),
+      for (final dark in [false, true]) raftTheme(dark: dark),
     ]) {
       await tester.pumpWidget(
         MaterialApp(
@@ -100,13 +93,7 @@ void main() {
     'theme changes update transparent system bars and icon contrast',
     (tester) async {
       for (final theme in [
-        for (final id in raftThemeMatrix([
-          raftThemePackId,
-          elegantThemePackId,
-          brutalThemePackId,
-        ], look: raftLookOf))
-          for (final dark in [false, true])
-            raftTheme(pack: packForThemeId(id), dark: dark),
+        for (final dark in [false, true]) raftTheme(dark: dark),
       ]) {
         await tester.pumpWidget(
           MaterialApp(

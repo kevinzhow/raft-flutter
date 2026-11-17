@@ -5,7 +5,7 @@ import 'package:raft_ui/raft_ui.dart';
 
 // Message attachment family against raft-ui 0.95.3 (message-attachment,
 // message-image-gallery, file-preview badge). The Raft look follows the
-// recipes; Elegant keeps its literals. Input mode comes from
+// recipes. Input mode comes from
 // RaftInteractionScope, never from width.
 
 const _touch = [Size(856, 944), Size(944, 856)];
@@ -16,7 +16,6 @@ Future<RaftTokens> _pump(
   Widget child, {
   required Size size,
   required bool touch,
-  bool elegant = false,
   double width = 600,
 }) async {
   tester.view.devicePixelRatio = 1;
@@ -29,9 +28,7 @@ Future<RaftTokens> _pump(
           ? RaftInteraction.touchMode
           : RaftInteraction.pointerMode,
       child: MaterialApp(
-        theme: raftTheme(
-          pack: elegant ? packForThemeId(elegantThemePackId) : null,
-        ),
+        theme: raftTheme(),
         home: Scaffold(
           body: Align(
             alignment: Alignment.topLeft,
@@ -135,14 +132,6 @@ void main() {
         expect(meta.color, t.colors['foreground-hint']);
       });
 
-      testWidgets('Elegant keeps radius 6 and the 12px title', (tester) async {
-        await _pump(tester, _card(), size: size, touch: touch, elegant: true);
-        final shape = _surface(tester).shape! as RoundedRectangleBorder;
-        expect(shape.borderRadius, BorderRadius.circular(6));
-        expect(_text(tester, 'report.pdf').fontSize, 12);
-        expect(_text(tester, 'report.pdf').fontWeight, FontWeight.w700);
-      });
-
       testWidgets('Raft gallery: gap 4, container-keyed row height', (
         tester,
       ) async {
@@ -203,22 +192,6 @@ void main() {
     expect(rects.map((r) => r.top).toSet().length, 1);
     expect(rects.last.right - rects.first.left, closeTo(360, .01));
     expect(rects.first.height, 128);
-  });
-
-  testWidgets('gallery: Elegant keeps gap 8 and the viewport wrap', (
-    tester,
-  ) async {
-    final extents = <Size>[];
-    await _pump(
-      tester,
-      _gallery([_square, _square], extents),
-      size: const Size(1440, 900),
-      touch: false,
-      elegant: true,
-    );
-    final a = tester.getRect(find.byKey(const ValueKey('img0')));
-    final b = tester.getRect(find.byKey(const ValueKey('img1')));
-    expect(b.left - a.right, 8);
   });
 
   for (final dark in [false, true]) {
@@ -310,38 +283,6 @@ void main() {
     expect(label.fontFamily, t.monoFont);
     expect(label.color, t.colors['foreground-muted']);
     expect(tester.getSize(find.byType(RaftFileTypeBadge)), const Size(28, 14));
-  });
-
-  testWidgets('badge: Elegant keeps the coloured fill; unknown stays bare', (
-    tester,
-  ) async {
-    await _pump(
-      tester,
-      const RaftFileTypeBadge(filename: 'a.pdf', size: Size(28, 14)),
-      size: const Size(1440, 900),
-      touch: false,
-      elegant: true,
-    );
-    final d =
-        tester
-                .widget<DecoratedBox>(
-                  find
-                      .descendant(
-                        of: find.byType(RaftFileTypeBadge),
-                        matching: find.byType(DecoratedBox),
-                      )
-                      .first,
-                )
-                .decoration
-            as BoxDecoration;
-    expect(d.color, const Color(0xffed3e51));
-    await _pump(
-      tester,
-      const RaftFileTypeBadge(filename: 'a.xyz'),
-      size: const Size(1440, 900),
-      touch: false,
-    );
-    expect(tester.getSize(find.byType(RaftFileTypeBadge)).height, 0);
   });
 
   testWidgets('hover and press repaint the overlay without remounting the '

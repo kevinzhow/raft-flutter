@@ -15,7 +15,7 @@
 | 共享组件状态 | 静止、hover、按下、选中、键盘焦点、展开、禁用、等待、错误；按角色列适用性，不能把普通按钮样式套给侧栏、rail、底栏或反应控件 |
 | 头像 | 自定义图片、允许的地址格式、原版 Gravatar/default 优先级；实际请求和解码、加载/失败回退、身份切换后迟到响应 |
 
-每个案例必须保存稳定 ID、Web 版本及组件来源、Flutter 源码哈希、实际挂载角色、测试数据、主题、窗口/DPR、状态适用性和具体动作。Brutal light、Elegant light 和 Elegant dark 各自保留操作前/后原图、实际布局/样式测量和结果。声明不适用须引用原版执行分支及原因；缺失、未实现、未运行和失败须分别保留。
+每个案例必须保存稳定 ID、Web 版本及组件来源、Flutter 源码哈希、实际挂载角色、测试数据、主题、窗口/DPR、状态适用性和具体动作。Raft light 和 Raft dark 各自保留操作前/后原图、实际布局/样式测量和结果。声明不适用须引用原版执行分支及原因；缺失、未实现、未运行和失败须分别保留。
 
 组件预览、定向测试和完整功能测试各自保留证据；任何一种都不能替代产品实际挂载状态的配对。诊断页面使用公开 fixture 时必须标明其范围，不证明真实账户/API、原生运行或完整页面。缺失必需案例、无法对应当前源码的证据、未解决差异和未运行状态，均阻止把该范围宣称为“已还原”。交付安装包的功能验收与还原验收分别给出结果。
 
@@ -31,7 +31,7 @@
 
 使用 Flutter SDK 的 `package:flutter/widget_previews.dart`，`@Preview` 顶层无必填参数函数，并用 `flutter widget-preview start`。不以普通静态截图站替代 Widget Preview。
 
-每个组件为 Brutal light、Elegant light、Elegant dark 建立独立 preview。覆盖日/英/中长文本、文本缩放、窄/宽尺寸及 default、hover、focus、pressed、disabled、loading、error；组件适用哪些状态需明列。
+每个组件为 Raft light、Raft dark 建立独立 preview。覆盖日/英/中长文本、文本缩放、窄/宽尺寸及 default、hover、focus、pressed、disabled、loading、error；组件适用哪些状态需明列。
 
 对照 Web 同版本、同主题、同数据、同尺寸的真实组件与产品覆写，检查字体/行高、颜色、alpha、间距、边框、阴影、圆角、图标、动画。字体必须使用实际字体资产并验证 fallback；CSS OKLCH 转 Flutter 色彩需要比较最终渲染值。
 
@@ -52,7 +52,7 @@ Preview 不依赖服务端或原生插件，避免 dart:io/ffi 的传递依赖�
 
 | 范围 | SDK Preview 与交互 | 定向验证 | 原生/未覆盖 |
 | --- | --- | --- | --- |
-| RaftAttachmentCard | attachment_previews.dart 的 attachmentPreview，经 RaftPreviews 生成 Brutal light、Elegant light、Elegant dark；打开/下载/分享/错误重试回调与无操作按钮的 exportMode | 三主题打开/下载、48px 目标、上传时可编辑、exportMode callback；App 撤权/宿主消失/迟到 bytes/关闭缓存清理 | GTK/X11 与 Android DocumentsUI 真实选择/保存/取消；Linux 主应用图片检查点已通过。历史 Android 6ab 完整主运行通过；系统文件查看器打开断言未证明 |
+| RaftAttachmentCard | attachment_previews.dart 的 attachmentPreview，经 RaftPreviews 生成 light、dark；打开/下载/分享/错误重试回调与无操作按钮的 exportMode | light/dark 打开/下载、48px 目标、上传时可编辑、exportMode callback；App 撤权/宿主消失/迟到 bytes/关闭缓存清理 | GTK/X11 与 Android DocumentsUI 真实选择/保存/取消；Linux 主应用图片检查点已通过。历史 Android 6ab 完整主运行通过；系统文件查看器打开断言未证明 |
 | PNG/文件分享与接收 | 纯 PNG review/消息选择组件由独立组件验收覆盖；平台 FileProvider/chooser 没有浏览器 SDK Preview | 私有 lease、fresh scope、迟到读取、草稿追加/取消、grant/path/数量边界 | Android 独立系统 chooser/receiver/ContentResolver 实际 bytes 与 URL 接收通过；Linux 真实保存。主应用新版本分享/接收完整链路待验收 |
 | 通知/内容 URI | 产品设置复用现有 RaftPanel/表单组件；原生通知 daemon、系统 permission 和 URI 转发不属于纯 UI Preview | scope/persistent preference/restart/race、fresh message routing、body/credential stripping | 隔离 Android 权限拒绝/允许、通知栏点击、warm/cold URI；Linux X11/private DBus popup 与 GLib 转发通过。Linux 服务端 desktop push 不支持；历史主应用仅验收在线 Socket；后台冷进程兜底另见 android-background-evidence.md |
 | Fleet 私有页/操作 | 复用既有 RaftPanel/表单/菜单；本轮无新增纯 raft_ui 组件 | 五项同代账户/角色、迟到目录/凭证/文件、socket 删除与 HTTP 删除顺序回归通过 | Linux 01:49:11 完整主运行的 CRUD/inspection/runtime 检查点通过；历史 Android 6ab 源码整轮已通过；Linux同源码整轮已通过（6ab功能基线）。凭证与权限回归不由 Preview 代替 |

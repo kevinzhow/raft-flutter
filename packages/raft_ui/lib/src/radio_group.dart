@@ -1,17 +1,14 @@
 // raft-ui `RadioGroup` / `RadioGroupItem` / `RadioGroupIndicator`: a grid of round options for choosing one of a few
 // answers. The item is a 20px circle (`border-line-strong bg-layer-card`, `focus-visible:shadow-focus`) with an 8px dot
 // when it is the chosen one; the `<label>` around it makes the whole row the hit area. Arrow keys move the choice.
-// The look comes from the generated `radioGroup` recipe (the frozen 0.5.52 set for Elegant and Brutal).
+// The look comes from the generated `radioGroup` recipe.
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart' show SemanticsRole;
 import 'package:flutter/services.dart';
 
 import 'design_primitives.dart';
-import 'dialog_card.dart' show raftRecipeThemeOf;
 import 'recipe_surface.dart';
 import 'recipes/radio_group.g.dart';
-import 'recipes/recipe_runtime.dart';
-import 'recipes/token_binding.dart' show RaftRecipeTokens;
 import 'space.dart';
 import 'theme.dart';
 
@@ -92,24 +89,19 @@ class _RaftRadioGroupState<T> extends State<RaftRadioGroup<T>> {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    final root = t.isRaftLook
-        ? RaftRadioGroupRecipe.resolve(
-            theme: t.recipeTheme,
-            states: t.recipeStates(
-              responsive: true,
-              extra: [if (widget.onChanged == null) 'data-disabled'],
-            ),
-            tokens: t.recipeTokens,
-          ).root
-        : null;
+    final root = RaftRadioGroupRecipe.resolve(
+      states: t.recipeStates(
+        responsive: true,
+        extra: [if (widget.onChanged == null) 'data-disabled'],
+      ),
+      tokens: t.recipeTokens,
+    ).root;
     Widget rows = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
-      spacing: widget.spacing ?? root?.rowGap ?? RaftSpace.x2,
+      spacing: widget.spacing ?? root.rowGap ?? RaftSpace.x2,
       children: widget.children,
     );
-    if (root != null) {
-      rows = RaftRecipeBox(style: root, tokens: t.recipeTokens, child: rows);
-    }
+    rows = RaftRecipeBox(style: root, tokens: t.recipeTokens, child: rows);
     return _RadioScope<T>(
       group: this,
       value: widget.value,
@@ -193,9 +185,8 @@ class _RaftRadioGroupItemState<T> extends State<RaftRadioGroupItem<T>> {
         builder: (context, st) {
           final t = RaftTokens.of(context);
           Widget? label = widget.child;
-          if (label != null && t.isRaftLook) {
+          if (label != null) {
             final recipe = RaftRadioGroupRecipe.resolve(
-              theme: t.recipeTheme,
               states: t.recipeStates(
                 responsive: true,
                 extra: [if (!enabled) 'data-disabled'],
@@ -256,7 +247,6 @@ class RaftRadioMark extends StatelessWidget {
     final t = RaftTokens.of(context);
     final rt = t.recipeTokens;
     final s = RaftRadioGroupRecipe.resolve(
-      theme: raftRecipeThemeOf(t),
       states: t.recipeStates(
         responsive: true,
         focusVisible: focusVisible,
@@ -267,7 +257,6 @@ class RaftRadioMark extends StatelessWidget {
       tokens: rt,
     );
     final item = s.item, dot = s.dot;
-    if (!t.isRaftLook) return _frozenRadioMark(item, dot, checked, rt);
     return ExcludeSemantics(
       child: RaftRecipeBox(
         style: item,
@@ -277,27 +266,4 @@ class RaftRadioMark extends StatelessWidget {
       ),
     );
   }
-}
-
-/// The frozen Elegant and Brutal circle: the recipe decoration of the pre-0.7.0 radio, no focus ring.
-Widget _frozenRadioMark(
-  RaftSlotStyle item,
-  RaftSlotStyle dot,
-  bool checked,
-  RaftRecipeTokens rt,
-) {
-  final size = item.width ?? 14.0;
-  return Container(
-    width: size,
-    height: item.height ?? size,
-    alignment: Alignment.center,
-    decoration: item.decoration(rt),
-    child: checked
-        ? Container(
-            width: dot.width ?? 6,
-            height: dot.height ?? 6,
-            decoration: dot.decoration(rt),
-          )
-        : null,
-  );
 }

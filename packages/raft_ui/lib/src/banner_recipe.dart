@@ -31,6 +31,7 @@ RaftBannerRecipeStyle raftBannerSlots(
         t.recipeTokens,
       ),
       action: source.action,
+      close: source.close,
     );
   // raft-ui `banner` sizes: `sm` px-3 py-2 gap-x-2 text-footnote (13/18),
   // `md` px-3.5 py-3, `lg` px-4 py-3.5; only `sm` changes the text.
@@ -130,5 +131,6 @@ RaftBannerRecipeStyle raftBannerSlots(
       t.recipeTokens,
     ),
     action: source.action,
+    close: source.close,
   );
 }

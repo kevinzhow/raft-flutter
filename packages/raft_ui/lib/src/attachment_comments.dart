@@ -1,8 +1,7 @@
 // Web AttachmentCommentsPanel.tsx: header ("Comments · file"), the
 // anchored comment cards, and the compact composer area with the pending
 // location-anchor chip. The app owns loading, posting and authority; this
-// file only renders. Classes are resolved from the TSX (brutal / elegant
-// pairs are cited per element).
+// file only renders. Classes are resolved from the TSX.
 import 'package:flutter/material.dart';
 
 import 'attachment_preview_shell.dart' show RaftCommentsSheetControls;
@@ -37,8 +36,7 @@ class RaftAttachmentCommentView {
 }
 
 /// `inline-flex items-center gap-1 border border-line-muted
-/// bg-layer-canvas-muted px-1.5 py-0.5 text-[10px] font-display font-bold`;
-/// brutal `border-black bg-brutal-stone/25 text-black`.
+/// bg-layer-canvas-muted px-1.5 py-0.5 text-[10px] font-display font-bold`.
 class RaftCommentAnchorChip extends StatelessWidget {
   const RaftCommentAnchorChip({
     super.key,
@@ -276,8 +274,8 @@ class RaftAttachmentCommentsPanel extends StatelessWidget {
   }
 }
 
-/// `rounded border border-line-muted bg-layer-panel px-2.5 py-2`; brutal
-/// `border-black/15 bg-white`. Header `flex items-center gap-1.5 pr-6`.
+/// `rounded border border-line-muted bg-layer-panel px-2.5 py-2`. Header
+/// `flex items-center gap-1.5 pr-6`.
 class _CommentCard extends StatelessWidget {
   const _CommentCard({required this.comment, required this.filename});
   final RaftAttachmentCommentView comment;
@@ -360,8 +358,8 @@ class _CommentCard extends StatelessWidget {
             ),
           ],
           const SizedBox(height: 4),
-          // `text-xs leading-relaxed text-foreground-muted`, brutal
-          // `text-black/80`, MarkdownContent density compact.
+          // `text-xs leading-relaxed text-foreground-muted`, MarkdownContent
+          // density compact.
           RaftMessageBody(
             content: c.content,
             // Source index.css disables selection inside its whole-card button.

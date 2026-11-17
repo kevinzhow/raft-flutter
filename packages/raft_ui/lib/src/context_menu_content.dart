@@ -39,8 +39,7 @@ class RaftContextMenuContentSeparator extends RaftContextMenuContentEntry {
 }
 
 /// raft-ui `ContextMenuContent` / `ContextMenuItem` / `ContextMenuSeparator`
-/// (the base-ui context menu recipe: brutal `border-2 border-black` popup with
-/// `py-2 px-3` rows and a `border-t-2` rule, elegant `rounded-md p-1`). The
+/// (the base-ui context menu recipe: `rounded-md p-1`). The
 /// width is the recipe's `min-w-48` or the widest row.
 class RaftContextMenuContent extends StatelessWidget {
   const RaftContextMenuContent({
@@ -56,7 +55,6 @@ class RaftContextMenuContent extends StatelessWidget {
     final t = RaftTokens.of(context);
     final resolver = RaftRecipeTokens(t);
     final content = RaftContextMenuRecipe.resolve(
-      theme: t.recipeTheme,
       states: t.recipeStates(responsive: true),
       tokens: resolver,
     ).content;
@@ -82,29 +80,10 @@ class RaftContextMenuContent extends StatelessWidget {
             child: ConstrainedBox(
               constraints: BoxConstraints(minWidth: content.minWidth ?? 192),
               child: IntrinsicWidth(
-                child: t.isRaftLook
-                    ? RaftPopoverSurface(
-                        surfaceStyle: content,
-                        child: _ContentList(children: children, gap: gap),
-                      )
-                    : RaftRecipeBox(
-                        style: content,
-                        tokens: resolver,
-                        clip: true,
-                        applyText: false,
-                        child: SingleChildScrollView(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              for (var i = 0; i < children.length; i++) ...[
-                                if (i > 0 && gap > 0) SizedBox(height: gap),
-                                children[i],
-                              ],
-                            ],
-                          ),
-                        ),
-                      ),
+                child: RaftPopoverSurface(
+                  surfaceStyle: content,
+                  child: _ContentList(children: children, gap: gap),
+                ),
               ),
             ),
           ),
@@ -142,13 +121,9 @@ class _Separator extends StatelessWidget {
     final t = RaftTokens.of(context);
     final resolver = RaftRecipeTokens(t);
     final style = RaftContextMenuRecipe.resolve(
-      theme: t.recipeTheme,
       states: t.recipeStates(responsive: true),
       tokens: resolver,
     ).separator;
-    if (!t.isRaftLook) {
-      return RaftRecipeBox(style: style, tokens: resolver, applyText: false);
-    }
     // `-mx-1 my-1 h-px bg-line-hairline`: the rule bleeds through the popup's
     // `p-1` inset to both edges (a recipe box would keep the margin inside).
     final margin = style.margin;
@@ -202,7 +177,6 @@ class _Item extends StatelessWidget {
         button: false,
         builder: (context, st) {
           final slot = RaftContextMenuRecipe.resolve(
-            theme: t.recipeTheme,
             states: t.recipeStates(
               responsive: true,
               hovered: st.hovered && enabled,
@@ -210,51 +184,22 @@ class _Item extends StatelessWidget {
               focusVisible: st.focusVisible,
               disabled: !enabled,
               extra: [
-                if (t.isRaftLook && !enabled) 'data-disabled',
-                if (t.isRaftLook && enabled && (st.hovered || st.focusVisible))
+                if (!enabled) 'data-disabled',
+                if (enabled && (st.hovered || st.focusVisible))
                   'data-highlighted',
               ],
             ),
             tokens: resolver,
           );
           final style = slot.item;
-          if (t.isRaftLook) {
-            return RaftMenuSlotRow(
-              label: item.label,
-              root: style,
-              tokens: resolver,
-              leading: item.glyph == null
-                  ? null
-                  // context-menu.mjs: `size-4`.
-                  : RaftIcon(item.glyph!, size: 16),
-            );
-          }
-          final color =
-              style.textStyle(resolver).color ??
-              DefaultTextStyle.of(context).style.color;
-          return RaftRecipeBox(
-            style: style,
+          return RaftMenuSlotRow(
+            label: item.label,
+            root: style,
             tokens: resolver,
-            width: double.infinity,
-            child: Row(
-              children: [
-                if (item.glyph != null) ...[
-                  SizedBox.square(
-                    dimension: 14,
-                    child: RaftIcon(item.glyph!, size: 14, color: color),
-                  ),
-                  SizedBox(width: style.columnGap ?? 8),
-                ],
-                Expanded(
-                  child: Text(
-                    item.label,
-                    maxLines: 1,
-                    softWrap: false,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
-            ),
+            leading: item.glyph == null
+                ? null
+                // context-menu.mjs: `size-4`.
+                : RaftIcon(item.glyph!, size: 16),
           );
         },
       ),

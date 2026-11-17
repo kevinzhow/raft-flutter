@@ -110,45 +110,4 @@ void main() {
       expect(tester.takeException(), isNull);
     });
   }
-
-  for (final (pack, dark) in raftThemeMatrix(
-    [
-      for (final pack in [elegantThemePackId, brutalThemePackId])
-        for (final dark in [false, true]) (pack, dark),
-    ],
-    look: (variant) => raftLookOf(variant.$1),
-    dark: (variant) => variant.$2,
-  )) {
-    testWidgets('$pack/$dark frozen popup widths remain unchanged', (
-      tester,
-    ) async {
-      _disposeMenu(tester);
-      await tester.pumpWidget(_app(pack, dark));
-      await tester.pumpAndSettle();
-      expect(tester.getSize(_menu('Row options')).width, 192);
-      await tester.tap(find.text('Move to section'));
-      await tester.pumpAndSettle();
-      expect(tester.getSize(_menu('Move target')).width, 224);
-      expect(tester.takeException(), isNull);
-    });
-
-    testWidgets('$pack/$dark source sidebar mount preserves frozen widths', (
-      tester,
-    ) async {
-      _disposeMenu(tester);
-      await tester.pumpWidget(
-        _app(pack, dark, width: 256, sidebar: true, heading: true),
-      );
-      await tester.pumpAndSettle();
-      expect(tester.getSize(_menu('Row options')).width, 256);
-      final label = find.text('Section label');
-      final paragraph = tester.renderObject<RenderParagraph>(label);
-      expect((paragraph.text as TextSpan).style!.fontSize, 10);
-      expect(tester.getSize(label).height, 15);
-      await tester.tap(find.text('Move to section'));
-      await tester.pumpAndSettle();
-      expect(tester.getSize(_menu('Move target')).width, 224);
-      expect(tester.takeException(), isNull);
-    });
-  }
 }

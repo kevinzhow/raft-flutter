@@ -5,14 +5,12 @@ import 'package:flutter/material.dart';
 import 'localization.dart';
 
 import 'components.dart';
-import 'dialog_card.dart' show RaftCloseButton;
 import 'dismiss_scope.dart';
 import 'form_presentation.dart';
 import 'overlays/dialog.dart';
 import 'settings_layout.dart' show RaftSpace;
 import 'error_presentation.dart';
 import 'theme.dart';
-import 'recipes/recipe_runtime.dart' show RaftRecipeSet;
 import 'design_primitives.dart';
 import 'icons.dart';
 
@@ -104,8 +102,7 @@ class RaftFieldError extends RaftUserError {
 /// close button pinned above, the fields scrolling, Cancel / submit pinned
 /// below the fields, above the keyboard) and a dialog card from 768, in the
 /// same route: crossing the breakpoint keeps the typed text, the focus and the
-/// caret. [showRaftDialog] presents the card at every width. Frozen looks keep
-/// their existing Material dialog renderer.
+/// caret. [showRaftDialog] presents the card at every width.
 class RaftFormDialog extends StatefulWidget {
   const RaftFormDialog({
     super.key,
@@ -441,7 +438,7 @@ class _RaftFormDialogState extends State<RaftFormDialog> {
   );
 
   /// The submit action in the phone sheet's head (Web `DialogCommit`, size
-  /// md); the frozen looks keep it in the footer.
+  /// md).
   Widget _commit() => RaftButton(
     label: busy && widget.busyLabel != null
         ? widget.busyLabel!
@@ -453,26 +450,18 @@ class _RaftFormDialogState extends State<RaftFormDialog> {
   );
 
   List<Widget> _actions() {
-    final legacy = RaftTokens.of(context).recipeSet == RaftRecipeSet.legacy;
     return [
-      if (legacy)
-        RaftTextButton(
-          label: widget.cancelLabel,
-          variant: RaftControlVariant.outline,
-          onPressed: busy ? null : () => Navigator.pop(context, false),
-        )
-      else
-        RaftButton(
-          label: widget.cancelLabel,
-          uiVariant: RaftButtonVariant.ghost,
-          uiSize: RaftButtonSize.lg,
-          onPressed: busy ? null : () => Navigator.pop(context, false),
-        ),
+      RaftButton(
+        label: widget.cancelLabel,
+        uiVariant: RaftButtonVariant.ghost,
+        uiSize: RaftButtonSize.lg,
+        onPressed: busy ? null : () => Navigator.pop(context, false),
+      ),
       RaftButton(
         label: busy && widget.busyLabel != null
             ? widget.busyLabel!
             : widget.submitLabel,
-        uiSize: legacy ? null : RaftButtonSize.lg,
+        uiSize: RaftButtonSize.lg,
         busy: busy,
         onPressed: _canSubmit ? submit : null,
         destructive: widget.destructive,
@@ -499,8 +488,7 @@ class _RaftFormDialogState extends State<RaftFormDialog> {
                 children: _actions(),
               ),
             )
-          : RaftTokens.of(context).recipeSet != RaftRecipeSet.legacy
-          ? RaftDialog.card(
+          : RaftDialog.card(
               title: widget.title,
               onClose: () => Navigator.pop(context, false),
               closeEnabled: !busy,
@@ -512,29 +500,6 @@ class _RaftFormDialogState extends State<RaftFormDialog> {
                 children: _actions(),
               ),
               child: _form(),
-            )
-          : AlertDialog(
-              title: Row(
-                children: [
-                  Expanded(child: Text(raftText(context, widget.title))),
-                  RaftCloseButton(
-                    onPressed: busy
-                        ? null
-                        : raftGuardedClose(
-                            context,
-                            () => Navigator.pop(context, false),
-                          ),
-                  ),
-                ],
-              ),
-              titlePadding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-              actionsPadding: const EdgeInsets.all(16),
-              content: SizedBox(
-                width: 480,
-                child: SingleChildScrollView(child: _form()),
-              ),
-              actions: _actions(),
             ),
     ),
   );

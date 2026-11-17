@@ -6,7 +6,6 @@ import 'package:raft_flutter/data/personal_presentation.dart';
 import 'package:raft_flutter/data/search_memory.dart';
 import 'package:raft_flutter/features/message_type_scale.dart';
 import 'package:raft_ui/raft_ui.dart';
-import 'package:raft_ui/test_themes.dart';
 
 class _Storage implements SearchMemoryStorage {
   final values = <String, String>{};
@@ -17,11 +16,7 @@ class _Storage implements SearchMemoryStorage {
 }
 
 void main() {
-  for (final id in raftThemeMatrix([
-    raftThemePackId,
-    elegantThemePackId,
-    brutalThemePackId,
-  ], look: raftLookOf)) {
+  for (final id in [raftThemePackId]) {
     testWidgets(
       '$id maps displayed tiers without rewriting stored preferences',
       (t) async {
@@ -35,7 +30,7 @@ void main() {
           final before = jsonEncode(disk.values);
           await t.pumpWidget(
             MaterialApp(
-              theme: raftTheme(pack: packForThemeId(id)),
+              theme: raftTheme(),
               home: PersonalPresentationScope(
                 store: store,
                 child: Builder(
@@ -52,9 +47,7 @@ void main() {
               ),
             ),
           );
-          final expected = (id == raftThemePackId
-              ? [14.0, 16.0, 18.0]
-              : [12.0, 14.0, 16.0])[i];
+          final expected = [14.0, 16.0, 18.0][i];
           expect(find.text('$expected'), findsOneWidget);
           expect(store.value.font, tier);
           expect(store.value.fontSize, [12, 14, 16][i]);

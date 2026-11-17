@@ -60,53 +60,6 @@ void main() {
     expect(t.binding.hasScheduledFrame, isFalse);
     await t.pumpWidget(const SizedBox());
   });
-
-  for (final look in [
-    (elegantThemePackId, false),
-    (elegantThemePackId, true),
-    (brutalThemePackId, false),
-  ]) {
-    testWidgets('frozen Material styles never mount another input $look', (
-      t,
-    ) async {
-      var count = 0;
-      await t.pumpWidget(
-        MaterialApp(
-          theme: raftTheme(pack: packForThemeId(look.$1), dark: look.$2),
-          home: Scaffold(
-            body: Column(
-              children: [
-                RaftButton.text(
-                  onPressed: () => count++,
-                  child: const Text('Text action'),
-                ),
-                RaftButton.outlined(
-                  onPressed: () => count++,
-                  child: const Text('Outline action'),
-                ),
-                RaftButton.iconAction(
-                  onPressed: () => count++,
-                  icon: const Icon(Icons.add),
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-      expect(find.byType(TextButton), findsNothing);
-      expect(find.byType(OutlinedButton), findsNothing);
-      expect(find.byType(IconButton), findsNothing);
-      expect(find.byType(InkWell), findsNothing);
-      expect(find.byType(RaftInteractive), findsNWidgets(3));
-      for (final button in find.byType(RaftButton).evaluate().toList()) {
-        await t.tap(find.byWidget(button.widget));
-      }
-      expect(count, 3, reason: 'Each canonical input activates exactly once.');
-      await t.pumpWidget(const SizedBox());
-      expect(t.takeException(), isNull);
-    });
-  }
-
   testWidgets('small icon aliases use the current Button icon size', (t) async {
     await t.pumpWidget(
       host(

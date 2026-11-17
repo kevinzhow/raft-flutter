@@ -6,7 +6,6 @@ import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/features/public_server_view.dart';
 import 'package:raft_flutter/data/source_time_formatter.dart';
 import 'package:raft_ui/raft_ui.dart';
-import 'package:raft_ui/test_themes.dart';
 
 typedef _Route = FutureOr<Object?> Function(
   Map<String, dynamic>? query,
@@ -107,8 +106,8 @@ Map<String, _Route> _routes({
   'POST $_base/join-as-guest': (_, _) => {'ok': true},
 };
 
-Widget _host(Widget child, {String themeId = raftThemePackId}) => MaterialApp(
-  theme: raftTheme(pack: packForThemeId(themeId)),
+Widget _host(Widget child) => MaterialApp(
+  theme: raftTheme(),
   home: Scaffold(body: child),
 );
 
@@ -121,7 +120,6 @@ Future<void> _mount(
   PublicServerAccount? account,
   String? channel,
   Size size = const Size(1280, 800),
-  String themeId = raftThemePackId,
 }) async {
   t.view.physicalSize = size;
   t.view.devicePixelRatio = 1;
@@ -137,7 +135,6 @@ Future<void> _mount(
         onRegister: onRegister ?? () {},
         onUnavailable: onUnavailable ?? () {},
       ),
-      themeId: themeId,
     ),
   );
   await t.pumpAndSettle();
@@ -146,46 +143,35 @@ Future<void> _mount(
 void main() {
   setUpAll(initializeSourceTimeFormatting);
   _loadOlderTests();
-  for (final themeId in raftThemeMatrix([
-    raftThemePackId,
-    elegantThemePackId,
-    brutalThemePackId,
-  ], look: raftLookOf)) {
-    testWidgets('$themeId preserves account time and offers no guest join', (
+  testWidgets('raft preserves account time and offers no guest join', (
+    t,
+  ) async {
+    final client = _PublicClient(
+      _routes(),
+      user: {
+        'id': 'u1',
+        'preferredTimezone': 'Asia/Kathmandu',
+        'preferredTimeFormat': '24h',
+      },
+    );
+    await _mount(
       t,
-    ) async {
-      final client = _PublicClient(
-        _routes(),
-        user: {
-          'id': 'u1',
-          'preferredTimezone': 'Asia/Kathmandu',
-          'preferredTimeFormat': '24h',
-        },
-      );
-      await _mount(
-        t,
-        client,
-        account: PublicServerAccount(servers: const [], onSelect: (_) {}),
-        themeId: themeId,
-      );
-      addTearDown(() async {
-        await t.pumpWidget(const SizedBox.shrink());
-        await t.pumpAndSettle();
-      });
-      final timestamp = t
-          .widget<RaftMessageTile>(
-            find.byKey(const ValueKey('public-message-m1')),
-          )
-          .timestamp;
-      expect(find.byKey(const ValueKey('public-join-guest')), findsNothing);
-      expect(
-        timestamp.endsWith('14:57'),
-        isTrue,
-        reason: '$themeId "$timestamp"',
-      );
-      expect(client.calls, isNot(contains('POST $_base/join-as-guest')));
+      client,
+      account: PublicServerAccount(servers: const [], onSelect: (_) {}),
+    );
+    addTearDown(() async {
+      await t.pumpWidget(const SizedBox.shrink());
+      await t.pumpAndSettle();
     });
-  }
+    final timestamp = t
+        .widget<RaftMessageTile>(
+          find.byKey(const ValueKey('public-message-m1')),
+        )
+        .timestamp;
+    expect(find.byKey(const ValueKey('public-join-guest')), findsNothing);
+    expect(timestamp.endsWith('14:57'), isTrue, reason: 'raft "$timestamp"');
+    expect(client.calls, isNot(contains('POST $_base/join-as-guest')));
+  });
   testWidgets(
     'signed out: channels, the first channel messages and the view-only banner',
     (t) async {

@@ -34,11 +34,7 @@ void main() {
   for (final (id, dark, heading, sans, mono) in raftThemeMatrix([
     (raftThemePackId, false, 'SpaceGrotesk', 'SpaceGrotesk', 'SpaceMono'),
     (raftThemePackId, true, 'SpaceGrotesk', 'SpaceGrotesk', 'SpaceMono'),
-    (elegantThemePackId, false, 'Inter', 'Geist', 'GeistMono'),
-    (elegantThemePackId, true, 'Inter', 'Geist', 'GeistMono'),
-    (brutalThemePackId, false, 'HankenGrotesk', 'HankenGrotesk', 'GeistMono'),
-    (brutalThemePackId, true, 'Inter', 'Geist', 'GeistMono'),
-  ], look: (v) => raftLookOf(v.$1))) {
+  ])) {
     for (final role in ['heading', 'sans', 'mono']) {
       testWidgets('$id dark=$dark $role draws the bundled glyphs', (t) async {
         await t.runAsync(loadParityFonts);

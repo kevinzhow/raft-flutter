@@ -17,53 +17,38 @@ class RaftAppearanceSectionRecipe {
   static const gapAbove = EdgeInsets.only(top: gap);
   BoxDecoration get card => RaftSettingsCard.decoration(t);
 
-  /// v1.21.23 AppearanceSection (`text-subhead font-semibold` title,
+  /// v1.21.23 AppearanceSection: `text-subhead font-semibold` title,
   /// `text-footnote text-foreground-muted` description, `text-caption
-  /// text-foreground-hint` note) or the a57b9dab 14/12/11 hierarchy.
-  bool get web => t.option('appearance.layout', or: 'web23') == 'web23';
-  TextStyle get heading => web
-      ? RaftTypography.body(
-          t,
-          size: t.typeSlot('subhead').fontSize,
-          line: t.typeSlot('subhead').lineHeight,
-          weight: FontWeight.w600,
-          color: t.colors['foreground'],
-        )
-      : RaftTypography.body(t, size: 14, line: 20, weight: FontWeight.w700);
-  TextStyle get description => web
-      ? RaftTypography.body(
-          t,
-          size: t.typeSlot('footnote').fontSize,
-          line: t.typeSlot('footnote').lineHeight,
-          color: t.muted,
-        )
-      : RaftTypography.body(t, size: 12, line: 16, color: t.muted);
-  TextStyle get annotation => web
-      ? RaftTypography.body(
-          t,
-          size: t.typeSlot('caption').fontSize,
-          line: t.typeSlot('caption').lineHeight,
-          color: t.colors['foreground-hint'],
-        )
-      : RaftTypography.body(
-          t,
-          size: 11,
-          line: 16,
-          color: t.muted,
-          weight: FontWeight.w700,
-        );
+  /// text-foreground-hint` note.
+  TextStyle get heading => RaftTypography.body(
+    t,
+    size: t.typeSlot('subhead').fontSize,
+    line: t.typeSlot('subhead').lineHeight,
+    weight: FontWeight.w600,
+    color: t.colors['foreground'],
+  );
+  TextStyle get description => RaftTypography.body(
+    t,
+    size: t.typeSlot('footnote').fontSize,
+    line: t.typeSlot('footnote').lineHeight,
+    color: t.muted,
+  );
+  TextStyle get annotation => RaftTypography.body(
+    t,
+    size: t.typeSlot('caption').fontSize,
+    line: t.typeSlot('caption').lineHeight,
+    color: t.colors['foreground-hint'],
+  );
 
   /// The "Preview" label above the message sample: v1.21.23 draws it
-  /// `text-footnote font-bold` (13/18 700), a57b9dab with the annotation style.
-  TextStyle get previewLabel => web
-      ? RaftTypography.body(
-          t,
-          size: t.typeSlot('footnote').fontSize,
-          line: t.typeSlot('footnote').lineHeight,
-          weight: FontWeight.w700,
-          color: t.colors['foreground-hint'],
-        )
-      : annotation;
+  /// `text-footnote font-bold` (13/18 700).
+  TextStyle get previewLabel => RaftTypography.body(
+    t,
+    size: t.typeSlot('footnote').fontSize,
+    line: t.typeSlot('footnote').lineHeight,
+    weight: FontWeight.w700,
+    color: t.colors['foreground-hint'],
+  );
 }
 
 class RaftAppearanceSection extends StatelessWidget {
@@ -161,35 +146,10 @@ class RaftAppearanceSection extends StatelessWidget {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          if (r.web)
-            // Web `Card className="mb-6 p-4"`: the Light / Dark / System
-            // preview cards. The Raft / Elegant / Brutal look picker is a
-            // product addition and sits after the Web sections (below).
-            themeCard()
-          else ...[
-            card([
-              title(
-                'Theme',
-                'Choose the visual style for this browser. Your choice is saved on this device.',
-              ),
-              const SizedBox(height: RaftSpace.x3),
-              RaftAppearancePicker(
-                appearance: appearance,
-                onChanged: onAppearance,
-              ),
-            ]),
-            if (NativeAppIcon.instance.mobile) ...[
-              const SizedBox(height: RaftAppearanceSectionRecipe.gap),
-              const RaftSettingsSectionHeader(
-                label: 'App icon',
-                glyph: RaftGlyph.smartphone,
-              ),
-              const AppIconSettingsSection(),
-            ],
-          ],
-          SizedBox(
-            height: r.web ? RaftSpace.x6 : RaftAppearanceSectionRecipe.gap,
-          ),
+          // Web `Card className="mb-6 p-4"`: the Light / Dark / System
+          // preview cards.
+          themeCard(),
+          const SizedBox(height: RaftSpace.x6),
           const RaftSettingsSectionHeader(
             label: 'Appearance',
             glyph: RaftGlyph.type,
@@ -201,7 +161,6 @@ class RaftAppearanceSection extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             RaftSegmentedControl<String>(
-              legacyStyle: RaftSegmentedStyle.tabs,
               value: value.font,
               label: 'Message font size',
               items: [
@@ -296,7 +255,6 @@ class RaftAppearanceSection extends StatelessWidget {
                     ),
                     RaftSegmentedControl<RaftRailSide>(
                       key: const ValueKey('appearance-rail-side'),
-                      legacyStyle: RaftSegmentedStyle.tabs,
                       value: railSide!.side,
                       label: raftText(context, 'Navigation rail'),
                       items: [
@@ -319,31 +277,15 @@ class RaftAppearanceSection extends StatelessWidget {
                 },
               ),
             ),
-          // Product additions that Web v1.21.23 has no counterpart for sit after
-          // its sections: the Raft / Elegant / Brutal look picker and, on a
-          // phone, the app icon.
-          if (r.web) ...[
+          // A product addition that Web v1.21.23 has no counterpart for sits
+          // after its sections: on a phone, the app icon.
+          if (NativeAppIcon.instance.mobile) ...[
             const SizedBox(height: RaftAppearanceSectionRecipe.gap),
-            card([
-              title(
-                'Look',
-                'Choose the visual style for this browser. Your choice is saved on this device.',
-              ),
-              const SizedBox(height: RaftSpace.x3),
-              RaftAppearancePicker(
-                appearance: appearance,
-                onChanged: onAppearance,
-                showMode: false,
-              ),
-            ]),
-            if (NativeAppIcon.instance.mobile) ...[
-              const SizedBox(height: RaftAppearanceSectionRecipe.gap),
-              const RaftSettingsSectionHeader(
-                label: 'App icon',
-                glyph: RaftGlyph.smartphone,
-              ),
-              const AppIconSettingsSection(),
-            ],
+            const RaftSettingsSectionHeader(
+              label: 'App icon',
+              glyph: RaftGlyph.smartphone,
+            ),
+            const AppIconSettingsSection(),
           ],
         ],
       );

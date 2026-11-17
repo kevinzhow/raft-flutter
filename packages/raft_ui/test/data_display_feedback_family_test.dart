@@ -5,7 +5,7 @@ import 'package:raft_ui/raft_ui.dart';
 
 /// The feedback / text part of the data-display families at raft-ui 0.95.3
 /// (Web v1.24): Banner, EmptyState, Progress, TextLink, SectionEyebrow /
-/// SectionHeader. Raft look only; the frozen looks keep their own drawing.
+/// SectionHeader.
 ///
 /// The three input contexts: a desktop window with a mouse (1024x768 Linux),
 /// an unfolded foldable by touch (856x944 Android) and a narrow desktop window

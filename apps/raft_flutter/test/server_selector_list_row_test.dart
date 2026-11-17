@@ -19,7 +19,6 @@ final _servers = [
 
 Future<void> _mount(
   WidgetTester t, {
-  String look = raftThemePackId,
   bool dark = false,
   Size size = const Size(856, 944),
   TargetPlatform platform = TargetPlatform.android,
@@ -30,10 +29,7 @@ Future<void> _mount(
   t.view.devicePixelRatio = 1;
   await t.pumpWidget(
     MaterialApp(
-      theme: raftTheme(
-        pack: packForThemeId(look),
-        dark: dark,
-      ).copyWith(platform: platform),
+      theme: raftTheme(dark: dark).copyWith(platform: platform),
       home: GlobalServerSelector(
         servers: _servers,
         user: RaftRecord({'id': 'owner', 'email': 'owner@parity.invalid'}),
@@ -157,22 +153,5 @@ void main() {
         expect(t.takeException(), isNull);
       },
     );
-  }
-  for (final mode in [
-    (elegantThemePackId, false),
-    (elegantThemePackId, true),
-    (brutalThemePackId, false),
-  ]) {
-    testWidgets('Frozen selector keeps its original option cards $mode', (
-      t,
-    ) async {
-      addTearDown(t.view.reset);
-      await _mount(t, look: mode.$1, dark: mode.$2);
-      expect(find.byType(RaftListRowGroup), findsNothing);
-      expect(find.byType(RaftCard), findsNWidgets(2));
-      expect(find.byType(RaftListRow), findsNothing);
-      expect(find.byKey(const ValueKey('global-server-alpha')), findsOneWidget);
-      expect(t.takeException(), isNull);
-    });
   }
 }

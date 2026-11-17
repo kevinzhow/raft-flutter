@@ -59,7 +59,7 @@ Future<RootFixture> mount(WidgetTester t, Size dp, String path) async {
     'hasNewer': false,
   };
   f.overrides['POST /channels/dm1/read'] = (_) => {};
-  await f.mount(t, 'elegant-light', dp.width, uri: Uri.parse(path));
+  await f.mount(t, 'light', dp.width, uri: Uri.parse(path));
   t.view.devicePixelRatio = dpr;
   t.view.physicalSize = dp * dpr;
   const top = 40 * dpr;

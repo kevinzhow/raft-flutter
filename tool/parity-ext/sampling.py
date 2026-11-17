@@ -1,7 +1,7 @@
 """Theme sampling for the parity extension suite (owner decision 2026-10-11).
 
-The DEFAULT theme (brutal-light) runs every case. elegant-light and
-elegant-dark only re-skin it, so each of them keeps 1-2 representative cases
+The DEFAULT theme name (brutal-light) runs every case. The names elegant-light and
+elegant-dark carry only the brightness (every name renders the Raft look), so each of them keeps 1-2 representative cases
 per surface (surface = first three id segments, `components.<area>.<surface>`):
 
   1. the FIRST case of the surface in builder order (the default variant);

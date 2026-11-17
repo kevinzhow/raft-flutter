@@ -5,7 +5,6 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:raft_theme/raft_theme.dart';
 import 'package:raft_ui/mobile_nav_server_previews.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_ui/test_themes.dart';
@@ -183,45 +182,6 @@ void main() {
       );
       expect(find.text('Raft Studio'), findsOneWidget);
     });
-
-    testWidgets(
-      'also joins the floating capsule as one more cell',
-      skip: raftLookSkip(raftLookElegant),
-      (t) async {
-        await _size(t, const Size(390, 844));
-        final fx = _Fixture();
-        await t.pumpWidget(
-          MaterialApp(
-            theme: raftTheme(pack: builtInElegantTheme),
-            home: Scaffold(
-              body: Align(
-                alignment: Alignment.bottomCenter,
-                child: RaftMobileNav(
-                  items: _items,
-                  selectedId: 'chat',
-                  onSelected: (_) {},
-                  trailing: RaftMobileNavServerTab(
-                    label: 'Raft Studio',
-                    avatar: const SizedBox.expand(),
-                    contentBuilder: (context, close) => _content(fx),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        );
-        final capsule = t.getRect(
-          find.byKey(const ValueKey('mobile-nav-source-capsule')),
-        );
-        final tab = t.getRect(_tab);
-        expect(capsule.width, 8 + 5 * 44 + 4 * 8);
-        expect(capsule.contains(tab.center), isTrue);
-        expect(
-          tab.left,
-          greaterThan(t.getRect(find.byType(RaftControl).last).left - 1),
-        );
-      },
-    );
   });
 
   for (final (size, platform) in [

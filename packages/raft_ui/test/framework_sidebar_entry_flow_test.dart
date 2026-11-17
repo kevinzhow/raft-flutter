@@ -4,11 +4,7 @@ import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_ui/test_themes.dart';
 
 void main() {
-  for (final pack in raftThemeMatrix([
-    raftThemePackId,
-    elegantThemePackId,
-    brutalThemePackId,
-  ], look: raftLookOf)) {
+  for (final pack in raftThemeMatrix([raftThemePackId])) {
     for (final dark in [false, true]) {
       testWidgets('$pack/$dark adjacent entries retain CSS flow margins', (
         t,
@@ -62,12 +58,6 @@ void main() {
                 t.getRect(controls.at(i - 1)).bottom,
             gap,
           );
-        }
-        // Frozen Elegant/Brutal have only a 4px bottom margin. Their original
-        // bounds stay unchanged when the host opts into block flow.
-        if (pack != raftThemePackId) {
-          expect(top, 0);
-          expect(bottom, 4);
         }
         await t.tap(controls.at(1));
         expect(activity, 1);

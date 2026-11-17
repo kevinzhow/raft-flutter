@@ -218,10 +218,6 @@ Future<void> main() async {
   SharedPreferences.setMockInitialValues({
     'raft.origin': client.origin,
     'raft.mode': 'light',
-    'raft.light': const String.fromEnvironment(
-      'AP_THEME',
-      defaultValue: 'brutal',
-    ),
     MobileTabbarStore.preferenceKey: tabs.encode(),
   });
   Timer.periodic(const Duration(seconds: 3), (_) {

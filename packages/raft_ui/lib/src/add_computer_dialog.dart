@@ -10,8 +10,6 @@ import 'package:flutter/material.dart';
 
 import '../raft_ui.dart';
 
-import 'package:raft_theme/recipes.dart' show RaftRecipeSet;
-
 class RaftAddComputerConnection {
   const RaftAddComputerConnection({
     required this.hostname,
@@ -56,31 +54,18 @@ class RaftAddComputerDialog extends StatefulWidget {
   /// The registered Computer once it is online (switches to the last step).
   final RaftAddComputerConnection? connected;
 
-  /// Web `Modal`: `bg-layer-backdrop theme-brutal:bg-black/60`, not
-  /// dismissed by the backdrop.
+  /// Web `Modal`: `bg-layer-backdrop`, not dismissed by the backdrop.
   static Future<void> show(BuildContext context, WidgetBuilder builder) {
-    final t = RaftTokens.of(context);
     return showRaftDialog<void>(
-      legacyMaterial: true,
       context: context,
       barrierDismissible: false,
-      legacyBarrierColor: t.colors['layer-backdrop'],
       builder: builder,
     );
   }
 
   /// The same backdrop painted inline (fixture captures of the open modal).
   static Widget backdrop(BuildContext context, Widget dialog) {
-    final t = RaftTokens.of(context);
-    if (t.recipeSet != RaftRecipeSet.legacy) {
-      return RaftDialogBackdrop(child: dialog);
-    }
-    return Stack(
-      children: [
-        Positioned.fill(child: ColoredBox(color: t.colors['layer-backdrop']!)),
-        dialog,
-      ],
-    );
+    return RaftDialogBackdrop(child: dialog);
   }
 
   @override
@@ -450,9 +435,9 @@ class _RaftComputerCommandGuideState extends State<RaftComputerCommandGuide> {
     final windows = platform == 'windows';
     // Tailwind `sm` (640px viewport); a guide in a host too narrow for the
     // heading beside the platform control stacks them instead of overflowing.
-    // The 0.7.0 segmented control is wider (12px item padding, 14px semibold), so
-    // the Raft look stacks earlier; the frozen looks keep 380.
-    final stackBelow = t.recipeSet == RaftRecipeSet.legacy ? 380 : 560;
+    // The 0.7.0 segmented control is wider (12px item padding, 14px semibold),
+    // so the guide stacks earlier.
+    const stackBelow = 560;
     final narrow =
         MediaQuery.sizeOf(context).width < 640 || available < stackBelow;
     final heading = Row(
@@ -495,7 +480,6 @@ class _RaftComputerCommandGuideState extends State<RaftComputerCommandGuide> {
             if (narrow) heading else Expanded(child: heading),
             SizedBox(width: narrow ? 0 : 12, height: narrow ? 8 : 0),
             RaftSegmentedControl<String>(
-              legacyStyle: RaftSegmentedStyle.recipe,
               value: platform,
               onChanged: widget.onPlatform,
               items: const [

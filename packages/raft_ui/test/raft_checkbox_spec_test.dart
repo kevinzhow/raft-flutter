@@ -34,7 +34,6 @@ RaftSlotStyle _indicator(
 }) {
   final t = _tokens(dark);
   return RaftCheckboxIndicatorRecipe.resolve(
-    theme: t.recipeTheme,
     shape: circle
         ? RaftCheckboxIndicatorRecipeShape.circle
         : RaftCheckboxIndicatorRecipeShape.square,
@@ -292,7 +291,6 @@ void main() {
         ];
         expect(rings(), isEmpty);
         final idle = RaftCheckboxRecipe.resolve(
-          theme: t.recipeTheme,
           tokens: t.recipeTokens,
           states: t.recipeStates(),
         ).root;
@@ -411,10 +409,7 @@ void main() {
       );
       expect(_indicator(dark, circle: true).classes, contains('rounded-full'));
       final t = _tokens(dark);
-      final root = RaftCheckboxRecipe.resolve(
-        theme: t.recipeTheme,
-        tokens: t.recipeTokens,
-      ).root;
+      final root = RaftCheckboxRecipe.resolve(tokens: t.recipeTokens).root;
       expect(
         root.classes,
         containsAll([

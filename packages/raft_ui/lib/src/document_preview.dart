@@ -10,7 +10,6 @@ import 'attachment_comment_scope.dart';
 import 'document_anchors.dart';
 import 'markdown_outline.dart';
 import 'message_body.dart';
-import 'design_primitives.dart';
 import 'message_content_tokens.dart';
 import 'text_measure.dart';
 import 'theme.dart';
@@ -37,7 +36,7 @@ const raftLazyCsvRows = 200;
 ///
 /// Web `AttachmentPreviewShell` panes: `TextPreviewPane`, `CsvPreviewPane`,
 /// `XlsxPreviewPane` and `MarkdownPreviewPane`, each on the shell's canvas
-/// surface (`bg-layer-canvas-muted`, brutal `bg-brutal-cream/45`).
+/// surface (`bg-layer-canvas-muted`).
 class RaftDocumentPreview extends StatefulWidget {
   const RaftDocumentPreview({
     super.key,
@@ -520,7 +519,7 @@ class _RaftDocumentPreviewState extends State<RaftDocumentPreview> {
       fontWeight: FontWeight.w700,
       color: t.muted,
     );
-    // `shadow-raft-sm theme-brutal:shadow-brutal-sm`
+    // `shadow-raft-sm`
     final shadow = t.themeShadows.sm.outer;
     Widget pane(Widget child) => ColoredBox(
       color: kind == 'markdown' ? recipe.background : recipe.background,
@@ -768,29 +767,7 @@ class _RaftDocumentPreviewState extends State<RaftDocumentPreview> {
                   ],
                 ),
               ),
-              if (isXlsx && sheets.length > 1)
-                if (t.isRaftLook)
-                  _xlsxTabs(sheets)
-                else
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: Wrap(
-                      children: [
-                        for (var i = 0; i < sheets.length; i++)
-                          Padding(
-                            padding: const EdgeInsets.only(right: 4),
-                            child: RaftControl(
-                              kind: RaftControlKind.tab,
-                              selected: sheet == i,
-                              shadow: false,
-                              semanticLabel: '${sheets[i]['name'] ?? ''}',
-                              onPressed: () => setState(() => sheet = i),
-                              child: Text('${sheets[i]['name'] ?? ''}'),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
+              if (isXlsx && sheets.length > 1) _xlsxTabs(sheets),
               if (empty)
                 _PaneBox(
                   clipBehavior: recipe.raft ? Clip.antiAlias : Clip.none,

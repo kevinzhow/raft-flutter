@@ -10,7 +10,7 @@ This is an implementation/provenance audit, not pixel acceptance. Every scoped p
 
 1. The main problem is incomplete component/constraint extraction, not absent colors. Generic Sidebar26/18 must never be substituted for mounted Sidebar8/12. The new explicit variants centralize both and source mobile overlay clearance.
 2. Source segmented controls wrap inside available width. Shared Wrap replaces unbounded Row; option keyboard order is retained. Avoid solving the same failure by shortening each page label.
-3. Theme rail glyph is18Br/16El. Source visual bounds and native48 hit rectangles are separate; Elegant capsule208×52 can contain48 targets in existing gaps. Compact Brutal31 visual cannot contain48 targets at zero inset; its native flow difference remains declared.
+3. Source visual bounds and native48 hit rectangles are separate.
 4. Shared content alignment was a constraint error: correct sizes still painted at Stack topStart. Centering the face content fixes all consumers without screenshot offsets.
 5. The Mermaid toolbar now has one measured width/target budget; mounted section count/disclosure/action geometry uses a shared recipe. Remaining consolidation: source-based generic Button icon-side inset variants; selection/menu compact rules from resolved CSS; product code/pre binding; responsive dialog wrapper. No blanket font/spacing compensation.
 

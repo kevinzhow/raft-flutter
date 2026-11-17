@@ -4,13 +4,9 @@ import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_ui/test_themes.dart';
 
 // db5e399f AvatarSlot sidebarList / GravatarAvatar: the fallback is User,
-// with the 2xs leaf's 10px glyph. The frozen packs keep their identity fallback.
+// with the 2xs leaf's 10px glyph.
 void main() {
-  for (final pack in raftThemeMatrix([
-    raftThemePackId,
-    elegantThemePackId,
-    brutalThemePackId,
-  ], look: raftLookOf)) {
+  for (final pack in raftThemeMatrix([raftThemePackId])) {
     for (final dark in [false, true]) {
       testWidgets('$pack/$dark sidebar fallback and other contexts', (t) async {
         for (final gravatar in [false, true]) {
@@ -43,33 +39,17 @@ void main() {
               ),
             );
             final sidebar = find.byKey(const ValueKey('sidebar'));
-            if (pack == raftThemePackId) {
-              final glyph = find.descendant(
-                of: sidebar,
-                matching: find.byType(RaftIcon),
-              );
-              expect(glyph, findsOneWidget);
-              expect(t.widget<RaftIcon>(glyph).glyph, RaftGlyph.user);
-              expect(t.widget<RaftIcon>(glyph).size, 10);
-            } else {
-              expect(
-                find.descendant(
-                  of: sidebar,
-                  matching: find.byType(
-                    name.isEmpty ? RaftAvatarPlaceholder : RaftAvatarInitials,
-                  ),
-                ),
-                findsOneWidget,
-              );
-            }
+            final glyph = find.descendant(
+              of: sidebar,
+              matching: find.byType(RaftIcon),
+            );
+            expect(glyph, findsOneWidget);
+            expect(t.widget<RaftIcon>(glyph).glyph, RaftGlyph.user);
+            expect(t.widget<RaftIcon>(glyph).size, 10);
             expect(
               find.descendant(
                 of: find.byKey(const ValueKey('panel')),
-                matching: find.byType(
-                  pack == raftThemePackId || name.isEmpty
-                      ? RaftAvatarPlaceholder
-                      : RaftAvatarInitials,
-                ),
+                matching: find.byType(RaftAvatarPlaceholder),
               ),
               findsOneWidget,
             );

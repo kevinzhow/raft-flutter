@@ -218,7 +218,7 @@ Finder get viewer => find.byType(RaftVideoViewer);
 RaftVideoViewer viewerOf(WidgetTester t) => t.widget<RaftVideoViewer>(viewer);
 
 Future<VideoFixture> launch(WidgetTester tester, List<VideoClip> clips,
-    {String mode = 'light', String theme = 'brutal', Future<void> Function()? prepare, String? awaitFile}) async {
+    {String mode = 'light', Future<void> Function()? prepare, String? awaitFile}) async {
   await lab.requireFiles([for (final clip in clips) clip.file]);
   await lab.reset();
   await prepare?.call();
@@ -228,7 +228,6 @@ Future<VideoFixture> launch(WidgetTester tester, List<VideoClip> clips,
     clips: clips,
     location: '/s/lab',
     mode: mode,
-    theme: theme,
   );
   await tester.pumpWidget(fixture.app);
   // Deep-linking the channel route opens it empty (see video_parity_main.dart):
@@ -675,14 +674,14 @@ void main() {
     await shutdown(tester);
   });
 
-  // ---- the viewer's black stage: every state legible in every theme -----------
+  // ---- the viewer's black stage: every state legible in light and dark -----------
 
-  scenario('viewer stage: connecting, buffering and failed are legible in every theme', (tester) async {
-    for (final (mode, theme) in const [('light', 'brutal'), ('light', 'elegant'), ('dark', 'elegant')]) {
-      final tag = '$theme-$mode';
+  scenario('viewer stage: connecting, buffering and failed are legible in light and dark', (tester) async {
+    for (final mode in const ['light', 'dark']) {
+      final tag = 'raft-$mode';
       // Connecting: the host answers a byte a second, so the player has not
       // opened yet when the viewer is on screen.
-      await launch(tester, [_stall], mode: mode, theme: theme);
+      await launch(tester, [_stall], mode: mode);
       await tester.pump(const Duration(seconds: 1));
       await tapCentre(tester, find.descendant(of: card('stall.mp4'), matching: find.byKey(const Key('inline-video-poster-card'))));
       await tester.pump(const Duration(milliseconds: 1200));
@@ -694,7 +693,7 @@ void main() {
       await tester.pump(const Duration(seconds: 1));
       await shutdown(tester);
       // Buffering: the host is slower than the clip plays.
-      await launch(tester, [_choke], mode: mode, theme: theme);
+      await launch(tester, [_choke], mode: mode);
       await openViewer(tester, 'choke.mp4');
       await tapCentre(tester, viewerPlay);
       await until(tester, () => viewerOf(tester).buffering, 'the viewer to show buffering', timeout: const Duration(seconds: 60));
@@ -705,7 +704,7 @@ void main() {
       await tester.pump(const Duration(seconds: 1));
       await shutdown(tester);
       // Failed: a file the system cannot play.
-      await launch(tester, [_corrupt], mode: mode, theme: theme);
+      await launch(tester, [_corrupt], mode: mode);
       await lab.host(tester, 'shot:stage-card-failed-$tag');
       await tapCentre(tester, find.descendant(of: card('broken.mp4'), matching: find.byKey(const Key('inline-video-poster-card'))));
       await until(tester, () => find.byType(RaftLoadError).evaluate().isNotEmpty, 'the viewer failure message');

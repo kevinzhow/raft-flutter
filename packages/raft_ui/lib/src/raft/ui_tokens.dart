@@ -1,6 +1,6 @@
 // Role tokens and type styles for the ported core components. Retired typed
 // getters follow raft-ui's token-names codemod when a map has only current
-// names; frozen maps retain their own original values.
+// names.
 import 'package:flutter/material.dart';
 
 import '../theme.dart'

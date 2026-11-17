@@ -1,6 +1,2 @@
-# The independent engine command runs every test. App checks exclude the
-# tagged legacy-look contracts through the shared test-selection tools.
+# The independent engine command runs every test.
 timeout: 60s
-tags:
-  look-elegant: {}
-  look-brutal: {}

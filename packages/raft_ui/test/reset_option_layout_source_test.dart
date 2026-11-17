@@ -42,7 +42,6 @@ void main() {
         await tester.pumpAndSettle();
         final first = find.byKey(const ValueKey('agent-reset-option-restart'));
         final tokens = RaftTokens.of(tester.element(first));
-        expect(tokens.isRaftLook, isTrue);
         final recipe = RaftWebAgentResetOptionsRecipe.resolve(
           tokens: tokens.recipeTokens,
         );

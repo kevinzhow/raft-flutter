@@ -1,18 +1,13 @@
-// WP-DS3 content family, Raft look only (raft-ui 0.95.3 / Web v1.24): the code
-// block frame and its keyboard region, the markdown link run, and the pieces
-// they share. The frozen looks (Elegant, Brutal) never reach this file.
+// WP-DS3 content family (raft-ui 0.95.3 / Web v1.24): the code block frame
+// and its keyboard region, the markdown link run, and the pieces they share.
 import 'token_geometry.dart';
 
 import 'package:flutter/material.dart';
-import 'package:raft_theme/recipes.dart' show RaftRecipeSet;
 
 import 'icons.dart';
 import 'localization.dart';
 import 'raft/button.dart' show RaftButton, RaftButtonSize, RaftButtonVariant;
 import 'theme.dart';
-
-/// True for the Raft look; the frozen looks keep their own recipes.
-bool raftContentLook(RaftTokens t) => t.recipeSet == RaftRecipeSet.raft;
 
 /// `CodeBlock` (raft-ui `code-block.recipe.mjs`): `rounded-container`
 /// `border-line-hairline` `bg-layer-code`, `py-2` body.

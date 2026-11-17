@@ -97,18 +97,4 @@ void main() {
       },
     );
   }
-
-  testWidgets(
-    'Elegant keeps the soft tint with a line-muted rule and 20 x 8 padding',
-    (tester) async {
-      final theme = raftTheme(pack: packForThemeId(elegantThemePackId));
-      final t = theme.extension<RaftTokens>()!;
-      await tester.pumpWidget(host(theme, notice()));
-      final d = decorationOf(tester);
-      expect(d.color, t.colors['warning-soft']);
-      expect((d.border! as Border).bottom.color, t.colors['line-muted']);
-      expect(tester.getTopLeft(find.text('Agent will not start')).dx, 20);
-    },
-    skip: raftLookSkip(raftLookElegant),
-  );
 }

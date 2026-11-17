@@ -59,11 +59,7 @@ Widget _host({
 );
 
 void main() {
-  for (final id in raftThemeMatrix([
-    raftThemePackId,
-    elegantThemePackId,
-    brutalThemePackId,
-  ], look: raftLookOf)) {
+  for (final id in raftThemeMatrix([raftThemePackId])) {
     for (final dark in [false, true]) {
       testWidgets(
         '$id dark=$dark small icon layout follows source touch policy',
@@ -144,11 +140,7 @@ void main() {
   testWidgets(
     'explicit minimum wins; larger icons retain their existing layout',
     (t) async {
-      for (final id in raftThemeMatrix([
-        raftThemePackId,
-        elegantThemePackId,
-        brutalThemePackId,
-      ], look: raftLookOf)) {
+      for (final id in raftThemeMatrix([raftThemePackId])) {
         for (final minimum in [0.0, 36.0, 60.0]) {
           await t.pumpWidget(_host(id: id, minimum: minimum, onPressed: () {}));
           expect(
@@ -174,11 +166,7 @@ void main() {
   testWidgets(
     'touch outside the visual row activates once; keyboard and inert states',
     (t) async {
-      for (final id in raftThemeMatrix([
-        raftThemePackId,
-        elegantThemePackId,
-        brutalThemePackId,
-      ], look: raftLookOf)) {
+      for (final id in raftThemeMatrix([raftThemePackId])) {
         var calls = 0;
         await t.pumpWidget(_host(id: id, onPressed: () => calls++));
         await t.pumpAndSettle();

@@ -2,8 +2,7 @@
 // AnnouncementModal.tsx, v1.21.12): raft-ui's `AnnouncementDialog` (wip) on
 // `layer={1}` holding a label row with the close button, the title, an
 // optional picture, the Markdown of the first page and a footer with one
-// primary action ("Got it", or the CTA label) next to an optional "Got it"
-// link.
+// primary action ("Got it", or the CTA label).
 //
 // Presentation and the dialog's own keyboard contract only; loading, the
 // dismiss write, the CTA navigation and when it is shown belong to the app.
@@ -59,8 +58,7 @@ class RaftAnnouncementLabels {
 ///
 /// * The primary button reads [ctaLabel] and calls [onCta] when the
 ///   announcement has a CTA, else it reads "Got it" and calls [onDismiss].
-///   In the frozen looks a "Got it" link beside a CTA calls [onDismiss]; the
-///   Raft look has the one button (Web v1.24), and ✕ closes.
+///   There is the one button (Web v1.24), and ✕ closes.
 /// * ✕, Escape and a press on the scrim dismiss (closing counts as read).
 /// * Enter acts like the primary button wherever focus is in the dialog (Web:
 ///   a capture-phase window listener, so a focused link does not swallow it).
@@ -216,48 +214,25 @@ class RaftAnnouncementCard extends StatelessWidget {
     final media = MediaQuery.of(context);
     // raft-ui `announcement` recipe: body / footer insets are
     // `--surface-inset` (16 with a mouse at >=768, 20 by touch).
-    final raft = t.option('announcement.style', or: 'recipe') == 'raft';
-    final a = raft
-        ? RaftAnnouncementRecipe.resolve(
-            states: t.recipeStates(responsive: true),
-            tokens: rt,
-          )
-        : null;
+    final a = RaftAnnouncementRecipe.resolve(
+      states: t.recipeStates(responsive: true),
+      tokens: rt,
+    );
     // `w-[calc(100%-2rem)] max-w-xl max-h-[calc(100dvh-2rem)]`.
     final width = math.min(
-      a?.content.maxWidth ?? maxWidth,
+      a.content.maxWidth ?? maxWidth,
       math.max(0.0, media.size.width - 32),
     );
     final maxHeight = math.max(
       0.0,
       media.size.height - 32 - media.viewInsets.bottom,
     );
-    final ink = t.semantic.foreground;
     // raft-ui wip `announcement`: `text-headline` title, `text-subhead
     // text-foreground-muted` copy, `px-5 pt-5 pb-5` body, no footer rule.
-    final titleStyle = raft
-        ? t.scale(RaftTypeScale.headline, weight: FontWeight.w700)
-        : slots.title
-              .text(rt)
-              .copyWith(
-                // `text-2xl font-bold tracking-tight normal-case`.
-                color: ink,
-                fontSize: 24,
-                height: 32 / 24,
-                fontWeight: FontWeight.w700,
-                letterSpacing: -0.6,
-                leadingDistribution: TextLeadingDistribution.even,
-              );
-    final bodyStyle = raft
-        ? t
-              .scale(RaftTypeScale.subhead, color: t.ui.foregroundMuted)
-              .copyWith(fontFamilyFallback: t.fontFallback)
-        : raftCssTextStyle(
-            family: t.bodyFont,
-            step: (14, 22.75), // text-sm/relaxed
-            color: ink,
-          ).copyWith(fontFamilyFallback: t.fontFallback);
-    final rule = BorderSide(color: t.semantic.lineMuted, width: 1);
+    final titleStyle = t.scale(RaftTypeScale.headline, weight: FontWeight.w700);
+    final bodyStyle = t
+        .scale(RaftTypeScale.subhead, color: t.ui.foregroundMuted)
+        .copyWith(fontFamilyFallback: t.fontFallback);
     final picture = image;
     final content = Column(
       mainAxisSize: MainAxisSize.min,
@@ -269,9 +244,7 @@ class RaftAnnouncementCard extends StatelessWidget {
             child: SingleChildScrollView(
               key: const ValueKey('announcement-body'),
               // `px-7 pt-6 pb-5` (the `body` slot in the Raft look).
-              padding: raft
-                  ? a!.body.padding
-                  : const EdgeInsets.fromLTRB(28, 24, 28, 20),
+              padding: a.body.padding,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -286,7 +259,7 @@ class RaftAnnouncementCard extends StatelessWidget {
                       ),
                     ],
                   ),
-                  SizedBox(height: raft ? a!.title.margin.top : 12),
+                  SizedBox(height: a.title.margin.top),
                   Semantics(
                     header: true,
                     child: RaftCssText(
@@ -296,16 +269,14 @@ class RaftAnnouncementCard extends StatelessWidget {
                     ),
                   ),
                   if (picture != null) ...[
-                    SizedBox(height: raft ? a!.picture.margin.top : 20),
+                    SizedBox(height: a.picture.margin.top),
                     _Picture(picture),
                   ],
                   // `mt-3`, `mt-5` right after the picture.
                   SizedBox(
-                    height: raft
-                        ? (picture == null
-                              ? a!.text.margin.top
-                              : a!.picture.margin.top)
-                        : (picture == null ? 12 : 20),
+                    height: picture == null
+                        ? a.text.margin.top
+                        : a.picture.margin.top,
                   ),
                   DefaultTextStyle(
                     key: const ValueKey('announcement-page-body'),
@@ -319,25 +290,10 @@ class RaftAnnouncementCard extends StatelessWidget {
         ),
         Container(
           key: const ValueKey('announcement-footer'),
-          // `border-t px-7 py-4` (the `footer` slot, no rule, in the Raft look).
-          padding: raft
-              ? a!.footer.padding
-              : const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
-          decoration: raft ? null : BoxDecoration(border: Border(top: rule)),
+          // The `footer` slot: no rule.
+          padding: a.footer.padding,
           child: _Footer(
             // v1.24: one action, the CTA or "Got it".
-            secondary: ctaLabel == null || raft
-                ? null
-                : RaftRecipeButton(
-                    key: const ValueKey('announcement-dismiss'),
-                    variant: RaftButtonRecipeVariant.link,
-                    size: RaftButtonRecipeSize.md,
-                    padding: const EdgeInsets.symmetric(vertical: 4),
-                    autoHeight: true,
-                    underline: true,
-                    label: labels.gotIt,
-                    onPressed: onDismiss,
-                  ),
             primary: RaftRecipeButton(
               key: const ValueKey('announcement-ok'),
               variant: RaftButtonRecipeVariant.accent,
@@ -392,35 +348,18 @@ class _Label extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    final raft = t.option('announcement.style', or: 'recipe') == 'raft';
     return Row(
       children: [
-        if (raft)
-          // `size-[9px] rounded-[2px] border-[1.5px] border-sticker-ink bg-attention-400`.
-          RaftStatus(size: RaftStatusSize.md, color: t.ui['attention-400'])
-        else
-          Container(
-            width: 6,
-            height: 6,
-            decoration: BoxDecoration(
-              color: t.colors['accent'],
-              shape: BoxShape.circle,
-            ),
-          ),
+        // `size-[9px] rounded-[2px] border-[1.5px] border-sticker-ink bg-attention-400`.
+        RaftStatus(size: RaftStatusSize.md, color: t.ui['attention-400']),
         const SizedBox(width: 8),
         Expanded(
           child: RaftCssText(
             text,
             key: const ValueKey('announcement-label'),
-            style: raft
-                ? t
-                      .scale(RaftTypeScale.caption, color: t.ui.foregroundMuted)
-                      .copyWith(fontFamilyFallback: t.fontFallback)
-                : raftCssTextStyle(
-                    family: t.bodyFont,
-                    step: RaftTextSteps.xs,
-                    color: t.semantic.foregroundMuted,
-                  ).copyWith(fontFamilyFallback: t.fontFallback),
+            style: t
+                .scale(RaftTypeScale.caption, color: t.ui.foregroundMuted)
+                .copyWith(fontFamilyFallback: t.fontFallback),
           ),
         ),
       ],
@@ -428,10 +367,8 @@ class _Label extends StatelessWidget {
   }
 }
 
-/// `AnnouncementDialogPicture`: `h-44 w-full overflow-hidden border
-/// border-line-muted` (brutal `border-2 border-line-strong`, elegant
-/// `rounded-lg`) with the image `object-contain`. The Raft caller overrides it
-/// (`aspect-video h-auto border-0`, image `object-fill`).
+/// `AnnouncementDialogPicture` as the Raft caller overrides it: `aspect-video
+/// h-auto border-0`, image `object-fill`.
 class _Picture extends StatelessWidget {
   const _Picture(this.image);
   final RaftAnnouncementImage image;
@@ -439,35 +376,30 @@ class _Picture extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    final raft = t.option('announcement.style', or: 'recipe') == 'raft';
-    final border = raft
-        ? null
-        : Border.all(color: t.semantic.lineMuted, width: 1);
     final radius = BorderRadius.circular(
-      raft ? t.size('radius.container', fallback: 10) : 8,
+      t.size('radius.container', fallback: 10),
     );
-    Widget picture = Container(
-      key: const ValueKey('announcement-picture'),
-      height: raft ? null : 176,
-      decoration: BoxDecoration(
-        border: border,
-        borderRadius: radius,
-        color: raft ? t.ui['fill-muted'] : null,
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: LayoutBuilder(
-        builder: (context, box) => RaftSizedImage.network(
-          image.url,
-          width: box.maxWidth,
-          height: box.maxHeight,
-          fit: raft ? BoxFit.fill : BoxFit.contain,
-          semanticLabel: image.alt,
-          errorBuilder: (_, _, _) => const SizedBox.shrink(),
+    return AspectRatio(
+      aspectRatio: 16 / 9,
+      child: Container(
+        key: const ValueKey('announcement-picture'),
+        decoration: BoxDecoration(
+          borderRadius: radius,
+          color: t.ui['fill-muted'],
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: LayoutBuilder(
+          builder: (context, box) => RaftSizedImage.network(
+            image.url,
+            width: box.maxWidth,
+            height: box.maxHeight,
+            fit: BoxFit.fill,
+            semanticLabel: image.alt,
+            errorBuilder: (_, _, _) => const SizedBox.shrink(),
+          ),
         ),
       ),
     );
-    if (raft) picture = AspectRatio(aspectRatio: 16 / 9, child: picture);
-    return picture;
   }
 }
 
@@ -475,8 +407,7 @@ class _Picture extends StatelessWidget {
 /// gap-3`; the actions are `ml-auto` (right) and, in a container narrower
 /// than 28rem, `flex-col` with `w-full` actions.
 class _Footer extends MultiChildRenderObjectWidget {
-  _Footer({required Widget? secondary, required Widget primary})
-    : super(children: [?secondary, primary]);
+  _Footer({required Widget primary}) : super(children: [primary]);
 
   @override
   RenderObject createRenderObject(BuildContext context) => _RenderFooter();

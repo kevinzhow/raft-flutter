@@ -1,7 +1,6 @@
 // Form primitives painted from raft-ui recipes: Field (label / description /
 // error), Input, Textarea + counter, InputGroup (prefixed / slug input), and
 // the Web client's legacy `.input-brutal` chrome (packages/web/src/index.css).
-import 'dart:math' as math;
 
 import 'text_selection_toolbar.dart';
 import 'hover_region.dart';
@@ -18,49 +17,20 @@ import 'recipes/field.g.dart' as gen;
 import 'recipes/input.g.dart';
 import 'recipes/input_group.g.dart';
 import 'input_group_size.dart';
-import 'recipes/kbd.g.dart';
 import 'recipes/label.g.dart';
 import 'kbd.dart';
 import 'recipes/recipe_runtime.dart';
 import 'recipes/recipe_router.dart' show resolveAuthoredClasses;
 import 'recipes/textarea.g.dart';
 import 'recipes/textarea_counter.g.dart';
-import 'recipes/token_binding.dart';
-import 'auth_page.dart'
-    show RaftAuthHandleGroup, raftAuthGroupedInputDecoration;
 import 'label.dart';
 import 'raft/button.dart' show RaftButton, RaftButtonVariant, RaftButtonSize;
 import 'raft/css_box.dart';
 import 'raft/ui_tokens.dart';
 import 'theme.dart';
-import 'tokens/tokens.dart';
-import 'design_primitives.dart'
-    show RaftFieldSurface, RaftTypography, RaftIconButton, RaftControlVariant;
-import 'panel_layout.dart' show raftRecipeTheme, RaftCssText;
-import 'dialog_card.dart'
-    show raftRecipeThemeOf, raftCssTextStyle, RaftTextSteps;
+import 'dialog_card.dart' show RaftTextSteps;
 
 import 'text_scaling.dart' show RaftScaled;
-
-part 'form_controls_frozen.dart';
-
-/// How the frozen Elegant and Brutal looks paint a field; see `form_controls_frozen.dart`.
-enum RaftLegacyField {
-  /// The shared form field (label, control, hint).
-  form,
-
-  /// A dialog's product `FormField`.
-  product,
-
-  /// The settings forms' compact field.
-  settings,
-
-  /// The agent forms' `StableField`.
-  stable,
-
-  /// The sign-in pages' field.
-  auth,
-}
 
 /// Web `FormField` over raft-ui `Field` / `FieldLabel` / `FieldDescription` / `FieldError`: the label (with the
 /// required `*` or `(optional)` marker), the control, then the error or the hint, in the `field` recipe's
@@ -82,12 +52,6 @@ class RaftField extends StatelessWidget {
     this.reserveMessage = false,
     this.belowControl = const [],
     this.belowDescription,
-    this.legacy = RaftLegacyField.form,
-    this.labelWeight,
-    this.family,
-    this.helperHint = false,
-    this.helperRecipe = false,
-    this.surface = true,
     this.hintBuilder,
   });
 
@@ -98,9 +62,7 @@ class RaftField extends StatelessWidget {
   final String? hint, error;
 
   /// Opt in: draws the hint itself in the message row's description [style]
-  /// (a hint with inline links). Only the Raft look; the frozen looks print
-  /// [hint] as plain text, so pass the link-free reading of it there. Never
-  /// replaces an error.
+  /// (a hint with inline links). Never replaces an error.
   final Widget Function(BuildContext context, TextStyle style)? hintBuilder;
 
   /// `size="compact"`: the `sm` label step.
@@ -121,13 +83,6 @@ class RaftField extends StatelessWidget {
   /// the message row. A notice that renders nothing leaves no box and no gap
   /// behind; shown, it keeps 16 below so the next field holds its distance.
   final Widget? belowDescription;
-
-  /// How the frozen looks paint this field and the knobs only they read (the Raft look draws the `field`
-  /// recipe for every one of them).
-  final RaftLegacyField legacy;
-  final FontWeight? labelWeight;
-  final String? family;
-  final bool helperHint, helperRecipe, surface;
 
   Widget _withBelowDescription(Widget field, double gap) {
     final below = belowDescription;
@@ -150,15 +105,6 @@ class RaftField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    if (t.recipeSet != RaftRecipeSet.raft) {
-      return _withBelowDescription(switch (legacy) {
-        RaftLegacyField.form => buildFrozenForm(context),
-        RaftLegacyField.product => buildFrozenProduct(context),
-        RaftLegacyField.settings => buildFrozenSettings(context),
-        RaftLegacyField.stable => buildFrozenStable(context),
-        RaftLegacyField.auth => buildFrozenAuth(context),
-      }, t.size('space.fieldGap', fallback: 0));
-    }
     final rt = t.recipeTokens;
     final states = t.recipeStates(
       responsive: true,
@@ -168,13 +114,11 @@ class RaftField extends StatelessWidget {
         ? gen.RaftFieldRecipeSize.sm
         : gen.RaftFieldRecipeSize.md;
     final f = gen.RaftFieldRecipe.resolve(
-      theme: t.recipeTheme,
       size: size,
       states: states,
       tokens: rt,
     );
     final l = RaftLabelRecipe.resolve(
-      theme: t.recipeTheme,
       size: compact ? RaftLabelRecipeSize.sm : RaftLabelRecipeSize.md,
       states: states,
       tokens: rt,
@@ -211,7 +155,6 @@ class RaftField extends StatelessWidget {
         : Text(
             counter!,
             style: RaftTextareaCounterRecipe.resolve(
-              theme: t.recipeTheme,
               states: states,
               tokens: rt,
             ).root.text(rt, base: base),
@@ -410,36 +353,11 @@ enum RaftInputChrome {
   /// raft-ui `Input` recipe (default).
   recipe,
 
-  /// Web legacy `.input-brutal` class: elegant `border border-line-field
+  /// Web legacy `.input-brutal` class: `border border-line-field
   /// bg-layer-panel px-3 py-2 font-display text-foreground-strong
-  /// shadow-raft-xs`, focus `border-line-strong shadow-raft-sm`; brutal
-  /// `border-2 border-black bg-white text-black shadow-brutal-sm`, focus
-  /// `shadow-brutal`. Invalid adds the Web callsite classes
-  /// `!border-brutal-red ring-2 ring-brutal-red/60`.
+  /// shadow-raft-xs`, focus `border-line-strong shadow-raft-sm`. Invalid adds
+  /// the Web callsite classes `!border-brutal-red ring-2 ring-brutal-red/60`.
   legacy,
-}
-
-/// How the frozen Elegant and Brutal looks paint an input (the Raft look ignores it: every input is the `input`
-/// recipe there). One value per call-shape the pre-theme build drew differently; see `form_controls_frozen.dart`.
-enum RaftLegacyInput {
-  /// A form field (login, settings rows): the Raft tokens in a hand-built box.
-  field,
-
-  /// A dialog input: the theme's input decoration inside the shared field frame.
-  dialog,
-
-  /// Agent forms, the forward search and combobox inputs: the `input` recipe in a recipe box.
-  recipe,
-
-  /// Settings forms: the `input` recipe as a plain container with the callsite `text-sm`.
-  settings,
-
-  /// Settings forms without the callsite `text-sm`: the recipe's own text.
-  settingsPlain,
-
-  /// The theme's Material input decoration as it is, with the callsite [RaftTextInput.style] and a glyph as the
-  /// decoration's prefix icon (inside an enclosing field frame where the page draws one).
-  themed,
 }
 
 /// Single- or multi-line text input painted from the raft-ui `Input` recipe
@@ -477,7 +395,6 @@ class RaftTextInput extends StatefulWidget {
     this.mono = false,
     this.numeric = false,
     this.upperCase = false,
-    this.legacy = RaftLegacyInput.field,
   });
 
   final TextEditingController? controller;
@@ -506,9 +423,6 @@ class RaftTextInput extends StatefulWidget {
 
   /// `font-mono`; [numeric] is `inputMode="numeric"` (digits only); [upperCase] capitalises typed text.
   final bool mono, numeric, upperCase;
-
-  /// How the frozen Elegant and Brutal looks paint this input.
-  final RaftLegacyInput legacy;
 
   /// Callsite overrides layered on the recipe (e.g. `px-2 py-1`,
   /// `text-xs font-mono`).
@@ -625,7 +539,6 @@ class _RaftTextInputState extends State<RaftTextInput>
     final rt = t.recipeTokens;
     final focused = focus.hasFocus;
     final s = RaftInputRecipe.resolve(
-      theme: t.recipeTheme,
       states: t.recipeStates(
         responsive: true,
         hovered: hovered,
@@ -745,7 +658,7 @@ class _RaftTextInputState extends State<RaftTextInput>
     ),
   );
 
-  /// The Web's legacy `.input-brutal` chrome (explicit `chrome: legacy`; every look).
+  /// The Web's legacy `.input-brutal` chrome (explicit `chrome: legacy`).
   Widget _buildLegacyChrome(BuildContext context, RaftTokens t) {
     final rt = t.recipeTokens;
     final focused = focus.hasFocus;
@@ -757,9 +670,8 @@ class _RaftTextInputState extends State<RaftTextInput>
     const padding = EdgeInsets.symmetric(horizontal: 12, vertical: 8);
     {
       // Source index.css .input-brutal includes the complete shadow-raft-xs
-      // (or focus shadow-raft-sm), including Elegant dark inset layers.
-      // The product's hard Brutal shadow and explicit invalid ring remain
-      // caller overrides; no global recipe or renderer changes are required.
+      // (or focus shadow-raft-sm). The explicit invalid ring remains a
+      // caller override; no global recipe or renderer changes are required.
       s = resolveAuthoredClasses(
         [
           'border',
@@ -823,15 +735,7 @@ class _RaftTextInputState extends State<RaftTextInput>
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     if (widget.chrome == RaftInputChrome.recipe) {
-      if (t.recipeSet == RaftRecipeSet.raft) return _buildRecipe(context, t);
-      return switch (widget.legacy) {
-        RaftLegacyInput.field => buildFrozenField(context, t),
-        RaftLegacyInput.dialog => buildFrozenDialog(context, t),
-        RaftLegacyInput.recipe => buildFrozenRecipe(context, t),
-        RaftLegacyInput.settings ||
-        RaftLegacyInput.settingsPlain => buildFrozenSettings(context, t),
-        RaftLegacyInput.themed => buildFrozenThemed(context, t),
-      };
+      return _buildRecipe(context, t);
     }
     return _buildLegacyChrome(context, t);
   }
@@ -862,7 +766,6 @@ class RaftTextarea extends StatefulWidget {
     this.lineHeight,
     this.minHeight,
     this.growsWithScale = false,
-    this.legacy = RaftLegacyInput.field,
   });
 
   /// Callsite type classes merged over the recipe text (`font-mono
@@ -889,9 +792,6 @@ class RaftTextarea extends StatefulWidget {
   /// bounded height (a dialog's description field).
   final bool growsWithScale;
 
-  /// How the frozen Elegant and Brutal looks paint this textarea.
-  final RaftLegacyInput legacy;
-
   /// Enforced limit (`maxLength`); the counter is [RaftTextareaCounter].
   final int? maxLength;
 
@@ -917,25 +817,8 @@ class _RaftTextareaState extends State<RaftTextarea>
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    final raft = t.recipeSet == RaftRecipeSet.raft;
-    if (!raft) {
-      switch (widget.legacy) {
-        case RaftLegacyInput.field:
-          break;
-        case RaftLegacyInput.dialog:
-          return buildFrozenDialog(context, t);
-        case RaftLegacyInput.recipe:
-          return buildFrozenRecipe(context, t);
-        case RaftLegacyInput.settings:
-        case RaftLegacyInput.settingsPlain:
-          return buildFrozenSettings(context, t);
-        case RaftLegacyInput.themed:
-          break;
-      }
-    }
     final rt = t.recipeTokens;
     var s = RaftTextareaRecipe.resolve(
-      theme: t.recipeTheme,
       states: t.recipeStates(
         responsive: true,
         hovered: hovered,
@@ -988,7 +871,7 @@ class _RaftTextareaState extends State<RaftTextarea>
           // This expanding input owns its scaled row height. Keeping that
           // bound avoids an infinite editor in a scrolling form at large text.
           applyText: false,
-          decorationOverride: raft ? (d) => raftSnapBorder(context, d) : null,
+          decorationOverride: (d) => raftSnapBorder(context, d),
           child: TextField(
             contextMenuBuilder: RaftTextSelectionToolbar.editableText,
             key: widget.fieldKey,
@@ -1048,7 +931,6 @@ class RaftTextareaCounter extends StatelessWidget {
     final t = RaftTokens.of(context);
     final rt = t.recipeTokens;
     final s = RaftTextareaCounterRecipe.resolve(
-      theme: t.recipeTheme,
       overLimit: length > limit,
       states: t.recipeStates(
         responsive: true,
@@ -1078,21 +960,6 @@ class RaftInputGroupAddon {
   final String? text;
   final RaftGlyph? glyph;
   final Widget? child;
-}
-
-/// How the frozen Elegant and Brutal looks paint an input group; see `form_controls_frozen.dart`.
-enum RaftLegacyGroup {
-  /// A prefixed input (`SlugInput`, the section name field).
-  prefixed,
-
-  /// The settings forms' prefixed input.
-  settings,
-
-  /// The message search field.
-  search,
-
-  /// The sign-in pages' username group: an `@` block and a borderless Material field in a hand-built frame.
-  handle,
 }
 
 /// raft-ui `InputGroup`: one bordered box holding an optional leading addon, the control and an optional trailing
@@ -1127,7 +994,6 @@ class RaftInputGroup extends StatefulWidget {
     this.onClear,
     this.clearOnEscape = false,
     this.kbd,
-    this.legacy = RaftLegacyGroup.prefixed,
     this.fieldKey,
     this.size,
   });
@@ -1162,9 +1028,6 @@ class RaftInputGroup extends StatefulWidget {
   /// raft-ui FitToolbarSearch: Escape in a field that holds text runs [onClear] and stops there (it closes
   /// nothing around the field); in an empty field, or while an IME is composing, Escape passes on.
   final bool clearOnEscape;
-
-  /// How the frozen Elegant and Brutal looks paint this group.
-  final RaftLegacyGroup legacy;
 
   /// Key of the inner [TextField] (tests and focus lookups).
   final Key? fieldKey;
@@ -1229,7 +1092,6 @@ class _RaftInputGroupState extends State<RaftInputGroup>
       final size = widget.size;
       return size == null
           ? RaftInputGroupRecipe.resolve(
-              theme: t.recipeTheme,
               align: align,
               variant: widget.variant,
               states: states,
@@ -1405,14 +1267,7 @@ class _RaftInputGroupState extends State<RaftInputGroup>
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    final group = t.recipeSet == RaftRecipeSet.raft
-        ? _buildRecipe(context, t)
-        : switch (widget.legacy) {
-            RaftLegacyGroup.prefixed => buildFrozenPrefixed(context, t),
-            RaftLegacyGroup.settings => buildFrozenSettings(context, t),
-            RaftLegacyGroup.search => buildFrozenSearch(context, t),
-            RaftLegacyGroup.handle => buildFrozenHandle(context, t),
-          };
+    final group = _buildRecipe(context, t);
     if (!widget.clearOnEscape) return group;
     return Focus(
       canRequestFocus: false,
@@ -1491,7 +1346,6 @@ class RaftPrefixedInput extends StatelessWidget {
     autofocus: autofocus,
     maxLength: maxLength,
     controlWeight: controlWeight,
-    legacy: RaftLegacyGroup.prefixed,
   );
 }
 

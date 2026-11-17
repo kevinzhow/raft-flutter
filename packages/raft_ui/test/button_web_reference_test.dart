@@ -1,5 +1,5 @@
 // Web v1.24 / raft-ui 0.95.3: social-login outline, dialog footer, bulk restart,
-// and keyboard-focused composer Send. The legacy looks keep their own recipes.
+// and keyboard-focused composer Send.
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/gestures.dart';

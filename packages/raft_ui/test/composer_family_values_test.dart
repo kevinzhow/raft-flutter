@@ -3,8 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 // Composer values of raft-ui 0.95.3 (composer.recipe, composer-suggestion
-// list). Raft look only; Elegant keeps its literals. Input mode comes from
-// RaftInteractionScope, never from width.
+// list). Input mode comes from RaftInteractionScope, never from width.
 
 const _touch = [Size(856, 944), Size(944, 856)];
 const _mouse = [Size(390, 844), Size(1440, 900)];
@@ -14,7 +13,6 @@ Future<void> _pump(
   Widget child, {
   required Size size,
   required bool touch,
-  bool elegant = false,
 }) async {
   tester.view.devicePixelRatio = 1;
   tester.view.physicalSize = size;
@@ -25,9 +23,7 @@ Future<void> _pump(
           ? RaftInteraction.touchMode
           : RaftInteraction.pointerMode,
       child: MaterialApp(
-        theme: raftTheme(
-          pack: elegant ? packForThemeId(elegantThemePackId) : null,
-        ),
+        theme: raftTheme(),
         home: Scaffold(
           body: Align(alignment: Alignment.bottomCenter, child: child),
         ),
@@ -97,26 +93,6 @@ void main() {
         expect(first.width, r.actionFace);
         final attach = tester.getRect(find.byType(RaftComposerAction).at(1));
         expect(attach.left - first.right, 6);
-      });
-
-      testWidgets('Elegant keeps its literals', (tester) async {
-        await _pump(
-          tester,
-          _composer(),
-          size: size,
-          touch: touch,
-          elegant: true,
-        );
-        final r = _recipe(tester);
-        expect(r.toolbarGap, 8);
-        // Gaps and the shell bottom come from the Elegant pack.
-        expect(r.actionGap, 6);
-        expect(r.metaGap, 12);
-        expect(r.shellInset.bottom, 0);
-        expect(r.actionFace, 28);
-        expect(r.firstActionOffset, 0);
-        expect(r.suggestionMaximum, 204);
-        expect(r.suggestionBottomGap, 4);
       });
 
       testWidgets('suggestion list values', (tester) async {

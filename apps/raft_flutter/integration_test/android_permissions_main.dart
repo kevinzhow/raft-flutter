@@ -136,7 +136,6 @@ Future<void> main() async {
   final prefs = await SharedPreferences.getInstance();
   await prefs.setString('raft.origin', client.origin);
   await prefs.setString('raft.mode', 'light');
-  await prefs.setString('raft.light', 'elegant');
   if (_origin.startsWith('http://')) {
     final probe = _ResumeProbe(Uri.parse(_origin));
     WidgetsBinding.instance.addObserver(probe);

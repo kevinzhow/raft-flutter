@@ -62,12 +62,14 @@ class GenGlyphs(unittest.TestCase):
         for name in gen.LEGACY + list(gen.FILLED):
             self.assertIn(name, self.by)
 
-    def test_ricons_small_mark_and_frozen_geometry_are_preserved(self):
+    def test_ricons_small_mark_is_preserved_and_frozen_names_resolve(self):
         icon = self.doc['icons'][self.by['unfollowArtifact']['key']]
         self.assertEqual(icon['smallNodes'][-1]['strokeWidth'], 3)
         self.assertNotEqual(icon['smallNodes'][-1], icon['nodes'][-1])
-        for name, key in self.doc['resolved']['frozen'].items():
-            self.assertEqual(self.by[name]['legacyKey'], key)
+        # The frozen looks' older geometry is gone; their names still resolve.
+        for name in self.doc['resolved']['frozen']:
+            self.assertIn(name, self.by)
+            self.assertNotIn('legacyKey', self.by[name])
         self.assertEqual(gen.scale_svg_path('M1 2a3 4 45 0 1 5 6', 2), 'M 2 4 a 6 8 45 0 1 10 12')
 
     def test_node_emission(self):

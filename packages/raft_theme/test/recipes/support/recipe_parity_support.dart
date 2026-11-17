@@ -4,8 +4,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_theme/recipes/recipe_runtime.dart';
 
-// Both generated registries expose this same function shape. Keep the registry
-// injected so modern and frozen entrypoints cannot silently use the other set.
+// The generated registry exposes this function shape; the registry is injected.
 typedef RecipeParityResolver = Map<String, RaftSlotStyle> Function(
   Map<String, String?> props, {
   RaftRecipeStates states,

@@ -17,10 +17,7 @@ void main() {
           final rt = t.recipeTokens;
           // raft-ui 0.7.0 has no pill Badge or Avatar any more; the radio item is a
           // Raft slot that still declares `rounded-full`.
-          final root = RaftRadioGroupRecipe.resolve(
-            theme: t.recipeTheme,
-            tokens: rt,
-          ).item;
+          final root = RaftRadioGroupRecipe.resolve(tokens: rt).item;
           // Preserve the generated Source radius; isolate geometry from colors.
           BoxDecoration black(BoxDecoration d) => d.copyWith(
             color: Colors.black,

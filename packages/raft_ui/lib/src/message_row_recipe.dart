@@ -59,15 +59,12 @@ enum RaftMessageSizeTier {
     lg => 'lg',
   };
 
-  /// The Raft look reads the type scale (`--text-body`, `--text-subhead`,
+  /// Reads the type scale (`--text-body`, `--text-subhead`,
   /// `--text-mono-meta`, with their desktop step at >= 768 and a fine pointer)
   /// and moves it by the tier like Web `appearanceStore`: body +-2 / +-4, name
-  /// +-2, meta +-1. A pack that sets its own sizes and the frozen looks keep
-  /// their numbers.
+  /// +-2, meta +-1. A pack that sets its own sizes keeps its numbers.
   static RaftTypeStyle? _slot(RaftTokens tokens, String name) =>
-      tokens.isRaftLook && tokens.themeOverrides == null
-      ? tokens.typeSlot(name)
-      : null;
+      tokens.themeOverrides == null ? tokens.typeSlot(name) : null;
   int get _step => switch (this) {
     sm => -1,
     md => 0,

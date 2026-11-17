@@ -6,7 +6,6 @@ import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_flutter/features/auth_view.dart';
 import 'package:raft_flutter/features/account_onboarding.dart';
-import 'package:raft_ui/test_themes.dart';
 
 import 'parity/cases/screens/screen_fixture.dart';
 
@@ -147,14 +146,13 @@ void main() {
 
   Widget authApp({
     String mode = 'login',
-    String themeId = raftThemePackId,
     Locale? locale,
     void Function(String)? onLogin,
   }) => MaterialApp(
     locale: locale,
     supportedLocales: const [Locale('en'), Locale('zh')],
     localizationsDelegates: GlobalMaterialLocalizations.delegates,
-    theme: raftTheme(pack: packForThemeId(themeId)),
+    theme: raftTheme(),
     home: AuthView(
       origin: 'https://example.invalid',
       initialMode: mode,
@@ -206,29 +204,6 @@ void main() {
     expect(find.text('Send reset link'), findsOneWidget);
   });
 
-  // TextLink v1.21.12: no underline at rest, hover/focus shows it.
-  testWidgets('text links are not underlined at rest, only on hover', (
-    tester,
-  ) async {
-    await tester.pumpWidget(authApp(themeId: elegantThemePackId));
-    bool underlined(String label) => tester
-        .widget<RaftUnderlinedText>(
-          find.widgetWithText(RaftUnderlinedText, label),
-        )
-        .underline;
-    expect(underlined('Forgot password?'), isFalse);
-    expect(underlined('Create one'), isFalse);
-    final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
-    await mouse.addPointer(location: Offset.zero);
-    addTearDown(mouse.removePointer);
-    await mouse.moveTo(
-      tester.getCenter(find.byKey(const Key('login-forgot-password'))),
-    );
-    await tester.pump();
-    expect(underlined('Forgot password?'), isTrue);
-    expect(underlined('Create one'), isFalse);
-  }, skip: raftLookSkip(raftLookElegant));
-
   // raft-ui 0.95.3 TextLink (Web v1.24): no underline at rest, the link under
   // the pointer underlines.
   testWidgets('current Raft auth links underline only under the pointer', (
@@ -261,42 +236,6 @@ void main() {
     expect(find.text('创建一个'), findsOneWidget);
     expect(find.text('忘记密码？'), findsOneWidget);
   });
-
-  // raft-ui field: elegant label is `font-medium text-foreground-strong
-  // dark:text-foreground-hint` (muted in dark, not the strong ink).
-  testWidgets('elegant-dark field labels are muted, light ones strong', (
-    tester,
-  ) async {
-    Future<(Color?, FontWeight?, RaftTokens)> labelOf(bool dark) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          key: ValueKey(dark),
-          theme: raftTheme(
-            pack: packForThemeId(elegantThemePackId),
-            dark: dark,
-          ),
-          home: AuthView(
-            origin: 'https://example.invalid',
-            onLogin: (b, e, p) async {},
-            onRegister: (b, e, p, a) async {},
-          ),
-        ),
-      );
-      final style = tester.widget<Text>(find.text('Email').first).style;
-      return (
-        style?.color,
-        style?.fontWeight,
-        RaftTokens.of(tester.element(find.byType(AuthView))),
-      );
-    }
-
-    final (darkColor, darkWeight, darkTokens) = await labelOf(true);
-    expect(darkColor, darkTokens.semantic.foregroundHint);
-    expect(darkWeight, FontWeight.w500);
-    final (lightColor, lightWeight, lightTokens) = await labelOf(false);
-    expect(lightColor, lightTokens.strong);
-    expect(lightWeight, FontWeight.w500);
-  }, skip: raftLookSkip(raftLookElegant));
 
   for (final dark in [false, true]) {
     testWidgets('current Raft auth field uses source field typography/$dark', (

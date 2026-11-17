@@ -293,11 +293,7 @@ void main() {
     );
   }
 
-  for (final id in raftThemeMatrix([
-    raftThemePackId,
-    elegantThemePackId,
-    brutalThemePackId,
-  ], look: raftLookOf)) {
+  for (final id in [raftThemePackId]) {
     testWidgets(
       'AssignTask direct entry keeps typed human assignment and revision in $id',
       (tester) async {
@@ -311,14 +307,8 @@ void main() {
           // real method without claiming a user-accessible menu journey.
           final Future<void> pending = owner.assignTask(_task);
           await tester.pumpAndSettle();
-          expect(
-            find.byType(RaftDialogSurface),
-            id == raftThemePackId ? findsOneWidget : findsNothing,
-          );
-          expect(
-            find.byType(SimpleDialog),
-            id == raftThemePackId ? findsNothing : findsOneWidget,
-          );
+          expect(find.byType(RaftDialogSurface), findsOneWidget);
+          expect(find.byType(SimpleDialog), findsNothing);
           await tester.tap(find.text('Ada · user'));
           await tester.pumpAndSettle();
           await pending;

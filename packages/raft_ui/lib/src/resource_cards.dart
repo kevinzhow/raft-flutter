@@ -291,7 +291,6 @@ class _RaftConversationCardState extends State<RaftConversationCard> {
     // SavedItem opts out with `shadow-none`.
     final selected = widget.selected && !widget.saved;
     final cardStyle = RaftCardRecipe.resolve(
-      theme: recipe.inkCard ? RaftRecipeTheme.brutal : RaftRecipeTheme.elegant,
       states: RaftRecipeStates({if (t.dark) RaftRecipeStates.dark}),
       tokens: rt,
     ).root;

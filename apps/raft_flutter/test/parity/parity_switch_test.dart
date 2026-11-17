@@ -1,6 +1,6 @@
 // Runtime theme-switch isolation (owner scope 2026-10-24): "styles leak between themes".
 //
-// For each case and every ordered pair of looks (raft / elegant / brutal x light / dark) the case is pumped in look A,
+// For each case and every ordered pair of looks (raft light / raft dark) the case is pumped in look A,
 // the app theme is switched to look B at runtime exactly like the app root does (the same MaterialApp is rebuilt with
 // the new `theme` / `darkTheme` / `themeMode`, the case's widgets keep their State), settled, and rasterised; the result
 // is compared byte for byte (raw RGBA) with a fresh launch in look B. Any difference is a leak: something the switch did
@@ -14,7 +14,7 @@
 //   PARITY_MANIFEST      case manifest (official + extension cases merged by the driver)
 //   PARITY_EXT_FIXTURES  extension fixture directory
 //   PARITY_SWITCH_CASES  comma list of case ids
-//   PARITY_SWITCH_LOOKS  comma list (default: all six)
+//   PARITY_SWITCH_LOOKS  comma list (default: raft-light,raft-dark)
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
@@ -34,21 +34,12 @@ import 'parity_harness.dart';
 
 typedef _Look = ({String pack, bool dark});
 
-const _allLooks = <String>[
-  'raft-light',
-  'raft-dark',
-  'elegant-light',
-  'elegant-dark',
-  'brutal-light',
-  'brutal-dark',
-];
+const _allLooks = <String>['raft-light', 'raft-dark'];
 
 _Look _look(String name) {
   final parts = name.split('-');
   final pack = switch (parts.first) {
     'raft' => raftThemePackId,
-    'elegant' => elegantThemePackId,
-    'brutal' => brutalThemePackId,
     _ => throw ArgumentError.value(name, 'look'),
   };
   return (pack: pack, dark: parts.last == 'dark');

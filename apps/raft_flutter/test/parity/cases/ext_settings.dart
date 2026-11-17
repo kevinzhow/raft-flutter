@@ -200,9 +200,7 @@ Widget _page(ParityContext ctx) {
       labsEnabled: flags.contains('labs'),
       now: () => now,
       appVersion:
-          _fx(ctx)[ctx.againstWeb && ctx.props['tab'] == 'about'
-                  ? 'webAppVersion'
-                  : 'appVersion']
+          _fx(ctx)[ctx.props['tab'] == 'about' ? 'webAppVersion' : 'appVersion']
               as String,
       // The React render host's origin (the QR encodes `<origin>/download`).
       frontendOrigin: Uri.parse(

@@ -102,7 +102,7 @@ class RaftAdaptiveWorkspace extends StatefulWidget {
   final void Function(bool mainVisible, bool threadVisible)?
   onPresentationChanged;
 
-  /// Source MobileBottomBarStack overlays Elegant bars; Brutal stays in flow.
+  /// Source MobileBottomBarStack overlays the bars on the content.
   final bool mobileNavigationFloating;
 
   /// Space the floating bar covers above the system inset (Web
@@ -399,14 +399,12 @@ class _RaftAdaptiveWorkspaceState extends State<RaftAdaptiveWorkspace> {
   }
 
   /// The rail slot of the desktop layout. Menus it opens (server switcher,
-  /// notification centre) go toward the content, and a Brutal rail faces its
-  /// divider that way.
+  /// notification centre) go toward the content.
   Widget navigationRail(RaftTokens t, double railWidth, bool onRight) {
     final rail = RaftRailEdgeScope(onRight: onRight, child: widget.rail);
-    // Nothing sits between the rail and the content when the sidebar is away,
-    // and a Brutal rail draws its own divider; an Elegant rail on the right
-    // would have none facing the content (on the left the content panel's
-    // own edge is that line).
+    // Nothing sits between the rail and the content when the sidebar is away;
+    // a rail on the right would have no divider facing the content (on the
+    // left the content panel's own edge is that line).
     final divider = (onRight) && !widget.sidebarVisible
         ? Border(left: BorderSide(color: t.colors['line-muted']!))
         : null;
@@ -667,7 +665,7 @@ class RaftPanelResizeHandle extends StatefulWidget {
   final VoidCallback? onChangeEnd;
 
   /// The public page's PanelResizeHandle: a `w-px bg-foreground/25` rule
-  /// (`group-hover:bg-foreground`, Brutal black) centred on the strip, always
+  /// (`group-hover:bg-foreground`) centred on the strip, always
   /// painted. The signed-in shell's resizers paint nothing.
   final bool hairline;
 
@@ -685,7 +683,7 @@ class RaftPanelResizeHandle extends StatefulWidget {
 }
 
 class _ResizeHandleState extends State<RaftPanelResizeHandle> {
-  /// `bg-foreground/25 group-hover:bg-foreground`, Brutal `black/25` / black.
+  /// `bg-foreground/25 group-hover:bg-foreground`.
   static Color _hairline(RaftTokens t, bool active) {
     final ink = t.colors['foreground']!;
     return active ? ink : ink.withValues(alpha: .25);
@@ -856,7 +854,7 @@ class RaftWorkspaceRail extends StatelessWidget {
   final List<RaftRailDestination> destinations;
 
   /// The rail stands in for the phone's bottom bar: touch buttons keep their
-  /// full target (Elegant's compact visual density would shave 8 dp off).
+  /// full target (the compact visual density would shave 8 dp off).
   final bool phone;
 
   /// The global bar owns the workspace trigger and starts the navigation below it.
@@ -869,7 +867,7 @@ class RaftWorkspaceRail extends StatelessWidget {
   final Widget? workspaceHeader;
   final Widget? footer;
 
-  /// LeftRail's Activity caller uses a one-pixel Brutal border-right override.
+  /// LeftRail's Activity caller uses a one-pixel border-right override.
   final bool thinDivider;
 
   Widget railGlyph(RaftRailDestination destination, double size) =>
@@ -890,7 +888,6 @@ class RaftWorkspaceRail extends StatelessWidget {
       density: RaftDensityScope.of(context),
     );
     final nav = RaftAppRailRecipe.resolve(
-      theme: t.recipeTheme,
       tokens: t.recipeTokens,
       states: t.recipeStates(),
     ).nav;
@@ -941,15 +938,6 @@ class RaftWorkspaceRail extends StatelessWidget {
                           constraints: BoxConstraints.tightFor(
                             width: bounds.layoutHeight,
                             height: bounds.layoutHeight,
-                          ),
-                          legacyStyle: ButtonStyle(
-                            minimumSize: WidgetStatePropertyAll(
-                              Size.square(bounds.layoutHeight),
-                            ),
-                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                            shape: WidgetStatePropertyAll(
-                              const RoundedRectangleBorder(),
-                            ),
                           ),
                           onPressed: onWorkspace,
                           icon: _RailAvatar(
@@ -1066,7 +1054,6 @@ class RaftRailUnreadCount extends StatelessWidget {
     if (count <= 0) return const SizedBox.shrink();
     final tokens = RaftTokens.of(context);
     final recipe = RaftAppRailRecipe.resolve(
-      theme: tokens.recipeTheme,
       states: tokens.recipeStates(),
       tokens: tokens.recipeTokens,
     );
@@ -1083,9 +1070,9 @@ class RaftRailUnreadCount extends StatelessWidget {
 /// (`resizeToAvoidBottomInset: false`); this layout shrinks only the content
 /// region. The bar stays at the bottom edge and the keyboard simply covers it.
 ///
-/// Floating (elegant) bars overlay the content; in-flow (brutal) bars reserve
-/// their own height, so the content only shrinks by the part of the keyboard
-/// that rises above the bar.
+/// Floating bars overlay the content; in-flow bars reserve their own height,
+/// so the content only shrinks by the part of the keyboard that rises above
+/// the bar.
 ///
 /// With a [rail] (wide foldable, landscape phone) the rail takes the leading
 /// edge at full height and the content region is what remains; [navigation]

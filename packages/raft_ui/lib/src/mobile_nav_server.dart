@@ -465,7 +465,6 @@ class _RaftMobileNavServerTabState extends State<RaftMobileNavServerTab>
       states: t.recipeStates(),
     );
     final popover = RaftPopoverRecipe.resolve(
-      theme: t.recipeTheme,
       tokens: rt,
       states: t.recipeStates(),
     ).content;

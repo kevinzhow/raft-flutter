@@ -3,8 +3,6 @@ import 'overlays/dialog.dart' show RaftDialog, showRaftDialog;
 // "Agent roles" holding one `Card p-3` per role (name, summary, details).
 import 'card.dart' show RaftCard;
 
-import 'dart:ui' show ImageFilter;
-
 import 'package:flutter/material.dart';
 
 import 'design_primitives.dart';
@@ -49,24 +47,16 @@ Future<void> showRaftRolePermissionHelp(
   BuildContext context, {
   required bool agent,
 }) {
-  final t = RaftTokens.of(context);
   return showRaftDialog<void>(
     context: context,
     modal: true,
-    legacyModal: true,
     barrierDismissible: true,
     barrierLabel: 'Close',
     // `Modal`: `backdrop-blur-[2px]` over the page (the Dialog layer has none).
     builder: (context) {
-      final dialog = RaftRolePermissionHelpDialog(
+      return RaftRolePermissionHelpDialog(
         agent: agent,
         onClose: () => Navigator.of(context).pop(),
-      );
-      if (t.isRaftLook) return dialog;
-      final blur = t.size('blur.modalBackdrop', fallback: 2);
-      return BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
-        child: dialog,
       );
     },
   );

@@ -1,4 +1,4 @@
-"""Settings values from Web v1.21.23 and the frozen a57b9dab recipes.
+"""Settings values from Web v1.21.23.
 
 See PR472's source table: SidebarItem accent / SidebarGroupLabel,
 SettingsPanel Card/content and its text-mono-code handle.
@@ -32,18 +32,6 @@ class SettingsComponentContractTests(unittest.TestCase):
         self.assert_pack('raft',
                          [15, 20, 13, 18, 20, '#ffffff', '#ffffff', '#ffffff'],
                          [15, 20, 13, 18, 20, '#242422', '#1b1b19', '#1b1b19'])
-
-    def test_elegant_original_settings(self):
-        # a57 accent recipe is 13px with a 1.5 line height. Group label is
-        # 10/15; ordinary content stays panel; only Feedback is card/dark.
-        self.assert_pack('elegant',
-                         [13, 19.5, 10, 15, 20, '#ffffff', '#ffffff', '#ffffff'],
-                         [13, 19.5, 10, 15, 20, '#242422', '#242422', '#1b1b19'])
-
-    def test_brutal_original_settings_and_elegant_dark(self):
-        self.assert_pack('brutal',
-                         [14, 20, 10, 15, 20, '#ffffff', '#ffffff', '#ffffff'],
-                         [13, 19.5, 10, 15, 20, '#242422', '#242422', '#1b1b19'])
 
 
 if __name__ == '__main__':

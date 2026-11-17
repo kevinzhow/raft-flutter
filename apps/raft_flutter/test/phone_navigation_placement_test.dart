@@ -15,7 +15,6 @@ import 'package:raft_flutter/platform/system_gesture_exclusion.dart';
 import 'package:raft_flutter/features/mobile_workspace_pages.dart';
 import 'package:raft_flutter/features/workspace_view.dart';
 import 'package:raft_ui/raft_ui.dart';
-import 'package:raft_ui/test_themes.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'support/server_tab.dart';
@@ -168,7 +167,6 @@ class _Rig {
     this.tester, {
     this.rtl = false,
     this.textScale = 1.0,
-    this.themeId = raftThemePackId,
     required this.size,
     this.padding = const FakeViewPadding(top: 24, bottom: 24),
     this.displayFeatures = const [],
@@ -179,7 +177,6 @@ class _Rig {
   final WidgetTester tester;
   final bool rtl;
   final double textScale;
-  final String themeId;
   Size size;
   final FakeViewPadding padding;
   late final _Client c;
@@ -219,7 +216,7 @@ class _Rig {
     });
     await tester.pumpWidget(
       MaterialApp(
-        theme: raftTheme(pack: packForThemeId(themeId)),
+        theme: raftTheme(),
         builder: (context, child) => Directionality(
           textDirection: rtl ? TextDirection.rtl : TextDirection.ltr,
           child: child!,
@@ -228,7 +225,7 @@ class _Rig {
           WorkspaceView(
             controller: w,
             railSide: railSide,
-            appearance: RaftAppearance(mode: ThemeMode.light, themeId: themeId),
+            appearance: RaftAppearance(mode: ThemeMode.light),
             onAppearance: (_) async {},
             onLogout: () async {},
           ),
@@ -1053,69 +1050,48 @@ void main() {
             '${end ? 'end' : 'start'}: the column sits on its side', (
           tester,
         ) async {
-          for (final pack in raftThemeMatrix([
-            raftThemePackId,
-            elegantThemePackId,
-          ], look: raftLookOf)) {
-            final store = RailSideStore();
-            if (end) store.update(RaftRailSide.end);
-            final r = _Rig(
-              tester,
-              size: size,
-              rtl: rtl,
-              railSide: store,
-              themeId: pack,
-            );
-            await r.start();
-            expect(tester.takeException(), isNull);
-            final onRight = end != rtl;
-            final rail = railRect(tester);
-            final bar = sidebarRect(tester);
-            final content = chatRect(tester);
-            if (onRight) {
-              expect(rail.right, size.width);
-              expect(bar.right, closeTo(rail.left, .5));
-              expect(content.right, lessThanOrEqualTo(bar.left + .5));
-              expect(content.left, 0);
-              // The divider faces the content.
-              expect(sidebarBorder(tester).left.width, greaterThan(0));
-              expect(sidebarBorder(tester).right, BorderSide.none);
-            } else {
-              expect(rail.left, 0);
-              expect(bar.left, closeTo(rail.right, .5));
-              expect(content.left, greaterThanOrEqualTo(bar.right - .5));
-              expect(content.right, size.width);
-              expect(sidebarBorder(tester).right.width, greaterThan(0));
-              expect(sidebarBorder(tester).left, BorderSide.none);
-            }
-            // Rail and sidebar are one unit, full height, same width as ever.
-            expect(bar.width, 240);
-            expect(rail.top, bar.top);
-            expect(rail.height, bar.height);
-            // Source puts workspace switching in the top bar. Keep the frozen
-            // rail-menu direction checks as well, using its actual Elegant host.
-            final headerMenu = pack == raftThemePackId;
-            final trigger = headerMenu
-                ? find.byKey(const Key('topbar-workspace'))
-                : _rail('workspace');
-            expect(trigger, findsOneWidget);
-            final anchor = tester.getRect(trigger);
-            await tester.tap(trigger);
-            await r.settle();
-            final menu = tester.getRect(find.byType(RaftServerMenuPanel).last);
-            if (headerMenu) {
-              expect(_rail('workspace'), findsNothing);
-              expect(menu.top, greaterThanOrEqualTo(anchor.bottom));
-              expect(menu.left, greaterThanOrEqualTo(8));
-              expect(menu.right, lessThanOrEqualTo(size.width - 8));
-            } else if (onRight) {
-              expect(menu.right, lessThanOrEqualTo(rail.left + .5));
-            } else {
-              expect(menu.left, greaterThanOrEqualTo(rail.right - .5));
-            }
-            expect(tester.takeException(), isNull);
-            await tester.pumpWidget(const SizedBox.shrink());
+          final store = RailSideStore();
+          if (end) store.update(RaftRailSide.end);
+          final r = _Rig(tester, size: size, rtl: rtl, railSide: store);
+          await r.start();
+          expect(tester.takeException(), isNull);
+          final onRight = end != rtl;
+          final rail = railRect(tester);
+          final bar = sidebarRect(tester);
+          final content = chatRect(tester);
+          if (onRight) {
+            expect(rail.right, size.width);
+            expect(bar.right, closeTo(rail.left, .5));
+            expect(content.right, lessThanOrEqualTo(bar.left + .5));
+            expect(content.left, 0);
+            // The divider faces the content.
+            expect(sidebarBorder(tester).left.width, greaterThan(0));
+            expect(sidebarBorder(tester).right, BorderSide.none);
+          } else {
+            expect(rail.left, 0);
+            expect(bar.left, closeTo(rail.right, .5));
+            expect(content.left, greaterThanOrEqualTo(bar.right - .5));
+            expect(content.right, size.width);
+            expect(sidebarBorder(tester).right.width, greaterThan(0));
+            expect(sidebarBorder(tester).left, BorderSide.none);
           }
+          // Rail and sidebar are one unit, full height, same width as ever.
+          expect(bar.width, 240);
+          expect(rail.top, bar.top);
+          expect(rail.height, bar.height);
+          // Source puts workspace switching in the top bar.
+          final trigger = find.byKey(const Key('topbar-workspace'));
+          expect(trigger, findsOneWidget);
+          final anchor = tester.getRect(trigger);
+          await tester.tap(trigger);
+          await r.settle();
+          final menu = tester.getRect(find.byType(RaftServerMenuPanel).last);
+          expect(_rail('workspace'), findsNothing);
+          expect(menu.top, greaterThanOrEqualTo(anchor.bottom));
+          expect(menu.left, greaterThanOrEqualTo(8));
+          expect(menu.right, lessThanOrEqualTo(size.width - 8));
+          expect(tester.takeException(), isNull);
+          await tester.pumpWidget(const SizedBox.shrink());
         });
       }
     }

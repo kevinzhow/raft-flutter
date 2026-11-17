@@ -7,8 +7,7 @@ import 'flutter_test_config.dart' show leakDebt;
 // WP-DS2 sheet family: the phone form sheet follows raft-ui 0.95.3 Drawer
 // (layer-popover fill, ring + float shadow, 16px top radius, 36x4 line-seam
 // handle, ease-slide 240/180ms) and Web NarrowDialog's sheet head (close X at
-// the start, title, commit at the end, a seam, no footer). The frozen looks
-// keep their old sheet.
+// the start, title, commit at the end, a seam, no footer).
 
 const _opener = ValueKey('open');
 
@@ -22,16 +21,11 @@ Color _color(WidgetTester tester, String name) =>
 
 Widget _app({
   bool dark = false,
-  String? frozen,
   bool reduceMotion = false,
   required Future<void> Function(BuildContext) open,
   TargetPlatform? platform,
 }) => MaterialApp(
-  theme: raftTheme(
-    dark: dark,
-    pack: frozen == null ? null : packForThemeId(frozen),
-    platform: platform,
-  ),
+  theme: raftTheme(dark: dark, platform: platform),
   builder: (context, home) => MediaQuery(
     data: MediaQuery.of(context).copyWith(disableAnimations: reduceMotion),
     child: home!,
@@ -67,7 +61,6 @@ RaftPresentedRoute<void>? _route;
 Future<void> _openForm(
   WidgetTester tester, {
   bool dark = false,
-  String? frozen,
   bool reduceMotion = false,
   bool settle = true,
   bool dismissible = true,
@@ -78,7 +71,6 @@ Future<void> _openForm(
   await tester.pumpWidget(
     _app(
       dark: dark,
-      frozen: frozen,
       reduceMotion: reduceMotion,
       platform: platform,
       open: (context) async {
@@ -108,18 +100,11 @@ Material _material(WidgetTester tester) => tester.widget<Material>(
   find.descendant(of: _surface, matching: find.byType(Material)).first,
 );
 
-Future<void> _pumpSurface(
-  WidgetTester tester, {
-  bool dark = false,
-  String? frozen,
-}) async {
+Future<void> _pumpSurface(WidgetTester tester, {bool dark = false}) async {
   _size(tester, const Size(390, 844));
   await tester.pumpWidget(
     MaterialApp(
-      theme: raftTheme(
-        dark: dark,
-        pack: frozen == null ? null : packForThemeId(frozen),
-      ),
+      theme: raftTheme(dark: dark),
       home: const Scaffold(
         body: RaftSheetSurface(
           height: 400,
@@ -167,29 +152,6 @@ void main() {
         );
       });
     }
-
-    testWidgets('a frozen look keeps the panel fill, the line-muted frame and '
-        'no shadow', (tester) async {
-      await _pumpSurface(tester, frozen: elegantThemePackId);
-      final material = _material(tester);
-      final t = RaftTokens.of(tester.element(find.byType(Scaffold)));
-      expect(material.color, t.panel);
-      final shape = material.shape as RoundedRectangleBorder;
-      expect(shape.side.color, t.colors['line-muted']);
-      expect(
-        tester
-            .widgetList<DecoratedBox>(
-              find.descendant(
-                of: _surface,
-                matching: find.byType(DecoratedBox),
-              ),
-            )
-            .map((d) => d.decoration)
-            .whereType<BoxDecoration>()
-            .expand((d) => d.boxShadow ?? const <BoxShadow>[]),
-        isEmpty,
-      );
-    });
   });
 
   group('handle', () {
@@ -208,15 +170,6 @@ void main() {
         (mark.decoration as BoxDecoration).color,
         _color(tester, 'line-seam'),
       );
-    });
-
-    testWidgets('a frozen look keeps the 24px box and the placeholder mark', (
-      tester,
-    ) async {
-      await _pumpSurface(tester, frozen: elegantThemePackId);
-      final box = find.byType(RaftSheetHandle);
-      expect(tester.getSize(box).height, 24);
-      expect(tester.getTopLeft(_mark).dy - tester.getTopLeft(box).dy, 10);
     });
 
     for (final size in const [
@@ -296,14 +249,6 @@ void main() {
       expect(_route!.reverseTransitionDuration, _frame);
     });
 
-    testWidgets('a frozen look keeps the framework sheet motion', (
-      tester,
-    ) async {
-      _size(tester, const Size(390, 844));
-      await _openForm(tester, frozen: elegantThemePackId);
-      expect(_route!.sheetAnimationStyle, isNull);
-    });
-
     testWidgets('a presented dialog form has no fade or scale', (tester) async {
       _size(tester, const Size(1280, 800));
       await _openForm(tester, settle: false);
@@ -319,12 +264,6 @@ void main() {
         find.ancestor(of: content, matching: find.byType(FadeTransition)),
       );
       expect(fades.where((f) => f.opacity.value < 1), isEmpty);
-    });
-
-    testWidgets('a frozen look keeps the 150ms dialog fade', (tester) async {
-      _size(tester, const Size(1280, 800));
-      await _openForm(tester, frozen: elegantThemePackId, settle: false);
-      expect(_route!.transitionDuration, const Duration(milliseconds: 150));
     });
   });
 
@@ -428,13 +367,6 @@ void main() {
       }
     });
 
-    testWidgets('a frozen look keeps the footer sheet', (tester) async {
-      _size(tester, const Size(390, 844));
-      await _openForm(tester, frozen: elegantThemePackId);
-      expect(head, findsNothing);
-      expect(find.text('Cancel'), findsOneWidget);
-    });
-
     testWidgets('a sheet with only a footer keeps the footer', (tester) async {
       _size(tester, const Size(390, 844));
       await _openForm(
@@ -520,21 +452,5 @@ void main() {
         expect(closed, 1);
       });
     }
-
-    testWidgets('a frozen look gets its own ghost X button', (tester) async {
-      _size(tester, const Size(390, 844));
-      await tester.pumpWidget(
-        MaterialApp(
-          theme: raftTheme(pack: packForThemeId(elegantThemePackId)),
-          home: Scaffold(
-            body: Center(child: RaftSheetClose(onPressed: () {})),
-          ),
-        ),
-      );
-      final button = tester.widget<RaftButton>(find.byType(RaftButton));
-      expect(button.glyph, RaftGlyph.x);
-      expect(button.tone, RaftButtonRecipeVariant.ghost);
-      expect(find.bySemanticsLabel('Close'), findsOneWidget);
-    });
   });
 }

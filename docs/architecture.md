@@ -8,7 +8,7 @@
 
 - raft-source main 快照 26f77ef97c40d3d91aa2c5e42b0fd66b8bf39fe6；Web 1.17.5，使用 raft-ui 0.5.27、Socket.IO 4.8.3、Zustand、React Markdown、Mermaid、FlexLayout。
 - 真正的基础设计系统在独立 npm 包 raft-ui，不只在 Web CSS。下载并检查了版本匹配的包，包元数据标记 MIT，包含 foundation.css、fonts.css、React 组件声明和行为。产品 Web 还覆写部分 tokens；ui-inventory 导入真实产品组件，但例子包含历史硬编码，不能把全部例子自动视为最新规范。
-- appTheme.ts 将 family 与 mode 分离。Brutal 仅 light；Elegant light/dark；偏好 mode + lightThemeId + darkThemeId，默认 system、白天 brutal、夜间 elegant。Flutter 要照搬解析/兼容规则，而非额外发明 Brutal Dark。
+- 外观只有 Raft 一套（light/dark）；设置里的外观偏好是 Light / Dark / System（2026-11-17 起 Elegant、Brutal 已删除）。
 - API 认证需要人类客户端会话、刷新去重、X-Server-Id、generation 切换清理。raft-sdk 是 TS 库，不可直接导入 Dart；agent API 也不能充当全量 human API。
 - sync-core 是纯状态机，存在 epoch、watermark、gap repair、幂等和 domain adapter；需 Dart 行为移植。Activity TypeSpec packet/部分 OpenAPI pilot 明确 experimental 或未挂载，不能当现网已实现全量协议。
 - 现有桌面 bridge 包含窗口与服务器绑定；移动 bridge 区分实际会话和 onboarding generation。Flutter 平台适配要保留这些行为，不依赖 React DOM。
@@ -150,7 +150,7 @@ The released APK smoke used an owned 16KiB Android emulator and synthetic input 
 
 移动任务槽现在拥有独立 MaterialPage，桌面继续使用 modal / docked 呈现。频道设置与成员通过客户端 `channelPage=settings:<channelId>|members:<channelId>` 槽投影为页面；底层频道、消息串与任务 URI 合同仍保留。冷链接先补入底层目的地，系统返回与顶部返回消费同一份业务历史；页面身份与进入实例分离，退出动画中的旧实例不会与快速重入的新实例共享帧 key。宽窄切换保留活动子树和任务 owner；呈现实例只由既有业务历史派生，不维护额外业务位置。隐藏的工作区保留草稿与列表状态，排除焦点、语义并暂停动画。
 
-移动频道设置与桌面复用 `ChannelOverflowMenu` 对应的成员区、内联名称/描述表单、偏好与管理操作，以及同一份权限和命令逻辑；移动端仍由路由槽承载，使用与 Web 手机面板一致的页头（盒状返回按钮，Brutal 62px / Elegant 56px），打开时不自动聚焦。未保存编辑在退出或转到成员页前由同一 guard 处理，窄屏提示按钮自动换行。私聊设置共享新版偏好内容，显示对方名称，不提供频道元数据或成员区。成员添加视图先消费自己的返回，再返回频道设置。账户、服务器、角色或频道权限收缩时撤销管理页。桌面仍使用右侧 drawer。
+移动频道设置与桌面复用 `ChannelOverflowMenu` 对应的成员区、内联名称/描述表单、偏好与管理操作，以及同一份权限和命令逻辑；移动端仍由路由槽承载，使用与 Web 手机面板一致的页头（盒状返回按钮），打开时不自动聚焦。未保存编辑在退出或转到成员页前由同一 guard 处理，窄屏提示按钮自动换行。私聊设置共享新版偏好内容，显示对方名称，不提供频道元数据或成员区。成员添加视图先消费自己的返回，再返回频道设置。账户、服务器、角色或频道权限收缩时撤销管理页。桌面仍使用右侧 drawer。
 
 2026-10-11 此次对齐通过 50 项设置适配/路由测试与 13 项组件/预览检查；包含 Android/iOS 路由变体、三种主题、保存、未保存返回、成员页往返和失权退出。组件测试中的系统返回模拟不等同于原生返回手势验收。
 

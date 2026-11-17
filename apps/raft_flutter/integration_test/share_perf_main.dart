@@ -48,7 +48,6 @@ void _mark(String event) {
 /// Mutable fixture state.
 class _Fx {
   int lat = 120, msg = 150;
-  String theme = 'brutal';
   bool dark = false;
 }
 
@@ -289,7 +288,6 @@ Future<void> _start() async {
   SharedPreferences.setMockInitialValues({
     'raft.origin': _origin,
     'raft.mode': _fx.dark ? 'dark' : 'light',
-    'raft.light': _fx.theme,
   });
   await DevicePreferences.load();
   final generation = ++_generation;
@@ -375,9 +373,6 @@ Future<void> _serve() async {
       switch (request.uri.path) {
         case '/scenario':
           _joined.clear();
-          _fx.theme = (q['theme'] ?? 'brutal') == 'brutal'
-              ? 'brutal'
-              : 'elegant';
           _fx.dark = q['theme'] == 'dark';
           await _start();
           request.response.write('ok');

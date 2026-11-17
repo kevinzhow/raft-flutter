@@ -1,9 +1,8 @@
 # Design tokens
 
 The current Raft look is generated from the published `@botiverse/raft-ui`
-**0.95.3** package used by Web v1.24.0. Elegant and Brutal retain their frozen
-0.5.52 sources and recipes. The two source sets have separate responsibilities;
-updating Raft does not regenerate the frozen looks.
+**0.95.3** package used by Web v1.24.0. Raft (light and dark) is the only look;
+the former Elegant and Brutal looks (frozen 0.5.52 sources) were deleted on 2026-11-17.
 
 The historical colour pipeline was calibrated against parity Chromium:
 
@@ -65,8 +64,7 @@ active tokens instead of `RaftLight`/`RaftDark`.
 The 0.5.52 tiers are only field schemas now (the names components still read).
 `RaftTokenSet.light` / `.dark` fill every field from `RaftLight` / `RaftDark`
 through `raft_token_mapping.dart`, chosen by what each colour is for, never by
-name alone (see "Current Raft look"). Upstream has only the Raft look; Flutter
-also retains Elegant and Brutal through frozen packs and recipes.
+name alone (see "Current Raft look"). Upstream has only the Raft look, and so has Flutter.
 `raftTheme(dark:)` installs `RaftTokens.theme(dark:)`. From a `RaftTokens` you get:
 
 | Getter | Type | Content |
@@ -181,7 +179,7 @@ entry or an entry points at a token that does not exist:
   `styles.css`: body 14/22, headline 16/24, footnote 12/18 ...) is the desktop scale. `RaftTokens.of(context)`
   returns a cached desktop variant (`RaftTokens.desktop`, `viewportWidth` = the breakpoint band) when the window
   is at least 768dp and `RaftInteraction.of(context)` is not touch, so `typeSlot` and `scale(RaftTypeScale.x)`
-  follow without a call site passing anything; a user pack's own slot wins, Elegant and Brutal never switch.
+  follow without a call site passing anything; a user pack's own slot wins.
   `recipeStates(responsive: true)` adds `pointer-fine` and that width for the generated recipes (34px controls,
   38x22 switch); a family opts in, the others keep their base states until their design-system package does.
 - **Borders.** `raftControlBorderPx(context, 1.5)` snaps a CSS border width the way Blink does (whole device
@@ -199,15 +197,12 @@ supports modular exports, helper-composed class lists and recipe-slot references
 Unknown recipe expressions and unexplained missing CSS fail generation.
 
 Tailwind 4.3.3 utilities retain flat selectors, media/container predicates and
-conditional theme variables. `raft_ui` recipe routers select this current set
-for Raft and the independent frozen set for Elegant and Brutal. Source data
+conditional theme variables. `raft_ui` recipe exports re-export this current set. Source data
 generation is one step; adapting each family's state, layout and compatibility
 bindings is separate work. See `docs/component-recipes.md` for family coverage.
-Validate changed adapters against the current Web's real rendering; frozen-look
-comparisons establish preservation only.
+Validate changed adapters against the current Web's real rendering.
 
 `tool/gen-glyphs` imports lucide-react 1.72.0 and `@botiverse/ricons` 0.1.1.
-Existing glyph names retain their earlier geometry for frozen looks; current
 Raft icons use the new geometry, including ricons' below-18px mark variant.
 
 ## Typography policy token

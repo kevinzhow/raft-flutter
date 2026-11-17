@@ -78,7 +78,6 @@ class _MenuPreviewState extends State<_MenuPreview> {
               ],
               resolveSlots: (state) {
                 final recipe = RaftSelectRecipe.resolve(
-                  theme: tokens.recipeTheme,
                   tokens: tokens.recipeTokens,
                   states: tokens.recipeStates(
                     hovered: state.hovered,

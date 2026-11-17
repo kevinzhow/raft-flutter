@@ -47,64 +47,6 @@ class RaftTabItem<T> {
   final Key? itemKey;
 }
 
-/// Resolved colours of a tab in one state.
-class RaftTabColors {
-  const RaftTabColors({
-    required this.fill,
-    required this.border,
-    required this.foreground,
-    this.ringEdge,
-    this.underline,
-  });
-  final Color fill, border, foreground;
-
-  /// `ring-sticker-edge` (the die-cut ring) of the selected sticker.
-  final Color? ringEdge;
-
-  /// `inset_0_-2px_0_foreground` of the selected underline tab.
-  final Color? underline;
-
-  static RaftTabColors resolve(
-    RaftUiColors ui,
-    RaftTabsVariant variant, {
-    required bool selected,
-    required bool disabled,
-    required bool hovered,
-    required bool pressed,
-  }) {
-    const clear = Color(0x00000000);
-    if (variant == RaftTabsVariant.underline) {
-      return RaftTabColors(
-        fill: clear,
-        border: clear,
-        foreground: disabled
-            ? ui.foregroundDisabled
-            : selected || hovered || pressed
-            ? ui.foreground
-            : ui.foregroundMuted,
-        underline: selected ? ui.foreground : null,
-      );
-    }
-    if (selected) {
-      return RaftTabColors(
-        fill: disabled
-            ? clear
-            : pressed
-            ? Color.alphaBlend(ui.stickerPressed, ui.brand)
-            : ui.brand,
-        border: ui.stickerInk,
-        foreground: disabled ? ui.foregroundDisabled : ui.stickerInk,
-        ringEdge: ui.stickerEdge,
-      );
-    }
-    return RaftTabColors(
-      fill: !disabled && (hovered || pressed) ? ui.fillPressed : clear,
-      border: clear,
-      foreground: disabled ? ui.foregroundDisabled : ui.foregroundMuted,
-    );
-  }
-}
-
 /// One `TabsTab`. Stateless about selection: the owner passes [selected]; [onPressed] null is `data-disabled`.
 class RaftTabButton extends StatelessWidget {
   const RaftTabButton({
@@ -149,12 +91,7 @@ class RaftTabButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
-    final ui = t.ui;
     final text = raftText(context, label);
-    final underline = variant == RaftTabsVariant.underline;
-    final borderWidth = underline ? 0.0 : raftControlBorderPx(context, 1.5);
-    final grows = growsWithText ?? RaftScaled.grows(context);
     return RaftInteractive(
       onPressed: onPressed,
       focusNode: focusNode,
@@ -162,95 +99,7 @@ class RaftTabButton extends StatelessWidget {
       selected: selected,
       semanticRole: SemanticsRole.tab,
       semanticLabel: semanticLabel ?? text,
-      builder: (context, st) {
-        if (t.isRaftLook) return _recipeSurface(context, st);
-        final disabled = onPressed == null;
-        final colors = RaftTabColors.resolve(
-          ui,
-          variant,
-          selected: selected,
-          disabled: disabled,
-          hovered: st.hovered,
-          pressed: st.pressed,
-        );
-        final fg = colors.foreground;
-        final weight = selected && !underline
-            ? FontWeight.w700
-            : FontWeight.w600;
-        final style = RaftControlTypography.of(
-          context,
-          t.scale(RaftTypeScale.callout, weight: weight, color: fg),
-        );
-        Widget? leading;
-        if (icon != null) {
-          leading = icon!(iconSize, fg, 2);
-        } else if (glyph != null) {
-          leading = RaftIcon(glyph!, size: iconSize, color: fg);
-        }
-        final content = Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ?leading,
-            if (leading != null && text.isNotEmpty) const SizedBox(width: 6),
-            if (text.isNotEmpty)
-              Text(text, maxLines: 1, softWrap: false, style: style),
-          ],
-        );
-        final rings = <RaftRing>[
-          if (colors.ringEdge != null) RaftRing(1.5, colors.ringEdge!),
-          if (st.focusVisible)
-            for (final layer in ui.focusRing.layers)
-              RaftRing(layer.spread, layer.color),
-        ];
-        final boxHeight = height ?? heightOf(variant);
-        Widget box = RaftCssBox(
-          // Measured per look rather than taken from the 0.7.1 class:
-          //   Raft     official `rounded-control`          = 8
-          //   Elegant  a57b9dab tab `rounded-md` (0.375rem) = 6
-          //   Brutal   a57b9dab tab, no rounding           = 0
-          // `radius.control` carries exactly 8 / 6 / 0, so it fits all three.
-          // `radius.chip` also holds 6 for Raft but 4 for Elegant, which would
-          // miss the measurement.
-          // The underline variant is `rounded-none` in the official source: a
-          // shape decision rather than a theme value, so it stays 0 everywhere.
-          radius: underline ? 0 : t.size('radius.control', fallback: 8),
-          fill: colors.fill,
-          borderWidth: borderWidth,
-          borderColor: colors.border,
-          rings: rings,
-          height: grows ? null : boxHeight,
-          padding:
-              padding ??
-              (underline
-                  ? EdgeInsets.zero
-                  : const EdgeInsets.symmetric(horizontal: 12)),
-          alignment: Alignment.center,
-          child: content,
-        );
-        if (grows) {
-          box = ConstrainedBox(
-            constraints: BoxConstraints(minHeight: boxHeight),
-            child: box,
-          );
-        }
-        if (colors.underline != null) {
-          box = Stack(
-            children: [
-              box,
-              Positioned(
-                left: 0,
-                right: 0,
-                bottom: 0,
-                height: 2,
-                child: IgnorePointer(
-                  child: ColoredBox(color: colors.underline!),
-                ),
-              ),
-            ],
-          );
-        }
-        return box;
-      },
+      builder: _recipeSurface,
     );
   }
 
@@ -258,7 +107,6 @@ class RaftTabButton extends StatelessWidget {
     final t = RaftTokens.of(context);
     final tokens = t.recipeTokens;
     final recipe = RaftTabsRecipe.resolve(
-      theme: t.recipeTheme,
       variant: variant == RaftTabsVariant.underline
           ? RaftTabsRecipeVariant.underline
           : RaftTabsRecipeVariant.default_,
@@ -396,16 +244,13 @@ class _RaftTabsListState<T> extends State<RaftTabsList<T>> {
   Widget build(BuildContext context) {
     final underline = widget.variant == RaftTabsVariant.underline;
     final tokens = RaftTokens.of(context);
-    final list = tokens.isRaftLook
-        ? RaftTabsRecipe.resolve(
-            theme: tokens.recipeTheme,
-            variant: underline
-                ? RaftTabsRecipeVariant.underline
-                : RaftTabsRecipeVariant.default_,
-            tokens: tokens.recipeTokens,
-          ).list
-        : null;
-    final gap = list?.columnGap ?? (underline ? 20.0 : 2.0);
+    final list = RaftTabsRecipe.resolve(
+      variant: underline
+          ? RaftTabsRecipeVariant.underline
+          : RaftTabsRecipeVariant.default_,
+      tokens: tokens.recipeTokens,
+    ).list;
+    final gap = list.columnGap ?? (underline ? 20.0 : 2.0);
     final row = Row(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.center,

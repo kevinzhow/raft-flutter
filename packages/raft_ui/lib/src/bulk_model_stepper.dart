@@ -4,7 +4,7 @@ import '../raft_ui.dart';
 
 /// Web `Stepper` (BulkChangeModelDialog): "1 Choose model ─── 2 Review". Once
 /// reviewing, step 1 turns into a check mark in the success colour and step 2
-/// takes the strong ink. Brutal draws it bold, uppercase and with a 2px rule.
+/// takes the strong ink.
 class RaftBulkModelStepper extends StatelessWidget {
   const RaftBulkModelStepper({super.key, required this.reviewing});
   final bool reviewing;

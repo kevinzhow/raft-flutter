@@ -27,13 +27,8 @@ void main() {
   testWidgets(
     'native marker values come from the same five-theme Flutter recipe and flash animation',
     (tester) async {
-      for (final id in raftThemeMatrix([
-        raftThemePackId,
-        elegantThemePackId,
-        brutalThemePackId,
-      ], look: raftLookOf)) {
+      for (final id in raftThemeMatrix([raftThemePackId])) {
         for (final dark in [false, true]) {
-          if (id == brutalThemePackId && dark) continue;
           final session = RaftAttachmentCommentState()..commentMode = true;
           final controller = NativeGeometry();
           await tester.pumpWidget(

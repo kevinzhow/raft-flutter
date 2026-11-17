@@ -12,13 +12,7 @@ const _windows = [
   (Size(390, 844), TargetPlatform.linux, 0.0),
 ];
 
-const _themes = [
-  (raftLookRaft, raftThemePackId, false),
-  (raftLookRaft, raftThemePackId, true),
-  (raftLookElegant, elegantThemePackId, false),
-  (raftLookElegant, elegantThemePackId, true),
-  (raftLookBrutal, brutalThemePackId, false),
-];
+const _themes = [(raftThemePackId, false), (raftThemePackId, true)];
 
 Finder get _join => find.descendant(
   of: find.byType(RaftChannelJoinFooter),
@@ -26,15 +20,14 @@ Finder get _join => find.descendant(
 );
 
 void main() {
-  for (final (look, pack, dark) in raftThemeMatrix(
+  for (final (pack, dark) in raftThemeMatrix(
     _themes,
-    look: (theme) => theme.$1,
-    dark: (theme) => theme.$3,
+    dark: (theme) => theme.$2,
   )) {
     for (final (size, platform, inset) in _windows) {
       for (final thread in [false, true]) {
         testWidgets(
-          '$look/$dark ${size.width}x${size.height} '
+          '$pack/$dark ${size.width}x${size.height} '
           '${thread ? 'thread' : 'workspace'} Join clears the system bar then becomes a composer',
           (t) async {
             final f = await FooterInsetFixture.mount(
@@ -107,7 +100,7 @@ void main() {
         'This Joint Channel is read-only because it has more than 2 free servers. It becomes writable again when one server\'s admin upgrades or a free server leaves.',
       ),
     ]) {
-      testWidgets('$look/$dark mounted $state notice clears the system bar', (
+      testWidgets('$pack/$dark mounted $state notice clears the system bar', (
         t,
       ) async {
         const size = Size(856, 944);

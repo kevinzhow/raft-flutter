@@ -101,7 +101,7 @@ void main() {
     expect(app.themeMode, ThemeMode.system);
   });
 
-  // Brutal and Elegant are the one Raft look now; `raft.mode` already said
+  // The retired families are the one Raft look now; `raft.mode` already said
   // Light, Dark or System.
   for (final family in ['brutal', 'elegant', 'retired-family']) {
     testWidgets('the retired theme family "$family" changes nothing', (
@@ -133,56 +133,32 @@ void main() {
   });
 
   test(
-    'storedAppearance reads the theme id independently of the mode',
+    'a stored theme id is ignored: the mode is the whole appearance',
     () async {
-      // The theme and the mode are separate choices stored under separate keys:
-      // picking Elegant must not disturb Light/Dark/System, and vice versa.
-      SharedPreferences.setMockInitialValues({
-        'raft.mode': 'dark',
-        'raft.theme': 'brutal',
-      });
-      final p = await SharedPreferences.getInstance();
-      final stored = storedAppearance(p);
-      expect(stored.themeId, 'brutal');
-      expect(stored.mode, ThemeMode.dark);
-
-      // No stored theme means the default look, not an empty id.
-      SharedPreferences.setMockInitialValues({'raft.mode': 'light'});
-      expect(
-        storedAppearance(await SharedPreferences.getInstance()).themeId,
-        raftThemePackId,
-      );
-
-      // An id naming no built-in theme is preserved as written: the user's
-      // choice is not silently rewritten, it is resolved to the fallback look
-      // when painted.
-      SharedPreferences.setMockInitialValues({'raft.theme': 'my-own-pack'});
-      expect(
-        storedAppearance(await SharedPreferences.getInstance()).themeId,
-        'my-own-pack',
-      );
+      for (final theme in ['brutal', 'elegant', 'my-own-pack']) {
+        SharedPreferences.setMockInitialValues({
+          'raft.mode': 'dark',
+          'raft.theme': theme,
+        });
+        final p = await SharedPreferences.getInstance();
+        expect(storedAppearance(p).mode, ThemeMode.dark, reason: theme);
+        expect(storedAppearance(p).pack.id, raftThemePackId, reason: theme);
+      }
     },
   );
 
-  test('choosing a theme persists it without touching the mode', () async {
-    // The theme id gets its own key, so setting one never rewrites the other.
-    // Painting is covered by packages/raft_ui/test/appearance_theme_test.dart,
-    // which can assert on tokens without booting the whole app.
-    SharedPreferences.setMockInitialValues({'raft.mode': 'light'});
+  test('saving the appearance writes the mode and drops raft.theme', () async {
+    SharedPreferences.setMockInitialValues({
+      'raft.mode': 'light',
+      'raft.theme': 'brutal',
+      'raft.light': 'elegant',
+    });
     final p = await SharedPreferences.getInstance();
-
-    const chosen = RaftAppearance(
-      mode: ThemeMode.light,
-      themeId: brutalThemePackId,
-    );
-    await p.setString('raft.mode', chosen.mode.name);
-    await p.setString(appearanceThemeKey, chosen.themeId);
-
-    expect(p.getString(appearanceThemeKey), brutalThemePackId);
-    expect(p.getString('raft.mode'), 'light');
-    // And it round-trips through the reader the first frame uses.
-    expect(storedAppearance(p).themeId, brutalThemePackId);
-    expect(storedAppearance(p).mode, ThemeMode.light);
+    await saveAppearance(p, const RaftAppearance(mode: ThemeMode.dark));
+    expect(p.getString('raft.mode'), 'dark');
+    expect(p.containsKey(appearanceThemeKey), isFalse);
+    expect(p.containsKey(retiredAppearanceThemeKey), isFalse);
+    expect(storedAppearance(p).mode, ThemeMode.dark);
   });
 
   test('storedAppearance reads the mode synchronously', () async {

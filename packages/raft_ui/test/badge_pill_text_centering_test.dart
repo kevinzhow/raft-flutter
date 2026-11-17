@@ -327,7 +327,7 @@ void main() {
             if (rows == null) {
               problems.add('$tag: no ink found');
             } else {
-              // Descenders of line-height-1 faces (brutal) and CJK ink reach
+              // Descenders of line-height-1 faces and CJK ink reach
               // the line edge, so the ink may touch the inner edge; a label
               // clipped to a shorter box is caught by the paragraph check.
               final ink = rows.$2 - rows.$1;

@@ -15,9 +15,7 @@ enum RaftPixelSpinnerSize {
   md,
   lg;
 
-  /// Resolve the modern-only painter from the existing generated source.
-  /// The frozen ring renderer never enters this path. Its legacy-shaped
-  /// router cannot represent the published `pixel` slot.
+  /// Resolve the painter from the existing generated source.
   source.RaftSpinnerRecipeStyle resolve(
     RaftTokenResolver? tokens, {
     bool inverse = false,
@@ -38,9 +36,8 @@ enum RaftPixelSpinnerSize {
   double get extent => pixel * 2 + gap;
 }
 
-/// The Raft look's painter for raft-ui `Spinner`. App and product code uses
-/// `RaftSpinner`, the one spinner: it paints this in the Raft look and the
-/// frozen ring in Elegant and Brutal.
+/// The painter for raft-ui `Spinner`. App and product code uses
+/// `RaftSpinner`, the one spinner.
 class RaftPixelSpinner extends StatefulWidget {
   const RaftPixelSpinner({
     super.key,

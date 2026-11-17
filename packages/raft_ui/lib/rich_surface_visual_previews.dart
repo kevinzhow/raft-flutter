@@ -139,7 +139,7 @@ class _SurfaceFixtureState extends State<_SurfaceFixture> {
     (hostKey.currentContext as Element).visitChildren(visit);
     final t = RaftTokens.of(context);
     debugPrint(
-      'RICH_VISUAL_GEOMETRY ${jsonEncode({'kind': widget.kind, 'theme': '${'elegant'}-${t.dark ? 'dark' : 'light'}', 'geometry': geometry})}',
+      'RICH_VISUAL_GEOMETRY ${jsonEncode({'kind': widget.kind, 'theme': 'raft-${t.dark ? 'dark' : 'light'}', 'geometry': geometry})}',
     );
   }
 

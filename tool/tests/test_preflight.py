@@ -487,16 +487,9 @@ class TestBudgetStepTests(unittest.TestCase):
         self.assertEqual(len(self.flutter_tests(world)), 3)  # the extra run counted it afresh
 
     def test_the_run_uses_the_gate_tier_whatever_the_shell_says(self):
-        with mock.patch.dict(pf.os.environ, {'RAFT_TEST_TIER': 'full', 'RAFT_TEST_ALL_THEMES': '1'}):
+        with mock.patch.dict(pf.os.environ, {'RAFT_TEST_TIER': 'full'}):
             env = pf.run_env('/tmp/x')
         self.assertEqual(env['RAFT_TEST_TIER'], 'gate')
-        self.assertNotIn('RAFT_TEST_ALL_THEMES', env)
-
-    def test_the_run_tests_the_raft_look_only(self):
-        with mock.patch.dict(pf.os.environ, {'RAFT_TEST_LOOKS': 'all', 'RAFT_TEST_MODES': 'dark'}):
-            env = pf.run_env('/tmp/x')
-        self.assertEqual(env['RAFT_TEST_LOOKS'], 'raft')
-        self.assertNotIn('RAFT_TEST_MODES', env)
 
     def test_suite_paths_are_repo_relative_whether_absolute_or_app_relative(self):
         self.assertEqual(pf.repo_relative(str(pf.root / 'apps/raft_flutter/test/a_test.dart')), 'apps/raft_flutter/test/a_test.dart')

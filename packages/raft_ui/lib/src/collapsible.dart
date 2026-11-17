@@ -4,7 +4,6 @@ import 'hover_region.dart';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:raft_theme/recipes.dart' show RaftRecipeSet;
 
 import 'localization.dart';
 import 'raft_underline.dart';
@@ -702,12 +701,11 @@ class RaftShowMoreToggle extends StatefulWidget {
   final Widget? icon;
   final TextStyle? style;
 
-  /// Web ShowMoreToggle is underlined; one themed recipe (Brutal rich cards)
-  /// keeps the label plain.
+  /// Web ShowMoreToggle is underlined (while a mouse hovers it).
   final bool underline;
 
-  /// The control's height; null is the label's own line (16 for the frozen
-  /// looks, the footnote line 18 for the Raft look).
+  /// The control's height; null is the label's own line (the footnote line,
+  /// 18).
   final double? visualHeight;
   @override
   State<RaftShowMoreToggle> createState() => _RaftShowMoreToggleState();
@@ -718,21 +716,18 @@ class _RaftShowMoreToggleState extends State<RaftShowMoreToggle> {
   @override
   Widget build(BuildContext context) {
     final tokens = RaftTokens.of(context);
-    final raft = tokens.recipeSet == RaftRecipeSet.raft;
     final mouse = RaftInteraction.of(context).pointer;
     final style = widget.style ?? MessageContentRecipe(tokens).toggle;
-    // Raft look: the footnote line (18 at 1.0x) grows with the text scale so
+    // The footnote line (18 at 1.0x) grows with the text scale so
     // a large type size wraps the label instead of overflowing the control.
     final fontSize = style.fontSize ?? 13;
     final visualHeight =
         widget.visualHeight ??
-        (raft
-            ? math.max(
-                18.0,
-                MediaQuery.textScalerOf(context).scale(fontSize) *
-                    (style.height ?? 18 / fontSize),
-              )
-            : 16.0);
+        math.max(
+          18.0,
+          MediaQuery.textScalerOf(context).scale(fontSize) *
+              (style.height ?? 18 / fontSize),
+        );
     final color = hovered
         ? MessageContentSemantic(tokens).toggleHover
         : style.color;
@@ -765,12 +760,10 @@ class _RaftShowMoreToggleState extends State<RaftShowMoreToggle> {
                   child: RaftUnderlinedText(
                     widget.label,
                     // raft-ui `TextLink`: underlined only while a mouse hovers
-                    // it (1.5px, offset 3); the frozen looks underline at rest.
-                    underline: raft
-                        ? widget.underline && hovered && mouse
-                        : widget.underline,
-                    underlineOffset: raft ? 3 : null,
-                    underlineThickness: raft ? 1.5 : null,
+                    // it (1.5px, offset 3).
+                    underline: widget.underline && hovered && mouse,
+                    underlineOffset: 3,
+                    underlineThickness: 1.5,
                     style: style.copyWith(color: color),
                   ),
                 ),

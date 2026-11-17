@@ -15,7 +15,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show LogicalKeyboardKey;
 
 import '../raft_ui.dart';
-import 'recipes/recipe_runtime.dart' show RaftRecipeSet;
 
 // ------------------------------------------------------------------- data
 
@@ -420,26 +419,15 @@ Widget _smallButton(
   RaftButtonRecipeVariant variant = RaftButtonRecipeVariant.outline,
   RaftButtonRecipeVariant? raftVariant,
   VoidCallback? onPressed,
-  bool brutalDisabledFill = false,
   String? tooltip,
 }) {
   final button = Builder(
     builder: (context) => RaftRecipeButton(
-      // `theme-brutal:disabled:bg-gray-200` (bulk action bar).
-      brutalSurface: brutalDisabledFill && onPressed == null
-          ? (t, _) => BoxDecoration(
-              color: const Color(0xFFE5E7EB),
-              border: Border.all(color: Colors.black, width: 2),
-              boxShadow: RaftShadowSet.brutalSm,
-            )
-          : null,
       key: key,
       label: label,
       glyph: glyph,
       glyphSize: 12,
-      variant: RaftTokens.of(context).recipeSet == RaftRecipeSet.raft
-          ? raftVariant ?? variant
-          : variant,
+      variant: raftVariant ?? variant,
       size: RaftButtonRecipeSize.sm,
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       textStep: (12, 16),
@@ -471,14 +459,13 @@ Widget _actionButton(
   String? tooltip,
 }) => Builder(
   builder: (context) {
-    final current = RaftTokens.of(context).recipeSet == RaftRecipeSet.raft;
-    final sourceSize = current && raftSize != null;
+    final sourceSize = raftSize != null;
     return RaftRecipeButton(
       key: key,
       label: label,
       glyph: glyph,
       glyphSize: sourceSize ? null : 14,
-      variant: current ? raftVariant ?? variant : variant,
+      variant: raftVariant ?? variant,
       size: sourceSize ? raftSize : RaftButtonRecipeSize.sm,
       padding: sourceSize
           ? null
@@ -870,9 +857,7 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
   Future<void> showResetOptions() async {
     final count = selected.length;
     final mode = await showRaftDialog<RaftComputerBulk>(
-      legacyMaterial: true,
       context: context,
-      legacyBarrierColor: RaftTokens.of(context).colors['layer-backdrop'],
       // Web `DialogCard` without `closeOnBackdrop`: a stray press on the
       // scrim keeps the choice; Escape and Back still close it.
       barrierDismissible: false,
@@ -981,7 +966,7 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
     child: Container(
       key: widget.headerKey ?? const ValueKey('computer-section-header'),
       // MainLayout's content column (`bg-layer-canvas-muted`) shows through
-      // the transparent Elegant PanelHeader; Brutal paints white.
+      // the transparent PanelHeader.
       color: t.colors['layer-canvas-muted'],
       child: RaftPanelHeaderBar(
         title: '${d.name}',
@@ -1002,8 +987,7 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
         ],
         iconSlot: RaftPanelHeaderIconTile(
           glyph: d.deviceGlyph,
-          // bg-primary-soft theme-brutal:bg-soft-signal; elegant border-0
-          // bg-fill-muted (`in-data-[theme=elegant]` wins).
+          // border-0 bg-fill-muted.
           background: t.colors['fill-muted']!,
           borderless: !false,
         ),
@@ -1088,83 +1072,7 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
   /// `flex items-start gap-4 px-5 py-5 border-b`: Card size-16 + Monitor 28,
   /// name (`text-lg font-bold leading-tight`), status (StatusDot + `text-sm
   /// font-mono` muted/60), hostname (`text-sm font-mono` muted/50).
-  Widget _identity(RaftTokens t) {
-    final ink = _Ink(t);
-    if (t.recipeSet == RaftRecipeSet.raft) return _identityRaft(t);
-    return _rule(
-      t,
-      key: const ValueKey('computer-section-identity'),
-      top: false,
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SizedBox.square(
-              dimension: 64,
-              child: RaftCard(
-                child: Center(
-                  child: RaftIcon(
-                    RaftGlyph.monitor,
-                    size: 28,
-                    color: ink.strong,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  RaftCssText(
-                    '${d.name}',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: ink.body(
-                      18,
-                      22.5,
-                      color: ink.strong,
-                      w: FontWeight.w700,
-                    ),
-                  ),
-                  Row(
-                    children: [
-                      RaftActivityDot(
-                        color: online
-                            ? t.product.brutalLime
-                            : upgrading
-                            ? t.product.brutalCyan
-                            : raftGray400,
-                      ),
-                      const SizedBox(width: 8),
-                      Flexible(
-                        child: RaftCssText(
-                          online
-                              ? 'Connected'
-                              : upgrading
-                              ? 'Updating…'
-                              : 'Offline',
-                          style: ink.mono(14, 20, color: ink.muted(.6)),
-                        ),
-                      ),
-                    ],
-                  ),
-                  if ((d.hostname ?? '').isNotEmpty)
-                    RaftCssText(
-                      d.hostname!,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: ink.mono(14, 20, color: ink.muted(.5)),
-                    ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  Widget _identity(RaftTokens t) => _identityRaft(t);
 
   /// Eyebrow + pencil row: `flex items-center gap-2 mb-1`.
   Widget _editableEyebrow(
@@ -2011,7 +1919,6 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
                               : 'Start',
                           glyph: RaftGlyph.play,
                           variant: RaftButtonRecipeVariant.success,
-                          brutalDisabledFill: true,
                           tooltip: online
                               ? 'Start selected offline agents'
                               : 'Computer must be online to start agents',
@@ -2027,7 +1934,6 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
                           key: const ValueKey('computer-bulk-stop'),
                           tooltip: 'Stop selected online agents',
                           glyph: RaftGlyph.square,
-                          brutalDisabledFill: true,
                           onPressed:
                               bulkAction == null && selectedOnline.isNotEmpty
                               ? showStopConfirm
@@ -2038,7 +1944,6 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
                           key: const ValueKey('computer-bulk-restart-reset'),
                           tooltip: online ? 'Restart or reset selected agents' : 'Computer must be online to restart or reset agents',
                           glyph: RaftGlyph.rotateCcw,
-                          brutalDisabledFill: true,
                           onPressed: bulkAction == null && online
                               ? showResetOptions
                               : null,
@@ -2049,7 +1954,6 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
                             key: const ValueKey('computer-bulk-change-model'),
                             tooltip: 'Change runtime and model for the selected agents',
                             glyph: RaftGlyph.arrowLeftRight,
-                            brutalDisabledFill: true,
                             onPressed: bulkAction != null || changingModel
                                 ? null
                                 : () async {
@@ -2755,7 +2659,6 @@ class _BulkResetDialogState extends State<_BulkResetDialog> {
     ];
     // ignore: raft_lints/avoid_render_where_without_or_else -- `options` is a fixed list holding every mode the state can take.
     final current = options.firstWhere((o) => o.$1 == mode);
-    final legacy = t.recipeSet == RaftRecipeSet.legacy;
     final actions = [
       _actionButton(
         'Cancel',
@@ -2764,7 +2667,6 @@ class _BulkResetDialogState extends State<_BulkResetDialog> {
         horizontal: 16,
         onPressed: () => Navigator.of(context).pop(),
       ),
-      if (legacy) const SizedBox(width: 12),
       _actionButton(
         current.$2,
         raftSize: RaftButtonRecipeSize.lg,
@@ -2835,18 +2737,12 @@ class _BulkResetDialogState extends State<_BulkResetDialog> {
                   ),
                 ],
                 const SizedBox(height: 20),
-                if (legacy)
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: actions,
-                  )
-                else
-                  OverflowBar(
-                    alignment: MainAxisAlignment.end,
-                    spacing: RaftSpace.x2,
-                    overflowSpacing: RaftSpace.x2,
-                    children: actions,
-                  ),
+                OverflowBar(
+                  alignment: MainAxisAlignment.end,
+                  spacing: RaftSpace.x2,
+                  overflowSpacing: RaftSpace.x2,
+                  children: actions,
+                ),
               ],
             ),
           ),

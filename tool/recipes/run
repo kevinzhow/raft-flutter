@@ -3,13 +3,10 @@
 #   extract.mjs  -> build/recipes/recipes.raw.json
 #   resolve.mjs  -> build/recipes/{recipes,coverage}.json, docs/component-recipes.md
 #   gen_dart.mjs -> packages/raft_theme/lib/recipes/*.g.dart (+ parity fixtures)
-#   gen_router.mjs -> packages/raft_ui/lib/src/recipes/*.g.dart (routes each recipe class
-#                     to this Raft set or to the frozen legacy set)
+#   gen_router.mjs -> packages/raft_ui/lib/src/recipes/*.g.dart (re-exports each recipe class
+#                     from the Raft set)
 #
-# This produces ONLY the Raft set. The Elegant and Brutal looks keep the frozen
-# raft-ui 0.5.52 output in packages/raft_theme/lib/recipes/legacy/ (see
-# packages/raft_theme/lib/recipes_legacy.dart); raft-ui 0.6.0 removed the `theme`
-# axis it was generated from, so that directory is never regenerated.
+# This produces the Raft set.
 #
 # Usage: tool/recipes/run [--test] [--raft-ui-only]
 #   --test          also run the node tests (incl. determinism) and the Dart recipe tests

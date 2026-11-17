@@ -322,29 +322,6 @@ void main() {
     expect(action.style!.color, tokens.colors['foreground']);
   });
 
-  for (final id in [elegantThemePackId, brutalThemePackId]) {
-    testWidgets('legacy capacity upgrade copy remains unchanged $id', (
-      t,
-    ) async {
-      w
-        ..machines = [_machine]
-        ..billing = {
-          'displayName': 'Free',
-          'capacity': {'maxAgents': 2, 'maxUniversalSeats': -1},
-          'usage': {'agents': 2, 'universalSeats': 0},
-        };
-      await open(t, pack: packForThemeId(id));
-      expect(
-        find.byWidgetPredicate(
-          (widget) =>
-              widget is RaftAgentInlineText &&
-              widget.action == 'Upgrade for More',
-        ),
-        findsOneWidget,
-      );
-    });
-  }
-
   testWidgets('selected runtime submits the v2 form in one dialog', (t) async {
     w
       ..machines = [_machine]

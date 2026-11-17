@@ -66,7 +66,6 @@ void main() {
         },
       },
       dark: false,
-      againstWeb: true,
     );
     addTearDown(() async {
       await tester.pumpWidget(const SizedBox.shrink());
@@ -78,7 +77,7 @@ void main() {
         extThreadAttachmentCases['components.thread-ext.attachment.image.pending-address-no-preview.brutal']!;
     await tester.pumpWidget(
       MaterialApp(
-        theme: raftTheme(pack: packForThemeId(raftThemePackId)),
+        theme: raftTheme(),
         home: MediaQuery(
           data: const MediaQueryData(
             size: Size(1280, 800),
@@ -97,14 +96,13 @@ void main() {
     AddressWaitHarness h, {
     String id = 'a',
     Key? key,
-    String look = raftThemePackId,
     bool dark = false,
   }) async {
     t.view.physicalSize = const Size(1280, 800);
     t.view.devicePixelRatio = 1;
     await t.pumpWidget(
       MaterialApp(
-        theme: raftTheme(pack: packForThemeId(look), dark: dark),
+        theme: raftTheme(dark: dark),
         home: MediaQuery(
           data: const MediaQueryData(disableAnimations: true),
           child: h.view(id: id, key: key),
@@ -280,34 +278,6 @@ void main() {
       expect(h.files.queries.single.url.endsWith('/b.png'), isTrue);
     },
   );
-  for (final mode in [
-    (look: elegantThemePackId, dark: false),
-    (look: elegantThemePackId, dark: true),
-    (look: brutalThemePackId, dark: false),
-  ]) {
-    testWidgets(
-      'frozen ${mode.look}/${mode.dark} keeps its original waiting placeholder',
-      (t) async {
-        final h = AddressWaitHarness();
-        cleanup(t, h);
-        await mount(t, h, look: mode.look, dark: mode.dark);
-        final lease = t
-            .state<AttachmentLightboxImageState>(
-              find.byType(AttachmentLightboxImage),
-            )
-            .lease!;
-        expect(lease.lease.waitingForAddress, isTrue);
-        expect(find.byType(RaftSpinner), findsNothing);
-        expect(find.byType(RaftTransferPlaceholder), findsOneWidget);
-        h.client.resolve('a');
-        await t.pump();
-        await t.pump();
-        expect(lease.lease.waitingForAddress, isFalse);
-        expect(find.byType(RaftSpinner), findsNothing);
-        expect(find.byType(RaftTransferPlaceholder), findsOneWidget);
-      },
-    );
-  }
 
   testWidgets(
     'two original-image leases share one actual address query and keep independent release',

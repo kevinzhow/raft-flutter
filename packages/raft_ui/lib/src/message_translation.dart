@@ -52,7 +52,6 @@ class RaftMessageTranslationStatus extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context), tokens = t.recipeTokens;
     final recipe = RaftMessageTranslationRecipe.resolve(
-      theme: t.recipeTheme,
       states: t.recipeStates(),
       tokens: tokens,
     );
@@ -129,7 +128,6 @@ class _RaftTranslationActionState extends State<_RaftTranslationAction> {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context), tokens = t.recipeTokens;
     final recipe = RaftMessageTranslationRecipe.resolve(
-      theme: t.recipeTheme,
       states: t.recipeStates(hovered: hovered),
       tokens: tokens,
     );
@@ -287,21 +285,15 @@ class RaftMessageTranslationOriginal extends StatelessWidget {
   /// The quote's text colour, which Web markdown prose inside it inherits.
   static Color? foreground(BuildContext context) {
     final t = RaftTokens.of(context), tokens = t.recipeTokens;
-    return RaftMarkdownRecipe.resolve(
-      theme: t.recipeTheme,
-      tokens: tokens,
-    ).blockquote.foreground(tokens);
+    return RaftMarkdownRecipe.resolve(tokens: tokens).blockquote
+        .foreground(tokens);
   }
 
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context), tokens = t.recipeTokens;
-    final quote = RaftMarkdownRecipe.resolve(
-      theme: t.recipeTheme,
-      tokens: tokens,
-    ).blockquote;
+    final quote = RaftMarkdownRecipe.resolve(tokens: tokens).blockquote;
     final recipe = RaftMessageTranslationRecipe.resolve(
-      theme: t.recipeTheme,
       states: t.recipeStates(),
       tokens: tokens,
     );

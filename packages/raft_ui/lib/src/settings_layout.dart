@@ -1,15 +1,13 @@
 import 'hover_region.dart';
 import 'space.dart';
 export 'space.dart';
-import 'panel_layout.dart'
-    show RaftCssText, RaftPanelAction, RaftPanelHeaderBar, raftRecipeTheme;
+import 'panel_layout.dart' show RaftCssText, RaftPanelHeaderBar;
 import 'recipe_surface.dart'
     show
         RaftLayeredDecoration,
         RaftOuterShadowPainter,
         RaftRecipeBinding,
         RaftRecipeBox;
-export 'panel_layout.dart' show raftRecipeTheme;
 
 import 'package:flutter/material.dart';
 
@@ -24,7 +22,6 @@ import 'package:raft_theme/recipes/sidebar_recipe.g.dart' as raft_sidebar;
 import 'package:raft_theme/recipes/sidebar_section_recipe.g.dart'
     as raft_sidebar_section;
 
-import 'recipes/recipe_router.dart' show usesLegacyRecipes;
 import 'recipes/recipe_runtime.dart';
 import 'recipes/recipes.g.dart';
 import 'recipes/token_binding.dart';
@@ -89,56 +86,16 @@ class RaftSettingsSidebarList extends StatelessWidget {
   final List<RaftSettingsNavGroup> groups;
   final String? activeId;
 
-  /// Elegant SidebarItem rows hang `-mx-(--sidebar-row-inset-x,6px)` past
-  /// the Sidebar's `px-2` scroll inset (`w-[calc(100%+12px)]`); Brutal rows
-  /// sit inside it.
-  static double rowOverhang(RaftTokens t) => 6;
-
-  /// The Sidebar scroll surface (`px-2 py-3`) minus the row overhang, so the
-  /// rows can span it while the group labels keep their `px-2`.
-  static EdgeInsets inset(RaftTokens t) => usesLegacyRecipes(t.recipeTokens)
-      ? EdgeInsets.symmetric(horizontal: 8 - rowOverhang(t), vertical: 12)
-      // raft-ui 0.7.0 Sidebar content: `px-2`, rows inside it (no overhang).
-      : const EdgeInsets.fromLTRB(8, 4, 8, 8);
+  /// The Sidebar scroll surface: raft-ui 0.7.0 Sidebar content `px-2`, rows
+  /// inside it (no overhang).
+  static EdgeInsets inset(RaftTokens t) =>
+      const EdgeInsets.fromLTRB(8, 4, 8, 8);
 
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    final overhang = rowOverhang(t);
     final visible = groups.where((g) => g.items.isNotEmpty).toList();
-    if (!usesLegacyRecipes(t.recipeTokens))
-      return _buildRaft(context, t, visible);
-    // `mb-1 px-2 text-[10px] font-bold
-    // text-foreground-muted theme-brutal:text-black/40`; line-height is the
-    // inherited preflight 1.5 under Sidebar's `font-display`.
-    // Web SidebarGroupLabel is `text-footnote font-bold`; a pack that sets no
-    // `type.settingsGroupLabel.*` keeps the a57b9dab 10/15.
-    final label = RaftTypography.heading(
-      t,
-      size: t.size('type.settingsGroupLabel.size', fallback: 10),
-      line: t.size('type.settingsGroupLabel.line', fallback: 15),
-      weight: FontWeight.w700,
-    ).copyWith(color: t.muted);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        for (var i = 0; i < visible.length; i++) ...[
-          // `space-y-3` between group divs; the last row's `mb-*` collapses
-          // into it (block margins), so the visible gap stays 12px.
-          if (i > 0) SizedBox(height: 12 - (2)),
-          Padding(
-            padding: EdgeInsets.fromLTRB(8 + overhang, 0, 8 + overhang, 4),
-            child: Text(_groupLabel(context, visible[i].label), style: label),
-          ),
-          for (final item in visible[i].items)
-            RaftSettingsSidebarItem(
-              rowKey: ValueKey('workspace-settings-nav-${item.id}'),
-              entry: item,
-              active: item.id == activeId,
-            ),
-        ],
-      ],
-    );
+    return _buildRaft(context, t, visible);
   }
 }
 
@@ -223,11 +180,12 @@ class RaftSettingsSidebarItem extends StatefulWidget {
 
 class _RaftSettingsSidebarItemState extends State<RaftSettingsSidebarItem> {
   bool hovered = false;
-  Widget _buildRaft(BuildContext context, RaftTokens t) {
+  @override
+  Widget build(BuildContext context) {
+    final t = RaftTokens.of(context);
     final tokens = RaftRecipeTokens(t);
     final size = MediaQuery.sizeOf(context);
     final recipe = RaftSidebarItemRecipe.resolve(
-      theme: raftRecipeTheme(t),
       states: RaftRecipeStates(
         {
           if (hovered) RaftRecipeStates.hover,
@@ -345,128 +303,6 @@ class _RaftSettingsSidebarItemState extends State<RaftSettingsSidebarItem> {
       ),
     );
   }
-
-  @override
-  Widget build(BuildContext context) {
-    final t = RaftTokens.of(context), tokens = RaftRecipeTokens(t);
-    if (!usesLegacyRecipes(tokens)) return _buildRaft(context, t);
-    final size = MediaQuery.sizeOf(context);
-    final s = RaftSidebarItemRecipe.resolve(
-      theme: raftRecipeTheme(t),
-      variant: RaftSidebarItemRecipeVariant.accent,
-      states: RaftRecipeStates(
-        {
-          if (hovered) RaftRecipeStates.hover,
-          if (widget.active) 'data-active',
-          if (t.dark) RaftRecipeStates.dark,
-        },
-        size.width,
-        size.height,
-      ),
-      tokens: tokens,
-    ).sidebarItem;
-    // Elegant `text-[13px]` sets no line-height: the row inherits the
-    // Sidebar's preflight 1.5 (13px -> 19.5px line, 35.5px row pitch).
-    // Web SettingsSidebarList rows are raft-ui SidebarItem (`text-subhead
-    // font-medium`, `data-active:font-bold`): size and line from
-    // `type.settingsSidebarItem.*` and the weights from the existing
-    // `type.sidebarItem.weight` / `type.sidebarItemActive.weight`. A pack that
-    // sets none keeps the a57b9dab recipe values (Elegant 13 / 1.5, Brutal 14).
-    final itemSize = t.size(
-      'type.settingsSidebarItem.size',
-      fallback: s.fontSize ?? 14,
-    );
-    final itemLine = t.size(
-      'type.settingsSidebarItem.line',
-      fallback: (s.fontSize ?? 14) * (s.lineHeight ?? 1.5),
-    );
-    final recipeWeight = (s.fontWeight ?? FontWeight.w500).value.toDouble();
-    final text =
-        RaftTypography.heading(
-              t,
-              size: s.fontSize ?? 14,
-              line: (s.fontSize ?? 14) * (s.lineHeight ?? 1.5),
-              weight: s.fontWeight ?? FontWeight.w500,
-            )
-            .merge(s.textStyle(tokens))
-            .copyWith(
-              fontSize: itemSize,
-              height: itemLine / itemSize,
-              fontWeight: raftFontWeight(
-                t.size(
-                  widget.active
-                      ? 'type.sidebarItemActive.weight'
-                      : 'type.sidebarItem.weight',
-                  fallback: recipeWeight,
-                ),
-              ),
-            );
-    return Padding(
-      padding: s.margin.copyWith(left: 0, right: 0),
-      child: Semantics(
-        button: true,
-        selected: widget.active,
-        label: widget.entry.label,
-        child: RaftHoverRegion(
-          cursor: SystemMouseCursors.click,
-          onEnter: (_) => setState(() => hovered = true),
-          onExit: (_) => setState(() => hovered = false),
-          child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: widget.entry.onTap,
-            child: Container(
-              key: widget.rowKey,
-              padding: s.padding,
-              decoration: s.decoration(tokens),
-              child: Row(
-                children: [
-                  RaftIcon(widget.entry.glyph, size: 14, color: text.color),
-                  SizedBox(width: s.columnGap ?? 6),
-                  Expanded(
-                    // The CSS line box (19.5px), not Flutter's ceiled
-                    // paragraph height, sets the row height.
-                    //
-                    // Above the default text size the label wraps and the
-                    // line box is a minimum height, so nothing is clipped.
-                    child: RaftScaled.grows(context)
-                        ? ConstrainedBox(
-                            constraints: BoxConstraints(
-                              minHeight: text.fontSize! * text.height!,
-                            ),
-                            child: Align(
-                              alignment: AlignmentDirectional.centerStart,
-                              child: Text(
-                                raftText(context, widget.entry.label),
-                                style: RaftControlTypography.of(context, text),
-                              ),
-                            ),
-                          )
-                        : SizedBox(
-                            height: text.fontSize! * text.height!,
-                            // The control profile changes the line height
-                            // inside that fixed box; keep the label centred
-                            // in it.
-                            child: Align(
-                              alignment: AlignmentDirectional.centerStart,
-                              child: Text(
-                                raftText(context, widget.entry.label),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: RaftControlTypography.of(context, text),
-                              ),
-                            ),
-                          ),
-                  ),
-                  if (widget.entry.attention)
-                    RaftAttentionDot(danger: widget.entry.attentionDanger),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
 }
 
 /// PanelHeader.tsx on a non-identity surface: the icon is desktop-only and
@@ -495,96 +331,28 @@ class RaftSettingsPanelHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final t = RaftTokens.of(context), tokens = RaftRecipeTokens(t);
-    if (t.option('panelAction.surface', or: 'outline') == 'ghost') {
-      return RaftPanelHeaderBar(
-        title: raftText(context, title),
-        // v1.21.23 page heads carry no icon tile (pageHeader.icon).
-        iconSlot:
-            !mobile &&
-                glyph != null &&
-                (iconTile || t.option('pageHeader.icon', or: 'none') == 'tile')
-            ? Container(
-                width: 27,
-                height: 27,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: t.colors['fill-muted'],
-                  borderRadius: BorderRadius.circular(t.fieldRadius),
-                ),
-                child: RaftIcon(glyph!, size: 18, color: t.muted),
-              )
-            : null,
-        onBack: mobile ? onMobileBack : null,
-        backKey: backKey,
-        backTooltip: raftText(context, backTooltip),
-      );
-    }
-    final size = MediaQuery.sizeOf(context);
-    final states = RaftRecipeStates(
-      {if (t.dark) RaftRecipeStates.dark},
-      size.width,
-      size.height,
-    );
-    final s = RaftPanelHeaderRecipe.resolve(
-      theme: raftRecipeTheme(t),
-      states: states,
-      tokens: tokens,
-    );
-    final header = s.header;
-    final titleStyle = RaftTypography.body(
-      t,
-      size: s.title.fontSize ?? 16,
-      line: (s.title.fontSize ?? 16) * (s.title.lineHeight ?? 1.25),
-      weight: s.title.fontWeight ?? FontWeight.w700,
-    ).merge(s.title.textStyle(tokens));
-    final height =
-        header.height ?? RaftLayoutMetrics.shellHeaderHeight(t, size.height);
-    return RaftStatusBarSource(
-      color: header.decoration(tokens).color ?? Colors.transparent,
-      child: Container(
-        height: height,
-        padding: header.padding,
-        decoration: header.decoration(tokens),
-        child: Row(
-          children: [
-            if (mobile && onMobileBack != null) ...[
-              // AppPanelHeader `onMobileBack`: the raft-ui PanelAction boxed
-              // ArrowLeft, touch area extended around the Web-sized visual.
-              RaftPanelAction(
-                key: backKey,
-                glyph: RaftGlyph.arrowLeft,
-                tooltip: raftText(context, backTooltip),
-                onPressed: onMobileBack,
-                minHitExtent: RaftMetrics.touchTarget,
+    final t = RaftTokens.of(context);
+    return RaftPanelHeaderBar(
+      title: raftText(context, title),
+      // v1.21.23 page heads carry no icon tile (pageHeader.icon).
+      iconSlot:
+          !mobile &&
+              glyph != null &&
+              (iconTile || t.option('pageHeader.icon', or: 'none') == 'tile')
+          ? Container(
+              width: 27,
+              height: 27,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: t.colors['fill-muted'],
+                borderRadius: BorderRadius.circular(t.fieldRadius),
               ),
-              SizedBox(width: header.columnGap ?? 12),
-            ],
-            if (!mobile && glyph != null) ...[
-              Container(
-                width: s.headerIcon.width,
-                height: s.headerIcon.height,
-                alignment: Alignment.center,
-                decoration: s.headerIcon.decoration(tokens),
-                child: RaftIcon(
-                  glyph!,
-                  size: 18,
-                  color: s.headerIcon.textStyle(tokens).color,
-                ),
-              ),
-              SizedBox(width: header.columnGap ?? 12),
-            ],
-            Expanded(
-              child: RaftCssText(
-                raftText(context, title),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: titleStyle,
-              ),
-            ),
-          ],
-        ),
-      ),
+              child: RaftIcon(glyph!, size: 18, color: t.muted),
+            )
+          : null,
+      onBack: mobile ? onMobileBack : null,
+      backKey: backKey,
+      backTooltip: raftText(context, backTooltip),
     );
   }
 }
@@ -631,10 +399,9 @@ class RaftSettingsPanelFrame extends StatelessWidget {
     vertical: 16,
   );
 
-  /// Web `px-4 py-4 md:px-5`; frozen looks keep their existing inset.
+  /// Web `px-4 py-4 md:px-5`.
   static EdgeInsets contentInsetFor(BuildContext context) =>
-      !usesLegacyRecipes(RaftTokens.of(context).recipeTokens) &&
-          raftBreakpointWidth(context) < 768
+      raftBreakpointWidth(context) < 768
       ? const EdgeInsets.all(RaftSpace.x4)
       : contentInset;
   @override
@@ -824,11 +591,8 @@ class RaftSettingsCard extends StatelessWidget {
       border: Border.all(color: t.colors['line-muted']!, width: 1),
       boxShadow: t.themeShadows.sm.outer,
     );
-    // The Raft look paints CSS geometry (padding-box clip, concentric rings);
-    // the frozen looks keep the plain decoration.
-    return usesLegacyRecipes(t.recipeTokens)
-        ? decoration
-        : RaftRecipeDecoration.from(decoration, cssGeometry: true);
+    // CSS geometry (padding-box clip, concentric rings).
+    return RaftRecipeDecoration.from(decoration, cssGeometry: true);
   }
 
   @override
@@ -867,10 +631,8 @@ class RaftSettingsCard extends StatelessWidget {
         padding: padding,
         decoration: base,
         // `overflow-hidden` on the Card: a child's fill follows the rounded
-        // padding box and never covers the border (the frozen looks do not clip).
-        clipBehavior: usesLegacyRecipes(t.recipeTokens)
-            ? Clip.none
-            : Clip.antiAlias,
+        // padding box and never covers the border.
+        clipBehavior: Clip.antiAlias,
         child: child,
       );
     }
@@ -930,10 +692,9 @@ class RaftSettingsText {
   final RaftTokens t;
 
   /// Language & Region uses the current Web subhead/footnote slots.
-  /// Other settings and the frozen looks retain their existing type scale.
+  /// Other settings retain their existing type scale.
   final bool semanticTypography;
-  bool get _semantic =>
-      semanticTypography && !usesLegacyRecipes(t.recipeTokens);
+  bool get _semantic => semanticTypography;
 
   /// `text-foreground-strong theme-brutal:text-black`
   Color get strong => t.strong;

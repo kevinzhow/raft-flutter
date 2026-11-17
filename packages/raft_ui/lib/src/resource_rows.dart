@@ -151,7 +151,6 @@ class _RaftSavedToggleState extends State<RaftSavedToggle> {
       );
     }
     final base = RaftPanelToggleActionRecipe.resolve(
-      theme: RaftRecipeTheme.elegant,
       states: RaftRecipeStates({
         'data-pressed',
         if (hovered) RaftRecipeStates.hover,
@@ -270,9 +269,6 @@ class RaftResourceBadge extends StatelessWidget {
       );
     }
     final root = RaftBadgeRecipe.resolve(
-      theme: t.option('control.edge', or: 'ring') == 'inkBorder'
-          ? RaftRecipeTheme.brutal
-          : RaftRecipeTheme.elegant,
       appearance: appearance,
       variant: variant,
       states: RaftRecipeStates({
@@ -339,7 +335,6 @@ class RaftPanelBackAction extends StatelessWidget {
         onPressed: onPressed,
         builder: (context, state) {
           final base = RaftPanelActionRecipe.resolve(
-            theme: t.recipeTheme,
             tokens: rt,
             states: t.recipeStates(
               hovered: state.hovered,
@@ -445,9 +440,6 @@ class RaftResourceMarkReadButton extends StatelessWidget {
       builder: (context, state) => ExcludeSemantics(
         child: RaftRecipeBox(
           style: RaftButtonRecipe.resolve(
-            theme: t.option('control.edge', or: 'ring') == 'inkBorder'
-                ? RaftRecipeTheme.brutal
-                : RaftRecipeTheme.elegant,
             variant: RaftButtonRecipeVariant.outline,
             size: RaftButtonRecipeSize.sm,
             states: t.recipeStates(

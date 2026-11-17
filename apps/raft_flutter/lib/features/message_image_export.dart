@@ -299,7 +299,6 @@ Future<bool?> previewMessageImage(
       'raft-${w.channel?.name ?? 'export'}-${DateTime.now().toIso8601String().substring(0, 10)}.png',
     );
     return await showRaftDialog<bool>(
-      legacyMaterial: true,
       context: context,
       builder: (_) => MessageImageReview(
         controller: w,

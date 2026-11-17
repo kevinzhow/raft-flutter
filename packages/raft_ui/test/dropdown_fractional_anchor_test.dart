@@ -7,11 +7,7 @@ const _trigger = ValueKey('fractional-dropdown-trigger');
 const _surface = ValueKey('fractional-dropdown-surface');
 
 void main() {
-  for (final look in raftThemeMatrix([
-    raftLookRaft,
-    raftLookElegant,
-    raftLookBrutal,
-  ], look: (look) => look)) {
+  for (final look in raftThemeMatrix(['raft'])) {
     for (final side in [RaftDropdownSide.bottom, RaftDropdownSide.right]) {
       testWidgets(
         '$look ${side.name} dropdown keeps source-aligned fractional anchor placement',
@@ -23,13 +19,7 @@ void main() {
           try {
             await tester.pumpWidget(
               MaterialApp(
-                theme: raftTheme(
-                  pack: switch (look) {
-                    raftLookElegant => packForThemeId(elegantThemePackId),
-                    raftLookBrutal => packForThemeId(brutalThemePackId),
-                    _ => null,
-                  },
-                ),
+                theme: raftTheme(),
                 home: Scaffold(
                   body: Stack(
                     children: [
@@ -84,19 +74,14 @@ void main() {
                 : Offset(anchor.right - popup.width, anchor.bottom + 4);
             // The current Web Files popup places its 240x80 surface at
             // integer coordinates, including its 3x capture. The current
-            // placement must retain that source alignment; frozen looks keep
-            // their prior fractional placement unchanged.
-            final expected = look == raftLookRaft
-                ? Offset(
-                    proposed.dx.roundToDouble(),
-                    proposed.dy.roundToDouble(),
-                  )
-                : proposed;
+            // placement must retain that source alignment.
+            final expected = Offset(
+              proposed.dx.roundToDouble(),
+              proposed.dy.roundToDouble(),
+            );
             expect(popup.topLeft, expected);
-            if (look == raftLookRaft) {
-              // p-1 + two min-h-option (36px) rows, without a list gap.
-              expect(popup.size, const Size(240, 80));
-            }
+            // p-1 + two min-h-option (36px) rows, without a list gap.
+            expect(popup.size, const Size(240, 80));
             await tester.tap(find.text('Download file'));
             await tester.pumpAndSettle();
             expect(invoked, 1);

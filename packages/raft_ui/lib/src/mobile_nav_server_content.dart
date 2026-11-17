@@ -22,7 +22,6 @@ class RaftMobileNavServerPopoverSeparator extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     final separator = RaftPopoverRecipe.resolve(
-      theme: t.recipeTheme,
       tokens: t.recipeTokens,
       states: t.recipeStates(),
     ).separator;

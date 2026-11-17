@@ -328,8 +328,6 @@ const Map<String, String> zhCatalogWeb2 = <String, String>{
   "Choose server": "选择服务器",
   "Choose the language for the app interface. This is separate from message translation.":
       "选择应用界面的显示语言。这与消息翻译无关。",
-  "Choose the visual style for this browser. Your choice is saved on this device.":
-      "选择此浏览器使用的视觉风格。选择会保存在此设备上。",
   "Choose what this app may request. Existing connections keep granted scopes until they reconnect or are revoked.":
       "选择此应用可以请求哪些权限。已有连接会保留已授予的权限，直到重新连接或被撤销。",
   "Choose where you want to use this app. Only available servers are shown here.":
@@ -415,7 +413,6 @@ const Map<String, String> zhCatalogWeb2 = <String, String>{
   "Collapse Comments": "收起评论",
   "Collapse long messages": "折叠长消息",
   "Collect report bundle failed": "收集报告包失败",
-  "Color mode": "明暗模式",
   "Coming soon": "即将推出",
   "Command": "命令",
   "Comment": "评论",

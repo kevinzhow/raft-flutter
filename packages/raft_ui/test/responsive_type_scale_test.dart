@@ -84,17 +84,6 @@ void main() {
     expect(identical(a, b), isTrue);
   });
 
-  testWidgets('Elegant keeps its frozen scale on desktop', (t) async {
-    final tokens = await _tokensAt(
-      t,
-      size: wide,
-      platform: TargetPlatform.linux,
-      pack: packForThemeId(elegantThemePackId),
-    );
-    expect(tokens.desktop, isFalse);
-    expect(tokens.typeSlot('body').fontSize, 16);
-  });
-
   testWidgets('a user pack\'s own slot wins over the desktop scale', (t) async {
     final pack = RaftThemePack.parse(
       jsonEncode({

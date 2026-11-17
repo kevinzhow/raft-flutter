@@ -127,10 +127,7 @@ class _RaftSidebarSectionDialogState extends State<RaftSidebarSectionDialog> {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     final tokens = RaftRecipeTokens(t);
-    final titleSlot = RaftCardRecipe.resolve(
-      theme: raftRecipeThemeOf(t),
-      tokens: tokens,
-    ).title;
+    final titleSlot = RaftCardRecipe.resolve(tokens: tokens).title;
     final canSubmit = controller.text.trim().isNotEmpty;
     final body = KeyedSubtree(
       key: _body,

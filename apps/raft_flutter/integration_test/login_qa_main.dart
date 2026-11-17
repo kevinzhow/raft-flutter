@@ -9,7 +9,7 @@
 //
 // A loopback control server (adb forward tcp:8791 tcp:8791) steps through the
 // states; tool/login-qa drives it:
-//   GET /scenario?name=login&theme=brutal|elegant|dark   restart the app in a state
+//   GET /scenario?name=login&theme=dark                  restart the app in a state
 //   GET /set?login=wrong&servers=fail ...                flip fixture switches live
 //   GET /release                                         answer every held request
 //   GET /rect?text=Sign%20In | ?key=login-email          physical-pixel rect
@@ -69,7 +69,6 @@ class _Fx {
   // ok | pending (POST /servers/join-community)
   String community = 'pending';
   String location = '/';
-  String theme = 'brutal';
   String lang = 'en';
   bool dark = false;
   final held = <Completer<void>>[];
@@ -124,7 +123,11 @@ List<Map<String, dynamic>> _servers() {
     'many' => [
       s('a', 'Raft Design', 'raft-design'),
       s('b', 'Launch Team', 'launch'),
-      s('c', 'Alex Chen Studio With A Very Long Server Name', 'alex-chen-studio'),
+      s(
+        'c',
+        'Alex Chen Studio With A Very Long Server Name',
+        'alex-chen-studio',
+      ),
       s('d', '陈思远的工作室', 'chen-studio'),
       s('e', 'Community', 'community'),
     ],
@@ -191,7 +194,9 @@ class _QaAdapter implements HttpClientAdapter {
         };
       case 'POST /auth/register':
         if (_fx.register == 'exists') {
-          throw _Status(409, {'error': 'An account with this email already exists.'});
+          throw _Status(409, {
+            'error': 'An account with this email already exists.',
+          });
         }
         if (_fx.register == 'pending') await _fx.hold();
         return {
@@ -225,7 +230,9 @@ class _QaAdapter implements HttpClientAdapter {
           case 'expired':
             throw _Status(404, {'error': 'This invite has expired.'});
           case 'throttled':
-            throw _Status(429, {'error': 'Too many requests. Try again later.'});
+            throw _Status(429, {
+              'error': 'Too many requests. Try again later.',
+            });
           case 'notfound':
             throw _Status(404, {'error': 'Invite not found.'});
         }
@@ -233,7 +240,9 @@ class _QaAdapter implements HttpClientAdapter {
       case 'GET /servers':
         if (_fx.servers == 'pending') await _fx.hold();
         if (_fx.servers == 'fail') {
-          throw _Status(500, {'error': 'Could not load your servers. Please retry.'});
+          throw _Status(500, {
+            'error': 'Could not load your servers. Please retry.',
+          });
         }
         return _servers();
       case 'POST /servers':
@@ -302,7 +311,10 @@ class _QaAdapter implements HttpClientAdapter {
           'surface': 'create_agent',
           'blocksChat': true,
           'allowedExits': <String>[],
-          'sideEffectState': {'transitions': 'enabled', 'completion': 'enabled'},
+          'sideEffectState': {
+            'transitions': 'enabled',
+            'completion': 'enabled',
+          },
         };
       }
       return _fx.setup == 'deferred'
@@ -372,10 +384,7 @@ class _QaAdapter implements HttpClientAdapter {
         },
       );
     } on _Net {
-      throw DioException.connectionError(
-        requestOptions: o,
-        reason: 'offline',
-      );
+      throw DioException.connectionError(requestOptions: o, reason: 'offline');
     }
   }
 
@@ -605,9 +614,7 @@ void _workspaceSetup(_Fx f) {
 Future<void> _start(String name, String theme) async {
   _fx.release();
   _scenarios[name]!(_fx);
-  _fx
-    ..theme = theme == 'brutal' ? 'brutal' : 'elegant'
-    ..dark = theme == 'dark';
+  _fx.dark = theme == 'dark';
   final store = MemorySessionStore();
   if (_fx.signedIn) {
     await store.write(
@@ -618,7 +625,6 @@ Future<void> _start(String name, String theme) async {
   SharedPreferences.setMockInitialValues({
     'raft.origin': _origin,
     'raft.mode': _fx.dark ? 'dark' : 'light',
-    'raft.light': _fx.theme,
   });
   // main() preloads the saved preferences before the first frame.
   await DevicePreferences.load();
@@ -626,7 +632,9 @@ Future<void> _start(String name, String theme) async {
   // A restart inside one process does not honour the initial location of a
   // `/s/...` route, so it arrives as a deep link once the directory loaded.
   final deepLink = _fx.location.startsWith('/s/') ? _fx.location : null;
-  runApp(_root(store, generation, Uri.parse(deepLink == null ? _fx.location : '/')));
+  runApp(
+    _root(store, generation, Uri.parse(deepLink == null ? _fx.location : '/')),
+  );
   if (deepLink != null) {
     await Future<void>.delayed(const Duration(milliseconds: 2500));
     if (generation == _generation) {

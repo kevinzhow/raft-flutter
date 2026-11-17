@@ -3,7 +3,7 @@
 
   tool/parity-ext/theme-isolation [--out DIR] [--cases ID[,ID...]] [--looks raft-light,...] [--fast]
 
-For each case and every ordered pair of looks (raft / elegant / brutal x light / dark) pumps the case in look A, switches the
+For each case and every ordered pair of looks (Raft light / dark) pumps the case in look A, switches the
 app theme to look B at runtime like the app root does, and compares the raster byte for byte with a fresh launch in look B
 (apps/raft_flutter/test/parity/parity_switch_test.dart). Every difference is a leak. Writes <out>/leaks.jsonl (one object per
 leak: case, from, to, differing pixels, how many still show the look switched away from, bounding box, image paths) and
@@ -45,7 +45,7 @@ def main():
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument('--out', default=os.environ.get('PARITY_SWITCH_OUT', str(ROOT / 'build/theme-isolation')))
     p.add_argument('--cases', help='comma list of case ids (default: the representative set)')
-    p.add_argument('--looks', default='raft-light,raft-dark,elegant-light,elegant-dark,brutal-light,brutal-dark')
+    p.add_argument('--looks', default='raft-light,raft-dark')
     p.add_argument('--fast', action='store_true', help='4 surfaces only')
     p.add_argument('--shared', help='official shared fixtures (default: packages/visual-testing/shared of the pinned '
                    'raft-source checkout, tool/raft_source.py)')

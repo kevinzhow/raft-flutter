@@ -325,8 +325,7 @@ class _MarkdownBlocks {
       style: style,
       underline: _hasUnderline(spans),
     );
-    // Elegant InlineCode is `inline-flex` (an atomic box that can grow its
-    // line); brutal code is an inline box that never does.
+    // InlineCode is `inline-flex`: an atomic box that can grow its line.
     final atomic = (_hasWidgetSpan(spans));
     return atomic ? _CssAtomicLines(style: style, child: text) : text;
   }
@@ -422,13 +421,10 @@ class _MarkdownBlocks {
 
   /// The plain raft-ui InlineCode (the Web `code` component adds no classes).
   ///
-  /// Brutal is an inline box (content area + padding + border) that never
-  /// grows its line; elegant is `inline-flex`, an atomic box whose line box is
-  /// its own line height.
+  /// `inline-flex`: an atomic box whose line box is its own line height.
   InlineSpan _inlineCode(String text, TextStyle parent) {
     final tokens = RaftRecipeTokens(t);
     final root = RaftInlineCodeRecipe.resolve(
-      theme: raftRecipeThemeOf(t),
       states: RaftRecipeStates({if (t.dark) RaftRecipeStates.dark}),
       tokens: tokens,
     ).root;
@@ -448,8 +444,8 @@ class _MarkdownBlocks {
         tokens: tokens,
         applyText: false,
         // Blink: the content area is the rounded ascent + descent; the
-        // elegant `inline-flex` line box is the recipe line height with
-        // the floored half-leading above the rounded ascent.
+        // `inline-flex` line box is the recipe line height with the floored
+        // half-leading above the rounded ascent.
         child: Builder(
           builder: (context) {
             // The CSS baseline snap is for the reference size. Larger text
@@ -488,7 +484,6 @@ class _MarkdownBlocks {
   Widget _codeBlock(String code) {
     final tokens = RaftRecipeTokens(t);
     final root = RaftInlineCodeRecipe.resolve(
-      theme: raftRecipeThemeOf(t),
       states: RaftRecipeStates({if (t.dark) RaftRecipeStates.dark}),
       tokens: tokens,
     ).root;

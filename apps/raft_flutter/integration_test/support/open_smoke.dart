@@ -250,7 +250,6 @@ Future<SmokeFixture> buildSmokeFixture({
   SharedPreferences.setMockInitialValues({
     'raft.origin': client.origin,
     'raft.mode': 'light',
-    'raft.light': 'elegant',
     MobileTabbarStore.preferenceKey: tabs.encode(),
   });
   final dir = await Directory.systemTemp.createTemp('raft-open-smoke-');

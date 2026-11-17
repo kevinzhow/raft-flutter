@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
 
-import 'raft/segmented_control.dart'
-    show RaftSegmentedControl, RaftSegmentedOption, RaftSegmentedStyle;
-
 import 'package:raft_theme/raft_theme.dart' show RaftThemePack;
 
 import 'design_primitives.dart';
@@ -10,88 +7,6 @@ import 'icons.dart';
 import 'localization.dart';
 import 'theme.dart';
 import 'raft/ui_tokens.dart';
-
-/// Appearance setting: which theme to paint with, and Light / Dark / System for
-/// that theme's two modes.
-///
-/// The theme and the mode are separate choices: every theme carries its own
-/// light and dark values, so any combination is meaningful.
-class RaftAppearancePicker extends StatelessWidget {
-  const RaftAppearancePicker({
-    super.key,
-    required this.appearance,
-    required this.onChanged,
-    this.showMode = true,
-  });
-  final RaftAppearance appearance;
-  final ValueChanged<RaftAppearance> onChanged;
-
-  /// Also offer Light / Dark / System. The Raft look shows those as the
-  /// preview cards ([RaftAppearanceModeCards]) and keeps only the theme here.
-  final bool showMode;
-  @override
-  Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
-    final eyebrow = RaftTypography.body(
-      t,
-      size: 12,
-      line: 16,
-      weight: FontWeight.w700,
-      color: t.muted,
-    );
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Text(raftText(context, 'Theme'), style: eyebrow),
-        const SizedBox(height: 8),
-        Align(
-          alignment: Alignment.centerLeft,
-          child: RaftSegmentedControl<String>(
-            key: const Key('appearance-theme'),
-            legacyStyle: RaftSegmentedStyle.recipe,
-            value: appearance.themeId,
-            label: 'Theme',
-            items: [
-              for (final theme in builtInAppearanceThemes)
-                RaftSegmentedOption(
-                  value: theme.id,
-                  label: raftText(context, theme.en),
-                ),
-            ],
-            onChanged: (id) => onChanged(appearance.copyWith(themeId: id)),
-          ),
-        ),
-        if (showMode) ...[
-          const SizedBox(height: 16),
-          Text(raftText(context, 'Color mode'), style: eyebrow),
-          const SizedBox(height: 8),
-          Align(
-            alignment: Alignment.centerLeft,
-            // raft-ui SegmentedControl, recipe geometry without touch-target
-            // growth.
-            child: RaftSegmentedControl<ThemeMode>(
-              key: const Key('appearance-mode'),
-              legacyStyle: RaftSegmentedStyle.recipe,
-              value: appearance.mode,
-              label: 'Appearance mode',
-              items: const [
-                RaftSegmentedOption(value: ThemeMode.light, label: 'Light'),
-                RaftSegmentedOption(value: ThemeMode.dark, label: 'Dark'),
-                RaftSegmentedOption(value: ThemeMode.system, label: 'System'),
-              ],
-              onChanged: (mode) => onChanged(appearance.copyWith(mode: mode)),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            raftText(context, 'System follows your device.'),
-            style: RaftTypography.body(t, size: 12, line: 16, color: t.muted),
-          ),
-        ],
-      ],
-    );
-  }
-}
 
 /// Web v1.21.23 `AppearanceThemePicker`: Light / Dark / System as three
 /// preview cards (`grid grid-cols-1 gap-2 sm:grid-cols-3`). Each card is a

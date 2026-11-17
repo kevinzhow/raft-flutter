@@ -27,7 +27,6 @@ Color _paintedBannerColor(WidgetTester tester) => tester
 
 Future<Color> _mount(
   WidgetTester tester, {
-  String look = raftThemePackId,
   bool dark = true,
   bool declared = true,
   Color? surface = _dialogSurface,
@@ -37,7 +36,7 @@ Future<Color> _mount(
   late Color source;
   await tester.pumpWidget(
     MaterialApp(
-      theme: raftTheme(pack: packForThemeId(look), dark: dark),
+      theme: raftTheme(dark: dark),
       home: Builder(
         builder: (context) {
           source =
@@ -97,13 +96,4 @@ void main() {
     await _mount(tester, override: custom);
     expect(_paintedBannerColor(tester), custom);
   });
-
-  for (final look in ['elegant', 'brutal']) {
-    testWidgets('frozen $look ignores the modern surface blend', (
-      tester,
-    ) async {
-      final source = await _mount(tester, look: look, dark: false);
-      expect(_paintedBannerColor(tester), source);
-    });
-  }
 }

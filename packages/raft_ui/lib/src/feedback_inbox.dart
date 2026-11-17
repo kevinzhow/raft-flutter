@@ -411,7 +411,6 @@ class _RaftFeedbackTicketCardState extends State<RaftFeedbackTicketCard> {
     final t = RaftTokens.of(context);
     final rt = t.recipeTokens;
     final r = RaftTaskCardRecipe.resolve(
-      theme: t.recipeTheme,
       states: t.recipeStates(hovered: hovered),
       tokens: rt,
     );
@@ -539,7 +538,6 @@ class RaftFeedbackKindChip extends StatelessWidget {
     final t = RaftTokens.of(context);
     final rt = t.recipeTokens;
     final s = RaftMessageReferenceRecipe.resolve(
-      theme: t.recipeTheme,
       variant: problem
           ? RaftMessageReferenceRecipeVariant.muted
           : RaftMessageReferenceRecipeVariant.info,

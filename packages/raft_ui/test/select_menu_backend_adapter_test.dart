@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/semantics.dart' show SemanticsRole;
 import 'package:flutter_test/flutter_test.dart';
-import 'package:raft_theme/raft_theme.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_ui/src/recipes/select.g.dart';
 import 'package:raft_ui/test_themes.dart';
@@ -83,7 +82,6 @@ void main() {
           const RaftMenuPopupRowState(index: -1),
         );
         final expected = RaftSelectRecipe.resolve(
-          theme: t.recipeTheme,
           tokens: t.recipeTokens,
           states: t.recipeStates(responsive: true),
         );
@@ -97,7 +95,6 @@ void main() {
           ),
         );
         final disabled = RaftSelectRecipe.resolve(
-          theme: t.recipeTheme,
           tokens: t.recipeTokens,
           states: t.recipeStates(
             responsive: true,
@@ -204,24 +201,5 @@ void main() {
         expect(tester.takeException(), isNull);
       },
     );
-  }
-
-  for (final pack in [builtInElegantTheme, builtInBrutalTheme]) {
-    testWidgets('Frozen ${pack.id} keeps its existing popup implementation', (
-      tester,
-    ) async {
-      final calls = <int?>[];
-      await _host(
-        tester,
-        false,
-        RaftSelectField<int>(value: 11, items: _items, onChanged: calls.add),
-        pack: pack,
-      );
-      await _open(tester);
-      expect(find.byType(RaftMenuPopupBackend), findsNothing);
-      await tester.tap(find.text('Gamma'));
-      await tester.pumpAndSettle();
-      expect(calls, [33]);
-    });
   }
 }

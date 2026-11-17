@@ -1,8 +1,7 @@
 """Nightly visual regression job (job 4 of tool/nightly-quality): the fast subset of the three-level suite.
 
 Runs `tool/parity-ext/run regress --fast` (L1 frame cases + key L2 pages, phone and desktop widths, light mode) for the
-three looks: Raft against the pinned Web v1.21.23 render, Elegant and Brutal against their frozen a57b9dab originals
-(docs/parity.md "Visual suite levels"). The job needs the pinned Web source checkout (tool/raft_source.py:
+Raft look against the pinned Web v1.21.23 render (docs/parity.md "Visual suite levels"). The job needs the pinned Web source checkout (tool/raft_source.py:
 `PARITY_RAFT_SOURCE`, else the checkout of the commit in docs/source-reference.json; `tool/raft-source prepare` makes
 it) and the Node toolchain list (`PARITY_TOOLCHAIN_PATHS`); without them it records why it did not run. The summary
 compares every score with the previous night's and lists the drops.
@@ -28,7 +27,7 @@ def source_problem(worktree, home=None):
 
 
 def command(worktree, out):
-    return [sys.executable, str(pathlib.Path(worktree) / 'tool/parity-ext/run'), 'regress', '--fast', '--theme', 'all',
+    return [sys.executable, str(pathlib.Path(worktree) / 'tool/parity-ext/run'), 'regress', '--fast',
             '--out', str(out)]
 
 
@@ -70,7 +69,7 @@ def render(visual, add):
         add(f"- {visual['error']}")
         return
     add(f"- {visual['cases']} 个用例（L1 框架 + 关键 L2 页面，手机/桌面，浅色），96% 线以下 {visual['belowCount']} 个，无分数 {visual['unscored']} 个")
-    add('- 单元格 = 过线数/总数（平均分）；Raft 对照 Web v1.21.23，Elegant/Brutal 对照 a57b9dab 冻结原图')
+    add('- 单元格 = 过线数/总数（平均分）；Raft 对照 Web v1.21.23')
     add('')
     add('| 层级 | 主题 | 过线/总数 | 平均分 | 无分数 |')
     add('| --- | --- | --- | --- | --- |')

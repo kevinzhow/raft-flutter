@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
-import 'package:raft_ui/src/message_content_tokens.dart';
 import 'package:raft_ui/test_themes.dart';
 
 void main() {
@@ -136,17 +135,9 @@ void main() {
           closeTo(textWidth('Status') + textWidth('Count') + 32, 2),
         );
         expect(body.styleSheet!.tableHeadAlign, TextAlign.left);
-        // Raft look: Web v1.24 raft-ui MarkdownLink `text-foreground-link`;
-        // the frozen looks keep the Tailwind blue-700 / blue-300 link.
+        // Web v1.24 raft-ui MarkdownLink `text-foreground-link`.
         final tokens = raftTheme(dark: dark).extension<RaftTokens>()!;
-        expect(
-          body.styleSheet!.a!.color,
-          tokens.isRaftLook
-              ? tokens.colors['foreground-link']
-              : dark
-              ? MessageContentPrimitive.linkDark
-              : MessageContentPrimitive.linkLight,
-        );
+        expect(body.styleSheet!.a!.color, tokens.colors['foreground-link']);
         expect(tester.takeException(), isNull);
       },
     );

@@ -776,7 +776,6 @@ class _ForwardComposerPageState extends State<ForwardComposerPage> {
             preview: RaftForwardedBundle(
               metadata: previewMetadata,
               formatTimestamp: forwardStamp(),
-              headerLine: 16.5,
             ),
             noteLabel: raftText(context, 'Optional note'),
             // Web mounts MessageInput variant="compact" with allowEmptySubmit:

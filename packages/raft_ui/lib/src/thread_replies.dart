@@ -69,22 +69,6 @@ class RaftThreadReplies extends StatelessWidget {
     // Larger text: a reply stacks (author and time above, the preview wrapped
     // below) instead of squeezing the preview out of a single line.
     final grows = RaftScaled.grows(context);
-    final style = ButtonStyle(
-      alignment: Alignment.centerLeft,
-      minimumSize: WidgetStatePropertyAll(const Size(48, 48)),
-      padding: WidgetStatePropertyAll(
-        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      ),
-      // Frozen TextButton.styleFrom foreground also supplied these overlays.
-      overlayColor: WidgetStateProperty.fromMap({
-        WidgetState.pressed: tokens.muted.withValues(alpha: .1),
-        WidgetState.hovered: tokens.muted.withValues(alpha: .08),
-        WidgetState.focused: tokens.muted.withValues(alpha: .1),
-      }),
-      foregroundColor: WidgetStateProperty.resolveWith(
-        (states) => states.contains(WidgetState.disabled) ? null : tokens.muted,
-      ),
-    );
     return Padding(
       padding: const EdgeInsets.only(top: 6),
       child: DecoratedBox(
@@ -99,7 +83,6 @@ class RaftThreadReplies extends StatelessWidget {
             children: [
               RaftButton.text(
                 onPressed: onOpen,
-                legacyStyle: style,
                 child: Row(
                   children: [
                     Flexible(
@@ -121,7 +104,6 @@ class RaftThreadReplies extends StatelessWidget {
                   onPressed: onOpenReply == null
                       ? null
                       : () => onOpenReply!(reply.id),
-                  legacyStyle: style,
                   child: Semantics(
                     label: raftFormat(
                       context,
@@ -235,7 +217,6 @@ class _RaftThreadRepliesBadgeState extends State<RaftThreadRepliesBadge> {
     final tokens = RaftTokens.of(context);
     final resolver = RaftRecipeTokens(tokens);
     final s = RaftBadgeRecipe.resolve(
-      theme: RaftRecipeTheme.elegant,
       appearance: hasUnread
           ? RaftBadgeRecipeAppearance.soft
           : RaftBadgeRecipeAppearance.solid,

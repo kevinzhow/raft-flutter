@@ -7,7 +7,6 @@ import 'icons.dart';
 import 'localization.dart';
 import 'panel_layout.dart' show RaftCssText;
 import 'recipes/button_variants.g.dart';
-import 'recipes/toast_styles.g.dart' show RaftToastRecipeTone;
 import 'theme.dart';
 import 'toast.dart';
 
@@ -123,7 +122,7 @@ class RaftErrorBanner extends StatelessWidget {
 
 /// Web page-level load failure (AgentSkills, ThreadPanel, MessageSearchPage):
 /// a centred column, `gap-3`, the message in `text-sm text-foreground-muted
-/// font-mono` (brutal `text-black/60`) and an outline `sm` Button with a
+/// font-mono` and an outline `sm` Button with a
 /// `RefreshCw` icon and the surface's Retry copy.
 class RaftLoadError extends StatelessWidget {
   const RaftLoadError(

@@ -4,11 +4,7 @@ import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_ui/test_themes.dart';
 
 void main() {
-  for (final id in raftThemeMatrix([
-    raftThemePackId,
-    elegantThemePackId,
-    brutalThemePackId,
-  ], look: raftLookOf)) {
+  for (final id in raftThemeMatrix([raftThemePackId])) {
     for (final dark in [false, true]) {
       testWidgets('system high contrast danger colors $id/$dark', (t) async {
         addTearDown(() => t.pumpWidget(const SizedBox()));
@@ -54,15 +50,7 @@ void main() {
 
         final ordinary = await colors(false);
         final high = await colors(true);
-        final tokens = RaftTokens.of(t.element(find.text('Delete')));
-        final expected =
-            id == raftThemePackId || (id == brutalThemePackId && !dark)
-            ? ordinary
-            : (
-                tokens.colors['button-danger-high-contrast'],
-                tokens.colors['button-danger-high-contrast-foreground'],
-              );
-        expect(high, expected);
+        expect(high, ordinary);
         expect(t.takeException(), isNull);
       });
     }

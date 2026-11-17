@@ -6,7 +6,7 @@
   tool/parity-ext/run summary
   tool/parity-ext/run publish [--no-verify]
 
-Without --frozen, a run compares the Raft look against the explicit pinned Web
+A run compares the Raft look against the explicit pinned Web
 reference in tool/parity-reference.json. Historical brutal/elegant case names
 supply brightness only. Wrong reference inputs or Flutter look metadata stop the
 comparison before scoring; geometry differences remain product failures.
@@ -64,7 +64,6 @@ import builders  # noqa: E402  (tool/parity-ext/builders.py)
 import react_cache  # noqa: E402  (tool/parity-ext/react_cache.py)
 import sampling  # noqa: E402  (tool/parity-ext/sampling.py: theme sampling rule)
 import reference_contract  # noqa: E402
-import frozen_ref  # noqa: E402  (tool/parity-ext/frozen_ref.py: frozen a57b9dab references)
 
 _ad_loader = importlib.machinery.SourceFileLoader('parity_ext_analyze_diffs', str(EXT / 'analyze-diffs.py'))
 analyze = importlib.util.module_from_spec(importlib.util.spec_from_loader(_ad_loader.name, _ad_loader))
@@ -912,14 +911,13 @@ def summarize(chosen_ids=None):
 def cmd_run(a):
     OUT.mkdir(parents=True, exist_ok=True)
     try:
-        override = reference_contract.configure_theme(frozen=a.frozen, env=os.environ)
-        if not a.frozen:
-            reference = reference_contract.validate_reference(
-                parity.RAFT_SOURCE, json.loads((ROOT / 'tool/parity-reference.json').read_text()))
-            (OUT / 'comparison-inputs.json').write_text(json.dumps({
-                'phase': 'reference-and-request', 'status': 'INPUTS_VALIDATED',
-                'themeOverride': override, 'reference': reference,
-            }, indent=2) + '\n')
+        override = reference_contract.configure_theme(env=os.environ)
+        reference = reference_contract.validate_reference(
+            parity.RAFT_SOURCE, json.loads((ROOT / 'tool/parity-reference.json').read_text()))
+        (OUT / 'comparison-inputs.json').write_text(json.dumps({
+            'phase': 'reference-and-request', 'status': 'INPUTS_VALIDATED',
+            'themeOverride': override, 'reference': reference,
+        }, indent=2) + '\n')
     except (OSError, ValueError) as error:
         sys.exit(f'extension comparison precondition failed: {error}')
     chosen = parity.select(ext_cases(), a.cases)
@@ -931,23 +929,16 @@ def cmd_run(a):
                 if row.get('react') and row['id'] in chosen_ids} if previous.is_file() else set()
     environment_failed = False
     flutter_failed = 0
-    if a.frozen:
-        # Elegant / Brutal: the reference is the frozen a57b9dab render, not the Web (frozen_ref.py).
-        found, missing = frozen_ref.install(parity.RESULTS, [c['id'] for c in chosen], frozen_ref.search_dirs('ext'))
-        print(f'frozen references: {len(found)} found, {len(missing)} without a frozen image', flush=True)
-        (OUT / 'frozen-missing.json').write_text(json.dumps(missing, indent=1))
-    else:
-        environment_failed = react_capture(chosen, a.refresh_react) is True
+    environment_failed = react_capture(chosen, a.refresh_react) is True
     if not a.skip_flutter:
         os.environ['PARITY_MANIFEST'] = str(MANIFEST)
         os.environ['PARITY_EXT_FIXTURES'] = str(FIXTURES)
         flutter_failed = parity.flutter_capture(chosen, a.cases, a.shards) or 0
-    if not a.frozen:
-        context = reference_contract.validate_flutter_metadata(
-            chosen, parity.RESULTS / 'android', override)
-        (OUT / 'comparison-context.json').write_text(json.dumps(context, indent=2) + '\n')
-        if context['errors']:
-            sys.exit('extension comparison INADMISSIBLE: ' + '; '.join(context['errors']))
+    context = reference_contract.validate_flutter_metadata(
+        chosen, parity.RESULTS / 'android', override)
+    (OUT / 'comparison-context.json').write_text(json.dumps(context, indent=2) + '\n')
+    if context['errors']:
+        sys.exit('extension comparison INADMISSIBLE: ' + '; '.join(context['errors']))
     log = OUT / 'cli.log'
     log.write_text('')
     cli('diff', '--pairs', parity.PAIR, log=log)
@@ -1042,12 +1033,10 @@ def main():
     r.add_argument('--refresh-react', action='store_true')
     r.add_argument('--shards', type=int, default=int(os.environ.get('PARITY_SHARDS', '4')))
     r.add_argument('--skip-flutter', action='store_true')
-    r.add_argument('--frozen', action='store_true',
-                   help='compare against the frozen a57b9dab images (Elegant / Brutal looks) instead of the Web render')
     r.add_argument('--allow-structural-gaps', action='store_true',
-                   help='full-suite mode: report known missing Web/frozen surfaces without failing; capture failures still fail')
+                   help='full-suite mode: report known missing Web surfaces without failing; capture failures still fail')
     r.set_defaults(fn=cmd_run)
-    g = sub.add_parser('regress', help='three-level (frame / page / component) x look (raft / elegant / brutal) regression')
+    g = sub.add_parser('regress', help='three-level (frame / page / component) regression')
     import regress  # noqa: E402  (tool/parity-ext/regress.py)
     regress.add_arguments(g)
     g.set_defaults(fn=regress.command)

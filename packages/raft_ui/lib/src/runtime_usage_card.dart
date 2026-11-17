@@ -1215,7 +1215,6 @@ class _RaftRuntimeUsageChipState extends State<RaftRuntimeUsageChip> {
       card: (context) {
         final width = (MediaQuery.sizeOf(context).width - 16).clamp(0, 390);
         final style = RaftCardRecipe.resolve(
-          theme: t.recipeTheme,
           states: t.recipeStates(),
           tokens: t.recipeTokens,
         ).root;
@@ -1278,7 +1277,6 @@ class RaftRuntimeUsageStatus extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     final style = RaftStatusRecipe.resolve(
-      theme: t.recipeTheme,
       size: RaftStatusRecipeSize.sm,
       variant: attention
           ? RaftStatusRecipeVariant.warning
@@ -1320,7 +1318,6 @@ class RaftRuntimeUsageSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     final style = RaftCardRecipe.resolve(
-      theme: t.recipeTheme,
       states: t.recipeStates(),
       tokens: t.recipeTokens,
     ).root;

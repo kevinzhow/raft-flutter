@@ -35,7 +35,6 @@ class _PendingAuthorize extends FakeHumanLoginApi {
 
 Future<void> _field(
   WidgetTester t, {
-  String look = raftThemePackId,
   bool dark = false,
   int count = 2,
   String selected = 'alpha',
@@ -43,7 +42,7 @@ Future<void> _field(
   ValueChanged<String>? onSelect,
 }) => t.pumpWidget(
   MaterialApp(
-    theme: raftTheme(pack: packForThemeId(look), dark: dark),
+    theme: raftTheme(dark: dark),
     home: Scaffold(
       body: HumanLoginServerField(
         lookup: _lookup(count),
@@ -212,16 +211,4 @@ void main() {
       expect(t.takeException(), isNull);
     },
   );
-  for (final mode in [
-    (elegantThemePackId, false),
-    (elegantThemePackId, true),
-    (brutalThemePackId, false),
-  ]) {
-    testWidgets('Frozen plain server choice keeps old cards $mode', (t) async {
-      await _field(t, look: mode.$1, dark: mode.$2);
-      expect(find.byKey(_select), findsNothing);
-      expect(find.byType(RaftRadioGroup<String>), findsOneWidget);
-      expect(find.byType(RaftCard), findsNWidgets(2));
-    });
-  }
 }

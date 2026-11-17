@@ -1,56 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show defaultTargetPlatform;
 import 'package:raft_theme/raft_theme.dart';
-import 'package:raft_theme/recipes.dart'
-    show RaftRecipeSet, RaftThemePackRecipes;
 
 import 'control_typography.dart';
 import 'interaction.dart' show RaftInteraction;
 import 'viewport_breakpoints.dart' show raftBreakpointWidth;
 import 'tokens/tokens.dart';
 
-/// The appearance setting: which theme to paint with (Raft, Elegant, Brutal or
-/// a user pack) and Light / Dark / System for its two modes.
-///
-/// The theme and the mode are independent: every theme carries both a light and
-/// a dark set of values, so choosing Elegant and Dark is meaningful, and so is
-/// Elegant and System.
+/// The appearance setting: Light / Dark / System for the Raft look.
 class RaftAppearance {
-  const RaftAppearance({
-    this.mode = ThemeMode.system,
-    this.themeId = builtInRaftThemeId,
-  });
+  const RaftAppearance({this.mode = ThemeMode.system});
   final ThemeMode mode;
 
-  /// The id of the theme pack to paint with. Must name a loadable pack; an
-  /// unknown id is reported by the registry rather than silently ignored.
-  final String themeId;
+  RaftAppearance copyWith({ThemeMode? mode}) =>
+      RaftAppearance(mode: mode ?? this.mode);
 
-  RaftAppearance copyWith({ThemeMode? mode, String? themeId}) =>
-      RaftAppearance(mode: mode ?? this.mode, themeId: themeId ?? this.themeId);
-
-  /// The pack this appearance paints with.
-  ///
-  /// An id that no longer names a built-in theme falls back to Raft rather than
-  /// painting nothing: a stored id can outlive the theme it names (a user pack
-  /// removed in a release), and the default look is a better failure than a
-  /// blank window. The stored id itself is not rewritten, so the user's choice
-  /// survives.
-  ///
-  /// Lives here rather than at the call site so the app root keeps only a call.
-  RaftThemePack get pack => packForThemeId(themeId);
+  /// The pack this appearance paints with: the built-in Raft theme.
+  RaftThemePack get pack => builtInRaftTheme;
 }
 
-/// The id of the built-in Raft pack, the default appearance.
+/// The id of the built-in Raft pack.
 const String builtInRaftThemeId = raftThemePackId;
-
-/// The themes offered in the appearance setting, in the order the picker shows
-/// them, with the label each one carries in the UI.
-const List<({String id, String en, String zh})> builtInAppearanceThemes = [
-  (id: raftThemePackId, en: 'Raft', zh: 'Raft'),
-  (id: 'elegant', en: 'Elegant', zh: '雅致'),
-  (id: 'brutal', en: 'Brutal', zh: '粗野'),
-];
 
 /// The token set of a brightness.
 RaftThemeId raftThemeId({bool dark = false}) =>
@@ -112,7 +82,6 @@ class RaftTokens extends ThemeExtension<RaftTokens> {
     RaftModeValues? mode,
     this.themeOverrides,
     this.textLocale,
-    this.recipeSet = RaftRecipeSet.raft,
     this.desktop = false,
     this.viewportWidth,
   }) : _tokens = tokens,
@@ -155,7 +124,6 @@ class RaftTokens extends ThemeExtension<RaftTokens> {
           ? null
           : (dark ? themePack.dark : themePack.light),
       textLocale: textLocale,
-      recipeSet: themePack.recipeSet,
     );
   }
   final bool dark;
@@ -165,21 +133,12 @@ class RaftTokens extends ThemeExtension<RaftTokens> {
   /// from the context, so [typeSlot], `scale` and the recipe states of the
   /// families that opt in follow the window and the input without a call site
   /// passing either. A touch screen and a phone width keep the base values at
-  /// every size. Elegant and Brutal never switch (frozen looks).
+  /// every size.
   final bool desktop;
 
   /// The breakpoint band of the window (see `raftBreakpointWidth`) when
   /// [desktop]; recipes compare their `width >=` rules against it.
   final double? viewportWidth;
-
-  /// Which generated recipe set this theme paints with: the Raft set for Raft
-  /// and user packs, the frozen 0.5.52 set for the built-in Elegant and Brutal
-  /// packs (see `RaftThemePackRecipes`). Components never read it directly;
-  /// `recipeTokens` hands it to the recipe router.
-  final RaftRecipeSet recipeSet;
-
-  /// The Raft look (the raft-ui 0.7.0 recipe set), not a frozen Elegant or Brutal.
-  bool get isRaftLook => recipeSet == RaftRecipeSet.raft;
 
   /// Locale for regional glyphs, independently of the UI translation locale.
   final Locale? textLocale;
@@ -294,10 +253,7 @@ class RaftTokens extends ThemeExtension<RaftTokens> {
 
   /// A named slot of the type scale (`hero` ... `mono-code`, [RaftTypeScale]) as
   /// the active pack sets it. A pack that does not set the slot keeps the Raft
-  /// value, so the built-in Elegant and Brutal packs (which carry no slots yet)
-  /// answer with the Raft scale. Only components that already paint the Raft
-  /// scale read this; the pre-theme looks keep their own literals behind their
-  /// own option until their packs carry slots.
+  /// value.
   RaftTypeStyle typeSlot(String slot) {
     final spec = _mode?.type[slot];
     final base = RaftTypeScale.byName[slot]!;
@@ -342,8 +298,7 @@ class RaftTokens extends ThemeExtension<RaftTokens> {
       : fontFallback;
 
   /// The hyperlink underline every underlined run shares (Web `underline
-  /// decoration-2 underline-offset-2`; no theme overrides it, so Brutal and
-  /// Elegant agree and only the colour differs by recipe).
+  /// decoration-2 underline-offset-2`; only the colour differs by recipe).
   RaftUnderlineMetrics get underline =>
       const RaftUnderlineMetrics(offset: 2, thickness: 2);
   TextStyle get fieldStyle => TextStyle(
@@ -364,7 +319,7 @@ class RaftTokens extends ThemeExtension<RaftTokens> {
 
   /// The keyboard focus ring (`shadow-focus`, the pack's `shadow.focusRing`
   /// layers, CSS top-first so painted last-first). A pack that sets none keeps
-  /// the control shadow it always had (Brutal's lift).
+  /// the control shadow.
   List<BoxShadow> get focusShadows {
     final ring = shadowLayers('shadow.focusRing');
     if (ring.isEmpty) return shadows;
@@ -381,7 +336,6 @@ class RaftTokens extends ThemeExtension<RaftTokens> {
     final base =
         theme.extension<RaftTokens>() ??
         RaftTokens.theme(dark: theme.brightness == Brightness.dark);
-    if (!base.isRaftLook) return base;
     final band = raftBreakpointWidth(context);
     return band >= _desktopMinWidth && !RaftInteraction.of(context).touch
         ? base.withDesktop(band)
@@ -404,7 +358,6 @@ class RaftTokens extends ThemeExtension<RaftTokens> {
       mode: _mode,
       themeOverrides: themeOverrides,
       textLocale: textLocale,
-      recipeSet: recipeSet,
       desktop: true,
       viewportWidth: band,
     );
@@ -423,7 +376,6 @@ class RaftTokens extends ThemeExtension<RaftTokens> {
           mode: _mode,
           themeOverrides: themeOverrides,
           textLocale: textLocale ?? this.textLocale,
-          recipeSet: recipeSet,
           desktop: desktop,
           viewportWidth: viewportWidth,
         )

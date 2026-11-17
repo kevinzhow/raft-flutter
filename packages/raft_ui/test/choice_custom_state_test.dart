@@ -78,7 +78,6 @@ void main() {
         final selected = <String>[];
         final pack = separatePack();
         final tokens = RaftTokens.theme(pack: pack, dark: dark);
-        expect(tokens.isRaftLook, isTrue);
         expect(tokens.option('segmented.frame', or: 'framed'), 'separate');
         await t.pumpWidget(
           host(

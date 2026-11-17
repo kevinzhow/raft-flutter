@@ -177,12 +177,8 @@ class _HostState extends State<_Host> {
   @override
   Widget build(BuildContext context) => ListenableBuilder(
     // The product composer rebuilds on its per-conversation signal; the
-    // controller itself does not notify for a draft change. Only against the
-    // Web: the frozen a57b9dab captures of this case were taken without the
-    // signal (no attachment row), and Elegant / Brutal are scored against them.
-    listenable: widget.ctx.againstWeb
-        ? Listenable.merge([w, w.composer.changes(w.draftScope())])
-        : w,
+    // controller itself does not notify for a draft change.
+    listenable: Listenable.merge([w, w.composer.changes(w.draftScope())]),
     builder: (context, _) {
       final thread = kind['thread'] == true;
       final drafts = w.uploads();

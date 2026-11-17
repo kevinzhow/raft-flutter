@@ -54,7 +54,6 @@ void main() {
     bool disabled = false,
   }) => RaftSegmentedControl<String>(
     value: 'public',
-    legacyStyle: RaftSegmentedStyle.recipe,
     onChanged: change,
     disabled: disabled,
     items: const [

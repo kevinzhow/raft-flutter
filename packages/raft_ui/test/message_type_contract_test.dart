@@ -5,11 +5,7 @@ import 'package:raft_ui/src/message_content_tokens.dart';
 import 'package:raft_ui/test_themes.dart';
 
 void main() {
-  for (final id in raftThemeMatrix([
-    raftThemePackId,
-    elegantThemePackId,
-    brutalThemePackId,
-  ], look: raftLookOf)) {
+  for (final id in raftThemeMatrix([raftThemePackId])) {
     for (final dark in [false, true]) {
       test('$id/$dark message typography follows its source tiers', () {
         final tokens = raftTheme(
@@ -17,7 +13,6 @@ void main() {
           dark: dark,
         ).extension<RaftTokens>()!;
         final native = id == raftThemePackId;
-        final raised = id == brutalThemePackId && !dark;
         final defaultBody = MessageContentRecipe(tokens, mountedMessage: true);
         expect(defaultBody.fontSize, native ? 16 : 14);
         for (var i = 0; i < RaftMessageSizeTier.values.length; i++) {
@@ -33,15 +28,11 @@ void main() {
           );
           expect(
             row.author.height! * row.author.fontSize!,
-            native
-                ? [18, 20, 22][i]
-                : raised
-                ? 20
-                : [12, 14, 16][i],
+            native ? [18, 20, 22][i] : [12, 14, 16][i],
           );
           expect(
             row.author.fontWeight,
-            native || raised ? FontWeight.w700 : FontWeight.w500,
+            native ? FontWeight.w700 : FontWeight.w500,
           );
           final size = (native ? [14.0, 16.0, 18.0] : [12.0, 14.0, 16.0])[i];
           final recipe = MessageContentRecipe(
@@ -54,14 +45,10 @@ void main() {
             recipe.body.height! * size,
             (native ? [20, 24, 28] : [16, 20, 24])[i],
           );
-          expect(recipe.body.letterSpacing, native || raised ? 0 : -size * .01);
+          expect(recipe.body.letterSpacing, native ? 0 : -size * .01);
           expect(
             recipe.body.color,
-            tokens.colors[native
-                ? 'foreground'
-                : raised
-                ? 'ink'
-                : 'foreground-muted'],
+            tokens.colors[native ? 'foreground' : 'foreground-muted'],
           );
         }
         // An explicit physical size and caller leading remain authoritative;

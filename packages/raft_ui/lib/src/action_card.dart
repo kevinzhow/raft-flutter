@@ -144,11 +144,8 @@ class RaftActionCard extends StatelessWidget {
           top: RaftMessageBodyMargin.collapse(context, recipe.topGap),
         ),
         child: _ActionFrame(
-          recipe: recipe,
           child: Padding(
-            padding: t.isRaftLook
-                ? recipe.inset
-                : recipe.inset + EdgeInsets.all(recipe.border.width),
+            padding: recipe.inset,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -460,27 +457,13 @@ class RaftActionScopeList extends StatelessWidget {
 }
 
 /// The card's frame. The Raft look is the raft-ui `MessageEmbed` (size `item`:
-/// radius 10, one hairline, `layer-card`, 400 wide); the frozen looks keep the
-/// 0.5.52 bordered panel.
+/// radius 10, one hairline, `layer-card`, 400 wide).
 class _ActionFrame extends StatelessWidget {
-  const _ActionFrame({required this.recipe, required this.child});
-  final ActionSnapshotRecipe recipe;
+  const _ActionFrame({required this.child});
   final Widget child;
 
   @override
   Widget build(BuildContext context) {
-    if (RaftTokens.of(context).isRaftLook) {
-      return RaftMessageEmbedFrame(
-        size: RaftMessageEmbedSize.item,
-        child: child,
-      );
-    }
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: recipe.background,
-        border: Border.fromBorderSide(recipe.border),
-      ),
-      child: child,
-    );
+    return RaftMessageEmbedFrame(size: RaftMessageEmbedSize.item, child: child);
   }
 }

@@ -5,7 +5,7 @@
 // is never edited:
 //   1. VisualTestingRoot.tsx: the `parityTheme` URL param selects the light or
 //      the dark appearance (brutal-light / elegant-light render light,
-//      elegant-dark renders dark; same override as tool/theme-parity-web.mjs).
+//      elegant-dark renders dark).
 //   2. VisualTestingCases.tsx: tool/parity-ext/host/*.tsx is appended and the
 //      default export asks the extension registry first; official ids fall
 //      through unchanged.

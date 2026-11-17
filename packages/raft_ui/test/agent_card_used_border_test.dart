@@ -48,7 +48,6 @@ void main() {
         final t = theme.extension<RaftTokens>()!;
         final resolver = RaftRecipeTokens(t);
         final specified = RaftCardRecipe.resolve(
-          theme: t.recipeTheme,
           states: t.recipeStates(),
           tokens: resolver,
         ).root;

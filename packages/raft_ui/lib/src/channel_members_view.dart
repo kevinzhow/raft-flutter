@@ -527,18 +527,11 @@ class RaftChannelMembersModal extends StatelessWidget {
         variant: RaftButtonRecipeVariant.primary,
         expand: true,
         gap: 6,
-        // px-3 py-1.5 text-sm font-bold; theme-brutal:bg-brutal-pink.
+        // px-3 py-1.5 text-sm font-bold.
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         textStep: RaftTextSteps.sm,
         disabled: adding || chips.isEmpty,
         foreground: null,
-        brutalSurface: (t, hovered) => BoxDecoration(
-          color: t.colors['color-brutal-pink'],
-          border: Border.all(color: t.colors['line-strong']!, width: 2),
-          boxShadow: hovered
-              ? t.themeShadows.md.outer
-              : t.themeShadows.sm.outer,
-        ),
         onPressed: onConfirm,
       ),
     ];
@@ -902,8 +895,7 @@ class _SelectedChip extends StatelessWidget {
 // Its column insets differ BY DESIGN and are reproduced as such, not unified:
 //   header      px-4  (16)  - back button, title, count Badge
 //   search      px-4  (16)  - `shrink-0 border-b px-4 py-3`
-//   group head  brutal px-2 + border-2 transparent => chevron box at 10;
-//               elegant px-0 + border => 1 (`[--sidebar-row-inset-x:0px]`)
+//   group head  px-0 + border => 1 (`[--sidebar-row-inset-x:0px]`)
 //   member row  px-3  (12)  - ChannelMemberRow, role tag right edge at 12
 //   Add button  p-3   (12)  - `border-t-2 p-3`, so wider than the search field
 //   add view    px-4  (16)  - search, candidate list card and confirm button
@@ -954,8 +946,7 @@ class _MembersPageState extends State<_MembersPage> {
       color: headerColor,
       child: Container(
         // `flex h-panel-header shrink-0 items-center gap-2 border-b
-        // border-line-muted bg-layer-inset px-4`, brutal `border-b-2
-        // border-black bg-soft-signal`. The drawer portals out of the AppShell,
+        // border-line-muted bg-layer-inset px-4`. The drawer portals out of the AppShell,
         // so `h-panel-header` is the 62px fallback.
         height: RaftMetrics.brutalPanelHeader,
         padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -1168,7 +1159,7 @@ class _MembersPageState extends State<_MembersPage> {
         ),
         if (!m.loading && m.onAdd != null)
           Container(
-            // `shrink-0 border-t-2 border-line-muted p-3`, brutal `border-black`;
+            // `shrink-0 border-t-2 border-line-muted p-3`;
             // the system inset is added so the button clears the gesture bar.
             padding: EdgeInsets.fromLTRB(12, 12, 12, 12 + bottomInset),
             decoration: BoxDecoration(
@@ -1196,9 +1187,8 @@ class _MembersPageState extends State<_MembersPage> {
 }
 
 /// `MemberPageSection`: a `SidebarSection` disclosure (starts open) over the
-/// member rows. Brutal header `mt-3 mb-1 h-6 px-2` holding a `h-6 gap-1.5
-/// border-2 border-transparent text-xs font-bold tracking-widest` button;
-/// elegant `mt-4 h-8 px-0` / `border border-transparent text-xs font-medium`.
+/// member rows. Header `mt-4 h-8 px-0` / `border border-transparent text-xs
+/// font-medium`.
 class _MemberSection extends StatefulWidget {
   const _MemberSection({
     super.key,
@@ -1253,7 +1243,7 @@ class _MemberSectionState extends State<_MemberSection> {
                     button: true,
                     expanded: open,
                     child: Padding(
-                      // `border-2 border-transparent` (brutal) / `border`
+                      // `border`
                       padding: EdgeInsets.symmetric(horizontal: t.border),
                       child: Row(
                         children: [
@@ -1493,7 +1483,7 @@ class _MemberPageRowState extends State<_MemberPageRow> {
 
 /// `ChannelMemberRemoveButton` (member-management rows): `h-7 w-7 rounded-sm
 /// border border-line-muted bg-danger-soft text-danger-strong` with a
-/// `UserMinus size={14}`; brutal square, `border-black bg-brutal-red/20`.
+/// `UserMinus size={14}`.
 class _RemoveMemberButton extends StatelessWidget {
   const _RemoveMemberButton({
     super.key,

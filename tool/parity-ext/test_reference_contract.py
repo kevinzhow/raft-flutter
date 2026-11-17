@@ -11,7 +11,7 @@ import reference_contract as policy
 class ThemeContractTests(unittest.TestCase):
     def test_current_web_defaults_to_raft_even_for_historical_case_names(self):
         env = {}
-        self.assertEqual(policy.configure_theme(frozen=False, env=env), 'raft-case')
+        self.assertEqual(policy.configure_theme(env=env), 'raft-case')
         self.assertEqual(env['PARITY_THEME_OVERRIDE'], 'raft-case')
         self.assertEqual(policy.expected_theme(self.case('brutal-light'), 'raft-case'), 'raft-light')
         self.assertEqual(policy.expected_theme(self.case('elegant-dark'), 'raft-case'), 'raft-dark')
@@ -23,17 +23,7 @@ class ThemeContractTests(unittest.TestCase):
     def test_legacy_look_cannot_be_scored_against_current_web(self):
         for look in ['brutal-light', 'elegant-dark', 'elegant-case']:
             with self.subTest(look=look), self.assertRaises(policy.InvalidComparison):
-                policy.configure_theme(frozen=False, env={'PARITY_THEME_OVERRIDE': look})
-
-    def test_frozen_mode_preserves_its_existing_selection(self):
-        env = {}
-        self.assertIsNone(policy.configure_theme(frozen=True, env=env))
-        self.assertEqual(env, {})
-        self.assertEqual(policy.configure_theme(frozen=True, env={'PARITY_THEME_OVERRIDE': 'elegant-dark'}), 'elegant-dark')
-
-    def test_modern_override_cannot_be_applied_to_frozen_reference(self):
-        with self.assertRaises(policy.InvalidComparison):
-            policy.configure_theme(frozen=True, env={'PARITY_THEME_OVERRIDE': 'raft-case'})
+                policy.configure_theme(env={'PARITY_THEME_OVERRIDE': look})
 
     def test_metadata_context_rejects_the_actual_wrong_look_regression(self):
         with tempfile.TemporaryDirectory() as name:

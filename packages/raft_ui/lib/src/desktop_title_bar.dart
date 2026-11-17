@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:raft_theme/recipes.dart' show RaftRecipeSet;
 
 import 'design_primitives.dart';
 import 'theme.dart';
 
 /// The desktop window's title strip, painted in the nav rail's colours.
 ///
-/// Brutal wears the rail's yellow with a 2 px black rule; Elegant (light and
-/// dark) wears the rail's canvas with a 1 px divider. Everything is read from
-/// the rail recipe, so the strip follows live theme changes with the rail.
+/// It wears the rail's canvas with a divider. Everything is read from the rail
+/// recipe, so the strip follows live theme changes with the rail.
 @immutable
 class RaftTitleBarRecipe {
   const RaftTitleBarRecipe(this.tokens);
@@ -20,16 +18,15 @@ class RaftTitleBarRecipe {
 
   /// The glyph colour the system draws window controls in, where they sit on
   /// [background]. New packs declare the Web frame role; older packs retain
-  /// their frozen rail foreground.
-  Color get foreground => tokens.recipeSet == RaftRecipeSet.legacy
-      ? RaftRailRecipe(tokens, viewportHeight: 0).foreground
-      : tokens.colors['foreground-on-frame'] ??
-            RaftRailRecipe(tokens, viewportHeight: 0).foreground;
+  /// their rail foreground.
+  Color get foreground =>
+      tokens.colors['foreground-on-frame'] ??
+      RaftRailRecipe(tokens, viewportHeight: 0).foreground;
 
-  /// The rail's divider: pure black in Brutal, the muted line in Elegant.
+  /// The rail's divider.
   Color get rule => RaftRailRecipe(tokens, viewportHeight: 0).border.color;
 
-  /// 2 px in Brutal, 1 px in Elegant.
+  /// The divider's width.
   double get ruleWidth => tokens.border;
 }
 

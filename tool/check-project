@@ -3,15 +3,9 @@
 
 Independent checks (host tests, analysis, sharded Dart tests) run concurrently.
 Dart test files are split into balanced shards, one `flutter test` process each.
-The checks test the Raft look only (light and dark; owner decision 2026-10-25). Theme-parametrized Dart tests
-run their Raft variants, and a test file tagged for a legacy look (`@Tags(['look-elegant'])`,
-`@Tags(['look-brutal'])`) is not run. The legacy looks (Elegant, Brutal) have their own on-demand suite,
-`tool/theme-suite`; this run prints a notice when the diff touches the theme engine (tool/theme_looks.py
-THEME_ENGINE_PATHS) and does not run the suite. `--all-themes` (or RAFT_TEST_ALL_THEMES=1) runs everything:
-every look, every variant. `--plan` prints what would run and exits.
+The Raft look (light and dark) is the only look. `--plan` prints what would run and exits.
 
-Test tiers (RAFT_TEST_TIER: `gate` by default, `impact` for merge checks, `full` for the nightly, releases
-and `--all-themes`). Every tier runs the same non-test steps (pub get, structure-audit, ds-audit, host
+Test tiers (RAFT_TEST_TIER: `gate` by default, `impact` for merge checks, `full` for the nightly and releases). Every tier runs the same non-test steps (pub get, structure-audit, ds-audit, host
 tests, analyze, raft-lints, test budget); they differ in the Dart test files. `impact` (tool/impact_tier.py)
 runs, per package, the files `tool/test-impact select` picks for the diff against the merge-base with the
 base below, plus the guard and cross-cutting files (registries, parity ledgers, shell audits, the raft_ui
@@ -46,8 +40,7 @@ ${RAFT_CHECK_CACHE:-~/.cache/raft-check}/passed/<tree>.json, keyed by
 `git rev-parse HEAD^{tree}` (with time, HEAD commit and the final JSON; a pass with
 flakes is recorded too). `--reuse` prints "tree <hash> already passed ..." plus the
 stored JSON with "reused": true and exits 0 without running anything, when the
-worktree is clean and that tree has a recorded pass (an `--all-themes` run only
-reuses an all-themes pass). The record keeps its tier: a full pass covers gate and impact requests,
+worktree is clean and that tree has a recorded pass. The record keeps its tier: a full pass covers gate and impact requests,
 a gate pass covers impact, an impact pass covers only impact. A dirty worktree never reuses and runs normally.
 
 The gate fails fast so a broken branch does not hold the shared lock for a full
@@ -58,7 +51,7 @@ anything for RAFT_CHECK_STALL_MINUTES (default 10, 0 = off). Each step is append
 to /tmp/raft-flutter-gate-events.log (tool/gate_events.py), with a terminal
 PASS/FAIL/ERROR line on every path; RAFT_GATE_NOTIFY_TARGET also sends failures.
 
-Usage: tool/check-project [--all-themes] [--reuse] [--plan]
+Usage: tool/check-project [--reuse] [--plan]
 """
 import codecs
 import concurrent.futures
@@ -82,7 +75,6 @@ import gate_events  # noqa: E402
 import impact_tier  # noqa: E402
 import raft_source  # noqa: E402
 import test_budget  # noqa: E402
-import theme_looks  # noqa: E402
 from test_events import file_durations, parse_test_events  # noqa: E402,F401  (also used through this module by the host tests)
 
 root = pathlib.Path(__file__).resolve().parent.parent
@@ -151,35 +143,13 @@ TIERS = ('impact', 'gate', 'full')  # weakest first: a pass of a tier covers a r
 
 
 def tier_mode(env):
-    """`full` for RAFT_TEST_TIER=full or an all-themes run, `impact` for RAFT_TEST_TIER=impact, else `gate`;
-    anything else is refused."""
+    """`full` for RAFT_TEST_TIER=full, `impact` for RAFT_TEST_TIER=impact, else `gate`; anything else is refused."""
     raw = env.get(TIER_VARIABLE, '').strip().lower()
     if raw not in ('', *TIERS):
         raise SystemExit(f'{TIER_VARIABLE} must be gate, impact or full, got {raw!r}.')
-    if raw == 'full' or env.get('RAFT_TEST_ALL_THEMES') == '1':
+    if raw == 'full':
         return 'full'
     return raw or 'gate'
-
-
-def apply_look_filter(files, base, env):
-    """(files to run, plan): drop the test files tied to a look the run does not select (tool/theme_looks.py).
-
-    The gate selects the Raft look; `--all-themes` selects every look. `files` are relative to `base`.
-    """
-    looks = theme_looks.selected_looks(env)
-    kept, skipped = theme_looks.split_by_looks(files, looks, base)
-    by_look = {look: [f for f in skipped if look in theme_looks.file_looks(base / f)] for look in theme_looks.LEGACY_LOOKS}
-    aware = [f for f in kept if theme_looks.declares_looks(base / f)]
-    return kept, {'looks': list(looks), 'skipped': skipped, 'byLook': {k: v for k, v in by_look.items() if v}, 'lookAware': aware}
-
-
-def look_summary(plan):
-    """Lines that say which looks ran and which legacy-look files were left to tool/theme-suite."""
-    shown = ', '.join(plan['looks'])
-    lines = [f"Looks: {shown}" + (' (light and dark)' if plan['looks'] == list(theme_looks.DEFAULT_LOOKS) else '') + f". Look-aware test files: {len(plan['lookAware'])}; legacy-look files skipped: {len(plan['skipped'])}"
-             + (f" ({theme_looks.SUITE_COMMAND} runs them)." if plan['skipped'] else '.')]
-    lines.extend(f'  legacy look, skipped: {name}' for name in plan['skipped'])
-    return lines
 
 
 def is_slow_test(path):
@@ -426,14 +396,12 @@ def slow_summary(plan):
     return lines
 
 
-def format_summary(shards, failures, totals, slowest, limit=None, themes=None, stop=None, flaky=(), retry_failed=(), slow=None, budget=None, looks=None, guard=(), impact=None):
+def format_summary(shards, failures, totals, slowest, limit=None, stop=None, flaky=(), retry_failed=(), slow=None, budget=None, guard=(), impact=None):
     """Human-readable gate summary; failures are listed by test name (first `limit` if given)."""
-    lines = [f"Dart tests: {totals['passed']} passed, {totals['skipped']} skipped, {len(failures)} failed across {len(shards)} shard(s)" + (f' (themes: {themes}).' if themes else '.')]
+    lines = [f"Dart tests: {totals['passed']} passed, {totals['skipped']} skipped, {len(failures)} failed across {len(shards)} shard(s)."]
     if totals.get('hidden'):
         lines.append(f"  ({totals['hidden']} hidden setUpAll/tearDownAll entries are not counted as tests.)")
     lines.extend(guard)
-    if looks:
-        lines.extend(look_summary(looks))
     lines.extend(impact_summary(impact))
     if slow:
         lines.extend(slow_summary(slow))
@@ -948,24 +916,22 @@ def tier_rank(tier):
     return TIERS.index(tier) if tier in TIERS else -1
 
 
-def pass_covers(record, themes, tier='gate'):
-    """A recorded all-themes pass covers a Raft-only request; a Raft-only pass does not cover all themes
-    (records from before the Raft-only rule say `sampled`; they count as Raft-only).
-    Likewise a pass covers a request for its tier or a weaker one: full covers gate and impact, gate covers
+def pass_covers(record, tier='gate'):
+    """A pass covers a request for its tier or a weaker one: full covers gate and impact, gate covers
     impact, an impact pass covers only impact (a record without a tier ran every file)."""
-    return (record.get('themes', 'raft') == 'all' or themes != 'all') and tier_rank(record.get('tier', 'full')) >= max(0, tier_rank(tier))
+    return tier_rank(record.get('tier', 'full')) >= max(0, tier_rank(tier))
 
 
-def record_pass(tree, commit, result, themes, engineering_run=None, env=None, now=None, tier='gate'):
+def record_pass(tree, commit, result, engineering_run=None, env=None, now=None, tier='gate'):
     """Remember a full pass of `tree`; never raises (a cache that cannot be written only costs a re-run)."""
     try:
         existing = read_pass_record(tree, env)
-        if existing and not pass_covers({'themes': themes, 'tier': tier}, existing.get('themes', 'raft'), existing.get('tier', 'full')):
-            return None  # keep the stronger all-themes record
+        if existing and not pass_covers({'tier': tier}, existing.get('tier', 'full')):
+            return None  # keep the stronger record
         path = passed_record_path(tree, env)
         path.parent.mkdir(parents=True, exist_ok=True)
         stamp = (now or time.gmtime())
-        record = {'tree': tree, 'time': time.strftime('%Y-%m-%dT%H:%M:%SZ', stamp), 'commit': commit, 'themes': themes, 'tier': tier,
+        record = {'tree': tree, 'time': time.strftime('%Y-%m-%dT%H:%M:%SZ', stamp), 'commit': commit, 'tier': tier,
                   'result': result, 'engineeringRun': engineering_run}
         temporary = path.with_name(f'{path.name}.{os.getpid()}.tmp')
         temporary.write_text(json.dumps(record, indent=2), encoding='utf-8')
@@ -976,11 +942,11 @@ def record_pass(tree, commit, result, themes, engineering_run=None, env=None, no
         return None
 
 
-def reusable_pass(themes, cwd=None, env=None, tier='gate'):
-    """The recorded pass to reuse for the current clean tree, else None (dirty tree, no record, weaker themes)."""
+def reusable_pass(cwd=None, env=None, tier='gate'):
+    """The recorded pass to reuse for the current clean tree, else None (dirty tree, no record, weaker tier)."""
     tree = clean_tree_hash(cwd)
     record = read_pass_record(tree, env) if tree else None
-    return record if record and pass_covers(record, themes, tier) else None
+    return record if record and pass_covers(record, tier) else None
 
 
 def reuse_message(record):
@@ -988,14 +954,14 @@ def reuse_message(record):
 
 
 def parse_args(argv):
-    """(all_themes, reuse, plan); --help prints the docstring."""
-    known = {'--all-themes', '--reuse', '--plan'}
+    """(reuse, plan); --help prints the docstring."""
+    known = {'--reuse', '--plan'}
     if '--help' in argv or '-h' in argv:
         print(__doc__)
         raise SystemExit(0)
     if any(arg not in known for arg in argv):
-        raise SystemExit(f'check-project: unknown arguments {argv}; the options are --all-themes, --reuse and --plan.')
-    return '--all-themes' in argv, '--reuse' in argv, '--plan' in argv
+        raise SystemExit(f'check-project: unknown arguments {argv}; the options are --reuse and --plan.')
+    return '--reuse' in argv, '--plan' in argv
 
 
 def write_aggregate_log(shards, summary_text, passed):
@@ -1007,10 +973,6 @@ def write_aggregate_log(shards, summary_text, passed):
             out.write(f"shard {shard['index']}: {tail[0] if tail else '(no output)'}\n")
         out.write('All tests passed!\n' if passed else 'Some tests failed.\n')
 
-
-def themes_mode(env):
-    """`all` for --all-themes (every look, every variant), else `raft` (the Raft look only)."""
-    return 'all' if env.get('RAFT_TEST_ALL_THEMES') == '1' else 'raft'
 
 
 def abort_message(emit, verdict, failures):
@@ -1083,22 +1045,18 @@ def run_gate(check_env, emit, started):
     results = {}
     cpu = os.cpu_count() or 2
     load = os.getloadavg()[0] if hasattr(os, 'getloadavg') else 0.0
-    files, looks = apply_look_filter(discover_tests(root), app_dir, check_env)
+    files = discover_tests(root)
     files, slow, impact = apply_test_tier(files, tier_mode(check_env), app_dir, select=lambda: select_impact(check_env))
-    guard = theme_looks.guard()  # a notice only: the legacy looks are not part of this run
     sizes = {f: (app_dir / f).stat().st_size for f in files if (app_dir / f).is_file()}
     shard_count, jobs = plan_parallelism(cpu, load)
     plan = partition(files, app_relative_weights(history_weights(root)), shard_count, sizes)
     timeout_override = os.environ.get('RAFT_CHECK_SHARD_TIMEOUT_MINUTES')
     max_failures = int(env_number('RAFT_CHECK_MAX_FAILURES', DEFAULT_MAX_FAILURES))
     stall_minutes = env_number('RAFT_CHECK_STALL_MINUTES', DEFAULT_STALL_MINUTES)
-    print(f'check-project: {len(files)} test files in {len(plan)} shard(s) x -j{jobs} on {cpu} CPUs (load {load:.1f}); themes: {themes_mode(check_env)}; tier: {slow["tier"]}.', file=sys.stderr)
-    for line in guard:
-        print(f'check-project: {line}', file=sys.stderr)
-    print(f"check-project: {look_summary(looks)[0]}", file=sys.stderr)
+    print(f'check-project: {len(files)} test files in {len(plan)} shard(s) x -j{jobs} on {cpu} CPUs (load {load:.1f}); tier: {slow["tier"]}.', file=sys.stderr)
     for line in [*impact_summary(impact), *slow_summary(slow)]:
         print(f'check-project: {line}', file=sys.stderr)
-    emit('START', shards=len(plan), jobs=jobs, files=len(files), cpus=cpu, load=f'{load:.1f}', themes=themes_mode(check_env), tier=slow['tier'], slow_skipped=len(slow['skipped']), looks=','.join(looks['looks']), look_skipped=len(looks['skipped']), engine_touched=bool(guard))
+    emit('START', shards=len(plan), jobs=jobs, files=len(files), cpus=cpu, load=f'{load:.1f}', tier=slow['tier'], slow_skipped=len(slow['skipped']))
 
     # A branch that merged new dependencies without `pub get` would fail every
     # test file at compile time, slowly; resolve the workspace first and stop.
@@ -1255,7 +1213,7 @@ def run_gate(check_env, emit, started):
     results = ordered
 
     slowest = slowest_tests(all_results)
-    summary_text = format_summary(shards, failures, totals, slowest, themes=themes_mode(check_env), stop=stop, flaky=flaky, retry_failed=retry_failed, slow=slow, budget=budget, looks=looks, guard=guard, impact=impact)
+    summary_text = format_summary(shards, failures, totals, slowest, stop=stop, flaky=flaky, retry_failed=retry_failed, slow=slow, budget=budget, impact=impact)
     (local / 'check-summary.txt').write_text(summary_text, encoding='utf-8')
     write_aggregate_log(shards, summary_text, tests_passed)
     previous = read_json(local / 'check-durations.json').get('files', {})
@@ -1264,14 +1222,13 @@ def run_gate(check_env, emit, started):
     (local / 'check-durations.json').write_text(json.dumps({
         'sourceHash': source_hash, 'wallSeconds': round(time.monotonic() - started, 1), 'shards': len(shards), 'jobsPerShard': jobs,
         'slowestTests': slowest, 'files': dict(sorted(merged.items()))}, indent=2), encoding='utf-8')
-    sys.stderr.write(format_summary(shards, failures, totals, slowest, limit=40, themes=themes_mode(check_env), stop=stop, flaky=flaky, retry_failed=retry_failed, slow=slow, budget=budget, looks=looks, guard=guard, impact=impact))
+    sys.stderr.write(format_summary(shards, failures, totals, slowest, limit=40, stop=stop, flaky=flaky, retry_failed=retry_failed, slow=slow, budget=budget, impact=impact))
 
     changed = stamp() != source_hash
     ok = all(results.values()) and not changed and not stop
     run_record = {
-        'sourceHash': source_hash, 'completed': ok, 'themes': themes_mode(check_env), 'tier': slow['tier'],
-        'slowSkipped': slow['skipped'], 'slowRan': slow['run'], 'looks': looks['looks'], 'lookSkipped': looks['skipped'],
-        'themeEngineTouched': bool(guard), 'checks': results,
+        'sourceHash': source_hash, 'completed': ok, 'tier': slow['tier'],
+        'slowSkipped': slow['skipped'], 'slowRan': slow['run'], 'checks': results,
         **({'impact': impact} if impact else {}),
         'shards': [{'index': s['index'], 'passed': s['passed'], 'exitCode': s['code'], 'seconds': round(s['seconds'], 1), 'files': len(s['files']), 'log': s['log'],
                     'startup': {'result': s['startup'][0], 'seconds': round(s['startup'][1], 1)} if s.get('startup') else None} for s in shards],
@@ -1347,44 +1304,32 @@ def plan_report(env, changed=None, reach=reach_by_imports, select=None):
     """What this run would test, without running anything: (lines, numbers)."""
     tier = tier_mode(env)
     discovered = discover_tests(root)
-    files, looks = apply_look_filter(discovered, app_dir, env)
-    files, slow, impact = apply_test_tier(files, tier, app_dir, changed, reach, select or (lambda: select_impact(env)))
+    files, slow, impact = apply_test_tier(discovered, tier, app_dir, changed, reach, select or (lambda: select_impact(env)))
     impact_skipped = impact['skipped'] - len(slow['skipped']) if impact else 0
-    numbers = {'discovered': len(discovered), 'legacyLookSkipped': len(looks['skipped']), 'slowSkipped': len(slow['skipped']), 'toRun': len(files),
-               'lookAware': len(looks['lookAware']), 'looks': looks['looks'], 'tier': tier, 'themes': themes_mode(env),
+    numbers = {'discovered': len(discovered), 'slowSkipped': len(slow['skipped']), 'toRun': len(files), 'tier': tier,
                **({'impactSkipped': impact_skipped} if impact else {})}
-    lines = [f"check-project plan: themes {numbers['themes']}, looks {','.join(looks['looks'])}, tier {tier}.",
+    lines = [f"check-project plan: tier {tier}.",
              f"  test files discovered:             {numbers['discovered']}",
-             f"  skipped, legacy look (theme-suite): {numbers['legacyLookSkipped']}",
              f"  skipped, slow tier:                 {numbers['slowSkipped']}",
              *([f"  skipped, impact tier (not selected): {impact_skipped}"] if impact else []),
-             f"  test files to run:                  {numbers['toRun']}",
-             f"  look-aware files among them:        {numbers['lookAware']} (Raft variants only unless the looks say otherwise)"]
-    lines.extend(f'    legacy look, skipped: {name}' for name in looks['skipped'])
+             f"  test files to run:                  {numbers['toRun']}"]
     lines.extend(impact_summary(impact))
     for plan in (impact or {}).get('packages', ()):
         lines.extend(f"    impact, runs: {name}" for name in plan['files'])
-    lines.extend(theme_looks.guard())
     return lines, numbers
 
 
 def main():
     check_env = dict(os.environ, PYTHONUTF8='1', RAFT_PROJECT_GATE='1')
-    all_themes, reuse, plan = parse_args(sys.argv[1:])
-    if all_themes:
-        check_env['RAFT_TEST_ALL_THEMES'] = '1'
-    # The gate tests the Raft look; the legacy looks are tool/theme-suite's. Only --all-themes widens it.
-    check_env.pop(theme_looks.MODES_VARIABLE, None)
-    check_env[theme_looks.LOOKS_VARIABLE] = 'all' if themes_mode(check_env) == 'all' else 'raft'
+    reuse, plan = parse_args(sys.argv[1:])
     if plan:
         lines, _ = plan_report(check_env)
         print('\n'.join(lines))
         sys.exit(0)
-    themes = themes_mode(check_env)
     tier = tier_mode(check_env)
     check_env[TIER_VARIABLE] = tier  # the Dart tests read it (raftFullMatrix)
     if reuse:
-        record = reusable_pass(themes, tier=tier)
+        record = reusable_pass(tier=tier)
         if record:
             emit, started = gate_events.Events(root), time.monotonic()
             print(reuse_message(record))
@@ -1406,7 +1351,7 @@ def main():
         outcome = run_gate(check_env, emit, started)
         finish(emit, started, outcome)
         if outcome['ok'] and start_tree and clean_tree_hash() == start_tree:  # only a clean tree that stayed clean is worth remembering
-            record_pass(start_tree, git_text('rev-parse', 'HEAD'), outcome['result'], themes, outcome.get('run_record'), tier=tier)
+            record_pass(start_tree, git_text('rev-parse', 'HEAD'), outcome['result'], outcome.get('run_record'), tier=tier)
     except BaseException as error:  # every other path still ends with a terminal event
         kill_children()
         if isinstance(error, SystemExit) and error.code in (0, None):

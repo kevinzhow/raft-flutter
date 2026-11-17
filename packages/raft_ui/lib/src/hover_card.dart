@@ -430,7 +430,6 @@ class _RaftHoverCardState extends State<RaftHoverCard>
     Widget card = Builder(builder: widget.card);
     if (widget.surface) {
       final style = RaftPreviewCardRecipe.resolve(
-        theme: t.recipeTheme,
         states: t.recipeStates(),
         tokens: t.recipeTokens,
       ).popup;

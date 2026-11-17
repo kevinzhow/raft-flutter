@@ -1,6 +1,6 @@
 // The single Button entry point. All visual states of the Raft look resolve
-// the current raft-ui Button recipe; compatibility wrappers retain only
-// frozen legacy paint and delegate their interaction to this component.
+// the current raft-ui Button recipe; compatibility wrappers delegate their
+// interaction to this component.
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart' show SemanticsRole;
 
@@ -9,18 +9,15 @@ import '../design_primitives.dart';
 import '../icons.dart';
 import '../localization.dart';
 import '../recipes/button_variants.g.dart';
-import '../recipes/recipe_router.dart';
 import '../recipes/recipe_runtime.dart';
 import '../recipes/text_link_variants.g.dart';
 import '../recipe_surface.dart';
 import '../stacked_actions.dart' show RaftStackedActions;
 import '../text_scaling.dart' show RaftScaled;
 import '../raft_underline.dart';
-import 'legacy_button_surface.dart';
 import 'button_color_transition.dart';
 import 'button_colors.dart';
 import 'css_box.dart' show raftControlBorderPx;
-import 'legacy_material_button_surface.dart';
 import '../theme.dart';
 import '../control_typography.dart';
 import '../tokens/tokens.dart';
@@ -76,7 +73,7 @@ enum RaftButtonVariant {
     RaftButtonRecipeVariant.success => success,
     RaftButtonRecipeVariant.outline => outline,
     RaftButtonRecipeVariant.ghost => ghost,
-    RaftButtonRecipeVariant.link => link,
+    RaftButtonRecipeVariant.onFrame => onFrame,
     RaftButtonRecipeVariant.dangerSecondary => dangerSecondary,
     RaftButtonRecipeVariant.danger => danger,
     RaftButtonRecipeVariant.dangerOutline => dangerOutline,
@@ -116,7 +113,7 @@ enum RaftButtonSize {
     RaftButtonRecipeSize.sm => sm,
     RaftButtonRecipeSize.md => md,
     RaftButtonRecipeSize.lg => lg,
-    RaftButtonRecipeSize.inline => inline,
+    RaftButtonRecipeSize.xl => xl,
     RaftButtonRecipeSize.iconXs => iconXs,
     RaftButtonRecipeSize.iconSm => iconSm,
     RaftButtonRecipeSize.iconMd => iconMd,
@@ -200,98 +197,30 @@ class RaftButtonMetrics {
     RaftTokens t,
   ) {
     final tokens = t.recipeTokens;
-    if (!usesLegacyRecipes(tokens)) {
-      Map<String, RaftSlotStyle> resolve([Iterable<String> extra = const []]) =>
-          _resolveButtonSlots(
-            size: size,
-            variant: variant,
-            states: t.recipeStates(responsive: true, extra: extra),
-            tokens: tokens,
-          );
-      final root = resolve()['root']!;
-      final start = resolve([RaftRecipeStates.iconInlineStart])['root']!;
-      final end = resolve([RaftRecipeStates.iconInlineEnd])['root']!;
-      final text = root.text(tokens);
-      final fontSize = text.fontSize ?? RaftTypeScale.body.fontSize;
-      return RaftButtonMetrics(
-        height: root.height ?? 0,
-        paddingX: root.padding.left,
-        iconStartPaddingLeft: start.padding.left,
-        iconEndPaddingRight: end.padding.right,
-        text: RaftTypeStyle(
-          fontSize,
-          fontSize * (text.height ?? 1),
-          fontWeight: text.fontWeight?.value.toInt() ?? 700,
-        ),
-        icon: root.target("& svg:not([class*='size-'])")?.width ?? fontSize,
-        gap: root.columnGap ?? 0,
-        square: size.isIcon,
-      );
-    }
-    // Pre-0.7 geometry remains frozen with the legacy paint adapters.
-    final frame =
-        variant == RaftButtonVariant.onFrame &&
-        (size == RaftButtonSize.xs ||
-            size == RaftButtonSize.sm ||
-            size == RaftButtonSize.md ||
-            size == RaftButtonSize.iconXs ||
-            size == RaftButtonSize.iconSm ||
-            size == RaftButtonSize.iconMd);
-    final axis = switch (size) {
-      RaftButtonSize.xs || RaftButtonSize.iconXs => 'xs',
-      RaftButtonSize.sm || RaftButtonSize.iconSm => 'sm',
-      RaftButtonSize.lg || RaftButtonSize.iconLg => 'lg',
-      _ => 'md',
-    };
-    final large = axis == 'lg';
-    final height = frame
-        ? t.size('size.control.onFrame', fallback: 36)
-        : size == RaftButtonSize.xl
-        ? 52.0
-        : t.size('size.control.$axis', fallback: large ? 44 : 32);
-    final nativeType = large ? RaftTypeScale.subhead : RaftTypeScale.footnote;
-    final fontSize = size == RaftButtonSize.xl
-        ? RaftTypeScale.body.fontSize
-        : frame
-        ? RaftTypeScale.subhead.fontSize
-        : t.size('type.button.$axis.size', fallback: nativeType.fontSize);
-    final line = size == RaftButtonSize.xl
-        ? RaftTypeScale.body.lineHeight
-        : frame
-        ? RaftTypeScale.subhead.lineHeight
-        : axis == 'xs'
-        ? 18.0
-        : t.size('type.button.$axis.line', fallback: nativeType.lineHeight);
-    final padding = size == RaftButtonSize.xl
-        ? 20.0
-        : frame
-        ? 10.0
-        : axis == 'md'
-        ? 12.0
-        : t.size('space.buttonInline.$axis', fallback: large ? 16 : 12);
-    final glyph = size == RaftButtonSize.xl
-        ? 18.0
-        : frame
-        ? (size.isIcon ? 20.0 : 16.0)
-        : size.isIcon
-        ? t.size('size.buttonGlyph.${size.name}', fallback: large ? 22 : 18)
-        : axis == 'md'
-        ? 16.0
-        : t.size('size.buttonGlyph.$axis', fallback: large ? 18 : 16);
+    Map<String, RaftSlotStyle> resolve([Iterable<String> extra = const []]) =>
+        _resolveButtonSlots(
+          size: size,
+          variant: variant,
+          states: t.recipeStates(responsive: true, extra: extra),
+          tokens: tokens,
+        );
+    final root = resolve()['root']!;
+    final start = resolve([RaftRecipeStates.iconInlineStart])['root']!;
+    final end = resolve([RaftRecipeStates.iconInlineEnd])['root']!;
+    final text = root.text(tokens);
+    final fontSize = text.fontSize ?? RaftTypeScale.body.fontSize;
     return RaftButtonMetrics(
-      height: height,
-      paddingX: size.isIcon ? 0 : padding,
-      iconStartPaddingLeft: size.isIcon ? 0 : padding - 2,
-      iconEndPaddingRight: size.isIcon ? 0 : padding - 2,
+      height: root.height ?? 0,
+      paddingX: root.padding.left,
+      iconStartPaddingLeft: start.padding.left,
+      iconEndPaddingRight: end.padding.right,
       text: RaftTypeStyle(
         fontSize,
-        line,
-        fontWeight: t.size('type.button.weight', fallback: 700).round(),
+        fontSize * (text.height ?? 1),
+        fontWeight: text.fontWeight?.value.toInt() ?? 700,
       ),
-      icon: glyph,
-      gap: frame || size == RaftButtonSize.xl
-          ? 8
-          : t.size('space.buttonGap.$axis', fallback: 8),
+      icon: root.target("& svg:not([class*='size-'])")?.width ?? fontSize,
+      gap: root.columnGap ?? 0,
       square: size.isIcon,
     );
   }
@@ -355,17 +284,14 @@ class RaftButton extends StatelessWidget {
     this.iconInlineEnd = false,
     this.glyphSize,
     this.disabledOpacity,
-    this.legacyBuilder,
     this.surfaceBuilder,
     this.styleBuilder,
-    this.legacyKind,
-    this.legacyStyle,
     this.legacyConstraints,
     this.legacyPadding,
   });
 
-  /// Migration constructors: current Button variants with frozen pre-0.7
-  /// style data for the legacy looks. No Material input implementation remains.
+  /// Migration constructors: current Button variants. No Material input
+  /// implementation remains.
   const RaftButton.text({
     Key? key,
     Widget? child,
@@ -373,7 +299,6 @@ class RaftButton extends StatelessWidget {
     Widget? icon,
     VoidCallback? onPressed,
     FocusNode? focusNode,
-    ButtonStyle? legacyStyle,
     EdgeInsets? padding,
     RaftSlotStyle Function(BuildContext, RaftInteractionState, RaftSlotStyle)?
     styleBuilder,
@@ -386,11 +311,9 @@ class RaftButton extends StatelessWidget {
          focusNode: focusNode,
          focusOnPointer: focusOnPointer,
          uiVariant: RaftButtonVariant.ghost,
-         legacyKind: RaftLegacyButtonKind.text,
          layoutTouchTarget: true,
          expandTouchTarget: false,
          semanticContainer: false,
-         legacyStyle: legacyStyle,
          padding: padding,
          styleBuilder: styleBuilder,
          autoHeight: true,
@@ -403,7 +326,6 @@ class RaftButton extends StatelessWidget {
     Widget? icon,
     VoidCallback? onPressed,
     FocusNode? focusNode,
-    ButtonStyle? legacyStyle,
   }) : this(
          key: key,
          child: child ?? label,
@@ -411,11 +333,9 @@ class RaftButton extends StatelessWidget {
          onPressed: onPressed,
          focusNode: focusNode,
          uiVariant: RaftButtonVariant.outline,
-         legacyKind: RaftLegacyButtonKind.outlined,
          layoutTouchTarget: true,
          expandTouchTarget: false,
          semanticContainer: false,
-         legacyStyle: legacyStyle,
        );
 
   const RaftButton.iconAction({
@@ -423,7 +343,6 @@ class RaftButton extends StatelessWidget {
     required Widget icon,
     VoidCallback? onPressed,
     String? tooltip,
-    ButtonStyle? legacyStyle,
     BoxConstraints? constraints,
     EdgeInsetsGeometry? padding,
   }) : this(
@@ -433,17 +352,13 @@ class RaftButton extends StatelessWidget {
          tooltip: tooltip,
          uiVariant: RaftButtonVariant.ghost,
          uiSize: RaftButtonSize.iconMd,
-         legacyKind: RaftLegacyButtonKind.icon,
          layoutTouchTarget: true,
          expandTouchTarget: false,
          semanticContainer: false,
-         legacyStyle: legacyStyle,
          legacyConstraints: constraints,
          legacyPadding: padding,
        );
 
-  final RaftLegacyButtonKind? legacyKind;
-  final ButtonStyle? legacyStyle;
   final BoxConstraints? legacyConstraints;
   final EdgeInsetsGeometry? legacyPadding;
   final String label;
@@ -478,10 +393,6 @@ class RaftButton extends StatelessWidget {
   final bool iconInlineStart, iconInlineEnd;
   final double? gap, glyphSize, disabledOpacity;
   final RaftOpacityCompositing opacityCompositing;
-
-  /// Frozen paint adapter used only by the pre-0.7 compatibility wrappers.
-  /// New compositions use the recipe and its normal class overrides above.
-  final Widget Function(BuildContext, RaftInteractionState)? legacyBuilder;
 
   /// Product positioning around the painted border box, e.g. a popup anchor.
   /// Runs inside interaction so hit testing/semantics track the same surface.
@@ -557,16 +468,7 @@ class RaftButton extends StatelessWidget {
       inMutuallyExclusiveGroup: inMutuallyExclusiveGroup,
       inertWhenDisabled: inertWhenDisabled,
       builder: (context, state) {
-        final t = RaftTokens.of(context);
-        Widget surface = usesLegacyRecipes(t.recipeTokens)
-            ? legacyBuilder?.call(context, state) ??
-                  (legacyKind != null
-                      ? RaftLegacyMaterialButtonSurface(
-                          button: this,
-                          state: state,
-                        )
-                      : RaftLegacyButtonSurface(button: this, state: state))
-            : _recipeSurface(context, state, accessibleLabel);
+        Widget surface = _recipeSurface(context, state, accessibleLabel);
         if (surfaceBuilder != null) surface = surfaceBuilder!(context, surface);
         return surface;
       },
@@ -613,7 +515,8 @@ class RaftButton extends StatelessWidget {
       states: states,
       tokens: tokens,
     );
-    var recipeRoot = slots['root'] ?? absentSlot(tokens);
+    var recipeRoot =
+        slots['root'] ?? RaftSlotStyle(const {}, const {}, const [], tokens);
     // Theme-authored structural roles refine the source shape without selecting
     // another Button variant. Every rounded source size uses rounded-control.
     final shapeRadius = recipeRoot.borderRadius;

@@ -5,11 +5,7 @@ import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_ui/test_themes.dart';
 
 void main() {
-  for (final pack in raftThemeMatrix([
-    raftThemePackId,
-    elegantThemePackId,
-    brutalThemePackId,
-  ], look: raftLookOf)) {
+  for (final pack in raftThemeMatrix([raftThemePackId])) {
     for (final dark in [false, true]) {
       testWidgets('$pack/$dark entry icon is independent of its label', (
         t,
@@ -57,21 +53,13 @@ void main() {
           final tokens = RaftTokens.of(t.element(icon));
           expect(
             IconTheme.of(t.element(icon)).color,
-            pack == raftThemePackId
-                ? tokens.colors['foreground-hint']
-                : glyph == RaftGlyph.bookmark
-                ? tokens.muted
-                : tokens.strong,
+            tokens.colors['foreground-hint'],
           );
           await mouse.moveTo(t.getCenter(icon));
           await t.pumpAndSettle();
           expect(
             IconTheme.of(t.element(icon)).color,
-            pack == raftThemePackId
-                ? tokens.colors['foreground-hint']
-                : glyph == RaftGlyph.bookmark
-                ? tokens.ink
-                : tokens.strong,
+            tokens.colors['foreground-hint'],
           );
           await mouse.moveTo(const Offset(380, 800));
           await t.pumpAndSettle();
@@ -112,17 +100,11 @@ void main() {
         final context = t.element(icon),
             tokens = RaftTokens.of(t.element(icon));
         // Mounted SidebarSectionControl's Button CSS overrides the Lucide
-        // size={16} attribute to 18px. Frozen a57 controls keep 14px.
-        expect(
-          t.widget<RaftIcon>(icon).size,
-          pack == raftThemePackId ? 18 : 14,
-        );
+        // size={16} attribute to 18px.
+        expect(t.widget<RaftIcon>(icon).size, 18);
         // Current SidebarSectionControl is a ghost Button; a57's btn-flat-sm
         // keeps its muted default and brightens on hover/focus.
-        expect(
-          IconTheme.of(context).color,
-          pack == raftThemePackId ? tokens.strong : tokens.muted,
-        );
+        expect(IconTheme.of(context).color, tokens.strong);
         await t.tap(icon);
         expect(actions, 1);
         await t.pumpWidget(const SizedBox.shrink());

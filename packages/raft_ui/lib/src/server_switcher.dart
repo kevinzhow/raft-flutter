@@ -29,7 +29,6 @@ import 'recipes/avatar.g.dart';
 import 'recipes/badge.g.dart';
 import 'recipes/context_menu.g.dart';
 import 'recipes/popover.g.dart';
-import 'recipes/recipe_router.dart' show usesLegacyRecipes;
 import 'recipes/recipe_runtime.dart';
 import 'space.dart';
 import 'text_scaling.dart' show RaftChrome, RaftScaled;
@@ -308,7 +307,6 @@ class _RaftServerSwitcherState extends State<RaftServerSwitcher> {
                       builder: (context, state) {
                         if (widget.logo != null) return widget.logo!;
                         final slot = RaftAppRailRecipe.resolve(
-                          theme: t.recipeTheme,
                           tokens: t.recipeTokens,
                           states: t.recipeStates(
                             hovered: state.hovered,
@@ -442,50 +440,22 @@ class RaftServerMenuPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    final legacy = usesLegacyRecipes(t.recipeTokens);
     final style = RaftPopoverRecipe.resolve(
-      theme: t.recipeTheme,
       tokens: t.recipeTokens,
       states: t.recipeStates(responsive: true),
     ).content;
-    final panel = legacy
-        ? RaftSlotStyle(
-            {
-              ...style.properties,
-              'background-color': const CssVar(
-                '--color-layer-panel',
-                null,
-                'layerPanel',
-              ),
-              for (final side in ['top', 'right', 'bottom', 'left']) ...{
-                'border-$side-width': const CssNum(1, 'px'),
-                'border-$side-style': const CssKeyword('solid'),
-                'border-$side-color': const CssVar(
-                  '--color-line-muted',
-                  null,
-                  'lineMuted',
-                ),
-              },
-            },
-            style.targets,
-            style.classes,
-            style.tokens,
-          )
-        : style;
     final separator = RaftContextMenuRecipe.resolve(
-      theme: t.recipeTheme,
       tokens: t.recipeTokens,
       states: t.recipeStates(responsive: true),
     ).separator;
     return RaftRecipeBox(
       key: const Key('server-switcher-menu'),
-      style: panel,
+      style: style,
       tokens: t.recipeTokens,
       width: width,
       // Web v1.24 ServerSwitcherMenu.tsx:187 supplies `p-1`; the published
-      // Popover paints a ring, without adding a layout border. Frozen looks
-      // retain their earlier panel and zero content padding.
-      padding: legacy ? EdgeInsets.zero : const EdgeInsets.all(RaftSpace.x1),
+      // Popover paints a ring, without adding a layout border.
+      padding: const EdgeInsets.all(RaftSpace.x1),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -517,35 +487,27 @@ class RaftServerMenuPanel extends StatelessWidget {
               top: separator.margin.top,
               bottom: separator.margin.bottom,
             ),
-            child: legacy
-                ? RaftRecipeBox(
-                    style: separator,
-                    tokens: t.recipeTokens,
-                    padding: EdgeInsets.zero,
-                    height: separator.height ?? separator.borderWidth.vertical,
-                  )
-                : SizedBox(
-                    height: separator.height ?? separator.borderWidth.vertical,
-                    child: LayoutBuilder(
-                      builder: (context, constraints) {
-                        final lineWidth =
-                            constraints.maxWidth - separator.margin.horizontal;
-                        return OverflowBox(
-                          minWidth: lineWidth,
-                          maxWidth: lineWidth,
-                          child: RaftRecipeBox(
-                            style: separator,
-                            tokens: t.recipeTokens,
-                            width: lineWidth,
-                            padding: EdgeInsets.zero,
-                            height:
-                                separator.height ??
-                                separator.borderWidth.vertical,
-                          ),
-                        );
-                      },
+            child: SizedBox(
+              height: separator.height ?? separator.borderWidth.vertical,
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final lineWidth =
+                      constraints.maxWidth - separator.margin.horizontal;
+                  return OverflowBox(
+                    minWidth: lineWidth,
+                    maxWidth: lineWidth,
+                    child: RaftRecipeBox(
+                      style: separator,
+                      tokens: t.recipeTokens,
+                      width: lineWidth,
+                      padding: EdgeInsets.zero,
+                      height:
+                          separator.height ?? separator.borderWidth.vertical,
                     ),
-                  ),
+                  );
+                },
+              ),
+            ),
           ),
           for (final entry in actions)
             _ServerAction(entry: entry, onActivate: onActivate),
@@ -742,7 +704,6 @@ class _ServerUnreadCount extends StatelessWidget {
       );
     }
     final slot = RaftBadgeRecipe.resolve(
-      theme: t.recipeTheme,
       tokens: t.recipeTokens,
       variant: RaftBadgeRecipeVariant.accent,
     ).root;
@@ -854,7 +815,6 @@ class _ServerAvatar extends StatelessWidget {
     // AvatarSlot server: Avatar `human` fallback ink (Elegant: muted at 70%).
     final rt = t.recipeTokens;
     final fallbackInk = RaftAvatarRecipe.resolve(
-      theme: t.recipeTheme,
       type_: RaftAvatarRecipeType.human,
       size: RaftAvatarRecipeSize.xl,
       tokens: rt,

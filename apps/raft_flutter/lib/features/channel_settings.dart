@@ -418,7 +418,6 @@ class _ChannelSettingsState extends State<ChannelSettings> {
     bool destructive = false,
   }) async {
     await showRaftDialog(
-      legacyMaterial: true,
       context: context,
       barrierDismissible: false,
       builder: (_) => RaftFormDialog(
@@ -1193,12 +1192,8 @@ class _ChannelSettingsState extends State<ChannelSettings> {
         '"{name}" and all of its messages will be permanently deleted. This cannot be undone.',
         {'name': c.name},
       ),
-      confirmLabel: RaftTokens.of(context).isRaftLook
-          ? 'Delete'
-          : 'Delete channel',
-      cancelLabel: RaftTokens.of(context).isRaftLook
-          ? 'Cancel'
-          : 'Keep Channel',
+      confirmLabel: 'Delete',
+      cancelLabel: 'Cancel',
       loadingLabel: 'Deleting…',
       variant: RaftButtonRecipeVariant.danger,
       action: () async {
@@ -1693,7 +1688,6 @@ class _ChannelSettingsState extends State<ChannelSettings> {
 
   Future<void> deleteChannel() async {
     final accepted = await showRaftDialog<bool>(
-      legacyMaterial: true,
       context: context,
       barrierDismissible: false,
       builder: (_) => RaftFormDialog(

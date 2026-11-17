@@ -1,4 +1,5 @@
-// Compatibility geometry API and the frozen Elegant / Brutal switch painter.
+// Compatibility geometry API and the switch painter a user theme pack selects
+// with `control.edge: ring` or `switch.shape: square`.
 // The Raft look paints from the generated `switchRecipe` in switch.dart.
 part of 'switch.dart';
 

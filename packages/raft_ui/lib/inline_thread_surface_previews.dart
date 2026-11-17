@@ -46,7 +46,7 @@ class _RepliesState extends State<_Replies> {
           const SizedBox(height: 16),
           Text('Parent thread callback: $opens'),
           const Text(
-            'Avatar assets and Elegant hover elevation are adapter slots; preview does not claim their visual parity.',
+            'Avatar assets are an adapter slot; preview does not claim their visual parity.',
           ),
         ],
       ),

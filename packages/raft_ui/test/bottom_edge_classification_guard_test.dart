@@ -7,7 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 const _owners = {
   'RaftChannelJoinFooter': 'RaftBottomInsetSurface',
   'RaftChannelBannerFooter': 'RaftBottomInsetSurface',
-  'RaftChannelArchivedFooter': 'RaftBottomInsetSurface',
+  'RaftChannelArchivedFooter': 'RaftChannelBannerFooter',
   'RaftbenchServiceDmNotice': 'RaftBottomInsetSurface',
   'RaftPublicBottomBanner': 'RaftBottomInsetSurface',
   'RaftSetupResumeBar': 'RaftBottomInsetSurface',

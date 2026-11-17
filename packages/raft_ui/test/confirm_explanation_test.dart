@@ -4,11 +4,7 @@ import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_ui/test_themes.dart';
 
 void main() {
-  for (final id in raftThemeMatrix([
-    raftThemePackId,
-    elegantThemePackId,
-    brutalThemePackId,
-  ], look: raftLookOf)) {
+  for (final id in raftThemeMatrix([raftThemePackId])) {
     for (final dark in [false, true]) {
       testWidgets('actual banner body source line and foreground $id/$dark', (
         t,
@@ -16,8 +12,6 @@ void main() {
         addTearDown(() => t.pumpWidget(const SizedBox()));
         final pack = packForThemeId(id);
         final tokens = RaftTokens.theme(pack: pack, dark: dark);
-        final originalElegant =
-            id == elegantThemePackId || (id == brutalThemePackId && dark);
         await t.pumpWidget(
           MaterialApp(
             theme: raftTheme(pack: pack, dark: dark),
@@ -32,9 +26,9 @@ void main() {
         final style = t
             .widget<Text>(find.text('Body with descenders gy.'))
             .style!;
-        expect(style.fontSize, originalElegant ? 13 : 14);
-        expect(style.fontSize! * style.height!, originalElegant ? 16 : 20);
-        expect(style.color, originalElegant ? tokens.muted : tokens.ink);
+        expect(style.fontSize, 14);
+        expect(style.fontSize! * style.height!, 20);
+        expect(style.color, tokens.ink);
       });
     }
   }

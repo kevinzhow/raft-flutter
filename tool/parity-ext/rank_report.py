@@ -41,7 +41,6 @@ def main():
     ap.add_argument('--out', required=True)
     ap.add_argument('--also', action='append', default=[])
     ap.add_argument('--top', type=int, default=30, help='surfaces listed for the Raft look')
-    ap.add_argument('--top-frozen', type=int, default=12, help='surfaces listed for Elegant / Brutal (compared with their frozen originals)')
     ap.add_argument('--shots')
     ap.add_argument('--causes', default=str(HERE / 'ranked-causes.json'))
     ap.add_argument('--write', help='markdown file for the ranked table')
@@ -69,12 +68,12 @@ def main():
         if r['score'] < g['worst']['score']:
             g['worst'] = r
     top = []
-    for look, mode in (('raft', 'light'), ('raft', 'dark'), ('elegant', 'light'), ('elegant', 'dark'), ('brutal', 'light')):
+    for look, mode in (('raft', 'light'), ('raft', 'dark')):
         mine = [g for (lk, md, _), g in groups.items() if (lk, md) == (look, mode) and g['below']]
         # surfaces ordered by their mean score (how broken the whole surface is), frame and page surfaces before components
         mine.sort(key=lambda g: (g['worst']['level'] == 'component', g['sum'] / g['cases']))
         top += ['', f'### {look} {mode}', '', '| # | mean | worst | below / cases | level | area | worst case | likely cause |', '| --- | --- | --- | --- | --- | --- | --- | --- |']
-        limit = a.top if look == 'raft' else a.top_frozen
+        limit = a.top
         for i, g in enumerate(mine[:limit], 1):
             w = g['worst']
             top.append(f"| {i} | {g['sum'] / g['cases'] * 100:.1f}% | {w['score'] * 100:.1f}% | {g['below']} / {g['cases']} | {w['level']} | {area_of(w['id'])} | "

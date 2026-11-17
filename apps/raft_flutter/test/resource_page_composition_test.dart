@@ -8,7 +8,6 @@ import 'package:raft_flutter/features/page_alignment_fixtures.dart';
 import 'package:raft_flutter/features/resource_cards.dart';
 import 'package:raft_flutter/features/resource_view.dart';
 import 'package:raft_flutter/features/page_layout.dart';
-import 'package:raft_ui/test_themes.dart';
 
 class _Client extends RaftClient {
   _Client()
@@ -97,7 +96,6 @@ void main() {
     String section,
     Size size, {
     bool dark = false,
-    String packId = raftThemePackId,
     Future<void> Function(String, String?)? onMessage,
   }) async {
     t.view.physicalSize = size;
@@ -106,7 +104,7 @@ void main() {
     addTearDown(t.view.resetDevicePixelRatio);
     await t.pumpWidget(
       MaterialApp(
-        theme: raftTheme(pack: packForThemeId(packId), dark: dark),
+        theme: raftTheme(dark: dark),
         home: Scaffold(
           body: ResourceView(
             controller: w,
@@ -121,20 +119,11 @@ void main() {
 
   // The page frame, header and populated list must share the measured surface.
   // Checking only the outer decoration missed the list's own Material fill.
-  for (final (pack, dark, color) in raftThemeMatrix([
-    (raftThemePackId, false, 0xffffffff),
-    (raftThemePackId, true, 0xff1b1b19),
-    (elegantThemePackId, false, 0xfff8f8f7),
-    (elegantThemePackId, true, 0xff0d0d0b),
-    (brutalThemePackId, false, 0xffffffff),
-    (brutalThemePackId, true, 0xff0d0d0b),
-  ], look: (v) => raftLookOf(v.$1))) {
+  for (final (dark, color) in [(false, 0xffffffff), (true, 0xff1b1b19)]) {
     for (final section in ['activity', 'saved']) {
       for (final width in [390.0, 1280.0]) {
-        testWidgets('$section surface $pack dark=$dark width=$width', (
-          t,
-        ) async {
-          await mount(t, section, Size(width, 844), dark: dark, packId: pack);
+        testWidgets('$section surface raft dark=$dark width=$width', (t) async {
+          await mount(t, section, Size(width, 844), dark: dark);
           final list = find.descendant(
             of: find.byType(ResourceView),
             matching: find.byWidgetPredicate(

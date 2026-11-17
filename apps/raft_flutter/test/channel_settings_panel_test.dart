@@ -517,32 +517,6 @@ void main() {
       }
     }
 
-    for (final id in [elegantThemePackId, brutalThemePackId]) {
-      testWidgets('legacy delete confirmation keeps existing copy $id', (
-        t,
-      ) async {
-        final (_, api) = await _open(t, pack: packForThemeId(id));
-        api.routes['DELETE /channels/c1'] = (_) => {};
-        api.routes['GET /channels'] = (_) => [];
-        Finder inDialog(String text) => find.descendant(
-          of: _id('channel-settings-confirm-dialog'),
-          matching: find.text(text),
-        );
-        await press(t, 'channel-settings-delete-action');
-        expect(inDialog('Keep Channel'), findsOneWidget);
-        await t.tap(inDialog('Keep Channel'));
-        await t.pumpAndSettle();
-        expect(_writes(api), isEmpty);
-        await press(t, 'channel-settings-delete-action');
-        await t.tap(inDialog('Delete channel').last);
-        await t.pumpAndSettle(const Duration(milliseconds: 100));
-        expect(_writes(api).map((c) => '${c.method} ${c.path}'), [
-          'DELETE /channels/c1',
-        ]);
-        expect(find.byType(RaftOverflowSheet), findsNothing);
-      });
-    }
-
     testWidgets('delete asks first and DELETEs the channel', (t) async {
       final (_, api) = await _open(t);
       api.routes['DELETE /channels/c1'] = (_) => {};
@@ -736,8 +710,7 @@ void main() {
   testWidgets('drawer is 420 wide on desktop', (t) async {
     await _open(t);
     // The default Raft pack sets size.channelOverflowDrawer to 420 (Web
-    // OverflowSheet: "420 wide, the whole width on a phone"); the 448 width
-    // belongs to the Elegant pack.
+    // OverflowSheet: "420 wide, the whole width on a phone").
     expect(t.getSize(_id('channel-overflow-sheet')).width, 420.0);
   });
 

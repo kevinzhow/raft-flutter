@@ -12,14 +12,9 @@ import 'package:flutter/rendering.dart' show RenderRepaintBoundary;
 import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_ui/test_themes.dart';
 
-// Independent source expectations: raft-ui 0.7.1 switchRecipe, and
-// a57b9dab lib/src/switch.dart:65-81. Brutal dark uses all Elegant values.
+// Independent source expectations: raft-ui 0.7.1 switchRecipe.
 void main() {
-  for (final id in raftThemeMatrix([
-    raftThemePackId,
-    elegantThemePackId,
-    brutalThemePackId,
-  ], look: raftLookOf)) {
+  for (final id in raftThemeMatrix([raftThemePackId])) {
     for (final dark in [false, true]) {
       testWidgets('$id dark=$dark preserves both source switch sizes', (
         t,
@@ -48,33 +43,8 @@ void main() {
             ),
           );
           // raft-ui 0.95.3 `md:pointer-fine` switch: 38x22 with a mouse from 768px.
-          final expected = id == raftThemePackId
-              ? const Size(38, 22)
-              : size == RaftSwitchSize.sm
-              ? const Size(28, 16)
-              : const Size(36, 20);
+          const expected = Size(38, 22);
           expect(t.getSize(find.byType(RaftSwitch)), expected, reason: '$size');
-          if (id == raftThemePackId) continue;
-          // The frozen looks read their switch geometry from the pack's tokens (the Raft look paints the generated
-          // recipe, see raft_switch_spec_test).
-          final tokens = RaftTokens.theme(pack: packForThemeId(id), dark: dark);
-          final name = size.name;
-          final thumb = tokens.size('size.switch.thumb.$name', fallback: -1);
-          final inset = tokens.size('space.switchInset', fallback: -1);
-          final square = id == brutalThemePackId && !dark;
-          expect(
-            thumb,
-            size == RaftSwitchSize.sm ? (square ? 10 : 12) : (square ? 14 : 16),
-          );
-          expect(inset, square ? 3 : 2);
-          expect(
-            tokens.size('size.switch.width.$name', fallback: -1) -
-                thumb -
-                2 * inset,
-            size == RaftSwitchSize.sm ? 12 : 16,
-          );
-          expect(tokens.size('motion.switchSlideMs', fallback: -1), 180);
-          expect(tokens.size('motion.switchColorMs', fallback: -1), 180);
         }
       });
       testWidgets(
@@ -423,88 +393,6 @@ void main() {
     final ring = await pixels('ring');
     expect(listEquals(ink, ring), isFalse);
   });
-  test('dark switch bottom shadow retains source float colour precision', () {
-    for (final id in [elegantThemePackId, brutalThemePackId]) {
-      final source = const Color.from(
-        alpha: .039203,
-        red: .954685,
-        green: .954685,
-        blue: .969524,
-      );
-      final actual = RaftTokens.theme(
-        pack: packForThemeId(id),
-        dark: true,
-      ).components.switchShadowBottom;
-      expect(actual.a, closeTo(source.a, 1e-12));
-      expect(actual.r, closeTo(source.r, 1e-12));
-      expect(actual.g, closeTo(source.g, 1e-12));
-      expect(actual.b, closeTo(source.b, 1e-12));
-    }
-  }, skip: raftLookSkip(raftLookElegant, raftLookBrutal));
-  testWidgets(
-    'touch highlight mode suppresses source hover until mouse highlights resume',
-    (t) async {
-      final original = FocusManager.instance.highlightStrategy;
-      final key = GlobalKey();
-      final mouse = await t.createGesture(kind: ui.PointerDeviceKind.mouse);
-      bool hoverPaint() {
-        final painted = t
-            .widgetList<CustomPaint>(find.byType(CustomPaint))
-            .singleWhere(
-              (paint) =>
-                  paint.painter.runtimeType.toString() == '_SwitchPainter',
-            );
-        return (painted.painter as dynamic).hovered as bool;
-      }
-
-      try {
-        FocusManager.instance.highlightStrategy =
-            FocusHighlightStrategy.alwaysTouch;
-        final specimen = RepaintBoundary(
-          key: key,
-          child: ColoredBox(
-            color: Colors.white,
-            child: SizedBox(
-              width: 100,
-              height: 60,
-              child: Align(
-                alignment: Alignment.topLeft,
-                child: RaftDensityScope(
-                  density: RaftDensity.desktop,
-                  child: RaftSwitch(value: false, onChanged: (_) {}),
-                ),
-              ),
-            ),
-          ),
-        );
-        await t.pumpWidget(
-          MaterialApp(
-            themeAnimationDuration: Duration.zero,
-            theme: raftTheme(pack: packForThemeId(brutalThemePackId)),
-            home: Scaffold(
-              body: Align(alignment: Alignment.topLeft, child: specimen),
-            ),
-          ),
-        );
-        await t.pumpAndSettle();
-        expect(hoverPaint(), isFalse);
-        await mouse.addPointer(location: const Offset(300, 300));
-        await mouse.moveTo(t.getCenter(find.byType(RaftSwitch)));
-        await t.pumpAndSettle();
-        expect(hoverPaint(), isFalse);
-        FocusManager.instance.highlightStrategy =
-            FocusHighlightStrategy.alwaysTraditional;
-        await t.pumpAndSettle();
-        expect(hoverPaint(), isTrue);
-      } finally {
-        await mouse.removePointer();
-        await t.pumpWidget(const SizedBox.shrink());
-        FocusManager.instance.highlightStrategy = original;
-      }
-    },
-    variant: TargetPlatformVariant.only(TargetPlatform.linux),
-    skip: raftLookSkip(raftLookBrutal),
-  );
   testWidgets(
     'Raft keeps the source thumb origin after device border quantization',
     (t) async {
@@ -553,11 +441,7 @@ void main() {
     t,
   ) async {
     try {
-      for (final id in raftThemeMatrix([
-        raftThemePackId,
-        elegantThemePackId,
-        brutalThemePackId,
-      ], look: raftLookOf)) {
+      for (final id in raftThemeMatrix([raftThemePackId])) {
         for (final dark in [false, true]) {
           for (final size in RaftSwitchSize.values) {
             await t.pumpWidget(
@@ -599,11 +483,7 @@ void main() {
     'explicit minimum target overrides the theme touch layout minimum',
     (t) async {
       try {
-        for (final id in raftThemeMatrix([
-          raftThemePackId,
-          elegantThemePackId,
-          brutalThemePackId,
-        ], look: raftLookOf)) {
+        for (final id in raftThemeMatrix([raftThemePackId])) {
           for (final minimum in [0.0, 60.0]) {
             await t.pumpWidget(
               MaterialApp(

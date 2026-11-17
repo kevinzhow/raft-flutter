@@ -22,13 +22,7 @@ The reference desktop app limits windows to 960 pt; Flutter continues to
 support narrower layouts with the same window frame. Window double-clicks
 continue to follow the user's macOS Zoom/Fill/Minimize/None preference.
 
-| Theme | Strip | Rule |
-|---|---|---|
-| Brutal | rail yellow (`primary-400`) | 2 px black |
-| Elegant light | rail canvas (`layer-canvas-muted`) | 1 px `line-muted` |
-| Elegant dark | rail dark canvas | 1 px dark `line-muted` |
-
-All three come from `RaftTitleBarRecipe` (raft_ui), which reads `RaftRailRecipe`,
+The strip is the rail colour (light or dark) with a rule below it; both come from `RaftTitleBarRecipe` (raft_ui), which reads `RaftRailRecipe`,
 so the strip can never drift from the rail and follows live theme changes.
 
 ## Pieces
@@ -217,7 +211,7 @@ entry point exists.
 For native caption QA without loading an account or message database, build
 `apps/raft_flutter/test_driver/windows_frame_qa.dart` as the Windows target. It
 uses the production runner, `DesktopTitleBar` and `RaftWorkspaceTopBar`; F6
-cycles Brutal light, Elegant light/dark and Raft light/dark; F9 quits the host.
+cycles Raft light and dark; F9 quits the host.
 Its tray bridge uses the separate lab preference namespace and the production
 exit handshake. Its search action only increments an in-memory counter. This
 isolates caption rendering, input and native window behavior from an installed
@@ -233,7 +227,7 @@ caption button glyphs. These need Windows 11 (build 22000+); on Windows 10 they
 are rejected and the system caption stays. DWM has no caption bottom rule
 (only a whole-window border colour), so Flutter draws the rule at the top of
 the client area. It reuses `RaftDesktopTitleBar` with the strip height equal to
-`RaftTitleBarRecipe.ruleWidth`: 2 logical pixels in Brutal and 1 in Elegant.
+`RaftTitleBarRecipe.ruleWidth`.
 The same recipe supplies the colour and blends the translucent dark divider
 over the rail background. Content and its `MediaQuery` start below the rule;
 live theme changes update it. This rule has no drag or double-click handlers:
@@ -255,16 +249,14 @@ caption structure while keeping each platform's window management native.
 
 Build and run `apps/raft_flutter` on macOS (`tool/flutter run -d macos`), then:
 
-1. Strip: the top bar is the rail colour with no title text. Brutal: yellow with
-   a 2 px black rule at its bottom; Elegant light: rail canvas with a 1 px
-   divider; Elegant dark: dark rail canvas with a 1 px dark divider. Compare
-   with `/tmp/titlebar-D-themes.png` (mockup) if available.
+1. Strip: the top bar is the rail colour with no title text. Light: rail canvas with its
+   bottom rule; dark: dark rail canvas with its dark rule.
 2. Traffic lights: top-left, vertically centred in the strip, all three work
    (close, minimise, zoom/fullscreen). Content (rail, sidebar, conversation)
    starts exactly below the rule; nothing is hidden under the bar. The rail's
    first item is not shifted compared with a build without this change by more
    than the bar height.
-3. Live theme: Settings > Appearance, switch Brutal / Elegant / light / dark /
+3. Live theme: Settings > Appearance, switch light / dark /
    system; the strip colour and rule change with the rail immediately, no flash.
 4. Drag: press and drag on the empty strip moves the window (also from a
    cold window with the app inactive). Drag on the rail or content does not.

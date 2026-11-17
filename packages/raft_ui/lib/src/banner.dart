@@ -14,8 +14,7 @@ import 'icons.dart';
 import 'localization.dart';
 import 'recipe_surface.dart';
 import 'recipes/banner.g.dart';
-import 'recipes/recipe_runtime.dart'
-    show RaftRecipeSet, RaftSlotStyle, RaftTokenResolver;
+import 'recipes/recipe_runtime.dart' show RaftSlotStyle, RaftTokenResolver;
 import 'theme.dart';
 import 'space.dart';
 import 'surface_background_scope.dart';
@@ -143,7 +142,6 @@ class RaftBanner extends StatelessWidget {
     final raft = t.option('banner.style', or: 'recipe') == 'raft';
     final hasTitle = title != null || titleBuilder != null;
     // Web's adapter does not mount BannerDescription for an empty body.
-    // Preserve the frozen looks' existing empty line until their retirement.
     final hasDescription =
         !raft ||
         descriptionBuilder != null ||
@@ -152,7 +150,6 @@ class RaftBanner extends StatelessWidget {
         descriptionTail != null;
     final hasAction = action != null || (actions?.isNotEmpty ?? false);
     final source = RaftBannerRecipe.resolve(
-      theme: t.recipeTheme,
       status: status,
       size: size,
       states: t.recipeStates(
@@ -198,12 +195,7 @@ class RaftBanner extends StatelessWidget {
         recipe.root.backgroundColor?.resolve(tokens, currentColor: base.color);
     final surface = RaftSurfaceBackgroundScope.of(context);
     final background =
-        t.recipeSet == RaftRecipeSet.raft &&
-            raft &&
-            fill != null &&
-            fill.a < 1 &&
-            surface != null &&
-            surface.a == 1
+        raft && fill != null && fill.a < 1 && surface != null && surface.a == 1
         ? raftChromeBlend(fill, surface)
         : backgroundColor;
     // raft-ui `Banner`: `role = destructive ? "alert" : "status"`.
@@ -257,8 +249,7 @@ class RaftBanner extends StatelessWidget {
         ? null
         : Padding(
             // Current Banner uses the generated root's gap-y-0.
-            // Frozen looks keep their existing title spacing; callers
-            // with an explicit Web margin retain their override.
+            // Callers with an explicit Web margin retain their override.
             padding: recipe.title.margin.copyWith(
               bottom: hasDescription
                   ? titleGap ??
@@ -390,7 +381,7 @@ class RaftBanner extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, box) {
         // `@max-[24rem]` on the root container: the action drops to its own
-        // full-width row, end aligned (`mt-2` Brutal / `mt-1` Elegant).
+        // full-width row, end aligned (`mt-1`).
         final below = action != null && box.maxWidth <= 384;
         final main = _rowOf(
           context,

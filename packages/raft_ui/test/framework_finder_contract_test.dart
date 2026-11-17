@@ -4,13 +4,9 @@ import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_ui/test_themes.dart';
 
 // db5e399f SidebarConversationFinder: text-subhead=15/20; the 1.5px CSS
-// border resolves to 1px at DPR1. Frozen packs retain 14/20 and 1.5px.
+// border resolves to 1px at DPR1.
 void main() {
-  for (final pack in raftThemeMatrix([
-    raftThemePackId,
-    elegantThemePackId,
-    brutalThemePackId,
-  ], look: raftLookOf)) {
+  for (final pack in raftThemeMatrix([raftThemePackId])) {
     for (final dark in [false, true]) {
       testWidgets('$pack/$dark finder follows its mounted contract', (t) async {
         final controller = TextEditingController(text: 'design');
@@ -41,11 +37,14 @@ void main() {
         );
         final field = find.byType(TextField);
         final style = t.widget<TextField>(field).style!;
-        expect([
-          style.fontSize,
-          style.fontSize! * style.height!,
-          t.getTopLeft(field).dx,
-        ], pack == raftThemePackId ? [15, 20, 43] : [14, 20, 43.5]);
+        expect(
+          [
+            style.fontSize,
+            style.fontSize! * style.height!,
+            t.getTopLeft(field).dx,
+          ],
+          [15, 20, 43],
+        );
         expect(t.getSize(find.byType(RaftConversationFinderField)).height, 54);
         await t.enterText(field, 'engineering');
         expect(controller.text, 'engineering');

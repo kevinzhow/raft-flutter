@@ -606,7 +606,7 @@ class _AgentDetailPanelState extends State<AgentDetailPanel>
         children: [
           RaftPanelHeaderBar(
             title: displayName,
-            // Web v1.21.12: the `@handle` subtitle, 15px mono in elegant.
+            // Web v1.21.12: the `@handle` subtitle.
             subtitle: '@${a['name'] ?? ''}',
             profileHandle: true,
             profileBody: true,
@@ -832,44 +832,22 @@ class _AgentDetailPanelState extends State<AgentDetailPanel>
 
   /// components/machine MachineRunLabel descriptor.
   String runLabel(Map<String, dynamic> m, BuildContext context) {
-    if (RaftTokens.of(context).isRaftLook) {
-      // Web v1.24 AgentProfileInfo.tsx:125-130: the version only (a legacy
-      // daemon's too, no "legacy" word); offline or unknown is a dash.
-      final v = m['status'] != 'online'
-          ? null
-          : m['isComputer'] == true
-          ? m['computerVersion']
-          : m['daemonVersion'];
-      return v == null ? '—' : 'v$v';
-    }
-    if (m['status'] != 'online') return 'Offline';
-    return m['isComputer'] == true && m['computerVersion'] != null
-        ? 'v${m['computerVersion']}'
-        : 'legacy v${m['daemonVersion'] ?? '?'}';
+    // Web v1.24 AgentProfileInfo.tsx:125-130: the version only (a legacy
+    // daemon's too, no "legacy" word); offline or unknown is a dash.
+    final v = m['status'] != 'online'
+        ? null
+        : m['isComputer'] == true
+        ? m['computerVersion']
+        : m['daemonVersion'];
+    return v == null ? '—' : 'v$v';
   }
-
-  /// An Info value that the old looks draw as a pill and v1.24 as plain text.
-  Widget _legacyInline(RaftTokens t, Widget badge, {String? plain}) =>
-      !t.isRaftLook
-      ? RaftInlineBadge(badge: badge)
-      : plain == null
-      ? badge
-      : RaftCssText(plain);
 
   /// Web v1.24 AgentProfileInfo.tsx:658-660: the role is plain text.
   Widget _roleValue(BuildContext context, ({String label, bool known}) chip) {
     final text = chip.known
         ? raftText(context, chip.label == 'admin' ? 'Admin' : 'Member')
         : chip.label;
-    if (RaftTokens.of(context).isRaftLook) return RaftCssText(text);
-    return RaftInlineBadge(
-      badge: RaftRecipeBadge(
-        text,
-        variant: chip.label == 'admin'
-            ? RaftBadgeRecipeVariant.accent
-            : RaftBadgeRecipeVariant.muted,
-      ),
-    );
+    return RaftCssText(text);
   }
 
   String createdDate(BuildContext context) {
@@ -1129,14 +1107,7 @@ class _AgentDetailPanelState extends State<AgentDetailPanel>
             model: model,
           );
     // v1.24: plain `font-mono` text (v1.21: an accent badge).
-    final badge = RaftTokens.of(context).isRaftLook
-        ? RaftCssText(label, style: RaftInfoRow.monoStyleOf(context))
-        : RaftInlineBadge(
-            badge: RaftRecipeBadge(
-              label,
-              variant: RaftBadgeRecipeVariant.accent,
-            ),
-          );
+    final badge = RaftCssText(label, style: RaftInfoRow.monoStyleOf(context));
     final hint = _runningSwitchesHint(context, a, config);
     if (hint == null) return badge;
     return RaftGapColumn(
@@ -1364,7 +1335,7 @@ class _AgentDetailPanelState extends State<AgentDetailPanel>
           onEditName: canEdit ? widget.actions.onEditName : null,
           // With the Recent activity card the status is its first line.
           statusRow: statusRow == null || showRecentActivity ? null : statusRow,
-          // `min-h-[66px] theme-brutal:min-h-[72px]`.
+          // `min-h-[66px]`.
           minHeight: 66,
         ),
         // Web `AgentComputerOfflineCard`: in place of Start while the Computer
@@ -1497,10 +1468,8 @@ class _AgentDetailPanelState extends State<AgentDetailPanel>
                               '${m['name']}',
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              // v1.24: `font-mono text-foreground` (v1.21.12: plain).
-                              style: t.isRaftLook
-                                  ? RaftInfoRow.monoStyleOf(context)
-                                  : RaftPanelText.profileValue(t),
+                              // v1.24: `font-mono text-foreground`.
+                              style: RaftInfoRow.monoStyleOf(context),
                             ),
                           )
                         : archivedMachine != null
@@ -1525,33 +1494,19 @@ class _AgentDetailPanelState extends State<AgentDetailPanel>
                       ),
                     ),
                     RaftInfoRow(
-                      label: raftText(
-                        context,
-                        t.isRaftLook
-                            ? 'Computer version'
-                            : 'Raft Computer version',
-                      ),
+                      label: raftText(context, 'Computer version'),
                       child: RaftCssText(
                         runLabel(m, context),
-                        style: t.isRaftLook
-                            ? RaftInfoRow.monoStyleOf(context)
-                            : RaftPanelText.profileMono(t),
+                        style: RaftInfoRow.monoStyleOf(context),
                       ),
                     ),
                   ],
                   RaftInfoRow(
                     label: raftText(context, 'Created'),
-                    // `tabular-nums theme-brutal:font-mono`.
                     child: RaftCssText(
                       createdDate(context),
                       // v1.24: `font-mono`.
-                      style: t.isRaftLook
-                          ? RaftInfoRow.monoStyleOf(context)
-                          : RaftPanelText.profileValue(t).copyWith(
-                              fontFeatures: const [
-                                FontFeature.tabularFigures(),
-                              ],
-                            ),
+                      style: RaftInfoRow.monoStyleOf(context),
                     ),
                   ),
                   RaftInfoRow(
@@ -1605,43 +1560,39 @@ class _AgentDetailPanelState extends State<AgentDetailPanel>
                 children: [
                   RaftInfoRow(
                     label: raftText(context, 'Runtime'),
-                    child: _legacyInline(
-                      t,
-                      // RuntimeAccountUsageGateChip: the agent's Computer usage.
-                      runtimeUsageGateChip(
-                        controller: widget.controller,
-                        enabled: canViewRuntimeUsage(
-                          widget.controller,
-                          machine,
-                        ),
-                        runtimeId: runtime,
-                        machineId: '${machine?['id'] ?? ''}',
-                        label: runtimeLabelWithStatus(
-                          context,
-                          runtime,
-                          deprecated: deprecatedHere(runtime),
-                        ),
-                        runtimeVersion: machine?['runtimeVersions'] is Map
-                            ? (machine!['runtimeVersions'] as Map)[runtime]
-                                  as String?
-                            : null,
-                        chip: (status) => RaftRecipeBadge(
-                          runtimeLabelWithStatus(
+                    child:
+                        // RuntimeAccountUsageGateChip: the agent's Computer usage.
+                        runtimeUsageGateChip(
+                          controller: widget.controller,
+                          enabled: canViewRuntimeUsage(
+                            widget.controller,
+                            machine,
+                          ),
+                          runtimeId: runtime,
+                          machineId: '${machine?['id'] ?? ''}',
+                          label: runtimeLabelWithStatus(
                             context,
                             runtime,
                             deprecated: deprecatedHere(runtime),
                           ),
-                          // v1.24: `soft information` in machine type
-                          // (RUNTIME_CHIP_CLASS); the old looks keep the solid chip.
-                          appearance: t.isRaftLook
-                              ? RaftBadgeRecipeAppearance.soft
-                              : RaftBadgeRecipeAppearance.solid,
-                          variant: RaftBadgeRecipeVariant.information,
-                          mono: t.isRaftLook,
-                          trailing: status,
+                          runtimeVersion: machine?['runtimeVersions'] is Map
+                              ? (machine!['runtimeVersions'] as Map)[runtime]
+                                    as String?
+                              : null,
+                          chip: (status) => RaftRecipeBadge(
+                            runtimeLabelWithStatus(
+                              context,
+                              runtime,
+                              deprecated: deprecatedHere(runtime),
+                            ),
+                            // v1.24: `soft information` in machine type
+                            // (RUNTIME_CHIP_CLASS).
+                            appearance: RaftBadgeRecipeAppearance.soft,
+                            variant: RaftBadgeRecipeVariant.information,
+                            mono: true,
+                            trailing: status,
+                          ),
                         ),
-                      ),
-                    ),
                   ),
                   // Web `currentRuntimeDeprecated` (AgentProfileInfo.tsx:233): the
                   // agent keeps running, but new agents cannot select this runtime.
@@ -1662,16 +1613,8 @@ class _AgentDetailPanelState extends State<AgentDetailPanel>
                   if (config.supportsReasoning)
                     RaftInfoRow(
                       label: raftText(context, 'Reasoning'),
-                      child: _legacyInline(
-                        t,
-                        RaftRecipeBadge(
-                          raftText(
-                            context,
-                            _reasoningEffortLabel(config.reasoningEffort),
-                          ),
-                          variant: RaftBadgeRecipeVariant.primary,
-                        ),
-                        plain: raftText(
+                      child: RaftCssText(
+                        raftText(
                           context,
                           _reasoningEffortLabel(config.reasoningEffort),
                         ),
@@ -1680,16 +1623,8 @@ class _AgentDetailPanelState extends State<AgentDetailPanel>
                   if (config.supportsFastMode)
                     RaftInfoRow(
                       label: raftText(context, 'Mode'),
-                      child: _legacyInline(
-                        t,
-                        RaftRecipeBadge(
-                          raftText(
-                            context,
-                            config.fastMode ? 'Fast mode' : 'Default',
-                          ),
-                          variant: RaftBadgeRecipeVariant.warning,
-                        ),
-                        plain: raftText(
+                      child: RaftCssText(
+                        raftText(
                           context,
                           config.fastMode ? 'Fast mode' : 'Default',
                         ),
@@ -1712,9 +1647,7 @@ class _AgentDetailPanelState extends State<AgentDetailPanel>
                               )
                             : RaftCssText(
                                 value,
-                                style: t.isRaftLook
-                                    ? RaftInfoRow.monoStyleOf(context)
-                                    : RaftPanelText.profileMono(t),
+                                style: RaftInfoRow.monoStyleOf(context),
                               ),
                       ),
                   ],

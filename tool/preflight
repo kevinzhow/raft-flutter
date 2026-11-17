@@ -10,7 +10,7 @@ on a typical branch, and reports every result (it never stops at the first failu
   docs-index            tool/tests/test_docs_index.py (every docs/ file is listed in docs/README.md)
   tool-tests            every tool/tests suite, only when a file under tool/ changed (a hook or script
                         change that breaks another tool's tests otherwise only fails in the full check)
-  theme-values          tool/tests/test_theme_values.py (the theme contract's value appendix matches its sources)
+  theme-values          tool/tests/test_theme_values.py (the built Raft theme pack matches its sources)
   guard-tests           the structural Dart guard tests, see GUARD_TESTS
   analyze               flutter analyze on the changed Dart files (pinned SDK via tool/flutter)
   raft-lints            tool/raft-lints on the changed lib files
@@ -34,11 +34,6 @@ stdout; the result is also written as JSON, with the HEAD tree hash, to
 each step's full output is in .local/preflight/<check>.txt. Exit code 1 if any check failed.
 Every heavy child runs under `nice -n 10`.
 
-The checks test the Raft look only. A legacy-look test file (`@Tags(['look-elegant'])`, `@Tags(['look-brutal'])`) is
-not among the affected tests; when the diff touches the theme engine (tool/theme_looks.py THEME_ENGINE_PATHS) or such a
-file, preflight prints a loud notice, before the table and again after the summary line, to run
-`tool/theme-suite --look all` before landing. The notice does not fail the run and does not start the suite.
-
 A portability finding that is intended can carry `// preflight-allow: <reason>` on the
 same line or the line above. Preflight passing does not replace the full check.
 """
@@ -57,7 +52,6 @@ import time
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 import affected_tests  # noqa: E402
 import test_budget  # noqa: E402
-import theme_looks  # noqa: E402
 
 root = pathlib.Path(__file__).resolve().parent.parent
 app_dir = root / 'apps/raft_flutter'
@@ -140,11 +134,8 @@ def git_names(*args):
 
 def run_env(tmp):
     """The check-project environment: UTF-8, temp files on disk (not a RAM-backed /tmp), and the gate test tier
-    (the theme matrix the full check runs, which is what the test budget counts)."""
+    (the matrix the full check runs, which is what the test budget counts)."""
     env = dict(os.environ, PYTHONUTF8='1', RAFT_PREFLIGHT='1', RAFT_TEST_TIER='gate', TMPDIR=str(tmp), TEMP=str(tmp), TMP=str(tmp))
-    env.pop('RAFT_TEST_ALL_THEMES', None)
-    env.pop(theme_looks.MODES_VARIABLE, None)
-    env[theme_looks.LOOKS_VARIABLE] = 'raft'  # the checks test the Raft look; tool/theme-suite owns the legacy looks
     return env
 
 
@@ -361,8 +352,7 @@ def rank_tests(changes, max_tests):
     sources = dart_sources(changes)
     ranked = affected_tests.ranked_affected_tests(set(changes.dart), sources, affected_tests.workspace_packages(root))
     guarded = set(GUARD_TESTS)
-    runnable = [path for _, path in ranked if path not in guarded and any(path.startswith(d + '/') for d in TEST_DIRS)
-                and theme_looks.runs_by_default(root / path)]  # a legacy-look file is tool/theme-suite's
+    runnable = [path for _, path in ranked if path not in guarded and any(path.startswith(d + '/') for d in TEST_DIRS)]
     chosen = runnable[:max_tests]
     return [os.path.relpath(path, app_dir).replace('\\', '/') for path in chosen], len(runnable) - len(chosen), len(runnable)
 
@@ -462,7 +452,7 @@ def run_steps(runner, changes, max_tests):
                               ok_detail='tool/tests pass', fail_detail='a tool test failed; see the log', requires_workspace=False)
     def theme_values():
         return runner.command('theme-values', [sys.executable, '-m', 'unittest', '-q', THEME_VALUES_TEST],
-                              ok_detail='value appendix matches its sources', requires_workspace=False)
+                              ok_detail='Raft theme pack matches its sources', requires_workspace=False)
 
     def analyze():
         if not workspace_dart:
@@ -623,8 +613,6 @@ def main(argv=None):
     if behind:
         print(f'warning: this branch is {behind} commit(s) behind {args.base}; rebase before handoff (tool/prepare-handoff does it). Checking anyway.')
     print(f'preflight: {len(changes.files)} changed file(s), {len(changes.dart)} Dart, against {args.base}.', flush=True)
-    engine_notice = theme_looks.notice_lines(theme_looks.touched(changes.files, root))
-    print('\n'.join(engine_notice), flush=True) if engine_notice else None
 
     tmp = run_tmp()
     runner = Runner(run_env(tmp), root / OUT_DIR)
@@ -642,11 +630,8 @@ def main(argv=None):
             print('\n'.join(f'  {line}' for line in r.tail))
     print()
     print(summary_line(results, seconds, tree, f'{args.base}@{base_sha[:8]}', behind))
-    if engine_notice:
-        print('\n'.join(engine_notice))
 
     document = build_json(args, changes, results, findings, tree, head, base_sha, behind, seconds, dirty)
-    document['themeEngineTouched'] = bool(engine_notice)
     out = pathlib.Path(args.out)
     out = out if out.is_absolute() else root / out
     out.parent.mkdir(parents=True, exist_ok=True)

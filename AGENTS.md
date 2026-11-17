@@ -44,7 +44,7 @@
 - 以 Web 为准：Raft 外观的验收基准是 Web 当前版本（raft-ui 版本见 packages/web/package.json），不是我们自己之前的 Flutter 版本。凡改样式、配方、token、组件，PR 必须附受影响真实界面的「Web | Flutter」明暗并排对比（tool/parity-ext 截 Web 默认主题），并列出剩余差异。
 - 改在组件层，不改在页面层：每个 PR 写明属于哪个设计系统家族（Button、DropdownMenu、Dialog……）。页面上单独覆盖样式、在页面里自拼浮层或菜单的改动不收；差异先修组件，所有用到它的界面一起变。
 - 一个家族只有一个实现：新代码只用该家族的规范组件；直接用 Material/Cupertino 控件（`ds-audit` 的 `bypass.*`）或已列为待淘汰的重复组件，计数只许下降，增长即检查失败。
-- 设计系统随 Web 升级：`tool/upstream_sync.py status` 报出 raft-ui 版本漂移时，先用 `tool/recipes/run` 重新生成配方，再做功能对齐；旧外观（Elegant、Brutal）读冻结配方，`tool/theme-suite --look all` 证明不变。
+- 设计系统随 Web 升级：`tool/upstream_sync.py status` 报出 raft-ui 版本漂移时，先用 `tool/recipes/run` 重新生成配方，再做功能对齐。
 
 ## 并行开发与模型分工（2026-10-10，Kevin 确认；18:26Z 更新）
 

@@ -19,8 +19,7 @@ import 'system_inset.dart';
 import 'theme.dart';
 
 // RaftSheet: the design system's bottom sheet. One look on every platform: the
-// raft_ui panel color, a token-sized top corner (square in brutal, with its 2px
-// black frame), our own drag handle and the shared scrim. The gestures come
+// raft_ui popover color, a token-sized top corner, our own drag handle and the shared scrim. The gestures come
 // from the framework's modal bottom sheet route and DraggableScrollableSheet
 // (see `RaftPresentedRoute`), so the physics are the platform-standard ones:
 //
@@ -48,7 +47,8 @@ abstract final class RaftSheetMetrics {
   static const mediumDetent = .6;
 
   /// The handle's hit area, its mark and the gap that keeps it clear of the
-  /// content (the frozen looks; the Raft look reads [handleBox]).
+  /// content (the fallback when the drawer recipe has no handle height; the
+  /// Raft look reads [handleBox]).
   static const handleArea = RaftSpace.x5 + RaftSpace.x1;
   static const handleWidth = 36.0, handleHeight = RaftSpace.x1;
 
@@ -57,64 +57,49 @@ abstract final class RaftSheetMetrics {
   static const minDragTarget = 44.0;
 
   /// The raft-ui Drawer popup (`side=down`): `layer-popover` fill,
-  /// `ring-1 ring-line-seam`, `shadow-float`, `rounded-t-dialog`. Null for the
-  /// frozen looks, which keep the panel sheet.
-  static RaftSlotStyle? _popup(RaftTokens t) => t.isRaftLook
-      ? RaftDrawerRecipe.resolve(
-          side: RaftDrawerRecipeSide.down,
-          axis: RaftDrawerRecipeAxis.y,
-          theme: t.recipeTheme,
-          states: t.recipeStates(),
-          tokens: t.recipeTokens,
-        ).popup
-      : null;
+  /// `ring-1 ring-line-seam`, `shadow-float`, `rounded-t-dialog`.
+  static RaftSlotStyle _popup(RaftTokens t) => RaftDrawerRecipe.resolve(
+    side: RaftDrawerRecipeSide.down,
+    axis: RaftDrawerRecipeAxis.y,
+    states: t.recipeStates(),
+    tokens: t.recipeTokens,
+  ).popup;
 
-  static RaftSlotStyle? _swipeHandle(RaftTokens t) => t.isRaftLook
-      ? RaftDrawerRecipe.resolve(
-          side: RaftDrawerRecipeSide.down,
-          axis: RaftDrawerRecipeAxis.y,
-          theme: t.recipeTheme,
-          states: t.recipeStates(),
-          tokens: t.recipeTokens,
-        ).swipeHandle
-      : null;
+  static RaftSlotStyle _swipeHandle(RaftTokens t) => RaftDrawerRecipe.resolve(
+    side: RaftDrawerRecipeSide.down,
+    axis: RaftDrawerRecipeAxis.y,
+    states: t.recipeStates(),
+    tokens: t.recipeTokens,
+  ).swipeHandle;
 
   /// The sheet's fill.
   static Color fill(RaftTokens t) =>
-      _popup(t)?.backgroundColor?.resolve(t.recipeTokens) ??
-      (t.isRaftLook ? t.colors['layer-popover']! : t.panel);
+      _popup(t).backgroundColor?.resolve(t.recipeTokens) ??
+      t.colors['layer-popover']!;
 
-  /// The outer shadows: the Raft look's ring and float shadow; none for the
-  /// frozen looks.
+  /// The outer shadows: the ring and float shadow.
   static List<BoxShadow> shadows(RaftTokens t) =>
-      _popup(t)?.boxShadow.toBoxShadows(t.recipeTokens) ?? const [];
+      _popup(t).boxShadow.toBoxShadows(t.recipeTokens);
 
   static double topRadius(RaftTokens t) =>
-      _popup(t)?.borderRadius?.topLeft.x ?? RaftSpace.x4;
+      _popup(t).borderRadius?.topLeft.x ?? RaftSpace.x4;
 
-  /// The handle box: 16px tall in the Raft look (`swipeHandle` slot), the
-  /// frozen looks keep [handleArea].
-  static double handleBox(RaftTokens t) =>
-      _swipeHandle(t)?.height ?? handleArea;
+  /// The handle box: 16px tall (`swipeHandle` slot).
+  static double handleBox(RaftTokens t) => _swipeHandle(t).height ?? handleArea;
 
   /// Where the mark starts inside [handleBox] (`::before` `top-1.5`); null
-  /// centres it (the frozen looks).
+  /// centres it.
   static double? handleMarkTop(RaftTokens t) =>
-      _swipeHandle(t)?.before?.length('top');
+      _swipeHandle(t).before?.length('top');
 
-  /// The mark's color: `line-seam` in the Raft look.
-  static Color handleColor(RaftTokens t) => t.isRaftLook
-      ? t.colors['line-seam']!
-      : t.colors['foreground-placeholder']!.withValues(alpha: .5);
+  /// The mark's color: `line-seam`.
+  static Color handleColor(RaftTokens t) => t.colors['line-seam']!;
 
-  /// The sheet's surface: rounded (elegant) or square (brutal) top corners.
-  /// The frozen looks keep the frame line; the Raft look's ring is part of
+  /// The sheet's surface: rounded top corners; the ring is part of
   /// [shadows].
   static ShapeBorder shape(RaftTokens t) => RoundedRectangleBorder(
     borderRadius: BorderRadius.vertical(top: Radius.circular(topRadius(t))),
-    side: t.isRaftLook
-        ? BorderSide.none
-        : BorderSide(color: t.colors['line-muted']!, width: 1),
+    side: BorderSide.none,
   );
 }
 
@@ -221,8 +206,7 @@ class _PointerDragArea extends StatelessWidget {
   }
 }
 
-/// The drag handle: the same mark in every theme (brutal black, elegant a
-/// placeholder-tinted pill), in a hit area tall enough for a thumb.
+/// The drag handle: a `line-seam` pill in a hit area tall enough for a thumb.
 class RaftSheetHandle extends StatelessWidget {
   const RaftSheetHandle({super.key});
 
@@ -268,8 +252,7 @@ class RaftSheetHandle extends StatelessWidget {
 /// by the drawer `closeButton` slot (`size-(--bar-button-size)`, 44 at radius
 /// 10; 28 at radius 6 with a mouse from 768) with an `X` from the `closeIcon`
 /// slot (`size-control-icon`: 22, or 18). The caller places it; Web's
-/// select-text drawer puts it on the title row. The frozen looks (which had
-/// no sheet X) get the ghost `icon-lg` X of their own button recipe.
+/// select-text drawer puts it on the title row.
 class RaftSheetClose extends StatelessWidget {
   const RaftSheetClose({
     super.key,
@@ -282,15 +265,6 @@ class RaftSheetClose extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    if (!t.isRaftLook) {
-      return RaftButton(
-        tone: RaftButtonRecipeVariant.ghost,
-        size: RaftButtonRecipeSize.iconLg,
-        glyph: RaftGlyph.x,
-        semanticLabel: raftText(context, tooltip),
-        onPressed: onPressed,
-      );
-    }
     final slots = raft_drawer.RaftDrawerRecipe.resolve(
       side: raft_drawer.RaftDrawerRecipeSide.down,
       axis: raft_drawer.RaftDrawerRecipeAxis.y,
@@ -388,12 +362,10 @@ class RaftSheet extends StatelessWidget {
               SliverPersistentHeader(
                 pinned: true,
                 delegate: _PinnedHeader(
-                  extent: t.isRaftLook
-                      ? math.max(
-                          handle + headerExtent,
-                          RaftSheetMetrics.minDragTarget,
-                        )
-                      : handle + headerExtent,
+                  extent: math.max(
+                    handle + headerExtent,
+                    RaftSheetMetrics.minDragTarget,
+                  ),
                   color: RaftSheetMetrics.fill(t),
                   child: _PointerDragArea(
                     child: Column(

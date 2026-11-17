@@ -58,7 +58,6 @@ import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'theme.dart';
 import 'recipes/badge.g.dart';
 import 'recipes/composer_suggestion_list.g.dart';
-import 'recipes/recipe_runtime.dart';
 import 'recipes/token_binding.dart';
 import 'mounted_avatar_recipe.dart';
 import 'raft/avatar.dart';
@@ -86,9 +85,8 @@ enum RaftPanelStyle {
   card,
 
   /// The Web client's `.card-brutal` composition class
-  /// (packages/web/src/index.css): elegant `border border-line-muted
-  /// bg-layer-panel shadow-raft-md`; brutal `border-2 border-black bg-white
-  /// shadow-brutal`.
+  /// (packages/web/src/index.css): `border border-line-muted bg-layer-panel
+  /// shadow-raft-md`.
   legacyCard,
 }
 
@@ -122,7 +120,6 @@ class RaftPanel extends StatelessWidget {
       case RaftPanelStyle.card:
         final rt = t.recipeTokens;
         final s = RaftCardRecipe.resolve(
-          theme: t.recipeTheme,
           states: t.recipeStates(),
           tokens: rt,
         ).root;
@@ -517,8 +514,8 @@ enum RaftConversationNavKind { channel, directMessage, directory }
 enum RaftChannelGlyphVariant { mountedProduct, genericComponent }
 
 /// Mounted Sidebar.tsx ChannelRow/DmRow use an unstyled Base UI button.
-/// Its selected utility overrides generic SidebarItem accents in both Elegant
-/// modes; it never inherits styled Button gradients, inset edges or transforms.
+/// Its selected utility overrides generic SidebarItem accents in both light
+/// and dark; it never inherits styled Button gradients, inset edges or transforms.
 class RaftMountedConversationControlRecipe extends RaftControlRecipe {
   const RaftMountedConversationControlRecipe(
     super.tokens, {
@@ -531,7 +528,7 @@ class RaftMountedConversationControlRecipe extends RaftControlRecipe {
   final bool pointerPressed;
 
   /// Sidebar.tsx `menuOpen`: an unselected Raft row keeps `bg-fill-pressed`
-  /// while its context menu is open. Frozen looks retain their original layer.
+  /// while its context menu is open.
   final bool menuOpen;
   @override
   bool get transformsOnInteraction => false;
@@ -543,7 +540,7 @@ class RaftMountedConversationControlRecipe extends RaftControlRecipe {
   BorderRadius get radius =>
       BorderRadius.circular(tokens.size('radius.sidebarItem', fallback: 6));
   @override
-  // SidebarItem: `px-2` Brutal, `px-1.5` Elegant (measured on desktop and mobile).
+  // SidebarItem: `px-1.5` (measured on desktop and mobile).
   EdgeInsets get padding => EdgeInsets.only(
     left: tokens.size('space.sidebarItemStart', fallback: 6),
     right: tokens.size('space.sidebarItemEnd', fallback: 6),
@@ -565,11 +562,7 @@ class RaftMountedConversationControlRecipe extends RaftControlRecipe {
       : foreground;
   @override
   Color get background => !selected
-      ? (menuOpen
-            ? tokens.colors[tokens.isRaftLook
-                  ? 'fill-pressed'
-                  : 'layer-sidebar-item-active']!
-            : Colors.transparent)
+      ? (menuOpen ? tokens.colors['fill-pressed']! : Colors.transparent)
       : tokens.colors['layer-sidebar-item-active']!;
   @override
   Color backgroundFor({bool hovered = false}) {
@@ -681,12 +674,11 @@ class RaftConversationNavigationRecipe {
       : null;
 
   // Resolved mounted ChannelRow cascade (including original md:py-1.5
-  // Elegant precedence): desktop Br32/El34, short Br32/El30,
-  // tall mobile Br40/El34. Direct-message AvatarSlot is a separate contract.
+  // precedence): desktop 34, short 30, tall mobile 34. Direct-message
+  // AvatarSlot is a separate contract.
   /// A navigation row's height: `size.navRowCompact` on short viewports,
   /// `size.navRowWide` at desktop width, otherwise `size.navRow`.
-  /// a57b9dab: Brutal 32 at desktop width or short, else 40; Elegant 30 short,
-  /// else 34.
+  /// a57b9dab: 30 short, else 34.
   double rowHeight({
     required double viewportWidth,
     required double viewportHeight,
@@ -726,8 +718,8 @@ class RaftConversationNavigationRecipe {
       tokens.size('radius.sidebarCount', fallback: 4),
     ),
   );
-  // Elegant inherits the mounted Sidebar Inter face; Brutal font-sans resolves
-  // Hanken. Generic navigation and DM label typography stay unchanged.
+  // Inherits the mounted Sidebar Inter face. Generic navigation and DM label
+  // typography stay unchanged.
   TextStyle get countTextStyle =>
       RaftTypography.body(
         tokens,
@@ -1838,8 +1830,7 @@ class RaftMessageTile extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         // The meta size class replaces the slot's `text-xs`
-                        // (tailwind-merge), so brutal inherits the body's
-                        // 20/14 line height; elegant keeps `leading-none`.
+                        // (tailwind-merge); `leading-none` stays.
                         style: recipe.time,
                       ),
                     ),
@@ -2996,13 +2987,13 @@ class _RaftComposerState extends State<RaftComposer> {
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
                               // `ComposerSuggestionGroup separated`:
-                              // `mt-1 pt-1`, brutal `border-t-2 border-black`;
+                              // `mt-1 pt-1`;
                               // Not-in-channel / Computers / Apps carry it even
                               // as the first group (In-channel never does).
                               if (startGroup && group > 1)
                                 Container(
                                   margin: const EdgeInsets.only(top: 4),
-                                  // Elegant has the spacing only (no rule).
+                                  // The spacing only (no rule).
                                   height: 4 + (0),
                                   alignment: Alignment.topCenter,
                                   child: null,
@@ -3015,8 +3006,8 @@ class _RaftComposerState extends State<RaftComposer> {
                                     style: recipe.suggestionGroupLabel,
                                   ),
                                 ),
-                              // Elegant group: `flex-col gap-2` (2px) and the
-                              // label's `mb-0.5`; Brutal has neither.
+                              // Group: `flex-col gap-2` (2px) and the
+                              // label's `mb-0.5`.
                               SizedBox(
                                 height: startGroup
                                     ? (label != null ? 4 : 0)
@@ -3660,8 +3651,7 @@ class _ChannelSuggestionBody extends StatelessWidget {
 }
 
 /// `ComposerSuggestionIcon variant="framed"` (channel rows), from the
-/// raft-ui composerSuggestionList recipe: brutal 20px `bg-primary` box with
-/// a black border and a 12px glyph; elegant bare 14px icon (`-mr-1`).
+/// raft-ui composerSuggestionList recipe: a bare 14px icon (`-mr-1`).
 class _FramedSuggestionIcon extends StatelessWidget {
   const _FramedSuggestionIcon({required this.glyph});
   final RaftGlyph glyph;
@@ -3670,7 +3660,6 @@ class _FramedSuggestionIcon extends StatelessWidget {
     final t = RaftTokens.of(context);
     final resolver = RaftRecipeTokens(t);
     final s = RaftComposerSuggestionListRecipe.resolve(
-      theme: RaftRecipeTheme.elegant,
       iconVariant: RaftComposerSuggestionListRecipeIconVariant.framed,
       tokens: resolver,
     ).icon;
@@ -3853,7 +3842,6 @@ class RaftActorTypeBadge extends StatelessWidget {
     final t = RaftTokens.of(context);
     final resolver = RaftRecipeTokens(t);
     final s = RaftBadgeRecipe.resolve(
-      theme: RaftRecipeTheme.elegant,
       appearance: RaftBadgeRecipeAppearance.soft,
       variant: RaftBadgeRecipeVariant.muted,
       tokens: resolver,
@@ -3921,7 +3909,6 @@ class RaftArchivedBadge extends StatelessWidget {
     final t = RaftTokens.of(context);
     final resolver = RaftRecipeTokens(t);
     final s = RaftBadgeRecipe.resolve(
-      theme: RaftRecipeTheme.elegant,
       appearance: RaftBadgeRecipeAppearance.soft,
       variant: RaftBadgeRecipeVariant.muted,
       tokens: resolver,

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'previews.dart';
 import 'src/popover_surface.dart';
 
-@RaftPreviews('Source Popover surface: LG Brutal / XL Elegant')
+@RaftPreviews('Source Popover surface')
 Widget popoverSurfacePreview() => const Center(
   child: RaftPopoverSurface(
     child: Padding(

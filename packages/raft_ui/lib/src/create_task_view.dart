@@ -24,7 +24,6 @@ import 'select_field.dart';
 import 'task.dart' show raftTaskStatusLabel;
 import 'tokens/tokens.dart' show RaftRadius, RaftTypeScale;
 import 'recipes/button_variants.g.dart';
-import 'recipes/recipe_runtime.dart' show RaftRecipeSet;
 import 'space.dart';
 import 'theme.dart';
 
@@ -75,8 +74,6 @@ class RaftCreateTaskDialogView extends StatelessWidget {
   Widget build(BuildContext context) {
     const gap = SizedBox(height: 16); // form `space-y-4`
     final batch = titles.length > 1;
-    final legacy = RaftTokens.of(context).recipeSet == RaftRecipeSet.legacy;
-    const padding = EdgeInsets.symmetric(horizontal: 16, vertical: 8);
     return RaftModalBackdrop(
       child: RaftDialog.card(
         key: const ValueKey('create-task-dialog'),
@@ -108,7 +105,7 @@ class RaftCreateTaskDialogView extends StatelessWidget {
                     // The final row's margin and Add Another's margin combine
                     // into the 12px gap below; earlier Web rows use mb-2.
                     padding: EdgeInsets.only(
-                      bottom: i == titles.length - 1 ? 0 : (legacy ? 4 : 8),
+                      bottom: i == titles.length - 1 ? 0 : 8,
                     ),
                     child: Row(
                       spacing: 4, // gap-1
@@ -128,17 +125,7 @@ class RaftCreateTaskDialogView extends StatelessWidget {
                             },
                           ),
                         ),
-                        if (batch && legacy)
-                          RaftRecipeButton(
-                            key: ValueKey('create-task-remove-$i'),
-                            variant: RaftButtonRecipeVariant.danger,
-                            size: RaftButtonRecipeSize.sm,
-                            glyph: RaftGlyph.trash2,
-                            padding: const EdgeInsets.all(4), // p-1
-                            tooltip: 'Remove',
-                            onPressed: () => onRemoveRow(i),
-                          ),
-                        if (batch && !legacy)
+                        if (batch)
                           RaftButton(
                             key: ValueKey('create-task-remove-$i'),
                             uiVariant: RaftButtonVariant.ghost,
@@ -154,35 +141,18 @@ class RaftCreateTaskDialogView extends StatelessWidget {
                 const SizedBox(height: 12), // mt-3
                 Align(
                   alignment: Alignment.centerLeft,
-                  child: legacy
-                      ? RaftRecipeButton(
-                          key: const ValueKey('create-task-add-row'),
-                          label: 'Add another',
-                          glyph: RaftGlyph.plus,
-                          variant: RaftButtonRecipeVariant.outline,
-                          size: RaftButtonRecipeSize.sm,
-                          // px-2 py-1 text-xs font-bold gap-1
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          textStep: RaftTextSteps.xs,
-                          fontWeight: FontWeight.w700,
-                          gap: 4,
-                          onPressed: onAddRow,
-                        )
-                      : RaftButton(
-                          key: const ValueKey('create-task-add-row'),
-                          label: 'Add another',
-                          glyph: RaftGlyph.plus,
-                          glyphSize: 16,
-                          // Web passes a plain Lucide Plus, without the
-                          // data-icon=inline-start selector marker.
-                          iconInlineStart: false,
-                          uiVariant: RaftButtonVariant.outline,
-                          uiSize: RaftButtonSize.sm,
-                          onPressed: onAddRow,
-                        ),
+                  child: RaftButton(
+                    key: const ValueKey('create-task-add-row'),
+                    label: 'Add another',
+                    glyph: RaftGlyph.plus,
+                    glyphSize: 16,
+                    // Web passes a plain Lucide Plus, without the
+                    // data-icon=inline-start selector marker.
+                    iconInlineStart: false,
+                    uiVariant: RaftButtonVariant.outline,
+                    uiSize: RaftButtonSize.sm,
+                    onPressed: onAddRow,
+                  ),
                 ),
               ],
             ),
@@ -207,18 +177,14 @@ class RaftCreateTaskDialogView extends StatelessWidget {
         footer: Wrap(
           alignment: WrapAlignment.end,
           crossAxisAlignment: WrapCrossAlignment.center,
-          spacing: legacy ? 12 : 8,
-          runSpacing: legacy ? 12 : 8,
+          spacing: 8,
+          runSpacing: 8,
           children: [
             RaftRecipeButton(
               key: const ValueKey('create-task-cancel'),
               label: 'Cancel',
-              variant: legacy
-                  ? RaftButtonRecipeVariant.outline
-                  : RaftButtonRecipeVariant.ghost,
-              size: legacy ? RaftButtonRecipeSize.sm : RaftButtonRecipeSize.lg,
-              padding: legacy ? padding : null,
-              textStep: legacy ? RaftTextSteps.sm : null,
+              variant: RaftButtonRecipeVariant.ghost,
+              size: RaftButtonRecipeSize.lg,
               onPressed: raftExplicitClose(context, onClose),
             ),
             RaftRecipeButton(
@@ -231,9 +197,7 @@ class RaftCreateTaskDialogView extends StatelessWidget {
                       'count': filledCount,
                     }),
               variant: RaftButtonRecipeVariant.accent,
-              size: legacy ? RaftButtonRecipeSize.sm : RaftButtonRecipeSize.lg,
-              padding: legacy ? padding : null,
-              textStep: legacy ? RaftTextSteps.sm : null,
+              size: RaftButtonRecipeSize.lg,
               disabled: submitting,
               onPressed: onSubmit,
             ),

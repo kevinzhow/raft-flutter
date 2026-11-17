@@ -34,25 +34,6 @@ final Map<String, ParityCase> uiPrimitiveCases = {
   'components.ui.avatar-list-row.states': _avatarListRow,
 };
 
-// Retired from the current Web official manifest. The frozen look suite keeps
-// their original builders and reference images independently of that manifest.
-// v1.24.0-source.1 sharedCases.json no longer lists the attention-dot,
-// status-dot, progress-bar, spinner, section-eyebrow and section-header
-// cases (the components themselves remain).
-final Map<String, ParityCase> uiFrozenPrimitiveCases = {
-  'components.ui.attention-dot.states': _attentionDot,
-  'components.ui.status-dot.states': _statusDot,
-  'components.ui.progress-bar.states': _progressBar,
-  'components.ui.spinner.states': _spinner,
-  'components.ui.section-eyebrow.states': _sectionEyebrow,
-  'components.ui.section-header.states': _sectionHeader,
-  'components.ui.button.states.elegant': _button,
-  'components.ui.card.states.elegant': _card,
-  'components.ui.form-field.states.elegant': _formField,
-  'components.ui.textarea.states.elegant': _textarea,
-  'components.ui.checkbox.states.elegant': _checkbox,
-};
-
 final Map<String, ParityUncovered> uiPrimitiveUncovered = {};
 
 // Source: v1.24.0-source.1 VisualTestingCases.tsx ui-typography-specimen.
@@ -146,11 +127,8 @@ Widget _frame(
           fontFamily: RaftTokens.of(context).headingFont,
           fontSize: 16,
           height: 1.5,
-          // `<main class="... text-foreground">` in the current Source; the
-          // frozen looks were captured with `text-black`.
-          color: ctx.againstWeb
-              ? RaftTokens.of(context).colors['foreground']
-              : Colors.black,
+          // `<main class="... text-foreground">` in the current Source.
+          color: RaftTokens.of(context).colors['foreground'],
           leadingDistribution: TextLeadingDistribution.even,
         ),
         child: OverflowBox(
@@ -340,15 +318,9 @@ final ParityCase _card = ParityCase(
 
 final ParityCase _formField = ParityCase(
   widgets: const ['raft_ui:RaftField', 'raft_ui:RaftTextInput'],
-  notes:
-      'Fixture inputs are the Web legacy .input-brutal class '
-      '(RaftInputChrome.legacy); the error input adds the callsite '
-      '!border-brutal-red ring-2 ring-brutal-red/60 (invalid); against the Web '
-      'the raft-ui Input (default chrome) is used.',
+  notes: 'Against the Web the raft-ui Input (default chrome) is used.',
   build: (ctx) {
-    final chrome = ctx.againstWeb
-        ? RaftInputChrome.recipe
-        : RaftInputChrome.legacy;
+    const chrome = RaftInputChrome.recipe;
     return _frame(
       ctx,
       height: 296,
@@ -486,49 +458,6 @@ final ParityCase _checkMarker = ParityCase(
   ),
 );
 
-final ParityCase _attentionDot = ParityCase(
-  widgets: const ['raft_ui:RaftAttentionDot'],
-  build: (ctx) => _frame(
-    ctx,
-    height: 80,
-    child: Align(
-      alignment: Alignment.topLeft,
-      child: _row(20, [
-        _labelRow(8, const RaftAttentionDot(), 'Unread'),
-        _labelRow(8, const RaftAttentionDot(compact: true), 'Compact'),
-        _labelRow(8, const RaftAttentionDot(warning: true), 'Warning'),
-      ]),
-    ),
-  ),
-);
-
-final ParityCase _statusDot = ParityCase(
-  widgets: const ['raft_ui:RaftStatusDot'],
-  build: (ctx) => _frame(
-    ctx,
-    height: 92,
-    child: Align(
-      alignment: Alignment.topLeft,
-      child: Builder(
-        builder: (context) {
-          final p = RaftTokens.of(context).product;
-          // `flex items-center gap-3` inside the `text-sm` column: the row's
-          // cross size is the tallest dot (11px), as in CSS.
-          return _row(12, [
-            RaftStatusDot(color: p.brutalLime),
-            RaftStatusDot(color: p.brutalOrange, size: RaftStatusDotSize.sm),
-            const RaftStatusDot(
-              color: RaftWebPalette.gray400,
-              size: RaftStatusDotSize.lg,
-            ),
-            const RaftStatusDot(external: true),
-          ]);
-        },
-      ),
-    ),
-  ),
-);
-
 final ParityCase _badge = ParityCase(
   widgets: const ['raft_ui:RaftBadge'],
   build: (ctx) => _frame(
@@ -573,28 +502,6 @@ final ParityCase _badge = ParityCase(
   ),
 );
 
-final ParityCase _progressBar = ParityCase(
-  widgets: const ['raft_ui:RaftProgressBar'],
-  build: (ctx) => _frame(
-    ctx,
-    height: 124,
-    child: _column(16, const [
-      RaftProgressBar(
-        value: 64,
-        label: 'Downloading update',
-        showPercent: true,
-        tone: RaftProgressRecipeVariant.accent,
-      ),
-      RaftProgressBar(
-        value: 28,
-        label: 'Verifying package',
-        showPercent: true,
-        tone: RaftProgressRecipeVariant.information,
-      ),
-    ]),
-  ),
-);
-
 final ParityCase _skeleton = ParityCase(
   widgets: const ['raft_ui:RaftSkeleton', 'raft_ui:RaftSkeletonRow'],
   notes:
@@ -627,39 +534,6 @@ final ParityCase _skeleton = ParityCase(
   ),
 );
 
-final ParityCase _spinner = ParityCase(
-  widgets: const ['raft_ui:RaftSpinner'],
-  notes:
-      'React renders spinners with animation:none; Flutter uses reduced '
-      'motion (MediaQuery.disableAnimations) for the same static frame. '
-      'The source xs/sm/md/lg size axis is shared by all themes: Raft uses pixel grids, legacy themes keep the original rings. '
-      'The black inverse box reproduces the fixture span (p-2 around a 24px '
-      'line box).',
-  build: (ctx) => _reducedMotion(
-    _frame(
-      ctx,
-      height: 92,
-      child: Align(
-        alignment: Alignment.topLeft,
-        child: _row(20, [
-          const RaftSpinner(recipeSize: RaftSpinnerRecipeSize.xs),
-          const RaftSpinner(recipeSize: RaftSpinnerRecipeSize.sm),
-          const RaftSpinner(recipeSize: RaftSpinnerRecipeSize.md),
-          const RaftSpinner(recipeSize: RaftSpinnerRecipeSize.lg),
-          Container(
-            color: Colors.black,
-            padding: const EdgeInsets.fromLTRB(8, 10, 8, 14),
-            child: const RaftSpinner(
-              recipeSize: RaftSpinnerRecipeSize.sm,
-              inverse: true,
-            ),
-          ),
-        ]),
-      ),
-    ),
-  ),
-);
-
 final ParityCase _slugInput = ParityCase(
   widgets: const ['raft_ui:RaftSlugInput'],
   notes: 'Second row keeps the fixture opacity-60 className.',
@@ -676,49 +550,6 @@ final ParityCase _slugInput = ParityCase(
   ),
 );
 
-final ParityCase _sectionEyebrow = ParityCase(
-  widgets: const ['raft_ui:RaftSectionEyebrow'],
-  notes: 'Second row has the fixture !text-black; third the bg-white/50 px-2 py-1 label.',
-  build: (ctx) => _frame(
-    ctx,
-    height: 92,
-    child: _column(12, [
-      const RaftSectionEyebrow('Recent Activity'),
-      const RaftSectionEyebrow('Applications', color: Colors.black),
-      Container(
-        color: Colors.white.withValues(alpha: .5),
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        child: const RaftSectionEyebrow('Choose Avatar'),
-      ),
-    ]),
-  ),
-);
-
-final ParityCase _sectionHeader = ParityCase(
-  widgets: const ['raft_ui:RaftSectionHeader', 'raft_ui:RaftButton'],
-  notes: 'The fixture className border-b-2 border-black pb-2 wraps the header.',
-  build: (ctx) => _frame(
-    ctx,
-    height: 88,
-    child: Container(
-      padding: const EdgeInsets.only(bottom: 8),
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: Colors.black, width: 2)),
-      ),
-      child: RaftSectionHeader(
-        label: 'Applications',
-        count: 3,
-        action: RaftButton(
-          label: 'Add',
-          onPressed: () {},
-          tone: RaftButtonRecipeVariant.outline,
-          size: RaftButtonRecipeSize.xs,
-        ),
-      ),
-    ),
-  ),
-);
-
 final ParityCase _selectionPopover = ParityCase(
   widgets: const ['raft_ui:RaftSelectionPopover'],
   notes:
@@ -732,7 +563,6 @@ final ParityCase _selectionPopover = ParityCase(
       builder: (context) {
         final tokens = RaftTokens.of(context);
         final card = RaftCardRecipe.resolve(
-          theme: tokens.recipeTheme,
           states: tokens.recipeStates(),
           tokens: tokens.recipeTokens,
         ).root;
@@ -819,35 +649,27 @@ final ParityCase _menuItem = ParityCase(
   widgets: const ['raft_ui:RaftMenuButtonItem'],
   notes:
       'Container is fixture markup: `w-full overflow-hidden rounded-container '
-      'border border-line-seam bg-layer-popover shadow-float` against the Web, '
-      '`border-2 border-black bg-white shadow-brutal` for the frozen looks; the '
+      'border border-line-seam bg-layer-popover shadow-float`; the '
       'frame is content-sized in React (16 + 116 + 16).',
   build: (ctx) => Builder(
     builder: (context) {
       final t = RaftTokens.of(context);
-      final web = ctx.againstWeb;
-      final decoration = web
-          ? BoxDecoration(
-              color: t.popover,
-              borderRadius: BorderRadius.circular(
-                t.size('radius.container', fallback: 10),
-              ),
-              border: Border.all(color: t.colors['line-seam']!),
-              boxShadow: [
-                for (final layer in t.shadowLayers('shadow.float'))
-                  if (!layer.inset) layer.toBoxShadow(),
-              ],
-            )
-          : BoxDecoration(
-              color: Colors.white,
-              border: Border.all(width: 2),
-              boxShadow: RaftProductShadows.shadowBrutal.paintOrder,
-            );
+      final decoration = BoxDecoration(
+        color: t.popover,
+        borderRadius: BorderRadius.circular(
+          t.size('radius.container', fallback: 10),
+        ),
+        border: Border.all(color: t.colors['line-seam']!),
+        boxShadow: [
+          for (final layer in t.shadowLayers('shadow.float'))
+            if (!layer.inset) layer.toBoxShadow(),
+        ],
+      );
       return _frame(
         ctx,
-        height: web ? 178 : 148,
+        height: 178,
         child: Container(
-          clipBehavior: web ? Clip.antiAlias : Clip.hardEdge,
+          clipBehavior: Clip.antiAlias,
           decoration: decoration,
           child: Semantics(
             role: SemanticsRole.menu,
@@ -865,9 +687,7 @@ final ParityCase _menuItem = ParityCase(
                       fontFamilyFallback: t.fontFallback,
                       fontSize: 12,
                       height: 16 / 12,
-                      color: web
-                          ? t.colors['foreground-hint']
-                          : Colors.black.withValues(alpha: .4),
+                      color: t.colors['foreground-hint'],
                     ),
                   ),
                 ),
@@ -916,9 +736,7 @@ final ParityCase _select = ParityCase(
 );
 
 /// The Source fixture markup: `text-callout font-bold text-foreground` over a
-/// `font-mono text-mono-meta text-foreground-muted` line. Elegant / Brutal are
-/// scored against the frozen render of the `text-black` / `text-black/50` markup
-/// the earlier Source used, so only the Web comparison reads the tokens.
+/// `font-mono text-mono-meta text-foreground-muted` line.
 Widget _surfaceItemBody(ParityContext ctx, String title, String detail) =>
     Builder(
       builder: (context) {
@@ -933,7 +751,7 @@ Widget _surfaceItemBody(ParityContext ctx, String title, String detail) =>
                 fontSize: 14,
                 height: 20 / 14,
                 fontWeight: FontWeight.w700,
-                color: ctx.againstWeb ? t.colors['foreground'] : Colors.black,
+                color: t.colors['foreground'],
               ),
             ),
             const SizedBox(height: 4),
@@ -943,9 +761,7 @@ Widget _surfaceItemBody(ParityContext ctx, String title, String detail) =>
                 t,
                 size: 12,
                 line: 16,
-                color: ctx.againstWeb
-                    ? t.colors['foreground-muted']
-                    : Colors.black.withValues(alpha: .5),
+                color: t.colors['foreground-muted'],
               ),
             ),
           ],
@@ -990,7 +806,7 @@ final ParityCase _avatarListRow = ParityCase(
   build: (ctx) {
     final rows = [
       RaftAvatarListRow(
-        avatar: RaftAvatar(name: ctx.againstWeb ? '' : 'Cindy', size: 32),
+        avatar: RaftAvatar(name: '', size: 32),
         name: 'Cindy',
         subtitle: 'Claude Code',
         rightContent: const [
@@ -998,10 +814,7 @@ final ParityCase _avatarListRow = ParityCase(
         ],
       ),
       RaftAvatarListRow(
-        avatar: RaftAvatar(
-          name: ctx.againstWeb ? '' : 'Product UX Designer',
-          size: 32,
-        ),
+        avatar: RaftAvatar(name: '', size: 32),
         name: 'Product UX Designer',
         subtitle: 'product@slock.ai',
         selected: true,
@@ -1015,12 +828,6 @@ final ParityCase _avatarListRow = ParityCase(
         ],
       ),
     ];
-    return _frame(
-      ctx,
-      height: 168,
-      child: ctx.againstWeb
-          ? RaftListRowGroup(children: rows)
-          : _column(12, rows),
-    );
+    return _frame(ctx, height: 168, child: RaftListRowGroup(children: rows));
   },
 );

@@ -89,9 +89,8 @@ class RaftTokenSet {
 
   /// Every tier read from one mode of a theme pack instead of the generated
   /// statics.
-  /// [fonts] are the pack's own family/stack declarations. Without them every
-  /// theme would paint the built-in Raft typeface, which is what happened before
-  /// this parameter existed: Elegant's Geist/Inter never reached a single glyph.
+  /// [fonts] are the pack's own family/stack declarations. Without them the
+  /// built-in Raft typeface is painted.
   factory RaftTokenSet.fromPack(
     RaftThemeId id, {
     required RaftModeValues mode,

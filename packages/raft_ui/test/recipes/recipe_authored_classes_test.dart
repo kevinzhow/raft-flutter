@@ -1,8 +1,6 @@
 import 'package:flutter/gestures.dart' show PointerDeviceKind;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:raft_theme/raft_theme.dart';
-import 'package:raft_theme/recipes.dart' show RaftRecipeSet;
 import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_ui/src/recipes/recipe_router.dart';
 
@@ -43,7 +41,6 @@ void main() {
         'selectionPopover.style': 'recipe',
       }),
     );
-    expect(t.recipeSet, RaftRecipeSet.raft);
     expect(t.option('surfaceItem.style', or: 'x'), 'recipe');
     expect(t.option('selectionPopover.style', or: 'x'), 'recipe');
   });
@@ -124,14 +121,6 @@ void main() {
       expect(classes, isNot(contains('bg-layer-card')));
       expect(classes.any((c) => c.contains('raft-md')), isFalse);
     });
-
-    for (final pack in [builtInElegantTheme, builtInBrutalTheme]) {
-      test('$mode ${pack.id}: assignee surface keeps the frozen classes', () {
-        final t = RaftTokens.theme(dark: dark, pack: pack);
-        final classes = taskAssigneeSurface(t).classes;
-        expect(classes, containsAll(['bg-layer-popover', 'shadow-raft-md']));
-      });
-    }
   }
 
   test('unknown class names fail loudly instead of a RangeError', () {

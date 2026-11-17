@@ -8,7 +8,7 @@ import 'package:raft_ui/raft_ui.dart';
 ///
 /// Raft: raft-ui 0.7.0 `PanelAction` (`panelActionBase`: `h-11 min-w-11` for touch,
 /// `h-8 min-w-8` for pointer input, `rounded-control`, svg `22px` / `18px`), read from the
-/// pack. Elegant and Brutal keep the a57b9dab `Button icon-sm outline`.
+/// pack.
 Widget _host(
   RaftThemePack pack, {
   bool dark = false,
@@ -152,16 +152,4 @@ void main() {
       expect(t.getSize(find.byKey(const Key('art'))), Size.square(glyph));
     }
   });
-
-  for (final id in [elegantThemePackId, brutalThemePackId]) {
-    testWidgets('$id keeps the a57b9dab outline Button icon-sm', (t) async {
-      for (final width in [390.0, 800.0]) {
-        await viewport(t, width);
-        await t.pumpWidget(_host(packForThemeId(id), onPressed: () {}));
-        expect(t.getSize(find.byType(RaftPanelIconButton)), const Size(28, 28));
-        expect(_glyph(t), const Size.square(14));
-      }
-      expect(t.takeException(), isNull);
-    });
-  }
 }

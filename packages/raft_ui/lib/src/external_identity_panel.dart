@@ -124,7 +124,7 @@ class RaftExternalIdentityBody extends StatelessWidget {
 }
 
 /// `AvatarSlot type="app"` initials fallback: the first two characters of the
-/// name in bold (Brutal black / Elegant muted); 24px in the profile tile, 14px
+/// name in bold (muted); 24px in the profile tile, 14px
 /// elsewhere.
 class RaftExternalInitials extends StatelessWidget {
   const RaftExternalInitials({
@@ -155,7 +155,7 @@ class RaftExternalInitials extends StatelessWidget {
   }
 }
 
-/// The profile panel's surface (`bg-layer-panel`, Brutal white).
+/// The profile panel's surface (`bg-layer-panel`).
 class RaftProfilePanelSurface extends StatelessWidget {
   const RaftProfilePanelSurface({super.key, required this.child});
   final Widget child;

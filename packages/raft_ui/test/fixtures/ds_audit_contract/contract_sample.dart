@@ -5,13 +5,14 @@
 // Color(0xFF000000) Colors.red BorderRadius.circular(8) fontSize: 14 isElegant
 // ignore_for_file: unused_local_variable, unused_element, unnecessary_statements
 import 'package:flutter/material.dart';
-import 'package:raft_ui/recipes.dart' show RaftRecipeTheme;
 
 const String mention = 'Colors.red Radius.circular(4) RaftRecipeTheme.elegant';
 
 /// Stand-ins for the theme types the rules key on by name. Their own uses
 /// count too; the totals in the Python test include them.
 enum RaftFamily { brutal, elegant }
+
+enum RaftRecipeTheme { elegant, brutal }
 
 class RaftTheme {
   const RaftTheme(this.id, this.family);

@@ -32,9 +32,7 @@ const literalFits = (() => {
   return fits;
 })();
 const pkg = resolve(repo, arg('package', 'packages/raft_theme'));
-// Raft set only. `lib/recipes/legacy/` holds the frozen raft-ui 0.5.52 output of the
-// Elegant and Brutal looks (see lib/recipes_legacy.dart); this script never writes or
-// removes anything below it.
+// Raft set only.
 const outDir = join(pkg, 'lib/recipes');
 const testDir = join(pkg, 'test/recipes');
 

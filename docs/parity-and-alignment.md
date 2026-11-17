@@ -44,7 +44,7 @@ tool/parity publish [--no-verify]
 
 ## Extension suite: `tool/parity-ext/run`
 
-The extension suite adds cases for pages the official set lacks (ids `components.<area>.*`, several hundred brutal-light cases).
+The extension suite adds cases for pages the official set lacks (ids `components.<area>.*`, several hundred `brutal-light` cases).
 
 ```sh
 export PARITY_EXT_WEB_PORT=4xxx                       # unique per run; default 4396
@@ -53,7 +53,7 @@ tool/parity-ext/run summary
 ```
 
 - Cases are generated on every run by the automatically discovered `tool/parity-ext/build-*.py` builders into `build/parity-ext/cases.json` (never committed); Flutter-side cases live in `apps/raft_flutter/test/parity/cases/`. Adding or fixing a surface: [extension quickstart](parity-ext-quickstart.md).
-- Theme sampling: `brutal-light` (the default theme) runs every case; `elegant-light` and `elegant-dark` run one or two cases per surface (rule in `tool/parity-ext/sampling.py`). `--cases` only sees the sampled set; `PARITY_EXT_ALL_THEMES=1` runs everything, `PARITY_EXT_ALL_DARK=1` keeps every elegant-dark case.
+- Theme sampling: `brutal-light` (the default name) runs every case; `elegant-light` and `elegant-dark` run one or two cases per surface (rule in `tool/parity-ext/sampling.py`). `--cases` only sees the sampled set; `PARITY_EXT_ALL_THEMES=1` runs everything, `PARITY_EXT_ALL_DARK=1` keeps every elegant-dark case.
 - Web captures are cached across worktrees (`PARITY_EXT_CACHE` overrides the location) and recaptured only when their inputs change.
 - Output goes to `build/parity-ext/` (`PARITY_EXT_OUT`): `summary.md` (per-case and per-area tables) and `site/index.html`.
 

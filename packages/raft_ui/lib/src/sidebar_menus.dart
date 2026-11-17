@@ -6,7 +6,6 @@ import 'dart:ui' show SemanticsRole;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import 'design_primitives.dart' show RaftTypography;
 import 'icons.dart';
 import 'list_items.dart';
 import 'recipe_surface.dart';
@@ -92,9 +91,8 @@ class RaftSidebarContextMenu extends StatefulWidget {
 
   /// Sidebar.tsx mounts row, section, surface and submenu popups at `w-60`.
   /// That matches the generated current recipe's `min-w-60`; its declared
-  /// width/minimum is used for Raft, while [legacyWidth] and
-  /// [legacySubmenuWidth] keep the frozen mounts' dimensions. Use the default
-  /// constructor when a caller intentionally requests a custom current width.
+  /// width/minimum is used; [legacyWidth] and [legacySubmenuWidth] are only
+  /// the fallbacks. Use the default constructor when a caller intentionally requests a custom current width.
   const RaftSidebarContextMenu.sidebar({
     super.key,
     required this.entries,
@@ -194,7 +192,6 @@ class _RaftSidebarContextMenuState extends State<RaftSidebarContextMenu> {
     }
     final t = RaftTokens.of(menuContext);
     final content = RaftContextMenuRecipe.resolve(
-      theme: t.recipeTheme,
       states: t.recipeStates(responsive: true),
       tokens: RaftRecipeTokens(t),
     ).content;
@@ -235,21 +232,18 @@ class _RaftSidebarContextMenuState extends State<RaftSidebarContextMenu> {
     final t = RaftTokens.of(context);
     final resolver = RaftRecipeTokens(t);
     final s = RaftContextMenuRecipe.resolve(
-      theme: t.recipeTheme,
       states: t.recipeStates(responsive: true),
       tokens: resolver,
     );
     final content = s.content;
     final separator = s.separator;
-    // The real Sidebar.tsx w-60 mounts match the current recipe's min-w-60;
-    // frozen caller widths are not current source overrides. Other users of
-    // this component keep their explicit width, bounded by CSS min-width.
-    final requestedWidth = t.isRaftLook && widget._sidebarSourceWidth
+    // The real Sidebar.tsx w-60 mounts match the current recipe's min-w-60.
+    // Other users of this component keep their explicit width, bounded by CSS
+    // min-width.
+    final requestedWidth = widget._sidebarSourceWidth
         ? content.width ?? content.minWidth ?? width
         : width;
-    final usedWidth = t.isRaftLook
-        ? math.max(requestedWidth, content.minWidth ?? 0)
-        : width;
+    final usedWidth = math.max(requestedWidth, content.minWidth ?? 0);
     Widget divider() {
       final w = separator.borderWidth.top;
       final m = separator.margin;
@@ -271,25 +265,11 @@ class _RaftSidebarContextMenuState extends State<RaftSidebarContextMenu> {
       for (final entry in entries)
         switch (entry) {
           RaftSidebarMenuDivider() => divider(),
-          RaftSidebarMenuHeading(:final label) =>
-            t.isRaftLook
-                ? RaftRecipeBox(
-                    style: s.label,
-                    tokens: resolver,
-                    child: Text(label),
-                  )
-                : Padding(
-                    padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
-                    child: Text(
-                      label,
-                      style: RaftTypography.heading(
-                        t,
-                        size: 10,
-                        line: 15,
-                        weight: FontWeight.w700,
-                      ).copyWith(color: t.colors['foreground-muted']),
-                    ),
-                  ),
+          RaftSidebarMenuHeading(:final label) => RaftRecipeBox(
+            style: s.label,
+            tokens: resolver,
+            child: Text(label),
+          ),
           RaftSidebarMenuNote(:final text) => RaftRecipeBox(
             style: s.label,
             tokens: resolver,

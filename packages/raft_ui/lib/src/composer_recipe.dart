@@ -3,7 +3,6 @@ import 'token_geometry.dart';
 import 'package:flutter/material.dart';
 
 import 'css_recipe_decoration.dart' show RaftRecipeDecoration;
-import 'recipes/recipe_router.dart' show usesLegacyRecipes;
 import 'design_primitives.dart';
 import 'tap_slop.dart';
 import 'icons.dart';
@@ -63,17 +62,13 @@ class RaftComposerRecipe {
           ),
   );
   // The Raft look is the raft-ui 0.95.3 composer (`pb-[embedded-inset-1px]`,
-  // `gap-embedded-inset`, `size-8` / `md:pointer-fine:size-(--bar-button-size)`);
-  // the frozen looks keep the pack literals. Pointer-fine is the desktop token
-  // variant, never the width alone.
-  bool get _raft => tokens.isRaftLook;
+  // `gap-embedded-inset`, `size-8` / `md:pointer-fine:size-(--bar-button-size)`).
+  // Pointer-fine is the desktop token variant, never the width alone.
   EdgeInsets get shellInset => EdgeInsets.fromLTRB(
     tokens.size('space.composerShellInline', fallback: 12),
     tokens.size('space.composerShellTop', fallback: 12),
     tokens.size('space.composerShellInline', fallback: 12),
-    _raft
-        ? _embeddedInset - 1
-        : tokens.size('space.composerShellBottom', fallback: 8),
+    _embeddedInset - 1,
   );
   double get shellGap => 8;
   double get shellRadius => tokens.size('radius.container', fallback: 8);
@@ -85,11 +80,10 @@ class RaftComposerRecipe {
         : (width * devicePixelRatio).floorToDouble() / devicePixelRatio;
   }
 
-  /// The Raft look paints a [RaftRecipeDecoration]: its focus ring (`0 0 0 2px gap,
+  /// The shell paints a [RaftRecipeDecoration]: its focus ring (`0 0 0 2px gap,
   /// 0 0 0 4px ink`) grows the corner radius with each spread (`radius + spread`,
   /// concentric with the border). A plain [BoxDecoration] inflates only the rect
-  /// and keeps the radius, which pinches the gap at the corners. The frozen looks
-  /// keep their original [BoxDecoration].
+  /// and keeps the radius, which pinches the gap at the corners.
   BoxDecoration shellDecoration({required bool focused}) {
     final decoration = BoxDecoration(
       color: tokens.colors['layer-composer-shell'] ?? tokens.panel,
@@ -101,7 +95,6 @@ class RaftComposerRecipe {
             )
           : null,
       // Named pack layers are CSS top-first; BoxDecoration paints bottom-first.
-      // Legacy packs encode their original paint order explicitly as data.
       boxShadow: [
         for (final layer
             in tokens
@@ -112,9 +105,7 @@ class RaftComposerRecipe {
           if (!layer.inset) layer.toBoxShadow(),
       ],
     );
-    return usesLegacyRecipes(tokens.recipeTokens)
-        ? decoration
-        : RaftRecipeDecoration.from(decoration, cssGeometry: true);
+    return RaftRecipeDecoration.from(decoration, cssGeometry: true);
   }
 
   double get editorMinimum => desktop
@@ -146,13 +137,11 @@ class RaftComposerRecipe {
   Offset get toolbarPaintOffset =>
       Offset(0, tokens.size('space.composerToolbarShiftY', fallback: 0));
   // Toolbar `mx`: (18 - 28) / 2 with a fine pointer, 6 - 12 - 1 otherwise.
-  double get firstActionOffset => _raft
-      ? (tokens.desktop ? -5 : -7)
-      : tokens.size('space.composerFirstActionOffset', fallback: -5);
+  double get firstActionOffset => tokens.desktop ? -5 : -7;
 
   /// The toolbar's negative margin also pulls Send past the shell's right
-  /// padding (Raft look only).
-  double get lastActionOffset => _raft && !compact ? firstActionOffset : 0;
+  /// padding.
+  double get lastActionOffset => !compact ? firstActionOffset : 0;
 
   /// Shell padding with the toolbar's bleed taken out of both ends.
   EdgeInsets shellPadding(double firstOffset) => shellInset.copyWith(
@@ -165,67 +154,41 @@ class RaftComposerRecipe {
     left: editorInset.left - firstOffset,
     right: editorInset.right - lastActionOffset,
   );
-  double get toolbarGap => _raft ? 6 : 8;
-  double get actionGap =>
-      _raft ? 6 : tokens.size('space.composerActionGap', fallback: 8);
-  double get metaGap =>
-      _raft ? 6 : tokens.size('space.composerMetaGap', fallback: 8);
+  double get toolbarGap => 6;
+  double get actionGap => 6;
+  double get metaGap => 6;
   double get _barButton => tokens.desktop ? 28 : 32;
-  double get actionFace =>
-      _raft ? _barButton : tokens.size('size.composerAction', fallback: 32);
-  double get submitFace =>
-      _raft ? _barButton : tokens.size('size.composerSubmit', fallback: 32);
+  double get actionFace => _barButton;
+  double get submitFace => _barButton;
   double get glyphSize => tokens.size('size.composerGlyph', fallback: 18);
 
   // composer-suggestion.recipe.ts / index.mjs13809–13910.
-  double get suggestionMaximum => _raft ? 240 : 204;
-  double get suggestionBottomGap => _raft ? 8 : 4;
-  // Brutal `border-2` sits inside the box: content starts inside it.
+  double get suggestionMaximum => 240;
+  double get suggestionBottomGap => 8;
   EdgeInsets get suggestionInset => EdgeInsets.all(4);
-  BoxDecoration get suggestionDecoration => _raft
-      ? BoxDecoration(
-          color: tokens.popover,
-          borderRadius: tokens.corner('radius.container', fallback: 10),
-          // `ring-1 ring-line-seam shadow-float`; CSS lists the ring first.
-          boxShadow: [
-            for (final layer in tokens.shadowLayers('shadow.float').reversed)
-              if (!layer.inset) layer.toBoxShadow(),
-            BoxShadow(color: tokens.colors['line-seam']!, spreadRadius: 1),
-          ],
-        )
-      : BoxDecoration(
-          color: tokens.popover,
-          borderRadius: BorderRadius.circular(8),
-          boxShadow: [
-            ...tokens.shadows,
-            if (!tokens.dark)
-              BoxShadow(color: tokens.colors['ink-6']!, spreadRadius: 1),
-          ],
-        );
-  EdgeInsets get suggestionGroupInset => _raft
-      ? const EdgeInsets.fromLTRB(10, 8, 10, 4)
-      : const EdgeInsets.symmetric(horizontal: 12, vertical: 8);
-  TextStyle get suggestionGroupLabel => _raft
-      // `text-caption font-bold text-foreground-hint`.
-      ? tokens.scale(
-          tokens.typeSlot('caption'),
-          weight: FontWeight.w700,
-          color: tokens.ui.foregroundHint,
-        )
-      : _legacyGroupLabel;
-  TextStyle get _legacyGroupLabel => RaftTypography.body(
-    tokens,
-    size: 11,
-    line: 11,
-    weight: FontWeight.w500,
-    color: tokens.strong.withValues(alpha: .45),
-  ).copyWith(letterSpacing: -.055);
+  BoxDecoration get suggestionDecoration => BoxDecoration(
+    color: tokens.popover,
+    borderRadius: tokens.corner('radius.container', fallback: 10),
+    // `ring-1 ring-line-seam shadow-float`; CSS lists the ring first.
+    boxShadow: [
+      for (final layer in tokens.shadowLayers('shadow.float').reversed)
+        if (!layer.inset) layer.toBoxShadow(),
+      BoxShadow(color: tokens.colors['line-seam']!, spreadRadius: 1),
+    ],
+  );
+  EdgeInsets get suggestionGroupInset =>
+      const EdgeInsets.fromLTRB(10, 8, 10, 4);
+  // `text-caption font-bold text-foreground-hint`.
+  TextStyle get suggestionGroupLabel => tokens.scale(
+    tokens.typeSlot('caption'),
+    weight: FontWeight.w700,
+    color: tokens.ui.foregroundHint,
+  );
   Color suggestionBackground({
     required bool highlighted,
     bool hovered = false,
   }) =>
       RaftComposerSuggestionListRecipe.resolve(
-        theme: tokens.recipeTheme,
         states: tokens.recipeStates(
           hovered: hovered,
           extra: [if (highlighted) 'data-highlighted=true'],
@@ -236,57 +199,31 @@ class RaftComposerRecipe {
   TextStyle suggestionTitle({
     required bool highlighted,
     bool hovered = false,
-  }) => _raft
+  }) =>
       // `text-callout font-medium text-foreground`, whatever the highlight.
-      ? tokens.scale(
-          tokens.typeSlot('callout'),
-          weight: FontWeight.w500,
-          color: tokens.ui.foreground,
-        )
-      : RaftTypography.body(
-          tokens,
-          size: 13,
-          line: 19.5,
-          weight: FontWeight.w500,
-          color: highlighted || hovered ? tokens.ink : tokens.muted,
-        ).copyWith(letterSpacing: -.065);
+      tokens.scale(
+        tokens.typeSlot('callout'),
+        weight: FontWeight.w500,
+        color: tokens.ui.foreground,
+      );
 
-  /// `ComposerSuggestionIcon variant="auxiliary"`: brutal `text-black/40`.
+  /// `ComposerSuggestionIcon variant="auxiliary"`.
   Color get suggestionAuxiliary => tokens.colors['foreground-placeholder']!;
 
-  /// `ComposerSuggestionMeta variant="code"`: `text-xs font-mono`
-  /// (brutal `text-black/40`), bold with the highlighted option.
-  TextStyle suggestionCode({bool highlighted = false}) => _raft
-      ? tokens.scale(
-          tokens.typeSlot('mono-meta'),
-          mono: true,
-          weight: highlighted ? FontWeight.w700 : FontWeight.w500,
-          color: tokens.ui.foregroundHint,
-        )
-      : TextStyle(
-          fontFamily: tokens.monoFont,
-          fontSize: 12,
-          height: 16 / 12,
-          fontWeight: highlighted ? FontWeight.w700 : FontWeight.w500,
-          color: tokens.colors['foreground-placeholder'],
-        );
+  /// `ComposerSuggestionMeta variant="code"`: `text-xs font-mono`, bold with
+  /// the highlighted option.
+  TextStyle suggestionCode({bool highlighted = false}) => tokens.scale(
+    tokens.typeSlot('mono-meta'),
+    mono: true,
+    weight: highlighted ? FontWeight.w700 : FontWeight.w500,
+    color: tokens.ui.foregroundHint,
+  );
 
   TextStyle get suggestionMeta => suggestionMetaFor();
 
-  /// Meta sets no weight: it inherits the option's `font-medium`, or
-  /// `data-[highlighted=true]:font-bold` (brutal).
-  TextStyle suggestionMetaFor({bool highlighted = false}) => _raft
-      ? tokens.scale(
-          tokens.typeSlot('caption'),
-          color: tokens.ui.foregroundHint,
-        )
-      : RaftTypography.body(
-          tokens,
-          size: 12,
-          line: 16,
-          weight: FontWeight.w500,
-          color: tokens.colors['foreground-placeholder'],
-        );
+  /// Meta sets no weight: it inherits the option's `font-medium`.
+  TextStyle suggestionMetaFor({bool highlighted = false}) =>
+      tokens.scale(tokens.typeSlot('caption'), color: tokens.ui.foregroundHint);
 }
 
 /// ComposerIconButton uses Button's interaction machinery but its own surface.
@@ -303,11 +240,8 @@ class _ComposerAttachRecipe extends RaftControlRecipe {
       ? tokens.colors['fill-strong']!.withValues(alpha: .8)
       : Colors.transparent;
   @override
-  Color foregroundFor({bool hovered = false}) => hovered
-      ? tokens.strong
-      : tokens.colors[tokens.isRaftLook
-            ? 'foreground-muted'
-            : 'foreground-icon']!;
+  Color foregroundFor({bool hovered = false}) =>
+      hovered ? tokens.strong : tokens.colors['foreground-muted']!;
   @override
   Color get foreground => foregroundFor();
   @override
@@ -315,7 +249,7 @@ class _ComposerAttachRecipe extends RaftControlRecipe {
   @override
   BorderRadius get radius => BorderRadius.circular(6);
   @override
-  // ds-allow: Web raft-ui/composer.recipe.ts iconButton `p-[7px]` (elegant), `p-1` (brutal)
+  // ds-allow: Web raft-ui/composer.recipe.ts iconButton `p-[7px]`
   EdgeInsets get padding => EdgeInsets.all(7);
   @override
   Gradient? get overlayGradient => null;
@@ -366,7 +300,7 @@ class _RaftComposerActionState extends State<RaftComposerAction> {
     final t = RaftTokens.of(context);
     final recipe = RaftComposerRecipe(t, desktop: false);
     final size = widget.submit ? recipe.submitFace : recipe.actionFace;
-    // Web uses 32px; legacy buttons keep their 26/28px face. Android's
+    // Web uses 32px. Android's
     // 48dp guideline is met by routing nearby touches to them instead
     // (RaftTapSlopHost in the composer). Desktop keeps the exact box.
     final touch = RaftDensityScope.of(context) == RaftDensity.touch;

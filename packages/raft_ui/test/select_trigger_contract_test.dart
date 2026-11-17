@@ -6,9 +6,7 @@ import 'package:raft_ui/test_themes.dart';
 void main() {
   for (final (id, height, size, weight) in raftThemeMatrix([
     (raftThemePackId, 44.0, 15.0, FontWeight.w600),
-    (elegantThemePackId, 32.0, 14.0, FontWeight.w500),
-    (brutalThemePackId, 32.0, 14.0, FontWeight.w700),
-  ], look: (v) => raftLookOf(v.$1))) {
+  ])) {
     testWidgets(
       '$id select uses its source trigger metrics and honors caller height',
       (t) async {

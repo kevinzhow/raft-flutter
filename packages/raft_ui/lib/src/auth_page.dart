@@ -2,13 +2,7 @@
 // AuthBrandShell.tsx, components/auth/*). Presentation only: the app owns
 // state, validation and requests and passes fields/callbacks in.
 import 'raft/checkbox.dart' show RaftCheckbox;
-import 'form_controls.dart'
-    show
-        RaftField,
-        RaftLegacyField,
-        RaftInputGroup,
-        RaftInputGroupAddon,
-        RaftLegacyGroup;
+import 'form_controls.dart' show RaftField, RaftInputGroup, RaftInputGroupAddon;
 import 'recipes/input_group.g.dart' show RaftInputGroupRecipeVariant;
 
 import 'dart:math' as math;
@@ -360,7 +354,8 @@ class RaftAuthField extends StatelessWidget {
   /// FormField `labelAction` (Web v1.21.12): a secondary action pushed to the far end of the label row.
   final Widget? labelAction;
 
-  /// The help text after the control; [helperHint] / [helperRecipe] pick its frozen-look ink and type.
+  /// The help text after the control. [helperHint], [helperRecipe] and
+  /// [surface] no longer change how it is drawn.
   final String? helper;
   final bool helperHint;
   final bool helperRecipe;
@@ -377,10 +372,6 @@ class RaftAuthField extends StatelessWidget {
     hint: helper,
     error: error,
     labelAction: labelAction,
-    helperHint: helperHint,
-    helperRecipe: helperRecipe,
-    surface: surface,
-    legacy: RaftLegacyField.auth,
     child: child,
   );
 }
@@ -631,8 +622,7 @@ class _RaftAuthLegalCheckboxState extends State<RaftAuthLegalCheckbox> {
     final t = RaftTokens.of(context);
     // Web v1.24: `<label className="flex items-start gap-2 text-callout
     // font-semibold text-foreground">`, the links MarkdownLink + ↗; the whole
-    // label toggles the box. The frozen looks keep the v1.21 checkbox
-    // (`gap-2.5 text-sm text-foreground-muted`, `mt-0.5`, bold strong links).
+    // label toggles the box.
     final web124 = t.textLinksUnderlined;
     final callout = t.typeSlot('callout');
     final base = web124
@@ -692,7 +682,6 @@ class _RaftAuthLegalCheckboxState extends State<RaftAuthLegalCheckbox> {
           child: RaftCheckbox(
             key: const Key('register-legal'),
             value: widget.checked,
-            legacyMaterial: true,
             onChanged: widget.onChanged,
           ),
         ),
@@ -707,8 +696,7 @@ class _RaftAuthLegalCheckboxState extends State<RaftAuthLegalCheckbox> {
 /// (`underline decoration-2 underline-offset-2 text-foreground-link
 /// decoration-foreground-link/40`) with TextLinkExternalIcon after it (the ↗,
 /// `ml-0.5`, 0.857em, in its own box so the underline stops at the text; its
-/// label "(opens in a new tab)" is read with the link). The frozen looks keep
-/// the v1.21 link in [legacy] (or the link ink).
+/// label "(opens in a new tab)" is read with the link).
 InlineSpan _legalLink(
   BuildContext context,
   String text,
@@ -1312,8 +1300,7 @@ class RaftAuthPage extends StatelessWidget {
     // buttons and the way out (expired / conflict, or a provider-only account).
     final form = link == null || (!link.terminal && link.passwordSignIn);
     // Web v1.24 forms: `stack-y-4 md:pointer-fine:stack-y-3`, 12px between
-    // the rows with a mouse on a window at least 768 wide. The frozen looks
-    // keep 16.
+    // the rows with a mouse on a window at least 768 wide.
     final gap =
         RaftTokens.of(context).textLinksUnderlined &&
             RaftInteraction.of(context).pointer &&
@@ -1541,7 +1528,7 @@ class RaftAuthPage extends StatelessWidget {
             // sign in</TextLink></TextSans>`
             const SizedBox(height: 16),
             // Web v1.24 Forgot/ResetPasswordPage: the default (muted)
-            // raft-ui TextLink; the frozen looks keep the v1.21 primary one.
+            // raft-ui TextLink.
             RaftAuthTextLink(
               key: const Key('auth-back-to-sign-in'),
               label: tr('Back to sign in'),
@@ -1800,8 +1787,7 @@ class RaftAuthVerifyPage extends StatelessWidget {
 
 /// ServerSelector first-server heading: `font-mono text-[10px] font-bold`
 /// eyebrow, `mt-2 text-2xl font-bold
-/// leading-tight` title, `mt-2 text-sm leading-5` description (brutal uses the
-/// `black/50` and `black/65` text colours).
+/// leading-tight` title, `mt-2 text-sm leading-5` description.
 class RaftOnboardingHeading extends StatelessWidget {
   const RaftOnboardingHeading({
     super.key,
@@ -1892,7 +1878,7 @@ class RaftOnboardingHeading extends StatelessWidget {
 
 /// OnboardingCreateShell: below the `lg` breakpoint (1024) the narrow layout (brand bar, form panel
 /// `px-6 py-10` in [RaftAuthShell]); from `lg` up a `[minmax(320px,2fr) 3fr]` grid with the form panel
-/// (brand mark top-left, `border-r-2` in Brutal, content `max-w-md` centred) beside the dot pane holding
+/// (brand mark top-left, content `max-w-md` centred) beside the dot pane holding
 /// [preview]. Without a [preview] it is always the narrow layout.
 class RaftOnboardingShell extends StatelessWidget {
   const RaftOnboardingShell({
@@ -2060,8 +2046,7 @@ class RaftAuthNote extends StatelessWidget {
   }
 }
 
-/// AccountIdentitySetupPage's username: an [RaftInputGroup] with the fixed `@` as a container addon; the frozen
-/// looks keep the [RaftAuthHandleGroup] frame.
+/// AccountIdentitySetupPage's username: an [RaftInputGroup] with the fixed `@` as a container addon.
 class RaftAuthHandleInput extends StatelessWidget {
   const RaftAuthHandleInput({
     super.key,
@@ -2086,7 +2071,6 @@ class RaftAuthHandleInput extends StatelessWidget {
     focusNode: focusNode,
     hintText: hintText,
     onChanged: onChanged,
-    legacy: RaftLegacyGroup.handle,
   );
 }
 

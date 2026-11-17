@@ -495,7 +495,6 @@ abstract class ManagementState<T extends StatefulWidget> extends State<T>
     if (!mounted) return;
     await scopedDialog<void>(
       (context) => RaftAlertDialog(
-        legacy: RaftLegacyAlert.material,
         title: Text(raftText(context, label)),
         content: SizedBox(
           width: 480,

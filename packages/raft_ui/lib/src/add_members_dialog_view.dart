@@ -231,8 +231,7 @@ class RaftAddMembersDialogView extends StatelessWidget {
 }
 
 /// ChannelMemberListShell (`max-h-72 overflow-y-auto border bg-layer-panel
-/// shadow-raft-sm`, brutal `border-2 border-black bg-white shadow-brutal-sm`)
-/// with ChannelMemberSectionHeader sections.
+/// shadow-raft-sm`) with ChannelMemberSectionHeader sections.
 class _MemberListShell extends StatelessWidget {
   const _MemberListShell({
     super.key,
@@ -368,8 +367,7 @@ class _RowState extends State<_Row> {
 }
 
 /// `size-6 rounded-sm border border-line-muted bg-danger-soft text-danger-strong
-/// hover:bg-danger/30` (brutal `rounded-none border-black bg-brutal-red/20`) with an
-/// `X size=12`.
+/// hover:bg-danger/30` with an `X size=12`.
 class _RemoveButton extends StatefulWidget {
   const _RemoveButton({
     super.key,

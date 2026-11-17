@@ -33,7 +33,6 @@ Future<void> main() async {
       defaultValue: '/s/lab/channel/vp',
     ),
     mode: const String.fromEnvironment('VP_MODE', defaultValue: 'light'),
-    theme: const String.fromEnvironment('VP_THEME', defaultValue: 'brutal'),
   );
   runApp(fixture.app);
 }

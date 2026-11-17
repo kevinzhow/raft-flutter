@@ -704,11 +704,10 @@ class SlowTierTests(unittest.TestCase):
     def reach_a(self, changed):
         return {'apps/raft_flutter/test/slow_a_test.dart', 'apps/raft_flutter/test/plain_test.dart'} if 'apps/raft_flutter/lib/a.dart' in changed else set()
 
-    def test_tier_is_gate_unless_full_or_all_themes(self):
+    def test_tier_is_gate_unless_full(self):
         self.assertEqual(check.tier_mode({}), 'gate')
         self.assertEqual(check.tier_mode({'RAFT_TEST_TIER': 'gate'}), 'gate')
         self.assertEqual(check.tier_mode({'RAFT_TEST_TIER': ' FULL '}), 'full')
-        self.assertEqual(check.tier_mode({'RAFT_TEST_ALL_THEMES': '1'}), 'full')
         with self.assertRaises(SystemExit):
             check.tier_mode({'RAFT_TEST_TIER': 'nightly'})
 
@@ -792,10 +791,9 @@ class SlowTierTests(unittest.TestCase):
         self.assertNotIn('Test tier', check.format_summary([], [], {'passed': 1, 'skipped': 0}, [], slow={'tier': 'gate', 'run': [], 'skipped': [], 'why': 'no slow files'}))
 
     def test_a_full_tier_pass_covers_a_gate_request_but_not_the_reverse(self):
-        self.assertTrue(check.pass_covers({'themes': 'raft', 'tier': 'full'}, 'raft', 'gate'))
-        self.assertFalse(check.pass_covers({'themes': 'raft', 'tier': 'gate'}, 'raft', 'full'))
-        self.assertTrue(check.pass_covers({'themes': 'raft'}, 'raft', 'full'))  # records from before tiers ran every file
-        self.assertFalse(check.pass_covers({'themes': 'raft', 'tier': 'full'}, 'all', 'full'))
+        self.assertTrue(check.pass_covers({'tier': 'full'}, 'gate'))
+        self.assertFalse(check.pass_covers({'tier': 'gate'}, 'full'))
+        self.assertTrue(check.pass_covers({}, 'full'))  # records from before tiers ran every file
 
 
 class ReuseTests(unittest.TestCase):
@@ -829,56 +827,56 @@ class ReuseTests(unittest.TestCase):
     def test_a_recorded_pass_is_found_for_the_same_tree(self):
         tree = self.tree()
         result = {'passed': True, 'sourceChanged': False, 'checks': {'x': True}, 'flaky': [{'file': 'a', 'tests': [], 'attempts': 1}]}
-        path = check.record_pass(tree, 'abc123', result, 'raft', {'themes': 'raft'}, env=self.env, now=time.gmtime(0))
+        path = check.record_pass(tree, 'abc123', result, {'completed': True}, env=self.env, now=time.gmtime(0))
         self.assertEqual(path, self.cache / 'passed' / f'{tree}.json')
         record = json.loads(path.read_text())
         self.assertEqual((record['tree'], record['commit'], record['time'], record['result']), (tree, 'abc123', '1970-01-01T00:00:00Z', result))
-        found = check.reusable_pass('raft', self.repo, self.env)
+        found = check.reusable_pass(self.repo, self.env)
         self.assertEqual(found['result'], result)  # the flakes stay listed
         self.assertIn(f'tree {tree} already passed at 1970-01-01T00:00:00Z on abc123; reusing', check.reuse_message(found))
 
     def test_a_different_tree_misses(self):
-        check.record_pass(self.tree(), 'abc', {'passed': True}, 'raft', env=self.env)
+        check.record_pass(self.tree(), 'abc', {'passed': True}, env=self.env)
         (self.repo / 'a.txt').write_text('two\n')
         git(self.repo, 'commit', '-q', '-am', 'two')
-        self.assertIsNone(check.reusable_pass('raft', self.repo, self.env))
+        self.assertIsNone(check.reusable_pass(self.repo, self.env))
 
     def test_the_same_tree_under_another_commit_still_hits(self):
-        check.record_pass(self.tree(), 'abc', {'passed': True}, 'raft', env=self.env)
+        check.record_pass(self.tree(), 'abc', {'passed': True}, env=self.env)
         git(self.repo, 'commit', '-q', '--allow-empty', '-m', 'same tree again')
-        self.assertIsNotNone(check.reusable_pass('raft', self.repo, self.env))
+        self.assertIsNotNone(check.reusable_pass(self.repo, self.env))
 
     def test_a_dirty_worktree_never_reuses(self):
-        check.record_pass(self.tree(), 'abc', {'passed': True}, 'raft', env=self.env)
+        check.record_pass(self.tree(), 'abc', {'passed': True}, env=self.env)
         (self.repo / 'a.txt').write_text('dirty\n')
-        self.assertIsNone(check.reusable_pass('raft', self.repo, self.env))
+        self.assertIsNone(check.reusable_pass(self.repo, self.env))
 
     def test_no_record_and_unreadable_records_miss(self):
-        self.assertIsNone(check.reusable_pass('raft', self.repo, self.env))
+        self.assertIsNone(check.reusable_pass(self.repo, self.env))
         path = check.passed_record_path(self.tree(), self.env)
         path.parent.mkdir(parents=True)
         path.write_text('not json')
-        self.assertIsNone(check.reusable_pass('raft', self.repo, self.env))
+        self.assertIsNone(check.reusable_pass(self.repo, self.env))
         path.write_text(json.dumps({'tree': self.tree(), 'result': {'passed': False}}))
-        self.assertIsNone(check.reusable_pass('raft', self.repo, self.env))
+        self.assertIsNone(check.reusable_pass(self.repo, self.env))
 
-    def test_a_sampled_pass_does_not_cover_all_themes_but_the_reverse_does(self):
-        check.record_pass(self.tree(), 'abc', {'passed': True}, 'raft', env=self.env)
-        self.assertIsNone(check.reusable_pass('all', self.repo, self.env))
-        check.record_pass(self.tree(), 'abc', {'passed': True}, 'all', env=self.env)
-        self.assertIsNotNone(check.reusable_pass('raft', self.repo, self.env))
-        self.assertIsNone(check.record_pass(self.tree(), 'abc', {'passed': True}, 'raft', env=self.env))  # keeps the all-themes record
-        self.assertIsNotNone(check.reusable_pass('all', self.repo, self.env))
+    def test_a_gate_pass_does_not_cover_a_full_request_but_the_reverse_does(self):
+        check.record_pass(self.tree(), 'abc', {'passed': True}, env=self.env, tier='gate')
+        self.assertIsNone(check.reusable_pass(self.repo, self.env, tier='full'))
+        check.record_pass(self.tree(), 'abc', {'passed': True}, env=self.env, tier='full')
+        self.assertIsNotNone(check.reusable_pass(self.repo, self.env, tier='gate'))
+        self.assertIsNone(check.record_pass(self.tree(), 'abc', {'passed': True}, env=self.env, tier='gate'))  # keeps the full record
+        self.assertIsNotNone(check.reusable_pass(self.repo, self.env, tier='full'))
 
     def test_an_unwritable_cache_does_not_raise(self):
         blocker = Path(self.tmp.name) / 'file'
         blocker.write_text('x')
         with contextlib.redirect_stderr(io.StringIO()):
-            self.assertIsNone(check.record_pass(self.tree(), 'abc', {'passed': True}, 'raft', env={'RAFT_CHECK_CACHE': str(blocker)}))
+            self.assertIsNone(check.record_pass(self.tree(), 'abc', {'passed': True}, env={'RAFT_CHECK_CACHE': str(blocker)}))
 
     def run_main(self, argv, gate_outcome=None):
         gate = unittest.mock.Mock(return_value=gate_outcome or {'ok': True, 'failures': [], 'stop': None, 'changed': False, 'failed_checks': [],
-                                                                  'flaky': [], 'result': {'passed': True, 'checks': {}}, 'run_record': {'themes': 'raft'}})
+                                                                  'flaky': [], 'result': {'passed': True, 'checks': {}}, 'run_record': {'completed': True}})
 
         class Silent:
             def __init__(self, *a):
@@ -896,7 +894,7 @@ class ReuseTests(unittest.TestCase):
                    unittest.mock.patch.object(check, 'run_tmp_root', lambda: Path(self.tmp.name) / 'tmp'),
                    unittest.mock.patch.object(sys, 'argv', ['check-project', *argv]),
                    # This fake CLI invocation tests the default gate. A caller's
-                   # nightly tier or all-look flags must not change its cache key.
+                   # nightly tier must not change its cache key.
                    unittest.mock.patch.dict(os.environ, self.env, clear=True)]
         for patcher in patches:
             patcher.start()
@@ -913,7 +911,7 @@ class ReuseTests(unittest.TestCase):
     def test_reuse_hit_prints_the_line_and_the_stored_json_and_runs_nothing(self):
         tree = self.tree()
         stored = {'passed': True, 'sourceChanged': False, 'checks': {'x': True}}
-        check.record_pass(tree, 'abc', stored, 'raft', {'themes': 'raft', 'completed': True}, env=self.env, now=time.gmtime(0))
+        check.record_pass(tree, 'abc', stored, {'completed': True}, env=self.env, now=time.gmtime(0))
         code, out, gate = self.run_main(['--reuse'])
         self.assertEqual(code, 0)
         gate.assert_not_called()
@@ -930,14 +928,14 @@ class ReuseTests(unittest.TestCase):
         self.assertEqual(check.read_pass_record(tree, self.env)['commit'], git(self.repo, 'rev-parse', 'HEAD'))
 
     def test_reuse_with_a_dirty_worktree_runs_and_records_nothing(self):
-        check.record_pass(self.tree(), 'abc', {'passed': True}, 'raft', env=self.env)
+        check.record_pass(self.tree(), 'abc', {'passed': True}, env=self.env)
         (self.repo / 'a.txt').write_text('dirty\n')
         code, out, gate = self.run_main(['--reuse'])
         gate.assert_called_once()
         self.assertNotIn('reused', out)
 
     def test_a_run_without_the_flag_never_reuses_but_records_a_clean_pass(self):
-        check.record_pass(self.tree(), 'abc', {'passed': True}, 'raft', env=self.env)
+        check.record_pass(self.tree(), 'abc', {'passed': True}, env=self.env)
         code, out, gate = self.run_main([])
         gate.assert_called_once()
 
@@ -950,65 +948,11 @@ class ReuseTests(unittest.TestCase):
     def test_unknown_arguments_and_help(self):
         with self.assertRaises(SystemExit):
             check.parse_args(['--nope'])
-        self.assertEqual(check.parse_args(['--reuse', '--all-themes']), (True, True, False))
-        self.assertEqual(check.parse_args([]), (False, False, False))
-        self.assertEqual(check.parse_args(['--plan']), (False, False, True))
-
-
-class LookTierTests(unittest.TestCase):
-    """The checks test the Raft look only (tool/theme_looks.py); a file tagged for a legacy look is not run."""
-
-    def tree(self, files):
-        tmp = tempfile.TemporaryDirectory()
-        self.addCleanup(tmp.cleanup)
-        base = Path(tmp.name)
-        for name, text in files.items():
-            (base / name).parent.mkdir(parents=True, exist_ok=True)
-            (base / name).write_text(text)
-        return base
-
-    FILES = {
-        'plain_test.dart': "import 'a.dart';\n",
-        'elegant_test.dart': "@Tags(['look-elegant'])\nlibrary;\n",
-        'both_test.dart': "@Tags(['look-brutal', 'look-elegant'])\nlibrary;\n",
-        'slow_elegant_test.dart': "@Tags(['slow', 'look-elegant'])\nlibrary;\n",
-        'mixed_test.dart': "import 'package:raft_ui/test_themes.dart';\nvoid main() { raftThemeMatrix([], look: raftLookOf); }\n",
-    }
-
-    def test_the_gate_skips_files_tied_to_a_legacy_look(self):
-        base = self.tree(self.FILES)
-        kept, plan = check.apply_look_filter(sorted(self.FILES), base, {})
-        self.assertEqual(kept, ['mixed_test.dart', 'plain_test.dart'])
-        self.assertEqual(plan['looks'], ['raft'])
-        self.assertEqual(plan['skipped'], ['both_test.dart', 'elegant_test.dart', 'slow_elegant_test.dart'])
-        self.assertEqual(plan['byLook']['brutal'], ['both_test.dart'])
-        self.assertEqual(plan['lookAware'], ['mixed_test.dart'])
-
-    def test_all_themes_runs_every_file(self):
-        base = self.tree(self.FILES)
-        kept, plan = check.apply_look_filter(sorted(self.FILES), base, {'RAFT_TEST_ALL_THEMES': '1'})
-        self.assertEqual(kept, sorted(self.FILES))
-        self.assertEqual(plan['skipped'], [])
-
-    def test_the_summary_names_the_suite_that_runs_the_skipped_files(self):
-        base = self.tree(self.FILES)
-        _, plan = check.apply_look_filter(sorted(self.FILES), base, {})
-        text = '\n'.join(check.look_summary(plan))
-        self.assertIn('tool/theme-suite --look all', text)
-        self.assertIn('legacy look, skipped: elegant_test.dart', text)
-
-    def test_themes_mode_is_raft_unless_all_themes(self):
-        self.assertEqual(check.themes_mode({}), 'raft')
-        self.assertEqual(check.themes_mode({'RAFT_TEST_ALL_THEMES': '1'}), 'all')
-
-    def test_the_plan_counts_files(self):
-        base = self.tree(self.FILES)
-        with unittest.mock.patch.object(check, 'discover_tests', return_value=sorted(self.FILES)), \
-                unittest.mock.patch.object(check, 'app_dir', base), unittest.mock.patch.object(check.theme_looks, 'guard', return_value=[]):
-            lines, numbers = check.plan_report({}, changed=[], reach=lambda changed: set())
-        self.assertEqual((numbers['discovered'], numbers['legacyLookSkipped'], numbers['lookAware']), (5, 3, 1))
-        self.assertEqual(numbers['toRun'], 2)
-        self.assertIn('check-project plan: themes raft, looks raft', lines[0])
+        with self.assertRaises(SystemExit):
+            check.parse_args(['--all-themes'])
+        self.assertEqual(check.parse_args(['--reuse']), (True, False))
+        self.assertEqual(check.parse_args([]), (False, False))
+        self.assertEqual(check.parse_args(['--plan']), (False, True))
 
 
 class FlakyEvidenceTests(unittest.TestCase):

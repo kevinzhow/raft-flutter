@@ -105,7 +105,6 @@ export 'src/recipes/button_variants.g.dart'
     show RaftButtonRecipeVariant, RaftButtonRecipeSize;
 
 export 'src/icons.dart';
-export 'src/recipes/toast_styles.g.dart' show RaftToastRecipeTone;
 export 'src/recipes/choice_list.g.dart' show RaftChoiceListRecipe;
 export 'src/brand.dart';
 export 'src/auth_account_link.dart';
@@ -179,7 +178,7 @@ export 'src/agent_dialogs.dart';
 export 'src/invite_human_dialog.dart';
 export 'src/role_permission_help_dialog.dart';
 export 'src/agent_unavailable_panel.dart';
-export 'src/settings_controls.dart' hide buildFrozenDialogShell;
+export 'src/settings_controls.dart';
 export 'src/settings_language.dart';
 export 'src/settings_administration.dart';
 export 'src/appearance_picker.dart';
@@ -267,7 +266,7 @@ export 'src/agent_create_form.dart' hide buildAgentDialog;
 export 'src/agent_combobox.dart';
 export 'src/agent_profile.dart';
 export 'src/agent_connection_insets.dart';
-export 'src/dialog_card.dart' hide buildFrozenDialogCard;
+export 'src/dialog_card.dart';
 export 'src/dismiss_scope.dart';
 export 'src/link_scope.dart';
 export 'src/copyable_code.dart';
@@ -363,8 +362,6 @@ export 'package:raft_theme/raft_theme.dart'
         builtInTheme,
         packForThemeId,
         raftThemePackId,
-        elegantThemePackId,
-        brutalThemePackId,
         RaftThemePack,
         RaftThemeException;
 

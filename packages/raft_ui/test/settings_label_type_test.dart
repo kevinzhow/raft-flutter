@@ -6,8 +6,7 @@ import 'package:raft_ui/raft_ui.dart';
 ///
 /// Web v1.21.23: SectionHeader composes SectionEyebrow (`text-footnote
 /// font-bold`, 13/18); the settings FormField is `size="compact"`: raft-ui label
-/// step `sm`, 12/16 600 (`foreground-field-label`). The a57b9dab looks keep the
-/// callsite 12/16 for both, with the recipe's weight and colour on the label.
+/// step `sm`, 12/16 600 (`foreground-field-label`).
 Widget _host(RaftThemePack pack) => MaterialApp(
   theme: raftTheme(pack: pack),
   home: const Scaffold(
@@ -31,8 +30,6 @@ TextStyle _style(WidgetTester t, String text) {
 void main() {
   for (final (id, size, line, weight) in [
     (raftThemePackId, 13.0, 18.0, FontWeight.w600),
-    (elegantThemePackId, 12.0, 16.0, null),
-    (brutalThemePackId, 12.0, 16.0, null),
   ]) {
     testWidgets('$id eyebrow $size/$line and field label', (t) async {
       addTearDown(() => t.pumpWidget(const SizedBox()));
@@ -44,7 +41,7 @@ void main() {
       final label = _style(t, 'Display name');
       expect(label.fontSize, 12);
       expect(label.height! * label.fontSize!, closeTo(16, .001));
-      if (weight != null) expect(label.fontWeight, weight);
+      expect(label.fontWeight, weight);
     });
   }
 }

@@ -68,7 +68,7 @@ void main() {
         t.view.physicalSize = const Size(320, 568);
         await t.pumpAndSettle();
         expect(t.takeException(), isNull);
-        // Web's taller (62px) brutal drawer header leaves less viewport; the
+        // Web's taller (62px) drawer header leaves less viewport; the
         // lazily built switch is scrolled in before it is toggled.
         final toggle = find.byType(RaftSwitch);
         await t.scrollUntilVisible(

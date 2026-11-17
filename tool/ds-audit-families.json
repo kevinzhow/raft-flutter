@@ -35,7 +35,7 @@
         "RaftContextMenuContent",
         "RaftSelectionPopover"
       ],
-      "note": "RaftMenuItemSurface paints the shared item surface and RaftMenuSlotRow lays out generated slots. PopupBackend owns common list/focus behavior; Dropdown/Panel/Item, ContextMenu and SelectionPopover retain their distinct source roles. Public typed values and callbacks remain with their adapters; Frozen rendering is preserved. Historical planning note (acceptance remains unverified): Source ownership proposed from exact 189+9 preparation inputs; final full/capture/visual acceptance remains pending.",
+      "note": "RaftMenuItemSurface paints the shared item surface and RaftMenuSlotRow lays out generated slots. PopupBackend owns common list/focus behavior; Dropdown/Panel/Item, ContextMenu and SelectionPopover retain their distinct source roles. Public typed values and callbacks remain with their adapters; Historical planning note (acceptance remains unverified): Source ownership proposed from exact 189+9 preparation inputs; final full/capture/visual acceptance remains pending.",
       "deprecated": {},
       "canonicalBindings": {
         "RaftMenuItemSurface": {
@@ -160,7 +160,7 @@
         "RaftFormDialog",
         "RaftDialogFrame"
       ],
-      "note": "RaftDialog owns standard, alert and DialogCard compositions; RaftFormDialog supplies form state on that implementation. RaftDialogFrame places presented content without painting it. RaftDialogSurface and RaftDialogBackdrop are shared paint parts. Old public Card/Shell/Modal names are compatibility adapters; frozen looks retain their original rendering. buildFrozenChoiceDialog is preserved legacy drawing, recorded as frozen_legacy in designSystemCoverage; it is not a current canonical paint part.",
+      "note": "RaftDialog owns standard, alert and DialogCard compositions; RaftFormDialog supplies form state on that implementation. RaftDialogFrame places presented content without painting it. RaftDialogSurface and RaftDialogBackdrop are shared paint parts. Old public Card/Shell/Modal names are compatibility adapters.",
       "deprecated": {
         "RaftDialogCard": "packages/raft_ui/lib/src/dialog_card.dart",
         "showRaftModal": "packages/raft_ui/lib/src/dialog_card.dart",
@@ -210,21 +210,8 @@
           "sourceBindings": [
             {
               "file": "packages/raft_ui/lib/src/choice_dialog.dart",
-              "bytes": 9615,
-              "sha256": "4d97844b83b0849ca66a30b6ac7d5602ca139140c0e304939ed3ac3a3df8d22e"
-            }
-          ],
-          "reason": "Data/options/slot metadata or callback signature; does not extend Widget/State/RenderObject. This record grants no style exemption, mount or visual acceptance."
-        },
-        "RaftFrozenChoiceDialogOption": {
-          "kind": "value_object",
-          "sourceFile": "packages/raft_ui/lib/src/overlays/dialog.dart",
-          "declarationName": "RaftFrozenChoiceDialogOption",
-          "sourceBindings": [
-            {
-              "file": "packages/raft_ui/lib/src/overlays/dialog.dart",
-              "bytes": 41344,
-              "sha256": "408211894d03c2e3a6ccf4e278b1c89b818978d86065666a00aeb476fd715bf3"
+              "bytes": 9540,
+              "sha256": "1da2c834cc8d95a4bde3e475107db687ac2b29f08a18a731b171c44d7ea48fc9"
             }
           ],
           "reason": "Data/options/slot metadata or callback signature; does not extend Widget/State/RenderObject. This record grants no style exemption, mount or visual acceptance."
@@ -237,7 +224,7 @@
         "RaftSegmentedItem",
         "RaftSegmentedTrack"
       ],
-      "note": "One RaftSegmentedControl (raft/segmented_control.dart, Web SegmentedControl). RaftSegmentedTrack and RaftSegmentedItem are its parts (the fill-muted track and the 32px sticker item), not rivals. RaftRecipeSegmentedControl was merged into it (P4); its frozen Elegant and Brutal paint is a private class in raft/segmented_control_frozen.dart (legacyStyle: recipe). The old style argument is now legacyStyle and steers only the frozen looks.",
+      "note": "One RaftSegmentedControl (raft/segmented_control.dart, Web SegmentedControl). RaftSegmentedTrack and RaftSegmentedItem are its parts (the fill-muted track and the 32px sticker item), not rivals. RaftRecipeSegmentedControl was merged into it (P4).",
       "deprecated": {},
       "canonicalBindings": {
         "RaftSegmentedControl": {
@@ -366,7 +353,7 @@
         "RaftCheckboxIndicator",
         "RaftCheckboxRow"
       ],
-      "note": "RaftCheckbox is the one control (raft/checkbox.dart, Web Checkbox) and RaftCheckboxIndicator its graphic (Web CheckboxIndicator) for rows that own the tap. RaftCheckMarker, RaftCheckboxControl and the argument-swallowing RaftCheckbox wrapper were merged into them (P4). The Material Checkbox and CheckboxListTile paint of the frozen looks lives in raft/checkbox_frozen.dart.",
+      "note": "RaftCheckbox is the one control (raft/checkbox.dart, Web Checkbox) and RaftCheckboxIndicator its graphic (Web CheckboxIndicator) for rows that own the tap. RaftCheckMarker, RaftCheckboxControl and the argument-swallowing RaftCheckbox wrapper were merged into them (P4).",
       "deprecated": {},
       "canonicalBindings": {
         "RaftCheckbox": {
@@ -398,8 +385,8 @@
           "sourceBindings": [
             {
               "file": "packages/raft_ui/lib/src/combobox_panel.dart",
-              "bytes": 22165,
-              "sha256": "3a85160c7e208589af2fe8ab59fbe481dfd66aad6db70212841967333a3083d9"
+              "bytes": 21692,
+              "sha256": "fa189a4b639674027e1af854b61d3cbb42047460a9633e789a955a6e9269ad0e"
             }
           ],
           "reason": "Public option/item data model; it does not extend Widget/State/RenderObject and is not a canonical rendering component. This source record grants no style exemption or visual acceptance."
@@ -420,7 +407,7 @@
       "canonical": [
         "RaftPickerTriggerButton"
       ],
-      "note": "RaftPickerTriggerButton (picker_trigger_button.dart, Web PickerTriggerButton). RaftPickerTriggerRecipe (design_primitives.dart) is the pre-0.7.0 recipe of RaftDropdownMenu's picker trigger style and of the frozen looks; RaftDropdownMenu is P2's, so it is not registered as a duplicate here.",
+      "note": "RaftPickerTriggerButton (picker_trigger_button.dart, Web PickerTriggerButton). RaftPickerTriggerRecipe (design_primitives.dart) is the pre-0.7.0 recipe of RaftDropdownMenu's picker trigger style; RaftDropdownMenu is P2's, so it is not registered as a duplicate here.",
       "deprecated": {},
       "canonicalBindings": {
         "RaftPickerTriggerButton": {
@@ -457,7 +444,7 @@
         "RaftSelectField",
         "RaftLabeledSelect"
       ],
-      "note": "RaftSelectField retains typed values and overlay ownership; its Raft popup consumes the shared RaftMenuPopupBackend with generated Select slots. Frozen Elegant/Brutal retain their original popup.",
+      "note": "RaftSelectField retains typed values and overlay ownership; its Raft popup consumes the shared RaftMenuPopupBackend with generated Select slots.",
       "deprecated": {},
       "nonWidgetModels": {
         "RaftSelectItem": {
@@ -467,8 +454,8 @@
           "sourceBindings": [
             {
               "file": "packages/raft_ui/lib/src/select_field.dart",
-              "bytes": 25701,
-              "sha256": "2fbcf1c33bd83fd0f04cd147252fb8350217a8d8343682c0bb9b5c87e141139d"
+              "bytes": 18597,
+              "sha256": "fede7d474b3f6e6d2ec4e7b6a34e7b8b02e8022aacee3897375e2bbed134e2a8"
             }
           ],
           "reason": "Public option/item data model; it does not extend Widget/State/RenderObject and is not a canonical rendering component. This source record grants no style exemption or visual acceptance."
@@ -517,7 +504,7 @@
         "RaftTabsList",
         "RaftTabButton"
       ],
-      "note": "RaftTabs / RaftTabsList / RaftTabButton (raft/tabs.dart, Web Tabs). RaftPanelTabBar and RaftConversationTabs are product strips (scrolling, reorder, Web SortableTabsList) built on RaftTabButton; RaftSegmentedStyle.tabs (frozen looks only) uses it too.",
+      "note": "RaftTabs / RaftTabsList / RaftTabButton (raft/tabs.dart, Web Tabs). RaftPanelTabBar and RaftConversationTabs are product strips (scrolling, reorder, Web SortableTabsList) built on RaftTabButton.",
       "deprecated": {},
       "canonicalBindings": {
         "RaftTabs": {
@@ -548,8 +535,8 @@
           "sourceBindings": [
             {
               "file": "packages/raft_ui/lib/src/toggle_group.dart",
-              "bytes": 5197,
-              "sha256": "83164e859dc875df6f326f4d43f8c02aae7e34085475daa8ca111dfc0f846e6a"
+              "bytes": 5137,
+              "sha256": "fedc61f60267d009a27189e9a5a9447393306087cd3f3d4eb7137e9e2a26f12e"
             }
           ],
           "reason": "Public option/item data model; it does not extend Widget/State/RenderObject and is not a canonical rendering component. This source record grants no style exemption or visual acceptance."
@@ -2739,45 +2726,6 @@
       "reason": "Published raft-ui0.95.3 source recipe; downstream canonical API and visual acceptance remain pending. This registration is source ownership only.",
       "generatedFile": "packages/raft_theme/lib/recipes/web_top_bar.g.dart",
       "axes": {}
-    }
-  },
-  "retiredRecipes": {
-    "scrollArea": {
-      "family": null,
-      "decision": "unresolved",
-      "owner": "WP-DS5 scroll area",
-      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation. Retired from current raft-ui0.95.3; frozen0.5.52 source remains here. Current consumer migration is not established by this record.",
-      "generatedFile": "packages/raft_theme/lib/recipes/legacy/scroll_area.g.dart",
-      "axes": {}
-    },
-    "messageTextSelectionToolbar": {
-      "family": null,
-      "decision": "unresolved",
-      "owner": "WP-DS2/DS3 text selection toolbar",
-      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation. Retired from current raft-ui0.95.3; frozen0.5.52 source remains here. Current consumer migration is not established by this record.",
-      "generatedFile": "packages/raft_theme/lib/recipes/legacy/message_text_selection_toolbar.g.dart",
-      "axes": {}
-    },
-    "liveAgentActivityBar": {
-      "family": null,
-      "decision": "unresolved",
-      "owner": "WP-DS3 message activity",
-      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation. Retired from current raft-ui0.95.3; frozen0.5.52 source remains here. Current consumer migration is not established by this record.",
-      "generatedFile": "packages/raft_theme/lib/recipes/legacy/live_agent_activity_bar.g.dart",
-      "axes": {}
-    },
-    "legacyTaskPanel": {
-      "family": null,
-      "decision": "unresolved",
-      "owner": "WP-DS4 task shell",
-      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation. Retired from current raft-ui0.95.3; frozen0.5.52 source remains here. Current consumer migration is not established by this record.",
-      "generatedFile": "packages/raft_theme/lib/recipes/legacy/legacy_task_panel.g.dart",
-      "axes": {
-        "framed": [
-          "true",
-          "false"
-        ]
-      }
     }
   }
 }

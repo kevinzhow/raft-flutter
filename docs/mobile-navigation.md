@@ -21,7 +21,7 @@
 
 - 侧栏模式下底栏自定义不适用（与桌面一致）：设置里的 “Bottom bar” 与仅手机的 “Computers” 快捷行隐藏；Activity、Computers 是侧栏的根页面。
 - 内容区在 `_MobileKeyboardLayout` 里让出侧栏；内容与侧栏各占固定的 `LayoutId` 槽，切换位置不重建页面栈，滚动位置、草稿、当前页保留。侧栏延伸到起始边的系统 inset（刘海 / 侧导航栏）下，按钮自身避让；键盘只缩内容区。
-- 底部悬浮胶囊的避让（Elegant）、首页列表的胶囊预留在侧栏模式下取消；实时活动条改为贴内容区底部。
+- 首页列表的胶囊预留在侧栏模式下取消；实时活动条改为贴内容区底部。
 - 触摸目标 ≥ 48 dp（侧栏按钮在手机上使用满宽，不套桌面的内边距）。
 - 折叠屏：只读取 `MediaQuery.displayFeatures`。铰链 / 半开折叠若落在侧栏条带（起始边 72 dp）内则保留底栏；中间的竖直铰链不影响侧栏（始终在起始侧）。尚无桌面姿态（tabletop）或跨铰链布局。
 
@@ -70,7 +70,7 @@ FVM 仅 ARM64 Android Release 编译及安全覆盖安装通过：targetSdk 37�
 依据手机已安装的官方 Android `build.raft.app` 1.13.0 APK 静态核对：普通手机任务进入 `compose_thread`，大屏桌面模式先尝试 adaptive detail；新版频道设置进入 `compose_channel_settings`，成员进入 `compose_thread_members`。频道设置先展示信息，编辑是按需弹窗；私聊设置仍是弹窗。官方新版设置有偏好开关，Flutter 本次直接采用已确认的页面体验，不增加兼容开关。
 
 - `WorkspaceNavigation` 仍是唯一导航权威；`MobileWorkspacePages` 将现代/legacy 任务及客户端 `channelPage` 槽投影为独立 `MaterialPage`。任务 controller、底层消息窗口与列表不因呈现切换重复创建。
-- 三类页面使用 Web 手机面板页头（Brutal 62px / Elegant 56px，盒状返回按钮，触控区 48px）；仅标签根页保留 `RaftMobilePageHeader` 的 56px 几何；使用 Flutter 平台页面过渡；桌面任务 modal / docked 及桌面、DM 设置维持原行为。
+- 三类页面使用 Web 手机面板页头（盒状返回按钮，触控区 48px）；仅标签根页保留 `RaftMobilePageHeader` 的 56px 几何；使用 Flutter 平台页面过渡；桌面任务 modal / docked 及桌面、DM 设置维持原行为。
 - 设置页没有编辑输入框或 autofocus；显式编辑后留在设置页。`#all` 不可重命名、归档和权限限制仍生效。成员添加视图的系统返回先回到成员列表，不被隐藏工作区重复消费。
 - 冷任务和管理链接补入底层目的地；历史帧仍最多八页、倍率最多 2，仅供过渡、不持久化。隐藏工作区排除焦点/语义并停止 ticker。权限收缩撤销管理页与根 Navigator 上的编辑弹窗。
 

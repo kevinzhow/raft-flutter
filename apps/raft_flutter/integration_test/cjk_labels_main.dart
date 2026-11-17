@@ -5,7 +5,7 @@
 //   tool/flutter build apk --profile --target-platform android-x64 \
 //     --android-project-arg=raftApplicationIdSuffix=.linkperf \
 //     -t integration_test/cjk_labels_main.dart \
-//     --dart-define=CJK_THEME=brutal --dart-define=CJK_LANG=zh
+//     --dart-define=CJK_LANG=zh
 //
 // A loopback control server (adb forward tcp:8765 tcp:8765) navigates and
 // reports geometry; tool/cjk-labels drives it:
@@ -34,7 +34,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'perf_lab/fixtures.dart';
 import 'perf_lab/navigation_host.dart';
 
-const _theme = String.fromEnvironment('CJK_THEME', defaultValue: 'brutal');
 const _lang = String.fromEnvironment('CJK_LANG', defaultValue: 'zh-CN');
 const _port = int.fromEnvironment('CJK_PORT', defaultValue: 8765);
 
@@ -153,7 +152,6 @@ Future<void> main() async {
   SharedPreferences.setMockInitialValues({
     'raft.origin': client.origin,
     'raft.mode': 'light',
-    'raft.light': _theme,
     MobileTabbarStore.preferenceKey: tabs.encode(),
   });
   final dir = await Directory.systemTemp.createTemp('raft-cjk-labels-');

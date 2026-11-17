@@ -3,8 +3,8 @@ import 'package:raft_ui/raft_ui.dart';
 
 import 'parity/parity_harness.dart';
 
-/// `tool/parity-ext/run regress` renders one extension case list in every look:
-/// `<look>-case` forces the look and keeps the brightness the case names itself.
+/// `<look>-case` renders every case in the Raft pack and keeps the brightness
+/// the case names itself.
 void main() {
   Map<String, dynamic> named(String theme) => {
     'id': 'components.shell.desktop.sidebar.default.x',
@@ -28,17 +28,6 @@ void main() {
     }
   });
 
-  test('elegant-case and brutal-case force the pack, brightness follows', () {
-    expect(parityThemeFor(named('elegant-dark'), override: 'elegant-case'), (
-      pack: elegantThemePackId,
-      dark: true,
-    ));
-    expect(parityThemeFor(named('brutal-light'), override: 'brutal-case'), (
-      pack: brutalThemePackId,
-      dark: false,
-    ));
-  });
-
   test('an official case with no theme prop is light under <look>-case', () {
     final official = <String, dynamic>{'id': 'components.ui.button.states'};
     expect(parityThemeFor(official, override: 'raft-case'), (
@@ -49,7 +38,7 @@ void main() {
 
   test('the plain override names keep their meaning', () {
     expect(parityThemeFor(named('brutal-light'), override: 'elegant-dark'), (
-      pack: elegantThemePackId,
+      pack: raftThemePackId,
       dark: true,
     ));
     expect(

@@ -18,11 +18,9 @@ import 'icons.dart';
 import 'indicators.dart';
 import 'localization.dart';
 import 'mounted_avatar_recipe.dart';
-import 'recipe_surface.dart' show RaftRecipeBinding;
 import 'inline_badge_editor.dart' show RaftTouchTargetExpander;
 import 'tooltip.dart';
 import 'recipes/button_variants.g.dart';
-import 'recipes/recipe_router.dart' show usesLegacyRecipes;
 import 'raft/ui_tokens.dart';
 import 'settings_controls.dart' show RaftSettingsRecipeButton;
 import 'space.dart';
@@ -68,8 +66,7 @@ class RaftOverflowSheet extends StatelessWidget {
   final List<Widget> children;
 
   /// Width of the drawer for a viewport: `max-w-[min(100vw,34rem)]`.
-  static double widthFor(double viewport, {bool brutal = true}) =>
-      math.min(viewport, brutal ? 544 : 448);
+  static double widthFor(double viewport) => math.min(viewport, 544);
 
   @override
   Widget build(BuildContext context) {
@@ -223,7 +220,7 @@ class RaftOverflowBareSheet extends StatelessWidget {
 }
 
 /// Drawer popup frame shared by [RaftOverflowSheet] and [RaftOverflowBareSheet]:
-/// right-aligned `max-w-[min(100vw,34rem)]`, brutal `border-l-2`, paper fill.
+/// right-aligned `max-w-[min(100vw,34rem)]`, paper fill.
 class _OverflowDrawerFrame extends StatelessWidget {
   const _OverflowDrawerFrame({required this.page, required this.child});
   final bool page;
@@ -246,7 +243,7 @@ class _OverflowDrawerFrame extends StatelessWidget {
         height: double.infinity,
         child: Material(
           color: paper,
-          // Elegant: the drawer is a `rounded-xl` card; brutal `rounded-none`.
+          // The drawer is a `rounded-xl` card.
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(page ? 0 : 12),
           ),
@@ -884,218 +881,73 @@ class RaftUnsavedChangesPrompt extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    if (!usesLegacyRecipes(t.recipeTokens)) {
-      return RaftModalBackdrop(
-        child: Semantics(
-          role: SemanticsRole.dialog,
-          scopesRoute: true,
-          namesRoute: true,
-          explicitChildNodes: true,
-          label: raftText(context, 'Unsaved changes'),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 400),
-            child: RaftDialogSurface(
-              key: const ValueKey('channel-overflow-unsaved-prompt'),
-              child: Padding(
-                padding: const EdgeInsets.all(RaftSpace.x5),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Semantics(
-                      header: true,
-                      child: Text(
-                        raftText(context, 'Unsaved changes'),
-                        style: t.scale(t.typeSlot('headline')),
+    return RaftModalBackdrop(
+      child: Semantics(
+        role: SemanticsRole.dialog,
+        scopesRoute: true,
+        namesRoute: true,
+        explicitChildNodes: true,
+        label: raftText(context, 'Unsaved changes'),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 400),
+          child: RaftDialogSurface(
+            key: const ValueKey('channel-overflow-unsaved-prompt'),
+            child: Padding(
+              padding: const EdgeInsets.all(RaftSpace.x5),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Semantics(
+                    header: true,
+                    child: Text(
+                      raftText(context, 'Unsaved changes'),
+                      style: t.scale(t.typeSlot('headline')),
+                    ),
+                  ),
+                  const SizedBox(height: RaftSpace.x1_5),
+                  Text(
+                    raftText(context, message),
+                    style: t.scale(
+                      t.typeSlot('subhead'),
+                      color: t.ui.foregroundMuted,
+                    ),
+                  ),
+                  const SizedBox(height: RaftSpace.x5),
+                  Wrap(
+                    alignment: WrapAlignment.end,
+                    spacing: RaftSpace.x2,
+                    runSpacing: RaftSpace.x2,
+                    children: [
+                      RaftSettingsRecipeButton(
+                        key: const ValueKey('channel-overflow-unsaved-keep'),
+                        label: 'Keep editing',
+                        variant: RaftButtonRecipeVariant.ghost,
+                        size: RaftButtonRecipeSize.lg,
+                        onPressed: busy ? null : onKeepEditing,
                       ),
-                    ),
-                    const SizedBox(height: RaftSpace.x1_5),
-                    Text(
-                      raftText(context, message),
-                      style: t.scale(
-                        t.typeSlot('subhead'),
-                        color: t.ui.foregroundMuted,
+                      RaftSettingsRecipeButton(
+                        key: const ValueKey('channel-overflow-unsaved-discard'),
+                        label: 'Discard changes',
+                        variant: RaftButtonRecipeVariant.warning,
+                        size: RaftButtonRecipeSize.lg,
+                        onPressed: busy ? null : onDiscard,
                       ),
-                    ),
-                    const SizedBox(height: RaftSpace.x5),
-                    Wrap(
-                      alignment: WrapAlignment.end,
-                      spacing: RaftSpace.x2,
-                      runSpacing: RaftSpace.x2,
-                      children: [
+                      if (onSaveAndClose != null)
                         RaftSettingsRecipeButton(
-                          key: const ValueKey('channel-overflow-unsaved-keep'),
-                          label: 'Keep editing',
-                          variant: RaftButtonRecipeVariant.ghost,
+                          key: const ValueKey('channel-overflow-unsaved-save'),
+                          label: busy ? 'Saving…' : 'Save and close',
+                          variant: RaftButtonRecipeVariant.accent,
                           size: RaftButtonRecipeSize.lg,
-                          onPressed: busy ? null : onKeepEditing,
+                          onPressed: busy ? null : onSaveAndClose,
                         ),
-                        RaftSettingsRecipeButton(
-                          key: const ValueKey(
-                            'channel-overflow-unsaved-discard',
-                          ),
-                          label: 'Discard changes',
-                          variant: RaftButtonRecipeVariant.warning,
-                          size: RaftButtonRecipeSize.lg,
-                          onPressed: busy ? null : onDiscard,
-                        ),
-                        if (onSaveAndClose != null)
-                          RaftSettingsRecipeButton(
-                            key: const ValueKey(
-                              'channel-overflow-unsaved-save',
-                            ),
-                            label: busy ? 'Saving…' : 'Save and close',
-                            variant: RaftButtonRecipeVariant.accent,
-                            size: RaftButtonRecipeSize.lg,
-                            onPressed: busy ? null : onSaveAndClose,
-                          ),
-                      ],
-                    ),
-                  ],
-                ),
+                    ],
+                  ),
+                ],
               ),
             ),
           ),
         ),
-      );
-    }
-    return RaftModalBackdrop(
-      child: _PromptCard(
-        key: const ValueKey('channel-overflow-unsaved-prompt'),
-        maxWidth: 384,
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Padding(
-              padding: const EdgeInsets.only(bottom: 16),
-              child: Text(
-                raftText(context, 'Unsaved changes'),
-                style: raftCssTextStyle(
-                  family: t.bodyFont,
-                  step: RaftTextSteps.lg,
-                  weight: FontWeight.w700,
-                  color: t.strong,
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.only(bottom: 20),
-              child: Text(
-                raftText(context, message),
-                style: raftCssTextStyle(
-                  family: t.bodyFont,
-                  step: RaftTextSteps.sm,
-                  color: Colors.black.withValues(alpha: .7),
-                ),
-              ),
-            ),
-            if (MediaQuery.sizeOf(context).width <
-                RaftLayoutMetrics.desktopBreakpoint)
-              Wrap(
-                alignment: WrapAlignment.end,
-                spacing: 12,
-                runSpacing: 12,
-                children: [
-                  RaftSettingsRecipeButton(
-                    key: const ValueKey('channel-overflow-unsaved-keep'),
-                    label: 'Keep Editing',
-                    variant: RaftButtonRecipeVariant.outline,
-                    size: RaftButtonRecipeSize.sm,
-                    onPressed: busy ? null : onKeepEditing,
-                  ),
-                  RaftSettingsRecipeButton(
-                    key: const ValueKey('channel-overflow-unsaved-discard'),
-                    label: 'Discard Changes',
-                    variant: RaftButtonRecipeVariant.warning,
-                    size: RaftButtonRecipeSize.sm,
-                    onPressed: busy ? null : onDiscard,
-                  ),
-                  if (onSaveAndClose != null) ...[
-                    RaftSettingsRecipeButton(
-                      key: const ValueKey('channel-overflow-unsaved-save'),
-                      label: busy ? 'Saving…' : 'Save and Close',
-                      variant: RaftButtonRecipeVariant.accent,
-                      size: RaftButtonRecipeSize.sm,
-                      onPressed: busy ? null : onSaveAndClose,
-                    ),
-                  ],
-                ],
-              )
-            else
-              // `flex justify-end gap-3` (no wrap): the row may be a hair wider
-              // than the card, like the unwrapped CSS flex.
-              SizedBox(
-                height: 28,
-                child: OverflowBox(
-                  maxWidth: double.infinity,
-                  alignment: Alignment.centerRight,
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      RaftSettingsRecipeButton(
-                        key: const ValueKey('channel-overflow-unsaved-keep'),
-                        label: 'Keep Editing',
-                        variant: RaftButtonRecipeVariant.outline,
-                        size: RaftButtonRecipeSize.sm,
-                        onPressed: busy ? null : onKeepEditing,
-                      ),
-                      const SizedBox(width: 12),
-                      RaftSettingsRecipeButton(
-                        key: const ValueKey('channel-overflow-unsaved-discard'),
-                        label: 'Discard Changes',
-                        variant: RaftButtonRecipeVariant.warning,
-                        size: RaftButtonRecipeSize.sm,
-                        onPressed: busy ? null : onDiscard,
-                      ),
-                      if (onSaveAndClose != null) ...[
-                        const SizedBox(width: 12),
-                        RaftSettingsRecipeButton(
-                          key: const ValueKey('channel-overflow-unsaved-save'),
-                          label: busy ? 'Saving…' : 'Save and Close',
-                          variant: RaftButtonRecipeVariant.accent,
-                          size: RaftButtonRecipeSize.sm,
-                          onPressed: busy ? null : onSaveAndClose,
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// The unsaved-changes prompt: raft-ui `DialogSurface`, whose surface is
-/// `bg-layer-popover` (dialog-CY6S-Xqf.mjs), the same role as the drawer.
-class _PromptCard extends StatelessWidget {
-  const _PromptCard({
-    super.key,
-    required this.maxWidth,
-    required this.padding,
-    required this.child,
-  });
-  final double maxWidth;
-  final EdgeInsets padding;
-  final Widget child;
-  @override
-  Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
-    return ConstrainedBox(
-      constraints: BoxConstraints(maxWidth: maxWidth),
-      child: Container(
-        width: double.infinity,
-        padding: padding,
-        decoration: BoxDecoration(
-          color: t.colors['layer-dialog'],
-          border: Border.all(color: t.colors['line-muted']!),
-          boxShadow: t.themeShadows.md.outer,
-        ),
-        child: child,
       ),
     );
   }

@@ -1673,9 +1673,8 @@ RECIPES_DIR = ROOT / 'packages/raft_theme/lib/recipes'
 
 
 def recipe_files():
-    """Generated recipes of both sets: the Raft set and the frozen legacy set
-    (recipes/legacy/) that the Elegant and Brutal looks still read."""
-    return sorted([*RECIPES_DIR.glob('*.g.dart'), *(RECIPES_DIR / 'legacy').glob('*.g.dart')])
+    """The generated Raft recipes."""
+    return sorted(RECIPES_DIR.glob('*.g.dart'))
 
 
 def oracle_css(m: Model):

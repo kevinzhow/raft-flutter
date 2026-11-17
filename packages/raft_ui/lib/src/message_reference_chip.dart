@@ -82,11 +82,6 @@ class RaftReferenceAppearance {
   final WidgetBuilder? hoverCard;
 }
 
-RaftRecipeTheme _theme(RaftTokens t) =>
-    t.option('press.effect', or: 'scale') == 'offsetShadow'
-    ? RaftRecipeTheme.brutal
-    : RaftRecipeTheme.elegant;
-
 /// Inline span for one reference inside a markdown paragraph. [base] is the
 /// surrounding paragraph style (the recipes use `font-size: inherit`).
 /// References are short `whitespace-nowrap` boxes, so they are WidgetSpans
@@ -110,7 +105,6 @@ InlineSpan raftReferenceSpan(
     // `display: inline` text: bold, underline (decoration-black/30,
     // decoration-2, underline-offset-2).
     final s = RaftMessageReferenceRecipe.resolve(
-      theme: _theme(t),
       variant: RaftMessageReferenceRecipeVariant.secondary,
       states: t.recipeStates(),
       tokens: resolver,
@@ -262,7 +256,6 @@ class RaftReferenceChip extends StatelessWidget {
         final status = appearance.taskStatus ?? RaftMessageTaskStatus.todo;
         // ignore: raft_lints/avoid_render_index_assertion -- The recipe evaluator always returns the 'root' node it was asked for.
         s = RaftTaskChipRecipe.resolveProps({
-          'theme': _theme(t).name,
           'variant': 'inline',
           'status': switch (status) {
             // The 0.7.0 recipe has no backlog row; its colours come from
@@ -291,47 +284,40 @@ class RaftReferenceChip extends StatelessWidget {
         );
       case RaftReferenceKind.unknownTask:
         s = RaftBadgeRecipe.resolve(
-          theme: _theme(t),
           variant: RaftBadgeRecipeVariant.muted,
           tokens: resolver,
         ).root;
         lineHeight = 1;
       case RaftReferenceKind.selfMention || RaftReferenceKind.message:
         s = RaftMessageReferenceRecipe.resolve(
-          theme: _theme(t),
           variant: RaftMessageReferenceRecipeVariant.primary,
           states: t.recipeStates(),
           tokens: resolver,
         ).root;
       case RaftReferenceKind.channel:
         s = RaftMessageReferenceRecipe.resolve(
-          theme: _theme(t),
           variant: RaftMessageReferenceRecipeVariant.accent,
           states: t.recipeStates(),
           tokens: resolver,
         ).root;
       case RaftReferenceKind.thread || RaftReferenceKind.mention:
         s = RaftMessageReferenceRecipe.resolve(
-          theme: _theme(t),
           variant: RaftMessageReferenceRecipeVariant.link,
           states: t.recipeStates(),
           tokens: resolver,
         ).root;
       case RaftReferenceKind.attachmentComment:
         s = RaftMessageReferenceRecipe.resolve(
-          theme: _theme(t),
           variant: RaftMessageReferenceRecipeVariant.muted,
-          states: t.recipeStates(extra: const ['has:>svg']),
+          states: t.recipeStates(),
           tokens: resolver,
         ).root;
       case RaftReferenceKind.permalink ||
           RaftReferenceKind.permalinkUnavailable:
-        // `<MessageReferenceChip variant="link"><Link/>label</…>`: the
-        // `has:>svg` states add the Brutal icon cell (`::before`).
+        // `<MessageReferenceChip variant="link"><Link/>label</…>`.
         s = RaftMessageReferenceRecipe.resolve(
-          theme: _theme(t),
           variant: RaftMessageReferenceRecipeVariant.link,
-          states: t.recipeStates(extra: const ['has:>svg']),
+          states: t.recipeStates(),
           tokens: resolver,
         ).root;
     }
@@ -360,26 +346,6 @@ class RaftReferenceChip extends StatelessWidget {
       leadingDistribution: TextLeadingDistribution.even,
     );
     final gap = s.columnGap ?? 4;
-    // Brutal `has:>svg`: the glyph sits in a full-height cell filled by the
-    // `::before` background with a right rule, svg margin 3px each side.
-    final before = s.before;
-    final Widget? iconCell = icon != null && before != null
-        ? Container(
-            margin: EdgeInsets.zero,
-            // ds-allow: Web raft-ui/message-reference.recipe.ts `[&>svg]:mx-[3px]`
-            padding: const EdgeInsets.symmetric(horizontal: 3),
-            decoration: BoxDecoration(
-              color: before.backgroundColor?.resolve(resolver),
-              border: Border(
-                right: BorderSide(
-                  color: before.border(resolver)?.right.color ?? Colors.black,
-                  width: before.border(resolver)?.right.width ?? 1,
-                ),
-              ),
-            ),
-            child: Center(child: icon),
-          )
-        : null;
     final chip = Container(
       height: appearance.kind == RaftReferenceKind.unknownTask
           ? s.height
@@ -395,12 +361,7 @@ class RaftReferenceChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (icon != null && iconCell != null)
-            iconCell
-          else if (icon != null) ...[
-            icon,
-            SizedBox(width: gap),
-          ],
+          if (icon != null) ...[icon, SizedBox(width: gap)],
           Flexible(
             // CSS uses the declared line-height as the inline-flex line box.
             // RenderParagraph rounds its natural height to whole pixels.

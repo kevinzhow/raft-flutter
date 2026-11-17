@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 
 import 'design_primitives.dart';
 import 'error_presentation.dart' show RaftErrorScope;
-import 'dialog_card.dart' show raftRecipeThemeOf;
 import 'icons.dart';
 import 'overlays/dialog.dart' show RaftDialog, showRaftDialog;
 import 'localization.dart';
@@ -63,7 +62,7 @@ class _RaftResetAgentDialogState extends State<RaftResetAgentDialog> {
       : [
           (
             'restart',
-            RaftTokens.of(context).isRaftLook ? 'Restart' : 'Restart Agent',
+            'Restart',
             'Stop and restart the agent process. Keeps the runtime session and workspace files.',
           ),
           (
@@ -95,11 +94,10 @@ class _RaftResetAgentDialogState extends State<RaftResetAgentDialog> {
       (o) => o.$1 == mode,
       orElse: () => choices.first,
     );
-    final strong = t.strong;
     final recipeTokens = RaftRecipeTokens(t);
-    final optionsRecipe = t.isRaftLook
-        ? RaftWebAgentResetOptionsRecipe.resolve(tokens: recipeTokens)
-        : null;
+    final optionsRecipe = RaftWebAgentResetOptionsRecipe.resolve(
+      tokens: recipeTokens,
+    );
     return RaftConfirmDialog(
       surfaceKey: const ValueKey('agent-dialog'),
       title: raftFormat(context, 'Restart or reset {name}', {
@@ -107,15 +105,13 @@ class _RaftResetAgentDialogState extends State<RaftResetAgentDialog> {
       }),
       maxWidth: 448,
       confirmLabel: raftText(context, selected.$2),
-      cancelLabel: raftText(context, t.isRaftLook ? 'Cancel' : 'Keep Working'),
+      cancelLabel: raftText(context, 'Cancel'),
       loadingLabel: raftText(context, 'Restarting…'),
       confirmGlyph: RaftGlyph.rotateCcw,
       confirmVariant: mode == 'full'
           ? RaftButtonRecipeVariant.danger
-          : mode == 'session' || t.isRaftLook
-          ? RaftButtonRecipeVariant.warning
-          : RaftButtonRecipeVariant.primary,
-      plainMessage: t.isRaftLook,
+          : RaftButtonRecipeVariant.warning,
+      plainMessage: true,
       onConfirm: () => widget.onConfirm(mode),
       content: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -124,46 +120,28 @@ class _RaftResetAgentDialogState extends State<RaftResetAgentDialog> {
           RaftRadioGroup<String>(
             value: mode,
             onChanged: (next) => setState(() => mode = next),
-            spacing: optionsRecipe?.root.rowGap ?? 12,
+            spacing: optionsRecipe.root.rowGap ?? 12,
             children: [
               for (final o in choices)
                 RaftRadioGroupItem<String>(
                   key: ValueKey('agent-reset-option-${o.$1}'),
                   value: o.$1,
-                  markInset:
-                      optionsRecipe?.indicator.margin ??
-                      const EdgeInsets.only(top: 2),
-                  padding: optionsRecipe?.row.padding ?? EdgeInsets.zero,
-                  minHeight: optionsRecipe?.row.minHeight ?? 0,
-                  gap: optionsRecipe?.row.columnGap ?? 12,
+                  markInset: optionsRecipe.indicator.margin,
+                  padding: optionsRecipe.row.padding,
+                  minHeight: optionsRecipe.row.minHeight ?? 0,
+                  gap: optionsRecipe.row.columnGap ?? 12,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    spacing: optionsRecipe?.content.rowGap ?? 0,
+                    spacing: optionsRecipe.content.rowGap ?? 0,
                     children: [
                       RaftCssText(
                         raftText(context, o.$2),
-                        style:
-                            optionsRecipe?.title.text(recipeTokens) ??
-                            RaftTypography.body(
-                              t,
-                              size: 14,
-                              line: 20,
-                              weight: FontWeight.w700,
-                              color: strong,
-                            ),
+                        style: optionsRecipe.title.text(recipeTokens),
                       ),
-                      if (optionsRecipe == null) const SizedBox(height: 4),
                       RaftCssText(
                         raftText(context, o.$3),
-                        style:
-                            optionsRecipe?.description.text(recipeTokens) ??
-                            RaftTypography.body(
-                              t,
-                              size: 12,
-                              line: 16,
-                              color: t.muted,
-                            ),
+                        style: optionsRecipe.description.text(recipeTokens),
                       ),
                     ],
                   ),
@@ -174,13 +152,9 @@ class _RaftResetAgentDialogState extends State<RaftResetAgentDialog> {
             const SizedBox(height: 12),
             RaftBanner(
               size: RaftBannerRecipeSize.sm,
-              status: t.isRaftLook
-                  ? RaftBannerRecipeStatus.destructive
-                  : RaftBannerRecipeStatus.warning,
+              status: RaftBannerRecipeStatus.destructive,
               descriptionWeight: FontWeight.w700,
-              glyph: t.isRaftLook
-                  ? RaftGlyph.octagonAlert
-                  : RaftGlyph.triangleAlert,
+              glyph: RaftGlyph.octagonAlert,
               description: raftText(
                 context,
                 'This will permanently delete all workspace files including MEMORY.md and notes/. This cannot be undone.',
@@ -312,7 +286,6 @@ class _RaftAgentProfileEditDialogState
   double fieldGap(RaftTokens t) =>
       4 +
       (field_recipe.RaftFieldRecipe.resolve(
-            theme: raftRecipeThemeOf(t),
             states: RaftRecipeStates({if (t.dark) RaftRecipeStates.dark}),
             tokens: RaftRecipeTokens(t),
           ).root.rowGap ??

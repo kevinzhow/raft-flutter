@@ -54,8 +54,7 @@ void main() {
         await t.pumpAndSettle();
         final row = find.byType(RaftMenuItem);
         final rect = t.getRect(row);
-        final tokens = raftTheme(dark: dark).extension<RaftTokens>()!;
-        expect(rect.height, tokens.isRaftLook ? 36 : 31.5);
+        expect(rect.height, 36);
         await t.tapAt(Offset(rect.center.dx, rect.bottom + 5));
         await t.pump();
         expect(calls, 1);

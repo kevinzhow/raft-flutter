@@ -742,7 +742,6 @@ class _CreateAgentDialogState extends State<CreateAgentDialog> {
     final cloud = hosted.active;
     final capacity = capacityReached;
     final tokens = RaftTokens.of(context);
-    final legacyDarkWarning = tokens.dark && !tokens.isRaftLook;
     final nameError = validationAttempted
         ? createAgentNameError(context, name.text)
         : null;
@@ -761,16 +760,6 @@ class _CreateAgentDialogState extends State<CreateAgentDialog> {
         RaftAgentBanner(
           status: RaftAgentBannerStatus.warning,
           // Web uses the warning Banner recipe without caller overrides.
-          // Retain the prior colours in the frozen legacy looks.
-          backgroundColor: legacyDarkWarning
-              ? tokens.colors['warning-soft']
-              : null,
-          foregroundColor: legacyDarkWarning
-              ? tokens.colors['warning-strong']
-              : null,
-          actionForeground: legacyDarkWarning
-              ? tokens.colors['warning-strong']
-              : null,
           description: raftFormat(
             context,
             '{limitLabel} reached ({usage}/{limit} on {planName} plan).',
@@ -781,10 +770,9 @@ class _CreateAgentDialogState extends State<CreateAgentDialog> {
               'planName': '${billing?['displayName'] ?? 'Free'}',
             },
           ),
-          action: tokens.isRaftLook ? 'Upgrade for more' : 'Upgrade for More',
+          action: 'Upgrade for more',
           actionSeparator:
-              tokens.isRaftLook &&
-                  Localizations.maybeLocaleOf(context)?.languageCode == 'zh'
+              Localizations.maybeLocaleOf(context)?.languageCode == 'zh'
               ? ''
               : ' ',
           // Web: onClose(); nav.toSettings("billing").

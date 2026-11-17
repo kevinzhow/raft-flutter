@@ -1,44 +1,11 @@
 import 'package:flutter/material.dart';
 
-import 'design_primitives.dart';
 import 'icons.dart';
 import 'message_rule_row.dart';
 import 'recipe_surface.dart';
 import 'recipes/message_system.g.dart';
 import 'theme.dart';
 import 'tooltip.dart';
-
-/// Mounted SystemMessage (raft-ui 0.5.52). The adapter supplies formatted
-/// receipt text/time; system rows have no author/avatar, reactions or message
-/// toolbar.
-///
-/// The note owns a short lead-in (`pt-[3px]`, brutal `pt-0`) and no bottom
-/// padding or margin; the message that follows cancels the rest of the seam
-/// with `data-follows-system` (see [RaftMessageRowRecipe]). Inside an expanded
-/// group the host re-asserts the lead: `pt-1` elegant, `pt-1.5` brutal.
-class RaftSystemMessageRecipe {
-  const RaftSystemMessageRecipe(this.tokens, {this.inGroup = false});
-  final RaftTokens tokens;
-  final bool inGroup;
-  // ignore: raft_lints/off_grid_spacing -- Web SystemMessage pt-[3px].
-  EdgeInsets get padding => EdgeInsets.fromLTRB(8, inGroup ? (4) : 3, 8, 0);
-  Color get clockColor =>
-      (tokens.dark ? tokens.strong : Colors.black).withValues(alpha: .4);
-  Color get contentColor =>
-      (tokens.dark ? tokens.strong : Colors.black).withValues(alpha: .5);
-  TextStyle get clock =>
-      RaftTypography.body(
-        tokens,
-        size: 11,
-        line: 16.5,
-        weight: FontWeight.w500,
-      ).copyWith(
-        color: clockColor,
-        fontFeatures: const [FontFeature.tabularFigures()],
-      );
-  TextStyle get content =>
-      RaftTypography.body(tokens, size: 12, line: 18, color: contentColor);
-}
 
 /// The rows of an expanded [RaftSystemMessageGroup] (Web
 /// `[&_[data-slot=system-message-item]]:pt-1`).
@@ -50,6 +17,8 @@ class _SystemGroupScope extends InheritedWidget {
   bool updateShouldNotify(_SystemGroupScope oldWidget) => false;
 }
 
+/// Mounted SystemMessage. The adapter supplies formatted receipt text/time;
+/// system rows have no author/avatar, reactions or message toolbar.
 class RaftSystemMessage extends StatelessWidget {
   const RaftSystemMessage({
     super.key,
@@ -62,13 +31,11 @@ class RaftSystemMessage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    if (!t.isRaftLook) return _buildFrozen(context, t);
     // raft-ui 0.95.3 `SystemMessage`: `flex items-center justify-center gap-2
     // px-4 pt-timeline-lead pb-timeline-row font-mono text-mono-meta
     // text-foreground-hint` with a flex-1 hairline before and after.
     final tokens = t.recipeTokens;
     final recipe = RaftMessageSystemRecipe.resolve(
-      theme: t.recipeTheme,
       tokens: tokens,
       states: t.recipeStates(responsive: true),
     );
@@ -119,37 +86,6 @@ class RaftSystemMessage extends StatelessWidget {
       ),
     );
   }
-
-  /// The frozen Elegant and Brutal looks keep the 0.5.52 note.
-  Widget _buildFrozen(BuildContext context, RaftTokens t) {
-    final recipe = RaftSystemMessageRecipe(
-      t,
-      inGroup: _SystemGroupScope.of(context),
-    );
-    return Padding(
-      padding: recipe.padding,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(timestamp, style: recipe.clock),
-          const SizedBox(width: 8),
-          Flexible(
-            // The line already says it; the full text only helps when cut.
-            child: RaftTooltip(
-              message: tooltip ?? content,
-              onlyWhenTruncated: tooltip == null,
-              child: Text(
-                content,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: recipe.content,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
 /// raft-ui `SystemMessageGroup*` (web SystemMessageGroupDisclosure.tsx): the
@@ -177,7 +113,6 @@ class RaftSystemMessageGroup extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context), tokens = t.recipeTokens;
     final recipe = RaftMessageSystemRecipe.resolve(
-      theme: t.recipeTheme,
       tokens: tokens,
       states: t.recipeStates(),
     );

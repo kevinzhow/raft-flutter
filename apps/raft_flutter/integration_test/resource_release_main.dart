@@ -198,7 +198,6 @@ Future<Widget> buildResourceReleaseApp({
   SharedPreferences.setMockInitialValues({
     'raft.origin': client.origin,
     'raft.mode': 'light',
-    'raft.light': 'brutal',
     MobileTabbarStore.preferenceKey: tabs.encode(),
   });
   final dir = await Directory.systemTemp.createTemp('raft-resource-release-');

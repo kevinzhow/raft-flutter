@@ -85,9 +85,7 @@ class RaftAttachmentCard extends StatelessWidget {
     return '${(value / (1024 * 1024)).toStringAsFixed(1)} MB';
   }
 
-  /// `text-[10px]` summary / meta lines: Brutal resolves the utility's 1.4286
-  /// line height (14.29px); Elegant inherits the message content's
-  /// `leading-5.25` (21px).
+  /// `text-[10px]` summary / meta lines.
   /// `gap-1.5` then the coloured total.
   static List<InlineSpan> _diffTotal(String text, Color? color) => [
     const WidgetSpan(child: SizedBox(width: 6)),
@@ -105,7 +103,6 @@ class RaftAttachmentCard extends StatelessWidget {
   }
 
   static double metaLineHeight(RaftTokens t) {
-    if (!t.isRaftLook) return 21 / 10;
     final slot = t.typeSlot('mono-meta');
     return slot.lineHeight / slot.fontSize;
   }
@@ -193,7 +190,7 @@ class RaftAttachmentCard extends StatelessWidget {
           children: [
             title(),
             if (metaLabel != null && summary != null)
-              // `mt-0.5 text-[10px] font-medium`, brutal `text-black/70`.
+              // `mt-0.5 text-[10px]`.
               Padding(
                 padding: const EdgeInsets.only(top: 2),
                 child: RaftTooltip(
@@ -220,8 +217,6 @@ class RaftAttachmentCard extends StatelessWidget {
                     overflow: grows ? TextOverflow.clip : TextOverflow.ellipsis,
                     style: component.metadata.copyWith(
                       height: metaLineHeight(t),
-                      fontWeight: t.isRaftLook ? null : FontWeight.w500,
-                      color: t.isRaftLook ? null : t.colors['foreground-muted'],
                     ),
                   ),
                 ),
@@ -413,53 +408,45 @@ class _AttachmentSurfaceState extends State<_AttachmentSurface> {
   @override
   Widget build(BuildContext context) {
     final t = widget.component.tokens;
-    final raft = t.isRaftLook;
     final radius = widget.component.cardRadius;
     // Raft: `hover:overlay-subtle active:overlay-medium`, and the keyboard
     // ring is `focus-visible:shadow-focus`; the border never changes.
-    final overlay = !raft
-        ? null
-        : pressed
+    final overlay = pressed
         ? t.colors['fill-medium']
         : hovered
         ? t.colors['fill-subtle']
         : null;
     final ring =
-        raft &&
         focused &&
         FocusManager.instance.highlightMode == FocusHighlightMode.traditional;
     Widget surface = Material(
       color: widget.recipe.background,
       clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(
-        side: widget.component.cardBorder(hovered: hovered, focused: focused),
+        side: widget.component.cardBorder(),
         borderRadius: radius,
       ),
       // One tree in every state: hover and press repaint the overlay, they
       // never remount the card content (its focus and gestures stay).
-      child: !raft
-          ? widget.child
-          : Stack(
-              fit: StackFit.passthrough,
-              children: [
-                widget.child,
-                Positioned.fill(
-                  child: IgnorePointer(
-                    child: overlay == null ? null : ColoredBox(color: overlay),
-                  ),
-                ),
-              ],
+      child: Stack(
+        fit: StackFit.passthrough,
+        children: [
+          widget.child,
+          Positioned.fill(
+            child: IgnorePointer(
+              child: overlay == null ? null : ColoredBox(color: overlay),
             ),
+          ),
+        ],
+      ),
     );
-    if (raft) {
-      surface = DecoratedBox(
-        decoration: BoxDecoration(
-          borderRadius: radius,
-          boxShadow: ring ? t.focusShadows : null,
-        ),
-        child: surface,
-      );
-    }
+    surface = DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: radius,
+        boxShadow: ring ? t.focusShadows : null,
+      ),
+      child: surface,
+    );
     return RaftHoverRegion(
       onEnter: (_) => setState(() => hovered = true),
       onExit: (_) => setState(() => hovered = false),

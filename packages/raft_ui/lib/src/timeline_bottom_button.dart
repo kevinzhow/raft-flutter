@@ -46,20 +46,7 @@ class RaftTimelineBottomButtonBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // raft-ui `MessageListJumpPill`: Button `outline` `md` (text-control, svg
-    // 16). The frozen looks keep the 0.5.52 `sm` pill.
-    if (!RaftTokens.of(context).isRaftLook) {
-      return RaftRecipeButton(
-        label: label,
-        glyph: RaftGlyph.arrowDown,
-        glyphSize: 12,
-        variant: RaftButtonRecipeVariant.outline,
-        size: RaftButtonRecipeSize.sm,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        textStep: (12, 16),
-        gap: 6,
-        onPressed: onPressed,
-      );
-    }
+    // 16).
     return RaftButton(
       label: label,
       glyph: RaftGlyph.arrowDown,
@@ -98,9 +85,7 @@ class RaftThreadUnreadJumpPill extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     final muted = t.colors['foreground-muted']!;
-    // Same Button as "Back to bottom": `outline` `md`, svg 16 (frozen looks
-    // keep the 0.5.52 `sm` 12px pill).
-    final raft = t.isRaftLook;
+    // Same Button as "Back to bottom": `outline` `md`, svg 16.
     Widget segment({
       required Widget child,
       required EdgeInsets padding,
@@ -127,7 +112,6 @@ class RaftThreadUnreadJumpPill extends StatelessWidget {
       size: RaftButtonRecipeSize.sm,
       padding: EdgeInsets.zero,
       fontWeight: FontWeight.w700,
-      textStep: raft ? null : (12, 16),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -141,7 +125,7 @@ class RaftThreadUnreadJumpPill extends StatelessWidget {
               children: [
                 RaftIcon(
                   up ? RaftGlyph.arrowUp : RaftGlyph.arrowDown,
-                  size: raft ? 16 : 12,
+                  size: 16,
                 ),
                 const SizedBox(width: 6),
                 Flexible(
@@ -159,7 +143,7 @@ class RaftThreadUnreadJumpPill extends StatelessWidget {
             padding: const EdgeInsets.only(left: 4, right: 10),
             onPressed: onDismiss,
             semanticLabel: dismissLabel,
-            child: RaftIcon(RaftGlyph.x, size: raft ? 16 : 14, color: muted),
+            child: RaftIcon(RaftGlyph.x, size: 16, color: muted),
           ),
         ],
       ),

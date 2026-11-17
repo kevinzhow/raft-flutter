@@ -46,16 +46,11 @@ Widget _surfaces(RaftThemePack pack, bool dark) => MaterialApp(
 );
 
 void main() {
-  // a57 drawer header/body and Card recipe paints; Brutal dark is Elegant.
   // Raft uses Web v1.21.23 Drawer popup and DialogSurface popover layers.
   for (final (id, dark, body, header, dialog) in raftThemeMatrix([
     (raftThemePackId, false, 0xffffffff, 0xffffffff, 0xffffffff),
     (raftThemePackId, true, 0xff292927, 0xff292927, 0xff292927),
-    (elegantThemePackId, false, 0xffffffff, 0xffffffff, 0xffffffff),
-    (elegantThemePackId, true, 0xff242422, 0xff242422, 0xff242422),
-    (brutalThemePackId, false, 0xfffffaef, 0xffffd440, 0xffffffff),
-    (brutalThemePackId, true, 0xff242422, 0xff242422, 0xff242422),
-  ], look: (row) => raftLookOf(row.$1))) {
+  ])) {
     testWidgets('$id dark=$dark drawer and dialog keep source surfaces', (
       t,
     ) async {

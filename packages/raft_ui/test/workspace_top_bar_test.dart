@@ -395,11 +395,7 @@ void main() {
     },
     variant: TargetPlatformVariant.only(TargetPlatform.linux),
   );
-  for (final pack in raftThemeMatrix([
-    raftThemePackId,
-    elegantThemePackId,
-    brutalThemePackId,
-  ], look: raftLookOf)) {
+  for (final pack in raftThemeMatrix([raftThemePackId])) {
     testWidgets(
       '$pack sidebar without title preserves the source content inset',
       (t) async {
@@ -431,11 +427,7 @@ void main() {
       },
     );
   }
-  for (final pack in raftThemeMatrix([
-    raftThemePackId,
-    elegantThemePackId,
-    brutalThemePackId,
-  ], look: raftLookOf)) {
+  for (final pack in raftThemeMatrix([raftThemePackId])) {
     testWidgets('$pack chrome policy preserves legacy and native ownership', (
       t,
     ) async {

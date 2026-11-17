@@ -5,9 +5,8 @@ import 'overlays/dialog.dart' show RaftDialog;
 // with its limits, and Cancel / Send invites. Presentation only: the app owns
 // requests, billing gates and navigation.
 import 'raft/segmented_control.dart'
-    show RaftSegmentedControl, RaftSegmentedOption, RaftSegmentedStyle;
+    show RaftSegmentedControl, RaftSegmentedOption;
 import 'label.dart';
-import 'recipes/recipe_runtime.dart' show RaftRecipeSet;
 
 import 'package:flutter/material.dart';
 
@@ -204,7 +203,6 @@ class _RaftInviteHumanDialogState extends State<RaftInviteHumanDialog> {
               ),
               const SizedBox(height: 16),
               RaftSegmentedControl<String>(
-                legacyStyle: RaftSegmentedStyle.recipe,
                 expand: true,
                 value: tab,
                 label: raftText(context, 'Invite method'),
@@ -260,27 +258,12 @@ class _RaftInviteHumanDialogState extends State<RaftInviteHumanDialog> {
     );
   }
 
-  /// The Web's `FIELD_LABEL_CLASS` label (13/18 600 ink-2) is a [RaftLabel]; the frozen looks keep the bare
-  /// `<label className="mb-1 block text-sm font-bold text-foreground-strong">` (no Field gap).
+  /// The Web's `FIELD_LABEL_CLASS` label (13/18 600 ink-2) is a [RaftLabel].
   Widget _fieldLabel(BuildContext context, RaftTokens t, String text) {
     // `mb-1.5` under the label.
-    if (t.recipeSet == RaftRecipeSet.raft) {
-      return Padding(
-        padding: const EdgeInsets.only(bottom: 6),
-        child: RaftLabel(text),
-      );
-    }
     return Padding(
-      padding: const EdgeInsets.only(bottom: 4),
-      child: Text(
-        raftText(context, text),
-        style: raftCssTextStyle(
-          family: t.headingFont,
-          step: RaftTextSteps.sm,
-          weight: FontWeight.w700,
-          color: t.colors['foreground-strong'],
-        ),
-      ),
+      padding: const EdgeInsets.only(bottom: 6),
+      child: RaftLabel(text),
     );
   }
 

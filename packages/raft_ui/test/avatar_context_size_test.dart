@@ -6,9 +6,7 @@ import 'package:raft_ui/test_themes.dart';
 void main() {
   for (final (id, hero, tile, header) in raftThemeMatrix([
     (raftThemePackId, 99.0, 51.0, 35.0),
-    (elegantThemePackId, 64.0, 64.0, 36.0),
-    (brutalThemePackId, 64.0, 64.0, 36.0),
-  ], look: (v) => raftLookOf(v.$1))) {
+  ])) {
     testWidgets(
       '$id profile identity keeps the hero separate from account tile',
       (tester) async {

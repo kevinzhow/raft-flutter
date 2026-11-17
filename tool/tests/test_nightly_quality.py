@@ -258,29 +258,9 @@ class TestEnvironmentTests(unittest.TestCase):
             args = types.SimpleNamespace(date='2026-10-19', out_dir=tmp, worktree=str(Path(tmp) / 'wt'), max_hours=1, seed=1)
             run = nq.Run(args)
             run.tmp = Path(tmp) / 'tmp'
-            with mock.patch.dict(os.environ, {'RAFT_TEST_ALL_THEMES': '1', 'RAFT_TEST_TIER': 'gate'}):
+            with mock.patch.dict(os.environ, {'RAFT_TEST_TIER': 'gate'}):
                 env = run.test_env()
         self.assertEqual(env['RAFT_TEST_TIER'], 'full')
-        self.assertNotIn('RAFT_TEST_ALL_THEMES', env)
-        self.assertEqual(env['RAFT_TEST_LOOKS'], 'raft')  # the legacy looks run in the legacy-looks suite
-
-    def test_the_raft_run_leaves_tagged_legacy_files_to_the_legacy_suite(self):
-        self.assertEqual(nq.LEGACY_TAG_EXCLUDES, ['-x', 'look-elegant', '-x', 'look-brutal'])
-
-    def test_the_legacy_suite_runs_tool_theme_suite_for_every_legacy_look(self):
-        import types
-        from unittest import mock
-        with tempfile.TemporaryDirectory() as tmp:
-            args = types.SimpleNamespace(date='2026-10-25', out_dir=tmp, worktree=str(Path(tmp) / 'wt'), max_hours=1, seed=1, legacy_timeout_minutes=5)
-            run = nq.Run(args)
-            run.env = {}
-            with mock.patch.object(nq, 'run', return_value={'code': 0, 'timed_out': False, 'seconds': 1.0}) as runner:
-                suite = run.legacy_suite()
-        command = runner.call_args.args[0]
-        self.assertIn('theme-suite', command[1])
-        self.assertEqual(command[command.index('--look') + 1], 'all')
-        self.assertIn('--tests-only', command)
-        self.assertEqual((suite['name'], suite['cwd']), ('legacy-looks', 'apps/raft_flutter'))
 
 
 class ImpactMapJobTests(unittest.TestCase):

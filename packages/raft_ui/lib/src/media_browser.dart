@@ -672,10 +672,9 @@ class _RaftMediaStripState extends State<RaftMediaStrip> {
   Widget _thumbAt(BuildContext context, RaftTokens t, int i) {
     final item = widget.items[i];
     final active = i == widget.index;
-    // The desktop strip in the Raft look is Web's `rounded-sticker
-    // border-[1.5px]` button (ImageLightbox.tsx); the phone strip and the older
-    // looks keep their own thumbnails.
-    final sticker = t.isRaftLook && !widget.compact;
+    // The desktop strip is Web's `rounded-sticker border-[1.5px]` button
+    // (ImageLightbox.tsx); the phone strip keeps its own thumbnails.
+    final sticker = !widget.compact;
     final onHud = t.ui['foreground-on-hud'];
     final border = active
         ? (t.colors[sticker ? 'selected' : 'accent-strong']!)
@@ -805,7 +804,7 @@ class RaftMediaAction {
   final Key? id;
 }
 
-/// Round (elegant) or boxed (brutal) icon button of the immersive chrome;
+/// Round icon button of the immersive chrome;
 /// the touch target is 44 dp.
 class RaftMediaChromeButton extends StatelessWidget {
   const RaftMediaChromeButton({

@@ -23,7 +23,7 @@ import 'anchored_popup.dart';
 import 'banner.dart';
 import 'components.dart' show RaftButton;
 import 'composer_recipe.dart';
-import 'dialog_card.dart' show RaftRecipeButton, raftRecipeThemeOf;
+import 'dialog_card.dart' show RaftRecipeButton;
 import 'design_primitives.dart';
 import 'feedback_inbox.dart';
 import 'icons.dart';
@@ -132,19 +132,13 @@ class RaftFeedbackViewHeader extends StatelessWidget {
   }
 }
 
-/// A feedback form's field label: the shared [RaftLabel] (`.hands-feedback-field-label` 13px / 600 in the
-/// frozen looks).
+/// A feedback form's field label: the shared [RaftLabel].
 class RaftFeedbackFieldLabel extends StatelessWidget {
   const RaftFeedbackFieldLabel(this.text, {super.key});
   final String text;
   @override
   Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
-    if (t.recipeSet == RaftRecipeSet.raft) return RaftLabel(text);
-    return Text(
-      raftText(context, text),
-      style: raftFeedbackText(t, size: 13, weight: FontWeight.w600),
-    );
+    return RaftLabel(text);
   }
 }
 
@@ -163,7 +157,6 @@ class RaftFeedbackKindPicker extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     final root = RaftSegmentedControlRecipe.resolve(
-      theme: t.recipeTheme,
       states: t.recipeStates(),
       tokens: t.recipeTokens,
     ).root;
@@ -208,7 +201,6 @@ class _KindItem extends StatelessWidget {
       semanticLabel: label,
       builder: (context, state) {
         final item = RaftSegmentedControlRecipe.resolve(
-          theme: t.recipeTheme,
           states: t.recipeStates(
             hovered: state.hovered,
             focusVisible: state.focusVisible,
@@ -532,7 +524,6 @@ class _Counter extends StatelessWidget {
     final t = RaftTokens.of(context);
     final rt = t.recipeTokens;
     final s = RaftTextareaCounterRecipe.resolve(
-      theme: t.recipeTheme,
       overLimit: length > RaftFeedbackComposer.limit,
       states: t.recipeStates(),
       tokens: rt,
@@ -847,11 +838,9 @@ class _RaftFeedbackMessageState extends State<RaftFeedbackMessage> {
     final m = widget.message;
     // MessageItem's `max-md:` padding, gap and avatar (below 768px).
     final width = MediaQuery.sizeOf(context).width;
-    // (Brutal keeps the desktop item at every width.)
     final compact = width < 768;
     final base = t.recipeStates(hovered: hovered);
     final s = RaftMessageItemRecipe.resolve(
-      theme: t.recipeTheme,
       states: compact ? RaftRecipeStates(base.flags, width) : base,
       tokens: rt,
     );
@@ -987,7 +976,6 @@ class _FeedbackAvatar extends StatelessWidget {
     final t = RaftTokens.of(context);
     final rt = t.recipeTokens;
     final s = RaftAvatarRecipe.resolve(
-      theme: t.recipeTheme,
       type_: author == RaftFeedbackAuthor.reporter
           ? RaftAvatarRecipeType.human
           : RaftAvatarRecipeType.agent,
@@ -1037,8 +1025,8 @@ class _FeedbackAvatar extends StatelessWidget {
 }
 
 /// FeedbackTicket body: the centred conversation (`MessageList`,
-/// `padding: 2px 0 12px`) over the reply footer. Elegant floats the footer
-/// over the list (`md:absolute bottom-0`); Brutal stacks it under a 2px rule.
+/// `padding: 2px 0 12px`) over the reply footer, which floats over the list
+/// (`md:absolute bottom-0`).
 class RaftFeedbackConversation extends StatelessWidget {
   const RaftFeedbackConversation({
     super.key,
@@ -1274,7 +1262,6 @@ class _RaftFeedbackCloseSplitState extends State<RaftFeedbackCloseSplit> {
     final t = RaftTokens.of(context);
     final rt = t.recipeTokens;
     final s = RaftMessageReferenceRecipe.resolve(
-      theme: t.recipeTheme,
       variant: RaftMessageReferenceRecipeVariant.accent,
       states: t.recipeStates(),
       tokens: rt,
@@ -1417,7 +1404,6 @@ class RaftFeedbackCloseMenu extends StatelessWidget {
     final t = RaftTokens.of(context);
     final rt = t.recipeTokens;
     final content = RaftDropdownMenuRecipe.resolve(
-      theme: raftRecipeThemeOf(t),
       states: t.recipeStates(),
       tokens: rt,
     ).content;
@@ -1507,7 +1493,6 @@ class _CloseMenuItem extends StatelessWidget {
       semanticLabel: '$label. $description',
       builder: (context, state) {
         final item = RaftDropdownMenuRecipe.resolve(
-          theme: raftRecipeThemeOf(t),
           states: t.recipeStates(
             extra: [
               if (state.hovered || state.focusVisible) 'data-highlighted',

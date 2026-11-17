@@ -49,7 +49,6 @@ Future<void> main() async {
   SharedPreferences.setMockInitialValues({
     'raft.origin': client.origin,
     'raft.mode': 'light',
-    'raft.light': const String.fromEnvironment('KB_THEME', defaultValue: 'brutal'),
     MobileTabbarStore.preferenceKey: tabs.encode(),
   });
   final dir = await Directory.systemTemp.createTemp('raft-keyboard-repro-');

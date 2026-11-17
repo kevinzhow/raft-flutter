@@ -187,12 +187,10 @@ class _RaftInlineVideoState extends State<RaftInlineVideo> {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context), rt = t.recipeTokens;
     final s = RaftMessageVideoPreviewRecipe.resolve(
-      theme: t.recipeTheme,
       states: t.recipeStates(),
       tokens: rt,
     );
     final action = RaftMessageVideoPreviewRecipe.resolve(
-      theme: t.recipeTheme,
       states: t.recipeStates(hovered: actionHovered),
       tokens: rt,
     ).action;
@@ -406,7 +404,6 @@ class RaftVideoPosterCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context), rt = t.recipeTokens;
     final s = RaftMessageVideoPreviewRecipe.resolve(
-      theme: t.recipeTheme,
       states: t.recipeStates(),
       tokens: rt,
     );

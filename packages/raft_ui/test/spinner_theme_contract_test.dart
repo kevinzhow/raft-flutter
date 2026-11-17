@@ -98,11 +98,7 @@ void main() {
       expect(stillPainter.phase, isNull);
     },
   );
-  for (final id in raftThemeMatrix([
-    raftThemePackId,
-    elegantThemePackId,
-    brutalThemePackId,
-  ], look: raftLookOf)) {
+  for (final id in raftThemeMatrix([raftThemePackId])) {
     for (final dark in [false, true]) {
       testWidgets('source spinner appearance and default extent $id/$dark', (
         t,
@@ -128,20 +124,13 @@ void main() {
           ),
         );
         final native = id == raftThemePackId;
-        final brutal = id == brutalThemePackId && !dark;
         expect(
           find.byType(RaftPixelSpinner),
           native ? findsOneWidget : findsNothing,
         );
         expect(
           t.getSize(find.byType(RaftSpinner)),
-          Size.square(
-            native
-                ? 12
-                : brutal
-                ? 16
-                : 14,
-          ),
+          Size.square(native ? 12 : 14),
         );
         if (native)
           expect(

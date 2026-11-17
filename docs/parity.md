@@ -304,22 +304,18 @@ The visual suite has three explicit levels, because a theme change can move any 
 Looks and what each is compared with:
 
 * **raft**: Flutter in the Raft look against the pinned Web v1.21.23 render (the default pipelines).
-* **elegant / brutal**: Flutter in that look against its own frozen original, the a57b9dab render captured once
-  (`tool/theme-baseline` for the official cases and the extension desktop cases, `tool/parity-ext/frozen-capture` for the
-  rest; registry `tool/parity-ext/frozen-baselines.json`, files under `$PARITY_FROZEN_ROOT`, default `/mnt/data/theme-baseline`).
-  They never move because the look is a new pixel contract: a regression means the look drifted from itself.
 
 One command runs any slice and writes one summary (level x look x mode):
 
 ```bash
-tool/parity-ext/run regress --level frame|page|component|all --theme raft|elegant|brutal|all --mode light|dark|all [--fast] [--out DIR]
+tool/parity-ext/run regress --level frame|page|component|all --theme raft --mode light|dark|all [--fast] [--out DIR]
 tool/parity-ext/run regress --plan-only        # case counts per job, nothing runs
 tool/parity-ext/run regress --summary-only     # rebuild <out>/regress-summary.md from the job directories
 ```
 
-Official ids run through `tool/parity`, extension ids through `tool/parity-ext/run run`, one job per (look, mode) in
+Official ids run through `tool/parity`, extension ids through `tool/parity-ext/run run`, one job per mode in
 `<out>/<look>-<mode>/{official,ext}/`; the Raft jobs set `PARITY_THEME_OVERRIDE=raft-case` (the Flutter harness renders every
-extension case in the Raft pack, brightness from the case's own theme name), the Elegant / Brutal jobs add `--frozen`.
+extension case in the Raft pack, brightness from the case's own theme name).
 Pass line is the tool's own: `pixelPerfectSimilarity > 0.96`. `--fast` is the nightly subset (`tool/nightly_visual.py`, job 4
 of `tool/nightly-quality`): L1 frame + the key L2 pages (`levels.FAST_PAGES`), phone and desktop widths, light.
 
@@ -373,21 +369,6 @@ the Node 24 / pnpm 10 binaries), `PARITY_REPORTS_ROOT`, `PARITY_BASE_URL`,
 
 Published report: <http://100.109.192.23:18931/raft_flutter_parity/latest/>
 (each run is kept under `raft_flutter_parity/<UTC timestamp>/`).
-
-## Legacy looks: on demand (`tool/theme-suite`)
-
-Owner decision 2026-10-25: the regular checks test the Raft look only. The frozen-baseline regression of the legacy looks (Elegant and Brutal against their a57b9dab originals, `regress --theme elegant|brutal`) runs on demand through the legacy suite, together with the Dart tests of those looks:
-
-```bash
-tool/theme-suite --look elegant --mode light     # one look, one mode
-tool/theme-suite --look all                      # Elegant + Brutal, both modes, plus the packages/raft_theme tests
-tool/theme-suite --look brutal --visual-only --cases 'components.ui.button.*'
-tool/theme-suite --look all --plan               # what would run, nothing run
-```
-
-The visual half needs the pinned Web source ([the raft-source checkout](parity-and-alignment.md#the-raft-source-checkout): `PARITY_RAFT_SOURCE`, else the checkout of the pinned commit; `tool/raft-source prepare` creates it) and the Node toolchain the other parity tools use; without the source the step fails and says so (`--tests-only` skips it). Scores are reported, not judged, unless `--baseline <earlier regress-summary.json>` is given, in which case a case that lost one point fails the step. Results: `.local/theme-suite/visual-<look>/regress-summary.{md,json}`.
-
-**Run it when** a change touches the theme engine, `packages/raft_theme`, the theme adapters or packs, recipes or recipe binding, or a legacy-look file (`THEME_ENGINE_PATHS` in `tool/theme_looks.py`); `check-project`, `preflight` and the pre-gate script print a notice when a diff does. The nightly runs its Dart half every night and keeps its own fast visual job (`tool/nightly_visual.py`). The details are in [Development](development.md#looks-the-checks-test-the-raft-look-only).
 
 ## How it is wired
 

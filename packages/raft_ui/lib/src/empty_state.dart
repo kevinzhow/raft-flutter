@@ -8,8 +8,7 @@ import 'theme.dart';
 /// The metrics of raft-ui 0.95.3 `EmptyState` that change with a mouse from
 /// 768 (`md:pointer-fine`): sides 16 (`px-(--page-inset)`) instead of 24, the
 /// title `text-headline` 16/24 instead of 17/22, the description `text-callout`
-/// 14/22 instead of 14/20. By touch, and in the frozen looks (never desktop),
-/// the pack's own tokens stand.
+/// 14/22 instead of 14/20. By touch the pack's own tokens stand.
 ({
   double inline,
   double titleSize,
@@ -40,8 +39,7 @@ raftEmptyStateMetrics(RaftTokens t) {
 /// raft-ui `EmptyState`: a [glyph] (36px, `foreground-hint`), a bold title, one
 /// sentence and at most one [action], centred. Semantic copy belongs to the
 /// caller; every visual value comes from the theme pack. Without a [glyph] the
-/// pack's `emptyState.defaultGlyph` stands in (the Raft look: a Lucide message
-/// square; the frozen Elegant and Brutal looks keep their original forum mark).
+/// pack's `emptyState.defaultGlyph` stands in (a Lucide message square).
 class RaftEmptyState extends StatelessWidget {
   const RaftEmptyState({
     super.key,

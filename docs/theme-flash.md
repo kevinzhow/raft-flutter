@@ -2,6 +2,8 @@
 
 Report: with a non-default theme (Elegant) the app first shows the default look and then jumps.
 
+Note (2026-11-17): the Elegant and Brutal looks were deleted; only Raft light/dark/system remains. The findings below are the record of the 2026-10-12 investigation, and the stored-appearance fix still applies to the light/dark/system choice.
+
 ## Entrypoint
 
 `apps/raft_flutter/integration_test/theme_flash_main.dart` runs the production startup sequence (`RootErrorBoundary`, `deferFirstFrame`, `RaftApp.restore`) on perf-lab fixtures, without login, on REAL persisted `SharedPreferences`, so a cold start reads the stored appearance from disk. Profile/debug only.

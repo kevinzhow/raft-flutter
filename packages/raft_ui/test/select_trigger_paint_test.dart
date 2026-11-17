@@ -4,11 +4,7 @@ import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_ui/test_themes.dart';
 
 void main() {
-  for (final id in raftThemeMatrix([
-    raftThemePackId,
-    elegantThemePackId,
-    brutalThemePackId,
-  ], look: raftLookOf)) {
+  for (final id in raftThemeMatrix([raftThemePackId])) {
     for (final dark in [false, true]) {
       testWidgets('$id/$dark Select preserves its source state colors', (
         t,
@@ -40,13 +36,8 @@ void main() {
         await t.pumpAndSettle();
         final tokens = RaftTokens.of(t.element(find.text('Codex')));
         final native = id == raftThemePackId;
-        final raised = id == brutalThemePackId && !dark;
         final foreground =
-            tokens.colors[native
-                ? 'foreground'
-                : raised
-                ? 'foreground-strong'
-                : 'foreground-muted'];
+            tokens.colors[native ? 'foreground' : 'foreground-muted'];
         final background =
             tokens.colors[native
                 ? 'layer-card'
@@ -55,17 +46,13 @@ void main() {
                 : 'layer-panel'];
         expect(
           DefaultTextStyle.of(t.element(find.text('Codex'))).style.fontWeight,
-          native
-              ? FontWeight.w600
-              : raised
-              ? FontWeight.w700
-              : FontWeight.w500,
+          native ? FontWeight.w600 : FontWeight.w500,
         );
         expect(
           DefaultTextStyle.of(t.element(find.text('Select...')))
               .style
               .fontWeight,
-          raised ? FontWeight.w700 : FontWeight.w500,
+          FontWeight.w500,
         );
         final fields = find.byType(RaftSelectField<String>);
         final enabled = t.widget<RaftRecipeBox>(

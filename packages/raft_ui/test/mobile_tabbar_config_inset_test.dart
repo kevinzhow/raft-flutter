@@ -27,11 +27,7 @@ void main() {
   for (final (pack, dark, floating) in raftThemeMatrix([
     (raftThemePackId, false, false),
     (raftThemePackId, true, false),
-    (elegantThemePackId, false, true),
-    (elegantThemePackId, true, true),
-    (brutalThemePackId, false, false),
-    (brutalThemePackId, true, true),
-  ], look: (v) => raftLookOf(v.$1))) {
+  ])) {
     for (final inset in [0.0, 24.0, 48.0]) {
       testWidgets(
         '$pack ${dark ? 'dark' : 'light'} preview clears $inset system inset and IME',
@@ -58,9 +54,6 @@ void main() {
               52 + math.max(0, 8 - inset),
               reason: 'Preview matches the real docked bar; no capsule gap.',
             );
-          }
-          if (pack == brutalThemePackId && !floating) {
-            expect(navHeight, 55, reason: 'Frozen look: no 8px floor.');
           }
           expect(
             t

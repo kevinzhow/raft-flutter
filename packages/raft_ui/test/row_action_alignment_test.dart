@@ -60,10 +60,7 @@ void main() {
         testWidgets(
           'RaftErrorBanner message and retry: $theme zh=$zh x$scale small=$small',
           (tester) async {
-            for (final id in raftThemeMatrix([
-              elegantThemePackId,
-              raftThemePackId,
-            ], look: raftLookOf)) {
+            for (final id in raftThemeMatrix([raftThemePackId])) {
               await tester.pumpWidget(
                 _host(
                   dark,
@@ -79,12 +76,7 @@ void main() {
               );
               await tester.pumpAndSettle();
               await tester.pumpAndSettle();
-              if (id == elegantThemePackId) {
-                expectVerticallyCentered(tester, [
-                  find.text('Could not load'),
-                  find.byType(RaftRecipeButton),
-                ], reason: 'legacy Elegant RaftErrorBanner small=$small');
-              } else {
+              {
                 // raft-ui 0.95.3 `BannerAction`: in a banner of 452px or more
                 // whose copy is one line, the action sits after the copy on
                 // its last line (`@min-[452px]:not-data-wrap:col-start-…
@@ -103,10 +95,7 @@ void main() {
       testWidgets(
         'RaftComposerNotice message and dismiss: $theme zh=$zh x$scale',
         (tester) async {
-          for (final id in raftThemeMatrix([
-            elegantThemePackId,
-            raftThemePackId,
-          ], look: raftLookOf)) {
+          for (final id in raftThemeMatrix([raftThemePackId])) {
             await tester.pumpWidget(
               _host(
                 dark,
@@ -120,44 +109,12 @@ void main() {
               ),
             );
             await tester.pumpAndSettle();
-            if (id == elegantThemePackId) {
-              expectVerticallyCentered(tester, [
-                find.text('Attachment too large'),
-                find.byType(RaftRecipeButton),
-              ], reason: 'legacy Elegant RaftComposerNotice');
-            } else {
-              expect(
-                tester.getTopLeft(find.text('Attachment too large')).dy,
-                tester.getTopLeft(find.byType(RaftButton)).dy,
-              );
-            }
+            expect(
+              tester.getTopLeft(find.text('Attachment too large')).dy,
+              tester.getTopLeft(find.byType(RaftButton)).dy,
+            );
           }
         },
-      );
-
-      testWidgets(
-        'RaftAvatarListRow name and trailing action: $theme zh=$zh x$scale',
-        (tester) async {
-          await tester.pumpWidget(
-            _host(
-              dark,
-              RaftAvatarListRow(
-                avatar: const SizedBox.square(dimension: 32),
-                name: 'Cindy',
-                subtitle: '@cindy',
-                actionContent: [_button('Remove')],
-              ),
-              // The recipe look centres the name with the action; the Raft
-              // `ListRow` centres the action on the whole two-line row.
-              themeId: elegantThemePackId,
-            ),
-          );
-          expectVerticallyCentered(tester, [
-            find.text('Cindy'),
-            find.byKey(_action),
-          ], reason: 'RaftAvatarListRow');
-        },
-        skip: raftLookSkip(raftLookElegant),
       );
 
       testWidgets(

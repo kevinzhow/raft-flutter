@@ -96,19 +96,5 @@ void main() {
         expect(activations, 1);
       });
     }
-    for (final id in [elegantThemePackId, brutalThemePackId]) {
-      test('$id/$dark frozen menu paint retains its original layer', () {
-        final tokens = raftTheme(
-          pack: packForThemeId(id),
-          dark: dark,
-        ).extension<RaftTokens>()!;
-        expect(tokens.isRaftLook, isFalse);
-        final recipe = RaftMountedConversationControlRecipe(
-          tokens,
-          menuOpen: true,
-        );
-        expect(recipe.background, tokens.colors['layer-sidebar-item-active']);
-      });
-    }
   }
 }

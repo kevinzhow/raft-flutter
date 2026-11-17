@@ -161,7 +161,6 @@ void main() {
       ),
       'RaftSegmentedControl tabs': () => RaftSegmentedControl<String>(
         label: '筛选',
-        legacyStyle: RaftSegmentedStyle.tabs,
         value: 'all',
         onChanged: (_) {},
         items: const [
@@ -171,7 +170,6 @@ void main() {
       ),
       'RaftSegmentedControl taskViews': () => RaftSegmentedControl<String>(
         label: '视图',
-        legacyStyle: RaftSegmentedStyle.taskViews,
         value: 'list',
         onChanged: (_) {},
         items: const [

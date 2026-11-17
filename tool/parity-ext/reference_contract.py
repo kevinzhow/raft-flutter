@@ -11,15 +11,11 @@ class InvalidComparison(ValueError):
     pass
 
 
-def configure_theme(*, frozen: bool, env: dict) -> str | None:
+def configure_theme(*, env: dict) -> str | None:
     override = env.get('PARITY_THEME_OVERRIDE') or None
     modern = {'raft-case', 'raft', 'raft-light', 'raft-dark', 'light'}
-    if frozen:
-        if override in modern:
-            raise InvalidComparison('Frozen references cannot use a Raft theme override.')
-        return override
     if override is not None and override not in modern:
-        raise InvalidComparison('A current Web comparison requires the Raft look; use --frozen for legacy references.')
+        raise InvalidComparison('A current Web comparison requires the Raft look.')
     # Historical case names carry brightness, not the current comparison look.
     env['PARITY_THEME_OVERRIDE'] = override or 'raft-case'
     return env['PARITY_THEME_OVERRIDE']

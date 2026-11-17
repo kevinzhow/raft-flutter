@@ -1,7 +1,6 @@
-// The Raft look's forwarded bundle (raft-ui 0.95.3 message-forwarded-bundle
-// recipes on the `messageEmbed` frame): every size, weight, colour and inset
-// is read from the generated slots. The frozen looks keep
-// `ForwardedSnapshotRecipe` (rich_card_tokens.dart).
+// The forwarded bundle (raft-ui 0.95.3 message-forwarded-bundle recipes on the
+// `messageEmbed` frame): every size, weight, colour and inset is read from the
+// generated slots.
 import 'package:flutter/widgets.dart';
 
 import 'message_embed_frame.dart';
@@ -42,19 +41,16 @@ class RaftForwardedBundleStyle {
     final states = t.recipeStates(responsive: true);
     final embed = raftMessageEmbedSlots(context);
     final bundle = RaftMessageForwardedBundleRecipe.resolve(
-      theme: t.recipeTheme,
       collapsed: true,
       states: states,
       tokens: t.recipeTokens,
     );
     final item = RaftMessageForwardedBundleItemRecipe.resolve(
-      theme: t.recipeTheme,
       states: states,
       tokens: t.recipeTokens,
     );
     final hoverStates = t.recipeStates(responsive: true, hovered: true);
     final hovered = RaftMessageForwardedBundleRecipe.resolve(
-      theme: t.recipeTheme,
       states: hoverStates,
       tokens: t.recipeTokens,
     );

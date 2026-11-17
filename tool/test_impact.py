@@ -239,13 +239,9 @@ def suite_files(events_path, root):
 
 
 def package_test_files(root, package_dir):
-    """Repo-relative test files of a package that the Raft run executes (legacy-look files are tool/theme-suite's)."""
-    import theme_looks
+    """Repo-relative test files of a package that the Raft run executes."""
     root = pathlib.Path(root)
-    found = sorted(p.relative_to(root).as_posix() for p in (root / package_dir / 'test').rglob('*_test.dart'))
-    if package_name(package_dir) == 'raft_theme':
-        return found
-    return [f for f in found if theme_looks.runs_by_default(str(root / f))]
+    return sorted(p.relative_to(root).as_posix() for p in (root / package_dir / 'test').rglob('*_test.dart'))
 
 
 def impact_filters(root, package_roots):
@@ -298,7 +294,6 @@ def build(root, packages, jobs, tier, raw_root, cache=CACHE, commit=None, log=pr
     its file's lines incomplete; the selector distrusts such files until then). `resume` keeps the reports
     of an interrupted build and runs only the test files that have none yet.
     """
-    import theme_looks
     root = pathlib.Path(root).resolve()
     package_roots = affected_tests.workspace_packages(root)
     commit = commit or git(['rev-parse', 'HEAD'], cwd=root).strip()
@@ -336,9 +331,6 @@ def build(root, packages, jobs, tier, raw_root, cache=CACHE, commit=None, log=pr
                 old.unlink()
         events.unlink(missing_ok=True)
         env = impact_env(os.environ, raw, root, package_roots)
-        env['RAFT_TEST_LOOKS'] = 'raft'
-        env.pop('RAFT_TEST_MODES', None)
-        env.pop('RAFT_TEST_ALL_THEMES', None)
         if tier:
             env['RAFT_TEST_TIER'] = tier
         # The map build runs at the lowest priority on a shared machine: a test that waits for CPU past the
@@ -347,9 +339,6 @@ def build(root, packages, jobs, tier, raw_root, cache=CACHE, commit=None, log=pr
         env.setdefault('RAFT_TEST_TIMEOUT_SECONDS', '600')
         cmd = [sys.executable, str(root / 'tool/flutter'), 'test', '--no-pub', '-j', str(jobs), '--enable-vmservice', '--no-dds',
                '--reporter', 'failures-only', '--file-reporter', f'json:{events}', *extra_args]
-        if package_name(package_dir) != 'raft_theme':  # the engine package runs whole (as in the nightly)
-            for look in theme_looks.LEGACY_LOOKS:
-                cmd += ['-x', theme_looks.tag_look(look)]
         cmd += files
         temp = ensure_probe_config(package_path, root)
         started = time.monotonic()
@@ -1085,14 +1074,11 @@ class Selector:
 
     def unmapped_tests(self, changed_dart):
         """Test files the maps do not know (probe failed, package without a map) that import a changed file."""
-        import theme_looks
         existing = set(all_test_files(self.root))
         if self.worktree:
             existing |= {f for f in git(['ls-files', '--others', '--exclude-standard', '--', '*_test.dart'], cwd=self.root).splitlines()
                          if affected_tests.is_test_file(f)}
         unknown = existing - self.map_tests
-        legacy = {f for f in unknown if not theme_looks.runs_by_default(str(self.root / f))}
-        unknown -= legacy
         if not unknown:
             return
         reach = self.importers(changed_dart) & unknown
@@ -1100,8 +1086,7 @@ class Selector:
         if unknown:
             failed = sum(1 for f in unknown if any(f in m.failed for m in self.maps))
             self.selection.notes.append(f'{len(unknown)} test files are not in any map or failed while it was built'
-                                        f' ({failed} failed; import-graph fallback for them)'
-                                        + (f'; {len(legacy)} legacy-look files left to tool/theme-suite' if legacy else ''))
+                                        f' ({failed} failed; import-graph fallback for them)')
 
     def check_maps(self):
         if not self.maps:
@@ -1141,12 +1126,11 @@ def all_test_files(root):
 
 
 def render(selection, root, maps, merge_base, fmt='text', package=None):
-    import theme_looks
     if selection.select_all:
         tests = {t: [f'all: {selection.select_all}'] for t in all_test_files(root)}
     else:
         tests = selection.tests
-    tests = {t: r for t, r in tests.items() if (pathlib.Path(root) / t).is_file() and theme_looks.runs_by_default(str(pathlib.Path(root) / t))}
+    tests = {t: r for t, r in tests.items() if (pathlib.Path(root) / t).is_file()}
     if package:
         prefix = package.rstrip('/') + '/'
         tests = {t[len(prefix):]: r for t, r in tests.items() if t.startswith(prefix)}

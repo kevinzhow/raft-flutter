@@ -5,7 +5,6 @@ import 'package:raft_theme/raft_theme.dart';
 import 'package:raft_theme/recipes.dart' show RaftThemeRecipeTokens;
 import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_ui/recipes.dart';
-import 'package:raft_ui/test_themes.dart';
 
 // Every foundation token referenced by the generated recipes must resolve
 // against the generated token set in all three themes.
@@ -169,16 +168,4 @@ void main() {
       }
     });
   }
-
-  test('brutal md primary button resolves to source values', () {
-    final tokens = RaftRecipeTokens(RaftTokens.theme());
-    final s = RaftButtonRecipe.resolve(
-      theme: RaftRecipeTheme.brutal,
-      variant: RaftButtonRecipeVariant.primary,
-      size: RaftButtonRecipeSize.md,
-      states: const RaftRecipeStates({}),
-      tokens: tokens,
-    );
-    expect(s.root.height, 32);
-  }, skip: raftLookSkip(raftLookBrutal));
 }

@@ -24,7 +24,7 @@ import 'recipe_surface.dart';
 import 'recipes/card.g.dart';
 import 'recipes/popover.g.dart';
 import 'recipes/recipe_router.dart'
-    show raftPopoverSurfaceClasses, resolveRecipeClasses, usesLegacyRecipes;
+    show raftPopoverSurfaceClasses, resolveRecipeClasses;
 import 'recipes/recipe_runtime.dart';
 import 'panel_layout.dart';
 import 'text_measure.dart';
@@ -60,9 +60,8 @@ class RaftInlineBox extends StatelessWidget {
 
 /// Web `AvatarListRow` (`align="center"`, v1.21.12): a [RaftCard.item]
 /// with `px-3 py-2`, avatar, name (`truncate text-sm font-semibold
-/// text-foreground-muted theme-brutal:font-bold theme-brutal:text-black`) +
-/// subtitle (`text-xs font-mono text-foreground-hint
-/// theme-brutal:text-black/50`) in a
+/// text-foreground-muted`) +
+/// subtitle (`text-xs font-mono text-foreground-hint`) in a
 /// baseline-aligned wrap, and right content (`flex shrink-0 items-center
 /// gap-1.5`).
 class RaftAvatarListRow extends StatelessWidget {
@@ -270,7 +269,7 @@ class RaftSectionEyebrow extends StatelessWidget {
 
 /// Web `SectionHeader`: `flex items-center justify-between gap-2` with
 /// optional icon, a [RaftSectionEyebrow] label + count (`ml-2 font-mono
-/// text-foreground-placeholder theme-brutal:text-black/40`) and an action
+/// text-foreground-placeholder`) and an action
 /// in a `shrink-0` block.
 class RaftSectionHeader extends StatelessWidget {
   const RaftSectionHeader({
@@ -314,22 +313,17 @@ class RaftSectionHeader extends StatelessWidget {
                     const WidgetSpan(child: SizedBox(width: 8)),
                     TextSpan(
                       text: '$count',
-                      style: t.recipeSet == RaftRecipeSet.raft
-                          // `font-mono text-mono-meta font-normal
-                          // text-foreground-hint` (12/16, 12/18 with a mouse).
-                          ? TextStyle(
-                              fontFamily: t.monoFont,
-                              fontSize: t.typeSlot('mono-meta').fontSize,
-                              height:
-                                  t.typeSlot('mono-meta').lineHeight /
-                                  t.typeSlot('mono-meta').fontSize,
-                              fontWeight: FontWeight.w400,
-                              color: t.colors['foreground-hint'],
-                            )
-                          : TextStyle(
-                              fontFamily: t.monoFont,
-                              color: t.semantic.foregroundPlaceholder,
-                            ),
+                      // `font-mono text-mono-meta font-normal
+                      // text-foreground-hint` (12/16, 12/18 with a mouse).
+                      style: TextStyle(
+                        fontFamily: t.monoFont,
+                        fontSize: t.typeSlot('mono-meta').fontSize,
+                        height:
+                            t.typeSlot('mono-meta').lineHeight /
+                            t.typeSlot('mono-meta').fontSize,
+                        fontWeight: FontWeight.w400,
+                        color: t.colors['foreground-hint'],
+                      ),
                     ),
                   ],
           ),
@@ -365,15 +359,6 @@ class RaftDisclosureCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    if (usesLegacyRecipes(t.recipeTokens)) {
-      return RaftCard(
-        padding: const EdgeInsets.symmetric(
-          horizontal: RaftSpace.x3,
-          vertical: RaftSpace.x2,
-        ),
-        child: child,
-      );
-    }
     return RaftRecipeBox(
       style: resolveRecipeClasses(
         const [
@@ -650,8 +635,7 @@ class _RaftCollapsibleSectionHeaderState
 /// with a57b9dab retaining raft-ui `Button` (variant ghost, size sm) and
 /// `flex w-full items-center gap-2 px-3 py-2 text-sm text-left
 /// font-medium text-foreground-strong hover:bg-fill-muted
-/// hover:!border-transparent disabled:text-foreground-muted` and brutal
-/// `text-black hover:bg-soft-signal/30 disabled:text-black/30`.
+/// hover:!border-transparent disabled:text-foreground-muted`.
 class RaftMenuButtonItem extends StatelessWidget {
   const RaftMenuButtonItem({
     super.key,
@@ -703,7 +687,6 @@ class RaftMenuButtonItem extends StatelessWidget {
         button: false,
         builder: (context, st) {
           final s = RaftButtonRecipe.resolve(
-            theme: t.recipeTheme,
             variant: RaftButtonRecipeVariant.ghost,
             size: RaftButtonRecipeSize.sm,
             states: t.recipeStates(
@@ -807,13 +790,11 @@ class RaftSelectionOption {
 }
 
 /// Web `ui/SelectionPopover`: raft-ui `Card` with the default className
-/// (`border border-line-muted bg-layer-panel shadow-raft-sm`, brutal
-/// `border-2 border-black bg-white shadow-brutal`), a header (`px-3 py-2
+/// (`border border-line-muted bg-layer-panel shadow-raft-sm`), a header (`px-3 py-2
 /// border-b`, `text-[10px] font-bold uppercase tracking-wide
 /// text-foreground-muted` title + Clear), an optional search `Input`
 /// (`w-full px-2 py-1 text-xs font-mono` in a `px-2 py-2 border-b` band) and
-/// `h-9` option rows (`px-3 text-xs font-bold border-b`, brutal
-/// `border-black/10`) with a 12px check.
+/// `h-9` option rows (`px-3 text-xs font-bold border-b`) with a 12px check.
 class RaftSelectionPopover extends StatelessWidget {
   const RaftSelectionPopover({
     super.key,
@@ -829,16 +810,10 @@ class RaftSelectionPopover extends StatelessWidget {
     this.emptyLabel = 'No options',
     this.width,
     this.surfaceStyle,
-    this.brutalProductShadow = false,
   });
 
   final String title;
   final List<RaftSelectionOption> options;
-
-  /// A caller surface that names the product `theme-brutal:shadow-brutal`
-  /// utility (not a recipe class): brutal paints that shadow instead of the
-  /// recipe's.
-  final bool brutalProductShadow;
 
   /// Shows the Clear action when non-null (`showClear && onClear`).
   final VoidCallback? onClear;
@@ -872,7 +847,6 @@ class RaftSelectionPopover extends StatelessWidget {
     final minimumWidth =
         surface.minWidth ??
         RaftPopoverRecipe.resolve(
-          theme: t.recipeTheme,
           states: t.recipeStates(),
           tokens: rt,
         ).content.minWidth ??
@@ -1104,8 +1078,7 @@ class RaftSelectionPopover extends StatelessWidget {
         width: width,
         clip: true,
         padding: EdgeInsets.zero,
-        // Source's theme-brutal:shadow-brutal is a product utility. It replaces
-        // the default recipe shadow; an explicit caller recipe owns its shadows.
+        // An explicit caller recipe owns its shadows.
         decorationOverride: null,
         child: ClipRRect(borderRadius: contentRadius, child: body),
       ),
@@ -1117,35 +1090,11 @@ class RaftSelectionPopover extends StatelessWidget {
 // Placement belongs to the popup owner; this recipe owns surface appearance.
 RaftSlotStyle _selectionPopoverSurface(RaftTokens tokens) {
   final card = RaftCardRecipe.resolve(
-    theme: tokens.recipeTheme,
     states: tokens.recipeStates(),
     tokens: tokens.recipeTokens,
   ).root;
-  // Raft set: the Card classes with the Popover content treatment. Frozen
-  // looks: their Card classes plus the authored 0.5.52 list.
-  final classes = tokens.recipeSet == RaftRecipeSet.raft
-      ? [...raftPopoverSurfaceClasses(card.classes), 'min-w-[220px]']
-      : [
-          ...card.classes.where(
-            (name) => !const {
-              'min-w-0',
-              'border-2',
-              'border-[0.5px]',
-              'border-line-muted',
-              'border-line-strong',
-              'border-black',
-              'bg-white',
-              'bg-layer-panel',
-              'shadow-raft-md',
-              'shadow-raft-xs',
-            }.contains(name),
-          ),
-          'min-w-[220px]',
-          'border',
-          'border-line-muted',
-          'bg-layer-panel',
-          'shadow-raft-sm',
-        ];
+  // The Card classes with the Popover content treatment.
+  final classes = [...raftPopoverSurfaceClasses(card.classes), 'min-w-[220px]'];
   return resolveRecipeClasses(
     classes,
     tokens.recipeStates(),

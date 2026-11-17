@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import 'dialog_card.dart' show raftRecipeThemeOf;
 import 'recipe_surface.dart';
 import 'recipes/card.g.dart';
 import 'recipes/recipe_runtime.dart' show RaftRecipeStates;
@@ -9,8 +8,7 @@ import 'system_inset.dart';
 import 'theme.dart';
 
 /// ui/BottomSheet.tsx: a `fixed inset-x-0 bottom-0 p-3` root holding a raft-ui
-/// Card (`mx-auto max-w-md`, Elegant `shadow-raft-xl`, Brutal `border-2
-/// border-black bg-white shadow-brutal-lg`) with no dim backdrop. The caller
+/// Card (`mx-auto max-w-md`, `shadow-raft-xl`) with no dim backdrop. The caller
 /// positions the sheet at the bottom of the page; [safeBottom] is
 /// `max(12px, env(safe-area-inset-bottom))`.
 class RaftBottomSheet extends StatelessWidget {
@@ -35,7 +33,6 @@ class RaftBottomSheet extends StatelessWidget {
     final t = RaftTokens.of(context);
     final rt = RaftRecipeTokens(t);
     final root = RaftCardRecipe.resolve(
-      theme: raftRecipeThemeOf(t),
       states: RaftRecipeStates({if (t.dark) RaftRecipeStates.dark}),
       tokens: rt,
     ).root;

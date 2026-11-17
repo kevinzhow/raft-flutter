@@ -295,14 +295,10 @@ class BypassRatchetTest(unittest.TestCase):
         ui = 'packages/raft_ui/lib/src/'
         expected = {
             ui + 'form_controls.dart': {'text_field'},
-            ui + 'form_controls_frozen.dart': {'text_field'},
-            ui + 'select_field_frozen.dart': {'select'},
-            ui + 'raft/checkbox_frozen.dart': {'toggle'},
             ui + 'overlays/dialog.dart': {'dialog'},
             ui + 'tooltip.dart': {'tooltip', 'overlay'},
             ui + 'toast.dart': {'overlay'},
             ui + 'pull_to_refresh.dart': {'refresh'},
-            ui + 'raft/legacy_material_button_surface.dart': {'button'},
         }
         self.assertEqual({name: set(families) for name, families in allowlist.items()}, expected)
         for name, families in allowlist.items():

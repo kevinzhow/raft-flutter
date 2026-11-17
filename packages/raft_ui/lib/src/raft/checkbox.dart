@@ -1,7 +1,7 @@
 // raft-ui `Checkbox` / `CheckboxIndicator`, painted in the Raft look from the generated `checkbox` and
 // `checkboxIndicator` recipes (raft_theme recipes/checkbox.g.dart, checkbox_indicator.g.dart): box size, border,
 // radius, fill, mark colour and size, the focus ring and the disabled colours are whatever the recipe resolves for
-// the control's state. The frozen Elegant and Brutal paint lives in checkbox_frozen.dart.
+// the control's state.
 import 'package:flutter/material.dart';
 
 import '../control_typography.dart';
@@ -10,15 +10,13 @@ import '../recipe_surface.dart'
     show RaftRecipeBinding, RaftRecipeBox, RaftSlotPaint;
 import '../recipes/checkbox.g.dart';
 import '../recipes/checkbox_indicator.g.dart';
-import '../recipes/recipe_runtime.dart' show CssNum, RaftRecipeTheme;
+import '../recipes/recipe_runtime.dart' show CssNum;
 import '../icons.dart';
 import '../theme.dart';
 import 'css_box.dart';
 import '../space.dart';
 import '../tokens/tokens.dart' show RaftTypeScale;
 import 'ui_tokens.dart';
-
-part 'checkbox_frozen.dart';
 
 /// `mark` of `CheckboxIndicator`.
 enum RaftCheckboxMark { check, minus }
@@ -73,10 +71,8 @@ class RaftCheckboxIndicator extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    if (!t.isRaftLook) return _frozenIndicator(context, this);
     final rt = t.recipeTokens;
     final root = RaftCheckboxIndicatorRecipe.resolve(
-      theme: t.recipeTheme,
       shape: shape == RaftCheckboxShape.circle
           ? RaftCheckboxIndicatorRecipeShape.circle
           : RaftCheckboxIndicatorRecipeShape.square,
@@ -152,12 +148,7 @@ class RaftCheckbox extends StatelessWidget {
     this.semanticLabel,
     this.focusNode,
     this.size = 20,
-    this.legacyMaterial = false,
   });
-
-  /// The frozen Elegant and Brutal looks drew this one control (the sign-up terms box) as a Material checkbox; this
-  /// keeps it so. The Raft look ignores it. Delete with the legacy looks.
-  final bool legacyMaterial;
 
   final bool value, indeterminate;
   final ValueChanged<bool>? onChanged;
@@ -170,11 +161,6 @@ class RaftCheckbox extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     final disabled = onChanged == null;
-    if (!t.isRaftLook) {
-      return legacyMaterial
-          ? _frozenMaterialCheckbox(context, this)
-          : _frozenCheckbox(context, this);
-    }
     final rt = t.recipeTokens;
     return RaftInteractive(
       onPressed: disabled
@@ -188,7 +174,6 @@ class RaftCheckbox extends StatelessWidget {
         mixed: indeterminate,
         child: RaftRecipeBox(
           style: RaftCheckboxRecipe.resolve(
-            theme: t.recipeTheme,
             states: t.recipeStates(
               responsive: true,
               focusVisible: st.focusVisible,
@@ -219,7 +204,7 @@ class RaftCheckbox extends StatelessWidget {
 }
 
 /// A checkbox with its title and optional description on one row (`<label><Checkbox /> title <span>description</span>
-/// </label>`): the whole row toggles. The frozen Elegant and Brutal looks keep the Material list tile they drew.
+/// </label>`): the whole row toggles.
 class RaftCheckboxRow extends StatelessWidget {
   const RaftCheckboxRow({
     super.key,
@@ -238,13 +223,12 @@ class RaftCheckboxRow extends StatelessWidget {
   /// Null disables the row.
   final ValueChanged<bool>? onChanged;
 
-  /// The compact row of the action card (`dense` list tile in the frozen looks).
+  /// The compact row of the action card.
   final bool dense;
 
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    if (!t.isRaftLook) return _frozenCheckboxRow(context, this);
     final ui = t.ui;
     final disabled = onChanged == null;
     final titleText = title;
@@ -264,7 +248,6 @@ class RaftCheckboxRow extends StatelessWidget {
             // The 20px box centres on the first 20px title line.
             RaftRecipeBox(
               style: RaftCheckboxRecipe.resolve(
-                theme: t.recipeTheme,
                 states: t.recipeStates(
                   responsive: true,
                   focusVisible: st.focusVisible,

@@ -71,15 +71,4 @@ void main() {
       [19, FontWeight.w700],
     );
   });
-
-  for (final id in [elegantThemePackId, brutalThemePackId]) {
-    testWidgets('$id keeps the a57b9dab 14 / 12 / 11 hierarchy', (t) async {
-      addTearDown(() => t.pumpWidget(const SizedBox()));
-      final r = await mount(t, packForThemeId(id));
-      expect(
-        [r.heading.fontSize, r.description.fontSize, r.annotation.fontSize],
-        [14, 12, 11],
-      );
-    });
-  }
 }

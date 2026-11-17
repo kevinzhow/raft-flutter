@@ -122,14 +122,8 @@ void main() {
     expect(t.takeException(), isNull);
   });
 
-  for (final (look, dark) in [
-    (raftThemePackId, false),
-    (raftThemePackId, true),
-    (elegantThemePackId, false),
-    (elegantThemePackId, true),
-    (brutalThemePackId, false),
-  ]) {
-    testWidgets('retry resolves and navigation stays reachable: $look/$dark', (
+  for (final dark in [false, true]) {
+    testWidgets('retry resolves and navigation stays reachable: raft/$dark', (
       t,
     ) async {
       retire(t);
@@ -161,7 +155,7 @@ void main() {
             }, user: const {'id': 'alice'});
             var closed = false;
             Widget host(Key key) => MaterialApp(
-              theme: raftTheme(pack: builtInTheme(look), dark: dark),
+              theme: raftTheme(dark: dark),
               home: MediaQuery(
                 data: MediaQueryData(
                   size: Size(width, 944),

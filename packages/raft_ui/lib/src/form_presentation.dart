@@ -16,7 +16,6 @@ import 'sheet.dart';
 import 'system_inset.dart';
 import 'tap_slop.dart';
 import 'theme.dart';
-import 'recipes/recipe_runtime.dart' show RaftRecipeSet;
 
 // A form is a window with inputs and a submit button (create a channel, edit a
 // profile, rename). It is shown with `RaftPresentationPolicy.form`: a bottom
@@ -330,7 +329,6 @@ Future<V?> showRaftWindow<V>(
     : modal
     ? showRaftDialog<V>(context: context, modal: true, builder: builder)
     : showRaftDialog<V>(
-        legacyMaterial: true,
         context: context,
         // Web `DialogCard` / `ConfirmDialog`: no scrim close.
         barrierDismissible: false,
@@ -366,10 +364,10 @@ class RaftFormSheet extends StatelessWidget {
   /// The scaffold's own close button; defaults to [RaftCloseButton].
   final Widget? closeButton;
 
-  /// The submit action, for the Raft look's phone sheet head (Web
+  /// The submit action, for the phone sheet head (Web
   /// `NarrowDialog` `DialogCommit`): the close X at the start, the title and
   /// this button at the end over a seam, with no footer (the X is Cancel).
-  /// Without it, and in the frozen looks, [footer] is drawn as before.
+  /// Without it [footer] is drawn as before.
   final Widget? commit;
 
   /// The close X of the head: the supplied [closeButton], else the scaffold's own.
@@ -391,7 +389,7 @@ class RaftFormSheet extends StatelessWidget {
     );
     final text = title;
     final scaler = MediaQuery.textScalerOf(context);
-    if (commit != null && t.isRaftLook) {
+    if (commit != null) {
       return _narrowSheet(context, t, style);
     }
     return LayoutBuilder(
@@ -449,9 +447,7 @@ class RaftFormSheet extends StatelessWidget {
             RaftSpace.x4,
             RaftSpace.x4,
           ),
-          body: t.recipeSet == RaftRecipeSet.raft
-              ? RaftTapSlopHost(child: body)
-              : body,
+          body: RaftTapSlopHost(child: body),
           footer: footer == null
               ? null
               : Padding(

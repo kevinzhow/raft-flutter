@@ -342,7 +342,7 @@ class _Chip extends StatelessWidget {
   final bool selected;
   final VoidCallback? onTap;
 
-  /// Raft look (`OptionGrid`): `h-8 rounded-control border-[1.5px] px-3 text-footnote font-bold`; the chosen one is
+  /// `OptionGrid`: `h-8 rounded-control border-[1.5px] px-3 text-footnote font-bold`; the chosen one is
   /// the yellow sticker (brand fill, ink border and type), the others sit on the card with the strong line. Hover
   /// lays the press overlay on the resting fill.
   Widget _raftChip(BuildContext context, RaftTokens t) {
@@ -387,57 +387,8 @@ class _Chip extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
-    if (t.isRaftLook) return _raftChip(context, t);
-    final border = 1.0;
-    final fill = (selected ? t.colors['primary-soft']! : t.panel);
-    final shadows = selected ? t.themeShadows.xs.outer : const <BoxShadow>[];
-    return RaftInteractive(
-      onPressed: onTap,
-      semanticLabel: label,
-      selected: selected,
-      builder: (context, state) {
-        final active = state.enabled && (state.hovered || state.pressed);
-        // Not selected: hover / pressed tint the idle surface.
-        final shade = !selected && active
-            ? (t.colors['layer-canvas-muted']!)
-            : fill;
-        return DecoratedBox(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(6),
-            boxShadow: [
-              if (state.focusVisible)
-                BoxShadow(color: t.ink.withValues(alpha: .8), spreadRadius: 2),
-            ],
-          ),
-          child: RaftCssSnappedBox(
-            color: shade,
-            borderColor: active
-                ? t.colors['line-strong']!
-                : t.colors['line-muted']!,
-            borderWidth: border,
-            radius: 6,
-            shadows: shadows,
-            child: Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: 12 + border,
-                vertical: 6 + border,
-              ),
-              child: Text(
-                label,
-                style: RaftTypography.heading(
-                  t,
-                  size: 14,
-                  line: 20,
-                ).copyWith(color: t.strong),
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
+  Widget build(BuildContext context) =>
+      _raftChip(context, RaftTokens.of(context));
 }
 
 /// SetupSessionFooter: `flex items-center gap-4 text-sm` with the muted

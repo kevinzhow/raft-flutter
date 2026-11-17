@@ -8,7 +8,7 @@ import 'package:raft_ui/raft_ui.dart';
 /// The recorded failure is this bar, not the search toolbar under it.
 /// [RaftTextScaling] over a platform scale of 2 makes the title and
 /// subtitle column overflow a fixed-height bar. Default scale stays on the
-/// 56px shell header (the Brutal 62px bar no longer exists).
+/// 56px shell header.
 void main() {
   testWidgets('Activity header stays 56px at the default text size', (
     tester,

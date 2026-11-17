@@ -120,7 +120,6 @@ void _expectAction(
   expect(button, findsOneWidget);
   final tokens = RaftTokens.of(tester.element(button));
   final expected = RaftButtonRecipe.resolve(
-    theme: tokens.recipeTheme,
     variant: variant,
     size: RaftButtonRecipeSize.lg,
     states: tokens.recipeStates(),
@@ -145,7 +144,6 @@ void _expectUnmarkedLeadingInset(
 ) {
   final tokens = RaftTokens.of(tester.element(button));
   final expected = RaftButtonRecipe.resolve(
-    theme: tokens.recipeTheme,
     variant: RaftButtonRecipeVariant.warning,
     size: RaftButtonRecipeSize.lg,
     states: tokens.recipeStates(),
@@ -190,8 +188,6 @@ void _contractTest(
 }
 
 void main() {
-  // These source assertions apply only to the current Raft look. Frozen
-  // Elegant/Brutal contracts are intentionally covered by their own tests.
   for (final dark in [false, true]) {
     _contractTest('Reset footer follows each source mode, dark=$dark', (
       tester,

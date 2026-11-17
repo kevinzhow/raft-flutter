@@ -92,7 +92,6 @@ Future<void> main() async {
   SharedPreferences.setMockInitialValues({
     'raft.origin': client.origin,
     'raft.mode': 'light',
-    'raft.light': 'elegant',
   });
   await DevicePreferences.load();
   final support = await getApplicationSupportDirectory();

@@ -28,10 +28,9 @@ import 'working_agents.dart';
 
 /// Header bar of a mounted conversation panel: Web `PanelHeader` inside the
 /// `edge="attached"` ConversationPanelRoot (ChatPanel). The panel root paints
-/// the bar's surface (Brutal white, Elegant `layer-canvas-muted`, where the
-/// desktop recipe leaves the header transparent) and its bottom rule (Elegant
-/// `*:data-panel-frame-header:border-b border-line-muted`; Brutal's
-/// `border-b-2 border-black` is the recipe's own).
+/// the bar's surface (`layer-canvas-muted`, where the desktop recipe leaves
+/// the header transparent) and its bottom rule
+/// (`*:data-panel-frame-header:border-b border-line-muted`).
 class RaftConversationHeader extends StatelessWidget {
   const RaftConversationHeader({
     super.key,
@@ -64,7 +63,6 @@ class RaftConversationHeader extends StatelessWidget {
   }) {
     final t = RaftTokens.of(context);
     final base = RaftPanelHeaderRecipe.resolve(
-      theme: raftRecipeTheme(t),
       states: RaftRecipeStates({
         if (t.dark) RaftRecipeStates.dark,
         if (hasMeta) 'has:>data-slot=panel-meta',
@@ -685,8 +683,7 @@ class _LinkedDescriptionState extends State<_LinkedDescription> {
 
 /// ChatPanel `regularTitleSuffix` archived badge: `inline-flex items-center
 /// rounded-sm border bg-warning/30 px-1.5 py-1 text-[11px] font-bold
-/// leading-none`; Brutal `rounded-none border-2 border-black
-/// bg-brutal-orange/30`.
+/// leading-none`.
 class _ArchivedBadge extends StatelessWidget {
   const _ArchivedBadge(this.label);
   final String label;

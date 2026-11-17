@@ -224,7 +224,6 @@ class RaftMenuItemSurface extends StatelessWidget {
       _ => false,
     };
     final composite =
-        tokens.recipeSet == RaftRecipeSet.raft &&
         tokenFill &&
         plainFill &&
         (style.opacity ?? 1) == 1 &&
@@ -237,7 +236,6 @@ class RaftMenuItemSurface extends StatelessWidget {
         .text(tokens, base: DefaultTextStyle.of(context).style)
         .color;
     final compositeBorders =
-        tokens.recipeSet == RaftRecipeSet.raft &&
         plainFill &&
         (style.opacity ?? 1) == 1 &&
         style.before == null &&

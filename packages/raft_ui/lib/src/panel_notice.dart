@@ -1,10 +1,9 @@
 import 'package:flutter/rendering.dart' show OverflowBoxFit;
 import 'package:flutter/widgets.dart';
 
-import 'agent_profile.dart' show RaftPanelText;
 import 'recipe_surface.dart';
 import 'recipes/panel_notice.g.dart';
-import 'recipes/recipe_runtime.dart' show RaftRecipeSet, RaftRecipeStates;
+import 'recipes/recipe_runtime.dart' show RaftRecipeStates;
 import 'theme.dart';
 import 'viewport_breakpoints.dart';
 
@@ -40,20 +39,9 @@ class RaftPanelNotice extends StatelessWidget {
   final Widget Function(BuildContext context, TextStyle style) content;
   final List<Widget> actions;
 
-  /// The frozen looks' tint of each status.
-  static String _legacyFill(RaftPanelNoticeRecipeStatus status) =>
-      switch (status) {
-        RaftPanelNoticeRecipeStatus.default_ => 'fill-muted',
-        RaftPanelNoticeRecipeStatus.warning => 'warning-soft',
-        RaftPanelNoticeRecipeStatus.destructive => 'danger-soft',
-        RaftPanelNoticeRecipeStatus.info => 'info-soft',
-        RaftPanelNoticeRecipeStatus.success => 'success-soft',
-      };
-
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    if (t.recipeSet != RaftRecipeSet.raft) return _legacy(context, t);
     final tokens = t.recipeTokens;
     final recipe = RaftPanelNoticeRecipe.resolve(
       status: status,
@@ -105,27 +93,4 @@ class RaftPanelNotice extends StatelessWidget {
       ),
     );
   }
-
-  Widget _legacy(BuildContext context, RaftTokens t) => Semantics(
-    liveRegion: true,
-    container: true,
-    child: Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-      decoration: BoxDecoration(
-        color: t.colors[_legacyFill(status)],
-        border: Border(
-          // ds-allow: the frozen Elegant and Brutal strip draws its 1px rule as it always did
-          bottom: BorderSide(color: t.colors['line-muted']!, width: 1),
-        ),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (leading != null) ...[leading!, const SizedBox(width: 8)],
-          Expanded(child: content(context, RaftPanelText.value(t))),
-          for (final action in actions) ...[const SizedBox(width: 8), action],
-        ],
-      ),
-    ),
-  );
 }

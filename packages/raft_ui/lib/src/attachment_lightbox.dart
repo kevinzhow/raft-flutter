@@ -141,7 +141,7 @@ class RaftLightboxIconAction extends StatelessWidget {
   }
 }
 
-/// The title bar both lightboxes share: `bg-layer-panel` (brutal white),
+/// The title bar both lightboxes share: `bg-layer-panel`,
 /// `border-b`, then `flex h-14 items-center gap-3 px-4`.
 class RaftLightboxHeader extends StatelessWidget {
   const RaftLightboxHeader({
@@ -164,8 +164,7 @@ class RaftLightboxHeader extends StatelessWidget {
   final List<Widget> actions;
   final bool titleBold;
 
-  /// Elegant `border-b-2` (image lightbox) or `border-b` (preview shell);
-  /// brutal is always 2.
+  /// `border-b-2` (image lightbox) or `border-b` (preview shell).
   final double borderWidth;
   final VoidCallback onClose;
   @override
@@ -299,7 +298,7 @@ class RaftLightboxHeader extends StatelessWidget {
   }
 }
 
-/// `aside`: `w-80`, `border-l` (`-2` brutal / image lightbox), panel surface.
+/// `aside`: `w-80`, `border-l` (`-2` in the image lightbox), panel surface.
 /// The content is laid out at the full 320 and clipped by the border box, as
 /// the Web `h-full w-80` inner div is.
 class RaftLightboxAside extends StatelessWidget {
@@ -630,12 +629,10 @@ class RaftLightboxLoading extends StatelessWidget {
     child: SizedBox.square(
       dimension: 256,
       child: Center(
-        child: RaftTokens.of(context).isRaftLook
-            ? const RaftSpinner(
-                inverse: true,
-                recipeSize: RaftSpinnerRecipeSize.lg,
-              )
-            : const RaftSpinner(inverse: true, size: 32),
+        child: const RaftSpinner(
+          inverse: true,
+          recipeSize: RaftSpinnerRecipeSize.lg,
+        ),
       ),
     ),
   );

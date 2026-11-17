@@ -237,7 +237,6 @@ class _ProviderConnectionsState
           return result;
         },
         builder: (context, data, failure) => RaftAlertDialog(
-          legacy: RaftLegacyAlert.material,
           title: Text('Agents using ${connection['name']}'),
           content: SizedBox(
             width: 480,
@@ -503,7 +502,6 @@ class _ProviderConnectionsState
       final receipt = managementMap(result['probe']);
       await scopedDialog<void>(
         (context) => RaftAlertDialog(
-          legacy: RaftLegacyAlert.material,
           title: Text(
             receipt['outcome'] == 'success'
                 ? 'Provider verified'
@@ -546,7 +544,6 @@ class _ProviderConnectionsState
           )['receipts'],
         ),
         builder: (dialog, receipts, failure) => RaftAlertDialog(
-          legacy: RaftLegacyAlert.material,
           title: Text(raftText(context, 'Provider verification history')),
           content: SizedBox(
             width: 560,

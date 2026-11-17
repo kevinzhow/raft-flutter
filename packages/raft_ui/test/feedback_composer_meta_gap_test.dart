@@ -24,20 +24,12 @@ void main() {
       )..addFont(Future.value(data))).load();
     }
   });
-  for (final variant in raftThemeMatrix(
-    [
-      (raftLookRaft, false, 8.0),
-      (raftLookRaft, true, 8.0),
-      (raftLookElegant, false, 16.0),
-      (raftLookElegant, true, 16.0),
-      (raftLookBrutal, false, 12.0),
-      (raftLookBrutal, true, 16.0),
-    ],
-    look: (v) => v.$1,
-    dark: (v) => v.$2,
-  )) {
+  for (final variant in raftThemeMatrix([
+    ('raft', false, 8.0),
+    ('raft', true, 8.0),
+  ], dark: (v) => v.$2)) {
     final (look, dark, gap) = variant;
-    final phone = look == raftLookRaft;
+    final phone = look == 'raft';
     testWidgets('feedback metadata and four actions/$look/$dark', (t) async {
       t.view.physicalSize = Size(phone ? 390 : 900, 844);
       t.view.devicePixelRatio = 1;

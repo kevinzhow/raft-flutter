@@ -57,7 +57,6 @@ class RaftMessageContextMenu extends StatelessWidget {
     final t = RaftTokens.of(context);
     final resolver = RaftRecipeTokens(t);
     final s = RaftContextMenuRecipe.resolve(
-      theme: t.recipeTheme,
       states: t.recipeStates(responsive: true),
       tokens: resolver,
     );
@@ -101,8 +100,8 @@ class RaftMessageContextMenu extends StatelessWidget {
             key: item.key,
             label: item.label,
             icon: SizedBox.square(
-              // MenuItem.tsx v1.24: the first icon is 16 (frozen looks 14).
-              dimension: t.isRaftLook ? 16 : 14,
+              // MenuItem.tsx v1.24: the first icon is 16.
+              dimension: 16,
               child: item.icon,
             ),
             onPressed: item.onPressed,
@@ -267,14 +266,10 @@ class _RaftContextMenuLayout extends SingleChildLayoutDelegate {
   bool shouldRelayout(_RaftContextMenuLayout old) => old.anchor != anchor;
 }
 
-/// Convenience: a lucide icon for a menu row, 16px (MenuItem.tsx v1.24;
-/// 14px in the frozen looks).
+/// Convenience: a lucide icon for a menu row, 16px (MenuItem.tsx v1.24).
 Widget raftMessageMenuIcon(RaftGlyph glyph) => Builder(
-  builder: (context) => RaftIcon(
-    glyph,
-    size: RaftTokens.of(context).isRaftLook ? 16 : 14,
-    color: IconTheme.of(context).color,
-  ),
+  builder: (context) =>
+      RaftIcon(glyph, size: 16, color: IconTheme.of(context).color),
 );
 
 class _SeparatorPainter extends CustomPainter {

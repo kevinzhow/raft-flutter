@@ -102,7 +102,6 @@ class _ResourceSearchHomeState extends State<ResourceSearchHome> {
         );
     final homeRecipe = RaftSearchHomeRecipe(t);
     final searchViewport = rui.RaftSearchRecipe.resolve(
-      theme: rui.RaftRecipeTheme.elegant,
       states: rui.RaftRecipeStates({
         if (t.dark) rui.RaftRecipeStates.dark,
       }, MediaQuery.sizeOf(context).width),

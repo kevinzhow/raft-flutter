@@ -1,7 +1,6 @@
 import 'package:flutter/painting.dart';
 import 'package:raft_theme/raft_theme.dart' show RaftModeValues;
-import 'package:raft_theme/recipes.dart'
-    show RaftThemeRecipeTokens, RaftRecipeSet;
+import 'package:raft_theme/recipes.dart' show RaftThemeRecipeTokens;
 
 import '../theme.dart';
 import '../tokens/raft_tokens.g.dart' show RaftLight;
@@ -14,17 +13,13 @@ import '../tokens/raft_tokens.g.dart' show RaftLight;
 /// source of their names.
 class RaftRecipeTokens extends RaftThemeRecipeTokens {
   RaftRecipeTokens(this.tokens)
-    : super(
-        tokens.themeValues ?? const RaftModeValues(),
-        recipeSet: tokens.recipeSet,
-      );
+    : super(tokens.themeValues ?? const RaftModeValues());
 
   /// Frozen source component values with the current foundation lookups.
   RaftRecipeTokens.source(this.tokens)
     : super(
         tokens.themeValues ?? const RaftModeValues(),
         bindComponents: false,
-        recipeSet: tokens.recipeSet,
       );
 
   final RaftTokens tokens;
@@ -63,7 +58,7 @@ class RaftRecipeTokens extends RaftThemeRecipeTokens {
       'theme-shadow-lg' || 'shadow-raft-lg' => s.lg,
       'theme-shadow-xl' || 'shadow-raft-xl' => s.xl,
       // Pack-level elevations the Raft recipes name directly
-      // (`elevationFloat`, `elevationSticker`); the frozen set never does.
+      // (`elevationFloat`, `elevationSticker`).
       _ => null,
     };
     return shadow == null ? super.shadow(name) : shadow.paintOrder;
@@ -78,22 +73,15 @@ class RaftRecipeTokens extends RaftThemeRecipeTokens {
       'fieldLineHeight' => m.fieldLineHeight,
       'cardTitleFontSize' => m.cardTitleFontSize,
       // raft-ui 0.95.3 foundation.css: `--card-title-*` is 16 / 600 / 24 (14 / 22 on desktop); the theme metric
-      // keeps the 0.7.1 500 / 22 that the frozen looks and the field scale are pinned to.
+      // keeps the 0.7.1 500 / 22 that the field scale is pinned to.
       'cardTitleFontWeight' =>
-        tokens.recipeSet == RaftRecipeSet.raft
-            ? RaftLight.metrics['card-title-font-weight'] ??
-                  m.cardTitleFontWeight
-            : m.cardTitleFontWeight,
+        RaftLight.metrics['card-title-font-weight'] ?? m.cardTitleFontWeight,
       'cardTitleLineHeight' =>
-        tokens.recipeSet == RaftRecipeSet.raft && !tokens.desktop
+        !tokens.desktop
             ? RaftLight.metrics['card-title-line-height'] ??
                   m.cardTitleLineHeight
             : m.cardTitleLineHeight,
-      _ =>
-        super.number(name) ??
-            (tokens.recipeSet == RaftRecipeSet.raft
-                ? RaftLight.metrics[cssName(name)]
-                : null),
+      _ => super.number(name) ?? RaftLight.metrics[cssName(name)],
     };
   }
 

@@ -286,12 +286,8 @@ void main() {
     });
   }
 
-  for (final (look, pack) in [
-    (raftLookRaft, builtInRaftTheme),
-    (raftLookElegant, builtInElegantTheme),
-    (raftLookBrutal, builtInBrutalTheme),
-  ]) {
-    for (final dark in raftThemeMatrix([false, true], look: (_) => look)) {
+  for (final pack in [builtInRaftTheme]) {
+    for (final dark in raftThemeMatrix([false, true])) {
       testWidgets('task header has square thread artwork ${pack.id}/$dark', (
         t,
       ) async {

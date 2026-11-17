@@ -34,17 +34,5 @@ void main() {
           .geometry['space.dialogBodyTop'],
       10,
     );
-    expect(
-      builtInElegantTheme
-          .resolve(dark: true, base: builtInRaftTheme)
-          .geometry['space.dialogBodyTop'],
-      10,
-    );
-    expect(
-      builtInBrutalTheme
-          .resolve(dark: true, base: builtInRaftTheme)
-          .geometry['space.dialogBodyTop'],
-      10,
-    );
   });
 }

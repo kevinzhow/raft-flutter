@@ -11,15 +11,13 @@ import 'package:flutter/material.dart';
 import 'flex_shrink_row.dart';
 import 'design_primitives.dart' show RaftTypography;
 import 'icons.dart';
-import 'indicators.dart' show RaftWebPalette;
 import 'localization.dart';
 import 'recipe_surface.dart';
 import 'recipes/button_variants.g.dart'
     show RaftButtonRecipeSize, RaftButtonRecipeVariant;
 import 'recipes/card.g.dart';
 import 'recipes/progress.g.dart';
-import 'recipes/recipe_router.dart'
-    show resolveRecipeClasses, usesLegacyRecipes;
+import 'recipes/recipe_router.dart' show resolveRecipeClasses;
 import 'recipes/skeleton.g.dart';
 import 'recipes/status.g.dart';
 import 'settings_controls.dart';
@@ -503,15 +501,13 @@ class _BillingLines {
   final RaftTokens t;
 
   /// raft-ui 0.7.0: the plan card's header and sections are separated by 1px
-  /// `border-line-hairline` rules on the plain card fill; the frozen looks keep
-  /// their 2px `line-muted` rules and the cream header.
-  bool get raft => t.isRaftLook;
-  Color get header => t.colors[raft ? 'line-hairline' : 'line-muted']!;
-  Color get strip => t.colors[raft ? 'line-hairline' : 'line-muted']!;
-  double get ruleWidth => raft ? 1 : 2;
+  /// `border-line-hairline` rules on the plain card fill.
+  Color get header => t.colors['line-hairline']!;
+  Color get strip => t.colors['line-hairline']!;
+  double get ruleWidth => 1;
 
-  /// `bg-layer-canvas-muted theme-brutal:bg-brutal-cream`.
-  Color? get headerFill => raft ? null : t.colors['layer-canvas-muted']!;
+  /// The header has no fill of its own.
+  Color? get headerFill => null;
   BoxDecoration get top => BoxDecoration(
     border: Border(
       top: BorderSide(color: strip, width: ruleWidth),
@@ -538,7 +534,6 @@ class _BillingSkeleton extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     final s = RaftSkeletonRecipe.resolve(
-      theme: t.recipeTheme,
       variant: variant,
       states: t.recipeStates(extra: ['data-variant=${variant.css}']),
       tokens: t.recipeTokens,
@@ -724,59 +719,56 @@ class _PlanCard extends StatelessWidget {
     final lines = _BillingLines(t);
     final band = raftBreakpointWidth(context);
     final s = section;
-    Widget features(String title, List<String> items, {required bool yes}) =>
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              raftText(context, title),
-              style: lines.raft
-                  // `SectionEyebrow`: `text-footnote font-bold text-foreground-hint`.
-                  ? t.scale(
-                      RaftTypeScale.footnote,
-                      weight: FontWeight.w700,
-                      color: t.colors['foreground-hint'],
-                    )
-                  : text.title.copyWith(color: yes ? null : text.muted),
-            ),
-            const SizedBox(height: 12),
-            for (final (i, item) in items.indexed) ...[
-              if (i > 0) const SizedBox(height: 12),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.only(top: 2),
-                    child: RaftIcon(
-                      yes ? RaftGlyph.check : RaftGlyph.x,
-                      size: 16,
-                      color: lines.raft
-                          // `text-foreground` / `text-foreground-hint`.
-                          ? (yes
-                                ? t.colors['foreground']
-                                : t.colors['foreground-hint'])
-                          : yes
-                          ? RaftWebPalette.green700
-                          : t.product.brutalRed,
-                    ),
+    Widget features(
+      String title,
+      List<String> items, {
+      required bool yes,
+    }) => Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          raftText(context, title),
+          // `SectionEyebrow`: `text-footnote font-bold text-foreground-hint`.
+          style: t.scale(
+            RaftTypeScale.footnote,
+            weight: FontWeight.w700,
+            color: t.colors['foreground-hint'],
+          ),
+        ),
+        const SizedBox(height: 12),
+        for (final (i, item) in items.indexed) ...[
+          if (i > 0) const SizedBox(height: 12),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(top: 2),
+                child: RaftIcon(
+                  yes ? RaftGlyph.check : RaftGlyph.x,
+                  size: 16,
+                  // `text-foreground` / `text-foreground-hint`.
+                  color: yes
+                      ? t.colors['foreground']
+                      : t.colors['foreground-hint'],
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  item,
+                  style: RaftTypography.inherited(
+                    t,
+                    size: 14,
+                    line: 20,
+                    color: !yes ? text.muted : text.strong,
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      item,
-                      style: RaftTypography.inherited(
-                        t,
-                        size: 14,
-                        line: 20,
-                        color: lines.raft && !yes ? text.muted : text.strong,
-                      ),
-                    ),
-                  ),
-                ],
+                ),
               ),
             ],
-          ],
-        );
+          ),
+        ],
+      ],
+    );
     final included = features('Included', s.included, yes: true);
     final excluded = s.notIncluded.isEmpty
         ? null
@@ -804,9 +796,7 @@ class _PlanCard extends StatelessWidget {
         key: const ValueKey('billing-current-plan-card'),
         decoration: RaftSettingsCard.decoration(t),
         // `overflow-hidden`: the header fill stops at the rounded padding box.
-        clipBehavior: usesLegacyRecipes(t.recipeTokens)
-            ? Clip.none
-            : Clip.antiAlias,
+        clipBehavior: Clip.antiAlias,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -824,36 +814,24 @@ class _PlanCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (lines.raft)
-                    // `text-headline` plus the 22px sticker check of the current plan.
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Flexible(
-                          child: Text(
-                            s.planName,
-                            style: t.scale(
-                              RaftTypeScale.headline,
-                              color: text.strong,
-                            ),
+                  // `text-headline` plus the 22px sticker check of the current plan.
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Flexible(
+                        child: Text(
+                          s.planName,
+                          style: t.scale(
+                            RaftTypeScale.headline,
+                            color: text.strong,
                           ),
                         ),
-                        const SizedBox(width: 8),
-                        _CurrentPlanCheck(t),
-                      ],
-                    )
-                  else
-                    Text(
-                      s.planName,
-                      style: RaftTypography.inherited(
-                        t,
-                        size: 18,
-                        line: 28,
-                        weight: FontWeight.w700,
-                        color: text.strong,
                       ),
-                    ),
-                  if (lines.raft) const SizedBox(height: 2),
+                      const SizedBox(width: 8),
+                      _CurrentPlanCheck(t),
+                    ],
+                  ),
+                  const SizedBox(height: 2),
                   Text(s.planDescription, style: text.bodyMuted),
                 ],
               ),
@@ -953,12 +931,12 @@ class _StatRow extends StatelessWidget {
         Expanded(
           child: Text(
             stat.label,
-            // Raft: `text-footnote font-semibold`; the frozen looks `text-xs font-bold`.
+            // `text-footnote font-semibold`.
             style: RaftTypography.inherited(
               t,
-              size: t.isRaftLook ? 13 : 12,
-              line: t.isRaftLook ? 18 : 16,
-              weight: t.isRaftLook ? FontWeight.w600 : FontWeight.w700,
+              size: 13,
+              line: 18,
+              weight: FontWeight.w600,
               color: text.strong,
             ),
           ),
@@ -987,11 +965,7 @@ class _SeatUsage extends StatelessWidget {
         if (total >= 100) 'group/progress:data-complete',
       ],
     );
-    final p = RaftProgressRecipe.resolve(
-      theme: t.recipeTheme,
-      states: states,
-      tokens: rt,
-    );
+    final p = RaftProgressRecipe.resolve(states: states, tokens: rt);
     // The track inherits Progress's local CSS variables (see RaftProgressBar);
     // the callsite adds `flex !overflow-hidden`.
     final track = resolveRecipeClasses(
@@ -1007,7 +981,6 @@ class _SeatUsage extends StatelessWidget {
           );
     Widget legend(String label, RaftStatusRecipeVariant variant) {
       final dot = RaftStatusRecipe.resolve(
-        theme: t.recipeTheme,
         size: RaftStatusRecipeSize.sm,
         variant: variant,
         states: t.recipeStates(),
@@ -1263,7 +1236,6 @@ class _SummaryCard extends StatelessWidget {
     final rt = t.recipeTokens;
     final text = RaftSettingsText(t);
     final root = RaftCardRecipe.resolve(
-      theme: t.recipeTheme,
       variant: RaftCardRecipeVariant.option,
       states: t.recipeStates(),
       tokens: rt,

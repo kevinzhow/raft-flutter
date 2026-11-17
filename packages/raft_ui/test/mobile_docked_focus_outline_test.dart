@@ -7,7 +7,32 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
 
-import 'mobile_focus_outline_test.dart' show navItems;
+const navItems = [
+  RaftMobileNavItem(
+    id: 'home',
+    label: 'Home',
+    glyph: RaftGlyph.home,
+    key: ValueKey('focus-tab-home'),
+  ),
+  RaftMobileNavItem(
+    id: 'tasks',
+    label: 'Tasks',
+    glyph: RaftGlyph.squareCheck,
+    key: ValueKey('focus-tab-tasks'),
+  ),
+  RaftMobileNavItem(
+    id: 'members',
+    label: 'Members',
+    glyph: RaftGlyph.users,
+    key: ValueKey('focus-tab-members'),
+  ),
+  RaftMobileNavItem(
+    id: 'settings',
+    label: 'Settings',
+    glyph: RaftGlyph.settings,
+    key: ValueKey('focus-tab-settings'),
+  ),
+];
 
 typedef Shot = ({int width, Uint8List pixels});
 

@@ -278,7 +278,6 @@ class _RaftComboboxPanelState extends State<RaftComboboxPanel> {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context), tokens = t.recipeTokens;
     final r = RaftComboboxRecipe.resolve(
-      theme: t.recipeTheme,
       inputOwner: RaftComboboxRecipeInputOwner.group,
       states: t.recipeStates(
         responsive: true,
@@ -384,15 +383,12 @@ class _RaftComboboxPanelState extends State<RaftComboboxPanel> {
                                 final selected =
                                     choices[i].id == widget.currentId;
                                 final recipe = RaftComboboxRecipe.resolve(
-                                  theme: t.recipeTheme,
                                   states: t.recipeStates(
                                     responsive: true,
                                     hovered: state.hovered && enabled,
                                     extra: {
-                                      if (t.isRaftLook && !enabled)
-                                        'data-disabled',
-                                      if (t.isRaftLook && selected)
-                                        'data-selected',
+                                      if (!enabled) 'data-disabled',
+                                      if (selected) 'data-selected',
                                       if (i == highlighted && enabled)
                                         'data-highlighted',
                                       if (i == choices.length - 1) 'last-child',
@@ -470,7 +466,7 @@ class _RaftComboboxPanelState extends State<RaftComboboxPanel> {
                                                 ],
                                               ),
                                       ),
-                                      if (t.isRaftLook && selected) ...[
+                                      if (selected) ...[
                                         SizedBox(width: item.columnGap ?? 0),
                                         RaftRecipeBox(
                                           style: recipe.itemIndicator,
@@ -489,10 +485,7 @@ class _RaftComboboxPanelState extends State<RaftComboboxPanel> {
                                   ),
                                 );
                                 // Current Web uses disabled ink, not a second opacity layer.
-                                // The frozen looks retain the previous paint unchanged.
-                                return t.isRaftLook || choices[i].enabled
-                                    ? row
-                                    : Opacity(opacity: .5, child: row);
+                                return row;
                               },
                             ),
                           ],
@@ -529,7 +522,6 @@ class RaftComboboxGroupLabel extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context), tokens = t.recipeTokens;
     final r = RaftComboboxRecipe.resolve(
-      theme: t.recipeTheme,
       inputOwner: RaftComboboxRecipeInputOwner.group,
       states: t.recipeStates(responsive: true),
       tokens: tokens,

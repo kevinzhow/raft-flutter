@@ -3,9 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_theme/recipes.dart';
 import 'package:raft_theme/raft_theme.dart';
 
-// Spot values of the Raft recipe set (raft-ui 0.7.0, no `theme` axis). The
-// frozen 0.5.52 values of the Elegant and Brutal looks are pinned in
-// legacy_recipe_spot_test.dart and must not change.
+// Spot values of the Raft recipe set (raft-ui 0.7.0, no `theme` axis).
 void main() {
   final sourceTokens = RaftThemeRecipeTokens(
     builtInRaftTheme.resolve(dark: false),

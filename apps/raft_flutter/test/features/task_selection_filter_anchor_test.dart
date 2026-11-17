@@ -178,7 +178,6 @@ void main() {
           reason: 'The caller keeps the same MenuController registration.',
         );
       },
-      skip: raftLookSkip(raftLookRaft),
     );
   }
 
@@ -209,7 +208,6 @@ void main() {
           await fixture.retire(tester);
         }
       },
-      skip: raftLookSkip(raftLookRaft),
     );
   }
 
@@ -236,7 +234,7 @@ void main() {
     } finally {
       await fixture.retire(tester);
     }
-  }, skip: raftLookSkip(raftLookRaft));
+  });
 
   testWidgets(
     'Outside action passes through and stale Task authority is fenced',
@@ -266,7 +264,6 @@ void main() {
         await fixture.retire(tester);
       }
     },
-    skip: raftLookSkip(raftLookRaft),
   );
 
   testWidgets('Task filter controllers still close siblings and unregister', (
@@ -299,7 +296,7 @@ void main() {
         hasLength(1),
       );
     }
-  }, skip: raftLookSkip(raftLookRaft));
+  });
 
   testWidgets('Task outside editor keeps its newly acquired focus', (
     tester,
@@ -323,5 +320,5 @@ void main() {
     } finally {
       await fixture.retire(tester);
     }
-  }, skip: raftLookSkip(raftLookRaft));
+  });
 }

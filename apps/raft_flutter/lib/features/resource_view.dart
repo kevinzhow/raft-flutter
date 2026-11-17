@@ -13,7 +13,6 @@ import 'package:raft_ui/recipes.dart'
     as rui
     show
         RaftRecipeStates,
-        RaftRecipeTheme,
         RaftRecipeTokens,
         RaftSearchRecipe,
         RaftSearchRecipeStyle;
@@ -2552,7 +2551,6 @@ class _ResourceViewState extends State<ResourceView> {
                             : 'Filter saved messages',
                       ),
                       leadingGlyph: RaftGlyph.search,
-                      legacy: RaftLegacyInput.themed,
                       onSubmitted: (_) => load(),
                     ),
                   )
@@ -2561,7 +2559,6 @@ class _ResourceViewState extends State<ResourceView> {
                     child: SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
                       child: RaftSegmentedControl<String>(
-                        legacyStyle: RaftSegmentedStyle.tabs,
                         value: ['all', 'unread', 'mentions'].contains(filter)
                             ? filter
                             : '',
@@ -3277,7 +3274,6 @@ class _ResourceViewState extends State<ResourceView> {
   rui.RaftSearchRecipeStyle searchSlots(BuildContext context) {
     final t = RaftTokens.of(context);
     return rui.RaftSearchRecipe.resolve(
-      theme: rui.RaftRecipeTheme.elegant,
       states: rui.RaftRecipeStates({
         if (t.dark) rui.RaftRecipeStates.dark,
       }, MediaQuery.sizeOf(context).width),
@@ -3699,7 +3695,6 @@ class _ResourceViewState extends State<ResourceView> {
                 shrinkFrame: t.option('resource.rows', or: 'cards') == 'flat',
                 // ThreadsInbox uses the raft-ui SegmentedControl recipe,
                 // rather than the older 11px tab-button presentation.
-                legacyStyle: RaftSegmentedStyle.buttons,
                 value: ['all', 'unread', 'mentions'].contains(filter)
                     ? filter
                     : '',
@@ -4640,7 +4635,6 @@ class _ResourceViewState extends State<ResourceView> {
                 controller: query,
                 hintText: raftText(context, 'Filter Activity'),
                 leadingGlyph: RaftGlyph.search,
-                legacy: RaftLegacyInput.themed,
                 onSubmitted: (_) {
                   if (accepts(scope)) load();
                 },
@@ -5090,7 +5084,6 @@ class _ResourceViewState extends State<ResourceView> {
     };
     final t = RaftTokens.of(context), rt = RaftRecipeTokens(t);
     final toolbar = RaftTasksPanelRecipe.resolve(
-      theme: RaftRecipeTheme.elegant,
       states: RaftRecipeStates({
         if (t.dark) RaftRecipeStates.dark,
       }, MediaQuery.sizeOf(context).width),
@@ -5137,20 +5130,13 @@ class _ResourceViewState extends State<ResourceView> {
                           : <String, String>{
                               // IdentityFilterChip: "me" first, then Unassigned.
                               if (self != null)
-                                'user:${self.id}': t.isRaftLook
-                                    ? raftTextZh(
-                                        context,
-                                        field == 'Creator'
-                                            ? 'Created by me'
-                                            : 'Assigned to me',
-                                        field == 'Creator' ? '我创建的' : '分配给我的',
-                                      )
-                                    : raftText(
-                                        context,
-                                        field == 'Creator'
-                                            ? 'Created by Me'
-                                            : 'Assigned to Me',
-                                      ),
+                                'user:${self.id}': raftTextZh(
+                                  context,
+                                  field == 'Creator'
+                                      ? 'Created by me'
+                                      : 'Assigned to me',
+                                  field == 'Creator' ? '我创建的' : '分配给我的',
+                                ),
                               if (field == 'Assignee')
                                 'unassigned': raftTextZh(
                                   context,
@@ -5168,7 +5154,7 @@ class _ResourceViewState extends State<ResourceView> {
                         selfIdentity: self == null
                             ? null
                             : ResourceSender(self.id, 'user', self.name),
-                        identityAvatars: t.isRaftLook && field != 'Channel'
+                        identityAvatars: field != 'Channel'
                             ? projectTaskFilterAvatars(
                                 origin: w.client.origin,
                                 identityKeys: names.keys,
@@ -5218,7 +5204,6 @@ class _ResourceViewState extends State<ResourceView> {
                     onPressed: () => createTask(sourceScope: scope),
                   ),
                 RaftSegmentedControl<String>(
-                  legacyStyle: RaftSegmentedStyle.taskViews,
                   value: taskLayout,
                   visualHeight: RaftMetrics.buttonMd,
                   minimumTargetSize: RaftMetrics.buttonMd,
@@ -5730,7 +5715,6 @@ class _ResourceViewState extends State<ResourceView> {
       final confirmed = await scopedDialog<bool>(
         scope,
         (context) => RaftAlertDialog(
-          legacy: RaftLegacyAlert.material,
           title: Text(raftText(context, 'Delete task')),
           content: Text('${task['title']}'),
           actions: [

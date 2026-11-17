@@ -64,7 +64,9 @@ class RaftBadgeColors {
     switch (appearance) {
       case RaftBadgeRecipeAppearance.solid:
         final fill = switch (variant) {
-          RaftBadgeRecipeVariant.default_ => ui.stickerPaper,
+          RaftBadgeRecipeVariant.default_ ||
+          RaftBadgeRecipeVariant.you ||
+          RaftBadgeRecipeVariant.busy => ui.stickerPaper,
           RaftBadgeRecipeVariant.muted => ui.inactive,
           RaftBadgeRecipeVariant.primary => ui.brand,
           RaftBadgeRecipeVariant.information => ui.info,
@@ -81,7 +83,9 @@ class RaftBadgeColors {
         );
       case RaftBadgeRecipeAppearance.soft:
         final fill = switch (variant) {
-          RaftBadgeRecipeVariant.default_ => opaque(ui.fillMuted),
+          RaftBadgeRecipeVariant.default_ ||
+          RaftBadgeRecipeVariant.you ||
+          RaftBadgeRecipeVariant.busy => opaque(ui.fillMuted),
           RaftBadgeRecipeVariant.muted => opaque(ui['inactive-soft']),
           RaftBadgeRecipeVariant.primary => opaque(ui['brand-soft']),
           RaftBadgeRecipeVariant.information => opaque(ui['info-soft']),
@@ -118,7 +122,7 @@ class RaftBadgeColors {
   }
 }
 
-/// The two `variant` arms of raft-ui 0.95.3 that the frozen looks' variant enum does not have: `you` (what is
+/// Two `variant` arms of raft-ui 0.95.3: `you` (what is
 /// addressed to you, `bg-you` when solid) and `busy` (the Working chip: `bg-presence-busy` solid,
 /// `bg-presence-busy-soft` soft). Their fills are read from the Raft badge recipe.
 enum RaftBadgeStateVariant {
@@ -152,8 +156,7 @@ class RaftBadge extends StatelessWidget {
     this.stateVariant,
   });
 
-  /// The `you` / `busy` arm; replaces [variant] in the Raft look (the frozen looks have neither and keep
-  /// [variant]).
+  /// The `you` / `busy` arm; replaces [variant].
   final RaftBadgeStateVariant? stateVariant;
 
   final String label;
@@ -218,18 +221,15 @@ class RaftBadge extends StatelessWidget {
     );
     // Height and corner radius come from the recipe (`md:pointer-fine:h-5 md:pointer-fine:rounded-sticker` on
     // soft and outline, `h-5 rounded-sticker` solid, `h-[22px] rounded-chip` otherwise); so do the `you` /
-    // `busy` fills. The frozen looks keep their literals.
-    final raftLook = t.isRaftLook;
-    final RaftSlotStyle? recipe = raftLook
-        ? RaftBadgeRecipe.resolveProps(
-            {
-              'appearance': appearance.css,
-              'variant': stateVariant?.css ?? variant.css,
-            },
-            states: t.recipeStates(responsive: true),
-            tokens: t.recipeTokens,
-          )['root']
-        : null;
+    // `busy` fills.
+    final RaftSlotStyle? recipe = RaftBadgeRecipe.resolveProps(
+      {
+        'appearance': appearance.css,
+        'variant': stateVariant?.css ?? variant.css,
+      },
+      states: t.recipeStates(responsive: true),
+      tokens: t.recipeTokens,
+    )['root'];
     if (recipe != null && stateVariant != null && !outline && !disabled) {
       final wash = recipe.backgroundColor?.resolve(t.recipeTokens);
       final base = wash == null
@@ -313,8 +313,8 @@ class RaftBadge extends StatelessWidget {
     // `h-5` / `h-[22px]` is a minimum here: at a larger text scale the label keeps its whole line box (a fixed
     // height would clip the descenders); at scale 1 the badge is exactly 20 / 22.
     // Both radii are theme tokens, and the official React specimen confirms the
-    // mapping: a solid badge is `rounded-sticker` (4 for Raft) and an outline
-    // badge `rounded-chip` (6). Elegant and Brutal then square or soften them.
+    // mapping: a solid badge is `rounded-sticker` (4) and an outline badge
+    // `rounded-chip` (6).
     final box = RaftCssBox(
       radius:
           radius ??

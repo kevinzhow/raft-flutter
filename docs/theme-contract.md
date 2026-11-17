@@ -8,7 +8,9 @@ Raft 外观的最终对照基准是 **Web v1.21.23 实际渲染**（source tag
 （SHA-256 `47e5ed2d0c4867db61f054940189db56010787b9353cbc1babfc048f6efd53fd`）；
 Badge、Card、Button（含 ghost）实现亦相同，因此不能通过更换 token 数据版本
 修复应用布局。官方样例只验证组件输入；页面的排列、变体和文案以该 Web 版本
-实际调用及渲染为准。Elegant／Brutal 的外观基准仍为 `a57b9dab`。
+实际调用及渲染为准。Elegant／Brutal 的外观基准曾为 `a57b9dab`（已删除）。
+
+更新（2026-11-17，Kevin）：Elegant 与 Brutal 外观已删除，Raft（light/dark）是唯一外观；下文对「三套主题」、Elegant/Brutal 包和 `a57b9dab` 基准的描述是 P0 设计与迁移时的历史记录，不再描述当前行为。当前取值以 Raft 包和 `docs/design-tokens.md` 为准。
 
 状态：待评审（Kevin、Cindy）。本文件只定义契约，不含实现代码。
 决定来源：Kevin，#raft-flutter:4093da5f（8798cb71 目标是与 Raft UI 无关的主题中间层、100%；
@@ -19,10 +21,6 @@ dd6c1674 开始，交给 DeepDesign）。
 
 | 文件 | 内容 |
 | --- | --- |
-| `docs/theme-contract/values-appendix.md` | 全部 159 个颜色角色 + 5 级阴影 + 字体度量在三套主题下的取值（生成，不手抄） |
-| `docs/theme-contract/values.json` | 同一份数据的机器可读版本，P1 适配器的输入 |
-| `tool/theme-contract/dump_theme_values.py` | 生成上面两个文件的脚本，`--check` 可在 CI 里查过期 |
-| `tool/tests/test_theme_values.py` | 把上面的 `--check` 接进检查流程（全量检查与 preflight 都会跑） |
 | `docs/theme-contract/examples/user-brand.theme.json` | 一份最小用户主题包，演示格式 |
 
 删主题前后五个区域的逐文件清单（G1–G5）不入库：按仓库规矩，盘点类材料放 PR 描述与 Raft。

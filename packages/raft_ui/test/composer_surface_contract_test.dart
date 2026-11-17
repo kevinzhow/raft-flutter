@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_theme/raft_theme.dart';
 import 'package:raft_ui/raft_ui.dart';
-import 'package:raft_ui/test_themes.dart';
 
 void main() {
   for (final dark in [false, true]) {
@@ -54,50 +53,6 @@ void main() {
       await tester.pumpWidget(const SizedBox());
     });
   }
-  test('frozen composer keeps old surface, border and shadow paint order', () {
-    for (final id in [elegantThemePackId, brutalThemePackId]) {
-      for (final dark in [false, true]) {
-        final tokens = raftTheme(
-          pack: packForThemeId(id),
-          dark: dark,
-        ).extension<RaftTokens>()!;
-        final recipe = RaftComposerRecipe(tokens, desktop: true);
-        for (final focused in [false, true]) {
-          final raised = id == brutalThemePackId && !dark;
-          final shadow = raised
-              ? tokens.shadows
-              : dark
-              ? [
-                  if (focused)
-                    BoxShadow(
-                      color: tokens.colors['accent-400']!.withValues(alpha: .7),
-                      spreadRadius: .5,
-                    ),
-                ]
-              : [
-                  ...tokens.shadows,
-                  BoxShadow(
-                    color: tokens.colors['line-composer']!,
-                    spreadRadius: 1,
-                  ),
-                ];
-          expect(
-            recipe.shellDecoration(focused: focused),
-            BoxDecoration(
-              color: tokens.panel,
-              borderRadius: BorderRadius.circular(recipe.shellRadius),
-              border: raised
-                  ? Border.all(color: tokens.colors['line-composer']!, width: 2)
-                  : null,
-              boxShadow: shadow,
-            ),
-            reason: '$id/$dark/$focused',
-          );
-          expect(recipe.hostDecoration.color, tokens.panel);
-        }
-      }
-    }
-  }, skip: raftLookSkip(raftLookElegant, raftLookBrutal));
   testWidgets('user pack independently controls composer surface and shadows', (
     tester,
   ) async {

@@ -35,6 +35,5 @@ class RaftSearchInput extends StatelessWidget {
     clearLabel: clearLabel,
     onClear: onClear,
     kbd: showEscape ? 'Esc' : null,
-    legacy: RaftLegacyGroup.search,
   );
 }

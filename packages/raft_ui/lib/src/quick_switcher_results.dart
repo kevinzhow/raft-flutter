@@ -37,7 +37,6 @@ class RaftQuickSwitcherFilterRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     final slot = gen.RaftSearchRecipe.resolve(
-      theme: t.recipeTheme,
       states: t.recipeStates(),
       tokens: t.recipeTokens,
     ).filtersRow;
@@ -183,11 +182,8 @@ class RaftQuickSwitcherHit extends StatelessWidget {
     final t = RaftTokens.of(context), rt = t.recipeTokens;
     final plain = t.option('listGroup.frame', or: 'framed') == 'plain';
     final m = RaftSearchMessageRecipe.resolve(
-      theme: t.recipeTheme,
       states: t.recipeStates(),
       tokens: rt,
-      selected: selected,
-      nested: nested,
     );
     TextStyle meta(RaftSlotStyle slot) {
       final own = slot.textStyle(rt);
@@ -363,7 +359,6 @@ class RaftQuickSwitcherHit extends StatelessWidget {
       return t.scale(RaftTypeScale.callout, color: t.ui.foregroundMuted);
     final rt = t.recipeTokens;
     return RaftSearchMessageRecipe.resolve(
-      theme: t.recipeTheme,
       states: t.recipeStates(),
       tokens: rt,
     ).messageBody.textStyle(rt).copyWith(fontFamily: t.bodyFont);
@@ -391,7 +386,6 @@ class RaftQuickSwitcherThreadGroup extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context), rt = t.recipeTokens;
     final g = RaftSearchThreadRecipe.resolve(
-      theme: t.recipeTheme,
       states: t.recipeStates(extra: [if (selected) 'data-selected=true']),
       tokens: rt,
     );
@@ -526,7 +520,6 @@ class RaftQuickSwitcherEntityScroll extends StatelessWidget {
     final t = RaftTokens.of(context);
     final gap =
         gen.RaftSearchRecipe.resolve(
-          theme: t.recipeTheme,
           states: t.recipeStates(),
           tokens: t.recipeTokens,
         ).list.rowGap ??

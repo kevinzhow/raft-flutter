@@ -95,7 +95,6 @@ writeFileSync(join(out,'steps_css_cases.g.json'),JSON.stringify({source:{version
 writeFileSync(join(out,'coverage.json'),JSON.stringify({source:{version:pkg.version,sha256:sha(css)},ruleCount:rules.length,matchedRules:hits.size,selectors:rules.map(({selector,line,atoms})=>({selector,line,atoms})),configurations:configs.length,environments:envs.length,slots:STEPS_SLOTS,fixtures:fixtures.length,values:pool.length,utilities:utility.length,stylePool:stylePool.length},null,2)+'\n');
 if(process.argv.includes('--write')){
  const dest=join(root,'packages/raft_theme/lib/recipes/steps_css.g.dart');writeFileSync(dest,dart);
- writeFileSync(join(root,'packages/raft_ui/lib/src/recipes/steps_css.g.dart'),"// Published-CSS Steps; Raft look only. Frozen paint stays in steps_frozen.dart.\nexport 'package:raft_theme/recipes/steps_css.g.dart';\n");
  writeFileSync(join(root,'packages/raft_theme/test/recipes/steps_css_cases.g.json'),readFileSync(join(out,'steps_css_cases.g.json')));
 }
 console.log(`steps-css: ${rules.length} rules, ${hits.size} matched, ${configs.length} configurations, ${envs.length} environmental partitions; source ${sha(css)}`);

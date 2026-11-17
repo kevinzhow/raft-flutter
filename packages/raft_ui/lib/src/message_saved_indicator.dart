@@ -17,10 +17,8 @@ class RaftMessageSavedIndicator extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     final label = raftText(context, 'Saved');
-    final slot = RaftMessageFooterRecipe.resolve(
-      theme: t.recipeTheme,
-      tokens: t.recipeTokens,
-    ).savedIndicator;
+    final slot = RaftMessageFooterRecipe.resolve(tokens: t.recipeTokens)
+        .savedIndicator;
     final svgKey = slot.targets.keys
         .where((k) => k.contains('svg'))
         .firstOrNull;
@@ -33,7 +31,6 @@ class RaftMessageSavedIndicator extends StatelessWidget {
       semanticLabel: raftText(context, 'Remove from Saved'),
       builder: (_, state) => RaftRecipeBox(
         style: RaftMessageFooterRecipe.resolve(
-          theme: t.recipeTheme,
           states: t.recipeStates(
             hovered: state.hovered,
             pressed: state.pressed,

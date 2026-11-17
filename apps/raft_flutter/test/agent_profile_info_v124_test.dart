@@ -18,19 +18,14 @@ void main() {
   TextStyle styleOf(WidgetTester tester, String text) =>
       tester.renderObject<RenderParagraph>(find.text(text)).text.style!;
 
-  Future<RaftTokens> hostList(
-    WidgetTester tester, {
-    bool elegant = false,
-  }) async {
+  Future<RaftTokens> hostList(WidgetTester tester) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(390, 844);
     addTearDown(tester.view.reset);
     late RaftTokens tokens;
     await tester.pumpWidget(
       MaterialApp(
-        theme: raftTheme(
-          pack: elegant ? packForThemeId(elegantThemePackId) : null,
-        ),
+        theme: raftTheme(),
         home: Scaffold(
           body: Builder(
             builder: (context) {
@@ -73,14 +68,6 @@ void main() {
       expect(tester.getTopLeft(find.text('v0.0.48')).dx, x);
       expect(x, closeTo(longTerm + 16, 1));
       expect(styleOf(tester, 'Member').color, t.ui.foreground);
-    });
-
-    testWidgets('Elegant look keeps the frozen 124px term grid', (
-      tester,
-    ) async {
-      await hostList(tester, elegant: true);
-      expect(tester.getTopLeft(find.text('Member')).dx, 140);
-      expect(tester.getTopLeft(find.text('v0.0.48')).dx, 140);
     });
   });
 

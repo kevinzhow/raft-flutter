@@ -94,26 +94,6 @@ void main() {
     });
   }
 
-  for (final look in [
-    (id: elegantThemePackId, dark: false),
-    (id: elegantThemePackId, dark: true),
-    (id: brutalThemePackId, dark: false),
-  ]) {
-    testWidgets('frozen agent footer stays gap-3 ${look.id}/${look.dark}', (
-      t,
-    ) async {
-      await host(t, pack: packForThemeId(look.id), dark: look.dark);
-      final cancel = t.getRect(find.byKey(cancelKey));
-      final submit = t.getRect(find.byKey(submitKey));
-      expect(submit.left - cancel.right, 12);
-      final wrap = t.widget<Wrap>(
-        find.descendant(of: find.byKey(footerKey), matching: find.byType(Wrap)),
-      );
-      expect(wrap.runSpacing, 12);
-      expect(t.takeException(), isNull);
-    });
-  }
-
   for (final scenario in [
     (
       name: 'narrow mouse window',

@@ -55,7 +55,6 @@ Future<void> showRaftComputerReleaseNotes(
   return showRaftDialog<void>(
     context: context,
     modal: true,
-    legacyModal: true,
     barrierDismissible: true,
     barrierLabel: 'Close',
     builder: (context) => RaftDismissScope(

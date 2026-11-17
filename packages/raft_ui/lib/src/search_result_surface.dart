@@ -67,16 +67,12 @@ class RaftSearchResultSurface extends StatelessWidget {
         }
         final style = entity
             ? RaftSearchEntityRecipe.resolve(
-                theme: t.recipeTheme,
                 states: states,
                 tokens: t.recipeTokens,
               ).entity
             : RaftSearchMessageRecipe.resolve(
-                theme: t.recipeTheme,
                 states: states,
                 tokens: t.recipeTokens,
-                selected: selected,
-                nested: nested,
               ).message;
         return RaftRecipeBox(
           // Chromium paints a hairline (`border-[0.5px]`) as 1px.
@@ -112,7 +108,6 @@ class RaftTaskFilterButton extends StatelessWidget {
       selected: selected,
       builder: (context, state) {
         final root = RaftButtonRecipe.resolve(
-          theme: t.recipeTheme,
           size: RaftButtonRecipeSize.sm,
           variant: selected
               ? RaftButtonRecipeVariant.primary

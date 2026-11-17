@@ -63,10 +63,8 @@ abstract final class RaftPanelEdge {
       presentation == RaftPanelPresentation.attached;
 
   /// The line between columns: raft-ui `--line-seam` (45% ink; `line-muted`
-  /// is the 15% hairline inside a surface). The frozen legacy looks keep
-  /// their own `line-muted`.
-  static Color seam(RaftTokens t) =>
-      t.isRaftLook ? t.ui.lineSeam : t.colors['line-muted']!;
+  /// is the 15% hairline inside a surface).
+  static Color seam(RaftTokens t) => t.ui.lineSeam;
 
   /// The edge line for [style] in theme [t], or null when the theme has none.
   static BorderSide? side(RaftTokens t, RaftPanelEdgeStyle style) {

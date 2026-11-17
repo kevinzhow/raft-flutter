@@ -71,31 +71,15 @@ class RaftAttachmentGallery extends StatelessWidget {
       }
       // raft-ui `message-image-gallery`: the root is `max-w-[min(360px,100%)]`
       // and everything below follows the root's own width (a container query),
-      // never the viewport; `gap-1` between cells and rows. The frozen looks
-      // keep the 0.5.52 viewport rules and 8px gap.
-      final raft = RaftTokens.of(context).isRaftLook;
-      final gap = raft
-          ? AttachmentPrimitive.raftGalleryGap
-          : AttachmentPrimitive.galleryGap;
+      // never the viewport; `gap-1` between cells and rows.
+      const gap = AttachmentPrimitive.raftGalleryGap;
       final width = math
           .max(
             1.0,
-            math.min(
-              available,
-              raft
-                  ? AttachmentPrimitive.raftGalleryMaxWidth
-                  : viewport >= AttachmentPrimitive.columnsBreakpoint
-                  ? AttachmentPrimitive.desktopGalleryMaxWidth
-                  : math.min(
-                      AttachmentPrimitive.mobileGalleryMaxWidth,
-                      viewport - AttachmentPrimitive.mobileGalleryReserve,
-                    ),
-            ),
+            math.min(available, AttachmentPrimitive.raftGalleryMaxWidth),
           )
           .toDouble();
-      final regularRows = raft
-          ? width >= AttachmentPrimitive.raftGalleryMaxWidth
-          : viewport >= AttachmentPrimitive.rowBreakpoint;
+      final regularRows = width >= AttachmentPrimitive.raftGalleryMaxWidth;
       final rows = raftImageGalleryRows(dimensions);
       return SizedBox(
         width: width,
@@ -112,12 +96,7 @@ class RaftAttachmentGallery extends StatelessWidget {
                     Builder(
                       builder: (context) {
                         final count = rows[row].length;
-                        final columns =
-                            !raft &&
-                                count == 3 &&
-                                viewport < AttachmentPrimitive.columnsBreakpoint
-                            ? 2
-                            : count;
+                        final columns = count;
                         final extent = Size(
                           (width - (columns - 1) * gap) / columns,
                           count == 3

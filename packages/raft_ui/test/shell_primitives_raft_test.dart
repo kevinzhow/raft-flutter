@@ -3,9 +3,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_ui/test_themes.dart';
 
-/// Raft look. The legacy file (shell_primitives_test.dart) pins the Elegant
-/// measurements; here the Raft banner and toast are asserted by behaviour and
-/// by relations between their own parts, not by Elegant pixels.
+/// The Raft banner and toast are asserted by behaviour and by relations
+/// between their own parts, not by absolute pixels.
 void main() {
   Future<void> pump(WidgetTester tester, bool dark, Widget child) =>
       tester.pumpWidget(

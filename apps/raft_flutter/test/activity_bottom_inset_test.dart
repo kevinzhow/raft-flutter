@@ -77,11 +77,7 @@ Finder _list(String view) =>
 
 void main() {
   for (final (size, platform, bottom, left) in _windows) {
-    for (final pack in [
-      raftThemePackId,
-      elegantThemePackId,
-      brutalThemePackId,
-    ]) {
+    for (final pack in [raftThemePackId]) {
       testWidgets(
         '$pack ${size.width}x${size.height} Activity footer clears one system inset',
         (t) async {

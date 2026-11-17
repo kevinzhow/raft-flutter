@@ -5,7 +5,7 @@
 // (timezone, time format, Save). The app page owns the draft state, loading
 // and saving.
 import 'raft/segmented_control.dart'
-    show RaftSegmentedControl, RaftSegmentedOption, RaftSegmentedStyle;
+    show RaftSegmentedControl, RaftSegmentedOption;
 
 import 'package:flutter/material.dart';
 
@@ -124,7 +124,6 @@ class RaftLanguageRegionView extends StatelessWidget {
     alignment: Alignment.centerLeft,
     child: RaftSegmentedControl<String>(
       key: key,
-      legacyStyle: RaftSegmentedStyle.recipe,
       label: raftText(context, label),
       value: value,
       // settings.language.modeOff is 关闭; the plain `Off` catalog entry is

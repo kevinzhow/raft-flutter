@@ -7,9 +7,6 @@ void main() {
   for (final (look, dark) in [
     (raftThemePackId, false),
     (raftThemePackId, true),
-    (elegantThemePackId, false),
-    (elegantThemePackId, true),
-    (brutalThemePackId, false),
   ]) {
     testWidgets('inline summary wraps and exposes one button: $look/$dark', (
       t,

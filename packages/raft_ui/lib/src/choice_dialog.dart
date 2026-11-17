@@ -43,7 +43,6 @@ class RaftChoiceDialogOption<T> {
 /// and cancellation behavior. Only its canonical Dialog paints a surface; rows
 /// use the generated WebSelectionRow slots through the shared menu paint part.
 /// Account/permission checks and route result authority stay with the caller.
-/// Frozen looks retain their original caller-owned SimpleDialog branches.
 class RaftChoiceDialog<T> extends StatefulWidget {
   const RaftChoiceDialog({
     super.key,

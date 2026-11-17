@@ -7,7 +7,7 @@ import 'package:raft_ui/raft_ui.dart';
 /// `text-subhead font-medium`, `data-active:font-bold`): the weights come from
 /// the existing `type.sidebarItem.weight` / `type.sidebarItemActive.weight`
 /// (Raft 500 / 700); size and line from `type.settingsSidebarItem.*` when the
-/// pack sets them, else the a57b9dab recipe (Elegant 13, Brutal 14).
+/// pack sets them.
 Widget _host(RaftTokens tokens) => MaterialApp(
   theme: raftTheme().copyWith(extensions: [tokens]),
   home: Scaffold(
@@ -70,18 +70,4 @@ void main() {
       expect(_style(t, 'Personal').fontSize, 13);
     },
   );
-
-  testWidgets('without the tokens the a57b9dab recipe sizes stay', (t) async {
-    addTearDown(() => t.pumpWidget(const SizedBox()));
-    await t.pumpWidget(
-      _host(RaftTokens.theme(pack: packForThemeId(elegantThemePackId))),
-    );
-    expect(_style(t, 'Account').fontSize, 13);
-    expect(_style(t, 'Personal').fontSize, 10);
-    await t.pumpWidget(
-      _host(RaftTokens.theme(pack: packForThemeId(brutalThemePackId))),
-    );
-    await t.pump(const Duration(seconds: 1));
-    expect(_style(t, 'Account').fontSize, 14);
-  });
 }

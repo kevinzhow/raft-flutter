@@ -96,7 +96,6 @@ Future<void> main() async {
   SharedPreferences.setMockInitialValues({
     'raft.origin': client.origin,
     'raft.mode': 'light',
-    'raft.light': 'elegant',
   });
   final dir = await Directory.systemTemp.createTemp('raft-activity-session-');
   runApp(

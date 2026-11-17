@@ -8,9 +8,7 @@ void main() {
       in raftThemeMatrix([
         // Web v1.21.23 SettingsProfileCard uses text-mono-code: 13px/20px.
         (raftThemePackId, 51.0, 10.0, 17.0, 22.0, 13.0, 20.0),
-        (elegantThemePackId, 64.0, 0.0, 18.0, 22.5, 14.0, 20.0),
-        (brutalThemePackId, 64.0, 0.0, 18.0, 22.5, 14.0, 20.0),
-      ], look: (v) => raftLookOf(v.$1))) {
+      ])) {
     testWidgets(
       '$id settings identity keeps the tile centered and source typography',
       (t) async {

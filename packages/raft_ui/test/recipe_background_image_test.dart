@@ -1,13 +1,10 @@
-import 'dart:io';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
-import 'package:raft_ui/src/recipes/button_variants.g.dart';
 import 'package:raft_ui/src/recipes/search_trigger.g.dart';
-import 'package:raft_ui/test_themes.dart';
 
 Future<List<int>> pixel(
   WidgetTester tester,
@@ -87,81 +84,6 @@ void main() {
           (argb >> 24) & 255,
         ]);
         expect(t.getSize(find.byKey(key)), const Size(360, 36));
-        expect(t.takeException(), isNull);
-      });
-    }
-  }
-
-  // The frozen looks keep their existing renderer. Record exact images for
-  // before/after review when explicitly requested; normal test runs write none.
-  for (final (id, dark) in raftThemeMatrix(
-    [
-      (elegantThemePackId, false),
-      (elegantThemePackId, true),
-      (brutalThemePackId, false),
-    ],
-    look: (v) => raftLookOf(v.$1),
-    dark: (v) => v.$2,
-  )) {
-    for (final hover in [false, true]) {
-      testWidgets('frozen $id/$dark/$hover retains recipe paint', (t) async {
-        const key = Key('legacy-paint');
-        await t.pumpWidget(
-          MaterialApp(
-            theme: raftTheme(pack: packForThemeId(id), dark: dark),
-            home: Scaffold(
-              body: Center(
-                child: RepaintBoundary(
-                  key: key,
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Builder(
-                      builder: (context) {
-                        final tokens = RaftTokens.of(context);
-                        final rt = tokens.recipeTokens;
-                        final root = RaftButtonRecipe.resolve(
-                          theme: tokens.recipeTheme,
-                          tokens: rt,
-                          variant: RaftButtonRecipeVariant.default_,
-                          size: RaftButtonRecipeSize.md,
-                          states: tokens.recipeStates(hovered: hover),
-                        ).root;
-                        return RaftRecipeBox(
-                          style: root,
-                          tokens: rt,
-                          width: 160,
-                          child: const Text('Frozen control'),
-                        );
-                      },
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        );
-        addTearDown(() async {
-          await t.pumpWidget(const SizedBox());
-        });
-        await t.pumpAndSettle();
-        final out = Platform.environment['RAFT_BACKGROUND_IMAGE_CAPTURE'];
-        if (out != null) {
-          await t.runAsync(() async {
-            final image = await t
-                .renderObject<RenderRepaintBoundary>(find.byKey(key))
-                .toImage(pixelRatio: 1);
-            try {
-              final data = (await image.toByteData(
-                format: ui.ImageByteFormat.png,
-              ))!;
-              final dir = Directory(out)..createSync(recursive: true);
-              File('${dir.path}/$id-$dark-$hover.png')
-                  .writeAsBytesSync(data.buffer.asUint8List());
-            } finally {
-              image.dispose();
-            }
-          });
-        }
         expect(t.takeException(), isNull);
       });
     }

@@ -15,8 +15,6 @@ import '../recipes/list_row.g.dart';
 import '../recipes/list_row_skeleton.g.dart';
 import '../recipes/recipe_runtime.dart';
 import '../theme.dart';
-import '../tokens/tokens.dart';
-import 'css_box.dart';
 import 'ui_tokens.dart';
 
 /// `variant` axis of `listRow`.
@@ -95,9 +93,6 @@ class _ListRowScope extends InheritedWidget {
       contentWidth != old.contentWidth ||
       recipe != old.recipe;
 }
-
-bool _modern(BuildContext context) =>
-    RaftTokens.of(context).recipeTokens.recipeSet == RaftRecipeSet.raft;
 
 final _sourceIndices = {
   for (var i = 0; i < source.raftRecipeUtilities.length; i++)
@@ -341,66 +336,8 @@ class RaftListRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ui = RaftTokens.of(context).ui;
-    final ink = RaftListRowInk.resolve(ui, tone: tone, disabled: disabled);
-    final pressable = interactive && !disabled && onPressed != null;
     Widget body(RaftInteractionState st) {
-      if (_modern(context)) return _recipeBody(context, st);
-      final wash = pressable && !selected && (st.hovered || st.pressed);
-      final fill = selected
-          ? ui['info-soft']
-          : wash
-          ? ui.fillPressed
-          : const Color(0x00000000);
-      Widget row = LayoutBuilder(
-        builder: (context, box) {
-          final contentWidth = box.maxWidth.isFinite ? box.maxWidth - 32 : 0.0;
-          return _ListRowScope(
-            ink: ink,
-            tone: tone,
-            contentWidth: contentWidth,
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                for (var i = 0; i < children.length; i++) ...[
-                  if (i > 0) const SizedBox(width: 12),
-                  children[i] is RaftListRowBody
-                      ? Expanded(child: children[i])
-                      : children[i],
-                ],
-              ],
-            ),
-          );
-        },
-      );
-      row = ConstrainedBox(
-        constraints: BoxConstraints(
-          minHeight: variant == RaftListRowVariant.standard ? 64 : 0,
-        ),
-        child: RaftCssBox(
-          fill: fill,
-          insetRingWidth: st.focusVisible ? 2 : 0,
-          insetRingColor: ui.foreground,
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          alignment: Alignment.center,
-          child: row,
-        ),
-      );
-      // `entry` rows have no `before:` rule at all.
-      if (!topRule || variant == RaftListRowVariant.entry) return row;
-      return Stack(
-        children: [
-          row,
-          Positioned(
-            top: 0,
-            left: ruleStart,
-            right: 0,
-            height: 1,
-            child: IgnorePointer(child: ColoredBox(color: ui.lineHairline)),
-          ),
-        ],
-      );
+      return _recipeBody(context, st);
     }
 
     if (!interactive) {
@@ -428,42 +365,36 @@ class RaftListRowBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final slot = _modern(context)
-        ? _part(context, (recipe) => recipe.body)
-        : null;
+    final slot = _part(context, (recipe) => recipe.body);
     final column = Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         for (var i = 0; i < children.length; i++) ...[
-          if (i > 0) SizedBox(height: slot?.rowGap ?? 2),
+          if (i > 0) SizedBox(height: slot.rowGap ?? 2),
           children[i],
         ],
       ],
     );
-    return slot == null
-        ? column
-        : RaftRecipeBox(
-            style: slot,
-            tokens: RaftTokens.of(context).recipeTokens,
-            child: column,
-          );
+    return RaftRecipeBox(
+      style: slot,
+      tokens: RaftTokens.of(context).recipeTokens,
+      child: column,
+    );
   }
 }
 
 Widget _line(BuildContext context, List<Widget> children) {
   // A `truncate` meta is capped at the line (non-flex Row children are unbounded).
-  final slot = _modern(context)
-      ? _part(context, (recipe) => recipe.line)
-      : null;
-  final gap = slot?.columnGap ?? 8;
+  final slot = _part(context, (recipe) => recipe.line);
+  final gap = slot.columnGap ?? 8;
   Widget cell(Widget child, double? lineWidth) => switch (child) {
     RaftListRowTitle() ||
     RaftListRowSubtitle() ||
     RaftListRowDescription() => Expanded(child: child),
     _SkeletonText(expands: true) => Expanded(child: child),
     // `min-w-0 truncate`: the title gives way first, then the time is cut.
-    RaftListRowMeta() when slot != null && lineWidth != null => ConstrainedBox(
+    RaftListRowMeta() when lineWidth != null => ConstrainedBox(
       constraints: BoxConstraints(
         maxWidth: (lineWidth - gap * (children.length - 1)).clamp(
           0,
@@ -483,19 +414,14 @@ Widget _line(BuildContext context, List<Widget> children) {
       ],
     ],
   );
-  final row = slot == null
-      ? build(null)
-      : LayoutBuilder(
-          builder: (context, c) =>
-              build(c.maxWidth.isFinite ? c.maxWidth : null),
-        );
-  return slot == null
-      ? row
-      : RaftRecipeBox(
-          style: slot,
-          tokens: RaftTokens.of(context).recipeTokens,
-          child: row,
-        );
+  final row = LayoutBuilder(
+    builder: (context, c) => build(c.maxWidth.isFinite ? c.maxWidth : null),
+  );
+  return RaftRecipeBox(
+    style: slot,
+    tokens: RaftTokens.of(context).recipeTokens,
+    child: row,
+  );
 }
 
 /// `ListRowTop`: the title, then the time.
@@ -521,32 +447,12 @@ class RaftListRowTitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
-    if (_modern(context)) {
-      return Text(
-        raftText(context, text),
-        maxLines: 1,
-        softWrap: false,
-        overflow: TextOverflow.ellipsis,
-        style: _partText(context, _part(context, (recipe) => recipe.title)),
-      );
-    }
-    final scope = _ListRowScope.maybeOf(context);
-    final unread = scope?.tone == RaftListRowTone.unread;
-    // Chromium seats a 16/24 Space Grotesk line box about 0.75px higher than Flutter's half-leading does.
-    return Transform.translate(
-      offset: const Offset(0, -0.75),
-      child: Text(
-        raftText(context, text),
-        maxLines: 1,
-        softWrap: false,
-        overflow: TextOverflow.ellipsis,
-        style: t.scale(
-          RaftTypeScale.body,
-          weight: unread ? FontWeight.w700 : FontWeight.w600,
-          color: _inkOf(context).ink,
-        ),
-      ),
+    return Text(
+      raftText(context, text),
+      maxLines: 1,
+      softWrap: false,
+      overflow: TextOverflow.ellipsis,
+      style: _partText(context, _part(context, (recipe) => recipe.title)),
     );
   }
 }
@@ -559,13 +465,10 @@ class RaftListRowSubtitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final style = _modern(context)
-        ? _partText(context, _part(context, (recipe) => recipe.subtitle))
-        : RaftTokens.of(context).scale(
-            RaftTypeScale.footnote,
-            weight: FontWeight.w400,
-            color: _inkOf(context).ink,
-          );
+    final style = _partText(
+      context,
+      _part(context, (recipe) => recipe.subtitle),
+    );
     return Text(
       raftText(context, text),
       maxLines: 1,
@@ -584,22 +487,15 @@ class RaftListRowDescription extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
     return Text(
       raftText(context, text),
       maxLines: wrap ? null : 1,
       softWrap: wrap,
       overflow: wrap ? TextOverflow.clip : TextOverflow.ellipsis,
-      style: _modern(context)
-          ? _partText(
-              context,
-              _part(context, (recipe) => recipe.description, wrap: wrap),
-            )
-          : t.scale(
-              RaftTypeScale.callout,
-              weight: FontWeight.w400,
-              color: _inkOf(context).ink2,
-            ),
+      style: _partText(
+        context,
+        _part(context, (recipe) => recipe.description, wrap: wrap),
+      ),
     );
   }
 }
@@ -611,32 +507,12 @@ class RaftListRowMeta extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
-    if (_modern(context)) {
-      return Text(
-        text,
-        maxLines: 1,
-        softWrap: false,
-        overflow: TextOverflow.ellipsis,
-        style: _partText(context, _part(context, (recipe) => recipe.meta)),
-      );
-    }
-    // Chromium rounds Space Mono's ascent and descent at 12px, which seats the line box 1px higher.
-    return Transform.translate(
-      offset: const Offset(0, -1),
-      child: Text(
-        text,
-        maxLines: 1,
-        softWrap: false,
-        style: t
-            .scale(
-              RaftTypeScale.monoMeta,
-              mono: true,
-              weight: FontWeight.w400,
-              color: _inkOf(context).ink3,
-            )
-            .copyWith(fontFeatures: const [FontFeature.tabularFigures()]),
-      ),
+    return Text(
+      text,
+      maxLines: 1,
+      softWrap: false,
+      overflow: TextOverflow.ellipsis,
+      style: _partText(context, _part(context, (recipe) => recipe.meta)),
     );
   }
 }
@@ -648,32 +524,21 @@ class RaftListRowValue extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
     final scope = _ListRowScope.maybeOf(context);
     final width = scope?.contentWidth ?? 0;
-    final slot = _modern(context)
-        ? _part(context, (recipe) => recipe.value)
-        : null;
-    final max = slot?['max-width'];
+    final slot = _part(context, (recipe) => recipe.value);
+    final max = slot['max-width'];
     final fraction = max is CssNum && max.unit == '%' ? max.value / 100 : null;
     return ConstrainedBox(
       constraints: BoxConstraints(
-        maxWidth: width > 0
-            ? width * (slot == null ? .45 : fraction ?? 1)
-            : double.infinity,
+        maxWidth: width > 0 ? width * (fraction ?? 1) : double.infinity,
       ),
       child: Text(
         raftText(context, text),
         maxLines: 1,
         softWrap: false,
         overflow: TextOverflow.ellipsis,
-        style: slot == null
-            ? t.scale(
-                RaftTypeScale.subhead,
-                weight: FontWeight.w400,
-                color: _inkOf(context).ink3,
-              )
-            : _partText(context, slot),
+        style: _partText(context, slot),
       ),
     );
   }
@@ -686,14 +551,7 @@ class RaftListRowIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (_modern(context))
-      return _recipeIcon(context, glyph, (recipe) => recipe.icon);
-    return ExcludeSemantics(
-      child: SizedBox.square(
-        dimension: 20,
-        child: RaftIcon(glyph, size: 20, color: _inkOf(context).ink3),
-      ),
-    );
+    return _recipeIcon(context, glyph, (recipe) => recipe.icon);
   }
 }
 
@@ -703,21 +561,10 @@ class RaftListRowChevron extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (_modern(context))
-      return _recipeIcon(
-        context,
-        RaftGlyph.chevronRight,
-        (recipe) => recipe.chevron,
-      );
-    return ExcludeSemantics(
-      child: SizedBox.square(
-        dimension: 20,
-        child: RaftIcon(
-          RaftGlyph.chevronRight,
-          size: 20,
-          color: _inkOf(context).ink3,
-        ),
-      ),
+    return _recipeIcon(
+      context,
+      RaftGlyph.chevronRight,
+      (recipe) => recipe.chevron,
     );
   }
 }
@@ -780,34 +627,16 @@ class RaftListRowGroup extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (_modern(context)) {
-      final t = RaftTokens.of(context);
-      final group = RaftListRowRecipe.resolve(
-        states: t.recipeStates(),
-        tokens: t.recipeTokens,
-      ).group;
-      return RaftRecipeBox(
-        style: group,
-        tokens: t.recipeTokens,
-        clip: true,
-        child: RaftListRowList(children: children),
-      );
-    }
-    final ui = RaftTokens.of(context).ui;
-    final border = raftControlBorderPx(context, 1);
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: ui.layerCard,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: ui.lineHairline, width: border),
-      ),
-      child: Padding(
-        padding: EdgeInsets.all(border),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(10 - border),
-          child: RaftListRowList(children: children),
-        ),
-      ),
+    final t = RaftTokens.of(context);
+    final group = RaftListRowRecipe.resolve(
+      states: t.recipeStates(),
+      tokens: t.recipeTokens,
+    ).group;
+    return RaftRecipeBox(
+      style: group,
+      tokens: t.recipeTokens,
+      clip: true,
+      child: RaftListRowList(children: children),
     );
   }
 }

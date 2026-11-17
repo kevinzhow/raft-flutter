@@ -15,7 +15,7 @@ import 'avatar_content.dart';
 import 'components.dart';
 import 'design_primitives.dart';
 import 'error_presentation.dart' show RaftErrorBanner;
-import 'form_controls.dart' show RaftTextInput, RaftLegacyInput;
+import 'form_controls.dart' show RaftTextInput;
 import 'icons.dart';
 
 import 'localization.dart';
@@ -60,8 +60,7 @@ class RaftForwardPage extends StatelessWidget {
   }
 }
 
-/// `flex min-h-14 items-center gap-3 border-b px-3 py-2`; brutal
-/// `border-b-2 border-black`, elegant `border-line-hairline`. Title
+/// `flex min-h-14 items-center gap-3 border-b px-3 py-2`, `border-line-hairline`. Title
 /// `text-base font-bold`, subtitle `truncate text-xs font-mono
 /// text-foreground-muted`.
 class RaftForwardPageHeader extends StatelessWidget {
@@ -426,8 +425,7 @@ class RaftForwardNoteField extends StatelessWidget {
 }
 
 /// Preview step: scrolling `p-3` body ("Message preview" + bundle) and the
-/// `border-t bg-layer-panel p-3` note bar (brutal `border-t-2 border-black
-/// bg-white`) with the "Optional note" label, editor and send action.
+/// `border-t bg-layer-panel p-3` note bar with the "Optional note" label, editor and send action.
 class RaftForwardPreviewStep extends StatelessWidget {
   const RaftForwardPreviewStep({
     super.key,
@@ -547,9 +545,8 @@ class RaftForwardPreviewStep extends StatelessWidget {
 }
 
 /// Target row: `flex w-full items-center gap-2 rounded-md border
-/// border-line-muted px-2 py-2 text-sm font-bold` / brutal `rounded-none
-/// border-2 border-black`; fill white / `bg-layer-panel`, selected
-/// `bg-soft-signal` / `bg-primary-soft`, hover `brutal-cyan/15` / fill-muted.
+/// border-line-muted px-2 py-2 text-sm font-bold`; fill `bg-layer-panel`, selected
+/// `bg-primary-soft`, hover fill-muted.
 class RaftForwardTargetRow extends StatefulWidget {
   const RaftForwardTargetRow({
     super.key,
@@ -683,7 +680,6 @@ class RaftForwardSearchInput extends StatelessWidget {
     // `autoFocus`.
     autofocus: true,
     leadingGlyph: RaftGlyph.search,
-    legacy: RaftLegacyInput.recipe,
   );
 }
 

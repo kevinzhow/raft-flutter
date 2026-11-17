@@ -4,11 +4,7 @@ import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_ui/test_themes.dart';
 
 void main() {
-  for (final id in raftThemeMatrix([
-    raftThemePackId,
-    elegantThemePackId,
-    brutalThemePackId,
-  ], look: raftLookOf)) {
+  for (final id in raftThemeMatrix([raftThemePackId])) {
     for (final dark in [false, true]) {
       testWidgets(
         'button physical override preserves axis and font preference $id/$dark',
@@ -46,7 +42,6 @@ void main() {
             final label = find.text('Continue');
             final style = DefaultTextStyle.of(t.element(label)).style;
             final tokens = RaftTokens.of(t.element(label));
-            final native = id == raftThemePackId;
             expect(style.fontFamily, tokens.bodyFont);
             expect(style.fontFamilyFallback, tokens.fontFallback);
             expect(
@@ -55,8 +50,7 @@ void main() {
                   ? 19
                   : tokens.size('type.button.${axis.name}.size', fallback: -1),
             );
-            if (axis == RaftButtonSize.inline ||
-                (axis == RaftButtonSize.xs && !native)) {
+            if (axis == RaftButtonSize.inline) {
               expect(
                 style.height,
                 2,

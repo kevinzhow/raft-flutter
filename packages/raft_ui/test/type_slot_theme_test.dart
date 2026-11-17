@@ -11,8 +11,7 @@ import 'package:raft_ui/src/page_tokens.dart';
 /// Sources: Web v1.21.23 / raft-ui 0.7.0 `text-headline` 17/22, `text-footnote`
 /// 13/18 (Banner `sm`, FormSection title and description), `text-caption`;
 /// the built-in values are unchanged, so these tests move a user pack and watch
-/// the widgets follow. Elegant and Brutal keep their a57b9dab literals behind
-/// their own options.
+/// the widgets follow.
 RaftThemePack _user({
   Map<String, Object?> geometry = const {},
   Map<String, Object?> type = const {},
@@ -50,7 +49,7 @@ void main() {
     t,
   ) async {
     addTearDown(() => t.pumpWidget(const SizedBox()));
-    late RaftTokens raft, elegant, user;
+    late RaftTokens raft, user;
     Widget probe(RaftThemePack pack, void Function(RaftTokens) take) => _host(
       pack,
       Builder(
@@ -63,10 +62,6 @@ void main() {
     await _mount(t, probe(packForThemeId(raftThemePackId), (v) => raft = v));
     await _mount(
       t,
-      probe(packForThemeId(elegantThemePackId), (v) => elegant = v),
-    );
-    await _mount(
-      t,
       probe(
         _user(
           type: {
@@ -77,7 +72,7 @@ void main() {
       ),
     );
     final headline = RaftTypeScale.headline;
-    for (final tokens in [raft, elegant]) {
+    for (final tokens in [raft]) {
       expect(tokens.typeSlot('headline').fontSize, headline.fontSize);
       expect(tokens.typeSlot('headline').lineHeight, headline.lineHeight);
       expect(tokens.typeSlot('footnote').fontSize, 13);
@@ -168,17 +163,6 @@ void main() {
     );
     // text-callout (14) at every density; sm was text-footnote (13).
     expect(_titleSize(t, 'Short banner'), 14);
-    await _mount(
-      t,
-      _host(
-        packForThemeId(elegantThemePackId),
-        const RaftBanner(
-          description: 'Short banner',
-          size: RaftBannerRecipeSize.sm,
-        ),
-      ),
-    );
-    expect(_titleSize(t, 'Short banner'), 12);
   });
 
   testWidgets('the plain empty state follows the empty-state tokens', (

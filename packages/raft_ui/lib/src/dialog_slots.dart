@@ -3,19 +3,17 @@ import 'recipe_surface.dart';
 import 'package:flutter/widgets.dart';
 
 import 'recipes/recipe_runtime.dart';
-import 'recipes/recipe_router.dart';
 import 'tap_slop.dart';
 import 'theme.dart';
 
 /// Projects the shared dialog's measured slots onto its existing recipe.
 /// The original decorations, semantic colors and text family remain intact.
 RaftSlotStyle raftDialogSlot(RaftTokens t, RaftSlotStyle source, String slot) {
-  final legacy = usesLegacyRecipes(t.recipeTokens);
   final overrides = t.themeOverrides;
-  if (!legacy && overrides == null) return source;
+  if (overrides == null) return source;
   final properties = {...source.properties};
   void number(String property, String name, double fallback) {
-    if (!legacy && !overrides!.geometry.containsKey(name)) return;
+    if (!overrides.geometry.containsKey(name)) return;
     properties[property] = CssNum(t.size(name, fallback: fallback), 'px');
   }
 
@@ -29,8 +27,8 @@ RaftSlotStyle raftDialogSlot(RaftTokens t, RaftSlotStyle source, String slot) {
 
   switch (slot) {
     case 'content':
-      final fill = overrides?.colors['layer-dialog'];
-      if (!legacy && fill != null) {
+      final fill = overrides.colors['layer-dialog'];
+      if (fill != null) {
         properties['background-color'] = CssColor(fill.toARGB32(), null, fill);
       }
       number('padding-left', 'space.dialogContentInline', source.padding.left);
@@ -48,10 +46,10 @@ RaftSlotStyle raftDialogSlot(RaftTokens t, RaftSlotStyle source, String slot) {
       final line = t.colors['line-dialog'] ?? t.line;
       for (final side in ['top', 'right', 'bottom', 'left']) {
         number('border-$side-width', 'stroke.dialog', source.borderWidth.top);
-        if (legacy || overrides!.geometry.containsKey('stroke.dialog')) {
+        if (overrides.geometry.containsKey('stroke.dialog')) {
           properties['border-$side-style'] = const CssKeyword('solid');
         }
-        if (legacy || overrides!.colors.containsKey('line-dialog')) {
+        if (overrides.colors.containsKey('line-dialog')) {
           properties['border-$side-color'] = CssColor(
             line.toARGB32(),
             null,
@@ -60,25 +58,8 @@ RaftSlotStyle raftDialogSlot(RaftTokens t, RaftSlotStyle source, String slot) {
         }
       }
       final ring = t.size('stroke.dialogRing', fallback: 0);
-      if (legacy && ring > 0) {
-        final shadow = source['box-shadow'];
-        properties['box-shadow'] = CssList([
-          CssSeq([
-            const CssNum(0),
-            const CssNum(0),
-            const CssNum(0),
-            CssNum(ring, 'px'),
-            CssColor(line.toARGB32(), null, line),
-          ]),
-          if (shadow is CssList)
-            ...shadow.items
-          else if (shadow != null)
-            shadow,
-        ]);
-      }
-      if (!legacy &&
-          (overrides!.geometry.containsKey('stroke.dialogRing') ||
-              overrides.colors.containsKey('line-dialog'))) {
+      if (overrides.geometry.containsKey('stroke.dialogRing') ||
+          overrides.colors.containsKey('line-dialog')) {
         // Replace the source ring in place; floating shadow layers keep their
         // source order, and reapplying a content binding remains idempotent.
         final shadows = source['box-shadow'];

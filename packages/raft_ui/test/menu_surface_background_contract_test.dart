@@ -103,7 +103,6 @@ RaftMenuPopupSlots _selectSlots(
 }) {
   final t = RaftTokens.of(context);
   final slots = RaftSelectRecipe.resolve(
-    theme: t.recipeTheme,
     tokens: t.recipeTokens,
     states: t.recipeStates(
       hovered: state.hovered,

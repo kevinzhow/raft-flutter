@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_theme/raft_theme.dart';
 import 'package:raft_ui/raft_ui.dart';
-import 'package:raft_ui/test_themes.dart';
 
 void main() {
   testWidgets('tooltip elevation can be changed by a user pack', (
@@ -47,65 +46,6 @@ void main() {
       ),
     ]);
   });
-  testWidgets('frozen tooltip elevation keeps its paint order and values', (
-    tester,
-  ) async {
-    addTearDown(() => tester.pumpWidget(const SizedBox.shrink()));
-    for (final id in [elegantThemePackId, brutalThemePackId]) {
-      for (final dark in [false, true]) {
-        late RaftTooltipRecipe recipe;
-        await tester.pumpWidget(
-          MaterialApp(
-            theme: raftTheme(pack: packForThemeId(id), dark: dark),
-            home: Builder(
-              builder: (context) {
-                recipe = RaftTooltipRecipe(RaftTokens.of(context));
-                return const SizedBox();
-              },
-            ),
-          ),
-        );
-        await tester.pumpAndSettle();
-        final expected = dark
-            ? [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: .55),
-                  spreadRadius: 1,
-                ),
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: .45),
-                  offset: const Offset(0, 10),
-                  blurRadius: 20,
-                  spreadRadius: -6,
-                ),
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: .35),
-                  offset: const Offset(0, 4),
-                  blurRadius: 8,
-                  spreadRadius: -3,
-                ),
-              ]
-            : [
-                BoxShadow(
-                  color: const Color(0xff191815).withValues(alpha: .1),
-                  offset: const Offset(0, 1),
-                  blurRadius: 1,
-                ),
-                BoxShadow(
-                  color: const Color(0xff191815).withValues(alpha: .04),
-                  spreadRadius: 1,
-                ),
-                BoxShadow(
-                  color: const Color(0xff191815).withValues(alpha: .16),
-                  offset: const Offset(0, 2),
-                  blurRadius: 12,
-                  spreadRadius: -4,
-                ),
-              ];
-        expect(recipe.shadows, expected, reason: '$id / dark=$dark');
-      }
-    }
-  }, skip: raftLookSkip(raftLookElegant, raftLookBrutal));
   testWidgets(
     'a user pack controls message toolbar padding without a style branch',
     (tester) async {

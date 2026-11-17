@@ -10,9 +10,6 @@ void main() {
   for (final spec in [
     ('raft-light', raftThemePackId, false),
     ('raft-dark', raftThemePackId, true),
-    ('elegant-light', elegantThemePackId, false),
-    ('elegant-dark', elegantThemePackId, true),
-    ('brutal', brutalThemePackId, false),
   ]) {
     testWidgets('public settings sidebar inset ${spec.$1}', (t) async {
       t.view.physicalSize = const Size(1280, 900);

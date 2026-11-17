@@ -85,7 +85,7 @@ void main() {
       expect(r.cssShadows.map((s) => s.spread), [1, -12]);
     },
   );
-  testWidgets('theme replacement changes paint while keeping Elegant extent', (
+  testWidgets('theme replacement changes paint while keeping its extent', (
     t,
   ) async {
     Widget host(bool dark) => MaterialApp(

@@ -121,19 +121,11 @@ class RaftSlackWizardView extends StatelessWidget {
   /// server keeps its channel pairs). Offered next to Disconnect, null hides it.
   final VoidCallback? onReauthorize;
 
-  /// `fg/alpha` over [bg] as Chromium composites it. Brutal fills match a
-  /// premultiplied model (alpha quantised to 8 bits, half-way rounding down,
-  /// both terms rounded); the Elegant fills match Flutter's own blend.
-  static Color _over(Color fg, double alpha, Color bg, {bool brutal = false}) {
-    if (!brutal) return Color.alphaBlend(fg.withValues(alpha: alpha), bg);
-    final a = (alpha * 255 - .5).ceil();
-    int ch(double f, double b) =>
-        ((f * 255).round() * a / 255).round() +
-        ((b * 255).round() * (255 - a) / 255).round();
-    return Color.fromARGB(255, ch(fg.r, bg.r), ch(fg.g, bg.g), ch(fg.b, bg.b));
-  }
+  /// `fg/alpha` over [bg] as Chromium composites it (Flutter's own blend).
+  static Color _over(Color fg, double alpha, Color bg) =>
+      Color.alphaBlend(fg.withValues(alpha: alpha), bg);
 
-  /// A token fill that may carry its own alpha (Elegant dark `*-soft`).
+  /// A token fill that may carry its own alpha (dark `*-soft`).
   static Color _flat(Color c, Color bg) =>
       c.a >= 1 ? c : Color.alphaBlend(c, bg);
 
@@ -315,53 +307,11 @@ class RaftSlackWizardView extends StatelessWidget {
       _ => 1,
     };
     const labels = ['Connect', 'Channels', 'Health'];
-    // Raft look: raft-ui `Steps` (Web `SlackBridgeProgress`); the frozen looks keep the three pills.
-    if (t.isRaftLook) {
-      return RaftSteps(
-        semanticLabel: 'Slack bridge setup progress',
-        current: active,
-        steps: [for (final label in labels) RaftStep(title: label)],
-      );
-    }
-    Widget step(int i) {
-      final done = i < active, current = i == active;
-      final Color fill = done
-          ? (t.colors['success-soft']!)
-          : current
-          ? (t.colors['accent-soft']!)
-          : (t.panel);
-      final Color ink = done
-          ? t.strong
-          : current
-          ? (t.colors['accent-strong']!)
-          : (t.colors['foreground-hint']!);
-      return RaftSnappedDecoratedBox(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        decoration: BoxDecoration(
-          color: fill,
-          border: Border.all(color: t.colors['line-muted']!),
-          borderRadius: BorderRadius.circular(6),
-        ),
-        child: RaftCssText(
-          raftText(context, labels[i]),
-          textAlign: TextAlign.center,
-          style: _text(
-            t,
-            size: 10,
-            line: 15,
-            weight: FontWeight.w700,
-            color: ink,
-          ),
-        ),
-      );
-    }
-
-    return Semantics(
-      label: raftText(context, 'Slack bridge setup progress'),
-      child: Row(
-        spacing: 6,
-        children: [for (var i = 0; i < 3; i++) Expanded(child: step(i))],
-      ),
+    // raft-ui `Steps` (Web `SlackBridgeProgress`).
+    return RaftSteps(
+      semanticLabel: 'Slack bridge setup progress',
+      current: active,
+      steps: [for (final label in labels) RaftStep(title: label)],
     );
   }
 
@@ -870,7 +820,7 @@ class RaftSlackWizardView extends StatelessWidget {
     Color muted,
   ) {
     // The translucent tone is composited over the section fill: Flutter would
-    // paint the (brutal) outer shadow underneath it.
+    // paint the outer shadow underneath it.
     final sectionFill = t.colors['layer-canvas-muted']!;
     final Color tone = _flat(switch (healthState) {
       'connected' => t.colors['success-soft']!,

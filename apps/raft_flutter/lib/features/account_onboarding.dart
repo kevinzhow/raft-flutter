@@ -458,7 +458,6 @@ class _OnboardingState extends State<AccountOnboardingView>
                     controller: displayName,
                     style: t.fieldStyle,
                     hintText: tr('Alex Chen'),
-                    legacy: RaftLegacyInput.themed,
                     onChanged: (_) => setState(() {
                       displayNameEdited = true;
                       displayNameError = null;

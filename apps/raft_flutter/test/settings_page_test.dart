@@ -47,80 +47,60 @@ class _Client extends RaftClient {
 }
 
 void main() {
-  testWidgets(
-    '360px settings selects appearance and keeps both axes actionable',
-    (tester) async {
-      tester.view.physicalSize = const Size(360, 844);
-      tester.view.devicePixelRatio = 1;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
-      RaftAppearance? accepted;
-      await tester.pumpWidget(
-        MaterialApp(
-          theme: raftTheme(),
-          home: Scaffold(
-            body: RaftSettingsPage(
-              destinations: [
-                RaftSettingsDestination(
-                  'account',
-                  'Account',
-                  RaftGlyph.user,
-                  (_) => const Text('Account body'),
+  testWidgets('360px settings selects the appearance mode', (tester) async {
+    tester.view.physicalSize = const Size(360, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    RaftAppearance? accepted;
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: raftTheme(),
+        home: Scaffold(
+          body: RaftSettingsPage(
+            destinations: [
+              RaftSettingsDestination(
+                'account',
+                'Account',
+                RaftGlyph.user,
+                (_) => const Text('Account body'),
+              ),
+              RaftSettingsDestination(
+                'appearance',
+                'Appearance',
+                RaftGlyph.palette,
+                (_) => RaftAppearanceModeCards(
+                  appearance: const RaftAppearance(mode: ThemeMode.light),
+                  onChanged: (v) => accepted = v,
                 ),
-                RaftSettingsDestination(
-                  'appearance',
-                  'Appearance',
-                  RaftGlyph.palette,
-                  (_) => RaftAppearancePicker(
-                    appearance: const RaftAppearance(mode: ThemeMode.light),
-                    onChanged: (v) => accepted = v,
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
-      );
-      await tester.tap(find.byTooltip('Back'));
-      await tester.pumpAndSettle();
-      await tester.tap(
-        find.byKey(const ValueKey('workspace-settings-nav-appearance')),
-      );
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Dark').first);
-      await tester.pumpAndSettle();
-      expect(accepted?.mode, ThemeMode.dark);
-      await tester.tap(find.text('System').first);
-      await tester.pumpAndSettle();
-      expect(accepted?.mode, ThemeMode.system);
-      // Both axes are offered at 360px and both are actionable: the theme row
-      // carries all three built-in looks, and the mode row still switches.
-      for (final theme in builtInAppearanceThemes) {
-        expect(find.text(theme.en), findsOneWidget, reason: theme.id);
-      }
-      // "Actionable" means the tap reaches the callback, not merely that the text
-      // is painted. The picker is a pure function of the appearance it is given,
-      // so each tap reports its own change against the mode it was built with
-      // (light): that is what tells the two axes apart.
-      await tester.tap(find.text('Brutal').first);
-      await tester.pumpAndSettle();
-      expect(accepted?.themeId, brutalThemePackId);
-      expect(
-        accepted?.mode,
-        ThemeMode.light,
-        reason: 'choosing a theme must not change the mode',
-      );
-      await tester.tap(find.text('Dark').first);
-      await tester.pumpAndSettle();
-      expect(accepted?.mode, ThemeMode.dark);
-      expect(
-        accepted?.themeId,
-        raftThemePackId,
-        reason: 'choosing a mode must not change the theme',
-      );
-      expect(tester.takeException(), isNull);
-    },
-  );
+      ),
+    );
+    await tester.tap(find.byTooltip('Back'));
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(const ValueKey('workspace-settings-nav-appearance')),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Dark').first);
+    await tester.pumpAndSettle();
+    expect(accepted?.mode, ThemeMode.dark);
+    await tester.tap(find.text('System').first);
+    await tester.pumpAndSettle();
+    expect(accepted?.mode, ThemeMode.system);
+    // The mode is the only appearance choice: there is no theme row.
+    expect(find.byKey(const Key('appearance-theme')), findsNothing);
+    expect(find.text('Theme'), findsNothing);
+    // "Actionable" means the tap reaches the callback, not merely that the text
+    // is painted.
+    await tester.tap(find.text('Light').first);
+    await tester.pumpAndSettle();
+    expect(accepted?.mode, ThemeMode.light);
+    expect(tester.takeException(), isNull);
+  });
   testWidgets('inline profile keeps an edit made during save acknowledgement', (
     tester,
   ) async {

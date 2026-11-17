@@ -7,13 +7,7 @@ import 'package:raft_ui/language_settings_previews.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 void main() {
-  for (final theme in [
-    (raftThemePackId, false),
-    (raftThemePackId, true),
-    (elegantThemePackId, false),
-    (elegantThemePackId, true),
-    (brutalThemePackId, false),
-  ]) {
+  for (final theme in [(raftThemePackId, false), (raftThemePackId, true)]) {
     for (final entry in [
       (const Size(390, 844), TargetPlatform.linux),
       (const Size(856, 944), TargetPlatform.android),

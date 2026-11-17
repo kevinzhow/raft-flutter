@@ -1,16 +1,12 @@
-"""One regression command over the three visual levels and the three looks (owner scope 2026-10-24).
+"""One regression command over the three visual levels (owner scope 2026-10-24).
 
-  tool/parity-ext/run regress [--level frame|page|component|all] [--theme raft|elegant|brutal|all]
-                              [--mode light|dark|all] [--fast] [--out DIR] [--cases GLOB[,GLOB]]
+  tool/parity-ext/run regress [--level frame|page|component|all] [--mode light|dark|all] [--fast] [--out DIR] [--cases GLOB[,GLOB]]
                               [--plan-only] [--summary-only]
 
 Levels (tool/parity-ext/levels.py): frame (L1 app frame), page (L2 whole pages), component (L3 official component
-cases + extension dialogs / menus / rows). Looks and what each is compared against:
-
-  raft      Flutter rendered in the Raft look vs the pinned Web v1.21.23 render (React; the unmodified official
-            pipeline for official ids, the extension pipeline for the rest)
-  elegant   Flutter rendered in the Elegant look vs its frozen a57b9dab original (tool/parity-ext/frozen_ref.py)
-  brutal    same for Brutal (light only; Brutal had no dark mode)
+cases + extension dialogs / menus / rows).
+Flutter is rendered in the Raft look and compared with the pinned Web v1.21.23 render (React; the unmodified official
+pipeline for official ids, the extension pipeline for the rest).
 
 Every job is one pipeline run (`tool/parity` for the official ids, `tool/parity-ext/run run` for the extension ids)
 written to <out>/<look>-<mode>/{official,ext}/; the command then writes <out>/regress-summary.{md,json}: one table
@@ -32,27 +28,22 @@ ROOT = HERE.parents[1]
 sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(ROOT / 'tool'))
 import builders  # noqa: E402
-import frozen_ref  # noqa: E402
 import levels  # noqa: E402
 import sampling  # noqa: E402
 
 PASS_LINE = 0.96
-LOOKS = ('raft', 'elegant', 'brutal')
+LOOKS = ('raft',)
 MODES = ('light', 'dark')
 # The extension case name that renders each (look, mode). On the Web every light name renders the one Raft page and
 # `elegant-dark` renders dark, so the Raft look reads one light and one dark name per case.
 EXT_THEME = {
     'raft': {'light': 'brutal-light', 'dark': 'elegant-dark'},
-    'elegant': {'light': 'elegant-light', 'dark': 'elegant-dark'},
-    'brutal': {'light': 'brutal-light'},
 }
-OFFICIAL_THEME = {'elegant': {'light': 'elegant-light', 'dark': 'elegant-dark'}, 'brutal': {'light': 'brutal-light'}}
 FAST_WIDTHS = (390, 1280)
 
 
 def add_arguments(p):
     p.add_argument('--level', choices=[*levels.LEVELS, 'all'], default='all')
-    p.add_argument('--theme', choices=[*LOOKS, 'all'], default='all', help='look (the Raft look is compared with the Web)')
     p.add_argument('--mode', choices=[*MODES, 'all'], default='all')
     p.add_argument('--fast', action='store_true',
                    help='nightly subset: L1 frame + key L2 pages (levels.FAST_PAGES), phone + desktop widths, light')
@@ -108,7 +99,7 @@ def wanted(case, want_levels, a):
 
 def plan(a):
     want_levels = set(levels.LEVELS if a.level == 'all' else [a.level])
-    looks = LOOKS if a.theme == 'all' else (a.theme,)
+    looks = LOOKS
     modes = MODES if a.mode == 'all' else (a.mode,)
     if a.fast:
         modes = ('light',)
@@ -123,15 +114,13 @@ def plan(a):
                 continue
             # Mounted framework cases declare their actual Raft identity,
             # while older builders still use the historical storage names.
-            ext_themes = {theme, f'raft-{mode}'} if look == 'raft' else {theme}
+            ext_themes = {theme, f'raft-{mode}'}
             ext_ids = [c['id'] for c in ext_full if c['theme'] in ext_themes and wanted(c, want_levels, a)
-                       # dark / non-Raft dark runs keep the surface sampling for L3 (docs/parity.md "Theme sampling")
+                       # dark runs keep the surface sampling for L3 (docs/parity.md "Theme sampling")
                        and (mode == 'light' or levels.level_of(c['id']) != levels.COMPONENT or c['id'] in sampled_ids)]
-            off_ids = [c['id'] for c in official if wanted(c, want_levels, a)] if mode == 'light' or look != 'raft' else []
-            if look == 'raft' and mode == 'dark':
+            off_ids = [c['id'] for c in official if wanted(c, want_levels, a)] if mode == 'light' else []
+            if mode == 'dark':
                 off_ids = []  # no official case declares a dark variant
-            if look != 'raft' and mode not in OFFICIAL_THEME[look]:
-                off_ids = []
             jobs.append({'look': look, 'mode': mode, 'ext': [] if a.no_ext else ext_ids,
                          'official': [] if a.no_official else off_ids, 'dir': f'{look}-{mode}'})
     return jobs
@@ -157,16 +146,8 @@ def run_job(job, a):
             env['PARITY_EXT_ALL_THEMES'] = '1'
             if not a.cases:
                 cmd += ['--allow-structural-gaps']
-        if look == 'raft':
-            if engine == 'ext':
-                env['PARITY_THEME_OVERRIDE'] = 'raft-case'  # official ids are the Raft look without an override
-        else:
-            if engine == 'official':
-                theme = OFFICIAL_THEME[look][mode]
-                env['PARITY_THEME_OVERRIDE'] = theme
-                cmd += ['--frozen', theme]
-            else:
-                cmd += ['--frozen']  # extension ids name their look; the Flutter side needs no override
+        if engine == 'ext':
+            env['PARITY_THEME_OVERRIDE'] = 'raft-case'  # official ids are the Raft look without an override
         print(f'[regress] {look}/{mode} {engine}: {len(ids)} case(s)', flush=True)
         log = pathlib.Path(a.out) / f'{job["dir"]}-{engine}.log'
         with open(log, 'w') as sink:
@@ -213,7 +194,7 @@ def load_rows(a, ext_cases, jobs=None, outside_plan=None):
                     }
                     continue
                 score, why, verdict = r.get('pixelPerfectSimilarity'), reasons.get((jobdir.name, engine, cid), ''), r['verdict']
-                if look == 'raft' and mode == 'dark' and score is not None and web_page_is_light(jobdir / engine, cid):
+                if mode == 'dark' and score is not None and web_page_is_light(jobdir / engine, cid):
                     # the Web host of this family does not apply dark mode: the reference is a light page, so the score says nothing
                     score, verdict, why = None, 'web-not-dark', 'Web: the host rendered a light page in dark mode (no valid dark reference)'
                 rows.append({
@@ -293,7 +274,7 @@ def summarize(a, ext_cases, jobs=None):
     keys = sorted({(r['look'], r['mode']) for r in rows}, key=lambda k: (LOOKS.index(k[0]), MODES.index(k[1])))
     lines = [f'# Visual regression: levels x looks ({dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%d %H:%MZ")})', '',
              'Cell = cases above the 96% line / cases in the cell (mean exact score of the captured pairs). '
-             'raft = vs Web v1.21.23; elegant / brutal = vs the frozen a57b9dab render.', '',
+             'raft = vs Web v1.21.23.', '',
              f'Execution scope: {len(rows)} selected case(s); {len(outside)} full-manifest row(s) outside this plan. '
              'Outside-plan rows are not execution failures or passes. The official full-manifest reports remain unchanged.', '',
              '| level | ' + ' | '.join(f'{l} {m}' for l, m in keys) + ' |', '| --- | ' + ' | '.join('---' for _ in keys) + ' |']

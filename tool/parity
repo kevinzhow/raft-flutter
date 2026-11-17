@@ -656,15 +656,7 @@ def cmd_run(a):
     chosen = select(cases, a.cases)
     if not chosen:
         sys.exit(f'no default cases match {a.cases!r}')
-    if a.frozen:
-        # Elegant / Brutal: the reference is the frozen a57b9dab render of that look (tool/parity-ext/frozen_ref.py).
-        sys.path.insert(0, str(root / 'tool/parity-ext'))
-        import frozen_ref
-        found, missing = frozen_ref.install(RESULTS, [c['id'] for c in chosen], frozen_ref.search_dirs('official', a.frozen))
-        print(f'frozen references ({a.frozen}): {len(found)} found, {len(missing)} without a frozen image', flush=True)
-        (OUT / 'frozen-missing.json').write_text(json.dumps(missing, indent=1))
-    else:
-        react_capture(chosen, a.refresh_react, a.react_fonts, a.react_text_render)
+    react_capture(chosen, a.refresh_react, a.react_fonts, a.react_text_render)
     flutter_failed = 0
     if not a.skip_flutter:
         flutter_failed = flutter_capture(chosen, a.cases, a.shards) or 0
@@ -886,9 +878,6 @@ def main():
     r.add_argument('--react-text-render', choices=['android', 'desktop'], default='android',
                    help='android: grayscale AA + subpixel positioning (default); desktop: Linux Chromium default')
     r.add_argument('--skip-flutter', action='store_true', help='reuse existing Flutter captures')
-    r.add_argument('--frozen', choices=['brutal-light', 'elegant-light', 'elegant-dark'],
-                   help='compare against the frozen a57b9dab render of that look instead of the Web (also set '
-                        'PARITY_THEME_OVERRIDE to the same value for the Flutter side)')
     r.set_defaults(fn=cmd_run)
     pub = sub.add_parser('publish')
     pub.add_argument('--no-verify', action='store_true')

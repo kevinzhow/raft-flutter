@@ -254,7 +254,6 @@ RaftComposerAttachmentRecipeStyle _style(
   required bool touch,
   bool hovered = false,
 }) => RaftComposerAttachmentRecipe.resolve(
-  theme: RaftRecipeTheme.elegant,
   states: RaftRecipeStates({
     if (t.dark) RaftRecipeStates.dark,
     if (image) 'has:data-slot=composer-attachment-image',
@@ -575,8 +574,8 @@ class _AttachmentChipState extends State<_AttachmentChip> {
       );
     }
 
-    // `attachment` root: brutal image chips carry the 2px border here, and
-    // every absolutely positioned child is relative to its padding box.
+    // `attachment` root: every absolutely positioned child is relative to its
+    // padding box.
     final border = s.attachment.border(resolver);
     final fixed = s.attachment.width != null && s.attachment.height != null;
     final overlays = <Widget>[
@@ -615,7 +614,6 @@ class _AttachmentChipState extends State<_AttachmentChip> {
             style: s.attachmentFailedOverlay,
             tokens: t,
             label: raftText(context, 'Upload failed'),
-            // The brutal image chip already has the 2px border.
             borderless: false,
           ),
         ),
@@ -677,9 +675,8 @@ class _AttachmentChipState extends State<_AttachmentChip> {
         child: stack,
       );
     }
-    // The badge sits at `top:-6 right:-6` of the chip's padding box (inside a
-    // brutal image chip's border); here the layout box already carries the
-    // 6px overhang, so it lies inside the Stack and takes hover and taps.
+    // The badge sits at `top:-6 right:-6` of the chip's padding box; here the
+    // layout box already carries the 6px overhang, so it lies inside the Stack and takes hover and taps.
     final inset = fixed ? s.attachment.borderWidth : EdgeInsets.zero;
     return RaftHoverRegion(
       onEnter: (_) => setState(() => hovered = true),
@@ -747,7 +744,7 @@ class _ImageBody extends StatelessWidget {
     final slot = style.attachmentImage;
     final radius = slot.borderRadius;
     final decoration = slot.decoration(resolver);
-    // brutal: 100% of the bordered chip; elegant: the slot's own 64x64.
+    // The slot's own 64x64.
     Widget picture = Stack(
       fit: StackFit.expand,
       children: [
@@ -855,7 +852,7 @@ class _FileBody extends StatelessWidget {
         ],
       ),
     );
-    // Elegant ring (`ring-1 ink10`) is a box-shadow outside the card.
+    // The ring (`ring-1 ink10`) is a box-shadow outside the card.
     card = DecoratedBox(
       decoration: BoxDecoration(
         borderRadius: slot.borderRadius,
@@ -994,7 +991,7 @@ class _ProgressBar extends StatelessWidget {
 
 /// Web failed-upload row: `role="alert" flex w-full flex-wrap items-center
 /// gap-2 rounded-md border border-line-strong bg-warning px-2 py-1.5 text-xs
-/// text-warning-foreground` (Brutal: square, 2px black border, orange fill).
+/// text-warning-foreground`.
 class _FailureRow extends StatelessWidget {
   const _FailureRow({
     super.key,

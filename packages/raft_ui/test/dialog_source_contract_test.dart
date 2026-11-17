@@ -232,11 +232,7 @@ void main() {
     (t) async {
       await mount(
         t,
-        const RaftAlertDialog(
-          legacy: RaftLegacyAlert.material,
-          title: Text('Review'),
-          content: Text('Body'),
-        ),
+        const RaftAlertDialog(title: Text('Review'), content: Text('Body')),
       );
       expect(find.byType(AlertDialog), findsNothing);
       expect(find.byType(RaftDialogSurface), findsOneWidget);

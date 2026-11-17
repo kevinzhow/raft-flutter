@@ -4,7 +4,7 @@
 // `SegmentedControlCount` when the count is above zero. The Web component has
 // no mounted caller today; this is the matching Flutter presentation.
 import 'raft/segmented_control.dart'
-    show RaftSegmentedControl, RaftSegmentedOption, RaftSegmentedStyle;
+    show RaftSegmentedControl, RaftSegmentedOption;
 
 import 'package:flutter/material.dart';
 
@@ -37,7 +37,6 @@ class RaftTaskFilterControl extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => RaftSegmentedControl<String>(
-    legacyStyle: RaftSegmentedStyle.recipe,
     label: raftText(context, 'Filter tasks'),
     value: value,
     onChanged: onChanged,

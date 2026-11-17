@@ -1,7 +1,7 @@
 import 'package:raft_ui/raft_ui.dart';
 
 /// Every panel surface that owns an attached left edge (Web `Panel
-/// edge="attached"`, the drawer's `theme-brutal:border-l-2`, the master /
+/// edge="attached"`, the drawer, the master /
 /// detail divider). The rule is ONE: `RaftPanelEdge` (raft_ui panel_edge.dart)
 /// draws the line everywhere except on a full-width standalone phone page.
 ///
@@ -23,7 +23,7 @@ class PanelEdgeSurface {
     required this.web,
     required this.files,
     required this.style,
-    this.elegantDraws = true,
+    this.drawsEdge = true,
     this.pixels = false,
   });
 
@@ -38,8 +38,8 @@ class PanelEdgeSurface {
   final List<String> files;
   final RaftPanelEdgeStyle style;
 
-  /// False when the Elegant theme has no such edge (the rounded drawer card).
-  final bool elegantDraws;
+  /// False when the Raft look has no such edge (the rounded drawer card).
+  final bool drawsEdge;
 
   /// Mounted by `detail_panel_seam_test.dart` (painted pixels), not the matrix.
   final bool pixels;
@@ -59,21 +59,21 @@ const panelEdgeSurfaces = <PanelEdgeSurface>[
     web: 'OverflowSheet DrawerContent `theme-brutal:border-l-2`',
     files: ['$_ui/channel_overflow_sheet.dart'],
     style: RaftPanelEdgeStyle.drawer,
-    elegantDraws: false,
+    drawsEdge: false,
   ),
   PanelEdgeSurface(
     'members-page',
     web: 'ChannelMembers presentation="page" bare in OverflowSheet',
     files: ['$_ui/channel_overflow_sheet.dart'],
     style: RaftPanelEdgeStyle.drawer,
-    elegantDraws: false,
+    drawsEdge: false,
   ),
   PanelEdgeSurface(
     'channel-settings-sheet',
     web: 'EditChannelDialog sheet (DrawerContent)',
     files: ['$_ui/channel_settings_sheet.dart'],
     style: RaftPanelEdgeStyle.drawer,
-    elegantDraws: false,
+    drawsEdge: false,
   ),
   PanelEdgeSurface(
     'task-thread-panel',

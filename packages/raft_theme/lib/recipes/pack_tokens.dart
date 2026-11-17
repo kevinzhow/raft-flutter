@@ -1,20 +1,7 @@
 import 'package:flutter/painting.dart';
 
-import '../src/brutal_pack.g.dart' show brutalThemePackId;
-import '../src/elegant_pack.g.dart' show elegantThemePackId;
 import '../src/theme_pack.dart';
 import 'recipe_runtime.dart';
-
-/// The recipe set a theme pack paints with. This is the one place the mapping
-/// is decided: the frozen looks (the built-in Elegant and Brutal packs) keep the
-/// 0.5.52 set from `recipes_legacy.dart`; every other pack, Raft and user packs
-/// extending it, uses the current raft-ui set.
-extension RaftThemePackRecipes on RaftThemePack {
-  RaftRecipeSet get recipeSet =>
-      builtIn && (id == elegantThemePackId || id == brutalThemePackId)
-      ? RaftRecipeSet.legacy
-      : RaftRecipeSet.raft;
-}
 
 /// Resolves recipe values directly from a resolved theme pack.
 ///
@@ -26,13 +13,10 @@ class RaftThemeRecipeTokens extends RaftTokenResolver {
     this.values, {
     this.textLocale,
     this.bindComponents = true,
-    this.recipeSet = RaftRecipeSet.raft,
   });
 
   final RaftModeValues values;
   final bool bindComponents;
-  @override
-  final RaftRecipeSet recipeSet;
   @override
   final Locale? textLocale;
 

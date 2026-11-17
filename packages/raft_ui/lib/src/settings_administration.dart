@@ -1093,7 +1093,6 @@ class RaftAdminDateTimeField extends StatelessWidget {
       semanticLabel: raftText(context, 'Expires at'),
       builder: (context, state) {
         final s = RaftInputRecipe.resolve(
-          theme: t.recipeTheme,
           states: t.recipeStates(focusVisible: state.focusVisible),
           tokens: tokens,
         ).root;

@@ -246,7 +246,6 @@ void main() {
         (tester) async {
           final rt = t.recipeTokens;
           final card = RaftCardRecipe.resolve(
-            theme: t.recipeTheme,
             states: t.recipeStates(),
             tokens: rt,
           ).root;
@@ -344,7 +343,6 @@ void main() {
         // The row has no layout border. Its selected shape is an inset
         // ::before box; both rings paint without shifting the content.
         final item = RaftSidebarItemRecipe.resolve(
-          theme: t.recipeTheme,
           states: t.recipeStates(extra: ['data-active']),
           tokens: rt,
         ).sidebarItem;
@@ -445,7 +443,6 @@ void main() {
         ),
       );
       final track = RaftSegmentedControlRecipe.resolve(
-        theme: t.recipeTheme,
         states: t.recipeStates(),
         tokens: t.recipeTokens,
       ).root;

@@ -277,7 +277,7 @@ class _StartFailureView extends StatelessWidget {
                     : 'Open Computers',
               ),
               glyph: RaftGlyph.externalLink,
-              tone: RaftButtonRecipeVariant.link,
+              uiVariant: RaftButtonVariant.link,
               size: RaftButtonRecipeSize.sm,
               onPressed: () => openComputers(computerId),
             ),

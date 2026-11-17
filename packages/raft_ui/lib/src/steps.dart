@@ -1,20 +1,13 @@
 // Published raft-ui Steps CSS owns Raft styling. The structural adapter maps
-// its horizontal grid/flex layout to Flutter; frozen looks retain their painter.
+// its horizontal grid/flex layout to Flutter.
 import 'package:flutter/material.dart';
 
-import 'control_typography.dart';
 import 'icons.dart';
 import 'localization.dart';
-import 'raft/css_box.dart';
-import 'raft/ui_tokens.dart';
 import 'recipe_surface.dart';
 import 'recipes/recipe_runtime.dart';
 import 'recipes/steps_css.g.dart';
-import 'space.dart';
 import 'theme.dart';
-import 'tokens/tokens.dart' show RaftTypeScale;
-
-part 'steps_frozen.dart';
 
 /// `status` of a step.
 enum RaftStepStatus { wait, process, finish, error }
@@ -58,7 +51,6 @@ class RaftSteps extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    if (!t.isRaftLook) return _frozenSteps(context, this);
     return LayoutBuilder(
       builder: (context, constraints) =>
           _buildPublished(context, t, constraints),
@@ -257,3 +249,22 @@ class _PublishedStep extends StatelessWidget {
     );
   }
 }
+
+Widget _semantic(
+  BuildContext context,
+  RaftStep step,
+  RaftStepStatus status,
+  bool isCurrent,
+  Widget child,
+) => Semantics(
+  container: true,
+  label: step.title,
+  hint: switch (status) {
+    RaftStepStatus.finish => raftText(context, 'Completed'),
+    RaftStepStatus.error => raftText(context, 'Failed'),
+    _ => null,
+  },
+  // `aria-current="step"`.
+  selected: isCurrent,
+  child: child,
+);

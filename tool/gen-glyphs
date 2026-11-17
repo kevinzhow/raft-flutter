@@ -521,9 +521,8 @@ def build_model(doc):
         add(name, doc['resolved']['legacy'][export], filled=True, citations=cites)
     for name, key in doc['resolved'].get('frozen', {}).items():
         if name not in entries: add(name, key, legacy=True)
-        entries[name]['legacyKey'] = key
     ordered = [entries[n] for n in sorted(entries, key=lambda n: (n.lower(), n))]
-    used = sorted({key for e in ordered for key in (e['key'], e.get('legacyKey', e['key']))})
+    used = sorted({e['key'] for e in ordered})
     return ordered, used
 
 
@@ -616,13 +615,12 @@ def render(doc):
         if e['filled']:
             args.append('filled: true')
         if 'smallNodes' in icon: args.append(f'smallNodes: {geometry_ident(e["key"])}Small')
-        if e.get('legacyKey', e['key']) != e['key']: args.append(f'legacyNodes: {geometry_ident(e["legacyKey"])}')
         lines.append(f"  {e['name']}({', '.join(args)}){';' if i == len(entries) - 1 else ','}")
     lines += [
         '',
-        '  const RaftGlyph(this._nodes, this.lucideName, this.lucideVersion, {this.filled = false, List<_LucideNode>? smallNodes, List<_LucideNode>? legacyNodes}) : _smallNodes = smallNodes, _legacyNodes = legacyNodes;',
+        '  const RaftGlyph(this._nodes, this.lucideName, this.lucideVersion, {this.filled = false, List<_LucideNode>? smallNodes}) : _smallNodes = smallNodes;',
         '  final List<_LucideNode> _nodes;',
-        '  final List<_LucideNode>? _smallNodes, _legacyNodes;',
+        '  final List<_LucideNode>? _smallNodes;',
         '',
         '  /// Lucide icon file name (kebab-case) the geometry comes from.',
         '  final String lucideName;',

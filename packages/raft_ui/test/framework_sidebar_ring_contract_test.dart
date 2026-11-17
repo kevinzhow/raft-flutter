@@ -10,11 +10,7 @@ import 'flutter_test_config.dart';
 
 void main() {
   RaftTestBinding.showShadows();
-  for (final pack in raftThemeMatrix([
-    raftThemePackId,
-    elegantThemePackId,
-    brutalThemePackId,
-  ], look: raftLookOf)) {
+  for (final pack in raftThemeMatrix([raftThemePackId])) {
     for (final dark in [false, true]) {
       testWidgets('$pack/$dark sidebar rings paint beyond layout', (t) async {
         t.view.physicalSize = const Size(1280, 800);
@@ -82,12 +78,7 @@ void main() {
               .descendant(of: selectedRow, matching: find.byType(RaftIcon))
               .first,
         );
-        expect(
-          glyph.color,
-          tokens.colors[pack == raftThemePackId
-              ? 'sticker-ink'
-              : 'foreground-sidebar-item-icon'],
-        );
+        expect(glyph.color, tokens.colors['sticker-ink']);
         final boundary = t.renderObject<RenderRepaintBoundary>(
           find.byKey(boundaryKey),
         );
@@ -129,11 +120,9 @@ void main() {
         ];
         // Source dark MainLayout: (95,95,93) at one pixel outside the selected
         // row/count/mention; the next pixel is partial coverage. Light has a
-        // transparent ring, and both frozen packs have no outer ring.
+        // transparent ring.
         for (var i = 0; i < pixels!.length; i++) {
-          final expected = pack == raftThemePackId && dark && i != 1
-              ? [95, 95, 93, 255]
-              : bg;
+          final expected = dark && i != 1 ? [95, 95, 93, 255] : bg;
           for (var channel = 0; channel < 4; channel++) {
             expect(
               pixels[i][channel],

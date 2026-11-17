@@ -5,56 +5,6 @@ import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_ui/test_themes.dart';
 
 void main() {
-  test(
-    'sidebar directional geometry keeps overlay and in-flow headers distinct',
-    () {
-      final elegant = raftTheme(pack: packForThemeId(elegantThemePackId))
-          .extension<RaftTokens>()!;
-      final desktop = RaftSidebarRecipe(
-        elegant,
-        viewportWidth: 1024,
-        viewportHeight: 844,
-      );
-      expect(
-        desktop.headerInset,
-        const EdgeInsetsDirectional.only(start: 26, end: 18),
-      );
-      expect(
-        desktop.contentInset(),
-        const EdgeInsetsDirectional.fromSTEB(26, 56, 18, 12),
-      );
-      expect(desktop.contentInset(headerInFlow: true).top, 0);
-      expect(desktop.contentInset().bottom, 12);
-      final shortMobile = RaftSidebarRecipe(
-        elegant,
-        viewportWidth: 390,
-        viewportHeight: 560,
-      );
-      expect(
-        shortMobile.headerInset,
-        const EdgeInsetsDirectional.symmetric(horizontal: 28),
-      );
-      expect(
-        shortMobile.contentInset(),
-        const EdgeInsetsDirectional.fromSTEB(28, 48, 28, 12),
-      );
-    },
-    skip: raftLookSkip(raftLookElegant),
-  );
-  test(
-    'rail keeps source theme glyph and compact face dimensions separate',
-    () {
-      final elegant = RaftRailRecipe(
-        raftTheme(pack: packForThemeId(elegantThemePackId))
-            .extension<RaftTokens>()!,
-        viewportHeight: 560,
-      );
-      expect(elegant.glyphSize, 16);
-      expect(elegant.itemSize, 40);
-      expect(elegant.width, 56);
-    },
-    skip: raftLookSkip(raftLookElegant),
-  );
   test('mounted product sidebar overrides library geometry and reserves actual mobile overlay', () {
     final t = raftTheme().extension<RaftTokens>()!;
     final desktop = RaftSidebarRecipe(
@@ -144,7 +94,6 @@ void main() {
                     label: 'Font size',
                     value: value,
                     visualHeight: 32,
-                    legacyStyle: RaftSegmentedStyle.buttons,
                     onChanged: (next) => update(() => value = next),
                     items: const [
                       RaftSegmentedOption(value: 'small', label: 'Small'),

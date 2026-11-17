@@ -44,10 +44,10 @@ void main() {
                     update = setState;
                     return RaftButton(
                       label: 'Read more',
-                      // Keep the old generated API working until its callers
-                      // migrate to the TextLink family.
-                      tone: RaftButtonRecipeVariant.link,
-                      size: RaftButtonRecipeSize.inline,
+                      // The retired Button link / inline API, now reached
+                      // through the component's own variant and size.
+                      uiVariant: RaftButtonVariant.link,
+                      uiSize: RaftButtonSize.inline,
                       physicalHeight: 60,
                       focusNode: focus,
                       disabled: disabled,

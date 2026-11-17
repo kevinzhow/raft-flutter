@@ -8,13 +8,7 @@
 //
 // Values come from the generated recipes (package:raft_ui/recipes.dart) and
 // tokens; Tailwind classes written in the Web JSX are resolved in comments.
-import 'form_controls.dart'
-    show
-        RaftField,
-        RaftLegacyField,
-        RaftTextInput,
-        RaftTextarea,
-        RaftLegacyInput;
+import 'form_controls.dart' show RaftField, RaftTextInput, RaftTextarea;
 
 import 'dart:math' as math;
 import 'dart:ui' show ImageFilter;
@@ -22,8 +16,6 @@ import 'dart:ui' show ImageFilter;
 import 'package:flutter/material.dart';
 
 import 'form_presentation.dart';
-import 'card.dart';
-import 'recipes/card.g.dart';
 import 'overlays/dialog.dart' show RaftDialog, showRaftDialog;
 import 'dialog_surface.dart';
 import 'presentation.dart' show RaftSurfaceForm;
@@ -31,20 +23,14 @@ import 'system_inset.dart';
 
 import 'package:flutter/rendering.dart';
 
-import 'control_typography.dart';
-import 'design_primitives.dart';
 import 'dismiss_scope.dart';
 import 'icons.dart';
 import 'localization.dart';
-import 'recipe_surface.dart';
 import 'recipes/button_variants.g.dart';
-import 'raft/button.dart' show RaftButton, RaftButtonMetrics;
-import 'tokens/tokens.dart' show RaftDesktopMetrics, RaftTypeStyle;
+import 'raft/button.dart' show RaftButton;
+import 'tokens/tokens.dart' show RaftDesktopMetrics;
 import 'recipes/recipe_runtime.dart';
-import 'recipes/recipe_router.dart' show usesLegacyRecipes;
-import 'recipes/token_binding.dart';
 import 'status_bar.dart';
-import 'text_scaling.dart';
 import 'theme.dart';
 
 /// Tailwind v4 text steps used by the dialogs (`--text-*` and its
@@ -74,12 +60,9 @@ TextStyle raftCssTextStyle({
   leadingDistribution: TextLeadingDistribution.even,
 );
 
-RaftRecipeTheme raftRecipeThemeOf(RaftTokens t) => RaftRecipeTheme.elegant;
-
 /// raft-ui `Button` painted from `buttonVariants`. [padding], [textStep] and
 /// [expand] are the JSX `className` overrides (`px-4 py-2`, `text-sm`,
-/// `w-full`); [brutalSurface] lets product wrappers (CloseButton) restate
-/// their `theme-brutal:` background/border/shadow classes.
+/// `w-full`).
 class RaftRecipeButton extends StatelessWidget {
   const RaftRecipeButton({
     super.key,
@@ -95,7 +78,6 @@ class RaftRecipeButton extends StatelessWidget {
     this.expand = false,
     this.disabled = false,
     this.tooltip,
-    this.brutalSurface,
     this.foreground,
     this.gap,
     this.fontWeight,
@@ -152,7 +134,6 @@ class RaftRecipeButton extends StatelessWidget {
   final (double, double)? textStep;
   final bool expand, disabled;
   final String? tooltip;
-  final BoxDecoration Function(RaftTokens t, bool hovered)? brutalSurface;
   final Color? foreground;
 
   /// `gap-*` override of the recipe gap.
@@ -183,154 +164,13 @@ class RaftRecipeButton extends StatelessWidget {
     physicalHeight: squareExtent,
     visualWidth: squareExtent,
     metricsKey: metricsKey,
-    legacyBuilder: _paintLegacy,
   );
-
-  Widget _paintLegacy(BuildContext context, RaftInteractionState state) {
-    final t = RaftTokens.of(context);
-    final tokens = RaftRecipeTokens(t);
-    final root = RaftButtonRecipe.resolve(
-      theme: raftRecipeThemeOf(t),
-      variant: variant,
-      size: size,
-      states: RaftRecipeStates({
-        if (t.dark) RaftRecipeStates.dark,
-        if (state.hovered && state.enabled) RaftRecipeStates.hover,
-        if (state.pressed && state.enabled) RaftRecipeStates.active,
-        if (state.focusVisible || (focusRing && (focusNode?.hasFocus ?? false)))
-          RaftRecipeStates.focusVisible,
-        if (disabled) RaftRecipeStates.disabled,
-      }),
-      tokens: tokens,
-    ).root;
-    var decoration = root.decoration(tokens);
-
-    final base = root.textStyle(tokens);
-    final profile = RaftButtonMetrics(
-      height: root.height ?? 0,
-      paddingX: root.padding.left,
-      iconStartPaddingLeft: root.padding.left,
-      iconEndPaddingRight: root.padding.right,
-      text: RaftTypeStyle(
-        base.fontSize ?? 14,
-        (base.fontSize ?? 14) * (base.height ?? 1),
-      ),
-      icon:
-          glyphSize ?? root.target("& svg:not([class*='size-'])")?.width ?? 16,
-      gap: gap ?? root.columnGap ?? 0,
-    ).forComponent(t, metricsKey);
-    final color = foreground ?? base.color ?? t.ink;
-    final step = textStep;
-    final text = RaftControlTypography.of(
-      context,
-      base.copyWith(
-        color: color,
-        fontWeight: fontWeight ?? base.fontWeight,
-        fontSize:
-            step?.$1 ??
-            (metricsKey == null ? base.fontSize : profile.text.fontSize),
-        height: step == null
-            ? (metricsKey == null ? base.height : profile.text.height)
-            : step.$2 / step.$1,
-        leadingDistribution: TextLeadingDistribution.even,
-        decoration: underline ? TextDecoration.underline : null,
-      ),
-    );
-    final wraps = autoHeight || RaftScaled.grows(context);
-    final svg = root.target("& svg:not([class*='size-'])");
-    final iconSize = metricsKey == null
-        ? glyphSize ?? svg?.width ?? 16
-        : profile.icon;
-    final resolvedGap = metricsKey == null
-        ? gap ?? root.columnGap ?? 0
-        : profile.gap;
-    Widget content =
-        child ??
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (glyph != null && !glyphTrailing)
-              RaftIcon(glyph!, size: iconSize, color: color),
-            if (glyph != null && label != null && !glyphTrailing)
-              SizedBox(width: resolvedGap),
-            if (label != null)
-              Flexible(
-                child: Text(
-                  raftText(context, label!),
-                  maxLines: wraps ? null : 1,
-                  textAlign: wraps ? TextAlign.center : null,
-                  overflow: wraps ? TextOverflow.clip : TextOverflow.ellipsis,
-                  style: text,
-                ),
-              ),
-            if (glyph != null && label != null && glyphTrailing)
-              SizedBox(width: resolvedGap),
-            if (glyph != null && glyphTrailing)
-              RaftIcon(glyph!, size: iconSize, color: color),
-          ],
-        );
-    content = DefaultTextStyle.merge(
-      style: text,
-      child: IconTheme.merge(
-        data: IconThemeData(color: color, size: iconSize),
-        child: content,
-      ),
-    );
-    final translate = root.translate ?? Offset.zero;
-    // With a fixed CSS height the flex item is centred in the content box;
-    // symmetric vertical padding (even when it overflows, e.g. `h-7 py-2`)
-    // therefore only matters horizontally.
-    final resolvedPadding =
-        padding ??
-        (metricsKey == null
-            ? root.padding
-            : root.padding.copyWith(
-                left: profile.paddingX,
-                right: profile.paddingX,
-              ));
-    final boxHeight = metricsKey == null ? root.height : profile.height;
-    // Above the default text size the recipe height is a minimum (CSS
-    // `min-height`) and the label wraps, so the button grows with its text.
-    final grows = boxHeight != null && wraps;
-    Widget box = Container(
-      height: grows ? null : boxHeight,
-      constraints: grows ? BoxConstraints(minHeight: boxHeight) : null,
-      width: expand ? double.infinity : root.width,
-      padding: boxHeight == null
-          ? resolvedPadding
-          : grows
-          ? EdgeInsets.fromLTRB(
-              resolvedPadding.left,
-              math.max(resolvedPadding.top, 4),
-              resolvedPadding.right,
-              math.max(resolvedPadding.bottom, 4),
-            )
-          : EdgeInsets.only(
-              left: resolvedPadding.left,
-              right: resolvedPadding.right,
-            ),
-      decoration: decoration,
-      // inline-flex: shrink-wraps its content unless `w-full`.
-      child: Center(widthFactor: expand ? null : 1, child: content),
-    );
-    box = Transform.translate(offset: translate, child: box);
-    final opacity = disabled && disabledOpacity != null
-        ? disabledOpacity
-        : root.opacity;
-    if (opacity != null && opacity < 1) {
-      box = Opacity(opacity: opacity, child: box);
-    }
-    return box;
-  }
 }
 
 /// Web v1.24 `CloseButton`: ghost `icon-md` Button (the 32px ×) that, with a
 /// mouse on a desktop, is a 28px bar button at radius 6
 /// (`md:pointer-fine:size-(--bar-button-size) rounded-(--bar-button-radius)`,
-/// `BAR_BUTTON_DESKTOP`); the Elegant and Brutal looks keep the frozen
-/// `icon-sm` Button with
-/// `theme-brutal:border-2 theme-brutal:border-black theme-brutal:shadow-brutal-sm
-/// theme-brutal:bg-white theme-brutal:text-black` and an `X`.
+/// `BAR_BUTTON_DESKTOP`).
 class RaftCloseButton extends StatelessWidget {
   const RaftCloseButton({
     super.key,
@@ -342,7 +182,7 @@ class RaftCloseButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    if (t.isRaftLook && t.desktop) {
+    if (t.desktop) {
       const bar = RaftDesktopMetrics.barButtonSize;
       return RaftButton(
         tone: RaftButtonRecipeVariant.ghost,
@@ -372,21 +212,14 @@ class RaftCloseButton extends StatelessWidget {
     }
     return RaftRecipeButton(
       variant: RaftButtonRecipeVariant.ghost,
-      size: t.isRaftLook
-          ? RaftButtonRecipeSize.iconMd
-          : RaftButtonRecipeSize.iconSm,
+      size: RaftButtonRecipeSize.iconMd,
       // `<X size={20} />`, but the recipe's `& svg:not([class*='size-'])`
       // width/height win over Lucide's size attributes.
       glyph: RaftGlyph.x,
       tooltip: raftText(context, tooltip),
       onPressed: onPressed,
-      // text-foreground-muted (elegant) / theme-brutal:text-black.
+      // text-foreground-muted.
       foreground: t.colors['foreground-muted'],
-      brutalSurface: (t, hovered) => BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: Colors.black, width: 2),
-        boxShadow: RaftShadowSet.brutalSm,
-      ),
     );
   }
 }
@@ -411,25 +244,13 @@ class RaftThreadViewButton extends StatelessWidget {
       tooltip: raftText(context, tooltip),
       onPressed: onPressed,
       foreground: color,
-      brutalSurface: (t, hovered) => BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: Colors.black, width: 2),
-        boxShadow: RaftShadowSet.brutalSm,
-      ),
       child: RaftThreadIcon(size: 14, color: color),
     );
   }
 }
 
-/// `--shadow-brutal-sm: 2px 2px 0px #141111` (Web index.css @theme).
-abstract final class RaftShadowSet {
-  static const brutalSm = [
-    BoxShadow(color: Color(0xff141111), offset: Offset(2, 2)),
-  ];
-}
-
 /// Web `Modal`: `fixed inset-0 overflow-y-auto bg-layer-backdrop
-/// backdrop-blur-[2px] theme-brutal:bg-black/60`, then `flex min-h-full p-4`
+/// backdrop-blur-[2px]`, then `flex min-h-full p-4`
 /// and a `m-auto flex w-full justify-center` column holding [child].
 ///
 /// Inside a presented form window ([showRaftForm]) the route draws the scrim,
@@ -465,10 +286,8 @@ class _RaftModalBackdropState extends State<RaftModalBackdrop> {
     }
     final child = widget.child, onBackdrop = widget.onBackdrop;
     final t = RaftTokens.of(context);
-    // Web Modal has no blur in Raft; the frozen packs supply their own radius.
     final blur = t.size('blur.modalBackdrop', fallback: 2);
-    final scrim =
-        RaftDialogNested.of(context) && !usesLegacyRecipes(t.recipeTokens)
+    final scrim = RaftDialogNested.of(context)
         ? t.colors['layer-backdrop-nested']!
         : t.colors['layer-backdrop']!;
     // The scrim dims the status bar band over its width too (see
@@ -479,8 +298,7 @@ class _RaftModalBackdropState extends State<RaftModalBackdrop> {
       child: BackdropFilter(
         enabled: blur > 0,
         filter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
-        child: _ModalPaint(
-          color: scrim,
+        child: RaftDialogBackdrop(
           // The scrim fills the window; the card keeps to one side of a hinge.
           child: _FoldAvoiding(
             child: LayoutBuilder(
@@ -557,28 +375,12 @@ class RaftModalCardCap extends InheritedWidget {
       maxHeight != oldWidget.maxHeight;
 }
 
-/// Frozen looks keep their full-window layout; the Raft look keeps the card
-/// off a fold or hinge while the scrim still spans the window.
+/// Keeps the card off a fold or hinge while the scrim still spans the window.
 class _FoldAvoiding extends StatelessWidget {
   const _FoldAvoiding({required this.child});
   final Widget child;
   @override
-  Widget build(BuildContext context) =>
-      usesLegacyRecipes(RaftTokens.of(context).recipeTokens)
-      ? child
-      : DisplayFeatureSubScreen(child: child);
-}
-
-class _ModalPaint extends StatelessWidget {
-  const _ModalPaint({required this.color, required this.child});
-  final Color color;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) =>
-      usesLegacyRecipes(RaftTokens.of(context).recipeTokens)
-      ? ColoredBox(color: color, child: child)
-      : RaftDialogBackdrop(child: child);
+  Widget build(BuildContext context) => DisplayFeatureSubScreen(child: child);
 }
 
 /// `m-auto` centring as Chromium paints it: layout keeps the half-pixel
@@ -721,9 +523,6 @@ class RaftProductFormField extends StatelessWidget {
     optional: optional,
     hint: hint,
     error: error,
-    labelWeight: labelWeight,
-    family: family,
-    legacy: RaftLegacyField.product,
     child: child,
   );
 }
@@ -803,7 +602,6 @@ class RaftDialogTextInput extends StatelessWidget {
             mono: mono,
             textStep: mono ? RaftTextSteps.xs : null,
             growsWithScale: true,
-            legacy: RaftLegacyInput.dialog,
           )
         : RaftTextInput(
             controller: controller,
@@ -817,236 +615,6 @@ class RaftDialogTextInput extends StatelessWidget {
             onSubmitted: onSubmitted,
             mono: mono,
             textStep: mono ? RaftTextSteps.xs : null,
-            legacy: RaftLegacyInput.dialog,
           );
-  }
-}
-
-// Frozen pre-P1 rendering stays in its original audit boundary. The public
-// adapter and current Raft dialogs never use this paint for the Raft look.
-Widget buildFrozenDialogCard({
-  required String title,
-  required VoidCallback onClose,
-  required Widget child,
-  required double maxWidth,
-  RaftGlyph? titleGlyph,
-  Widget? actions,
-  Widget? footer,
-  required double footerGap,
-  bool showClose = true,
-}) => _FrozenRaftDialogCard(
-  title: title,
-  onClose: onClose,
-  maxWidth: maxWidth,
-  titleGlyph: titleGlyph,
-  actions: actions,
-  footer: footer,
-  footerGap: footerGap,
-  showClose: showClose,
-  child: child,
-);
-
-class _FrozenRaftDialogCard extends StatefulWidget {
-  const _FrozenRaftDialogCard({
-    required this.title,
-    required this.onClose,
-    required this.child,
-    this.maxWidth = 448, // max-w-md = 28rem
-    this.titleGlyph,
-    this.actions,
-    this.footer,
-    this.footerGap = 16,
-    this.showClose = true,
-  });
-  final String title;
-
-  /// The submit row of a form. In a dialog it follows [child] after a 16px
-  /// gap, as part of the body; in a bottom sheet ([showRaftForm] below 768)
-  /// it pins to the bottom while [child] scrolls.
-  final Widget? footer;
-
-  /// The space between [child] and [footer] in a dialog.
-  final double footerGap;
-
-  /// The action row (buttons) under [child]. Above the default text size the
-  /// card is capped to the viewport and only [child] scrolls, so these stay on
-  /// screen; at the default size it simply follows [child].
-  final Widget? actions;
-
-  /// A leading `<Icon size={18} />` in the title (`flex min-w-0 items-center
-  /// gap-2` + `truncate` title span).
-  final RaftGlyph? titleGlyph;
-  final bool showClose;
-  final VoidCallback onClose;
-  final Widget child;
-  final double maxWidth;
-
-  @override
-  State<_FrozenRaftDialogCard> createState() => __FrozenRaftDialogCardState();
-}
-
-class __FrozenRaftDialogCardState extends State<_FrozenRaftDialogCard> {
-  final _body = GlobalKey(debugLabel: 'dialog card body');
-  final _actions = GlobalKey(debugLabel: 'dialog card actions');
-  final _footer = GlobalKey(debugLabel: 'dialog card footer');
-
-  @override
-  Widget build(BuildContext context) {
-    final title = widget.title,
-        onClose = widget.onClose,
-        maxWidth = widget.maxWidth,
-        titleGlyph = widget.titleGlyph;
-    final body = KeyedSubtree(key: _body, child: widget.child);
-    final footerRow = widget.footer;
-    final footer = footerRow == null
-        ? null
-        : KeyedSubtree(key: _footer, child: footerRow);
-    // A dialog keeps the form's own layout: the submit row ends the body.
-    final child = footer == null
-        ? body
-        : Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              body,
-              SizedBox(height: widget.footerGap),
-              footer,
-            ],
-          );
-    final actionRow = widget.actions;
-    final actions = actionRow == null
-        ? null
-        : KeyedSubtree(key: _actions, child: actionRow);
-    final t = RaftTokens.of(context);
-    final tokens = RaftRecipeTokens(t);
-    if (RaftFormFrame.sheetOf(context)) {
-      final root = RaftCardRecipe.resolve(
-        theme: raftRecipeThemeOf(t),
-        states: RaftRecipeStates({if (t.dark) RaftRecipeStates.dark}),
-        tokens: tokens,
-      ).root;
-      return DefaultTextStyle(
-        style: root.text(tokens, base: DefaultTextStyle.of(context).style),
-        child: RaftFormSheet(
-          title: raftText(context, title),
-          onClose: onClose,
-          closeButton: widget.showClose ? null : const SizedBox.shrink(),
-          titleGlyph: titleGlyph,
-          body: body,
-          footer: footer ?? actions,
-        ),
-      );
-    }
-    final titleSlot = RaftCardRecipe.resolve(
-      theme: raftRecipeThemeOf(t),
-      tokens: tokens,
-    ).title;
-    final titleStyle = raftCssTextStyle(
-      family: titleSlot.fontFamily ?? t.headingFont,
-      step: RaftTextSteps.lg,
-      weight: FontWeight.w700,
-      color: t.ink,
-    );
-    final grows = RaftScaled.grows(context);
-    final header = Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Row(
-        // CardHeader `gap-4` between the title and the close button.
-        spacing: 16,
-        children: [
-          Expanded(
-            child: Semantics(
-              header: true,
-              child: titleGlyph == null
-                  ? Text(
-                      // CardTitle has no `truncate`: a long title wraps.
-                      raftText(context, title),
-                      style: titleStyle,
-                    )
-                  : Row(
-                      spacing: 8,
-                      children: [
-                        RaftIcon(titleGlyph, size: 18, color: t.ink),
-                        Expanded(
-                          child: Text(
-                            raftText(context, title),
-                            // The title wraps above the default text size.
-                            maxLines: grows ? null : 1,
-                            overflow: grows
-                                ? TextOverflow.clip
-                                : TextOverflow.ellipsis,
-                            style: titleStyle,
-                          ),
-                        ),
-                      ],
-                    ),
-            ),
-          ),
-          if (widget.showClose)
-            RaftCloseButton(onPressed: raftGuardedClose(context, onClose)),
-        ],
-      ),
-    );
-    if (grows) {
-      // Text above the default size: the dialog never outgrows the viewport
-      // (minus the system insets and the modal's 16px margin); the actions
-      // stay put and the body scrolls above them.
-      final media = MediaQuery.of(context);
-      final cap = math.max(
-        0.0,
-        media.size.height - 32 - media.padding.vertical,
-      );
-      return ConstrainedBox(
-        constraints: BoxConstraints(maxHeight: cap),
-        child: RaftCard(
-          dialog: true,
-          maxWidth: maxWidth,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Without pinned actions the close button stays reachable;
-              // with them the header scrolls so a short viewport keeps room
-              // for the body.
-              if (actions == null)
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
-                  child: header,
-                ),
-              Flexible(
-                child: SingleChildScrollView(
-                  padding: EdgeInsets.fromLTRB(
-                    24,
-                    actions == null ? 0 : 24,
-                    24,
-                    actions == null ? 24 : 0,
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [if (actions != null) header, child],
-                  ),
-                ),
-              ),
-              if (actions != null)
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-                  child: actions,
-                ),
-            ],
-          ),
-        ),
-      );
-    }
-    return RaftCard(
-      dialog: true,
-      maxWidth: maxWidth,
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [header, child, ?actions],
-      ),
-    );
   }
 }

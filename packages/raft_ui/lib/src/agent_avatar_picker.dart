@@ -281,7 +281,6 @@ class RaftAvatarDiscardConfirmation extends StatelessWidget {
     final t = RaftTokens.of(context),
         rt = RaftRecipeTokens(RaftTokens.of(context));
     final s = RaftAlertDialogRecipe.resolve(
-      theme: raftRecipeTheme(t),
       states: RaftRecipeStates({if (t.dark) RaftRecipeStates.dark}),
       tokens: rt,
     );

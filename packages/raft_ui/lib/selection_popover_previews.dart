@@ -9,7 +9,6 @@ import 'previews.dart';
 /// separate from SelectionPopover.tsx117's theme-dependent default surface.
 RaftSlotStyle selectionPopoverCallerSurface(RaftTokens tokens) {
   final card = RaftCardRecipe.resolve(
-    theme: tokens.recipeTheme,
     states: tokens.recipeStates(),
     tokens: tokens.recipeTokens,
   ).root;

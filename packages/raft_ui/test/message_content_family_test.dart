@@ -9,8 +9,7 @@ import 'package:raft_ui/test_themes.dart';
 
 // WP-DS3 content family against raft-ui 0.95.3 / Web v1.24: code block frame,
 // the keyboard region of an overflowing block, inline code, markdown
-// blockquote / table head / links, and ShowMoreToggle. Raft look only (the
-// frozen looks keep their recipes); input mode is set with
+// blockquote / table head / links, and ShowMoreToggle. Input mode is set with
 // RaftInteractionScope, never by width.
 
 const _touchSizes = [Size(856, 944), Size(944, 856)];

@@ -282,7 +282,7 @@ void main() {
             expect(mount, isNotNull, reason: '${surface.id} has no mount');
             final edgeX = await mount!(t, width);
             if (edgeX == null) return;
-            final drawn = width >= 768 && surface.elegantDraws;
+            final drawn = width >= 768 && surface.drawsEdge;
             final lineWidth = 1.0;
             final rules = paintedRules().where((r) => r.height >= 200);
             // The line is the surface's own border (starts at its left edge)

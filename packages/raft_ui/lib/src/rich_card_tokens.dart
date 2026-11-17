@@ -10,12 +10,9 @@ import 'theme.dart';
 /// success Badge primitives. See dist/index.mjs; colors resolve through the
 /// shared semantic palette rather than duplicating sampled PNG literals.
 abstract final class RichCardPrimitive {
-  static const badgeElegantHeight = 18.0;
-  static const badgeElegantInset = EdgeInsets.symmetric(
-    horizontal: 8,
-    vertical: 2,
-  );
-  static const badgeGapElegant = 6.0;
+  static const badgeHeight = 18.0;
+  static const badgeInset = EdgeInsets.symmetric(horizontal: 8, vertical: 2);
+  static const badgeGap = 6.0;
   static const embedRadius = 8.0, contentRadius = 5.5;
   static const embedInset = 2.0, fineBorder = .5;
   static const headerVerticalInset = 6.0, footerVerticalInset = 6.0;
@@ -124,7 +121,7 @@ class ActionSnapshotRecipe extends RaftActionCardRecipe {
     border: Border.all(color: Colors.transparent),
     borderRadius: BorderRadius.circular(999),
   );
-  double get badgeHeight => RichCardPrimitive.badgeElegantHeight;
-  EdgeInsets get badgeInset => RichCardPrimitive.badgeElegantInset;
-  double get badgeGap => RichCardPrimitive.badgeGapElegant;
+  double get badgeHeight => RichCardPrimitive.badgeHeight;
+  EdgeInsets get badgeInset => RichCardPrimitive.badgeInset;
+  double get badgeGap => RichCardPrimitive.badgeGap;
 }

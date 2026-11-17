@@ -15,18 +15,6 @@ void main() {
   RaftTokens tokens(RaftThemePack pack, {bool dark = false}) =>
       RaftTokens.theme(pack: pack, dark: dark);
 
-  test('legacy ordinary and Feedback content keep different dark surfaces', () {
-    for (final id in [elegantThemePackId, brutalThemePackId]) {
-      final t = tokens(packForThemeId(id), dark: true);
-      expect(RaftSettingsCard.decoration(t).color, t.panel);
-      // a57b9dab settings_layout.dart:410 uses panel for ordinary content;
-      // only feedbackSurface at :351 switches to card in dark mode.
-      const frame = RaftSettingsPanelFrame(header: null, child: SizedBox());
-      expect(frame.contentSurfaceOf(t), t.panel);
-      expect(RaftSettingsPanelFrame.feedbackSurface(t), t.colors['layer-card']);
-    }
-  });
-
   test('the roles move the card and the content surface', () {
     final base = tokens(packForThemeId(raftThemePackId), dark: true);
     final t = RaftTokens(

@@ -119,7 +119,6 @@ class RaftProductEmptyState extends StatelessWidget {
     }
     final rt = t.recipeTokens;
     final recipe = RaftEmptyStateRecipe.resolve(
-      theme: t.recipeTheme,
       states: t.recipeStates(),
       tokens: rt,
     );

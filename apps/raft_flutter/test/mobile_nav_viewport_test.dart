@@ -6,18 +6,14 @@ import 'package:raft_ui/test_themes.dart';
 
 import 'app_global_server_selector_test.dart' show RootFixture;
 
-// Real RaftApp composition: a docked bar spends its height once, while the
-// legacy capsule overlays the list. This is a geometry contract, so every
-// theme variant runs rather than sampling away the distinguishing cases.
+// Real RaftApp composition: the docked bar spends its height once. This is a
+// geometry contract, so every theme variant runs rather than sampling away the
+// distinguishing cases.
 void main() {
-  for (final (pack, mode, inset, docked) in raftThemeMatrix([
-    (raftThemePackId, 'light', 24.0, true),
-    (raftThemePackId, 'dark', 48.0, true),
-    (brutalThemePackId, 'light', 24.0, true),
-    (elegantThemePackId, 'light', 24.0, false),
-    (elegantThemePackId, 'dark', 24.0, false),
-    (brutalThemePackId, 'dark', 24.0, false),
-  ], look: (v) => raftLookOf(v.$1))) {
+  for (final (pack, mode, inset) in raftThemeMatrix([
+    (raftThemePackId, 'light', 24.0),
+    (raftThemePackId, 'dark', 48.0),
+  ])) {
     testWidgets('$pack $mode preserves the visible sidebar viewport', (
       t,
     ) async {
@@ -37,7 +33,7 @@ void main() {
       final bar = find.byKey(const Key('workspace-mobile-navigation'));
       final listRect = t.getRect(list), barRect = t.getRect(bar);
       expect(barRect.bottom, closeTo(900 - inset, .01));
-      if (docked) {
+      {
         expect(
           listRect.bottom,
           closeTo(barRect.top, .01),
@@ -55,9 +51,6 @@ void main() {
           ),
           findsOneWidget,
         );
-      } else {
-        expect(listRect.bottom, greaterThan(barRect.top));
-        expect(listRect.bottom, closeTo(900, .01));
       }
     }, variant: TargetPlatformVariant.only(TargetPlatform.android));
   }

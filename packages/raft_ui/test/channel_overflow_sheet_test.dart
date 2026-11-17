@@ -100,8 +100,8 @@ void main() {
     () {
       test('column count follows the grid width', () {
         expect(RaftMembersStrip.columnsFor(0), 7);
-        expect(RaftMembersStrip.columnsFor(416), 9); // elegant 448 - 32
-        expect(RaftMembersStrip.columnsFor(510), 11); // brutal 544 - 34
+        expect(RaftMembersStrip.columnsFor(416), 9); // 448 - 32
+        expect(RaftMembersStrip.columnsFor(510), 11); // 544 - 34
         expect(RaftMembersStrip.columnsFor(10), 1);
       });
       test(

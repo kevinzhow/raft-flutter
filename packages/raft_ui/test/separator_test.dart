@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_ui/test_themes.dart';
@@ -68,60 +67,4 @@ void main() {
       expect(find.byType(DecoratedBox), findsWidgets);
     });
   }
-
-  testWidgets('Elegant paints exactly what Divider painted', (tester) async {
-    Future<List<int>> render(Widget line, double width, double height) async {
-      final key = GlobalKey();
-      await tester.pumpWidget(
-        MaterialApp(
-          theme: raftTheme(pack: packForThemeId(elegantThemePackId)),
-          home: RepaintBoundary(
-            key: key,
-            child: ColoredBox(
-              color: const Color(0xFFFFFFFF),
-              child: SizedBox(width: width, height: height, child: line),
-            ),
-          ),
-        ),
-      );
-      late List<int> bytes;
-      await tester.runAsync(() async {
-        final boundary =
-            key.currentContext!.findRenderObject()! as RenderRepaintBoundary;
-        final image = await boundary.toImage(pixelRatio: 3);
-        bytes = (await image.toByteData())!.buffer.asUint8List();
-        image.dispose();
-      });
-      return bytes;
-    }
-
-    for (final (thickness, color) in [
-      (null, null),
-      (1.0, const Color(0xFF123456)),
-      (2.0, null),
-    ]) {
-      final before = await render(
-        Divider(height: 1, thickness: thickness, color: color),
-        100,
-        20,
-      );
-      final after = await render(
-        RaftSeparator(thickness: thickness, color: color),
-        100,
-        20,
-      );
-      expect(after, before, reason: 'horizontal $thickness $color');
-      final beforeV = await render(
-        VerticalDivider(width: 1, thickness: thickness, color: color),
-        20,
-        100,
-      );
-      final afterV = await render(
-        RaftSeparator(axis: Axis.vertical, thickness: thickness, color: color),
-        20,
-        100,
-      );
-      expect(afterV, beforeV, reason: 'vertical $thickness $color');
-    }
-  }, skip: raftLookSkip(raftLookElegant));
 }

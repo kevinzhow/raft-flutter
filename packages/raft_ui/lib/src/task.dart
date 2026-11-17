@@ -151,7 +151,6 @@ class RaftTaskCard extends StatelessWidget {
     final t = RaftTokens.of(context);
     final rt = RaftRecipeTokens(t);
     final r = RaftTaskCardRecipe.resolve(
-      theme: RaftRecipeTheme.elegant,
       states: RaftRecipeStates({if (t.dark) RaftRecipeStates.dark}),
       tokens: rt,
     );
@@ -355,13 +354,8 @@ class RaftTaskSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     final rt = RaftRecipeTokens(t);
-    final theme = RaftRecipeTheme.elegant;
     final states = RaftRecipeStates({if (t.dark) RaftRecipeStates.dark});
-    final r = RaftTaskListSectionRecipe.resolve(
-      theme: theme,
-      states: states,
-      tokens: rt,
-    );
+    final r = RaftTaskListSectionRecipe.resolve(states: states, tokens: rt);
     final trigger = _taskSectionTrigger(
       context,
       r,
@@ -444,7 +438,6 @@ class RaftSliverTaskSection extends StatelessWidget {
     final t = RaftTokens.of(context),
         rt = RaftRecipeTokens(RaftTokens.of(context));
     final r = RaftTaskListSectionRecipe.resolve(
-      theme: RaftRecipeTheme.elegant,
       states: RaftRecipeStates({if (t.dark) RaftRecipeStates.dark}),
       tokens: rt,
     );
@@ -532,7 +525,6 @@ Widget _taskSectionTrigger(
   // count is `font-mono text-mono-meta text-foreground-hint`.
   final raft = plain
       ? RaftTaskListSectionRecipe.resolve(
-          theme: t.recipeTheme,
           states: t.recipeStates(responsive: true),
           tokens: rt,
         )
@@ -641,14 +633,12 @@ class RaftTaskSectionBadge extends StatelessWidget {
       // column's label in `foreground-muted`, the list section's in
       // `foreground-hint`; the status pixel in front.
       final ink = board
-          ? RaftTaskBoardColumnRecipe.resolve(
-              theme: t.recipeTheme,
-              tokens: rt,
-            ).badge.textStyle(rt).color
-          : RaftTaskListSectionRecipe.resolve(
-              theme: t.recipeTheme,
-              tokens: rt,
-            ).badge.textStyle(rt).color;
+          ? RaftTaskBoardColumnRecipe.resolve(tokens: rt).badge
+                .textStyle(rt)
+                .color
+          : RaftTaskListSectionRecipe.resolve(tokens: rt).badge
+                .textStyle(rt)
+                .color;
       return Row(
         mainAxisSize: MainAxisSize.min,
         spacing: 8,
@@ -669,10 +659,9 @@ class RaftTaskSectionBadge extends StatelessWidget {
         ],
       );
     }
-    final theme = RaftRecipeTheme.elegant;
     final badge = board
-        ? RaftTaskBoardColumnRecipe.resolve(theme: theme, tokens: rt).badge
-        : RaftTaskListSectionRecipe.resolve(theme: theme, tokens: rt).badge;
+        ? RaftTaskBoardColumnRecipe.resolve(tokens: rt).badge
+        : RaftTaskListSectionRecipe.resolve(tokens: rt).badge;
 
     final base = badge.textStyle(rt);
     final size = base.fontSize ?? 10;
@@ -750,7 +739,6 @@ class RaftTaskBoardColumn extends StatelessWidget {
     // Raft: raft-ui 0.95.3 with the window and the input (34px trigger with a
     // mouse from 768px); the frozen looks keep their base states.
     final r = RaftTaskBoardColumnRecipe.resolve(
-      theme: t.recipeTheme,
       states: flat ? t.recipeStates(responsive: true) : t.recipeStates(),
       tokens: rt,
     );
@@ -848,7 +836,6 @@ class RaftTaskBoardColumn extends StatelessWidget {
       );
       if (!(collapsed && dropActive)) return column;
       final outline = RaftTaskBoardColumnRecipe.resolve(
-        theme: t.recipeTheme,
         states: t.recipeStates(
           responsive: true,
           extra: const ['data-drop-collapsed=true', 'data-drop-state=allowed'],
@@ -1028,16 +1015,8 @@ class RaftTaskLaneEmpty extends StatelessWidget {
       final rt = RaftRecipeTokens(t);
       final states = t.recipeStates(responsive: true);
       final e = board
-          ? RaftTaskBoardColumnRecipe.resolve(
-              theme: t.recipeTheme,
-              states: states,
-              tokens: rt,
-            ).empty
-          : RaftTaskListSectionRecipe.resolve(
-              theme: t.recipeTheme,
-              states: states,
-              tokens: rt,
-            ).empty;
+          ? RaftTaskBoardColumnRecipe.resolve(states: states, tokens: rt).empty
+          : RaftTaskListSectionRecipe.resolve(states: states, tokens: rt).empty;
       return ConstrainedBox(
         constraints: BoxConstraints(
           minWidth: double.infinity,

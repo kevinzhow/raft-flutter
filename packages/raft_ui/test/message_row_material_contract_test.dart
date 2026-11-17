@@ -4,11 +4,7 @@ import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_ui/test_themes.dart';
 
 void main() {
-  for (final id in raftThemeMatrix([
-    raftThemePackId,
-    elegantThemePackId,
-    brutalThemePackId,
-  ], look: raftLookOf)) {
+  for (final id in raftThemeMatrix([raftThemePackId])) {
     for (final dark in [false, true]) {
       test('source row geometry $id/$dark', () {
         final tokens = raftTheme(
@@ -16,7 +12,6 @@ void main() {
           dark: dark,
         ).extension<RaftTokens>()!;
         final native = id == raftThemePackId;
-        final brutal = id == brutalThemePackId && !dark;
         final narrow = RaftMessageRowRecipe(tokens, viewportWidth: 390);
         final wide = RaftMessageRowRecipe(tokens, viewportWidth: 1280);
         final thread = RaftMessageRowRecipe(
@@ -24,66 +19,26 @@ void main() {
           viewportWidth: 390,
           rowContext: RaftMessageRowContext.thread,
         );
-        expect(
-          narrow.gutterWidth,
-          native
-              ? 35
-              : brutal
-              ? 36
-              : 32,
-        );
+        expect(narrow.gutterWidth, native ? 35 : 32);
         expect(wide.gutterWidth, native ? 35 : 36);
         expect(narrow.avatarExtent, native ? 35 : 36);
-        expect(narrow.gap, native || brutal ? 12 : 8);
+        expect(narrow.gap, native ? 12 : 8);
         expect(narrow.avatarTop, 2);
         expect(
           narrow.padding,
           native
               ? const EdgeInsets.symmetric(horizontal: 8, vertical: 4)
-              : brutal
-              ? const EdgeInsets.symmetric(horizontal: 6, vertical: 4)
               : const EdgeInsets.fromLTRB(16, 8, 16, 6),
         );
-        expect(
-          thread.padding.left,
-          native
-              ? 8
-              : brutal
-              ? 6
-              : 12,
-        );
-        expect(
-          wide.padding.left,
-          native
-              ? 8
-              : brutal
-              ? 6
-              : 28,
-        );
-        expect(
-          narrow.subtitleStyle.fontFamily,
-          brutal ? tokens.monoFont : tokens.bodyFont,
-        );
+        expect(thread.padding.left, native ? 8 : 12);
+        expect(wide.padding.left, native ? 8 : 28);
+        expect(narrow.subtitleStyle.fontFamily, tokens.bodyFont);
         expect(narrow.headerReserve, native ? 0 : 96);
-        expect(narrow.headerLine, native || brutal ? 20 : 21);
-        expect(
-          narrow.bodyGap,
-          native
-              ? 1
-              : brutal
-              ? 0
-              : 4,
-        );
-        expect(narrow.bodyBottomGap, native || brutal ? 0 : 4);
+        expect(narrow.headerLine, native ? 20 : 21);
+        expect(narrow.bodyGap, native ? 1 : 4);
+        expect(narrow.bodyBottomGap, native ? 0 : 4);
         expect(narrow.minimumHeight, native ? 0 : 48);
-        expect(
-          narrow.borderWidth,
-          native
-              ? 0
-              : brutal
-              ? 2
-              : 1,
-        );
+        expect(narrow.borderWidth, native ? 0 : 1);
         for (final tier in RaftMessageSizeTier.values) {
           final sized = RaftMessageRowRecipe(
             tokens,
@@ -100,14 +55,7 @@ void main() {
           );
           expect(
             sized.time.fontSize! * sized.time.height!,
-            closeTo(
-              native
-                  ? [15, 16, 17][tier.index]
-                  : brutal
-                  ? 16
-                  : tier.meta,
-              .001,
-            ),
+            closeTo(native ? [15, 16, 17][tier.index] : tier.meta, .001),
           );
         }
       });

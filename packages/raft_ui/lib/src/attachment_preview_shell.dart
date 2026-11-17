@@ -32,8 +32,7 @@ class RaftCommentsSheetControls {
 /// comments toggle, copy, download, close), the body below it and the
 /// comments panel as a `w-80` aside from `sm` up or a 2-state bottom sheet
 /// below. [canvas] is the `browser-find` layout (text, csv, xlsx, markdown):
-/// the pane sits on `bg-layer-canvas-muted` (brutal cream) instead of the
-/// panel surface.
+/// the pane sits on `bg-layer-canvas-muted` instead of the panel surface.
 class RaftAttachmentPreviewShell extends StatefulWidget {
   const RaftAttachmentPreviewShell({
     super.key,
@@ -333,8 +332,7 @@ class _RaftAttachmentPreviewShellState
 }
 
 /// Web `HtmlPreviewBody` before the sandboxed frame reports its link
-/// inventory: the white frame under `bg-layer-panel/75` (brutal `bg-white/75`)
-/// and the centred "Preparing interactive preview…" chip.
+/// inventory: the white frame under `bg-layer-panel/75` and the centred "Preparing interactive preview…" chip.
 class RaftPreviewPreparing extends StatelessWidget {
   const RaftPreviewPreparing({super.key});
   @override

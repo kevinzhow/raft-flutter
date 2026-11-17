@@ -134,7 +134,6 @@ class _AccountSettingsState extends ManagementState<AccountSettings> {
     if (remove) {
       final accepted = await scopedDialog<bool>(
         (context) => RaftAlertDialog(
-          legacy: RaftLegacyAlert.material,
           title: Text(raftText(context, 'Remove Profile Image')),
           content: Text(
             raftText(
@@ -398,9 +397,8 @@ class _AccountSettingsState extends ManagementState<AccountSettings> {
                     maxLines: 1,
                     style: RaftTypography.mono(
                       t,
-                      // `text-mono-code`: 13/20 in the Raft look (the frozen
-                      // looks keep their `text-sm`).
-                      size: t.isRaftLook ? 13 : 14,
+                      // `text-mono-code`: 13/20.
+                      size: 13,
                       line: 20,
                       color: RaftSettingsText(t).strong,
                     ),

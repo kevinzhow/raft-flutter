@@ -38,7 +38,7 @@ void main() {
       ),
     );
     expect(tokens.tokenSet.id, RaftThemeId.dark);
-    // The 0.7.1 field metrics (16/24) are applied; the card title keeps Elegant's 16/22/500 (see
+    // The 0.7.1 field metrics (16/24) are applied; the card title keeps 16/22/500 (see
     // raft_token_mapping.dart).
     expect(tokens.metrics.fieldFontSize, 16);
     expect(tokens.metrics.cardTitleLineHeight, 22);
@@ -101,7 +101,7 @@ void main() {
     expect(metrics.fieldFontSize, 16);
     expect(metrics.fieldLineHeight, 24);
     expect(metrics.cardTitleFontWeight, 500);
-    // The Space Grotesk / Space Mono faces are a follow-up; Elegant's carry on.
+    // The Space Grotesk / Space Mono faces are a follow-up.
     expect(metrics.headingFontStack.first, 'Space Grotesk');
     expect(metrics.sansFont, 'packages/raft_ui/SpaceGrotesk');
     expect(RaftScale.spacing, 4);

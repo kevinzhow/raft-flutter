@@ -95,7 +95,6 @@ class _PopupOwnerState extends State<_PopupOwner> {
     resolutions.add(state);
     final tokens = RaftTokens.of(context);
     final slots = RaftSelectRecipe.resolve(
-      theme: tokens.recipeTheme,
       tokens: tokens.recipeTokens,
       states: tokens.recipeStates(
         hovered: state.hovered,

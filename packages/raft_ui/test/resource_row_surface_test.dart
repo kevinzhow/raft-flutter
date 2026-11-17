@@ -156,11 +156,7 @@ void main() {
       },
     );
   }
-  for (final id in raftThemeMatrix([
-    raftThemePackId,
-    elegantThemePackId,
-    brutalThemePackId,
-  ], look: raftLookOf)) {
+  for (final id in raftThemeMatrix([raftThemePackId])) {
     testWidgets('$id resource toolbar preview keeps both actions connected', (
       t,
     ) async {

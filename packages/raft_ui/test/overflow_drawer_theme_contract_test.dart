@@ -6,9 +6,7 @@ import 'package:raft_ui/test_themes.dart';
 void main() {
   for (final (pack, lightWidth) in raftThemeMatrix([
     (raftThemePackId, 420.0),
-    (elegantThemePackId, 448.0),
-    (brutalThemePackId, 544.0),
-  ], look: (v) => raftLookOf(v.$1))) {
+  ])) {
     for (final dark in [false, true]) {
       testWidgets(
         '$pack/$dark drawer uses source width and keeps phone/page bounds',
@@ -16,7 +14,7 @@ void main() {
           tester.view.devicePixelRatio = 1;
           addTearDown(tester.view.reset);
           addTearDown(() => tester.pumpWidget(const SizedBox.shrink()));
-          final limit = dark && pack == brutalThemePackId ? 448.0 : lightWidth;
+          final limit = lightWidth;
           for (final (viewport, page, expected) in [
             (1280.0, false, limit),
             (390.0, false, 390.0),

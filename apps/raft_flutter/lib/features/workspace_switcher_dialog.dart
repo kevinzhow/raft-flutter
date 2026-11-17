@@ -1,4 +1,3 @@
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
@@ -15,63 +14,27 @@ Widget workspaceSwitcherDialog({
   required VoidCallback onClose,
   ValueChanged<RaftRecord>? onOpenInBrowser,
 }) {
-  if (RaftTokens.of(context).isRaftLook) {
-    return RaftChoiceDialog<String>(
-      title: translate('Switch Server'),
-      options: [
-        for (final server in servers)
-          RaftChoiceDialogOption(
-            key: ValueKey('switch-server-choice-${server.id}'),
-            value: server.id,
-            label: server.name,
-            selected: server.id == selectedServerId,
-            onAuxiliary: onOpenInBrowser == null
-                ? null
-                : () => onOpenInBrowser(server),
-            trailing: onOpenInBrowser == null ? null : browserAction(server),
-          ),
-        RaftChoiceDialogOption(
-          value: 'create',
-          label: translate('Create server'),
-        ),
-        RaftChoiceDialogOption(value: 'join', label: translate('Join server')),
-      ],
-      onSelected: onSelected,
-      onClose: onClose,
-    );
-  }
-  return buildFrozenChoiceDialog(
-    title: Text(translate('Switch Server')),
+  return RaftChoiceDialog<String>(
+    title: translate('Switch Server'),
     options: [
       for (final server in servers)
-        RaftFrozenChoiceDialogOption(
-          onPressed: () => onSelected(server.id),
-          child: Listener(
-            onPointerDown: onOpenInBrowser == null
-                ? null
-                : (event) {
-                    if (event.buttons == kMiddleMouseButton) {
-                      onOpenInBrowser(server);
-                    }
-                  },
-            child: Row(
-              children: [
-                Expanded(child: Text(server.name)),
-                if (onOpenInBrowser != null) browserAction(server),
-                if (server.id == selectedServerId)
-                  const RaftIcon(RaftGlyph.check, size: 14),
-              ],
-            ),
-          ),
+        RaftChoiceDialogOption(
+          key: ValueKey('switch-server-choice-${server.id}'),
+          value: server.id,
+          label: server.name,
+          selected: server.id == selectedServerId,
+          onAuxiliary: onOpenInBrowser == null
+              ? null
+              : () => onOpenInBrowser(server),
+          trailing: onOpenInBrowser == null ? null : browserAction(server),
         ),
-      RaftFrozenChoiceDialogOption(
-        onPressed: () => onSelected('create'),
-        child: Text(translate('Create server')),
+      RaftChoiceDialogOption(
+        value: 'create',
+        label: translate('Create server'),
       ),
-      RaftFrozenChoiceDialogOption(
-        onPressed: () => onSelected('join'),
-        child: Text(translate('Join server')),
-      ),
+      RaftChoiceDialogOption(value: 'join', label: translate('Join server')),
     ],
+    onSelected: onSelected,
+    onClose: onClose,
   );
 }

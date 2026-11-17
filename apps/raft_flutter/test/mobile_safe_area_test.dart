@@ -19,11 +19,7 @@ void main() {
     for (final (pack, theme) in raftThemeMatrix([
       (raftThemePackId, 'light'),
       (raftThemePackId, 'dark'),
-      (elegantThemePackId, 'light'),
-      (elegantThemePackId, 'dark'),
-      (brutalThemePackId, 'light'),
-      (brutalThemePackId, 'dark'),
-    ], look: (v) => raftLookOf(v.$1))) {
+    ])) {
       testWidgets(
         '$platform $pack $theme root controls clear the system gesture area',
         (t) async {
@@ -40,10 +36,6 @@ void main() {
           final w = f.workspace(t);
           final nav = find.byKey(const Key('workspace-mobile-navigation'));
           final screenBottom = t.view.physicalSize.height;
-          final tokens = RaftTokens.of(t.element(nav));
-          final floating =
-              tokens.option('mobileNav.style', or: 'docked') ==
-              'floatingCapsule';
 
           void expectBarClearance() {
             expect(t.getRect(nav).bottom, closeTo(screenBottom - inset, .01));
@@ -60,36 +52,17 @@ void main() {
               );
             }
             final surface = find.byKey(
-              ValueKey(
-                floating
-                    ? 'mobile-nav-source-capsule'
-                    : 'mobile-nav-source-docked',
-              ),
+              const ValueKey('mobile-nav-source-docked'),
             );
             expect(
               t.getRect(surface).bottom,
-              closeTo(screenBottom - inset - (floating ? 8 : 0), .01),
-              reason:
-                  'Only the floating capsule leaves a gap above the safe area.',
+              closeTo(screenBottom - inset, .01),
             );
           }
 
           expectBarClearance();
           final sidebar = find.byKey(const Key('workspace-sidebar'));
-          expect(
-            t.getRect(sidebar).bottom,
-            floating ? screenBottom : t.getRect(nav).top,
-          );
-          if (floating) {
-            // The overlaid list retains scroll clearance for the capsule.
-            final sliver = t.widget<CustomScrollView>(sidebar).slivers.first;
-            expect(
-              (sliver as SliverPadding).padding
-                  .resolve(TextDirection.ltr)
-                  .bottom,
-              68 + inset,
-            );
-          }
+          expect(t.getRect(sidebar).bottom, t.getRect(nav).top);
 
           // The keyboard covers the tab bar rather than lifting it. Its dismissal
           // restores the same geometry, with the safe inset consumed once.

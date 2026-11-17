@@ -345,14 +345,12 @@ void main() {
             final control = find.byKey(const ValueKey('panel-tab-chat'));
             final face = find.descendant(
               of: control,
-              matching: tokens.isRaftLook
-                  ? find.byWidgetPredicate(
-                      (widget) =>
-                          widget is RaftRecipeBox &&
-                          widget.style.context?.recipe == 'tabs' &&
-                          widget.style.context?.slot == 'tab',
-                    )
-                  : find.byType(RaftCssBox),
+              matching: find.byWidgetPredicate(
+                (widget) =>
+                    widget is RaftRecipeBox &&
+                    widget.style.context?.recipe == 'tabs' &&
+                    widget.style.context?.slot == 'tab',
+              ),
             );
             expect(control, findsOneWidget);
             expect(face, findsOneWidget);

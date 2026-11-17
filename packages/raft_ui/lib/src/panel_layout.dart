@@ -1,4 +1,3 @@
-import 'recipes/recipe_router.dart';
 // Panel chrome shared by the Web detail panels (AgentDetailPanel,
 // HumanDetailPanel, MachineDetailPanel): the canonical PanelHeader row, its
 // PanelAction buttons, the scrollable underline Tabs strip and the section
@@ -24,7 +23,6 @@ import 'design_primitives.dart' hide RaftPanelHeaderRecipe;
 import 'icons.dart';
 import 'inline_badge_editor.dart' show RaftTouchTargetExpander;
 import 'recipes/recipe_runtime.dart';
-import 'recipes/button_variants.g.dart';
 import 'recipes/panel_action.g.dart';
 import 'recipes/panel_header.g.dart';
 import 'raft/tabs.dart';
@@ -32,55 +30,24 @@ import 'raft/blink_snap.dart';
 import 'raft/button.dart';
 import 'raft/ui_tokens.dart';
 import 'recipes/token_binding.dart';
-import 'recipe_surface.dart' show raftCssText, RaftRecipeBinding;
+import 'recipe_surface.dart' show raftCssText;
 import 'status_bar.dart';
 import 'text_scaling.dart' show RaftChrome, RaftScaled;
 import 'large_content_viewer.dart';
 import 'theme.dart';
 import 'tooltip.dart';
 
-/// Which generated recipe set a component resolves.
-///
-/// The recipes were generated from two CSS themes (`brutal` and `elegant`), so
-/// the resolver takes a two-valued enum. The contract forbids choosing by theme
-/// name or theme id, so the choice is derived from a **geometry token** the
-/// theme declares:
-///
-///   `radius.control` > 0  -> the elegant recipe set
-///   `radius.control` == 0 -> the brutal recipe set
-///
-/// Verified against the resolved recipes rather than assumed: the elegant set
-/// gives `rounded-md` + `border-0` (a ring drawn outside a transparent border),
-/// the brutal set gives `rounded-none` + `border-2`. The control radius is
-/// exactly the token that distinguishes them — Raft 8, Elegant 6, Brutal 0 — so
-/// Raft and Elegant both take the elegant set (which is what the app painted
-/// before this helper existed, since it was hardcoded to `elegant`) and Brutal
-/// now takes the brutal set.
-///
-/// This is a bridge, not a destination. The generated recipe tables carry radii,
-/// paddings and strokes as compile-time constants; the contract's §10.2 plan is
-/// to regenerate them from tokens instead of picking one of two compiled sets.
-/// Until then this is the honest mapping, and it is the only place the
-/// two-valued choice is made.
-RaftRecipeTheme raftRecipeTheme(RaftTokens t) =>
-    t.size('radius.control', fallback: 8) > 0
-    ? RaftRecipeTheme.elegant
-    : RaftRecipeTheme.brutal;
-
-/// `theme-brutal:text-black/<n>` overrides used across the Web panels; other
-/// themes keep the semantic token.
+/// The panel ink: the semantic token (the Web `theme-brutal:text-black/<n>`
+/// overrides do not apply).
 Color raftPanelInk(RaftTokens t, double brutalAlpha, Color elegant) => elegant;
 
 /// raft-ui `PanelTitle` as the profile detail block uses it (Web v1.21.12
 /// `<PanelTitle className="min-w-0 text-foreground-muted
 /// theme-brutal:text-black theme-brutal:text-lg">`): the panel-header recipe's
-/// `title` slot (elegant 17 / semibold / heading family, brutal 16 bold) with
-/// the muted ink; brutal is black at `text-lg` (18, the recipe's
-/// `leading-tight` ratio keeps the 22.5px line box).
+/// `title` slot with the muted ink.
 TextStyle raftPanelTitleStyle(RaftTokens t) {
   final rt = RaftRecipeTokens(t);
   final slot = RaftPanelHeaderRecipe.resolve(
-    theme: raftRecipeTheme(t),
     states: RaftRecipeStates({if (t.dark) RaftRecipeStates.dark}, 390),
     tokens: rt,
   ).title;
@@ -95,9 +62,8 @@ TextStyle raftPanelTitleStyle(RaftTokens t) {
 
 /// AgentDetailPanel.tsx InfoRow (Web v1.21.12): `grid
 /// grid-cols-[7.75rem_minmax(0,1fr)] items-start gap-x-4`; the term is `flex
-/// min-h-5 items-center gap-1.5 text-[13px] text-foreground-hint
-/// theme-brutal:text-black/50`, the value `text-sm text-foreground-muted
-/// theme-brutal:text-black`.
+/// min-h-5 items-center gap-1.5 text-[13px] text-foreground-hint`, the value
+/// `text-sm text-foreground-muted`.
 class RaftInfoRow extends StatelessWidget {
   const RaftInfoRow({
     super.key,
@@ -117,7 +83,7 @@ class RaftInfoRow extends StatelessWidget {
     ).copyWith(color: t.colors['foreground-muted']),
   );
 
-  /// The term: `text-[13px] text-foreground-hint theme-brutal:text-black/50`.
+  /// The term: `text-[13px] text-foreground-hint`.
   /// `text-[13px]` sets no line height, so the body's 1.5 ratio is inherited.
   static TextStyle labelStyle(RaftTokens t) => raftCssText.merge(
     RaftTypography.body(
@@ -128,34 +94,28 @@ class RaftInfoRow extends StatelessWidget {
     ),
   );
 
-  /// The term in the active look: the Raft look's DescriptionList term
-  /// (footnote, medium, hint), else the frozen [labelStyle].
+  /// The term: the DescriptionList term (footnote, medium, hint).
   static TextStyle termStyleOf(BuildContext context) {
     final t = RaftTokens.of(context);
-    return t.isRaftLook
-        ? raftCssText.merge(
-            t.scale(
-              RaftTypeScale.footnote,
-              weight: FontWeight.w500,
-              color: t.ui.foregroundHint,
-            ),
-          )
-        : labelStyle(t);
+    return raftCssText.merge(
+      t.scale(
+        RaftTypeScale.footnote,
+        weight: FontWeight.w500,
+        color: t.ui.foregroundHint,
+      ),
+    );
   }
 
-  /// The details in the active look: the Raft look's DescriptionList details
-  /// (callout, regular, foreground), else the frozen muted [valueStyle].
+  /// The details: the DescriptionList details (callout, regular, foreground).
   static TextStyle detailsStyleOf(BuildContext context) {
     final t = RaftTokens.of(context);
-    return t.isRaftLook
-        ? raftCssText.merge(
-            t.scale(
-              RaftTypeScale.callout,
-              weight: FontWeight.w400,
-              color: t.ui.foreground,
-            ),
-          )
-        : valueStyle(t);
+    return raftCssText.merge(
+      t.scale(
+        RaftTypeScale.callout,
+        weight: FontWeight.w400,
+        color: t.ui.foreground,
+      ),
+    );
   }
 
   /// [detailsStyleOf] in the mono face (`font-mono`).
@@ -166,51 +126,18 @@ class RaftInfoRow extends StatelessWidget {
   /// [detailsStyleOf] in `text-foreground-muted`.
   static TextStyle mutedStyleOf(BuildContext context) {
     final t = RaftTokens.of(context);
-    return t.isRaftLook
-        ? detailsStyleOf(context).copyWith(color: t.ui.foregroundMuted)
-        : valueStyle(t);
+    return detailsStyleOf(context).copyWith(color: t.ui.foregroundMuted);
   }
 
   /// [detailsStyleOf] in `text-foreground-hint`.
   static TextStyle hintStyleOf(BuildContext context) {
     final t = RaftTokens.of(context);
-    return t.isRaftLook
-        ? detailsStyleOf(context).copyWith(color: t.ui.foregroundHint)
-        : valueStyle(t);
+    return detailsStyleOf(context).copyWith(color: t.ui.foregroundHint);
   }
 
   @override
   Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
-    if (t.isRaftLook) return RaftInfoRowBody(row: this);
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SizedBox(
-          width: 124,
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(minHeight: 20),
-            child: Row(
-              children: [
-                Flexible(
-                  child: RaftCssText(
-                    label,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: labelStyle(t),
-                  ),
-                ),
-                for (final a in actions) ...[const SizedBox(width: 6), a],
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: DefaultTextStyle.merge(style: valueStyle(t), child: child),
-        ),
-      ],
-    );
+    return RaftInfoRowBody(row: this);
   }
 }
 
@@ -322,7 +249,6 @@ class RaftPanelAction extends StatelessWidget {
       final t = RaftTokens.of(context),
           rt = RaftRecipeTokens(RaftTokens.of(context));
       final s = RaftPanelActionRecipe.resolve(
-        theme: raftRecipeTheme(t),
         states: RaftRecipeStates({
           if (state.hovered) RaftRecipeStates.hover,
           if (state.pressed) RaftRecipeStates.active,
@@ -663,7 +589,6 @@ class RaftPanelHeaderBar extends StatelessWidget {
     final rt = RaftRecipeTokens(t);
     final width = MediaQuery.sizeOf(context).width;
     final s = RaftPanelHeaderRecipe.resolve(
-      theme: raftRecipeTheme(t),
       states: RaftRecipeStates({
         if (t.dark) RaftRecipeStates.dark,
         if (subtitle != null) 'has:>data-slot=panel-meta',
@@ -1196,10 +1121,7 @@ class RaftPanelIconButton extends StatelessWidget {
       focusNode: focusNode,
       semanticLabel: tooltip,
       tooltip: tooltip,
-      legacyBuilder: _paintLegacy,
       surfaceBuilder: (context, surface) {
-        if (usesLegacyRecipes(RaftTokens.of(context).recipeTokens))
-          return surface;
         Widget button = RaftBlinkSnap(child: surface);
         if (anchorLink != null)
           button = CompositedTransformTarget(
@@ -1209,51 +1131,6 @@ class RaftPanelIconButton extends StatelessWidget {
           );
         return button;
       },
-    );
-  }
-
-  Widget _paintLegacy(BuildContext context, RaftInteractionState state) {
-    final t = RaftTokens.of(context);
-    final rt = RaftRecipeTokens(t);
-    final s = RaftButtonRecipe.resolve(
-      theme: raftRecipeTheme(t),
-      variant: RaftButtonRecipeVariant.outline,
-      size: RaftButtonRecipeSize.iconSm,
-      states: RaftRecipeStates({
-        if (state.hovered) RaftRecipeStates.hover,
-        if (state.pressed) RaftRecipeStates.active,
-        if (state.focusVisible) RaftRecipeStates.focusVisible,
-        if (onPressed == null) RaftRecipeStates.disabled,
-        if (t.dark) RaftRecipeStates.dark,
-      }),
-      tokens: rt,
-    ).root;
-    Widget button = Container(
-      width: s.width,
-      height: s.height,
-      alignment: Alignment.center,
-      decoration: s.decoration(rt),
-      child: icon != null
-          ? icon!(iconSize, s.color?.resolve(rt) ?? t.strong)
-          : RaftIcon(
-              glyph,
-              size: iconSize,
-              color: s.color?.resolve(rt) ?? t.strong,
-            ),
-    );
-    if (anchorLink != null) {
-      button = CompositedTransformTarget(
-        key: anchorKey,
-        link: anchorLink!,
-        child: button,
-      );
-    }
-    return Opacity(
-      opacity: s.opacity ?? 1,
-      child: Transform.translate(
-        offset: s.translate ?? Offset.zero,
-        child: button,
-      ),
     );
   }
 }

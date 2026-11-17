@@ -1770,8 +1770,8 @@ class _MessageInlineCodeBuilder extends MarkdownElementBuilder {
       RaftBackgroundSpan(
         background: style.backgroundColor ?? Colors.transparent,
         // raft-ui `InlineCode`: `rounded-sticker` 4 and `py-px` (Raft look).
-        radius: raftContentLook(RaftTokens.of(context)) ? 4 : 0,
-        verticalInset: raftContentLook(RaftTokens.of(context)) ? 1 : 0,
+        radius: 4,
+        verticalInset: 1,
         children: [
           padding(),
           highlight.isEmpty
@@ -1900,17 +1900,16 @@ class _MessageLinkBuilder extends MarkdownElementBuilder {
     // [_highlightSearchNodes]); it stays a link and a single leaf span, which
     // flutter_markdown keeps as it is.
     final only = children.length == 1 ? children[0] : null;
-    // raft-ui `MarkdownLink` (Raft look): `text-foreground-link`, a faint
+    // raft-ui `MarkdownLink`: `text-foreground-link`, a faint
     // underline that turns full under a mouse.
     final tokens = RaftTokens.of(context);
-    final raft = raftContentLook(tokens);
-    final faint = raft && !(only is md.Element && only.tag == 'mark');
+    final faint = !(only is md.Element && only.tag == 'mark');
     final recognizer = MessageLinkRecognizer(faintUnderline: faint)
       ..onTap = onLink == null ? null : () => onLink!(href);
     recognizers?.add(recognizer);
     final style = linkStyle.copyWith(
       decoration: TextDecoration.none,
-      color: raft ? tokens.colors['foreground-link'] : null,
+      color: tokens.colors['foreground-link'],
     );
     if (only is md.Element && only.tag == 'mark') {
       return Text.rich(
@@ -2020,11 +2019,9 @@ TextStyle raftCodeSpanStyle(RaftTokens t, double fontSize) {
   final recipe = RaftCodeRecipe(t);
   return recipe.textStyle.copyWith(
     fontSize: fontSize,
-    color: raftContentLook(t)
-        ? (t.dark ? _darkCodeTokenTheme : _lightCodeTokenTheme)['root']
-                  ?.color ??
-              recipe.foreground
-        : recipe.foreground,
+    color:
+        (t.dark ? _darkCodeTokenTheme : _lightCodeTokenTheme)['root']?.color ??
+        recipe.foreground,
   );
 }
 
@@ -2203,14 +2200,12 @@ class _RaftCodeBlockState extends State<RaftCodeBlock> {
   Object? codeBoxKey;
   Widget buildCodeBox(RaftTokens t) {
     final touch = RaftInteraction.of(context).touch;
-    final recipe = RaftCodeRecipe(t);
-    final raft = raftContentLook(t);
     final line = widget.lineHeight;
     // The cached span carries the colour and size only (what a prepared body
     // also has); the line height reaches it through the Text style.
     final spanStyle = raftCodeSpanStyle(t, widget.fontSize);
     final textStyle = spanStyle.copyWith(
-      height: raft && line != null ? line / widget.fontSize : null,
+      height: line != null ? line / widget.fontSize : null,
     );
     final key = (
       widget.code,
@@ -2239,30 +2234,20 @@ class _RaftCodeBlockState extends State<RaftCodeBlock> {
       scrollDirection: Axis.horizontal,
       child: text,
     );
-    if (raft) {
-      scroll = RaftCodeScrollRegion(
-        onOverflowChanged: (value) {
-          if (mounted) setState(() => overflows = value);
-        },
-        child: scroll,
-      );
-    }
+    scroll = RaftCodeScrollRegion(
+      onOverflowChanged: (value) {
+        if (mounted) setState(() => overflows = value);
+      },
+      child: scroll,
+    );
     return codeBox = Container(
       key: const ValueKey('code-container'),
       width: double.infinity,
-      constraints: raft && !widget.exportMode
+      constraints: !widget.exportMode
           ? const BoxConstraints(minHeight: RaftCodeBlockFrame.minHeight)
           : null,
-      decoration: raft
-          ? RaftCodeBlockFrame.decoration(t)
-          : BoxDecoration(
-              color: recipe.background,
-              border: Border.all(color: recipe.border, width: t.border),
-              borderRadius: recipe.radius,
-            ),
-      padding: raft
-          ? RaftCodeBlockFrame.padding
-          : const EdgeInsets.fromLTRB(12, 12, 48, 12),
+      decoration: RaftCodeBlockFrame.decoration(t),
+      padding: RaftCodeBlockFrame.padding,
       // Android SelectableText eagerly wins a horizontal finger drag even
       // when its read-only EditableText does nothing with the drag. A touch
       // selection region keeps long-press/copy and lets the viewport pan.
@@ -2275,7 +2260,6 @@ class _RaftCodeBlockState extends State<RaftCodeBlock> {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    final raft = raftContentLook(t);
     final block = Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: RaftHoverRegion(
@@ -2291,13 +2275,13 @@ class _RaftCodeBlockState extends State<RaftCodeBlock> {
                   buildCodeBox(t),
                   if (!widget.exportMode)
                     Positioned(
-                      right: raft ? RaftCodeBlockFrame.actionInset : 8,
-                      top: raft ? RaftCodeBlockFrame.actionInset : 8,
+                      right: RaftCodeBlockFrame.actionInset,
+                      top: RaftCodeBlockFrame.actionInset,
                       // index.css `.r-code-copy`: hidden; row hover or
                       // focus-visible .55; its own hover or copied 1;
                       // `@media (hover: none)` (touch) always .55.
                       child: ExcludeSemantics(
-                        excluding: raft && overflows,
+                        excluding: overflows,
                         child: RaftHoverRegion(
                           onEnter: (_) => setState(() => buttonHovered = true),
                           onExit: (_) => setState(() => buttonHovered = false),
@@ -2310,30 +2294,11 @@ class _RaftCodeBlockState extends State<RaftCodeBlock> {
                                           RaftDensity.touch
                                 ? .55
                                 : 0,
-                            child: raft
-                                ? RaftCodeBlockFrame.copyButton(
-                                    copied: copied,
-                                    tooltip: copied ? 'Copied' : 'Copy Code',
-                                    onPressed: widget.code.isEmpty
-                                        ? null
-                                        : copy,
-                                  )
-                                : RaftIconButton(
-                                    glyph: copied
-                                        ? RaftGlyph.check
-                                        : RaftGlyph.copy,
-                                    tooltip: copied ? 'Copied' : 'Copy Code',
-                                    onPressed: widget.code.isEmpty
-                                        ? null
-                                        : copy,
-                                    visualSize: RaftMetrics.buttonXs,
-                                    minimumTargetSize:
-                                        RaftInteraction.of(context).touch
-                                        ? RaftMetrics.touchTarget
-                                        : RaftMetrics.buttonXs,
-                                    glyphSize: RaftMetrics.iconSm,
-                                    variant: RaftControlVariant.ghost,
-                                  ),
+                            child: RaftCodeBlockFrame.copyButton(
+                              copied: copied,
+                              tooltip: copied ? 'Copied' : 'Copy Code',
+                              onPressed: widget.code.isEmpty ? null : copy,
+                            ),
                           ),
                         ),
                       ),
@@ -2367,7 +2332,7 @@ class _RaftCodeBlockState extends State<RaftCodeBlock> {
       onTapHint: canCopy ? raftText(context, 'Copy Code') : null,
       // An overflowing Raft block keeps its labelled `Code` region node (the
       // text and the copy button are excluded inside it).
-      excludeSemantics: !(raft && overflows),
+      excludeSemantics: !overflows,
       child: block,
     );
   }

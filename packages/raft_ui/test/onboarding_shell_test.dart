@@ -21,9 +21,7 @@ Widget _host(Size size, {Widget? preview}) => MediaQuery(
 void main() {
   for (final (id, light) in raftThemeMatrix([
     (raftThemePackId, const Color(0xffffd440)),
-    (elegantThemePackId, const Color(0xffffffff)),
-    (brutalThemePackId, const Color(0xffffd440)),
-  ], look: (v) => raftLookOf(v.$1))) {
+  ])) {
     testWidgets(
       '$id auth header keeps its source fill at phone and desktop widths',
       (t) async {

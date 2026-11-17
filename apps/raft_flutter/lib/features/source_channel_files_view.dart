@@ -573,132 +573,46 @@ class SourceChannelFileRow extends StatefulWidget {
 
 class _FileRowState extends State<SourceChannelFileRow> {
   var hovered = false;
-  final menu = MenuController();
-  Widget _menuItem(
-    BuildContext context,
-    VoidCallback action,
-    Widget icon,
-    String label,
-  ) {
-    final recipe = RaftMenuRecipe(
-      RaftTokens.of(context),
-      viewportHeight: MediaQuery.sizeOf(context).height,
-    );
-    final height = RaftDensityScope.of(context) == RaftDensity.touch
-        ? recipe.rowTargetHeight
-        : recipe.rowVisualHeight;
-    return MenuItemButton(
-      onPressed: action,
-      leadingIcon: icon,
-      style: ButtonStyle(
-        padding: WidgetStatePropertyAll(recipe.rowInset),
-        minimumSize: WidgetStatePropertyAll(Size(0, height)),
-        maximumSize: WidgetStatePropertyAll(Size(double.infinity, height)),
-        textStyle: WidgetStatePropertyAll(recipe.label),
-        foregroundColor: WidgetStatePropertyAll(recipe.foreground),
-        backgroundColor: WidgetStateProperty.resolveWith(
-          (states) =>
-              states.contains(WidgetState.hovered) &&
-                      RaftHoverScope.of(context) ||
-                  states.contains(WidgetState.focused)
-              ? recipe.highlightedBackground
-              : Colors.transparent,
+  Widget _overflowMenu(BuildContext context) {
+    final label = 'Actions for ${widget.file.filename}';
+    return RaftDropdownMenu(
+      label: label,
+      surfaceKey: ValueKey('channel-file-overflow-menu-${widget.file.id}'),
+      kind: RaftMenuKind.dropdownMenu,
+      side: RaftDropdownSide.bottom,
+      align: RaftDropdownAlign.end,
+      sideOffset: 4,
+      entries: [
+        RaftMenuEntry(
+          label: raftText(context, 'Jump to original message'),
+          leading: const ChannelFileGlyph(
+            SourceChannelFileGlyph.jump,
+            size: 16,
+          ),
+          onPressed: widget.onOpenSource,
         ),
-        overlayColor: const WidgetStatePropertyAll(Colors.transparent),
-        side: const WidgetStatePropertyAll(BorderSide.none),
-        shape: const WidgetStatePropertyAll(RoundedRectangleBorder()),
-      ),
-      child: Text(raftText(context, label)),
-    );
-  }
-
-  Widget _overflowMenu(BuildContext context, SourceChannelFilesRecipe recipe) {
-    if (RaftTokens.of(context).isRaftLook) {
-      final label = 'Actions for ${widget.file.filename}';
-      return RaftDropdownMenu(
-        label: label,
-        surfaceKey: ValueKey('channel-file-overflow-menu-${widget.file.id}'),
-        kind: RaftMenuKind.dropdownMenu,
-        side: RaftDropdownSide.bottom,
-        align: RaftDropdownAlign.end,
-        sideOffset: 4,
-        entries: [
-          RaftMenuEntry(
-            label: raftText(context, 'Jump to original message'),
-            leading: const ChannelFileGlyph(
-              SourceChannelFileGlyph.jump,
-              size: 16,
-            ),
-            onPressed: widget.onOpenSource,
-          ),
-          RaftMenuEntry(
-            label: raftText(context, 'Download file'),
-            leading: const RaftIcon(RaftGlyph.download, size: 16),
-            onPressed: widget.onDownload,
-          ),
-        ],
-        triggerBuilder: (context, focus, onPressed) => RaftButton(
-          key: ValueKey('channel-file-overflow-${widget.file.id}'),
-          uiSize: RaftButtonSize.iconSm,
-          uiVariant: RaftButtonVariant.ghost,
-          layoutTouchTarget: true,
-          expandTouchTarget: false,
-          semanticContainer: false,
-          focusNode: focus,
-          semanticLabel: label,
-          tooltip: label,
-          onPressed: onPressed,
-          iconBuilder: (size, color) => ChannelFileGlyph(
-            SourceChannelFileGlyph.more,
-            size: size,
-            color: color,
-          ),
-        ),
-      );
-    }
-    return MenuAnchor(
-      controller: menu,
-      alignmentOffset: const Offset(0, 4),
-      style: const MenuStyle(
-        backgroundColor: WidgetStatePropertyAll(Colors.transparent),
-        surfaceTintColor: WidgetStatePropertyAll(Colors.transparent),
-        shadowColor: WidgetStatePropertyAll(Colors.transparent),
-        elevation: WidgetStatePropertyAll(0),
-        padding: WidgetStatePropertyAll(EdgeInsets.zero),
-      ),
-      menuChildren: [
-        RaftMenuPanel(
-          onDismiss: menu.close,
-          children: [
-            _menuItem(
-              context,
-              () {
-                menu.close();
-                widget.onOpenSource();
-              },
-              const ChannelFileGlyph(SourceChannelFileGlyph.jump, size: 14),
-              'Jump to Original Message',
-            ),
-            _menuItem(
-              context,
-              () {
-                menu.close();
-                widget.onDownload();
-              },
-              const RaftIcon(RaftGlyph.download, size: 14),
-              'Download File',
-            ),
-          ],
+        RaftMenuEntry(
+          label: raftText(context, 'Download file'),
+          leading: const RaftIcon(RaftGlyph.download, size: 16),
+          onPressed: widget.onDownload,
         ),
       ],
-      builder: (context, controller, _) => RaftControl(
+      triggerBuilder: (context, focus, onPressed) => RaftButton(
         key: ValueKey('channel-file-overflow-${widget.file.id}'),
-        visualHeight: recipe.actionSize,
-        semanticLabel: 'Actions for ${widget.file.filename}',
-        tooltip: 'Actions for ${widget.file.filename}',
-        onPressed: () =>
-            controller.isOpen ? controller.close() : controller.open(),
-        child: const ChannelFileGlyph(SourceChannelFileGlyph.more, size: 14),
+        uiSize: RaftButtonSize.iconSm,
+        uiVariant: RaftButtonVariant.ghost,
+        layoutTouchTarget: true,
+        expandTouchTarget: false,
+        semanticContainer: false,
+        focusNode: focus,
+        semanticLabel: label,
+        tooltip: label,
+        onPressed: onPressed,
+        iconBuilder: (size, color) => ChannelFileGlyph(
+          SourceChannelFileGlyph.more,
+          size: size,
+          color: color,
+        ),
       ),
     );
   }
@@ -831,7 +745,7 @@ class _FileRowState extends State<SourceChannelFileRow> {
                 constraints.maxWidth,
                 hovered: hovered,
               ))
-                _overflowMenu(context, recipe)
+                _overflowMenu(context)
               else
                 Row(
                   mainAxisSize: MainAxisSize.min,

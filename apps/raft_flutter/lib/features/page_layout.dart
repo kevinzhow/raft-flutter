@@ -163,7 +163,6 @@ class RaftPageHeader extends StatelessWidget implements PreferredSizeWidget {
       );
     }
     final source = recipes.RaftPanelHeaderRecipe.resolve(
-      theme: t.recipeTheme,
       states: recipes.RaftRecipeStates(
         {if (t.dark) recipes.RaftRecipeStates.dark},
         MediaQuery.sizeOf(context).width,

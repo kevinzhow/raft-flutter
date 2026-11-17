@@ -165,10 +165,3 @@ test('pipeline is deterministic and committed outputs are current', { timeout: 1
 test('the raft_ui recipe router is current', () => {
   execFileSync(process.execPath, [join(tool, 'gen_router.mjs'), '--check'], { stdio: 'pipe' });
 });
-
-test('the frozen legacy recipe set is untouched by the pipeline', () => {
-  // lib/recipes/legacy holds raft-ui 0.5.52 output; the pipeline only reads it.
-  const legacy = join(repo, 'packages/raft_theme/lib/recipes/legacy');
-  assert.equal(readdirSync(legacy).filter((f) => f.endsWith('.g.dart')).length, 123);
-  assert.match(readFileSync(join(legacy, 'badge.g.dart'), 'utf8'), /raft-ui 0\.5\.52 dist\/index\.mjs/);
-});

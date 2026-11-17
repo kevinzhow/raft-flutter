@@ -1,4 +1,4 @@
-"""Frozen surface paints: Web v1.21.23 for Raft, a57b9dab for the families."""
+"""Surface paints of the Raft look: Web v1.21.23."""
 import json
 from pathlib import Path
 import unittest
@@ -25,22 +25,6 @@ class SurfaceColorContractTests(unittest.TestCase):
         self.assert_modes('raft',
             ['#ffffff'] * 4 + ['#00000000'] + ['#ffffff'] * 3,
             ['#292927'] * 3 + ['#1b1b19'] * 3 + ['#242422', '#1b1b19'])
-
-    def test_elegant_original_surface_layers(self):
-        # a57 channel_overflow_sheet.dart:76,234,1043; dialog_card.dart:485
-        # Card root resolves token(layerPanel), NOT token(layerCard).
-        # conversation_surface.dart:20; channel_members_view.dart:365,843.
-        self.assert_modes('elegant',
-            ['#ffffff'] * 4 + ['#00000000'] + ['#ffffff'] * 2 + ['#fcfcfb'],
-            ['#242422'] * 3 + ['#1b1b19'] * 3 + ['#242422', '#131311'])
-
-    def test_brutal_original_surface_layers_and_entire_elegant_dark(self):
-        # a57 drawer cream, yellow drawer/member headers, white Card/forward
-        # dialog/list; the contract selects the whole Elegant mode at night.
-        self.assert_modes('brutal',
-            ['#fffaef', '#ffd440', '#ffffff', '#ffffff', '#00000000',
-             '#ffffff', '#ffffff', '#ffd440'],
-            ['#242422'] * 3 + ['#1b1b19'] * 3 + ['#242422', '#131311'])
 
 
 if __name__ == '__main__':

@@ -272,7 +272,7 @@ def markdown(rows, states=None, skipped=None, uncaptured=None):
     if states:
         lines += ['', '## Control states', '',
                   'States the Web defines per control kind (default / hover / pressed / focus / selected / checked / disabled / loading) and the ones '
-                  'a state case captures (`tool/parity-ext/build-states-cases.py`): Raft vs Web, Elegant / Brutal vs their frozen originals.', '',
+                  'a state case captures (`tool/parity-ext/build-states-cases.py`): Raft vs Web.', '',
                   '| control | scene | level | Web source | Web states | captured | not captured | Flutter surface |',
                   '| --- | --- | --- | --- | --- | --- | --- | --- |']
         for c in states:
@@ -313,9 +313,7 @@ def main():
     if a.scores:
         import re
         for r in json.loads(pathlib.Path(a.scores).read_text())['rows']:
-            if r['score'] is None and r['look'] != 'raft' and r['engine'] == 'ext' and r['verdict'] == 'react-missing':
-                key = (r['look'], r['mode'], 'no frozen reference image (case did not exist or did not render at a57b9dab)')
-            elif r['score'] is None and r['verdict'] == 'not-covered':
+            if r['score'] is None and r['verdict'] == 'not-covered':
                 key = (r['look'], r['mode'], 'no Flutter surface / case builder (not covered)')
             elif r['score'] is None:
                 why = re.sub(r'components\.[\w.-]+', '<id>', (r.get('why') or r['verdict']))[:110]

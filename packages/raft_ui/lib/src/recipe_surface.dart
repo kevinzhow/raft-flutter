@@ -22,8 +22,6 @@ import 'raft/ui_tokens.dart' show raftChromeBlend;
 import 'surface_background_scope.dart';
 
 extension RaftRecipeBinding on RaftTokens {
-  RaftRecipeTheme get recipeTheme => RaftRecipeTheme.elegant;
-
   RaftRecipeTokens get recipeTokens => RaftRecipeTokens(this);
 
   /// Frozen recipe geometry for references in an already themed renderer.
@@ -385,17 +383,18 @@ class RaftRecipeBox extends StatelessWidget {
     if (controlLabel) textStyle = RaftControlTypography.of(context, textStyle);
     final current = textStyle.color;
     final layers = style.cssShadows(tokens, currentColor: current);
-    final cssGeometry = tokens.recipeSet == RaftRecipeSet.raft;
     final background = style.backgroundColor?.resolve(
       tokens,
       currentColor: current,
     );
-    final overlay = cssGeometry
-        ? _uniformBackgroundImage(style['background-image'], tokens, current)
-        : null;
+    final overlay = _uniformBackgroundImage(
+      style['background-image'],
+      tokens,
+      current,
+    );
     final originalBorder = style.border(tokens, currentColor: current);
     BoxDecoration decoration = RaftRecipeDecoration(
-      cssGeometry: cssGeometry,
+      cssGeometry: true,
       color: background == null || overlay == null
           ? overlay ?? background
           // Chromium composites the hover/press wash with its 8-bit alpha onto an opaque fill (measured in
@@ -457,7 +456,6 @@ class RaftRecipeBox extends StatelessWidget {
     final borderBackdrop = ownedSurface ?? (unpainted ? backdrop : null);
     final border = decoration.border;
     if (declareSurface &&
-        cssGeometry &&
         backdrop?.a == 1 &&
         borderBackdrop != null &&
         border is Border &&
@@ -494,7 +492,6 @@ class RaftRecipeBox extends StatelessWidget {
     final outerShadows = decoration.boxShadow ?? const <BoxShadow>[];
     final preciseStickerEdge =
         compositeSharpStickerEdge &&
-        cssGeometry &&
         ownedSurface != null &&
         backdrop?.a == 1 &&
         identical(decoration.boxShadow, sourceOuterShadows) &&
@@ -508,7 +505,7 @@ class RaftRecipeBox extends StatelessWidget {
                       (s.color as RaftTokenColor).fallback == null)),
         );
     decoration = RaftRecipeDecoration(
-      cssGeometry: cssGeometry,
+      cssGeometry: true,
       color: decoration.color,
       border: decoration.border,
       borderRadius: decoration.borderRadius,
@@ -599,7 +596,7 @@ class RaftRecipeBox extends StatelessWidget {
             decoration.borderRadius?.resolve(TextDirection.ltr) ??
                 BorderRadius.zero,
             circle: decoration.shape == BoxShape.circle,
-            cssGeometry: cssGeometry,
+            cssGeometry: true,
             opaqueBackdrop: preciseStickerEdge ? backdrop : null,
             compositeOnOpaque: preciseStickerEdge ? raftChromeBlend : null,
             devicePixelRatio: dpr,

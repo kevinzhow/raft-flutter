@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
-import 'package:raft_ui/test_themes.dart';
 
 void main() {
   setUpAll(() async {
@@ -101,62 +100,6 @@ void main() {
             await t.pumpWidget(const SizedBox.shrink());
           },
           variant: TargetPlatformVariant.only(platform),
-        );
-      }
-    }
-  }
-  for (final pack in raftThemeMatrix([
-    elegantThemePackId,
-    brutalThemePackId,
-  ], look: raftLookOf)) {
-    for (final dark in [false, true]) {
-      for (final height in [480.0, 844.0]) {
-        testWidgets(
-          'a57 $pack/$dark/$height preserves mobile workspace geometry',
-          (t) async {
-            await t.pumpWidget(
-              MaterialApp(
-                theme: raftTheme(pack: packForThemeId(pack), dark: dark),
-                home: Scaffold(
-                  body: RaftMobileRootHeader(
-                    workspace: true,
-                    viewportHeight: height,
-                    leading: RaftMobileServerSelector(
-                      label: 'Legacy',
-                      viewportHeight: height,
-                      onPressed: () {},
-                    ),
-                    actions: const [
-                      RaftMobileNotificationButton(mobileHeader: true),
-                    ],
-                  ),
-                ),
-              ),
-            );
-            await t.pumpAndSettle();
-            expect(find.byType(RaftMobilePageHeader), findsOneWidget);
-            final text = t.widget<Text>(find.text('Legacy'));
-            expect(text.style!.fontSize, 16);
-            expect(text.style!.height, 24 / 16);
-            final bell = find.byType(RaftMobileNotificationButton);
-            expect(t.getSize(bell), const Size(32, 32));
-            expect(
-              t
-                  .widget<RaftIcon>(
-                    find.descendant(of: bell, matching: find.byType(RaftIcon)),
-                  )
-                  .size,
-              16,
-            );
-            final control = t.widget<RaftControl>(
-              find.descendant(
-                of: find.byType(RaftMobileServerSelector),
-                matching: find.byType(RaftControl),
-              ),
-            );
-            expect(control.visualHeight, height <= 600 ? 24 : 36);
-            await t.pumpWidget(const SizedBox.shrink());
-          },
         );
       }
     }

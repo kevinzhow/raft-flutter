@@ -13,8 +13,8 @@ const matrixLeakLimit = 8;
 /// dozens of variants of one declaration (page x size x theme) repeats the same
 /// object lifecycle in each. On the gate this tracks the FIRST case of every
 /// declaration site that expands to more than [limit] cases in the file and
-/// turns tracking off for the rest; `RAFT_TEST_TIER=full` (the nightly) and
-/// `RAFT_TEST_ALL_THEMES=1` track every case. Sites of [limit] cases or fewer
+/// turns tracking off for the rest; `RAFT_TEST_TIER=full` (the nightly)
+/// tracks every case. Sites of [limit] cases or fewer
 /// are always tracked.
 ///
 /// The site of a case is the first stack frame outside the test packages, taken

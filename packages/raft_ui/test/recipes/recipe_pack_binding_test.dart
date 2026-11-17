@@ -31,7 +31,6 @@ void main() {
         {'disabled'},
       ]) {
         final style = RaftInputRecipe.resolve(
-          theme: raftRecipeTheme(t),
           states: RaftRecipeStates({...flags, if (dark) 'dark'}),
           tokens: t.recipeTokens,
         ).root;

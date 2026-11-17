@@ -533,7 +533,6 @@ class MessagePresentation extends StatelessWidget {
       if (!context.mounted) return;
       final navigator = Navigator.of(context);
       final shown = showRaftDialog<void>(
-        legacyMaterial: true,
         context: context,
         builder: (ctx) => ValueListenableBuilder<Map<String, dynamic>?>(
           valueListenable: data,
@@ -593,7 +592,6 @@ class MessagePresentation extends StatelessWidget {
   }) {
     final w = controller;
     return RaftAlertDialog(
-      legacy: RaftLegacyAlert.material,
       title: Text(title),
       content: SizedBox(
         width: 560,

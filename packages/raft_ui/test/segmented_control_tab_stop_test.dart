@@ -13,7 +13,7 @@ const _items = [
 ];
 
 void main() {
-  for (final look in ['raft', 'elegant']) {
+  for (final look in ['raft']) {
     testWidgets(
       '$look: Tab enters on the checked segment and leaves after it',
       (t) async {
