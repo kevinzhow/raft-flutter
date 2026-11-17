@@ -462,8 +462,18 @@ void main() {
       await _select(t, w);
       await t.runAsync(() async {
         unawaited(w.jumpToMessage('c1', 'old-1'));
-        await Future<void>.delayed(const Duration(milliseconds: 80));
       });
+      // The jump's context 404 and fallback page settle on real async work:
+      // wait for the target card instead of a fixed delay (flaky under load).
+      final title = find.text(
+        "This thread's first message is older than 30 days",
+      );
+      for (var i = 0; i < 100 && title.evaluate().isEmpty; i++) {
+        await t.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 20)),
+        );
+        await t.pump();
+      }
       await t.pumpAndSettle();
       expect(
         find.text("This thread's first message is older than 30 days"),
