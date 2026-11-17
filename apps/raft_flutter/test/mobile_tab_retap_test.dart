@@ -253,23 +253,19 @@ void main() {
     }, variant: TargetPlatformVariant.only(TargetPlatform.android));
   }
 
-  testWidgets(
-    'a narrow Linux window re-taps Home by mouse',
-    (t) async {
-      final f = fixture();
-      await mount(f, t);
-      final scroller = scrollerIn(t, homeList);
-      scroller.position.jumpTo(600);
-      await t.pump();
-      final mouse = await t.startGesture(
-        t.getCenter(find.byKey(const Key('mobile-tab-home'))),
-        kind: PointerDeviceKind.mouse,
-      );
-      await mouse.up();
-      await settle(t);
-      expect(scroller.position.pixels, 0);
-      await f.close(t);
-    },
-    variant: TargetPlatformVariant.only(TargetPlatform.linux),
-  );
+  testWidgets('a narrow Linux window re-taps Home by mouse', (t) async {
+    final f = fixture();
+    await mount(f, t);
+    final scroller = scrollerIn(t, homeList);
+    scroller.position.jumpTo(600);
+    await t.pump();
+    final mouse = await t.startGesture(
+      t.getCenter(find.byKey(const Key('mobile-tab-home'))),
+      kind: PointerDeviceKind.mouse,
+    );
+    await mouse.up();
+    await settle(t);
+    expect(scroller.position.pixels, 0);
+    await f.close(t);
+  }, variant: TargetPlatformVariant.only(TargetPlatform.linux));
 }

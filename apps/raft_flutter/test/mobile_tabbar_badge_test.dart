@@ -5,10 +5,7 @@ import 'app_global_server_selector_test.dart' show RootFixture;
 
 void main() {
   for (final theme in ['light']) {
-    Future<RootFixture> mount(
-      WidgetTester t, {
-      required int unread,
-    }) async {
+    Future<RootFixture> mount(WidgetTester t, {required int unread}) async {
       final f = RootFixture();
       f.overrides['GET /channels/inbox'] = (_) => {
         'items': [],

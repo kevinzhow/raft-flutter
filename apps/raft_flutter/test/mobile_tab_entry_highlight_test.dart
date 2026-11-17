@@ -1,7 +1,6 @@
 @Tags(['slow'])
 library;
 
-
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -132,12 +131,7 @@ void main() {
       'keeps Home selected and unfocused under the pushed Settings page',
       (t) async {
         final f = RootFixture();
-        await f.mount(
-          t,
-          theme,
-          390,
-          uri: Uri.parse('/s/alpha'),
-        );
+        await f.mount(t, theme, 390, uri: Uri.parse('/s/alpha'));
         t.view.physicalSize = const Size(390, 844);
         await f.flush(t);
         // Settings is pushed from the server tab over Home (Web v1.24).
@@ -188,12 +182,7 @@ void main() {
     'unfolded Android uses Settings rail while touch opens Notifications',
     (t) async {
       final f = RootFixture();
-      await f.mount(
-        t,
-        'light',
-        856,
-        uri: Uri.parse('/s/alpha/settings'),
-      );
+      await f.mount(t, 'light', 856, uri: Uri.parse('/s/alpha/settings'));
       t.view.physicalSize = const Size(856, 944);
       await f.flush(t);
       void observe() {

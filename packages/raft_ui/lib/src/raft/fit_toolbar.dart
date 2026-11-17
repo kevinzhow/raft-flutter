@@ -1098,7 +1098,10 @@ class _FitScrollGroupState extends State<_FitScrollGroup> {
       width: widget.width,
       child: Row(
         spacing: widget.gap,
-        children: [Expanded(child: body), ?end],
+        children: [
+          Expanded(child: body),
+          ?end,
+        ],
       ),
     );
   }

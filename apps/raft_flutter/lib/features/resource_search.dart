@@ -705,9 +705,9 @@ class ResourceSearchResults extends StatelessWidget {
                             // SearchEntityResultIcon (searchEntity entityIcon).
                             decoration: plain
                                 ? recipe.flatEntityIconSurface
-                                : rui.RaftSearchEntityRecipe.resolve(
-                                    tokens: rt,
-                                  ).entityIcon.decoration(rt),
+                                : rui.RaftSearchEntityRecipe.resolve(tokens: rt)
+                                      .entityIcon
+                                      .decoration(rt),
                             child: RaftIcon(
                               entity.kind == 'channel'
                                   ? RaftGlyph.hash

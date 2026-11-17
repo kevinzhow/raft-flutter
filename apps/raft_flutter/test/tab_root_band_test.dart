@@ -25,50 +25,48 @@ class _Workspace extends WorkspaceController {
 void main() {
   for (final dark in [false, true]) {
     final mode = dark ? 'dark' : 'light';
-    testWidgets(
-      'Home band $mode: workspace button, avatar and name, menu',
-      (t) async {
-        final (w, _) = await pageFixture(t);
-        w.server = RaftRecord({'id': 's1', 'role': 'owner', 'name': 'Alpha'});
-        w.setSection('home');
-        await mountPage(t, w, dark, width: 390, height: 844, browserHost: true);
-        final tokens = RaftTokens.of(
-          t.element(find.byKey(const Key('mobile-server-selector'))),
-        );
-        final button = find.byType(RaftWorkspaceButton);
-        expect(button, findsOneWidget);
-        expect(
-          find.descendant(
-            of: find.byKey(const Key('mobile-server-selector')),
-            matching: find.byType(RaftWorkspaceButton),
-          ),
-          findsOneWidget,
-        );
-        final avatar = find.descendant(
-          of: button,
-          matching: find.byType(RaftAvatarSlot),
-        );
-        expect(avatar, findsOneWidget);
-        expect(t.getRect(avatar).left, 20, reason: '-ml-[11px] on the 20 edge');
-        expect(
-          find.descendant(of: button, matching: find.text('Alpha')),
-          findsOneWidget,
-        );
-        final band = t.getRect(find.byType(RaftMobileRootHeader));
-        expect(band.height, 56);
-        final bell = find.byType(RaftMobileNotificationButton);
-        expect(t.getRect(bell).right, 381, reason: 'Web: 9px from the edge');
-        expect(
-          tokens.colors['layer-section-header-mobile'],
-          tokens.colors['layer-frame'],
-        );
-        await t.tap(button);
-        await t.pumpAndSettle();
-        expect(find.byKey(const Key('server-switcher-menu')), findsOneWidget);
-        await t.pumpWidget(const SizedBox.shrink());
-      },
-      variant: TargetPlatformVariant.only(TargetPlatform.android),
-    );
+    testWidgets('Home band $mode: workspace button, avatar and name, menu', (
+      t,
+    ) async {
+      final (w, _) = await pageFixture(t);
+      w.server = RaftRecord({'id': 's1', 'role': 'owner', 'name': 'Alpha'});
+      w.setSection('home');
+      await mountPage(t, w, dark, width: 390, height: 844, browserHost: true);
+      final tokens = RaftTokens.of(
+        t.element(find.byKey(const Key('mobile-server-selector'))),
+      );
+      final button = find.byType(RaftWorkspaceButton);
+      expect(button, findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byKey(const Key('mobile-server-selector')),
+          matching: find.byType(RaftWorkspaceButton),
+        ),
+        findsOneWidget,
+      );
+      final avatar = find.descendant(
+        of: button,
+        matching: find.byType(RaftAvatarSlot),
+      );
+      expect(avatar, findsOneWidget);
+      expect(t.getRect(avatar).left, 20, reason: '-ml-[11px] on the 20 edge');
+      expect(
+        find.descendant(of: button, matching: find.text('Alpha')),
+        findsOneWidget,
+      );
+      final band = t.getRect(find.byType(RaftMobileRootHeader));
+      expect(band.height, 56);
+      final bell = find.byType(RaftMobileNotificationButton);
+      expect(t.getRect(bell).right, 381, reason: 'Web: 9px from the edge');
+      expect(
+        tokens.colors['layer-section-header-mobile'],
+        tokens.colors['layer-frame'],
+      );
+      await t.tap(button);
+      await t.pumpAndSettle();
+      expect(find.byKey(const Key('server-switcher-menu')), findsOneWidget);
+      await t.pumpWidget(const SizedBox.shrink());
+    }, variant: TargetPlatformVariant.only(TargetPlatform.android));
   }
 
   group('Search tab root', () {
@@ -99,9 +97,8 @@ void main() {
         MaterialApp(
           supportedLocales: const [Locale('en')],
           localizationsDelegates: GlobalMaterialLocalizations.delegates,
-          theme: raftTheme(
-            dark: dark,
-          ).copyWith(platform: TargetPlatform.android),
+          theme: raftTheme(dark: dark)
+              .copyWith(platform: TargetPlatform.android),
           home: Scaffold(
             body: ResourceView(
               controller: w,

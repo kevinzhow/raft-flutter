@@ -112,19 +112,19 @@ class RaftWorkspaceButton extends StatelessWidget {
         borderRadius: BorderRadius.circular(t.radius),
       ),
       child: RaftButton(
-      label: '',
-      // The dot's label joins the button's name, as the dot's aria-label does
-      // inside the Web button.
-      semanticLabel: attention && attentionLabel != null
-          ? '$name, $attentionLabel'
-          : name,
-      leading: content,
-      gap: 0,
-      focusNode: focusNode,
-      uiVariant: RaftButtonVariant.onFrame,
-      uiSize: RaftButtonSize.md,
-      onPressed: onPressed,
-    ),
+        label: '',
+        // The dot's label joins the button's name, as the dot's aria-label does
+        // inside the Web button.
+        semanticLabel: attention && attentionLabel != null
+            ? '$name, $attentionLabel'
+            : name,
+        leading: content,
+        gap: 0,
+        focusNode: focusNode,
+        uiVariant: RaftButtonVariant.onFrame,
+        uiSize: RaftButtonSize.md,
+        onPressed: onPressed,
+      ),
     );
     return RaftInteraction.of(context).touch
         ? RaftTapSlopAnchor(

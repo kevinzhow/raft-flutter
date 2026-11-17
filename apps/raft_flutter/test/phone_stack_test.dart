@@ -155,10 +155,7 @@ void main() {
           route,
           query: {'open': 'thread:t1', 'thread': 'ca:ma', 'msg': 'r1'},
         );
-        expect(
-          stack(thread),
-          hasLength(route == RaftRoute.activity ? 2 : 3),
-        );
+        expect(stack(thread), hasLength(route == RaftRoute.activity ? 2 : 3));
         expect(stack(thread).last.uri, thread.uri);
       }
     });

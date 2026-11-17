@@ -137,7 +137,6 @@ class WorkspaceView extends StatefulWidget {
   final NativeSharing? sharing;
   final PersonalPresentationStore? presentation;
 
-
   /// The device-local side of the phone layout's rail (left / right); the
   /// workspace owns one by default.
   final RailSideStore? railSide;
@@ -2009,9 +2008,8 @@ class _WorkspaceViewState extends State<WorkspaceView>
                     t,
                     MediaQuery.sizeOf(context).height,
                   ) +
-                  (DesktopNavigationPolicy.forSection(
-                        route,
-                      ).usesConversationSidebar
+                  (DesktopNavigationPolicy.forSection(route)
+                          .usesConversationSidebar
                       ? sidebarWidth
                       : 0)
             : 0,
@@ -3648,9 +3646,8 @@ class _WorkspaceViewState extends State<WorkspaceView>
                                   child: RaftNavItem(
                                     key: const Key('nav-search'),
                                     role: RaftNavItemRole.search,
-                                    viewportHeight: MediaQuery.sizeOf(
-                                      context,
-                                    ).height,
+                                    viewportHeight: MediaQuery.sizeOf(context)
+                                        .height,
                                     label: tr('Search'),
                                     glyph: RaftGlyph.search,
                                     selected: w.section == 'search',

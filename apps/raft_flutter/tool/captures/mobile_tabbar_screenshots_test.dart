@@ -148,12 +148,7 @@ void main() {
           'totalUnreadCount': unread,
           'hasMore': false,
         };
-        await f.mount(
-          t,
-          theme,
-          390,
-          uri: Uri.parse(path),
-        );
+        await f.mount(t, theme, 390, uri: Uri.parse(path));
         // Web reference: 390x844 viewport, no safe-area insets.
         t.view.padding = FakeViewPadding.zero;
         t.view.physicalSize = const Size(390, 844);
