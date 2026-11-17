@@ -31,6 +31,9 @@ class MobileSettingsSelection extends ChangeNotifier {
     _json(controller.server?.json),
     controller.location.serverSlug,
     controller.location.settingsPath.join('\u0000'),
+    // `/settings/<tab>#<id>`: a link to a section is a new jump each time.
+    controller.location.uri.fragment,
+    controller.location.uri.fragment.isEmpty ? 0 : controller.navigation.revision,
   );
 
   static String _json(Object? value) {
@@ -153,7 +156,15 @@ Widget workspaceSettingsSurface({
   final tab = WorkspaceNavigation.settingsTab(
     controller.location.settingsPath.firstOrNull ?? 'account',
   );
+  final location = controller.location;
+  final subPage = location.settingsPath.elementAtOrNull(1);
+  final anchor = location.uri.fragment.isEmpty ? null : location.uri.fragment;
+  final anchorRevision = anchor == null ? 0 : controller.navigation.revision;
   final inputs = (
+    subPage,
+    anchor,
+    anchorRevision,
+    location.uri.query,
     authority,
     scope,
     jsonEncode(controller.client.user?.json),
@@ -193,6 +204,15 @@ Widget workspaceSettingsSurface({
           notifications: notifications,
           onLogout: onLogout,
           mobileRoot: controller.location.settingsPath.isEmpty,
+          subPage: subPage,
+          subPageQuery: location.uri.queryParameters,
+          anchor: anchor,
+          anchorRevision: anchorRevision,
+          openLocation: (next) => _openSettingsLocation(
+            controller: controller,
+            allowed: allowed(),
+            location: next,
+          ),
           mobileResetRevision: revision + hostRevision,
           railSide: railSide,
           onMobileLocationChanged: (next) => _openSettingsTab(
@@ -211,6 +231,16 @@ Widget workspaceSettingsSurface({
     cache.widget = tab == 'account' ? page : null;
   }
   return page;
+}
+
+void _openSettingsLocation({
+  required WorkspaceController controller,
+  required bool allowed,
+  required RaftLocation location,
+}) {
+  if (!allowed) return;
+  controller.navigation.navigate(location, kind: RaftNavigationKind.push);
+  controller.notifyListeners();
 }
 
 void _openSettingsTab({

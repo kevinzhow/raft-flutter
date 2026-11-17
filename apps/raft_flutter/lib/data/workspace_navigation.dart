@@ -1,3 +1,4 @@
+import '../features/settings_sub_pages.dart' show settingsSubPageFor;
 import 'navigation_registry.dart';
 import 'phone_stack.dart';
 import 'raft_location.dart';
@@ -428,6 +429,20 @@ class WorkspaceNavigation {
     return switch (location.route) {
       RaftRoute.agent || RaftRoute.human => page(RaftRoute.members),
       RaftRoute.computer => page(RaftRoute.computers),
+      // A level-2 page (`/settings/account/delete`) returns to its tab, not to
+      // the Settings list (SettingsPanel `useMobileBack` fallback).
+      RaftRoute.settings
+          when location.settingsPath.length == 2 &&
+              settingsSubPageFor(
+                    location.settingsPath.first,
+                    location.settingsPath[1],
+                  ) !=
+                  null =>
+        RaftLocation.at(
+          serverSlug: location.serverSlug,
+          route: RaftRoute.settings,
+          settingsPath: [location.settingsPath.first],
+        ),
       RaftRoute.settings when location.settingsPath.isNotEmpty => page(
         RaftRoute.settings,
       ),

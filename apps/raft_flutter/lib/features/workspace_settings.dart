@@ -6,6 +6,7 @@ import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_updater/raft_updater.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../data/raft_location.dart';
 import '../data/rail_side_preference.dart';
 import '../data/personal_presentation.dart';
 import '../data/raftbench_access.dart';
@@ -48,6 +49,8 @@ import 'provider_views.dart';
 import 'raftbench_page.dart';
 import 'server_views.dart';
 import 'settings_page.dart';
+import 'settings_sub_pages.dart';
+import 'workspace_settings_shell.dart';
 import 'source_feedback_view.dart';
 
 /// The Settings tab: Sidebar.tsx `settingsSidebarGroups` (desktop Settings
@@ -71,6 +74,11 @@ class WorkspaceSettings extends StatefulWidget {
     this.mobileResetRevision = 0,
     this.onMobileDetailChanged,
     this.onMobileLocationChanged,
+    this.subPage,
+    this.subPageQuery = const {},
+    this.anchor,
+    this.anchorRevision = 0,
+    this.openLocation,
     this.providerEnabled = false,
     this.bridgeEnabled = false,
     this.labsEnabled = false,
@@ -102,6 +110,20 @@ class WorkspaceSettings extends StatefulWidget {
   final ValueChanged<bool>? onMobileDetailChanged;
   final ValueChanged<String?>? onMobileLocationChanged;
 
+  /// The level-2 page open over [initialTab] (`/settings/account/<subPage>`),
+  /// with the query it was opened with.
+  final String? subPage;
+  final Map<String, String> subPageQuery;
+
+  /// The `#fragment` of `/settings/<tab>#<anchor>` and the navigation
+  /// revision that opened it (opening it again is a new jump).
+  final String? anchor;
+  final int anchorRevision;
+
+  /// Pushes a location from inside Settings (a sub-page, a search result, the
+  /// global search); the host checks it still owns the page.
+  final void Function(RaftLocation location)? openLocation;
+
   /// Server feature flags (provider connections / Slack bridge / Labs UI).
   final bool providerEnabled, bridgeEnabled, labsEnabled;
 
@@ -123,6 +145,17 @@ class WorkspaceSettings extends StatefulWidget {
 
 class _WorkspaceSettingsState extends State<WorkspaceSettings> {
   late int feedbackUnread = cachedFeedbackUnread(widget.controller);
+
+  /// The navigation revision of the jump Enter in Search settings started:
+  /// only that jump moves focus to the setting (the location can't say).
+  int keyboardJumpRevision = -1;
+
+  void openLocation(RaftLocation next, {bool fromKeyboard = false}) {
+    widget.openLocation?.call(next);
+    if (fromKeyboard) {
+      keyboardJumpRevision = widget.controller.navigation.revision;
+    }
+  }
 
   void _setUnread(int count) {
     final w = widget.controller;
@@ -201,6 +234,25 @@ class _WorkspaceSettingsState extends State<WorkspaceSettings> {
       mobileResetRevision: widget.mobileResetRevision,
       onMobileDetailChanged: widget.onMobileDetailChanged,
       onMobileLocationChanged: widget.onMobileLocationChanged,
+      subPage: settingsSubPageFor(widget.initialTab, widget.subPage),
+      subPageQuery: widget.subPageQuery,
+      onSubPageOpen: (id, query) => openLocation(
+        settingsSubPageLocation(
+          w.location.serverSlug,
+          settingsSubPageById(id)!,
+          query: query,
+        ),
+      ),
+      // Back from a level-2 page is the page before it, as from a tab.
+      onSubPageBack: () => widget.onMobileLocationChanged?.call(null),
+      search: workspaceSettingsSearchHost(
+        context,
+        w,
+        open: openLocation,
+      ),
+      anchor: widget.anchor,
+      anchorRevision: widget.anchorRevision,
+      anchorFromKeyboard: keyboardJumpRevision == widget.anchorRevision,
       destinations: [
         RaftSettingsDestination(
           'account',
