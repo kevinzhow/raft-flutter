@@ -872,7 +872,7 @@ class _JoinLinkRow extends StatelessWidget {
               decoration: BoxDecoration(
                 color: t.colors['fill-muted'] ?? text.panel,
                 borderRadius: BorderRadius.circular(
-                  t.size('radius.control', fallback: 6),
+                  t.size('radius.control', fallback: RaftRadius.control),
                 ),
               ),
               child: SelectableText(

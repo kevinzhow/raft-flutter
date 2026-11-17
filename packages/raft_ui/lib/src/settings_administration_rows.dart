@@ -556,17 +556,21 @@ class RaftContextGrantsCard extends StatelessWidget {
           children: [
             first,
             for (final g in list ?? const <RaftContextGrant>[])
-              RaftAvatarListRow(
+              RaftListRow(
                 key: ValueKey('context-view-grant-${g.id}'),
-                avatar: RaftAvatarSlot(
-                  name: g.name,
-                  slot: RaftAvatarSlotContext.surfaceList,
-                  agent: true,
-                  avatarUrl: g.avatarUrl,
-                ),
-                name: g.name,
-                subtitle: g.subtitle,
-                rightContent: [
+                children: [
+                  RaftAvatarSlot(
+                    name: g.name,
+                    slot: RaftAvatarSlotContext.surfaceList,
+                    agent: true,
+                    avatarUrl: g.avatarUrl,
+                  ),
+                  RaftListRowBody(
+                    children: [
+                      RaftListRowTitle(g.name),
+                      RaftListRowMeta(g.subtitle),
+                    ],
+                  ),
                   RaftSettingsRecipeButton(
                     key: ValueKey('context-view-revoke-${g.id}'),
                     label: 'Revoke',

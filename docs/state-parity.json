@@ -4247,6 +4247,174 @@
     "canonicalRegistry": "tool/ds-audit-families.json",
     "about": "Ownership registration only. The resolved scanner checks completeness. UNKNOWN/pending/history never count as current visual PASS. Existing lifecycle covered records retain their original scope.",
     "declarations": {
+      "apps/raft_flutter/lib/features/administration_context_grants.dart#class:AdminContextViewGrantsSection": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/administration_context_grants.dart#class:_GateState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/administration_context_grants.dart#class:_GrantsCard": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/administration_context_grants.dart#class:_GrantsState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/administration_context_grants.dart#method:AdminContextViewGrantsSection.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/administration_context_grants.dart#method:_GateState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/administration_context_grants.dart#method:_GrantsCard.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/administration_context_grants.dart#method:_GrantsState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/administration_context_grants.dart#method:_GrantsState.openGrant": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/administration_immediate.dart#function:showUndoToast": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/administration_onboarding_section.dart#class:AdminOnboardingSection": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/administration_onboarding_section.dart#class:_OnboardingState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/administration_onboarding_section.dart#method:AdminOnboardingSection.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/administration_onboarding_section.dart#method:_OnboardingState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/administration_support.dart#function:adminConfirm": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/administration_switch_sections.dart#class:AdminMemberPermissionsSection": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/administration_switch_sections.dart#class:AdminSystemChannelsSection": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/administration_switch_sections.dart#class:AdminTranslationSection": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/administration_switch_sections.dart#class:_MemberPermissionsState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/administration_switch_sections.dart#class:_SystemChannelsState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/administration_switch_sections.dart#class:_TranslationState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/administration_switch_sections.dart#method:AdminMemberPermissionsSection.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/administration_switch_sections.dart#method:AdminSystemChannelsSection.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/administration_switch_sections.dart#method:AdminTranslationSection.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/administration_switch_sections.dart#method:_MemberPermissionsState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/administration_switch_sections.dart#method:_SystemChannelsState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/administration_switch_sections.dart#method:_TranslationState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/member_removal_impact.dart#function:ownComputersTransferNote": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
       "apps/raft_flutter/lib/features/sso_required_page.dart#class:SsoRequiredPage": {
         "role": "unresolved",
         "familyRefs": [],
@@ -5165,30 +5333,6 @@
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
-      "apps/raft_flutter/lib/features/administration_view.dart#class:_MemberPermissionsSection": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
-      },
-      "apps/raft_flutter/lib/features/administration_view.dart#class:_MemberPermissionsState": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
-      },
-      "apps/raft_flutter/lib/features/administration_view.dart#class:_OnboardingSection": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
-      },
-      "apps/raft_flutter/lib/features/administration_view.dart#class:_OnboardingState": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
-      },
       "apps/raft_flutter/lib/features/administration_view.dart#class:_ProductAnalyticsSection": {
         "role": "unresolved",
         "familyRefs": [],
@@ -5200,36 +5344,6 @@
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
-      },
-      "apps/raft_flutter/lib/features/administration_view.dart#class:_SystemChannelsSection": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
-      },
-      "apps/raft_flutter/lib/features/administration_view.dart#class:_SystemChannelsState": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
-      },
-      "apps/raft_flutter/lib/features/administration_view.dart#class:_TranslationSection": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
-      },
-      "apps/raft_flutter/lib/features/administration_view.dart#class:_TranslationState": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
-      },
-      "apps/raft_flutter/lib/features/administration_view.dart#function:_confirm": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Resolved surface_factory; real-entry/family/state mapping remains unreviewed."
       },
       "apps/raft_flutter/lib/features/administration_view.dart#method:AdministrationView.build": {
         "role": "unresolved",
@@ -5285,30 +5399,6 @@
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
-      "apps/raft_flutter/lib/features/administration_view.dart#method:_MemberPermissionsSection.createState": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
-      },
-      "apps/raft_flutter/lib/features/administration_view.dart#method:_MemberPermissionsState.build": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
-      },
-      "apps/raft_flutter/lib/features/administration_view.dart#method:_OnboardingSection.createState": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
-      },
-      "apps/raft_flutter/lib/features/administration_view.dart#method:_OnboardingState.build": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
-      },
       "apps/raft_flutter/lib/features/administration_view.dart#method:_ProductAnalyticsSection.createState": {
         "role": "unresolved",
         "familyRefs": [],
@@ -5316,30 +5406,6 @@
         "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
       },
       "apps/raft_flutter/lib/features/administration_view.dart#method:_ProductAnalyticsState.build": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
-      },
-      "apps/raft_flutter/lib/features/administration_view.dart#method:_SystemChannelsSection.createState": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
-      },
-      "apps/raft_flutter/lib/features/administration_view.dart#method:_SystemChannelsState.build": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
-      },
-      "apps/raft_flutter/lib/features/administration_view.dart#method:_TranslationSection.createState": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
-      },
-      "apps/raft_flutter/lib/features/administration_view.dart#method:_TranslationState.build": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
@@ -18229,6 +18295,18 @@
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
+      "packages/raft_ui/lib/settings_administration_previews.dart#class:_OnboardingPreview": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/settings_administration_previews.dart#class:_OnboardingPreviewState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
       "packages/raft_ui/lib/settings_administration_previews.dart#function:administrationAdminsPreview": {
         "role": "unresolved",
         "familyRefs": [],
@@ -18236,6 +18314,12 @@
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
       "packages/raft_ui/lib/settings_administration_previews.dart#function:administrationFormsPreview": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/settings_administration_previews.dart#function:administrationOnboardingPreview": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
@@ -18260,6 +18344,18 @@
         "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
       },
       "packages/raft_ui/lib/settings_administration_previews.dart#method:_FormsPreviewState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/settings_administration_previews.dart#method:_OnboardingPreview.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/settings_administration_previews.dart#method:_OnboardingPreviewState.build": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
@@ -33585,12 +33681,6 @@
         "owner": "design-system alignment",
         "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
       },
-      "packages/raft_ui/lib/src/settings_administration.dart#class:RaftAdminCheckboxForm": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
-      },
       "packages/raft_ui/lib/src/settings_administration.dart#class:RaftAdminCheckboxRow": {
         "role": "unresolved",
         "familyRefs": [],
@@ -33615,12 +33705,6 @@
         "owner": "design-system alignment",
         "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
       },
-      "packages/raft_ui/lib/src/settings_administration.dart#class:RaftAdminOnboardingCard": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
-      },
       "packages/raft_ui/lib/src/settings_administration.dart#class:RaftAdminPrincipalPicker": {
         "role": "unresolved",
         "familyRefs": [],
@@ -33634,12 +33718,6 @@
         "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
       },
       "packages/raft_ui/lib/src/settings_administration.dart#class:RaftAdminSection": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
-      },
-      "packages/raft_ui/lib/src/settings_administration.dart#class:RaftAdminSwitchCard": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
@@ -33687,7 +33765,7 @@
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
-      "packages/raft_ui/lib/src/settings_administration.dart#class:_EmptyLine": {
+      "packages/raft_ui/lib/src/settings_administration.dart#class:_EmptyRow": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
@@ -33711,43 +33789,25 @@
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
-      "packages/raft_ui/lib/src/settings_administration.dart#local-function:CLASS:RaftAdminOnboardingCard@46648/METHOD:build@47545/FUNCTION:row@47683": {
+      "packages/raft_ui/lib/src/settings_administration.dart#local-function:CLASS:RaftAgreementBody@32633/METHOD:build@34239/FUNCTION:item@34569": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
-      "packages/raft_ui/lib/src/settings_administration.dart#local-function:CLASS:RaftAgreementBody@36979/METHOD:build@38585/FUNCTION:item@38916": {
+      "packages/raft_ui/lib/src/settings_administration.dart#local-function:CLASS:RaftPublicVisibilityCard@46677/METHOD:build@47614/FUNCTION:secondLevel@49049": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
-      "packages/raft_ui/lib/src/settings_administration.dart#local-function:CLASS:RaftPublicVisibilityCard@62798/METHOD:build@63905/FUNCTION:secondLevel@65340": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
-      },
-      "packages/raft_ui/lib/src/settings_administration.dart#local-function:CLASS:RaftPublicVisibilityCard@62798/METHOD:build@63905/FUNCTION:switchRow@64123": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
-      },
-      "packages/raft_ui/lib/src/settings_administration.dart#local-function:CLASS:_JoinLinkRow@29728/METHOD:build@29864/FUNCTION:<anonymous>@30568/FUNCTION:top@30799": {
+      "packages/raft_ui/lib/src/settings_administration.dart#local-function:CLASS:RaftPublicVisibilityCard@46677/METHOD:build@47614/FUNCTION:switchRow@47832": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
       "packages/raft_ui/lib/src/settings_administration.dart#method:RaftAdminAgreementCard.build": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
-      },
-      "packages/raft_ui/lib/src/settings_administration.dart#method:RaftAdminCheckboxForm.build": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
@@ -33777,12 +33837,6 @@
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
-      "packages/raft_ui/lib/src/settings_administration.dart#method:RaftAdminOnboardingCard.build": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
-      },
       "packages/raft_ui/lib/src/settings_administration.dart#method:RaftAdminPrincipalPicker.createState": {
         "role": "unresolved",
         "familyRefs": [],
@@ -33796,12 +33850,6 @@
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
       "packages/raft_ui/lib/src/settings_administration.dart#method:RaftAdminSection.build": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
-      },
-      "packages/raft_ui/lib/src/settings_administration.dart#method:RaftAdminSwitchCard.build": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
@@ -33849,7 +33897,7 @@
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
-      "packages/raft_ui/lib/src/settings_administration.dart#method:_EmptyLine.build": {
+      "packages/raft_ui/lib/src/settings_administration.dart#method:_EmptyRow.build": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
@@ -33878,6 +33926,150 @@
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/settings_administration_rows.dart#class:RaftAdminImmediateSwitchRow": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/settings_administration_rows.dart#class:RaftAdminOnboardingRows": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/settings_administration_rows.dart#class:RaftAdminRowSelect": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/settings_administration_rows.dart#class:RaftAdminRows": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/settings_administration_rows.dart#class:RaftAdminSaveLine": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/settings_administration_rows.dart#class:RaftAdminSwitchCard": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/settings_administration_rows.dart#class:RaftContextGrantsCard": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/settings_administration_rows.dart#class:RaftGrantContextBody": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/settings_administration_rows.dart#class:RaftOwnComputersTransferNote": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/settings_administration_rows.dart#class:_ControlBelow": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/settings_administration_rows.dart#class:_DescriptionWithLink": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/settings_administration_rows.dart#method:RaftAdminImmediateSwitchRow.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/settings_administration_rows.dart#method:RaftAdminOnboardingRows.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/settings_administration_rows.dart#method:RaftAdminRowSelect.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/settings_administration_rows.dart#method:RaftAdminRows._row": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/settings_administration_rows.dart#method:RaftAdminRows.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/settings_administration_rows.dart#method:RaftAdminSaveLine.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/settings_administration_rows.dart#method:RaftAdminSwitchCard.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/settings_administration_rows.dart#method:RaftContextGrantsCard.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/settings_administration_rows.dart#method:RaftGrantContextBody.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/settings_administration_rows.dart#method:RaftOwnComputersTransferNote.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/settings_administration_rows.dart#method:_ControlBelow.of": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/settings_administration_rows.dart#method:_ControlBelow.updateShouldNotify": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/settings_administration_rows.dart#method:_DescriptionWithLink.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
       "packages/raft_ui/lib/src/settings_app_editor.dart#class:RaftAppEditorActionLine": {
         "role": "unresolved",
@@ -40282,18 +40474,6 @@
           }
         ]
       },
-      "packages/raft_ui/lib/src/settings_administration.dart#local-function:CLASS:RaftAdminOnboardingCard@46631/METHOD:build@47528/FUNCTION:row@47666": {
-        "role": "entry_composition",
-        "familyRefs": [],
-        "owner": "P1 dialogs / canonical Choice integration",
-        "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
-      },
-      "packages/raft_ui/lib/src/settings_administration.dart#local-function:CLASS:RaftAgreementBody@36963/METHOD:build@38569/FUNCTION:item@38899": {
-        "role": "entry_composition",
-        "familyRefs": [],
-        "owner": "P1 dialogs / canonical Choice integration",
-        "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
-      },
       "packages/raft_ui/lib/src/settings_administration.dart#local-function:CLASS:RaftPublicVisibilityCard@62809/METHOD:build@63916/FUNCTION:secondLevel@65351": {
         "role": "unresolved",
         "familyRefs": [],
@@ -40307,12 +40487,6 @@
         ],
         "owner": "P1 dialogs / canonical Choice integration",
         "reason": "Historical source-position identity superseded by packages/raft_ui/lib/src/settings_administration.dart#local-function:CLASS:RaftPublicVisibilityCard@62766/METHOD:build@63703/FUNCTION:switchRow@63921. The removals in the v1.24 compatibility patch shifted offsets without changing the declaration body. This old identity is not current runtime or visual evidence."
-      },
-      "packages/raft_ui/lib/src/settings_administration.dart#local-function:CLASS:_JoinLinkRow@29744/METHOD:build@29880/FUNCTION:<anonymous>@30584/FUNCTION:top@30815": {
-        "role": "entry_composition",
-        "familyRefs": [],
-        "owner": "P1 dialogs / canonical Choice integration",
-        "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
       },
       "apps/raft_flutter/lib/features/activity_pagination.dart#class:ActivityPagination": {
         "role": "unresolved",
@@ -41346,23 +41520,6 @@
         "familyRefs": [],
         "owner": "task299 native server windows",
         "reason": "Existing local builder moved after native-window service wiring; its rendering is unchanged. No style exemption or visual acceptance."
-      },
-      "packages/raft_ui/lib/src/settings_administration.dart#local-function:CLASS:RaftPublicVisibilityCard@62780/METHOD:build@63717/FUNCTION:secondLevel@65152": {
-        "role": "entry_composition",
-        "familyRefs": [],
-        "owner": "P1 dialogs / canonical Choice integration",
-        "reason": "Resolved builder composes the current render/state/input path; it owns 4 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
-      },
-      "packages/raft_ui/lib/src/settings_administration.dart#local-function:CLASS:RaftPublicVisibilityCard@62780/METHOD:build@63717/FUNCTION:switchRow@63935": {
-        "role": "internal_wrapper",
-        "familyRefs": [
-          "switch"
-        ],
-        "owner": "P1 dialogs / canonical Choice integration",
-        "delegatesTo": [
-          "packages/raft_ui/lib/src/raft/switch.dart#class:RaftSwitch"
-        ],
-        "reason": "Resolved constructor/function calls delegate to the registered canonical owner(s); this declaration owns no scanner-detected paint. This is source delegation, not runtime mount or visual evidence."
       },
       "apps/raft_flutter/lib/features/composer_directory.dart#local-function:CLASS:ComposerDirectory@7898/METHOD:build@13073/FUNCTION:add@13400": {
         "role": "unresolved",
@@ -52875,6 +53032,33 @@
         "mountStatus": "source_reviewed",
         "reason": "Source-reviewed canonical control delegation only; current matched-state mounting and visual acceptance remain pending. Required conditions are registered separately; no visual PASS is asserted."
       },
+      "surface:apps/raft_flutter/lib/features/administration_context_grants.dart#method:_GrantsState.openGrant": {
+        "owner": "design-system alignment",
+        "kind": "surface_factory_candidate",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/administration_context_grants.dart#method:_GrantsState.openGrant"
+        ],
+        "mountStatus": "unresolved",
+        "reason": "Resolved function owns a surface call; actual target, route and state are not yet observed."
+      },
+      "surface:apps/raft_flutter/lib/features/administration_immediate.dart#function:showUndoToast": {
+        "owner": "design-system alignment",
+        "kind": "surface_factory_candidate",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/administration_immediate.dart#function:showUndoToast"
+        ],
+        "mountStatus": "unresolved",
+        "reason": "Resolved function owns a surface call; actual target, route and state are not yet observed."
+      },
+      "surface:apps/raft_flutter/lib/features/administration_support.dart#function:adminConfirm": {
+        "owner": "design-system alignment",
+        "kind": "surface_factory_candidate",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/administration_support.dart#function:adminConfirm"
+        ],
+        "mountStatus": "unresolved",
+        "reason": "Resolved function owns a surface call; actual target, route and state are not yet observed."
+      },
       "surface:showRaftDialog": {
         "owner": "design-system alignment",
         "kind": "dialog",
@@ -52898,15 +53082,6 @@
         "kind": "surface_factory_candidate",
         "declarationRefs": [
           "apps/raft_flutter/lib/features/add_computer_dialog.dart#function:showAddComputerDialog"
-        ],
-        "mountStatus": "unresolved",
-        "reason": "Resolved function owns a surface call; actual target, route and state are not yet observed."
-      },
-      "surface:apps/raft_flutter/lib/features/administration_view.dart#function:_confirm": {
-        "owner": "design-system alignment",
-        "kind": "surface_factory_candidate",
-        "declarationRefs": [
-          "apps/raft_flutter/lib/features/administration_view.dart#function:_confirm"
         ],
         "mountStatus": "unresolved",
         "reason": "Resolved function owns a surface call; actual target, route and state are not yet observed."
@@ -55901,6 +56076,24 @@
         "owner": "design-system alignment",
         "reason": "Review the real entry and applicable theme/input/state dimensions; historical case names do not establish current visual coverage."
       },
+      "surface:apps/raft_flutter/lib/features/administration_context_grants.dart#method:_GrantsState.openGrant:applicability": {
+        "entryId": "surface:apps/raft_flutter/lib/features/administration_context_grants.dart#method:_GrantsState.openGrant",
+        "applicability": "unknown",
+        "owner": "design-system alignment",
+        "reason": "Real entry and applicable theme/input/state dimensions require source review and bound execution."
+      },
+      "surface:apps/raft_flutter/lib/features/administration_immediate.dart#function:showUndoToast:applicability": {
+        "entryId": "surface:apps/raft_flutter/lib/features/administration_immediate.dart#function:showUndoToast",
+        "applicability": "unknown",
+        "owner": "design-system alignment",
+        "reason": "Real entry and applicable theme/input/state dimensions require source review and bound execution."
+      },
+      "surface:apps/raft_flutter/lib/features/administration_support.dart#function:adminConfirm:applicability": {
+        "entryId": "surface:apps/raft_flutter/lib/features/administration_support.dart#function:adminConfirm",
+        "applicability": "unknown",
+        "owner": "design-system alignment",
+        "reason": "Real entry and applicable theme/input/state dimensions require source review and bound execution."
+      },
       "surface:showRaftDialog:applicability": {
         "entryId": "surface:showRaftDialog",
         "applicability": "unknown",
@@ -55915,12 +56108,6 @@
       },
       "surface:apps/raft_flutter/lib/features/add_computer_dialog.dart#function:showAddComputerDialog:applicability": {
         "entryId": "surface:apps/raft_flutter/lib/features/add_computer_dialog.dart#function:showAddComputerDialog",
-        "applicability": "unknown",
-        "owner": "design-system alignment",
-        "reason": "Real entry and applicable theme/input/state dimensions require source review and bound execution."
-      },
-      "surface:apps/raft_flutter/lib/features/administration_view.dart#function:_confirm:applicability": {
-        "entryId": "surface:apps/raft_flutter/lib/features/administration_view.dart#function:_confirm",
         "applicability": "unknown",
         "owner": "design-system alignment",
         "reason": "Real entry and applicable theme/input/state dimensions require source review and bound execution."
