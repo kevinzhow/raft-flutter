@@ -24,28 +24,37 @@ Map<String, dynamic> boardTask(
   String status, {
   String? assignee,
   String? readOnlyReason,
-  String activityAt = '2026-11-17T10:00:00.000Z',
+  String? activityAt,
   int replies = 0,
-}) => {
-  'id': id,
-  'taskNumber': number,
-  'title': 'Task $id',
-  'description': 'About $id',
-  'status': status,
-  'channelId': 'c1',
-  'channelName': 'general',
-  'conversationChannelId': 'conv-$id',
-  'conversationReplyCount': replies,
-  'createdAt': '2026-11-01T00:00:00.000Z',
-  'updatedAt': activityAt,
-  'activityAt': activityAt,
-  'readOnlyReason': ?readOnlyReason,
-  if (assignee != null) ...{
-    'claimedByType': 'user',
-    'claimedById': assignee,
-    'claimedByName': assignee,
-  },
-};
+}) {
+  // Two hours before the clock the cards read ("2h ago"): a fixed instant
+  // made the time label, and so the room left for the assignee, depend on
+  // the day the test runs.
+  activityAt ??= DateTime.now()
+      .toUtc()
+      .subtract(const Duration(hours: 2))
+      .toIso8601String();
+  return {
+    'id': id,
+    'taskNumber': number,
+    'title': 'Task $id',
+    'description': 'About $id',
+    'status': status,
+    'channelId': 'c1',
+    'channelName': 'general',
+    'conversationChannelId': 'conv-$id',
+    'conversationReplyCount': replies,
+    'createdAt': '2026-11-01T00:00:00.000Z',
+    'updatedAt': activityAt,
+    'activityAt': activityAt,
+    'readOnlyReason': ?readOnlyReason,
+    if (assignee != null) ...{
+      'claimedByType': 'user',
+      'claimedById': assignee,
+      'claimedByName': assignee,
+    },
+  };
+}
 
 List<Map<String, dynamic>> defaultRows() => [
   boardTask('t1', 1, 'todo'),
