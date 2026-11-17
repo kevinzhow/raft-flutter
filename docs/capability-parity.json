@@ -13726,14 +13726,14 @@
    "status": "covered",
    "webEntry": "Settings > Account 'Log out' + confirm | ServerSelector 'Log out' | EmailVerificationPage 'Log out'",
    "gate": "",
-   "flutterEntry": "account_settings.dart 'account-logout' + confirm; global_server_selector.dart; account_onboarding.dart onLogOut",
+   "flutterEntry": "account_sign_out_section.dart 'account-logout' + confirm; global_server_selector.dart; account_onboarding.dart onLogOut",
    "flutterRefs": [
     {
      "file": "packages/raft_client/lib/src/client.dart",
      "needle": "/auth/logout"
     },
     {
-     "file": "apps/raft_flutter/lib/features/account_settings.dart",
+     "file": "apps/raft_flutter/lib/features/account_sign_out_section.dart",
      "needle": "account-logout-confirm-button"
     }
    ],
@@ -13987,14 +13987,14 @@
    "status": "covered",
    "webEntry": "Settings > Account > Session > 'Log out' + confirm dialog",
    "gate": "",
-   "flutterEntry": "account_settings.dart 'account-logout' + confirm",
+   "flutterEntry": "account_sign_out_section.dart 'account-logout' + confirm",
    "flutterRefs": [
     {
-     "file": "apps/raft_flutter/lib/features/account_settings.dart",
+     "file": "apps/raft_flutter/lib/features/account_sign_out_section.dart",
      "needle": "account-logout"
     },
     {
-     "file": "apps/raft_flutter/lib/features/account_settings.dart",
+     "file": "apps/raft_flutter/lib/features/account_sign_out_section.dart",
      "needle": "account-logout-confirm-button"
     }
    ],
@@ -18537,6 +18537,46 @@
     {
      "file": "packages/raft_client/lib/src/second_factor_settings.dart",
      "needle": "'$_base/passkeys'"
+    }
+   ],
+   "justification": "",
+   "impact": "",
+   "size": ""
+  },
+  {
+   "kind": "endpoint",
+   "id": "GET /me/app-logins",
+   "area": "account-profile",
+   "capability": "List the Apps the person signed in to with Raft (Settings › Account; Web v1.24)",
+   "background": false,
+   "status": "covered",
+   "webEntry": "AppLoginsSection listAppLogins",
+   "gate": "none",
+   "flutterEntry": "account_app_logins.dart AppLoginsSection",
+   "flutterRefs": [
+    {
+     "file": "packages/raft_client/lib/src/app_logins.dart",
+     "needle": "'/me/app-logins'"
+    }
+   ],
+   "justification": "",
+   "impact": "",
+   "size": ""
+  },
+  {
+   "kind": "endpoint",
+   "id": "DELETE /me/app-logins/:id",
+   "area": "account-profile",
+   "capability": "Revoke an App the person signed in to with Raft (confirm first; Web v1.24)",
+   "background": false,
+   "status": "covered",
+   "webEntry": "AppLoginsSection ConfirmDialog revokeAppLogin",
+   "gate": "none",
+   "flutterEntry": "account_app_logins.dart AppLoginsSection revoke",
+   "flutterRefs": [
+    {
+     "file": "packages/raft_client/lib/src/app_logins.dart",
+     "needle": "'/me/app-logins/${Uri.encodeComponent(clientId)}'"
     }
    ],
    "justification": "",

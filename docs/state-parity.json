@@ -4247,6 +4247,39 @@
           "gapKind": "case-missing"
         }
       ]
+    },
+    {
+      "id": "settings.account.app-logins",
+      "title": "Settings: Account › Apps you signed in to with Raft",
+      "webEntry": "packages/web/src/features/settings/account/AppLoginsSection.tsx",
+      "flutterEntry": "apps/raft_flutter/lib/features/account_app_logins.dart",
+      "states": [
+        {
+          "state": "loading",
+          "web": "no",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "na",
+          "justification": "Both render nothing until GET /me/app-logins answers; the section appears only once the list has an App."
+        },
+        {
+          "state": "empty",
+          "web": "no",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "na",
+          "justification": "With no App signed in (or after revoking the last one) the section is absent on both; focus moves to the Session heading."
+        },
+        {
+          "state": "error",
+          "variant": "list failed",
+          "web": "no",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "na",
+          "justification": "A failed list read leaves the section hidden on both, with no message. A failed revoke keeps the confirm dialog open with its own error line on both (test/account_app_logins_test.dart)."
+        }
+      ]
     }
   ],
   "navigationCoverage": {
@@ -5243,12 +5276,6 @@
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
-      },
-      "apps/raft_flutter/lib/features/account_settings.dart#method:_AccountSettingsState.confirmLogout": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
       },
       "apps/raft_flutter/lib/features/account_settings.dart#method:_AccountSettingsState.edit": {
         "role": "unresolved",
@@ -53846,6 +53873,66 @@
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/account_app_logins.dart#class:AppLoginsSection": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/account_app_logins.dart#class:_AppLoginRow": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/account_app_logins.dart#class:_AppLoginsState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/account_app_logins.dart#method:AppLoginsSection.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/account_app_logins.dart#method:_AppLoginRow.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/account_app_logins.dart#method:_AppLoginsState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/account_app_logins.dart#method:_AppLoginsState.revoke": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/account_sign_out_section.dart#class:AccountSignOutSection": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/account_sign_out_section.dart#method:AccountSignOutSection.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/account_sign_out_section.dart#method:AccountSignOutSection.confirm": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       }
     },
     "entries": {
@@ -54944,15 +55031,6 @@
         "kind": "surface_factory_candidate",
         "declarationRefs": [
           "apps/raft_flutter/lib/app_root.dart#method:_RaftAppState.openNextShare"
-        ],
-        "mountStatus": "unresolved",
-        "reason": "Resolved function owns a surface call; actual target, route and state are not yet observed."
-      },
-      "surface:apps/raft_flutter/lib/features/account_settings.dart#method:_AccountSettingsState.confirmLogout": {
-        "owner": "design-system alignment",
-        "kind": "surface_factory_candidate",
-        "declarationRefs": [
-          "apps/raft_flutter/lib/features/account_settings.dart#method:_AccountSettingsState.confirmLogout"
         ],
         "mountStatus": "unresolved",
         "reason": "Resolved function owns a surface call; actual target, route and state are not yet observed."
@@ -57349,6 +57427,32 @@
         ],
         "mountStatus": "unresolved",
         "reason": "Resolved function owns a surface call; actual target, route and state are not yet observed."
+      },
+      "surface:apps/raft_flutter/lib/features/account_app_logins.dart#method:_AppLoginsState.revoke": {
+        "owner": "design-system alignment",
+        "kind": "surface_factory_candidate",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/account_app_logins.dart#method:_AppLoginsState.revoke"
+        ],
+        "mountStatus": "unresolved",
+        "reason": "Resolved function owns a surface call; actual target, route and state are not yet observed."
+      },
+      "surface:apps/raft_flutter/lib/features/account_sign_out_section.dart#method:AccountSignOutSection.confirm": {
+        "owner": "design-system alignment",
+        "kind": "surface_factory_candidate",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/account_sign_out_section.dart#method:AccountSignOutSection.confirm"
+        ],
+        "mountStatus": "unresolved",
+        "reason": "Resolved function owns a surface call; actual target, route and state are not yet observed."
+      },
+      "screen:settings.account.app-logins": {
+        "owner": "design-system alignment",
+        "kind": "route_or_panel_candidate",
+        "lifecycleScreenId": "settings.account.app-logins",
+        "declarationRefs": [],
+        "mountStatus": "unresolved",
+        "reason": "Existing lifecycle screen record; exact builder/family composition and current mounted state are not yet established."
       }
     },
     "requirements": {
@@ -58050,12 +58154,6 @@
       },
       "surface:apps/raft_flutter/lib/app_root.dart#method:_RaftAppState.openNextShare:applicability": {
         "entryId": "surface:apps/raft_flutter/lib/app_root.dart#method:_RaftAppState.openNextShare",
-        "applicability": "unknown",
-        "owner": "design-system alignment",
-        "reason": "Real entry and applicable theme/input/state dimensions require source review and bound execution."
-      },
-      "surface:apps/raft_flutter/lib/features/account_settings.dart#method:_AccountSettingsState.confirmLogout:applicability": {
-        "entryId": "surface:apps/raft_flutter/lib/features/account_settings.dart#method:_AccountSettingsState.confirmLogout",
         "applicability": "unknown",
         "owner": "design-system alignment",
         "reason": "Real entry and applicable theme/input/state dimensions require source review and bound execution."

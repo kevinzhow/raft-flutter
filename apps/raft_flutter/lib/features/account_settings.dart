@@ -5,11 +5,13 @@ import 'package:raft_client/raft_client.dart';
 import '../data/user_error.dart';
 import '../data/workspace_controller.dart';
 import '../data/personal_presentation.dart';
+import 'account_app_logins.dart';
 import 'account_onboarding.dart';
 import 'account_connections_view.dart';
 import 'account_security_passkeys.dart';
 import 'account_security_two_step.dart';
 import 'human_avatar_edit_menu.dart';
+import 'account_sign_out_section.dart';
 import 'management_support.dart';
 import 'public_avatar_url.dart';
 import 'usage_data_card.dart';
@@ -58,6 +60,13 @@ class _AccountSettingsState extends ManagementState<AccountSettings> {
   }
 
   final profileName = TextEditingController();
+
+  /// The Session heading, where focus lands when revoking the last App login
+  /// removes that section (Web `signOutHeadingRef`).
+  final signOutHeading = FocusNode(
+    debugLabel: 'account session heading',
+    skipTraversal: true,
+  );
   String? profileAccount, savedProfileName;
   bool profileBusy = false, profileSaved = false;
   // ignore: raft_lints/avoid_imperative_notice_state -- Clears when the next save starts and on account change (clearData/hydrateProfile).
@@ -65,6 +74,7 @@ class _AccountSettingsState extends ManagementState<AccountSettings> {
   @override
   void dispose() {
     profileName.dispose();
+    signOutHeading.dispose();
     super.dispose();
   }
 
@@ -490,44 +500,24 @@ class _AccountSettingsState extends ManagementState<AccountSettings> {
           controller: controller,
           passkeys: (s) => PasskeysSection(controller: controller, settings: s),
         ),
-        const RaftSettingsSectionHeader(
-          label: 'Session',
-          glyph: RaftGlyph.logOut,
-        ),
-        RaftSettingsActionCard(
-          title: 'Sign out',
-          description: 'Sign out of this browser. Your account and data stay; you can sign back in any time.',
-          // `variant="warning" size="md"`, text only.
-          action: RaftSettingsRecipeButton(
-            key: const Key('account-logout'),
-            label: 'Sign out',
-            variant: RaftButtonRecipeVariant.warning,
-            onPressed: widget.onLogout == null
-                ? null
-                : () => confirmLogout(context),
-          ),
+        // Apps signed in to with the Raft account: nothing renders while the
+        // list is empty. Revoking the last one moves focus to the Session
+        // heading (AccountSection.tsx).
+        AppLoginsSection(
+          key: ValueKey('account-app-logins-$authority'),
+          controller: controller,
+          emptiedFocus: signOutHeading,
         ),
         UsageDataSettingsCard(controller: controller),
         const SignInDiagnosticsCard(),
+        AccountSignOutSection(
+          headingFocus: signOutHeading,
+          onLogout: widget.onLogout,
+        ),
+        // Delete Account (Web DeleteAccountSection, AccountSection.tsx:648):
+        // the danger zone goes here, last on the page.
         const SizedBox(height: RaftSpace.x6),
       ],
     );
-  }
-
-  Future<void> confirmLogout(BuildContext context) async {
-    final ok = await RaftConfirmDialog.show(
-      context,
-      const RaftConfirmDialog(
-        title: 'Sign out',
-        message: 'Sign out of this browser? Your account and data are kept; you can sign back in any time.',
-        confirmLabel: 'Sign out',
-        cancelLabel: 'Cancel',
-        surfaceKey: ValueKey('account-logout-dialog'),
-        // confirmColor="bg-brutal-orange" -> warning tone.
-        confirmVariant: RaftButtonRecipeVariant.warning,
-        confirmKey: Key('account-logout-confirm-button'),
-      ),
-    );
-    if (ok == true) await widget.onLogout?.call();
   }
 }

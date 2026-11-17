@@ -61,6 +61,8 @@ const dialogSurfaces = <CloseSurface>[
       'lib/features/workspace_view_sidebar_menus.dart',
       'lib/features/account_settings.dart',
       'lib/features/account_security_passkeys.dart',
+      'lib/features/account_app_logins.dart',
+      'lib/features/account_sign_out_section.dart',
       'lib/features/artifacts/artifact_frame_confirm.dart',
       '../../packages/raft_ui/lib/src/computer_detail.dart',
       '../../packages/raft_ui/lib/src/settings_controls.dart',

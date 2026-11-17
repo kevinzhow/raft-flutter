@@ -7,11 +7,11 @@ Pixel parity, field parity (`docs/field-parity.md`) and the page inventory (`doc
 
 ## Summary
 
-Total capabilities: 844 (398 endpoint/network keys, 446 client-side).
+Total capabilities: 846 (400 endpoint/network keys, 446 client-side).
 
 | Status | Count |
 | --- | ---: |
-| ✅ covered | 717 |
+| ✅ covered | 719 |
 | ⚠️ partial | 30 |
 | ❌ missing | 2 |
 | ➖ na | 95 |
@@ -31,7 +31,7 @@ Total capabilities: 844 (398 endpoint/network keys, 446 client-side).
 | Files and attachments | 25 | 3 | 0 | 2 |
 | Search | 19 | 0 | 0 | 1 |
 | Notifications | 30 | 4 | 0 | 9 |
-| Account and profile | 52 | 0 | 0 | 13 |
+| Account and profile | 54 | 0 | 0 | 13 |
 | Onboarding and auth | 37 | 1 | 0 | 8 |
 | Joint channels | 11 | 0 | 0 | 1 |
 | Public and guest | 19 | 1 | 0 | 4 |
@@ -740,11 +740,13 @@ Legend: ✅ covered (endpoint called and a reachable entry point with equivalent
 | ✅ | Disconnect a social sign-in provider (asks to set a password first when it is the last method) | `DELETE /auth/identities/:id` | Settings > Account > Connected accounts > 'Disconnect' + confirm (or 'Send setup email' when password required) | account_connections_view.dart disconnect() with 'Disconnect this sign-in account?' confirm and password-setup fallback |  |
 | ✅ | Delete a passkey (with two-step verification on, a step-up answer in the same request; never the last factor; Web v1.24) | `DELETE /auth/second-factor/passkeys/:id` | PasskeysSection DeleteDialog then VerifyItsYouDialog[gate: none] | account_security_passkeys.dart delete |  |
 | ✅ | Cancel a pending two-step reset from a signed-in session (Web v1.24) | `DELETE /auth/second-factor/recovery` | useSecondFactorRecoveryNotification Cancel reset[gate: none] | account_security_recovery.dart secondFactorRecoveryEntry (Cancel reset) |  |
+| ✅ | Revoke an App the person signed in to with Raft (confirm first; Web v1.24) | `DELETE /me/app-logins/:id` | AppLoginsSection ConfirmDialog revokeAppLogin[gate: none] | account_app_logins.dart AppLoginsSection revoke |  |
 | ➖ | Unsubscribe this browser from push notifications (bg) | `DELETE /push/subscribe` | Notifications > Web Push 'Disable'[gate: push-capable browser (web channel); desktop shell uses desktop-native card] | notification_settings_view.dart 'Test notification' (local OS notification, no server push) | N/A: Web Push (VAPID service-worker subscription) is browser-only. The server has no APNs/FCM channel (routes/push.ts only serves web-push), so Flutter's native equivalent is local OS notifications posted by the app's background inbox refresh (platform/background_inbox.dart, desktop_inbox_notifications.dart) with a phone/desktop 'Test notification' card (docs/parity.md ~L1040-1050 records the difference). Note: with the app fully closed there is no server-initiated push. |
 | ✅ | List connected social sign-in identities and whether a password is set | `GET /auth/identities` | Settings > Account > 'Connected accounts' card (AccountSection loadIdentities) | account_connections_view.dart (Settings > Account sign-in methods) |  |
 | ✅ | List the person's passkeys (Web v1.24) | `GET /auth/second-factor/passkeys` | PasskeysSection listPasskeys[gate: none] | account_security_passkeys.dart PasskeysSection |  |
 | ✅ | Read a pending two-step reset for the notification center (Web v1.24) | `GET /auth/second-factor/recovery` | useSecondFactorRecoveryNotification[gate: none] | system_notification_store.dart refreshSecondFactorRecovery (first entry, no Dismiss) |  |
 | ✅ | Two-step verification state and methods (Settings › Account; Web v1.24) | `GET /auth/second-factor/status` | TwoStepVerificationSection / PasskeysSection fetchSecondFactorStatus[gate: none] | account_security_two_step.dart TwoStepVerificationSection, account_security_passkeys.dart |  |
+| ✅ | List the Apps the person signed in to with Raft (Settings › Account; Web v1.24) | `GET /me/app-logins` | AppLoginsSection listAppLogins[gate: none] | account_app_logins.dart AppLoginsSection |  |
 | ✅ | List my feedback tickets (Active/Ended/All filter, unread dot, load more) | `GET /product-feedback/tickets` | Settings > Feedback inbox \| Feedback unread dot in settings nav (background poll)[gate: any signed-in user] | source_feedback_view.dart inbox; workspace_settings.dart loadFeedbackUnread dot |  |
 | ✅ | Open a feedback ticket conversation | `GET /product-feedback/tickets/:id` | Settings > Feedback > ticket[gate: any signed-in user] | source_feedback_view.dart _ticket() detail conversation |  |
 | ✅ | Open or download a screenshot/attachment attached to a feedback ticket | `GET /product-feedback/tickets/:id/attachments/:id` | Settings > Feedback > ticket detail: click an attachment (onOpenAttachment) -> Lightbox with Download and Close[gate: any signed-in user viewing own ticket] | source_feedback_view.dart _openSent -> RaftClient.getBytes, then showFeedbackImage (lightbox with Download and Close) |  |
@@ -755,7 +757,7 @@ Legend: ✅ covered (endpoint called and a reachable entry point with equivalent
 | ✅ | Rename a passkey (Web v1.24) | `PATCH /auth/second-factor/passkeys/:id` | PasskeysSection RenameDialog[gate: none] | account_security_passkeys.dart _RenameDialog |  |
 | ➖ | Mute or unmute push notifications from this server | `PATCH /servers/:id/notification-settings` | Settings > Notifications > 'Mute notifications from this server' checkbox + Save[gate: web push channel only (desktop-native card has no mute on Web either)] | none: a server's level is written with PUT /notification-levels | N/A: Web v1.24 no longer calls it (ledger API-15 / API-18): Settings › Notifications reads /me/notification-settings and /notification-levels and writes PUT /notification-levels (WP-NOTIF). The server still serves it. |
 | ✅ | Connect an additional social sign-in provider to the account | `POST /auth/:id/link/start` | Settings > Account > Connected accounts > provider 'Connect' button | account_connections_view.dart 'Connect' -> NativeOAuthBroker link flow (/auth/mobile/oauth/:provider/link/start + link/complete) | Flutter uses the mobile OAuth link endpoints rather than the Web browser redirect endpoint; same user capability. |
-| ✅ | Log out (Settings > Account > Session, server selector, email verification page) | `POST /auth/logout` | Settings > Account 'Log out' + confirm \| ServerSelector 'Log out' \| EmailVerificationPage 'Log out' | account_settings.dart 'account-logout' + confirm; global_server_selector.dart; account_onboarding.dart onLogOut |  |
+| ✅ | Log out (Settings > Account > Session, server selector, email verification page) | `POST /auth/logout` | Settings > Account 'Log out' + confirm \| ServerSelector 'Log out' \| EmailVerificationPage 'Log out' | account_sign_out_section.dart 'account-logout' + confirm; global_server_selector.dart; account_onboarding.dart onLogOut |  |
 | ✅ | Upload my profile picture (account settings, my profile, onboarding identity setup): "Upload a photo" in the avatar menu | `POST /auth/me/avatar` | HumanAvatarEditMenu > Upload a photo (Settings > Account \| HumanDetailPanel \| AccountIdentitySetupPage) | human_avatar_edit_menu.dart (account_settings.dart image() -> AccountMediaActions.uploadAvatar; member_profile_view.dart; account_onboarding.dart) |  |
 | ✅ | Report the device's observed timezone to the server (first/last observed timezone) (bg) | `POST /auth/me/timezone-observation` | authStore reportBrowserTimezoneObservation after login/restore (background, no UI)[gate: server supports first-observation field] | client.dart _reportTimezone after sign-in/restore (flutter_timezone via readDeviceTimezone) |  |
 | ✅ | Regenerate the backup codes with an authenticator code (Web v1.24) | `POST /auth/second-factor/backup-codes/regenerate` | TwoStepVerificationSection RegenerateDialog[gate: two-step verification (server: own setting)] | account_security_two_step.dart regenerate |  |
@@ -776,7 +778,7 @@ Legend: ✅ covered (endpoint called and a reachable entry point with equivalent
 | ✅ | Build a pixel avatar and make it my avatar (replaces a photo); the answer replaces the signed-in user | `PUT /auth/me/avatar-recipe` | HumanAvatarEditMenu > Build an avatar > HumanAvatarBuilderDialog Save[gate: human_avatar_builder_v0 on for the current server][gate: human_avatar_builder_v0] | human_avatar_builder_dialog.dart -> human_avatar_save.dart saveHumanAvatarRecipe |  |
 | ✅ | Change password (current, new, confirm) when a password is configured | `ui:account.change-password` | Settings > Account > 'Change password' toggle + form[gate: password configured; otherwise 'Set password by email'] | account_password_editor.dart (account-change-password / account-password-submit) |  |
 | ✅ | Edit display name and save (username and email are read-only, email shows Verified/Unverified) | `ui:account.profile-display-name-save` | Settings > Account profile card: display name input + 'Save Profile' | account_settings.dart profile card ('account-save-profile', read-only username/email) |  |
-| ✅ | Log out with confirmation | `ui:account.sign-out` | Settings > Account > Session > 'Log out' + confirm dialog | account_settings.dart 'account-logout' + confirm |  |
+| ✅ | Log out with confirmation | `ui:account.sign-out` | Settings > Account > Session > 'Log out' + confirm dialog | account_sign_out_section.dart 'account-logout' + confirm |  |
 | ✅ | Opt in/out of sharing product usage data | `ui:account.usage-data-consent` | Settings > Account > Usage data card switch (UsageDataSettingsCard) + 'Learn more'[gate: feature flag for the card] | usage_data_card.dart UsageDataSettingsCard |  |
 | ➖ | Toggle 'Workspace mode' (multi-pane grid) on/off from Account settings | `ui:account.workspace-mode-toggle` | Settings > Account top card: Workspace mode checkbox (WorkspaceModeSettingsCard)[gate: desktop-width only (>=1024)] |  | N/A: Web removed the workspace grid in v1.21.x. Flutter removed the mirrored entry, side-by-side view, per-column sessions, and the mode switch. |
 | ✅ | Toggle hiding empty sidebar sections | `ui:appearance.hide-empty-sidebar-sections` | Appearance > 'Hide empty sidebar sections' switch | appearance_section.dart toggle 'appearance-hide-empty' |  |
