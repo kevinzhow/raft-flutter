@@ -93,8 +93,9 @@ SettingsSearchResult? _match(SearchableSetting setting, String query) {
   final where = setting.sectionLabel == null
       ? setting.pageLabel
       : '${setting.pageLabel} ${setting.sectionLabel}';
-  if (has(where))
+  if (has(where)) {
     return SettingsSearchResult(setting, SettingsSearchMatchField.where);
+  }
   return null;
 }
 
