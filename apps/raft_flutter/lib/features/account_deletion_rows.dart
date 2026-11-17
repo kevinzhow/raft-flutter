@@ -133,32 +133,33 @@ class AccountDeletionChecklistRow extends StatelessWidget {
                   Expanded(flex: 7, child: outcomeColumn),
                 ],
               )
-            : Row(
+            // Below `sm`: grid-cols-[20px_1fr] gap-x-3 gap-y-1.5, the arrow
+            // centred in the icon column (`pt-1 justify-center`).
+            : Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                spacing: RaftSpace.x1_5,
                 children: [
-                  SizedBox(width: RaftSpace.x5, child: icon),
-                  const SizedBox(width: RaftSpace.x3),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      spacing: RaftSpace.x1_5,
-                      children: [
-                        nameText,
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Padding(
-                              padding: const EdgeInsets.only(
-                                top: RaftSpace.half,
-                              ),
-                              child: arrow,
-                            ),
-                            const SizedBox(width: RaftSpace.x3),
-                            Expanded(child: outcomeColumn),
-                          ],
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(width: RaftSpace.x5, child: icon),
+                      const SizedBox(width: RaftSpace.x3),
+                      Expanded(child: nameText),
+                    ],
+                  ),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(
+                        width: RaftSpace.x5,
+                        child: Padding(
+                          padding: const EdgeInsets.only(top: RaftSpace.x1),
+                          child: Center(child: arrow),
                         ),
-                      ],
-                    ),
+                      ),
+                      const SizedBox(width: RaftSpace.x3),
+                      Expanded(child: outcomeColumn),
+                    ],
                   ),
                 ],
               ),

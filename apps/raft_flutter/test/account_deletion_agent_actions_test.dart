@@ -2,11 +2,13 @@
 // AccountDeletionAgentRow.tsx AgentAction): the Pro tag sits inside the Move
 // button after its label, and the actions wrap within a phone's width.
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/features/account_deletion_page.dart';
 import 'package:raft_ui/raft_ui.dart';
 
+import 'parity/parity_harness.dart' show loadParityFonts;
 import 'support/account_deletion_server.dart';
 
 void main() {
@@ -114,5 +116,55 @@ void main() {
         t.getTopLeft(find.text('The rest happens automatically (1)')).dy,
       ),
     );
+  });
+
+  testWidgets('phone width: the outcome arrow sits in the icon column', (
+    t,
+  ) async {
+    // Web AccountDeletionChecklistRow below `sm`: grid-cols-[20px_1fr], the
+    // arrow under the icon, so the outcome and its actions get the width.
+    t.view
+      ..physicalSize = const Size(390, 1400)
+      ..devicePixelRatio = 1;
+    addTearDown(t.view.reset);
+    // Real fonts: the test font's em-square glyphs would cut any label.
+    await t.runAsync(loadParityFonts);
+    await t.pumpWidget(
+      MaterialApp(
+        theme: raftTheme(),
+        home: Scaffold(
+          body: SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: AccountDeletionPage(
+              controller: w,
+              onMoveElsewhere: (_, _) {},
+            ),
+          ),
+        ),
+      ),
+    );
+    await t.pumpAndSettle();
+    final icon = t.getRect(
+      find
+          .byWidgetPredicate(
+            (w) => w is RaftIcon && w.glyph == RaftGlyph.monitor,
+          )
+          .first,
+    );
+    final arrow = t.getRect(
+      find
+          .byWidgetPredicate(
+            (w) => w is RaftIcon && w.glyph == RaftGlyph.arrowRight,
+          )
+          .first,
+    );
+    expect(arrow.center.dx, closeTo(icon.center.dx, 2));
+    final label = t.renderObject<RenderParagraph>(
+      find.descendant(
+        of: find.byKey(const ValueKey('account-deletion-move-c1')),
+        matching: find.text('Move to another computer'),
+      ),
+    );
+    expect(label.didExceedMaxLines, isFalse, reason: 'the label is not cut');
   });
 }
