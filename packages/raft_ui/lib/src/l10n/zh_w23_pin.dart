@@ -210,7 +210,7 @@ const Map<String, String> zhCatalogW23Pin = <String, String>{
       "按需读取当前范围的任务快照，无需扫描频道消息。",
   "Tasks observed": "已观察任务",
   "Done / observed": "已完成 / 已观察",
-  "Median creation → done": "创建至完成的中位时长",
+  "Median creation → done": "创建至完成中位时长",
   "{value} h": "{value} 小时",
   "Current owners: {user} human · {agent} agent · {unassigned} unassigned":
       "当前负责人：{user} 人类 · {agent} Agent · {unassigned} 未分配",

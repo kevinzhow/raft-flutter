@@ -134,7 +134,10 @@ class _OrphanedJointChannelsSectionState
             if (mounted) setState(() => error = null);
             try {
               await w.command('POST', '/channels/$id/disconnect');
-              await w.refreshChannels();
+              // Web drops the channel from its store at once; the sidebar
+              // catches up from a background read, so the row and toast
+              // don't wait for it.
+              unawaited(w.refreshChannels());
               if (!mounted || identity != pageIdentity(w)) return;
               setState(
                 () => connections = [
