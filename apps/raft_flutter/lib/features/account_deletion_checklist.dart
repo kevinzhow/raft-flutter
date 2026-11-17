@@ -358,7 +358,11 @@ class _AccountDeletionChecklistState
                   onChanged: widget.onReload,
                 ),
               if (needsAction > 0 && automatic > 0) ...[
+                // Web `<Separator className="mt-3" />` between the groups.
                 const SizedBox(height: RaftSpace.x3),
+                const RaftSeparator(
+                  key: ValueKey('account-deletion-groups-separator'),
+                ),
                 _GroupLabel(
                   raftFormat(
                     context,

@@ -81,9 +81,12 @@ class AccountDeletionHeading extends StatelessWidget {
                 color: ink,
                 width: AccountDeletionMetrics.edge,
               ),
-              boxShadow: [
-                BoxShadow(color: t.colors['sticker-edge']!, spreadRadius: 1.5),
-              ],
+              // `shadow-sticker` (--elevation-sticker), the only shadow.
+              boxShadow:
+                  (t.dark
+                          ? RaftDark.elevationSticker
+                          : RaftLight.elevationSticker)
+                      .paintOrder,
             ),
             child: ExcludeSemantics(
               child: RaftIcon(glyph, size: 28, color: ink, strokeWidth: 2),

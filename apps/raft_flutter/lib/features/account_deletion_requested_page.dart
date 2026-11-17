@@ -86,14 +86,23 @@ class AccountDeletionRequestedPage extends StatelessWidget {
                       ),
                       const SizedBox(width: AccountDeletionMetrics.gap10),
                       Expanded(
-                        child: Text(
+                        // Web `<b className="font-semibold">` on the date.
+                        child: Text.rich(
                           date.isEmpty
-                              ? tr('Sign in before the deletion date to cancel')
-                              : raftFormat(
-                                  context,
-                                  'Sign in to Raft before {date}',
-                                  {'date': date},
+                              ? TextSpan(
+                                  text: tr(
+                                    'Sign in before the deletion date to cancel',
+                                  ),
+                                )
+                              : accountDeletionDateSpan(
+                                  raftText(
+                                    context,
+                                    'Sign in to Raft before {date}',
+                                  ),
+                                  date,
+                                  strong,
                                 ),
+                          key: const ValueKey('account-deletion-cancel-by'),
                           style: RaftTypography.heading(
                             t,
                             size: 15,

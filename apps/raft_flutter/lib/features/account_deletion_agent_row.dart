@@ -75,38 +75,43 @@ class _AgentAction extends StatelessWidget {
       trailingGlyph: menu ? RaftGlyph.chevronDown : null,
       onPressed: onPressed,
       leading: null,
-    );
-    Widget withBadge(Widget child) => badge == null
-        ? child
-        : Row(
-            mainAxisSize: MainAxisSize.min,
-            spacing: RaftSpace.x1_5,
-            children: [
-              child,
-              RaftBadge(
-                label: badge!,
-                appearance: RaftBadgeRecipeAppearance.outline,
-              ),
-            ],
-          );
-    if (agents case [final only]) {
-      return withBadge(button(() => onChoose(only)));
-    }
-    return withBadge(
-      RaftDropdownMenu(
-        label: label,
-        width: 240,
-        triggerBuilder: (context, focusNode, open) =>
-            button(open, focusNode: focusNode, menu: true),
-        entries: [
-          for (final agent in agents)
-            RaftMenuEntry(
-              label: agent.name,
-              glyph: RaftGlyph.bot,
-              onPressed: () => onChoose(agent),
+      // Web `{icon}{label}{badge}<ChevronDown/>`: the tag is in the button.
+      child: badge == null
+          ? null
+          : Row(
+              mainAxisSize: MainAxisSize.min,
+              spacing: RaftSpace.x1_5,
+              children: [
+                Flexible(
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                RaftBadge(
+                  label: badge!,
+                  appearance: RaftBadgeRecipeAppearance.outline,
+                ),
+              ],
             ),
-        ],
-      ),
+    );
+    if (agents case [final only]) {
+      return button(() => onChoose(only));
+    }
+    return RaftDropdownMenu(
+      label: label,
+      width: 240,
+      triggerBuilder: (context, focusNode, open) =>
+          button(open, focusNode: focusNode, menu: true),
+      entries: [
+        for (final agent in agents)
+          RaftMenuEntry(
+            label: agent.name,
+            glyph: RaftGlyph.bot,
+            onPressed: () => onChoose(agent),
+          ),
+      ],
     );
   }
 }

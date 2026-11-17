@@ -36,6 +36,14 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('Sign in to Raft before $date'), findsOneWidget);
+    // Web `<b className="font-semibold">`: the date stands out.
+    final cancelBy = t.widget<Text>(
+      find.byKey(const ValueKey('account-deletion-cancel-by')),
+    );
+    final dateSpan = (cancelBy.textSpan! as TextSpan).children!
+        .cast<TextSpan>()
+        .singleWhere((span) => span.text == date);
+    expect(dateSpan.style?.fontWeight, FontWeight.w600);
     expect(
       find.text("You've been signed out on every device."),
       findsOneWidget,
