@@ -107,7 +107,7 @@ STATES = {
                                 run_=run(6, 'ready', 0, report('incomplete', 'No messages were read in this window; nothing was analyzed.',
                                                                ['missing_tool_outcomes'], []))),
 }
-SNAPSHOT = {'surfaces': 3, 'total': 10, 'todo': 2, 'inProgress': 3, 'inReview': 1, 'done': 3, 'closed': 1,
+SNAPSHOT = {'surfaces': 3, 'total': 10, 'backlog': 0, 'todo': 2, 'inProgress': 3, 'inReview': 1, 'done': 3, 'closed': 1,
             'humanCreated': 6, 'agentCreated': 4, 'durationSamples': 3, 'medianHours': 5.5, 'p90Hours': 26.25,
             'firstCreatedAt': '2026-05-02T08:30:00.000Z', 'latestCreatedAt': '2026-06-18T09:00:00.000Z',
             'latestUpdatedAt': '2026-06-18T22:00:00.000Z'}
