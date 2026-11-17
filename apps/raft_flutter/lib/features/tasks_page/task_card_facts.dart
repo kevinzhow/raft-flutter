@@ -141,6 +141,7 @@ class TaskCardFacts extends StatelessWidget {
           child: LayoutBuilder(
             builder: (context, box) => box.maxWidth < 30
                 ? const SizedBox.shrink()
+                // ds-allow: Web TaskCardFacts `gap-2`
                 : Padding(padding: const EdgeInsets.only(right: 8), child: who),
           ),
         ),

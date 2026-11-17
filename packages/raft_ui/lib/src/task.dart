@@ -7,6 +7,8 @@ import 'localization.dart';
 import 'theme.dart';
 import 'design_primitives.dart';
 import 'icons.dart';
+import 'indicators.dart'
+    show RaftSkeleton, RaftSkeletonRow, RaftSkeletonVariant;
 import 'inline_badge_editor.dart';
 import 'recipe_surface.dart';
 import 'mounted_task_chip.dart';
@@ -793,6 +795,64 @@ class RaftTaskSectionBadge extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Web `TaskCardSkeleton`: a task card while its column loads: the card's own
+/// box, a meta line, a title of two lines and the chip's block.
+class RaftTaskCardSkeleton extends StatelessWidget {
+  const RaftTaskCardSkeleton({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final t = RaftTokens.of(context);
+    return ExcludeSemantics(
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: t.card,
+          borderRadius: BorderRadius.circular(t.radius),
+          border: Border.all(color: t.colors['line-loading-card']!),
+        ),
+        child: const Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          spacing: 6,
+          children: [
+            Align(
+              alignment: Alignment.centerLeft,
+              child: RaftSkeleton(variant: RaftSkeletonVariant.line, width: 64),
+            ),
+            RaftSkeletonRow(lineFractions: [1, .5]),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: RaftSkeleton(width: 96, height: 24),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// The copy of a dragged task card that follows the hand (Web `TaskDragOverlay`
+/// around a TaskCard): [width] wide, never hit.
+class RaftTaskDragFeedback extends StatelessWidget {
+  const RaftTaskDragFeedback({
+    super.key,
+    required this.width,
+    required this.child,
+  });
+  final double width;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => Material(
+    type: MaterialType.transparency,
+    child: SizedBox(
+      width: width,
+      child: IgnorePointer(child: child),
+    ),
+  );
 }
 
 /// Web `TaskBoardColumn` (taskBoardColumn recipe): a column whose trigger row

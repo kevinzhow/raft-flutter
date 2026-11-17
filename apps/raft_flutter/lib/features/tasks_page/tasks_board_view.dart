@@ -228,15 +228,7 @@ class _TasksBoardViewState extends State<TasksBoardView> {
     }
     final context = columnKeys[status]?.currentContext;
     if (context != null) {
-      unawaited(
-        Scrollable.ensureVisible(
-          context,
-          alignment: .5,
-          duration: MediaQuery.disableAnimationsOf(context)
-              ? Duration.zero
-              : const Duration(milliseconds: 150),
-        ),
-      );
+      unawaited(Scrollable.ensureVisible(context, alignment: .5));
     }
   }
 
@@ -485,11 +477,13 @@ class _TasksBoardViewState extends State<TasksBoardView> {
               scrollDirection: Axis.horizontal,
               padding: raftScrollPadding(
                 context,
+                // ds-allow: Web VIEWPORT_CONTENT_CLASS `px-(--surface-inset) py-4 @max-md/tasks:px-4`
                 EdgeInsets.symmetric(horizontal: inline, vertical: 16),
               ),
               child: Row(
                 key: const ValueKey('tasks-page-board'),
                 crossAxisAlignment: CrossAxisAlignment.start,
+                // ds-allow: Web TaskBoardRoot `gap-4`
                 spacing: 16,
                 children: [
                   for (final status in boardColumns(widget.filters))
@@ -634,7 +628,9 @@ class _ColumnBody extends StatelessWidget {
     final items = <Widget Function(BuildContext)>[
       if (tasks.isEmpty)
         (context) => skeleton
-            ? const _CardSkeleton()
+            ? const RaftTaskCardSkeleton(
+                key: ValueKey('task-board-card-skeleton'),
+              )
             : RaftTaskLaneEmpty(
                 board: true,
                 label: raftFormat(context, 'No {status} tasks', {
@@ -648,7 +644,10 @@ class _ColumnBody extends StatelessWidget {
             board: board,
             task: task,
           ),
-        if (skeleton) (context) => const _CardSkeleton(),
+        if (skeleton)
+          (context) => const RaftTaskCardSkeleton(
+            key: ValueKey('task-board-card-skeleton'),
+          ),
       ],
       if (hasMore)
         (context) => _LoadMoreEnd(
@@ -664,6 +663,7 @@ class _ColumnBody extends StatelessWidget {
       shrinkWrap: true,
       padding: EdgeInsets.zero,
       itemCount: items.length,
+      // ds-allow: Web BoardColumn `TaskBoardColumnItems` `gap-2`
       separatorBuilder: (_, _) => const SizedBox(height: 8),
       findItemIndexCallback: (key) =>
           key is ValueKey<String> ? indices[key.value] : null,
@@ -718,47 +718,8 @@ class _LoadMoreEndState extends State<_LoadMoreEnd> {
         onPressed: widget.onLoadMore,
       );
     }
-    return const SizedBox(height: 1, width: double.infinity);
-  }
-}
-
-/// A card while its column loads: a card's own box, meta line, a title of two
-/// lines and the chip's block (Web `TaskCardSkeleton`).
-class _CardSkeleton extends StatelessWidget {
-  const _CardSkeleton();
-
-  @override
-  Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
-    return ExcludeSemantics(
-      child: Container(
-        key: const ValueKey('task-board-card-skeleton'),
-        width: double.infinity,
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: t.card,
-          borderRadius: BorderRadius.circular(
-            t.size('radius.taskLoadingCard', fallback: 10),
-          ),
-          border: Border.all(color: t.colors['line-loading-card']!),
-        ),
-        child: const Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          spacing: 6,
-          children: [
-            Align(
-              alignment: Alignment.centerLeft,
-              child: RaftSkeleton(variant: RaftSkeletonVariant.line, width: 64),
-            ),
-            RaftSkeletonRow(lineFractions: [1, .5]),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: RaftSkeleton(width: 96, height: 24),
-            ),
-          ],
-        ),
-      ),
-    );
+    // ds-allow: Web LoadMoreSentinel `h-px w-full` (2px: the spacing grid has no 1)
+    return const SizedBox(height: 2, width: double.infinity);
   }
 }
 
@@ -868,17 +829,12 @@ class _BoardCardState extends State<_BoardCard> {
           key: anchor,
           child: LayoutBuilder(
             builder: (context, box) {
-              final feedback = Material(
-                type: MaterialType.transparency,
-                child: SizedBox(
-                  width: box.maxWidth,
-                  child: IgnorePointer(
-                    child: card(
-                      context,
-                      interactive: false,
-                      task: board.taskOf(id) ?? task,
-                    ),
-                  ),
+              final feedback = RaftTaskDragFeedback(
+                width: box.maxWidth,
+                child: card(
+                  context,
+                  interactive: false,
+                  task: board.taskOf(id) ?? task,
                 ),
               );
               final dimmed = Opacity(
