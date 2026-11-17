@@ -72,7 +72,9 @@ class ResourceSearchHome extends StatefulWidget {
     required this.onRemove,
     required this.onClear,
     required this.onEntity,
+    this.controller,
   });
+  final ScrollController? controller;
   final List<String> history;
   final List<SearchEntity> frequent;
   final String origin;
@@ -126,6 +128,7 @@ class _ResourceSearchHomeState extends State<ResourceSearchHome> {
     }) => RaftSearchHomeHeading(label: label, glyph: glyph, actions: actions);
     return ListView(
       key: const PageStorageKey('search-home'),
+      controller: widget.controller,
       primary: false,
       // SearchShellViewport padding plus the home `<div class="p-4">`.
       padding: raftScrollPadding(

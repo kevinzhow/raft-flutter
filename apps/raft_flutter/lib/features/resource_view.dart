@@ -70,6 +70,7 @@ import 'saved_sidebar_entry.dart';
 import 'reading_anchor.dart';
 import 'agent_message_collapse.dart' show captureActivityAgentCollapse;
 import '../platform/content_links.dart';
+import 'tab_root_retap.dart';
 import '../platform/interaction_timing.dart';
 
 export 'activity_task_rows.dart';
@@ -165,7 +166,7 @@ class ResourceView extends StatefulWidget {
   State<ResourceView> createState() => _ResourceViewState();
 }
 
-class _ResourceViewState extends State<ResourceView> {
+class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
   final query = TextEditingController();
   String? lastPublishedQuery;
   TextEditingValue lastSearchEditingValue = TextEditingValue.empty;
@@ -422,6 +423,7 @@ class _ResourceViewState extends State<ResourceView> {
         : searchMemory.current(personal).history;
     return ResourceSearchHome(
       key: ValueKey('search-home-$scope'),
+      controller: searchScroll,
       history: history,
       frequent: frequentEntities,
       origin: w.client.origin,
@@ -1645,8 +1647,9 @@ class _ResourceViewState extends State<ResourceView> {
           ? null
           : totalUnreadCount! + next.delta;
       rows = next.window;
-      acceptedActivityItems = ActivityRowWindow.from(acceptedActivityItems)
-          .replaceKey(key, next.row);
+      acceptedActivityItems = ActivityRowWindow.from(
+        acceptedActivityItems,
+      ).replaceKey(key, next.row);
     });
   }
 
@@ -1817,6 +1820,7 @@ class _ResourceViewState extends State<ResourceView> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    bindRetap();
     bindSectionActivity();
     if (!initializedTaskLayout && widget.section == 'tasks') {
       initializedTaskLayout = true;
@@ -1951,6 +1955,7 @@ class _ResourceViewState extends State<ResourceView> {
     searchDebounce?.cancel();
     clearActivityGesture();
     widget.searchFocusRequests?.removeListener(focusSearchField);
+    disposeRetap();
     queryFocus.dispose();
     query.dispose();
     events?.cancel();
@@ -2807,6 +2812,7 @@ class _ResourceViewState extends State<ResourceView> {
         : widget.section == 'search'
         ? ResourceSearchResults(
             key: PageStorageKey(('search-results', scrollView)),
+            controller: searchScroll,
             query: query.text,
             rows: rows,
             entities: currentSearchEntities,
@@ -3141,6 +3147,25 @@ class _ResourceViewState extends State<ResourceView> {
 
   /// The cursor before any arrow key: the first selectable result.
   String? get firstSearchKey => searchKeys.firstOrNull;
+
+  /// Re-tapping this page's phone tab scrolls its list to the top; Search
+  /// focuses its field once it is there (Web `useTabRootScroll`). Activity's
+  /// next-unread step replaces this handler (INBOX).
+  void bindRetap() {
+    final tab = TabRootRetapScope.of(context);
+    final here =
+        tab == widget.section &&
+        widget.initialSearchChannelId == null &&
+        (tab != 'tasks' || serverTaskPage);
+    retapBinding.bind(
+      here ? tab : null,
+      () => switch (tab) {
+        'tasks' => retapScroll(taskListScroll),
+        'search' => retapScroll(searchScroll, atTop: focusSearchField),
+        _ => retapScroll(listScroll),
+      },
+    );
+  }
 
   /// Cmd/Ctrl+K on the Search page and its first frame (Source
   /// `focusSearchInput`): focus the field and select what it holds.

@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 
 import '../data/workspace_controller.dart';
+import 'tab_root_retap.dart';
 
 /// Principal, page, and every value that changes how the list is built.
 /// Messages and presence are not inputs.
@@ -35,8 +36,11 @@ Widget mobileResourceBody({
   required bool activityMasterDetail,
   required Widget Function(WorkspaceController owner) buildList,
 }) {
+  // The phone bar's re-tap reaches the list only while it is that tab's root.
+  Widget list(WorkspaceController owner) =>
+      TabRootRetapScope(tab: wide ? null : rootTab, child: buildList(owner));
   final useOuter = direct && (route == 'tasks' || route == 'saved');
-  if (!useOuter || outer == null) return buildList(page);
+  if (!useOuter || outer == null) return list(page);
   return MobileResourceDirectPage(
     inputs: mobileResourceInputs(
       outer,
@@ -46,7 +50,7 @@ Widget mobileResourceBody({
       activityMasterDetail: activityMasterDetail,
     ),
     active: active,
-    buildList: () => buildList(outer),
+    buildList: () => list(outer),
   );
 }
 

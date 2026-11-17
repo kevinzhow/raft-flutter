@@ -69,6 +69,7 @@ import 'mobile_settings_owner.dart';
 import 'server_views.dart';
 import 'layout_hold.dart';
 import 'mobile_workspace_navigation.dart';
+import 'tab_root_retap.dart';
 import 'mobile_workspace_pages.dart';
 import 'desktop_navigation_policy.dart';
 import 'activity_destination.dart';
@@ -2008,8 +2009,9 @@ class _WorkspaceViewState extends State<WorkspaceView>
                     t,
                     MediaQuery.sizeOf(context).height,
                   ) +
-                  (DesktopNavigationPolicy.forSection(route)
-                          .usesConversationSidebar
+                  (DesktopNavigationPolicy.forSection(
+                        route,
+                      ).usesConversationSidebar
                       ? sidebarWidth
                       : 0)
             : 0,
@@ -3097,8 +3099,7 @@ class _WorkspaceViewState extends State<WorkspaceView>
       // Native tab bars consume the system inset once, outside the nav recipe.
       bottomInset: 0,
       onSelected: (tab) => selectMobileTab(tab, scope),
-      onReselected: (tab) =>
-          tab == 'search' ? searchFocusRequests.value++ : null,
+      onReselected: TabRootRetap.retap,
       serverTab: MobileServerTab(
         controller: w,
         appUpdate: appUpdate,
@@ -3620,49 +3621,56 @@ class _WorkspaceViewState extends State<WorkspaceView>
                     w.refreshUnread(),
                     w.loadSidebar(),
                   ]),
-                  child: CustomScrollView(
-                    key: const Key('workspace-sidebar'),
-                    physics: mobileHome
-                        ? const AlwaysScrollableScrollPhysics()
+                  child: TabRootScroller(
+                    tab: mobileHome
+                        ? w.navigation.mobileRootTabOf(w.location)
                         : null,
-                    slivers: [
-                      SliverPadding(
-                        padding: recipe.contentInset(
-                          headerInFlow: !showWorkspaceTopBar,
-                          bottomBar: !railNavigation,
-                          bottomInset: edgeToEdgeHome
-                              ? raftSystemBottomInset(context)
-                              : 0,
-                        ),
-                        sliver: SliverMainAxisGroup(
-                          slivers: [
-                            if (mobileHome &&
-                                !mobileTabIds.contains(MobileTabs.search))
+                    builder: (_, retapController) => CustomScrollView(
+                      controller: mobileHome ? retapController : null,
+                      key: const Key('workspace-sidebar'),
+                      physics: mobileHome
+                          ? const AlwaysScrollableScrollPhysics()
+                          : null,
+                      slivers: [
+                        SliverPadding(
+                          padding: recipe.contentInset(
+                            headerInFlow: !showWorkspaceTopBar,
+                            bottomBar: !railNavigation,
+                            bottomInset: edgeToEdgeHome
+                                ? raftSystemBottomInset(context)
+                                : 0,
+                          ),
+                          sliver: SliverMainAxisGroup(
+                            slivers: [
+                              if (mobileHome &&
+                                  !mobileTabIds.contains(MobileTabs.search))
+                                SliverToBoxAdapter(
+                                  child: RaftNavItem(
+                                    key: const Key('nav-search'),
+                                    role: RaftNavItemRole.search,
+                                    viewportHeight: MediaQuery.sizeOf(
+                                      context,
+                                    ).height,
+                                    label: tr('Search'),
+                                    glyph: RaftGlyph.search,
+                                    selected: w.section == 'search',
+                                    onTap: () => select('search'),
+                                  ),
+                                ),
                               SliverToBoxAdapter(
-                                child: RaftNavItem(
-                                  key: const Key('nav-search'),
-                                  role: RaftNavItemRole.search,
-                                  viewportHeight: MediaQuery.sizeOf(context)
-                                      .height,
-                                  label: tr('Search'),
-                                  glyph: RaftGlyph.search,
-                                  selected: w.section == 'search',
-                                  onTap: () => select('search'),
+                                child: SavedSidebarEntry(
+                                  key: const Key('nav-saved'),
+                                  precededByEntry: mobileHome,
+                                  controller: w,
+                                  onTap: () => select('saved'),
                                 ),
                               ),
-                            SliverToBoxAdapter(
-                              child: SavedSidebarEntry(
-                                key: const Key('nav-saved'),
-                                precededByEntry: mobileHome,
-                                controller: w,
-                                onTap: () => select('saved'),
-                              ),
-                            ),
-                            ...conversationSlivers(),
-                          ],
+                              ...conversationSlivers(),
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),

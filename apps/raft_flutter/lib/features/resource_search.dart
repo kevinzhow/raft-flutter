@@ -357,7 +357,9 @@ class ResourceSearchResults extends StatelessWidget {
     this.members = const [],
     this.dms = const [],
     this.currentUser,
+    this.controller,
   });
+  final ScrollController? controller;
   final String query, origin, plan;
   final List<Map<String, dynamic>> agents, members;
   final List<RaftChannel> dms;
@@ -648,6 +650,7 @@ class ResourceSearchResults extends StatelessWidget {
     }
 
     return CustomScrollView(
+      controller: controller,
       // SearchViewport padding plus the results `<div class="p-4">`.
       slivers: [
         SliverPadding(
@@ -702,9 +705,9 @@ class ResourceSearchResults extends StatelessWidget {
                             // SearchEntityResultIcon (searchEntity entityIcon).
                             decoration: plain
                                 ? recipe.flatEntityIconSurface
-                                : rui.RaftSearchEntityRecipe.resolve(tokens: rt)
-                                      .entityIcon
-                                      .decoration(rt),
+                                : rui.RaftSearchEntityRecipe.resolve(
+                                    tokens: rt,
+                                  ).entityIcon.decoration(rt),
                             child: RaftIcon(
                               entity.kind == 'channel'
                                   ? RaftGlyph.hash
