@@ -166,5 +166,8 @@ void main() {
       ),
     );
     expect(label.didExceedMaxLines, isFalse, reason: 'the label is not cut');
+    // `text-body` on a touch phone is 16/24 (desktop 14/22), not a fixed 14.
+    final name = t.widget<Text>(find.text('2 agents on Laptop'));
+    expect(name.style?.fontSize, RaftTypeScale.body.fontSize);
   });
 }

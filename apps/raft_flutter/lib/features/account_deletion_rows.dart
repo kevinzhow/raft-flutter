@@ -58,22 +58,18 @@ class AccountDeletionChecklistRow extends StatelessWidget {
       children: [
         Text(
           name,
-          style: RaftTypography.heading(
-            t,
-            size: 14,
-            line: 20,
+          // `text-body font-semibold text-foreground`
+          style: t.scale(
+            RaftTypeScale.body,
             weight: FontWeight.w600,
-          ).copyWith(color: t.semantic.foreground),
+            color: t.semantic.foreground,
+          ),
         ),
         if (detail != null)
           Text(
             detail!,
-            style: RaftTypography.heading(
-              t,
-              size: 13,
-              line: 18,
-              weight: FontWeight.w400,
-            ).copyWith(color: t.muted),
+            // `text-callout text-foreground-muted`
+            style: t.scale(RaftTypeScale.callout, color: t.muted),
           ),
       ],
     );
@@ -89,12 +85,8 @@ class AccountDeletionChecklistRow extends StatelessWidget {
       spacing: RaftSpace.half,
       children: [
         DefaultTextStyle.merge(
-          style: RaftTypography.heading(
-            t,
-            size: 14,
-            line: 20,
-            weight: FontWeight.w400,
-          ).copyWith(color: t.semantic.foreground),
+          // `text-body text-foreground`
+          style: t.scale(RaftTypeScale.body, color: t.semantic.foreground),
           child: outcome,
         ),
         ...children,
@@ -179,12 +171,11 @@ class AccountDeletionRowNote extends StatelessWidget {
     final t = RaftTokens.of(context);
     return Text(
       text,
-      style: RaftTypography.heading(
-        t,
-        size: 13,
-        line: 18,
-        weight: FontWeight.w400,
-      ).copyWith(color: danger ? t.colors['danger-strong']! : t.muted),
+      // `text-callout text-foreground-muted`
+      style: t.scale(
+        RaftTypeScale.callout,
+        color: danger ? t.colors['danger-strong']! : t.muted,
+      ),
     );
   }
 }
