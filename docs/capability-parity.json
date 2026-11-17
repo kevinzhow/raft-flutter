@@ -4118,10 +4118,10 @@
    "status": "covered",
    "webEntry": "serverStore.loadSettings (Administration > Onboarding; background)",
    "gate": "",
-   "flutterEntry": "administration_view.dart _OnboardingSection reads $base/settings",
+   "flutterEntry": "administration_onboarding_section.dart AdminOnboardingSection reads $base/settings",
    "flutterRefs": [
     {
-     "file": "apps/raft_flutter/lib/features/administration_view.dart",
+     "file": "apps/raft_flutter/lib/features/administration_onboarding_section.dart",
      "needle": "$base/settings"
     }
    ],
@@ -4162,14 +4162,14 @@
    "status": "covered",
    "webEntry": "Language & Region translation controls (background) | Administration > Translation",
    "gate": "",
-   "flutterEntry": "message_translation_store.dart; administration_view.dart _TranslationSection",
+   "flutterEntry": "message_translation_store.dart; administration_switch_sections.dart AdminTranslationSection",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/data/message_translation_store.dart",
      "needle": "translation-settings"
     },
     {
-     "file": "apps/raft_flutter/lib/features/administration_view.dart",
+     "file": "apps/raft_flutter/lib/features/administration_switch_sections.dart",
      "needle": "translation-settings"
     }
    ],
@@ -4208,9 +4208,9 @@
    "capability": "Rename the server (Server Profile), toggle member-permission 'hide humans', set public/lab flags",
    "background": false,
    "status": "covered",
-   "webEntry": "Settings > Server Profile name + 'Save Profile' | Administration > Member Permissions",
+   "webEntry": "Settings > Server Profile name + 'Save Profile' | Administration > Member Permissions switch",
    "gate": "editServerSettings",
-   "flutterEntry": "server_views.dart ServerSettingsView save() | administration_view.dart _MemberPermissionsSection",
+   "flutterEntry": "server_views.dart ServerSettingsView save() | administration_switch_sections.dart AdminMemberPermissionsSection",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/server_views.dart",
@@ -4256,16 +4256,16 @@
    "capability": "Choose the onboarding agent and whether it greets in #all",
    "background": false,
    "status": "covered",
-   "webEntry": "Administration > Onboarding section (agent select, greeting yes/no, Save)",
+   "webEntry": "Administration > Onboarding section (agent select and greeting switch each save when changed)",
    "gate": "editServerSettings",
-   "flutterEntry": "administration_view.dart _OnboardingSection",
+   "flutterEntry": "administration_onboarding_section.dart AdminOnboardingSection",
    "flutterRefs": [
     {
-     "file": "apps/raft_flutter/lib/features/administration_view.dart",
+     "file": "apps/raft_flutter/lib/features/administration_onboarding_section.dart",
      "needle": "$base/onboarding-settings"
     },
     {
-     "file": "apps/raft_flutter/lib/features/administration_view.dart",
+     "file": "apps/raft_flutter/lib/features/administration_onboarding_section.dart",
      "needle": "label: 'Onboarding'"
     }
    ],
@@ -4367,16 +4367,16 @@
    "capability": "Enable or disable message translation for the whole server",
    "background": false,
    "status": "covered",
-   "webEntry": "Administration > Translation checkbox + Save",
+   "webEntry": "Administration > Translation switch (applies at once; Undo toast when turned off)",
    "gate": "editServerSettings",
-   "flutterEntry": "administration_view.dart 'admin-translation-save'",
+   "flutterEntry": "administration_switch_sections.dart AdminTranslationSection 'admin-translation'",
    "flutterRefs": [
     {
-     "file": "apps/raft_flutter/lib/features/administration_view.dart",
-     "needle": "admin-translation-save"
+     "file": "apps/raft_flutter/lib/features/administration_switch_sections.dart",
+     "needle": "admin-translation"
     },
     {
-     "file": "apps/raft_flutter/lib/features/administration_view.dart",
+     "file": "apps/raft_flutter/lib/features/administration_switch_sections.dart",
      "needle": "translation-settings"
     }
    ],
@@ -4424,7 +4424,7 @@
      "needle": "/channels/system/all/${toPublic ? 'restore' : 'hide'}"
     },
     {
-     "file": "apps/raft_flutter/lib/features/administration_view.dart",
+     "file": "apps/raft_flutter/lib/features/administration_switch_sections.dart",
      "needle": "'Hide #all channel'"
     }
    ],
@@ -4448,8 +4448,8 @@
      "needle": "/channels/system/all/${toPublic ? 'restore' : 'hide'}"
     },
     {
-     "file": "apps/raft_flutter/lib/features/administration_view.dart",
-     "needle": "/channels/system/all/${hidden ? 'hide' : 'restore'}"
+     "file": "apps/raft_flutter/lib/features/administration_switch_sections.dart",
+     "needle": "/channels/system/all/${checked ? 'hide' : 'restore'}"
     }
    ],
    "justification": "",
@@ -4699,13 +4699,13 @@
    "capability": "Hide the human directory and counts from non-admin members",
    "background": false,
    "status": "covered",
-   "webEntry": "Administration > Member Permissions checkbox + Save",
-   "gate": "editServerSettings (checkbox disabled otherwise)",
-   "flutterEntry": "administration_view.dart _MemberPermissionsSection",
+   "webEntry": "Administration > Member Permissions switch (applies at once; Undo toast when hidden)",
+   "gate": "editServerSettings (switch disabled otherwise)",
+   "flutterEntry": "administration_switch_sections.dart AdminMemberPermissionsSection",
    "flutterRefs": [
     {
-     "file": "apps/raft_flutter/lib/features/administration_view.dart",
-     "needle": "admin-hide-humans-save"
+     "file": "apps/raft_flutter/lib/features/administration_switch_sections.dart",
+     "needle": "admin-hide-humans"
     }
    ],
    "justification": "",
@@ -4743,16 +4743,16 @@
    "capability": "Hide or restore the #all system channel",
    "background": false,
    "status": "covered",
-   "webEntry": "Administration > System Channels: 'Hide #all channel' checkbox + Save",
+   "webEntry": "Administration > System Channels: 'Hide #all channel' switch (hiding asks first; applies at once)",
    "gate": "changeChannelVisibility",
-   "flutterEntry": "administration_view.dart _SystemChannelsSection",
+   "flutterEntry": "administration_switch_sections.dart AdminSystemChannelsSection",
    "flutterRefs": [
     {
-     "file": "apps/raft_flutter/lib/features/administration_view.dart",
-     "needle": "admin-hide-all-save"
+     "file": "apps/raft_flutter/lib/features/administration_switch_sections.dart",
+     "needle": "admin-hide-all"
     },
     {
-     "file": "apps/raft_flutter/lib/features/administration_view.dart",
+     "file": "apps/raft_flutter/lib/features/administration_switch_sections.dart",
      "needle": "/channels/system/all/"
     }
    ],
@@ -14971,14 +14971,14 @@
    "status": "covered",
    "webEntry": "ServerSetupProjectionGate steps (computer/runtime, create Cindy agent, 'Let's go' handoff) | Settings > Administration > Onboarding 'Finish setup' button (handleFinishSetup) | CreateAgentDialog onboarding finish",
    "gate": "owner/admin; server projection decides surface (non-owner gets surface none)",
-   "flutterEntry": "server_setup_gate.dart transition()/completeCindy() and administration_view.dart _OnboardingSection 'Finish setup' (onFinishSetup)",
+   "flutterEntry": "server_setup_gate.dart transition()/completeCindy() and administration_onboarding_section.dart AdminOnboardingSection 'Finish setup' (onFinishSetup)",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/server_setup_gate.dart",
      "needle": "$base/setup-transition"
     },
     {
-     "file": "apps/raft_flutter/lib/features/administration_view.dart",
+     "file": "apps/raft_flutter/lib/features/administration_onboarding_section.dart",
      "needle": "onFinishSetup: finishSetup"
     }
    ],

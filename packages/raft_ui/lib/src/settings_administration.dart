@@ -12,15 +12,6 @@ import 'package:flutter/services.dart';
 import '../raft_ui.dart';
 import 'recipes/input.g.dart' show RaftInputRecipe;
 
-/// `text-foreground-muted theme-brutal:text-black/40`.
-Color _quiet(RaftTokens t) => t.muted;
-
-/// The `sm:` breakpoint (640px viewport).
-bool _sm(BuildContext context) => raftBreakpointWidth(context) >= 640;
-
-/// The `md:` breakpoint (768px viewport).
-bool _md(BuildContext context) => raftBreakpointWidth(context) >= 768;
-
 /// Save button label state shared by the section forms.
 enum RaftAdminSaveState { idle, saving, saved }
 
@@ -99,7 +90,7 @@ class RaftAdminSaveButton extends StatelessWidget {
         : null,
     glyphSize: 14,
     variant: RaftButtonRecipeVariant.accent,
-    size: RaftButtonRecipeSize.sm,
+    size: RaftButtonRecipeSize.md,
     onPressed: onPressed,
   );
 }
@@ -110,13 +101,16 @@ class RaftAdminCheckboxRow extends StatelessWidget {
   const RaftAdminCheckboxRow({
     super.key,
     required this.title,
-    required this.description,
+    this.description,
     required this.checked,
     this.onChanged,
     this.dimmed = false,
     this.checkboxKey,
   });
-  final String title, description;
+  final String title;
+
+  /// Null: the title alone (v1.24 PreJoinAgreementSection dropped its line).
+  final String? description;
   final bool checked;
 
   /// Null disables the checkbox.
@@ -133,7 +127,7 @@ class RaftAdminCheckboxRow extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.only(top: 2),
+          padding: EdgeInsets.only(top: description == null ? 0 : 2),
           child: RaftCheckbox(
             key: checkboxKey,
             value: checked,
@@ -150,11 +144,13 @@ class RaftAdminCheckboxRow extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 RaftCssText(raftText(context, title), style: text.title),
-                const SizedBox(height: 2),
-                RaftCssText(
-                  raftText(context, description),
-                  style: text.description,
-                ),
+                if (description case final description?) ...[
+                  const SizedBox(height: 2),
+                  RaftCssText(
+                    raftText(context, description),
+                    style: text.description,
+                  ),
+                ],
               ],
             ),
           ),
@@ -218,8 +214,9 @@ class RaftAdminRow {
   final bool saving;
 }
 
-/// AdminsSection's card: the add-owner/admin picker row, the owner/admin
-/// list and the error banner.
+/// AdminsSection's group (Web v1.24): the add-owner/admin fields are the first
+/// row (side by side from 32rem of the group's own width), then a row per
+/// owner and admin; the error banner sits under the whole group.
 class RaftAdminsCard extends StatelessWidget {
   const RaftAdminsCard({
     super.key,
@@ -260,119 +257,121 @@ class RaftAdminsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final t = RaftTokens.of(context), text = RaftSettingsText(t);
     final selected = candidates.where((c) => c.key == selectedKey).firstOrNull;
     final canPromote = selected != null && roleOptions.isNotEmpty && !saving;
-    // The picker, role and action stack when text is scaled up: they no longer
-    // fit one row.
-    final wide = _sm(context) && !RaftScaled.grows(context);
-    final picker = RaftAdminPrincipalPicker(
-      candidates: candidates,
-      selectedKey: selected?.key,
-      enabled: candidates.isNotEmpty && !saving,
-      onSelect: onSelect,
-    );
-    final roleSelect = RaftSelectField<String>(
-      key: const ValueKey('admin-role-select'),
-      label: raftText(context, 'Role'),
-      placeholder: 'Role',
-      value: role,
-      items: [
-        for (final (value, label) in const [
-          ('owner', 'Owner'),
-          ('admin', 'Admin'),
-        ])
-          RaftSelectItem(
-            value: value,
-            enabled: roleOptions.contains(value),
-            label: raftText(context, label),
-            cssText: true,
-          ),
-      ],
-      onChanged: canPromote
-          ? (value) {
-              if (value != null) onRole(value);
-            }
-          : null,
-    );
-    final promote = RaftSettingsRecipeButton(
-      key: const ValueKey('admin-update-role'),
-      label: promoting ? 'Saving…' : 'Update role',
-      variant: RaftButtonRecipeVariant.accent,
-      size: RaftButtonRecipeSize.sm,
-      expand: !wide,
-      onPressed: canPromote ? onPromote : null,
-    );
-    return RaftSettingsCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          RaftCssText(
-            raftText(context, 'Add owner/admin'),
-            style: raftSettingsBody(
-              t,
-              size: 12,
-              line: 16,
-              weight: FontWeight.w700,
-              color: text.muted,
-            ),
-          ),
-          const SizedBox(height: 8),
-          if (wide)
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(child: picker),
-                const SizedBox(width: 8),
-                SizedBox(width: 120, child: roleSelect),
-                const SizedBox(width: 8),
-                promote,
-              ],
-            )
-          else
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                picker,
-                const SizedBox(height: 8),
-                roleSelect,
-                const SizedBox(height: 8),
-                promote,
-              ],
-            ),
-          ?note,
-          const SizedBox(height: 16),
-          Container(
-            padding: const EdgeInsets.only(top: 16),
-            decoration: BoxDecoration(
-              border: Border(top: BorderSide(color: text.edge, width: 2)),
-            ),
-            child: rows.isEmpty
-                ? RaftCssText(
-                    raftText(context, 'No owners or admins yet'),
-                    style: raftSettingsBody(
-                      t,
-                      size: 12,
-                      line: 16,
-                      color: _quiet(t),
-                    ).copyWith(fontStyle: FontStyle.italic),
-                  )
-                : Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      for (final (i, row) in rows.indexed) ...[
-                        if (i > 0) const SizedBox(height: 8),
-                        _AdminListRow(row: row, saving: saving),
-                      ],
-                    ],
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        LayoutBuilder(
+          builder: (context, constraints) {
+            // `@lg`: 32rem of the group's own width, and not under scaled text
+            // (the fields no longer fit one row).
+            final wide =
+                constraints.maxWidth >= raftSettingsRowNarrowWidth &&
+                !RaftScaled.grows(context);
+            final picker = RaftAdminPrincipalPicker(
+              candidates: candidates,
+              selectedKey: selected?.key,
+              enabled: candidates.isNotEmpty && !saving,
+              onSelect: onSelect,
+            );
+            final roleSelect = RaftSelectField<String>(
+              key: const ValueKey('admin-role-select'),
+              label: raftText(context, 'Role'),
+              placeholder: 'Role',
+              value: role,
+              items: [
+                for (final (value, label) in const [
+                  ('owner', 'Owner'),
+                  ('admin', 'Admin'),
+                ])
+                  RaftSelectItem(
+                    value: value,
+                    enabled: roleOptions.contains(value),
+                    label: raftText(context, label),
+                    cssText: true,
                   ),
-          ),
-          if (error case final error?) ...[
-            const SizedBox(height: 16),
-            RaftAdminWarning(error),
-          ],
+              ],
+              onChanged: canPromote
+                  ? (value) {
+                      if (value != null) onRole(value);
+                    }
+                  : null,
+            );
+            final promote = RaftSettingsRecipeButton(
+              key: const ValueKey('admin-update-role'),
+              label: promoting ? 'Saving…' : 'Update role',
+              variant: RaftButtonRecipeVariant.accent,
+              size: RaftButtonRecipeSize.lg,
+              expand: !wide,
+              onPressed: canPromote ? onPromote : null,
+            );
+            final first = RaftListRow(
+              variant: RaftListRowVariant.plain,
+              interactive: false,
+              children: [
+                RaftListRowBody(
+                  children: [
+                    const RaftListRowTitle('Add owner/admin'),
+                    Padding(
+                      padding: const EdgeInsets.only(top: RaftSpace.x2),
+                      child: wide
+                          ? Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(child: picker),
+                                const SizedBox(width: RaftSpace.x2),
+                                SizedBox(width: 120, child: roleSelect),
+                                const SizedBox(width: RaftSpace.x2),
+                                promote,
+                              ],
+                            )
+                          : Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                picker,
+                                const SizedBox(height: RaftSpace.x2),
+                                roleSelect,
+                                const SizedBox(height: RaftSpace.x2),
+                                promote,
+                              ],
+                            ),
+                    ),
+                    ?note,
+                  ],
+                ),
+              ],
+            );
+            return RaftListRowGroup(
+              children: [
+                first,
+                if (rows.isEmpty)
+                  const RaftListRow(
+                    variant: RaftListRowVariant.plain,
+                    interactive: false,
+                    children: [
+                      RaftListRowBody(
+                        children: [
+                          RaftListRowDescription(
+                            'No owners or admins yet',
+                            wrap: true,
+                          ),
+                        ],
+                      ),
+                    ],
+                  )
+                else
+                  for (final row in rows) _AdminListRow(row: row, saving: saving),
+              ],
+            );
+          },
+        ),
+        // Adding and removing share this line, so it is under the whole group.
+        if (error case final error?) ...[
+          const SizedBox(height: RaftSpace.x3),
+          RaftErrorBanner(error, small: true),
         ],
-      ),
+      ],
     );
   }
 }
@@ -400,13 +399,13 @@ class _AdminListRow extends StatelessWidget {
           RaftSettingsRecipeButton(
             key: ValueKey('admin-remove-${p.key}'),
             label: row.saving ? 'Saving…' : row.removeLabel!,
-            size: RaftButtonRecipeSize.sm,
+            size: RaftButtonRecipeSize.md,
             onPressed: saving ? null : row.onRemove,
           )
         else
           RaftCssText(
             raftText(context, row.note ?? ''),
-            style: RaftTypography.mono(t, size: 10, line: 15, color: _quiet(t)),
+            style: t.scale(RaftTypeScale.footnote, color: t.muted),
           ),
       ],
     );
@@ -648,8 +647,8 @@ class RaftAdminInvite {
   final VoidCallback onRevoke;
 }
 
-/// InvitesSection's card: bordered invite rows (`space-y-1.5`) with the
-/// revoke icon button, or the italic empty line once loaded.
+/// InvitesSection's group (Web v1.24): a row per pending invite (the address,
+/// when it was sent, Revoke), or the empty line once loaded.
 class RaftAdminInvitesCard extends StatelessWidget {
   const RaftAdminInvitesCard({
     super.key,
@@ -661,71 +660,35 @@ class RaftAdminInvitesCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final t = RaftTokens.of(context), text = RaftSettingsText(t);
-    return RaftSettingsCard(
-      child: invites.isEmpty
-          ? loading
-                ? const SizedBox.shrink()
-                : _EmptyLine('No pending invites')
-          : Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+    if (invites.isEmpty && loading) return const SizedBox.shrink();
+    return RaftListRowGroup(
+      children: [
+        if (invites.isEmpty)
+          const _EmptyRow('No pending invites')
+        else
+          for (final invite in invites)
+            RaftListRow(
+              key: ValueKey('admin-invite-${invite.id}'),
+              variant: RaftListRowVariant.plain,
+              interactive: false,
               children: [
-                for (final (i, invite) in invites.indexed) ...[
-                  if (i > 0) const SizedBox(height: 6),
-                  Container(
-                    key: ValueKey('admin-invite-${invite.id}'),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: text.softEdge, width: 1),
-                    ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: RaftCssText(
-                            invite.email,
-                            maxLines: 1,
-                            softWrap: false,
-                            overflow: TextOverflow.ellipsis,
-                            style: RaftTypography.mono(
-                              t,
-                              size: 12,
-                              line: 16,
-                              color: text.strong,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        RaftCssText(
-                          invite.date,
-                          style: RaftTypography.mono(
-                            t,
-                            size: 10,
-                            line: 15,
-                            color: _quiet(t),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        _IconAction(
-                          key: ValueKey('admin-invite-revoke-${invite.id}'),
-                          tooltip: 'Revoke invite',
-                          glyph: RaftGlyph.x,
-                          size: 12,
-                          onPressed: invite.onRevoke,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+                RaftListRowBody(children: [RaftListRowTitle(invite.email)]),
+                RaftListRowMeta(invite.date),
+                _IconAction(
+                  key: ValueKey('admin-invite-revoke-${invite.id}'),
+                  tooltip: 'Revoke invite',
+                  glyph: RaftGlyph.x,
+                  size: 14,
+                  onPressed: invite.onRevoke,
+                ),
               ],
             ),
+      ],
     );
   }
 }
 
-/// `Button variant="outline" size="icon-sm"` inside a Tooltip.
+/// `Button variant="outline" size="icon-md"` inside a Tooltip.
 class _IconAction extends StatelessWidget {
   const _IconAction({
     super.key,
@@ -748,29 +711,27 @@ class _IconAction extends StatelessWidget {
         label: '',
         glyph: glyph,
         glyphSize: size,
-        size: RaftButtonRecipeSize.iconSm,
+        size: RaftButtonRecipeSize.iconMd,
         onPressed: onPressed,
       ),
     ),
   );
 }
 
-class _EmptyLine extends StatelessWidget {
-  const _EmptyLine(this.message);
+/// A row with only a description (`ListRowDescription wrap`): the empty state.
+class _EmptyRow extends StatelessWidget {
+  const _EmptyRow(this.message);
   final String message;
   @override
-  Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
-    return RaftCssText(
-      raftText(context, message),
-      style: raftSettingsBody(
-        t,
-        size: 12,
-        line: 16,
-        color: _quiet(t),
-      ).copyWith(fontStyle: FontStyle.italic),
-    );
-  }
+  Widget build(BuildContext context) => RaftListRow(
+    variant: RaftListRowVariant.plain,
+    interactive: false,
+    children: [
+      RaftListRowBody(
+        children: [RaftListRowDescription(message, wrap: true)],
+      ),
+    ],
+  );
 }
 
 // ---------------------------------------------------------------- join links
@@ -792,8 +753,9 @@ class RaftAdminJoinLink {
   final VoidCallback onCopy, onRevoke;
 }
 
-/// JoinLinksSection's card: the create form (Max Uses / Expires At,
-/// `md:grid-cols-2`), the create error and button, then the link rows.
+/// JoinLinksSection's group (Web v1.24): the create form (Max uses / Expires
+/// at side by side from 32rem of the group's own width, the create error and
+/// button) is the first row, then a row per active link.
 class RaftAdminJoinLinksCard extends StatelessWidget {
   const RaftAdminJoinLinksCard({
     super.key,
@@ -818,7 +780,6 @@ class RaftAdminJoinLinksCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final t = RaftTokens.of(context), text = RaftSettingsText(t);
     final maxField = RaftSettingsField(
       label: 'Max uses',
       child: RaftRecipeInput(
@@ -833,171 +794,116 @@ class RaftAdminJoinLinksCard extends StatelessWidget {
       label: 'Expires at',
       child: RaftAdminDateTimeField(value: expiresAt, onChanged: onExpiresAt),
     );
-    return RaftSettingsCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          if (_md(context))
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final wide = constraints.maxWidth >= raftSettingsRowNarrowWidth;
+        return RaftListRowGroup(
+          children: [
+            RaftListRow(
+              variant: RaftListRowVariant.plain,
+              interactive: false,
               children: [
-                Expanded(child: maxField),
-                const SizedBox(width: 12),
-                Expanded(child: expiresField),
-              ],
-            )
-          else ...[
-            maxField,
-            const SizedBox(height: 12),
-            expiresField,
-          ],
-          if (createError case final error?) ...[
-            const SizedBox(height: 12),
-            RaftAdminWarning(error),
-          ],
-          const SizedBox(height: 12),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: RaftSettingsRecipeButton(
-              key: const ValueKey('admin-join-link-create'),
-              label: creating ? 'Creating…' : 'Create invite link',
-              glyph: RaftGlyph.plus,
-              glyphSize: 14,
-              variant: RaftButtonRecipeVariant.accent,
-              size: RaftButtonRecipeSize.sm,
-              onPressed: creating ? null : onCreate,
-            ),
-          ),
-          const SizedBox(height: 16),
-          Container(
-            padding: const EdgeInsets.only(top: 16),
-            decoration: BoxDecoration(
-              border: Border(top: BorderSide(color: text.edge, width: 2)),
-            ),
-            child: links.isEmpty
-                ? loading
-                      ? const SizedBox.shrink()
-                      : _EmptyLine('No active invite links')
-                : Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      for (final (i, link) in links.indexed) ...[
-                        if (i > 0) const SizedBox(height: 8),
-                        _JoinLinkRow(link: link),
-                      ],
+                RaftListRowBody(
+                  children: [
+                    if (wide)
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(child: maxField),
+                          const SizedBox(width: RaftSpace.x3),
+                          Expanded(child: expiresField),
+                        ],
+                      )
+                    else ...[
+                      maxField,
+                      const SizedBox(height: RaftSpace.x3),
+                      expiresField,
                     ],
-                  ),
-          ),
-        ],
-      ),
+                    if (createError case final error?) ...[
+                      const SizedBox(height: RaftSpace.x3),
+                      RaftErrorBanner(error, small: true),
+                    ],
+                    const SizedBox(height: RaftSpace.x3),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: RaftSettingsRecipeButton(
+                        key: const ValueKey('admin-join-link-create'),
+                        label: creating ? 'Creating…' : 'Create invite link',
+                        glyph: RaftGlyph.plus,
+                        glyphSize: 14,
+                        size: RaftButtonRecipeSize.md,
+                        onPressed: creating ? null : onCreate,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            if (links.isEmpty)
+              if (!loading) const _EmptyRow('No active invite links')
+              else
+                const SizedBox.shrink()
+            else
+              for (final link in links) _JoinLinkRow(link: link),
+          ],
+        );
+      },
     );
   }
 }
 
+/// JoinLinkRow (Web v1.24): the link and its uses and expiry under it, Copy and
+/// Revoke at the row's end.
 class _JoinLinkRow extends StatelessWidget {
   const _JoinLinkRow({required this.link});
   final RaftAdminJoinLink link;
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context), text = RaftSettingsText(t);
-    return Container(
+    return RaftListRow(
       key: ValueKey('admin-join-link-${link.id}'),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        border: Border.all(color: text.softEdge, width: 1),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // `flex items-center gap-2`: Blink centres the 28px icon buttons
-          // and the 8 + 16.5 + borders URL box in the taller one and snaps
-          // each to whole pixels; Flutter would paint the half pixel.
-          Builder(
-            builder: (context) {
-              final urlHeight = 8 + 16.5 + (2.0);
-              final rowHeight = urlHeight > 28 ? urlHeight : 28.0;
-              double snapped(double h) => ((rowHeight - h) / 2).roundToDouble();
-              Widget top(double h, Widget child) => Padding(
-                padding: EdgeInsets.only(top: snapped(h)),
-                child: child,
-              );
-              return ConstrainedBox(
-                // The row height is a minimum: a taller URL line (larger text,
-                // Android Chinese control line) grows the row.
-                constraints: BoxConstraints(minHeight: rowHeight),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: top(
-                        urlHeight,
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: text.panel,
-                            border: Border.all(color: text.edge, width: 1),
-                          ),
-                          child: ConstrainedBox(
-                            // Blink's 16.5px line box (Flutter rounds a
-                            // paragraph's line to whole pixels); a minimum, so
-                            // a taller line box grows the field.
-                            constraints: const BoxConstraints(minHeight: 16.5),
-                            child: SelectableText(
-                              link.url,
-                              maxLines: 1,
-                              style: RaftTypography.mono(
-                                t,
-                                size: 11,
-                                line: 16.5,
-                                color: text.strong,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    top(
-                      28,
-                      _IconAction(
-                        key: ValueKey('admin-join-link-copy-${link.id}'),
-                        tooltip: 'Copy invite link',
-                        glyph: link.copied ? RaftGlyph.check : RaftGlyph.copy,
-                        size: 14,
-                        onPressed: link.onCopy,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    top(
-                      28,
-                      _IconAction(
-                        key: ValueKey('admin-join-link-revoke-${link.id}'),
-                        tooltip: 'Revoke invite link',
-                        glyph: RaftGlyph.x,
-                        size: 14,
-                        onPressed: link.onRevoke,
-                      ),
-                    ),
-                  ],
+      variant: RaftListRowVariant.plain,
+      interactive: false,
+      children: [
+        RaftListRowBody(
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: t.colors['fill-muted'] ?? text.panel,
+                borderRadius: BorderRadius.circular(
+                  t.size('radius.control', fallback: 6),
                 ),
-              );
-            },
-          ),
-          const SizedBox(height: 6),
-          RaftCssText(
-            link.meta,
-            style: RaftTypography.mono(
-              t,
-              size: 11,
-              line: 16.5,
-              color: text.faint,
+              ),
+              child: SelectableText(
+                link.url,
+                maxLines: 1,
+                style: RaftTypography.mono(
+                  t,
+                  size: 12,
+                  line: 18,
+                  color: text.strong,
+                ),
+              ),
             ),
-          ),
-        ],
-      ),
+            RaftListRowMeta(link.meta),
+          ],
+        ),
+        _IconAction(
+          key: ValueKey('admin-join-link-copy-${link.id}'),
+          tooltip: 'Copy invite link',
+          glyph: link.copied ? RaftGlyph.check : RaftGlyph.copy,
+          size: 14,
+          onPressed: link.onCopy,
+        ),
+        _IconAction(
+          key: ValueKey('admin-join-link-revoke-${link.id}'),
+          tooltip: 'Revoke invite link',
+          glyph: RaftGlyph.x,
+          size: 14,
+          onPressed: link.onRevoke,
+        ),
+      ],
     );
   }
 }
@@ -1231,7 +1137,6 @@ class RaftAdminAgreementCard extends StatelessWidget {
           RaftAdminCheckboxRow(
             checkboxKey: const ValueKey('admin-agreement-enabled'),
             title: 'Require agreement before joining',
-            description: 'New invite-link and community joins must accept the current version before membership is created.',
             checked: enabled,
             dimmed: busy,
             onChanged: busy ? null : onEnabled,

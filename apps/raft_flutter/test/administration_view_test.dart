@@ -431,11 +431,12 @@ void main() {
       ]);
     });
 
-    testWidgets('owners & admins: an admin sees Owner only', (t) async {
+    testWidgets('owners & admins: an admin may remove an admin agent', (t) async {
       final (w, _) = _workspace(_routes(), role: 'admin');
       addTearDown(w.dispose);
       await _pump(t, w);
-      expect(_in('admins', find.text('Owner only')), findsOneWidget);
+      // The sole owner stays; an admin cannot remove an owner.
+      expect(_in('admins', find.text('Last owner')), findsOneWidget);
       // v1.24 canChangeAgentMemberRole: an admin can demote an admin agent.
       expect(
         find.byKey(const ValueKey('admin-remove-agent:a-bot')),
