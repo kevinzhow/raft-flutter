@@ -21,6 +21,7 @@ class _Case {
     api.routes['GET /agents/$_agent/hosted-runtime/model'] = (_) => {
       'label': 'DeepSeek Flash',
     };
+    api.routes['GET /raftbench/readers'] = (_) => {'readers': []};
     api.routes['PUT /raftbench'] = (_) => {'saved': true};
     api.routes['PUT /raftbench/assignment'] = (_) => {'saved': true};
     api.routes['POST /raftbench/agents'] = (_) => {'agentId': 'new'};
@@ -61,8 +62,10 @@ Future<_Case> _mount(
         controller: c.controller,
         allowed: true,
         onOpenAgent: c.openedAgents.add,
-        onOpenMessage: (channel, message) =>
-            c.openedMessages.add((channel, message)),
+        onOpenEvidence: (channel, target, message) async {
+          c.openedMessages.add((channel, message));
+          return true;
+        },
       ),
     ),
     size: size,
@@ -75,6 +78,12 @@ Future<_Case> _mount(
 
 Finder _text(String s) => find.text(s);
 
+/// The "Reading progress and coverage" `<details>` is collapsed (Web v1.24).
+Future<void> _openCoverage(WidgetTester t) async {
+  await t.tap(_text('Reading progress and coverage'));
+  await t.pump();
+}
+
 void main() {
   for (final (name, size) in [
     ('desktop', raftbenchDesktop),
@@ -86,10 +95,7 @@ void main() {
         final semantics = t.ensureSemantics();
         final c = await _mount(t, 'dashboard-disabled', size: size);
         expect(_text('Patterns and improvements'), findsOneWidget);
-        expect(
-          _text('Reads selected channels · no DM replies'),
-          findsOneWidget,
-        );
+        expect(_text('Reads selected channels · no DM replies'), findsNothing);
         expect(_text('Enable and start analysis'), findsOneWidget);
         // `<details open>` while disabled: sources and the start date are visible.
         expect(_text('Channels to analyze (up to 50)'), findsOneWidget);
@@ -121,6 +127,7 @@ void main() {
         // once the user picked one).
         expect(put.containsKey('historyFrom'), isFalse);
         expect(_text('Disable and clear results'), findsOneWidget);
+        await _openCoverage(t);
         expect(_text('Waiting for the analysis agent…'), findsOneWidget);
         expect(
           find.bySemanticsLabel(RegExp('Analysis progress')),
@@ -134,9 +141,7 @@ void main() {
           reason: 'a progress record exists: it is the batch wording',
         );
         expect(
-          _text(
-            'This batch has read 0 messages. The background scan continues in further batches.',
-          ),
+          _text('Reading new messages. Findings so far stay visible.'),
           findsOneWidget,
         );
         semantics.dispose();
@@ -165,44 +170,43 @@ void main() {
     await unmount(t);
   });
 
-  testWidgets(
-    'queued and running show the progress bar and the batch counters',
-    (t) async {
-      final c = await _mount(t, 'dashboard-running');
-      expect(_text('Reading channel messages…'), findsOneWidget);
-      expect(
-        _text('Read 96 of 189 messages · 2 batches accepted'),
-        findsOneWidget,
-      );
-      expect(
-        _text(
-          'This batch has read 41 messages. The background scan continues in further batches.',
-        ),
-        findsOneWidget,
-      );
-      expect(
-        _text('Current cloud agent model: DeepSeek Flash'),
-        findsOneWidget,
-      );
-      expect(
-        find.textContaining(
-          '2 channels · history continues in background; checks for new messages every 15 minutes',
-        ),
-        findsOneWidget,
-      );
-      // Selected sources match the saved ones.
-      expect(c.controller.selected, [_c1, _c2]);
-      // A running analysis shows no verdict line yet.
-      expect(_text('Analysis complete'), findsNothing);
-      await unmount(t);
-    },
-  );
+  testWidgets('queued and running show the progress bar and the batch counters', (
+    t,
+  ) async {
+    final c = await _mount(t, 'dashboard-running');
+    await _openCoverage(t);
+    expect(_text('Reading channel messages…'), findsOneWidget);
+    expect(_text('Read 96 of 189 messages so far'), findsOneWidget);
+    expect(
+      _text('Reading new messages. Findings so far stay visible.'),
+      findsOneWidget,
+    );
+    expect(
+      _text(
+        'New messages are read in the background. Findings so far stay visible.',
+      ),
+      findsOneWidget,
+    );
+    expect(_text('Current cloud agent model: DeepSeek Flash'), findsOneWidget);
+    expect(
+      find.textContaining(
+        '2 channels · history continues in background; checks for new messages every 15 minutes',
+      ),
+      findsOneWidget,
+    );
+    // Selected sources match the saved ones.
+    expect(c.controller.selected, [_c1, _c2]);
+    // A running analysis shows no verdict line yet.
+    expect(_text('Analysis complete'), findsNothing);
+    await unmount(t);
+  });
 
   testWidgets('ready: findings, evidence references and the proposal', (
     t,
   ) async {
     final c = await _mount(t, 'dashboard-ready');
-    expect(_text('Analysis complete'), findsOneWidget);
+    // A ready run says nothing (Web v1.24 shows only a state that needs one).
+    expect(_text('Analysis complete'), findsNothing);
     expect(_text('Completion claim needs verification'), findsOneWidget);
     expect(_text('Repeated attempts'), findsOneWidget);
     expect(
@@ -212,18 +216,12 @@ void main() {
       findsOneWidget,
     );
     expect(
-      _text(
-        'Evidence: conversation only; actual task or tool outcome is unverified',
-      ),
-      findsOneWidget,
-    );
-    expect(
       _text('Evidence: insufficient to determine the outcome'),
       findsOneWidget,
     );
-    expect(_text('Task intent: Actively pursued'), findsOneWidget);
-    expect(_text('Task intent: Unknown'), findsOneWidget);
-    expect(_text('1 counterexamples were considered'), findsOneWidget);
+    expect(find.textContaining('Task intent'), findsNothing);
+    expect(find.textContaining('counterexamples'), findsNothing);
+    expect(find.textContaining('Latest evidence: '), findsWidgets);
     expect(_text('Suggestion'), findsOneWidget);
     expect(
       _text('Ask the agent to post the deploy link before closing the task.'),
@@ -241,10 +239,10 @@ void main() {
     expect(_text('Channels to analyze (up to 50)'), findsNothing);
 
     // Evidence opens the source message in its channel.
-    await t.tap(_text('Evidence #general · 3f9c1a77'));
+    await t.tap(_text('#general 3f9c1a77'));
     expect(c.openedMessages, [(_c1, '3f9c1a77')]);
-    await t.tap(_text('Evidence #general · 3f9c1a78'));
-    await t.tap(_text('Counterevidence #random · 8e2d4b10'));
+    await t.tap(_text('#general 3f9c1a78'));
+    await t.tap(_text('#random 8e2d4b10').last);
     expect(c.openedMessages.map((e) => e.$1), [_c1, _c1, _c2]);
     expect(c.openedMessages.last.$2, '8e2d4b10-6c3f-4a9b-b2d4-1f0e9d8c7b63');
     await unmount(t);
@@ -273,14 +271,22 @@ void main() {
           controller: c.controller,
           allowed: true,
           onOpenAgent: (_) {},
-          onOpenMessage: (_, _) {},
+          onOpenEvidence: (_, _, _) async => true,
         ),
       ),
     );
     c.controller.start();
     await settle(t);
-    expect(_text('Source unavailable in this view'), findsNWidgets(2));
-    expect(find.textContaining('Evidence #general'), findsNothing);
+    // `#general:3f9c1a77` names a reply in a readable channel: still a link.
+    expect(
+      find.byWidgetPredicate(
+        (w) =>
+            w is RaftTooltip && w.message == 'Source unavailable in this view',
+      ),
+      findsOneWidget,
+    );
+    expect(_text('#general:3f9c1a77 3f9c1a77'), findsOneWidget);
+    expect(_text('#elsewhere 3f9c1a78'), findsOneWidget);
     await unmount(t);
   });
 
@@ -290,7 +296,10 @@ void main() {
     await t.ensureVisible(_text('Next page'));
     await t.tap(_text('Next page'));
     await settle(t);
-    expect(c.api.where('GET /raftbench').last.query, {'page': 2});
+    expect(c.api.where('GET /raftbench').last.query, {
+      'page': 2,
+      'period': 'recent',
+    });
     c.api.routes['GET /raftbench'] = (call) {
       final json = raftbenchMap('dashboard-ready');
       (json['pagination']! as Map)['page'] = 2;
@@ -302,13 +311,17 @@ void main() {
     await t.ensureVisible(_text('Previous page'));
     await t.tap(_text('Previous page'));
     await settle(t);
-    expect(c.api.where('GET /raftbench').last.query, {'page': 1});
+    expect(c.api.where('GET /raftbench').last.query, {
+      'page': 1,
+      'period': 'recent',
+    });
     await unmount(t);
   });
 
   testWidgets('partial and stale analyses say so', (t) async {
     await _mount(t, 'dashboard-partial');
-    expect(_text('Partial analysis — coverage is incomplete'), findsOneWidget);
+    // A progressive scan keeps its partial state to the reason line.
+    expect(_text('Partial analysis — coverage is incomplete'), findsNothing);
     expect(_text('Reading stopped at the character limit.'), findsOneWidget);
     await unmount(t);
     await _mount(t, 'dashboard-stale');
@@ -326,14 +339,17 @@ void main() {
     t,
   ) async {
     await _mount(t, 'dashboard-skipped-window');
+    await _openCoverage(t);
+    // Both ranges are lines of one warning banner.
+    final banner = find.textContaining('(44 messages)');
+    expect(banner, findsOneWidget);
+    expect(find.textContaining('(Unknown messages)'), findsOneWidget);
     expect(
       find.textContaining(
         'was not analyzed after 3 failed attempts. Its outcome is unknown.',
       ),
-      findsNWidgets(2),
+      findsOneWidget,
     );
-    expect(find.textContaining('(44 messages)'), findsOneWidget);
-    expect(find.textContaining('(Unknown messages)'), findsOneWidget);
     expect(_text('A chunk was skipped.'), findsOneWidget);
     await unmount(t);
   });
@@ -351,6 +367,7 @@ void main() {
       );
       await unmount(t);
       await _mount(t, 'dashboard-provision-failed');
+      await _openCoverage(t);
       expect(
         _text(
           'The analysis agent could not start. An administrator needs to check the cloud agent service.',
@@ -366,6 +383,7 @@ void main() {
     t,
   ) async {
     final c = await _mount(t, 'dashboard-outside-window');
+    await _openCoverage(t);
     expect(
       _text('Selected channels: 412 messages total; 0 in the analysis range.'),
       findsOneWidget,
@@ -390,7 +408,9 @@ void main() {
 
   testWidgets('no material: the window had nothing', (t) async {
     await _mount(t, 'dashboard-no-material');
-    expect(_text('No material in this window'), findsOneWidget);
+    // An empty poll of a progressive scan has no verdict line.
+    expect(_text('No material in this window'), findsNothing);
+    await _openCoverage(t);
     expect(
       _text(
         'No messages were read in this window; nothing was analyzed. Try a channel with recent messages.',
@@ -405,13 +425,16 @@ void main() {
     'editing the range on an enabled analysis offers Apply and restarts it',
     (t) async {
       final c = await _mount(t, 'dashboard-ready');
+      await t.ensureVisible(_text('Sources and historical range'));
       await t.tap(_text('Sources and historical range'));
       await t.pump();
       expect(_text('Apply changes and restart'), findsNothing);
+      await t.ensureVisible(_text('Past 30 days'));
       await t.tap(_text('Past 30 days'));
       await t.pump();
       expect(_text('Apply changes and restart'), findsOneWidget);
       // Assign is blocked while edits are pending.
+      await t.ensureVisible(_text('Apply changes and restart'));
       await t.tap(_text('Apply changes and restart'));
       await settle(t);
       final put = c.api.where('PUT /raftbench').single.data! as Map;
@@ -470,7 +493,7 @@ void main() {
           controller: c.controller,
           allowed: true,
           onOpenAgent: (_) {},
-          onOpenMessage: (_, _) {},
+          onOpenEvidence: (_, _, _) async => true,
         ),
       ),
     );
@@ -478,8 +501,12 @@ void main() {
     await settle(t);
     expect(
       _text(
-        'Analysis settings could not be loaded or saved. Check access and try again.',
+        'Analysis settings could not be loaded (code: HTTP 403). Refresh the page to try again.',
       ),
+      findsOneWidget,
+    );
+    expect(
+      _text('Your account may not have access to RaftBench on this server.'),
       findsOneWidget,
     );
     expect(c.enabled, [false]);
@@ -498,7 +525,7 @@ void main() {
           controller: c.controller,
           allowed: true,
           onOpenAgent: (_) {},
-          onOpenMessage: (_, _) {},
+          onOpenEvidence: (_, _, _) async => true,
         ),
       ),
     );
@@ -509,7 +536,8 @@ void main() {
   testWidgets('Chinese wording (Web zh-cn)', (t) async {
     await _mount(t, 'dashboard-ready', locale: const Locale('zh'));
     expect(_text('行为模式与改进'), findsOneWidget);
-    expect(_text('本轮分析已完成'), findsOneWidget);
+    expect(_text('读取进度与覆盖范围'), findsOneWidget);
+    expect(_text('Agent 访问'), findsOneWidget);
     expect(_text('完成声明需要核实'), findsOneWidget);
     await unmount(t);
   });

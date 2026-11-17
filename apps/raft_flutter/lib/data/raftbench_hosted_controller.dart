@@ -1,24 +1,31 @@
 import 'dart:async';
+import 'dart:io' show SocketException;
 
 import 'package:flutter/foundation.dart';
+import 'package:raft_client/raft_client.dart' show RaftApiException;
 
+import 'raftbench_reader_controller.dart';
 import 'package:raft_ui/raft_ui.dart'
     show
         RaftForegroundPeriodic,
         RaftbenchDashboard,
+        RaftbenchFeedback,
+        RaftbenchGroup,
         RaftbenchHostedPanel,
+        raftbenchPatternKinds,
         RaftbenchOption,
         RaftbenchRun,
         RaftbenchServiceAgent,
         raftbenchHistoryDays;
 
 /// One HTTP call of the signed-in session (`RaftClient.request`).
-typedef RaftbenchRequest = Future<dynamic> Function(
-  String method,
-  String path, {
-  Object? data,
-  Map<String, dynamic>? query,
-});
+typedef RaftbenchRequest =
+    Future<dynamic> Function(
+      String method,
+      String path, {
+      Object? data,
+      Map<String, dynamic>? query,
+    });
 
 /// The conversation-insights panel (Web `HostedAnalysis.tsx`): reads the
 /// server-owned dashboard every 5 seconds while the page is open, and writes
@@ -39,7 +46,16 @@ class RaftbenchHostedController extends ChangeNotifier
     required this.onEnabled,
     DateTime Function()? now,
     this.poll = true,
-  }) : now = now ?? DateTime.now;
+    this.channelId,
+  }) : now = now ?? DateTime.now {
+    readers = RaftbenchReaderController(
+      request: (method, path, {data}) => request(method, path, data: data),
+      current: () => !_disposed && identity() == _identity,
+    );
+  }
+
+  /// The channel the page is scoped to; null reads the whole workspace.
+  final String? channelId;
 
   final RaftbenchRequest request;
 
@@ -61,17 +77,29 @@ class RaftbenchHostedController extends ChangeNotifier
 
   RaftbenchDashboard? _data;
   @override
+  bool loading = true, saving = false;
   @override
-  @override
-  bool loading = true, saving = false, failed = false;
+  String? loadError, saveError; // ignore: raft_lints/avoid_imperative_notice_state -- Web `loadError`/`saveError`: a load clears the first and a save the second when it starts; the controller dies with its identity.
   @override
   int page = 1;
+  @override
+  String period = 'recent';
+  @override
+  String? kind;
+  @override
+  Map<String, RaftbenchGroup>? groups;
+  @override
+  bool groupsUnavailable = false, feedbackError = false; // ignore: raft_lints/avoid_imperative_notice_state -- Web `feedbackError`: cleared when the next vote starts; the controller dies with its identity.
+  @override
+  String? feedbackSaving;
+  Map<String, int> _groupPages = {};
+  @override
+  late final RaftbenchReaderController readers;
   @override
   List<RaftbenchServiceAgent> serviceAgents = const [];
   List<RaftbenchOption> _options = const [];
   List<String>? _selection;
   String? _historyDate;
-  @override
   @override
   String? modelAgentId, modelLabel;
 
@@ -99,6 +127,7 @@ class RaftbenchHostedController extends ChangeNotifier
       roleAllowed();
 
   void start() {
+    unawaited(readers.load());
     unawaited(load());
     if (poll) {
       _poll ??= RaftForegroundPeriodic(const Duration(seconds: 5), () {
@@ -221,6 +250,24 @@ class RaftbenchHostedController extends ChangeNotifier
       invalidHistory ||
       ((data?.revision ?? 0) > 0 && changed);
 
+  /// A diagnostic code safe to show: the HTTP status or the transport failure,
+  /// never the response body (Web `errorCode`).
+  static String errorCode(Object error) {
+    if (error is RaftApiException && error.status != null) {
+      return 'HTTP ${error.status}';
+    }
+    if (error is TimeoutException) return 'TIMEOUT';
+    if (error is SocketException) return 'NETWORK';
+    return 'UNKNOWN';
+  }
+
+  Map<String, dynamic> _query(int pageNumber, {String? kindFilter}) => {
+    'page': pageNumber,
+    'period': period,
+    'kind': ?kindFilter,
+    'channelId': ?channelId,
+  };
+
   // Loading.
 
   Future<void> load() async {
@@ -228,12 +275,60 @@ class RaftbenchHostedController extends ChangeNotifier
     final seq = ++_loadSeq;
     _reading = true;
     try {
-      final raw = await request('GET', '/raftbench', query: {'page': page});
+      final raw = await request(
+        'GET',
+        '/raftbench',
+        query: _query(page, kindFilter: kind),
+      );
       if (seq != _loadSeq || !_current()) return;
       final parsed = RaftbenchDashboard.parse(raw);
+      Map<String, RaftbenchGroup>? grouped;
+      var groupFailed = false;
+      final counts = parsed.kindCounts;
+      final kinds = counts == null
+          ? const <String>[]
+          : [
+              for (final value in raftbenchPatternKinds)
+                if ((counts[value] ?? 0) > 0) value,
+            ];
+      if (kind == null &&
+          parsed.enabled &&
+          counts != null &&
+          kinds.isNotEmpty) {
+        // A failed group fetch falls back to the flat paged list instead of
+        // failing the whole page.
+        try {
+          final pages = await Future.wait([
+            for (final value in kinds)
+              Future.wait([
+                for (var i = 0; i < (_groupPages[value] ?? 1); i++)
+                  request(
+                    'GET',
+                    '/raftbench',
+                    query: _query(i + 1, kindFilter: value),
+                  ).then(RaftbenchDashboard.parse),
+              ]),
+          ]);
+          grouped = {
+            for (final (i, value) in kinds.indexed)
+              value: RaftbenchGroup(
+                patterns: [
+                  for (final p in pages[i]) ...?p.run?.report?.patterns,
+                ],
+                feedback: [for (final p in pages[i]) ...p.findingFeedback],
+                total: pages[i].first.pagination.total,
+              ),
+          };
+        } catch (_) {
+          groupFailed = true;
+        }
+        if (seq != _loadSeq || !_current()) return;
+      }
       _data = parsed;
       loading = false;
-      failed = false;
+      loadError = null;
+      groups = grouped;
+      groupsUnavailable = groupFailed;
       _changed();
       onEnabled(parsed.enabled);
       _syncModelPoll();
@@ -249,11 +344,11 @@ class RaftbenchHostedController extends ChangeNotifier
           _changed();
         }
       }
-    } catch (_) {
+    } catch (error) {
       if (seq == _loadSeq && _current()) {
         _data = null;
         loading = false;
-        failed = true;
+        loadError = errorCode(error);
         _changed();
         onEnabled(false);
       }
@@ -338,7 +433,7 @@ class RaftbenchHostedController extends ChangeNotifier
   void setPage(int value) {
     page = value < 1 ? 1 : value;
     _changed();
-    unawaited(load());
+    _reload();
   }
 
   String _startIso(String day) =>
@@ -357,7 +452,7 @@ class RaftbenchHostedController extends ChangeNotifier
     final date = startDate ?? (useDraftDate ? _historyDate : null);
     saving = true;
     _writing = true;
-    failed = false;
+    saveError = null;
     _changed();
     _loadSeq++;
     _reading = false;
@@ -385,9 +480,9 @@ class RaftbenchHostedController extends ChangeNotifier
         _changed();
         await load();
       }
-    } catch (_) {
+    } catch (error) {
       if (seq == _mutationSeq && _current()) {
-        failed = true;
+        saveError = errorCode(error);
         _changed();
       }
     } finally {
@@ -419,7 +514,7 @@ class RaftbenchHostedController extends ChangeNotifier
     if (!_current() || saving) return;
     saving = true;
     _writing = true;
-    failed = false;
+    saveError = null;
     _changed();
     try {
       await request(
@@ -427,9 +522,9 @@ class RaftbenchHostedController extends ChangeNotifier
         '/raftbench/agents',
         data: const <String, Object?>{},
       );
-    } catch (_) {
+    } catch (error) {
       if (_current()) {
-        failed = true;
+        saveError = errorCode(error);
         _changed();
       }
     } finally {
@@ -450,7 +545,7 @@ class RaftbenchHostedController extends ChangeNotifier
     if (!_current() || snapshot == null || assignmentBlocked) return;
     saving = true;
     _writing = true;
-    failed = false;
+    saveError = null;
     _changed();
     try {
       await request(
@@ -467,9 +562,9 @@ class RaftbenchHostedController extends ChangeNotifier
       );
       page = 1;
       onEnabled(true);
-    } catch (_) {
+    } catch (error) {
       if (_current()) {
-        failed = true;
+        saveError = errorCode(error);
         _changed();
       }
     } finally {
@@ -482,8 +577,92 @@ class RaftbenchHostedController extends ChangeNotifier
     }
   }
 
+  /// Switch the evidence period (Web `choosePeriod`): the view empties and
+  /// reloads from page 1.
+  @override
+  void choosePeriod(String value) {
+    if (value == period) return;
+    _resetView();
+    period = value;
+    _changed();
+    _reload();
+  }
+
+  /// Filter by pattern kind (Web `filterKind`); null is "All patterns".
+  @override
+  void filterKind(String? value) {
+    if (value == kind) return;
+    _resetView();
+    kind = value;
+    _changed();
+    _reload();
+  }
+
+  /// A changed input restarts the read (Web: the `load` callback changes, so
+  /// its effect aborts the one in flight and reads again at once).
+  void _reload() {
+    _loadSeq++;
+    _reading = false;
+    unawaited(load());
+  }
+
+  void _resetView() {
+    _loadSeq++;
+    _reading = false;
+    page = 1;
+    _groupPages = {};
+    groups = null;
+    _data = null;
+    loading = true;
+  }
+
+  /// "Show N more" of one group: one more server page of that kind.
+  @override
+  void showMore(String value) {
+    if (!raftbenchPatternKinds.contains(value)) return;
+    _groupPages = {..._groupPages, value: (_groupPages[value] ?? 1) + 1};
+    _reload();
+  }
+
+  /// Vote on a finding (`PUT /raftbench/findings/:id/feedback`); voting the
+  /// selected value again clears it. The dashboard is re-read on success.
+  @override
+  Future<void> reviewFinding(RaftbenchFeedback feedback, String vote) async {
+    final snapshot = data;
+    if (!_current() ||
+        snapshot == null ||
+        feedback.id.isEmpty ||
+        feedback.version.isEmpty ||
+        feedbackSaving != null) {
+      return;
+    }
+    feedbackSaving = feedback.id;
+    feedbackError = false;
+    _changed();
+    try {
+      await request(
+        'PUT',
+        '/raftbench/findings/${feedback.id}/feedback',
+        data: {
+          'revision': snapshot.revision,
+          'version': feedback.version,
+          'value': feedback.value == vote ? null : vote,
+        },
+      );
+      if (_current()) await load();
+    } catch (_) {
+      if (_current()) feedbackError = true;
+    } finally {
+      if (_current()) {
+        feedbackSaving = null;
+        _changed();
+      }
+    }
+  }
+
   @override
   void dispose() {
+    readers.dispose();
     _disposed = true;
     _loadSeq++;
     _mutationSeq++;

@@ -68,6 +68,37 @@ class RaftbenchPattern {
   );
 }
 
+/// The four pattern kinds, in the Web's order (`RAFTBENCH_PATTERN_KINDS`).
+const raftbenchPatternKinds = [
+  'repeated_clarification',
+  'repeated_attempt',
+  'unsupported_completion',
+  'successful_practice',
+];
+
+/// One finding's reviewer vote (`findingFeedback[i]`): `value` is `agree`,
+/// `inaccurate` or null (no vote). Parallel to the report's patterns.
+class RaftbenchFeedback {
+  const RaftbenchFeedback({
+    required this.id,
+    required this.version,
+    required this.value,
+    required this.evidenceAt,
+  });
+  final String id, version;
+  final String? value, evidenceAt;
+
+  static List<RaftbenchFeedback> parseList(Object? v) => [
+    for (final r in _rows(v))
+      RaftbenchFeedback(
+        id: _string(r['id']) ?? '',
+        version: _string(r['version']) ?? '',
+        value: _string(r['value']),
+        evidenceAt: _string(r['evidenceAt']),
+      ),
+  ];
+}
+
 class RaftbenchSkippedRange {
   const RaftbenchSkippedRange(this.from, this.to, this.messages);
   final String from, to;
@@ -110,7 +141,15 @@ class RaftbenchRun {
     required this.exhausted,
     required this.failureReason,
     required this.report,
+    this.sourceKind,
+    this.unreadFailures = const {},
   });
+
+  /// `channel` or `thread` while a stream is read; null on older servers.
+  final String? sourceKind;
+
+  /// Failed reads per stream (`channel` / `thread`), from `unreadRetries`.
+  final Map<String, int> unreadFailures;
 
   /// `stale`, `queued`, `running`, `ready`, `partial` or `failed`.
   final String runId, status, from, to, updatedAt, stopReason;
@@ -140,6 +179,13 @@ class RaftbenchRun {
       stopReason: _string(json['stopReason']) ?? '',
       exhausted: json['exhausted'] == true,
       failureReason: _string(json['failureReason']),
+      sourceKind: _string(json['sourceKind']),
+      unreadFailures: {
+        if (json['unreadRetries'] is Map)
+          for (final e in (json['unreadRetries'] as Map).entries)
+            if (e.key is String && e.value is Map)
+              e.key as String: _int((e.value as Map)['failures']),
+      },
       report: report is Map
           ? RaftbenchReport.parse(Map<String, Object?>.from(report))
           : null,
@@ -152,9 +198,33 @@ class RaftbenchProgress {
     required this.readMessages,
     required this.completedBatches,
     required this.scannedThroughAt,
+    this.streamRead = const {},
   });
   final int readMessages, completedBatches;
   final String? scannedThroughAt;
+
+  /// Messages read per stream (`streams.channel` / `streams.thread`); empty on
+  /// servers that read thread replies together with channels.
+  final Map<String, int> streamRead;
+}
+
+/// First-pass message labeling (`triage`): `off`, `no_key`, `running`,
+/// `idle` or `budget_exhausted`.
+class RaftbenchTriage {
+  const RaftbenchTriage({
+    required this.state,
+    required this.triagedMessages,
+    required this.labeledMessages,
+    required this.todayTokens,
+    required this.dailyTokenLimit,
+  });
+  final String state;
+  final int triagedMessages, labeledMessages, todayTokens, dailyTokenLimit;
+
+  /// `min(100, round(today / limit * 100))`, 0 without a limit.
+  int get usage => dailyTokenLimit > 0
+      ? (todayTokens / dailyTokenLimit * 100).round().clamp(0, 100)
+      : 0;
 }
 
 class RaftbenchCoverage {
@@ -207,7 +277,15 @@ class RaftbenchDashboard {
     required this.intervalMinutes,
     required this.run,
     required this.pagination,
+    this.findingFeedback = const [],
+    this.kindCounts,
+    this.triage,
   });
+  final List<RaftbenchFeedback> findingFeedback;
+
+  /// `findingIndex.kindCounts`; null on servers without the finding index.
+  final Map<String, int>? kindCounts;
+  final RaftbenchTriage? triage;
   final String? historyFrom, agentId;
   final RaftbenchProgress? progress;
   final RaftbenchCoverage? coverage;
@@ -226,14 +304,37 @@ class RaftbenchDashboard {
     final progress = json['progress'], coverage = json['coverage'];
     final provisioning = json['provisioning'], run = json['run'];
     final pagination = json['pagination'];
+    final index = json['findingIndex'], triage = json['triage'];
     Map<String, Object?> map(Object? v) => Map<String, Object?>.from(v as Map);
     return RaftbenchDashboard(
       historyFrom: _string(json['historyFrom']),
+      findingFeedback: RaftbenchFeedback.parseList(json['findingFeedback']),
+      kindCounts: index is Map && map(index)['kindCounts'] is Map
+          ? {
+              for (final e in (map(index)['kindCounts'] as Map).entries)
+                if (e.key is String) e.key as String: _int(e.value),
+            }
+          : null,
+      triage: triage is Map
+          ? RaftbenchTriage(
+              state: _string(map(triage)['state']) ?? 'off',
+              triagedMessages: _int(map(triage)['triagedMessages']),
+              labeledMessages: _int(map(triage)['labeledMessages']),
+              todayTokens: _int(map(triage)['todayTokens']),
+              dailyTokenLimit: _int(map(triage)['dailyTokenLimit']),
+            )
+          : null,
       progress: progress is Map
           ? RaftbenchProgress(
               readMessages: _int(map(progress)['readMessages']),
               completedBatches: _int(map(progress)['completedBatches']),
               scannedThroughAt: _string(map(progress)['scannedThroughAt']),
+              streamRead: {
+                if (map(progress)['streams'] is Map)
+                  for (final e in (map(progress)['streams'] as Map).entries)
+                    if (e.key is String && e.value is Map)
+                      e.key as String: _int((e.value as Map)['readMessages']),
+              },
             )
           : null,
       coverage: coverage is Map
@@ -289,6 +390,9 @@ class RaftbenchDashboard {
         intervalMinutes: intervalMinutes,
         run: clearRun ? null : run,
         pagination: pagination,
+        findingFeedback: findingFeedback,
+        kindCounts: kindCounts,
+        triage: triage,
       );
 }
 
@@ -316,4 +420,49 @@ class RaftbenchServiceAgent {
         ),
     ];
   }
+}
+
+/// An agent that may be granted read access to the findings
+/// (`GET /raftbench/readers`).
+class RaftbenchReader {
+  const RaftbenchReader({
+    required this.agentId,
+    required this.name,
+    required this.displayName,
+    required this.enabled,
+  });
+  final String agentId, name;
+  final String? displayName;
+  final bool enabled;
+
+  /// `displayName || name` (an empty display name falls back).
+  String get label => displayName?.isNotEmpty == true ? displayName! : name;
+
+  static List<RaftbenchReader> parseList(Object? value) {
+    if (value is! Map) throw const FormatException('Invalid readers');
+    final rows = value['readers'];
+    if (rows is! List) throw const FormatException('Invalid readers');
+    return [
+      for (final row in _rows(rows))
+        RaftbenchReader(
+          agentId: _string(row['agentId']) ?? '',
+          name: _string(row['name']) ?? '',
+          displayName: _string(row['displayName']),
+          enabled: row['enabled'] == true,
+        ),
+    ];
+  }
+}
+
+/// One pattern kind of the grouped "All" view: the findings read so far, their
+/// votes, and the kind's total on the server.
+class RaftbenchGroup {
+  const RaftbenchGroup({
+    required this.patterns,
+    required this.feedback,
+    required this.total,
+  });
+  final List<RaftbenchPattern> patterns;
+  final List<RaftbenchFeedback> feedback;
+  final int total;
 }

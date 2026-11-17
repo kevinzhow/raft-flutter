@@ -87,6 +87,7 @@ Future<_Page> _mount(
   api.routes['GET /raftbench'] = (_) => raftbenchFixture(dashboard);
   api.routes['GET /raftbench/agents'] = (_) =>
       raftbenchFixture('service-agents');
+  api.routes['GET /raftbench/readers'] = (_) => {'readers': []};
   api.routes['GET /tasks/server/snapshot-metrics'] = (_) =>
       raftbenchFixture('snapshot-metrics');
   api.routes['GET /billing/hosted-runtime-usage'] = (_) =>
@@ -200,6 +201,14 @@ void main() {
       expect(find.text('Patterns and improvements'), findsWidgets);
       expect(find.text('Channel'), findsWidgets);
       expect(find.text('Workspace overview'), findsWidgets);
+      // "Task and cost context" is a collapsed `<details>` after the analysis.
+      expect(
+        find.byKey(const ValueKey('raftbench-task-snapshot')),
+        findsNothing,
+      );
+      await t.ensureVisible(find.byKey(const ValueKey('raftbench-metrics')));
+      await t.tap(find.byKey(const ValueKey('raftbench-metrics')));
+      await t.pump();
       expect(
         find.byKey(const ValueKey('raftbench-task-snapshot')),
         findsOneWidget,
@@ -213,7 +222,6 @@ void main() {
         findsOneWidget,
       );
       expect(find.text('Legacy phrase and repetition rules'), findsOneWidget);
-      expect(find.text('Analysis complete'), findsOneWidget);
       // The workspace scope reads task aggregates without a channel.
       expect(
         p.api.calls
@@ -294,13 +302,22 @@ void main() {
     },
   );
 
-  testWidgets('the section links scroll to their section', (t) async {
+  testWidgets('the section nav is gone: analysis, then collapsed metrics', (
+    t,
+  ) async {
     await _mount(t, size: raftbenchPhone);
-    final aiTitle = find.byKey(const ValueKey('raftbench-hosted-analysis'));
-    final before = t.getTopLeft(aiTitle).dy;
-    await t.tap(find.text('Reads selected channels · no DM replies').first);
-    await t.pumpAndSettle();
-    expect(t.getTopLeft(aiTitle).dy, lessThan(before));
+    expect(find.text('Reads selected channels · no DM replies'), findsNothing);
+    final ai = t.getTopLeft(
+      find.byKey(const ValueKey('raftbench-hosted-analysis')),
+    );
+    final metrics = t.getTopLeft(
+      find.byKey(const ValueKey('raftbench-metrics')),
+    );
+    final rules = t.getTopLeft(
+      find.byKey(const ValueKey('raftbench-legacy-rules')),
+    );
+    expect(ai.dy, lessThan(metrics.dy));
+    expect(metrics.dy, lessThan(rules.dy));
     await unmount(t);
   });
 
@@ -315,8 +332,9 @@ void main() {
     expect(location.route, RaftRoute.settings);
     expect(location.settingsPath, ['raftbench']);
     expect(
-      RaftLocation.fromUri(Uri.parse('/s/acme/settings/raftbench'))
-          .settingsPath,
+      RaftLocation.fromUri(
+        Uri.parse('/s/acme/settings/raftbench'),
+      ).settingsPath,
       ['raftbench'],
     );
     expect(

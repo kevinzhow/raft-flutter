@@ -18,6 +18,7 @@ class _Harness {
     api.routes['GET /raftbench'] = (_) => raftbenchFixture(dashboard);
     api.routes['GET /raftbench/agents'] = (_) =>
         raftbenchFixture('service-agents');
+    api.routes['GET /raftbench/readers'] = (_) => {'readers': []};
     api.routes['GET /agents/$_agent/hosted-runtime/model'] = (_) => {
       'label': 'DeepSeek Flash',
     };
@@ -57,14 +58,17 @@ void main() {
       final h = _Harness(dashboard: 'dashboard-ready');
       await h.loaded();
       expect(h.controller.loading, isFalse);
-      expect(h.controller.failed, isFalse);
+      expect(h.controller.loadError, isNull);
       expect(h.controller.data!.run!.status, 'ready');
       expect(
         h.controller.serviceAgents.map((a) => a.name),
         contains('raftbench-service'),
       );
       expect(h.enabled, [true]);
-      expect(h.api.where('GET /raftbench').single.query, {'page': 1});
+      expect(h.api.where('GET /raftbench').single.query, {
+        'page': 1,
+        'period': 'recent',
+      });
       // The analysis agent is active: its model is read for the footer line.
       expect(h.controller.modelAgentId, _agent);
       expect(h.controller.modelLabel, 'DeepSeek Flash');
@@ -210,7 +214,8 @@ void main() {
     await h.loaded();
     h.controller.chooseHistoryDays(7);
     await h.controller.toggleAnalysis();
-    expect(h.controller.failed, isTrue);
+    expect(h.controller.saveError, 'HTTP 409');
+    expect(h.controller.loadError, isNull);
     expect(h.controller.saving, isFalse);
     expect(h.controller.changed, isTrue);
     expect(h.controller.data!.enabled, isFalse);
@@ -224,7 +229,7 @@ void main() {
       h.api.routes['GET /raftbench'] = (_) =>
           throw RaftApiException('RaftBench is unavailable', status: 403);
       await h.loaded();
-      expect(h.controller.failed, isTrue);
+      expect(h.controller.loadError, 'HTTP 403');
       expect(h.controller.loading, isFalse);
       expect(h.controller.data, isNull);
       expect(h.enabled, [false]);
@@ -238,7 +243,7 @@ void main() {
     h.api.routes['GET /raftbench/agents'] = (_) =>
         throw RaftApiException('x', status: 500);
     await h.loaded();
-    expect(h.controller.failed, isFalse);
+    expect(h.controller.loadError, isNull);
     expect(h.controller.serviceAgents, isEmpty);
     expect(h.controller.data, isNotNull);
     h.controller.dispose();
@@ -361,7 +366,10 @@ void main() {
     h.controller.setPage(2);
     await pump();
     await pump();
-    expect(h.api.where('GET /raftbench').last.query, {'page': 2});
+    expect(h.api.where('GET /raftbench').last.query, {
+      'page': 2,
+      'period': 'recent',
+    });
     h.controller.setPage(0);
     await pump();
     expect(h.controller.page, 1);

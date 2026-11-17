@@ -2,8 +2,11 @@
 // snapshot, the 7-day completion comparison and the server-wide cloud-agent
 // spend, read from existing database and billing aggregates.
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 import '../../raft_ui.dart';
+import '../recipes/recipe_runtime.dart' show RaftSlotStyle;
+import '../recipes/table.g.dart';
 
 import 'raftbench_parts.dart';
 
@@ -94,7 +97,9 @@ class _Overview extends StatelessWidget {
     String tr(String s) => raftText(context, s);
     return Container(
       key: const ValueKey('raftbench-manager-header'),
-      color: t.colors['info-soft'],
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: t.colors['line-hairline']!)),
+      ),
       padding: EdgeInsets.all(pad),
       child: Wrap(
         alignment: WrapAlignment.spaceBetween,
@@ -102,28 +107,17 @@ class _Overview extends StatelessWidget {
         spacing: 12,
         runSpacing: 12,
         children: [
-          Row(
+          Column(
             mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              RaftIcon(RaftGlyph.barChart3, size: 24, color: t.ink),
-              const SizedBox(width: 12),
-              Flexible(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Semantics(
-                      header: true,
-                      child: Text(
-                        tr('Task and cost context'),
-                        style: ty.headline(),
-                      ),
-                    ),
-                    Text(
-                      tr('Supporting metrics · not a quality score'),
-                      style: ty.caption(weight: FontWeight.w400),
-                    ),
-                  ],
-                ),
+              Semantics(
+                header: true,
+                child: Text(tr('Task and cost context'), style: ty.headline()),
+              ),
+              Text(
+                tr('Supporting metrics · not a quality score'),
+                style: ty.caption(color: ty.hint, weight: FontWeight.w400),
               ),
             ],
           ),
@@ -141,7 +135,24 @@ class _Overview extends StatelessWidget {
     final fmt = RaftbenchFormat(context);
     final state = controller.snapshot, snap = state.value;
     final out = <Widget>[
-      _heading(ty, tr('Task history from the database')),
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _heading(ty, tr('Task history from the database')),
+          if (snap?.latestUpdatedAt != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Text(
+                raftFormat(
+                  context,
+                  'Historical snapshot · last updated {updated} UTC',
+                  {'updated': snap!.latestUpdatedAt!.substring(0, 10)},
+                ),
+                style: ty.callout(color: ty.hint),
+              ),
+            ),
+        ],
+      ),
       if (state.kind == RaftbenchLoadKind.loading)
         _status(ty, tr('Aggregating all accessible task sources…')),
       if (state.kind == RaftbenchLoadKind.error)
@@ -162,7 +173,6 @@ class _Overview extends StatelessWidget {
       (tr('Done'), snap.done, false),
       (tr('Closed'), snap.closed, false),
     ];
-    final caption = ty.caption(color: ty.hint, weight: FontWeight.w400);
     out.add(
       KeyedSubtree(
         key: const ValueKey('raftbench-task-snapshot'),
@@ -205,25 +215,42 @@ class _Overview extends StatelessWidget {
             ),
             if (snap.durationSamples > 0) ...[
               const SizedBox(height: 12),
-              Text(
-                raftFormat(
-                  context,
-                  'Creation → done: median {median}, 90th percentile {p90} ({count} valid completed tasks). Calendar time includes waiting.',
-                  {
-                    'median': _hours(context, snap.medianHours),
-                    'p90': _hours(context, snap.p90Hours),
-                    'count': snap.durationSamples,
-                  },
-                ),
-                style: ty.callout(),
+              _Grid(
+                key: const ValueKey('raftbench-snapshot-durations'),
+                columns: 2,
+                children: [
+                  for (final (label, value) in [
+                    (tr('Median time to complete'), snap.medianHours),
+                    (tr('90% completed within'), snap.p90Hours),
+                  ])
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: t.sidebar,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(label, style: ty.callout()),
+                          const SizedBox(height: 4),
+                          Text(
+                            _hours(context, value),
+                            style: ty.title().copyWith(fontFeatures: _tabular),
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
               ),
             ],
             const SizedBox(height: 12),
             RaftbenchDetails(
-              summaryStyle: ty.caption(weight: FontWeight.w600),
+              summaryStyle: ty.callout(weight: FontWeight.w600),
               summary: Text(tr('How this is counted')),
               child: DefaultTextStyle.merge(
-                style: caption,
+                style: ty.callout(color: ty.hint),
                 child: Padding(
                   padding: const EdgeInsets.only(top: 8),
                   child: Column(
@@ -231,35 +258,20 @@ class _Overview extends StatelessWidget {
                     spacing: 4,
                     children: [
                       Text(
-                        tr(
-                          'Current task states across accessible task sources. This is available without starting AI analysis or scanning messages.',
-                        ),
-                      ),
-                      Text(
                         raftFormat(
                           context,
-                          '{surfaces} accessible task sources · created {first}–{latest} · last task update {updated} (UTC). This is a historical snapshot, not a current activity trend.',
-                          {
-                            'first':
-                                snap.firstCreatedAt?.substring(0, 10) ?? '—',
-                            'latest':
-                                snap.latestCreatedAt?.substring(0, 10) ?? '—',
-                            'updated':
-                                snap.latestUpdatedAt?.substring(0, 10) ?? '—',
-                            'surfaces': snap.surfaces,
-                          },
+                          'Channels you can access: {count}.',
+                          {'count': fmt.number(snap.surfaces)},
                         ),
                       ),
-                      Text(
-                        raftFormat(
-                          context,
-                          'Created by people: {human} · by agents: {agent}.',
-                          {
-                            'human': fmt.number(snap.humanCreated),
-                            'agent': fmt.number(snap.agentCreated),
-                          },
+                      if (snap.durationSamples > 0)
+                        Text(
+                          raftFormat(
+                            context,
+                            'Completion time includes waiting; based on {count} completed tasks.',
+                            {'count': fmt.number(snap.durationSamples)},
+                          ),
                         ),
-                      ),
                     ],
                   ),
                 ),
@@ -291,52 +303,29 @@ class _Overview extends StatelessWidget {
     if (periods == null) return out;
     final empty =
         periods.current.completed == 0 && periods.previous.completed == 0;
-    final cards = [
-      (
-        tr('Completed tasks'),
-        '${periods.current.completed} / ${periods.previous.completed}',
-      ),
-      (
-        tr('Median creation → done'),
-        '${_hours(context, periods.current.medianHours)} / ${_hours(context, periods.previous.medianHours)}',
-      ),
-      (
-        tr('Mean creation → done'),
-        '${_hours(context, periods.current.meanHours)} / ${_hours(context, periods.previous.meanHours)}',
-      ),
-    ];
+    final fmt = RaftbenchFormat(context);
     out.add(
       KeyedSubtree(
-        key: const ValueKey('raftbench-task-comparison'),
+        key: const ValueKey('raftbench-task-comparison-table'),
         child: empty
             ? _status(ty, tr('No tasks completed in either period'))
-            : _Grid(
-                columns: 3,
-                single: true,
-                children: [
-                  for (final (label, value) in cards)
-                    RaftbenchCard(
-                      padded: false,
-                      child: Padding(
-                        padding: const EdgeInsets.all(12),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(label, style: ty.caption()),
-                            const SizedBox(height: 8),
-                            Text(
-                              value,
-                              style: ty.title().copyWith(
-                                fontFeatures: _tabular,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                ],
-              ),
+            : _compare(context, t, ty, [
+                (
+                  tr('Completed tasks'),
+                  fmt.number(periods.current.completed),
+                  fmt.number(periods.previous.completed),
+                ),
+                (
+                  tr('Median creation → done'),
+                  _hours(context, periods.current.medianHours),
+                  _hours(context, periods.previous.medianHours),
+                ),
+                (
+                  tr('Mean creation → done'),
+                  _hours(context, periods.current.meanHours),
+                  _hours(context, periods.previous.meanHours),
+                ),
+              ]),
       ),
     );
     return out;
@@ -348,11 +337,7 @@ class _Overview extends StatelessWidget {
     final state = controller.costs, cost = state.value;
     final below = tr('under {amount}');
     return [
-      _heading(
-        ty,
-        tr('Cloud agent cost · whole server'),
-        icon: RaftIcon(RaftGlyph.wallet, size: 18, color: t.ink),
-      ),
+      _heading(ty, tr('Cloud agent cost · whole server')),
       if (state.kind == RaftbenchLoadKind.loading)
         _status(ty, tr('Reading cloud agent billing…')),
       if (state.kind == RaftbenchLoadKind.error)
@@ -371,10 +356,15 @@ class _Overview extends StatelessWidget {
           ),
         ),
       if (cost != null) ...[
-        Text(
-          '${fmt.usd(cost.currentUsd, below)} / ${fmt.usd(cost.previousUsd, below)}',
+        KeyedSubtree(
           key: const ValueKey('raftbench-cost-comparison'),
-          style: ty.title().copyWith(fontFeatures: _tabular),
+          child: _compare(context, t, ty, [
+            (
+              tr('Spent'),
+              fmt.usd(cost.currentUsd, below),
+              fmt.usd(cost.previousUsd, below),
+            ),
+          ]),
         ),
         Text(
           tr(
@@ -392,6 +382,90 @@ class _Overview extends StatelessWidget {
           ),
       ],
     ];
+  }
+
+  /// raft-ui `Table` (`table-fixed`): a blank first heading (the metric column,
+  /// "Metric" for assistive technology), one column per comparison window
+  /// headed with its dates, and one row per metric.
+  Widget _compare(
+    BuildContext context,
+    RaftTokens t,
+    RaftbenchType ty,
+    List<(String, String, String)> rows,
+  ) {
+    String tr(String s) => raftText(context, s);
+    final window = controller.window;
+    String span(int start, int end) {
+      final locale = RaftbenchFormat(context).locale;
+      String day(int millis) => DateFormat.MMMd(
+        locale,
+      ).format(DateTime.fromMillisecondsSinceEpoch(millis, isUtc: true));
+      return '${day(start)} – ${day(end - 86400000)}';
+    }
+
+    final current = window == null
+        ? ''
+        : raftFormat(context, 'Last {days} days ({range})', {
+            'days': window.days,
+            'range': span(window.start, window.end),
+          });
+    final previous = window == null
+        ? ''
+        : raftFormat(context, 'Previous {days} days ({range})', {
+            'days': window.days,
+            'range': span(window.previousStart, window.start),
+          });
+    final tokens = t.recipeTokens;
+    final recipe = RaftTableRecipe.resolve(
+      states: t.recipeStates(),
+      tokens: tokens,
+    );
+    Widget cell(RaftSlotStyle slot, Widget child, {int flex = 3}) => Expanded(
+      flex: flex,
+      child: RaftRecipeBox(style: slot, tokens: tokens, child: child),
+    );
+    Widget row(List<Widget> cells) => RaftRecipeBox(
+      style: recipe.row,
+      tokens: tokens,
+      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: cells),
+    );
+    return RaftRecipeBox(
+      style: recipe.root,
+      tokens: tokens,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          RaftRecipeBox(
+            style: recipe.header,
+            tokens: tokens,
+            child: row([
+              cell(
+                recipe.head,
+                Semantics(label: tr('Metric'), child: const SizedBox.shrink()),
+                flex: 2,
+              ),
+              cell(recipe.head, Text(current)),
+              cell(recipe.head, Text(previous)),
+            ]),
+          ),
+          for (final (label, now, before) in rows)
+            row([
+              cell(recipe.head, Text(label), flex: 2),
+              cell(
+                recipe.cell,
+                Text(now, style: const TextStyle(fontFeatures: _tabular)),
+              ),
+              cell(
+                recipe.cell,
+                Text(
+                  before,
+                  style: TextStyle(fontFeatures: _tabular, color: ty.hint),
+                ),
+              ),
+            ]),
+        ],
+      ),
+    );
   }
 
   Widget _limits(BuildContext context, RaftTokens t, RaftbenchType ty) {
@@ -455,23 +529,18 @@ class _Overview extends StatelessWidget {
   }
 }
 
-/// `grid grid-cols-2 gap-3 sm:grid-cols-3` (`grid-cols-1` with [single]): the
+/// `grid grid-cols-2 gap-3 sm:grid-cols-3`: the
 /// items of a row are as tall as the tallest of that row.
 class _Grid extends StatelessWidget {
-  const _Grid({
-    required this.columns,
-    required this.children,
-    this.single = false,
-  });
+  const _Grid({super.key, required this.columns, required this.children});
   final int columns;
-  final bool single;
   final List<Widget> children;
 
   @override
   Widget build(BuildContext context) {
     // Tailwind `sm` is 640.
     final wide = raftBreakpointWidth(context) >= 640;
-    final count = wide ? columns : (single ? 1 : 2);
+    final count = wide ? columns : 2;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: 12,

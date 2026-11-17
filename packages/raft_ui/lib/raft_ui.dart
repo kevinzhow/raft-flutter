@@ -169,7 +169,8 @@ export 'src/raftbench/raftbench_rules.dart';
 export 'src/raftbench/raftbench_manager_overview.dart';
 export 'src/raftbench/raftbench_hosted_analysis.dart';
 export 'src/raftbench/raftbench_legacy_rules.dart';
-export 'src/raftbench/raftbench_findings.dart' show raftbenchEvidenceSource;
+export 'src/raftbench/raftbench_findings.dart'
+    show raftbenchEvidenceSource, raftbenchParseEvidenceTarget;
 export 'src/raftbench/raftbench_page_view.dart';
 export 'src/raftbench/raftbench_date_field.dart';
 export 'src/meter.dart';

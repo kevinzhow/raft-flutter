@@ -82,7 +82,8 @@ class RaftbenchServiceDmNotice extends StatelessWidget {
     child: const RaftBanner(
       status: RaftBannerRecipeStatus.info,
       textAlign: TextAlign.center,
-      description: 'This read-only analysis agent does not reply to DMs. Results appear on the RaftBench page.',
+      description:
+          'This read-only analysis agent does not reply to DMs. Results appear on the RaftBench page.',
     ),
   );
 }
@@ -99,6 +100,7 @@ class RaftbenchAdminView extends StatefulWidget {
     required this.analysisAllowed,
     required this.onOpenAgent,
     required this.onOpenMessage,
+    required this.onOpenEvidence,
   });
   final RaftbenchOverviewPanel overview;
   final RaftbenchHostedPanel hosted;
@@ -112,6 +114,7 @@ class RaftbenchAdminView extends StatefulWidget {
   final bool analysisAllowed;
   final void Function(String agentId) onOpenAgent;
   final void Function(String channelId, String messageId) onOpenMessage;
+  final RaftbenchOpenEvidence onOpenEvidence;
 
   @override
   State<RaftbenchAdminView> createState() => _RaftbenchAdminViewState();
@@ -119,23 +122,11 @@ class RaftbenchAdminView extends StatefulWidget {
 
 class _RaftbenchAdminViewState extends State<RaftbenchAdminView> {
   final scroll = ScrollController();
-  final metricsKey = GlobalKey(), aiKey = GlobalKey();
 
   @override
   void dispose() {
     scroll.dispose();
     super.dispose();
-  }
-
-  void _reveal(GlobalKey key) {
-    final target = key.currentContext;
-    if (target == null) return;
-    Scrollable.ensureVisible(
-      target,
-      duration: MediaQuery.disableAnimationsOf(context)
-          ? Duration.zero
-          : const Duration(milliseconds: 200),
-    );
   }
 
   @override
@@ -149,64 +140,6 @@ class _RaftbenchAdminViewState extends State<RaftbenchAdminView> {
         ? tr('Workspace overview')
         : widget.options.where((o) => o.value == scope).firstOrNull?.label ??
               '';
-    Widget tile({
-      required RaftGlyph glyph,
-      required String title,
-      required String cue,
-      required Color color,
-      required GlobalKey target,
-    }) => GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: () => _reveal(target),
-      child: MouseRegion(
-        cursor: SystemMouseCursors.click,
-        child: Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: color,
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Row(
-            children: [
-              RaftIcon(glyph, size: 22, color: t.ink),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(title, style: ty.callout(weight: FontWeight.w700)),
-                    // The cue is an inline span: its line box takes the 24px of
-                    // the parent's line height, not the caption's 16.
-                    Text(
-                      cue,
-                      style: ty
-                          .caption(weight: FontWeight.w400)
-                          .copyWith(height: 24 / 12),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-    final tiles = [
-      tile(
-        glyph: RaftGlyph.barChart3,
-        title: tr('Task and cost context'),
-        cue: tr('Supporting metrics · not a quality score'),
-        color: t.colors['info-soft']!,
-        target: metricsKey,
-      ),
-      tile(
-        glyph: RaftGlyph.sparkles,
-        title: tr('Patterns and improvements'),
-        cue: tr('Reads selected channels · no DM replies'),
-        color: t.colors['success-soft']!,
-        target: aiKey,
-      ),
-    ];
     return _Scroll(
       controller: scroll,
       child: Column(
@@ -246,18 +179,6 @@ class _RaftbenchAdminViewState extends State<RaftbenchAdminView> {
               ),
             ],
           ),
-          LayoutBuilder(
-            builder: (context, box) {
-              if (raftBreakpointWidth(context) < 640) {
-                return Column(spacing: 12, children: tiles);
-              }
-              return Row(
-                spacing: 12,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [for (final x in tiles) Expanded(child: x)],
-              );
-            },
-          ),
           RaftbenchCard(
             child: Align(
               alignment: Alignment.centerLeft,
@@ -295,17 +216,24 @@ class _RaftbenchAdminViewState extends State<RaftbenchAdminView> {
               ),
             ),
           ),
-          KeyedSubtree(
-            key: metricsKey,
-            child: RaftbenchManagerOverview(controller: widget.overview),
+          RaftbenchHostedAnalysis(
+            controller: widget.hosted,
+            allowed: widget.analysisAllowed,
+            onOpenAgent: widget.onOpenAgent,
+            onOpenEvidence: widget.onOpenEvidence,
           ),
-          KeyedSubtree(
-            key: aiKey,
-            child: RaftbenchHostedAnalysis(
-              controller: widget.hosted,
-              allowed: widget.analysisAllowed,
-              onOpenAgent: widget.onOpenAgent,
-              onOpenMessage: widget.onOpenMessage,
+          // `<details id="raftbench-metrics">`: collapsed, the summary a bordered box.
+          RaftbenchDetails(
+            key: const ValueKey('raftbench-metrics'),
+            summaryStyle: ty.callout(weight: FontWeight.w600),
+            summaryBox: BoxDecoration(
+              border: Border.all(color: t.colors['line-hairline']!),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            summary: Text(tr('Task and cost context')),
+            child: Padding(
+              padding: const EdgeInsets.only(top: 12),
+              child: RaftbenchManagerOverview(controller: widget.overview),
             ),
           ),
           RaftbenchLegacyRules(

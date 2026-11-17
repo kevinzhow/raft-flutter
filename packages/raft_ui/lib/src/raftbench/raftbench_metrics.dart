@@ -59,6 +59,7 @@ class RaftbenchTaskSnapshot {
   const RaftbenchTaskSnapshot({
     required this.surfaces,
     required this.total,
+    required this.backlog,
     required this.todo,
     required this.inProgress,
     required this.inReview,
@@ -73,7 +74,7 @@ class RaftbenchTaskSnapshot {
     required this.latestCreatedAt,
     required this.latestUpdatedAt,
   });
-  final int surfaces, total, todo, inProgress, inReview, done, closed;
+  final int surfaces, total, backlog, todo, inProgress, inReview, done, closed;
   final int humanCreated, agentCreated, durationSamples;
   final double? medianHours, p90Hours;
   final String? firstCreatedAt, latestCreatedAt, latestUpdatedAt;
@@ -83,6 +84,7 @@ class RaftbenchTaskSnapshot {
     const keys = [
       'surfaces',
       'total',
+      'backlog',
       'todo',
       'inProgress',
       'inReview',
@@ -102,7 +104,8 @@ class RaftbenchTaskSnapshot {
     }
     int n(String key) => row[key]! as int;
     if (n('total') !=
-            n('todo') +
+            n('backlog') +
+                n('todo') +
                 n('inProgress') +
                 n('inReview') +
                 n('done') +
@@ -113,6 +116,7 @@ class RaftbenchTaskSnapshot {
     return RaftbenchTaskSnapshot(
       surfaces: n('surfaces'),
       total: n('total'),
+      backlog: n('backlog'),
       todo: n('todo'),
       inProgress: n('inProgress'),
       inReview: n('inReview'),

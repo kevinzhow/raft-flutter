@@ -257,6 +257,7 @@ void main() {
       await t.tap(find.text('Scan phrases and repeats'));
       await settle(t);
       await settle(t);
+      await t.ensureVisible(find.text('Human frustration · 1'));
       await t.tap(find.text('Human frustration · 1'));
       await t.pump();
       await t.ensureVisible(find.text('Confirm signal'));

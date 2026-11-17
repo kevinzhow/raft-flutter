@@ -1,6 +1,7 @@
 {
   "surfaces": 3,
   "total": 10,
+  "backlog": 0,
   "todo": 2,
   "inProgress": 3,
   "inReview": 1,

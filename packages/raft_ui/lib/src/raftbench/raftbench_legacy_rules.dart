@@ -13,9 +13,12 @@ String _label(RaftbenchSignal kind) => switch (kind) {
   RaftbenchSignal.repetition => 'Repeated agent messages',
 };
 String _rule(RaftbenchSignal kind) => switch (kind) {
-  RaftbenchSignal.frustration => 'Explicit English/Chinese frustration phrase. Quotations, negation and sarcasm can be misread; inspect the context.',
-  RaftbenchSignal.negative => 'Negative wording in a human message. This is a review cue, not proof of failure.',
-  RaftbenchSignal.repetition => 'Identical text after case/whitespace normalization, at least 16 characters, from the same agent in the same channel within 15 minutes. Legitimate reminders can match.',
+  RaftbenchSignal.frustration =>
+    'Explicit English/Chinese frustration phrase. Quotations, negation and sarcasm can be misread; inspect the context.',
+  RaftbenchSignal.negative =>
+    'Negative wording in a human message. This is a review cue, not proof of failure.',
+  RaftbenchSignal.repetition =>
+    'Identical text after case/whitespace normalization, at least 16 characters, from the same agent in the same channel within 15 minutes. Legitimate reminders can match.',
 };
 String _reviewLabel(RaftbenchReview status) => switch (status) {
   RaftbenchReview.needsReview => 'Needs review',
@@ -102,7 +105,6 @@ class _Rules extends StatelessWidget {
                               ? 'Refresh phrase scan'
                               : 'Scan phrases and repeats',
                         ),
-                        small: true,
                         onPressed: c.canScan ? c.analyze : null,
                       ),
                       Text(
@@ -350,7 +352,6 @@ class _Rules extends StatelessWidget {
                 ),
                 RaftbenchButton(
                   tr('All scanned channels'),
-                  small: true,
                   variant: RaftButtonRecipeVariant.ghost,
                   onPressed: c.clearDrill,
                 ),
@@ -363,7 +364,6 @@ class _Rules extends StatelessWidget {
                 for (final channel in snapshot.channels)
                   RaftbenchButton(
                     '${channelLabel(channel.channelId)} · ${raftFormat(context, '{count} cues', {'count': evaluation.findings.where((f) => f.evidence.first.channelId == channel.channelId).length})}',
-                    small: true,
                     variant: c.drillChannelId == channel.channelId
                         ? RaftButtonRecipeVariant.information
                         : RaftButtonRecipeVariant.outline,
@@ -410,7 +410,6 @@ class _Rules extends StatelessWidget {
               ])
                 RaftbenchButton(
                   tr(kind == null ? 'All signals' : _label(kind)),
-                  small: true,
                   variant: c.filter == kind
                       ? RaftButtonRecipeVariant.information
                       : RaftButtonRecipeVariant.outline,
@@ -608,7 +607,6 @@ class _Rules extends StatelessWidget {
                         alignment: Alignment.centerLeft,
                         child: RaftbenchButton(
                           tr('Open original message'),
-                          small: true,
                           variant: RaftButtonRecipeVariant.ghost,
                           onPressed: () => onOpenMessage(m.channelId, m.id),
                         ),
@@ -635,20 +633,14 @@ class _Rules extends StatelessWidget {
         spacing: 8,
         runSpacing: 8,
         children: [
-          RaftbenchButton(
-            tr('Confirm signal'),
-            small: true,
-            onPressed: c.confirm,
-          ),
+          RaftbenchButton(tr('Confirm signal'), onPressed: c.confirm),
           RaftbenchButton(
             tr('Mark as false positive'),
-            small: true,
             variant: RaftButtonRecipeVariant.outline,
             onPressed: c.dismiss,
           ),
           RaftbenchButton(
             tr('Reopen'),
-            small: true,
             variant: RaftButtonRecipeVariant.ghost,
             onPressed: c.reopen,
           ),

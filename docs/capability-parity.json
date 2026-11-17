@@ -18080,7 +18080,7 @@
      "needle": "'/raftbench'"
     }
    ],
-   "justification": "Web v1.21.23 RaftBench (Settings > RaftBench for an owner or admin on a server with raftbench_overview_v0), ported in WP-BENCH.",
+   "justification": "Web v1.24.0 RaftBench (Settings > RaftBench for an owner or admin on a server with raftbench_overview_v0), ported in WP-ADMIN.",
    "impact": "",
    "size": ""
   },
@@ -18100,7 +18100,7 @@
      "needle": "'/raftbench/agents'"
     }
    ],
-   "justification": "Web v1.21.23 RaftBench (Settings > RaftBench for an owner or admin on a server with raftbench_overview_v0), ported in WP-BENCH.",
+   "justification": "Web v1.24.0 RaftBench (Settings > RaftBench for an owner or admin on a server with raftbench_overview_v0), ported in WP-ADMIN.",
    "impact": "",
    "size": ""
   },
@@ -18120,7 +18120,7 @@
      "needle": "'POST',\n        '/raftbench/agents'"
     }
    ],
-   "justification": "Web v1.21.23 RaftBench (Settings > RaftBench for an owner or admin on a server with raftbench_overview_v0), ported in WP-BENCH.",
+   "justification": "Web v1.24.0 RaftBench (Settings > RaftBench for an owner or admin on a server with raftbench_overview_v0), ported in WP-ADMIN.",
    "impact": "",
    "size": ""
   },
@@ -18140,7 +18140,7 @@
      "needle": "'PUT',\n        '/raftbench'"
     }
    ],
-   "justification": "Web v1.21.23 RaftBench (Settings > RaftBench for an owner or admin on a server with raftbench_overview_v0), ported in WP-BENCH.",
+   "justification": "Web v1.24.0 RaftBench (Settings > RaftBench for an owner or admin on a server with raftbench_overview_v0), ported in WP-ADMIN.",
    "impact": "",
    "size": ""
   },
@@ -18160,7 +18160,67 @@
      "needle": "'/raftbench/assignment'"
     }
    ],
-   "justification": "Web v1.21.23 RaftBench (Settings > RaftBench for an owner or admin on a server with raftbench_overview_v0), ported in WP-BENCH.",
+   "justification": "Web v1.24.0 RaftBench (Settings > RaftBench for an owner or admin on a server with raftbench_overview_v0), ported in WP-ADMIN.",
+   "impact": "",
+   "size": ""
+  },
+  {
+   "kind": "endpoint",
+   "id": "GET /raftbench/readers",
+   "area": "server-settings-admin",
+   "capability": "List the agents that may read the RaftBench findings",
+   "background": false,
+   "status": "covered",
+   "webEntry": "raftbench/ReaderAccess.tsx",
+   "gate": "none",
+   "flutterEntry": "raftbench_reader_controller.dart load(); raftbench_reader_access.dart",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/data/raftbench_reader_controller.dart",
+     "needle": "'/raftbench/readers'"
+    }
+   ],
+   "justification": "Web v1.24.0 RaftBench (Settings > RaftBench for an owner or admin on a server with raftbench_overview_v0), ported in WP-ADMIN.",
+   "impact": "",
+   "size": ""
+  },
+  {
+   "kind": "endpoint",
+   "id": "PUT /raftbench/readers/:id",
+   "area": "server-settings-admin",
+   "capability": "Grant or revoke an agent's read access to the RaftBench findings",
+   "background": false,
+   "status": "covered",
+   "webEntry": "raftbench/ReaderAccess.tsx",
+   "gate": "none",
+   "flutterEntry": "raftbench_reader_controller.dart toggle()",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/data/raftbench_reader_controller.dart",
+     "needle": "'/raftbench/readers/"
+    }
+   ],
+   "justification": "Web v1.24.0 RaftBench (Settings > RaftBench for an owner or admin on a server with raftbench_overview_v0), ported in WP-ADMIN.",
+   "impact": "",
+   "size": ""
+  },
+  {
+   "kind": "endpoint",
+   "id": "PUT /raftbench/findings/:id/feedback",
+   "area": "server-settings-admin",
+   "capability": "Vote Agree / Inaccurate on a RaftBench finding",
+   "background": false,
+   "status": "covered",
+   "webEntry": "raftbench/HostedAnalysis.tsx",
+   "gate": "none",
+   "flutterEntry": "raftbench_hosted_controller.dart reviewFinding()",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/data/raftbench_hosted_controller.dart",
+     "needle": "'/raftbench/findings/"
+    }
+   ],
+   "justification": "Web v1.24.0 RaftBench (Settings > RaftBench for an owner or admin on a server with raftbench_overview_v0), ported in WP-ADMIN.",
    "impact": "",
    "size": ""
   },
@@ -18180,7 +18240,7 @@
      "needle": "'/tasks/server/period-metrics'"
     }
    ],
-   "justification": "Web v1.21.23 RaftBench (Settings > RaftBench for an owner or admin on a server with raftbench_overview_v0), ported in WP-BENCH.",
+   "justification": "Web v1.24.0 RaftBench (Settings > RaftBench for an owner or admin on a server with raftbench_overview_v0), ported in WP-ADMIN.",
    "impact": "",
    "size": ""
   },
@@ -18200,7 +18260,7 @@
      "needle": "'/tasks/server/snapshot-metrics'"
     }
    ],
-   "justification": "Web v1.21.23 RaftBench (Settings > RaftBench for an owner or admin on a server with raftbench_overview_v0), ported in WP-BENCH.",
+   "justification": "Web v1.24.0 RaftBench (Settings > RaftBench for an owner or admin on a server with raftbench_overview_v0), ported in WP-ADMIN.",
    "impact": "",
    "size": ""
   },

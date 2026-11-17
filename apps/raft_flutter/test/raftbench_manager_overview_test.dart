@@ -52,82 +52,76 @@ void main() {
     ('desktop', raftbenchDesktop),
     ('phone', raftbenchPhone),
   ]) {
-    testWidgets(
-      'shows the task snapshot, the comparison and the spend ($name)',
-      (t) async {
-        await _mount(t, _api(), size: size);
-        expect(find.text('Task and cost context'), findsOneWidget);
-        expect(
-          find.text('Supporting metrics · not a quality score'),
-          findsOneWidget,
-        );
-        // Snapshot tiles.
-        for (final label in [
-          'All tasks',
-          'Awaiting review',
-          'In progress',
-          'To do',
-          'Done',
-          'Closed',
-        ]) {
-          expect(find.text(label), findsOneWidget, reason: label);
-        }
-        expect(find.text('10'), findsOneWidget);
-        expect(
-          find.text(
-            'Creation → done: median 5.5 h, 90th percentile 26.3 h (3 valid completed tasks). Calendar time includes waiting.',
-          ),
-          findsOneWidget,
-        );
-        // Period comparison, current / previous.
-        expect(find.text('4 / 1'), findsOneWidget);
-        expect(find.text('5.5 h / 30 h'), findsOneWidget);
-        expect(find.text('8.3 h / 30 h'), findsOneWidget);
-        // Server-wide spend, estimated.
-        expect(
-          find.byKey(const ValueKey('raftbench-cost-comparison')),
-          findsOneWidget,
-        );
-        expect(
-          (t.widget(
-            find.byKey(const ValueKey('raftbench-cost-comparison')),
-          ) as Text).data,
-          r'$1.63 / $0.75',
-        );
-        expect(
-          find.text(
-            'Estimated, in USD by UTC day, as reported by the cloud agent provider. For reference, not a bill.',
-          ),
-          findsOneWidget,
-        );
-        expect(
-          find.text('Some usage has no price and is not included.'),
-          findsNothing,
-        );
-        await unmount(t);
-      },
-    );
+    testWidgets('shows the task snapshot, the comparison and the spend ($name)', (
+      t,
+    ) async {
+      await _mount(t, _api(), size: size);
+      expect(find.text('Task and cost context'), findsOneWidget);
+      expect(
+        find.text('Supporting metrics · not a quality score'),
+        findsOneWidget,
+      );
+      // Snapshot tiles.
+      for (final label in [
+        'All tasks',
+        'Awaiting review',
+        'In progress',
+        'To do',
+        'Done',
+        'Closed',
+      ]) {
+        expect(find.text(label), findsOneWidget, reason: label);
+      }
+      expect(find.text('10'), findsOneWidget);
+      expect(
+        find.text('Historical snapshot · last updated 2026-10-23 UTC'),
+        findsOneWidget,
+      );
+      expect(find.text('Median time to complete'), findsOneWidget);
+      expect(find.text('90% completed within'), findsOneWidget);
+      expect(find.text('26.3 h'), findsOneWidget);
+      // Period comparison: a table, one column per window.
+      expect(find.text('Last 7 days (Oct 17 – Oct 23)'), findsNWidgets(2));
+      expect(find.text('Previous 7 days (Oct 10 – Oct 16)'), findsNWidgets(2));
+      expect(find.text('Completed tasks'), findsOneWidget);
+      expect(find.text('4'), findsOneWidget);
+      expect(find.text('30 h'), findsNWidgets(2));
+      expect(find.text('5.5 h'), findsNWidgets(2));
+      expect(find.text('8.3 h'), findsOneWidget);
+      expect(find.text('Spent'), findsOneWidget);
+      // Server-wide spend, estimated.
+      expect(
+        find.byKey(const ValueKey('raftbench-cost-comparison')),
+        findsOneWidget,
+      );
+      expect(find.text(r'$1.63'), findsOneWidget);
+      expect(find.text(r'$0.75'), findsOneWidget);
+      expect(
+        find.text(
+          'Estimated, in USD by UTC day, as reported by the cloud agent provider. For reference, not a bill.',
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.text('Some usage has no price and is not included.'),
+        findsNothing,
+      );
+      await unmount(t);
+    });
   }
 
   testWidgets('a collapsed Sources and limits opens on tap', (t) async {
     await _mount(t, _api());
-    expect(
-      find.textContaining('Current task states across accessible task sources'),
-      findsNothing,
-    );
+    expect(find.textContaining('based on 3 completed tasks'), findsNothing);
     await t.tap(find.text('How this is counted').first);
     await t.pump();
     expect(
-      find.textContaining('Current task states across accessible task sources'),
-      findsOneWidget,
-    );
-    expect(
-      find.textContaining(
-        '3 accessible task sources · created 2026-09-02–2026-10-23 · last task update 2026-10-23 (UTC)',
+      find.text(
+        'Completion time includes waiting; based on 3 completed tasks.',
       ),
       findsOneWidget,
     );
-    expect(find.text('Created by people: 6 · by agents: 4.'), findsOneWidget);
+    expect(find.text('Channels you can access: 3.'), findsOneWidget);
     await unmount(t);
   });
 
@@ -170,7 +164,7 @@ void main() {
     );
     expect(find.text('All tasks'), findsNothing);
     // The other aggregates are unaffected.
-    expect(find.text('4 / 1'), findsOneWidget);
+    expect(find.text('Completed tasks'), findsOneWidget);
     expect(
       find.byKey(const ValueKey('raftbench-cost-comparison')),
       findsOneWidget,

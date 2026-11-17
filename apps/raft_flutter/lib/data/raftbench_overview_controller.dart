@@ -51,6 +51,11 @@ class RaftbenchOverviewController extends ChangeNotifier
     RaftbenchLoadKind.idle,
   );
 
+  /// The comparison windows of the last [load] (Web `now`, for the column
+  /// headings); null before the first load.
+  @override
+  RaftbenchWindow? window;
+
   late final String _identity = identity();
   int _seq = 0;
   bool _disposed = false;
@@ -69,7 +74,7 @@ class RaftbenchOverviewController extends ChangeNotifier
   Future<void> load() async {
     if (_disposed || identity() != _identity || !roleAllowed()) return;
     final seq = ++_seq;
-    final window = RaftbenchWindow.at(now());
+    final window = this.window = RaftbenchWindow.at(now());
     tasks = const RaftbenchLoad(RaftbenchLoadKind.loading);
     snapshot = const RaftbenchLoad(RaftbenchLoadKind.loading);
     costs = const RaftbenchLoad(RaftbenchLoadKind.loading);

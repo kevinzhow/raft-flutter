@@ -7,6 +7,13 @@ import 'raftbench_metrics.dart';
 import 'raftbench_models.dart';
 import 'raftbench_rules.dart';
 
+/// Opens the message an evidence reference cites in the thread panel (Web
+/// `EvidenceChip`). [channelId] is the cited channel's id, [target] the
+/// reference as written (`#name` or `#name:shortId`). Completes with false
+/// when the source no longer resolves, so the chip turns static.
+typedef RaftbenchOpenEvidence =
+    Future<bool> Function(String channelId, String target, String messageId);
+
 /// The `all` scope of the page's channel picker.
 const raftbenchWorkspaceScope = 'workspace';
 
@@ -84,6 +91,9 @@ abstract interface class RaftbenchOverviewPanel implements Listenable {
   RaftbenchLoad<RaftbenchTaskPeriods> get tasks;
   RaftbenchLoad<RaftbenchTaskSnapshot> get snapshot;
   RaftbenchLoad<RaftbenchCostComparison> get costs;
+
+  /// The two comparison windows of the last load, for the column headings.
+  RaftbenchWindow? get window;
   bool get anyLoading;
   Future<void> load();
 }
@@ -93,8 +103,28 @@ abstract interface class RaftbenchHostedPanel implements Listenable {
   RaftbenchDashboard? get data;
   bool get loading;
   bool get saving;
-  bool get failed;
+
+  /// A diagnostic code (`HTTP 403`, `TIMEOUT`, `NETWORK`, `UNKNOWN`) of the
+  /// last failed load / save; null when there is none. Kept apart, as on the
+  /// Web, so a failed save does not read as a broken page.
+  String? get loadError;
+  String? get saveError;
   int get page;
+
+  /// `recent` or `history` (the evidence period).
+  String get period;
+
+  /// The pattern kind filter; null is "All patterns".
+  String? get kind;
+
+  /// The grouped "All" view; null while the flat list is shown.
+  Map<String, RaftbenchGroup>? get groups;
+  bool get groupsUnavailable;
+
+  /// The finding whose vote is being saved, and whether the last vote failed.
+  String? get feedbackSaving;
+  bool get feedbackError;
+  RaftbenchReaderPanel get readers;
   List<RaftbenchServiceAgent> get serviceAgents;
   List<RaftbenchOption> get options;
   String? get modelAgentId;
@@ -117,11 +147,23 @@ abstract interface class RaftbenchHostedPanel implements Listenable {
   void setHistoryDate(String value);
   void chooseHistoryDays(int days);
   void setPage(int value);
+  void choosePeriod(String value);
+  void filterKind(String? value);
+  void showMore(String kind);
+  Future<void> reviewFinding(RaftbenchFeedback feedback, String vote);
   Future<void> toggleAnalysis();
   Future<void> applySettings();
   Future<void> analyzeAvailableHistory();
   Future<void> createServiceAgent();
   Future<void> assignAgent(String agentId);
+}
+
+/// "Agent access": which agents may read the findings.
+abstract interface class RaftbenchReaderPanel implements Listenable {
+  List<RaftbenchReader> get readers;
+  bool get failed;
+  bool get busy;
+  Future<void> toggle(RaftbenchReader reader);
 }
 
 /// The collapsed legacy phrase rules.

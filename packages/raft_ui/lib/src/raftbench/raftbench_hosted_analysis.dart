@@ -1,12 +1,14 @@
 // RaftBench "Patterns and improvements" (Web raftbench/HostedAnalysis.tsx):
-// enable / disable, the sources and start date, the service agent, progress,
-// coverage and the accepted findings.
+// enable / disable, the finding index, progress and coverage, the findings,
+// the service agent, agent access, and the sources and start date.
 import 'package:flutter/material.dart';
 
 import '../../raft_ui.dart';
 
+import 'raftbench_finding_index.dart';
 import 'raftbench_findings.dart';
 import 'raftbench_parts.dart';
+import 'raftbench_reader_access.dart';
 
 class RaftbenchHostedAnalysis extends StatelessWidget {
   const RaftbenchHostedAnalysis({
@@ -14,7 +16,7 @@ class RaftbenchHostedAnalysis extends StatelessWidget {
     required this.controller,
     required this.allowed,
     required this.onOpenAgent,
-    required this.onOpenMessage,
+    required this.onOpenEvidence,
   });
   final RaftbenchHostedPanel controller;
   final bool allowed;
@@ -22,8 +24,8 @@ class RaftbenchHostedAnalysis extends StatelessWidget {
   /// Open the agent's profile (Web `nav.toAgent`).
   final void Function(String agentId) onOpenAgent;
 
-  /// Open the source message in its channel (Web `nav.toMessage`).
-  final void Function(String channelId, String messageId) onOpenMessage;
+  /// Open a cited message in the thread panel (Web `EvidenceChip`).
+  final RaftbenchOpenEvidence onOpenEvidence;
 
   @override
   Widget build(BuildContext context) => ListenableBuilder(
@@ -32,7 +34,7 @@ class RaftbenchHostedAnalysis extends StatelessWidget {
       controller: controller,
       allowed: allowed,
       onOpenAgent: onOpenAgent,
-      onOpenMessage: onOpenMessage,
+      onOpenEvidence: onOpenEvidence,
     ),
   );
 }
@@ -42,12 +44,12 @@ class _Analysis extends StatelessWidget {
     required this.controller,
     required this.allowed,
     required this.onOpenAgent,
-    required this.onOpenMessage,
+    required this.onOpenEvidence,
   });
   final RaftbenchHostedPanel controller;
   final bool allowed;
   final void Function(String) onOpenAgent;
-  final void Function(String, String) onOpenMessage;
+  final RaftbenchOpenEvidence onOpenEvidence;
 
   @override
   Widget build(BuildContext context) {
@@ -69,8 +71,6 @@ class _Analysis extends StatelessWidget {
         data == null ||
         c.saving ||
         (!data.enabled && (selected.isEmpty || invalid));
-    final coverage = data?.coverage;
-    final progress = data?.progress;
     // Plain block flow: each block carries its own `mt-*` (nothing collapses
     // away at the top of the padded body).
     Widget at(double top, Widget child) => Padding(
@@ -78,141 +78,34 @@ class _Analysis extends StatelessWidget {
       child: child,
     );
     Widget live(Widget child) => Semantics(liveRegion: true, child: child);
+    final index = data?.enabled == true && data?.kindCounts != null;
     final children = <Widget>[
       if (c.loading)
         at(12, live(Text(tr('Loading analysis settings…'), style: ty.body()))),
-      if (c.failed)
-        at(
-          12,
-          live(
-            Text(
-              tr(
-                'Analysis settings could not be loaded or saved. Check access and try again.',
-              ),
-              style: ty.body(color: ty.danger),
-            ),
-          ),
+      if (c.loadError != null) at(12, _error(ty, c.loadError!, load: true)),
+      if (c.saveError != null) at(12, _error(ty, c.saveError!, load: false)),
+      if (data?.enabled == true && data?.triage != null)
+        at(12, RaftbenchTriageLine(triage: data!.triage!)),
+      if (index)
+        Padding(
+          padding: const EdgeInsets.only(top: 0, bottom: 20),
+          child: RaftbenchFindingIndex(controller: c),
         ),
-      if (data != null) at(16, _agentCard(context, t, ty, hint)),
-      at(16, _settings(context, t, ty, hint)),
-      if (data?.enabled == true &&
-          progress != null &&
-          progress.readMessages > 0)
+      at(index ? 0 : 16, _coverageDetails(context, t, ty, hint, fmt)),
+      if (run != null && !c.emptyScan)
         at(
           16,
-          live(
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  coverage != null
-                      ? raftFormat(
-                          context,
-                          'Read {count} of {total} messages · {batches} batches accepted',
-                          {
-                            'count': fmt.number(progress.readMessages),
-                            'total': fmt.number(coverage.windowMessages),
-                            'batches': fmt.number(progress.completedBatches),
-                          },
-                        )
-                      : raftFormat(
-                          context,
-                          'Read {count} messages · {batches} batches accepted',
-                          {
-                            'count': fmt.number(progress.readMessages),
-                            'batches': fmt.number(progress.completedBatches),
-                          },
-                        ),
-                  style: ty.body(weight: FontWeight.w600),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  tr(
-                    'New messages are read in the background. Findings so far stay visible.',
-                  ),
-                  style: hint,
-                ),
-              ],
-            ),
-          ),
+          RaftbenchFindings(controller: c, onOpenEvidence: onOpenEvidence),
         ),
-      if (coverage != null) at(16, _coverage(context, t, ty, hint, fmt)),
-      if (data?.enabled == true)
-        at(
-          8,
-          Text(
-            raftFormat(context, 'Current cloud agent model: {model}', {
-              'model': c.modelAgentId == data!.agentId && c.modelLabel != null
-                  ? c.modelLabel!
-                  : tr('Unknown'),
-            }),
-            style: hint,
-          ),
+      if (data != null) at(16, _agentCard(context, t, ty, hint)),
+      at(
+        16,
+        RaftbenchReaderAccess(
+          controller: c.readers,
+          enabled: data?.enabled == true,
         ),
-      if (data?.enabled == true)
-        at(
-          12,
-          Text(
-            raftFormat(
-              context,
-              '{sources} channels · history continues in background; checks for new messages every {count} minutes',
-              {
-                'count': data!.intervalMinutes,
-                'sources': data.channelIds.length,
-              },
-            ),
-            style: hint,
-          ),
-        ),
-      if (data?.enabled == true && data?.provisioning?.state == 'failed')
-        at(
-          12,
-          live(
-            Text(
-              tr(
-                'The analysis agent could not start. An administrator needs to check the cloud agent service.',
-              ),
-              style: ty.body(color: ty.danger),
-            ),
-          ),
-        ),
-      if (c.busy && !c.emptyScan) at(16, _busy(context, t, ty, hint)),
-      if (run != null && run.skippedRanges.isNotEmpty)
-        at(
-          12,
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: t.colors['warning-soft'],
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: live(
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  for (final range in run.skippedRanges)
-                    Text(
-                      raftFormat(
-                        context,
-                        'A chunk from {from} to {to} ({count} messages) was not analyzed after 3 failed attempts. Its outcome is unknown.',
-                        {
-                          'from': fmt.stamp(range.from),
-                          'to': fmt.stamp(range.to),
-                          'count': range.messages == null
-                              ? tr('Unknown')
-                              : fmt.number(range.messages!),
-                        },
-                      ),
-                      style: ty.callout(color: ty.warning),
-                    ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      if (run != null && !c.emptyScan)
-        at(16, RaftbenchFindings(controller: c, onOpenMessage: onOpenMessage)),
+      ),
+      at(16, _settings(context, t, ty, hint)),
     ];
     return RaftbenchCard(
       padded: false,
@@ -224,7 +117,11 @@ class _Analysis extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            color: t.colors['success-soft'],
+            decoration: BoxDecoration(
+              border: Border(
+                bottom: BorderSide(color: t.colors['line-hairline']!),
+              ),
+            ),
             padding: EdgeInsets.all(pad),
             child: Wrap(
               alignment: WrapAlignment.spaceBetween,
@@ -232,30 +129,12 @@ class _Analysis extends StatelessWidget {
               spacing: 12,
               runSpacing: 12,
               children: [
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    RaftIcon(RaftGlyph.sparkles, size: 24, color: t.ink),
-                    const SizedBox(width: 12),
-                    Flexible(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Semantics(
-                            header: true,
-                            child: Text(
-                              tr('Patterns and improvements'),
-                              style: ty.headline(),
-                            ),
-                          ),
-                          Text(
-                            tr('Reads selected channels · no DM replies'),
-                            style: ty.caption(weight: FontWeight.w400),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+                Semantics(
+                  header: true,
+                  child: Text(
+                    tr('Patterns and improvements'),
+                    style: ty.headline(),
+                  ),
                 ),
                 RaftbenchButton(
                   tr(toggleLabel),
@@ -272,6 +151,175 @@ class _Analysis extends StatelessWidget {
               children: children,
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  /// `ErrorLine`: the failure with its diagnostic code, and for a 401 / 403 the
+  /// reason to try something else.
+  Widget _error(RaftbenchType ty, String code, {required bool load}) => Builder(
+    builder: (context) {
+      String tr(String s) => raftText(context, s);
+      return Semantics(
+        liveRegion: true,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              raftFormat(
+                context,
+                load
+                    ? 'Analysis settings could not be loaded (code: {code}). Refresh the page to try again.'
+                    : 'Analysis settings could not be saved (code: {code}). Try again.',
+                {'code': code},
+              ),
+              style: ty.body(color: ty.danger),
+            ),
+            if (code == 'HTTP 401' || code == 'HTTP 403')
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  tr(
+                    code == 'HTTP 401'
+                        ? 'Your sign-in may have expired. Refresh the page or sign in again.'
+                        : 'Your account may not have access to RaftBench on this server.',
+                  ),
+                  style: ty.caption(color: ty.danger, weight: FontWeight.w400),
+                ),
+              ),
+          ],
+        ),
+      );
+    },
+  );
+
+  /// `<details>` "Reading progress and coverage": the cumulative read count,
+  /// the source coverage, the model and cadence, provisioning, the busy bar and
+  /// the skipped chunks.
+  Widget _coverageDetails(
+    BuildContext context,
+    RaftTokens t,
+    RaftbenchType ty,
+    TextStyle hint,
+    RaftbenchFormat fmt,
+  ) {
+    String tr(String s) => raftText(context, s);
+    Widget live(Widget child) => Semantics(liveRegion: true, child: child);
+    Widget at(double top, Widget child) => Padding(
+      padding: EdgeInsets.only(top: top),
+      child: child,
+    );
+    final c = controller, data = c.data, run = c.run;
+    final coverage = data?.coverage;
+    final progress = data?.progress;
+    return RaftbenchDetails(
+      key: const ValueKey('raftbench-coverage-details'),
+      summaryStyle: ty.callout(weight: FontWeight.w600),
+      summary: Text(tr('Reading progress and coverage')),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (data?.enabled == true &&
+              progress != null &&
+              progress.readMessages > 0)
+            at(
+              16,
+              live(
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      coverage != null
+                          ? raftFormat(
+                              context,
+                              'Read {count} of {total} messages so far',
+                              {
+                                'count': fmt.number(progress.readMessages),
+                                'total': fmt.number(coverage.windowMessages),
+                              },
+                            )
+                          : raftFormat(
+                              context,
+                              'Read {count} messages so far',
+                              {'count': fmt.number(progress.readMessages)},
+                            ),
+                      style: ty.body(weight: FontWeight.w600),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      tr(
+                        'New messages are read in the background. Findings so far stay visible.',
+                      ),
+                      style: hint,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          if (coverage != null) at(16, _coverage(context, t, ty, hint, fmt)),
+          if (data?.enabled == true)
+            at(
+              8,
+              Text(
+                raftFormat(context, 'Current cloud agent model: {model}', {
+                  'model':
+                      c.modelAgentId == data!.agentId && c.modelLabel != null
+                      ? c.modelLabel!
+                      : tr('Unknown'),
+                }),
+                style: hint,
+              ),
+            ),
+          if (data?.enabled == true)
+            at(
+              12,
+              Text(
+                raftFormat(
+                  context,
+                  '{sources} channels · history continues in background; checks for new messages every {count} minutes',
+                  {
+                    'count': data!.intervalMinutes,
+                    'sources': data.channelIds.length,
+                  },
+                ),
+                style: hint,
+              ),
+            ),
+          if (data?.enabled == true && data?.provisioning?.state == 'failed')
+            at(
+              12,
+              live(
+                Text(
+                  tr(
+                    'The analysis agent could not start. An administrator needs to check the cloud agent service.',
+                  ),
+                  style: ty.body(color: ty.danger),
+                ),
+              ),
+            ),
+          if (c.busy && !c.emptyScan) at(16, _busy(context, t, ty, hint)),
+          if (run != null && run.skippedRanges.isNotEmpty)
+            at(
+              12,
+              RaftBanner(
+                size: RaftBannerRecipeSize.sm,
+                description: [
+                  for (final range in run.skippedRanges)
+                    raftFormat(
+                      context,
+                      'A chunk from {from} to {to} ({count} messages) was not analyzed after 3 failed attempts. Its outcome is unknown.',
+                      {
+                        'from': fmt.stamp(range.from),
+                        'to': fmt.stamp(range.to),
+                        'count': range.messages == null
+                            ? tr('Unknown')
+                            : fmt.number(range.messages!),
+                      },
+                    ),
+                ].join('\n'),
+              ),
+            ),
         ],
       ),
     );
@@ -325,7 +373,6 @@ class _Analysis extends StatelessWidget {
                   ),
                   RaftbenchButton(
                     tr('Create service agent'),
-                    small: true,
                     onPressed: c.saving ? null : c.createServiceAgent,
                   ),
                 ],
@@ -378,7 +425,6 @@ class _Analysis extends StatelessWidget {
                         if (data.agentId != agent.agentId)
                           RaftbenchButton(
                             tr('Assign agent'),
-                            small: true,
                             onPressed: !agent.ready || c.assignmentBlocked
                                 ? null
                                 : () => c.assignAgent(agent.agentId),
@@ -478,7 +524,6 @@ class _Analysis extends StatelessWidget {
                   for (final days in raftbenchHistoryDays)
                     RaftbenchButton(
                       raftFormat(context, 'Past {days} days', {'days': days}),
-                      small: true,
                       onPressed: c.saving
                           ? null
                           : () => c.chooseHistoryDays(days),
@@ -611,7 +656,9 @@ class _Analysis extends StatelessWidget {
         : run == null || run.status == 'queued'
         ? 'Waiting for the analysis agent…'
         : run.stopReason == 'more_pages'
-        ? 'Reading channel messages…'
+        ? (run.sourceKind == 'thread'
+              ? 'Reading thread replies…'
+              : 'Reading channel messages…')
         : 'Analyzing the messages read…';
     final count = run?.fetchedMessages ?? 0;
     final batch = data.progress != null;
@@ -626,9 +673,7 @@ class _Analysis extends StatelessWidget {
             label: tr('Analysis progress'),
             value: raftFormat(
               context,
-              batch
-                  ? 'This batch: {count} messages read'
-                  : '{count} messages read',
+              batch ? '{count} new messages read' : '{count} messages read',
               {'count': RaftbenchFormat(context).number(count)},
             ),
             child: RaftbenchBar(
@@ -644,7 +689,7 @@ class _Analysis extends StatelessWidget {
             raftFormat(
               context,
               batch
-                  ? 'This batch has read {count} messages. The background scan continues in further batches.'
+                  ? 'Reading new messages. Findings so far stay visible.'
                   : '{count} messages read. The total is not known yet; this bar does not show a percentage.',
               {'count': RaftbenchFormat(context).number(count)},
             ),

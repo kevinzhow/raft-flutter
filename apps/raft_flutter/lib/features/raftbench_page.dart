@@ -72,7 +72,8 @@ class _RaftbenchPageState extends State<RaftbenchPage> {
     if (!canUseRaftBench(w.server?.string('role'))) {
       return const RaftbenchNotice(
         title: 'RaftBench is for server administrators',
-        help: 'Only this server’s owner or administrators can open this overview. Existing channel permissions still apply.',
+        help:
+            'Only this server’s owner or administrators can open this overview. Existing channel permissions still apply.',
       );
     }
     final flag = widget.flag;
@@ -84,7 +85,8 @@ class _RaftbenchPageState extends State<RaftbenchPage> {
       }
       return const RaftbenchNotice(
         title: 'RaftBench is not enabled for this server',
-        help: 'This pilot is off by default and only available to explicitly enrolled servers.',
+        help:
+            'This pilot is off by default and only available to explicitly enrolled servers.',
       );
     }
     return _AdminPage(
@@ -114,7 +116,8 @@ class _AdminPage extends StatefulWidget {
 class _AdminPageState extends State<_AdminPage> {
   String channelId = raftbenchWorkspaceScope;
   bool consented = false;
-  late final RaftbenchHostedController hosted;
+  RaftbenchHostedController? hosted;
+  String? hostedScope;
   late final RaftbenchRulesController rules;
   RaftbenchOverviewController? overview;
   String? overviewScope;
@@ -132,18 +135,6 @@ class _AdminPageState extends State<_AdminPage> {
   void initState() {
     super.initState();
     bool role() => canUseRaftBench(w.server?.string('role'));
-    hosted = RaftbenchHostedController(
-      request: _request,
-      identity: () => pageIdentity(w),
-      roleAllowed: role,
-      analysisAllowed: () => widget.analysisAllowed,
-      now: widget.now,
-      onEnabled: (enabled) {
-        if (consented != enabled && mounted) {
-          setState(() => consented = enabled);
-        }
-      },
-    )..start();
     rules = RaftbenchRulesController(
       request: _request,
       identity: () => pageIdentity(w),
@@ -157,7 +148,7 @@ class _AdminPageState extends State<_AdminPage> {
   @override
   void dispose() {
     w.removeListener(_changed);
-    hosted.dispose();
+    hosted?.dispose();
     rules.dispose();
     overview?.dispose();
     super.dispose();
@@ -186,6 +177,60 @@ class _AdminPageState extends State<_AdminPage> {
     unawaited(w.jumpToMessage(channel, message));
   }
 
+  /// Web `EvidenceChip.open`: a cited top-level message opens its thread; a
+  /// `#channel:shortId` reply resolves its parent through the message context
+  /// and opens focused on the reply. False when the thread no longer resolves.
+  Future<bool> _openEvidence(
+    String channelId,
+    String target,
+    String messageId,
+  ) async {
+    final shortId = raftbenchParseEvidenceTarget(target).threadShortId;
+    if (shortId == null) {
+      await w.openThreadIdentity(
+        parentChannelId: channelId,
+        parentMessageId: messageId,
+      );
+      return true;
+    }
+    final Object? context;
+    try {
+      context = await _request(
+        'GET',
+        '/messages/context/$shortId',
+        query: {'channelId': channelId},
+      );
+    } catch (_) {
+      // Web lets the failure surface unhandled: the chip stays a link.
+      return true;
+    }
+    final map = context is Map ? context : const {};
+    final canonical = map['canonicalTarget'];
+    final targetId = map['targetMessageId'];
+    String? parent, threadChannel, parentChannel = channelId;
+    if (canonical is Map &&
+        canonical['kind'] == 'thread' &&
+        canonical['threadParentMessageId'] is String) {
+      parent = canonical['threadParentMessageId'] as String;
+      if (canonical['channelId'] is String) {
+        parentChannel = canonical['channelId'] as String;
+      }
+      if (canonical['threadChannelId'] is String) {
+        threadChannel = canonical['threadChannelId'] as String;
+      }
+    } else if (targetId is String && targetId.isNotEmpty) {
+      parent = targetId;
+    }
+    if (parent == null) return false;
+    await w.openThreadIdentity(
+      parentChannelId: parentChannel,
+      parentMessageId: parent,
+      focusedMessageId: messageId,
+      initialThreadChannelId: threadChannel,
+    );
+    return true;
+  }
+
   @override
   Widget build(BuildContext context) {
     final choices = options;
@@ -196,7 +241,6 @@ class _AdminPageState extends State<_AdminPage> {
         : ids.contains(channelId)
         ? channelId
         : '';
-    hosted.setOptions(choices);
     rules.configure(
       channelId: scope,
       options: choices,
@@ -205,6 +249,27 @@ class _AdminPageState extends State<_AdminPage> {
     );
     final membership = ([...ids]..sort()).join(',');
     final managerScope = '${pageIdentity(w)}|$scope|$membership';
+    // Web keys HostedAnalysis by the same scope: a new scope starts afresh.
+    if (hostedScope != managerScope) {
+      hosted?.dispose();
+      hostedScope = managerScope;
+      hosted = RaftbenchHostedController(
+        request: _request,
+        identity: () => pageIdentity(w),
+        roleAllowed: () => canUseRaftBench(w.server?.string('role')),
+        analysisAllowed: () => widget.analysisAllowed,
+        now: widget.now,
+        channelId: scope == raftbenchWorkspaceScope || scope.isEmpty
+            ? null
+            : scope,
+        onEnabled: (enabled) {
+          if (consented != enabled && mounted) {
+            setState(() => consented = enabled);
+          }
+        },
+      )..start();
+    }
+    hosted!.setOptions(choices);
     if (overviewScope != managerScope) {
       overview?.dispose();
       overviewScope = managerScope;
@@ -221,7 +286,7 @@ class _AdminPageState extends State<_AdminPage> {
     }
     return RaftbenchAdminView(
       overview: overview!,
-      hosted: hosted,
+      hosted: hosted!,
       rules: rules,
       options: choices,
       scope: scope,
@@ -232,6 +297,7 @@ class _AdminPageState extends State<_AdminPage> {
       analysisAllowed: widget.analysisAllowed,
       onOpenAgent: _openAgent,
       onOpenMessage: _openMessage,
+      onOpenEvidence: _openEvidence,
     );
   }
 }

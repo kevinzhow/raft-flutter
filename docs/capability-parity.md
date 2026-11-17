@@ -7,11 +7,11 @@ Pixel parity, field parity (`docs/field-parity.md`) and the page inventory (`doc
 
 ## Summary
 
-Total capabilities: 837 (391 endpoint/network keys, 446 client-side).
+Total capabilities: 840 (394 endpoint/network keys, 446 client-side).
 
 | Status | Count |
 | --- | ---: |
-| ✅ covered | 713 |
+| ✅ covered | 716 |
 | ⚠️ partial | 28 |
 | ❌ missing | 2 |
 | ➖ na | 94 |
@@ -23,7 +23,7 @@ Total capabilities: 837 (391 endpoint/network keys, 446 client-side).
 | Channels | 35 | 0 | 0 | 0 |
 | DMs | 6 | 0 | 0 | 0 |
 | Members and roles | 20 | 0 | 0 | 3 |
-| Server settings and admin | 56 | 0 | 0 | 2 |
+| Server settings and admin | 59 | 0 | 0 | 2 |
 | Billing | 4 | 4 | 0 | 1 |
 | Agents, computers, runtimes | 132 | 1 | 1 | 9 |
 | Integrations, apps, MCP | 78 | 6 | 0 | 7 |
@@ -253,8 +253,9 @@ Legend: ✅ covered (endpoint called and a reachable entry point with equivalent
 | ✅ | Revoke a pending email invite | `DELETE /servers/:id/invites/:id` | Administration > Pending Invites revoke icon + confirm[gate: inviteMembers] | administration_view.dart _InvitesSection 'Revoke Invite' confirm |  |
 | ✅ | Revoke an invite link | `DELETE /servers/:id/join-links/:id` | Administration > Invite Links revoke icon + confirm \| InviteHumanDialog 'Revoke link'[gate: inviteMembers] | administration_view.dart _JoinLinksSection.revoke() ('Revoke Invite Link' confirm) \| workspace_menu_invite.dart |  |
 | ➖ | Desktop download options in Settings | `GET /desktop-download/platforms` | components/settings/DesktopDownloadOptions.tsx[gate: none] |  | N/A: Web-only: lists installers of the desktop app for browser users. The app is itself the installed client (plan section 3 item 8, Web-only items recorded as intentional differences). |
-| ✅ | RaftBench overview dashboard (owner/admin, flag raftbench_overview_v0) | `GET /raftbench` | raftbench/HostedAnalysis.tsx[gate: none] | raftbench_hosted_controller.dart load() (5 s read, revision-guarded writes), raftbench_page.dart, raftbench_hosted_analysis.dart | Web v1.21.23 RaftBench (Settings > RaftBench for an owner or admin on a server with raftbench_overview_v0), ported in WP-BENCH. |
-| ✅ | List RaftBench service agents | `GET /raftbench/agents` | raftbench/HostedAnalysis.tsx[gate: none] | raftbench_hosted_controller.dart load() service-agent list; raftbench_hosted_analysis.dart agent card | Web v1.21.23 RaftBench (Settings > RaftBench for an owner or admin on a server with raftbench_overview_v0), ported in WP-BENCH. |
+| ✅ | RaftBench overview dashboard (owner/admin, flag raftbench_overview_v0) | `GET /raftbench` | raftbench/HostedAnalysis.tsx[gate: none] | raftbench_hosted_controller.dart load() (5 s read, revision-guarded writes), raftbench_page.dart, raftbench_hosted_analysis.dart | Web v1.24.0 RaftBench (Settings > RaftBench for an owner or admin on a server with raftbench_overview_v0), ported in WP-ADMIN. |
+| ✅ | List RaftBench service agents | `GET /raftbench/agents` | raftbench/HostedAnalysis.tsx[gate: none] | raftbench_hosted_controller.dart load() service-agent list; raftbench_hosted_analysis.dart agent card | Web v1.24.0 RaftBench (Settings > RaftBench for an owner or admin on a server with raftbench_overview_v0), ported in WP-ADMIN. |
+| ✅ | List the agents that may read the RaftBench findings | `GET /raftbench/readers` | raftbench/ReaderAccess.tsx[gate: none] | raftbench_reader_controller.dart load(); raftbench_reader_access.dart | Web v1.24.0 RaftBench (Settings > RaftBench for an owner or admin on a server with raftbench_overview_v0), ported in WP-ADMIN. |
 | ✅ | List my servers (switcher, server selector, session restore) | `GET /servers` | Server switcher menu, ServerSelector | client.dart servers(); global_server_selector.dart; workspace server menu |  |
 | ✅ | Read the pre-join agreement | `GET /servers/:id/agreement` | Settings > Administration > 'Pre-join Agreement' section[gate: editServerSettings] | administration_view.dart _AgreementSection |  |
 | ✅ | List pending email invites | `GET /servers/:id/invites` | Settings > Administration > 'Pending Invites' section[gate: inviteMembers] | administration_view.dart _InvitesSection ('Pending Invites') |  |
@@ -266,8 +267,8 @@ Legend: ✅ covered (endpoint called and a reachable entry point with equivalent
 | ✅ | Load my sidebar order (pins, sections, placements, sort) (bg) | `GET /servers/:id/sidebar-order` | Sidebar (background hydrate) and sidebar menus | workspace_controller.dart sidebar-order load; sidebar_preferences_view.dart |  |
 | ✅ | Read whether message translation is enabled for the server | `GET /servers/:id/translation-settings` | Language & Region translation controls (background) \| Administration > Translation | message_translation_store.dart; administration_view.dart _TranslationSection |  |
 | ✅ | Per-server unread/mute summary used for switcher badges (bg) | `GET /servers/unread-summary` | Server switcher unread badge / muted badge (background) | source_server_unread.dart -> RaftServerMenuRow activityUnreadCount/pushMuted |  |
-| ✅ | Task metrics per period for the RaftBench dashboard | `GET /tasks/server/period-metrics` | raftbench/periodMetrics.ts[gate: none] | raftbench_overview_controller.dart load() | Web v1.21.23 RaftBench (Settings > RaftBench for an owner or admin on a server with raftbench_overview_v0), ported in WP-BENCH. |
-| ✅ | Task snapshot metrics for the RaftBench dashboard | `GET /tasks/server/snapshot-metrics` | raftbench/periodMetrics.ts[gate: none] | raftbench_overview_controller.dart load() | Web v1.21.23 RaftBench (Settings > RaftBench for an owner or admin on a server with raftbench_overview_v0), ported in WP-BENCH. |
+| ✅ | Task metrics per period for the RaftBench dashboard | `GET /tasks/server/period-metrics` | raftbench/periodMetrics.ts[gate: none] | raftbench_overview_controller.dart load() | Web v1.24.0 RaftBench (Settings > RaftBench for an owner or admin on a server with raftbench_overview_v0), ported in WP-ADMIN. |
+| ✅ | Task snapshot metrics for the RaftBench dashboard | `GET /tasks/server/snapshot-metrics` | raftbench/periodMetrics.ts[gate: none] | raftbench_overview_controller.dart load() | Web v1.24.0 RaftBench (Settings > RaftBench for an owner or admin on a server with raftbench_overview_v0), ported in WP-ADMIN. |
 | ✅ | Rename the server (Server Profile), toggle member-permission 'hide humans', set public/lab flags | `PATCH /servers/:id` | Settings > Server Profile name + 'Save Profile' \| Administration > Member Permissions[gate: editServerSettings] | server_views.dart ServerSettingsView save() \| administration_view.dart _MemberPermissionsSection |  |
 | ✅ | Owner master switch that enables Labs for the server | `PATCH /servers/:id/labs/access` | Settings > Labs master toggle[gate: owner only (canSetMasterAccess)] | labs_view.dart master switch |  |
 | ✅ | Choose the onboarding agent and whether it greets in #all | `PATCH /servers/:id/onboarding-settings` | Administration > Onboarding section (agent select, greeting yes/no, Save)[gate: editServerSettings] | administration_view.dart _OnboardingSection |  |
@@ -279,15 +280,17 @@ Legend: ✅ covered (endpoint called and a reachable entry point with equivalent
 | ✅ | Drag-reorder servers in the switcher | `PATCH /servers/order` | Server switcher menu: drag handle (reorderServer) | workspace_view.dart reorderMenuServers (RaftServerSwitcher onReorder) |  |
 | ✅ | Hide the #all channel from everyone | `POST /channels/system/all/hide` | Channel settings (#all) 'Hide #all' action with confirm \| Settings > Server > System channels 'Hide #all channel' toggle[gate: changeChannelVisibility (owner/admin)] | channel_settings.dart visibility action on #all \| administration_view.dart system-channel toggle |  |
 | ✅ | Restore the hidden #all channel | `POST /channels/system/all/restore` | Channel settings (#all) 'Restore #all' action with confirm \| Settings > Server > System channels toggle off 'Hide #all channel'[gate: changeChannelVisibility (owner/admin)] | channel_settings.dart visibility action on #all \| administration_view.dart system-channel toggle |  |
-| ✅ | Create the hosted analysis agent for RaftBench | `POST /raftbench/agents` | raftbench/HostedAnalysis.tsx[gate: none] | raftbench_hosted_controller.dart createServiceAgent() | Web v1.21.23 RaftBench (Settings > RaftBench for an owner or admin on a server with raftbench_overview_v0), ported in WP-BENCH. |
+| ✅ | Create the hosted analysis agent for RaftBench | `POST /raftbench/agents` | raftbench/HostedAnalysis.tsx[gate: none] | raftbench_hosted_controller.dart createServiceAgent() | Web v1.24.0 RaftBench (Settings > RaftBench for an owner or admin on a server with raftbench_overview_v0), ported in WP-ADMIN. |
 | ✅ | Create a new server (name, URL slug) | `POST /servers` | ServerSelector 'Create New Server' form \| switcher 'Switch or create server' | global_server_selector.dart 'Create Server' \| server_views.dart WorkspaceActions.create \| workspace menu 'Create workspace' |  |
 | ✅ | Change the server avatar | `POST /servers/:id/avatar` | Settings > Server Profile avatar tile upload[gate: editServerSettings (owner/admin)] | server_views.dart 'server-profile-avatar' picker (added in eaba7c98) |  |
 | ✅ | Send email invites with a per-invitee role (member or guest) | `POST /servers/:id/invites` | Workspace switcher menu 'Invite human' > InviteHumanDialog By email tab 'Send invites' (also Sidebar entry)[gate: inviteMembers; seat limit prompts 'View billing'] | workspace_menu_invite.dart _InviteDialog (email rows with role select, upgrade hint) opened from the server menu 'Invite human' action |  |
 | ✅ | Create an invite link with optional max uses and expiry (and regenerate from the invite dialog) | `POST /servers/:id/join-links` | Administration > Invite Links 'Create link' (max uses, expires at) \| InviteHumanDialog Link tab 'Apply link options'/regenerate[gate: inviteMembers] | administration_view.dart _JoinLinksSection.create() \| workspace_menu_invite.dart link options |  |
 | ✅ | Leave the server | `POST /servers/:id/leave` | Settings > Server Profile > Danger Zone 'Leave Server' + confirm[gate: admin, member, guest (not owner)] | server_views.dart 'server-danger-leave-button' with confirmLeave |  |
 | ✅ | Join the public Raft community server (with agreement) from the switcher or Help menu | `POST /servers/join-community` | Server switcher 'Join community' \| Help menu 'Join Community'[gate: only when not already joined] | workspace_view.dart server menu 'Join Community' action and Help 'Join Community' |  |
-| ✅ | Save the RaftBench configuration | `PUT /raftbench` | raftbench/HostedAnalysis.tsx[gate: none] | raftbench_hosted_controller.dart save() (enable / disable / apply) | Web v1.21.23 RaftBench (Settings > RaftBench for an owner or admin on a server with raftbench_overview_v0), ported in WP-BENCH. |
-| ✅ | Assign the RaftBench service agent | `PUT /raftbench/assignment` | raftbench/HostedAnalysis.tsx[gate: none] | raftbench_hosted_controller.dart assignAgent() | Web v1.21.23 RaftBench (Settings > RaftBench for an owner or admin on a server with raftbench_overview_v0), ported in WP-BENCH. |
+| ✅ | Save the RaftBench configuration | `PUT /raftbench` | raftbench/HostedAnalysis.tsx[gate: none] | raftbench_hosted_controller.dart save() (enable / disable / apply) | Web v1.24.0 RaftBench (Settings > RaftBench for an owner or admin on a server with raftbench_overview_v0), ported in WP-ADMIN. |
+| ✅ | Assign the RaftBench service agent | `PUT /raftbench/assignment` | raftbench/HostedAnalysis.tsx[gate: none] | raftbench_hosted_controller.dart assignAgent() | Web v1.24.0 RaftBench (Settings > RaftBench for an owner or admin on a server with raftbench_overview_v0), ported in WP-ADMIN. |
+| ✅ | Vote Agree / Inaccurate on a RaftBench finding | `PUT /raftbench/findings/:id/feedback` | raftbench/HostedAnalysis.tsx[gate: none] | raftbench_hosted_controller.dart reviewFinding() | Web v1.24.0 RaftBench (Settings > RaftBench for an owner or admin on a server with raftbench_overview_v0), ported in WP-ADMIN. |
+| ✅ | Grant or revoke an agent's read access to the RaftBench findings | `PUT /raftbench/readers/:id` | raftbench/ReaderAccess.tsx[gate: none] | raftbench_reader_controller.dart toggle() | Web v1.24.0 RaftBench (Settings > RaftBench for an owner or admin on a server with raftbench_overview_v0), ported in WP-ADMIN. |
 | ✅ | Require and edit the pre-join agreement (title, markdown body up to the length cap) | `PUT /servers/:id/agreement` | Pre-join Agreement: require checkbox, title, body, preview, Save[gate: editServerSettings] | administration_view.dart _AgreementSection save() |  |
 | ✅ | Enroll the server in or out of an individual Lab | `PUT /servers/:id/labs/:id` | Settings > Labs per-lab enrollment switch[gate: owner/admin] | labs_view.dart per-lab switch ('PUT' $base/labs/<key>) |  |
 | ✅ | Report an issue: upload the diagnostic bundle to the feedback export service | `RAW components/agent/ReportIssueDialog.tsx` | ReportIssueDialog (Feedback > Report an issue) | report_issue.dart posts to $exportUrl/api/reports and /complete |  |

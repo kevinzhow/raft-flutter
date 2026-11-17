@@ -53,9 +53,9 @@ class RaftbenchType {
 /// `react-intl` formats with the page's defaults: numeric date, `h:mm` time.
 class RaftbenchFormat {
   RaftbenchFormat(BuildContext context)
-    : locale = Localizations.localeOf(context)
-          .toLanguageTag()
-          .replaceAll('-', '_');
+    : locale = Localizations.localeOf(
+        context,
+      ).toLanguageTag().replaceAll('-', '_');
   final String locale;
 
   String number(num value, {int maximumFractionDigits = 3}) =>
@@ -121,20 +121,23 @@ class RaftbenchCard extends StatelessWidget {
   );
 }
 
-/// The page's Button: raft-ui `Button` (default variant), size sm unless
-/// said otherwise.
+/// The page's Button: raft-ui `Button` (default variant), size md (Web v1.24
+/// uses no `sm` button on this page).
 class RaftbenchButton extends StatelessWidget {
   const RaftbenchButton(
     this.label, {
     super.key,
     this.onPressed,
-    this.small = false,
     this.variant = RaftButtonRecipeVariant.default_,
     this.expand = false,
+    this.toggled,
   });
   final String label;
   final VoidCallback? onPressed;
-  final bool small, expand;
+  final bool expand;
+
+  /// `aria-pressed` of a toggle button (the finding votes).
+  final bool? toggled;
   final RaftButtonRecipeVariant variant;
 
   @override
@@ -142,9 +145,10 @@ class RaftbenchButton extends StatelessWidget {
     label: label,
     onPressed: onPressed,
     tone: variant,
-    size: small ? RaftButtonRecipeSize.sm : RaftButtonRecipeSize.md,
-    visualHeight: small ? RaftMetrics.buttonSm : RaftMetrics.buttonMd,
+    size: RaftButtonRecipeSize.md,
+    visualHeight: RaftMetrics.buttonMd,
     expand: expand,
+    toggled: toggled,
   );
 }
 
