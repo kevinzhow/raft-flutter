@@ -3520,7 +3520,10 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
   /// Web `useSettledValue` of the counts line: the numbers change only when
   /// the page of the shown filter has settled.
   void settleActivityCounts() => activityFacets.counts.settle(
-    loaded: rowsView != null && rowsView == listView && !loading,
+    // A failed load has settled too: Web reads "0 in progress · 0 unread".
+    loaded:
+        (rowsView != null && rowsView == listView && !loading) ||
+        activityLoadFailed,
     totalCount: totalCount ?? 0,
     objects: activityFacets.objects,
     totalUnread: totalUnreadCount ?? 0,
