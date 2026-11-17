@@ -7472,24 +7472,6 @@
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
-      "apps/raft_flutter/lib/features/channel_members.dart#local-function:CLASS:_ChannelMembersState@7813/METHOD:build@21316/FUNCTION:externalRow@21646": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
-      },
-      "apps/raft_flutter/lib/features/channel_members.dart#local-function:CLASS:_ChannelMembersState@7813/METHOD:build@21316/FUNCTION:item@27411": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
-      },
-      "apps/raft_flutter/lib/features/channel_members.dart#local-function:CLASS:_ChannelMembersState@7813/METHOD:build@21316/FUNCTION:row@22579": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
-      },
       "apps/raft_flutter/lib/features/channel_members.dart#method:ChannelMembers.createState": {
         "role": "unresolved",
         "familyRefs": [],
@@ -7543,12 +7525,6 @@
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
-      },
-      "apps/raft_flutter/lib/features/channel_settings.dart#local-function:CLASS:_ChannelSettingsState@2939/METHOD:membersStrip@43701/FUNCTION:tile@43809": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
       },
       "apps/raft_flutter/lib/features/channel_settings.dart#method:ChannelSettings.createState": {
         "role": "unresolved",
@@ -8281,12 +8257,6 @@
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
-      },
-      "apps/raft_flutter/lib/features/create_channel_dialog.dart#local-function:CLASS:_CreateChannelDialogState@6502/METHOD:build@12069/FUNCTION:item@12118": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
       },
       "apps/raft_flutter/lib/features/create_channel_dialog.dart#method:CreateChannelDialog.createState": {
         "role": "unresolved",
@@ -22002,18 +21972,6 @@
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
       "packages/raft_ui/lib/src/channel_members_view.dart#local-function:CLASS:RaftChannelMembersModal@4128/METHOD:_addView@11629/FUNCTION:eyebrow@11757": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
-      },
-      "packages/raft_ui/lib/src/channel_members_view.dart#local-function:CLASS:RaftChannelMembersModal@4128/METHOD:_roster@8725/FUNCTION:row@8926": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
-      },
-      "packages/raft_ui/lib/src/channel_members_view.dart#local-function:CLASS:_CreateAgentEntry@22386/METHOD:build@22918/FUNCTION:plus@23184": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
@@ -39808,18 +39766,6 @@
         "owner": "design-system alignment",
         "reason": "Registered by the current resolved runtime census. Exact family/part ownership and real-entry applicability still require review; this creates no mount or visual acceptance claim."
       },
-      "packages/raft_ui/lib/src/create_channel_view.dart#local-function:CLASS:_RecipeMemberPicker@8053/METHOD:build@8442/FUNCTION:group@8671": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Registered by the current resolved runtime census. Exact family/part ownership and real-entry applicability still require review; this creates no mount or visual acceptance claim."
-      },
-      "packages/raft_ui/lib/src/create_channel_view.dart#local-function:CLASS:_RecipeMemberPicker@8053/METHOD:build@8442/FUNCTION:row@8979": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Registered by the current resolved runtime census. Exact family/part ownership and real-entry applicability still require review; this creates no mount or visual acceptance claim."
-      },
       "packages/raft_ui/lib/src/design_primitives.dart#local-function:CLASS:_RaftDropdownMenuState@66702/METHOD:build@72213/FUNCTION:toggle@72398": {
         "role": "unresolved",
         "familyRefs": [],
@@ -50651,12 +50597,6 @@
         "owner": "design-system alignment",
         "reason": "WP-SIDE (Web v1.24 channel side area, Tasks / Files cards, web preview): composes raft_ui parts; real-entry/family/state mapping remains unreviewed. This registration grants no style exemption or visual acceptance."
       },
-      "apps/raft_flutter/lib/features/channel_side_area.dart#local-function:CLASS:_ChannelSideAreaState@5858/METHOD:_measureComposer@16485/FUNCTION:<anonymous>@16555/FUNCTION:visit@16781": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "WP-SIDE (Web v1.24 channel side area, Tasks / Files cards, web preview): composes raft_ui parts; real-entry/family/state mapping remains unreviewed. This registration grants no style exemption or visual acceptance."
-      },
       "apps/raft_flutter/lib/features/channel_side_area.dart#method:ChannelSideArea.createState": {
         "role": "unresolved",
         "familyRefs": [],
@@ -52418,6 +52358,542 @@
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/channel_members.dart#local-function:CLASS:_ChannelMembersState@9077/METHOD:build@24313/FUNCTION:externalRow@24643": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/channel_members.dart#local-function:CLASS:_ChannelMembersState@9077/METHOD:build@24313/FUNCTION:item@31144": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/channel_members.dart#local-function:CLASS:_ChannelMembersState@9077/METHOD:build@24313/FUNCTION:row@25732": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/channel_settings.dart#local-function:CLASS:_ChannelSettingsState@3305/METHOD:membersStrip@55613/FUNCTION:tile@55819": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/create_channel_dialog.dart#local-function:CLASS:_CreateChannelDialogState@9014/METHOD:build@14895/FUNCTION:item@14944": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/channel_members_view.dart#local-function:CLASS:RaftChannelMembersModal@3934/METHOD:_roster@8676/FUNCTION:row@8877": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/channel_members_view.dart#local-function:CLASS:_CreateAgentEntry@14221/METHOD:build@14753/FUNCTION:plus@14976": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/create_channel_view.dart#local-function:CLASS:_RecipeMemberPicker@11632/METHOD:build@12241/FUNCTION:group@12798": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Registered by the current resolved runtime census. Exact family/part ownership and real-entry applicability still require review; this creates no mount or visual acceptance claim."
+      },
+      "packages/raft_ui/lib/src/create_channel_view.dart#local-function:CLASS:_RecipeMemberPicker@11632/METHOD:build@12241/FUNCTION:row@13106": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Registered by the current resolved runtime census. Exact family/part ownership and real-entry applicability still require review; this creates no mount or visual acceptance claim."
+      },
+      "apps/raft_flutter/lib/features/channel_side_area.dart#local-function:CLASS:_ChannelSideAreaState@5894/METHOD:_measureComposer@17072/FUNCTION:<anonymous>@17142/FUNCTION:visit@17368": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-SIDE (Web v1.24 channel side area, Tasks / Files cards, web preview): composes raft_ui parts; real-entry/family/state mapping remains unreviewed. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/channel_activity_badge.dart#class:ChannelActivityBadge": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-CHAN",
+        "reason": "Activity-order badge and channel header composition. Exact family placement and state-specific visual acceptance are pending."
+      },
+      "apps/raft_flutter/lib/features/channel_activity_badge.dart#function:channelActivityHeader": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-CHAN",
+        "reason": "Activity-order badge and channel header composition. Exact family placement and state-specific visual acceptance are pending."
+      },
+      "apps/raft_flutter/lib/features/channel_activity_badge.dart#method:ChannelActivityBadge.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-CHAN",
+        "reason": "Activity-order badge and channel header composition. Exact family placement and state-specific visual acceptance are pending."
+      },
+      "apps/raft_flutter/lib/features/channel_activity_session.dart#method:ChannelActivityPresentation.allHidden": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-CHAN",
+        "reason": "Activity timeline projection and retained conversation windows. Exact family placement and state-specific visual acceptance are pending."
+      },
+      "apps/raft_flutter/lib/features/channel_activity_session.dart#method:ChannelActivityPresentation.paywallAtTop": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-CHAN",
+        "reason": "Activity timeline projection and retained conversation windows. Exact family placement and state-specific visual acceptance are pending."
+      },
+      "apps/raft_flutter/lib/features/channel_activity_session.dart#method:ChannelActivityPresentation.rowsFor": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-CHAN",
+        "reason": "Activity timeline projection and retained conversation windows. Exact family placement and state-specific visual acceptance are pending."
+      },
+      "apps/raft_flutter/lib/features/channel_activity_session.dart#method:ChannelActivityPresentation.wrapRow": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-CHAN",
+        "reason": "Activity timeline projection and retained conversation windows. Exact family placement and state-specific visual acceptance are pending."
+      },
+      "apps/raft_flutter/lib/features/channel_announcement_host.dart#class:ChannelAnnouncementHost": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-CHAN",
+        "reason": "Announcement lifetime, strip mount and Artifact navigation. Exact family placement and state-specific visual acceptance are pending."
+      },
+      "apps/raft_flutter/lib/features/channel_announcement_host.dart#class:_ChannelAnnouncementHostState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-CHAN",
+        "reason": "Announcement lifetime, strip mount and Artifact navigation. Exact family placement and state-specific visual acceptance are pending."
+      },
+      "apps/raft_flutter/lib/features/channel_announcement_host.dart#method:ChannelAnnouncementHost.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-CHAN",
+        "reason": "Announcement lifetime, strip mount and Artifact navigation. Exact family placement and state-specific visual acceptance are pending."
+      },
+      "apps/raft_flutter/lib/features/channel_announcement_host.dart#method:_ChannelAnnouncementHostState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-CHAN",
+        "reason": "Announcement lifetime, strip mount and Artifact navigation. Exact family placement and state-specific visual acceptance are pending."
+      },
+      "apps/raft_flutter/lib/features/channel_announcement_host.dart#method:_ChannelAnnouncementHostState.didUpdateWidget": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-CHAN",
+        "reason": "Announcement lifetime, strip mount and Artifact navigation. Exact family placement and state-specific visual acceptance are pending."
+      },
+      "apps/raft_flutter/lib/features/channel_announcement_settings.dart#class:ChannelAnnouncementSettings": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-CHAN",
+        "reason": "Announcement row, Artifact picker and mutation confirmations. Exact family placement and state-specific visual acceptance are pending."
+      },
+      "apps/raft_flutter/lib/features/channel_announcement_settings.dart#class:_AnnouncementPicker": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-CHAN",
+        "reason": "Announcement row, Artifact picker and mutation confirmations. Exact family placement and state-specific visual acceptance are pending."
+      },
+      "apps/raft_flutter/lib/features/channel_announcement_settings.dart#class:_AnnouncementPickerState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-CHAN",
+        "reason": "Announcement row, Artifact picker and mutation confirmations. Exact family placement and state-specific visual acceptance are pending."
+      },
+      "apps/raft_flutter/lib/features/channel_announcement_settings.dart#class:_ChannelAnnouncementSettingsState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-CHAN",
+        "reason": "Announcement row, Artifact picker and mutation confirmations. Exact family placement and state-specific visual acceptance are pending."
+      },
+      "apps/raft_flutter/lib/features/channel_announcement_settings.dart#method:ChannelAnnouncementSettings.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-CHAN",
+        "reason": "Announcement row, Artifact picker and mutation confirmations. Exact family placement and state-specific visual acceptance are pending."
+      },
+      "apps/raft_flutter/lib/features/channel_announcement_settings.dart#method:_AnnouncementPicker.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-CHAN",
+        "reason": "Announcement row, Artifact picker and mutation confirmations. Exact family placement and state-specific visual acceptance are pending."
+      },
+      "apps/raft_flutter/lib/features/channel_announcement_settings.dart#method:_AnnouncementPickerState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-CHAN",
+        "reason": "Announcement row, Artifact picker and mutation confirmations. Exact family placement and state-specific visual acceptance are pending."
+      },
+      "apps/raft_flutter/lib/features/channel_announcement_settings.dart#method:_ChannelAnnouncementSettingsState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-CHAN",
+        "reason": "Announcement row, Artifact picker and mutation confirmations. Exact family placement and state-specific visual acceptance are pending."
+      },
+      "apps/raft_flutter/lib/features/channel_announcement_settings.dart#method:_ChannelAnnouncementSettingsState.pick": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "dialog",
+          "list_row"
+        ],
+        "owner": "WP-CHAN",
+        "reason": "Announcement row, Artifact picker and mutation confirmations. Exact family placement and state-specific visual acceptance are pending."
+      },
+      "apps/raft_flutter/lib/features/channel_announcement_settings.dart#method:_ChannelAnnouncementSettingsState.remove": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "dialog"
+        ],
+        "owner": "WP-CHAN",
+        "reason": "Announcement row, Artifact picker and mutation confirmations. Exact family placement and state-specific visual acceptance are pending."
+      },
+      "apps/raft_flutter/lib/features/channel_announcement_strip.dart#class:ChannelAnnouncementStrip": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-CHAN",
+        "reason": "Announcement list row and Copy link menu. Exact family placement and state-specific visual acceptance are pending."
+      },
+      "apps/raft_flutter/lib/features/channel_announcement_strip.dart#method:ChannelAnnouncementStrip.build": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "menu",
+          "list_row",
+          "button"
+        ],
+        "owner": "WP-CHAN",
+        "reason": "Announcement list row and Copy link menu. Exact family placement and state-specific visual acceptance are pending."
+      },
+      "apps/raft_flutter/lib/features/channel_details_host.dart#class:ChannelDetailsHost": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-CHAN",
+        "reason": "Attached channel Details host and focus scope. Exact family placement and state-specific visual acceptance are pending."
+      },
+      "apps/raft_flutter/lib/features/channel_details_host.dart#class:_ChannelDetailsHostState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-CHAN",
+        "reason": "Attached channel Details host and focus scope. Exact family placement and state-specific visual acceptance are pending."
+      },
+      "apps/raft_flutter/lib/features/channel_details_host.dart#method:ChannelDetailsHost.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-CHAN",
+        "reason": "Attached channel Details host and focus scope. Exact family placement and state-specific visual acceptance are pending."
+      },
+      "apps/raft_flutter/lib/features/channel_details_host.dart#method:_ChannelDetailsHostState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-CHAN",
+        "reason": "Attached channel Details host and focus scope. Exact family placement and state-specific visual acceptance are pending."
+      },
+      "apps/raft_flutter/lib/features/channel_details_slack.dart#class:ChannelDetailsSlack": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-CHAN",
+        "reason": "Details Slack row, pairing dialog and refresh feedback. Exact family placement and state-specific visual acceptance are pending."
+      },
+      "apps/raft_flutter/lib/features/channel_details_slack.dart#class:_SlackPairingDialog": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-CHAN",
+        "reason": "Details Slack row, pairing dialog and refresh feedback. Exact family placement and state-specific visual acceptance are pending."
+      },
+      "apps/raft_flutter/lib/features/channel_details_slack.dart#class:_SlackPairingDialogState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-CHAN",
+        "reason": "Details Slack row, pairing dialog and refresh feedback. Exact family placement and state-specific visual acceptance are pending."
+      },
+      "apps/raft_flutter/lib/features/channel_details_slack.dart#method:ChannelDetailsSlack.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-CHAN",
+        "reason": "Details Slack row, pairing dialog and refresh feedback. Exact family placement and state-specific visual acceptance are pending."
+      },
+      "apps/raft_flutter/lib/features/channel_details_slack.dart#method:ChannelDetailsSlack.open": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "dialog",
+          "select",
+          "button"
+        ],
+        "owner": "WP-CHAN",
+        "reason": "Details Slack row, pairing dialog and refresh feedback. Exact family placement and state-specific visual acceptance are pending."
+      },
+      "apps/raft_flutter/lib/features/channel_details_slack.dart#method:_SlackPairingDialog.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-CHAN",
+        "reason": "Details Slack row, pairing dialog and refresh feedback. Exact family placement and state-specific visual acceptance are pending."
+      },
+      "apps/raft_flutter/lib/features/channel_details_slack.dart#method:_SlackPairingDialogState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-CHAN",
+        "reason": "Details Slack row, pairing dialog and refresh feedback. Exact family placement and state-specific visual acceptance are pending."
+      },
+      "apps/raft_flutter/lib/features/channel_details_slack.dart#method:_SlackPairingDialogState.refresh": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "dialog"
+        ],
+        "owner": "WP-CHAN",
+        "reason": "Details Slack row, pairing dialog and refresh feedback. Exact family placement and state-specific visual acceptance are pending."
+      },
+      "apps/raft_flutter/lib/features/channel_members.dart#method:_ChannelMembersButtonState.didUpdateWidget": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-CHAN",
+        "reason": "Channel roster and member picker adapter. Exact family placement and state-specific visual acceptance are pending."
+      },
+      "apps/raft_flutter/lib/features/channel_members.dart#method:_ChannelMembersState.didUpdateWidget": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-CHAN",
+        "reason": "Channel roster and member picker adapter. Exact family placement and state-specific visual acceptance are pending."
+      },
+      "apps/raft_flutter/lib/features/channel_section_select.dart#class:ChannelSectionSelect": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-CHAN",
+        "reason": "Channel section select and versioned sidebar placement. Exact family placement and state-specific visual acceptance are pending."
+      },
+      "apps/raft_flutter/lib/features/channel_section_select.dart#local-function:CLASS:ChannelSectionSelect@307/METHOD:build@555/FUNCTION:<anonymous>@646/FUNCTION:choose@2194": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "select"
+        ],
+        "owner": "WP-CHAN",
+        "reason": "Channel section select and versioned sidebar placement. Exact family placement and state-specific visual acceptance are pending."
+      },
+      "apps/raft_flutter/lib/features/channel_section_select.dart#method:ChannelSectionSelect.build": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "select",
+          "dialog"
+        ],
+        "owner": "WP-CHAN",
+        "reason": "Channel section select and versioned sidebar placement. Exact family placement and state-specific visual acceptance are pending."
+      },
+      "apps/raft_flutter/lib/features/channel_settings.dart#method:_ChannelSettingsState.metadataForm": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-CHAN",
+        "reason": "Channel Details preferences, actions, edit and member entry. Exact family placement and state-specific visual acceptance are pending."
+      },
+      "apps/raft_flutter/lib/features/channel_settings.dart#method:_ChannelSettingsState.visibilitySetting": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-CHAN",
+        "reason": "Channel Details preferences, actions, edit and member entry. Exact family placement and state-specific visual acceptance are pending."
+      },
+      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@5109/METHOD:attachmentGallery@66302/FUNCTION:view@67456": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-CHAN",
+        "reason": "Offset update from the activity timeline integration. Exact family placement and state-specific visual acceptance are pending."
+      },
+      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@5109/METHOD:buildTimeline@113870/FUNCTION:timelineFor@117383": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-CHAN",
+        "reason": "Offset update from the activity timeline integration. Exact family placement and state-specific visual acceptance are pending."
+      },
+      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@5109/METHOD:senderAvatar@78880/FUNCTION:avatar@81355": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-CHAN",
+        "reason": "Offset update from the activity timeline integration. Exact family placement and state-specific visual acceptance are pending."
+      },
+      "apps/raft_flutter/lib/features/create_channel_dialog.dart#function:channelCandidateAppBadge": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-CHAN",
+        "reason": "Create channel form and shared member choice feed. Exact family placement and state-specific visual acceptance are pending."
+      },
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5688/METHOD:buildWorkspace@47429/FUNCTION:<anonymous>@47647/FUNCTION:conversation@50761": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-CHAN",
+        "reason": "Offset update from the channel Details workspace route. Exact family placement and state-specific visual acceptance are pending."
+      },
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5688/METHOD:buildWorkspace@47429/FUNCTION:<anonymous>@47647/FUNCTION:workspace@63972": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-CHAN",
+        "reason": "Offset update from the channel Details workspace route. Exact family placement and state-specific visual acceptance are pending."
+      },
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5688/METHOD:settingsRailAction@108614/FUNCTION:action@108648": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-CHAN",
+        "reason": "Offset update from the channel Details workspace route. Exact family placement and state-specific visual acceptance are pending."
+      },
+      "packages/raft_ui/lib/channel_management_previews.dart#function:channelDetailsColumnPreview": {
+        "role": "preview_fixture",
+        "familyRefs": [],
+        "owner": "WP-CHAN",
+        "reason": "SDK member and channel management previews. Exact family placement and state-specific visual acceptance are pending."
+      },
+      "packages/raft_ui/lib/channel_management_previews.dart#function:channelDetailsPagePreview": {
+        "role": "preview_fixture",
+        "familyRefs": [],
+        "owner": "WP-CHAN",
+        "reason": "SDK member and channel management previews. Exact family placement and state-specific visual acceptance are pending."
+      },
+      "packages/raft_ui/lib/member_choice_list_previews.dart#class:_MemberChoicePreview": {
+        "role": "preview_fixture",
+        "familyRefs": [],
+        "owner": "WP-CHAN",
+        "reason": "SDK ChoiceList previews for empty, populated and filtered states. Exact family placement and state-specific visual acceptance are pending."
+      },
+      "packages/raft_ui/lib/member_choice_list_previews.dart#class:_MemberChoicePreviewState": {
+        "role": "preview_fixture",
+        "familyRefs": [],
+        "owner": "WP-CHAN",
+        "reason": "SDK ChoiceList previews for empty, populated and filtered states. Exact family placement and state-specific visual acceptance are pending."
+      },
+      "packages/raft_ui/lib/member_choice_list_previews.dart#function:memberChoiceListDisabledPreview": {
+        "role": "preview_fixture",
+        "familyRefs": [],
+        "owner": "WP-CHAN",
+        "reason": "SDK ChoiceList previews for empty, populated and filtered states. Exact family placement and state-specific visual acceptance are pending."
+      },
+      "packages/raft_ui/lib/member_choice_list_previews.dart#function:memberChoiceListEmptyPreview": {
+        "role": "preview_fixture",
+        "familyRefs": [],
+        "owner": "WP-CHAN",
+        "reason": "SDK ChoiceList previews for empty, populated and filtered states. Exact family placement and state-specific visual acceptance are pending."
+      },
+      "packages/raft_ui/lib/member_choice_list_previews.dart#function:memberChoiceListPreview": {
+        "role": "preview_fixture",
+        "familyRefs": [],
+        "owner": "WP-CHAN",
+        "reason": "SDK ChoiceList previews for empty, populated and filtered states. Exact family placement and state-specific visual acceptance are pending."
+      },
+      "packages/raft_ui/lib/member_choice_list_previews.dart#method:_MemberChoicePreview.createState": {
+        "role": "preview_fixture",
+        "familyRefs": [],
+        "owner": "WP-CHAN",
+        "reason": "SDK ChoiceList previews for empty, populated and filtered states. Exact family placement and state-specific visual acceptance are pending."
+      },
+      "packages/raft_ui/lib/member_choice_list_previews.dart#method:_MemberChoicePreviewState.build": {
+        "role": "preview_fixture",
+        "familyRefs": [],
+        "owner": "WP-CHAN",
+        "reason": "SDK ChoiceList previews for empty, populated and filtered states. Exact family placement and state-specific visual acceptance are pending."
+      },
+      "packages/raft_ui/lib/src/channel_header.dart#local-function:CLASS:_RaftCssShrinkRow@32188/METHOD:build@32512/FUNCTION:<anonymous>@33155/FUNCTION:text@33435": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-CHAN",
+        "reason": "Shared channel heading and activity badge placement. Exact family placement and state-specific visual acceptance are pending."
+      },
+      "packages/raft_ui/lib/src/channel_overflow_sheet.dart#class:_ChannelDetailsHeader": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-CHAN",
+        "reason": "Channel Details identity, header and settings sections. Exact family placement and state-specific visual acceptance are pending."
+      },
+      "packages/raft_ui/lib/src/channel_overflow_sheet.dart#class:_ChannelDetailsIdentity": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-CHAN",
+        "reason": "Channel Details identity, header and settings sections. Exact family placement and state-specific visual acceptance are pending."
+      },
+      "packages/raft_ui/lib/src/channel_overflow_sheet.dart#class:_ChannelDetailsIdentityState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-CHAN",
+        "reason": "Channel Details identity, header and settings sections. Exact family placement and state-specific visual acceptance are pending."
+      },
+      "packages/raft_ui/lib/src/channel_overflow_sheet.dart#function:raftDetailsActionRow": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-CHAN",
+        "reason": "Channel Details identity, header and settings sections. Exact family placement and state-specific visual acceptance are pending."
+      },
+      "packages/raft_ui/lib/src/channel_overflow_sheet.dart#function:raftDetailsPreferenceRow": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-CHAN",
+        "reason": "Channel Details identity, header and settings sections. Exact family placement and state-specific visual acceptance are pending."
+      },
+      "packages/raft_ui/lib/src/channel_overflow_sheet.dart#function:raftDetailsSettingsGroup": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-CHAN",
+        "reason": "Channel Details identity, header and settings sections. Exact family placement and state-specific visual acceptance are pending."
+      },
+      "packages/raft_ui/lib/src/channel_overflow_sheet.dart#method:RaftMembersStrip.detailsTile": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-CHAN",
+        "reason": "Channel Details identity, header and settings sections. Exact family placement and state-specific visual acceptance are pending."
+      },
+      "packages/raft_ui/lib/src/channel_overflow_sheet.dart#method:RaftOverflowSheet._detailsSurface": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-CHAN",
+        "reason": "Channel Details identity, header and settings sections. Exact family placement and state-specific visual acceptance are pending."
+      },
+      "packages/raft_ui/lib/src/channel_overflow_sheet.dart#method:_ChannelDetailsHeader.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-CHAN",
+        "reason": "Channel Details identity, header and settings sections. Exact family placement and state-specific visual acceptance are pending."
+      },
+      "packages/raft_ui/lib/src/channel_overflow_sheet.dart#method:_ChannelDetailsIdentity.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-CHAN",
+        "reason": "Channel Details identity, header and settings sections. Exact family placement and state-specific visual acceptance are pending."
+      },
+      "packages/raft_ui/lib/src/channel_overflow_sheet.dart#method:_ChannelDetailsIdentityState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-CHAN",
+        "reason": "Channel Details identity, header and settings sections. Exact family placement and state-specific visual acceptance are pending."
+      },
+      "packages/raft_ui/lib/src/create_channel_view.dart#class:_MemberPickerContentState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-CHAN",
+        "reason": "Member ChoiceList input, grouping and row composition. Exact family placement and state-specific visual acceptance are pending."
+      },
+      "packages/raft_ui/lib/src/create_channel_view.dart#function:raftArchivedNameBanner": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-CHAN",
+        "reason": "Member ChoiceList input, grouping and row composition. Exact family placement and state-specific visual acceptance are pending."
+      },
+      "packages/raft_ui/lib/src/create_channel_view.dart#method:RaftMemberPickerContent.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-CHAN",
+        "reason": "Member ChoiceList input, grouping and row composition. Exact family placement and state-specific visual acceptance are pending."
+      },
+      "packages/raft_ui/lib/src/create_channel_view.dart#method:_MemberPickerContentState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-CHAN",
+        "reason": "Member ChoiceList input, grouping and row composition. Exact family placement and state-specific visual acceptance are pending."
+      },
+      "packages/raft_ui/lib/src/create_channel_view.dart#method:_MemberPickerContentState.didUpdateWidget": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-CHAN",
+        "reason": "Member ChoiceList input, grouping and row composition. Exact family placement and state-specific visual acceptance are pending."
       }
     },
     "entries": {
@@ -55802,6 +56278,69 @@
         "mountStatus": "unresolved",
         "owner": "design-system alignment",
         "reason": "Resolved function owns a surface call; actual target, route and state are not yet observed."
+      },
+      "surface:apps/raft_flutter/lib/features/channel_announcement_settings.dart#method:_ChannelAnnouncementSettingsState.pick": {
+        "owner": "WP-CHAN",
+        "kind": "surface",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/channel_announcement_settings.dart#method:_ChannelAnnouncementSettingsState.pick"
+        ],
+        "mountStatus": "source_reviewed",
+        "reason": "Announcement row, Artifact picker and mutation confirmations."
+      },
+      "surface:apps/raft_flutter/lib/features/channel_announcement_settings.dart#method:_ChannelAnnouncementSettingsState.remove": {
+        "owner": "WP-CHAN",
+        "kind": "surface",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/channel_announcement_settings.dart#method:_ChannelAnnouncementSettingsState.remove"
+        ],
+        "mountStatus": "source_reviewed",
+        "reason": "Announcement row, Artifact picker and mutation confirmations."
+      },
+      "surface:apps/raft_flutter/lib/features/channel_announcement_strip.dart#method:ChannelAnnouncementStrip.build": {
+        "owner": "WP-CHAN",
+        "kind": "surface",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/channel_announcement_strip.dart#method:ChannelAnnouncementStrip.build"
+        ],
+        "mountStatus": "source_reviewed",
+        "reason": "Announcement list row and Copy link menu."
+      },
+      "surface:apps/raft_flutter/lib/features/channel_details_slack.dart#method:ChannelDetailsSlack.open": {
+        "owner": "WP-CHAN",
+        "kind": "surface",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/channel_details_slack.dart#method:ChannelDetailsSlack.open"
+        ],
+        "mountStatus": "source_reviewed",
+        "reason": "Details Slack row, pairing dialog and refresh feedback."
+      },
+      "surface:apps/raft_flutter/lib/features/channel_details_slack.dart#method:_SlackPairingDialogState.refresh": {
+        "owner": "WP-CHAN",
+        "kind": "surface",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/channel_details_slack.dart#method:_SlackPairingDialogState.refresh"
+        ],
+        "mountStatus": "source_reviewed",
+        "reason": "Details Slack row, pairing dialog and refresh feedback."
+      },
+      "surface:apps/raft_flutter/lib/features/channel_section_select.dart#local-function:CLASS:ChannelSectionSelect@307/METHOD:build@555/FUNCTION:<anonymous>@646/FUNCTION:choose@2194": {
+        "owner": "WP-CHAN",
+        "kind": "surface",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/channel_section_select.dart#local-function:CLASS:ChannelSectionSelect@307/METHOD:build@555/FUNCTION:<anonymous>@646/FUNCTION:choose@2194"
+        ],
+        "mountStatus": "source_reviewed",
+        "reason": "Channel section select and versioned sidebar placement."
+      },
+      "surface:apps/raft_flutter/lib/features/channel_section_select.dart#method:ChannelSectionSelect.build": {
+        "owner": "WP-CHAN",
+        "kind": "surface",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/channel_section_select.dart#method:ChannelSectionSelect.build"
+        ],
+        "mountStatus": "source_reviewed",
+        "reason": "Channel section select and versioned sidebar placement."
       }
     },
     "requirements": {
@@ -58653,6 +59192,48 @@
         "applicability": "unknown",
         "owner": "design-system alignment",
         "reason": "Real entry and applicable theme/input/state dimensions require source review and bound execution."
+      },
+      "surface:apps/raft_flutter/lib/features/channel_announcement_settings.dart#method:_ChannelAnnouncementSettingsState.pick:applicability": {
+        "entryId": "surface:apps/raft_flutter/lib/features/channel_announcement_settings.dart#method:_ChannelAnnouncementSettingsState.pick",
+        "applicability": "unknown",
+        "owner": "WP-CHAN",
+        "reason": "The source entry is registered. Bound visual state and input coverage are pending."
+      },
+      "surface:apps/raft_flutter/lib/features/channel_announcement_settings.dart#method:_ChannelAnnouncementSettingsState.remove:applicability": {
+        "entryId": "surface:apps/raft_flutter/lib/features/channel_announcement_settings.dart#method:_ChannelAnnouncementSettingsState.remove",
+        "applicability": "unknown",
+        "owner": "WP-CHAN",
+        "reason": "The source entry is registered. Bound visual state and input coverage are pending."
+      },
+      "surface:apps/raft_flutter/lib/features/channel_announcement_strip.dart#method:ChannelAnnouncementStrip.build:applicability": {
+        "entryId": "surface:apps/raft_flutter/lib/features/channel_announcement_strip.dart#method:ChannelAnnouncementStrip.build",
+        "applicability": "unknown",
+        "owner": "WP-CHAN",
+        "reason": "The source entry is registered. Bound visual state and input coverage are pending."
+      },
+      "surface:apps/raft_flutter/lib/features/channel_details_slack.dart#method:ChannelDetailsSlack.open:applicability": {
+        "entryId": "surface:apps/raft_flutter/lib/features/channel_details_slack.dart#method:ChannelDetailsSlack.open",
+        "applicability": "unknown",
+        "owner": "WP-CHAN",
+        "reason": "The source entry is registered. Bound visual state and input coverage are pending."
+      },
+      "surface:apps/raft_flutter/lib/features/channel_details_slack.dart#method:_SlackPairingDialogState.refresh:applicability": {
+        "entryId": "surface:apps/raft_flutter/lib/features/channel_details_slack.dart#method:_SlackPairingDialogState.refresh",
+        "applicability": "unknown",
+        "owner": "WP-CHAN",
+        "reason": "The source entry is registered. Bound visual state and input coverage are pending."
+      },
+      "surface:apps/raft_flutter/lib/features/channel_section_select.dart#local-function:CLASS:ChannelSectionSelect@307/METHOD:build@555/FUNCTION:<anonymous>@646/FUNCTION:choose@2194:applicability": {
+        "entryId": "surface:apps/raft_flutter/lib/features/channel_section_select.dart#local-function:CLASS:ChannelSectionSelect@307/METHOD:build@555/FUNCTION:<anonymous>@646/FUNCTION:choose@2194",
+        "applicability": "unknown",
+        "owner": "WP-CHAN",
+        "reason": "The source entry is registered. Bound visual state and input coverage are pending."
+      },
+      "surface:apps/raft_flutter/lib/features/channel_section_select.dart#method:ChannelSectionSelect.build:applicability": {
+        "entryId": "surface:apps/raft_flutter/lib/features/channel_section_select.dart#method:ChannelSectionSelect.build",
+        "applicability": "unknown",
+        "owner": "WP-CHAN",
+        "reason": "The source entry is registered. Bound visual state and input coverage are pending."
       }
     },
     "knownStateAtoms": {
@@ -61164,6 +61745,61 @@
         "applicability": "unknown",
         "owner": "WP-TASKS v1.24 alignment",
         "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/channel_members_view.dart#method:_MemberPageRowState.build|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:hovered": {
+        "applicability": "unknown",
+        "owner": "WP-CHAN",
+        "reason": "Roster rows, shared ChoiceList and staged member feedback. Bound visual coverage for this recipe state is pending."
+      },
+      "packages/raft_ui/lib/src/channel_members_view.dart#method:_MemberPageRowState.build|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:pointerCoarse": {
+        "applicability": "unknown",
+        "owner": "WP-CHAN",
+        "reason": "Roster rows, shared ChoiceList and staged member feedback. Bound visual coverage for this recipe state is pending."
+      },
+      "packages/raft_ui/lib/src/channel_members_view.dart#method:_MemberPageRowState.build|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+        "applicability": "unknown",
+        "owner": "WP-CHAN",
+        "reason": "Roster rows, shared ChoiceList and staged member feedback. Bound visual coverage for this recipe state is pending."
+      },
+      "packages/raft_ui/lib/src/create_channel_view.dart#method:_MemberPickerContentState.build|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:pointerCoarse": {
+        "applicability": "unknown",
+        "owner": "WP-CHAN",
+        "reason": "Member ChoiceList input, grouping and row composition. Bound visual coverage for this recipe state is pending."
+      },
+      "packages/raft_ui/lib/src/create_channel_view.dart#method:_MemberPickerContentState.build|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+        "applicability": "unknown",
+        "owner": "WP-CHAN",
+        "reason": "Member ChoiceList input, grouping and row composition. Bound visual coverage for this recipe state is pending."
+      },
+      "packages/raft_ui/lib/src/create_channel_view.dart#method:_RecipeMemberPicker.build|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:pointerCoarse": {
+        "applicability": "unknown",
+        "owner": "WP-CHAN",
+        "reason": "Member ChoiceList input, grouping and row composition. Bound visual coverage for this recipe state is pending."
+      },
+      "packages/raft_ui/lib/src/create_channel_view.dart#method:_RecipeMemberPicker.build|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+        "applicability": "unknown",
+        "owner": "WP-CHAN",
+        "reason": "Member ChoiceList input, grouping and row composition. Bound visual coverage for this recipe state is pending."
+      },
+      "packages/raft_ui/lib/src/create_channel_view.dart#method:_RecipeMemberRow.build|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:disabled": {
+        "applicability": "unknown",
+        "owner": "WP-CHAN",
+        "reason": "Member ChoiceList input, grouping and row composition. Bound visual coverage for this recipe state is pending."
+      },
+      "packages/raft_ui/lib/src/create_channel_view.dart#method:_RecipeMemberRow.build|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:pointerCoarse": {
+        "applicability": "unknown",
+        "owner": "WP-CHAN",
+        "reason": "Member ChoiceList input, grouping and row composition. Bound visual coverage for this recipe state is pending."
+      },
+      "packages/raft_ui/lib/src/create_channel_view.dart#method:_RecipeMemberRow.build|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:pressed": {
+        "applicability": "unknown",
+        "owner": "WP-CHAN",
+        "reason": "Member ChoiceList input, grouping and row composition. Bound visual coverage for this recipe state is pending."
+      },
+      "packages/raft_ui/lib/src/create_channel_view.dart#method:_RecipeMemberRow.build|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+        "applicability": "unknown",
+        "owner": "WP-CHAN",
+        "reason": "Member ChoiceList input, grouping and row composition. Bound visual coverage for this recipe state is pending."
       }
     },
     "evidence": {},
