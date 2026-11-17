@@ -199,6 +199,16 @@ const dialogSurfaces = <CloseSurface>[
     ],
   ),
   CloseSurface(
+    'message-select-text',
+    kind: SurfaceKind.dialog,
+    webOutside: WebOutside.closes,
+    web: 'MessageSelectTextDrawer.tsx Drawer: X, Esc, swipe, scrim',
+    phone: {_x, _esc, _scrim, _sys, _drag},
+    fold: {_x, _esc, _scrim, _sys, _drag},
+    desktop: {_x, _esc, _scrim, _sys, _drag},
+    files: ['lib/features/message_select_text_sheet.dart'],
+  ),
+  CloseSurface(
     'create-external-agent',
     kind: SurfaceKind.dialog,
     webOutside: WebOutside.stays,
