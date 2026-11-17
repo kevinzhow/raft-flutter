@@ -59,6 +59,16 @@ SystemNotificationCopy systemNotificationCopy(
       ),
     );
   }
+  if (notice.destination == SystemNoticeDestination.seatJoin) {
+    // Web layout.systemNotifications.seatJoinBlocked{Title,Body}.
+    return SystemNotificationCopy(
+      format("{server} · {name} couldn't join", {
+        'server': p['server'],
+        'name': p['name'],
+      }),
+      format('Upgrade needed for {name} to join', {'name': p['name']}),
+    );
+  }
   switch (notice.id) {
     case 'plan-downgrade':
       if (p['expired'] == true) {

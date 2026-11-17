@@ -13,6 +13,9 @@ enum SystemNoticeDestination {
 
   /// Web useSecondFactorRecoveryNotification: its action is Cancel reset.
   secondFactorRecovery,
+
+  /// Web useSeatJoinBlocks (section 0b): its action opens the Web billing page.
+  seatJoin,
 }
 
 class SystemNotice {

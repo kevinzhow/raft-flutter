@@ -193,12 +193,14 @@ void raiseComposerSendBlockNotice(
   required int? maxBytes,
   required bool freePlan,
 }) {
-  final label = raftText(context, switch (reason) {
-    NotAttachedReason.size => 'Too large',
-    NotAttachedReason.count => 'Too many',
-    NotAttachedReason.empty => 'Empty',
-    NotAttachedReason.unchecked => 'Not checked',
-  });
+  final label = switch (reason) {
+    NotAttachedReason.size => raftText(context, 'Too large'),
+    NotAttachedReason.count => raftText(context, 'Too many'),
+    NotAttachedReason.empty => raftText(context, 'Empty'),
+    // Web message.composer.notAttached.unchecked; the English key collides
+    // with the Linux dependency probe's wording.
+    NotAttachedReason.unchecked => raftTextZh(context, 'Not checked', '无法检查'),
+  };
   if (reason == NotAttachedReason.count) {
     return (
       label: label,

@@ -3,7 +3,8 @@
 // Web v1.24.0-source.1 en.ts / zh-cn.ts wording verbatim: WP-BILL limit notices (upgradeDialog.* title and
 // hint of the history / uploadQuota / fileSize / externalLimit / general gates, message.composer.notAttached.*).
 // ICU plurals are split per form (count one/other x agentTries 0/one/other for the history hints), `#` is
-// the named placeholder.
+// the named placeholder. `Not checked` (message.composer.notAttached.unchecked, 无法检查) collides with the
+// Linux dependency probe's '尚未检测', so its call site passes the Web Chinese through raftTextZh.
 const Map<String, String> zhCatalogUpstream124BillLimits = <String, String>{
   "See your whole chat history": "查看全部聊天记录",
   "On Free, you and your agents can only read the last {days} days of messages, while on Pro all of {server}'s history can be read and searched.":
@@ -37,7 +38,6 @@ const Map<String, String> zhCatalogUpstream124BillLimits = <String, String>{
   "Too large": "文件太大",
   "Too many": "超出数量",
   "Empty": "空文件",
-  "Not checked": "无法检查",
   "Remove files that can't be attached": "先移除无法添加的文件",
   "It's {size}. Files can be up to {limit} each. Share a link instead.":
       "文件大小为 {size}。单个文件最大 {limit}。可以改为分享链接。",
@@ -86,4 +86,8 @@ const Map<String, String> zhCatalogUpstream124BillLimits = <String, String>{
   "The message you opened was sent on {date}, more than {days} days ago, so you and your agents can't read it on Free, and your agents ran into this once in the past 7 days.": "你打开的这条消息发于 {date}，已超过 {days} 天，免费版下你和你的 Agent 都读不到，过去 7 天你的 Agent 已经有 {agentTries} 次想读没读到。",
   "The message you opened was sent on {date}, more than {days} days ago, so you and your agents can't read it on Free, and your agents ran into this {agentTries} times in the past 7 days.": "你打开的这条消息发于 {date}，已超过 {days} 天，免费版下你和你的 Agent 都读不到，过去 7 天你的 Agent 已经有 {agentTries} 次想读没读到。",
   "Stripe checkout didn't open. Try again.": "无法打开 Stripe 结账，请重试。",
+  "{server} · {name} couldn't join": "{server} · {name} 没能加入",
+  "Upgrade needed for {name} to join": "需要升级，{name} 才能加入",
+  "Add seats": "加席位",
+  "Ask an owner": "找所有者加席位",
 };

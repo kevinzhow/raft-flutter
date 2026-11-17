@@ -7,9 +7,11 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:raft_client/raft_client.dart';
-import 'package:raft_sync/raft_sync.dart' show LiveEvent, ListChangedEvent;
+import 'package:raft_sync/raft_sync.dart'
+    show LiveEvent, ListChangedEvent, ServerFeaturesChangedEvent;
 import 'package:raft_ui/raft_ui.dart';
 
+import '../data/feature_flag_client_facts.dart';
 import '../data/freshness.dart';
 import '../data/second_factor_recovery_notice.dart';
 import '../data/system_notification_projection.dart';
@@ -20,6 +22,7 @@ import 'fleet_views.dart';
 import 'account_security_recovery.dart';
 import 'joint_invite_errors.dart';
 import 'source_feedback_view.dart';
+import 'workspace_web_billing.dart';
 import 'system_notification_copy.dart';
 
 /// The mounted Web system-notification aggregator, separate from message Activity
@@ -56,8 +59,8 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
   /// Machines and agents the notices project from. Agent presence patches
   /// (activity, last seen) do not change them.
   WorkspaceEntitySelection? entities;
-  Timer? coalesce, closeDelay, jointInvitesPing;
-  RaftForegroundPeriodic? poll;
+  Timer? coalesce, closeDelay, jointInvitesPing, seatJoinPing;
+  RaftForegroundPeriodic? poll, seatPoll;
   final resumeRefresh = Freshness(const Duration(seconds: 20));
   OverlayEntry? popup;
   bool popupKeyboard = false;
@@ -98,6 +101,7 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
           get: w.query,
           entities: directoryEntities,
           post: (path) => w.command('POST', path),
+          seatAddEnabled: seatAddEnabled,
         );
     unawaited(bind());
     store.addListener(updated);
@@ -136,6 +140,28 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
           () => unawaited(store.refreshJointInvites()),
         );
       }
+      // Web useSeatJoinBlocks: the seat-join-blocks:changed ping, a change of
+      // the pro_seat_add flag (which also asks the flag again) and a
+      // reconnect read the list again.
+      final flagChanged =
+          ping is ServerFeaturesChangedEvent &&
+          ping.serverId == w.client.serverId &&
+          ping.keys.contains(RaftFeatureFlags.proSeatAdd);
+      if ((ping is ListChangedEvent &&
+              ping.event == ListChangedEvent.seatJoinBlocks &&
+              ping.serverId == w.client.serverId) ||
+          flagChanged ||
+          e.name == 'connected') {
+        seatJoinPing?.cancel();
+        seatJoinPing = Timer(
+          const Duration(milliseconds: 100),
+          () => unawaited(
+            store.refreshSeatJoinBlocks(
+              reevaluate: flagChanged || e.name == 'connected',
+            ),
+          ),
+        );
+      }
     });
     // Stops while hidden/paused; resume refreshes (didChangeAppLifecycleState).
     poll = RaftForegroundPeriodic(const Duration(seconds: 60), () {
@@ -143,7 +169,39 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
       unawaited(store.refreshUsageLimit());
       unawaited(store.refreshJointInvites());
     });
+    // The 5-minute safety poll of the seat-join list (an agent taking or
+    // freeing a seat); stops while hidden.
+    seatPoll = RaftForegroundPeriodic(
+      const Duration(minutes: 5),
+      () => unawaited(store.refreshSeatJoinBlocks()),
+    );
     WidgetsBinding.instance.addObserver(this);
+  }
+
+  /// `pro_seat_add` of [serverId] (`POST /feature-flags/evaluate`); null when
+  /// the answer could not be read, so the last one stays.
+  Future<bool?> seatAddEnabled(String serverId) async {
+    try {
+      final value = await w.client.post(
+        '/feature-flags/evaluate',
+        data: featureFlagEvaluateBody(
+          keys: const [RaftFeatureFlags.proSeatAdd],
+          serverId: serverId,
+        ),
+      );
+      final rows = value is Map ? value['evaluations'] : null;
+      if (rows is! List) return null;
+      for (final row in rows) {
+        if (row is Map && row['key'] == RaftFeatureFlags.proSeatAdd) {
+          final enabled = row['enabled'];
+          return enabled is bool ? enabled : null;
+        }
+      }
+    } on RaftApiException catch (error) {
+      // Unknown is not permission: only a denial turns the flag off.
+      if (error.status == 401 || error.status == 403) return false;
+    } catch (_) {}
+    return null;
   }
 
   Future<void> bind() => store.bind(
@@ -232,9 +290,11 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
     store.removeListener(updated);
     events?.cancel();
     poll?.dispose();
+    seatPoll?.dispose();
     coalesce?.cancel();
     closeDelay?.cancel();
     jointInvitesPing?.cancel();
+    seatJoinPing?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     if (owner.store == null) store.dispose();
   }
@@ -256,6 +316,7 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
       if (resumeRefresh.due()) {
         unawaited(store.refresh());
         unawaited(store.refreshUsageLimit());
+        unawaited(store.refreshSeatJoinBlocks());
         unawaited(store.refreshJointInvites());
         unawaited(store.refreshSecondFactorRecovery());
       }
@@ -436,7 +497,18 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
         _ => RaftGlyph.triangleAlert,
       },
       actions: [
-        if (n.destination == SystemNoticeDestination.jointInvite)
+        if (n.destination == SystemNoticeDestination.seatJoin)
+          RaftNotificationAction(
+            // Web: an owner adds the seat, anyone else asks an owner for it.
+            // Both happen on the Web's Plan & Billing page.
+            label: raftText(
+              context,
+              w.can('manageBilling') ? 'Add seats' : 'Ask an owner',
+            ),
+            primary: true,
+            onPressed: () => unawaited(openSeatJoinBilling(n, scope)),
+          )
+        else if (n.destination == SystemNoticeDestination.jointInvite)
           RaftNotificationAction(
             label: raftText(context, 'Accept'),
             primary: true,
@@ -516,6 +588,12 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
       if (mounted) setState(() => acceptingJointInvite = null);
       if (!disposed) unawaited(store.refreshJointInvites());
     }
+  }
+
+  Future<void> openSeatJoinBilling(SystemNotice n, String captured) async {
+    if (!live(n, captured)) return;
+    close();
+    await w.openWebBilling();
   }
 
   Future<void> navigate(SystemNotice n, String captured) async {

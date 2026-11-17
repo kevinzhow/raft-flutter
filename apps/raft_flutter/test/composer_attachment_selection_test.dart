@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
+import 'package:raft_flutter/data/attachment_limit_decision.dart';
 import 'package:raft_flutter/data/upload_mime.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
 
@@ -81,24 +82,25 @@ void main() {
     expect(w.uploadsReady(), true);
   });
 
-  test(
-    'empty and oversize files leave with the Web notices (singular plural)',
-    () async {
-      final client = _Client()..limit.complete(4096);
-      final w = controller(client);
-      await w.attachSelection([_file('e.txt', 0)], text: _text);
-      expect(w.uploads(), isEmpty);
-      expect(w.composerErrorFor(), '1 empty file skipped.');
-      await w.attachSelection([_file('big.png', 8192)], text: _text);
-      expect(w.uploads(), isEmpty);
-      expect(
-        w.composerErrorFor(),
-        'Max 4.0KB per file. Current largest file is 8.0KB.',
-      );
-    },
-  );
+  test('an empty file stays failed; one Pro would take raises the limit notice (v1.24)', () async {
+    final client = _Client()..limit.complete(4096);
+    final w = controller(client);
+    await w.attachSelection([_file('e.txt', 0)], text: _text);
+    // Web v1.24 `attachmentRejectionPlan`: what no plan changes stays in the
+    // row, failed, saying why; no banner.
+    final kept = w.uploads().single;
+    expect(kept.notAttached!.reason, NotAttachedReason.empty);
+    expect(kept.canRetry, false);
+    expect(w.composerErrorFor(), isNull);
+    w.removeUpload(kept);
+    // A Free server, a file over its ceiling but within Pro's: it does not
+    // stay, and the limit notice is queued for the upgrade.
+    await w.attachSelection([_file('big.png', 8192)], text: _text);
+    expect(w.uploads(), isEmpty);
+    expect(w.composer.uploads.limitNotices.take()?.gate, 'upload_file_size');
+  });
 
-  test('the eleventh file is skipped with a singular count', () async {
+  test('the eleventh file stays failed as too many', () async {
     final client = _Client()..limit.complete(1024);
     final w = controller(client);
     final done = w.attachSelection([
@@ -106,11 +108,8 @@ void main() {
     ], text: _text);
     await Future<void>.delayed(Duration.zero);
     await Future<void>.delayed(Duration.zero);
-    expect(w.uploads(), hasLength(10));
-    expect(
-      w.composerErrorFor(),
-      'Only 10 attachments per message. 1 extra file skipped.',
-    );
+    expect(w.uploads(), hasLength(11));
+    expect(w.uploads().last.notAttached!.reason, NotAttachedReason.count);
     for (var i = 0; i < 10; i++) {
       client.uploads['f$i.txt']!.complete([
         {'id': 'id'},
@@ -144,11 +143,9 @@ void main() {
     final client = _Client()..limit.complete(null);
     final w = controller(client);
     await w.attachSelection([_file('a.png', 4)], text: _text);
-    expect(w.uploads(), isEmpty);
-    expect(
-      w.composerErrorFor(),
-      'The upload size limit could not be checked. Try again in a moment.',
-    );
+    // Web v1.24: the file stays, failed, as "Not checked".
+    expect(w.uploads().single.notAttached!.reason, NotAttachedReason.unchecked);
+    expect(client.uploads, isEmpty);
   });
 
   test(

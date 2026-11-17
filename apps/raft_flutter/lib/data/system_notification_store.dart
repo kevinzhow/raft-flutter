@@ -9,6 +9,7 @@ import 'computer_version_notices.dart';
 import 'joint_invite_notices.dart';
 import 'second_factor_recovery_notice.dart';
 import 'search_memory.dart';
+import 'seat_join_blocks.dart';
 import 'system_notification_projection.dart';
 import 'usage_limit_attention.dart';
 
@@ -67,6 +68,7 @@ class SystemNotificationStore extends ChangeNotifier {
     DateTime Function()? clock,
     this.entities,
     this.post,
+    this.seatAddEnabled,
   }) : storage = storage ?? PreferencesSearchMemoryStorage(),
        clock = clock ?? DateTime.now;
   final SystemNotificationGet get;
@@ -81,6 +83,14 @@ class SystemNotificationStore extends ChangeNotifier {
   /// the feed stays off. Web 1.24 reads the feed for everyone
   /// (useUsageLimitAttention.ts:19-34; `usage_limit_attention_v0` is retired).
   final SystemNotificationPost? post;
+
+  /// Evaluates the `pro_seat_add` flag of a server (null: could not tell, the
+  /// last answer stays). Without it the seat-join notices stay off.
+  final Future<bool?> Function(String serverId)? seatAddEnabled;
+  List<SeatJoinBlock> _seatBlocks = const [];
+  int _seatRevision = 0;
+  bool? _seatFlag;
+  List<SeatJoinBlock> get seatJoinBlocks => _seatBlocks;
   SystemNotificationContext? context;
   UsageLimitSnapshot? _usage;
   int _usageRevision = 0;
@@ -162,6 +172,11 @@ class SystemNotificationStore extends ChangeNotifier {
           ?secondFactorRecoveryNotice(_recovery),
           if (c.server != null) ...jointInviteNotices(_jointInvites),
           if (c.server != null) ...usageLimitNotices(_usage),
+          if (c.server != null)
+            ...seatJoinBlockNotices(
+              _seatBlocks,
+              serverName: '${c.server!['name'] ?? ''}',
+            ),
           ...projectSystemNotifications(
             server: c.server,
             channels: c.channels,
@@ -207,6 +222,9 @@ class SystemNotificationStore extends ChangeNotifier {
     _machineReady = false;
     _usage = null;
     ++_usageRevision;
+    _seatBlocks = const [];
+    _seatFlag = null;
+    ++_seatRevision;
     _jointInvites = const [];
     ++_jointRevision;
     _recovery = null;
@@ -220,6 +238,7 @@ class SystemNotificationStore extends ChangeNotifier {
     if (key == null) return;
     unawaited(refresh());
     unawaited(refreshUsageLimit());
+    unawaited(refreshSeatJoinBlocks(reevaluate: true));
     unawaited(refreshJointInvites());
     unawaited(refreshSecondFactorRecovery());
     try {
@@ -370,6 +389,42 @@ class SystemNotificationStore extends ChangeNotifier {
       if (next != null) _setUsage(next);
     } catch (_) {
       if (_acceptsUsage(scope, ticket)) _setUsage(null);
+    }
+  }
+
+  /// Reads the people a full invite or join link turned away (Web
+  /// `useSeatJoinBlocks`): only behind `pro_seat_add` and for a role that is
+  /// not a guest. A failed read keeps the last list, a reply for a server the
+  /// person left is dropped, and a flag or role that stops asking clears it.
+  /// [reevaluate] reads the flag again (mount, a flag change, a reconnect);
+  /// pings and polls use the last answer.
+  Future<void> refreshSeatJoinBlocks({bool reevaluate = false}) async {
+    final c = context, evaluate = seatAddEnabled;
+    if (closed || c == null || evaluate == null) return;
+    final scope = c.scope, ticket = ++_seatRevision;
+    bool accepts() =>
+        !closed && context?.scope == scope && ticket == _seatRevision;
+    void clear() {
+      if (_seatBlocks.isEmpty) return;
+      _seatBlocks = const [];
+      _publish();
+    }
+
+    if (!seatJoinBlocksAsked(c.server)) return clear();
+    final serverId = c.server!['id'] as String;
+    try {
+      if (reevaluate || _seatFlag == null) {
+        final enabled = await evaluate(serverId);
+        if (!accepts()) return;
+        if (enabled != null) _seatFlag = enabled;
+      }
+      if (_seatFlag != true) return clear();
+      final raw = await get('/servers/$serverId/seat-join-blocks');
+      if (!accepts()) return;
+      _seatBlocks = parseSeatJoinBlocks(raw);
+      _publish();
+    } catch (_) {
+      // Keep the last known list; the next ping or poll tries again.
     }
   }
 
