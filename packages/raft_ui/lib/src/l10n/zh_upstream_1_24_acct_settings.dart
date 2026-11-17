@@ -12,7 +12,6 @@ const Map<String, String> zhCatalogUpstream124AcctSettings = <String, String>{
       "换个词试试，或者在全部内容中搜索消息和人。",
   // Settings the search lists (settingsSearchCopy.ts) that no catalog file had yet.
   "Theme on {serverName}": "{serverName} 的主题",
-  "Delete account": "注销账号",
   "Same as display language": "与界面语言相同",
   "How {serverName} looks to you. Only you see it.":
       "你在 {serverName} 看到的样子。只有你看得到。",
@@ -20,8 +19,6 @@ const Map<String, String> zhCatalogUpstream124AcctSettings = <String, String>{
   "Light and dark": "浅色和深色",
   "Send messages with": "发送消息的按键",
   "Show member descriptions": "显示成员描述",
-  "Sign out everywhere and schedule your account for deletion. You can cancel until the date it's deleted.":
-      "在所有设备上退出登录，并安排注销你的账号。在注销日期之前，你随时可以取消。",
   "Single sign-on (SSO)": "单点登录（SSO）",
   // settings.common.undoOtherServer (the undo of an immediate change after switching server).
   "Not undone: you've switched to another server": "未撤销：你已切换到其他服务器",
