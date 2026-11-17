@@ -285,6 +285,9 @@ class RaftPanelAction extends StatelessWidget {
   );
 }
 
+/// Every corner rounded by [radius].
+BorderRadius raftRoundedBorder(double radius) => BorderRadius.circular(radius);
+
 // Source global index.css focus-visible outline: 2px, offset 2px.
 // Pointer focus keeps the generated resting surface and geometry unchanged.
 class RaftCssFocusOutline extends CustomPainter {
@@ -295,6 +298,16 @@ class RaftCssFocusOutline extends CustomPainter {
     this.width = 2,
     this.offset = 2,
   });
+
+  /// The same ring with every corner [radius] (a circle: half the side, or
+  /// any larger value).
+  RaftCssFocusOutline.rounded({
+    required this.enabled,
+    required this.color,
+    required double radius,
+    this.width = 2,
+    this.offset = 2,
+  }) : radius = raftRoundedBorder(radius);
   final bool enabled;
   final Color color;
   final BorderRadius radius;

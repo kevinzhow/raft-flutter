@@ -12,6 +12,9 @@ import 'human_avatar_recipe.dart';
 /// kept per look, so the first frame is final. A value that is not a built
 /// avatar shows [fallback].
 class RaftHumanPixelAvatar extends StatelessWidget {
+  /// Web `rounded-[2px]` on the img.
+  static const _imageRadius = 2.0;
+
   const RaftHumanPixelAvatar({
     super.key,
     required this.avatarUrl,
@@ -27,7 +30,7 @@ class RaftHumanPixelAvatar extends StatelessWidget {
     if (recipe == null) return fallback ?? const SizedBox.shrink();
     return ExcludeSemantics(
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(2),
+        borderRadius: BorderRadius.circular(_imageRadius),
         child: CustomPaint(
           painter: RaftHumanPixelPainter(raftHumanAvatarImage(recipe)),
           child: const SizedBox.expand(),
@@ -109,3 +112,8 @@ ui.Image raftHumanAvatarImage(RaftHumanAvatarRecipe recipe) {
   if (_images.length > _cacheCapacity) _images.remove(_images.keys.first);
   return image;
 }
+
+/// The art's own hair colour for a `hairColor` option id, for the builder's
+/// swatches.
+Color raftHumanAvatarHairColor(String hairColorId) =>
+    Color(raftHumanAvatarHairSwatch(hairColorId));

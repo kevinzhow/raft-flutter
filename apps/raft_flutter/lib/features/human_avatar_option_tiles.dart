@@ -3,6 +3,11 @@ import 'package:flutter/semantics.dart' show SemanticsRole;
 import 'package:flutter/services.dart';
 import 'package:raft_ui/raft_ui.dart';
 
+// Web HumanAvatarBuilderDialog metrics: options are fixed 72px columns (`w-18`),
+// a swatch's tile is the 44px touch target around its 32px dot.
+const double _tileWidth = 72, _swatchTarget = 44, _swatchDot = 32;
+const double _dotBorder = 1.5, _circle = 999;
+
 /// The builder's five tabs (Web `TABS`).
 enum HumanAvatarTab {
   background('Background'),
@@ -103,15 +108,15 @@ class HumanAvatarTabPanel extends StatelessWidget {
     final t = RaftTokens.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      spacing: 6,
+      spacing: RaftSpace.x1_5,
       children: [
         Semantics(
           header: true,
           child: Text(
             title,
             style: t
-                .scale(RaftTypeScale.footnote, weight: FontWeight.w700)
-                .copyWith(color: t.colors['foreground-strong']),
+                .scale(RaftTypeScale.footnote, weight: FontWeight.w600)
+                .copyWith(color: t.colors['foreground-muted']),
           ),
         ),
         child,
@@ -123,7 +128,7 @@ class HumanAvatarTabPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     String tr(String s) => raftText(context, s);
     return Padding(
-      padding: const EdgeInsets.only(top: 12),
+      padding: const EdgeInsets.only(top: RaftSpace.x3),
       child: switch (tab) {
         HumanAvatarTab.background => _tiles(
           context,
@@ -139,7 +144,7 @@ class HumanAvatarTabPanel extends StatelessWidget {
         ),
         HumanAvatarTab.hair => Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
-          spacing: 12,
+          spacing: RaftSpace.x3,
           children: [
             _group(
               context,
@@ -170,7 +175,7 @@ class HumanAvatarTabPanel extends StatelessWidget {
         ),
         HumanAvatarTab.accessories => Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
-          spacing: 12,
+          spacing: RaftSpace.x3,
           children: [
             _group(
               context,
@@ -306,14 +311,16 @@ class HumanAvatarOptionTiles extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
+    // `rounded-control`.
+    final tile = raftRoundedBorder(t.size('radius.control', fallback: 6));
     return _TileGroup(
       label: label,
       ids: field.ids,
       chosen: recipe[field],
       disabled: disabled,
       onPick: (id) => onPick(field, id),
-      spacing: 8,
-      runSpacing: 12,
+      spacing: RaftSpace.x2,
+      runSpacing: RaftSpace.x3,
       tile: (id, chosen, focus, pick) {
         final base = withoutHead
             ? recipe.withOption(RaftHumanAvatarField.head, 'none')
@@ -336,19 +343,16 @@ class HumanAvatarOptionTiles extends StatelessWidget {
               foregroundPainter: RaftCssFocusOutline(
                 enabled: state.focusVisible,
                 color: t.colors['line-strong']!,
-                radius: BorderRadius.circular(6),
+                radius: tile,
                 offset: 0,
               ),
               child: Container(
-                width: 72,
-                padding: const EdgeInsets.symmetric(vertical: 6),
-                decoration: BoxDecoration(
-                  color: overlay,
-                  borderRadius: BorderRadius.circular(6),
-                ),
+                width: _tileWidth,
+                padding: const EdgeInsets.symmetric(vertical: RaftSpace.x1_5),
+                decoration: BoxDecoration(color: overlay, borderRadius: tile),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
-                  spacing: 4,
+                  spacing: RaftSpace.x1,
                   children: [
                     ExcludeSemantics(
                       child: _Ring(
@@ -406,14 +410,12 @@ class _Ring extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     return CustomPaint(
-      foregroundPainter: RaftCssFocusOutline(
+      foregroundPainter: RaftCssFocusOutline.rounded(
         enabled: chosen,
         color: t.colors['foreground']!,
-        radius: BorderRadius.circular(
-          t.option('avatar.shape', or: 'circle') == 'square'
-              ? t.size('radius.avatar', fallback: 4)
-              : 999,
-        ),
+        radius: t.option('avatar.shape', or: 'circle') == 'square'
+            ? t.size('radius.avatar', fallback: 4)
+            : _circle,
       ),
       child: child,
     );
@@ -445,11 +447,11 @@ class HumanAvatarHairColorSwatches extends StatelessWidget {
       chosen: recipe[field],
       disabled: disabled,
       onPick: (id) => onPick(field, id),
-      spacing: 4,
+      spacing: RaftSpace.x1,
       runSpacing: 4,
       tile: (id, chosen, focus, pick) {
         final name = humanAvatarOptionLabel(context, field, id);
-        final color = Color(raftHumanAvatarHairSwatch(id));
+        final color = raftHumanAvatarHairColor(id);
         return RaftTooltip(
           message: name,
           child: RaftInteractive(
@@ -461,15 +463,15 @@ class HumanAvatarHairColorSwatches extends StatelessWidget {
             inMutuallyExclusiveGroup: true,
             onPressed: disabled ? null : pick,
             builder: (context, state) => CustomPaint(
-              foregroundPainter: RaftCssFocusOutline(
+              foregroundPainter: RaftCssFocusOutline.rounded(
                 enabled: state.focusVisible,
                 color: t.colors['line-strong']!,
-                radius: BorderRadius.circular(22),
+                radius: _swatchTarget / 2,
                 offset: 0,
               ),
               child: Container(
-                width: 44,
-                height: 44,
+                width: _swatchTarget,
+                height: _swatchTarget,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
@@ -478,18 +480,21 @@ class HumanAvatarHairColorSwatches extends StatelessWidget {
                       : null,
                 ),
                 child: CustomPaint(
-                  foregroundPainter: RaftCssFocusOutline(
+                  foregroundPainter: RaftCssFocusOutline.rounded(
                     enabled: chosen,
                     color: t.colors['foreground']!,
-                    radius: BorderRadius.circular(16),
+                    radius: _swatchDot / 2,
                   ),
                   child: Container(
-                    width: 32,
-                    height: 32,
+                    width: _swatchDot,
+                    height: _swatchDot,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: color,
-                      border: Border.all(color: t.ui.stickerInk, width: 1.5),
+                      border: Border.all(
+                        color: t.ui.stickerInk,
+                        width: _dotBorder,
+                      ),
                     ),
                   ),
                 ),

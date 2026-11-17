@@ -211,6 +211,7 @@ export 'src/human_pixel_avatar.dart'
     show
         RaftHumanPixelAvatar,
         RaftHumanPixelPainter,
+        raftHumanAvatarHairColor,
         raftHumanAvatarImage,
         raftReleaseHumanAvatarImages;
 export 'src/human_avatar_art.dart'

@@ -22,7 +22,8 @@ Future<void> showHumanAvatarBuilder(
     // The builder guards its own close: nothing is stored until Save, and a
     // choice is not "text the person typed" (Web asks nothing on Cancel).
     guardUnsaved: false,
-    dialogMaxWidth: 512,
+    // Web `DialogSheetContent size="lg"`.
+    dialogMaxWidth: 640,
     builder: (_) => HumanAvatarBuilderDialog(
       client: client,
       avatarUrl: avatarUrl,
@@ -124,7 +125,9 @@ class _BuilderState extends State<HumanAvatarBuilderDialog> {
     final saveButton = RaftButton(
       key: const ValueKey('human-avatar-builder-save'),
       label: tr(saving ? 'Saving…' : 'Save'),
-      uiSize: RaftButtonSize.lg,
+      uiVariant: RaftButtonVariant.primary,
+      // The footer buttons measure 34px on Web (the Shuffle button's md).
+      uiSize: RaftButtonSize.md,
       busy: saving,
       // Nothing to save while it is the stored look; over a photo or no
       // avatar, Save always does something.
@@ -134,7 +137,7 @@ class _BuilderState extends State<HumanAvatarBuilderDialog> {
       key: const ValueKey('human-avatar-builder-cancel'),
       label: tr('Cancel'),
       uiVariant: RaftButtonVariant.ghost,
-      uiSize: RaftButtonSize.lg,
+      uiSize: RaftButtonSize.md,
       onPressed: saving ? null : close,
     );
     return PopScope(
@@ -151,25 +154,21 @@ class _BuilderState extends State<HumanAvatarBuilderDialog> {
                 commit: RaftButton(
                   key: const ValueKey('human-avatar-builder-save'),
                   label: tr(saving ? 'Saving…' : 'Save'),
+                  uiVariant: RaftButtonVariant.primary,
                   uiSize: RaftButtonSize.md,
                   busy: saving,
                   onPressed: changed && !saving ? save : null,
                 ),
               )
-            : RaftDialog.card(
-                contentKey: const ValueKey('human-avatar-builder'),
+            : RaftDialog.shell(
+                surfaceKey: const ValueKey('human-avatar-builder'),
                 title: tr('Build an avatar'),
-                maxWidth: 512,
-                onClose: close,
-                closeEnabled: !saving,
-                pinFooterAtLargeText: true,
-                footer: Wrap(
-                  alignment: WrapAlignment.end,
-                  spacing: RaftDialogSlots.of(context).footer.columnGap ?? 0,
-                  runSpacing: RaftDialogSlots.of(context).footer.columnGap ?? 0,
-                  children: [cancel, saveButton],
-                ),
-                child: body,
+                maxWidth: 640,
+                // Esc, the X and the scrim ask the route; PopScope refuses
+                // them while a save is in flight (the X is off then).
+                onClose: saving ? null : close,
+                body: body,
+                footer: [cancel, saveButton],
               ),
       ),
     );
@@ -180,12 +179,12 @@ class _BuilderState extends State<HumanAvatarBuilderDialog> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
-      spacing: 16,
+      spacing: RaftSpace.x4,
       children: [
         // One layout at every width: the preview with Shuffle beside it, then
         // the tabs at the body's full width, then the options.
         Row(
-          spacing: 16,
+          spacing: RaftSpace.x4,
           children: [
             Semantics(
               image: true,

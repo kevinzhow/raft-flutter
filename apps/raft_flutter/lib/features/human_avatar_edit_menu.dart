@@ -109,6 +109,8 @@ class _HumanAvatarEditMenuState extends State<HumanAvatarEditMenu> {
   }
 }
 
+const double _circle = 999;
+
 /// The avatar with Web's `AvatarEditVeil` over it: the scrim (`layer-backdrop`)
 /// with a pencil in HUD ink covering the avatar to its corners, shown on hover,
 /// on keyboard focus and the whole time an upload is in flight.
@@ -131,17 +133,15 @@ class _AvatarEditTrigger extends StatelessWidget {
         child: RaftIcon(
           RaftGlyph.pencil,
           size: 20,
-          color: t.colors['foreground-on-hud'] ?? const Color(0xFFFFFFFF),
+          color: t.colors['foreground-on-hud']!,
         ),
       ),
     );
     return CustomPaint(
-      foregroundPainter: RaftCssFocusOutline(
+      foregroundPainter: RaftCssFocusOutline.rounded(
         enabled: focusVisible,
         color: t.colors['line-strong']!,
-        radius: BorderRadius.circular(
-          square ? t.size('radius.avatar', fallback: 0) : 999,
-        ),
+        radius: square ? t.size('radius.avatar', fallback: 0) : _circle,
       ),
       child: Stack(
         fit: StackFit.passthrough,
@@ -150,12 +150,11 @@ class _AvatarEditTrigger extends StatelessWidget {
           Positioned.fill(
             child: ExcludeSemantics(
               child: IgnorePointer(
-                child: AnimatedOpacity(
+                child: Opacity(
                   opacity: veil ? 1 : 0,
-                  duration: const Duration(milliseconds: 150),
                   child: square
                       ? ClipRRect(
-                          borderRadius: BorderRadius.circular(
+                          borderRadius: raftRoundedBorder(
                             t.size('radius.avatar', fallback: 0),
                           ),
                           child: veilFill,
