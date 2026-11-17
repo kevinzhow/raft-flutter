@@ -24,24 +24,6 @@ List<Map<String, dynamic>> fixtureTasks() => [
   pageTask('o1', status: 'todo', createdBy: 'bob', claimedBy: 'bob'),
 ];
 
-Future<List<Map<String, dynamic>>> mountPage(
-  WidgetTester t,
-  WorkspaceController w, {
-  Size size = const Size(1280, 900),
-  TargetPlatform platform = TargetPlatform.linux,
-}) async {
-  sizeWindow(t, size);
-  final opened = <Map<String, dynamic>>[];
-  await t.pumpWidget(
-    tasksApp(
-      TasksPage(controller: w, onOpenTask: opened.add, currentTaskId: null),
-      platform: platform,
-    ),
-  );
-  await settleTasks(t);
-  return opened;
-}
-
 Finder headNumber(String text) => find.descendant(
   of: find.byKey(const Key('page-header-surface')),
   matching: find.text(text),

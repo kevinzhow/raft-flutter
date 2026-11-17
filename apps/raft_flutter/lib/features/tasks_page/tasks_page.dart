@@ -273,9 +273,11 @@ class _TasksPageState extends State<TasksPage> {
     // The list's Select all, not the open task's: only from the list or from
     // nowhere.
     final focus = FocusManager.instance.primaryFocus;
+    // Nothing focused is a scope holding the focus (the route's), not a
+    // control.
     final inPage =
         focus == null ||
-        focus == FocusManager.instance.rootScope ||
+        focus is FocusScopeNode ||
         (focus.context?.findAncestorStateOfType<_TasksPageState>() == this);
     if (!inPage) return false;
     unawaited(_selectAll());

@@ -32,6 +32,15 @@ String? shortRelativeTime(BuildContext context, String value, DateTime now) {
   return raftFormat(context, '{count}d ago', {'count': (ms / day).round()});
 }
 
+/// A count as the message says it: English's `#` groups thousands
+/// (`2,000`), the Chinese `{count}` does not.
+String _counted(BuildContext context, int count) {
+  if (Localizations.maybeLocaleOf(context)?.languageCode == 'zh') {
+    return '$count';
+  }
+  return '$count'.replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (_) => ',');
+}
+
 /// Counted copy with Web's one / other plural arms: the English source of
 /// each arm is its own catalog key.
 String tasksPlural(
@@ -40,8 +49,10 @@ String tasksPlural(
   String one,
   String other, [
   Map<String, Object?> values = const {},
-]) =>
-    raftFormat(context, count == 1 ? one : other, {'count': count, ...values});
+]) => raftFormat(context, count == 1 ? one : other, {
+  'count': _counted(context, count),
+  ...values,
+});
 
 /// The ", skipped N" a batch toast ends with, when any were skipped.
 String tasksSkipped(BuildContext context, int skipped) => skipped <= 0

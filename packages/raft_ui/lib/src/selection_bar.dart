@@ -366,7 +366,6 @@ class _BarAction extends RaftFitItem {
     }
     if (action.popover != null) {
       return _BarPopover(
-        key: ValueKey('selection-bar-action-${action.id}'),
         popover: action.popover!,
         button: button,
       );

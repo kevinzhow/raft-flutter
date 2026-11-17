@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
+import 'package:raft_flutter/features/tasks_page/tasks_page.dart';
 import 'package:raft_flutter/features/tasks_page/tasks_page_model.dart';
 import 'package:raft_flutter/features/tasks_page/tasks_page_store.dart';
 import 'package:raft_ui/raft_ui.dart';
@@ -60,6 +61,11 @@ class TasksServer implements HttpClientAdapter {
 
   /// Held answers: a request whose key is here waits for the completer.
   final holds = <String, Completer<void>>{};
+
+  /// While set, every write waits for it; [inFlight] counts the writes
+  /// started and not answered, [maxInFlight] the most at once.
+  Completer<void>? gate;
+  int inFlight = 0, maxInFlight = 0;
 
   Iterable<RequestOptions> get taskReads =>
       requests.where((r) => r.path == '/tasks/server');
@@ -215,8 +221,15 @@ class TasksServer implements HttpClientAdapter {
     Future<void>? cancelFuture,
   ) async {
     requests.add(options);
+    final write = options.method != 'GET' && options.path.startsWith('/tasks/');
+    if (write) {
+      inFlight += 1;
+      if (inFlight > maxInFlight) maxInFlight = inFlight;
+    }
     final hold = holds['${options.method} ${options.path}'];
     if (hold != null) await hold.future;
+    if (write && gate != null) await gate!.future;
+    if (write) inFlight -= 1;
     final (status, body) = answer(options);
     return ResponseBody.fromString(
       jsonEncode(body),
@@ -231,17 +244,27 @@ class TasksServer implements HttpClientAdapter {
   void close({bool force = false}) {}
 }
 
+/// The app's client with a socket the test speaks on.
+class TasksClient extends RaftClient {
+  TasksClient({required super.transport})
+    : super(
+        origin: 'https://example.invalid',
+        sessionStore: MemorySessionStore(),
+      );
+  final bus = StreamController<RaftEvent>.broadcast(sync: true);
+  @override
+  Stream<RaftEvent> get events => bus.stream;
+  void emit(String name, [dynamic payload]) =>
+      bus.add(RaftEvent(name, payload));
+}
+
 Future<(WorkspaceController, TasksServer)> tasksFixture({
   bool flag = true,
   List<Map<String, dynamic>>? tasks,
   String role = 'owner',
 }) async {
   final server = TasksServer(flag: flag, tasks: tasks);
-  final client = RaftClient(
-    origin: 'https://example.invalid',
-    sessionStore: MemorySessionStore(),
-    transport: Dio()..httpClientAdapter = server,
-  );
+  final client = TasksClient(transport: Dio()..httpClientAdapter = server);
   await client.login('fixture', 'fixture');
   client.selectServer('s1');
   final w = WorkspaceController(client);
@@ -272,8 +295,9 @@ Future<void> settleTasks(WidgetTester t, {int rounds = 8}) async {
 Widget tasksApp(
   Widget child, {
   TargetPlatform platform = TargetPlatform.linux,
+  bool dark = false,
 }) => MaterialApp(
-  theme: raftTheme().copyWith(platform: platform),
+  theme: raftTheme(dark: dark).copyWith(platform: platform),
   home: RaftToastHost(child: Scaffold(body: child)),
 );
 
@@ -282,4 +306,25 @@ void sizeWindow(WidgetTester t, Size size) {
     ..devicePixelRatio = 1
     ..physicalSize = size;
   addTearDown(t.view.reset);
+}
+
+/// The page in a window of [size]; the tasks it was asked to open.
+Future<List<Map<String, dynamic>>> mountPage(
+  WidgetTester t,
+  WorkspaceController w, {
+  Size size = const Size(1280, 900),
+  TargetPlatform platform = TargetPlatform.linux,
+  bool dark = false,
+}) async {
+  sizeWindow(t, size);
+  final opened = <Map<String, dynamic>>[];
+  await t.pumpWidget(
+    tasksApp(
+      TasksPage(controller: w, onOpenTask: opened.add, currentTaskId: null),
+      platform: platform,
+      dark: dark,
+    ),
+  );
+  await settleTasks(t);
+  return opened;
 }
