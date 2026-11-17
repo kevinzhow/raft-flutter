@@ -368,10 +368,46 @@ class _RenderToastPaintSnap extends RenderProxyBox {
       );
 }
 
+/// Why a toast closed (the argument of `onClose`).
+enum RaftToastCloseReason {
+  /// The person pressed the toast's action (Undo). `onClose` runs before
+  /// `onAction`.
+  action,
+
+  /// Its time ran out.
+  timeout,
+
+  /// Swiped away, the close button, Escape, `clear()` or [RaftToastHandle.dismiss].
+  dismissed,
+
+  /// A newer toast took the place.
+  replaced,
+}
+
+/// A shown toast: lets its owner close it early (the same row acted on again,
+/// the page left). A handle whose toast is gone does nothing.
+class RaftToastHandle {
+  RaftToastHandle._(this._controller, this._serial);
+  final RaftToastController _controller;
+  final int _serial;
+
+  /// Whether this toast is still the one on screen.
+  bool get isShown =>
+      _controller._serial == _serial && _controller._title != null;
+
+  /// Closes this toast as [RaftToastCloseReason.dismissed]; a newer toast is
+  /// left alone.
+  void dismiss() {
+    if (isShown) _controller._finish(RaftToastCloseReason.dismissed);
+  }
+}
+
 /// UI-owned transient feedback. No payload persistence or app/API dependency.
 /// A new notice replaces this owner's old notice and restarts its timeout.
 class RaftToastController extends ChangeNotifier {
   Timer? _timer;
+  int _serial = 0;
+  void Function(RaftToastCloseReason)? _onClose;
   DateTime? _started;
   Duration _remaining = Duration.zero;
   bool _paused = false;
@@ -440,7 +476,10 @@ class RaftToastController extends ChangeNotifier {
 
   /// raft-ui toast manager timing (Web toastBridge.ts): 5s, or 8s when the
   /// toast has an action or is an error, unless [duration] is given.
-  void show(
+  ///
+  /// [onClose] runs once when this toast closes, with the reason; it does not
+  /// run again if the owner is disposed first. Returns a handle to close it early.
+  RaftToastHandle show(
     String title, {
     Duration? duration,
     String? description,
@@ -456,8 +495,12 @@ class RaftToastController extends ChangeNotifier {
     /// Web `hasIcon !== false`: the tone glyph before the text.
     /// Null follows [dismissible].
     bool? icon,
+    void Function(RaftToastCloseReason reason)? onClose,
   }) {
     _timer?.cancel();
+    final replacedClose = _title == null ? null : _onClose;
+    final serial = ++_serial;
+    _onClose = onClose;
     _dismissible = dismissible;
     _icon = icon;
     _title = title;
@@ -472,11 +515,13 @@ class RaftToastController extends ChangeNotifier {
             : const Duration(seconds: 5));
     if (!_paused) _start();
     notifyListeners();
+    replacedClose?.call(RaftToastCloseReason.replaced);
+    return RaftToastHandle._(this, serial);
   }
 
   void _start() {
     _started = DateTime.now();
-    _timer = Timer(_remaining, clear);
+    _timer = Timer(_remaining, () => _finish(RaftToastCloseReason.timeout));
   }
 
   void pause(bool value) {
@@ -493,15 +538,28 @@ class RaftToastController extends ChangeNotifier {
     }
   }
 
-  void clear() {
+  void clear() => _finish(RaftToastCloseReason.dismissed);
+
+  /// The toast's action was pressed: closes it as
+  /// [RaftToastCloseReason.action], then runs the action.
+  void activate() {
+    final action = _onAction;
+    _finish(RaftToastCloseReason.action);
+    action?.call();
+  }
+
+  void _finish(RaftToastCloseReason reason) {
     _timer?.cancel();
     if (_title == null) return;
+    final onClose = _onClose;
     _title = null;
     _description = null;
     _actionLabel = null;
     _onAction = null;
+    _onClose = null;
     _paused = false;
     notifyListeners();
+    onClose?.call(reason);
   }
 
   @override
@@ -743,9 +801,7 @@ class _RaftToastPortalState extends State<RaftToastPortal>
         onClose: content.close ? widget.controller.clear : null,
         actionLabel: content.actionLabel,
         onAction: () {
-          final action = widget.controller.onAction;
-          widget.controller.clear();
-          action?.call();
+          widget.controller.activate();
         },
       );
       if (touch) {

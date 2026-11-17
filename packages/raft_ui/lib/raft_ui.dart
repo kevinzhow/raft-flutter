@@ -373,3 +373,4 @@ export 'src/raft/list_row_action.dart';
 export 'src/card_parts.dart' hide RaftCardScope;
 export 'src/raft/fit_toolbar.dart';
 export 'src/raft/inbox_item.dart';
+export 'src/raft/swipe_row.dart';

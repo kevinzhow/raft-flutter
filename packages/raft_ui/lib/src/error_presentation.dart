@@ -311,18 +311,36 @@ bool showRaftToast(
   String? description,
   String? actionLabel,
   VoidCallback? onAction,
-}) {
-  final host = RaftToastHost.maybeOf(context);
-  if (host == null) return false;
-  host.show(
-    raftText(context, title),
-    description: description == null ? null : raftText(context, description),
-    tone: tone,
-    actionLabel: actionLabel == null ? null : raftText(context, actionLabel),
-    onAction: onAction,
-  );
-  return true;
-}
+}) =>
+    showRaftToastHandle(
+      context,
+      title,
+      tone: tone,
+      description: description,
+      actionLabel: actionLabel,
+      onAction: onAction,
+    ) !=
+    null;
+
+/// [showRaftToast] with a close hook: [onClose] says why the toast closed
+/// (action, timeout, dismissed, replaced), and the returned handle closes it
+/// early. Null when no [RaftToastHost] is mounted (then [onClose] never runs).
+RaftToastHandle? showRaftToastHandle(
+  BuildContext context,
+  String title, {
+  RaftToastRecipeTone tone = RaftToastRecipeTone.error,
+  String? description,
+  String? actionLabel,
+  VoidCallback? onAction,
+  void Function(RaftToastCloseReason reason)? onClose,
+}) => RaftToastHost.maybeOf(context)?.show(
+  raftText(context, title),
+  description: description == null ? null : raftText(context, description),
+  tone: tone,
+  actionLabel: actionLabel == null ? null : raftText(context, actionLabel),
+  onAction: onAction,
+  onClose: onClose,
+);
 
 /// Shows [error] as an error toast through the installed mapper.
 bool showRaftErrorToast(
