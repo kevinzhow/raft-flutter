@@ -96,6 +96,30 @@ void main() {
     );
   }
 
+  testWidgets(
+    'each toggle is a square as tall as Search',
+    (t) async {
+      await mount(t, dark: false, tasksOpen: true);
+      final search = t.getSize(find.byKey(const Key('channel-topbar-search')));
+      for (final key in ['tasks', 'files']) {
+        final box = t.getSize(
+          find
+              .descendant(
+                of: find.byKey(Key(key)),
+                matching: find.byType(Container),
+              )
+              .first,
+        );
+        expect(box.width, box.height, reason: '$key is square');
+        expect(box.height, search.height, reason: '$key as tall as Search');
+      }
+    },
+    variant: const TargetPlatformVariant({
+      TargetPlatform.linux,
+      TargetPlatform.android,
+    }),
+  );
+
   testWidgets('without toggles the head is as it was', (t) async {
     await mount(t, dark: false, tasksOpen: false, withToggles: false);
     expect(find.byKey(const Key('tasks')), findsNothing);

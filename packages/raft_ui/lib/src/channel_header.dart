@@ -390,7 +390,15 @@ class _ConversationHeaderToggle extends StatelessWidget {
           }),
           tokens: rt,
         ).base;
-        final svg = s.target('& > svg');
+        // The head's Search and Settings are ghost icon-sm buttons
+        // (_ConversationHeaderAction): the toggle takes their square.
+        final source = RaftButtonMetrics.of(
+          RaftButtonSize.iconSm,
+          RaftButtonVariant.ghost,
+          t,
+        );
+        final extent = source.height;
+        final glyphSize = source.icon;
         return CustomPaint(
           foregroundPainter: RaftCssFocusOutline(
             enabled: state.focusVisible,
@@ -401,12 +409,16 @@ class _ConversationHeaderToggle extends StatelessWidget {
             opacity: s.opacity ?? 1,
             child: Transform.translate(
               offset: s.translate ?? Offset.zero,
+              // raft-ui panelToggleAction is a square of the control height,
+              // as PanelAction (Search, Settings) beside it, the icon centred.
               child: Container(
-                padding: s.padding,
+                width: extent,
+                height: extent,
+                alignment: Alignment.center,
                 decoration: s.decoration(rt),
                 child: RaftIcon(
                   glyph,
-                  size: svg?.width ?? 14,
+                  size: glyphSize,
                   color: s.color?.resolve(rt) ?? t.strong,
                 ),
               ),
