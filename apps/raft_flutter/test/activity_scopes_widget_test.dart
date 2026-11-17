@@ -143,7 +143,7 @@ void main() {
     expect(t.takeException(), isNull);
     expect(state.rows, hasLength(1));
     expect(state.rowKey(state.rows.single), 'object:artifact:o1');
-    expect(state.activityObjects.objectCount, 0);
+    expect(state.activityFacets.objects.objectCount, 0);
   });
 
   testWidgets('Pinned reloads when the sidebar pins change', (t) async {

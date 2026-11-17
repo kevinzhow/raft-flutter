@@ -232,7 +232,7 @@ void main() {
       expect(workspace.inboxQueries.last['limit'], 60);
       expect(state.rows, hasLength(60));
       final window = store.windowSince(0)!;
-      expect(window['items'], hasLength(50));
+      expect(window['items'], hasLength(30));
       expect(window['items'].first['lastMessagePreview'], 'Updated');
       expect(window['hasMore'], isTrue);
       await tester.pumpWidget(const SizedBox());

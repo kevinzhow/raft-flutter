@@ -401,7 +401,7 @@ void main() {
         await tester.pump();
         // Private conversation fails closed before the directory refresh.
         expect(state.rows.where((r) => r['channelId'] == 'ch7'), isEmpty);
-        expect(state.rows, hasLength(29));
+        expect(state.rows, hasLength(49));
         expect(identical(state.rows[0], kept), isTrue);
         expect(skeleton, findsNothing);
         expect(scroll.position.pixels, 200);

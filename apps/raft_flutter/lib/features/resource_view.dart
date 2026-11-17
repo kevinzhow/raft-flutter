@@ -49,7 +49,7 @@ import 'activity_counts_line.dart';
 import 'activity_load_failed.dart';
 import 'activity_mark_all_read.dart';
 import 'activity_retap.dart';
-import 'activity_scope_reload.dart';
+import 'activity_page_state.dart';
 import 'activity_unread_scope.dart';
 import 'create_task_dialog.dart';
 import 'desktop_navigation_policy.dart' show DesktopContentTarget;
@@ -463,9 +463,6 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
   /// The failure came from the blocking first read (no list on screen yet).
   bool errorWhileLoading = false;
 
-  /// 503 `rw_unconfigured`: Activity is unavailable, not failed.
-  bool activityUnavailable = false;
-
   /// Web `showLoadFailed`: no rows and a failed load shows the failed state,
   /// never the empty one.
   bool get activityLoadFailed => error != null && rows.isEmpty && !loading;
@@ -492,24 +489,16 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
   /// attention window; Pinned, Saved and Artifacts never do.
   bool get globalInbox => !activityChoice.isScope;
 
-  /// The object (Artifact) counts of the accepted inbox window.
-  ActivityObjectCounts activityObjects = ActivityObjectCounts.none;
-
-  /// The header's settled counts (Web `useSettledValue`).
-  final activityCounts = ActivityCountsLine();
+  /// The Activity facets held beside the rows (object counts, settled counts).
+  ActivityPageState get activityFacets => ActivityPageState.of(this);
   ActivityUnreadSnapshotStore get activityUnreadSnapshots =>
       ActivityUnreadScope.of(w).snapshots;
-  VoidCallback? leaveActivityVisit;
-  VoidCallback? unregisterRetap;
-  final activityReload = ActivityScopeReload();
 
   /// What the phone's Activity re-tap works with (Web `useActivityNextUnread`).
-  late final activityRetapHost = ActivityRetapHost(
+  ActivityRetapHost activityRetapHost() => ActivityRetapHost(
     scroll: () => listScroll,
     context: context,
-    rowKeys: () => [
-      for (final row in visibleRows) ?rowKey(row),
-    ],
+    rowKeys: () => [for (final row in visibleRows) ?rowKey(row)],
     isUnread: (key) {
       final row = visibleRows.where((r) => rowKey(r) == key).firstOrNull;
       return row != null && !ActivityUnreadSnapshot.isRead(row);
@@ -1205,7 +1194,7 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
     }
     setState(() {
       errorWhileLoading = loading;
-      activityUnavailable =
+      activityFacets.unavailable =
           cause is RaftApiException &&
           cause.status == 503 &&
           cause.code == 'rw_unconfigured';
@@ -1224,7 +1213,7 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
     if (!mounted) return;
     _authorityCache.synchronize(w.channels, w.dms, force: forceAccess);
     if (widget.section == 'activity' &&
-        activityReload.changed(
+        activityFacets.reload.changed(
           choice: activityChoice,
           pinned: w.sidebarOrder['pinned'],
           savedRevision: w.savedRevision,
@@ -1283,7 +1272,7 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
           ? ActivityFilterPreference.read(w.server?.id).name
           : 'all';
       if (widget.section == 'activity') {
-        activityCounts.reset();
+        activityFacets.counts.reset();
         activityScrolls[filter] ??= listScroll!;
       }
       error = null;
@@ -1844,8 +1833,14 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
       // Web restores the server's last Filter choice (sync, so the first
       // frame is the final one) and starts the visit and the re-tap.
       filter = ActivityFilterPreference.read(w.server?.id).name;
-      leaveActivityVisit = ActivityUnreadScope.of(w).visit.enter();
-      unregisterRetap = ActivityRetap.of(w).register(activityRetapHost);
+      activityFacets.leaveVisit = ActivityUnreadScope.of(w).visit.enter();
+      activityFacets.unregisterRetap = ActivityRetap.of(w).register(activityRetapHost());
+      // The pins and saves as of now are what a later change is measured from.
+      activityFacets.reload.changed(
+        choice: ActivityFilterChoice.all,
+        pinned: w.sidebarOrder['pinned'],
+        savedRevision: w.savedRevision,
+      );
     }
     final restored = restoreSnapshot();
     final seed = sharedInboxSeed();
@@ -1954,8 +1949,8 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
 
   @override
   void dispose() {
-    leaveActivityVisit?.call();
-    unregisterRetap?.call();
+    activityFacets.leaveVisit?.call();
+    activityFacets.unregisterRetap?.call();
     sectionActivity?.removeListener(sectionActivityChanged);
     events?.cancel();
     events = null;
@@ -2344,7 +2339,7 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
                 ?.toInt();
             totalUnreadCount = (value['totalUnreadCount'] as num?)?.toInt();
             if (widget.section == 'activity') {
-              activityObjects = ActivityObjectCounts.fromWindow(value);
+              activityFacets.objects = ActivityObjectCounts.fromWindow(value);
             }
           }
           if (widget.section == 'activity' && globalInbox && value is Map) {
@@ -2778,7 +2773,7 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
         : widget.section == 'activity' && activityLoadFailed
         ? ActivityLoadFailed(
             key: const ValueKey('inbox-load-failed'),
-            unavailable: activityUnavailable,
+            unavailable: activityFacets.unavailable,
             onRetry: () => load(),
           )
         : visibleRows.isEmpty
@@ -3433,10 +3428,10 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
 
   /// Web `useSettledValue` of the counts line: the numbers change only when
   /// the page of the shown filter has settled.
-  void settleActivityCounts() => activityCounts.settle(
+  void settleActivityCounts() => activityFacets.counts.settle(
     loaded: rowsView != null && rowsView == listView && !loading,
     totalCount: totalCount ?? 0,
-    objects: activityObjects,
+    objects: activityFacets.objects,
     totalUnread: totalUnreadCount ?? 0,
     filter: activityChoice.readFilter,
     activeUnreadHint: totalUnreadCount ?? 0,
@@ -3444,9 +3439,9 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
 
   /// Web `showMarkAllRead`: settled unread (objects included) above zero.
   bool get activityShowsMarkAllRead =>
-      (activityCounts.known
-          ? activityCounts.unread
-          : (totalUnreadCount ?? 0) + activityObjects.objectUnreadCount) >
+      (activityFacets.counts.known
+          ? activityFacets.counts.unread
+          : (totalUnreadCount ?? 0) + activityFacets.objects.objectUnreadCount) >
       0;
 
   /// Mark all read: after every queued Mark as Read / Unread write settled.
@@ -3473,7 +3468,7 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
     if (widget.mobileRoot && mobile && widget.section == 'activity') {
       return activityRootHeader(
         w,
-        activityCountsString(context, activityCounts),
+        activityCountsString(context, activityFacets.counts),
       );
     }
     final header = RaftPageHeader(
@@ -3491,7 +3486,7 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
         'tasks' => '$count ${raftText(context, 'channel tasks')}',
         'saved' =>
           '$count ${raftText(context, count == 1 ? 'saved item' : 'saved items')}',
-        'activity' => activityCountsString(context, activityCounts),
+        'activity' => activityCountsString(context, activityFacets.counts),
         _ => null,
       },
       height: raftPageHeaderHeight(context),
