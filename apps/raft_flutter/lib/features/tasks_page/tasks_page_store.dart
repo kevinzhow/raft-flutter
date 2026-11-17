@@ -648,6 +648,7 @@ class TasksPageStore extends ChangeNotifier {
 
   @override
   void dispose() {
+    if (_disposed) return;
     _disposed = true;
     for (final timer in [..._timers.values, ..._retries]) {
       timer.cancel();

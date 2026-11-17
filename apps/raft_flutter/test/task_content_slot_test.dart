@@ -66,23 +66,6 @@ Future<WorkspaceController> mountTasks(
   };
   api.routes['POST /channels/task-conv/read'] = (_) => {};
   api.routes['GET /tasks/task-1'] = (_) => {'task': v2Task};
-  // The Tasks page with task v2 reads its lanes and counts (the task is the
-  // viewer's own, not assigned: 你发起的).
-  final board = api.routes['GET /tasks/server']!;
-  api.routes['GET /tasks/server'] = (o) => o.queryParameters['relation'] == null
-      ? board(o)
-      : {
-          'tasks': o.queryParameters['relation'] == 'created_by_me'
-              ? [v2Task]
-              : <dynamic>[],
-          'next_cursor': null,
-        };
-  api.routes['GET /tasks/server/counts'] = (o) => {
-    'counts': {
-      'todo': o.queryParameters['relation'] == 'created_by_me' ? 1 : 0,
-    },
-    'relations': <String, dynamic>{},
-  };
   if (v2) TaskV2ConversationsFlag.of(w).markEnabled();
   w.messageDomain.ledger.ingest([
     row('accepted-main', 'c1', 1),

@@ -43,13 +43,25 @@ Future<void> flush(WidgetTester t) async {
 void taskRoutes(MessageAdapter api, Map<String, dynamic> task) {
   api.routes['GET /servers/s1/members'] = (_) => <dynamic>[];
   api.routes['GET /agents'] = (_) => <dynamic>[];
+  // Today's status board reads a status lane; the Tasks page (task v2) a
+  // `relation` lane and its counts (the task is its viewer's own: 你发起的).
   api.routes['GET /tasks/server'] = (r) => {
-    'tasks':
-        r.queryParameters['status'] == null ||
-            r.queryParameters['status'] == task['status']
-        ? [task]
-        : [],
+    'tasks': r.queryParameters['relation'] != null
+        ? (r.queryParameters['relation'] == 'created_by_me' ? [task] : [])
+        : (r.queryParameters['status'] == null ||
+                  r.queryParameters['status'] == task['status']
+              ? [task]
+              : []),
     'next_cursor': null,
+  };
+  api.routes['GET /tasks/server/counts'] = (r) => {
+    'counts': {
+      '${task['status']}':
+          const [null, 'created_by_me'].contains(r.queryParameters['relation'])
+          ? 1
+          : 0,
+    },
+    'relations': <String, dynamic>{},
   };
   api.routes['GET /tasks/channel/c1/number/8'] = (_) => {'task': task};
   api.routes['GET /tasks/task-1/history'] = (_) => {'events': <dynamic>[]};

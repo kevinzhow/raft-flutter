@@ -15,6 +15,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/features/resource_view.dart';
+import 'package:raft_flutter/features/tasks_page/tasks_page_store.dart';
 import 'package:raft_flutter/features/task_surface.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -105,15 +106,33 @@ Future<(WorkspaceController, _Adapter, Map<String, dynamic>)> _fixture() async {
   );
   a.routes['GET /servers/s1/members'] = (_) => (200, <dynamic>[]);
   a.routes['GET /agents'] = (_) => (200, <dynamic>[]);
+  // Today's status board reads a status lane; the Tasks page (task v2) a
+  // `relation` lane and its counts (the task is the viewer's own).
   a.routes['GET /tasks/server'] = (r) => (
     200,
     {
-      'tasks':
-          r.queryParameters['status'] == null ||
-              r.queryParameters['status'] == task['status']
-          ? [task]
-          : [],
+      'tasks': r.queryParameters['relation'] != null
+          ? (r.queryParameters['relation'] == 'created_by_me' ? [task] : [])
+          : (r.queryParameters['status'] == null ||
+                    r.queryParameters['status'] == task['status']
+                ? [task]
+                : []),
       'next_cursor': null,
+    },
+  );
+  a.routes['GET /tasks/server/counts'] = (r) => (
+    200,
+    {
+      'counts': {
+        '${task['status']}':
+            const [
+              null,
+              'created_by_me',
+            ].contains(r.queryParameters['relation'])
+            ? 1
+            : 0,
+      },
+      'relations': <String, dynamic>{},
     },
   );
   a.routes['GET /tasks/channel/c1/number/7'] = (_) => (200, {'task': task});
@@ -167,6 +186,8 @@ Future<TaskSurfaceControllerProbe> _open(
     ..devicePixelRatio = 1
     ..physicalSize = const Size(1280, 900);
   addTearDown(t.view.reset);
+  // The page's store lives with the session; the test lets it go.
+  addTearDown(() => TasksPageStore.of(w).dispose());
   await t.pumpWidget(
     MaterialApp(
       theme: raftTheme(),
@@ -225,7 +246,8 @@ void main() {
     await _open(t, w);
     // The bar names the task by its ref; the head shows the dialog's facts.
     expect(find.byKey(const ValueKey('task-modal-bar-ref')), findsOneWidget);
-    expect(find.text('#test:#7'), findsOneWidget);
+    // (The page's row under the dialog carries the ref too.)
+    expect(find.text('#test:#7'), findsNWidgets(2));
     expect(find.text('Task #7'), findsOneWidget);
     expect(find.text('Source'), findsOneWidget);
     expect(find.text('Bob'), findsOneWidget);
