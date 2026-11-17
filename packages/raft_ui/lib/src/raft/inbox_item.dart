@@ -9,10 +9,15 @@
 // slot, the `context`/`subtitle`/`message`/`metadata` slots, the trailing
 // unread pixel (hidden in compact) and the roomy density.
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart' show CustomSemanticsAction;
+import 'package:flutter/services.dart';
 import 'package:raft_theme/recipes/inbox_item.g.dart' as raft;
 
 import '../indicators.dart';
 import '../interaction.dart';
+import '../mounted_task_chip.dart';
+import '../task_status_badge.dart';
+import '../tooltip.dart' show RaftTooltip;
 import '../recipe_surface.dart';
 import '../recipes/inbox_item_skeleton.g.dart';
 import '../recipes/recipe_runtime.dart';
@@ -68,6 +73,12 @@ class RaftInboxItem extends StatefulWidget {
     this.disabled = false,
     this.onOpen,
     this.focusNode,
+    this.timestampAtRest = false,
+    this.timestampTooltip,
+    this.located = false,
+    this.onLongPress,
+    this.onSecondaryTap,
+    this.semanticActions = const {},
   });
 
   final String semanticLabel;
@@ -84,12 +95,121 @@ class RaftInboxItem extends StatefulWidget {
   final VoidCallback? onOpen;
   final FocusNode? focusNode;
 
+  /// `ActivityRowTime`: a row under a day old shows its short time ("now",
+  /// "3m", "2h") at rest, on touch too; only an older row's clock is revealed
+  /// by hover or keyboard focus (never on touch). `true` is the former.
+  final bool timestampAtRest;
+
+  /// The time in words ("Today at 5:20 PM"), a [RaftTooltip] on the shown
+  /// timestamp. Mouse only.
+  final String? timestampTooltip;
+
+  /// Web `data-located` (`useLocated`): the row a jump landed on is washed
+  /// `info-soft`, held 1.2 s and faded out by 2 s. The caller clears it after
+  /// [raftLocatedDuration]; the fade is the component's.
+  final bool located;
+
+  /// Press-and-hold (touch) and right click (mouse), with the global position
+  /// the row menu opens at.
+  final ValueChanged<Offset>? onLongPress, onSecondaryTap;
+
+  /// Screen-reader-only actions on the row's trigger, by label (Web's phone
+  /// Done: a visually hidden button for assistive technology). Each is a
+  /// `CustomSemanticsAction`; nothing is drawn.
+  final Map<String, VoidCallback> semanticActions;
+
   @override
   State<RaftInboxItem> createState() => _RaftInboxItemState();
 }
 
-class _RaftInboxItemState extends State<RaftInboxItem> {
+/// raft-ui `LOCATED_MS`.
+const Duration raftLocatedDuration = Duration(milliseconds: 2000);
+
+/// The open triggers of mounted rows: Up and Down move between these.
+final Expando<bool> _rowTriggers = Expando<bool>('RaftInboxItem trigger');
+
+class _InboxRowWidth extends InheritedWidget {
+  const _InboxRowWidth({required this.width, required super.child});
+  final double width;
+  static double? of(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<_InboxRowWidth>()?.width;
+  @override
+  bool updateShouldNotify(_InboxRowWidth old) => old.width != width;
+}
+
+class _RaftInboxItemState extends State<RaftInboxItem>
+    with SingleTickerProviderStateMixin {
   bool _hovered = false, _focusWithin = false;
+  final FocusNode _ownedTrigger = FocusNode(debugLabel: 'inbox-item-open');
+  Offset _lastPointer = Offset.zero;
+  late final AnimationController _located = AnimationController(
+    vsync: this,
+    duration: raftLocatedDuration,
+  );
+
+  FocusNode get _trigger => widget.focusNode ?? _ownedTrigger;
+
+  @override
+  void initState() {
+    super.initState();
+    _rowTriggers[_trigger] = true;
+    if (widget.located) _located.forward();
+  }
+
+  @override
+  void didUpdateWidget(RaftInboxItem old) {
+    super.didUpdateWidget(old);
+    if (old.focusNode != widget.focusNode) {
+      _rowTriggers[old.focusNode ?? _ownedTrigger] = null;
+      _rowTriggers[_trigger] = true;
+    }
+    if (widget.located && !old.located) {
+      _located.forward(from: 0);
+    } else if (!widget.located && old.located) {
+      _located.value = 1;
+    }
+  }
+
+  @override
+  void dispose() {
+    _rowTriggers[_trigger] = null;
+    _located.dispose();
+    _ownedTrigger.dispose();
+    super.dispose();
+  }
+
+  /// Up and Down on a row's trigger focus the previous or next row's, across
+  /// day groups (Web `moveRowFocus`): plain keys only, never the actions.
+  KeyEventResult _moveRow(FocusNode node, KeyEvent event) {
+    if (event is KeyUpEvent) return KeyEventResult.ignored;
+    final key = event.logicalKey;
+    if (key != LogicalKeyboardKey.arrowDown &&
+        key != LogicalKeyboardKey.arrowUp) {
+      return KeyEventResult.ignored;
+    }
+    final keyboard = HardwareKeyboard.instance;
+    if (keyboard.isAltPressed ||
+        keyboard.isControlPressed ||
+        keyboard.isMetaPressed ||
+        keyboard.isShiftPressed) {
+      return KeyEventResult.ignored;
+    }
+    final rows = [
+      for (final n in FocusScope.of(context).traversalDescendants)
+        if (_rowTriggers[n] == true) n,
+    ];
+    final next =
+        rows.indexOf(_trigger) + (key == LogicalKeyboardKey.arrowDown ? 1 : -1);
+    if (next >= 0 && next < rows.length) {
+      final target = rows[next];
+      target.requestFocus();
+      final targetContext = target.context;
+      if (targetContext != null) {
+        Scrollable.ensureVisible(targetContext);
+      }
+    }
+    return KeyEventResult.handled;
+  }
 
   bool get _enabled => !widget.disabled && widget.onOpen != null;
 
@@ -107,8 +227,8 @@ class _RaftInboxItemState extends State<RaftInboxItem> {
         FocusManager.instance.highlightMode == FocusHighlightMode.traditional;
     final showTime =
         widget.timestamp != null &&
-        !touch &&
-        (_hovered || (_focusWithin && keyboard));
+        (widget.timestampAtRest ||
+            (!touch && (_hovered || (_focusWithin && keyboard))));
     // `--inbox-item-actions-room`: 40 with a mouse while revealed, 44 on touch.
     final room = !hasLine || !hasActions
         ? 0.0
@@ -172,6 +292,33 @@ class _RaftInboxItemState extends State<RaftInboxItem> {
                 ),
               ),
             ),
+            if (widget.located || _located.isAnimating)
+              Positioned(
+                key: const ValueKey('inbox-item-located'),
+                left: inset,
+                right: insetEnd,
+                top: 0,
+                bottom: 0,
+                child: IgnorePointer(
+                  child: AnimatedBuilder(
+                    animation: _located,
+                    builder: (context, _) {
+                      // Held to 1.2 s, then faded out by 2 s.
+                      final fade = MediaQuery.disableAnimationsOf(context)
+                          ? (_located.value < .6 ? 1.0 : 0.0)
+                          : (1 - (_located.value - .6) / .4).clamp(0.0, 1.0);
+                      return DecoratedBox(
+                        decoration: BoxDecoration(
+                          borderRadius: radius,
+                          color: t.colors['info-soft']!.withValues(
+                            alpha: t.colors['info-soft']!.a * fade,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
             if (state.focusVisible)
               Positioned(
                 key: const ValueKey('inbox-item-focus-ring'),
@@ -227,12 +374,20 @@ class _RaftInboxItemState extends State<RaftInboxItem> {
                                   ),
                                 ),
                                 if (showTime)
-                                  DefaultTextStyle(
-                                    key: const ValueKey('inbox-item-timestamp'),
-                                    style: timeStyle,
-                                    maxLines: 1,
-                                    softWrap: false,
-                                    child: widget.timestamp!,
+                                  RaftTooltip(
+                                    message: widget.timestampTooltip ?? '',
+                                    enabled:
+                                        !touch &&
+                                        widget.timestampTooltip != null,
+                                    child: DefaultTextStyle(
+                                      key: const ValueKey(
+                                        'inbox-item-timestamp',
+                                      ),
+                                      style: timeStyle,
+                                      maxLines: 1,
+                                      softWrap: false,
+                                      child: widget.timestamp!,
+                                    ),
                                   ),
                               ],
                             ),
@@ -291,50 +446,85 @@ class _RaftInboxItemState extends State<RaftInboxItem> {
     final duration = MediaQuery.disableAnimationsOf(context)
         ? Duration.zero
         : actionStyle.transitionDuration ?? Duration.zero;
-    return Focus(
-      canRequestFocus: false,
-      skipTraversal: true,
-      onFocusChange: (focused) {
-        if (_focusWithin != focused) setState(() => _focusWithin = focused);
-      },
-      child: MouseRegion(
-        onEnter: (_) => setState(() => _hovered = true),
-        onExit: (_) => setState(() => _hovered = false),
-        child: Stack(
-          children: [
-            RaftInteractive(
-              key: const ValueKey('inbox-item-open'),
-              onPressed: _enabled ? widget.onOpen : null,
-              focusNode: widget.focusNode,
-              semanticLabel: widget.semanticLabel,
-              selected: widget.selected,
-              expandTouchTarget: false,
-              builder: (context, state) =>
-                  ExcludeSemantics(child: content(state)),
-            ),
-            if (hasActions)
-              Positioned.directional(
-                textDirection: Directionality.of(context),
-                end: padding.right,
-                top: 0,
-                bottom: 0,
-                child: Center(
-                  child: AnimatedOpacity(
-                    opacity: revealed ? 1 : 0,
-                    duration: duration,
-                    child: IgnorePointer(
-                      key: const ValueKey('inbox-item-actions'),
-                      ignoring: !revealed,
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        spacing: actionStyle.columnGap ?? 2,
-                        children: widget.actions,
+    Widget trigger = RaftInteractive(
+      key: const ValueKey('inbox-item-open'),
+      onPressed: _enabled ? widget.onOpen : null,
+      focusNode: _trigger,
+      semanticLabel: widget.semanticLabel,
+      selected: widget.selected,
+      expandTouchTarget: false,
+      semanticContainer: widget.semanticActions.isEmpty ? null : false,
+      onLongPress: widget.onLongPress == null
+          ? null
+          : () => widget.onLongPress!(_lastPointer),
+      onSecondaryTapDown: widget.onSecondaryTap == null
+          ? null
+          : (details) => widget.onSecondaryTap!(details.globalPosition),
+      builder: (context, state) => ExcludeSemantics(child: content(state)),
+    );
+    if (widget.semanticActions.isNotEmpty) {
+      trigger = Semantics(
+        container: true,
+        customSemanticsActions: {
+          for (final entry in widget.semanticActions.entries)
+            CustomSemanticsAction(label: entry.key): entry.value,
+        },
+        child: trigger,
+      );
+    }
+    trigger = Listener(
+      behavior: HitTestBehavior.translucent,
+      onPointerDown: (event) => _lastPointer = event.position,
+      child: Focus(
+        canRequestFocus: false,
+        skipTraversal: true,
+        onKeyEvent: _moveRow,
+        child: trigger,
+      ),
+    );
+    return LayoutBuilder(
+      builder: (context, constraints) => _InboxRowWidth(
+        width: constraints.maxWidth,
+        child: Focus(
+          canRequestFocus: false,
+          skipTraversal: true,
+          onFocusChange: (focused) {
+            if (_focusWithin != focused) setState(() => _focusWithin = focused);
+          },
+          child: MouseRegion(
+            onEnter: (_) => setState(() => _hovered = true),
+            onExit: (_) => setState(() => _hovered = false),
+            child: Stack(
+              children: [
+                trigger,
+                if (hasActions)
+                  Positioned.directional(
+                    textDirection: Directionality.of(context),
+                    end: padding.right,
+                    top: 0,
+                    bottom: 0,
+                    child: Center(
+                      child: AnimatedOpacity(
+                        opacity: revealed ? 1 : 0,
+                        duration: duration,
+                        // Web keeps the resting actions in the accessibility
+                        // tree (opacity 0, still focusable).
+                        alwaysIncludeSemantics: true,
+                        child: IgnorePointer(
+                          key: const ValueKey('inbox-item-actions'),
+                          ignoring: !revealed,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            spacing: actionStyle.columnGap ?? 2,
+                            children: widget.actions,
+                          ),
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ),
-          ],
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -538,6 +728,45 @@ class RaftInboxItemSkeleton extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// `InboxItemStatus`: a task conversation's state, last in the marks before the
+/// count. The word is a [RaftTaskStatusBadge]; in a row narrower than 320 it is
+/// the status icon alone (`itemStatusPixel`) with the word in a tooltip. The
+/// word is also the row's accessible name, which the caller composes into
+/// `RaftInboxItem.semanticLabel` (the row's content is excluded from semantics).
+class RaftInboxItemStatus extends StatelessWidget {
+  const RaftInboxItemStatus({
+    super.key,
+    required this.status,
+    required this.label,
+  });
+  final RaftMessageTaskStatus status;
+  final String label;
+
+  /// `@max-[320px]/inbox-item-row`.
+  static const double pixelBreakpoint = 320;
+
+  @override
+  Widget build(BuildContext context) {
+    final width = _InboxRowWidth.of(context);
+    if (width != null && width <= pixelBreakpoint) {
+      final recipe = RaftMessageTaskChipRecipe(RaftTokens.of(context), status);
+      return RaftTooltip(
+        message: label,
+        child: RaftMessageTaskStatusIcon(
+          key: const ValueKey('inbox-item-status-pixel'),
+          status: status,
+          color: recipe.iconForeground,
+        ),
+      );
+    }
+    return RaftTaskStatusBadge(
+      key: const ValueKey('inbox-item-status-word'),
+      status: status,
+      label: label,
     );
   }
 }

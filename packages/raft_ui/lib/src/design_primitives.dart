@@ -1905,17 +1905,24 @@ class RaftMenuEntry {
     this.leading,
     this.trailing,
     this.onPressed,
+    this.checked,
   });
   const RaftMenuEntry.separator()
     : label = null,
       glyph = null,
       leading = null,
       trailing = null,
-      onPressed = null;
+      onPressed = null,
+      checked = null;
   final String? label;
   final RaftGlyph? glyph;
   final Widget? leading, trailing;
   final VoidCallback? onPressed;
+
+  /// `DropdownMenuRadioItem`: non-null makes the entry a radio item of a
+  /// `RaftMenuKind.dropdownMenu` menu, [checked] being the chosen one (a check
+  /// mark ends the row, the semantics role is `menuItemRadio`).
+  final bool? checked;
 }
 
 /// Original dropdown composition with one owner for popup and keyboard focus.
@@ -2348,6 +2355,7 @@ class _RaftDropdownMenuState extends State<RaftDropdownMenu> {
                                           glyph: widget.entries[i].glyph,
                                           leading: widget.entries[i].leading,
                                           trailing: widget.entries[i].trailing,
+                                          checked: widget.entries[i].checked,
                                           focusNode: nodes[i],
                                           onMove: move,
                                           onPressed:
@@ -2579,7 +2587,11 @@ class RaftMenuItem extends StatefulWidget {
     this.onMove,
     this.italic = false,
     this.divider = false,
+    this.checked,
   });
+
+  /// A radio item of a `dropdownMenu` (see [RaftMenuEntry.checked]).
+  final bool? checked;
 
   /// SelectionPopover sentinel rows ("Assigned to me", "Unassigned"):
   /// `italic text-foreground-muted`.
@@ -2621,13 +2633,20 @@ class _RaftMenuItemState extends State<RaftMenuItem> {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     final enabled = widget.onPressed != null;
+    final radio =
+        widget.checked != null && widget.kind == RaftMenuKind.dropdownMenu;
     Widget result = Semantics(
-      role: widget.kind == RaftMenuKind.selectionPopover
+      role: radio
+          ? SemanticsRole.menuItemRadio
+          : widget.kind == RaftMenuKind.selectionPopover
           ? SemanticsRole.menuItemCheckbox
           : SemanticsRole.menuItem,
-      checked: widget.kind == RaftMenuKind.selectionPopover
+      checked: radio
+          ? widget.checked
+          : widget.kind == RaftMenuKind.selectionPopover
           ? widget.selected
           : null,
+      inMutuallyExclusiveGroup: radio ? true : null,
       label: widget.label,
       enabled: enabled,
       focusable: enabled,
@@ -2701,6 +2720,51 @@ class _RaftMenuItemState extends State<RaftMenuItem> {
                     enabled: enabled,
                     hovered: hovered,
                     focusVisible: focused,
+                  )
+                : radio
+                ? Builder(
+                    builder: (context) {
+                      final slots = RaftDropdownMenuRecipe.resolve(
+                        tokens: t.recipeTokens,
+                        states: t
+                            .recipeStates(
+                              responsive: true,
+                              disabled: !enabled,
+                              extra: [
+                                if (!enabled) 'data-disabled',
+                                if (widget.checked!) 'data-checked',
+                                if (enabled && (hovered || focused))
+                                  'data-highlighted',
+                              ],
+                            )
+                            .copyWith(
+                              viewportWidth: MediaQuery.sizeOf(context).width,
+                              viewportHeight: MediaQuery.sizeOf(context).height,
+                            ),
+                      );
+                      return RaftMenuSlotRow(
+                        label: widget.label,
+                        leading:
+                            widget.leading ??
+                            (widget.glyph == null
+                                ? null
+                                : RaftIcon(widget.glyph!, size: 16)),
+                        trailing: widget.trailing,
+                        indicator: widget.checked!
+                            ? RaftIcon(
+                                RaftGlyph.check,
+                                size:
+                                    slots.indicator.target('& svg')?.width ??
+                                    slots.indicator.width ??
+                                    14,
+                              )
+                            : null,
+                        root: slots.radioItem,
+                        itemText: slots.radioLabel,
+                        itemIndicator: slots.indicator,
+                        tokens: t.recipeTokens,
+                      );
+                    },
                   )
                 : widget.kind == RaftMenuKind.dropdownMenu
                 ? RaftMenuSlotRow(
