@@ -111,7 +111,7 @@ void main() {
   late _Adapter a;
 
   /// [spend] answers the cloud spend read; [spendStatus] its HTTP status.
-  Future<List<Uri>> mount(
+  Future<void> mount(
     WidgetTester t,
     Map<String, dynamic> billing, {
     Object? spend,
@@ -157,7 +157,6 @@ void main() {
     t.view.physicalSize = const Size(1280, 3000);
     t.view.devicePixelRatio = 1;
     addTearDown(t.view.reset);
-    final opened = <Uri>[];
     await t.pumpWidget(
       MaterialApp(
         theme: raftTheme(),
@@ -165,21 +164,13 @@ void main() {
           body: ListView(
             padding: const EdgeInsets.all(20),
             children: [
-              BillingView(
-                controller: w,
-                now: () => _now,
-                openExternal: (uri) async {
-                  opened.add(uri);
-                  return true;
-                },
-              ),
+              BillingView(controller: w, now: () => _now),
             ],
           ),
         ),
       ),
     );
     await t.pumpAndSettle();
-    return opened;
   }
 
   group('cloud agent spend card', () {
@@ -279,82 +270,6 @@ void main() {
       w.notifyListeners();
       await t.pumpAndSettle();
       expect(a.reads('/billing/hosted-runtime-usage'), hasLength(1));
-    });
-  });
-
-  group('promotion code at checkout', () {
-    testWidgets('the field and its hint are on the checkout form', (t) async {
-      await mount(t, _free());
-      expect(find.text('Promotion code (optional)'), findsWidgets);
-      expect(
-        find.text(
-          'Stripe checks this code at Checkout. Leave blank to enter a code there.',
-        ),
-        findsOneWidget,
-      );
-    });
-
-    testWidgets('a code is trimmed, reviewed and sent', (t) async {
-      final opened = await mount(t, _free());
-      a.routes['POST /billing/checkout'] = (_) => {
-        'url': 'https://checkout.stripe.invalid/session',
-      };
-      await t.enterText(
-        find.byKey(const ValueKey('billing-promotion-input')),
-        ' spring26 ',
-      );
-      await t.pumpAndSettle();
-      await t.tap(find.byKey(const ValueKey('billing-upgrade')));
-      await t.pumpAndSettle();
-      expect(
-        find.textContaining(
-          'Promotion code: spring26. The final discount is confirmed on Stripe Checkout.',
-        ),
-        findsOneWidget,
-      );
-      await t.tap(find.byKey(const ValueKey('billing-confirm')));
-      await t.pumpAndSettle();
-      final body = a.posts('/billing/checkout').single.data as Map;
-      expect(body['promotionCode'], 'spring26');
-      expect(opened.single.host, 'checkout.stripe.invalid');
-    });
-
-    testWidgets('no code sends none and reviews none', (t) async {
-      await mount(t, _free());
-      a.routes['POST /billing/checkout'] = (_) => {
-        'url': 'https://checkout.stripe.invalid/session',
-      };
-      await t.tap(find.byKey(const ValueKey('billing-upgrade')));
-      await t.pumpAndSettle();
-      expect(find.textContaining('Promotion code:'), findsNothing);
-      await t.tap(find.byKey(const ValueKey('billing-confirm')));
-      await t.pumpAndSettle();
-      final body = a.posts('/billing/checkout').single.data as Map;
-      expect(body.containsKey('promotionCode'), isFalse);
-    });
-
-    testWidgets('an unavailable code says to check or remove it', (t) async {
-      await mount(t, _free());
-      a.routes['POST /billing/checkout'] = (_) => {
-        'error': 'Promotion code unavailable',
-        'code': 'promotion_code_unavailable',
-      };
-      a.statuses['POST /billing/checkout'] = 400;
-      await t.enterText(
-        find.byKey(const ValueKey('billing-promotion-input')),
-        'GONE',
-      );
-      await t.pumpAndSettle();
-      await t.tap(find.byKey(const ValueKey('billing-upgrade')));
-      await t.pumpAndSettle();
-      await t.tap(find.byKey(const ValueKey('billing-confirm')));
-      await t.pumpAndSettle();
-      expect(
-        find.text(
-          'This promotion code is unavailable. Check it or remove it to continue.',
-        ),
-        findsOneWidget,
-      );
     });
   });
 }

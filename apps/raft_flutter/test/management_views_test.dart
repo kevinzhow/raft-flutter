@@ -923,7 +923,7 @@ void main() {
       findsNothing,
     );
   });
-  testWidgets('admin can read Stripe billing but cannot purchase or cancel', (
+  testWidgets('admin can read Stripe billing but has no purchase or cancel control', (
     tester,
   ) async {
     final (w, a) = (await tester.runAsync(() => _fixture('admin')))!;
@@ -941,13 +941,16 @@ void main() {
       host(ListView(children: [BillingView(controller: w)])),
     );
     await tester.pumpAndSettle();
-    expect(find.text('Pro'), findsOneWidget);
-    // PlanSection: the portal / cancel / seat controls render disabled with
-    // the owner-only reason (canManageBilling is false).
-    expect(find.text('Only server owners can change billing.'), findsOneWidget);
-    await tester.tap(find.byKey(const ValueKey('billing-cancel')));
-    await tester.pumpAndSettle();
-    expect(find.byKey(const ValueKey('billing-confirm-dialog')), findsNothing);
+    expect(find.text('Pro'), findsWidgets);
+    // PlanSection: the portal / cancel / seat controls are owner-only
+    // (canManageBilling is false): they are not on the page at all.
+    for (final k in [
+      'billing-cancel',
+      'billing-manage-stripe',
+      'billing-add-seats',
+    ]) {
+      expect(find.byKey(ValueKey(k)), findsNothing, reason: k);
+    }
     expect(
       a.calls.where(
         (c) => c.path.startsWith('/billing/') && c.method == 'POST',

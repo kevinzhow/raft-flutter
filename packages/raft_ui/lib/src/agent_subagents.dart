@@ -277,18 +277,35 @@ class RaftSubagentDetailHead extends StatelessWidget {
   }
 }
 
-/// One term and its details of a [RaftDescriptionList].
+/// One term and its details of a [RaftDescriptionList]. [detailsChild]
+/// replaces the [details] text (a spinner, a badge); [details] still names it
+/// for assistive technology.
 class RaftDescriptionEntry {
-  const RaftDescriptionEntry(this.term, this.details);
+  const RaftDescriptionEntry(
+    this.term,
+    this.details, {
+    this.detailsChild,
+    this.termChild,
+    this.key,
+  });
   final String term, details;
+  final Widget? detailsChild, termChild;
+  final Key? key;
 }
 
-/// raft-ui `DescriptionList direction="horizontal"`: a two-column grid, the
-/// terms (footnote, medium, hint) at least 88px wide and at most 160px, 16px
-/// before the details (callout, at least 32px tall), 2px between the rows.
+/// raft-ui `DescriptionList`: `horizontal` is a two-column grid, the terms
+/// (footnote, medium, hint) at least 88px wide and at most 160px, 16px before
+/// the details (callout, at least 32px tall), 2px between the rows; `inline`
+/// wraps term-and-details pairs side by side, 24px apart across and 8px
+/// between lines, 12px between a term and its details.
 class RaftDescriptionList extends StatelessWidget {
-  const RaftDescriptionList({super.key, required this.entries});
+  const RaftDescriptionList({
+    super.key,
+    required this.entries,
+    this.inline = false,
+  });
   final List<RaftDescriptionEntry> entries;
+  final bool inline;
 
   @override
   Widget build(BuildContext context) {
@@ -303,6 +320,32 @@ class RaftDescriptionList extends StatelessWidget {
       weight: FontWeight.w400,
       color: t.ui.foreground,
     );
+    Widget detailsOf(RaftDescriptionEntry e) =>
+        e.detailsChild ?? RaftCssText(e.details, style: details);
+    if (inline) {
+      return Wrap(
+        crossAxisAlignment: WrapCrossAlignment.center,
+        spacing: 24,
+        runSpacing: 8,
+        children: [
+          for (final e in entries)
+            ConstrainedBox(
+              key: e.key,
+              constraints: const BoxConstraints(maxWidth: 384),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
+                children: [
+                  e.termChild ?? RaftCssText(e.term, style: term),
+                  const SizedBox(width: 12),
+                  Flexible(child: detailsOf(e)),
+                ],
+              ),
+            ),
+        ],
+      );
+    }
     return Table(
       defaultVerticalAlignment: TableCellVerticalAlignment.baseline,
       textBaseline: TextBaseline.alphabetic,
@@ -318,16 +361,21 @@ class RaftDescriptionList extends StatelessWidget {
                     minWidth: 88,
                     maxWidth: 160,
                   ),
-                  child: RaftCssText(entries[i].term, style: term),
+                  child:
+                      entries[i].termChild ??
+                      RaftCssText(entries[i].term, style: term),
                 ),
               ),
-              Padding(
-                padding: EdgeInsets.only(top: i == 0 ? 0 : 2),
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(minHeight: 32),
-                  child: Align(
-                    alignment: AlignmentDirectional.centerStart,
-                    child: RaftCssText(entries[i].details, style: details),
+              KeyedSubtree(
+                key: entries[i].key,
+                child: Padding(
+                  padding: EdgeInsets.only(top: i == 0 ? 0 : 2),
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(minHeight: 32),
+                    child: Align(
+                      alignment: AlignmentDirectional.centerStart,
+                      child: detailsOf(entries[i]),
+                    ),
                   ),
                 ),
               ),

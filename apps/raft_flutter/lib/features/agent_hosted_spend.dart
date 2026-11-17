@@ -266,16 +266,22 @@ class _AgentHostedSpendCardState extends State<AgentHostedSpendCard> {
           ],
         );
     }
-    return Column(
+    // One of Plan & Billing's cards, titled like the others (Web v1.24).
+    return RaftCard(
       key: const ValueKey('hosted-runtime-spend'),
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        const RaftSettingsSectionHeader(
-          label: 'Cloud agent spend',
-          glyph: RaftGlyph.activity,
-        ),
-        RaftSettingsCard(child: body),
-      ],
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          RaftCardSectionHeader(
+            aboveContent: true,
+            title: RaftCardTitle(
+              Semantics(header: true, child: Text(tr('Cloud agent spend'))),
+            ),
+          ),
+          RaftCardContent(child: body),
+        ],
+      ),
     );
   }
 }
