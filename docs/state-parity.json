@@ -10170,6 +10170,12 @@
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
+      "apps/raft_flutter/lib/features/mobile_resource_direct.dart#local-function:FUNCTION:mobileResourceBody@762/FUNCTION:list@1189": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
       "apps/raft_flutter/lib/features/mobile_route_gate.dart#class:MobileChatDirectRead": {
         "role": "unresolved",
         "familyRefs": [],
@@ -11616,31 +11622,31 @@
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
-      "apps/raft_flutter/lib/features/resource_search.dart#local-function:CLASS:ResourceSearchResults@11292/METHOD:build@16056/FUNCTION:message@19816": {
+      "apps/raft_flutter/lib/features/resource_search.dart#local-function:CLASS:ResourceSearchResults@11292/METHOD:build@16115/FUNCTION:message@19875": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
-      "apps/raft_flutter/lib/features/resource_search.dart#local-function:CLASS:ResourceSearchResults@11292/METHOD:build@16056/FUNCTION:messageGroup@21363": {
+      "apps/raft_flutter/lib/features/resource_search.dart#local-function:CLASS:ResourceSearchResults@11292/METHOD:build@16115/FUNCTION:messageGroup@21422": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
-      "apps/raft_flutter/lib/features/resource_search.dart#local-function:CLASS:ResourceSearchResults@11292/METHOD:build@16056/FUNCTION:section@17424": {
+      "apps/raft_flutter/lib/features/resource_search.dart#local-function:CLASS:ResourceSearchResults@11292/METHOD:build@16115/FUNCTION:section@17483": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
-      "apps/raft_flutter/lib/features/resource_search.dart#local-function:CLASS:ResourceSearchResults@11292/METHOD:build@16056/FUNCTION:slotText@16763": {
+      "apps/raft_flutter/lib/features/resource_search.dart#local-function:CLASS:ResourceSearchResults@11292/METHOD:build@16115/FUNCTION:slotText@16822": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
-      "apps/raft_flutter/lib/features/resource_search.dart#local-function:CLASS:ResourceSearchResults@11292/METHOD:build@16056/FUNCTION:surface@18845": {
+      "apps/raft_flutter/lib/features/resource_search.dart#local-function:CLASS:ResourceSearchResults@11292/METHOD:build@16115/FUNCTION:surface@18904": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
@@ -12293,7 +12299,7 @@
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
-      "apps/raft_flutter/lib/features/search_home.dart#local-function:CLASS:_ResourceSearchHomeState@2715/METHOD:build@2980/FUNCTION:heading@3968": {
+      "apps/raft_flutter/lib/features/search_home.dart#local-function:CLASS:_ResourceSearchHomeState@2774/METHOD:build@3039/FUNCTION:heading@4027": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
@@ -29176,13 +29182,13 @@
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
-      "packages/raft_ui/lib/src/mobile_navigation.dart#local-function:CLASS:RaftMobileNav@6826/METHOD:_bar@8403/FUNCTION:badged@8747": {
+      "packages/raft_ui/lib/src/mobile_navigation.dart#local-function:CLASS:RaftMobileNav@7712/METHOD:_bar@9667/FUNCTION:badged@10011": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
-      "packages/raft_ui/lib/src/mobile_navigation.dart#local-function:CLASS:RaftMobileNav@6826/METHOD:_bar@8403/FUNCTION:item@9466": {
+      "packages/raft_ui/lib/src/mobile_navigation.dart#local-function:CLASS:RaftMobileNav@7712/METHOD:_bar@9667/FUNCTION:item@10730": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
@@ -39898,13 +39904,13 @@
         "owner": "task289 menu/dialog source ownership",
         "reason": "Native non-anchored chooser presentation: current branch delegates to ChoiceDialog; non-Raft branch calls the real Frozen factory. It preserves callback/route authority and is not an identical anchored Web entry."
       },
-      "apps/raft_flutter/lib/features/resource_view.dart#local-function:CLASS:_ResourceViewState@6468/METHOD:scopedDialog@45955/FUNCTION:buildOwned@46182": {
+      "apps/raft_flutter/lib/features/resource_view.dart#local-function:CLASS:_ResourceViewState@6652/METHOD:scopedDialog@46194/FUNCTION:buildOwned@46421": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "task289 scoped source registration",
         "reason": "Actual resolved declaration in the exact Mac preparation runtime subset. Independent paint/delegation/state/real-entry closure remains unresolved; no thin-wrapper or style exemption is granted."
       },
-      "apps/raft_flutter/lib/features/resource_view.dart#local-function:CLASS:_ResourceViewState@6468/METHOD:scopedMenu@47003/FUNCTION:buildOwned@47210": {
+      "apps/raft_flutter/lib/features/resource_view.dart#local-function:CLASS:_ResourceViewState@6652/METHOD:scopedMenu@47242/FUNCTION:buildOwned@47449": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "task289 scoped source registration",
@@ -41140,19 +41146,19 @@
         "owner": "task299 native server windows",
         "reason": "Production server-switcher callbacks delegate to the explicit desktop service or existing browser fallback. No style exemption or visual acceptance."
       },
-      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5391/METHOD:buildWorkspace@47604/FUNCTION:<anonymous>@47842/FUNCTION:conversation@50956": {
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5521/METHOD:buildWorkspace@47195/FUNCTION:<anonymous>@47413/FUNCTION:conversation@50527": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "task299 native server windows",
         "reason": "Historical source-position identity superseded by apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5358/METHOD:buildWorkspace@47571/FUNCTION:<anonymous>@47809/FUNCTION:conversation@50923. The removals in the v1.24 compatibility patch shifted offsets without changing the declaration body. This old identity is not current runtime or visual evidence."
       },
-      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5391/METHOD:buildWorkspace@47604/FUNCTION:<anonymous>@47842/FUNCTION:workspace@63551": {
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5521/METHOD:buildWorkspace@47195/FUNCTION:<anonymous>@47413/FUNCTION:workspace@63843": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "task299 native server windows",
         "reason": "Historical source-position identity superseded by apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5358/METHOD:buildWorkspace@47571/FUNCTION:<anonymous>@47809/FUNCTION:workspace@63518. The removals in the v1.24 compatibility patch shifted offsets without changing the declaration body. This old identity is not current runtime or visual evidence."
       },
-      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5391/METHOD:settingsRailAction@108758/FUNCTION:action@108792": {
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5521/METHOD:settingsRailAction@108016/FUNCTION:action@108050": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "task299 native server windows",
@@ -44581,6 +44587,12 @@
         "familyRefs": [],
         "owner": "WP-TASK2 v1.24 alignment",
         "reason": "Source census candidate (WP-TASK2 part 3: task beside the list, create-task channel field, task head pull-down); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/resource_view.dart#method:_ResourceViewState.bindRetap": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
       },
       "apps/raft_flutter/lib/features/task_content_slot.dart#class:TaskContentSlot": {
         "role": "unresolved",
@@ -49381,6 +49393,48 @@
         "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
       },
       "packages/raft_ui/lib/workspace_button_previews.dart#method:_WorkspaceButtonPreview.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "apps/raft_flutter/lib/features/tab_root_retap.dart#class:TabRootRetapScope": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "apps/raft_flutter/lib/features/tab_root_retap.dart#class:TabRootScroller": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "apps/raft_flutter/lib/features/tab_root_retap.dart#class:_TabRootScrollerState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "apps/raft_flutter/lib/features/tab_root_retap.dart#method:TabRootRetapScope.of": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "apps/raft_flutter/lib/features/tab_root_retap.dart#method:TabRootRetapScope.updateShouldNotify": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "apps/raft_flutter/lib/features/tab_root_retap.dart#method:TabRootScroller.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "apps/raft_flutter/lib/features/tab_root_retap.dart#method:_TabRootScrollerState.build": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
