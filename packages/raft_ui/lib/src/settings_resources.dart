@@ -15,30 +15,13 @@ import 'icons.dart';
 import 'indicators.dart';
 import 'list_items.dart';
 import 'localization.dart';
-import 'qr_code.dart';
+import 'settings_about_mobile.dart';
 import 'recipe_surface.dart';
 import 'recipes/button_variants.g.dart' show RaftButtonRecipeSize;
 import 'recipes/card.g.dart';
 import 'settings_layout.dart';
-import 'text_scaling.dart' show RaftScaled;
 import 'theme.dart';
 
-/// MobileDownloadQr.tsx + the AboutSection mobile-app buttons.
-@immutable
-class RaftAboutMobileApp {
-  const RaftAboutMobileApp({
-    required this.onAndroid,
-    required this.onIos,
-    this.qrUrl,
-  });
-  final VoidCallback onAndroid, onIos;
-
-  /// The web-origin `/download` chooser the QR encodes; null hides the QR
-  /// (Web: `hidden sm:block`, and a failed encoder chunk renders nothing).
-  final String? qrUrl;
-}
-
-/// What the Updates card says; the app derives it from its update service.
 enum RaftAboutUpdateState {
   idle,
   checking,
@@ -223,6 +206,19 @@ class RaftSettingsAbout extends StatelessWidget {
         ],
       ),
     );
+    final versionCard = RaftCard.item(
+      interactive: false,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(raftText(context, productName), style: text.title),
+          const SizedBox(height: 4),
+          Text(raftText(context, version), style: text.description),
+          const SizedBox(height: 4),
+          const RaftAboutSourceCode(),
+        ],
+      ),
+    );
     final app = mobileApp;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -232,11 +228,11 @@ class RaftSettingsAbout extends StatelessWidget {
           'Version',
           RaftGlyph.tag,
           update == null
-              ? card(productName, version)
+              ? versionCard
               : Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    card(productName, version),
+                    versionCard,
                     const SizedBox(height: 8),
                     _updateCard(text),
                   ],
@@ -250,40 +246,7 @@ class RaftSettingsAbout extends StatelessWidget {
             RaftGlyph.smartphone,
             RaftCard.item(
               interactive: false,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    raftText(context, 'Get the Raft mobile app.'),
-                    style: text.description,
-                  ),
-                  const SizedBox(height: 12),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      RaftButton(
-                        key: const ValueKey('mobile-download-android'),
-                        label: 'Download Android APK',
-                        variant: RaftControlVariant.outline,
-                        size: RaftButtonRecipeSize.sm,
-                        onPressed: app.onAndroid,
-                      ),
-                      RaftButton(
-                        key: const ValueKey('mobile-download-ios'),
-                        label: 'Download on the App Store',
-                        variant: RaftControlVariant.outline,
-                        size: RaftButtonRecipeSize.sm,
-                        onPressed: app.onIos,
-                      ),
-                    ],
-                  ),
-                  if (app.qrUrl != null) ...[
-                    const SizedBox(height: 12),
-                    RaftMobileDownloadQr(url: app.qrUrl!),
-                  ],
-                ],
-              ),
+              child: RaftAboutMobileDownloads(app: app),
             ),
           ),
         ],
@@ -298,54 +261,6 @@ class RaftSettingsAbout extends StatelessWidget {
             card(workspaceName!, workspaceDetail ?? ''),
           ),
         ],
-      ],
-    );
-  }
-}
-
-/// MobileDownloadQr.tsx: a one-line caption (`mb-1 whitespace-nowrap
-/// text-[11px] leading-tight text-foreground-muted theme-brutal:text-black/50`)
-/// over the code (`h-28 w-28 border-2 border-black bg-white text-black p-1`,
-/// crisp-edged modules, theme independent).
-class RaftMobileDownloadQr extends StatelessWidget {
-  const RaftMobileDownloadQr({super.key, required this.url});
-  final String url;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
-    final matrix = RaftQrMatrix.encode(url);
-    return Column(
-      key: const ValueKey('mobile-download-qr'),
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        RaftScaled.lineBox(
-          context,
-          height: 11 * 1.25,
-          child: Text(
-            raftText(context, 'Or, Scan with your phone'),
-            maxLines: 1,
-            softWrap: false,
-            style: RaftTypography.body(
-              t,
-              size: 11,
-              line: 11 * 1.25,
-              color: RaftSettingsText(t).faint,
-            ),
-          ),
-        ),
-        const SizedBox(height: 4),
-        Container(
-          width: 112,
-          height: 112,
-          padding: const EdgeInsets.all(4),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            border: Border.all(color: Colors.black, width: 2),
-          ),
-          child: CustomPaint(painter: RaftQrCodePainter(matrix, Colors.black)),
-        ),
       ],
     );
   }
@@ -447,7 +362,7 @@ class RaftReleaseNotesView extends StatelessWidget {
               key: const ValueKey('release-notes-retry'),
               label: 'Try again',
               variant: RaftControlVariant.outline,
-              size: RaftButtonRecipeSize.sm,
+              size: RaftButtonRecipeSize.md,
               onPressed: onRetry,
             ),
           ),

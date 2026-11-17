@@ -3,7 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 Widget _host(Widget child) => MaterialApp(
-  theme: raftTheme(),
+  theme: raftTheme().copyWith(platform: TargetPlatform.linux),
   home: Scaffold(body: SingleChildScrollView(child: child)),
 );
 
@@ -30,7 +30,8 @@ void main() {
       expect(find.byKey(ValueKey('settings-about-$section')), findsOneWidget);
     }
     expect(find.text('1.17.5'), findsOneWidget);
-    expect(find.text('Or, Scan with your phone'), findsOneWidget);
+    expect(find.text("Scan with your phone's camera."), findsOneWidget);
+    expect(find.text('Or, Scan with your phone'), findsNothing);
     await t.tap(find.text('Download Android APK'));
     expect(android, 1);
   });
