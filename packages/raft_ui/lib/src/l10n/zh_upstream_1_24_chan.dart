@@ -18,6 +18,8 @@ const Map<String, String> zhCatalogUpstream124Chan = {
   "Messages with the newest reply move to the bottom, next to the message box. Everyone in this channel sees the same order.":
       "有新回复的消息会移到底部，靠近输入框。频道里的每个人看到的顺序都一样。",
   "Couldn't change the message order.": "无法更改消息顺序。",
+  "The channel is no longer available.": "此频道已不可用。",
+  "The channel announcement could not be confirmed.": "暂时无法确认频道公告。",
   "Announcement": "公告",
   "No announcement": "还没有公告",
   "Set an Artifact of this channel as its announcement: rules, dates, links everyone should know.":
@@ -54,6 +56,7 @@ const Map<String, String> zhCatalogUpstream124Chan = {
   "Channel settings": "频道设置",
   "Your preferences": "我的偏好",
   "Sidebar section": "侧栏分区",
+  "Move to section": "移动到分区",
   "Shown to everyone in {server}.": "{server} 里的所有人都能看到。",
   "Shown to the channel's members.": "频道成员能看到。",
   "Everyone in {server} can find and read it.": "{server} 里的所有人都能找到并阅读。",
