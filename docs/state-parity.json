@@ -51026,6 +51026,12 @@
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "WP-SIDE (Web v1.24 channel side area, Tasks / Files cards, web preview): composes raft_ui parts; real-entry/family/state mapping remains unreviewed. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5652/METHOD:settingsRailAction@108655/FUNCTION:action@108689": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-SIDE (Web v1.24 channel side area, Tasks / Files cards, web preview): composes raft_ui parts; real-entry/family/state mapping remains unreviewed. This registration grants no style exemption or visual acceptance."
       }
     },
     "entries": {
