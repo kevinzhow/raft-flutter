@@ -200,6 +200,24 @@ void main() {
     expect(t.takeException(), isNull);
   });
 
+  // Behaviour rule (Kevin 537b93f1): Web's Upgrade cannot fail to open; a
+  // browser that refuses the link must say so, not do nothing.
+  testWidgets('Upgrade to Pro says so when the browser cannot open', (t) async {
+    final previous = savedOpenWeb;
+    savedOpenWeb = (uri) async => false;
+    addTearDown(() => savedOpenWeb = previous);
+    w.saved = () => {
+      'saved': [_row('a')],
+      'total': 1,
+      'historyHidden': {'count': 1},
+    };
+    await mount(t);
+    expect(find.text('Could not open this address.'), findsNothing);
+    await t.tap(find.text('Upgrade to Pro'));
+    await t.pumpAndSettle();
+    expect(find.text('Could not open this address.'), findsOneWidget);
+  });
+
   testWidgets('first page asks for 50 rows', (t) async {
     await mount(t);
     expect(w.savedQueries.first?['limit'], 50);

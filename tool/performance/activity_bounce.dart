@@ -327,7 +327,6 @@ class _LabState extends State<_Lab> {
                   key: pageKey,
                   controller: widget.workspace,
                   section: 'activity',
-                  activitySidebarEnabled: true,
                   onMessage: (_, _) async {},
                 ),
               ),

@@ -630,7 +630,9 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
         ? advanced.search(query.text)
         : advanced.list(
             query.text,
-            activityChoice: widget.section == 'activity' ? activityChoice : null,
+            activityChoice: widget.section == 'activity'
+                ? activityChoice
+                : null,
           );
     if (params == null) return null;
     return ResourceFilters.viewKey(path, params);
@@ -718,7 +720,8 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
     }
     final scroll = listScroll;
     if (activityPage) {
-      ActivityFirstUnread.of(w).observe(w, visibleRows, rowKey, scroll, context);
+      ActivityFirstUnread.of(w)
+          .observe(w, visibleRows, rowKey, scroll, context);
     }
     listUpdates.observeRows(
       view: (widget.section, filter, rowsView),
@@ -1899,7 +1902,8 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
       // frame is the final one) and starts the visit and the re-tap.
       filter = ActivityFilterPreference.read(w.server?.id).name;
       activityFacets.leaveVisit = ActivityUnreadScope.of(w).visit.enter();
-      activityFacets.unregisterRetap = ActivityRetap.of(w).register(activityRetapHost());
+      activityFacets.unregisterRetap = ActivityRetap.of(w)
+          .register(activityRetapHost());
       bindActivityUndo();
       // The pins and saves as of now are what a later change is measured from.
       activityFacets.reload.changed(
@@ -2700,7 +2704,8 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
               ],
             ),
           ),
-        if (widget.section == 'activity' && !(activityPhoneBar && activityShowsList))
+        if (widget.section == 'activity' &&
+            !(activityPhoneBar && activityShowsList))
           activityToolbar(scope),
         if (widget.section == 'search') searchFilters(),
         if (widget.section == 'saved' && extraFilters) advancedFilters(),
@@ -2802,12 +2807,18 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
       ? SavedHistoryBanner(
           count: historyHiddenCount,
           listEmpty: rows.isEmpty,
-          onUpgrade: () {
+          onUpgrade: () async {
             final uri = savedBillingUri(
               origin: w.client.origin,
               slug: w.server?.string('slug') ?? '',
             );
-            if (uri != null) unawaited(savedOpenWeb(uri));
+            // Web's in-app upgrade cannot fail to open: say so, never no-op.
+            final opened =
+                uri != null && await savedOpenWeb(uri).catchError((_) => false);
+            if (!opened) {
+              if (mounted)
+                showRaftToast(context, 'Could not open this address.');
+            }
           },
         )
       : null;
@@ -2896,7 +2907,10 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
                                 context,
                                 'Save a message to find it here later.',
                               )
-                            : raftText(context, activityChoice.emptyDescription),
+                            : raftText(
+                                context,
+                                activityChoice.emptyDescription,
+                              ),
                         icon: (context, size, color) => RaftIcon(
                           widget.section == 'saved'
                               ? RaftGlyph.bookmark
@@ -3518,7 +3532,8 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
   bool get activityShowsMarkAllRead =>
       (activityFacets.counts.known
           ? activityFacets.counts.unread
-          : (totalUnreadCount ?? 0) + activityFacets.objects.objectUnreadCount) >
+          : (totalUnreadCount ?? 0) +
+                activityFacets.objects.objectUnreadCount) >
       0;
 
   /// Mark all read: after every queued Mark as Read / Unread write settled.
@@ -3529,11 +3544,7 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
       activityUnreadSnapshots.noteRead([
         for (final row in rows) ?activityItemKey(row),
       ]);
-      return command(
-        'POST',
-        '/channels/inbox/read-all',
-        sourceScope: scope,
-      );
+      return command('POST', '/channels/inbox/read-all', sourceScope: scope);
     });
   }
 
@@ -3997,7 +4008,8 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
         onNothingUnread: () => showNothingUnreadToast(this),
       );
     } catch (_) {
-      if (mounted) showRaftToast(context, "Couldn't mark it as unread. Try again.");
+      if (mounted)
+        showRaftToast(context, "Couldn't mark it as unread. Try again.");
     }
     if (!mounted || !accepts(scope)) return;
     if (!projected) await load(keep: true, quietErrors: true);
@@ -4042,7 +4054,11 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
 
   /// Done and Unfollow wait out their Undo on every route; the rest is the
   /// page's own.
-  void activityRowAction(Map<String, dynamic> row, String action, String scope) {
+  void activityRowAction(
+    Map<String, dynamic> row,
+    String action,
+    String scope,
+  ) {
     final undo = activityFacets.undo;
     if (!accepts(scope) || undo == null) {
       unawaited(activityAction(row, action, scope));
@@ -4078,7 +4094,10 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
     }
   }
 
-  Future<void> markActivityObjectRead(Map<String, dynamic> row, String scope) async {
+  Future<void> markActivityObjectRead(
+    Map<String, dynamic> row,
+    String scope,
+  ) async {
     setState(() {
       rows = [
         for (final r in rows)

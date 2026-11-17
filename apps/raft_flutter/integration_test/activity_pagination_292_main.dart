@@ -211,7 +211,6 @@ Map<String, Object?> _snapshot(_Pages pages, LabNavigationContent content) {
       final ScrollController? scroll = state.listScroll as ScrollController?;
       resourceViews.add({
         'mobileRoot': widget.mobileRoot,
-        'activitySidebarEnabled': widget.activitySidebarEnabled,
         'compactActivitySidebar': widget.compactActivitySidebar,
         'acceptedIds': ids,
         'uniqueAccepted': ids.toSet().length,
@@ -277,14 +276,6 @@ Map<String, Object?> _snapshot(_Pages pages, LabNavigationContent content) {
     'flagEvaluateReads': pages.flagReads,
     'flagOwnerExists':
         workspace != null && ActivityRolloutFlags.peek(workspace) != null,
-    'rememberedConversationList': workspace == null
-        ? null
-        : FeatureFlagMemory.read([
-            workspace.client.origin,
-            workspace.client.user?.id,
-            workspace.server?.id,
-            workspace.server?.string('role'),
-          ], ActivityRolloutFlags.activityConversationListKey),
     'flutterViews': views,
     'activityViews': resourceViews,
     'renderedRows': renderedRows,
@@ -332,10 +323,7 @@ Future<void> main() async {
     return {
       'evaluations': [
         for (final key in ActivityRolloutFlags.keys)
-          {
-            'key': key,
-            'enabled': key == ActivityRolloutFlags.activityConversationListKey,
-          },
+          {'key': key, 'enabled': false},
       ],
     };
   };

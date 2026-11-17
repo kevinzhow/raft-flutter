@@ -262,18 +262,9 @@ abstract final class TapTargetRegistry {
       'RaftMessageTile',
       'RaftThreadRepliesBadge',
     ], 'public_server_view_test.dart (reply badge opens the thread)'),
-    TapContainer(
-      'activity-saved-rows',
-      'features/resource_view.dart',
-      ['RaftConversationCard'],
-      'activity_row_interaction_test.dart; tap_target_matrix_test.dart (Saved rows)',
-    ),
-    TapContainer(
-      'activity-card-rows',
-      'features/activity_card_row.dart',
-      ['RaftConversationCard'],
-      'activity_row_interaction_test.dart (Activity list rows)',
-    ),
+    TapContainer('activity-saved-rows', 'features/saved_page_rows.dart', [
+      'RaftConversationCard',
+    ], 'tap_target_matrix_test.dart (Saved rows); saved_page_w24_test.dart'),
     TapContainer('search-rows', 'features/resource_search.dart', [
       'RaftSearchResultSurface',
     ], 'desktop_preview_single_location_test.dart'),

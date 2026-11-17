@@ -41,7 +41,11 @@ Widget swipeRowPreview() => Builder(
       child: Container(
         constraints: const BoxConstraints(minHeight: 64),
         padding: const EdgeInsets.symmetric(horizontal: 16),
-        alignment: AlignmentDirectional.centerStart,
+        // An open row slides its content under the buttons (clipped, as on
+        // Web); its label sits on the side that stays in view.
+        alignment: open == RaftSwipeEdge.end
+            ? AlignmentDirectional.centerEnd
+            : AlignmentDirectional.centerStart,
         color: bg,
         child: Text(title),
       ),
@@ -49,8 +53,8 @@ Widget swipeRowPreview() => Builder(
     return Column(
       children: [
         row('Closed', null),
-        row('Open on Done and Mute', RaftSwipeEdge.end),
-        row('Open on Read', RaftSwipeEdge.start),
+        row('Trailing open', RaftSwipeEdge.end),
+        row('Leading open', RaftSwipeEdge.start),
       ],
     );
   },

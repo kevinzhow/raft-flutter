@@ -1,4 +1,3 @@
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
@@ -40,23 +39,41 @@ void main() {
         expect(inScroller.evaluate().isNotEmpty, env.phone);
       });
 
-      testWidgets('Mark all read shows while something is unread and posts', (t) async {
+      testWidgets('Mark all read shows while something is unread and posts', (
+        t,
+      ) async {
         await mountActivity(t, w, env);
-        final mark = find.byKey(const ValueKey('activity-filter-mark-all-read'));
-        expect(find.textContaining('Mark all', findRichText: true).evaluate().isNotEmpty ||
-            find.byTooltip('Mark all as read').evaluate().isNotEmpty || mark.evaluate().isNotEmpty, isTrue);
+        final mark = find.byKey(
+          const ValueKey('activity-filter-mark-all-read'),
+        );
+        expect(
+          find
+                  .textContaining('Mark all', findRichText: true)
+                  .evaluate()
+                  .isNotEmpty ||
+              find.byTooltip('Mark all as read').evaluate().isNotEmpty ||
+              mark.evaluate().isNotEmpty,
+          isTrue,
+        );
       });
 
-      testWidgets('one heading per day, 2px between rows, no Divider', (t) async {
+      testWidgets('one heading per day, 2px between rows, no Divider', (
+        t,
+      ) async {
         await mountActivity(t, w, env);
-        expect(find.byKey(const ValueKey('inbox-item-list-heading')), findsWidgets);
+        expect(
+          find.byKey(const ValueKey('inbox-item-list-heading')),
+          findsWidgets,
+        );
         expect(find.byType(Divider), findsNothing);
         final a = t.getRect(find.byKey(const ValueKey('activity-channel-ch0')));
         final b = t.getRect(find.byKey(const ValueKey('activity-channel-ch1')));
         expect(b.top - a.bottom, 2);
       });
 
-      testWidgets('a stuck day heading sits under the bar and covers rows', (t) async {
+      testWidgets('a stuck day heading sits under the bar and covers rows', (
+        t,
+      ) async {
         await mountActivity(t, w, env);
         final scroll = t.state<ScrollableState>(find.byType(Scrollable).first);
         final bar = t.getRect(find.byType(RaftActivityFilterBar));

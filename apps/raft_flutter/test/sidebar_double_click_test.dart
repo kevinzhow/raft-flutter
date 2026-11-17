@@ -245,7 +245,7 @@ void main() {
             body: StatefulBuilder(
               builder: (context, setState) {
                 rebuild = setState;
-                focus.observe(rows, (r) => '${r['id']}', scroll, context);
+                focus.observe(w, rows, (r) => '${r['id']}', scroll, context);
                 return ListView.builder(
                   controller: scroll,
                   itemCount: rows.length,
@@ -282,6 +282,9 @@ void main() {
       expect(scroll.offset, greaterThan(0));
       final top = t.getTopLeft(find.text('row 40')).dy;
       expect(top, inInclusiveRange(0, 600));
+      // Web useLocated: the mark is retired after its 2 s.
+      await t.pump(ActivityFirstUnread.locatedDuration);
+      expect(focus.highlights('r40'), isFalse);
     });
 
     testWidgets('a double-click on the rail Activity item marks the first '
@@ -324,10 +327,8 @@ void main() {
       }
       expect(shown('Channel 1'), findsOneWidget);
       bool marked(int i) => t
-          .widget<RaftInboxItem>(
-            find.byKey(ValueKey('activity-channel-ch$i')),
-          )
-          .selected;
+          .widget<RaftInboxItem>(find.byKey(ValueKey('activity-channel-ch$i')))
+          .located;
       expect(
         [for (var i = 0; i < 4; i++) marked(i)],
         [false, true, false, false],
@@ -346,6 +347,9 @@ void main() {
       }
       // Nothing was opened: the first unread conversation is only marked.
       expect(w.section, 'activity');
+      // The mark retires after Web's 2 s (useLocated).
+      await t.pump(ActivityFirstUnread.locatedDuration);
+      expect([for (var i = 0; i < 4; i++) marked(i)], everyElement(isFalse));
       await t.pumpWidget(const SizedBox());
     });
   });

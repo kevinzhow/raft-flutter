@@ -177,8 +177,7 @@ agent activity ref chips); the rest OK or SAME.
 | channel-panel | `lib/features/conversation_panel.dart` | RaftChatView | tap_target_matrix_test.dart (chat, Activity, Search hosts) |
 | task-discussion | `lib/features/task_surface.dart` | RaftChatView | tap_target_matrix_test.dart (task discussion carries onTask / onViewBilling) |
 | public-server | `lib/features/public_server_view.dart` | RaftMessageTile, RaftThreadRepliesBadge | public_server_view_test.dart (reply badge opens the thread) |
-| activity-saved-rows | `lib/features/resource_view.dart` | RaftConversationCard | activity_row_interaction_test.dart; tap_target_matrix_test.dart (Saved rows) |
-| activity-card-rows | `lib/features/activity_card_row.dart` | RaftConversationCard | activity_row_interaction_test.dart; activity_conversation_list_test.dart (Activity card and list rows) |
+| activity-saved-rows | `lib/features/saved_page_rows.dart` | RaftConversationCard | tap_target_matrix_test.dart (Saved rows); saved_page_w24_test.dart |
 | search-rows | `lib/features/resource_search.dart` | RaftSearchResultSurface | desktop_preview_single_location_test.dart |
 | image-export | `lib/features/message_image_export.dart` | RaftMessageTile | inert by design: off-screen render for the exported image |
 | appearance-sample | `lib/features/appearance_section.dart` | RaftMessageTile | inert by design: static sample row in Appearance settings |

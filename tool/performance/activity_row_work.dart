@@ -109,7 +109,6 @@ Future<Map<String, dynamic>> run(int size) async {
           key: key,
           controller: workspace,
           section: 'activity',
-          activitySidebarEnabled: true,
           onMessage: (_, _) async {},
         ),
       ),

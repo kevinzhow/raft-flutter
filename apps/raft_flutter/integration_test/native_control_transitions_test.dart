@@ -10,7 +10,7 @@ import '../../../packages/raft_ui/test/control_transition_paint_test.dart'
 import '../../../packages/raft_ui/test/agent_menu_anchor_test.dart' as menus;
 import '../../../packages/raft_ui/test/recipe_button_interaction_test.dart'
     as recipe_buttons;
-import '../test/activity_row_interaction_test.dart' as activity_rows;
+import '../test/activity_inbox_row_done_test.dart' as activity_rows;
 
 // Actual native renderer evidence for the shared product controls. These
 // controlled fixtures do not establish authentication or full-page parity.

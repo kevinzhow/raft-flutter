@@ -50102,19 +50102,19 @@
         "owner": "design-system alignment",
         "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
       },
-      "apps/raft_flutter/lib/features/resource_view.dart#local-function:CLASS:_ResourceViewState@7358/METHOD:activityList@109649/FUNCTION:bar@109871": {
+      "apps/raft_flutter/lib/features/resource_view.dart#local-function:CLASS:_ResourceViewState@7358/METHOD:activityList@110085/FUNCTION:bar@110307": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
       },
-      "apps/raft_flutter/lib/features/resource_view.dart#local-function:CLASS:_ResourceViewState@7358/METHOD:scopedDialog@49720/FUNCTION:buildOwned@49947": {
+      "apps/raft_flutter/lib/features/resource_view.dart#local-function:CLASS:_ResourceViewState@7358/METHOD:scopedDialog@49763/FUNCTION:buildOwned@49990": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
       },
-      "apps/raft_flutter/lib/features/resource_view.dart#local-function:CLASS:_ResourceViewState@7358/METHOD:scopedMenu@50768/FUNCTION:buildOwned@50975": {
+      "apps/raft_flutter/lib/features/resource_view.dart#local-function:CLASS:_ResourceViewState@7358/METHOD:scopedMenu@50811/FUNCTION:buildOwned@51018": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
@@ -53364,6 +53364,15 @@
         ],
         "mountStatus": "unresolved",
         "reason": "New entry function (WP-INBOX Activity list / Saved); no real-entry capture acceptance is inferred."
+      },
+      "surface:_ResourceViewState.savedBanner": {
+        "owner": "design-system alignment",
+        "kind": "toast",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/resource_view.dart#method:_ResourceViewState.savedBanner"
+        ],
+        "mountStatus": "unresolved",
+        "reason": "New entry function (WP-INBOX Saved: Upgrade to Pro says when the browser cannot open); no real-entry capture acceptance is inferred."
       }
     },
     "requirements": {
