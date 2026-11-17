@@ -602,6 +602,19 @@
           "role": "public_api"
         }
       }
+    },
+    "workspace_button": {
+      "canonical": [
+        "RaftWorkspaceButton"
+      ],
+      "note": "raft-ui 0.95.3 WorkspaceButton: an on-frame md Button holding the server avatar, name, public-page globe and chevron. The phone Home band (RaftMobileServerSelector) renders it; the desktop top bar keeps its own strip layout over the same on-frame RaftButton.",
+      "deprecated": {},
+      "canonicalBindings": {
+        "RaftWorkspaceButton": {
+          "declarationId": "packages/raft_ui/lib/src/workspace_button.dart#class:RaftWorkspaceButton",
+          "role": "public_api"
+        }
+      }
     }
   },
   "recipes": {

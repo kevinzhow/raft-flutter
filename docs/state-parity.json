@@ -49353,6 +49353,38 @@
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/workspace_button.dart#class:RaftWorkspaceButton": {
+        "role": "canonical_component",
+        "familyRefs": [
+          "workspace_button"
+        ],
+        "owner": "design-system canonical registry",
+        "reason": "Actual resolved Widget bound by canonicalBindings; registering ownership does not establish current visual acceptance."
+      },
+      "packages/raft_ui/lib/src/workspace_button.dart#method:RaftWorkspaceButton.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/workspace_button_previews.dart#class:_WorkspaceButtonPreview": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/workspace_button_previews.dart#function:workspaceButtonPreview": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/workspace_button_previews.dart#method:_WorkspaceButtonPreview.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
       }
     },
     "entries": {
