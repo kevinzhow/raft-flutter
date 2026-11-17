@@ -262,8 +262,9 @@ class ActivityUnreadSnapshotStore {
     if (snapshot == null) return;
     Set<String>? read;
     for (final key in keys) {
-      if (snapshot.read.contains(key) || (read?.contains(key) ?? false))
+      if (snapshot.read.contains(key) || (read?.contains(key) ?? false)) {
         continue;
+      }
       read ??= {...snapshot.read};
       read.add(key);
     }
@@ -350,8 +351,9 @@ class ActivityUnreadSnapshotStore {
     dropWhere((row) => activityItemKey(row) == key);
     return () {
       final now = _snapshot;
-      if (now == null || now.list != taken.list || now.visit != taken.visit)
+      if (now == null || now.list != taken.list || now.visit != taken.visit) {
         return;
+      }
       if (now.rows.any((row) => activityItemKey(row) == key)) return;
       final keys = [for (final row in now.rows) activityItemKey(row)];
       final anchor = above.where(keys.contains).firstOrNull;
@@ -369,7 +371,8 @@ class ActivityUnreadSnapshotStore {
     final snapshot = _snapshot;
     if (snapshot == null) return;
     final rows = [for (final row in snapshot.rows) apply(row)];
-    if (!_sameRows(rows, snapshot.rows))
+    if (!_sameRows(rows, snapshot.rows)) {
       _snapshot = snapshot.copyWith(rows: rows);
+    }
   }
 }

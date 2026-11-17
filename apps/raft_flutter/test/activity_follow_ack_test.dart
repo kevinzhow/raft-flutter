@@ -57,8 +57,9 @@ class Client extends RaftClient {
       return Future.value({'evaluations': []});
     }
     // The saved-badge read every window makes (SavedCountStore): not under test.
-    if (path == '/channels/saved/check')
+    if (path == '/channels/saved/check') {
       return Future.value(<String, dynamic>{});
+    }
     posts.add((path: path, data: data));
     final response = Completer<dynamic>();
     pending.add(response);
