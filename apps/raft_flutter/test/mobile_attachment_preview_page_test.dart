@@ -285,7 +285,8 @@ void main() {
                 : find.text(name),
           );
           await t.pumpAndSettle();
-          w.channel = RaftChannel({...w.channel!.json, 'joined': false});
+          // The member loses the channel: its preview closes.
+          w.sessionScope.revokeChannel(w.channel!.id);
           w.notifyListeners();
           await t.pumpAndSettle();
           expect(previewSurface, findsNothing);

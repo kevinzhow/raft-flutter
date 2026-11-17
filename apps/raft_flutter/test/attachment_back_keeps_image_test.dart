@@ -268,11 +268,11 @@ void main() {
     );
   }
 
-  testWidgets('the current thread page still drops its picture when the '
-      'workspace stops presenting its message', (tester) async {
+  testWidgets('the current thread page drops its picture when its '
+      'channel is revoked', (tester) async {
     final (w, state) = await _openThreadWithImage(tester);
-    // Same page, same location: the thread's rows are gone from the workspace.
-    w.threadChannelId = null;
+    // Same page, same location: the member loses the thread.
+    w.sessionScope.revokeChannel('thread-1');
     w.notifyListeners();
     await tester.pump();
     expect(state.invalidated, isTrue);
