@@ -383,13 +383,12 @@ final ParityCase _channelSettings = ParityCase(
         'changeChannelVisibility': true,
         'archiveChannels': true,
         'deleteChannels': true,
-        'addChannelMembers': true,
       },
     });
     final (w, _) = fixture.workspace({
       'GET /channels/${channel.id}/members': (_) => {
-        'agents': [],
-        'humans': [],
+        'agents': [fixture.agent('cindy')],
+        'humans': [fixture.member('owner')],
         'externalMembers': [],
       },
     });

@@ -44,6 +44,44 @@ void main() {
       },
     );
   }
+  testWidgets('member picker filters the signed-in user by channel roster', (
+    t,
+  ) async {
+    final (w, api) = (await t.runAsync(() => fixture()))!;
+    addTearDown(w.dispose);
+    addTearDown(w.client.dispose);
+    final channels = [
+      for (final id in ['c1', 'c2'])
+        RaftChannel({
+          'id': id,
+          'name': id,
+          'type': 'channel',
+          'channelCapabilities': {'addChannelMembers': true},
+        }),
+    ];
+    w.channels = channels;
+    api.routes['GET /channels/c1/members'] = (_) => {
+      'humans': const [],
+      'agents': const [],
+    };
+    api.routes['GET /channels/c2/members'] = (_) => {
+      'humans': [
+        {'userId': 'alice', 'name': 'Self'},
+      ],
+      'agents': const [],
+    };
+    Widget view(RaftChannel channel) =>
+        host(ChannelMembers(controller: w, channel: channel, startInAdd: true));
+    await t.pumpWidget(view(channels.first));
+    await t.pumpAndSettle();
+    expect(find.text('Self'), findsOneWidget);
+    await t.pumpWidget(view(channels.last));
+    await t.pumpAndSettle();
+    expect(find.text('Self'), findsNothing);
+    expect(find.text('Bob'), findsOneWidget);
+    await t.pumpWidget(const SizedBox.shrink());
+  });
+
   testWidgets('new agent names preserve an internal @ exactly as typed', (
     t,
   ) async {

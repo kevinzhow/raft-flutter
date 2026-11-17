@@ -146,12 +146,12 @@ List<ChannelMemberCandidate> channelMemberCandidatesFrom(
         ),
 ];
 
-/// Agents (not deleted) and server members other than the signed-in user,
-/// from the same endpoints the Web stores load (`/agents`,
-/// `/servers/:id/members`).
+/// Agents and server members from the same endpoints the Web stores load
+/// (`/agents`, `/servers/:id/members`).
 Future<List<ChannelMemberCandidate>> loadChannelMemberCandidates(
-  WorkspaceController w,
-) async {
+  WorkspaceController w, {
+  bool includeSelf = false,
+}) async {
   final serverId = w.server?.id;
   final values = await Future.wait([
     w.query('/agents'),
@@ -164,15 +164,16 @@ Future<List<ChannelMemberCandidate>> loadChannelMemberCandidates(
   return channelMemberCandidatesFrom(
     rows(values[0]),
     values.length > 1 ? rows(values[1]) : null,
-    w.client.user?.id,
+    includeSelf ? null : w.client.user?.id,
   );
 }
 
 /// The picker candidates the workspace directory already holds (this session
 /// or restored from the device); null while either list was never loaded.
 List<ChannelMemberCandidate>? cachedChannelMemberCandidates(
-  WorkspaceController w,
-) {
+  WorkspaceController w, {
+  bool includeSelf = false,
+}) {
   final d = w.services.entityDirectory;
   if (!d.state(WorkspaceEntityKind.agents).loaded ||
       !d.state(WorkspaceEntityKind.members).loaded) {
@@ -181,7 +182,7 @@ List<ChannelMemberCandidate>? cachedChannelMemberCandidates(
   return channelMemberCandidatesFrom(
     d.rows(WorkspaceEntityKind.agents),
     d.rows(WorkspaceEntityKind.members),
-    w.client.user?.id,
+    includeSelf ? null : w.client.user?.id,
   );
 }
 
@@ -191,9 +192,9 @@ List<ChannelMemberCandidate>? cachedChannelMemberCandidates(
 /// asks the endpoints directly when the directory cannot provide them (a role
 /// without directory access, or a failed read). Owners call [dispose].
 class ChannelCandidateFeed extends ChangeNotifier {
-  ChannelCandidateFeed(this.w) {
+  ChannelCandidateFeed(this.w, {this.includeSelf = false}) {
     w.services.entityDirectory.addListener(_sync);
-    final cached = cachedChannelMemberCandidates(w);
+    final cached = cachedChannelMemberCandidates(w, includeSelf: includeSelf);
     if (cached != null) {
       value = cached;
       ready = true;
@@ -203,6 +204,7 @@ class ChannelCandidateFeed extends ChangeNotifier {
     }
   }
   final WorkspaceController w;
+  final bool includeSelf;
   static const _kinds = [
     WorkspaceEntityKind.agents,
     WorkspaceEntityKind.members,
@@ -215,7 +217,7 @@ class ChannelCandidateFeed extends ChangeNotifier {
 
   void _sync() {
     if (_disposed) return;
-    final next = cachedChannelMemberCandidates(w);
+    final next = cachedChannelMemberCandidates(w, includeSelf: includeSelf);
     if (next == null) return;
     value = next;
     ready = true;
@@ -227,7 +229,10 @@ class ChannelCandidateFeed extends ChangeNotifier {
     await Future.wait([for (final kind in _kinds) d.refresh(kind)]);
     if (_disposed || ready) return;
     try {
-      final direct = await loadChannelMemberCandidates(w);
+      final direct = await loadChannelMemberCandidates(
+        w,
+        includeSelf: includeSelf,
+      );
       if (_disposed || ready) return;
       value = direct;
       ready = true;

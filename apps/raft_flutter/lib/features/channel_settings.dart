@@ -2003,7 +2003,11 @@ class _ChannelSettingsState extends State<ChannelSettings> {
       details: widget.details,
       headerWrapper: membersOpen ? null : widget.headerWrapper,
       archived: c.archived,
-      title: dm ? (widget.dmName ?? c.name) : '#${c.name}',
+      title: dm
+          ? (widget.dmName ?? c.name)
+          : widget.details
+          ? c.name
+          : '#${c.name}',
       badge: dm
           ? 'Direct message'
           : private

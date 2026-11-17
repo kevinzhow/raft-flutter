@@ -65,6 +65,18 @@ void main() {
     return api;
   }
 
+  testWidgets('Details places the visibility badge beside the channel name', (
+    t,
+  ) async {
+    await open(t);
+    final title = key('channel-overflow-title-text');
+    final badge = key('channel-overflow-visibility-badge');
+    expect(t.widget<Text>(title).data, 'work');
+    expect(t.getTopLeft(badge).dx - t.getTopRight(title).dx, 12);
+    expect(t.getCenter(badge).dy, t.getCenter(title).dy);
+    await t.pumpWidget(const SizedBox.shrink());
+  });
+
   testWidgets('inline edit cancels with Escape and saves exactly one field', (
     t,
   ) async {
@@ -88,7 +100,7 @@ void main() {
     await t.tap(key('channel-settings-save-inline'));
     await t.pumpAndSettle();
     expect(name, findsNothing);
-    expect(find.text('#renamed'), findsOneWidget);
+    expect(find.text('renamed'), findsOneWidget);
     expect(
       api.calls
           .skip(from)

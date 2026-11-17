@@ -337,7 +337,7 @@ class _ChannelDetailsIdentityState extends State<_ChannelDetailsIdentity> {
     final description = widget.description?.trim() ?? '';
     final style = t.scale(RaftTypeScale.callout);
     final grows = RaftScaled.grows(context);
-    final trailing = <Widget>[
+    final badges = <Widget>[
       if (widget.badge != null)
         RaftBadge(
           key: const ValueKey('channel-overflow-visibility-badge'),
@@ -350,51 +350,62 @@ class _ChannelDetailsIdentityState extends State<_ChannelDetailsIdentity> {
           appearance: RaftBadgeRecipeAppearance.soft,
           variant: RaftBadgeRecipeVariant.muted,
         ),
-      if (widget.action != null) widget.action!,
     ];
     return LayoutBuilder(
       builder: (context, box) {
         final stacked = grows || box.maxWidth < 320;
+        final identity = Row(
+          children: [
+            RaftIconTile(
+              glyph: widget.badge == 'Private'
+                  ? RaftGlyph.lock
+                  : widget.badge == 'Direct message'
+                  ? RaftGlyph.user
+                  : RaftGlyph.hash,
+            ),
+            const SizedBox(width: RaftSpace.x3),
+            Flexible(
+              child: Semantics(
+                header: true,
+                child: Text(
+                  widget.title,
+                  key: const ValueKey('channel-overflow-title-text'),
+                  maxLines: grows ? null : 1,
+                  overflow: grows ? TextOverflow.clip : TextOverflow.ellipsis,
+                  style: t.scale(RaftTypeScale.headline),
+                ),
+              ),
+            ),
+            if (!stacked)
+              for (final badge in badges) ...[
+                const SizedBox(width: RaftSpace.x3),
+                badge,
+              ],
+          ],
+        );
         return Padding(
           key: const ValueKey('channel-details-identity'),
           padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Row(
-                children: [
-                  RaftIconTile(
-                    glyph: widget.badge == 'Private'
-                        ? RaftGlyph.lock
-                        : widget.badge == 'Direct message'
-                        ? RaftGlyph.user
-                        : RaftGlyph.hash,
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Semantics(
-                      header: true,
-                      child: Text(
-                        widget.title,
-                        key: const ValueKey('channel-overflow-title-text'),
-                        maxLines: RaftScaled.grows(context) ? null : 1,
-                        overflow: RaftScaled.grows(context)
-                            ? TextOverflow.clip
-                            : TextOverflow.ellipsis,
-                        style: t.scale(RaftTypeScale.headline),
-                      ),
-                    ),
-                  ),
-                  if (!stacked)
-                    for (final item in trailing) ...[
-                      const SizedBox(width: 12),
-                      item,
-                    ],
-                ],
-              ),
-              if (stacked && trailing.isNotEmpty) ...[
-                const SizedBox(height: 12),
-                Wrap(spacing: 12, runSpacing: 12, children: trailing),
+              if (!stacked && widget.action != null)
+                Row(
+                  children: [
+                    Expanded(child: identity),
+                    const SizedBox(width: RaftSpace.x3),
+                    widget.action!,
+                  ],
+                )
+              else
+                identity,
+              if (stacked && (badges.isNotEmpty || widget.action != null)) ...[
+                const SizedBox(height: RaftSpace.x3),
+                Wrap(
+                  spacing: RaftSpace.x3,
+                  runSpacing: RaftSpace.x3,
+                  children: [...badges, ?widget.action],
+                ),
               ],
               if (description.isNotEmpty) ...[
                 const SizedBox(height: 12),
