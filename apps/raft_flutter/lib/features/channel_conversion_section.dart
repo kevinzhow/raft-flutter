@@ -298,20 +298,8 @@ class _ConversionSectionState
     final jobId = snapshot.job['id'];
     if (kind == 'retry' && snapshot.job['status'] != 'failed') return;
     if (kind == 'cancel' && !snapshot.canCancel) return;
-    if (kind == 'start' &&
-        (!w.can('federateChannels', resource: currentChannel) ||
-            channel['name'] == 'all' ||
-            !{'channel', 'private'}.contains(channel['type']) ||
-            snapshot.active ||
-            snapshot.job['status'] == 'failed')) {
-      return;
-    }
     final confirmed = await confirm(
-      kind == 'cancel'
-          ? 'Cancel Conversion'
-          : kind == 'retry'
-          ? 'Retry Conversion'
-          : 'Convert to joint channel',
+      kind == 'cancel' ? 'Cancel Conversion' : 'Retry Conversion',
       kind == 'cancel'
           ? 'Cancel eligible work before audience cutover and restore the original channel. Completed conversion cannot be reversed.'
           : 'Preserve this channel history and members while preparing a shared conversation. Sending may be temporarily unavailable during conversion.',
@@ -358,18 +346,10 @@ class _ConversionSectionState
         observations[key] = observation;
         revision++;
         poll?.cancel();
-        final path = kind == 'start'
-            ? '/channels/${widget.channelId}/convert-to-joint'
-            : '/channels/conversion-jobs/$jobId/$kind';
+        final path = '/channels/conversion-jobs/$jobId/$kind';
         try {
           final result = managementMap(
-            await w.client.post(
-              path,
-              data: {
-                'commandId': observation.token,
-                if (kind == 'start') 'observeProgress': true,
-              },
-            ),
+            await w.client.post(path, data: {'commandId': observation.token}),
           );
           if (!same(source) || observations[key] != observation) return;
           final receipt = ChannelConversionSnapshot.from(result);
@@ -405,11 +385,7 @@ class _ConversionSectionState
           }
         }
       },
-      submit: kind == 'cancel'
-          ? 'Cancel Conversion'
-          : kind == 'retry'
-          ? 'Retry Conversion'
-          : 'Convert to joint channel',
+      submit: kind == 'cancel' ? 'Cancel Conversion' : 'Retry Conversion',
       cancel: kind == 'cancel' ? 'Keep Conversion' : 'Cancel',
       destructive: kind == 'cancel',
     );
