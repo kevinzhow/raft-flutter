@@ -110,6 +110,11 @@ class TasksBoardView extends StatefulWidget {
 class _TasksBoardViewState extends State<TasksBoardView> {
   final scroll = ScrollController();
   final cards = <String, _BoardCardState>{};
+
+  /// The card a hand has lifted, if any: its column hides it while its copy
+  /// follows the hand (Web `useTaskBoardDrag` `activeTaskId`, which
+  /// `BoardColumn` filters out of `visibleTasks`).
+  final dragging = ValueNotifier<String?>(null);
   final columnKeys = {for (final s in boardStatuses) s: GlobalKey()};
   final backlogHeading = GlobalKey();
   final reasonPanel = GlobalKey<RaftTaskReasonPanelState>();
@@ -140,6 +145,7 @@ class _TasksBoardViewState extends State<TasksBoardView> {
   @override
   void dispose() {
     keyboard.dispose();
+    dragging.dispose();
     scroll.dispose();
     super.dispose();
   }
@@ -446,7 +452,10 @@ class _TasksBoardViewState extends State<TasksBoardView> {
     );
   }
 
-  void dragEnd() => autoScroller?.stopAutoScroll();
+  void dragEnd() {
+    autoScroller?.stopAutoScroll();
+    dragging.value = null;
+  }
 
   // ---------------------------------------------------------------- build
 
@@ -464,7 +473,12 @@ class _TasksBoardViewState extends State<TasksBoardView> {
       fit: StackFit.passthrough,
       children: [
         ListenableBuilder(
-          listenable: Listenable.merge([store, widget.selection, keyboard]),
+          listenable: Listenable.merge([
+            store,
+            widget.selection,
+            keyboard,
+            dragging,
+          ]),
           builder: (context, _) {
             // The card may have landed in its column with this change.
             queueFocus();
@@ -654,14 +668,22 @@ class _ColumnBody extends StatelessWidget {
           onLoadMore: () => board.store.loadMore(lanes),
         ),
     ];
+    // The lifted card is no item of the column: its gap goes with it (the
+    // one after it, or the one before it when it was the last).
+    final lifted = indices['task-board-draggable-${board.dragging.value}'];
     return ListView.separated(
       key: PageStorageKey(('task-board-lane', status)),
       primary: false,
       shrinkWrap: true,
       padding: EdgeInsets.zero,
       itemCount: items.length,
-      // ds-allow: Web BoardColumn `TaskBoardColumnItems` `gap-2`
-      separatorBuilder: (_, _) => const SizedBox(height: 8),
+      separatorBuilder: (_, index) =>
+          lifted != null &&
+              (index == lifted ||
+                  (index == lifted - 1 && lifted == items.length - 1))
+          ? const SizedBox.shrink()
+          // ds-allow: Web BoardColumn `TaskBoardColumnItems` `gap-2`
+          : const SizedBox(height: 8),
       findItemIndexCallback: (key) =>
           key is ValueKey<String> ? indices[key.value] : null,
       itemBuilder: (context, index) => items[index](context),
@@ -789,11 +811,12 @@ class _BoardCardState extends State<_BoardCard> {
       selected: w.selection.isSelected(taskId),
       current: w.currentTaskId == taskId,
       onTap: interactive ? () => board.tapCard(task) : null,
-      statusOptions: interactive && editable
-          ? taskV2StatusOptions(task, true)
-          : const [],
-      onStatus: interactive && editable
-          ? (next) => unawaited(board.chipStatus(task, next))
+      // The lifted copy shows the editable chip too (Web's overlay card).
+      statusOptions: editable ? taskV2StatusOptions(task, true) : const [],
+      onStatus: editable
+          ? interactive
+                ? (next) => unawaited(board.chipStatus(task, next))
+                : (_) {}
           : null,
       titleEnd: taskCardReplies(w.controller, task),
       footerEnd: TaskCardFacts(controller: w.controller, task: task),
@@ -834,17 +857,17 @@ class _BoardCardState extends State<_BoardCard> {
                   task: board.taskOf(id) ?? task,
                 ),
               );
-              final dimmed = Opacity(
-                key: const ValueKey('task-board-card-dragging'),
-                opacity: .4,
-                child: content,
+              // Web hides the lifted card in its column: its copy is the card.
+              const gone = SizedBox.shrink(
+                key: ValueKey('task-board-card-lifted'),
               );
               return touch
                   ? LongPressDraggable<_BoardDrag>(
                       data: payload,
                       maxSimultaneousDrags: 1,
                       feedback: feedback,
-                      childWhenDragging: dimmed,
+                      childWhenDragging: gone,
+                      onDragStarted: () => board.dragging.value = id,
                       onDragUpdate: board.dragUpdate,
                       onDragEnd: (_) => board.dragEnd(),
                       onDraggableCanceled: (_, _) => board.dragEnd(),
@@ -854,7 +877,8 @@ class _BoardCardState extends State<_BoardCard> {
                       data: payload,
                       maxSimultaneousDrags: 1,
                       feedback: feedback,
-                      childWhenDragging: dimmed,
+                      childWhenDragging: gone,
+                      onDragStarted: () => board.dragging.value = id,
                       onDragUpdate: board.dragUpdate,
                       onDragEnd: (_) => board.dragEnd(),
                       onDraggableCanceled: (_, _) => board.dragEnd(),

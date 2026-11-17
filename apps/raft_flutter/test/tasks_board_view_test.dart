@@ -497,10 +497,11 @@ void main() {
       expect(h.movedSelected, isEmpty);
     });
 
-    testWidgets('the card stays at 40% in place while its copy follows', (
-      t,
-    ) async {
+    testWidgets('the card leaves its column while its copy follows: no ghost, '
+        'no gap, no placeholder in the target (Web visibleTasks)', (t) async {
       await mountBoard(t);
+      final first = topOf(t, card('t1'));
+      final target = topOf(t, card('t3'));
       final g = await t.startGesture(
         topOf(t, card('t1')),
         kind: PointerDeviceKind.mouse,
@@ -509,13 +510,32 @@ void main() {
       await t.pump();
       await g.moveTo(t.getCenter(column('done')));
       await t.pump();
-      final dimmed = find.byKey(const ValueKey('task-board-card-dragging'));
-      expect(t.widget<Opacity>(dimmed).opacity, .4);
-      // The lifted copy (no key of its own) shows the card too.
-      expect(find.text('Task t1'), findsNWidgets(2));
+      // The lifted copy is the only card showing it; nothing is left at 40%.
+      expect(find.text('Task t1'), findsOneWidget);
+      expect(
+        find.byWidgetPredicate((w) => w is Opacity && w.opacity == .4),
+        findsNothing,
+      );
+      expect(card('t1'), findsNothing);
+      // The card under it took its place in the column (no gap left by the
+      // card, none between them).
+      expect(topOf(t, card('t4')), first);
+      // The target column opens no gap for the card.
+      expect(topOf(t, card('t3')), target);
+      // The copy floats with the shadow of a lifted card (`shadow-float`).
+      final lifted = find.ancestor(
+        of: find.text('Task t1'),
+        matching: find.byWidgetPredicate(
+          (w) =>
+              w is DecoratedBox &&
+              w.decoration is BoxDecoration &&
+              ((w.decoration as BoxDecoration).boxShadow?.isNotEmpty ?? false),
+        ),
+      );
+      expect(lifted, findsWidgets);
       await g.up();
       await settle(t);
-      expect(dimmed, findsNothing);
+      expect(card('t1'), findsOneWidget);
     });
 
     testWidgets('a selected card dropped while several are selected moves '
@@ -852,10 +872,7 @@ void main() {
       await g.up();
       await settle(t);
       expect(h.writes(), isEmpty);
-      expect(
-        find.byKey(const ValueKey('task-board-card-dragging')),
-        findsNothing,
-      );
+      expect(card('t1'), findsOneWidget);
     });
 
     testWidgets('on a phone a long press drag to Backlog asks the reason', (

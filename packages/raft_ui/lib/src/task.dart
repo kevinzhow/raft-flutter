@@ -15,6 +15,7 @@ import 'mounted_task_chip.dart';
 import 'task_status_badge.dart';
 import 'panel_layout.dart' show RaftCssText;
 import 'raft/ui_tokens.dart';
+import 'token_geometry.dart';
 import 'tokens/tokens.dart';
 import '../recipes.dart';
 
@@ -846,13 +847,29 @@ class RaftTaskDragFeedback extends StatelessWidget {
   final Widget child;
 
   @override
-  Widget build(BuildContext context) => Material(
-    type: MaterialType.transparency,
-    child: SizedBox(
-      width: width,
-      child: IgnorePointer(child: child),
-    ),
-  );
+  Widget build(BuildContext context) {
+    final t = RaftTokens.of(context);
+    return Material(
+      type: MaterialType.transparency,
+      child: SizedBox(
+        width: width,
+        // The card in the overlay is lifted: `shadow-float` on the card
+        // (`group-data-[dragging=true]/task-draggable:shadow-float`).
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(
+              t.size('radius.container', fallback: 10),
+            ),
+            boxShadow: [
+              for (final layer in t.shadowLayers('shadow.float').reversed)
+                if (!layer.inset) layer.toBoxShadow(),
+            ],
+          ),
+          child: IgnorePointer(child: child),
+        ),
+      ),
+    );
+  }
 }
 
 /// Web `TaskBoardColumn` (taskBoardColumn recipe): a column whose trigger row

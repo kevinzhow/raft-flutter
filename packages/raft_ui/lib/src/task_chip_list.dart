@@ -388,8 +388,8 @@ class RaftTaskAssignee extends StatelessWidget {
     );
     return ConstrainedBox(
       constraints: const BoxConstraints(maxWidth: 192),
-      // A box with no room for the gap after the avatar shows the avatar
-      // alone (the name would have no width to truncate into).
+      // A box with no room for the gap after the avatar drops the gap (the
+      // name truncates into whatever is left, as Web's `truncate` does).
       child: LayoutBuilder(
         builder: (context, box) => Row(
           key: const ValueKey('message-task-chip-assignee'),
@@ -397,7 +397,7 @@ class RaftTaskAssignee extends StatelessWidget {
           spacing: box.maxWidth < _avatarAndGap ? 0 : 6,
           children: [
             avatar,
-            if (box.maxWidth >= _avatarAndGap) Flexible(child: label),
+            Flexible(child: label),
           ],
         ),
       ),
