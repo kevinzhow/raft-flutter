@@ -3,6 +3,7 @@ import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import '../data/workspace_controller.dart';
+import 'activity_rollout_flags.dart' show ActivityRolloutFlags;
 import 'management_support.dart';
 
 /// Settings > Labs (SettingsPanel.tsx LabsSection, gated by
@@ -131,6 +132,13 @@ class _LabsViewState extends ManagementState<LabsView> {
       }
       setState(() => readback = next);
       saveSnapshot();
+      // LabsSection.tsx:106-107 `refreshServerFeatureFlags`: a Lab that gates
+      // a feature takes effect this session. The app has no shared flag
+      // store; the session-wide owners re-read on their own. Only
+      // ActivityRolloutFlags exposes `reevaluate`; the other owners
+      // (AgentLoungeFlag, the rail gates in workspace_view.dart) re-read on
+      // `server:updated` / reconnect only.
+      ActivityRolloutFlags.peek(w)?.reevaluate();
     } catch (_) {
       if (mounted) {
         setState(() => mutationError = 'Failed to update Labs settings.');
