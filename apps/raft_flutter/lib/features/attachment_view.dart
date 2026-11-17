@@ -171,6 +171,7 @@ class _AttachmentViewState extends State<AttachmentView> {
   ModalRoute<void>? previewRoute;
   late int generation;
   late String? principal, server, projectedServer, role;
+  late String boundChannel;
   WorkspaceController get w => widget.controller;
   String get name => '${widget.metadata['filename'] ?? 'Attachment'}';
   String get mime =>
@@ -179,8 +180,9 @@ class _AttachmentViewState extends State<AttachmentView> {
   bool get isSvg => _isSvgMime(mime);
 
   /// The account, server and role the card was bound under are still the
-  /// workspace's. Like Web, nothing asks whether the workspace presents the
-  /// row's conversation: a card in Saved, Search or a covered page opens.
+  /// workspace's, and its channel is not revoked. Like Web, nothing asks
+  /// whether the workspace presents the row's conversation: a card in Saved,
+  /// Search or a covered page opens.
   bool get authorized =>
       mounted &&
       !invalidated &&
@@ -188,7 +190,8 @@ class _AttachmentViewState extends State<AttachmentView> {
       principal == w.client.user?.id &&
       server == w.client.serverId &&
       projectedServer == w.server?.id &&
-      role == w.server?.string('role');
+      role == w.server?.string('role') &&
+      !w.sessionScope.revokedChannels.contains(boundChannel);
 
   @override
   void initState() {
@@ -368,6 +371,7 @@ class _AttachmentViewState extends State<AttachmentView> {
     server = w.client.serverId;
     projectedServer = w.server?.id;
     role = w.server?.string('role');
+    boundChannel = ownerChannel;
   }
 
   /// Server-generated 320px WebP (Web's inline `thumbnailUrl` source).

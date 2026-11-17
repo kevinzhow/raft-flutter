@@ -337,13 +337,11 @@ void main() {
         )),
         (1152, 864),
       );
-      await tester.pumpWidget(const SizedBox());
 
-      // The member can no longer view the channel: nothing is read or shown.
-      w.channels = [];
-      w.channel = null;
+      // The member loses the channel while the card shows: the picture goes
+      // and nothing more is read (its rows leave with the channel's window).
+      w.sessionScope.revokeChannel('channel');
       w.notifyListeners();
-      await tester.pumpWidget(view(w, files));
       for (var i = 0; i < 5; i++) {
         await tester.runAsync(
           () => Future<void>.delayed(const Duration(milliseconds: 10)),
