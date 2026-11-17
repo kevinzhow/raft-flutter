@@ -44,6 +44,12 @@ void main() {
         ),
       ),
     );
+    // The header reads the task v2 flag (one /feature-flags/evaluate for the
+    // server, ChannelSideFlags): let that request finish.
+    for (var i = 0; i < 3; i++) {
+      await t.runAsync(() => Future<void>.delayed(Duration.zero));
+      await t.pump(const Duration(milliseconds: 250));
+    }
     return opened;
   }
 
