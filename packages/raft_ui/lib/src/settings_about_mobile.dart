@@ -4,14 +4,14 @@ import 'package:flutter/material.dart';
 
 import 'design_primitives.dart'
     show RaftTextLink, RaftTextLinkVariant, RaftTypography;
-import 'dialog_card.dart' show RaftRecipeButton;
 import 'icons.dart';
 import 'link_scope.dart';
 import 'localization.dart';
 import 'qr_code.dart';
+import 'raft/button.dart' show RaftButton, RaftButtonSize, RaftButtonVariant;
 import 'raft/ui_tokens.dart';
-import 'recipes/button_variants.g.dart' show RaftButtonRecipeVariant;
 import 'theme.dart';
+import 'token_geometry.dart';
 import 'tokens/raft_tokens.g.dart' show RaftTypeScale;
 
 /// AboutSection's Mobile app section: the download targets.
@@ -140,12 +140,12 @@ class RaftAboutMobileDownloads extends StatelessWidget {
         key: ValueKey('mobile-download-${phone.name}'),
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          RaftRecipeButton(
+          RaftButton(
             key: ValueKey(store.key),
             label: store.label,
-            glyph: RaftGlyph.arrowUpRight,
-            glyphTrailing: true,
-            variant: RaftButtonRecipeVariant.default_,
+            trailingGlyph: RaftGlyph.arrowUpRight,
+            uiVariant: RaftButtonVariant.standard,
+            uiSize: RaftButtonSize.md,
             onPressed: store.onPressed,
           ),
           const SizedBox(height: 12),
@@ -230,9 +230,7 @@ class RaftMobileDownloadQr extends StatelessWidget {
         decoration: BoxDecoration(
           color: t.colors['sticker-paper'],
           border: Border.all(color: t.colors['line-hairline']!),
-          borderRadius: BorderRadius.circular(
-            t.size('radius.sticker', fallback: 4),
-          ),
+          borderRadius: t.corner('radius.sticker', fallback: 4),
         ),
         child: CustomPaint(
           painter: RaftQrCodePainter(matrix, t.colors['sticker-ink']!),

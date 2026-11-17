@@ -850,10 +850,13 @@ class _SourceFeedbackProjectionViewState
       onBack: store.back,
       headerTrailing: link == null
           ? null
-          : RaftIconButton(
+          : RaftButton(
               key: const ValueKey('settings-feedback-ticket-copy-link'),
               glyph: RaftGlyph.link,
+              uiVariant: RaftButtonVariant.ghost,
+              uiSize: RaftButtonSize.iconMd,
               tooltip: raftText(context, 'Copy link'),
+              semanticLabel: raftText(context, 'Copy link'),
               onPressed: () => unawaited(_copyLink(link)),
             ),
       loading: store.detailLoading && ticket == null,

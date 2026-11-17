@@ -27,6 +27,11 @@ RaftSettingsAbout _about({
   ),
 );
 
+/// The store button (the DS default Button); the text links are not.
+final _storeButton = find.byWidgetPredicate(
+  (w) => w is RaftButton && w.uiVariant == RaftButtonVariant.standard,
+);
+
 void main() {
   testWidgets('computer: QR first with its sentence, then the three links', (
     t,
@@ -66,7 +71,7 @@ void main() {
     expect(links[0].dy, links[2].dy);
     expect(links[0].dy, greaterThan(t.getBottomLeft(qr).dy));
     // No store button on a computer.
-    expect(find.byType(RaftRecipeButton), findsNothing);
+    expect(_storeButton, findsNothing);
 
     await t.tap(find.text('Get it on Google Play'));
     await t.tap(find.text('Download on the App Store'));
@@ -96,7 +101,7 @@ void main() {
       await t.pumpWidget(_host(_about(), platform: platform));
       expect(find.byKey(const ValueKey('mobile-download-qr')), findsNothing);
       expect(find.text("Scan with your phone's camera."), findsNothing);
-      final button = find.byType(RaftRecipeButton);
+      final button = _storeButton;
       expect(button, findsOneWidget);
       expect(
         find.descendant(of: button, matching: find.text(store)),
