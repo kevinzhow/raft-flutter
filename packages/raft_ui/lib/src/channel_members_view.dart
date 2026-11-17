@@ -140,6 +140,7 @@ class RaftChannelMembersModal extends StatelessWidget {
     this.candidateHumans = const [],
     this.matchedCandidateKeys,
     this.chips = const [],
+    this.failedChoices = const {},
     required this.isChecked,
     required this.onToggle,
     this.canCreateAgent = false,
@@ -180,6 +181,7 @@ class RaftChannelMembersModal extends StatelessWidget {
 
   /// Selected `(key, label)` pairs in selection order.
   final List<(String, String)> chips;
+  final Set<String> failedChoices;
   final bool Function(String key) isChecked;
   final ValueChanged<String> onToggle;
   final VoidCallback? onConfirm;
@@ -399,7 +401,7 @@ class RaftChannelMembersModal extends StatelessWidget {
             for (final (key, label) in chips)
               _SelectedChip(
                 label: label,
-                agent: key.startsWith('agent:'),
+                failed: failedChoices.contains(key),
                 onRemove: adding ? null : () => onToggle(key),
               ),
           ],
@@ -611,40 +613,38 @@ class _DashedBoxPainter extends CustomPainter {
 class _SelectedChip extends StatelessWidget {
   const _SelectedChip({
     required this.label,
-    required this.agent,
+    required this.failed,
     required this.onRemove,
   });
   final String label;
-  final bool agent;
+  final bool failed;
   final VoidCallback? onRemove;
   @override
   Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
-    final fill = t.colors[agent ? 'info-soft' : 'accent-soft'];
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(color: fill, border: null),
-      child: Row(
+    return RaftBadge(
+      label: label,
+      appearance: RaftBadgeRecipeAppearance.soft,
+      variant: failed
+          ? RaftBadgeRecipeVariant.warning
+          : RaftBadgeRecipeVariant.default_,
+      trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 128),
-            child: Text(
-              label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: raftCssTextStyle(
-                family: t.headingFont,
-                step: RaftTextSteps.xs,
-                weight: FontWeight.w700,
-                color: t.strong,
-              ),
+          if (failed) ...[
+            const RaftIcon(RaftGlyph.triangleAlert, size: 12),
+            const SizedBox(width: 4),
+            Text(
+              raftText(context, 'Failed to add'),
+              style: Theme.of(context).textTheme.labelSmall,
             ),
-          ),
-          const SizedBox(width: 4),
-          GestureDetector(
-            onTap: onRemove,
-            child: const RaftIcon(RaftGlyph.x, size: 12),
+          ],
+          RaftRecipeButton(
+            tooltip: raftFormat(context, 'Deselect {name}', {'name': label}),
+            glyph: RaftGlyph.x,
+            glyphSize: 14,
+            variant: RaftButtonRecipeVariant.ghost,
+            size: RaftButtonRecipeSize.iconXs,
+            onPressed: onRemove,
           ),
         ],
       ),

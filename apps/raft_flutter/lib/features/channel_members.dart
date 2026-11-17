@@ -304,6 +304,7 @@ class _ChannelMembersState extends State<ChannelMembers> {
   /// cold open). Candidates and agent rows come from the workspace directory
   /// and never hold the roster back.
   bool rosterKnown = false, adding = false;
+  int rosterEpoch = 0;
   bool get loading => !rosterKnown || (addView && !_feed.ready);
   late bool addView = widget.startInAdd;
 
@@ -315,6 +316,7 @@ class _ChannelMembersState extends State<ChannelMembers> {
   /// A failed roster read: it ends with the next roster that loads.
   final loadError = CauseNotice();
   final selected = <String>{};
+  final failedChoices = <String>{};
   final search = TextEditingController();
 
   String? roleChanging;
@@ -364,9 +366,12 @@ class _ChannelMembersState extends State<ChannelMembers> {
     if (oldWidget.channel.id != widget.channel.id ||
         oldWidget.controller != widget.controller) {
       _reload?.cancel();
+      rosterEpoch++;
+      adding = false;
       profile = null;
       pendingJoin = null;
       selected.clear();
+      failedChoices.clear();
       search.clear();
       addView = widget.startInAdd;
       error = null;
@@ -515,6 +520,7 @@ class _ChannelMembersState extends State<ChannelMembers> {
       setState(() {
         pendingJoin = null;
         selected.remove('agent:$id');
+        failedChoices.remove('agent:$id');
         search.clear();
       });
       await load();
@@ -532,6 +538,10 @@ class _ChannelMembersState extends State<ChannelMembers> {
 
   Future<void> confirmAdd() async {
     if (adding || selected.isEmpty || !canAdd) return;
+    final epoch = rosterEpoch;
+    final id = channel.id;
+    final choices = Set<String>.of(selected);
+    bool current() => mounted && rosterEpoch == epoch;
     setState(() {
       adding = true;
       error = null;
@@ -539,36 +549,52 @@ class _ChannelMembersState extends State<ChannelMembers> {
     try {
       await w.command(
         'POST',
-        '/channels/${channel.id}/members/batch',
+        '/channels/$id/members/batch',
         data: {
           'userIds': [
-            for (final k in selected)
+            for (final k in choices)
               if (k.startsWith('human:')) k.substring(6),
           ],
           'agentIds': [
-            for (final k in selected)
+            for (final k in choices)
               if (k.startsWith('agent:')) k.substring(6),
           ],
         },
       );
-      selected.clear();
-      addView = false;
+      if (!current()) return;
+      resetAdd();
       await load();
     } catch (_) {
-      if (mounted) {
-        setState(
-          () => error = raftText(
-            context,
-            // The server batch is atomic, so a rejection (a personal assistant
-            // is refused with 403 `assistant_channel_forbidden`) leaves every
-            // selected row unresolved: Web's one "none" banner.
-            'None of the selected members could be added.',
-          ),
-        );
+      if (current() && addView) {
+        setState(() {
+          // The batch is atomic. Keep each unresolved choice available.
+          failedChoices
+            ..clear()
+            ..addAll(choices);
+          final pending = pendingJoin;
+          if (pending == null ||
+              choices.length != 1 ||
+              !choices.contains('agent:${pending.id}')) {
+            error = raftText(
+              context,
+              'None of the selected members could be added.',
+            );
+          }
+        });
       }
     } finally {
-      if (mounted) setState(() => adding = false);
+      if (current()) setState(() => adding = false);
     }
+  }
+
+  void resetAdd() {
+    setState(() {
+      addView = false;
+      error = null;
+      selected.clear();
+      failedChoices.clear();
+    });
+    search.clear();
   }
 
   /// `useChannelMemberRemoval`: stage the target, then the destructive
@@ -694,6 +720,16 @@ class _ChannelMembersState extends State<ChannelMembers> {
   void close() => widget.onClose != null
       ? widget.onClose!()
       : Navigator.of(context).maybePop();
+
+  void back() {
+    if (profile != null) {
+      setState(() => profile = null);
+    } else if (addView) {
+      resetAdd();
+    } else {
+      close();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -889,7 +925,7 @@ class _ChannelMembersState extends State<ChannelMembers> {
       ),
     );
     final matching = searchChannelMemberCandidates(search.text, candidates);
-    final content = RaftChannelMembersModal(
+    final roster = RaftChannelMembersModal(
       page: widget.page,
       onClose: close,
       search: search,
@@ -904,12 +940,7 @@ class _ChannelMembersState extends State<ChannelMembers> {
       ],
       agents: [for (final a in agents) row('agent', a)],
       onAdd: canAdd ? () => setState(() => addView = true) : null,
-      onBack: () => setState(() {
-        addView = false;
-        error = null;
-        selected.clear();
-        search.clear();
-      }),
+      onBack: resetAdd,
       hasCandidates: candidates.isNotEmpty,
       matchedCandidateKeys: [for (final c in matching) '${c.kind}:${c.id}'],
       candidateAgents: [
@@ -931,9 +962,11 @@ class _ChannelMembersState extends State<ChannelMembers> {
                 key,
           ),
       ],
+      failedChoices: failedChoices,
       isChecked: selected.contains,
       onToggle: (key) => setState(() {
         if (!selected.remove(key)) selected.add(key);
+        failedChoices.remove(key);
         // Web toggleCandidate: the add failure described the old selection.
         error = null;
       }),
@@ -952,46 +985,37 @@ class _ChannelMembersState extends State<ChannelMembers> {
       onConfirm: confirmAdd,
     );
     final open = profile;
-    if (widget.page && open != null) {
-      void back() => setState(() => profile = null);
-      return PopScope(
-        canPop: false,
-        onPopInvokedWithResult: (_, _) => back(),
-        child: open.kind == 'human'
-            ? MemberProfileView(
-                key: ValueKey('member-page-profile-${open.id}'),
-                controller: w,
-                userId: open.id,
-                onClose: back,
-                onBack: back,
-                onOpenAgent: (id) =>
-                    setState(() => profile = (kind: 'agent', id: id)),
-              )
-            : FleetDetail(
-                key: ValueKey('member-page-profile-${open.id}'),
-                controller: w,
-                computers: false,
-                initial: agentRows[open.id] ?? {'id': open.id},
-                onClose: back,
-              ),
-      );
-    }
-    return PopScope(
-      canPop: !widget.page || (!addView && !widget.embedded),
-      onPopInvokedWithResult: (didPop, _) {
-        if (didPop || !widget.page) return;
-        if (addView) {
-          setState(() {
-            addView = false;
-            error = null;
-            selected.clear();
-            search.clear();
-          });
-        } else if (widget.embedded) {
-          close();
-        }
-      },
-      child: content,
+    if (!widget.page) return roster;
+    final content = open == null
+        ? roster
+        : open.kind == 'human'
+        ? MemberProfileView(
+            key: ValueKey('member-page-profile-${open.id}'),
+            controller: w,
+            userId: open.id,
+            onClose: back,
+            onBack: back,
+            onOpenAgent: (id) =>
+                setState(() => profile = (kind: 'agent', id: id)),
+          )
+        : FleetDetail(
+            key: ValueKey('member-page-profile-${open.id}'),
+            controller: w,
+            computers: false,
+            initial: agentRows[open.id] ?? {'id': open.id},
+            onClose: back,
+          );
+    final canPop = open == null && !addView && !widget.embedded;
+    return RaftDismissScope(
+      takeFocus: widget.embedded,
+      onDismiss: back,
+      child: PopScope(
+        canPop: canPop,
+        onPopInvokedWithResult: (didPop, _) {
+          if (!didPop && !canPop && !raftDismissTopPopup(context)) back();
+        },
+        child: content,
+      ),
     );
   }
 }

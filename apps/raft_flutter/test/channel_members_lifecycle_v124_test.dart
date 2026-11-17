@@ -6,6 +6,80 @@ import 'package:raft_flutter/features/channel_members.dart';
 import 'support/joint_channel_fixture.dart' show fixture, host;
 
 void main() {
+  testWidgets(
+    'a rejected add marks the choices and a corrected retry clears it',
+    (t) async {
+      final (w, api) = (await t.runAsync(() => fixture()))!;
+      addTearDown(w.dispose);
+      addTearDown(w.client.dispose);
+      t.view.physicalSize = const Size(390, 844);
+      t.view.devicePixelRatio = 1;
+      addTearDown(t.view.reset);
+      final channel = RaftChannel({
+        'id': 'c1',
+        'name': 'work',
+        'type': 'channel',
+        'channelCapabilities': {'addChannelMembers': true},
+      });
+      w.channels = [channel];
+      const path = 'POST /channels/c1/members/batch';
+      var joined = false;
+      api.routes['GET /channels/c1/members'] = (_) => {
+        'humans': const [],
+        'agents': [
+          if (joined) {'id': 'a1', 'name': 'Cindy'},
+        ],
+      };
+      api.routes[path] = (request) {
+        if (api.statuses[path] == 409) return {'error': 'Refused'};
+        expect(request.data, {
+          'userIds': [],
+          'agentIds': ['a1'],
+        });
+        joined = true;
+        return <String, dynamic>{};
+      };
+      api.statuses[path] = 409;
+      await t.pumpWidget(
+        host(
+          ChannelMembers(
+            controller: w,
+            channel: channel,
+            page: true,
+            startInAdd: true,
+          ),
+        ),
+      );
+      await t.pumpAndSettle();
+      Finder key(String value) => find.byKey(ValueKey(value));
+      final confirm = key('add-member-confirm');
+      await t.tap(key('add-candidate-agent:a1'));
+      await t.tap(key('add-candidate-human:bob'));
+      await t.pumpAndSettle();
+      await t.tap(confirm);
+      await t.pumpAndSettle();
+      expect(
+        find.text('None of the selected members could be added.'),
+        findsOneWidget,
+      );
+      expect(find.text('Failed to add'), findsNWidgets(2));
+      await t.tap(find.bySemanticsLabel('Deselect Bob'));
+      await t.pumpAndSettle();
+      expect(
+        find.text('None of the selected members could be added.'),
+        findsNothing,
+      );
+      expect(find.text('Failed to add'), findsOneWidget);
+      api.statuses.remove(path);
+      await t.tap(confirm);
+      await t.pumpAndSettle();
+      expect(joined, isTrue);
+      expect(find.text('Failed to add'), findsNothing);
+      expect(key('member-page-row-agent-a1'), findsOneWidget);
+      await t.pumpWidget(const SizedBox.shrink());
+    },
+  );
+
   for (final button in [false, true]) {
     testWidgets(
       'mounted member ${button ? 'trigger' : 'roster'} follows a changed channel',

@@ -145,6 +145,8 @@ void main() {
         final (w, api) = await settingsFixture(t);
         final opening = w.channel!;
         await mountSettingsWorkspace(t, w, dark, PrivateRouteGuard());
+        await t.tap(find.byKey(const ValueKey('channel-details-edit')));
+        await t.pumpAndSettle();
         final nameController = nameField(t);
         nameController.value = const TextEditingValue(
           text: 'Unsubmitted opening draft',
@@ -169,7 +171,7 @@ void main() {
         final retained = t.widget<RaftOverflowSheet>(
           find.byType(RaftOverflowSheet),
         );
-        expect(retained.title, '#${opening.name}');
+        expect(retained.title, opening.name);
         expect(nameField(t), same(nameController));
         expect(nameController.text, 'Unsubmitted opening draft');
         expect(nameController.selection.baseOffset, 12);
