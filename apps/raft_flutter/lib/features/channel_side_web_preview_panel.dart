@@ -6,6 +6,8 @@ import 'package:raft_ui/raft_ui.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
+import 'channel_side_card.dart' show ChannelSideHeadWrapper;
+import 'channel_side_layout.dart' show ChannelSideSection;
 import 'channel_side_web_preview.dart';
 
 /// What the preview's WebView does with a navigation request.
@@ -63,7 +65,11 @@ class WebPreviewPanel extends StatelessWidget {
     required this.page,
     this.covering = false,
     this.openExternal = _launchInBrowser,
+    this.headWrapper,
   });
+
+  /// Wraps the head (the grip that moves the section: ChannelSideHeadWrapper).
+  final ChannelSideHeadWrapper? headWrapper;
 
   final WebPreviewStore store;
   final WebPreviewPage page;
@@ -71,6 +77,9 @@ class WebPreviewPanel extends StatelessWidget {
 
   /// Opens an address in the system browser.
   final FutureOr<void> Function(String url) openExternal;
+
+  Widget _head(BuildContext context, Widget head) =>
+      headWrapper?.call(context, ChannelSideSection.artifact, head) ?? head;
 
   @override
   Widget build(BuildContext context) => ListenableBuilder(
@@ -103,48 +112,51 @@ class WebPreviewPanel extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              RaftPanelHeaderBar(
-                key: const ValueKey('web-preview-header'),
-                title: parts.host,
-                subtitle: parts.rest.isEmpty ? null : parts.rest,
-                onBack: covering ? store.close : null,
-                backKey: const ValueKey('web-preview-back'),
-                backTooltip: closeLabel,
-                actions: [
-                  RaftPanelAction(
-                    key: const ValueKey('web-preview-open-tab'),
-                    glyph: RaftGlyph.arrowUpRight,
-                    tooltip: openLabel,
-                    onPressed: open,
-                    minHitExtent: RaftMetrics.touchTarget,
-                  ),
-                  if (showsHere && !covering)
+              _head(
+                context,
+                RaftPanelHeaderBar(
+                  key: const ValueKey('web-preview-header'),
+                  title: parts.host,
+                  subtitle: parts.rest.isEmpty ? null : parts.rest,
+                  onBack: covering ? store.close : null,
+                  backKey: const ValueKey('web-preview-back'),
+                  backTooltip: closeLabel,
+                  actions: [
                     RaftPanelAction(
-                      key: const ValueKey('web-preview-width'),
-                      glyph: toWidth == WebPreviewWidth.phone
-                          ? RaftGlyph.smartphone
-                          : RaftGlyph.monitor,
-                      tooltip: widthLabel,
-                      onPressed: () => store.setWidth(toWidth),
+                      key: const ValueKey('web-preview-open-tab'),
+                      glyph: RaftGlyph.arrowUpRight,
+                      tooltip: openLabel,
+                      onPressed: open,
                       minHitExtent: RaftMetrics.touchTarget,
                     ),
-                  if (showsHere)
-                    RaftPanelAction(
-                      key: const ValueKey('web-preview-refresh'),
-                      glyph: RaftGlyph.refreshCw,
-                      tooltip: refreshLabel,
-                      onPressed: store.reload,
-                      minHitExtent: RaftMetrics.touchTarget,
-                    ),
-                  if (!covering)
-                    RaftPanelAction(
-                      key: const ValueKey('web-preview-close'),
-                      glyph: RaftGlyph.x,
-                      tooltip: closeLabel,
-                      onPressed: store.close,
-                      minHitExtent: RaftMetrics.touchTarget,
-                    ),
-                ],
+                    if (showsHere && !covering)
+                      RaftPanelAction(
+                        key: const ValueKey('web-preview-width'),
+                        glyph: toWidth == WebPreviewWidth.phone
+                            ? RaftGlyph.smartphone
+                            : RaftGlyph.monitor,
+                        tooltip: widthLabel,
+                        onPressed: () => store.setWidth(toWidth),
+                        minHitExtent: RaftMetrics.touchTarget,
+                      ),
+                    if (showsHere)
+                      RaftPanelAction(
+                        key: const ValueKey('web-preview-refresh'),
+                        glyph: RaftGlyph.refreshCw,
+                        tooltip: refreshLabel,
+                        onPressed: store.reload,
+                        minHitExtent: RaftMetrics.touchTarget,
+                      ),
+                    if (!covering)
+                      RaftPanelAction(
+                        key: const ValueKey('web-preview-close'),
+                        glyph: RaftGlyph.x,
+                        tooltip: closeLabel,
+                        onPressed: store.close,
+                        minHitExtent: RaftMetrics.touchTarget,
+                      ),
+                  ],
+                ),
               ),
               Expanded(
                 child: showsHere

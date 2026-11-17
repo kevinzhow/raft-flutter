@@ -25,6 +25,7 @@ import 'channel_files_media.dart';
 import 'channel_side_card.dart';
 import 'channel_side_cards.dart';
 import 'channel_side_column.dart';
+import 'channel_side_drag.dart';
 import 'channel_side_flags.dart';
 import 'channel_side_layout.dart';
 import 'channel_side_store.dart';
@@ -162,6 +163,7 @@ class _ChannelSideAreaState extends State<ChannelSideArea> {
   late ChannelSideStore store;
   late WebPreviewStore preview;
   late ChannelFilesMedia media;
+  final drag = ChannelSideDragController();
   late Listenable listenable;
   int previewOpenedAt = 0;
   double composerBelow = 0;
@@ -194,6 +196,24 @@ class _ChannelSideAreaState extends State<ChannelSideArea> {
     }
     previewOpenedAt = preview.openedAt;
   }
+
+  @override
+  void dispose() {
+    drag.dispose();
+    super.dispose();
+  }
+
+  /// Every card's head carries the grip that moves its section.
+  Widget _wrapHead(
+    BuildContext context,
+    ChannelSideSection section,
+    Widget head,
+  ) => ChannelSideHead(
+    drag: drag,
+    section: section,
+    enabled: drag.enabled,
+    child: head,
+  );
 
   @override
   Widget build(BuildContext context) => _ChannelSideAreaScope(
@@ -233,6 +253,23 @@ class _ChannelSideAreaState extends State<ChannelSideArea> {
         placement.mode == ChannelSideMode.overlay &&
         placement.columns.isNotEmpty;
     if (placement.mode == ChannelSideMode.float) _measureComposer();
+    // Sections move only beside the chat, by a pointer, with more than one
+    // open (Web `sideSectionDrag` enabled).
+    drag.sync(
+      store: store,
+      area: context,
+      enabled:
+          beside &&
+          !RaftInteraction.of(context).touch &&
+          placement.columns.fold(0, (n, c) => n + c.sections.length) > 1,
+      fits: (moved) =>
+          placeChannelSide(
+            moved.visible(open),
+            width: box.maxWidth,
+            compact: false,
+          ).mode ==
+          ChannelSideMode.beside,
+    );
     return Stack(
       clipBehavior: Clip.none,
       children: [
@@ -292,6 +329,7 @@ class _ChannelSideAreaState extends State<ChannelSideArea> {
               ),
             ),
           ),
+        Positioned.fill(child: ChannelSideDragLayer(drag: drag)),
       ],
     );
   }
@@ -312,15 +350,9 @@ class _ChannelSideAreaState extends State<ChannelSideArea> {
     WebPreviewPage? page,
   ) {
     final titles = _titles(context, page);
-    final names = [for (final s in sections) titles[s] ?? s.name];
-    final zh = Localizations.localeOf(context).languageCode == 'zh';
-    final list = names.length < 2
-        ? names.join()
-        : zh
-        ? '${names.sublist(0, names.length - 1).join('、')}和${names.last}'
-        : names.length == 2
-        ? '${names[0]} and ${names[1]}'
-        : '${names.sublist(0, names.length - 1).join(', ')}, and ${names.last}';
+    final list = channelSideNames(context, [
+      for (final s in sections) titles[s] ?? s.name,
+    ]);
     return raftFormat(context, 'Resize {sections}', {'sections': list});
   }
 
@@ -340,7 +372,7 @@ class _ChannelSideAreaState extends State<ChannelSideArea> {
     titles: _titles(context, page),
     resize: resize,
     cardOf: (context, section, fold) =>
-        _card(context, section, fold, mode, page, compact),
+        drag.card(section, _card(context, section, fold, mode, page, compact)),
   );
 
   Widget _card(
@@ -364,7 +396,7 @@ class _ChannelSideAreaState extends State<ChannelSideArea> {
           phone: compact,
           collapsed: fold.collapsed,
           onCollapsedChanged: fold.onCollapsedChanged,
-          headWrapper: widget.headWrapper,
+          headWrapper: widget.headWrapper ?? _wrapHead,
           actions: [
             RaftPanelAction(
               key: const Key('channel-tasks-panel-new'),
@@ -402,7 +434,7 @@ class _ChannelSideAreaState extends State<ChannelSideArea> {
           phone: compact,
           collapsed: fold.collapsed,
           onCollapsedChanged: fold.onCollapsedChanged,
-          headWrapper: widget.headWrapper,
+          headWrapper: widget.headWrapper ?? _wrapHead,
           child:
               body ??
               SourceChannelFilesView(
@@ -431,6 +463,7 @@ class _ChannelSideAreaState extends State<ChannelSideArea> {
               store: preview,
               page: page!,
               covering: mode == ChannelSideMode.overlay,
+              headWrapper: widget.headWrapper ?? _wrapHead,
             );
       default:
         return const SizedBox.shrink();
