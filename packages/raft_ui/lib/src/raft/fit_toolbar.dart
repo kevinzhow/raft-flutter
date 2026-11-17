@@ -530,9 +530,8 @@ class _RaftFitToolbarState extends State<RaftFitToolbar> {
       next.requestFocus();
       final c = next.context;
       if (c != null)
-        Scrollable.maybeOf(
-          c,
-        )?.position.ensureVisible(c.findRenderObject()!, alignment: .5);
+        Scrollable.maybeOf(c)?.position
+            .ensureVisible(c.findRenderObject()!, alignment: .5);
     }
     return KeyEventResult.handled;
   }

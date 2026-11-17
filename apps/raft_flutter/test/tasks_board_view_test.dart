@@ -91,8 +91,10 @@ class BoardHarness {
   static final reads = <Map<String, dynamic>>[];
 
   /// The server's page for a lane read (the rows of its statuses).
-  dynamic Function(String path, Map<String, dynamic> query) handler =
-      (path, query) => const {};
+  dynamic Function(String path, Map<String, dynamic> query) handler = (
+    path,
+    query,
+  ) => const {};
 
   Iterable<RequestOptions> writes() =>
       api.calls.where((c) => c.method != 'GET' && c.path.startsWith('/tasks/'));
@@ -189,9 +191,8 @@ Future<BoardHarness> mountBoard(
 
   await t.pumpWidget(
     MaterialApp(
-      theme: raftTheme(
-        dark: dark,
-      ).copyWith(platform: platform ?? TargetPlatform.linux),
+      theme: raftTheme(dark: dark)
+          .copyWith(platform: platform ?? TargetPlatform.linux),
       home: RaftToastHost(
         child: Scaffold(
           body: ListenableBuilder(

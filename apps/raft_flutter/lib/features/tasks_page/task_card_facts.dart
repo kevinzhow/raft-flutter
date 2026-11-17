@@ -61,9 +61,9 @@ class TaskActivityTime extends StatelessWidget {
     if (short == null) return const SizedBox.shrink();
     final t = RaftTokens.of(context);
     final stale = isStaleTask(task, clock);
-    final full = DateFormat.yMMMd(
-      locale?.toLanguageTag(),
-    ).add_jm().format(DateTime.parse(at).toLocal());
+    final full = DateFormat.yMMMd(locale?.toLanguageTag())
+        .add_jm()
+        .format(DateTime.parse(at).toLocal());
     final style = t
         .scale(
           RaftTypeScale.monoMeta,

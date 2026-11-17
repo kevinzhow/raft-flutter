@@ -267,25 +267,19 @@ class _CreateTaskDialogState extends State<CreateTaskDialog> {
 /// Web `createFailureMessage`: the create's refusals a person can act on, in
 /// their language; any other shows the server's sentence. [asMessage]: the
 /// task was written as one message (task v2), not as titles.
-String createTaskFailureText(
-  Object error, {
-  bool asMessage = false,
-}) => switch (serverErrorCode(error)) {
-  'membership_required' =>
-    'Join this channel to create tasks in it: a new task posts its titles here as your message.',
-  'quota_read_only' =>
-    "This channel is read-only on your current plan, so tasks can't be created in it.",
-  'channel_archived' =>
-    'This channel is archived: unarchive it to create tasks in it.',
-  'channel_access_changed' =>
-    'Your access to this channel just changed. Refresh and try again.',
-  'task_source_message_too_long' =>
-    asMessage
-        ? 'This message is too long to send as a task: shorten it.'
-        : 'These titles are too long to post as one message: shorten them or create fewer at once.',
-  _ => userErrorText(
-    error,
-    fallback: 'Failed to create task',
-    where: 'create task',
-  ),
-};
+String createTaskFailureText(Object error, {bool asMessage = false}) =>
+    switch (serverErrorCode(error)) {
+      'membership_required' => 'Join this channel to create tasks in it: a new task posts its titles here as your message.',
+      'quota_read_only' => "This channel is read-only on your current plan, so tasks can't be created in it.",
+      'channel_archived' =>
+        'This channel is archived: unarchive it to create tasks in it.',
+      'channel_access_changed' =>
+        'Your access to this channel just changed. Refresh and try again.',
+      'task_source_message_too_long' =>
+        asMessage ? 'This message is too long to send as a task: shorten it.' : 'These titles are too long to post as one message: shorten them or create fewer at once.',
+      _ => userErrorText(
+        error,
+        fallback: 'Failed to create task',
+        where: 'create task',
+      ),
+    };

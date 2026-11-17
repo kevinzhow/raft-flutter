@@ -636,31 +636,28 @@ void main() {
       LaneDetail.summary,
     );
 
-    test(
-      'a live row that hinges on the sender is unknown, once changed after the read',
-      () {
-        final live = task('live', extra: {'sourceMessageId': 'm1'});
-        final listed = task('listed', extra: {'sourceMessageId': 'm2'});
-        final r = read(lane, [listed], sequence: 1);
-        List<String> unknown(int Function(String) change) =>
-            laneUnknownIds([lane], [r], known([live, listed]), me, change);
-        expect(unknown((_) => 0), isEmpty);
-        expect(unknown((id) => id == 'live' ? 2 : 0), ['live']);
-        // Not placed meanwhile: an unknown fact reads as no match for an unlisted row.
-        expect(
-          ids(
-            mergedLaneTasks(
-              [lane],
-              [r],
-              known([live, listed]),
-              me,
-              (id) => id == 'live' ? 2 : 0,
-            ),
+    test('a live row that hinges on the sender is unknown, once changed after the read', () {
+      final live = task('live', extra: {'sourceMessageId': 'm1'});
+      final listed = task('listed', extra: {'sourceMessageId': 'm2'});
+      final r = read(lane, [listed], sequence: 1);
+      List<String> unknown(int Function(String) change) =>
+          laneUnknownIds([lane], [r], known([live, listed]), me, change);
+      expect(unknown((_) => 0), isEmpty);
+      expect(unknown((id) => id == 'live' ? 2 : 0), ['live']);
+      // Not placed meanwhile: an unknown fact reads as no match for an unlisted row.
+      expect(
+        ids(
+          mergedLaneTasks(
+            [lane],
+            [r],
+            known([live, listed]),
+            me,
+            (id) => id == 'live' ? 2 : 0,
           ),
-          ['listed'],
-        );
-      },
-    );
+        ),
+        ['listed'],
+      );
+    });
 
     test('lanes not yet read have nothing to learn', () {
       final live = task('live', extra: {'sourceMessageId': 'm1'});

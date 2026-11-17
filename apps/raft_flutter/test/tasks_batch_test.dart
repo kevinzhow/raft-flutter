@@ -63,40 +63,37 @@ void main() {
       }
     });
 
-    test(
-      'status: any writable task, but no todo to in_progress without an assignee',
-      () {
-        expect(can(const BatchStatus('done'), task('a')), isTrue);
-        expect(
-          can(
-            const BatchStatus('done'),
-            task('a', {'readOnlyReason': 'archived'}),
-          ),
-          isFalse,
-        );
-        expect(can(const BatchStatus('in_progress'), task('a')), isTrue);
-        final unassigned = task('a', {
-          'claimedById': null,
-          'claimedByType': null,
-        });
-        expect(can(const BatchStatus('in_progress'), unassigned), isFalse);
-        expect(
-          can(const BatchStatus('in_progress'), {
-            ...unassigned,
-            'claimedById': '',
-          }),
-          isFalse,
-        );
-        expect(can(const BatchStatus('done'), unassigned), isTrue);
-        expect(
-          can(const BatchStatus('in_progress'), {
-            ...unassigned,
-            'status': 'backlog',
-          }),
-          isTrue,
-        );
-      },
-    );
+    test('status: any writable task, but no todo to in_progress without an assignee', () {
+      expect(can(const BatchStatus('done'), task('a')), isTrue);
+      expect(
+        can(
+          const BatchStatus('done'),
+          task('a', {'readOnlyReason': 'archived'}),
+        ),
+        isFalse,
+      );
+      expect(can(const BatchStatus('in_progress'), task('a')), isTrue);
+      final unassigned = task('a', {
+        'claimedById': null,
+        'claimedByType': null,
+      });
+      expect(can(const BatchStatus('in_progress'), unassigned), isFalse);
+      expect(
+        can(const BatchStatus('in_progress'), {
+          ...unassigned,
+          'claimedById': '',
+        }),
+        isFalse,
+      );
+      expect(can(const BatchStatus('done'), unassigned), isTrue);
+      expect(
+        can(const BatchStatus('in_progress'), {
+          ...unassigned,
+          'status': 'backlog',
+        }),
+        isTrue,
+      );
+    });
 
     test('assignee: the capability, not done, writable', () {
       expect(can(const BatchAssignee(null), task('a')), isTrue);
@@ -352,36 +349,33 @@ void main() {
       writer = taskBatchWriter(store, server.call);
     });
 
-    test(
-      'status: PATCH /tasks/:id/status {status}, never claim; the task is applied',
-      () async {
-        server.answer = (_, _) => {
-          'task': task('a', {'status': 'done'}),
-        };
-        await runTaskBatch(
-          const BatchStatus('done'),
-          [task('a'), task('b')],
-          viewer,
-          perform: writer,
-        );
-        expect(server.requests..sort(), [
-          'PATCH /tasks/a/status',
-          'PATCH /tasks/b/status',
-        ]);
-        expect(server.bodies, everyElement({'status': 'done'}));
-        expect(store.knownById['a']!['status'], 'done');
-        // Into Backlog: still no reason, one status only.
-        server.requests.clear();
-        server.bodies.clear();
-        await runTaskBatch(
-          const BatchStatus('backlog'),
-          [task('c')],
-          viewer,
-          perform: writer,
-        );
-        expect(server.bodies.single, {'status': 'backlog'});
-      },
-    );
+    test('status: PATCH /tasks/:id/status {status}, never claim; the task is applied', () async {
+      server.answer = (_, _) => {
+        'task': task('a', {'status': 'done'}),
+      };
+      await runTaskBatch(
+        const BatchStatus('done'),
+        [task('a'), task('b')],
+        viewer,
+        perform: writer,
+      );
+      expect(server.requests..sort(), [
+        'PATCH /tasks/a/status',
+        'PATCH /tasks/b/status',
+      ]);
+      expect(server.bodies, everyElement({'status': 'done'}));
+      expect(store.knownById['a']!['status'], 'done');
+      // Into Backlog: still no reason, one status only.
+      server.requests.clear();
+      server.bodies.clear();
+      await runTaskBatch(
+        const BatchStatus('backlog'),
+        [task('c')],
+        viewer,
+        perform: writer,
+      );
+      expect(server.bodies.single, {'status': 'backlog'});
+    });
 
     test('the unassigned todo is not moved to in_progress at all', () async {
       final outcome = await runTaskBatch(
@@ -470,27 +464,24 @@ void main() {
       },
     );
 
-    test(
-      'a joint task has no direct conversation: the server answers its local one',
-      () async {
-        server.answer = (method, path) => path.endsWith('/conversation')
-            ? {'conversationChannelId': 'local'}
-            : {};
-        await runTaskBatch(
-          const BatchFollow(),
-          [
-            task('a', {
-              'channelType': 'joint',
-              'conversationChannelId': 'remote',
-            }),
-          ],
-          viewer,
-          perform: writer,
-        );
-        expect(server.requests.first, 'POST /tasks/a/conversation');
-        expect(server.bodies.last, {'threadChannelId': 'local'});
-      },
-    );
+    test('a joint task has no direct conversation: the server answers its local one', () async {
+      server.answer = (method, path) => path.endsWith('/conversation')
+          ? {'conversationChannelId': 'local'}
+          : {};
+      await runTaskBatch(
+        const BatchFollow(),
+        [
+          task('a', {
+            'channelType': 'joint',
+            'conversationChannelId': 'remote',
+          }),
+        ],
+        viewer,
+        perform: writer,
+      );
+      expect(server.requests.first, 'POST /tasks/a/conversation');
+      expect(server.bodies.last, {'threadChannelId': 'local'});
+    });
 
     test(
       'follow fails visibly when the conversation has no channel id',

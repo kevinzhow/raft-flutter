@@ -14,8 +14,7 @@ const tasksPageSurfaces = <CloseSurface>[
   CloseSurface(
     'tasks-page-filter-popover',
     kind: SurfaceKind.popup,
-    web:
-        'tasksPage/TasksPageToolbar.tsx Popover + ui/SelectionPopover.tsx (Channel, Status, Creator, Assignee): Esc, outside press',
+    web: 'tasksPage/TasksPageToolbar.tsx Popover + ui/SelectionPopover.tsx (Channel, Status, Creator, Assignee): Esc, outside press',
     phone: {_esc, _scrim, _sys},
     fold: {_esc, _scrim, _sys},
     desktop: {_esc, _scrim, _sys},
@@ -27,8 +26,7 @@ const tasksPageSurfaces = <CloseSurface>[
   CloseSurface(
     'tasks-page-sort-menu',
     kind: SurfaceKind.popup,
-    web:
-        'tasksPage/TasksPageToolbar.tsx SortPicker (Select): Esc, outside press',
+    web: 'tasksPage/TasksPageToolbar.tsx SortPicker (Select): Esc, outside press',
     fold: {_esc, _scrim, _sys},
     desktop: {_esc, _scrim, _sys},
     none: {'phone': _atNarrow},
@@ -37,8 +35,7 @@ const tasksPageSurfaces = <CloseSurface>[
   CloseSurface(
     'tasks-page-more-menu',
     kind: SurfaceKind.popup,
-    web:
-        'ui/ListToolbarParts.tsx ListToolbarMore (DropdownMenu): Esc, outside press',
+    web: 'ui/ListToolbarParts.tsx ListToolbarMore (DropdownMenu): Esc, outside press',
     phone: {_esc, _scrim, _sys},
     none: {
       'fold': 'the sort and the view fit the line, More is hidden',
@@ -60,8 +57,7 @@ const tasksPageSurfaces = <CloseSurface>[
   CloseSurface(
     'tasks-batch-status-menu',
     kind: SurfaceKind.popup,
-    web:
-        'tasksPage/TasksSelectionBar.tsx Status DropdownMenu (opens upward): Esc, outside press',
+    web: 'tasksPage/TasksSelectionBar.tsx Status DropdownMenu (opens upward): Esc, outside press',
     phone: {_esc, _scrim, _sys},
     fold: {_esc, _scrim, _sys},
     desktop: {_esc, _scrim, _sys},
@@ -73,8 +69,7 @@ const tasksPageSurfaces = <CloseSurface>[
   CloseSurface(
     'tasks-batch-assignee-picker',
     kind: SurfaceKind.popup,
-    web:
-        'tasksPage/TasksSelectionBar.tsx Assignee Popover + SelectionPopover (searchable, opens upward): Esc, outside press',
+    web: 'tasksPage/TasksSelectionBar.tsx Assignee Popover + SelectionPopover (searchable, opens upward): Esc, outside press',
     phone: {_esc, _scrim, _sys},
     fold: {_esc, _scrim, _sys},
     desktop: {_esc, _scrim, _sys},
@@ -87,8 +82,7 @@ const tasksPageSurfaces = <CloseSurface>[
     'tasks-batch-delete-confirm',
     kind: SurfaceKind.dialog,
     webOutside: WebOutside.stays,
-    web:
-        'task/TaskDeleteConfirmDialog.tsx (batch Delete of tasksPage/TasksSelectionBar.tsx): X + Esc, no scrim close, gated while deleting',
+    web: 'task/TaskDeleteConfirmDialog.tsx (batch Delete of tasksPage/TasksSelectionBar.tsx): X + Esc, no scrim close, gated while deleting',
     phone: {_x, _esc, _sys},
     fold: {_x, _esc, _sys},
     desktop: {_x, _esc, _sys},
@@ -101,14 +95,12 @@ const tasksPageSurfaces = <CloseSurface>[
     'tasks-page-new-task',
     kind: SurfaceKind.dialog,
     webOutside: WebOutside.stays,
-    web:
-        'task/DeferredCreateTaskDialog (CreateTaskMessageDialog) opened by TasksPageToolbar New task: X + Esc, no backdrop close',
+    web: 'task/DeferredCreateTaskDialog (CreateTaskMessageDialog) opened by TasksPageToolbar New task: X + Esc, no backdrop close',
     phone: {_x, _esc, _scrim, _sys, Affordance.drag},
     fold: {_x, _esc, _scrim, _sys},
     desktop: {_x, _esc, _sys},
     status: 'approved',
-    fix:
-        'a sheet on a phone, as every form: its scrim press and drag down close it',
+    fix: 'a sheet on a phone, as every form: its scrim press and drag down close it',
     files: [
       'lib/features/tasks_page/tasks_page.dart',
       'lib/features/create_task_message_dialog.dart',

@@ -550,45 +550,39 @@ void main() {
       expect(api.countReads, 4);
     });
 
-    test(
-      'board: columns are the sum over relations; a search reads none of the view',
-      () async {
-        final api = FakeApi();
-        api.handler = (_, q) => {
-          'counts': {
-            'todo': 1,
-            'done': q['relation'] == 'created_by_me' ? 5 : 0,
-          },
-        };
-        final plan = TasksCountsPlan(
-          TasksPageTab.mine,
-          TasksPageView.board,
-          PageFilters.none,
-          '2026-11-16T00:00:00.000Z',
-        );
-        final s = await loaded(plan, api);
-        final c = s.countsOf(plan);
-        expect(c.columns, {
-          'backlog': 0,
-          'todo': 3,
-          'in_progress': 0,
-          'done': 5,
-          'closed': 0,
-        });
-        expect(c.shown, 8);
-        final searching = TasksCountsPlan(
-          TasksPageTab.all,
-          TasksPageView.list,
-          const PageFilters(query: 'x'),
-          '2026-11-16T00:00:00.000Z',
-        );
-        expect(searching.viewSets, isEmpty);
-        final read = s.countsOf(searching);
-        expect(read.searching, isTrue);
-        expect(read.shown, isNull);
-        expect(read.sections, isNull);
-      },
-    );
+    test('board: columns are the sum over relations; a search reads none of the view', () async {
+      final api = FakeApi();
+      api.handler = (_, q) => {
+        'counts': {'todo': 1, 'done': q['relation'] == 'created_by_me' ? 5 : 0},
+      };
+      final plan = TasksCountsPlan(
+        TasksPageTab.mine,
+        TasksPageView.board,
+        PageFilters.none,
+        '2026-11-16T00:00:00.000Z',
+      );
+      final s = await loaded(plan, api);
+      final c = s.countsOf(plan);
+      expect(c.columns, {
+        'backlog': 0,
+        'todo': 3,
+        'in_progress': 0,
+        'done': 5,
+        'closed': 0,
+      });
+      expect(c.shown, 8);
+      final searching = TasksCountsPlan(
+        TasksPageTab.all,
+        TasksPageView.list,
+        const PageFilters(query: 'x'),
+        '2026-11-16T00:00:00.000Z',
+      );
+      expect(searching.viewSets, isEmpty);
+      final read = s.countsOf(searching);
+      expect(read.searching, isTrue);
+      expect(read.shown, isNull);
+      expect(read.sections, isNull);
+    });
 
     test('failed only when a view set has nothing to show', () {
       fakeAsync((async) {

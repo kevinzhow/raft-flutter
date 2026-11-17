@@ -20,8 +20,10 @@ import '../server_task_scope.dart';
 import 'tasks_page_model.dart';
 
 /// GET [path] with [query]: the controller's `query` by default.
-typedef TasksQuery =
-    Future<dynamic> Function(String path, Map<String, dynamic> query);
+typedef TasksQuery = Future<dynamic> Function(
+  String path,
+  Map<String, dynamic> query,
+);
 
 /// After live task changes the counts are read again at most this often.
 const countsRefreshMinInterval = Duration(seconds: 10);
@@ -767,9 +769,8 @@ extension TasksPageCountsRead on TasksPageStore {
           for (final s in boardStatuses)
             s: slotData.fold<int>(0, (sum, d) => sum + d!.statuses[s]!),
         };
-        shown = boardColumns(
-          plan.filters,
-        ).fold<int>(0, (t, s) => t + columns![s]!);
+        shown = boardColumns(plan.filters)
+            .fold<int>(0, (t, s) => t + columns![s]!);
       }
     } else if (plan.tab == TasksPageTab.all) {
       shown = slotData.isEmpty ? null : slotData[0]?.total;

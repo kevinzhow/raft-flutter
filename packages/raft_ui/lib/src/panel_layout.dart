@@ -119,9 +119,9 @@ class RaftInfoRow extends StatelessWidget {
   }
 
   /// [detailsStyleOf] in the mono face (`font-mono`).
-  static TextStyle monoStyleOf(BuildContext context) => detailsStyleOf(
-    context,
-  ).copyWith(fontFamily: RaftTokens.of(context).monoFont);
+  static TextStyle monoStyleOf(BuildContext context) =>
+      detailsStyleOf(context)
+          .copyWith(fontFamily: RaftTokens.of(context).monoFont);
 
   /// [detailsStyleOf] in `text-foreground-muted`.
   static TextStyle mutedStyleOf(BuildContext context) {

@@ -364,9 +364,8 @@ void main() {
       await settleTasks(t);
       expect(searched(), greaterThan(0));
       expect(
-        {
-          for (final r in server.taskReads) r.queryParameters['q'],
-        }.difference({null}),
+        {for (final r in server.taskReads) r.queryParameters['q']}
+            .difference({null}),
         {'Task a'},
       );
       // The x: at once, no wait.

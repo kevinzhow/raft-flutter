@@ -725,12 +725,12 @@ class RaftTaskSectionBadge extends StatelessWidget {
       // column's label in `foreground-muted`, the list section's in
       // `foreground-hint`; the status pixel in front.
       final ink = board
-          ? RaftTaskBoardColumnRecipe.resolve(
-              tokens: rt,
-            ).badge.textStyle(rt).color
-          : RaftTaskListSectionRecipe.resolve(
-              tokens: rt,
-            ).badge.textStyle(rt).color;
+          ? RaftTaskBoardColumnRecipe.resolve(tokens: rt).badge
+                .textStyle(rt)
+                .color
+          : RaftTaskListSectionRecipe.resolve(tokens: rt).badge
+                .textStyle(rt)
+                .color;
       return Row(
         mainAxisSize: MainAxisSize.min,
         spacing: 8,

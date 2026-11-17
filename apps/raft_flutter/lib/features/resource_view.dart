@@ -1746,9 +1746,8 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
           ? null
           : totalUnreadCount! + next.delta;
       rows = next.window;
-      acceptedActivityItems = ActivityRowWindow.from(
-        acceptedActivityItems,
-      ).replaceKey(key, next.row);
+      acceptedActivityItems = ActivityRowWindow.from(acceptedActivityItems)
+          .replaceKey(key, next.row);
     });
   }
 

@@ -119,41 +119,38 @@ void main() {
       );
     }
 
-    test(
-      'reads each lane to its end, 500 summaries a page, rows kept in the store',
-      () async {
-        serve(
-          (q) => q['cursor'] == null
-              ? {
-                  'tasks': [task('a'), task('b')],
-                  'next_cursor': 'p2',
-                }
-              : {
-                  'tasks': [task('c')],
-                  'next_cursor': null,
-                },
-        );
-        final other = LaneSpec(
-          const ServerTaskFilters(statuses: ['done']),
-          ServerTaskSort.activity,
-          LaneDetail.full,
-        );
-        final read = await readAllLaneTaskIds(store, [lane, other]);
-        expect(read.ids, ['a', 'b', 'c']);
-        expect(read.complete, isTrue);
-        expect(read.capped, isFalse);
-        expect(asked.first, {
-          'status': 'todo',
-          'sort': 'activity',
-          'limit': '500',
-          'detail': 'summary',
-        });
-        expect(asked[1]['cursor'], 'p2');
-        // The other lane is a full lane but Select all reads summaries.
-        expect(asked[2]['detail'], 'summary');
-        expect(store.knownById.keys, containsAll(['a', 'b', 'c']));
-      },
-    );
+    test('reads each lane to its end, 500 summaries a page, rows kept in the store', () async {
+      serve(
+        (q) => q['cursor'] == null
+            ? {
+                'tasks': [task('a'), task('b')],
+                'next_cursor': 'p2',
+              }
+            : {
+                'tasks': [task('c')],
+                'next_cursor': null,
+              },
+      );
+      final other = LaneSpec(
+        const ServerTaskFilters(statuses: ['done']),
+        ServerTaskSort.activity,
+        LaneDetail.full,
+      );
+      final read = await readAllLaneTaskIds(store, [lane, other]);
+      expect(read.ids, ['a', 'b', 'c']);
+      expect(read.complete, isTrue);
+      expect(read.capped, isFalse);
+      expect(asked.first, {
+        'status': 'todo',
+        'sort': 'activity',
+        'limit': '500',
+        'detail': 'summary',
+      });
+      expect(asked[1]['cursor'], 'p2');
+      // The other lane is a full lane but Select all reads summaries.
+      expect(asked[2]['detail'], 'summary');
+      expect(store.knownById.keys, containsAll(['a', 'b', 'c']));
+    });
 
     test('a task in two lanes is counted once', () async {
       serve(

@@ -199,8 +199,11 @@ Future<void> Function(BatchAction, Map<String, dynamic>) taskBatchPerformer(
 );
 
 /// A write to the server: the controller client's `request`.
-typedef TaskBatchRequest =
-    Future<dynamic> Function(String method, String path, {dynamic data});
+typedef TaskBatchRequest = Future<dynamic> Function(
+  String method,
+  String path, {
+  dynamic data,
+});
 
 /// One task's write for the action over [request], its answer applied to
 /// [store] at once (so the page updates before the socket's event). A

@@ -110,9 +110,8 @@ void main() {
                 ? const ValueKey('tasks-page-failed')
                 : const ValueKey('tasks-page-empty');
             expect(find.byKey(key), findsOneWidget);
-            final canvas = RaftTokens.of(
-              t.element(find.byKey(key)),
-            ).colors['layer-canvas'];
+            final canvas = RaftTokens.of(t.element(find.byKey(key)))
+                .colors['layer-canvas'];
             final fill = t.widget<ColoredBox>(
               find
                   .descendant(

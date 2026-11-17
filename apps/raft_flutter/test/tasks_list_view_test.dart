@@ -342,9 +342,8 @@ void main() {
       );
       await settleTasks(t);
       Color? fill(String id) =>
-          ((t.widget<DecoratedBox>(
-                    find.byKey(Key('tasks-page-row-cell-$id')),
-                  )).decoration
+          ((t.widget<DecoratedBox>(find.byKey(Key('tasks-page-row-cell-$id'))))
+                      .decoration
                   as BoxDecoration)
               .color;
       final tokens = RaftTokens.of(t.element(row('a1')));

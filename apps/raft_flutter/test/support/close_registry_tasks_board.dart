@@ -10,8 +10,7 @@ const tasksBoardSurfaces = <CloseSurface>[
   CloseSurface(
     'tasks-board-backlog-reason',
     kind: SurfaceKind.popup,
-    web:
-        'task/tasksPage/TasksBoardView.tsx + task/TaskBacklogReasonPopover.tsx Popover (Base UI): a card dropped on Backlog, the popover anchored at the Backlog column heading; Esc, outside press, Cancel; busy while the write runs',
+    web: 'task/tasksPage/TasksBoardView.tsx + task/TaskBacklogReasonPopover.tsx Popover (Base UI): a card dropped on Backlog, the popover anchored at the Backlog column heading; Esc, outside press, Cancel; busy while the write runs',
     phone: {_esc, _scrim, _sys},
     fold: {_esc, _scrim, _sys},
     desktop: {_esc, _scrim, _sys},
