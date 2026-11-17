@@ -5,9 +5,12 @@ import 'dart:ui' show PointerDeviceKind;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:raft_flutter/features/activity_first_unread.dart';
 import 'package:raft_flutter/features/resource_view.dart';
 import 'package:raft_flutter/features/tab_root_retap.dart';
+import 'package:raft_ui/raft_ui.dart';
 
+import 'activity_incremental_refresh_test.dart' show channelRow;
 import 'app_global_server_selector_test.dart' show RootFixture;
 import 'support/server_tab.dart';
 
@@ -154,6 +157,29 @@ void main() {
     expect(scroller.position.pixels, 0);
     expect(w.location.toString(), where);
     expect(w.navigation.index, index);
+    await f.close(t);
+  });
+
+  // Web activityRetap: Activity's own step replaces the scroll to the top.
+  testWidgets('Activity: re-tap locates the next unread row', (t) async {
+    final f = fixture();
+    f.overrides['GET /channels/inbox'] = (_) => {
+      'items': [
+        for (var i = 0; i < 30; i++) channelRow(i, unread: i == 12 ? 3 : 0),
+      ],
+      'hasMore': false,
+      'totalUnreadCount': 3,
+    };
+    await mount(f, t);
+    await tapTab(f, t, 'activity');
+    final row = find.byKey(const ValueKey('activity-channel-ch12'));
+    expect(row, findsNothing, reason: 'below the first screen');
+    await t.tap(find.byKey(const Key('mobile-tab-activity')));
+    await f.flush(t);
+    await settle(t);
+    expect(t.widget<RaftInboxItem>(row).located, isTrue);
+    expect(t.getRect(row).top, lessThan(400));
+    await t.pump(ActivityFirstUnread.locatedDuration);
     await f.close(t);
   });
 

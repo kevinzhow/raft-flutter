@@ -4,15 +4,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:raft_ui/raft_ui.dart';
-import 'package:url_launcher/url_launcher.dart';
 
-import '../platform/content_links.dart';
 import 'icu_message.dart';
 import 'sender_avatar_projection.dart';
-
-/// Opens a Web address. Tests replace it.
-Future<bool> Function(Uri) savedOpenWeb = (uri) =>
-    launchUrl(uri, mode: LaunchMode.externalApplication);
 
 /// `PLAN_CONFIG.free.limits.messageHistoryDays` (SavedPanel `FREE_HISTORY_DAYS`).
 const savedFreeHistoryDays = 30;
@@ -58,13 +52,6 @@ class SavedHistoryBanner extends StatelessWidget {
       ),
     );
   }
-}
-
-/// The Web Plan & Billing page of this server.
-Uri? savedBillingUri({required String origin, required String slug}) {
-  if (slug.isEmpty) return null;
-  final web = ContentLinks.originFor(origin);
-  return web.replace(path: '/s/$slug/settings/billing');
 }
 
 /// SavedItem: meta row (`SAVED_ROW_META_CLASS`), message up to three lines and

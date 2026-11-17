@@ -36,6 +36,7 @@ import '../data/server_task_window.dart';
 import '../data/server_saved_window.dart';
 import 'server_task_scope.dart';
 import 'saved_page_rows.dart';
+import 'workspace_web_billing.dart';
 import 'saved_page_scope.dart';
 import '../data/task_board_reconcile.dart';
 import '../data/task_view_mode_preference.dart';
@@ -2807,20 +2808,11 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
       ? SavedHistoryBanner(
           count: historyHiddenCount,
           listEmpty: rows.isEmpty,
-          onUpgrade: () async {
-            final uri = savedBillingUri(
-              origin: w.client.origin,
-              slug: w.server?.string('slug') ?? '',
-            );
-            // Web's in-app upgrade cannot fail to open: say so, never no-op.
-            final opened =
-                uri != null && await savedOpenWeb(uri).catchError((_) => false);
-            if (!opened) {
-              if (mounted) {
-                showRaftToast(context, 'Could not open this address.');
-              }
-            }
-          },
+          // Web HistoryWindowBanner: paywallUpgrade("history_30d", "saved").
+          // Payment is on the Web; a browser that cannot open says so.
+          onUpgrade: () => unawaited(
+            openWebBillingOrToast(context, w, gate: WebBillingGate.history),
+          ),
         )
       : null;
 
@@ -3208,6 +3200,8 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
     retapBinding.bind(
       here ? tab : null,
       () => switch (tab) {
+        // Web activityRetap: the next unread row, then back to the top.
+        'activity' => unawaited(ActivityRetap.of(w).trigger()),
         'tasks' => retapScroll(taskListScroll),
         'search' => retapScroll(searchScroll, atTop: focusSearchField),
         _ => retapScroll(listScroll),

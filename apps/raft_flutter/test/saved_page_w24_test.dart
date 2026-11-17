@@ -9,7 +9,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/features/resource_view.dart';
-import 'package:raft_flutter/features/saved_page_rows.dart';
+import 'package:raft_flutter/platform/web_billing.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 class _Api extends RaftClient {
@@ -181,12 +181,12 @@ void main() {
 
   testWidgets('Upgrade to Pro opens the Web billing settings', (t) async {
     final opened = <Uri>[];
-    final previous = savedOpenWeb;
-    savedOpenWeb = (uri) async {
+    final previous = webBillingLauncher;
+    webBillingLauncher = (uri) async {
       opened.add(uri);
       return true;
     };
-    addTearDown(() => savedOpenWeb = previous);
+    addTearDown(() => webBillingLauncher = previous);
     w.saved = () => {
       'saved': [_row('a')],
       'total': 1,
@@ -197,15 +197,17 @@ void main() {
     await t.pumpAndSettle();
     expect(opened, hasLength(1));
     expect(opened.single.path, '/s/acme/settings/billing');
+    // Web paywallUpgrade("history_30d", "saved").
+    expect(opened.single.queryParameters['upgrade'], 'history_30d');
     expect(t.takeException(), isNull);
   });
 
   // Behaviour rule (Kevin 537b93f1): Web's Upgrade cannot fail to open; a
   // browser that refuses the link must say so, not do nothing.
   testWidgets('Upgrade to Pro says so when the browser cannot open', (t) async {
-    final previous = savedOpenWeb;
-    savedOpenWeb = (uri) async => false;
-    addTearDown(() => savedOpenWeb = previous);
+    final previous = webBillingLauncher;
+    webBillingLauncher = (uri) async => false;
+    addTearDown(() => webBillingLauncher = previous);
     w.saved = () => {
       'saved': [_row('a')],
       'total': 1,
