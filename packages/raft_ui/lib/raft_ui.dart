@@ -206,6 +206,15 @@ export 'src/report_issue_dialog.dart';
 export 'src/sos_dialog.dart';
 
 export 'src/avatar_content.dart';
+export 'src/human_avatar_recipe.dart';
+export 'src/human_pixel_avatar.dart'
+    show
+        RaftHumanPixelAvatar,
+        RaftHumanPixelPainter,
+        raftHumanAvatarImage,
+        raftReleaseHumanAvatarImages;
+export 'src/human_avatar_art.dart'
+    show RaftHumanAvatarPixels, composeRaftHumanAvatar;
 export 'src/avatar_image_cache.dart';
 export 'src/sized_image.dart';
 

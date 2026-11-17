@@ -3,6 +3,8 @@ import 'package:flutter/foundation.dart';
 
 import 'avatar_pixel_data.dart';
 import 'avatar_image_cache.dart';
+import 'human_avatar_recipe.dart' show isHumanAvatarUrl;
+import 'human_pixel_avatar.dart';
 import 'icons.dart';
 import 'sized_image.dart';
 
@@ -27,7 +29,9 @@ class RaftAvatarContent extends StatelessWidget {
   /// Authorized adapter-resolved public URL; never an attachment capability.
   final String? uploadedUrl, gravatarUrl;
 
-  /// Parsed source pixel key, e.g. robot or random:seed (no pixel: prefix).
+  /// An agent's parsed source pixel key, e.g. robot or random:seed (no pixel:
+  /// prefix). For a person, their built avatar's stored value
+  /// (`pixel-human:v1:...`), drawn from its recipe (Web PersonAvatar).
   final String? pixelKey;
   final Widget? fallback;
 
@@ -121,11 +125,17 @@ class RaftAvatarContent extends StatelessWidget {
           ? _image(uploadedUrl!, empty, () => empty)
           : empty;
     }
-    Widget gravatar() => _publicUrl(gravatarUrl)
-        ? _image(gravatarUrl!, empty, () => empty)
+    // A person's stored photo, else the avatar they built, else the User
+    // placeholder (a photo that fails to load is the placeholder too).
+    final built = pixelKey;
+    final person = isHumanAvatarUrl(built)
+        ? RaftHumanPixelAvatar(avatarUrl: built!, fallback: empty)
         : empty;
+    Widget gravatar() => _publicUrl(gravatarUrl)
+        ? _image(gravatarUrl!, person, () => person)
+        : person;
     return _publicUrl(uploadedUrl) && isUploadedHumanAvatar(uploadedUrl)
-        ? _image(uploadedUrl!, empty, gravatar)
+        ? _image(uploadedUrl!, person, gravatar)
         : gravatar();
   }
 }

@@ -66,7 +66,7 @@ void main() {
     expect(emailOnly.uploadedUrl, isNull);
     expect(emailOnly.pixelKey, isNull);
     expect(
-      raftHumanAvatarSource('pixel-human:v1:eyes=round'),
+      raftHumanAvatarSource('pixel-human:v1:yellow.2.short.ink.wink.cap.none'),
       RaftHumanAvatarSource.pixel,
     );
     expect(

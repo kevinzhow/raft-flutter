@@ -1,0 +1,19 @@
+{
+  "sizes": [
+    112,
+    99,
+    56,
+    40,
+    24,
+    17
+  ],
+  "recipes": {
+    "default": "pixel-human:v1:yellow.2.short.ink.wink.cap.none",
+    "sky_glasses": "pixel-human:v1:sky.3.curly.brown.grin.headphones.glasses",
+    "pink_long": "pixel-human:v1:pink.5.long.blonde.blush.none.glasses",
+    "mint_bun": "pixel-human:v1:mint.1.bun.ginger.oh.beanie.none",
+    "lilac_buzz": "pixel-human:v1:lilac.4.buzz.grey.smirk.none.none",
+    "cream_side": "pixel-human:v1:cream.2.side.ink.calm.cap.glasses/auto",
+    "yellow_happy": "pixel-human:v1:yellow.3.short.grey.happy.none.none"
+  }
+}

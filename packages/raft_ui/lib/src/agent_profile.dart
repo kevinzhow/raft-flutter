@@ -25,6 +25,7 @@ import 'package:flutter/services.dart';
 
 import 'system_inset.dart';
 import 'avatar_content.dart';
+import 'human_avatar_recipe.dart' show isHumanAvatarUrl;
 import 'icons.dart';
 import 'profile_link.dart';
 import 'inline_badge_editor.dart';
@@ -348,8 +349,14 @@ class RaftAvatarSlot extends StatelessWidget {
           kind: agent
               ? RaftAvatarContentKind.agent
               : RaftAvatarContentKind.human,
-          pixelKey: key,
-          uploadedUrl: key == null ? avatarUrl : null,
+          pixelKey: agent
+              ? key
+              : isHumanAvatarUrl(avatarUrl)
+              ? avatarUrl
+              : null,
+          uploadedUrl: key == null && !isHumanAvatarUrl(avatarUrl)
+              ? avatarUrl
+              : null,
           fallback: Center(
             child: RaftIcon(
               agent ? RaftGlyph.bot : RaftGlyph.user,

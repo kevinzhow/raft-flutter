@@ -1,3 +1,5 @@
+import 'package:raft_ui/raft_ui.dart' show isHumanAvatarUrl;
+
 import 'external_sender.dart';
 import 'public_avatar_url.dart';
 
@@ -16,6 +18,10 @@ class SenderAvatarProjection {
     this.pixelKey,
   });
   final String identity, kind;
+
+  /// [pixelKey] is an agent's sprite key (no `pixel:` prefix); for a person it
+  /// is their built avatar's stored value (`pixel-human:v1:...`), which
+  /// RaftAvatarContent draws from its recipe.
   final String? uploadedUrl, pixelKey;
 }
 
@@ -37,9 +43,7 @@ enum RaftHumanAvatarSource { uploaded, pixel, placeholder }
 
 RaftHumanAvatarSource raftHumanAvatarSource(String? avatarUrl) {
   if (raftUploadedHumanAvatar(avatarUrl)) return RaftHumanAvatarSource.uploaded;
-  if (avatarUrl != null && avatarUrl.startsWith('pixel-human:v1:')) {
-    return RaftHumanAvatarSource.pixel;
-  }
+  if (isHumanAvatarUrl(avatarUrl)) return RaftHumanAvatarSource.pixel;
   return RaftHumanAvatarSource.placeholder;
 }
 
@@ -105,6 +109,11 @@ SenderAvatarProjection projectSenderAvatar({
     kind: 'human',
     uploadedUrl: humanUrl is String && raftUploadedHumanAvatar(humanUrl)
         ? raftPublicAvatarUrl(origin, humanUrl)
+        : null,
+    pixelKey:
+        raftHumanAvatarSource(humanUrl is String ? humanUrl : null) ==
+            RaftHumanAvatarSource.pixel
+        ? humanUrl as String
         : null,
   );
 }

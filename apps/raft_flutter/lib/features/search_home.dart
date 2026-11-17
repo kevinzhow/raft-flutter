@@ -226,6 +226,18 @@ class _ResourceSearchHomeState extends State<ResourceSearchHome> {
                                   widget.origin,
                                   entity.row['avatarUrl'] as String?,
                                 ),
+                                // A person's built avatar (Web EntityResultRow
+                                // PersonAvatar).
+                                content:
+                                    entity.kind != 'agent' &&
+                                        isHumanAvatarUrl(
+                                          entity.row['avatarUrl'] as String?,
+                                        )
+                                    ? RaftHumanPixelAvatar(
+                                        avatarUrl:
+                                            entity.row['avatarUrl'] as String,
+                                      )
+                                    : null,
                               ),
                             const SizedBox(width: 12),
                             Expanded(

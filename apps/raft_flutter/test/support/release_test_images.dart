@@ -1,6 +1,7 @@
 import 'package:flutter/painting.dart' show imageCache;
 import 'package:flutter/scheduler.dart' show SchedulerBinding;
-import 'package:raft_ui/raft_ui.dart' show RaftHotImages, RaftImageBytes;
+import 'package:raft_ui/raft_ui.dart'
+    show RaftHotImages, RaftImageBytes, raftReleaseHumanAvatarImages;
 
 /// Empties every image holder a test can leave behind, and lets the engine
 /// release what it held. Runs after every test (see `flutter_test_config.dart`).
@@ -19,6 +20,7 @@ import 'package:raft_ui/raft_ui.dart' show RaftHotImages, RaftImageBytes;
 /// ImageStreamCompleterHandle. Drive one frame after clearing.
 Future<void> releaseTestImages() async {
   RaftHotImages.instance.releaseAll();
+  raftReleaseHumanAvatarImages();
   RaftImageBytes.instance = RaftImageBytes();
   RaftImageBytes.resetClient();
   imageCache
