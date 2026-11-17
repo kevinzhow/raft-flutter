@@ -27,6 +27,8 @@ import 'recipes/token_binding.dart';
 import 'settings_layout.dart';
 import 'sized_image.dart';
 import 'theme.dart' hide RaftFieldRecipe;
+import 'agent_profile.dart' show RaftAvatarSlot, RaftAvatarSlotContext;
+import 'token_geometry.dart';
 import 'tooltip.dart' show RaftTooltip;
 
 /// Recipe-driven controls the Settings pages compose. Every geometry, colour
@@ -864,6 +866,7 @@ class RaftServerProfileTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (onUpload == null) return _tile(context);
+    final t = RaftTokens.of(context);
     // The control is labelled by its action, not by the initial it paints.
     final tile = ExcludeSemantics(child: _tile(context));
     final label = raftText(context, busy ? busyLabel : uploadLabel);
@@ -882,19 +885,16 @@ class RaftServerProfileTile extends StatelessWidget {
                 tile,
                 if (active && !busy)
                   Positioned.fill(
-                    child: Padding(
-                      padding: const EdgeInsets.all(2),
-                      child: DecoratedBox(
-                        decoration: BoxDecoration(
-                          color: const Color(0x66000000),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Center(
-                          child: RaftIcon(
-                            RaftGlyph.upload,
-                            size: 18,
-                            color: Color(0xFFFFFFFF),
-                          ),
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: const Color(0x66000000),
+                        borderRadius: t.corner('radius.sticker', fallback: 4),
+                      ),
+                      child: const Center(
+                        child: RaftIcon(
+                          RaftGlyph.upload,
+                          size: 18,
+                          color: Color(0xFFFFFFFF),
                         ),
                       ),
                     ),
@@ -909,50 +909,37 @@ class RaftServerProfileTile extends StatelessWidget {
 
   Widget _tile(BuildContext context) {
     final t = RaftTokens.of(context);
-    Widget image(Widget fallback) => imageUrl == null
-        ? fallback
-        : RaftSizedImage.avatar(
-            imageUrl!,
-            fit: BoxFit.cover,
-            errorBuilder: (_, _, _) => fallback,
-          );
-    // Elegant Avatar (human recipe): `border-2 border-transparent
-    // bg-clip-padding`, the `rounded-full bg-fill-muted` fallback whose
-    // `text-sm text-foreground-placeholder/70` wins over the slot's
-    // text-2xl (font-display bold carries through).
-    return SizedBox.square(
-      dimension: 64,
-      child: Padding(
-        padding: const EdgeInsets.all(2),
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: t.colors['fill-muted'],
-            shape: BoxShape.circle,
-          ),
-          child: ClipOval(
-            child: image(
-              Center(
-                child: Text(
-                  initial,
-                  style:
-                      RaftTypography.heading(
-                        t,
-                        size: 14,
-                        line: 20,
-                        weight: FontWeight.w700,
-                      ).copyWith(
-                        color: t.colors['foreground-placeholder']!.withValues(
-                          alpha: t.colors['foreground-placeholder']!.a * .7,
-                        ),
-                      ),
-                ),
-              ),
-            ),
-          ),
+    // AvatarSlot `profile-tile` type="server" at the `lg` step (51): the
+    // server tile (ink fill and edge, server-avatar initial at 22px bold).
+    final initialText = Center(
+      child: Text(
+        initial,
+        style: RaftTypography.heading(
+          t,
+          size: 22,
+          line: 28,
+          weight: FontWeight.w700,
+          color: t.colors['foreground-avatar-server'] ?? t.strong,
         ),
       ),
     );
+    return RaftAvatarSlot(
+      name: initial,
+      slot: RaftAvatarSlotContext.mentionCard,
+      agent: false,
+      server: true,
+      sizeOverride: _extent,
+      content: imageUrl == null
+          ? initialText
+          : RaftSizedImage.avatar(
+              imageUrl!,
+              fit: BoxFit.cover,
+              errorBuilder: (_, _, _) => initialText,
+            ),
+    );
   }
+
+  static const double _extent = 51;
 }
 
 /// SettingsPanel.tsx preference block (`space-y-3`): a `text-sm font-bold`
