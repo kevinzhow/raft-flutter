@@ -143,34 +143,35 @@ class RaftServerLabsSection extends StatelessWidget {
             decoration: BoxDecoration(
               border: Border(bottom: BorderSide(color: masterLine, width: 2)),
             ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        raftText(context, 'Server labs access'),
-                        style: text.title,
-                      ),
-                      if (!canSetMaster) ...[
-                        const SizedBox(height: 4),
+            // LabsSection.tsx:154 (v1.24): `flex min-h-8 items-center`.
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 32),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
                         Text(
-                          raftText(
-                            context,
-                            'Only server owners can change the master gate.',
-                          ),
-                          style: note,
+                          raftText(context, 'Server labs access'),
+                          style: text.title,
                         ),
+                        if (!canSetMaster) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            raftText(
+                              context,
+                              'Only server owners can change the master gate.',
+                            ),
+                            style: note,
+                          ),
+                        ],
                       ],
-                    ],
+                    ),
                   ),
-                ),
-                const SizedBox(width: 16),
-                Padding(
-                  padding: const EdgeInsets.only(top: 2),
-                  child: RaftSwitch(
+                  const SizedBox(width: 16),
+                  RaftSwitch(
                     key: const ValueKey('server-labs-master'),
                     value: masterEnabled,
                     size: RaftSwitchSize.md,
@@ -178,8 +179,8 @@ class RaftServerLabsSection extends StatelessWidget {
                     semanticLabel: raftText(context, 'Server labs access'),
                     onChanged: onMasterChanged,
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
           const SizedBox(height: 16),
@@ -209,7 +210,8 @@ class RaftServerLabsSection extends StatelessWidget {
                 child: Opacity(
                   opacity: lab.editable ? 1 : .6,
                   child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    // ServerLabRow.tsx:38 (v1.24): `items-center`.
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       Expanded(
                         child: Column(
@@ -236,10 +238,13 @@ class RaftServerLabsSection extends StatelessWidget {
                       const SizedBox(width: 16),
                       SizedBox(
                         width: 44,
-                        child: Padding(
-                          padding: const EdgeInsets.only(top: 2),
-                          child: Align(
-                            alignment: Alignment.topRight,
+                        // ServerLabRow.tsx:51-63: a disabled lab carries its
+                        // reason as a tooltip on the switch.
+                        child: Align(
+                          alignment: Alignment.centerRight,
+                          child: RaftTooltip(
+                            message: raftText(context, lab.disabledReason),
+                            enabled: lab.disabledReason.isNotEmpty,
                             child: RaftSwitch(
                               value: lab.checked,
                               size: RaftSwitchSize.md,
@@ -471,7 +476,8 @@ class RaftMessagingBridgesSection extends StatelessWidget {
             size: RaftBannerRecipeSize.lg,
             glyph: RaftGlyph.circleAlert,
             title: 'Raft for Slack',
-            description: 'The Slack bridge operation failed. No setup state was assumed.',
+            description:
+                'The Slack bridge operation failed. No setup state was assumed.',
           )
         else
           ?child,
