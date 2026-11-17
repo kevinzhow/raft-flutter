@@ -28,7 +28,7 @@ class RaftCommentsSheetControls {
 }
 
 /// Web `AttachmentPreviewShell` (document / HTML / video / audio previews):
-/// `bg-black/75` portal root, the absolute `h-14` header (type badge, name,
+/// `bg-black/75` portal root, the toolbar header (type badge, name,
 /// comments toggle, copy, download, close), the body below it and the
 /// comments panel as a `w-80` aside from `sm` up or a 2-state bottom sheet
 /// below. [canvas] is the `browser-find` layout (text, csv, xlsx, markdown):
@@ -305,16 +305,18 @@ class _RaftAttachmentPreviewShellState
         autofocus: true,
         child: SafeArea(
           bottom: false,
+          // Web `FileViewerShell`: the body follows the toolbar in flow, so it
+          // starts at the toolbar's real height (44 with a mouse from 768dp,
+          // 56 with touch, taller at larger text) and nothing shows between.
           child: Stack(
             children: [
-              Positioned(
-                left: 0,
-                right: 0,
-                top: raftLightboxHeaderRow,
-                bottom: 0,
-                child: body,
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  header,
+                  Expanded(child: body),
+                ],
               ),
-              Positioned(left: 0, right: 0, top: 0, child: header),
               ?sheet,
             ],
           ),
