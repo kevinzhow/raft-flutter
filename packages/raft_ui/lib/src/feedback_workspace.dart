@@ -1039,9 +1039,14 @@ class RaftFeedbackConversation extends StatelessWidget {
     this.loadingMore = false,
     this.composer,
     this.controller,
+    this.headerTrailing,
   });
   final VoidCallback onBack;
   final List<RaftFeedbackMessageData> messages;
+
+  /// The ticket header's own actions (Web: Copy link in the SDK header's
+  /// action group).
+  final Widget? headerTrailing;
 
   /// No detail to show yet (the skeleton).
   final bool loading;
@@ -1131,7 +1136,11 @@ class RaftFeedbackConversation extends StatelessWidget {
         children: [
           ColoredBox(
             color: t.colors['layer-canvas']!,
-            child: RaftFeedbackViewHeader(title: 'My Feedback', onBack: onBack),
+            child: RaftFeedbackViewHeader(
+              title: 'My feedback',
+              onBack: onBack,
+              trailing: headerTrailing,
+            ),
           ),
           Expanded(
             child: footer == null

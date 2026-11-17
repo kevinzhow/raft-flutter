@@ -81,7 +81,7 @@ void main() {
           find.byKey(const ValueKey('feedback-ticket-${fixture.first}')),
         );
         await tester.pumpAndSettle();
-        expect(find.text('My Feedback'), findsOneWidget);
+        expect(find.text('My feedback'), findsOneWidget);
         expect(find.text('团队回复 中文 日本語'), findsOneWidget);
         expect(counts, [2, 0]);
         await tester.tap(find.byKey(const ValueKey('feedback-back')));

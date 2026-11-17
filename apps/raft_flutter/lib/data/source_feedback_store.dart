@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 
@@ -213,6 +214,17 @@ class SourceFeedbackFailure implements Exception {
 }
 
 enum SourceFeedbackFilter { all, open, resolved }
+
+/// A degraded first page is retried starting at the server's
+/// `retry_after_seconds` (5 when it is missing or garbled), doubling up to this
+/// cap (productFeedbackListContract.ts, createHandsFeedbackTransport.ts).
+const _degradedRetryMaxMs = 60000;
+
+int _degradedRetryMs(Map<String, dynamic> page) {
+  final seconds = page['retry_after_seconds'];
+  final valid = seconds is num && seconds.isFinite && seconds > 0;
+  return ((valid ? seconds : 5) * 1000).round();
+}
 
 Map<String, dynamic> _map(dynamic value) {
   if (value is! Map) throw const FormatException('Invalid feedback projection');
@@ -439,6 +451,12 @@ class SourceFeedbackStore extends ChangeNotifier {
   String? _retryListCursor, _retryCommentCursor;
   int? unreadTotal;
   bool listLoading = false, detailLoading = false;
+
+  /// The inbox's first page is waiting out a degraded answer (Hands briefly
+  /// unavailable, server #12566) and is being retried: [listLoading] stays
+  /// true, so the inbox is neither empty nor errored, and the host shows
+  /// "Feedback can't load right now. Retrying…".
+  bool listDegraded = false;
   SourceFeedbackError? listError, detailError;
   SourceFeedbackFilter filter = SourceFeedbackFilter.all;
 
@@ -543,7 +561,7 @@ class SourceFeedbackStore extends ChangeNotifier {
     _selectedId = _nextCursor = _nextCommentCursor = null;
     _retryListCursor = _retryCommentCursor = null;
     unreadTotal = null;
-    listLoading = detailLoading = false;
+    listLoading = detailLoading = listDegraded = false;
     listError = detailError = null;
     filter = SourceFeedbackFilter.all;
     _creating = false;
@@ -610,12 +628,34 @@ class SourceFeedbackStore extends ChangeNotifier {
       return;
     }
     try {
-      final raw = _map(
-        await get(
-          '/product-feedback/tickets',
-          query: {'limit': 20, 'cursor': ?cursor},
-        ),
-      );
+      // Only the first page can degrade (it opts in with `degraded_ok`); a
+      // degraded answer is retried, never shown, until a real page arrives or
+      // a newer load / another account supersedes this read.
+      var retryMs = 0;
+      Map<String, dynamic> raw;
+      while (true) {
+        raw = _map(
+          await get(
+            '/product-feedback/tickets',
+            query: {
+              'limit': 20,
+              'cursor': ?cursor,
+              if (cursor == null) 'degraded_ok': 1,
+            },
+          ),
+        );
+        if (raw['degraded'] != true) break;
+        if (!_accepts(scope) || request != _listRequest) return;
+        if (!listDegraded) {
+          listDegraded = true;
+          notifyListeners();
+        }
+        retryMs = retryMs == 0
+            ? _degradedRetryMs(raw)
+            : math.min(retryMs * 2, _degradedRetryMaxMs);
+        await Future<void>.delayed(Duration(milliseconds: retryMs));
+        if (!_accepts(scope) || request != _listRequest) return;
+      }
       final rows = _rows(raw['tickets'], SourceFeedbackTicket.parse);
       final next = _cursor(raw, 'next_cursor'),
           unread = _integer(raw, 'unread_total');
@@ -648,6 +688,7 @@ class SourceFeedbackStore extends ChangeNotifier {
     } finally {
       if (_accepts(scope) && request == _listRequest) {
         listLoading = false;
+        listDegraded = false;
         notifyListeners();
       } else {
         syncAuthority();

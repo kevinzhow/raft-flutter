@@ -159,6 +159,7 @@ export 'src/qr_code.dart';
 export 'src/settings_resources.dart';
 export 'src/settings_about_mobile.dart';
 export 'src/feedback_inbox.dart';
+export 'src/feedback_inbox_notice.dart';
 export 'src/feedback_workspace.dart';
 export 'src/settings_workspace.dart';
 export 'src/raftbench/raftbench_panels.dart';

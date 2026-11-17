@@ -127,6 +127,7 @@ class RaftFeedbackInbox extends StatelessWidget {
     this.onOpen,
     this.onLoadMore,
     this.headerAction,
+    this.notice,
     this.onClose,
     this.closeDisabled = false,
   });
@@ -156,6 +157,11 @@ class RaftFeedbackInbox extends StatelessWidget {
   /// The header's trailing control (Web: `New feedback`).
   final Widget? headerAction;
 
+  /// The inbox's one notice line (`inboxNotice`), at the top of the list
+  /// scroll, above the skeleton, the error banner, the empty state and the
+  /// rows. Null draws nothing and no inset.
+  final Widget? notice;
+
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
@@ -181,7 +187,12 @@ class RaftFeedbackInbox extends StatelessWidget {
                       2 + raftFeedbackScrollGutter(context),
                       0,
                     ),
-                    child: emptyState,
+                    child: notice == null
+                        ? emptyState
+                        : Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [notice!, const SizedBox(height: 12), emptyState],
+                          ),
                   ),
                 ),
               ),
@@ -206,6 +217,7 @@ class RaftFeedbackInbox extends StatelessWidget {
                   // cannot shrink the track, so the 12px grid
                   // gap after it stays.
                   const SizedBox(height: 12),
+                  if (notice != null) ...[notice!, const SizedBox(height: 12)],
                   // No match in the loaded pages does not exhaust the inbox.
                   // Keep pagination reachable, including when the empty copy
                   // needs to scroll at larger text sizes.

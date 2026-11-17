@@ -298,7 +298,7 @@ void main() {
     await t.pumpWidget(
       _host(
         RaftFeedbackViewHeader(
-          title: 'My Feedback',
+          title: 'My feedback',
           onBack: () => back++,
           trailing: const Text('trail'),
         ),

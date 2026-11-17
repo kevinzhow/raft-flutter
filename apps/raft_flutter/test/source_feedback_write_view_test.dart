@@ -99,7 +99,7 @@ void main() {
     expect(h.posts.single.$1, '/product-feedback');
     expect(h.posts.single.$3!.fields['type'], 'problem');
     expect(h.posts.single.$3!.fields['message'], 'Paste crashes');
-    expect(find.text('My Feedback'), findsOneWidget);
+    expect(find.text('My feedback'), findsOneWidget);
     expect(find.text('Paste crashes'), findsOneWidget);
     expect(_key('feedback-reply-input'), findsOneWidget);
     await tester.tap(_key('feedback-back'));

@@ -7,16 +7,19 @@ import 'package:dio/dio.dart' show DioMediaType, FormData, MultipartFile;
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
+import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
+import '../platform/content_links.dart';
 import '../platform/file_selection.dart';
 
 import '../data/source_feedback_store.dart';
 import '../data/workspace_controller.dart';
 import 'feedback_attachment_preview.dart';
+import 'feedback_ticket_link.dart';
 import 'management_support.dart'
     show pageIdentity, readPageSnapshot, writePageSnapshot;
 
@@ -75,9 +78,14 @@ class SourceFeedbackView extends StatefulWidget {
     required this.controller,
     this.onUnreadChanged,
     this.initialTicketId,
+    this.frontendOrigin,
   });
   final WorkspaceController controller;
   final ValueChanged<int>? onUnreadChanged;
+
+  /// The web origin a copied ticket link points at (Web `shareableWebOrigin`);
+  /// defaults to the one the connected server's web app lives on.
+  final Uri? frontendOrigin;
 
   /// `/settings/feedback/ticket/:id` deep link (the Report Issue dialog's
   /// "View ticket"): the ticket opens once the inbox is read.
@@ -258,10 +266,19 @@ class _SourceFeedbackViewState extends State<SourceFeedbackView> {
     super.dispose();
   }
 
+  String? ticketLink(String ticketId) => feedbackTicketUrl(
+    origin:
+        widget.frontendOrigin ??
+        ContentLinks.originFor(widget.controller.client.origin),
+    slug: widget.controller.server?.string('slug'),
+    ticketId: ticketId,
+  );
+
   @override
   Widget build(BuildContext context) => SourceFeedbackProjectionView(
     store: store,
     pickFiles: pickFeedbackImages,
+    ticketLink: ticketLink,
     inboxSeed: seed,
     loadAttachment: (ticketId, attachmentId) =>
         widget.controller.client.getBytes(
@@ -392,8 +409,13 @@ class SourceFeedbackProjectionView extends StatefulWidget {
     this.pickFiles,
     this.inboxSeed = const [],
     this.loadAttachment,
+    this.ticketLink,
   });
   final SourceFeedbackStore store;
+
+  /// The open ticket's shareable address (the header's Copy link); null hides
+  /// the action.
+  final String? Function(String ticketId)? ticketLink;
   final FeedbackFilePicker? pickFiles;
 
   /// Reads a ticket's attachment with the session (Web `openAttachment`);
@@ -542,6 +564,23 @@ class _SourceFeedbackProjectionViewState
     );
   }
 
+  /// FeedbackTicketLinkAction: copies the ticket's link at once (no request),
+  /// then says so; a refused clipboard says so too.
+  Future<void> _copyLink(String url) async {
+    var copied = true;
+    try {
+      await Clipboard.setData(ClipboardData(text: url));
+    } catch (_) {
+      copied = false;
+    }
+    if (!mounted) return;
+    showRaftToast(
+      context,
+      copied ? 'Link copied.' : "Couldn't copy the link",
+      tone: copied ? RaftToastRecipeTone.success : RaftToastRecipeTone.error,
+    );
+  }
+
   int _previewRequest = 0;
 
   /// Web `openAttachment`: the screenshot is read with the session, then
@@ -657,6 +696,7 @@ class _SourceFeedbackProjectionViewState
     final rows = ticketsFor(store.filter);
     return RaftFeedbackInbox(
       key: ValueKey((store, store.authority())),
+      notice: RaftFeedbackInboxNotice(degraded: store.listDegraded),
       headerAction: store.canWrite
           ? RaftFeedbackHeaderButton(
               key: const ValueKey('feedback-new'),
@@ -802,9 +842,20 @@ class _SourceFeedbackProjectionViewState
       _ => RaftFeedbackAuthor.system,
     };
     final reason = _reason(ticket?.closureReason);
+    final link = store.selectedId == null
+        ? null
+        : widget.ticketLink?.call(store.selectedId!);
     return RaftFeedbackConversation(
       key: ValueKey('feedback-detail-${store.selectedId}'),
       onBack: store.back,
+      headerTrailing: link == null
+          ? null
+          : RaftIconButton(
+              key: const ValueKey('settings-feedback-ticket-copy-link'),
+              glyph: RaftGlyph.link,
+              tooltip: raftText(context, 'Copy link'),
+              onPressed: () => unawaited(_copyLink(link)),
+            ),
       loading: store.detailLoading && ticket == null,
       error: store.detailError == null
           ? null
