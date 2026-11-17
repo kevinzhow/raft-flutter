@@ -14,11 +14,14 @@ Future<void> confirmDeleteServer(
   final server = w.server;
   if (server == null) return;
   final matches = ValueNotifier(false);
-  final ok = await RaftConfirmDialog.show(
+  // ConfirmDialog onConfirm: the delete runs in the dialog (Deleting…), which
+  // stays open with the error when it fails.
+  await RaftConfirmDialog.show(
     context,
     RaftConfirmDialog(
       title: 'Delete server',
       confirmLabel: 'Delete server',
+      loadingLabel: 'Deleting…',
       surfaceKey: const ValueKey('server-danger-dialog'),
       confirmKey: const Key('server-delete-confirm-button'),
       content: _DeleteServerConfirm(
@@ -27,13 +30,14 @@ Future<void> confirmDeleteServer(
         matches: matches,
       ),
       confirmEnabled: matches,
+      onConfirm: () async {
+        await w.client.exitServer(server.id, delete: true);
+        w.sessionScope.revokeServer(server.id);
+        await w.recoverMembership();
+      },
     ),
   );
   matches.dispose();
-  if (ok != true) return;
-  await w.client.exitServer(server.id, delete: true);
-  w.sessionScope.revokeServer(server.id);
-  await w.recoverMembership();
 }
 
 /// SetupSessionFooter "Delete this server": owners only (Web

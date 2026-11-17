@@ -258,10 +258,13 @@ class _ServerSettingsViewState extends State<ServerSettingsView> {
 
   Future<void> confirmDelete() => confirmDeleteServer(context, w);
 
+  /// DangerZoneSection `LeaveServerConfirmDialog` (without the Computers
+  /// impact note, which WP-MEMBERS owns): Leave runs in the dialog, which keeps
+  /// its error on a failure.
   Future<void> confirmLeave() async {
     final server = w.server;
     if (server == null) return;
-    final ok = await RaftConfirmDialog.show(
+    await RaftConfirmDialog.show(
       context,
       RaftConfirmDialog(
         title: 'Leave server',
@@ -270,15 +273,15 @@ class _ServerSettingsViewState extends State<ServerSettingsView> {
           "You'll lose access to {serverName} and all of its channels. You can be re-invited later.",
           {'serverName': server.name},
         ),
-        confirmLabel: 'Leave server',
+        confirmLabel: 'Leave',
         cancelLabel: 'Cancel',
+        loadingLabel: 'Leaving…',
         surfaceKey: const ValueKey('server-danger-dialog'),
-        // confirmColor="bg-brutal-orange" -> warning tone.
         confirmVariant: RaftButtonRecipeVariant.warning,
         confirmKey: const Key('server-leave-confirm-button'),
+        onConfirm: () => exitServer(delete: false),
       ),
     );
-    if (ok == true) await exitServer(delete: false);
   }
 
   Future<void> exitServer({required bool delete}) async {
@@ -389,7 +392,8 @@ class _ServerSettingsViewState extends State<ServerSettingsView> {
                     glyph: saved && !saving ? RaftGlyph.check : null,
                     glyphSize: 14,
                     variant: RaftButtonRecipeVariant.accent,
-                    size: RaftButtonRecipeSize.sm,
+                    // ProfileSection.tsx (v1.24): `size="md"`.
+                    size: RaftButtonRecipeSize.md,
                     onPressed: dirty && !saving ? save : null,
                   ),
                 ),
@@ -412,34 +416,28 @@ class _ServerSettingsViewState extends State<ServerSettingsView> {
           label: 'Danger zone',
           glyph: RaftGlyph.triangleAlert,
         ),
-        if (canLeave) ...[
-          RaftSettingsActionCard(
+        // An owner can't leave and only an owner deletes: one row or the other.
+        if (canLeave)
+          RaftDangerActionRow(
+            key: const Key('server-danger-leave-card'),
             title: 'Leave server',
-            description: "You will lose access to this server's channels and DMs. You can rejoin if invited again.",
-            action: RaftSettingsRecipeButton(
-              key: const Key('server-danger-leave-button'),
-              label: 'Leave server',
-              variant: RaftButtonRecipeVariant.warning,
-              onPressed: confirmLeave,
-            ),
+            description:
+                "You will lose access to this server's channels and DMs. You can rejoin if invited again.",
+            actionLabel: 'Leave server',
+            warning: true,
+            actionKey: const Key('server-danger-leave-button'),
+            onAction: confirmLeave,
           ),
-          const SizedBox(height: RaftSpace.x3),
-        ],
         if (role == 'owner')
-          RaftSettingsActionCard(
+          RaftDangerActionRow(
             key: const Key('server-danger-delete-card'),
-            stacked: true,
             title: 'Delete server',
-            description: 'Permanently remove this server and all its data. This cannot be undone.',
-            action: RaftSettingsRecipeButton(
-              key: const Key('server-danger-delete-button'),
-              label: 'Delete server',
-              glyph: RaftGlyph.trash2,
-              glyphSize: 14,
-              variant: RaftButtonRecipeVariant.danger,
-              expand: true,
-              onPressed: confirmDelete,
-            ),
+            description:
+                'Permanently remove this server and all its data. This cannot be undone.',
+            actionLabel: 'Delete server',
+            actionGlyph: RaftGlyph.trash2,
+            actionKey: const Key('server-danger-delete-button'),
+            onAction: confirmDelete,
           ),
         const SizedBox(height: RaftSpace.x6),
       ],
