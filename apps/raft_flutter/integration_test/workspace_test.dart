@@ -37,7 +37,6 @@ import 'native_message_menu.dart';
 import 'resource_flow.dart';
 import 'composer_suggestions_flow.dart';
 import 'action_card_flow.dart';
-import 'channel_conversion_flow.dart';
 import 'html_preview_flow.dart';
 import 'media_preview_flow.dart';
 import 'support/server_tab.dart';
@@ -2268,11 +2267,6 @@ void main() {
         w,
         section: (name) => section(tester, name),
         capture: (name) => screenshot(tester, name),
-      );
-      await verifyChannelConversionFlow(
-        tester,
-        w,
-        capture: (name) => screenshot(tester, 'linux-$name'),
       );
       await w.selectChannel(general);
       await tester.pumpAndSettle();

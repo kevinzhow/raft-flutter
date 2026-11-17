@@ -49,6 +49,10 @@ The joint native helper requires `fixtureEmailDisabled: true`, creates two isola
 
 ## Channel conversion boundary
 
+Web v1.24 retires starting a channel conversion. The native workspace test no longer calls the initiation flow. Existing conversion jobs and their recovery controls use `external_channels_v1`.
+
+### Historical acceptance before v1.24
+
 The pinned flag migration enables configurable evaluation but defaults `channel_to_joint_conversion_v0` to false. Native channel settings fail closed on false, unknown, or failed evaluation, and evaluate again before each conversion command. The Linux 01:49:11 full-run checkpoint verified the live default-OFF control remains hidden. The mounted source supports ordinary/private channels converting to joint channels. It does not expose completed joint → ordinary conversion; cancellation compensates eligible work before audience cutover, and completed joint channels retain the existing disconnect workflow.
 
 `POST /channels/:id/convert-to-joint` sends `observeProgress: true` and a fresh UUID `commandId`. An admitted command is distinct from the durable worker job. The UI polls mounted channel/job projections, never treats a completed command or a transport failure as completed conversion, and retains uncertain pending observations only in the current client's memory across widget remounts. Retry and cancel use the mounted job routes; `canCancel` and cutover facts remain server-authoritative. Active upload recovery lists actual session filenames and cancels through the mounted upload-session endpoint, without exposing session identifiers or replacing the uploader transport.

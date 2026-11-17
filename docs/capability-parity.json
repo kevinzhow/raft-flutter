@@ -15490,8 +15490,8 @@
    "capability": "Poll a channel-conversion job's status",
    "background": true,
    "status": "covered",
-   "webEntry": "JointConversionSection polling after 'Convert to Joint Channel' (background of the conversion UI)",
-   "gate": "same as convert-to-joint",
+   "webEntry": "JointConversionSection polls the background job for an existing conversion",
+   "gate": "external_channels_v1 and an existing conversion job",
    "flutterEntry": "channel_conversion_section.dart poll",
    "flutterRefs": [
     {
@@ -15594,7 +15594,7 @@
    "background": false,
    "status": "covered",
    "webEntry": "JointConversionSection 'Cancel conversion' button (when canCancel)",
-   "gate": "same as convert-to-joint",
+   "gate": "external_channels_v1 and an existing conversion job",
    "flutterEntry": "channel_conversion_section.dart 'Cancel conversion' action",
    "flutterRefs": [
     {
@@ -15618,7 +15618,7 @@
    "background": false,
    "status": "covered",
    "webEntry": "JointConversionSection 'Retry conversion' button when status=failed",
-   "gate": "same as convert-to-joint",
+   "gate": "external_channels_v1 and a failed conversion job",
    "flutterEntry": "channel_conversion_section.dart 'Retry conversion' action",
    "flutterRefs": [
     {
