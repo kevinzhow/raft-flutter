@@ -61,22 +61,24 @@ List<String> ids(String query) => [
 ];
 
 void main() {
-  test(
-    'names first, then other words, then descriptions, then page and section; the list order within each',
-    () {
-      expect(ids('message'), ['message-font-size', 'send-with', 'leave-server']);
-      expect(ids('send'), ['send-with', 'push-notifications']);
-      expect(
-        [
-          for (final r in searchSettings(settings, 'push'))
-            (r.setting.id, r.field),
-        ],
-        [('push-notifications', SettingsSearchMatchField.alias)],
-      );
-      expect(ids('danger'), ['leave-server'], reason: 'a section finds its settings');
-      expect(searchSettings(settings, 'danger').first.field, SettingsSearchMatchField.where);
-    },
-  );
+  test('names first, then other words, then descriptions, then page and section; the list order within each', () {
+    expect(ids('message'), ['message-font-size', 'send-with', 'leave-server']);
+    expect(ids('send'), ['send-with', 'push-notifications']);
+    expect(
+      [
+        for (final r in searchSettings(settings, 'push'))
+          (r.setting.id, r.field),
+      ],
+      [('push-notifications', SettingsSearchMatchField.alias)],
+    );
+    expect(ids('danger'), [
+      'leave-server',
+    ], reason: 'a section finds its settings');
+    expect(
+      searchSettings(settings, 'danger').first.field,
+      SettingsSearchMatchField.where,
+    );
+  });
 
   test('each kind of match outranks the next, against the list order', () {
     final list = [
@@ -96,13 +98,16 @@ void main() {
     );
   });
 
-  test('another word that matched is the result alias, so the row can show it', () {
-    final result = searchSettings(settings, 'Return').single;
-    expect(result.setting.id, 'send-with');
-    expect(result.field, SettingsSearchMatchField.alias);
-    expect(result.alias, 'return');
-    expect(searchSettings(settings, 'font').first.alias, isNull);
-  });
+  test(
+    'another word that matched is the result alias, so the row can show it',
+    () {
+      final result = searchSettings(settings, 'Return').single;
+      expect(result.setting.id, 'send-with');
+      expect(result.field, SettingsSearchMatchField.alias);
+      expect(result.alias, 'return');
+      expect(searchSettings(settings, 'font').first.alias, isNull);
+    },
+  );
 
   test('case, full-width letters and extra spaces do not matter', () {
     expect(ids('ENTER'), ['send-with']);
@@ -111,11 +116,14 @@ void main() {
     expect(normalizeSettingsSearchText('  Ｓｅｎｄ　Key '), 'send key');
   });
 
-  test('an empty or blank query finds nothing, and so does a word no setting has', () {
-    expect(ids(''), isEmpty);
-    expect(ids('   '), isEmpty);
-    expect(ids('launch'), isEmpty);
-  });
+  test(
+    'an empty or blank query finds nothing, and so does a word no setting has',
+    () {
+      expect(ids(''), isEmpty);
+      expect(ids('   '), isEmpty);
+      expect(ids('launch'), isEmpty);
+    },
+  );
 
   test('the other words are the display language, then English, each once', () {
     const entry = SettingsSearchEntry(
@@ -129,25 +137,42 @@ void main() {
     expect(settingsSearchAliases(entry, zh: false), ['dark', 'night']);
   });
 
-  test('a cut description keeps its words findable through the index aliases', () {
-    List<SettingsSearchMatchField> finds(String id, bool zh, String query) {
-      final entry = settingsSearchIndex.firstWhere((e) => e.id == id);
-      return [
-        for (final r in searchSettings([
-          setting(id, aliases: settingsSearchAliases(entry, zh: zh)),
-        ], query))
-          r.field,
-      ];
-    }
+  test(
+    'a cut description keeps its words findable through the index aliases',
+    () {
+      List<SettingsSearchMatchField> finds(String id, bool zh, String query) {
+        final entry = settingsSearchIndex.firstWhere((e) => e.id == id);
+        return [
+          for (final r in searchSettings([
+            setting(id, aliases: settingsSearchAliases(entry, zh: zh)),
+          ], query))
+            r.field,
+        ];
+      }
 
-    expect(finds('message-font-size', true, '代码块'), [SettingsSearchMatchField.alias]);
-    expect(finds('live-agent-activity', false, 'above the composer'), [SettingsSearchMatchField.alias]);
-    expect(finds('show-agent-model', false, 'next to its name'), [SettingsSearchMatchField.alias]);
-    expect(finds('time-format', true, '仅显示'), [SettingsSearchMatchField.alias]);
-    expect(finds('passkeys', false, 'screen lock'), [SettingsSearchMatchField.alias]);
-    expect(finds('theme', false, 'follow your device'), [SettingsSearchMatchField.alias]);
-    expect(finds('push-notifications', false, 'web push'), [SettingsSearchMatchField.alias]);
-  });
+      expect(finds('message-font-size', true, '代码块'), [
+        SettingsSearchMatchField.alias,
+      ]);
+      expect(finds('live-agent-activity', false, 'above the composer'), [
+        SettingsSearchMatchField.alias,
+      ]);
+      expect(finds('show-agent-model', false, 'next to its name'), [
+        SettingsSearchMatchField.alias,
+      ]);
+      expect(finds('time-format', true, '仅显示'), [
+        SettingsSearchMatchField.alias,
+      ]);
+      expect(finds('passkeys', false, 'screen lock'), [
+        SettingsSearchMatchField.alias,
+      ]);
+      expect(finds('theme', false, 'follow your device'), [
+        SettingsSearchMatchField.alias,
+      ]);
+      expect(finds('push-notifications', false, 'web push'), [
+        SettingsSearchMatchField.alias,
+      ]);
+    },
+  );
 
   test('the index is the Web list: unique ids, none the app does not have', () {
     final seen = <String>{};
@@ -155,6 +180,9 @@ void main() {
       expect(seen.add(entry.id), isTrue, reason: 'duplicate ${entry.id}');
     }
     expect(seen, isNot(contains('desktop-app')));
-    expect(seen, containsAll(['display-name', 'delete-account', 'two-step', 'plan']));
+    expect(
+      seen,
+      containsAll(['display-name', 'delete-account', 'two-step', 'plan']),
+    );
   });
 }

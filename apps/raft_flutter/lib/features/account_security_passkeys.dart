@@ -124,8 +124,7 @@ class _PasskeysState extends State<PasskeysSection> {
       RaftConfirmDialog(
         surfaceKey: const ValueKey('passkeys-delete-dialog'),
         title: raftFormat(context, 'Delete “{name}”?', {'name': passkey.name}),
-        message:
-            "You can't sign in or verify with this passkey after this. It stays in your password manager until you remove it there too. Your other browsers are signed out. Computers and the raft CLI stay connected.",
+        message: "You can't sign in or verify with this passkey after this. It stays in your password manager until you remove it there too. Your other browsers are signed out. Computers and the raft CLI stay connected.",
         confirmLabel: 'Delete passkey',
         confirmKey: const ValueKey('passkeys-delete-confirm'),
         onConfirm: () async {

@@ -48,7 +48,9 @@ Widget _app(Widget home, {Locale? locale}) => MaterialApp(
   home: Scaffold(body: SingleChildScrollView(child: home)),
 );
 
-(_Client, WorkspaceController) _fixture({Map<String, dynamic> user = const {}}) {
+(_Client, WorkspaceController) _fixture({
+  Map<String, dynamic> user = const {},
+}) {
   final client = _Client(
     (method, path, query) {
       if (path == '/auth/me') return {'id': 'alice', ...user};
@@ -74,22 +76,25 @@ void main() {
   tearDown(() => MessageTranslationStore.followDisplayLanguage('en'));
 
   group('followDisplayLanguage', () {
-    test('a person with no preference translates into the display language', () {
-      final (client, w) = _fixture();
-      addTearDown(w.dispose);
-      final store = w.services.translations;
-      expect(store.settings.effectiveLanguage, 'en');
-      var told = 0;
-      store.addListener(() => told++);
-      MessageTranslationStore.followDisplayLanguage('zh-cn');
-      expect(store.settings.effectiveLanguage, 'zh-cn');
-      expect(told, 1, reason: 'the rows translating into it are told');
-      // The browser's language no longer decides it.
-      MessageTranslationStore.deviceLanguages = () => ['ja-JP'];
-      MessageTranslationStore.followDisplayLanguage('en');
-      expect(store.settings.effectiveLanguage, 'en');
-      expect(client.requests, isNotNull);
-    });
+    test(
+      'a person with no preference translates into the display language',
+      () {
+        final (client, w) = _fixture();
+        addTearDown(w.dispose);
+        final store = w.services.translations;
+        expect(store.settings.effectiveLanguage, 'en');
+        var told = 0;
+        store.addListener(() => told++);
+        MessageTranslationStore.followDisplayLanguage('zh-cn');
+        expect(store.settings.effectiveLanguage, 'zh-cn');
+        expect(told, 1, reason: 'the rows translating into it are told');
+        // The browser's language no longer decides it.
+        MessageTranslationStore.deviceLanguages = () => ['ja-JP'];
+        MessageTranslationStore.followDisplayLanguage('en');
+        expect(store.settings.effectiveLanguage, 'en');
+        expect(client.requests, isNotNull);
+      },
+    );
 
     test('a stored preference is not followed', () {
       final (_, w) = _fixture(user: {'preferredLanguage': 'ja'});
@@ -115,47 +120,58 @@ void main() {
   });
 
   group('translation target choices', () {
-    testWidgets('same as display language first, then names in the UI language', (
-      t,
-    ) async {
-      late List<RaftLanguageOption> en, zh;
-      await t.pumpWidget(
-        _app(Builder(builder: (c) {
-          en = translationTargetOptions(c);
-          return const SizedBox();
-        })),
-      );
-      await t.pumpWidget(
-        _app(
-          Builder(builder: (c) {
-            zh = translationTargetOptions(c);
-            return const SizedBox();
-          }),
-          locale: const Locale('zh', 'CN'),
-        ),
-      );
-      expect(en.first, ('display', 'Same as display language'));
-      expect([for (final o in en.skip(1)) o.$2], [
-        'English',
-        'French',
-        'German',
-        'Italian',
-        'Japanese',
-        'Korean',
-        'Brazilian Portuguese',
-        'Russian',
-        'Simplified Chinese',
-        'Spanish',
-        'Traditional Chinese',
-      ]);
-      expect(zh.first.$1, 'display');
-      expect({for (final o in zh.skip(1)) o.$1}, {
-        for (final o in en.skip(1)) o.$1,
-      });
-      expect(zh[1], ('pt-br', '巴西葡萄牙语'));
-      expect(zh.last, ('en', '英语'));
-      expect(en.any((o) => o.$2 == 'Browser language'), isFalse);
-    });
+    testWidgets(
+      'same as display language first, then names in the UI language',
+      (t) async {
+        late List<RaftLanguageOption> en, zh;
+        await t.pumpWidget(
+          _app(
+            Builder(
+              builder: (c) {
+                en = translationTargetOptions(c);
+                return const SizedBox();
+              },
+            ),
+          ),
+        );
+        await t.pumpWidget(
+          _app(
+            Builder(
+              builder: (c) {
+                zh = translationTargetOptions(c);
+                return const SizedBox();
+              },
+            ),
+            locale: const Locale('zh', 'CN'),
+          ),
+        );
+        expect(en.first, ('display', 'Same as display language'));
+        expect(
+          [for (final o in en.skip(1)) o.$2],
+          [
+            'English',
+            'French',
+            'German',
+            'Italian',
+            'Japanese',
+            'Korean',
+            'Brazilian Portuguese',
+            'Russian',
+            'Simplified Chinese',
+            'Spanish',
+            'Traditional Chinese',
+          ],
+        );
+        expect(zh.first.$1, 'display');
+        expect(
+          {for (final o in zh.skip(1)) o.$1},
+          {for (final o in en.skip(1)) o.$1},
+        );
+        expect(zh[1], ('pt-br', '巴西葡萄牙语'));
+        expect(zh.last, ('en', '英语'));
+        expect(en.any((o) => o.$2 == 'Browser language'), isFalse);
+      },
+    );
 
     testWidgets('picking Same as display language saves no preference', (
       t,
@@ -178,51 +194,53 @@ void main() {
       expect(find.textContaining('Browser language'), findsNothing);
     });
 
-    testWidgets('a person with no preference sees Same as display language selected', (
-      t,
-    ) async {
+    testWidgets(
+      'a person with no preference sees Same as display language selected',
+      (t) async {
+        final (_, w) = _fixture();
+        addTearDown(w.dispose);
+        t.view.devicePixelRatio = 1;
+        t.view.physicalSize = const Size(900, 3200);
+        addTearDown(t.view.reset);
+        await t.pumpWidget(_app(LocaleSettingsPage(controller: w)));
+        await t.pumpAndSettle();
+        expect(find.text('Same as display language'), findsOneWidget);
+      },
+    );
+  });
+
+  testWidgets(
+    'Language & Region rows are the targets of #display-language, #translation-mode, #timezone and #time-format',
+    (t) async {
       final (_, w) = _fixture();
       addTearDown(w.dispose);
       t.view.devicePixelRatio = 1;
       t.view.physicalSize = const Size(900, 3200);
       addTearDown(t.view.reset);
-      await t.pumpWidget(_app(LocaleSettingsPage(controller: w)));
-      await t.pumpAndSettle();
-      expect(find.text('Same as display language'), findsOneWidget);
-    });
-  });
-
-  testWidgets('Language & Region rows are the targets of #display-language, #translation-mode, #timezone and #time-format', (
-    t,
-  ) async {
-    final (_, w) = _fixture();
-    addTearDown(w.dispose);
-    t.view.devicePixelRatio = 1;
-    t.view.physicalSize = const Size(900, 3200);
-    addTearDown(t.view.reset);
-    final registry = SettingsAnchorRegistry();
-    addTearDown(registry.dispose);
-    await t.pumpWidget(
-      _app(
-        SettingsAnchorScope(
-          registry: registry,
-          child: LocaleSettingsPage(controller: w),
+      final registry = SettingsAnchorRegistry();
+      addTearDown(registry.dispose);
+      await t.pumpWidget(
+        _app(
+          SettingsAnchorScope(
+            registry: registry,
+            child: LocaleSettingsPage(controller: w),
+          ),
         ),
-      ),
-    );
-    await t.pumpAndSettle();
-    for (final id in [
-      'display-language',
-      'translation-mode',
-      'timezone',
-      'time-format',
-    ]) {
-      registry.jump(id);
-      await t.pump();
-      await t.pump();
-      expect(registry.waiting, isFalse, reason: '#$id has a row to land on');
-    }
-  });
+      );
+      await t.pumpAndSettle();
+      for (final id in [
+        'display-language',
+        'translation-mode',
+        'timezone',
+        'time-format',
+      ]) {
+        registry.jump(id);
+        await t.pump();
+        await t.pump();
+        expect(registry.waiting, isFalse, reason: '#$id has a row to land on');
+      }
+    },
+  );
 
   test('the timezone label is the offset and the city', () {
     final options = localeTimezoneOptions('Asia/Shanghai');

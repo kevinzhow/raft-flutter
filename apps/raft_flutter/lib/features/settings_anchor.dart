@@ -90,9 +90,8 @@ class SettingsAnchorScope extends InheritedWidget {
   });
   final SettingsAnchorRegistry registry;
 
-  static SettingsAnchorRegistry? maybeOf(BuildContext context) => context
-      .getInheritedWidgetOfExactType<SettingsAnchorScope>()
-      ?.registry;
+  static SettingsAnchorRegistry? maybeOf(BuildContext context) =>
+      context.getInheritedWidgetOfExactType<SettingsAnchorScope>()?.registry;
 
   @override
   bool updateShouldNotify(SettingsAnchorScope old) =>
@@ -159,11 +158,7 @@ class _RaftSettingsAnchorState extends State<RaftSettingsAnchor>
   /// takes focus (Web `focusJumpTarget`).
   void reveal({required bool focus}) {
     if (!mounted) return;
-    Scrollable.ensureVisible(
-      context,
-      alignment: 0,
-      duration: Duration.zero,
-    );
+    Scrollable.ensureVisible(context, alignment: 0, duration: Duration.zero);
     _located.forward(from: 0);
     if (focus) _focus.requestFocus();
   }

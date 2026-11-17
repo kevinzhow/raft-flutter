@@ -422,11 +422,14 @@ class _TwoStepState extends State<TwoStepVerificationSection> {
                       key: const ValueKey('two-step-backup-codes-row'),
                       glyph: RaftGlyph.ticket,
                       title: 'Backup codes',
-                      description:
-                          raftFormat(context, '{remaining} of {total} left', {
-                            'remaining': s.backupCodesRemaining,
-                            'total': backupCodeSetSize,
-                          }),
+                      description: raftFormat(
+                        context,
+                        '{remaining} of {total} left',
+                        {
+                          'remaining': s.backupCodesRemaining,
+                          'total': backupCodeSetSize,
+                        },
+                      ),
                       notice: s.backupCodesRemaining <= lowBackupCodes
                           ? secondFactorBanner(
                               icuText(

@@ -330,8 +330,8 @@ class _RaftSettingsSidebarItemState extends State<RaftSettingsSidebarItem> {
                             maxLines: 1,
                             style: RaftControlTypography.of(
                               context,
-                              text,
-                            ).copyWith(fontSize: 12, color: hint),
+                              t.scale(t.typeSlot('footnote'), color: hint),
+                            ),
                           ),
                         ),
                       ),
@@ -475,6 +475,37 @@ class RaftSettingsBreadcrumb extends StatelessWidget {
       ),
     );
   }
+}
+
+/// The Search settings field's row, pinned above the list as it scrolls
+/// (SettingsSearch.tsx `sticky top-0 px-2 pt-2 pb-1`).
+class RaftSettingsSearchFrame extends StatelessWidget {
+  const RaftSettingsSearchFrame({super.key, required this.child});
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) =>
+      Padding(padding: const EdgeInsets.fromLTRB(8, 8, 8, 4), child: child);
+}
+
+/// The results, a list of cells 2px apart like the pages' rows
+/// (SettingsSearch.tsx `flex flex-col gap-0.5`).
+class RaftSettingsSearchResultList extends StatelessWidget {
+  const RaftSettingsSearchResultList({
+    super.key,
+    this.listKey,
+    required this.children,
+  });
+  final Key? listKey;
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) => Column(
+    key: listKey,
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    spacing: 2,
+    children: children,
+  );
 }
 
 /// SettingsSearch.tsx `SettingsSearchResultRow`: raft-ui `SidebarItem wrap`

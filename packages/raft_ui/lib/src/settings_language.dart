@@ -195,8 +195,7 @@ class RaftLanguageRegionView extends StatelessWidget {
                   RaftSettingsPreference(
                     semanticTypography: true,
                     title: 'Display language',
-                    description:
-                        'Choose the language for the app interface. This is separate from message translation.',
+                    description: 'Choose the language for the app interface. This is separate from message translation.',
                     child: _select(
                       context,
                       key: const ValueKey('display-language-select'),
@@ -229,8 +228,7 @@ class RaftLanguageRegionView extends StatelessWidget {
                   semanticTypography: true,
                   gapBefore: 16,
                   title: 'Translation mode',
-                  description:
-                      'Auto translates visible messages. Manual adds Translate to each message menu. Off keeps originals only.',
+                  description: 'Auto translates visible messages. Manual adds Translate to each message menu. Off keeps originals only.',
                   notice: translationNotice,
                   child: _segmented(
                     context,
@@ -267,8 +265,7 @@ class RaftLanguageRegionView extends StatelessWidget {
                   semanticTypography: true,
                   gapBefore: 16,
                   title: 'Default view',
-                  description:
-                      'Choose whether messages show translation, original, or both.',
+                  description: 'Choose whether messages show translation, original, or both.',
                   child: _segmented(
                     context,
                     key: const ValueKey('translation-display'),

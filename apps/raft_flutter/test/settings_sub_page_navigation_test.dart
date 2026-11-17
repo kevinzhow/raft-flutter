@@ -7,13 +7,12 @@ import 'package:raft_flutter/data/raft_navigation_history.dart';
 import 'package:raft_flutter/data/workspace_navigation.dart';
 import 'package:raft_flutter/features/settings_sub_pages.dart';
 
-RaftLocation settings(List<String> path, {String? fragment}) =>
-    RaftLocation.at(
-      serverSlug: 'acme',
-      route: RaftRoute.settings,
-      settingsPath: path,
-      fragment: fragment,
-    );
+RaftLocation settings(List<String> path, {String? fragment}) => RaftLocation.at(
+  serverSlug: 'acme',
+  route: RaftRoute.settings,
+  settingsPath: path,
+  fragment: fragment,
+);
 
 void main() {
   test('the location of a sub-page parses back to its path', () {
@@ -30,7 +29,9 @@ void main() {
 
   test('a cold sub-page returns to its parent tab, a tab to the list', () {
     expect(
-      WorkspaceNavigation.parentPageOf(settings(['account', 'delete']))?.uri.path,
+      WorkspaceNavigation.parentPageOf(settings(['account', 'delete']))
+          ?.uri
+          .path,
       '/s/acme/settings/account',
     );
     expect(
@@ -43,9 +44,9 @@ void main() {
       '/s/acme/settings',
     );
     expect(
-      WorkspaceNavigation.parentPageOf(
-        settings(['feedback', 'ticket', 'x']),
-      )?.uri.path,
+      WorkspaceNavigation.parentPageOf(settings(['feedback', 'ticket', 'x']))
+          ?.uri
+          .path,
       '/s/acme/settings',
     );
   });

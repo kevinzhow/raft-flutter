@@ -161,9 +161,8 @@ class SettingsSearchField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final placeholder = raftText(context, 'Search settings');
-    return Padding(
+    return RaftSettingsSearchFrame(
       key: const Key('settings-search'),
-      padding: const EdgeInsets.fromLTRB(8, 8, 8, 4),
       child: Focus(
         canRequestFocus: false,
         skipTraversal: true,
@@ -230,8 +229,10 @@ class SettingsSearchResults extends StatefulWidget {
 class SettingsSearchResultsState extends State<SettingsSearchResults> {
   final _nodes = <String, FocusNode>{};
 
-  FocusNode _node(String id) =>
-      _nodes.putIfAbsent(id, () => FocusNode(debugLabel: 'settings-search-$id'));
+  FocusNode _node(String id) => _nodes.putIfAbsent(
+    id,
+    () => FocusNode(debugLabel: 'settings-search-$id'),
+  );
 
   /// Focuses the first result; false when there is none.
   bool focusFirst() {
@@ -312,10 +313,8 @@ class SettingsSearchResultsState extends State<SettingsSearchResults> {
       child: Semantics(
         container: true,
         label: raftText(context, 'Search settings'),
-        child: Column(
-          key: SettingsSearchResults.listKey,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          spacing: 2,
+        child: RaftSettingsSearchResultList(
+          listKey: SettingsSearchResults.listKey,
           children: [
             for (final result in widget.results)
               _row(context, result, markQuery),

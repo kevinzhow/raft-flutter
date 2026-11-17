@@ -500,7 +500,10 @@ void main() {
             ],
           ),
         );
-        expect(find.bySemanticsLabel(RegExp('Notifications on Acme')), findsOneWidget);
+        expect(
+          find.bySemanticsLabel(RegExp('Notifications on Acme')),
+          findsOneWidget,
+        );
         expect(
           find.descendant(
             of: find.byKey(
