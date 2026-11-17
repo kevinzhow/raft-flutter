@@ -59,6 +59,7 @@ import 'package:raft_ui/language_settings_previews.dart';
 import 'package:raft_ui/legacy_input_previews.dart';
 import 'package:raft_ui/media_browser_previews.dart';
 import 'package:raft_ui/video_poster_card_previews.dart';
+import 'package:raft_ui/member_choice_list_previews.dart';
 import 'package:raft_ui/member_profile_previews.dart';
 import 'package:raft_ui/message_affordance_previews.dart';
 import 'package:raft_ui/message_row_previews.dart';
@@ -515,6 +516,39 @@ final auditSurfaces = <AuditSurface>[
     'Working agents · desktop',
     workingAgentsDesktopPreview,
     Size(960, 420),
+  ),
+  AuditSurface(
+    'channelDetailsColumnPreview',
+    'Channel details side column',
+    channelDetailsColumnPreview,
+    Size(1280, 844),
+    representative: true,
+  ),
+  AuditSurface(
+    'channelDetailsPagePreview',
+    'Mobile channel details page',
+    channelDetailsPagePreview,
+    Size(390, 844),
+    representative: true,
+  ),
+  AuditSurface(
+    'memberChoiceListPreview',
+    'Channel member choices',
+    memberChoiceListPreview,
+    Size(390, 500),
+    representative: true,
+  ),
+  AuditSurface(
+    'memberChoiceListEmptyPreview',
+    'Channel member choices empty',
+    memberChoiceListEmptyPreview,
+    Size(390, 320),
+  ),
+  AuditSurface(
+    'memberChoiceListDisabledPreview',
+    'Channel member choices disabled',
+    memberChoiceListDisabledPreview,
+    Size(390, 500),
   ),
   AuditSurface(
     'channelSettingsPagePreview',
