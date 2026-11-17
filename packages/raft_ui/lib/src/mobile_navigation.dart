@@ -496,6 +496,7 @@ class RaftMobileServerSelector extends StatelessWidget {
     this.focusNode,
     this.publicPageLive = false,
     this.avatarUrl,
+    this.open = false,
   });
   final String label;
   final VoidCallback? onPressed;
@@ -510,6 +511,9 @@ class RaftMobileServerSelector extends StatelessWidget {
   /// The server's public page is live: a globe after the name (Web
   /// `PublicPageGlobe`).
   final bool publicPageLive;
+
+  /// The server menu is open (the WorkspaceButton's pressed fill).
+  final bool open;
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
@@ -526,6 +530,7 @@ class RaftMobileServerSelector extends StatelessWidget {
         attentionLabel: attentionLabel,
         focusNode: focusNode,
         publicPageLive: publicPageLive,
+        open: open,
       );
     }
     return _SelectorControl(

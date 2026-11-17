@@ -10,6 +10,7 @@ Future<void> _pump(
   String name = 'Dev Workspace',
   bool attention = false,
   bool live = false,
+  bool open = false,
   FocusNode? focus,
   VoidCallback? onPressed,
   double width = 390,
@@ -31,6 +32,7 @@ Future<void> _pump(
               attention: attention,
               attentionLabel: 'Other servers have unread messages',
               publicPageLive: live,
+              open: open,
               focusNode: focus,
               onPressed: onPressed,
             ),
@@ -139,6 +141,27 @@ void main() {
       expect(find.byType(RaftAttentionDot), findsNothing);
       expect(find.bySemanticsLabel('Dev Workspace'), findsOneWidget);
       handle.dispose();
+    });
+
+    testWidgets('$mode open menu keeps the on-frame pressed fill', (t) async {
+      Color? fill() {
+        final box = t.widget<DecoratedBox>(
+          find
+              .ancestor(
+                of: find.byType(RaftButton),
+                matching: find.byType(DecoratedBox),
+              )
+              .first,
+        );
+        return (box.decoration as BoxDecoration).color;
+      }
+
+      await _pump(t, dark: dark);
+      expect(fill(), isNull);
+      await _pump(t, dark: dark, open: true);
+      final tokens = RaftTokens.of(t.element(find.byType(RaftWorkspaceButton)));
+      // Web `data-popup-open` on the WorkspaceButton (on-frame pressed).
+      expect(fill(), tokens.colors['fill-frame-pressed']);
     });
 
     testWidgets('$mode focus, keyboard activation and semantics', (t) async {

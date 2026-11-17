@@ -24,6 +24,7 @@ class RaftWorkspaceButton extends StatelessWidget {
     this.attention = false,
     this.attentionLabel,
     this.publicPageLive = false,
+    this.open = false,
     this.focusNode,
     this.onPressed,
   });
@@ -37,6 +38,9 @@ class RaftWorkspaceButton extends StatelessWidget {
   final bool attention;
   final String? attentionLabel;
   final bool publicPageLive;
+
+  /// Its menu is open: Web `data-popup-open` keeps the on-frame pressed fill.
+  final bool open;
   final FocusNode? focusNode;
   final VoidCallback? onPressed;
 
@@ -101,7 +105,13 @@ class RaftWorkspaceButton extends StatelessWidget {
         const RaftIcon(RaftGlyph.chevronDown, size: 16),
       ],
     );
-    final button = RaftButton(
+    final Widget button = DecoratedBox(
+      // The top bar's workspace button paints the same pressed fill.
+      decoration: BoxDecoration(
+        color: open ? t.colors['fill-frame-pressed'] : null,
+        borderRadius: BorderRadius.circular(t.radius),
+      ),
+      child: RaftButton(
       label: '',
       // The dot's label joins the button's name, as the dot's aria-label does
       // inside the Web button.
@@ -114,6 +124,7 @@ class RaftWorkspaceButton extends StatelessWidget {
       uiVariant: RaftButtonVariant.onFrame,
       uiSize: RaftButtonSize.md,
       onPressed: onPressed,
+    ),
     );
     return RaftInteraction.of(context).touch
         ? RaftTapSlopAnchor(
