@@ -67,7 +67,10 @@ class RaftMeter extends StatelessWidget {
         );
     final gap = r.root.length('row-gap') ?? 6;
     final trackHeight = r.track.length('height') ?? 8;
-    final indicator = warning ? t.ui.warning : t.ui.info;
+    // Web paints a full meter (used up) in the warning colour.
+    final indicator = warning || (max > 0 && used >= max)
+        ? t.ui.warning
+        : t.ui.info;
     return Semantics(
       container: true,
       label: label,
@@ -77,23 +80,29 @@ class RaftMeter extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.baseline,
-              textBaseline: TextBaseline.alphabetic,
-              children: [
-                Expanded(
-                  child:
-                      labelChild ??
-                      RaftCssText(
-                        label,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: labelStyle,
-                      ),
-                ),
-                SizedBox(width: r.header.length('column-gap') ?? 12),
-                RaftCssText(valueText, style: valueStyle),
-              ],
+            // `flex-wrap justify-between`: the value drops under the label
+            // when both cannot share a line (large text).
+            LayoutBuilder(
+              builder: (context, box) => Wrap(
+                alignment: WrapAlignment.spaceBetween,
+                crossAxisAlignment: WrapCrossAlignment.end,
+                spacing: r.header.length('column-gap') ?? 12,
+                runSpacing: r.header.length('row-gap') ?? 2,
+                children: [
+                  ConstrainedBox(
+                    constraints: BoxConstraints(maxWidth: box.maxWidth),
+                    child:
+                        labelChild ??
+                        RaftCssText(
+                          label,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: labelStyle,
+                        ),
+                  ),
+                  RaftCssText(valueText, style: valueStyle),
+                ],
+              ),
             ),
             SizedBox(height: gap),
             RaftRecipeBox(
@@ -107,10 +116,12 @@ class RaftMeter extends StatelessWidget {
                 alignment: AlignmentDirectional.centerStart,
                 child: FractionallySizedBox(
                   widthFactor: _fraction,
-                  heightFactor: 1,
-                  child: ColoredBox(
-                    key: const ValueKey('meter-indicator'),
-                    color: indicator,
+                  child: SizedBox(
+                    height: trackHeight,
+                    child: ColoredBox(
+                      key: const ValueKey('meter-indicator'),
+                      color: indicator,
+                    ),
                   ),
                 ),
               ),

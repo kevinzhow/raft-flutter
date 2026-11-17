@@ -13,7 +13,7 @@ abstract final class RaftBillingPlans {
   static const downgradeGracePeriodDays = 7;
   static final trialStart = DateTime.utc(2026, 4, 18);
   static final trialEnd = DateTime.utc(2026, 6, 23, 12);
-  static const comparePlansUrl = 'https://raft.build/#pricing';
+  static const comparePlansUrl = 'https://raft.build/pricing';
 
   /// `isTrialActive(now)`.
   static bool trialActive(DateTime now) =>

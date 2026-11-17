@@ -7,14 +7,14 @@ Pixel parity, field parity (`docs/field-parity.md`) and the page inventory (`doc
 
 ## Summary
 
-Total capabilities: 831 (389 endpoint/network keys, 442 client-side).
+Total capabilities: 832 (390 endpoint/network keys, 442 client-side).
 
 | Status | Count |
 | --- | ---: |
-| ✅ covered | 717 |
-| ⚠️ partial | 24 |
+| ✅ covered | 713 |
+| ⚠️ partial | 28 |
 | ❌ missing | 2 |
-| ➖ na | 88 |
+| ➖ na | 89 |
 
 | Area | ✅ | ⚠️ | ❌ | ➖ |
 | --- | ---: | ---: | ---: | ---: |
@@ -24,7 +24,7 @@ Total capabilities: 831 (389 endpoint/network keys, 442 client-side).
 | DMs | 6 | 0 | 0 | 0 |
 | Members and roles | 20 | 0 | 0 | 3 |
 | Server settings and admin | 56 | 0 | 0 | 2 |
-| Billing | 8 | 0 | 0 | 0 |
+| Billing | 4 | 4 | 0 | 1 |
 | Agents, computers, runtimes | 132 | 1 | 1 | 9 |
 | Integrations, apps, MCP | 78 | 6 | 0 | 7 |
 | Tasks | 42 | 0 | 0 | 5 |
@@ -309,13 +309,14 @@ Legend: ✅ covered (endpoint called and a reachable entry point with equivalent
 | | Capability | Id | Web entry | Flutter entry | Notes |
 | --- | --- | --- | --- | --- | --- |
 | ✅ | Hosted runtime spend for the billing cost card and the agent Cost area | `GET /billing/hosted-runtime-usage` | raftbench/costMetrics.ts and the settings cost card[gate: none] | agent_hosted_spend.dart AgentHostedSpendCard (Settings > Plan, owner/admin), plus the RaftBench cost comparison |  |
-| ✅ | Read plan and subscription state | `GET /billing/subscription` | Plan & Billing; also seat-limit hints in invite and create-agent dialogs[gate: viewBilling for the page] | billing_view.dart; workspace_menu_invite.dart; create_agent_dialog.dart |  |
-| ✅ | Read workspace usage (humans, agents, computers, channels vs plan limits) | `GET /servers/:id/usage` | Plan & Billing usage/seat rows, downgrade warning[gate: viewBilling] | billing_view.dart usage read -> seat usage bars |  |
-| ✅ | Cancel the Pro subscription at period end | `POST /billing/cancel` | Plan & Billing > 'Cancel subscription' + confirm[gate: viewBilling (owner/admin); owner-only for changes per server error] | billing_view.dart 'billing-cancel' action |  |
-| ✅ | Start Pro checkout (monthly/yearly, seat count) in Stripe | `POST /billing/checkout` | Settings > Plan & Billing > 'Upgrade to Pro' (PlanSection)[gate: viewBilling (owner/admin); owner-only for changes per server error] | billing_view.dart 'billing-upgrade' action |  |
-| ✅ | Open the Stripe billing portal | `POST /billing/portal` | Plan & Billing > 'Billing portal'[gate: viewBilling (owner/admin); owner-only for changes per server error] | billing_view.dart 'billing-portal' action |  |
-| ✅ | Change the number of paid seats (seat update with optional promotion code) | `POST /billing/seat-pack-quantity` | Plan & Billing > 'Manage Seats' > Confirm update[gate: viewBilling (owner/admin); owner-only for changes per server error] | billing_view.dart 'billing-update-seats' action |  |
-| ✅ | Preview the prorated charge before changing seats | `POST /billing/seat-pack-quantity/preview` | Plan & Billing > Manage Seats review step[gate: viewBilling (owner/admin); owner-only for changes per server error] | billing_view.dart seat update review dialog |  |
+| ✅ | Read the payment method Stripe charges (owners) | `GET /billing/payment-method` | Plan & Billing > Billing card > Payment method row (PaymentMethodItem)[gate: owner (canManageBilling); the row is left out when the read fails or Stripe is off] | billing_payment_method.dart BillingPaymentMethodList |  |
+| ✅ | Read plan and subscription state | `GET /billing/subscription` | Plan & Billing (BillingTabContent, PlanSection, PlanSectionContent); also seat-limit hints in invite and create-agent dialogs[gate: viewBilling for the page] | billing_view.dart; workspace_menu_invite.dart; create_agent_dialog.dart |  |
+| ✅ | Read workspace usage (humans, agents, computers, channels vs plan limits) | `GET /servers/:id/usage` | Plan & Billing usage card (seat meter, upload meter, members), downgrade warning[gate: viewBilling] | billing_view.dart usage read -> seat meter and member counts (billing_overview.dart) |  |
+| ⚠️ | Cancel the Pro subscription at period end | `POST /billing/cancel` | Plan & Billing > 'Cancel subscription' card + confirm (PlanSectionContent)[gate: viewBilling (owner/admin); owner-only for changes per server error] | billing_overview.dart 'billing-cancel' -> WorkspaceController.openWebBilling (Web Plan & Billing page) | Impact: Cancelling happens on the Web, not in the app; one hop to the browser. By decision (Kevin 2654e77c) the app only shows plan, seats, usage and payment-method status; Cancel subscription opens the Web Plan & Billing page in the browser on every platform. The app never sends POST /billing/cancel. Size S |
+| ⚠️ | Start Pro checkout (monthly/yearly, seat count) in Stripe | `POST /billing/checkout` | Plan & Billing > 'Upgrade to Pro' card (PlanSectionContent) -> upgrade dialog[gate: viewBilling (owner/admin); owner-only for changes per server error] | billing_overview.dart 'billing-upgrade' -> WorkspaceController.openWebBilling (Web Plan & Billing page) | Impact: Starting Pro checkout happens on the Web, not in the app; one hop to the browser. By decision (Kevin 2654e77c) the app only shows plan, seats, usage and payment-method status; Upgrade to Pro / Ask an owner to upgrade opens the Web Plan & Billing page in the browser on every platform. The app never sends POST /billing/checkout. Size S |
+| ⚠️ | Open the Stripe billing portal | `POST /billing/portal` | Plan & Billing > 'Manage in Stripe' and the past-due 'Update payment method' (PlanSectionContent)[gate: viewBilling (owner/admin); owner-only for changes per server error] | billing_overview.dart 'billing-manage-stripe' -> WorkspaceController.openWebBilling (Web Plan & Billing page) | Impact: Managing the card, invoices and receipts happens on the Web, not in the app; one hop to the browser. By decision (Kevin 2654e77c) the app only shows plan, seats, usage and payment-method status; Manage in Stripe and Update payment method opens the Web Plan & Billing page in the browser on every platform. The app never sends POST /billing/portal. Size S |
+| ⚠️ | Change the number of paid seats (seat update with optional promotion code) | `POST /billing/seat-pack-quantity` | Plan & Billing > 'Add seats', 'Manage seats', 'Keep Pro' (PlanSectionContent)[gate: viewBilling (owner/admin); owner-only for changes per server error] | billing_overview.dart 'billing-add-seats' -> WorkspaceController.openWebBilling (Web Plan & Billing page) | Impact: Changing seats or keeping Pro happens on the Web, not in the app; one hop to the browser. By decision (Kevin 2654e77c) the app only shows plan, seats, usage and payment-method status; Add seats, Manage seats and Keep Pro opens the Web Plan & Billing page in the browser on every platform. The app never sends POST /billing/seat-pack-quantity. Size S |
+| ➖ | Preview the prorated charge before changing seats | `POST /billing/seat-pack-quantity/preview` | Plan & Billing > Add seats / Manage seats dialogs[gate: viewBilling (owner/admin); owner-only for changes per server error] |  | N/A: Not built (Kevin 2654e77c): the seat dialogs and their prorated preview are on the Web page the app opens; the app sends no seat request. |
 
 ## Agents, computers, runtimes
 

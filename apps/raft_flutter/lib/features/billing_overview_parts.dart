@@ -13,7 +13,7 @@ class BillingRestricted extends StatelessWidget {
     final t = RaftTokens.of(context);
     return Padding(
       key: const ValueKey('billing-restricted'),
-      padding: const EdgeInsets.only(bottom: 24),
+      padding: const EdgeInsets.only(bottom: RaftSpace.x6),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -22,7 +22,7 @@ class BillingRestricted extends StatelessWidget {
             glyph: RaftGlyph.creditCard,
           ),
           RaftCard(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(RaftSpace.x4),
             child: RaftCssText(
               raftText(
                 context,
@@ -80,7 +80,7 @@ class BillingOverviewLoading extends StatelessWidget {
       label: raftText(context, 'Loading'),
       child: Padding(
         key: const ValueKey('billing-overview-loading'),
-        padding: const EdgeInsets.only(bottom: 24),
+        padding: const EdgeInsets.only(bottom: RaftSpace.x6),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -96,7 +96,7 @@ class BillingOverviewLoading extends StatelessWidget {
                     children: [
                       const _Bar(320, 14, 20),
                       if (narrow) ...[
-                        const SizedBox(height: 6),
+                        const SizedBox(height: RaftSpace.x1_5),
                         const _Bar(160, 14, 20),
                       ],
                     ],
@@ -104,7 +104,7 @@ class BillingOverviewLoading extends StatelessWidget {
                 ),
               ]),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: RaftSpace.x4),
             ExcludeSemantics(
               child: card([
                 const RaftCardSectionHeader(
@@ -122,7 +122,7 @@ class BillingOverviewLoading extends StatelessWidget {
                         max: 1,
                         valueText: '',
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: RaftSpace.x2),
                       const RaftDescriptionList(
                         inline: true,
                         entries: [

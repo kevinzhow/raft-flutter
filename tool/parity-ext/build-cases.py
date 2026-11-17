@@ -799,7 +799,6 @@ settings_fixture['routes']['GET /integrations/marketplace/market_github/install/
     'requested_groups': [], 'approved_groups': [], 'subscribed_events': [], 'effective_groups': [],
     'effective_events': [], 'app_review_pending': False, 'approval_required': False}
 CURRENT_PLAN = "[data-testid='billing-current-plan-card']"
-SUMMARY = "[data-testid='billing-summary-card']"
 MODAL_CARD = "[data-slot='modal-backdrop'] [data-slot='card']"
 MARKET = "[data-testid='connected-apps-marketplace-collection'] > button"
 
@@ -808,26 +807,16 @@ def apps_tab(name):
     return {'type': 'click', 'target': f"[data-testid='connected-apps-tab-{name}']"}
 
 
-settings_case('billing.current-plan', 'Plan & Billing: current plan card (free, trial)', tab='billing',
+settings_case('billing.current-plan', 'Plan & Billing: current plan card (free)', tab='billing',
               selector=CURRENT_PLAN, android_key='billing-current-plan-card', hint=PLAN_HINT)
-settings_case('billing.summary', 'Plan & Billing: checkout summary card', tab='billing', viewport=FRAME_TALL,
-              selector=SUMMARY, android_key='billing-summary-card', hint=PLAN_HINT)
 settings_case('billing.pro', 'Plan & Billing: Pro subscription (seat usage, manage seats)', tab='billing',
               region='panel', viewport=FRAME_TALL, route_set='billing-pro', hint=PLAN_HINT)
 settings_case('billing.pro-plan', 'Plan & Billing: Pro current plan card (seat bar, portal)', tab='billing',
               selector=CURRENT_PLAN, android_key='billing-current-plan-card', route_set='billing-pro', hint=PLAN_HINT)
-settings_case('billing.pro-summary', 'Plan & Billing: manage seats summary card', tab='billing',
-              selector=SUMMARY, android_key='billing-summary-card', route_set='billing-pro', hint=PLAN_HINT,
-              interactions=[{'type': 'reveal', 'target': SUMMARY}],
-              android=[{'type': 'reveal', 'key': 'billing-summary-card'}])
 settings_case('billing.admin', 'Plan & Billing: admin (cannot change billing)', tab='billing', role='admin',
               region='panel', viewport=FRAME_TALL, route_set='billing-admin', hint=PLAN_HINT)
 settings_case('billing.loading', 'Plan & Billing: loading skeleton', tab='billing', region='panel',
               route_set='billing-loading', hint=SETTINGS_HINT + '#PlanBillingLoadingSection')
-settings_case('billing.confirm-checkout', 'Plan & Billing: confirm Pro checkout dialog', tab='billing',
-              selector=DIALOG, android_key='billing-confirm-dialog', hint=PLAN_HINT + ' + ConfirmDialog.tsx',
-              interactions=[{'type': 'click', 'target': btn('Upgrade to Pro')}],
-              android=[{'type': 'tap', 'key': 'billing-upgrade'}])
 settings_case('billing.mobile', 'Plan & Billing: mobile page', tab='billing', viewport=MOBILE_FRAME,
               platform='mobile', hint=PLAN_HINT)
 settings_case('billing.mobile-pro', 'Plan & Billing: mobile page, Pro', tab='billing', viewport=MOBILE_FRAME,

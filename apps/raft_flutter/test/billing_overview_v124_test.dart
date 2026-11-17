@@ -5,10 +5,13 @@
 // seat, portal or cancel request is ever sent from here.
 import 'dart:async';
 import 'dart:convert';
-import 'dart:typed_data';
+import 'dart:io';
+import 'dart:ui' as ui;
 
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
@@ -91,6 +94,7 @@ Widget _host(Widget child, {double width = 1280, bool dark = false}) =>
       data: MediaQueryData(size: Size(width, 2400)),
       child: MaterialApp(
         theme: dark ? raftTheme(dark: true) : raftTheme(),
+        builder: (context, child) => RaftToastHost(child: child!),
         home: Scaffold(
           body: ListView(padding: const EdgeInsets.all(20), children: [child]),
         ),
@@ -294,7 +298,24 @@ void main() {
       await mount(t, _free());
       await t.tap(key('billing-compare-plans'));
       await t.pumpAndSettle();
-      expect(opened.single.host, 'raft.build');
+      expect(opened.single.toString(), 'https://raft.build/pricing');
+    });
+
+    testWidgets('a browser that will not open says so, not silence', (t) async {
+      await mount(t, _free());
+      webBillingLauncher = (uri) async => false;
+      await t.tap(key('billing-upgrade'));
+      await t.pump();
+      expect(find.text('Could not open this address.'), findsOneWidget);
+      await t.pumpAndSettle(const Duration(seconds: 6));
+    });
+
+    testWidgets('the tap opens the browser with no request first', (t) async {
+      final (_, a) = await mount(t, _free());
+      final before = a.calls.length;
+      await t.tap(key('billing-upgrade'));
+      expect(opened, hasLength(1));
+      expect(a.calls.length, before);
     });
 
     testWidgets('without Stripe the upgrade button is off and says why', (
@@ -592,6 +613,83 @@ void main() {
         expect(t.takeException(), isNull);
         expect(key('billing-details-card'), findsOneWidget);
       });
+    }
+  });
+
+  // Evidence render (not a pixel gate): RAFT_BILLING_CAPTURE_DIR=<dir> writes
+  // the Free and Pro pages, light and dark, as PNGs with the bundled fonts.
+  final captureDir = Platform.environment['RAFT_BILLING_CAPTURE_DIR'];
+  group('capture', () {
+    Map<String, dynamic> devFree() => {
+      ..._free(),
+      'usage': {'humans': 1, 'agents': 0, 'universalSeats': 0},
+      'fileUploadQuota': {
+        'month': '2026-11',
+        'limited': true,
+        'limitBytes': 104857600,
+        'usedBytes': 0,
+        'remainingBytes': 104857600,
+      },
+      'stripeConfigured': false,
+    };
+    Map<String, dynamic> devPro() => {
+      ..._pro(),
+      'source': 'server',
+      'subscription': null,
+      'price': null,
+      'capacity': {'maxHumans': -1, 'maxAgents': -1, 'maxUniversalSeats': 1},
+      'usage': {'humans': 6, 'agents': 4, 'universalSeats': 6.4},
+      'provisioned': {'humans': 0, 'agents': 0, 'proPackQuantity': 0},
+      'stripeConfigured': false,
+    };
+    final cases = {
+      'free': devFree(),
+      'pro': devPro(),
+      'pro-subscription': _pro(),
+    };
+    for (final entry in cases.entries) {
+      for (final dark in [false, true]) {
+        testWidgets('${entry.key} ${dark ? 'dark' : 'light'}', (t) async {
+          await t.runAsync(() async {
+            for (final family in ['SpaceGrotesk', 'SpaceMono', 'Inter']) {
+              final data = await rootBundle.load(
+                'packages/raft_ui/assets/fonts/$family.ttf',
+              );
+              await (FontLoader(
+                'packages/raft_ui/$family',
+              )..addFont(Future.value(data))).load();
+            }
+          });
+          await mount(
+            t,
+            entry.value,
+            width: 976,
+            dark: dark,
+            paymentMethod: {
+              'paymentMethod': {
+                'type': 'card',
+                'brand': 'visa',
+                'last4': '4242',
+                'expMonth': 12,
+                'expYear': 2029,
+              },
+            },
+          );
+          final boundary = t.renderObject(
+            find.byType(RepaintBoundary).first,
+          ) as RenderRepaintBoundary;
+          await t.runAsync(() async {
+            final image = await boundary.toImage();
+            final bytes = await image.toByteData(
+              format: ui.ImageByteFormat.png,
+            );
+            File(
+              '$captureDir/flutter-${entry.key}-${dark ? 'dark' : 'light'}.png',
+            ).writeAsBytesSync(bytes!.buffer.asUint8List());
+            image.dispose();
+          });
+        }, skip: captureDir == null);
+      }
     }
   });
 }

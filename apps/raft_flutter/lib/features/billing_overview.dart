@@ -217,7 +217,7 @@ class BillingOverview extends StatelessWidget {
         now: m.now,
       ))
         Padding(
-          padding: const EdgeInsets.only(bottom: 16),
+          padding: const EdgeInsets.only(bottom: RaftSpace.x4),
           child: banner(
             key: const ValueKey('billing-downgraded'),
             status: warn,
@@ -424,8 +424,14 @@ class BillingOverview extends StatelessWidget {
             summary,
             key: const ValueKey('billing-current-plan-summary'),
           ),
+        if (m.appsumo == null && planActions.isNotEmpty)
+          const SizedBox(height: RaftSpace.x3),
         if (planActions.isNotEmpty)
-          Wrap(spacing: 8, runSpacing: 8, children: planActions),
+          Wrap(
+            spacing: RaftSpace.x2,
+            runSpacing: RaftSpace.x2,
+            children: planActions,
+          ),
       ],
     );
 
@@ -443,12 +449,12 @@ class BillingOverview extends StatelessWidget {
                   'total': seatNumber(m.seatCapacity),
                 }),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: RaftSpace.x2),
               Wrap(
                 alignment: WrapAlignment.spaceBetween,
                 crossAxisAlignment: WrapCrossAlignment.center,
-                spacing: 24,
-                runSpacing: 8,
+                spacing: RaftSpace.x6,
+                runSpacing: RaftSpace.x2,
                 children: [
                   RaftDescriptionList(
                     inline: true,
@@ -563,7 +569,7 @@ class BillingOverview extends StatelessWidget {
       title: tr('Usage'),
       content: [
         for (var i = 0; i < usageChildren.length; i++) ...[
-          if (i > 0) const SizedBox(height: 20),
+          if (i > 0) const SizedBox(height: RaftSpace.x5),
           usageChildren[i],
         ],
       ],
@@ -587,7 +593,7 @@ class BillingOverview extends StatelessWidget {
                       ),
                 key: const ValueKey('billing-upgrade-price'),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: RaftSpace.x4),
               _ProAdds(
                 items: [
                   tr('Unlimited message history'),
@@ -596,10 +602,10 @@ class BillingOverview extends StatelessWidget {
                   tr('Use external channels'),
                 ],
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: RaftSpace.x4),
               Wrap(
-                spacing: 8,
-                runSpacing: 8,
+                spacing: RaftSpace.x2,
+                runSpacing: RaftSpace.x2,
                 crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
                   RaftButton(
@@ -622,7 +628,7 @@ class BillingOverview extends StatelessWidget {
                 ],
               ),
               if (!b.stripeConfigured) ...[
-                const SizedBox(height: 16),
+                const SizedBox(height: RaftSpace.x4),
                 RaftCssText(
                   tr('Paid plans are not available yet.'),
                   style: RaftTokens.of(context).scale(
@@ -711,12 +717,12 @@ class BillingOverview extends StatelessWidget {
     ];
     return Padding(
       key: const ValueKey('billing-overview'),
-      padding: const EdgeInsets.only(bottom: 24),
+      padding: const EdgeInsets.only(bottom: RaftSpace.x6),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           for (var i = 0; i < cards.length; i++) ...[
-            if (i > 0) const SizedBox(height: 16),
+            if (i > 0) const SizedBox(height: RaftSpace.x4),
             cards[i],
           ],
         ],
@@ -868,8 +874,8 @@ class _ProAdds extends StatelessWidget {
         final wide = box.maxWidth >= 480;
         final width = wide ? (box.maxWidth - 24) / 2 : box.maxWidth;
         return Wrap(
-          spacing: 24,
-          runSpacing: 8,
+          spacing: RaftSpace.x6,
+          runSpacing: RaftSpace.x2,
           children: [
             for (final item in items)
               SizedBox(
@@ -878,14 +884,14 @@ class _ProAdds extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Padding(
-                      padding: const EdgeInsets.only(top: 2),
+                      padding: const EdgeInsets.only(top: RaftSpace.half),
                       child: RaftIcon(
                         RaftGlyph.check,
                         size: 16,
                         color: t.colors['success-strong'],
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: RaftSpace.x2),
                     Expanded(child: RaftCssText(item, style: style)),
                   ],
                 ),

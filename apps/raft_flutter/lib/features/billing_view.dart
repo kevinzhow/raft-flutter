@@ -8,7 +8,7 @@ import '../data/billing_info.dart';
 import '../data/billing_plans.dart';
 import '../data/feature_flag_client_facts.dart';
 import '../data/workspace_controller.dart';
-import '../platform/web_billing.dart' show webBillingLauncher;
+import '../platform/web_billing.dart' show openInBrowser;
 import 'agent_hosted_spend.dart';
 import 'billing_overview.dart';
 import 'billing_overview_model.dart';
@@ -159,13 +159,10 @@ class _BillingState extends ManagementState<BillingView> {
   }
 
   Future<void> _compare() async {
-    var opened = false;
-    try {
-      // The pricing page, in the browser like every page that leaves Raft.
-      opened = await webBillingLauncher(
-        Uri.parse(RaftBillingPlans.comparePlansUrl),
-      );
-    } catch (_) {}
+    // The pricing page, in the browser like every page that leaves Raft.
+    final opened = await openInBrowser(
+      Uri.parse(RaftBillingPlans.comparePlansUrl),
+    );
     if (!opened && mounted) {
       showRaftToast(context, 'Could not open this address.');
     }

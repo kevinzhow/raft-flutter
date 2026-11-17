@@ -88,3 +88,13 @@ Future<bool> openWebBilling({
     return false;
   }
 }
+
+/// Any other page that leaves the app for the browser (the pricing page),
+/// through the same launcher. False when it could not be opened.
+Future<bool> openInBrowser(Uri uri) async {
+  try {
+    return await webBillingLauncher(uri);
+  } on Object {
+    return false;
+  }
+}

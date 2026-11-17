@@ -4916,7 +4916,7 @@
    "capability": "Read plan and subscription state",
    "background": false,
    "status": "covered",
-   "webEntry": "Plan & Billing; also seat-limit hints in invite and create-agent dialogs",
+   "webEntry": "Plan & Billing (BillingTabContent, PlanSection, PlanSectionContent); also seat-limit hints in invite and create-agent dialogs",
    "gate": "viewBilling for the page",
    "flutterEntry": "billing_view.dart; workspace_menu_invite.dart; create_agent_dialog.dart",
    "flutterRefs": [
@@ -4935,22 +4935,42 @@
   },
   {
    "kind": "endpoint",
+   "id": "GET /billing/payment-method",
+   "area": "billing",
+   "capability": "Read the payment method Stripe charges (owners)",
+   "background": false,
+   "status": "covered",
+   "webEntry": "Plan & Billing > Billing card > Payment method row (PaymentMethodItem)",
+   "gate": "owner (canManageBilling); the row is left out when the read fails or Stripe is off",
+   "flutterEntry": "billing_payment_method.dart BillingPaymentMethodList",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/features/billing_payment_method.dart",
+     "needle": "/billing/payment-method"
+    }
+   ],
+   "justification": "",
+   "impact": "",
+   "size": ""
+  },
+  {
+   "kind": "endpoint",
    "id": "GET /servers/:id/usage",
    "area": "billing",
    "capability": "Read workspace usage (humans, agents, computers, channels vs plan limits)",
    "background": false,
    "status": "covered",
-   "webEntry": "Plan & Billing usage/seat rows, downgrade warning",
+   "webEntry": "Plan & Billing usage card (seat meter, upload meter, members), downgrade warning",
    "gate": "viewBilling",
-   "flutterEntry": "billing_view.dart usage read -> seat usage bars",
+   "flutterEntry": "billing_view.dart usage read -> seat meter and member counts (billing_overview.dart)",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/billing_view.dart",
      "needle": "/usage"
     },
     {
-     "file": "apps/raft_flutter/lib/features/billing_view.dart",
-     "needle": "RaftBillingSeatUsage"
+     "file": "apps/raft_flutter/lib/features/billing_overview.dart",
+     "needle": "billing-seat-meter"
     }
    ],
    "justification": "",
@@ -4963,23 +4983,23 @@
    "area": "billing",
    "capability": "Cancel the Pro subscription at period end",
    "background": false,
-   "status": "covered",
-   "webEntry": "Plan & Billing > 'Cancel subscription' + confirm",
+   "status": "partial",
+   "webEntry": "Plan & Billing > 'Cancel subscription' card + confirm (PlanSectionContent)",
    "gate": "viewBilling (owner/admin); owner-only for changes per server error",
-   "flutterEntry": "billing_view.dart 'billing-cancel' action",
+   "flutterEntry": "billing_overview.dart 'billing-cancel' -> WorkspaceController.openWebBilling (Web Plan & Billing page)",
    "flutterRefs": [
     {
-     "file": "apps/raft_flutter/lib/features/billing_view.dart",
-     "needle": "/billing/cancel"
+     "file": "apps/raft_flutter/lib/features/billing_overview.dart",
+     "needle": "billing-cancel"
     },
     {
      "file": "apps/raft_flutter/lib/features/billing_view.dart",
-     "needle": "billing-cancel"
+     "needle": "openWebBilling"
     }
    ],
-   "justification": "",
-   "impact": "",
-   "size": ""
+   "justification": "By decision (Kevin 2654e77c) the app only shows plan, seats, usage and payment-method status; Cancel subscription opens the Web Plan & Billing page in the browser on every platform. The app never sends POST /billing/cancel.",
+   "impact": "Cancelling happens on the Web, not in the app; one hop to the browser.",
+   "size": "S"
   },
   {
    "kind": "endpoint",
@@ -4987,23 +5007,23 @@
    "area": "billing",
    "capability": "Start Pro checkout (monthly/yearly, seat count) in Stripe",
    "background": false,
-   "status": "covered",
-   "webEntry": "Settings > Plan & Billing > 'Upgrade to Pro' (PlanSection)",
+   "status": "partial",
+   "webEntry": "Plan & Billing > 'Upgrade to Pro' card (PlanSectionContent) -> upgrade dialog",
    "gate": "viewBilling (owner/admin); owner-only for changes per server error",
-   "flutterEntry": "billing_view.dart 'billing-upgrade' action",
+   "flutterEntry": "billing_overview.dart 'billing-upgrade' -> WorkspaceController.openWebBilling (Web Plan & Billing page)",
    "flutterRefs": [
     {
-     "file": "apps/raft_flutter/lib/features/billing_view.dart",
-     "needle": "/billing/checkout"
+     "file": "apps/raft_flutter/lib/features/billing_overview.dart",
+     "needle": "billing-upgrade"
     },
     {
      "file": "apps/raft_flutter/lib/features/billing_view.dart",
-     "needle": "billing-upgrade"
+     "needle": "openWebBilling"
     }
    ],
-   "justification": "",
-   "impact": "",
-   "size": ""
+   "justification": "By decision (Kevin 2654e77c) the app only shows plan, seats, usage and payment-method status; Upgrade to Pro / Ask an owner to upgrade opens the Web Plan & Billing page in the browser on every platform. The app never sends POST /billing/checkout.",
+   "impact": "Starting Pro checkout happens on the Web, not in the app; one hop to the browser.",
+   "size": "S"
   },
   {
    "kind": "endpoint",
@@ -5011,23 +5031,23 @@
    "area": "billing",
    "capability": "Open the Stripe billing portal",
    "background": false,
-   "status": "covered",
-   "webEntry": "Plan & Billing > 'Billing portal'",
+   "status": "partial",
+   "webEntry": "Plan & Billing > 'Manage in Stripe' and the past-due 'Update payment method' (PlanSectionContent)",
    "gate": "viewBilling (owner/admin); owner-only for changes per server error",
-   "flutterEntry": "billing_view.dart 'billing-portal' action",
+   "flutterEntry": "billing_overview.dart 'billing-manage-stripe' -> WorkspaceController.openWebBilling (Web Plan & Billing page)",
    "flutterRefs": [
     {
-     "file": "apps/raft_flutter/lib/features/billing_view.dart",
-     "needle": "/billing/portal"
+     "file": "apps/raft_flutter/lib/features/billing_overview.dart",
+     "needle": "billing-manage-stripe"
     },
     {
      "file": "apps/raft_flutter/lib/features/billing_view.dart",
-     "needle": "billing-portal"
+     "needle": "openWebBilling"
     }
    ],
-   "justification": "",
-   "impact": "",
-   "size": ""
+   "justification": "By decision (Kevin 2654e77c) the app only shows plan, seats, usage and payment-method status; Manage in Stripe and Update payment method opens the Web Plan & Billing page in the browser on every platform. The app never sends POST /billing/portal.",
+   "impact": "Managing the card, invoices and receipts happens on the Web, not in the app; one hop to the browser.",
+   "size": "S"
   },
   {
    "kind": "endpoint",
@@ -5035,23 +5055,23 @@
    "area": "billing",
    "capability": "Change the number of paid seats (seat update with optional promotion code)",
    "background": false,
-   "status": "covered",
-   "webEntry": "Plan & Billing > 'Manage Seats' > Confirm update",
+   "status": "partial",
+   "webEntry": "Plan & Billing > 'Add seats', 'Manage seats', 'Keep Pro' (PlanSectionContent)",
    "gate": "viewBilling (owner/admin); owner-only for changes per server error",
-   "flutterEntry": "billing_view.dart 'billing-update-seats' action",
+   "flutterEntry": "billing_overview.dart 'billing-add-seats' -> WorkspaceController.openWebBilling (Web Plan & Billing page)",
    "flutterRefs": [
     {
-     "file": "apps/raft_flutter/lib/features/billing_view.dart",
-     "needle": "/billing/seat-pack-quantity'"
+     "file": "apps/raft_flutter/lib/features/billing_overview.dart",
+     "needle": "billing-add-seats"
     },
     {
      "file": "apps/raft_flutter/lib/features/billing_view.dart",
-     "needle": "billing-update-seats"
+     "needle": "openWebBilling"
     }
    ],
-   "justification": "",
-   "impact": "",
-   "size": ""
+   "justification": "By decision (Kevin 2654e77c) the app only shows plan, seats, usage and payment-method status; Add seats, Manage seats and Keep Pro opens the Web Plan & Billing page in the browser on every platform. The app never sends POST /billing/seat-pack-quantity.",
+   "impact": "Changing seats or keeping Pro happens on the Web, not in the app; one hop to the browser.",
+   "size": "S"
   },
   {
    "kind": "endpoint",
@@ -5059,21 +5079,12 @@
    "area": "billing",
    "capability": "Preview the prorated charge before changing seats",
    "background": false,
-   "status": "covered",
-   "webEntry": "Plan & Billing > Manage Seats review step",
+   "status": "na",
+   "webEntry": "Plan & Billing > Add seats / Manage seats dialogs",
    "gate": "viewBilling (owner/admin); owner-only for changes per server error",
-   "flutterEntry": "billing_view.dart seat update review dialog",
-   "flutterRefs": [
-    {
-     "file": "apps/raft_flutter/lib/features/billing_view.dart",
-     "needle": "/billing/seat-pack-quantity/preview"
-    },
-    {
-     "file": "apps/raft_flutter/lib/features/billing_view.dart",
-     "needle": "billing-confirm"
-    }
-   ],
-   "justification": "",
+   "flutterEntry": "",
+   "flutterRefs": [],
+   "justification": "Not built (Kevin 2654e77c): the seat dialogs and their prorated preview are on the Web page the app opens; the app sends no seat request.",
    "impact": "",
    "size": ""
   },
@@ -6444,32 +6455,32 @@
    "size": ""
   },
   {
-    "kind": "endpoint",
-    "id": "POST /agents/:id/subagents/:id/interrupt",
-    "area": "agents-computers-runtimes",
-    "capability": "Stop one running subagent (the agent and its other subagents keep running): 'Stop subagent' in the Activity tab's Subagents detail; outcome toast (asked to stop / not running / cannot be stopped on its own), Computer offline or too old refusals, Retry on failure",
-    "background": false,
-    "status": "covered",
-    "webEntry": "AgentActivityLog > Subagents > SubagentDetail 'Stop subagent' (stopSubagentWithFeedback)",
-    "gate": "canStopSubagentsOf: controlAgentRuntime capability (or creator) on a live agent whose runtime is codex, claude, kimi-sdk or qoder; the subagent is running and names its own task id",
-    "flutterEntry": "agent_subagents_view.dart AgentSubagentsView (onStop) > agent_subagent_stop.dart stopSubagentWithFeedback",
-    "flutterRefs": [
-      {
-        "file": "apps/raft_flutter/lib/features/agent_subagent_stop.dart",
-        "needle": "/interrupt"
-      },
-      {
-        "file": "apps/raft_flutter/lib/features/agent_subagent_stop.dart",
-        "needle": "stopSubagentWithFeedback("
-      },
-      {
-        "file": "apps/raft_flutter/lib/features/agent_profile_rules.dart",
-        "needle": "canStopSubagentsOf("
-      }
-    ],
-    "justification": "",
-    "impact": "",
-    "size": ""
+   "kind": "endpoint",
+   "id": "POST /agents/:id/subagents/:id/interrupt",
+   "area": "agents-computers-runtimes",
+   "capability": "Stop one running subagent (the agent and its other subagents keep running): 'Stop subagent' in the Activity tab's Subagents detail; outcome toast (asked to stop / not running / cannot be stopped on its own), Computer offline or too old refusals, Retry on failure",
+   "background": false,
+   "status": "covered",
+   "webEntry": "AgentActivityLog > Subagents > SubagentDetail 'Stop subagent' (stopSubagentWithFeedback)",
+   "gate": "canStopSubagentsOf: controlAgentRuntime capability (or creator) on a live agent whose runtime is codex, claude, kimi-sdk or qoder; the subagent is running and names its own task id",
+   "flutterEntry": "agent_subagents_view.dart AgentSubagentsView (onStop) > agent_subagent_stop.dart stopSubagentWithFeedback",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/features/agent_subagent_stop.dart",
+     "needle": "/interrupt"
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/agent_subagent_stop.dart",
+     "needle": "stopSubagentWithFeedback("
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/agent_profile_rules.dart",
+     "needle": "canStopSubagentsOf("
+    }
+   ],
+   "justification": "",
+   "impact": "",
+   "size": ""
   },
   {
    "kind": "endpoint",
