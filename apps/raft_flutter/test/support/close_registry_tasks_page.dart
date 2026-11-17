@@ -16,9 +16,9 @@ const tasksPageSurfaces = <CloseSurface>[
     kind: SurfaceKind.popup,
     web:
         'tasksPage/TasksPageToolbar.tsx Popover + ui/SelectionPopover.tsx (Channel, Status, Creator, Assignee): Esc, outside press',
-    phone: {_esc, _scrim},
-    fold: {_esc, _scrim},
-    desktop: {_esc, _scrim},
+    phone: {_esc, _scrim, _sys},
+    fold: {_esc, _scrim, _sys},
+    desktop: {_esc, _scrim, _sys},
     files: [
       'lib/features/tasks_page/tasks_page_toolbar.dart',
       'lib/features/task_selection_filter.dart',
@@ -75,9 +75,9 @@ const tasksPageSurfaces = <CloseSurface>[
     kind: SurfaceKind.popup,
     web:
         'tasksPage/TasksSelectionBar.tsx Assignee Popover + SelectionPopover (searchable, opens upward): Esc, outside press',
-    phone: {_esc, _scrim},
-    fold: {_esc, _scrim},
-    desktop: {_esc, _scrim},
+    phone: {_esc, _scrim, _sys},
+    fold: {_esc, _scrim, _sys},
+    desktop: {_esc, _scrim, _sys},
     files: [
       'lib/features/tasks_page/tasks_selection_bar.dart',
       '../../packages/raft_ui/lib/src/selection_bar.dart',

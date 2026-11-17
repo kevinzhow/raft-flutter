@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 
 import 'anchored_popup.dart';
+import 'dismiss_scope.dart';
 
 /// Caller-controlled popover lifetime with the shared Raft popup placement.
 ///
@@ -79,20 +80,24 @@ class _RaftPopoverAnchorState extends State<RaftPopoverAnchor> {
     builder: widget.builder,
     child: widget.child,
     overlayBuilder: (context, info) => Positioned.fill(
-      child: RaftAnchoredPopup(
-        anchorKey: widget.anchorKey,
-        anchorRect: info.anchorRect,
-        gap: widget.gap,
-        collisionPadding: widget.collisionPadding,
-        alignRight: widget.alignRight,
-        snapToPixel: true,
-        child: TapRegion(
-          groupId: info.tapRegionGroupId,
-          onTapOutside: (_) => widget.controller.close(),
-          child: Focus(
-            focusNode: _popupFocus,
-            includeSemantics: false,
-            child: widget.popup,
+      // The system back gesture closes the popover, not the page under it.
+      child: RaftBackDismiss(
+        onDismiss: widget.controller.close,
+        child: RaftAnchoredPopup(
+          anchorKey: widget.anchorKey,
+          anchorRect: info.anchorRect,
+          gap: widget.gap,
+          collisionPadding: widget.collisionPadding,
+          alignRight: widget.alignRight,
+          snapToPixel: true,
+          child: TapRegion(
+            groupId: info.tapRegionGroupId,
+            onTapOutside: (_) => widget.controller.close(),
+            child: Focus(
+              focusNode: _popupFocus,
+              includeSemantics: false,
+              child: widget.popup,
+            ),
           ),
         ),
       ),
