@@ -49304,13 +49304,13 @@
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
-      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5590/METHOD:buildWorkspace@47408/FUNCTION:<anonymous>@47626/FUNCTION:workspace@64056": {
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5590/METHOD:buildWorkspace@47408/FUNCTION:<anonymous>@47626/FUNCTION:workspace@63951": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
-      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5590/METHOD:settingsRailAction@108207/FUNCTION:action@108241": {
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5590/METHOD:settingsRailAction@108102/FUNCTION:action@108136": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
@@ -50102,19 +50102,19 @@
         "owner": "design-system alignment",
         "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
       },
-      "apps/raft_flutter/lib/features/resource_view.dart#local-function:CLASS:_ResourceViewState@7358/METHOD:activityList@110103/FUNCTION:bar@110325": {
+      "apps/raft_flutter/lib/features/resource_view.dart#local-function:CLASS:_ResourceViewState@7425/METHOD:activityList@110042/FUNCTION:bar@110264": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
       },
-      "apps/raft_flutter/lib/features/resource_view.dart#local-function:CLASS:_ResourceViewState@7358/METHOD:scopedDialog@49763/FUNCTION:buildOwned@49990": {
+      "apps/raft_flutter/lib/features/resource_view.dart#local-function:CLASS:_ResourceViewState@7425/METHOD:scopedDialog@49885/FUNCTION:buildOwned@50112": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
       },
-      "apps/raft_flutter/lib/features/resource_view.dart#local-function:CLASS:_ResourceViewState@7358/METHOD:scopedMenu@50811/FUNCTION:buildOwned@51018": {
+      "apps/raft_flutter/lib/features/resource_view.dart#local-function:CLASS:_ResourceViewState@7425/METHOD:scopedMenu@50933/FUNCTION:buildOwned@51140": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",

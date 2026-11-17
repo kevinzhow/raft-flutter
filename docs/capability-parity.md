@@ -11,10 +11,10 @@ Total capabilities: 833 (391 endpoint/network keys, 442 client-side).
 
 | Status | Count |
 | --- | ---: |
-| ✅ covered | 714 |
+| ✅ covered | 709 |
 | ⚠️ partial | 28 |
 | ❌ missing | 2 |
-| ➖ na | 89 |
+| ➖ na | 94 |
 
 | Area | ✅ | ⚠️ | ❌ | ➖ |
 | --- | ---: | ---: | ---: | ---: |
@@ -30,7 +30,7 @@ Total capabilities: 833 (391 endpoint/network keys, 442 client-side).
 | Tasks | 42 | 0 | 0 | 5 |
 | Files and attachments | 25 | 3 | 0 | 2 |
 | Search | 19 | 0 | 0 | 1 |
-| Notifications | 33 | 4 | 0 | 6 |
+| Notifications | 30 | 4 | 0 | 9 |
 | Account and profile | 52 | 0 | 0 | 13 |
 | Onboarding and auth | 37 | 1 | 0 | 8 |
 | Joint channels | 12 | 0 | 0 | 0 |
