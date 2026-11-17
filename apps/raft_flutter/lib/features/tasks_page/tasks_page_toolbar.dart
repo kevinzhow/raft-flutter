@@ -228,14 +228,16 @@ class _ScopeItem extends RaftFitItem {
     if (form == RaftFitForm.full) {
       // The track is taller than the line's controls: it hangs into the air
       // above and below (`-my-[3px]`), the line stays as tall as the controls.
-      final track = t.desktop ? 40.0 : 38.0;
+      // (The segment is the line's height; the track adds 3px around it.)
+      final track = line + 6;
       return Align(
+        widthFactor: 1,
         heightFactor: line / track,
         child: RaftSegmentedControl<TasksPageTab>(
           value: tab,
           label: label,
-          visualHeight: track,
-          minimumTargetSize: track,
+          visualHeight: line,
+          minimumTargetSize: line,
           onChanged: onChanged,
           items: [
             for (final value in TasksPageTab.values)
@@ -305,17 +307,18 @@ class _ViewItem extends RaftFitItem {
   }) {
     final t = RaftTokens.of(context);
     final line = t.desktop ? RaftDesktopMetrics.controlHeight : 32.0;
-    final track = t.desktop ? 40.0 : 38.0;
+    final track = line + 6;
     final iconOnly = form != RaftFitForm.full;
     String name(TasksPageView v) =>
         raftText(context, v == TasksPageView.list ? 'List' : 'Board');
     return Align(
+      widthFactor: 1,
       heightFactor: line / track,
       child: RaftSegmentedControl<TasksPageView>(
         value: view,
         label: label,
-        visualHeight: track,
-        minimumTargetSize: track,
+        visualHeight: line,
+        minimumTargetSize: line,
         onChanged: onChanged,
         items: [
           for (final value in TasksPageView.values)
