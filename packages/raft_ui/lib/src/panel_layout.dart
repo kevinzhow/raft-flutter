@@ -119,9 +119,9 @@ class RaftInfoRow extends StatelessWidget {
   }
 
   /// [detailsStyleOf] in the mono face (`font-mono`).
-  static TextStyle monoStyleOf(BuildContext context) =>
-      detailsStyleOf(context)
-          .copyWith(fontFamily: RaftTokens.of(context).monoFont);
+  static TextStyle monoStyleOf(BuildContext context) => detailsStyleOf(
+    context,
+  ).copyWith(fontFamily: RaftTokens.of(context).monoFont);
 
   /// [detailsStyleOf] in `text-foreground-muted`.
   static TextStyle mutedStyleOf(BuildContext context) {
@@ -332,28 +332,37 @@ class RaftPanelHeaderContent extends StatelessWidget {
     required this.style,
     required this.heading,
     this.meta,
+    this.inline = false,
   });
+
+  /// `flex-row items-baseline gap-2` on the content (a page head that names
+  /// the page with its number beside it: Web TasksPage), whatever the recipe.
+  final bool inline;
   final RaftSlotStyle style;
   final Widget heading;
   final Widget? meta;
 
   @override
   Widget build(BuildContext context) {
-    final horizontal = switch (style['flex-direction']) {
-      CssKeyword(value: 'row') => true,
-      _ => false,
-    };
-    final gap =
-        (horizontal ? style.columnGap : style.rowGap) ??
-        style.length('gap') ??
-        0;
+    final horizontal =
+        inline ||
+        switch (style['flex-direction']) {
+          CssKeyword(value: 'row') => true,
+          _ => false,
+        };
+    final gap = inline
+        ? 8.0
+        : (horizontal ? style.columnGap : style.rowGap) ??
+              style.length('gap') ??
+              0;
     final baseline =
         horizontal &&
         meta != null &&
-        switch (style['align-items']) {
-          CssKeyword(value: 'baseline') => true,
-          _ => false,
-        };
+        (inline ||
+            switch (style['align-items']) {
+              CssKeyword(value: 'baseline') => true,
+              _ => false,
+            });
     return LayoutBuilder(
       builder: (context, constraints) => Flex(
         direction: horizontal ? Axis.horizontal : Axis.vertical,
@@ -427,10 +436,16 @@ class RaftPanelHeaderBar extends StatelessWidget {
     this.profileHandle = false,
     this.background,
     this.leading,
+    this.inlineMeta = false,
   });
 
   /// A control before the title, after Back (a side card's fold chevron).
   final Widget? leading;
+
+  /// The subtitle beside the title on one baseline, in the mono meta hint ink
+  /// (Web `PanelHeaderContent className="flex-row items-baseline gap-2"` with
+  /// `text-mono-meta text-foreground-hint`: the server Tasks page's head).
+  final bool inlineMeta;
 
   /// The page surface under this header; null keeps the recipe fill.
   final Color? background;
@@ -483,7 +498,7 @@ class RaftPanelHeaderBar extends StatelessWidget {
     );
     final gap = narrow ? 8.0 : 12.0;
     final titleStyle = t.scale(t.typeSlot('headline'));
-    final metaStyle = profileHandle
+    final metaStyle = inlineMeta || profileHandle
         ? t.scale(
             t.typeSlot('mono-meta'),
             mono: true,
@@ -495,6 +510,7 @@ class RaftPanelHeaderBar extends StatelessWidget {
             color: t.ui.foregroundHint,
           );
     final heading = Row(
+      mainAxisSize: inlineMeta ? MainAxisSize.min : MainAxisSize.max,
       children: [
         Flexible(
           child: Semantics(
@@ -554,6 +570,22 @@ class RaftPanelHeaderBar extends StatelessWidget {
             Expanded(
               child:
                   titleSlot ??
+                  (inlineMeta && subtitle != null
+                      ? Row(
+                          crossAxisAlignment: CrossAxisAlignment.baseline,
+                          textBaseline: TextBaseline.alphabetic,
+                          spacing: 8,
+                          children: [
+                            Flexible(child: heading),
+                            RaftCssText(
+                              subtitle!,
+                              style: metaStyle,
+                              maxLines: 1,
+                              softWrap: false,
+                            ),
+                          ],
+                        )
+                      : null) ??
                   Column(
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -687,6 +719,7 @@ class RaftPanelHeaderBar extends StatelessWidget {
                 titleSlot ??
                 RaftPanelHeaderContent(
                   style: s.headerContent,
+                  inline: inlineMeta,
                   heading: titleSuffix == null
                       ? Semantics(
                           header: true,
@@ -730,7 +763,15 @@ class RaftPanelHeaderBar extends StatelessWidget {
                           overflow: lines == null
                               ? TextOverflow.clip
                               : TextOverflow.ellipsis,
-                          style: (profileHandle)
+                          style: inlineMeta
+                              ? t
+                                    .scale(
+                                      RaftTypeScale.monoMeta,
+                                      mono: true,
+                                      color: t.ui.foregroundHint,
+                                    )
+                                    .merge(raftCssText)
+                              : (profileHandle)
                               ? text(
                                   s.meta,
                                 ).copyWith(fontFamily: t.monoFont, fontSize: 15)

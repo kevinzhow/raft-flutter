@@ -133,23 +133,30 @@ class TaskCardFacts extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
             style: t.scale(RaftTypeScale.caption, color: t.ui.foregroundHint),
           );
-    return Row(
-      key: const ValueKey('tasks-page-card-facts'),
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Flexible(
-          child: LayoutBuilder(
-            builder: (context, box) => box.maxWidth < 30
-                ? const SizedBox.shrink()
-                // ds-allow: Web TaskCardFacts `gap-2`
-                : Padding(padding: const EdgeInsets.only(right: 8), child: who),
+    return LayoutBuilder(
+      builder: (context, box) => Row(
+        key: const ValueKey('tasks-page-card-facts'),
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Flexible(
+            child: LayoutBuilder(
+              builder: (context, room) => room.maxWidth < 30
+                  ? const SizedBox.shrink()
+                  // ds-allow: Web TaskCardFacts `gap-2`
+                  : Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: who,
+                    ),
+            ),
           ),
-        ),
-        Flexible(
-          flex: 0,
-          child: TaskActivityTime(task: task, now: now),
-        ),
-      ],
+          // The time is never wider than the facts' own room (a card too
+          // narrow for it clips the time rather than overflowing).
+          ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: box.maxWidth),
+            child: TaskActivityTime(task: task, now: now),
+          ),
+        ],
+      ),
     );
   }
 }

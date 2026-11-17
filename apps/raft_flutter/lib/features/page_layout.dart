@@ -79,6 +79,7 @@ class RaftPageHeader extends StatelessWidget implements PreferredSizeWidget {
         title: title,
         background: background,
         subtitle: subtitle,
+        inlineMeta: true,
         leftPadding: leftInset,
         bottomRule: bottomRule,
         actions: actions,

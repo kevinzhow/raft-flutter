@@ -370,41 +370,42 @@ class RaftTaskAssignee extends StatelessWidget {
     final name = task.assigneeIsViewer
         ? raftText(context, 'You')
         : task.assigneeName!;
+    final avatar = RaftAvatar(
+      name: task.assigneeName!,
+      kind: task.assigneeIsAgent ? RaftAvatarKind.agent : RaftAvatarKind.human,
+      imageUrl: task.assigneeAvatarUrl,
+      mountedContext: RaftMountedAvatarContext.compactList,
+    );
+    final label = Text(
+      name,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: t.scale(
+        RaftTypeScale.caption,
+        weight: task.assigneeIsViewer ? FontWeight.w600 : FontWeight.w400,
+        color: task.assigneeIsViewer ? t.ui.foreground : t.ui.foregroundMuted,
+      ),
+    );
     return ConstrainedBox(
       constraints: const BoxConstraints(maxWidth: 192),
-      child: Row(
-        key: const ValueKey('message-task-chip-assignee'),
-        mainAxisSize: MainAxisSize.min,
-        spacing: 6,
-        children: [
-          RaftAvatar(
-            name: task.assigneeName!,
-            kind: task.assigneeIsAgent
-                ? RaftAvatarKind.agent
-                : RaftAvatarKind.human,
-            imageUrl: task.assigneeAvatarUrl,
-            mountedContext: RaftMountedAvatarContext.compactList,
-          ),
-          Flexible(
-            child: Text(
-              name,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: t.scale(
-                RaftTypeScale.caption,
-                weight: task.assigneeIsViewer
-                    ? FontWeight.w600
-                    : FontWeight.w400,
-                color: task.assigneeIsViewer
-                    ? t.ui.foreground
-                    : t.ui.foregroundMuted,
-              ),
-            ),
-          ),
-        ],
+      // A box with no room for the gap after the avatar shows the avatar
+      // alone (the name would have no width to truncate into).
+      child: LayoutBuilder(
+        builder: (context, box) => Row(
+          key: const ValueKey('message-task-chip-assignee'),
+          mainAxisSize: MainAxisSize.min,
+          spacing: box.maxWidth < _avatarAndGap ? 0 : 6,
+          children: [
+            avatar,
+            if (box.maxWidth >= _avatarAndGap) Flexible(child: label),
+          ],
+        ),
       ),
     );
   }
+
+  /// The avatar slot (20) and the gap after it (6).
+  static const _avatarAndGap = 26.0;
 }
 
 /// The accessible label of a row's reply count (Web `task.chip.*`).

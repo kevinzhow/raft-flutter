@@ -29,7 +29,7 @@ const Map<String, String> zhCatalogUpstream124Tasks = <String, String>{
   "Assigned to me": "分配给我的",
   "View as": "视图",
   "Assign to": "转给",
-  "Selected the first task": "已选前 {count} 个任务",
+  "Selected the first task": "已选前 1 个任务",
   "Selected the first {count} tasks": "已选前 {count} 个任务",
   "Selected {count} task; the rest couldn't be read": "已选 {count} 个任务，其余的没能读到",
   "Selected {count} tasks; the rest couldn't be read": "已选 {count} 个任务，其余的没能读到",

@@ -533,6 +533,7 @@ class _TasksPageState extends State<TasksPage> {
       message = narrowed
           ? RaftProductEmptyPanel(
               key: const ValueKey('tasks-page-empty'),
+              background: t.colors['layer-canvas'],
               titleHeading: true,
               title: raftText(context, 'No tasks match'),
               icon: (context, size, color) =>
@@ -540,6 +541,7 @@ class _TasksPageState extends State<TasksPage> {
             )
           : RaftProductEmptyPanel(
               key: const ValueKey('tasks-page-empty'),
+              background: t.colors['layer-canvas'],
               titleHeading: true,
               title: raftText(context, 'No tasks yet'),
               icon: (context, size, color) =>
@@ -678,6 +680,7 @@ class _CountsFailed extends StatelessWidget {
   @override
   Widget build(BuildContext context) => RaftProductEmptyPanel(
     key: const ValueKey('tasks-page-failed'),
+    background: RaftTokens.of(context).colors['layer-canvas'],
     titleHeading: true,
     title: raftText(context, 'Tasks didn’t load'),
     icon: (context, size, color) =>

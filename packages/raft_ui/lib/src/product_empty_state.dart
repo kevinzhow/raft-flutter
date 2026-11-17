@@ -195,8 +195,13 @@ class RaftProductEmptyPanel extends StatelessWidget {
     this.description,
     this.action,
     this.titleHeading = false,
+    this.background,
   });
 
+  /// The body's fill; null is the sidebar tint (the Tasks panel's viewport,
+  /// transparent in dark). The server Tasks page's viewport is the plain
+  /// canvas (Web TasksPage `VIEWPORT_CLASS` `bg-layer-canvas`).
+  final Color? background;
   final bool titleHeading;
   final String title;
   final String? description;
@@ -209,7 +214,7 @@ class RaftProductEmptyPanel extends StatelessWidget {
     return ColoredBox(
       // TasksPanelViewport `dark:bg-transparent`: Elegant dark shows the
       // mounted card surface.
-      color: (t.dark ? Colors.transparent : t.sidebar),
+      color: background ?? (t.dark ? Colors.transparent : t.sidebar),
       child: Padding(
         padding: raftScrollPadding(context, const EdgeInsets.all(16)),
         child: SizedBox.expand(
