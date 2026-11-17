@@ -208,10 +208,11 @@ class _AppLoginRow extends StatelessWidget {
       interactive: false,
       semanticLabel: login.name,
       children: [
-        // AvatarSlot `list-row` `type="app"`: the logo, else the initials.
+        // AvatarSlot `list-row` `type="app"`: the logo, else the initials, in
+        // the human sticker (AvatarSlot passes `type="human"` to Avatar for
+        // everything but an agent).
         RaftAvatar(
           name: login.name,
-          kind: RaftAvatarKind.app,
           uiSize: RaftAvatarSize.md,
           content: logo == null
               ? initials
