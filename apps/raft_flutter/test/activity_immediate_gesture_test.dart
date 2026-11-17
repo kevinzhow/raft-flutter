@@ -7,6 +7,7 @@ import 'package:raft_ui/raft_ui.dart';
 
 import 'activity_open_clears_new_test.dart' show activityRow;
 import 'message_presentation_test.dart' show fixture;
+import 'support/activity_row_actions.dart' show activityNewCount;
 
 void main() {
   for (final mode in [
@@ -87,7 +88,7 @@ void main() {
         expect(tester.getRect(card), rect);
         expect(tester.getRect(next), nextRect);
         expect(
-          find.descendant(of: card, matching: find.text('2 new')),
+          find.descendant(of: card, matching: activityNewCount(2)),
           findsNothing,
         );
         if (mode == 'double') {

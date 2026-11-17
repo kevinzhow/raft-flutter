@@ -136,7 +136,7 @@ void main() {
             expect(find.byType(RaftChatView), findsOneWidget);
             expect(a, findsOneWidget);
             expect(b, findsOneWidget);
-            final tint = t.widget<RaftConversationListRow>(a);
+            final tint = t.widget<RaftInboxItem>(a);
             expect(tint.selected, isTrue);
             // A different row retargets the preview, never navigates.
             await click(t, b, kind);

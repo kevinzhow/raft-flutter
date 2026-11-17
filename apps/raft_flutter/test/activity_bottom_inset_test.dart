@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_flutter/data/device_preferences.dart';
-import 'package:raft_flutter/features/activity_rollout_flags.dart';
 import 'package:raft_flutter/features/resource_view.dart';
 import 'package:raft_flutter/features/workspace_view.dart';
 import 'package:raft_ui/raft_ui.dart';
@@ -60,7 +59,7 @@ Future<ActivityWorkspace> _mount(
   await t.pumpAndSettle();
   expect(find.byType(WorkspaceView), findsOneWidget);
   expect(find.byType(ResourceView), findsOneWidget);
-  expect(find.byType(RaftConversationListRow), findsWidgets);
+  expect(find.byType(RaftInboxItem), findsWidgets);
   return w;
 }
 
@@ -184,7 +183,7 @@ void main() {
       final lastRow = find
           .descendant(
             of: retained,
-            matching: find.byType(RaftConversationListRow, skipOffstage: false),
+            matching: find.byType(RaftInboxItem, skipOffstage: false),
             skipOffstage: false,
           )
           .last;

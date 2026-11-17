@@ -9,6 +9,7 @@ import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_ui/test_themes.dart';
 
 import 'message_presentation_test.dart' show fixture;
+import 'support/activity_row_actions.dart' show activityNewCount;
 
 Map<String, dynamic> activityRow(
   String kind, {
@@ -124,7 +125,7 @@ void main() {
             );
             Finder badge(String label) => find.descendant(
               of: find.byKey(key),
-              matching: find.text(label),
+              matching: activityNewCount(int.parse(label)),
             );
             List<RequestOptions> readAlls() => api.calls
                 .where((r) => r.path == '/channels/$scope/read-all')
@@ -132,19 +133,19 @@ void main() {
 
             await tester.pumpWidget(page());
             await tester.pumpAndSettle();
-            expect(badge('2 new'), findsOneWidget);
+            expect(badge('2'), findsOneWidget);
 
             await tester.tap(find.byKey(key));
             expect(opened, hasLength(1));
             await tester.pump();
             // Every frame from the open moment on: no indicator.
             for (var frame = 0; frame < 6; frame++) {
-              expect(badge('2 new'), findsNothing, reason: 'frame $frame');
-              expect(find.text('2 new'), findsNothing);
+              expect(badge('2'), findsNothing, reason: 'frame $frame');
+              expect(activityNewCount(2), findsNothing);
               await tester.pump(const Duration(milliseconds: 16));
             }
             await tester.pumpAndSettle();
-            expect(badge('2 new'), findsNothing);
+            expect(badge('2'), findsNothing);
             expect(opened, hasLength(1));
             expect(readAlls(), hasLength(1));
             expect(readAlls().single.data, isNull);
@@ -162,11 +163,11 @@ void main() {
             );
             await tester.pumpAndSettle();
             await tester.pumpWidget(page());
-            expect(badge('2 new'), findsNothing);
+            expect(badge('2'), findsNothing);
             await tester.pump(const Duration(milliseconds: 16));
-            expect(badge('2 new'), findsNothing);
+            expect(badge('2'), findsNothing);
             await tester.pumpAndSettle();
-            expect(badge('2 new'), findsNothing);
+            expect(badge('2'), findsNothing);
             expect(find.byKey(key), findsOneWidget);
 
             // A genuinely newer message shows the indicator again.
@@ -174,7 +175,7 @@ void main() {
             final dynamic returned = tester.state(find.byType(ResourceView));
             unawaited(returned.reconcile());
             await tester.pumpAndSettle();
-            expect(badge('1 new'), findsOneWidget);
+            expect(badge('1'), findsOneWidget);
           },
         );
       }

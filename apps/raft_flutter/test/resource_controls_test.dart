@@ -318,9 +318,9 @@ void main() {
     ];
     await mount(t, 'activity');
     // Touch exposes Done through the real row menu.
-    await t.longPress(find.byType(RaftConversationListRow));
+    await t.longPress(find.byType(RaftInboxItem));
     await t.pumpAndSettle();
-    await t.tap(find.text('Done'));
+    await t.tap(find.text('Mark as Done'));
     await t.pumpAndSettle();
     // Activity owns its layout flag query; an invalid frontier must still
     // produce no Done (or other storage-domain) write.
@@ -430,9 +430,9 @@ void main() {
       expect(c.mutations.last.path, '/channels/threads/follow');
       expect(c.mutations.last.data, {'parentMessageId': 'p'});
       // Touch exposes Done through the real row menu.
-      await t.longPress(find.byType(RaftConversationListRow));
+      await t.longPress(find.byType(RaftInboxItem));
       await t.pumpAndSettle();
-      await t.tap(find.text('Done'));
+      await t.tap(find.text('Mark as Done'));
       await t.pumpAndSettle();
       // Source inboxStore1427–1441 performs Done, starts a human-self read-all,
       // and owns one awaited refresh. Preserve the exact storage-domain write.

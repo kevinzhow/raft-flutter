@@ -315,7 +315,7 @@ void main() {
       final finder = find.byKey(
         const ValueKey('activity-thread-thread-msg-agent-reply'),
       );
-      final retired = t.widget<RaftConversationListRow>(finder).onOpen;
+      final retired = t.widget<RaftInboxItem>(finder).onOpen;
       await t.tap(finder);
       await t.pumpAndSettle();
       expect(calls, ['channel-design:msg-visual-activity-reply']);
@@ -324,7 +324,7 @@ void main() {
       w.server = RaftRecord({'id': 's', 'role': 'guest'});
       w.notifyListeners();
       await t.pumpAndSettle();
-      retired();
+      retired!();
       await t.pumpAndSettle();
       expect(calls, hasLength(1));
       expect(finder, findsNothing);

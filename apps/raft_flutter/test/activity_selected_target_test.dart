@@ -67,14 +67,14 @@ void main() {
           ),
         );
         List<String> selected() => [
-          for (final card in t.widgetList<RaftConversationListRow>(
-            find.byType(RaftConversationListRow),
+          for (final card in t.widgetList<RaftInboxItem>(
+            find.byType(RaftInboxItem),
           ))
             if (card.selected) (card.key! as ValueKey<String>).value,
         ];
         await mount(null);
         await t.pumpAndSettle();
-        expect(find.byType(RaftConversationListRow), findsNWidgets(4));
+        expect(find.byType(RaftInboxItem), findsNWidgets(4));
         expect(selected(), isEmpty);
 
         await mount(

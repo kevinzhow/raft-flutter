@@ -12,6 +12,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'activity_open_clears_new_test.dart' show activityRow;
 import 'message_presentation_test.dart' show fixture;
 import 'support/app_services_fixture.dart';
+import 'support/activity_row_actions.dart' show activityNewCount;
 
 void main() {
   for (final (dark) in [(true)]) {
@@ -80,7 +81,7 @@ void main() {
           }
           Future<void> watch(String when) async {
             for (var i = 0; i < 50; i++) {
-              expect(find.text('2 new'), findsNWidgets(3), reason: '$when $i');
+              expect(activityNewCount(2), findsNWidgets(3), reason: '$when $i');
               await tester.pump(const Duration(milliseconds: 100));
             }
           }
@@ -166,7 +167,7 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      expect(find.text('2 new'), findsNWidgets(3));
+      expect(activityNewCount(2), findsNWidgets(3));
       final dynamic state = tester.state(find.byType(ResourceView));
       seq = '6';
       unread = 3;
@@ -188,7 +189,7 @@ void main() {
       for (var i = 0; i < 60; i++) {
         await tester.pump(const Duration(milliseconds: 100));
         if (i > 5) {
-          expect(find.text('3 new'), findsNWidgets(3), reason: 'frame $i');
+          expect(activityNewCount(3), findsNWidgets(3), reason: 'frame $i');
         }
       }
     },
@@ -252,12 +253,12 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      expect(find.text('2 new'), findsNWidgets(3));
+      expect(activityNewCount(2), findsNWidgets(3));
       await tester.tap(find.byKey(const ValueKey('activity-dm-d1')));
       await tester.pump(const Duration(milliseconds: 220));
       for (var i = 0; i < 60; i++) {
         await tester.pump(const Duration(milliseconds: 100));
-        final shown = find.text('2 new').evaluate().length;
+        final shown = activityNewCount(2).evaluate().length;
         expect(shown, 2, reason: 'frame $i');
       }
       // Leave and return with the opened conversation still selected: the two
@@ -270,13 +271,13 @@ void main() {
         if (find.byKey(const ValueKey('activity-dm-d1')).evaluate().isEmpty) {
           continue;
         }
-        expect(find.text('2 new').evaluate().length, 2, reason: 'revisit $i');
+        expect(activityNewCount(2).evaluate().length, 2, reason: 'revisit $i');
       }
       expect(
         find.byKey(const ValueKey('activity-thread-thread-1')),
         findsOneWidget,
       );
-      expect(find.text('2 new'), findsNWidgets(2));
+      expect(activityNewCount(2), findsNWidgets(2));
     },
   );
 
@@ -339,25 +340,25 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      expect(find.text('2 new'), findsNWidgets(3));
+      expect(activityNewCount(2), findsNWidgets(3));
       for (var i = 0; i < 60; i++) {
         await tester.pump(const Duration(milliseconds: 100));
         expect(
-          find.text('2 new').evaluate().length,
+          activityNewCount(2).evaluate().length,
           greaterThanOrEqualTo(2),
           reason: 'frame $i',
         );
         expect(
           find.descendant(
             of: find.byKey(const ValueKey('activity-thread-thread-1')),
-            matching: find.text('2 new'),
+            matching: activityNewCount(2),
           ),
           findsOneWidget,
         );
         expect(
           find.descendant(
             of: find.byKey(const ValueKey('activity-channel-c1')),
-            matching: find.text('2 new'),
+            matching: activityNewCount(2),
           ),
           findsOneWidget,
         );

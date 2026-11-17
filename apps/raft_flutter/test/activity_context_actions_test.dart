@@ -57,7 +57,7 @@ Future<dynamic> mount(
 
 Future<void> openMenu(WidgetTester tester) async {
   await tester.tap(
-    find.byType(RaftConversationListRow).first,
+    find.byType(RaftInboxItem).first,
     buttons: kSecondaryMouseButton,
     kind: PointerDeviceKind.mouse,
   );
@@ -96,7 +96,7 @@ void main() {
       expect(state.totalCount, 2);
       final requests = client.posts.length, reads = w.inboxQueries.length;
       await openMenu(tester);
-      await tester.tap(find.widgetWithText(RaftMenuButtonItem, 'Done'));
+      await tester.tap(find.widgetWithText(RaftMenuButtonItem, 'Mark as Done'));
       await tester.pumpAndSettle();
       expect(find.byType(RaftSidebarContextMenu), findsNothing);
       expect((state.rows as List).map((dynamic row) => row['id']), ['other']);

@@ -78,14 +78,11 @@ class ActivityObjectRow extends StatelessWidget {
       }),
       offered: true,
     );
-    final face = SizedBox.square(
-      dimension: 19,
-      child: RaftAvatarSlot(
-        name: shownName,
-        slot: RaftAvatarSlotContext.compactList,
-        agent: actorType == 'agent',
-        content: _faceContent(context, w.client.origin, actorType, actorId, shownName),
-      ),
+    final face = RaftAvatarSlot(
+      name: shownName,
+      slot: RaftAvatarSlotContext.compactList,
+      agent: actorType == 'agent',
+      content: _faceContent(context, w.client.origin, actorType, actorId, shownName),
     );
     return ActivityRowTimeBuilder(
       at: row['lastActivityAt'],
@@ -195,6 +192,9 @@ class ActivityObjectRow extends StatelessWidget {
 /// it narrows, where it lives truncates first, then the text, down to about a
 /// dozen characters it always shows, then the name and what else is new (that
 /// down to its count, a floor of 9ch).
+/// The gap between the line's pieces (`ml-1`).
+const double _pieceGap = 4;
+
 class _ObjectLine extends StatelessWidget {
   const _ObjectLine({
     super.key,
@@ -217,10 +217,7 @@ class _ObjectLine extends StatelessWidget {
     final t = RaftTokens.of(context);
     final style = DefaultTextStyle.of(context).style;
     final textStyle = strong ? style.copyWith(color: t.strong) : style;
-    final actorStyle = style.copyWith(
-      fontWeight: FontWeight.w600,
-      color: t.strong,
-    );
+    final actorStyle = style.merge(RaftListRowSender.name(context, '').style);
     final direction = Directionality.of(context);
     final scaler = MediaQuery.textScalerOf(context);
     double measure(String s, TextStyle st) {
@@ -237,15 +234,15 @@ class _ObjectLine extends StatelessWidget {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        const faceWidth = 19.0 + 4;
+        const faceWidth = 19.0 + _pieceGap;
         final charWidth = measure('0', style);
         final avail = constraints.maxWidth - faceWidth;
         final actorW = actor == null ? 0.0 : measure(actor!, actorStyle);
         final textW = measure(text, textStyle);
         final newsW = [for (final n in news) measure(n, style)];
         final homeW = home == null ? 0.0 : measure(home!, style);
-        final newsTotal = newsW.fold(0.0, (a, b) => a + b) + 4.0 * news.length;
-        final shared = avail - actorW - newsTotal - (home == null ? 0 : 4);
+        final newsTotal = newsW.fold(0.0, (a, b) => a + b) + _pieceGap * news.length;
+        final shared = avail - actorW - newsTotal - (home == null ? 0 : _pieceGap);
         // Where it lives truncates first, then the text, down to 12 characters.
         var textShown = textW, homeShown = homeW;
         if (shared < textW + homeW) {
@@ -260,58 +257,56 @@ class _ObjectLine extends StatelessWidget {
         return ClipRect(
           child: OverflowBox(
             alignment: AlignmentDirectional.centerStart,
-            minWidth: 0,
             maxWidth: double.infinity,
             child: Row(
               mainAxisSize: MainAxisSize.min,
+              spacing: _pieceGap,
               children: [
                 face,
-                const SizedBox(width: 4),
-                if (actor != null)
-                  Text(
-                    actor!,
-                    key: const ValueKey('object-card-actor'),
-                    maxLines: 1,
-                    softWrap: false,
-                    style: actorStyle,
-                  ),
-                SizedBox(
-                  width: textShown,
-                  child: Text(
-                    text,
-                    key: const ValueKey('object-card-text'),
-                    maxLines: 1,
-                    softWrap: false,
-                    overflow: TextOverflow.ellipsis,
-                    style: textStyle,
-                  ),
-                ),
-                for (final (i, n) in news.indexed)
-                  Padding(
-                    padding: const EdgeInsetsDirectional.only(start: 4),
-                    child: SizedBox(
-                      width: newsW[i],
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (actor != null)
+                      Text(
+                        actor!,
+                        key: const ValueKey('object-card-actor'),
+                        maxLines: 1,
+                        softWrap: false,
+                        style: actorStyle,
+                      ),
+                    SizedBox(
+                      width: textShown,
                       child: Text(
-                        n,
-                        key: const ValueKey('object-card-news'),
+                        text,
+                        key: const ValueKey('object-card-text'),
                         maxLines: 1,
                         softWrap: false,
                         overflow: TextOverflow.ellipsis,
+                        style: textStyle,
                       ),
+                    ),
+                  ],
+                ),
+                for (final (i, n) in news.indexed)
+                  SizedBox(
+                    width: newsW[i],
+                    child: Text(
+                      n,
+                      key: const ValueKey('object-card-news'),
+                      maxLines: 1,
+                      softWrap: false,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 if (home != null && homeShown > 0)
-                  Padding(
-                    padding: const EdgeInsetsDirectional.only(start: 4),
-                    child: SizedBox(
-                      width: homeShown,
-                      child: Text(
-                        home!,
-                        key: const ValueKey('object-card-home'),
-                        maxLines: 1,
-                        softWrap: false,
-                        overflow: TextOverflow.ellipsis,
-                      ),
+                  SizedBox(
+                    width: homeShown,
+                    child: Text(
+                      home!,
+                      key: const ValueKey('object-card-home'),
+                      maxLines: 1,
+                      softWrap: false,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
               ],

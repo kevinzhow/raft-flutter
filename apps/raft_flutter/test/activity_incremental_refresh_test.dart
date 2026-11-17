@@ -361,7 +361,7 @@ void main() {
         await tester.tap(
           find.ancestor(
             of: shown('Channel 1'),
-            matching: find.byType(RaftConversationListRow),
+            matching: find.byType(RaftInboxItem),
           ),
           buttons: kSecondaryMouseButton,
         );
@@ -376,7 +376,7 @@ void main() {
         });
         await tester.pump();
         expect(state.rows.first['lastMessagePreview'], 'Newer');
-        await tester.tap(find.widgetWithText(RaftMenuButtonItem, 'Done'));
+        await tester.tap(find.widgetWithText(RaftMenuButtonItem, 'Mark as Done'));
         await tester.pumpAndSettle();
         final done = client.posts.indexOf('POST /channels/inbox/done');
         expect(done, isNot(-1));

@@ -16,6 +16,7 @@ import 'activity_open_clears_new_test.dart' show activityRow;
 import 'chat_focus_receipt_test.dart' show paintedMessage;
 import 'message_presentation_test.dart' show MessageAdapter, fixture;
 import 'support/app_services_fixture.dart';
+import 'support/activity_row_actions.dart' show activityNewCount;
 
 class _Client extends RaftClient {
   _Client(MessageAdapter api)
@@ -214,7 +215,7 @@ void main() {
                 expect(w.location.thread, isNull);
                 expect(card, findsOneWidget);
                 expect(
-                  find.descendant(of: card, matching: find.text('1 new')),
+                  find.descendant(of: card, matching: activityNewCount(1)),
                   outcome == 'success' ? findsNothing : findsOneWidget,
                   reason:
                       'Read ACK must update Activity before a second visit or inbox response; frame $frame.',
@@ -230,7 +231,7 @@ void main() {
                 receipt.complete({'maxReadSeq': 6, 'readStateVersion': 2});
                 await _dispatch(tester);
                 expect(
-                  find.descendant(of: card, matching: find.text('1 new')),
+                  find.descendant(of: card, matching: activityNewCount(1)),
                   findsNothing,
                 );
                 expect(
@@ -250,7 +251,7 @@ void main() {
                 });
                 await _dispatch(tester);
                 expect(
-                  find.descendant(of: card, matching: find.text('1 new')),
+                  find.descendant(of: card, matching: activityNewCount(1)),
                   findsOneWidget,
                 );
                 expect(
@@ -307,7 +308,7 @@ void main() {
       try {
         await tester.pumpWidget(page());
         await tester.pumpAndSettle();
-        expect(find.text('1 new'), findsOneWidget);
+        expect(activityNewCount(1), findsOneWidget);
         await tester.pumpWidget(const SizedBox());
         await tester.pumpAndSettle();
         final write = w.conversationReads.markAllRead('thread-1');
@@ -317,7 +318,7 @@ void main() {
         hold = true;
         await tester.pumpWidget(page());
         // The returning page cannot paint the old badge while waiting for GET.
-        expect(find.text('1 new'), findsNothing);
+        expect(activityNewCount(1), findsNothing);
         final dynamic state = tester.state(find.byType(ResourceView));
         expect(state.rows.single['unreadCount'], 0);
         expect(state.totalUnreadCount, 0);

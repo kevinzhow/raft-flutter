@@ -324,7 +324,7 @@ void main() {
       }
       expect(shown('Channel 1'), findsOneWidget);
       bool marked(int i) => t
-          .widget<RaftConversationListRow>(
+          .widget<RaftInboxItem>(
             find.byKey(ValueKey('activity-channel-ch$i')),
           )
           .selected;

@@ -111,6 +111,9 @@ class _ActivityRowActivationState extends State<ActivityRowActivation> {
   );
 }
 
+/// The gap between a title and the badge after it (`InboxItemHeading` gap-2).
+const double _titleBadgeGap = 8;
+
 /// ThreadsInbox `InboxRow` (`layout="list"`).
 class ActivityInboxRow extends StatelessWidget {
   const ActivityInboxRow({super.key, required this.row, required this.host});
@@ -308,7 +311,7 @@ class ActivityInboxRow extends StatelessWidget {
           key: const ValueKey('conversation-card-primary'),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: f.titleMuted ? TextStyle(color: hint) : null,
+          style: f.titleMuted ? DefaultTextStyle.of(context).style.copyWith(color: hint) : null,
         );
         final badges = [
           if (f.appBadge != null)
@@ -323,7 +326,7 @@ class ActivityInboxRow extends StatelessWidget {
         final body = Text.rich(
           key: const ValueKey('conversation-card-body'),
           TextSpan(
-            style: f.strong ? TextStyle(color: t.strong) : null,
+            style: f.strong ? DefaultTextStyle.of(context).style.copyWith(color: t.strong) : null,
             children: [
               if (f.threadPrefix != null)
                 f.threadPrefixHidden
@@ -341,15 +344,12 @@ class ActivityInboxRow extends StatelessWidget {
                     ? RaftListRowSender.name(context, f.senderLabel!)
                     : TextSpan(
                         text: f.senderLabel,
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                          color: t.strong,
-                        ),
+                        style: RaftListRowSender.name(context, '').style,
                       ),
               if (f.hasPreview)
                 TextSpan(
                   text: f.preview,
-                  style: f.previewRetracted ? TextStyle(color: hint) : null,
+                  style: f.previewRetracted ? DefaultTextStyle.of(context).style.copyWith(color: hint) : null,
                 ),
             ],
           ),
@@ -421,13 +421,8 @@ class ActivityInboxRow extends StatelessWidget {
                 ? titleText
                 : Row(
                     mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Flexible(child: titleText),
-                      for (final b in badges) ...[
-                        const SizedBox(width: 6),
-                        b,
-                      ],
-                    ],
+                    spacing: _titleBadgeGap,
+                    children: [Flexible(child: titleText), ...badges],
                   ),
             timestamp: time == null
                 ? null

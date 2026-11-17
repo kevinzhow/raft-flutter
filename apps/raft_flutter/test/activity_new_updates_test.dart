@@ -49,7 +49,7 @@ void main() {
 
     Finder card(String title) => find.ancestor(
       of: shown(title),
-      matching: find.byType(RaftConversationListRow),
+      matching: find.byType(RaftInboxItem),
     );
 
     Rect listRect(WidgetTester tester) =>

@@ -41,7 +41,7 @@ Future<void> _mount(
 
 Future<void> _markUnread(WidgetTester tester) async {
   await tester.tap(
-    find.byType(RaftConversationListRow).first,
+    find.byType(RaftInboxItem).first,
     buttons: kSecondaryMouseButton,
     kind: PointerDeviceKind.mouse,
   );

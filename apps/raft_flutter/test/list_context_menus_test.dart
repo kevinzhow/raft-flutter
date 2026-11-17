@@ -69,7 +69,7 @@ void main() {
       // raft-ui 0.7.0 ContextMenuPopup's min-w-60 therefore wins (240px).
       expect(tester.getSize(menu).width, 240);
       expect(find.text('Mark as read'), findsOneWidget);
-      expect(find.text('Done'), findsOneWidget);
+      expect(find.text('Mark as Done'), findsOneWidget);
       // A channel row has no follow control.
       expect(find.text('Unfollow'), findsNothing);
       await tester.tap(find.text('Mark as read'));
@@ -105,7 +105,7 @@ void main() {
       tester,
       find.byKey(const ValueKey('activity-channel-ch0')),
     );
-    await tester.tap(find.text('Done'));
+    await tester.tap(find.text('Mark as Done'));
     await tester.pumpAndSettle();
     expect(client.posts, contains('POST /channels/inbox/done'));
     expect(client.bodies.last.toString(), contains('ch0'));

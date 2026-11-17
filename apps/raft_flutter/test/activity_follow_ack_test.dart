@@ -124,7 +124,7 @@ void main() {
 
     Future<void> action(WidgetTester tester, String label) async {
       await tester.tap(
-        find.byType(RaftConversationListRow),
+        find.byType(RaftInboxItem),
         buttons: kSecondaryMouseButton,
       );
       await tester.pumpAndSettle();
@@ -141,7 +141,7 @@ void main() {
         workspace.inbox = held;
         final Future<void> oldRead = state.load();
         await tester.pump();
-        expect(find.byType(RaftConversationListRow), findsOneWidget);
+        expect(find.byType(RaftInboxItem), findsOneWidget);
         client.pending.single.complete({});
         await tester.pumpAndSettle();
         expect((state.rows.single as Map)['isFollowing'], false);
@@ -189,7 +189,7 @@ void main() {
         expect((state.rows.single as Map)['isFollowing'], true);
         expect((state.rows.single as Map)['unreadCount'], 0);
         await tester.tap(
-          find.byType(RaftConversationListRow),
+          find.byType(RaftInboxItem),
           buttons: kSecondaryMouseButton,
         );
         await tester.pumpAndSettle();
@@ -218,7 +218,7 @@ void main() {
       (tester) async {
         final dynamic state = await mount(tester);
         await tester.tap(
-          find.byType(RaftConversationListRow),
+          find.byType(RaftInboxItem),
           buttons: kSecondaryMouseButton,
         );
         await tester.pumpAndSettle();
@@ -251,7 +251,7 @@ void main() {
         );
         await tester.pumpAndSettle();
         expect(state.rows, isEmpty);
-        expect(find.byType(RaftConversationListRow), findsNothing);
+        expect(find.byType(RaftInboxItem), findsNothing);
         expect(find.textContaining('Denied'), findsOneWidget);
       },
     );
@@ -283,7 +283,7 @@ void main() {
           reason: 'Source success preserves the acknowledged row without an immediate stale reload.',
         );
         await tester.tap(
-          find.byType(RaftConversationListRow),
+          find.byType(RaftInboxItem),
           buttons: kSecondaryMouseButton,
         );
         await tester.pumpAndSettle();

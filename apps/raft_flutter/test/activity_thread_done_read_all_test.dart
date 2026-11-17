@@ -116,12 +116,12 @@ void main() {
       (tester) async {
         final page = await _MountedDone.mount(tester, dark);
         try {
-          expect(find.byType(RaftConversationListRow), findsOneWidget);
+          expect(find.byType(RaftInboxItem), findsOneWidget);
           expect(page.attention.totalUnreadCount, 3);
           final refreshed = Completer<dynamic>();
           page.api.routes['GET /channels/inbox'] = (_) => refreshed.future;
           await page.click(tester);
-          expect(find.byType(RaftConversationListRow), findsNothing);
+          expect(find.byType(RaftInboxItem), findsNothing);
           expect(page.writes, isEmpty);
           final before = page.inboxCalls;
           page.done.complete({});
@@ -149,7 +149,7 @@ void main() {
           // never starts a second background inbox GET.
           expect(page.workspace.conversationReads.unread['thread'], 1);
           expect(page.inboxCalls, before + 1);
-          expect(find.byType(RaftConversationListRow), findsNothing);
+          expect(find.byType(RaftInboxItem), findsNothing);
           expect(tester.takeException(), isNull);
         } finally {
           await page.close(tester);
@@ -169,7 +169,7 @@ void main() {
           page.read.completeError(page.failure(500));
           await _dispatch(tester);
           expect(page.inboxCalls, before);
-          expect(find.byType(RaftConversationListRow), findsNothing);
+          expect(find.byType(RaftInboxItem), findsNothing);
           expect(page.state.error, isNull);
           expect(tester.takeException(), isNull);
         } finally {
@@ -186,7 +186,7 @@ void main() {
           page.done.completeError(page.failure(500));
           await _dispatch(tester);
           expect(page.writes, isEmpty);
-          expect(find.byType(RaftConversationListRow), findsOneWidget);
+          expect(find.byType(RaftInboxItem), findsOneWidget);
           expect(tester.takeException(), isNull);
         } finally {
           await page.close(tester);
