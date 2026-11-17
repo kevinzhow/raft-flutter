@@ -41146,19 +41146,19 @@
         "owner": "task299 native server windows",
         "reason": "Production server-switcher callbacks delegate to the explicit desktop service or existing browser fallback. No style exemption or visual acceptance."
       },
-      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5521/METHOD:buildWorkspace@47195/FUNCTION:<anonymous>@47413/FUNCTION:conversation@50527": {
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5520/METHOD:buildWorkspace@47194/FUNCTION:<anonymous>@47412/FUNCTION:conversation@50526": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "task299 native server windows",
         "reason": "Historical source-position identity superseded by apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5358/METHOD:buildWorkspace@47571/FUNCTION:<anonymous>@47809/FUNCTION:conversation@50923. The removals in the v1.24 compatibility patch shifted offsets without changing the declaration body. This old identity is not current runtime or visual evidence."
       },
-      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5521/METHOD:buildWorkspace@47195/FUNCTION:<anonymous>@47413/FUNCTION:workspace@63843": {
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5520/METHOD:buildWorkspace@47194/FUNCTION:<anonymous>@47412/FUNCTION:workspace@63842": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "task299 native server windows",
         "reason": "Historical source-position identity superseded by apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5358/METHOD:buildWorkspace@47571/FUNCTION:<anonymous>@47809/FUNCTION:workspace@63518. The removals in the v1.24 compatibility patch shifted offsets without changing the declaration body. This old identity is not current runtime or visual evidence."
       },
-      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5521/METHOD:settingsRailAction@108016/FUNCTION:action@108050": {
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5520/METHOD:settingsRailAction@107993/FUNCTION:action@108027": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "task299 native server windows",
