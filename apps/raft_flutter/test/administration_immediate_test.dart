@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
@@ -15,7 +13,8 @@ import 'package:raft_ui/raft_ui.dart';
 typedef _Route = Object? Function(dynamic data);
 
 class _Client extends RaftClient {
-  _Client(this.routes) : super(sessionStore: MemorySessionStore()) {
+  _Client(this.routes)
+    : super(origin: 'https://raft.invalid', sessionStore: MemorySessionStore()) {
     user = RaftRecord({'id': 'u-owner', 'name': 'owner'});
     selectServer('s1');
   }
@@ -298,8 +297,8 @@ void main() {
       );
       await t.tap(find.text('Undo'));
       await t.pumpAndSettle();
-      await t.tap(find.text('Undo'), warnIfMissed: false);
-      await t.pumpAndSettle();
+      // The toast closes with its action: Undo cannot be pressed twice.
+      expect(find.text('Undo'), findsNothing);
       expect(c.sent('PATCH /servers/s1'), [
         {'hideHumansFromMembers': true},
         {'hideHumansFromMembers': false},
@@ -575,7 +574,8 @@ void main() {
       expect(t.widget<RaftButton>(confirm).onPressed, isNull);
       await t.tap(_key('context-view-grant-agent'));
       await t.pumpAndSettle();
-      expect(find.text('bot'), findsNothing);
+      // `bot` already has access: only its row in the list is left.
+      expect(find.text('bot'), findsOneWidget);
       await t.tap(find.text('helper').last);
       await t.pumpAndSettle();
       await t.tap(confirm);

@@ -176,7 +176,12 @@ class RaftAdminPrincipal {
     this.subtitle,
     this.avatarUrl,
     this.optionLabel,
+    this.searchText,
   });
+
+  /// What the picker's search also matches besides the label (Web: a human's
+  /// `email name`, an agent's `@name`).
+  final String? searchText;
 
   /// `getAdminPrincipalKey` (`human:<id>` / `agent:<id>`).
   final String key;
@@ -229,7 +234,12 @@ class RaftAdminsCard extends StatelessWidget {
     this.saving = false,
     this.promoting = false,
     this.error,
+    this.note,
   });
+
+  /// Under the add row's fields (the owner hand-over's
+  /// [RaftOwnComputersTransferNote]).
+  final Widget? note;
   final List<RaftAdminPrincipal> candidates;
   final List<RaftAdminRow> rows;
   final String? selectedKey;
@@ -330,6 +340,7 @@ class RaftAdminsCard extends StatelessWidget {
                 promote,
               ],
             ),
+          ?note,
           const SizedBox(height: 16),
           Container(
             padding: const EdgeInsets.only(top: 16),
@@ -539,9 +550,9 @@ class _RaftAdminPrincipalPickerState extends State<RaftAdminPrincipalPicker> {
             final options = [
               for (final c in widget.candidates)
                 if (needle.isEmpty ||
-                    '${c.label} ${c.optionLabel ?? ''}'.toLowerCase().contains(
-                      needle,
-                    ))
+                    '${c.label} ${c.searchText ?? c.optionLabel ?? ''}'
+                        .toLowerCase()
+                        .contains(needle))
                   c,
             ];
             return CallbackShortcuts(

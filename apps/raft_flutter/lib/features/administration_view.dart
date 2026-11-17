@@ -13,6 +13,7 @@ import 'administration_onboarding_section.dart';
 import 'administration_support.dart';
 import 'administration_switch_sections.dart';
 import 'agent_detail_view.dart' show agentTimeFormatter;
+import 'member_removal_impact.dart';
 import 'management_support.dart'
     show
         managementMap,
@@ -138,6 +139,7 @@ class _AdminsSectionState extends State<_AdminsSection> {
   // ignore: raft_lints/avoid_imperative_notice_state -- error clears when the next role change starts (Web setError('') in handlePromote/handleDemote); the section is remounted on server/account change.
   String? selectedKey, savingKey, error;
   String selectedRole = 'admin';
+  late final impact = MemberRemovalImpactRead(w, _changed);
 
   @override
   void initState() {
@@ -236,6 +238,22 @@ class _AdminsSectionState extends State<_AdminsSection> {
       subtitle: p.subtitle,
       optionLabel: p.optionLabel,
       avatarUrl: p.avatarUrl,
+      // Web filters on `label identity`: a human's `email name`, an agent's
+      // `@name`.
+      searchText: p.agent
+          ? '@${p.name}'
+          : [p.email, p.name].where((v) => v != null && v.isNotEmpty).join(' '),
+    );
+    // An owner about to make someone else owner: what becomes of the Computers
+    // they attached here, from their own removal impact.
+    final grantsOwner =
+        role == 'owner' &&
+        effectiveRole == 'owner' &&
+        selected != null &&
+        !selected.agent;
+    impact.sync(
+      w.server?.id,
+      grantsOwner ? w.client.user?.id : null,
     );
     return RaftAdminSection(
       regionKey: adminRegion('admins'),
@@ -252,6 +270,7 @@ class _AdminsSectionState extends State<_AdminsSection> {
         saving: savingKey != null,
         promoting: selected != null && savingKey == selected.key,
         error: error,
+        note: ownComputersTransferNote(context, impact),
         onPromote: () {
           if (selected != null) {
             change(selected, effectiveRole, 'Failed to update role');

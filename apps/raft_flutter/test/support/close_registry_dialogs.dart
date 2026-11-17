@@ -42,7 +42,8 @@ const dialogSurfaces = <CloseSurface>[
     fold: {_x, _esc, _sys},
     desktop: {_x, _esc, _sys},
     files: [
-      'lib/features/administration_view.dart',
+      'lib/features/administration_context_grants.dart',
+      'lib/features/administration_support.dart',
       'lib/features/agent_archive_section.dart',
       'lib/features/agent_connections_section.dart',
       'lib/features/agent_identity_adoption.dart',
