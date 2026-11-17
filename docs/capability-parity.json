@@ -1135,15 +1135,15 @@
    "status": "covered",
    "webEntry": "MessageItem ctx menu > 'Copy Link'",
    "gate": "none",
-   "flutterEntry": "chat_view.dart actions() item 'copy-link' -> shareMessageLink(copy: true)",
+   "flutterEntry": "chat_view.dart actions() item 'copy-link' -> copyMessageLink (local permalink, clipboard at once)",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/message_context_menu_sections.dart",
      "needle": "'Copy link'"
     },
     {
-     "file": "apps/raft_flutter/lib/features/share_message_link.dart",
-     "needle": "shareMessageLink"
+     "file": "apps/raft_flutter/lib/features/copy_message_link.dart",
+     "needle": "copyMessageLink"
     }
    ],
    "justification": "",

@@ -56,7 +56,7 @@ import 'message_sender_menu.dart';
 import 'message_preparation.dart';
 import 'pending_mention_actions.dart';
 import 'message_reference_directory.dart';
-import 'share_message_link.dart';
+import 'copy_message_link.dart';
 import 'private_route_guard.dart';
 import 'message_selection.dart';
 import 'system_message_grouping.dart';
@@ -666,29 +666,20 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
   }
 
   Future<void> copySelectionLinks() async {
-    final authority = workspaceAuthority(w), revision = selection.revision;
     try {
-      final copied = await copySelectedMessageLinks(
-        w,
-        selection,
-        () => mounted,
-      );
-      if (copied &&
-          mounted &&
-          authority == workspaceAuthority(w) &&
-          revision == selection.revision) {
-        selectionToast.show(raftText(context, 'Copied'), dismissible: false);
+      final count = await copySelectedMessageLinks(w, selection);
+      if (count > 0 && mounted) {
+        selectionToast.show(
+          count == 1
+              ? raftText(context, 'Link copied.')
+              : raftFormat(context, '{count} links copied.', {'count': count}),
+          dismissible: false,
+        );
       }
     } catch (_) {
-      if (mounted &&
-          authority == workspaceAuthority(w) &&
-          revision == selection.revision &&
-          selection.active) {
+      if (mounted && selection.active) {
         setState(
-          () => selectionError = raftText(
-            context,
-            'The message link could not be shared.',
-          ),
+          () => selectionError = raftText(context, 'Clipboard write blocked.'),
         );
       }
     }
@@ -1586,7 +1577,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
     }
     try {
       if (choice == 'copy-link') {
-        await shareMessageLink(context, w, message, copy: true);
+        await copyMessageLink(w, message);
       }
       if (choice == 'copy-markdown') {
         await Clipboard.setData(ClipboardData(text: message.content));

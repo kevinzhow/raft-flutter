@@ -342,20 +342,6 @@ class NativeSharing {
     });
   }
 
-  Future<void> shareText(String text, {String? title}) async {
-    if (!supported) {
-      throw PlatformException(
-        code: 'unsupported',
-        message: 'System sharing is unavailable on this platform.',
-      );
-    }
-    await channel.invokeMethod<void>('share', {
-      'text': text,
-      'title': title,
-      'mimeType': 'text/plain',
-    });
-  }
-
   Future<void> shareFile(SharedFileLease lease, String mimeType) async {
     if (!supported) {
       throw PlatformException(

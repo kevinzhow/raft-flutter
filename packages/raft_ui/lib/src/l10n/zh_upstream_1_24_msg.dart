@@ -46,4 +46,7 @@ const Map<String, String> zhCatalogUpstream124Msg = <String, String>{
   "Reading new messages before claiming the task": "认领任务前先读新消息",
   "Reading new messages before changing the task": "修改任务前先读新消息",
   "Reading new messages before updating the task": "更新任务前先读新消息",
+  // Select mode Copy links (message.forward.linkCopied, other form; the one
+  // form is "Link copied." in zh_upstream_1_24_art1.dart).
+  "{count} links copied.": "已复制 {count} 条链接。",
 };

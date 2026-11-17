@@ -12569,12 +12569,6 @@
         "owner": "design-system alignment",
         "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
       },
-      "apps/raft_flutter/lib/features/share_message_link.dart#function:shareMessageLink": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Resolved surface_factory; real-entry/family/state mapping remains unreviewed."
-      },
       "apps/raft_flutter/lib/features/sidebar_conversation_finder.dart#class:SidebarConversationFinderBox": {
         "role": "unresolved",
         "familyRefs": [],
@@ -46928,19 +46922,19 @@
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
-      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@5000/METHOD:attachmentGallery@66410/FUNCTION:view@67564": {
+      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4999/METHOD:attachmentGallery@66154/FUNCTION:view@67308": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
-      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@5000/METHOD:buildTimeline@114781/FUNCTION:timelineFor@118280": {
+      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4999/METHOD:buildTimeline@114525/FUNCTION:timelineFor@118024": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
-      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@5000/METHOD:senderAvatar@78988/FUNCTION:avatar@81463": {
+      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4999/METHOD:senderAvatar@78732/FUNCTION:avatar@81207": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
@@ -50444,15 +50438,6 @@
         "mountStatus": "unresolved",
         "reason": "Resolved function owns a surface call; actual target, route and state are not yet observed."
       },
-      "surface:apps/raft_flutter/lib/features/share_message_link.dart#function:shareMessageLink": {
-        "owner": "design-system alignment",
-        "kind": "surface_factory_candidate",
-        "declarationRefs": [
-          "apps/raft_flutter/lib/features/share_message_link.dart#function:shareMessageLink"
-        ],
-        "mountStatus": "unresolved",
-        "reason": "Resolved function owns a surface call; actual target, route and state are not yet observed."
-      },
       "surface:apps/raft_flutter/lib/features/workspace_browser.dart#function:openWorkspaceInBrowser": {
         "owner": "design-system alignment",
         "kind": "surface_factory_candidate",
@@ -53177,12 +53162,6 @@
       },
       "surface:apps/raft_flutter/lib/features/public_attachments.dart#function:downloadPublicAttachment:applicability": {
         "entryId": "surface:apps/raft_flutter/lib/features/public_attachments.dart#function:downloadPublicAttachment",
-        "applicability": "unknown",
-        "owner": "design-system alignment",
-        "reason": "Real entry and applicable theme/input/state dimensions require source review and bound execution."
-      },
-      "surface:apps/raft_flutter/lib/features/share_message_link.dart#function:shareMessageLink:applicability": {
-        "entryId": "surface:apps/raft_flutter/lib/features/share_message_link.dart#function:shareMessageLink",
         "applicability": "unknown",
         "owner": "design-system alignment",
         "reason": "Real entry and applicable theme/input/state dimensions require source review and bound execution."

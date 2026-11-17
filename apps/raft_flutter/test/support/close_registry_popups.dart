@@ -145,7 +145,6 @@ const popupSurfaces = <CloseSurface>[
     desktop: {_x},
     files: [
       'lib/features/agent_scopes_view.dart',
-      'lib/features/share_message_link.dart',
       'lib/features/workspace_browser.dart',
       'lib/features/fleet_views.dart',
       'lib/features/source_channel_files_actions.dart',
