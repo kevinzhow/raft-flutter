@@ -50108,12 +50108,6 @@
         "owner": "design-system alignment",
         "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
       },
-      "apps/raft_flutter/lib/features/attachment_view.dart#local-function:CLASS:_AttachmentViewState@4487/METHOD:previewImage@36606/FUNCTION:image@36839": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "Artifact viewer",
-        "reason": "WP-ART1 Artifact viewer, cards and attachment save (Web v1.24); compositions of raft_ui parts, real-entry mapping stays with the viewer owner."
-      },
       "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@5035/METHOD:attachmentGallery@66359/FUNCTION:view@67513": {
         "role": "unresolved",
         "familyRefs": [],
@@ -50161,6 +50155,12 @@
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "MSG-MENU (Web v1.24 MessageSelectTextDrawer): a composition of raft_ui RaftSheet / RaftSheetClose / RaftButton / RaftSelectionArea; real-entry mapping stays unreviewed."
+      },
+      "apps/raft_flutter/lib/features/attachment_view.dart#local-function:CLASS:_AttachmentViewState@4487/METHOD:previewImage@36769/FUNCTION:image@37002": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Artifact viewer",
+        "reason": "WP-ART1 Artifact viewer, cards and attachment save (Web v1.24); compositions of raft_ui parts, real-entry mapping stays with the viewer owner."
       }
     },
     "entries": {
