@@ -41,13 +41,6 @@ const accountDeletionNamesShown = 5;
 /// (Web `MOVE_AGENT_PARAM`).
 const accountDeletionMoveParam = 'move';
 
-/// Delete Account on [serverSlug], opening Move to another computer for
-/// [agentId] (Web `moveAgentElsewhereHref`).
-Uri accountDeletionMoveLocation(String serverSlug, String agentId) => Uri(
-  path: '/s/$serverSlug/settings/account/delete',
-  queryParameters: {accountDeletionMoveParam: agentId},
-);
-
 typedef _RowAgent = ({String id, String name});
 
 /// One optional action: a button for a single agent, else a menu of them.
@@ -140,8 +133,8 @@ class AccountDeletionAgentRow extends StatefulWidget {
   /// An agent moved or archived: read the list again.
   final VoidCallback onChanged;
 
-  /// Opens Delete Account on another server with that agent's move (Web: a
-  /// link to [accountDeletionMoveLocation]); null hides Move there.
+  /// Opens Delete Account on another server with that agent's move (Web
+  /// `moveAgentElsewhereHref`); null hides Move there.
   final void Function(AccountDeletionServer server, String agentId)?
   onMoveElsewhere;
   final bool first;

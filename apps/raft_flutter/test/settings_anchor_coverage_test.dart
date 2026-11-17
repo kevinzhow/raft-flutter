@@ -11,14 +11,6 @@ import 'package:raft_flutter/features/settings_search_index.dart';
 /// owns the file the row is in (the rows there are not this package's files):
 /// a result for one of these opens its page at the top.
 const pending = <String, List<String>>{
-  'account (account_settings.dart)': [
-    'display-name',
-    'username',
-    'email',
-    'password',
-    'sign-out',
-    'delete-account',
-  ],
   'appearance (appearance_section.dart)': [
     'message-font-size',
     'live-agent-activity',

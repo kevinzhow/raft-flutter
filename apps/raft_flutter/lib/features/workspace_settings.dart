@@ -20,6 +20,8 @@ import '../platform/linux_uri_scheme.dart';
 import '../platform/linux_dependencies.dart';
 import 'linux_dependencies_settings.dart';
 import '../platform/native_notifications.dart';
+import 'account_deletion_agent_row.dart' show accountDeletionMoveParam;
+import 'account_deletion_page.dart';
 import 'account_settings.dart';
 import 'app_image_update_text.dart';
 import 'desktop_links_settings.dart';
@@ -149,6 +151,29 @@ class _WorkspaceSettingsState extends State<WorkspaceSettings> {
     }
   }
 
+  /// Account › Delete account (the only sub-page). `?move=<agent>` opens the
+  /// move dialog once; Move on another server's computer and "Open server
+  /// settings" lead to that server.
+  Widget deletionPage(WorkspaceController w) {
+    final page = settingsSubPageById('account/delete')!;
+    RaftLocation on(String slug, [Map<String, String> query = const {}]) =>
+        settingsSubPageLocation(slug, page, query: query);
+    return AccountDeletionPage(
+      controller: w,
+      moveAgentId: widget.link.query[accountDeletionMoveParam],
+      onMoveConsumed: () => openLocation(on(w.location.serverSlug)),
+      onOpenServerSettings: (server) => openLocation(
+        RaftLocation.at(
+          serverSlug: server.slug,
+          route: RaftRoute.settings,
+          settingsPath: const ['server'],
+        ),
+      ),
+      onMoveElsewhere: (server, agentId) =>
+          openLocation(on(server.slug, {accountDeletionMoveParam: agentId})),
+    );
+  }
+
   void _setUnread(int count) {
     final w = widget.controller;
     writePageSnapshot(w, feedbackUnreadSnapshotKey, pageIdentity(w), {
@@ -227,6 +252,7 @@ class _WorkspaceSettingsState extends State<WorkspaceSettings> {
       onMobileDetailChanged: widget.onMobileDetailChanged,
       onMobileLocationChanged: widget.onMobileLocationChanged,
       subPage: settingsSubPageFor(widget.initialTab, widget.link.subPage),
+      subPageBody: (_) => deletionPage(w),
       subPageQuery: widget.link.query,
       onSubPageOpen: (id, query) => openLocation(
         settingsSubPageLocation(

@@ -82,8 +82,8 @@ final deleteAccount = SettingsSubPage(
   id: 'account/delete',
   parentTab: 'account',
   title: 'Delete account',
-  builder: (_) => const Text('Delete body'),
 );
+Widget deleteBody(BuildContext _) => const Text('Delete body');
 
 void main() {
   group('level-2 sub-page', () {
@@ -96,6 +96,7 @@ void main() {
           RaftSettingsPage(
             destinations: destinations(),
             subPage: deleteAccount,
+            subPageBody: deleteBody,
             onMobileLocationChanged: tabs.add,
           ),
         );
@@ -135,6 +136,7 @@ void main() {
           RaftSettingsPage(
             destinations: destinations(),
             subPage: deleteAccount,
+            subPageBody: deleteBody,
             mobileRoot: false,
             onSubPageBack: () => back++,
           ),

@@ -109,6 +109,7 @@ class RaftSettingsPage extends StatefulWidget {
     this.onMobileDetailChanged,
     this.onMobileLocationChanged,
     this.subPage,
+    this.subPageBody,
     this.subPageQuery = const {},
     this.onSubPageOpen,
     this.onSubPageBack,
@@ -116,7 +117,7 @@ class RaftSettingsPage extends StatefulWidget {
     this.anchor,
     this.anchorRevision = 0,
     this.anchorFromKeyboard = false,
-  });
+  }) : assert(subPage == null || subPageBody != null);
   final List<RaftSettingsDestination> destinations;
   final String initialTab;
 
@@ -124,6 +125,9 @@ class RaftSettingsPage extends StatefulWidget {
   /// its title, a desktop breadcrumb back to the tab, and Back to the tab on
   /// a phone.
   final SettingsSubPage? subPage;
+
+  /// The body of [subPage].
+  final WidgetBuilder? subPageBody;
   final Map<String, String> subPageQuery;
 
   /// Opens a sub-page from a row inside a tab ([openSettingsSubPage]).
@@ -396,7 +400,7 @@ class _RaftSettingsPageState extends State<RaftSettingsPage> {
     // A sub-page is its own page under the tab: its own body, scroll position
     // and key, the tab's row staying selected in the list.
     final pageId = subPage?.id ?? active.id;
-    final pageBuilder = subPage?.builder ?? active.builder!;
+    final pageBuilder = subPage == null ? active.builder! : widget.subPageBody!;
     Widget page() => subPage != null || active.scroll
         ? ListView(
             key: PageStorageKey('settings-page-$pageId'),

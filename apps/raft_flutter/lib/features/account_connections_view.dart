@@ -9,6 +9,7 @@ import '../data/workspace_controller.dart';
 import '../platform/oauth_broker.dart';
 import 'management_support.dart';
 import 'account_password_editor.dart';
+import 'settings_anchor.dart';
 import 'account_sign_in_recipe.dart';
 import 'second_factor_step_up.dart';
 import 'social_sign_in_failure.dart';
@@ -349,10 +350,13 @@ class _AccountConnectionsState extends ManagementState<AccountConnectionsView> {
       ],
       if (!loading && passwordStateKnown)
         if (passwordConfigured)
-          AccountPasswordEditor(
-            key: ValueKey('password-$authority'),
-            controller: w,
-            onUpdated: reload,
+          RaftSettingsAnchor(
+            id: 'password',
+            child: AccountPasswordEditor(
+              key: ValueKey('password-$authority'),
+              controller: w,
+              onUpdated: reload,
+            ),
           )
         else ...[
           Text(raftText(context, 'Set a password'), style: recipe.heading),

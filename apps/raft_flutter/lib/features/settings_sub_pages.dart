@@ -13,7 +13,6 @@ class SettingsSubPage {
     required this.id,
     required this.parentTab,
     required this.title,
-    required this.builder,
   });
 
   /// `<tab>/<slug>`: the settings path after `/settings/` (`account/delete`).
@@ -26,25 +25,18 @@ class SettingsSubPage {
   /// The title, English source text (`Delete account`); the zh catalog is
   /// keyed by it.
   final String title;
-  final WidgetBuilder builder;
 
   /// The last segment of [id].
   String get slug => id.substring(id.indexOf('/') + 1);
 }
 
-Widget _placeholder(BuildContext context) => const SizedBox.shrink();
-
-/// Every level-2 page, by id. Web has one: Account › Delete account.
-///
-/// The builder is a placeholder until the account deletion page lands; swap
-/// it for the page there (its [BuildContext] is inside a
-/// [SettingsSubPageScope]).
-final List<SettingsSubPage> settingsSubPages = [
+/// Every level-2 page, by id. Web has one: Account › Delete account. The
+/// host that knows the workspace (WorkspaceSettings) builds its body.
+const List<SettingsSubPage> settingsSubPages = [
   SettingsSubPage(
     id: 'account/delete',
     parentTab: 'account',
     title: 'Delete account',
-    builder: _placeholder,
   ),
 ];
 

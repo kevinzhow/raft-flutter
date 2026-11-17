@@ -6,6 +6,7 @@ import '../data/user_error.dart';
 import '../data/workspace_controller.dart';
 import '../data/personal_presentation.dart';
 import 'account_app_logins.dart';
+import 'account_deletion_section.dart';
 import 'account_onboarding.dart';
 import 'account_connections_view.dart';
 import 'account_security_passkeys.dart';
@@ -15,6 +16,8 @@ import 'account_sign_out_section.dart';
 import 'management_support.dart';
 import 'public_avatar_url.dart';
 import 'usage_data_card.dart';
+import 'settings_anchor.dart';
+import 'settings_sub_pages.dart';
 import 'sign_in_diagnostics_card.dart';
 
 class AccountSettings extends StatefulWidget {
@@ -351,66 +354,75 @@ class _AccountSettingsState extends ManagementState<AccountSettings> {
             ),
             const SizedBox(height: RaftSpace.x3),
           ],
-          RaftSettingsField(
-            label: 'Display name',
-            child: RaftRecipeInput(
-              fieldKey: const Key('account-profile-display-name'),
-              controller: profileName,
-              // `theme-brutal:p-2`
-              onChanged: (_) => setState(() => profileSaved = false),
-              onSubmitted: (_) => saveProfile(),
-            ),
-          ),
-          const SizedBox(height: RaftSpace.x3),
-          RaftSettingsField(
-            label: 'Username',
-            // PrefixedInput "@": `border-line-muted bg-fill-muted
-            // shadow-none`, input `text-sm text-foreground-muted`.
-            child: RaftSettingsPrefixedInput(
-              key: ValueKey(
-                'account-username-${user?.id}-${user?.string('name')}',
+          RaftSettingsAnchor(
+            id: 'display-name',
+            child: RaftSettingsField(
+              label: 'Display name',
+              child: RaftRecipeInput(
+                fieldKey: const Key('account-profile-display-name'),
+                controller: profileName,
+                // `theme-brutal:p-2`
+                onChanged: (_) => setState(() => profileSaved = false),
+                onSubmitted: (_) => saveProfile(),
               ),
-              prefix: '@',
-              value: user?.string('name') ?? '',
-              readOnly: true,
-              flat: true,
-              rootColor: t.colors['fill-muted'],
-              rootBorderColor: t.colors['line-muted'],
-              textColor: t.muted,
             ),
           ),
           const SizedBox(height: RaftSpace.x3),
-          RaftSettingsField(
-            label: 'Email',
-            child: Row(
-              children: [
-                Flexible(
-                  child: SelectableText(
-                    user?.string('email') ?? '',
-                    maxLines: 1,
-                    style: RaftTypography.mono(
-                      t,
-                      // `text-mono-code`: 13/20.
-                      size: 13,
-                      line: 20,
-                      color: RaftSettingsText(t).strong,
+          RaftSettingsAnchor(
+            id: 'username',
+            child: RaftSettingsField(
+              label: 'Username',
+              // PrefixedInput "@": `border-line-muted bg-fill-muted
+              // shadow-none`, input `text-sm text-foreground-muted`.
+              child: RaftSettingsPrefixedInput(
+                key: ValueKey(
+                  'account-username-${user?.id}-${user?.string('name')}',
+                ),
+                prefix: '@',
+                value: user?.string('name') ?? '',
+                readOnly: true,
+                flat: true,
+                rootColor: t.colors['fill-muted'],
+                rootBorderColor: t.colors['line-muted'],
+                textColor: t.muted,
+              ),
+            ),
+          ),
+          const SizedBox(height: RaftSpace.x3),
+          RaftSettingsAnchor(
+            id: 'email',
+            child: RaftSettingsField(
+              label: 'Email',
+              child: Row(
+                children: [
+                  Flexible(
+                    child: SelectableText(
+                      user?.string('email') ?? '',
+                      maxLines: 1,
+                      style: RaftTypography.mono(
+                        t,
+                        // `text-mono-code`: 13/20.
+                        size: 13,
+                        line: 20,
+                        color: RaftSettingsText(t).strong,
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(width: RaftSpace.x2),
-                user?.json['emailVerified'] == true
-                    ? const RaftSettingsRecipeBadge(
-                        label: 'Verified',
-                        variant: RaftBadgeRecipeVariant.success,
-                        appearance: RaftBadgeRecipeAppearance.soft,
-                        glyph: RaftGlyph.shield,
-                      )
-                    : const RaftSettingsRecipeBadge(
-                        label: 'Unverified',
-                        variant: RaftBadgeRecipeVariant.warning,
-                        appearance: RaftBadgeRecipeAppearance.soft,
-                      ),
-              ],
+                  const SizedBox(width: RaftSpace.x2),
+                  user?.json['emailVerified'] == true
+                      ? const RaftSettingsRecipeBadge(
+                          label: 'Verified',
+                          variant: RaftBadgeRecipeVariant.success,
+                          appearance: RaftBadgeRecipeAppearance.soft,
+                          glyph: RaftGlyph.shield,
+                        )
+                      : const RaftSettingsRecipeBadge(
+                          label: 'Unverified',
+                          variant: RaftBadgeRecipeVariant.warning,
+                          appearance: RaftBadgeRecipeAppearance.soft,
+                        ),
+                ],
+              ),
             ),
           ),
           if (profileError != null) ...[
@@ -510,13 +522,21 @@ class _AccountSettingsState extends ManagementState<AccountSettings> {
         ),
         UsageDataSettingsCard(controller: controller),
         const SignInDiagnosticsCard(),
-        AccountSignOutSection(
-          headingFocus: signOutHeading,
-          onLogout: widget.onLogout,
+        RaftSettingsAnchor(
+          id: 'sign-out',
+          child: AccountSignOutSection(
+            headingFocus: signOutHeading,
+            onLogout: widget.onLogout,
+          ),
         ),
         // Delete Account (Web DeleteAccountSection, AccountSection.tsx:648):
-        // the danger zone goes here, last on the page.
-        const SizedBox(height: RaftSpace.x6),
+        // the danger zone, last on the page.
+        RaftSettingsAnchor(
+          id: 'delete-account',
+          child: AccountDeleteSection(
+            onOpen: () => openSettingsSubPage(context, 'account/delete'),
+          ),
+        ),
       ],
     );
   }
