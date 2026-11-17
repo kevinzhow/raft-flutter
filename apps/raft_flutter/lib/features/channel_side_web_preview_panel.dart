@@ -266,11 +266,10 @@ class _NotShowingLine extends StatelessWidget {
     return Container(
       key: const ValueKey('web-preview-hint'),
       // Web `px-(--column-margin) py-1.5`.
-      // ignore: raft_lints/off_grid_spacing -- Web py-1.5 is 6px.
-      // ds-allow: Web py-1.5, 6px, between the 4px and 8px steps
+      // Web px-4 py-1.5.
       padding: const EdgeInsets.symmetric(
         horizontal: RaftSpace.x4,
-        vertical: 6,
+        vertical: RaftSpace.x1_5,
       ),
       decoration: BoxDecoration(
         border: Border(top: BorderSide(color: t.ui.lineSeam)),
@@ -377,7 +376,6 @@ class _SiteFrameState extends State<_SiteFrame> {
             clipBehavior: Clip.antiAlias,
             decoration: BoxDecoration(
               color: t.ui.layerCard,
-              // ignore: raft_lints/off_grid_spacing -- Web rounded-[6px].
               // ds-allow: Web rounded-[6px] of the phone-width frame, no token
               borderRadius: const BorderRadius.all(Radius.circular(6)),
               border: Border.all(color: t.ui.lineHairline),
