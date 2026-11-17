@@ -10674,13 +10674,17 @@
    "capability": "Tasks page view mode Board/List remembered across sessions (platform default board on desktop, list on mobile)",
    "background": false,
    "status": "covered",
-   "webEntry": "components/task/TasksPanel.tsx readStoredTaskViewMode/writeStoredTaskViewMode (slock.tasks.viewMode) + ?view= param",
+   "webEntry": "components/task/tasksPage/useTasksPageParams.ts readStoredTaskViewMode/writeStoredTaskViewMode (slock.tasks.viewMode) + ?view= param, default list (task v2 Tasks page); components/task/TasksPanel.tsx for the channel Tasks tab and task v2 off",
    "gate": "",
-   "flutterEntry": "resource_view.dart taskLayout segmented 'Board' / 'List'; the choice is kept in the device preference raft.tasks.viewMode (task_view_mode_preference.dart) and wins over the viewport default (Board on desktop, List on phone), shared by the server-wide page and every channel Tasks tab",
+   "flutterEntry": "tasks_page/tasks_page_params.dart (task v2 Tasks page: the stored choice, else the list) and resource_view.dart taskLayout (channel tab, task v2 off: viewport default); the choice is kept in the device preference raft.tasks.viewMode (task_view_mode_preference.dart), shared by the server-wide page and every channel Tasks tab",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/data/task_view_mode_preference.dart",
      "needle": "raft.tasks.viewMode"
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/tasks_page/tasks_page_params.dart",
+     "needle": "TaskViewModePreference.write"
     },
     {
      "file": "apps/raft_flutter/lib/features/resource_view.dart",

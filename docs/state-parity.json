@@ -4029,6 +4029,58 @@
           "justification": "The app opens an https page in the browser instead of a WebView while macOS VoiceOver is on (the WKWebView platform view crashes Flutter's accessibility bridge, as the Artifact frame); Web has no such state."
         }
       ]
+    },
+    {
+      "id": "tasks.page",
+      "title": "Tasks page with task v2 (list and board)",
+      "webEntry": "packages/web/src/components/task/tasksPage/TasksPage.tsx",
+      "flutterEntry": "apps/raft_flutter/lib/features/tasks_page/tasks_page.dart",
+      "states": [
+        {
+          "state": "loading",
+          "variant": "counts not read yet: row skeletons per section; each section's rows while its first page is read",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "gap",
+          "justification": "Flutter draws the same skeleton as Web's TasksListSkeleton / RowsSkeleton (row-sized bars; tasks_list_view_test.dart proves a skeleton row is a loaded row's height). No Web | Flutter parity case for the page with task v2 yet (the React host needs the v2 store seeded unread).",
+          "size": "M",
+          "gapKind": "case-missing"
+        },
+        {
+          "state": "empty",
+          "variant": "No tasks yet (全部), No tasks match (a filter or search), No tasks in a 我的 section",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "gap",
+          "justification": "tasks_page_test.dart and tasks_list_view_test.dart cover each empty state and that Clear filters / the search's x resolve it. The Web capture must show the state (the React host must not pre-seed the store over it) before a case is added.",
+          "size": "M",
+          "gapKind": "case-missing"
+        },
+        {
+          "state": "error",
+          "variant": "counts failed after three attempts: Tasks didn't load, Try again; a page that failed: Try again in place",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "gap",
+          "justification": "Same copy and action as Web's CountsFailed and LoadMoreSentinel (tests prove Try again loads the list and the hint goes). No parity case yet.",
+          "size": "S",
+          "gapKind": "case-missing"
+        },
+        {
+          "state": "partial",
+          "variant": "next page read as the end scrolls into view; a selection with its bar",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "gap",
+          "justification": "tasks_list_view_test.dart proves the cursor reads; tasks_selection_bar_test.dart the bar and its toasts. No parity case yet.",
+          "size": "M",
+          "gapKind": "case-missing"
+        }
+      ]
     }
   ],
   "navigationCoverage": {
@@ -4065,6 +4117,7 @@
       ],
       "tasks": [
         "tasks.list",
+        "tasks.page",
         "tasks.detail"
       ],
       "saved": [
@@ -39685,18 +39738,6 @@
         "owner": "task289 menu/dialog source ownership",
         "reason": "Native non-anchored chooser presentation: current branch delegates to ChoiceDialog; non-Raft branch calls the real Frozen factory. It preserves callback/route authority and is not an identical anchored Web entry."
       },
-      "apps/raft_flutter/lib/features/resource_view.dart#local-function:CLASS:_ResourceViewState@6652/METHOD:scopedDialog@46194/FUNCTION:buildOwned@46421": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "task289 scoped source registration",
-        "reason": "Actual resolved declaration in the exact Mac preparation runtime subset. Independent paint/delegation/state/real-entry closure remains unresolved; no thin-wrapper or style exemption is granted."
-      },
-      "apps/raft_flutter/lib/features/resource_view.dart#local-function:CLASS:_ResourceViewState@6652/METHOD:scopedMenu@47242/FUNCTION:buildOwned@47449": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "task289 scoped source registration",
-        "reason": "Actual resolved declaration in the exact Mac preparation runtime subset. Independent paint/delegation/state/real-entry closure remains unresolved; no thin-wrapper or style exemption is granted."
-      },
       "apps/raft_flutter/lib/features/resource_view.dart#method:_ResourceViewState.assignTask": {
         "role": "unresolved",
         "familyRefs": [],
@@ -51236,6 +51277,384 @@
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "WP-TASKS (Web v1.24 Tasks page, TaskChipList page variant / SelectionToolbar): resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/resource_view.dart#local-function:CLASS:_ResourceViewState@6754/METHOD:scopedDialog@46296/FUNCTION:buildOwned@46523": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "task289 scoped source registration",
+        "reason": "Actual resolved declaration in the exact Mac preparation runtime subset. Independent paint/delegation/state/real-entry closure remains unresolved; no thin-wrapper or style exemption is granted."
+      },
+      "apps/raft_flutter/lib/features/resource_view.dart#local-function:CLASS:_ResourceViewState@6754/METHOD:scopedMenu@47344/FUNCTION:buildOwned@47551": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "task289 scoped source registration",
+        "reason": "Actual resolved declaration in the exact Mac preparation runtime subset. Independent paint/delegation/state/real-entry closure remains unresolved; no thin-wrapper or style exemption is granted."
+      },
+      "apps/raft_flutter/lib/features/resource_view.dart#method:_ResourceViewState.buildResource": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-TASKS v1.24 alignment",
+        "reason": "Source census candidate (WP-TASKS: the server Tasks page with task v2, its toolbar, list and selection bar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/task_selection_filter.dart#method:_TaskSelectionFilterState._tooltip": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-TASKS v1.24 alignment",
+        "reason": "Source census candidate (WP-TASKS: the server Tasks page with task v2, its toolbar, list and selection bar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/tasks_page/tasks_list_view.dart#class:LoadMoreSentinel": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-TASKS v1.24 alignment",
+        "reason": "Source census candidate (WP-TASKS: the server Tasks page with task v2, its toolbar, list and selection bar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/tasks_page/tasks_list_view.dart#class:TasksLaneRows": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-TASKS v1.24 alignment",
+        "reason": "Source census candidate (WP-TASKS: the server Tasks page with task v2, its toolbar, list and selection bar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/tasks_page/tasks_list_view.dart#class:TasksListSkeleton": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-TASKS v1.24 alignment",
+        "reason": "Source census candidate (WP-TASKS: the server Tasks page with task v2, its toolbar, list and selection bar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/tasks_page/tasks_list_view.dart#class:TasksListView": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-TASKS v1.24 alignment",
+        "reason": "Source census candidate (WP-TASKS: the server Tasks page with task v2, its toolbar, list and selection bar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/tasks_page/tasks_list_view.dart#class:TasksRowsSkeleton": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-TASKS v1.24 alignment",
+        "reason": "Source census candidate (WP-TASKS: the server Tasks page with task v2, its toolbar, list and selection bar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/tasks_page/tasks_list_view.dart#class:TasksSectionHeading": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-TASKS v1.24 alignment",
+        "reason": "Source census candidate (WP-TASKS: the server Tasks page with task v2, its toolbar, list and selection bar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/tasks_page/tasks_list_view.dart#class:_LoadMoreSentinelState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-TASKS v1.24 alignment",
+        "reason": "Source census candidate (WP-TASKS: the server Tasks page with task v2, its toolbar, list and selection bar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/tasks_page/tasks_list_view.dart#class:_TasksLaneRowsState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-TASKS v1.24 alignment",
+        "reason": "Source census candidate (WP-TASKS: the server Tasks page with task v2, its toolbar, list and selection bar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/tasks_page/tasks_list_view.dart#method:LoadMoreSentinel.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-TASKS v1.24 alignment",
+        "reason": "Source census candidate (WP-TASKS: the server Tasks page with task v2, its toolbar, list and selection bar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/tasks_page/tasks_list_view.dart#method:TasksLaneRows.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-TASKS v1.24 alignment",
+        "reason": "Source census candidate (WP-TASKS: the server Tasks page with task v2, its toolbar, list and selection bar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/tasks_page/tasks_list_view.dart#method:TasksListSkeleton.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-TASKS v1.24 alignment",
+        "reason": "Source census candidate (WP-TASKS: the server Tasks page with task v2, its toolbar, list and selection bar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/tasks_page/tasks_list_view.dart#method:TasksListView._rows": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-TASKS v1.24 alignment",
+        "reason": "Source census candidate (WP-TASKS: the server Tasks page with task v2, its toolbar, list and selection bar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/tasks_page/tasks_list_view.dart#method:TasksListView.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-TASKS v1.24 alignment",
+        "reason": "Source census candidate (WP-TASKS: the server Tasks page with task v2, its toolbar, list and selection bar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/tasks_page/tasks_list_view.dart#method:TasksRowsSkeleton.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-TASKS v1.24 alignment",
+        "reason": "Source census candidate (WP-TASKS: the server Tasks page with task v2, its toolbar, list and selection bar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/tasks_page/tasks_list_view.dart#method:TasksSectionHeading.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-TASKS v1.24 alignment",
+        "reason": "Source census candidate (WP-TASKS: the server Tasks page with task v2, its toolbar, list and selection bar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/tasks_page/tasks_list_view.dart#method:_LoadMoreSentinelState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-TASKS v1.24 alignment",
+        "reason": "Source census candidate (WP-TASKS: the server Tasks page with task v2, its toolbar, list and selection bar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/tasks_page/tasks_list_view.dart#method:_TasksLaneRowsState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-TASKS v1.24 alignment",
+        "reason": "Source census candidate (WP-TASKS: the server Tasks page with task v2, its toolbar, list and selection bar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/tasks_page/tasks_page.dart#class:TasksPage": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-TASKS v1.24 alignment",
+        "reason": "Source census candidate (WP-TASKS: the server Tasks page with task v2, its toolbar, list and selection bar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/tasks_page/tasks_page.dart#class:_BoardSkeleton": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-TASKS v1.24 alignment",
+        "reason": "Source census candidate (WP-TASKS: the server Tasks page with task v2, its toolbar, list and selection bar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/tasks_page/tasks_page.dart#class:_CountsFailed": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-TASKS v1.24 alignment",
+        "reason": "Source census candidate (WP-TASKS: the server Tasks page with task v2, its toolbar, list and selection bar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/tasks_page/tasks_page.dart#class:_TasksPageState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-TASKS v1.24 alignment",
+        "reason": "Source census candidate (WP-TASKS: the server Tasks page with task v2, its toolbar, list and selection bar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/tasks_page/tasks_page.dart#method:TasksPage.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-TASKS v1.24 alignment",
+        "reason": "Source census candidate (WP-TASKS: the server Tasks page with task v2, its toolbar, list and selection bar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/tasks_page/tasks_page.dart#method:_BoardSkeleton.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-TASKS v1.24 alignment",
+        "reason": "Source census candidate (WP-TASKS: the server Tasks page with task v2, its toolbar, list and selection bar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/tasks_page/tasks_page.dart#method:_CountsFailed.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-TASKS v1.24 alignment",
+        "reason": "Source census candidate (WP-TASKS: the server Tasks page with task v2, its toolbar, list and selection bar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/tasks_page/tasks_page.dart#method:_TasksPageState._newTask": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-TASKS v1.24 alignment",
+        "reason": "Source census candidate (WP-TASKS: the server Tasks page with task v2, its toolbar, list and selection bar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/tasks_page/tasks_page.dart#method:_TasksPageState._toast": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-TASKS v1.24 alignment",
+        "reason": "Source census candidate (WP-TASKS: the server Tasks page with task v2, its toolbar, list and selection bar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/tasks_page/tasks_page.dart#method:_TasksPageState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-TASKS v1.24 alignment",
+        "reason": "Source census candidate (WP-TASKS: the server Tasks page with task v2, its toolbar, list and selection bar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/tasks_page/tasks_page.dart#method:_TasksPageState.didUpdateWidget": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-TASKS v1.24 alignment",
+        "reason": "Source census candidate (WP-TASKS: the server Tasks page with task v2, its toolbar, list and selection bar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/tasks_page/tasks_page_rows.dart#class:TaskActivityTime": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-TASKS v1.24 alignment",
+        "reason": "Source census candidate (WP-TASKS: the server Tasks page with task v2, its toolbar, list and selection bar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/tasks_page/tasks_page_rows.dart#function:tasksPageChipRow": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-TASKS v1.24 alignment",
+        "reason": "Source census candidate (WP-TASKS: the server Tasks page with task v2, its toolbar, list and selection bar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/tasks_page/tasks_page_rows.dart#method:TaskActivityTime.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-TASKS v1.24 alignment",
+        "reason": "Source census candidate (WP-TASKS: the server Tasks page with task v2, its toolbar, list and selection bar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/tasks_page/tasks_page_toolbar.dart#class:TasksPageToolbar": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-TASKS v1.24 alignment",
+        "reason": "Source census candidate (WP-TASKS: the server Tasks page with task v2, its toolbar, list and selection bar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/tasks_page/tasks_page_toolbar.dart#class:_TasksPageToolbarState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-TASKS v1.24 alignment",
+        "reason": "Source census candidate (WP-TASKS: the server Tasks page with task v2, its toolbar, list and selection bar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/tasks_page/tasks_page_toolbar.dart#method:TasksPageToolbar.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-TASKS v1.24 alignment",
+        "reason": "Source census candidate (WP-TASKS: the server Tasks page with task v2, its toolbar, list and selection bar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/tasks_page/tasks_page_toolbar.dart#method:_FilterItem.buildForm": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-TASKS v1.24 alignment",
+        "reason": "Source census candidate (WP-TASKS: the server Tasks page with task v2, its toolbar, list and selection bar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/tasks_page/tasks_page_toolbar.dart#method:_ScopeItem.buildForm": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-TASKS v1.24 alignment",
+        "reason": "Source census candidate (WP-TASKS: the server Tasks page with task v2, its toolbar, list and selection bar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/tasks_page/tasks_page_toolbar.dart#method:_TasksPageToolbarState._choices": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-TASKS v1.24 alignment",
+        "reason": "Source census candidate (WP-TASKS: the server Tasks page with task v2, its toolbar, list and selection bar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/tasks_page/tasks_page_toolbar.dart#method:_TasksPageToolbarState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-TASKS v1.24 alignment",
+        "reason": "Source census candidate (WP-TASKS: the server Tasks page with task v2, its toolbar, list and selection bar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/tasks_page/tasks_page_toolbar.dart#method:_TasksPageToolbarState.didUpdateWidget": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-TASKS v1.24 alignment",
+        "reason": "Source census candidate (WP-TASKS: the server Tasks page with task v2, its toolbar, list and selection bar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/tasks_page/tasks_page_toolbar.dart#method:_ViewItem.buildForm": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-TASKS v1.24 alignment",
+        "reason": "Source census candidate (WP-TASKS: the server Tasks page with task v2, its toolbar, list and selection bar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/tasks_page/tasks_selection_bar.dart#class:TasksSelectionBar": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-TASKS v1.24 alignment",
+        "reason": "Source census candidate (WP-TASKS: the server Tasks page with task v2, its toolbar, list and selection bar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/tasks_page/tasks_selection_bar.dart#class:_AssigneePicker": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-TASKS v1.24 alignment",
+        "reason": "Source census candidate (WP-TASKS: the server Tasks page with task v2, its toolbar, list and selection bar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/tasks_page/tasks_selection_bar.dart#class:_AssigneePickerState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-TASKS v1.24 alignment",
+        "reason": "Source census candidate (WP-TASKS: the server Tasks page with task v2, its toolbar, list and selection bar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/tasks_page/tasks_selection_bar.dart#class:_TasksSelectionBarState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-TASKS v1.24 alignment",
+        "reason": "Source census candidate (WP-TASKS: the server Tasks page with task v2, its toolbar, list and selection bar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/tasks_page/tasks_selection_bar.dart#local-function:CLASS:_AssigneePickerState@10507/METHOD:build@10729/FUNCTION:avatar@11577": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-TASKS v1.24 alignment",
+        "reason": "Source census candidate (WP-TASKS: the server Tasks page with task v2, its toolbar, list and selection bar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/tasks_page/tasks_selection_bar.dart#method:TasksSelectionBar.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-TASKS v1.24 alignment",
+        "reason": "Source census candidate (WP-TASKS: the server Tasks page with task v2, its toolbar, list and selection bar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/tasks_page/tasks_selection_bar.dart#method:_AssigneePicker.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-TASKS v1.24 alignment",
+        "reason": "Source census candidate (WP-TASKS: the server Tasks page with task v2, its toolbar, list and selection bar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/tasks_page/tasks_selection_bar.dart#method:_AssigneePickerState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-TASKS v1.24 alignment",
+        "reason": "Source census candidate (WP-TASKS: the server Tasks page with task v2, its toolbar, list and selection bar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/tasks_page/tasks_selection_bar.dart#method:_TasksSelectionBarState._askDelete": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-TASKS v1.24 alignment",
+        "reason": "Source census candidate (WP-TASKS: the server Tasks page with task v2, its toolbar, list and selection bar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/tasks_page/tasks_selection_bar.dart#method:_TasksSelectionBarState._assigneePicker": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-TASKS v1.24 alignment",
+        "reason": "Source census candidate (WP-TASKS: the server Tasks page with task v2, its toolbar, list and selection bar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/tasks_page/tasks_selection_bar.dart#method:_TasksSelectionBarState._toast": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-TASKS v1.24 alignment",
+        "reason": "Source census candidate (WP-TASKS: the server Tasks page with task v2, its toolbar, list and selection bar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/tasks_page/tasks_selection_bar.dart#method:_TasksSelectionBarState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-TASKS v1.24 alignment",
+        "reason": "Source census candidate (WP-TASKS: the server Tasks page with task v2, its toolbar, list and selection bar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/selection_bar.dart#class:_BarPopover": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-TASKS v1.24 alignment",
+        "reason": "Source census candidate (WP-TASKS: the server Tasks page with task v2, its toolbar, list and selection bar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/selection_bar.dart#class:_BarPopoverState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-TASKS v1.24 alignment",
+        "reason": "Source census candidate (WP-TASKS: the server Tasks page with task v2, its toolbar, list and selection bar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/selection_bar.dart#local-function:CLASS:_BarAction@9403/METHOD:buildForm@10228/FUNCTION:button@10838": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-TASKS v1.24 alignment",
+        "reason": "Source census candidate (WP-TASKS: the server Tasks page with task v2, its toolbar, list and selection bar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/selection_bar.dart#local-function:CLASS:_BarMore@14043/METHOD:buildForm@14199/FUNCTION:trigger@14414": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-TASKS v1.24 alignment",
+        "reason": "Source census candidate (WP-TASKS: the server Tasks page with task v2, its toolbar, list and selection bar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/selection_bar.dart#method:_BarPopover.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-TASKS v1.24 alignment",
+        "reason": "Source census candidate (WP-TASKS: the server Tasks page with task v2, its toolbar, list and selection bar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/selection_bar.dart#method:_BarPopoverState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-TASKS v1.24 alignment",
+        "reason": "Source census candidate (WP-TASKS: the server Tasks page with task v2, its toolbar, list and selection bar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/task_chip_page.dart#method:extension(RaftTaskPageList)._wrapped": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-TASKS v1.24 alignment",
+        "reason": "Source census candidate (WP-TASKS: the server Tasks page with task v2, its toolbar, list and selection bar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       }
     },
     "entries": {
@@ -54515,6 +54934,50 @@
         ],
         "mountStatus": "unresolved",
         "reason": "New WP-SIDE entry (Web v1.24); no real-entry capture acceptance is inferred."
+      },
+      "screen:tasks.page": {
+        "owner": "task v2",
+        "kind": "route_or_panel_candidate",
+        "lifecycleScreenId": "tasks.page",
+        "declarationRefs": [],
+        "mountStatus": "unresolved",
+        "reason": "The server Tasks page with task v2 (TasksPage: toolbar, list, selection bar); widget tests only, no visual PASS is asserted."
+      },
+      "surface:apps/raft_flutter/lib/features/tasks_page/tasks_page.dart#method:_TasksPageState._newTask": {
+        "owner": "WP-TASKS v1.24 alignment",
+        "kind": "surface_factory_candidate",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/tasks_page/tasks_page.dart#method:_TasksPageState._newTask"
+        ],
+        "mountStatus": "unresolved",
+        "reason": "Resolved function owns a surface call; actual target, route and state are not yet observed."
+      },
+      "surface:apps/raft_flutter/lib/features/tasks_page/tasks_page.dart#method:_TasksPageState._toast": {
+        "owner": "WP-TASKS v1.24 alignment",
+        "kind": "surface_factory_candidate",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/tasks_page/tasks_page.dart#method:_TasksPageState._toast"
+        ],
+        "mountStatus": "unresolved",
+        "reason": "Resolved function owns a surface call; actual target, route and state are not yet observed."
+      },
+      "surface:apps/raft_flutter/lib/features/tasks_page/tasks_selection_bar.dart#method:_TasksSelectionBarState._askDelete": {
+        "owner": "WP-TASKS v1.24 alignment",
+        "kind": "surface_factory_candidate",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/tasks_page/tasks_selection_bar.dart#method:_TasksSelectionBarState._askDelete"
+        ],
+        "mountStatus": "unresolved",
+        "reason": "Resolved function owns a surface call; actual target, route and state are not yet observed."
+      },
+      "surface:apps/raft_flutter/lib/features/tasks_page/tasks_selection_bar.dart#method:_TasksSelectionBarState._toast": {
+        "owner": "WP-TASKS v1.24 alignment",
+        "kind": "surface_factory_candidate",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/tasks_page/tasks_selection_bar.dart#method:_TasksSelectionBarState._toast"
+        ],
+        "mountStatus": "unresolved",
+        "reason": "Resolved function owns a surface call; actual target, route and state are not yet observed."
       }
     },
     "requirements": {
@@ -59849,6 +60312,16 @@
         "applicability": "unknown",
         "owner": "design-system alignment",
         "reason": "Resolved state atom use (WP-SIDE); look/input/real-entry applicability remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/tasks_page/tasks_page_toolbar.dart#method:_FilterItem.buildForm|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+        "applicability": "unknown",
+        "owner": "WP-TASKS v1.24 alignment",
+        "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/tasks_page/tasks_page_toolbar.dart#method:_FilterItem.buildForm|state:data-fit-label": {
+        "applicability": "unknown",
+        "owner": "WP-TASKS v1.24 alignment",
+        "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
       }
     },
     "evidence": {},

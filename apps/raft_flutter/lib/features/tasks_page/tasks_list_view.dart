@@ -112,6 +112,7 @@ class _LoadMoreSentinelState extends State<LoadMoreSentinel> {
     }
     if (!widget.loading) _checkAfterLayout();
     // The end marker takes no room of its own: it only has a place to check.
+    // ds-allow: the end marker has no room of its own
     return const SizedBox(
       key: ValueKey('tasks-page-more'),
       height: 0,
@@ -141,6 +142,7 @@ class TasksRowsSkeleton extends StatelessWidget {
           borderRadius: BorderRadius.circular(radius),
         ),
         child: ClipRRect(
+          // ds-allow: the page list's `rounded-container` less its 1px border
           borderRadius: BorderRadius.circular(radius - 1),
           child: Column(
             children: [
@@ -157,6 +159,7 @@ class TasksRowsSkeleton extends StatelessWidget {
                   child: ConstrainedBox(
                     constraints: BoxConstraints(minHeight: minHeight),
                     child: Padding(
+                      // ds-allow: the loaded row's own padding (`pl-2`, its check gutter, `pr-3`, `py-1.5`)
                       padding: EdgeInsetsDirectional.fromSTEB(
                         (t.desktop ? 8.0 : 12.0) + 20 + 8,
                         6,
@@ -175,6 +178,7 @@ class TasksRowsSkeleton extends StatelessWidget {
                               variant: RaftSkeletonVariant.line,
                               width: 80,
                             ),
+                            // ds-allow: Web row skeleton `gap-2`
                             const SizedBox(width: 8),
                             const RaftSkeleton(
                               variant: RaftSkeletonVariant.block,
@@ -213,12 +217,14 @@ class TasksSectionHeading extends StatelessWidget {
       section == MineSection.assigned ? 'Assigned' : 'Started by you',
     );
     return Padding(
+      // ds-allow: Web section heading `mb-3`
       padding: const EdgeInsets.only(bottom: 12),
       child: Semantics(
         header: true,
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.baseline,
           textBaseline: TextBaseline.alphabetic,
+          // ds-allow: Web section heading `gap-2`
           spacing: 8,
           children: [
             Flexible(
@@ -265,6 +271,7 @@ class TasksListSkeleton extends StatelessWidget {
     return Column(
       key: const ValueKey('tasks-page-mine-loading'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
+      // ds-allow: Web `gap-9` between the loading sections
       spacing: 36,
       children: [
         for (final section in MineSection.values)
@@ -356,6 +363,7 @@ class TasksListView extends StatelessWidget {
     return Column(
       key: const ValueKey('tasks-page-mine'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
+      // ds-allow: Web `flex flex-col gap-9` between the 我的 sections
       spacing: 36,
       children: [
         for (final (i, section) in MineSection.values.indexed)
@@ -444,6 +452,7 @@ class _TasksLaneRowsState extends State<TasksLaneRows> {
       ];
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
+        // ds-allow: Web `gap-2` between a list and its more / loading rows
         spacing: 8,
         children: [
           RaftTaskPageList(
@@ -482,6 +491,7 @@ class _TasksLaneRowsState extends State<TasksLaneRows> {
     if ((total == null || total > 0) && !view.loaded) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
+        // ds-allow: Web `gap-2` between the loading board's cards
         spacing: 8,
         children: [
           if (!view.failed) TasksRowsSkeleton(rows: math.min(total ?? 3, 3)),

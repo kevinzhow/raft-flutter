@@ -264,6 +264,7 @@ class _ScopeItem extends RaftFitItem {
             label: _name(context, value),
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
+              // ds-allow: Web ListScopeSelect count `gap-2`
               spacing: 8,
               children: [
                 if (counts[value] != null)

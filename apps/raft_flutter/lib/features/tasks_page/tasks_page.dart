@@ -599,6 +599,7 @@ class _TasksPageState extends State<TasksPage> {
         slivers: [
           if (mobile) PinnedHeaderSliver(child: toolbar),
           SliverPadding(
+            // ds-allow: Web page content `px-(--surface-inset) py-4`, `pb-24` under the bar
             padding: EdgeInsets.fromLTRB(
               inset,
               mobile ? 0 : 16,
@@ -607,6 +608,7 @@ class _TasksPageState extends State<TasksPage> {
             ),
             sliver: SliverToBoxAdapter(
               child: Padding(
+                // ds-allow: Web page content `py-4`
                 padding: EdgeInsets.only(top: mobile ? 16 : 0),
                 child: scrollBody,
               ),
@@ -689,6 +691,7 @@ class _BoardSkeleton extends StatelessWidget {
   Widget build(BuildContext context) => Column(
     key: const ValueKey('tasks-page-loading'),
     crossAxisAlignment: CrossAxisAlignment.stretch,
+    // ds-allow: Web `gap-2` between the loading board's cards
     spacing: 8,
     children: [
       for (var i = 0; i < 4; i++)
