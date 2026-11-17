@@ -67,7 +67,12 @@ class _ActivityPaginationState extends State<ActivityPagination> {
           page = (widget.scope, widget.offset);
       if (attempted == page || controller.positions.length != 1) return;
       final position = controller.position;
-      if (!position.hasContentDimensions || position.extentAfter >= 240) return;
+      if (!position.hasContentDimensions) return;
+      // Web `max(240, 2 x clientHeight)` from the loaded end.
+      final near = position.viewportDimension * 2 > 240
+          ? position.viewportDimension * 2
+          : 240.0;
+      if (position.extentAfter >= near) return;
       attempted = page;
       unawaited(widget.onMore());
     });

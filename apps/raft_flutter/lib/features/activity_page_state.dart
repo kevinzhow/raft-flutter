@@ -3,6 +3,8 @@ import 'package:flutter/foundation.dart';
 import '../data/activity_object_rows.dart';
 import 'activity_counts_line.dart';
 import 'activity_scope_reload.dart';
+import 'activity_swipe_actions.dart';
+import 'activity_undo.dart';
 
 /// What one mounted Activity list keeps beside its rows. Held outside the
 /// State class (an [Expando] on it) so the resource page's field count does
@@ -24,6 +26,11 @@ class ActivityPageState {
 
   /// 503 `rw_unconfigured`: Activity is unavailable, not failed.
   bool unavailable = false;
+
+  /// The row open under a swipe, and the Done / Unfollow / Mute waiting out
+  /// their Undo.
+  final open = ActivitySwipeOpen();
+  ActivityUndo? undo;
 
   /// Ends the Activity visit / the phone re-tap registration on dispose.
   VoidCallback? leaveVisit, unregisterRetap;

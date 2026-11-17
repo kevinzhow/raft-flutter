@@ -67,6 +67,7 @@ class ActivityFirstUnread {
 
   /// Called while the Activity page builds its rows.
   void observe(
+    WorkspaceController w,
     List<Map<String, dynamic>> rows,
     String? Function(Map) keyOf,
     ScrollController? scroll,
@@ -84,6 +85,13 @@ class ActivityFirstUnread {
     final key = unread[(at + 1) % unread.length];
     _pending = false;
     _focused = key;
+    _locatedTimer?.cancel();
+    _locatedTimer = Timer(locatedDuration, () {
+      if (_focused == key) {
+        _focused = null;
+        w.notifyListeners();
+      }
+    });
     if (scroll != null) _reveal(context, scroll, ResourceRowListKey(key), 0);
   }
 
@@ -152,11 +160,13 @@ Widget activityHeaderJump(
   BuildContext context,
   WorkspaceController w,
   String section,
-  Widget header,
-) => section != 'activity'
+  Widget header, {
+  bool loadFailed = false,
+}) => section != 'activity'
     ? header
     : activityStaleNotice(
         w,
+        loadFailed: loadFailed,
         RaftTooltip(
           message: raftText(
             context,
@@ -171,9 +181,14 @@ Widget activityHeaderJump(
 
 /// The phone Activity tab root's header (Web TabRootBar: the name and the
 /// counts line), with the task #164 notice under it.
-Widget activityRootHeader(WorkspaceController w, String subtitle) =>
+Widget activityRootHeader(
+  WorkspaceController w,
+  String subtitle, {
+  bool loadFailed = false,
+}) =>
     activityStaleNotice(
       w,
+      loadFailed: loadFailed,
       // Web `headerContainerProps.onClick = goToNextUnread` on a phone.
       GestureDetector(
         key: const ValueKey('activity-header-retap'),
@@ -188,8 +203,13 @@ Widget activityRootHeader(WorkspaceController w, String subtitle) =>
     );
 
 /// ThreadsInbox: the Activity notice of task #164 sits under the head.
-Widget activityStaleNotice(WorkspaceController w, Widget header) => Column(
+Widget activityStaleNotice(
+  WorkspaceController w,
+  Widget header, {
+  bool loadFailed = false,
+}) => Column(
   mainAxisSize: MainAxisSize.min,
   crossAxisAlignment: CrossAxisAlignment.stretch,
-  children: [header, StaleCountsNotice.activity(w)],
+  // Not with the failed state: that already says the list did not load.
+  children: [header, if (!loadFailed) StaleCountsNotice.activity(w)],
 );

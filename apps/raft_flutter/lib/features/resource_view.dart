@@ -52,6 +52,16 @@ import 'activity_mark_all_read.dart';
 import 'activity_retap.dart';
 import 'activity_page_state.dart';
 import 'activity_unread_scope.dart';
+import 'activity_list_view.dart';
+import 'activity_swipe_actions.dart';
+import 'activity_toolbar_mount.dart';
+import 'activity_undo.dart';
+import '../data/object_activity_api.dart';
+import 'artifacts/artifact_models.dart' show ArtifactLinkTarget;
+import 'artifacts/artifact_viewer_page.dart' show openWorkspaceArtifact;
+import 'activity_row_label.dart' show ActivityRowLookups;
+import 'activity_row_time.dart' show activityRowFormatter;
+import '../data/source_time_formatter.dart' show sourceTimeNow;
 import 'create_task_dialog.dart';
 import 'desktop_navigation_policy.dart' show DesktopContentTarget;
 import 'search_home.dart';
@@ -495,6 +505,47 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
   ActivityUnreadSnapshotStore get activityUnreadSnapshots =>
       ActivityUnreadScope.of(w).snapshots;
 
+  /// Done / Unfollow / Mute with their Undo, for every route to them.
+  void bindActivityUndo() {
+    final undo = ActivityUndo(
+      ActivityUndoDeps(
+        w: w,
+        context: () => mounted ? context : null,
+        key: rowKey,
+        listed: (key) => rows.where((r) => rowKey(r) == key).firstOrNull,
+        mountedAction: (row, action) => activityAction(row, action, authority),
+        accepts: () => mounted,
+      ),
+    )..addListener(activityUndoChanged);
+    activityFacets.undo = undo;
+  }
+
+  void activityUndoChanged() {
+    if (mounted) setState(() {});
+  }
+
+  void disposeActivityUndo() {
+    activityFacets.undo
+      ?..removeListener(activityUndoChanged)
+      ..dispose();
+    activityFacets.open.dispose();
+  }
+
+  /// Rows out of the list while their Done / Unfollow waits out its Undo.
+  List<Map<String, dynamic>> activityUndoShown(
+    List<Map<String, dynamic>> base,
+  ) {
+    final undo = activityFacets.undo;
+    if (undo == null) return base;
+    undo.reconcile();
+    return undo.hasHidden
+        ? [
+            for (final row in base)
+              if (!undo.hides(rowKey(row))) row,
+          ]
+        : base;
+  }
+
   /// What the phone's Activity re-tap works with (Web `useActivityNextUnread`).
   ActivityRetapHost activityRetapHost() => ActivityRetapHost(
     scroll: () => listScroll,
@@ -661,7 +712,7 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
     }
     final scroll = listScroll;
     if (activityPage) {
-      ActivityFirstUnread.of(w).observe(visibleRows, rowKey, scroll, context);
+      ActivityFirstUnread.of(w).observe(w, visibleRows, rowKey, scroll, context);
     }
     listUpdates.observeRows(
       view: (widget.section, filter, rowsView),
@@ -1843,6 +1894,7 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
       filter = ActivityFilterPreference.read(w.server?.id).name;
       activityFacets.leaveVisit = ActivityUnreadScope.of(w).visit.enter();
       activityFacets.unregisterRetap = ActivityRetap.of(w).register(activityRetapHost());
+      bindActivityUndo();
       // The pins and saves as of now are what a later change is measured from.
       activityFacets.reload.changed(
         choice: ActivityFilterChoice.all,
@@ -1959,6 +2011,7 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
   void dispose() {
     activityFacets.leaveVisit?.call();
     activityFacets.unregisterRetap?.call();
+    disposeActivityUndo();
     sectionActivity?.removeListener(sectionActivityChanged);
     events?.cancel();
     events = null;
@@ -2641,7 +2694,8 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
               ],
             ),
           ),
-        if (widget.section == 'activity') activityToolbar(scope),
+        if (widget.section == 'activity' && !(activityPhoneBar && activityShowsList))
+          activityToolbar(scope),
         if (widget.section == 'search') searchFilters(),
         if (widget.section == 'saved' && extraFilters) advancedFilters(),
         if (widget.section == 'tasks') taskFilters(),
@@ -2656,31 +2710,10 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
             padding: const EdgeInsets.all(16),
             child: RaftErrorBanner(error!, small: true),
           ),
-        Expanded(
-          child:
-              widget.section == 'activity' &&
-                  !widget.compactActivitySidebar &&
-                  MediaQuery.sizeOf(context).width <
-                      RaftLayoutMetrics.desktopBreakpoint &&
-                  activitySections.contains(filter)
-              ? RaftSectionPager<String>(
-                  key: ValueKey(identityAuthority),
-                  sections: activitySections,
-                  value: filter,
-                  onChanged: (value) =>
-                      chooseActivityFilter(ActivityFilterChoice.parse(value)),
-                  unvisitedBuilder: (_) => const RaftActivityLoadingList(),
-                  builder: (context, value) => value == filter
-                      ? resourceResults(context)
-                      : inactiveActivitySection(value),
-                )
-              : resourceResults(context),
-        ),
+        Expanded(child: resourceResults(context)),
       ],
     );
   }
-
-  List<String> get activitySections => const ['all', 'unread', 'mentions'];
 
   Widget resourceResults(BuildContext context) {
     final results = resourceResultsPager(context);
@@ -2909,86 +2942,91 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
           );
   }
 
-  /// A neighboring page is a pure projection of its accepted window. It
-  /// never issues reads, appends pages or registers another data owner.
-  Widget inactiveActivitySection(String value) {
-    final window = viewWindows[listViewFor(value)];
-    if (window == null) return const RaftActivityLoadingList();
-    if (window.rows.isEmpty) {
-      return RaftEmptyState(
-        title: ActivityFilterChoice.parse(value).emptyTitle,
-        detail: ActivityFilterChoice.parse(value).emptyDescription,
-      );
-    }
-    final listed = window.rows;
-    return ListView.separated(
-      key: PageStorageKey(('resource-list', 'activity', value)),
-      primary: false,
-      padding: raftScrollPadding(context, EdgeInsets.zero),
-      controller: activityScrolls[value],
-      itemCount: listed.length,
-      separatorBuilder: (_, _) => const SizedBox.shrink(),
-      itemBuilder: (_, i) =>
-          listedActivityCard(listed, i, authority, viewFilter: value),
-    );
-  }
-
   /// Activity/Saved rows newest first. Rows keep their element when rows land
   /// above them, and the reading anchor keeps the reader's row in place.
   Widget resourceList() {
     final shown = visibleRows;
-    final list = ListView.separated(
-      key: snapshotted
-          ? PageStorageKey(('resource-list', widget.section, filter))
-          : PageStorageKey((
-              'resource-list',
-              widget.section,
-              widget.channelId,
-              listView,
-            )),
-      controller: listScroll,
-      physics: mobileActivityRefresh
-          ? const AlwaysScrollableScrollPhysics()
-          : null,
-      padding: raftScrollPadding(
-        context,
-        widget.section == 'activity'
-            ? EdgeInsets.zero
-            : widget.section == 'saved'
-            ? RaftConversationCardRecipe(RaftTokens.of(context)).listInset
-            : const EdgeInsets.all(16),
-      ),
-      // SavedPanel loads the next page when its sentinel comes
-      // within `rootMargin: 240px` of the scroller.
-      scrollCacheExtent: widget.section == 'saved'
-          ? const ScrollCacheExtent.pixels(240)
-          : null,
-      itemCount: shown.length + (hasMore ? 1 : 0),
-      separatorBuilder: (_, _) => SizedBox(
-        height: widget.section == 'activity'
-            ? 0
-            : widget.section == 'saved'
-            ? RaftConversationCardRecipe(RaftTokens.of(context)).listGap
-            : RaftConversationCardRecipe.gap,
-      ),
-      itemBuilder: (context, index) => index == shown.length
-          ? widget.section == 'saved'
-                ? savedSentinelRow()
-                : RaftButton.text(
-                    onPressed: () => load(append: true),
-                    child: Text(raftText(context, 'Load more')),
-                  )
-          : KeyedSubtree(
-              key: listUpdates.keyOf(rowKey(shown[index])),
-              child: widget.section == 'activity'
-                  ? listedActivityCard(shown, index, authority)
-                  : item(shown[index], topRule: index > 0),
+    final list = widget.section == 'activity'
+        ? activityList(shown)
+        : ListView.separated(
+            key: snapshotted
+                ? PageStorageKey(('resource-list', widget.section, filter))
+                : PageStorageKey((
+                    'resource-list',
+                    widget.section,
+                    widget.channelId,
+                    listView,
+                  )),
+            controller: listScroll,
+            physics: mobileActivityRefresh
+                ? const AlwaysScrollableScrollPhysics()
+                : null,
+            padding: raftScrollPadding(
+              context,
+              widget.section == 'saved'
+                  ? RaftConversationCardRecipe(RaftTokens.of(context)).listInset
+                  : const EdgeInsets.all(16),
             ),
-      findItemIndexCallback: listUpdates.indexOf,
-    );
+            // SavedPanel loads the next page when its sentinel comes
+            // within `rootMargin: 240px` of the scroller.
+            scrollCacheExtent: widget.section == 'saved'
+                ? const ScrollCacheExtent.pixels(240)
+                : null,
+            itemCount: shown.length + (hasMore ? 1 : 0),
+            separatorBuilder: (_, _) => SizedBox(
+              height: widget.section == 'saved'
+                  ? RaftConversationCardRecipe(RaftTokens.of(context)).listGap
+                  : RaftConversationCardRecipe.gap,
+            ),
+            itemBuilder: (context, index) => index == shown.length
+                ? widget.section == 'saved'
+                      ? savedSentinelRow()
+                      : RaftButton.text(
+                          onPressed: () => load(append: true),
+                          child: Text(raftText(context, 'Load more')),
+                        )
+                : KeyedSubtree(
+                    key: listUpdates.keyOf(rowKey(shown[index])),
+                    child: item(shown[index], topRule: index > 0),
+                  ),
+            findItemIndexCallback: listUpdates.indexOf,
+          );
     return snapshotted
         ? RaftReadingAnchor(controller: listUpdates.anchor, child: list)
         : list;
+  }
+
+  /// The Activity scroller: day groups, the phone's pinned filter row, swipe.
+  Widget activityList(List<Map<String, dynamic>> shown) {
+    final scope = authority;
+    final phone = activityPhoneBar;
+    final swipe = RaftInteraction.of(context).touch && phone;
+    final facets = activityFacets;
+    Widget bar(Widget child) =>
+        swipe ? ActivitySwipeBarGuard(open: facets.open, child: child) : child;
+    final list = ActivityListView(
+      key: PageStorageKey(('resource-list', widget.section, filter)),
+      controller: listScroll,
+      rows: shown,
+      surface: resourceSurface,
+      formatter: activityRowFormatter(context, w.client.user?.json),
+      now: sourceTimeNow(),
+      physics: mobileActivityRefresh
+          ? const AlwaysScrollableScrollPhysics()
+          : null,
+      phoneBar: phone ? bar(activityToolbar(scope)) : null,
+      keyFor: (row) => listUpdates.keyOf(rowKey(row)),
+      indexOfKey: listUpdates.indexOf,
+      rowBuilder: (context, row, index) =>
+          listedActivityCard(shown, index, scope),
+      tail: hasMore
+          ? RaftButton.text(
+              onPressed: () => load(append: true),
+              child: Text(raftText(context, 'Load more')),
+            )
+          : null,
+    );
+    return ActivitySwipeScope(open: facets.open, child: list);
   }
 
   List<SearchEntity> get currentSearchEntities => searchEntities(
@@ -3433,67 +3471,24 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
     load();
   }
 
-  /// The phone's segmented All / Unread / Mentions strip and Mark all read;
-  /// the Filter menu (RaftActivityFilterBar) replaces it with the list UI.
-  Widget activityToolbar(String scope) {
-    final t = RaftTokens.of(context);
-    // ThreadsInbox `inbox-toolbar`: `flex h-[54px] items-center
-    // justify-between gap-3 px-4 border-b theme-brutal:border-b-2`.
-    Widget markAll() => RaftResourceMarkReadButton(onPressed: () => markAllRead(scope));
-    return Container(
-      constraints: RaftResourceMetrics.activityToolbarConstraints,
-      padding: RaftResourceMetrics.activityToolbarInset,
-      decoration: BoxDecoration(
-        color: t.panel,
-        border: Border(
-          bottom: BorderSide(color: t.line, width: t.border),
-        ),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: RaftResourceFilterViewport(
-              child: RaftSegmentedControl<String>(
-                shrinkFrame: t.option('resource.rows', or: 'cards') == 'flat',
-                // ThreadsInbox uses the raft-ui SegmentedControl recipe,
-                // rather than the older 11px tab-button presentation.
-                value: ['all', 'unread', 'mentions'].contains(filter)
-                    ? filter
-                    : '',
-                visualHeight: RaftMetrics.buttonMd,
-                minimumTargetSize: RaftMetrics.buttonMd,
-                label: raftText(context, 'Activity filters'),
-                items: [
-                  for (final value in ['all', 'unread', 'mentions'])
-                    RaftSegmentedOption(
-                      value: value,
-                      label: raftText(context, switch (value) {
-                        'all' => 'All',
-                        'unread' => 'Unread',
-                        _ => 'Mentions',
-                      }),
-                    ),
-                ],
-                onChanged: (value) {
-                  if (accepts(scope) && filter != value) {
-                    chooseActivityFilter(ActivityFilterChoice.parse(value));
-                  }
-                },
-              ),
-            ),
-          ),
-          // `showMarkAllRead`: while anything is unread, in every scope.
-          if (activityShowsMarkAllRead) ...[
-            const SizedBox(width: RaftResourceMetrics.activityToolbarGap),
-            if (RaftScaled.grows(context))
-              Flexible(child: markAll())
-            else
-              markAll(),
-          ],
-        ],
-      ),
-    );
-  }
+  /// Web `isPhoneTabRoot`: the filter bar is the scroller's first child.
+  bool get activityPhoneBar => RaftAdaptiveWorkspace.compactOf(context);
+
+  /// The list (not its loading, failed or empty state) is what the body shows.
+  bool get activityShowsList =>
+      !(loading && visibleRows.isEmpty) &&
+      !activityLoadFailed &&
+      visibleRows.isNotEmpty;
+
+  Widget activityToolbar(String scope) => activityFilterBar(
+    context,
+    choice: activityChoice,
+    onChoice: (next) {
+      if (accepts(scope)) chooseActivityFilter(next);
+    },
+    showMarkAllRead: activityShowsMarkAllRead,
+    onMarkAllRead: () => unawaited(markAllRead(scope)),
+  );
 
   /// Web `useSettledValue` of the counts line: the numbers change only when
   /// the page of the shown filter has settled.
@@ -3538,6 +3533,7 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
       return activityRootHeader(
         w,
         activityCountsString(context, activityFacets.counts),
+        loadFailed: activityLoadFailed,
       );
     }
     final header = RaftPageHeader(
@@ -3582,7 +3578,13 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
           ? (widget.onBack ?? () {})
           : null,
     );
-    return activityHeaderJump(context, w, widget.section, header);
+    return activityHeaderJump(
+      context,
+      w,
+      widget.section,
+      header,
+      loadFailed: activityLoadFailed,
+    );
   }
 
   /// Whether [row] is the item open in the preview, else the row a double
@@ -3590,9 +3592,8 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
   bool activityRowSelected(Map<String, dynamic> row) {
     final target = widget.activitySelectedTarget;
     return widget.section == 'activity' &&
-        (target == null
-            ? ActivityFirstUnread.of(w).highlights(rowKey(row))
-            : activityRowOpen(target, row));
+        target != null &&
+        activityRowOpen(target, row);
   }
 
   void activateActivity(
@@ -3923,14 +3924,29 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
         context,
         row,
         unread: unread,
+        muteChannel: activityMuteChannel(row),
         onDismiss: close,
         onAction: (action) {
           if (!accepts(scope)) return;
           close();
+          final channel = activityMuteChannel(row);
           if (action == ActivityContextAction.toggleRead) {
             unawaited(toggleActivityRead(row, scope, unread));
+          } else if (action == ActivityContextAction.mute ||
+              action == ActivityContextAction.unmute) {
+            // The menu's Mute is immediate and silent (no Undo toast).
+            if (channel != null) {
+              unawaited(
+                activityFacets.undo?.mute(
+                  row,
+                  channel,
+                  '',
+                  muted: action == ActivityContextAction.mute,
+                ),
+              );
+            }
           } else {
-            unawaited(activityAction(row, action.name, scope));
+            activityRowAction(row, action.name, scope);
           }
         },
       );
@@ -3966,11 +3982,6 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
     String scope, {
     String? viewFilter,
   }) {
-    // Object (Artifact) rows are drawn by the row package; until then they
-    // take no space rather than reach a conversation row.
-    if (isActivityObjectRow(rows[index])) {
-      return SizedBox.shrink(key: ValueKey(activityItemKey(rows[index])));
-    }
     return activityCard(
       rows[index],
       scope,
@@ -3978,6 +3989,83 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
       separator: index > 0,
       topRule: index > 0,
     );
+  }
+
+  ActivityRowLookups activityLookups() => ActivityRowLookups(
+    controller: w,
+    agents: rowAgents,
+    people: rowPeople,
+    directorySenderLabel: directorySenderLabel,
+    stableSender: stableSender,
+  );
+
+  /// The stored channel a row's Mute acts on (a channel, or a DM).
+  RaftChannel? activityMuteChannel(Map<String, dynamic> row) {
+    final id = row['channelId'];
+    return row['kind'] == 'channel' || row['kind'] == 'dm'
+        ? id is String
+              ? w.channelById(id)
+              : null
+        : null;
+  }
+
+  /// Done and Unfollow wait out their Undo on every route; the rest is the
+  /// page's own.
+  void activityRowAction(Map<String, dynamic> row, String action, String scope) {
+    final undo = activityFacets.undo;
+    if (!accepts(scope) || undo == null) {
+      unawaited(activityAction(row, action, scope));
+    } else if (action == 'done') {
+      undo.done(row);
+    } else if (action == 'unfollow') {
+      undo.unfollow(
+        row,
+        activityConversationLabel(context, row, activityLookups(), filter),
+      );
+    } else {
+      unawaited(activityAction(row, action, scope));
+    }
+  }
+
+  /// The object (Artifact) write of a row: Done, or read on open
+  /// (`ObjectActivityApi`, the one request Web sends). A refusal brings the
+  /// row back with the list's own refresh and, for read, says so.
+  Future<void> writeActivityObject(
+    Map<String, dynamic> row,
+    String scope,
+    String action,
+  ) async {
+    try {
+      final api = ObjectActivityApi(w.client);
+      await (action == 'done' ? api.done(row) : api.read(row));
+    } catch (_) {
+      if (!mounted || !accepts(scope)) return;
+      if (action == 'read') {
+        showRaftToast(context, "Couldn't mark it as read. Try again.");
+      }
+      unawaited(load(keep: true, quietErrors: true));
+    }
+  }
+
+  Future<void> markActivityObjectRead(Map<String, dynamic> row, String scope) async {
+    setState(() {
+      rows = [
+        for (final r in rows)
+          if (rowKey(r) == rowKey(row)) {...r, 'unreadCount': 0} else r,
+      ];
+    });
+    await writeActivityObject(row, scope, 'read');
+  }
+
+  /// An Artifact row opens its viewer and reads (Web `openObjectRow`).
+  void openActivityObject(Map<String, dynamic> row, String scope) {
+    if (!accepts(scope)) return;
+    final id = row['objectId'];
+    if (id is! String) return;
+    if (((row['unreadCount'] as num?) ?? 0) > 0) {
+      unawaited(markActivityObjectRead(row, scope));
+    }
+    unawaited(openWorkspaceArtifact(context, w, ArtifactLinkTarget(id)));
   }
 
   Widget activityCard(
@@ -3989,32 +4077,45 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
   }) {
     final filter = viewFilter ?? this.filter;
     final pin = activityGestureMatches(scope);
-    return ActivityCardRow(
-      row: row,
-      host: ActivityRowHost(
-        controller: w,
-        filter: filter,
-        interval: pin ? activityGestureInterval! : doubleClickInterval,
-        pinnedHeight: pin ? activityGestureHeights[rowKey(row)] : null,
-        selected: activityRowSelected(row),
-        canonical: widget.onActivityCanonical != null,
-        popupOpen: menuRowKey != null && menuRowKey == rowKey(row),
-        savedView: false,
-        listLayout: true,
-        separator: separator,
-        topRule: topRule,
-        open: () => openConversation(row, scope),
-        activate: (detail, height, {bool pointer = false}) =>
-            activateActivity(row, scope, detail, height, pointer: pointer),
-        menu: (at) => activityMenu(row, scope, at),
-        action: (action) => activityAction(row, action, scope),
-        relativeTime: relativeTime,
-        stableSender: stableSender,
-        directorySenderLabel: directorySenderLabel,
-        agents: rowAgents,
-        people: rowPeople,
-      ),
+    final facets = activityFacets;
+    final host = ActivityRowHost(
+      controller: w,
+      filter: filter,
+      interval: pin ? activityGestureInterval! : doubleClickInterval,
+      pinnedHeight: pin ? activityGestureHeights[rowKey(row)] : null,
+      selected: activityRowSelected(row),
+      located: ActivityFirstUnread.of(w).highlights(rowKey(row)),
+      canonical: widget.onActivityCanonical != null,
+      popupOpen: menuRowKey != null && menuRowKey == rowKey(row),
+      open: () => openConversation(row, scope),
+      onOpenObject: (r) => openActivityObject(r, scope),
+      activate: (detail, height, {bool pointer = false}) =>
+          activateActivity(row, scope, detail, height, pointer: pointer),
+      menu: (at) => activityMenu(row, scope, at),
+      action: (action) => activityRowAction(row, action, scope),
+      stableSender: stableSender,
+      directorySenderLabel: directorySenderLabel,
+      agents: rowAgents,
+      people: rowPeople,
     );
+    final undo = facets.undo;
+    final card = ActivityCardRow(row: row, host: host);
+    return undo == null
+        ? card
+        : ActivitySwipeRow(
+            row: row,
+            host: host,
+            hooks: ActivitySwipeHooks(
+              open: facets.open,
+              undo: undo,
+              muteChannel: activityMuteChannel,
+              muted: activityMuted,
+              toggleRead: (r, unread) =>
+                  unawaited(toggleActivityRead(r, scope, unread)),
+              key: rowKey,
+            ),
+            child: card,
+          );
   }
 
   /// `task.status.emptyGroup`: "No {status} tasks"
@@ -4439,7 +4540,8 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
         .firstOrNull;
     if (current == null) return;
     row = current;
-    if (row['kind'] == 'mention_action' && action == 'done') {
+    if ((row['kind'] == 'mention_action' || isActivityObjectRow(row)) &&
+        action == 'done') {
       setState(() {
         rows = rows.where((item) => rowKey(item) != itemKey).toList();
         acceptedActivityItems = acceptedActivityItems
@@ -4465,6 +4567,9 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
         'groups': activityGroups,
         'totalUnreadCount': totalUnreadCount,
       });
+      if (isActivityObjectRow(row)) {
+        unawaited(writeActivityObject(row, scope, 'done'));
+      }
       saveSnapshot();
       return;
     }
@@ -4666,12 +4771,13 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
   );
 
   List<Map<String, dynamic>> get visibleRows {
-    if (widget.section == 'activity' && activityGestureCurrent) {
-      return ActivityRowWindow.from(rows).retaining(activityGestureRows!);
+    if (widget.section == 'activity') {
+      final base = activityGestureCurrent
+          ? ActivityRowWindow.from(rows).retaining(activityGestureRows!)
+          : unreadSnapshotRows(rows);
+      return activityRowsInShownOrder(activityUndoShown(base));
     }
-    if (widget.section != 'tasks') {
-      return widget.section == 'activity' ? unreadSnapshotRows(rows) : rows;
-    }
+    if (widget.section != 'tasks') return rows;
     return rows.where(matchesTask).toList()..sort((a, b) {
       final order = raftTaskStatuses
           .indexOf('${a['status']}')
