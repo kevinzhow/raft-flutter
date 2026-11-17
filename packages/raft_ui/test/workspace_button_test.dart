@@ -56,8 +56,8 @@ void main() {
             w.decoration is BoxDecoration &&
             (w.decoration! as BoxDecoration).border != null,
       );
-      final decoration = t.widget<Container>(band.first).decoration!
-          as BoxDecoration;
+      final decoration =
+          t.widget<Container>(band.first).decoration! as BoxDecoration;
       expect(decoration.color, tokens.colors['layer-section-header-mobile']);
       expect(decoration.color, tokens.colors['layer-frame']);
       expect(t.getRect(band.first).height, 56);
@@ -134,12 +134,7 @@ void main() {
       addTearDown(focus.dispose);
       var pressed = 0;
       final handle = t.ensureSemantics();
-      await _pump(
-        t,
-        dark: dark,
-        focus: focus,
-        onPressed: () => pressed++,
-      );
+      await _pump(t, dark: dark, focus: focus, onPressed: () => pressed++);
       focus.requestFocus();
       await t.pump();
       expect(focus.hasFocus, isTrue);

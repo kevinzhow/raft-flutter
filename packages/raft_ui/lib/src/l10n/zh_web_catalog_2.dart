@@ -369,6 +369,7 @@ const Map<String, String> zhCatalogWeb2 = <String, String>{
   "Clear runtime sessions, delete workspace files, and restart the selected agents.":
       "清除运行时会话、删除工作区文件，并重启选中的 Agent。",
   "Clear Search": "清除搜索",
+  "Search filters": "搜索筛选",
   "Clear the runtime session and restart the agent. Workspace files are preserved.":
       "清除运行时会话并重新启动 Agent，工作区文件会保留。",
   "Clear the runtime session and restart. Workspace files (MEMORY.md, notes/) are preserved.":

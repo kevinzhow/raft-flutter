@@ -105,7 +105,7 @@ class RaftPageHeader extends StatelessWidget implements PreferredSizeWidget {
       final root = RaftMobileRootHeaderRecipe(
         t,
         viewportHeight: MediaQuery.sizeOf(context).height,
-        inset: RaftLayoutMetrics.panelInset,
+        inset: 16, // Web TasksPanel TabRootBar: `px-4` in the band
       );
       return RaftMobilePageHeader(
         background: t.colors['layer-section-header-mobile'],

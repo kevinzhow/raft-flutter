@@ -152,7 +152,11 @@ Widget activityHeaderJump(
 Widget activityRootHeader(WorkspaceController w, String subtitle) =>
     activityStaleNotice(
       w,
-      RaftMobileRootHeader(title: 'Activity', subtitle: subtitle),
+      RaftMobileRootHeader(
+        title: 'Activity',
+        subtitle: subtitle,
+        inset: RaftLayoutMetrics.panelInset,
+      ),
     );
 
 /// ThreadsInbox: the Activity notice of task #164 sits under the head.

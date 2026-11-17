@@ -140,90 +140,101 @@ class SearchFilterBar extends StatelessWidget {
           ),
       ],
     );
-    return RaftSearchFilterWrap(
-      children: [
-        picker(
-          'From',
-          'Filter by Sender',
-          senderOptions,
-          {if (filters.sender != null) filters.sender!.key},
-          (key) => filters.selectSender(
-            senders.where((s) => s.key == key).firstOrNull,
-          ),
-          () => filters.selectSender(null),
-          single: true,
-          label: filters.sender == null
-              ? raftText(context, 'From')
-              : '${raftText(context, 'From')}: ${filters.sender!.label}',
-          glyph: RaftGlyph.userCircle2,
+    final scrolling = <Widget>[
+      picker(
+        'From',
+        'Filter by Sender',
+        senderOptions,
+        {if (filters.sender != null) filters.sender!.key},
+        (key) => filters.selectSender(
+          senders.where((s) => s.key == key).firstOrNull,
         ),
-        picker(
-          'Scope',
-          'Search Scope',
-          const {
-            'mentioned': 'Mentions Me',
-            'humans': 'Humans',
-            'agents': 'Agents',
+        () => filters.selectSender(null),
+        single: true,
+        label: filters.sender == null
+            ? raftText(context, 'From')
+            : '${raftText(context, 'From')}: ${filters.sender!.label}',
+        glyph: RaftGlyph.userCircle2,
+      ),
+      picker(
+        'Scope',
+        'Search Scope',
+        const {
+          'mentioned': 'Mentions Me',
+          'humans': 'Humans',
+          'agents': 'Agents',
+        },
+        filters.scopes,
+        filters.toggleScope,
+        filters.scopes.clear,
+        glyph: RaftGlyph.atSign,
+      ),
+      if (filters.channelId != null && channelLabel != null)
+        RaftTextButton(
+          key: ValueKey('$scope:Channel'),
+          label: channelLabel!(filters.channelId!),
+          glyph: RaftGlyph.hash,
+          trailingGlyph: RaftGlyph.x,
+          variant: RaftControlVariant.primary,
+          selected: true,
+          visualHeight: RaftMetrics.buttonSm,
+          onPressed: () {
+            if (valid()) {
+              filters.channelId = null;
+              onChanged();
+            }
           },
-          filters.scopes,
-          filters.toggleScope,
-          filters.scopes.clear,
-          glyph: RaftGlyph.atSign,
+        )
+      else
+        picker(
+          'Channel',
+          'Filter by Channel',
+          conversations,
+          {if (filters.channelId != null) filters.channelId!},
+          (id) => filters.channelId = id,
+          () => filters.channelId = null,
+          single: true,
+          glyph: RaftGlyph.hash,
         ),
-        if (filters.channelId != null && channelLabel != null)
-          RaftTextButton(
-            key: ValueKey('$scope:Channel'),
-            label: channelLabel!(filters.channelId!),
-            glyph: RaftGlyph.hash,
-            trailingGlyph: RaftGlyph.x,
-            variant: RaftControlVariant.primary,
-            selected: true,
-            visualHeight: RaftMetrics.buttonSm,
-            onPressed: () {
-              if (valid()) {
-                filters.channelId = null;
-                onChanged();
-              }
-            },
-          )
-        else
-          picker(
-            'Channel',
-            'Filter by Channel',
-            conversations,
-            {if (filters.channelId != null) filters.channelId!},
-            (id) => filters.channelId = id,
-            () => filters.channelId = null,
-            single: true,
-            glyph: RaftGlyph.hash,
-          ),
-        dropdown(
-          'Search Date Range',
-          // ignore: raft_lints/avoid_render_index_assertion -- timeRange is validated when restored (search_memory.dart) and only set from this dropdown.
-          timeRanges[filters.timeRange]!,
-          timeRanges,
-          (value) => filters.timeRange = value,
+      dropdown(
+        'Search Date Range',
+        // ignore: raft_lints/avoid_render_index_assertion -- timeRange is validated when restored (search_memory.dart) and only set from this dropdown.
+        timeRanges[filters.timeRange]!,
+        timeRanges,
+        (value) => filters.timeRange = value,
+      ),
+    ];
+    final sort = dropdown(
+      'Sort Search Results',
+      filters.searchSort == 'recent' ? 'Recent' : 'Relevant',
+      sorts,
+      (value) => filters.searchSort = value,
+    );
+    final clearAll = // Button ghost xs "Clear All".
+    RaftTextButton(
+      label: 'Clear All',
+      variant: RaftControlVariant.ghost,
+      visualHeight: RaftMetrics.buttonXs,
+      minimumTargetSize: RaftMetrics.buttonXs,
+      onPressed: () {
+        if (valid()) {
+          filters.clearSearchFilters();
+          onChanged();
+        }
+      },
+    );
+    // Web SearchFilterBar: one FitToolbar line. The chips are a scroll group
+    // with Clear All pinned at its end; Sort is its own first-line group.
+    return RaftFitToolbar(
+      semanticLabel: raftText(context, 'Search filters'),
+      children: [
+        RaftFitGroup(
+          firstLine: true,
+          scroll: true,
+          end: filters.hasSearchFilter ? clearAll : null,
+          items: [for (final chip in scrolling) RaftFitChild(child: chip)],
         ),
-        dropdown(
-          'Sort Search Results',
-          filters.searchSort == 'recent' ? 'Recent' : 'Relevant',
-          sorts,
-          (value) => filters.searchSort = value,
-        ),
-        if (filters.hasSearchFilter)
-          // Button ghost xs "Clear All".
-          RaftTextButton(
-            label: 'Clear All',
-            variant: RaftControlVariant.ghost,
-            visualHeight: RaftMetrics.buttonXs,
-            minimumTargetSize: RaftMetrics.buttonXs,
-            onPressed: () {
-              if (valid()) {
-                filters.clearSearchFilters();
-                onChanged();
-              }
-            },
-          ),
+        RaftFitGroup(firstLine: true, items: [RaftFitChild(child: sort)]),
       ],
     );
   }

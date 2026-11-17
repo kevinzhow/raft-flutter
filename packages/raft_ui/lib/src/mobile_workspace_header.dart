@@ -24,10 +24,8 @@ class _MobileWorkspaceHeader extends StatelessWidget {
             // The workspace button hangs 11px outward (`-ml-[11px]`), so its
             // avatar sits on the band's 20px content edge.
             left: 20 - RaftWorkspaceButton.hang,
-            right: recipe.tokens.size(
-              'space.mobileWorkspaceHeaderEnd',
-              fallback: 3,
-            ),
+            // Web v1.24 measured: the bell's 44px box ends 9px from the edge.
+            right: 9,
           ),
           decoration: BoxDecoration(
             color: recipe.background,

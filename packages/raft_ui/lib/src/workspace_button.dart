@@ -50,7 +50,9 @@ class RaftWorkspaceButton extends StatelessWidget {
       kind: RaftAvatarKind.server,
       mountedContext: RaftMountedAvatarContext.compactRow,
       imageUrl: avatarUrl,
-      corner: attention ? const ExcludeSemantics(child: RaftAttentionDot()) : null,
+      corner: attention
+          ? const ExcludeSemantics(child: RaftAttentionDot())
+          : null,
     );
     final content = Row(
       mainAxisSize: MainAxisSize.min,

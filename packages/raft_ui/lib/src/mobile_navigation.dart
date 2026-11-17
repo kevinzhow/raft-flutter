@@ -733,13 +733,21 @@ class RaftMobileRootHeaderRecipe {
     color: tokens.colors['line-muted']!,
     width: tokens.size('stroke.rule', fallback: 1),
   );
-  TextStyle get title => RaftTypography.heading(
-    tokens,
-    size: 16,
-    line: 24,
-    weight: FontWeight.w700,
-    color: tokens.strong,
-  );
+  // Web TabRootBar's `PanelTitle` is `text-headline` (17/22 on a phone); the
+  // old looks keep the 16/24 heading.
+  TextStyle get title =>
+      tokens.option('listGroup.frame', or: 'framed') == 'plain'
+      ? tokens.scale(
+          RaftTypeScale.headline,
+          color: tokens.colors['foreground-on-frame'],
+        )
+      : RaftTypography.heading(
+          tokens,
+          size: 16,
+          line: 24,
+          weight: FontWeight.w700,
+          color: tokens.strong,
+        );
 }
 
 /// No SafeArea inside: the shell applies the top system inset exactly once.
@@ -755,7 +763,13 @@ class RaftMobileRootHeader extends StatelessWidget {
     this.onBack,
     this.backKey,
     this.subtitle,
+    this.content,
   });
+
+  /// Web TabRootBar `content`: replaces the name and subtitle in the band
+  /// (Search's field). [title] then stays as the screen-reader-only heading,
+  /// and the content gets the band's [inset] on both sides.
+  final Widget? content;
 
   /// The phone Home workspace header has natural-width frame actions.
   final bool workspace;
@@ -785,6 +799,33 @@ class RaftMobileRootHeader extends StatelessWidget {
         recipe: recipe,
         leading: leading!,
         actions: actions,
+      );
+    }
+    if (content != null) {
+      return RaftStatusBarSource(
+        color: recipe.background,
+        child: Container(
+          height: RaftScaled.grows(context) ? null : recipe.height,
+          constraints: RaftScaled.grows(context)
+              ? BoxConstraints(minHeight: recipe.height)
+              : null,
+          padding: EdgeInsets.symmetric(horizontal: recipe.inset),
+          decoration: BoxDecoration(
+            color: recipe.background,
+            border: Border(bottom: recipe.border),
+          ),
+          child: Row(
+            children: [
+              // `<h1 class="sr-only">`: the page's heading for assistive tech.
+              Semantics(
+                header: true,
+                label: raftText(context, title ?? ''),
+                child: const SizedBox.shrink(),
+              ),
+              Expanded(child: content!),
+            ],
+          ),
+        ),
       );
     }
     final name = Text(

@@ -3274,14 +3274,21 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
       ],
     );
     return mobile
-        ? RaftPanelHeaderBar(
-            title: raftText(context, 'Search'),
-            background: plain ? t.canvas : null,
-            titleSlot: row,
-            // Search is a tab root (Web v1.24): no Back beside the bottom bar.
-            onBack: widget.mobileRoot ? null : widget.onBack ?? () {},
-            backTooltip: raftText(context, 'Back'),
-          )
+        ? widget.mobileRoot
+              // Web v1.24 TabRootBar `content`: the field in the frame band.
+              ? RaftMobileRootHeader(
+                  key: const Key('search-tab-head'),
+                  title: 'Search',
+                  inset: RaftLayoutMetrics.panelInset,
+                  content: row,
+                )
+              : RaftPanelHeaderBar(
+                  title: raftText(context, 'Search'),
+                  background: plain ? t.canvas : null,
+                  titleSlot: row,
+                  onBack: widget.onBack ?? () {},
+                  backTooltip: raftText(context, 'Back'),
+                )
         : Container(
             height: recipe.height,
             padding: EdgeInsets.symmetric(
