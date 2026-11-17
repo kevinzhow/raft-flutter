@@ -1,4 +1,5 @@
 import 'mobile_server_tab.dart';
+import 'limit_notice.dart';
 import 'server_menu_model.dart';
 import 'agent_lounge.dart' show AgentLoungeFlag;
 import 'agent_runtime_labels.dart' show runtimeDisplayNameOf;
@@ -1326,7 +1327,11 @@ class _WorkspaceViewState extends State<WorkspaceView>
       // page in its retained mobile Navigator.
       child: widget.mobileRoutePage
           ? body
-          : AnnouncementHost(controller: w, child: body),
+          : LimitNoticeHost(
+              controller: w,
+              queue: w.composer.uploads.limitNotices,
+              child: AnnouncementHost(controller: w, child: body),
+            ),
     );
   }
 

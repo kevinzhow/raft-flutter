@@ -44,6 +44,8 @@ class RaftComposerAttachment {
     this.error,
     this.canRetry = true,
     this.quotaBlocked = false,
+    this.failedLabel,
+    this.failedDetail,
   });
   final String id, name;
 
@@ -66,9 +68,18 @@ class RaftComposerAttachment {
   /// failed overlay) and the banner carries the message.
   final bool quotaBlocked;
 
-  /// Failed files except quota errors leave the chip list for an alert row.
+  /// Web `failedReason` (SortableAttachment / AttachmentChipBody): a file the
+  /// selection check refused for a reason no plan changes stays on its chip
+  /// (not in an alert row); [failedLabel] is the short line on its failed
+  /// cover and [failedDetail] the whole reason (tooltip and semantics).
+  final String? failedLabel, failedDetail;
+
+  /// Failed files except quota errors and refused files leave the chip list
+  /// for an alert row.
   bool get inFailureRow =>
-      status == RaftComposerAttachmentStatus.failed && !quotaBlocked;
+      status == RaftComposerAttachmentStatus.failed &&
+      !quotaBlocked &&
+      failedLabel == null;
 }
 
 /// Lets a subtree paint and hit-test outside the box it occupies in layout
@@ -472,13 +483,16 @@ class _AttachmentChipState extends State<_AttachmentChip> {
       ],
       if (item.status == RaftComposerAttachmentStatus.failed)
         wash(ui.layerCard.withValues(alpha: .9), [
-          RaftCssText(
-            raftText(context, 'Upload failed'),
-            textAlign: TextAlign.center,
-            style: t.scale(
-              RaftTypeScale.caption,
-              weight: FontWeight.w600,
-              color: ui['danger-strong'],
+          _failedReason(
+            item,
+            RaftCssText(
+              item.failedLabel ?? raftText(context, 'Upload failed'),
+              textAlign: TextAlign.center,
+              style: t.scale(
+                RaftTypeScale.caption,
+                weight: FontWeight.w600,
+                color: ui['danger-strong'],
+              ),
             ),
           ),
         ], border: Border.all(color: ui['danger-strong'], width: hairline)),
@@ -613,7 +627,8 @@ class _AttachmentChipState extends State<_AttachmentChip> {
           child: _Overlay(
             style: s.attachmentFailedOverlay,
             tokens: t,
-            label: raftText(context, 'Upload failed'),
+            label: item.failedLabel ?? raftText(context, 'Upload failed'),
+            detail: item.failedDetail,
             borderless: false,
           ),
         ),
@@ -887,17 +902,35 @@ BoxDecoration _truncating(BoxDecoration d) {
   );
 }
 
+/// The whole reason a file is not attached: the label's tooltip (Web
+/// `Tooltip content={failedReason.detail}`) and its accessible description.
+Widget _withReason(String? detail, Widget label) => detail == null
+    ? label
+    : Semantics(
+        label: detail,
+        container: true,
+        child: RaftTooltip(message: detail, child: label),
+      );
+
+Widget _failedReason(RaftComposerAttachment item, Widget label) =>
+    _withReason(item.failedDetail, label);
+
 class _Overlay extends StatelessWidget {
   const _Overlay({
     required this.style,
     required this.tokens,
     required this.label,
+    this.detail,
     this.spinner = false,
     this.borderless = false,
   });
   final RaftSlotStyle style;
   final RaftTokens tokens;
   final String label;
+
+  /// Web `ComposerAttachmentFailedOverlay aria-label` + the label's tooltip:
+  /// why the file is not attached.
+  final String? detail;
   final bool spinner, borderless;
   @override
   Widget build(BuildContext context) {
@@ -929,12 +962,15 @@ class _Overlay extends StatelessWidget {
                     padding: EdgeInsets.only(bottom: 4),
                     child: RaftSpinner(),
                   ),
-                RaftCssText(
-                  label,
-                  textAlign: TextAlign.center,
-                  style: style
-                      .textStyle(resolver)
-                      .copyWith(color: color, fontFamily: tokens.headingFont),
+                _withReason(
+                  detail,
+                  RaftCssText(
+                    label,
+                    textAlign: TextAlign.center,
+                    style: style
+                        .textStyle(resolver)
+                        .copyWith(color: color, fontFamily: tokens.headingFont),
+                  ),
                 ),
               ],
             ),

@@ -3,10 +3,12 @@ import 'dart:async';
 import 'package:flutter/widgets.dart';
 import 'package:raft_ui/raft_ui.dart';
 
+import '../data/attachment_limit_decision.dart';
 import '../data/upload_mime.dart';
 import '../data/upload_failure.dart';
 import '../data/upload_reorder.dart';
 import '../data/workspace_controller.dart';
+import 'limit_notice.dart' show formatUploadSize;
 
 // Web MessageInput pending attachments (SortableAttachment + failed-upload
 // rows) over the controller's per-draft-scope uploads. Presentation is
@@ -19,8 +21,9 @@ bool isBillingUploadQuotaError(String? error) =>
 /// The view model of one draft, with fixed copy localized.
 RaftComposerAttachment composerAttachmentFor(
   BuildContext context,
-  UploadDraft draft,
-) {
+  UploadDraft draft, {
+  bool freePlan = true,
+}) {
   final status = draft.checking
       ? RaftComposerAttachmentStatus.checking
       : draft.error != null
@@ -29,6 +32,15 @@ RaftComposerAttachment composerAttachmentFor(
       ? RaftComposerAttachmentStatus.ready
       : RaftComposerAttachmentStatus.uploading;
   final mime = draft.mimeType;
+  final notAttached = draft.notAttached == null
+      ? null
+      : notAttachedCopy(
+          context,
+          reason: draft.notAttached!.reason,
+          size: draft.sizeBytes,
+          maxBytes: draft.notAttached!.maxBytes,
+          freePlan: freePlan,
+        );
   return RaftComposerAttachment(
     id: '${draft.key}',
     name: draft.filename,
@@ -41,9 +53,11 @@ RaftComposerAttachment composerAttachmentFor(
     progress: draft.progress > 0
         ? (draft.progress * 100).round().clamp(1, 99)
         : 0,
-    error: draft.error == null
+    error: draft.error == null || notAttached != null
         ? null
         : raftFormat(context, draft.error!, directUploadOf(draft).errorValues),
+    failedLabel: notAttached?.label,
+    failedDetail: notAttached?.detail,
     canRetry: draft.canRetry,
     quotaBlocked: isBillingUploadQuotaError(draft.error),
   );
@@ -59,11 +73,16 @@ Widget? composerAttachmentsFor(
 }) {
   final drafts = w.uploads(thread: thread);
   if (drafts.isEmpty) return null;
+  final freePlan = (w.server?.string('plan') ?? 'free') == 'free';
   final byId = {
-    for (final draft in drafts) composerAttachmentFor(context, draft).id: draft,
+    for (final draft in drafts)
+      composerAttachmentFor(context, draft, freePlan: freePlan).id: draft,
   };
   return RaftComposerAttachments(
-    items: [for (final draft in drafts) composerAttachmentFor(context, draft)],
+    items: [
+      for (final draft in drafts)
+        composerAttachmentFor(context, draft, freePlan: freePlan),
+    ],
     onRemove: (item) {
       final draft = byId[item.id];
       if (draft != null) w.removeUpload(draft, thread: thread);
@@ -91,7 +110,7 @@ Widget? composerAttachmentsFor(
 }
 
 /// Why the files of a draft keep Send from going out, in Web's precedence.
-enum ComposerSendBlock { checking, uploading, failed }
+enum ComposerSendBlock { checking, uploading, notAttached, failed }
 
 /// The block [drafts] impose on sending now, or null when they allow it. The
 /// send title, the blocked-send notice and the notice's lifetime all read this
@@ -101,25 +120,27 @@ ComposerSendBlock? composerSendBlockOf(List<UploadDraft> drafts) {
   if (drafts.any((d) => d.error == null && d.id == null && !d.queued)) {
     return ComposerSendBlock.uploading;
   }
+  if (drafts.any((d) => d.notAttached != null)) {
+    return ComposerSendBlock.notAttached;
+  }
   if (drafts.any((d) => d.error != null)) return ComposerSendBlock.failed;
   return null;
 }
 
 /// Web `message.composer.*` title for the send action while files are not
 /// sendable, or null when none applies.
-String? composerSendBlockTitle(BuildContext context, List<UploadDraft> drafts) =>
-    switch (composerSendBlockOf(drafts)) {
-      ComposerSendBlock.checking => raftText(context, 'Checking attachments…'),
-      ComposerSendBlock.uploading => raftText(
-        context,
-        'Uploading attachments…',
-      ),
-      ComposerSendBlock.failed => raftText(
-        context,
-        'Retry or remove failed attachments',
-      ),
-      null => null,
-    };
+String? composerSendBlockTitle(
+  BuildContext context,
+  List<UploadDraft> drafts,
+) => switch (composerSendBlockOf(drafts)) {
+  ComposerSendBlock.checking => raftText(context, 'Checking attachments…'),
+  ComposerSendBlock.uploading => raftText(context, 'Uploading attachments…'),
+  ComposerSendBlock.failed || ComposerSendBlock.notAttached => raftText(
+    context,
+    'Retry or remove failed attachments',
+  ),
+  null => null,
+};
 
 /// Web `handleSubmit`: the notice a blocked send leaves in the banner.
 String? composerSendBlockNotice(
@@ -133,6 +154,10 @@ String? composerSendBlockNotice(
   ComposerSendBlock.uploading => raftText(
     context,
     'Wait for attachments to finish uploading before sending.',
+  ),
+  ComposerSendBlock.notAttached => raftText(
+    context,
+    "Remove files that can't be attached",
   ),
   ComposerSendBlock.failed => raftText(
     context,
@@ -156,5 +181,73 @@ void raiseComposerSendBlockNotice(
     composerSendBlockNotice(context, w.uploads(thread: thread)),
     thread: thread,
     whileTrue: () => composerSendBlockOf(w.uploads(thread: thread)) == block,
+  );
+}
+
+/// Web `notAttachedCopy`: the short line on a refused file's failed cover and
+/// the whole reason (its tooltip and accessible description).
+({String label, String detail}) notAttachedCopy(
+  BuildContext context, {
+  required NotAttachedReason reason,
+  required int size,
+  required int? maxBytes,
+  required bool freePlan,
+}) {
+  final label = raftText(context, switch (reason) {
+    NotAttachedReason.size => 'Too large',
+    NotAttachedReason.count => 'Too many',
+    NotAttachedReason.empty => 'Empty',
+    NotAttachedReason.unchecked => 'Not checked',
+  });
+  if (reason == NotAttachedReason.count) {
+    return (
+      label: label,
+      detail: raftFormat(
+        context,
+        'A message can have up to {max} attachments.',
+        {'max': maxMessageAttachments},
+      ),
+    );
+  }
+  if (reason == NotAttachedReason.empty) {
+    return (
+      label: label,
+      detail: raftText(context, "Empty files can't be attached."),
+    );
+  }
+  if (reason == NotAttachedReason.unchecked || maxBytes == null) {
+    return (
+      label: label,
+      detail: raftText(
+        context,
+        'The upload size limit could not be checked. Try again in a moment.',
+      ),
+    );
+  }
+  final values = {
+    'size': formatUploadSize(context, size),
+    'limit': formatUploadSize(context, maxBytes),
+  };
+  // Over Pro's ceiling too, on Free: say both, so upgrading isn't mistaken for
+  // the way out.
+  return (
+    label: label,
+    detail: freePlan
+        ? raftFormat(
+            context,
+            "It's {size}. Free uploads files up to {limit} each, and Pro up to {proLimit}. Share a link instead.",
+            {
+              ...values,
+              'proLimit': formatUploadSize(
+                context,
+                proSingleFileUploadLimitBytes,
+              ),
+            },
+          )
+        : raftFormat(
+            context,
+            "It's {size}. Files can be up to {limit} each. Share a link instead.",
+            values,
+          ),
   );
 }
