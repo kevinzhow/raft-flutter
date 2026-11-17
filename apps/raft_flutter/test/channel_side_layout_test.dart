@@ -203,67 +203,61 @@ void main() {
     },
   );
 
-  test(
-    'a section this build doesn\'t know (a newer client\'s) is dropped, not the '
-    'whole layout; a column of only those goes too',
-    () {
-      expect(
-        ChannelSideLayout.parse({
-          'v': 1,
-          'columns': [
-            raw(['profile', 'futureSection'], 400),
-          ],
-        }),
-        lay([
-          c([S.profile], 400),
-        ]),
-      );
-      expect(
-        ChannelSideLayout.parse({
-          'v': 1,
-          'columns': [
-            raw(['tasks'], 300),
-            raw(['futureSection'], 360),
-            raw(['artifact', 7], 480),
-          ],
-        }),
-        lay([
-          c([S.tasks], 300),
-          c([S.artifact], 480),
-        ]),
-      );
-      expect(
-        ChannelSideLayout.parse({
-          'v': 1,
-          'columns': [
-            raw(['futureSection'], 360),
-          ],
-        }),
-        isNull,
-        reason: 'nothing known left',
-      );
-    },
-  );
+  test('a section this build doesn\'t know (a newer client\'s) is dropped, not the '
+      'whole layout; a column of only those goes too', () {
+    expect(
+      ChannelSideLayout.parse({
+        'v': 1,
+        'columns': [
+          raw(['profile', 'futureSection'], 400),
+        ],
+      }),
+      lay([
+        c([S.profile], 400),
+      ]),
+    );
+    expect(
+      ChannelSideLayout.parse({
+        'v': 1,
+        'columns': [
+          raw(['tasks'], 300),
+          raw(['futureSection'], 360),
+          raw(['artifact', 7], 480),
+        ],
+      }),
+      lay([
+        c([S.tasks], 300),
+        c([S.artifact], 480),
+      ]),
+    );
+    expect(
+      ChannelSideLayout.parse({
+        'v': 1,
+        'columns': [
+          raw(['futureSection'], 360),
+        ],
+      }),
+      isNull,
+      reason: 'nothing known left',
+    );
+  });
 
-  test(
-    'a layout saved with the retired execution record ("record") reads without it',
-    () {
-      expect(
-        ChannelSideLayout.parse({
-          'v': 1,
-          'columns': [
-            raw(['thread'], 400),
-            raw(['profile', 'record', 'context'], 400),
-            raw(['record'], 360),
-          ],
-        }),
-        lay([
-          c([S.thread], 400),
-          c([S.profile, S.context], 400),
-        ]),
-      );
-    },
-  );
+  test('a layout saved with the retired execution record ("record") reads without it', () {
+    expect(
+      ChannelSideLayout.parse({
+        'v': 1,
+        'columns': [
+          raw(['thread'], 400),
+          raw(['profile', 'record', 'context'], 400),
+          raw(['record'], 360),
+        ],
+      }),
+      lay([
+        c([S.thread], 400),
+        c([S.profile, S.context], 400),
+      ]),
+    );
+  });
 
   test('completing places each missing section where the default would: thread '
       'first, Tasks or Files under the other, the Artifact and the profile in '
@@ -386,16 +380,13 @@ void main() {
     );
   });
 
-  test(
-    'a column\'s minimum is its widest section\'s: the thread\'s 360, the Artifact\'s 480, the profile\'s 320, else 280',
-    () {
-      expect(channelSideColumnMinWidth([S.tasks, S.files]), 280);
-      expect(channelSideColumnMinWidth([S.tasks, S.thread]), 360);
-      expect(channelSideColumnMinWidth([S.artifact, S.tasks]), 480);
-      expect(channelSideColumnMinWidth([S.profile]), 320);
-      expect(channelSideColumnMinWidth([]), 0);
-    },
-  );
+  test('a column\'s minimum is its widest section\'s: the thread\'s 360, the Artifact\'s 480, the profile\'s 320, else 280', () {
+    expect(channelSideColumnMinWidth([S.tasks, S.files]), 280);
+    expect(channelSideColumnMinWidth([S.tasks, S.thread]), 360);
+    expect(channelSideColumnMinWidth([S.artifact, S.tasks]), 480);
+    expect(channelSideColumnMinWidth([S.profile]), 320);
+    expect(channelSideColumnMinWidth([]), 0);
+  });
 
   test('only columns with an open section show, with only those sections', () {
     final l = lay([
@@ -478,41 +469,38 @@ void main() {
   group('a new column', () {
     final l = ChannelSideLayout.defaults.complete();
 
-    test(
-      'at the edges; alone it keeps its column\'s width, out of a stack its own default',
-      () {
-        final split = l.move(S.files, const ChannelSideDropNewColumn(2));
-        expect(
-          shape(split),
-          'thread | tasks | files | artifact | profile+context',
-          reason: 'four side columns and the thread\'s own',
-        );
-        expect(
-          split.columns[2].width,
-          360,
-          reason: 'out of a stack: Files\' own default',
-        );
-        expect(
-          shape(l.move(S.tasks, const ChannelSideDropNewColumn(0))),
-          'tasks | thread | files | artifact | profile+context',
-        );
-        expect(
-          identical(l.move(S.thread, const ChannelSideDropNewColumn(0)), l),
-          isTrue,
-          reason: 'alone at its own left edge',
-        );
-        expect(
-          identical(l.move(S.thread, const ChannelSideDropNewColumn(1)), l),
-          isTrue,
-          reason: 'alone at its own right edge',
-        );
-        expect(
-          shape(l.move(S.thread, const ChannelSideDropNewColumn(2))),
-          'tasks+files | thread | artifact | profile+context',
-          reason: 'a lone section moving: same count',
-        );
-      },
-    );
+    test('at the edges; alone it keeps its column\'s width, out of a stack its own default', () {
+      final split = l.move(S.files, const ChannelSideDropNewColumn(2));
+      expect(
+        shape(split),
+        'thread | tasks | files | artifact | profile+context',
+        reason: 'four side columns and the thread\'s own',
+      );
+      expect(
+        split.columns[2].width,
+        360,
+        reason: 'out of a stack: Files\' own default',
+      );
+      expect(
+        shape(l.move(S.tasks, const ChannelSideDropNewColumn(0))),
+        'tasks | thread | files | artifact | profile+context',
+      );
+      expect(
+        identical(l.move(S.thread, const ChannelSideDropNewColumn(0)), l),
+        isTrue,
+        reason: 'alone at its own left edge',
+      );
+      expect(
+        identical(l.move(S.thread, const ChannelSideDropNewColumn(1)), l),
+        isTrue,
+        reason: 'alone at its own right edge',
+      );
+      expect(
+        shape(l.move(S.thread, const ChannelSideDropNewColumn(2))),
+        'tasks+files | thread | artifact | profile+context',
+        reason: 'a lone section moving: same count',
+      );
+    });
 
     test('the profile moved left of Tasks\' column keeps its saved width', () {
       final wide = l
@@ -643,127 +631,120 @@ void main() {
     expect(l.move(S.context, const ChannelSideDropNewColumn(4)), l);
   });
 
-  test(
-    'a stored layout with a column holding only the context view normalises to it under the profile',
-    () {
-      String done(List<(List<S>, int)> columns) =>
-          shape(lay(columns).complete());
-      expect(
-        done([
-          c([S.thread]),
-          c([S.tasks, S.files]),
-          c([S.profile]),
-          c([S.context]),
-          c([S.artifact]),
-        ]),
-        'thread | tasks+files | profile+context | artifact',
-      );
-      expect(
-        done([
-          c([S.context]),
-          c([S.thread]),
-          c([S.tasks, S.files]),
-          c([S.artifact, S.profile]),
-        ]),
-        'thread | tasks+files | artifact+profile+context',
-      );
-      expect(
-        done([
-          c([S.thread]),
-          c([S.context]),
-          c([S.tasks, S.files]),
-          c([S.profile]),
-        ]),
-        'thread | tasks+files | profile+context | artifact',
-      );
-      // A layout saved before the context view existed gets it under the profile.
-      expect(
-        done([
-          c([S.thread]),
-          c([S.tasks, S.files]),
-          c([S.artifact]),
-          c([S.profile]),
-        ]),
-        'thread | tasks+files | artifact | profile+context',
-      );
-    },
-  );
+  test('a stored layout with a column holding only the context view normalises to it under the profile', () {
+    String done(List<(List<S>, int)> columns) => shape(lay(columns).complete());
+    expect(
+      done([
+        c([S.thread]),
+        c([S.tasks, S.files]),
+        c([S.profile]),
+        c([S.context]),
+        c([S.artifact]),
+      ]),
+      'thread | tasks+files | profile+context | artifact',
+    );
+    expect(
+      done([
+        c([S.context]),
+        c([S.thread]),
+        c([S.tasks, S.files]),
+        c([S.artifact, S.profile]),
+      ]),
+      'thread | tasks+files | artifact+profile+context',
+    );
+    expect(
+      done([
+        c([S.thread]),
+        c([S.context]),
+        c([S.tasks, S.files]),
+        c([S.profile]),
+      ]),
+      'thread | tasks+files | profile+context | artifact',
+    );
+    // A layout saved before the context view existed gets it under the profile.
+    expect(
+      done([
+        c([S.thread]),
+        c([S.tasks, S.files]),
+        c([S.artifact]),
+        c([S.profile]),
+      ]),
+      'thread | tasks+files | artifact | profile+context',
+    );
+  });
 
-  test(
-    'the channel details follow the profile: under it by default, carried with it, never a column alone',
-    () {
-      expect(
-        fullShape(ChannelSideLayout.defaults),
-        'thread | tasks+files | artifact | profile+context+details',
-      );
-      // A layout saved before the details existed gets them under the profile,
-      // after the context view.
-      expect(
-        fullShape(
-          lay([
-            c([S.thread]),
-            c([S.tasks, S.files]),
-            c([S.profile, S.context]),
-            c([S.artifact]),
-          ]).complete(),
-        ),
-        'thread | tasks+files | profile+context+details | artifact',
-      );
-      final l = ChannelSideLayout.defaults.complete();
-      // The profile carries them.
-      expect(
-        fullShape(l.move(S.profile, const ChannelSideDropInto(2, null))),
-        'thread | tasks+files | artifact+profile+context+details',
-      );
-      // Moved by themselves into a stack they stay there; dropped into a column
-      // of their own they go back under the profile.
-      expect(
-        fullShape(l.move(S.details, const ChannelSideDropInto(1, null))),
-        'thread | tasks+files+details | artifact | profile+context',
-      );
-      expect(l.move(S.details, const ChannelSideDropNewColumn(4)), l);
-      expect(
-        fullShape(
-          lay([
-            c([S.thread]),
-            c([S.details]),
-            c([S.tasks, S.files]),
-            c([S.profile]),
-          ]).complete(),
-        ),
-        'thread | tasks+files | profile+context+details | artifact',
-      );
-      expect(channelSideColumnMinWidth([S.details]), 320);
-      // A reader that knows them keeps them where they were saved.
-      expect(
-        ChannelSideLayout.parse({
-          'v': 1,
-          'columns': [
-            raw(['thread'], 400),
-            raw(['profile', 'details'], 400),
-          ],
-        }),
+  test('the channel details follow the profile: under it by default, carried with it, never a column alone', () {
+    expect(
+      fullShape(ChannelSideLayout.defaults),
+      'thread | tasks+files | artifact | profile+context+details',
+    );
+    // A layout saved before the details existed gets them under the profile,
+    // after the context view.
+    expect(
+      fullShape(
         lay([
-          c([S.thread], 400),
-          c([S.profile, S.details], 400),
-        ]),
-      );
-      // A section a reader doesn't know is dropped and the rest kept.
-      expect(
-        ChannelSideLayout.parse({
-          'v': 1,
-          'columns': [
-            raw(['thread'], 400),
-            raw(['profile', 'not-yet-a-section'], 400),
-          ],
-        }),
+          c([S.thread]),
+          c([S.tasks, S.files]),
+          c([S.profile, S.context]),
+          c([S.artifact]),
+        ]).complete(),
+      ),
+      'thread | tasks+files | profile+context+details | artifact',
+    );
+    final l = ChannelSideLayout.defaults.complete();
+    // The profile carries them.
+    expect(
+      fullShape(l.move(S.profile, const ChannelSideDropInto(2, null))),
+      'thread | tasks+files | artifact+profile+context+details',
+    );
+    // Moved by themselves into a stack they stay there; dropped into a column
+    // of their own they go back under the profile.
+    expect(
+      fullShape(l.move(S.details, const ChannelSideDropInto(1, null))),
+      'thread | tasks+files+details | artifact | profile+context',
+    );
+    expect(l.move(S.details, const ChannelSideDropNewColumn(4)), l);
+    expect(
+      fullShape(
         lay([
-          c([S.thread], 400),
-          c([S.profile], 400),
-        ]),
-      );
-    },
-  );
+          c([S.thread]),
+          c([S.details]),
+          c([S.tasks, S.files]),
+          c([S.profile]),
+        ]).complete(),
+      ),
+      'thread | tasks+files | profile+context+details | artifact',
+    );
+    expect(channelSideColumnMinWidth([S.details]), 320);
+    // A reader that knows them keeps them where they were saved.
+    expect(
+      ChannelSideLayout.parse({
+        'v': 1,
+        'columns': [
+          raw(['thread'], 400),
+          raw(['profile', 'details'], 400),
+        ],
+      }),
+      lay([
+        c([S.thread], 400),
+        c([S.profile, S.details], 400),
+      ]),
+    );
+    // A section a reader doesn't know is dropped and the rest kept.
+    expect(
+      ChannelSideLayout.parse({
+        'v': 1,
+        'columns': [
+          raw(['thread'], 400),
+          raw(['profile', 'not-yet-a-section'], 400),
+        ],
+      }),
+      lay([
+        c([S.thread], 400),
+        c([S.profile], 400),
+      ]),
+    );
+  });
 
   test(
     'toJson is the saved shape: v 1 and each column\'s sections and width',

@@ -1880,89 +1880,98 @@ class _WorkspaceViewState extends State<WorkspaceView>
                                 : mobileNavigation(rootTab),
                             content: ChannelSideArea(
                               controller: w,
-                              headerExtent: wide ? raftPageHeaderHeight(context) : 0,
+                              headerExtent: wide
+                                  ? raftPageHeaderHeight(context)
+                                  : 0,
                               onOpenTask: openTaskSurface,
                               child: Column(
-                              children: [
-                                // The Computers root header sits in the
-                                // content region beside the rail.
-                                if (railShown &&
-                                    rootTab == 'computers' &&
-                                    !thread)
-                                  RaftMobileRootHeader(title: 'Computers'),
-                                // Settings composes its own sidebar and
-                                // content headers in the shared top row.
-                                if (wide &&
-                                    !unresolvedChannelRoute &&
-                                    ![
-                                      'settings',
-                                      'home',
-                                      'tasks',
-                                      'saved',
-                                      'activity',
-                                      'search',
-                                      'members',
-                                      'computers',
-                                    ].contains(route))
-                                  route == 'chat' &&
-                                          w.channel != null &&
-                                          [
-                                            'channel',
-                                            'private',
-                                            'joint',
-                                          ].contains(w.channel!.type)
-                                      ? channelHeader()
-                                      : route == 'chat' &&
-                                            w.channel?.type == 'dm'
-                                      ? dmHeader()
-                                      : RaftPageHeader(
-                                          title: route == 'home'
-                                              ? (w.channel?.name ?? title)
-                                              : title,
-                                          height: raftPageHeaderHeight(context),
-                                          icon: RaftIcon(sectionGlyph(route)),
-                                          subtitle: route == 'chat'
-                                              ? w.channel?.string('description')
-                                              : null,
-                                          actions: [
-                                            RaftTooltip(
-                                              message: w.connected
-                                                  ? tr('Connected')
-                                                  : tr('Reconnecting'),
-                                              child: Icon(
-                                                Icons.circle,
-                                                size: 8,
-                                                color: w.connected
-                                                    ? t.colors['success']
-                                                    : t.muted,
-                                              ),
+                                children: [
+                                  // The Computers root header sits in the
+                                  // content region beside the rail.
+                                  if (railShown &&
+                                      rootTab == 'computers' &&
+                                      !thread)
+                                    RaftMobileRootHeader(title: 'Computers'),
+                                  // Settings composes its own sidebar and
+                                  // content headers in the shared top row.
+                                  if (wide &&
+                                      !unresolvedChannelRoute &&
+                                      ![
+                                        'settings',
+                                        'home',
+                                        'tasks',
+                                        'saved',
+                                        'activity',
+                                        'search',
+                                        'members',
+                                        'computers',
+                                      ].contains(route))
+                                    route == 'chat' &&
+                                            w.channel != null &&
+                                            [
+                                              'channel',
+                                              'private',
+                                              'joint',
+                                            ].contains(w.channel!.type)
+                                        ? channelHeader()
+                                        : route == 'chat' &&
+                                              w.channel?.type == 'dm'
+                                        ? dmHeader()
+                                        : RaftPageHeader(
+                                            title: route == 'home'
+                                                ? (w.channel?.name ?? title)
+                                                : title,
+                                            height: raftPageHeaderHeight(
+                                              context,
                                             ),
-                                            if (route == 'chat' &&
-                                                w.channel != null)
+                                            icon: RaftIcon(sectionGlyph(route)),
+                                            subtitle: route == 'chat'
+                                                ? w.channel?.string(
+                                                    'description',
+                                                  )
+                                                : null,
+                                            actions: [
+                                              RaftTooltip(
+                                                message: w.connected
+                                                    ? tr('Connected')
+                                                    : tr('Reconnecting'),
+                                                child: Icon(
+                                                  Icons.circle,
+                                                  size: 8,
+                                                  color: w.connected
+                                                      ? t.colors['success']
+                                                      : t.muted,
+                                                ),
+                                              ),
+                                              if (route == 'chat' &&
+                                                  w.channel != null)
+                                                RaftIconButton(
+                                                  tooltip: 'Channel Settings',
+                                                  onPressed: () =>
+                                                      channelSettings(),
+                                                  glyph: RaftGlyph
+                                                      .slidersHorizontal,
+                                                ),
                                               RaftIconButton(
-                                                tooltip: 'Channel Settings',
+                                                tooltip: 'Refresh',
                                                 onPressed: () =>
-                                                    channelSettings(),
-                                                glyph:
-                                                    RaftGlyph.slidersHorizontal,
+                                                    w.channel == null
+                                                    ? w.bootstrap()
+                                                    : w.selectChannel(
+                                                        w.channel!,
+                                                      ),
+                                                glyph: RaftGlyph.refreshCw,
                                               ),
-                                            RaftIconButton(
-                                              tooltip: 'Refresh',
-                                              onPressed: () => w.channel == null
-                                                  ? w.bootstrap()
-                                                  : w.selectChannel(w.channel!),
-                                              glyph: RaftGlyph.refreshCw,
-                                            ),
-                                          ],
-                                        ),
-                                Expanded(
-                                  child: KeyedSubtree(
-                                    key: const ValueKey('classic-editor'),
-                                    child: content,
+                                            ],
+                                          ),
+                                  Expanded(
+                                    child: KeyedSubtree(
+                                      key: const ValueKey('classic-editor'),
+                                      child: content,
+                                    ),
                                   ),
-                                ),
-                              ],
-                            ),
+                                ],
+                              ),
                             ),
                             thread: thread
                                 ? RaftConversationSurface(

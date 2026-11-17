@@ -19,12 +19,11 @@ enum ChannelSideMode { beside, float, overlay }
 
 /// What the drag agent wraps around a card's head (the handle that moves the
 /// section among the columns). Receives the section and the finished head.
-typedef ChannelSideHeadWrapper =
-    Widget Function(
-      BuildContext context,
-      ChannelSideSection section,
-      Widget head,
-    );
+typedef ChannelSideHeadWrapper = Widget Function(
+  BuildContext context,
+  ChannelSideSection section,
+  Widget head,
+);
 
 class ChannelSideCardView extends StatelessWidget {
   const ChannelSideCardView({

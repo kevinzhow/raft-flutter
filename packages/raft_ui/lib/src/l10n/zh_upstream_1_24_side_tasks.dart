@@ -16,7 +16,8 @@ const Map<String, String> zhCatalogUpstream124SideTasks = <String, String>{
   // task.sidePanel.emptyMineBody
   "Tasks assigned to you in this channel show up here.": "本频道里分配给你的任务会显示在这里。",
   // task.sidePanel.emptyAllBody
-  "Tasks that people and agents create in this channel show up here.": "人和 Agent 在本频道创建的任务会显示在这里。",
+  "Tasks that people and agents create in this channel show up here.":
+      "人和 Agent 在本频道创建的任务会显示在这里。",
   // task.status.showGroup
   "Show {status}": "展开{status}",
   // task.status.hideGroup

@@ -136,45 +136,39 @@ void main() {
       expect(ChannelSideStore.of(w), same(store));
     });
 
-    test(
-      'a layout arriving later replaces the shown one and is kept on the device',
-      () async {
-        await boot();
-        final store = ChannelSideStore.of(w);
-        expect(store.layout, ChannelSideLayout.defaults);
-        var heard = 0;
-        store.addListener(() => heard++);
-        w.deliver(orderWith(saved));
-        expect(store.layout, saved);
-        expect(heard, 1);
-        expect(
-          ChannelSideLayout.parse(
-            jsonDecode(DevicePreferences.current!.getString(_deviceLayout)!),
-          ),
-          saved,
-        );
-        w.deliver(orderWith(other));
-        expect(store.layout, other);
-      },
-    );
+    test('a layout arriving later replaces the shown one and is kept on the device', () async {
+      await boot();
+      final store = ChannelSideStore.of(w);
+      expect(store.layout, ChannelSideLayout.defaults);
+      var heard = 0;
+      store.addListener(() => heard++);
+      w.deliver(orderWith(saved));
+      expect(store.layout, saved);
+      expect(heard, 1);
+      expect(
+        ChannelSideLayout.parse(
+          jsonDecode(DevicePreferences.current!.getString(_deviceLayout)!),
+        ),
+        saved,
+      );
+      w.deliver(orderWith(other));
+      expect(store.layout, other);
+    });
 
-    test(
-      'a saved layout missing a section is completed (never a section without a place)',
-      () async {
-        await boot();
-        w.sidebarOrder = orderWith(
-          lay([
-            ([S.tasks], 300),
-          ]),
-        );
-        final store = ChannelSideStore.of(w);
-        expect(
-          shape(store.layout),
-          'thread | tasks+files | artifact | profile+context+details',
-        );
-        expect(store.layout.columns[1].width, 300);
-      },
-    );
+    test('a saved layout missing a section is completed (never a section without a place)', () async {
+      await boot();
+      w.sidebarOrder = orderWith(
+        lay([
+          ([S.tasks], 300),
+        ]),
+      );
+      final store = ChannelSideStore.of(w);
+      expect(
+        shape(store.layout),
+        'thread | tasks+files | artifact | profile+context+details',
+      );
+      expect(store.layout.columns[1].width, 300);
+    });
 
     test('a value that is not a layout reads as none saved', () async {
       await boot();
@@ -184,23 +178,20 @@ void main() {
       expect(ChannelSideStore.of(w).layout, ChannelSideLayout.defaults);
     });
 
-    test(
-      'unrelated sidebar-order changes and controller notifications change nothing',
-      () async {
-        await boot();
-        w.sidebarOrder = orderWith(saved);
-        final store = ChannelSideStore.of(w);
-        var heard = 0;
-        store.addListener(() => heard++);
-        w.deliver({
-          ...orderWith(saved),
-          'pinned': ['y'],
-        });
-        w.deliver({...w.sidebarOrder});
-        expect(heard, 0);
-        expect(store.layout, saved);
-      },
-    );
+    test('unrelated sidebar-order changes and controller notifications change nothing', () async {
+      await boot();
+      w.sidebarOrder = orderWith(saved);
+      final store = ChannelSideStore.of(w);
+      var heard = 0;
+      store.addListener(() => heard++);
+      w.deliver({
+        ...orderWith(saved),
+        'pinned': ['y'],
+      });
+      w.deliver({...w.sidebarOrder});
+      expect(heard, 0);
+      expect(store.layout, saved);
+    });
   });
 
   group('device fallback when the server has none', () {
@@ -228,18 +219,15 @@ void main() {
       expect(ChannelSideStore.of(w).layout, ChannelSideLayout.defaults);
     });
 
-    test(
-      'the server\'s layout wins over the device copy, then none saved goes back to it',
-      () async {
-        await boot({_deviceLayout: jsonEncode(other.toJson())});
-        final store = ChannelSideStore.of(w);
-        w.deliver(orderWith(saved));
-        expect(store.layout, saved);
-        // The server copy is now this device's too: a server without one shows it.
-        w.deliver(orderWith(null));
-        expect(store.layout, saved);
-      },
-    );
+    test('the server\'s layout wins over the device copy, then none saved goes back to it', () async {
+      await boot({_deviceLayout: jsonEncode(other.toJson())});
+      final store = ChannelSideStore.of(w);
+      w.deliver(orderWith(saved));
+      expect(store.layout, saved);
+      // The server copy is now this device's too: a server without one shows it.
+      w.deliver(orderWith(null));
+      expect(store.layout, saved);
+    });
 
     test('with no server open a move is kept on this device only', () async {
       await boot();
@@ -309,22 +297,19 @@ void main() {
       expect(client.patches.single.layout!.columns[1].width, 500);
     });
 
-    test(
-      'a layout the server echoes back unchanged does not reset a live resize',
-      () async {
-        await boot();
-        w.sidebarOrder = orderWith(saved);
-        final store = ChannelSideStore.of(w);
-        store.resizeColumn(1, 470, false);
-        // Any sidebar-order write answers with the whole order, layout included.
-        w.deliver(orderWith(saved));
-        w.deliver({
-          ...orderWith(ChannelSideLayout.parse(saved.toJson())),
-          'pinned': ['z'],
-        });
-        expect(store.layout.columns[1].width, 470);
-      },
-    );
+    test('a layout the server echoes back unchanged does not reset a live resize', () async {
+      await boot();
+      w.sidebarOrder = orderWith(saved);
+      final store = ChannelSideStore.of(w);
+      store.resizeColumn(1, 470, false);
+      // Any sidebar-order write answers with the whole order, layout included.
+      w.deliver(orderWith(saved));
+      w.deliver({
+        ...orderWith(ChannelSideLayout.parse(saved.toJson())),
+        'pinned': ['z'],
+      });
+      expect(store.layout.columns[1].width, 470);
+    });
 
     test(
       'a different layout from another client replaces a live resize',
@@ -338,23 +323,20 @@ void main() {
       },
     );
 
-    test(
-      'while a save is in flight, an older order arriving does not undo the drop',
-      () async {
-        await boot();
-        w.sidebarOrder = orderWith(saved);
-        final store = ChannelSideStore.of(w);
-        store.moveSection(S.tasks, const ChannelSideDropInto(0, S.files));
-        final moved = store.layout;
-        w.deliver(orderWith(saved));
-        expect(store.layout, moved);
-        client.patches.single.done.complete({
-          'channelSideLayout': moved.toJson(),
-        });
-        await _settle();
-        expect(store.layout, moved);
-      },
-    );
+    test('while a save is in flight, an older order arriving does not undo the drop', () async {
+      await boot();
+      w.sidebarOrder = orderWith(saved);
+      final store = ChannelSideStore.of(w);
+      store.moveSection(S.tasks, const ChannelSideDropInto(0, S.files));
+      final moved = store.layout;
+      w.deliver(orderWith(saved));
+      expect(store.layout, moved);
+      client.patches.single.done.complete({
+        'channelSideLayout': moved.toJson(),
+      });
+      await _settle();
+      expect(store.layout, moved);
+    });
   });
 
   group('a refused save rolls back', () {
@@ -404,85 +386,76 @@ void main() {
       expect(store.layout, saved);
     });
 
-    test(
-      'overlapping saves: the layout shown is the newest one asked for until all settle',
-      () async {
-        await boot();
-        w.sidebarOrder = orderWith(saved);
-        final store = ChannelSideStore.of(w);
-        store.moveSection(S.tasks, const ChannelSideDropInto(0, S.files));
-        final first = store.layout;
-        store.resizeColumn(0, 350, true);
-        final second = store.layout;
-        expect(client.patches, hasLength(2));
-        expect(second, isNot(first));
-        // The older one is refused first: its rollback restores the order from
-        // before it, but a newer save is still out and the layout shown is its.
-        client.patches[0].done.completeError(
-          const RaftApiException('no', status: 500),
-        );
-        await _settle();
-        expect(store.layout, second);
-        client.patches[1].done.complete({'channelSideLayout': second.toJson()});
-        await _settle();
-        expect(store.layout, second, reason: 'the newest was saved: it stands');
-      },
-    );
+    test('overlapping saves: the layout shown is the newest one asked for until all settle', () async {
+      await boot();
+      w.sidebarOrder = orderWith(saved);
+      final store = ChannelSideStore.of(w);
+      store.moveSection(S.tasks, const ChannelSideDropInto(0, S.files));
+      final first = store.layout;
+      store.resizeColumn(0, 350, true);
+      final second = store.layout;
+      expect(client.patches, hasLength(2));
+      expect(second, isNot(first));
+      // The older one is refused first: its rollback restores the order from
+      // before it, but a newer save is still out and the layout shown is its.
+      client.patches[0].done.completeError(
+        const RaftApiException('no', status: 500),
+      );
+      await _settle();
+      expect(store.layout, second);
+      client.patches[1].done.complete({'channelSideLayout': second.toJson()});
+      await _settle();
+      expect(store.layout, second, reason: 'the newest was saved: it stands');
+    });
 
-    test(
-      'overlapping saves: a refused newest goes back to what the server holds',
-      () async {
-        await boot();
-        w.sidebarOrder = orderWith(saved);
-        final store = ChannelSideStore.of(w);
-        store.moveSection(S.tasks, const ChannelSideDropInto(0, S.files));
-        final first = store.layout;
-        store.resizeColumn(0, 350, true);
-        // The first is accepted, the newer one refused: the server holds `first`.
-        client.patches[0].done.complete({'channelSideLayout': first.toJson()});
-        await _settle();
-        client.patches[1].done.completeError(
-          const RaftApiException('no', status: 500),
-        );
-        await _settle();
-        expect(store.layout, first);
-      },
-    );
+    test('overlapping saves: a refused newest goes back to what the server holds', () async {
+      await boot();
+      w.sidebarOrder = orderWith(saved);
+      final store = ChannelSideStore.of(w);
+      store.moveSection(S.tasks, const ChannelSideDropInto(0, S.files));
+      final first = store.layout;
+      store.resizeColumn(0, 350, true);
+      // The first is accepted, the newer one refused: the server holds `first`.
+      client.patches[0].done.complete({'channelSideLayout': first.toJson()});
+      await _settle();
+      client.patches[1].done.completeError(
+        const RaftApiException('no', status: 500),
+      );
+      await _settle();
+      expect(store.layout, first);
+    });
   });
 
   group('the cards beside the chat', () {
-    test(
-      'open and collapsed are the person\'s, not the channel\'s, and kept on the device',
-      () async {
-        await boot();
-        final store = ChannelSideStore.of(w);
-        expect(store.cardOpen(ChannelSideCard.tasks), isFalse);
-        expect(store.collapsed(ChannelSideCard.files), isFalse);
-        store.setCardOpen(ChannelSideCard.tasks, true);
-        store.setCollapsed(ChannelSideCard.files, true);
-        expect(store.cardOpen(ChannelSideCard.tasks), isTrue);
-        expect(store.cardOpen(ChannelSideCard.files), isFalse);
-        expect(store.collapsed(ChannelSideCard.files), isTrue);
-        expect(store.collapsed(ChannelSideCard.tasks), isFalse);
-        // Another channel, even another server: the same cards.
-        w.channel = RaftChannel({'id': 'c1', 'name': 'one', 'type': 'channel'});
-        w.ping();
-        expect(store.cardOpen(ChannelSideCard.tasks), isTrue);
-        w.channel = RaftChannel({'id': 'c2', 'name': 'two', 'type': 'channel'});
-        w.ping();
-        expect(store.cardOpen(ChannelSideCard.tasks), isTrue);
-        expect(store.collapsed(ChannelSideCard.files), isTrue);
-        // The next launch (a new workspace on the same device) starts from them.
-        final next = _Workspace(client)
-          ..server = RaftRecord({'id': 's2', 'role': 'member'});
-        addTearDown(next.dispose);
-        final again = ChannelSideStore.of(next);
-        expect(again.cardOpen(ChannelSideCard.tasks), isTrue);
-        expect(again.cardOpen(ChannelSideCard.files), isFalse);
-        expect(again.collapsed(ChannelSideCard.files), isTrue);
-        expect(again.collapsed(ChannelSideCard.tasks), isFalse);
-      },
-    );
+    test('open and collapsed are the person\'s, not the channel\'s, and kept on the device', () async {
+      await boot();
+      final store = ChannelSideStore.of(w);
+      expect(store.cardOpen(ChannelSideCard.tasks), isFalse);
+      expect(store.collapsed(ChannelSideCard.files), isFalse);
+      store.setCardOpen(ChannelSideCard.tasks, true);
+      store.setCollapsed(ChannelSideCard.files, true);
+      expect(store.cardOpen(ChannelSideCard.tasks), isTrue);
+      expect(store.cardOpen(ChannelSideCard.files), isFalse);
+      expect(store.collapsed(ChannelSideCard.files), isTrue);
+      expect(store.collapsed(ChannelSideCard.tasks), isFalse);
+      // Another channel, even another server: the same cards.
+      w.channel = RaftChannel({'id': 'c1', 'name': 'one', 'type': 'channel'});
+      w.ping();
+      expect(store.cardOpen(ChannelSideCard.tasks), isTrue);
+      w.channel = RaftChannel({'id': 'c2', 'name': 'two', 'type': 'channel'});
+      w.ping();
+      expect(store.cardOpen(ChannelSideCard.tasks), isTrue);
+      expect(store.collapsed(ChannelSideCard.files), isTrue);
+      // The next launch (a new workspace on the same device) starts from them.
+      final next = _Workspace(client)
+        ..server = RaftRecord({'id': 's2', 'role': 'member'});
+      addTearDown(next.dispose);
+      final again = ChannelSideStore.of(next);
+      expect(again.cardOpen(ChannelSideCard.tasks), isTrue);
+      expect(again.cardOpen(ChannelSideCard.files), isFalse);
+      expect(again.collapsed(ChannelSideCard.files), isTrue);
+      expect(again.collapsed(ChannelSideCard.tasks), isFalse);
+    });
 
     test(
       'opening an open card only picks it; setting a value it has tells nobody',
@@ -515,26 +488,23 @@ void main() {
       expect(store.collapsed(ChannelSideCard.tasks), isFalse);
     });
 
-    test(
-      'the card opened or picked last is the one that shows where only one fits',
-      () async {
-        await boot();
-        final store = ChannelSideStore.of(w);
-        store.setCardOpen(ChannelSideCard.tasks, true);
-        store.setCardOpen(ChannelSideCard.files, true);
-        expect(store.activeCard(['tasks', 'files']), 'files');
-        store.focus('tasks');
-        expect(store.activeCard(['tasks', 'files']), 'tasks');
-        store.focus('app');
-        expect(store.activeCard(['tasks', 'files', 'app']), 'app');
-        expect(store.activeCard(['tasks', 'files']), 'tasks');
-        expect(store.activeCard(<String>[]), isNull);
-        // Closing does not move focus; opening again does.
-        store.setCardOpen(ChannelSideCard.tasks, false);
-        store.setCardOpen(ChannelSideCard.tasks, true);
-        expect(store.activeCard(['tasks', 'files']), 'tasks');
-      },
-    );
+    test('the card opened or picked last is the one that shows where only one fits', () async {
+      await boot();
+      final store = ChannelSideStore.of(w);
+      store.setCardOpen(ChannelSideCard.tasks, true);
+      store.setCardOpen(ChannelSideCard.files, true);
+      expect(store.activeCard(['tasks', 'files']), 'files');
+      store.focus('tasks');
+      expect(store.activeCard(['tasks', 'files']), 'tasks');
+      store.focus('app');
+      expect(store.activeCard(['tasks', 'files', 'app']), 'app');
+      expect(store.activeCard(['tasks', 'files']), 'tasks');
+      expect(store.activeCard(<String>[]), isNull);
+      // Closing does not move focus; opening again does.
+      store.setCardOpen(ChannelSideCard.tasks, false);
+      store.setCardOpen(ChannelSideCard.tasks, true);
+      expect(store.activeCard(['tasks', 'files']), 'tasks');
+    });
 
     test(
       'activeSideCard: ties go to the first in the list, no focus is zero',
@@ -567,56 +537,46 @@ void main() {
   });
 
   group('stack splits', () {
-    test(
-      'defaults: Tasks over Files 60/40; the thread, the Artifact and the profile 3 to a section\'s 2; else even',
-      () async {
-        await boot();
-        final store = ChannelSideStore.of(w);
-        expect(store.splitShares([S.tasks, S.files]), [0.6, 0.4]);
-        expect(store.splitShares([S.thread, S.tasks]), [0.6, 0.4]);
-        expect(store.splitShares([S.artifact, S.files]), [0.6, 0.4]);
-        expect(store.splitShares([S.tasks, S.artifact]), [0.4, 0.6]);
-        expect(store.splitShares([S.files, S.tasks]), [0.5, 0.5]);
-        final three = store.splitShares([S.tasks, S.files, S.artifact]);
-        expect(three[0], closeTo(2 / 7, 1e-9));
-        expect(three[1], closeTo(2 / 7, 1e-9));
-        expect(three[2], closeTo(3 / 7, 1e-9));
-        expect(store.splitShares([S.profile, S.context]), [0.5, 0.5]);
-        expect(store.splitShares([S.tasks]), [1.0]);
-      },
-    );
+    test('defaults: Tasks over Files 60/40; the thread, the Artifact and the profile 3 to a section\'s 2; else even', () async {
+      await boot();
+      final store = ChannelSideStore.of(w);
+      expect(store.splitShares([S.tasks, S.files]), [0.6, 0.4]);
+      expect(store.splitShares([S.thread, S.tasks]), [0.6, 0.4]);
+      expect(store.splitShares([S.artifact, S.files]), [0.6, 0.4]);
+      expect(store.splitShares([S.tasks, S.artifact]), [0.4, 0.6]);
+      expect(store.splitShares([S.files, S.tasks]), [0.5, 0.5]);
+      final three = store.splitShares([S.tasks, S.files, S.artifact]);
+      expect(three[0], closeTo(2 / 7, 1e-9));
+      expect(three[1], closeTo(2 / 7, 1e-9));
+      expect(three[2], closeTo(3 / 7, 1e-9));
+      expect(store.splitShares([S.profile, S.context]), [0.5, 0.5]);
+      expect(store.splitShares([S.tasks]), [1.0]);
+    });
 
-    test(
-      'a saved split is kept on the device per stack and read by the next launch',
-      () async {
-        await boot();
-        final store = ChannelSideStore.of(w);
-        var heard = 0;
-        store.addListener(() => heard++);
-        store.saveSplit([S.tasks, S.files], [0.3, 0.7]);
-        expect(store.splitShares([S.tasks, S.files]), [0.3, 0.7]);
-        expect(store.splitShares([S.files, S.tasks]), [
-          0.5,
-          0.5,
-        ], reason: 'another stack');
-        expect(heard, 1);
-        final saved =
-            jsonDecode(
-                  DevicePreferences.current!.getString(
-                    'raft.channelSide.splits',
-                  )!,
-                )
-                as Map;
-        expect(saved.keys, ['tasks|files']);
-        final next = _Workspace(client)
-          ..server = RaftRecord({'id': 's1', 'role': 'owner'});
-        addTearDown(next.dispose);
-        expect(ChannelSideStore.of(next).splitShares([S.tasks, S.files]), [
-          0.3,
-          0.7,
-        ]);
-      },
-    );
+    test('a saved split is kept on the device per stack and read by the next launch', () async {
+      await boot();
+      final store = ChannelSideStore.of(w);
+      var heard = 0;
+      store.addListener(() => heard++);
+      store.saveSplit([S.tasks, S.files], [0.3, 0.7]);
+      expect(store.splitShares([S.tasks, S.files]), [0.3, 0.7]);
+      expect(store.splitShares([S.files, S.tasks]), [
+        0.5,
+        0.5,
+      ], reason: 'another stack');
+      expect(heard, 1);
+      final saved = jsonDecode(
+        DevicePreferences.current!.getString('raft.channelSide.splits')!,
+      ) as Map;
+      expect(saved.keys, ['tasks|files']);
+      final next = _Workspace(client)
+        ..server = RaftRecord({'id': 's1', 'role': 'owner'});
+      addTearDown(next.dispose);
+      expect(ChannelSideStore.of(next).splitShares([S.tasks, S.files]), [
+        0.3,
+        0.7,
+      ]);
+    });
 
     test(
       'a saved split that does not fit the stack reads as the default',

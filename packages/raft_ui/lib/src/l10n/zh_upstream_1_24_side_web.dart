@@ -6,7 +6,8 @@ const Map<String, String> zhCatalogUpstream124SideWeb = <String, String>{
   // webPreview.panelLabel
   "Web preview: {host}": "网页预览：{host}",
   // webPreview.notShowing
-  "Page not showing? <link>Open in new tab</link>": "页面没有显示？<link>在新标签页中打开</link>",
+  "Page not showing? <link>Open in new tab</link>":
+      "页面没有显示？<link>在新标签页中打开</link>",
   // webPreview.insecureTitle
   "This page can’t be shown here": "无法在这里显示此页面",
   // webPreview.insecureDescription
@@ -30,8 +31,7 @@ const Map<String, String> zhCatalogUpstream124SideWeb = <String, String>{
   // settings.howWebLinksOpen.title
   "How web links open": "网页链接打开方式",
   // settings.howWebLinksOpen.description
-  "Where a web link in a message opens when you click it.":
-      "点击消息里的网页链接时在哪里打开。",
+  "Where a web link in a message opens when you click it.": "点击消息里的网页链接时在哪里打开。",
   // settings.howWebLinksOpen.notChosen
   "Ask on the first click": "第一次点击时询问",
   // settings.howWebLinksOpen.beside

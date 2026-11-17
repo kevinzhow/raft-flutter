@@ -848,8 +848,7 @@ class MessagePresentation extends StatelessWidget {
     }
     return ListenableBuilder(
       listenable: webPreviewAvailability(controller),
-      builder: (_, _) =>
-          cardOf(besideEnabled: webPreviewAvailable(controller)),
+      builder: (_, _) => cardOf(besideEnabled: webPreviewAvailable(controller)),
     );
   }
 
