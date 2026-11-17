@@ -479,6 +479,7 @@ class RaftChannelHeader extends StatelessWidget {
     this.searchLabel = 'Search This Channel',
     this.settingsLabel = 'Channel Settings',
     this.archivedLabel,
+    this.titleSuffix,
     this.mutedLabel,
     this.onOpenLink,
     this.publicPage = false,
@@ -502,6 +503,7 @@ class RaftChannelHeader extends StatelessWidget {
   /// The localized tooltip of the small bell-off after the title (null = not
   /// muted).
   final String? mutedLabel;
+  final Widget? titleSuffix;
 
   /// ChannelDescription: tapping an http(s) link in the description. Null
   /// leaves the description plain text.
@@ -685,7 +687,7 @@ class RaftChannelHeader extends StatelessWidget {
   /// one `gap-1.5` row after the title.
   Widget _withArchivedBadge(RaftTokens t, Widget title) {
     final label = archivedLabel, muted = mutedLabel;
-    if (label == null && muted == null) return title;
+    if (label == null && muted == null && titleSuffix == null) return title;
     return Row(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -693,7 +695,10 @@ class RaftChannelHeader extends StatelessWidget {
         Flexible(child: title),
         const SizedBox(width: 8),
         if (label != null) _ArchivedBadge(label),
-        if (label != null && muted != null) const SizedBox(width: 6),
+        if (label != null && titleSuffix != null) const SizedBox(width: 6),
+        ?titleSuffix,
+        if ((label != null || titleSuffix != null) && muted != null)
+          const SizedBox(width: 6),
         if (muted != null)
           RaftTooltip(
             message: muted,

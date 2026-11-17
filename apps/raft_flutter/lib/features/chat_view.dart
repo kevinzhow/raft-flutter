@@ -89,6 +89,7 @@ import 'saved_sidebar_entry.dart';
 import 'attachment_comment_ref.dart';
 import 'composer_slot.dart';
 import 'dm_read_status.dart';
+import 'channel_activity_session.dart';
 
 /// Controlled mounted-viewport action; no route, controller or data ownership.
 class ChatViewportHandle {
@@ -149,6 +150,7 @@ class RaftChatView extends StatefulWidget {
 }
 
 class _RaftChatViewState extends PhonePageState<RaftChatView> {
+  ChannelActivityPresentation get activity => timelineKeys.activity!;
   late MessageReferenceDirectory referenceDirectory;
   late ComposerDirectory composerDirectory;
   late MessageAgentPresentation agentPresentation;
@@ -467,28 +469,19 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
     return widget.thread ? scope.thread : scope.channel;
   }
 
-  List<RaftMessage> get rows {
-    // Covered and non-phone timelines keep the controller projection. The
-    // foreground phone page reads the shared window, which already includes
-    // pending sends. A missing window falls back so the first frame is not
-    // emptied.
-    if (MobileRouteGate.sharedWindow(
-      context,
-      w,
-      direct: _directTimeline,
-      visible: presentationActive,
-    )) {
-      final window = widget.thread
-          ? _messages.threadWindow
-          : _messages.messageWindow;
-      if (window != null && !window.retired) return window.timeline;
-    }
-    return _messages.timeline(thread: widget.thread);
-  }
+  List<RaftMessage> get rows => activity.rowsFor(
+    context,
+    direct: _directTimeline,
+    visible: presentationActive,
+  );
 
   @override
   void initState() {
     super.initState();
+    timelineKeys.activity = ChannelActivityPresentation(
+      w,
+      thread: widget.thread,
+    )..addListener(sync);
     // Close the anchored reaction picker on window metric changes without a
     // MediaQuery size dependency: that dependency rebuilt the whole timeline
     // on every frame of a window resize.
@@ -522,7 +515,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
       thread: widget.thread,
     )..addListener(referencesChanged);
     taskProjection = MessageTaskProjection(w)..addListener(referencesChanged);
-    selection = MessageSelection(w, thread: widget.thread)
+    selection = ChannelActivitySelection(activity, () => rows)
       ..addListener(selectionChanged);
     w.services.translations.addListener(referencesChanged);
     bindThreadSearch();
@@ -540,6 +533,11 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
     final controllerChanged = oldWidget.controller != w;
     final scopeChanged = controllerChanged || oldWidget.thread != widget.thread;
     if (scopeChanged) {
+      activity.dispose();
+      timelineKeys.activity = ChannelActivityPresentation(
+        w,
+        thread: widget.thread,
+      )..addListener(sync);
       closeReactionPicker();
       bindingRevision++;
       timelineKeys.bodies.cancel();
@@ -582,7 +580,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
           thread: widget.thread,
         )..addListener(referencesChanged);
       }
-      selection = MessageSelection(w, thread: widget.thread)
+      selection = ChannelActivitySelection(activity, () => rows)
         ..addListener(selectionChanged);
       bindThreadSearch();
       selectionError = null;
@@ -958,6 +956,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
   @override
   void dispose() {
     saveReadingAnchor();
+    activity.dispose();
     MessageHistoryMemory.cancelSample(w, this);
     releaseAgentCollapse(this);
     if (reportedBottomId case final id?) {
@@ -1154,6 +1153,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
       // Web useTranslationBatch: the panel loads the server's translation
       // settings once per server.
       w.services.translations.ensureSettings();
+      activity.update();
       final id = widget.thread ? w.threadChannelId : w.channel?.id;
       final presented = rows;
       for (final row in presented) {
@@ -1168,7 +1168,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
           : _messages.channelGeneration;
       final loading = widget.thread
           ? _messages.state.threadLoading
-          : _messages.state.channelLoading;
+          : activity.loading;
       final target = _messages.state.highlightedMessageId;
       // A newly mounted preview can own a still-accepted same-channel window
       // while its permalink GET waits. Publish that accepted window at its
@@ -1778,7 +1778,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
     void open() {
       if (!mounted ||
           authority != workspaceAuthority(w) ||
-          !_messages.presentsMessage(parent.id) ||
+          !rows.any((row) => row.id == parent.id) ||
           !w.can('viewChannel', resource: w.channel)) {
         return;
       }
@@ -2975,6 +2975,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
       previous = at > 0 ? current[at - 1].createdAt : null;
     }
     final showDay =
+        !activity.mode &&
         stamp != null &&
         (previous == null ||
             timeFormatter.dayKey(previous) != timeFormatter.dayKey(stamp));
@@ -3047,6 +3048,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
   }
 
   bool standalone(RaftMessage m) =>
+      activity.mode ||
       _messages.threadSummaries[m.id] != null ||
       taskProjection.presentFor(m) != null ||
       taskProjection.taskListFor(m) != null;
@@ -3144,7 +3146,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
     final measuredRows = raftRowExtents.scope(rowExtentScope(context));
     final loading = widget.thread
         ? _messages.state.threadLoading
-        : _messages.state.channelLoading;
+        : activity.loading;
     final empty = rows.isEmpty;
     const recipe = RaftTimelineCompositionRecipe();
     final List<Widget> header;
@@ -3188,13 +3190,13 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         ?contextLoadBanner(),
-                        if (RaftHistoryPaywallView.atTop(w))
+                        if (activity.paywallAtTop)
                           RaftHistoryPaywallView(controller: w)
                         else
                           RaftThreadHistoryTopState(
-                            hasMore: _messages.state.hasMore,
-                            historyLimited: _messages.state.historyLimited,
-                            loadingOlder: _messages.state.loadingOlder,
+                            hasMore: activity.hasMore,
+                            historyLimited: activity.historyLimited,
+                            loadingOlder: activity.loadingOlder,
                             loadingOlderLabel: raftText(
                               context,
                               'Loading older messages...',
@@ -3217,7 +3219,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
     }
     final rowStyle = timelineKeys.rowStyle(
       context,
-      authority: (w, workspaceAuthority(w)),
+      authority: (w, workspaceAuthority(w), activity.mode),
       user: w.client.user,
       interactive: canReact,
       day: timeFormatter.dayKey(sourceTimeNow()),
@@ -3279,11 +3281,9 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
               centerIndex: centerIndex(),
               epoch: centerEpoch,
               indexOfId: windowIndexOf,
-              rowBuilder: (context, index) => HistoryGapPlaceholder(
-                controller: w,
-                thread: widget.thread,
-                newerId: source(messages[index]).id,
-                child: datedTile(
+              rowBuilder: (context, index) => activity.wrapRow(
+                source(messages[index]),
+                datedTile(
                   source(messages[index]),
                   dmRead: source(messages[index]).id == dmReadId,
                 ),
@@ -3303,13 +3303,11 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
                   thread: widget.thread,
                 ),
               ),
-              hasOlder: widget.thread
-                  ? w.threadHasMore
-                  : _messages.state.hasMore,
-              loadingOlder: _messages.state.loadingOlder,
-              onLoadOlder: presentationActive
-                  ? () => _messages.older(thread: widget.thread)
-                  : null,
+              hasOlder: widget.thread ? w.threadHasMore : activity.hasMore,
+              loadingOlder: widget.thread
+                  ? _messages.state.loadingOlder
+                  : activity.loadingOlder,
+              onLoadOlder: presentationActive ? activity.older : null,
               hasNewer: widget.thread
                   ? _messages.threadWindow?.hasNewer == true
                   : _messages.state.hasNewer,
@@ -3331,7 +3329,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
                         ),
                       ),
                     )
-                  : RaftHistoryPaywallView.hidesAll(w)
+                  : activity.allHidden
                   ? RaftHistoryPaywallView(
                       controller: w,
                       allHidden: true,
