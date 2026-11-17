@@ -54,8 +54,13 @@ class RaftTaskPageList extends StatelessWidget {
     this.currentTaskId,
     this.selection,
     this.wrapTitle = true,
+    this.rowWrap,
   });
   final List<RaftTaskChipRow> tasks;
+
+  /// Wraps each row (its id and the row), for what the app marks a row with
+  /// (the task slot's focus return). The row's key stays on the row.
+  final Widget Function(String taskId, Widget row)? rowWrap;
   final ValueChanged<RaftTaskChipRow> onOpen;
   final bool showStatus;
 
@@ -102,12 +107,15 @@ class RaftTaskPageList extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 for (var i = 0; i < tasks.length; i++)
-                  _PageRow(
-                    key: ValueKey('tasks-page-row-${tasks[i].id}'),
-                    task: tasks[i],
-                    divider: i > 0,
-                    narrow: narrow,
-                    list: this,
+                  _wrapped(
+                    tasks[i].id,
+                    _PageRow(
+                      key: ValueKey('tasks-page-row-${tasks[i].id}'),
+                      task: tasks[i],
+                      divider: i > 0,
+                      narrow: narrow,
+                      list: this,
+                    ),
                   ),
               ],
             ),
@@ -116,6 +124,10 @@ class RaftTaskPageList extends StatelessWidget {
       },
     );
   }
+}
+
+extension on RaftTaskPageList {
+  Widget _wrapped(String id, Widget row) => rowWrap?.call(id, row) ?? row;
 }
 
 class _PageRow extends StatefulWidget {

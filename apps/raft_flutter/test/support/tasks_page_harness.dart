@@ -12,7 +12,6 @@ import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/features/tasks_page/tasks_page.dart';
 import 'package:raft_flutter/features/tasks_page/tasks_page_model.dart';
-import 'package:raft_flutter/features/tasks_page/tasks_page_store.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 const meId = 'alice';
@@ -256,6 +255,12 @@ class TasksClient extends RaftClient {
   Stream<RaftEvent> get events => bus.stream;
   void emit(String name, [dynamic payload]) =>
       bus.add(RaftEvent(name, payload));
+
+  @override
+  Future<void> dispose() async {
+    await bus.close();
+    return super.dispose();
+  }
 }
 
 Future<(WorkspaceController, TasksServer)> tasksFixture({
@@ -276,8 +281,6 @@ Future<(WorkspaceController, TasksServer)> tasksFixture({
     'joined': true,
   });
   w.channels = [w.channel!];
-  // The page's store lives with the controller; a test lets it go.
-  addTearDown(() => TasksPageStore.of(w).dispose());
   return (w, server);
 }
 

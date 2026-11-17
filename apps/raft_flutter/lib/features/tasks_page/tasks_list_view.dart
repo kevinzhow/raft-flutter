@@ -11,6 +11,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import '../../data/workspace_controller.dart';
+import '../task_content_slot.dart' show TaskSlotRow;
 import 'tasks_page_model.dart';
 import 'tasks_page_rows.dart';
 import 'tasks_page_store.dart';
@@ -448,6 +449,10 @@ class _TasksLaneRowsState extends State<TasksLaneRows> {
           RaftTaskPageList(
             tasks: rows,
             wrapTitle: true,
+            rowWrap: (id, row) => KeyedSubtree(
+              key: ValueKey('slot-row-$id'),
+              child: TaskSlotRow(taskId: id, child: row),
+            ),
             showChannel: true,
             showAssignee: widget.showAssignee,
             showUnassigned: true,

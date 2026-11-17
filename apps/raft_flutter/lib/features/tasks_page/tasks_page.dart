@@ -51,20 +51,26 @@ void bindTasksPageLive(WorkspaceController controller, TasksPageStore store) {
   if (held != null && identical(held.client, client)) return;
   held?.sub.cancel().ignore();
   // ignore: raft_lints/avoid_unreleased_resource -- kept in _live for the store's life; replaced when the client changes
-  final sub = client.events.listen((event) {
-    if (event.name != 'connected' && !event.name.startsWith('task:')) return;
-    switch (classifyTaskEvent(
-      event,
-      serverId: controller.server?.string('id'),
-    )) {
-      case TaskEventIgnored():
-        return;
-      case TaskEventUnrecognized():
-        store.reset();
-      case TaskEventPatch(:final patches):
-        store.applyLive(patches);
-    }
-  });
+  final sub = client.events.listen(
+    (event) {
+      if (event.name != 'connected' && !event.name.startsWith('task:')) return;
+      switch (classifyTaskEvent(
+        event,
+        serverId: controller.server?.string('id'),
+      )) {
+        case TaskEventIgnored():
+          return;
+        case TaskEventUnrecognized():
+          store.reset();
+        case TaskEventPatch(:final patches):
+          store.applyLive(patches);
+      }
+    },
+    // The client is gone (its session ended): so is what the store read.
+    onDone: () {
+      if (identical(_live[store]?.client, client)) store.dispose();
+    },
+  );
   _live[store] = (client: client, sub: sub);
 }
 
