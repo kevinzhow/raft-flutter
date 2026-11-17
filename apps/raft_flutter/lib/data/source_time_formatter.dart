@@ -281,6 +281,21 @@ class SourceTimeFormatter {
 
   final _messageTimes = <int, (_TodayContext, String)>{};
 
+  /// Web formatCompactDate (utils/timeFormatting.ts), a Files card row's
+  /// time: the clock today, the abbreviated month and day earlier this year,
+  /// else the calendar day (YYYY-MM-DD), in the preferred zone.
+  String compactDate(Object? value, {DateTime? now}) {
+    final date = _date(value);
+    if (date == null) return value?.toString() ?? '';
+    final today = _todayFor(now ?? sourceTimeNow());
+    final key = dayKey(date);
+    if (key == today.today) return _clock(date);
+    if (wallTime(date).year == today.year) {
+      return DateFormat.MMMd(locale).format(wallTime(date));
+    }
+    return key;
+  }
+
   /// useTimeFormatter.formatShortDateTime: preferred-zone abbreviated month,
   /// numeric day and the explicit two-digit chosen hour cycle, without a year.
   String shortDateTime(Object? value) {
