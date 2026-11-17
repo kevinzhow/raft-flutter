@@ -11481,7 +11481,7 @@
     },
     {
      "file": "apps/raft_flutter/lib/features/source_channel_files_view.dart",
-     "needle": "'Download File'"
+     "needle": "'Download file'"
     },
     {
      "file": "apps/raft_flutter/lib/platform/attachment_files.dart",
@@ -11750,13 +11750,13 @@
    "capability": "Channel Files tab: file rows with type icon, preview, 'Jump to message', 'Download file', overflow menu, Load more, empty/error states",
    "background": false,
    "status": "covered",
-   "webEntry": "ChannelFilesPanel.tsx",
+   "webEntry": "components/message/ChannelFilesPanel.tsx, ChannelFilesCard.tsx (Web 1.24)",
    "gate": "",
-   "flutterEntry": "source_channel_files_view.dart + source_channel_files_actions.dart",
+   "flutterEntry": "source_channel_files_view.dart + source_channel_files_actions.dart (tab; with task v2 the Files card, channel_side_area.dart)",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/source_channel_files_view.dart",
-     "needle": "Jump to Original Message"
+     "needle": "Jump to original message"
     },
     {
      "file": "apps/raft_flutter/lib/features/source_channel_files_actions.dart",
@@ -11822,13 +11822,13 @@
    "capability": "Channel 'Files' tab: list files, preview, 'Jump to original message', 'Download file', Load more",
    "background": false,
    "status": "covered",
-   "webEntry": "ChannelFilesPanel",
+   "webEntry": "components/message/ChannelFilesPanel.tsx, ChannelFilesCard.tsx (Web 1.24)",
    "gate": "channel read access",
-   "flutterEntry": "source_channel_files_view.dart + source_channel_files_actions.dart",
+   "flutterEntry": "source_channel_files_view.dart + source_channel_files_actions.dart (tab; with task v2 the Files card, channel_side_area.dart)",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/source_channel_files_view.dart",
-     "needle": "'Jump to Original Message'"
+     "needle": "'Jump to original message'"
     },
     {
      "file": "apps/raft_flutter/lib/features/source_channel_files_view.dart",
