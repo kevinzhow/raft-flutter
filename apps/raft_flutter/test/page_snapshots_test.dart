@@ -485,6 +485,11 @@ void main() {
       'type': 'channel',
       'joined': true,
       'activityMuteSupported': true,
+      'channelCapabilities': {
+        'editChannelMetadata': true,
+        'manageVisitorAccess': true,
+        'addChannelMembers': true,
+      },
     });
 
     void routes(_Adapter a, String id, {bool collapse = true}) {
@@ -503,11 +508,8 @@ void main() {
       a.routes['GET /channels/$id/notification-settings'] = (_) => {
         'activityMuted': false,
       };
-      a.routes['GET /channels/$id'] = (_) => {
-        'id': id,
-        'name': id == 'c1' ? 'work' : 'play',
-        'type': 'channel',
-      };
+      a.routes['GET /channels/$id'] = (_) =>
+          channel(id, id == 'c1' ? 'work' : 'play').json;
       a.routes['POST /feature-flags/evaluate'] = (_) => {
         'evaluations': [
           {'key': 'server_guest_v0', 'enabled': true},
@@ -518,6 +520,10 @@ void main() {
 
     Widget sheet(WorkspaceController w, RaftChannel c) =>
         ChannelSettings(controller: w, channel: c, isPanel: true);
+
+    final visitorVisibility = find.byKey(
+      const ValueKey('channel-settings-visitor-visible-switch'),
+    );
 
     Finder rowSwitch(String label) => find.byWidgetPredicate(
       (w) => w is RaftSwitch && w.semanticLabel == label,
@@ -544,7 +550,7 @@ void main() {
 
     List<Finder> layout() => [
       find.byType(RaftDialogTextInput).first,
-      find.text('Guest access'),
+      visitorVisibility,
       find.text('Pin channel'),
       // v1.24: the Notifications level row (Mute is one of its choices).
       find.text('Notifications'),
@@ -555,6 +561,7 @@ void main() {
     Future<(WorkspaceController, _Adapter)> opened(WidgetTester t) async {
       final (w, a) = (await t.runAsync(_fixture))!;
       addTearDown(w.dispose);
+      w.server = RaftRecord({...w.server!.json, 'publicPageLive': true});
       final c1 = channel('c1', 'work');
       w.channels = [c1, channel('c2', 'play')];
       routes(a, 'c1');
@@ -596,8 +603,7 @@ void main() {
         a.gate = Completer<void>();
         await t.pumpWidget(_host(sheet(w, w.channels.last)));
         expect(find.byType(RaftSpinner), findsNothing);
-        // Flags are server-level: the guest section is final.
-        expect(find.text('Guest access'), findsOneWidget);
+        expect(visitorVisibility, findsOneWidget);
         expect(find.text('Chat with members from other servers'), findsNothing);
         // Per-channel values are in flight: rows hold their space.
         // The level row stays in place; its Mute choice waits for the
@@ -666,7 +672,7 @@ void main() {
         await t.pumpWidget(_host(sheet(w, w.channels.first)));
         // Nothing from the other identity: flags are cold again.
         expect(find.byType(RaftSpinner), findsOneWidget);
-        expect(find.text('Guest access'), findsNothing);
+        expect(visitorVisibility, findsNothing);
         a.gate!.complete();
         await t.pumpAndSettle();
       });
