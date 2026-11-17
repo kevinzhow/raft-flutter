@@ -417,11 +417,8 @@ class _TasksBoardViewState extends State<TasksBoardView> {
     final range = keys.isShiftPressed;
     final modified = keys.isMetaPressed || keys.isControlPressed || range;
     if (widget.selection.selecting || modified) {
-      widget.selection.select(
-        '${task['id']}',
-        range: range,
-        order: widget.order(),
-      );
+      final id = '${task['id']}';
+      widget.selection.select(id, range: range, order: widget.order());
       return;
     }
     widget.onOpenTask(task);
