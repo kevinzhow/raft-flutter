@@ -234,6 +234,10 @@ void main() {
   });
 
   Future<void> menu(WidgetTester t, String title, String value) async {
+    // The search filter chips are one sideways-scrolling strip (Web
+    // FitToolbar): bring the chip into view first, as a user scrolls to it.
+    await t.ensureVisible(find.byTooltip(title));
+    await t.pumpAndSettle();
     await t.tap(find.byTooltip(title));
     await t.pumpAndSettle();
     await t.tap(find.text(value).last);

@@ -1091,17 +1091,15 @@ class _FitScrollGroupState extends State<_FitScrollGroup> {
       ),
     );
     final end = widget.end;
+    // One Row whether or not [end] is shown: when it appears (Clear All after
+    // the first filter), the chips keep their elements and the chip that had
+    // focus keeps it, instead of the scroller being re-parented.
     return SizedBox(
       width: widget.width,
-      child: end == null
-          ? body
-          : Row(
-              spacing: widget.gap,
-              children: [
-                Expanded(child: body),
-                end,
-              ],
-            ),
+      child: Row(
+        spacing: widget.gap,
+        children: [Expanded(child: body), ?end],
+      ),
     );
   }
 }

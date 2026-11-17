@@ -129,11 +129,13 @@ void main() {
         '/s/demo/agent/a',
         '/s/demo/computer/c',
         '/s/demo/settings/account',
-        '/s/demo/activity',
         '/s/demo/members?profile=human:h',
       ]) {
         expect(navigation(path).mobileRootTab, isNull, reason: path);
       }
+      // Activity is a tab in the fixed phone bar and in the rail: always a
+      // root (the bottom-bar customisation that could turn it off is gone).
+      expect(navigation('/s/demo/activity').mobileRootTab, 'activity');
       // v1.24: pushed from the server tab, roots only beside the rail.
       expect(navigation('/s/demo/settings').mobileRootTab, isNull);
       expect(navigation('/s/demo/members').mobileRootTab, isNull);
