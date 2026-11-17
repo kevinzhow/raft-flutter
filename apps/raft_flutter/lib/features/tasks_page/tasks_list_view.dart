@@ -62,13 +62,13 @@ class _LoadMoreSentinelState extends State<LoadMoreSentinel> {
     super.didChangeDependencies();
     final next = Scrollable.maybeOf(context)?.position;
     if (next == _position) return;
-    _position?.removeListener(_check);
-    _position = next?..addListener(_check);
+    _position?.removeListener(_checkAfterLayout);
+    _position = next?..addListener(_checkAfterLayout);
   }
 
   @override
   void dispose() {
-    _position?.removeListener(_check);
+    _position?.removeListener(_checkAfterLayout);
     super.dispose();
   }
 

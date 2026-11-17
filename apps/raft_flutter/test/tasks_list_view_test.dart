@@ -219,7 +219,10 @@ void main() {
       addTearDown(w.dispose);
       await mountPage(t, w);
       expect(row('a1'), findsOneWidget);
-      final reads = server.taskReads.length;
+      int assignedReads() => server.taskReads
+          .where((r) => r.queryParameters['relation'] == 'assigned_to_me')
+          .length;
+      final reads = assignedReads();
       (w.client as TasksClient).emit('task:updated', {
         'serverId': 's1',
         'task': {...pageTask('a1', claimedBy: meId, status: 'done')},
@@ -227,7 +230,9 @@ void main() {
       await settleTasks(t, rounds: 3);
       expect(row('a1'), findsNothing);
       expect(row('a2'), findsOneWidget);
-      expect(server.taskReads.length, reads);
+      // The list it left is not read again (the other lanes may be: a fact
+      // about the task they lack).
+      expect(assignedReads(), reads);
       await t.pumpWidget(const SizedBox());
     });
 
@@ -247,7 +252,10 @@ void main() {
       ))!;
       addTearDown(w.dispose);
       await mountPage(t, w);
-      final reads = server.taskReads.length;
+      int assignedReads() => server.taskReads
+          .where((r) => r.queryParameters['relation'] == 'assigned_to_me')
+          .length;
+      final reads = assignedReads();
       (w.client as TasksClient).emit('task:created', {
         'serverId': 's1',
         'task': pageTask(
@@ -259,7 +267,7 @@ void main() {
       await settleTasks(t, rounds: 3);
       expect(row('a9'), findsOneWidget);
       expect(t.getTopLeft(row('a9')).dy < t.getTopLeft(row('a2')).dy, isTrue);
-      expect(server.taskReads.length, reads);
+      expect(assignedReads(), reads);
       await t.pumpWidget(const SizedBox());
     });
 
@@ -299,6 +307,7 @@ void main() {
       ))!;
       addTearDown(w.dispose);
       await mountPage(t, w);
+      await settleTasks(t);
       final reads = server.taskReads.length;
       (w.client as TasksClient).emit('task:deleted', {
         'serverId': 'other',
