@@ -61,9 +61,9 @@ class TaskActivityTime extends StatelessWidget {
     if (short == null) return const SizedBox.shrink();
     final t = RaftTokens.of(context);
     final stale = isStaleTask(task, clock);
-    final full = DateFormat.yMMMd(locale?.toLanguageTag()).add_jm().format(
-      DateTime.parse(at).toLocal(),
-    );
+    final full = DateFormat.yMMMd(
+      locale?.toLanguageTag(),
+    ).add_jm().format(DateTime.parse(at).toLocal());
     final style = t
         .scale(
           RaftTypeScale.monoMeta,
@@ -83,7 +83,9 @@ class TaskActivityTime extends StatelessWidget {
         child: Text(
           short,
           key: ValueKey(
-            stale ? 'tasks-page-activity-time-stale' : 'tasks-page-activity-time',
+            stale
+                ? 'tasks-page-activity-time-stale'
+                : 'tasks-page-activity-time',
           ),
           maxLines: 1,
           softWrap: false,
@@ -142,7 +144,10 @@ class TaskCardFacts extends StatelessWidget {
                 : Padding(padding: const EdgeInsets.only(right: 8), child: who),
           ),
         ),
-        Flexible(flex: 0, child: TaskActivityTime(task: task, now: now)),
+        Flexible(
+          flex: 0,
+          child: TaskActivityTime(task: task, now: now),
+        ),
       ],
     );
   }

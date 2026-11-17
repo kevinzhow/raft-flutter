@@ -11,6 +11,7 @@ import 'close_registry_raftbench.dart';
 import 'close_registry_server_tab.dart';
 import 'close_registry_side_cards.dart';
 import 'close_registry_task_slot.dart';
+import 'close_registry_tasks_board.dart';
 import 'close_registry_viewers.dart';
 import 'close_registry_web_link_choice.dart';
 import 'close_surface.dart';
@@ -29,6 +30,7 @@ List<CloseSurface> get allCloseSurfaces => [
   ...serverTabSurfaces,
   ...sideCardSurfaces,
   ...taskSlotSurfaces,
+  ...tasksBoardSurfaces,
   ...viewerSurfaces,
   ...artifactSurfaces,
   ...webLinkChoiceSurfaces,

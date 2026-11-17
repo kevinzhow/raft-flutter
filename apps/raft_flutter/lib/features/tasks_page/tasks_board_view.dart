@@ -181,22 +181,13 @@ class _TasksBoardViewState extends State<TasksBoardView> {
     final view = View.maybeOf(context);
     if (view == null) return;
     unawaited(
-      SemanticsService.sendAnnouncement(
-        view,
-        text,
-        Directionality.of(context),
-      ),
+      SemanticsService.sendAnnouncement(view, text, Directionality.of(context)),
     );
   }
 
   /// Says [source] for task [id]: `{number}` the task's number, `{place}` the
   /// column [place] by its name.
-  void announce(
-    String source,
-    String id, {
-    String? place,
-    String? reason,
-  }) {
+  void announce(String source, String id, {String? place, String? reason}) {
     final task = taskOf(id);
     say(
       raftFormat(context, source, {
@@ -338,11 +329,7 @@ class _TasksBoardViewState extends State<TasksBoardView> {
       return;
     }
     if (status == 'backlog') {
-      askBacklogReason(
-        id,
-        backlogHeading,
-        fromKeyboard: fromKeyboard,
-      );
+      askBacklogReason(id, backlogHeading, fromKeyboard: fromKeyboard);
       return;
     }
     if (fromKeyboard) focusAfterDrag(id);
@@ -424,12 +411,7 @@ class _TasksBoardViewState extends State<TasksBoardView> {
     final id = prompt?.taskId;
     final task = id == null ? null : taskOf(id);
     if (task == null) return false;
-    final moved = await moveTask(
-      task,
-      'backlog',
-      reason: reason,
-      toast: false,
-    );
+    final moved = await moveTask(task, 'backlog', reason: reason, toast: false);
     // The popover shows the failure under its field.
     if (moved && mounted) closeBacklogReason(moved: true);
     return moved;
@@ -482,8 +464,8 @@ class _TasksBoardViewState extends State<TasksBoardView> {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    final inline = MediaQuery.sizeOf(context).width <
-            RaftLayoutMetrics.desktopBreakpoint
+    final inline =
+        MediaQuery.sizeOf(context).width < RaftLayoutMetrics.desktopBreakpoint
         ? 16.0
         : t.size('space.tasksViewportInline', fallback: 20);
     final p = prompt;
@@ -494,28 +476,32 @@ class _TasksBoardViewState extends State<TasksBoardView> {
       children: [
         ListenableBuilder(
           listenable: Listenable.merge([store, widget.selection, keyboard]),
-          builder: (context, _) => SingleChildScrollView(
-            controller: scroll,
-            primary: false,
-            scrollDirection: Axis.horizontal,
-            padding: raftScrollPadding(
-              context,
-              EdgeInsets.symmetric(horizontal: inline, vertical: 16),
-            ),
-            child: Row(
-              key: const ValueKey('tasks-page-board'),
-              crossAxisAlignment: CrossAxisAlignment.start,
-              spacing: 16,
-              children: [
-                for (final status in boardColumns(widget.filters))
-                  _StatusColumn(
-                    key: ValueKey('task-board-column-$status'),
-                    board: this,
-                    status: status,
-                  ),
-              ],
-            ),
-          ),
+          builder: (context, _) {
+            // The card may have landed in its column with this change.
+            queueFocus();
+            return SingleChildScrollView(
+              controller: scroll,
+              primary: false,
+              scrollDirection: Axis.horizontal,
+              padding: raftScrollPadding(
+                context,
+                EdgeInsets.symmetric(horizontal: inline, vertical: 16),
+              ),
+              child: Row(
+                key: const ValueKey('tasks-page-board'),
+                crossAxisAlignment: CrossAxisAlignment.start,
+                spacing: 16,
+                children: [
+                  for (final status in boardColumns(widget.filters))
+                    _StatusColumn(
+                      key: ValueKey('task-board-column-$status'),
+                      board: this,
+                      status: status,
+                    ),
+                ],
+              ),
+            );
+          },
         ),
         if (p != null)
           RaftTaskReasonPopover(
@@ -762,10 +748,7 @@ class _CardSkeleton extends StatelessWidget {
           children: [
             Align(
               alignment: Alignment.centerLeft,
-              child: RaftSkeleton(
-                variant: RaftSkeletonVariant.line,
-                width: 64,
-              ),
+              child: RaftSkeleton(variant: RaftSkeletonVariant.line, width: 64),
             ),
             RaftSkeletonRow(lineFractions: [1, .5]),
             Align(

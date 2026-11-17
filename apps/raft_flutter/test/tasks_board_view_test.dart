@@ -82,6 +82,9 @@ class BoardHarness {
   final List<Map<String, dynamic>> rows;
   late final TasksPageStore store;
   final selection = TaskSelection();
+
+  /// What the page reads the columns' totals from (it feeds them to the board).
+  late final ValueNotifier<Map<String, int>?> counts;
   final opened = <String>[];
   final movedSelected = <String>[];
   final said = <String>[];
@@ -106,6 +109,7 @@ Future<BoardHarness> mountBoard(
   PageFilters filters = const PageFilters(),
   TargetPlatform? platform,
   Completer<void>? hold,
+  Widget Function(Widget board)? wrap,
 }) async {
   t.view.physicalSize = size;
   t.view.devicePixelRatio = 1;
@@ -122,6 +126,8 @@ Future<BoardHarness> mountBoard(
   final h = BoardHarness(controller, api, rows ?? defaultRows());
   addTearDown(h.store.dispose);
   addTearDown(h.selection.dispose);
+  h.counts = ValueNotifier(counts);
+  addTearDown(h.counts.dispose);
   BoardHarness.reads.clear();
   h.handler = (path, query) async {
     await hold?.future;
@@ -135,8 +141,9 @@ Future<BoardHarness> mountBoard(
     };
   };
   // The server keeps what it was written.
-  Map<String, dynamic> write(Map<String, dynamic> fields) =>
-      {'task': h.rows[0] = {...h.rows[0], ...fields}};
+  Map<String, dynamic> write(Map<String, dynamic> fields) => {
+    'task': h.rows[0] = {...h.rows[0], ...fields},
+  };
   api.routes['PATCH /tasks/t1/status'] = (o) =>
       write({'status': (o.data as Map)['status']});
   api.routes['PATCH /tasks/t1/claim'] = (_) =>
@@ -151,18 +158,19 @@ Future<BoardHarness> mountBoard(
     },
   );
   addTearDown(
-    () => t.binding.defaultBinaryMessenger.setMockDecodedMessageHandler<dynamic>(
-      SystemChannels.accessibility,
-      null,
-    ),
+    () =>
+        t.binding.defaultBinaryMessenger.setMockDecodedMessageHandler<dynamic>(
+          SystemChannels.accessibility,
+          null,
+        ),
   );
-  Widget board = TasksBoardView(
+  Widget board() => TasksBoardView(
     controller: controller,
     store: h.store,
     tab: TasksPageTab.all,
     filters: filters,
     sort: ServerTaskSort.activity,
-    columns: counts,
+    columns: h.counts.value,
     countCurrent: true,
     selection: h.selection,
     order: () => [for (final r in h.rows) '${r['id']}'],
@@ -170,19 +178,25 @@ Future<BoardHarness> mountBoard(
     onOpenTask: (task) => h.opened.add('${task['id']}'),
     onMoveSelected: h.movedSelected.add,
   );
-  if (interaction != null) {
-    board = RaftInteractionScope(interaction: interaction, child: board);
+  Widget composed() {
+    var widget = board();
+    if (wrap != null) widget = wrap(widget);
+    if (interaction != null) {
+      widget = RaftInteractionScope(interaction: interaction, child: widget);
+    }
+    return widget;
   }
+
   await t.pumpWidget(
     MaterialApp(
-      theme: raftTheme(dark: dark).copyWith(
-        platform: platform ?? TargetPlatform.linux,
-      ),
+      theme: raftTheme(
+        dark: dark,
+      ).copyWith(platform: platform ?? TargetPlatform.linux),
       home: RaftToastHost(
         child: Scaffold(
           body: ListenableBuilder(
-            listenable: h.selection,
-            builder: (_, _) => board,
+            listenable: Listenable.merge([h.selection, h.counts]),
+            builder: (_, _) => composed(),
           ),
         ),
       ),
@@ -304,7 +318,10 @@ void main() {
       expect(find.text('No Todo tasks'), findsNothing);
       hold.complete();
       await settle(t);
-      expect(find.byKey(const ValueKey('task-board-card-skeleton')), findsNothing);
+      expect(
+        find.byKey(const ValueKey('task-board-card-skeleton')),
+        findsNothing,
+      );
       expect(card('t1'), findsOneWidget);
     });
 
@@ -350,10 +367,7 @@ void main() {
           .subtract(const Duration(days: 4))
           .toUtc()
           .toIso8601String();
-      await mountBoard(
-        t,
-        rows: [boardTask('t1', 1, 'todo', activityAt: old)],
-      );
+      await mountBoard(t, rows: [boardTask('t1', 1, 'todo', activityAt: old)]);
       expect(
         find.descendant(
           of: card('t1'),
@@ -399,47 +413,53 @@ void main() {
       expect(h.opened, isEmpty);
     });
 
-    testWidgets('selected and current cards paint as Web does, light and dark',
-        (t) async {
-      for (final dark in [false, true]) {
-        final h = await mountBoard(t, dark: dark, currentTaskId: 't2');
-        h.selection.select('t1');
-        await settle(t);
-        final tokens = RaftTokens.of(t.element(card('t1')));
-        BoxDecoration surface(String id) =>
-            (t.widget<Container>(
-                      find.descendant(
-                        of: card(id),
-                        matching: find.byKey(
-                          const ValueKey('task-card-surface'),
+    testWidgets(
+      'selected and current cards paint as Web does, light and dark',
+      (t) async {
+        for (final dark in [false, true]) {
+          final h = await mountBoard(t, dark: dark, currentTaskId: 't2');
+          h.selection.select('t1');
+          await settle(t);
+          final tokens = RaftTokens.of(t.element(card('t1')));
+          BoxDecoration surface(String id) =>
+              (t
+                      .widget<Container>(
+                        find.descendant(
+                          of: card(id),
+                          matching: find.byKey(
+                            const ValueKey('task-card-surface'),
+                          ),
                         ),
-                      ),
-                    )
-                    .decoration!
-                as BoxDecoration);
-        expect(surface('t1').color, tokens.colors['fill-cell-selected']);
-        expect(surface('t2').color, tokens.colors['fill-cell-selected']);
-        expect(surface('t4').color, isNot(tokens.colors['fill-cell-selected']));
-        final ring = t.widget<DecoratedBox>(
-          find.descendant(
-            of: card('t1'),
-            matching: find.byKey(const ValueKey('task-card-selected-ring')),
-          ),
-        );
-        final border = (ring.decoration as BoxDecoration).border! as Border;
-        expect(border.top.width, 2);
-        expect(border.top.color, tokens.colors['info']);
-        // Only a selected card is ringed.
-        expect(
-          find.descendant(
-            of: card('t2'),
-            matching: find.byKey(const ValueKey('task-card-selected-ring')),
-          ),
-          findsNothing,
-        );
-        await t.pumpWidget(const SizedBox());
-      }
-    });
+                      )
+                      .decoration!
+                  as BoxDecoration);
+          expect(surface('t1').color, tokens.colors['fill-cell-selected']);
+          expect(surface('t2').color, tokens.colors['fill-cell-selected']);
+          expect(
+            surface('t4').color,
+            isNot(tokens.colors['fill-cell-selected']),
+          );
+          final ring = t.widget<DecoratedBox>(
+            find.descendant(
+              of: card('t1'),
+              matching: find.byKey(const ValueKey('task-card-selected-ring')),
+            ),
+          );
+          final border = (ring.decoration as BoxDecoration).border! as Border;
+          expect(border.top.width, 2);
+          expect(border.top.color, tokens.colors['info']);
+          // Only a selected card is ringed.
+          expect(
+            find.descendant(
+              of: card('t2'),
+              matching: find.byKey(const ValueKey('task-card-selected-ring')),
+            ),
+            findsNothing,
+          );
+          await t.pumpWidget(const SizedBox());
+        }
+      },
+    );
   });
 
   group('pointer drag', () {
@@ -636,9 +656,7 @@ void main() {
 
     testWidgets('the status chip asks the same, from the card', (t) async {
       final h = await mountBoard(t);
-      await t.tap(
-        find.descendant(of: card('t1'), matching: find.text('Todo')),
-      );
+      await t.tap(find.descendant(of: card('t1'), matching: find.text('Todo')));
       await settle(t);
       await t.tap(find.byKey(const ValueKey('backlog')).last);
       await settle(t);
@@ -652,9 +670,7 @@ void main() {
       t,
     ) async {
       final h = await mountBoard(t);
-      await t.tap(
-        find.descendant(of: card('t1'), matching: find.text('Todo')),
-      );
+      await t.tap(find.descendant(of: card('t1'), matching: find.text('Todo')));
       await settle(t);
       await t.tap(find.byKey(const ValueKey('in_progress')).last);
       await settle(t);
@@ -685,7 +701,12 @@ void main() {
         'press', (t) async {
       final many = [
         for (var i = 1; i <= 25; i++)
-          boardTask('p$i', i, 'todo', activityAt: '2026-11-17T10:${59 - i}:00Z'),
+          boardTask(
+            'p$i',
+            i,
+            'todo',
+            activityAt: '2026-11-17T10:${59 - i}:00Z',
+          ),
       ];
       final h = await mountBoard(
         t,
@@ -705,10 +726,7 @@ void main() {
       await settle(t);
       final reads = BoardHarness.reads.where((r) => r['cursor'] != null);
       expect(reads, hasLength(1), reason: 'one read of the next page');
-      expect(
-        find.byKey(const ValueKey('task-load-more-todo')),
-        findsOneWidget,
-      );
+      expect(find.byKey(const ValueKey('task-load-more-todo')), findsOneWidget);
       expect(find.text('Try again'), findsOneWidget);
       fail = false;
       await t.tap(find.text('Try again'));
@@ -760,7 +778,10 @@ void main() {
       await g.up();
       await settle(t);
       expect(h.writes(), isEmpty);
-      expect(find.byKey(const ValueKey('task-board-card-dragging')), findsNothing);
+      expect(
+        find.byKey(const ValueKey('task-board-card-dragging')),
+        findsNothing,
+      );
     });
 
     testWidgets('on a phone a long press drag to Backlog asks the reason', (
