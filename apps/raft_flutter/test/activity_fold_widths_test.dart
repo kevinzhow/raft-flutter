@@ -42,7 +42,7 @@ void main() {
   };
   for (final size in sizes) {
     final wide = size.width >= 768;
-    for (final flagOn in [false, true]) {
+    for (final flagOn in [false]) {
       for (final kind in [PointerDeviceKind.touch, PointerDeviceKind.mouse]) {
         testWidgets(
           '${size.width.toInt()}x${size.height.toInt()} flag=$flagOn ${kind.name}: '
@@ -136,7 +136,7 @@ void main() {
             expect(find.byType(RaftChatView), findsOneWidget);
             expect(a, findsOneWidget);
             expect(b, findsOneWidget);
-            final tint = t.widget<RaftConversationCard>(a);
+            final tint = t.widget<RaftConversationListRow>(a);
             expect(tint.selected, isTrue);
             // A different row retargets the preview, never navigates.
             await click(t, b, kind);

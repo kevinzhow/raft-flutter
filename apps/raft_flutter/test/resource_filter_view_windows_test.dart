@@ -14,14 +14,14 @@ import 'activity_incremental_refresh_test.dart'
         channelRow,
         skeleton;
 
-/// Done and filtered Saved answer with their own rows.
+/// The Pinned scope and filtered Saved answer with their own rows.
 class FilterWorkspace extends ActivityWorkspace {
   FilterWorkspace(super.client);
   final doneQueries = <Map<String, dynamic>>[];
 
   @override
   Future<dynamic> query(String path, {Map<String, dynamic>? query}) async {
-    if (path == '/channels/inbox/done') {
+    if (path == '/channels/inbox' && query?['scope'] == 'pinned') {
       doneQueries.add({...?query});
       final gate = hold;
       if (gate != null) await gate.future;
@@ -88,11 +88,11 @@ void main() {
     tester,
   ) async {
     final dynamic state = await mount(tester, 'activity');
-    expect(state.rows, hasLength(30));
+    expect(state.rows, hasLength(50));
     final first = state.rows.first;
 
-    // Cold Done: nothing to show yet, so the skeleton is right.
-    state.filter = 'done';
+    // Cold Pinned: nothing to show yet, so the skeleton is right.
+    state.filter = 'pinned';
     w.hold = Completer<void>();
     unawaited(state.load());
     await tester.pump();
@@ -110,17 +110,17 @@ void main() {
     unawaited(state.load());
     await tester.pump();
     expect(skeleton, findsNothing);
-    expect(state.rows, hasLength(30));
+    expect(state.rows, hasLength(50));
     expect(state.loading, isFalse);
     expect(w.inboxQueries, hasLength(requests + 1));
     w.hold!.complete();
     w.hold = null;
     await tester.pumpAndSettle();
-    expect(state.rows, hasLength(30));
+    expect(state.rows, hasLength(50));
     expect(identical(state.rows.first, first), isTrue);
 
-    // And Done again, without a second skeleton.
-    state.filter = 'done';
+    // And Pinned again, without a second skeleton.
+    state.filter = 'pinned';
     w.hold = Completer<void>();
     unawaited(state.load());
     await tester.pump();
@@ -165,7 +165,7 @@ void main() {
     tester,
   ) async {
     dynamic state = await mount(tester, 'activity');
-    state.filter = 'done';
+    state.filter = 'pinned';
     await state.load();
     await tester.pumpAndSettle();
     await tester.pumpWidget(
@@ -187,14 +187,14 @@ void main() {
       ),
     );
     state = tester.state(find.byType(ResourceView));
-    // The snapshot opens on the Done view; the All window is kept beside it.
-    expect(state.filter, 'done');
+    // The snapshot opens on the Pinned view; the All window is kept beside it.
+    expect(state.filter, 'pinned');
     state.filter = 'all';
     w.hold = Completer<void>();
     unawaited(state.load());
     await tester.pump();
     expect(skeleton, findsNothing);
-    expect(state.rows, hasLength(30));
+    expect(state.rows, hasLength(50));
     w.hold!.complete();
     w.hold = null;
     await tester.pumpAndSettle();

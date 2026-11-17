@@ -17,7 +17,7 @@ Numbers are the items of the v1.21.23 plan, section 3.
 | # | Question | What the answer needs | Rows it settles |
 | --- | --- | --- | --- |
 | 3 | Native push (FCM / APNs) | The server needs a native push channel first; until then record it as a server-capability gap and do not schedule it. Since Web v1.24 the gap includes delayed phone alerts: with "Phone alerts" at 1, 2, 5 or 10 minutes the server holds a phone's alert and later sends it through FCM / APNs only (`mobileDeferral.ts`), so this app, which posts the socket's `notification:push` itself, never gets a held alert; with the default ("Only when I'm not active on a computer") and "Always" it alerts as Web's apps do (WP-NOTIF, coordinator decision 2026-11-14: record it, do not build native push) | `ui:notifications.push-subscription`, `ui:notifications.web-push-controls`, `ui:notifications.content-settings` |
-| 5 | Web removed the Activity Done, Saved and DMs views (flag `activity_sidebar_inbox_v0`); the app still has them and the server still serves them | Keep and record as an intended difference (recommended), or remove to match Web | `BP-READ-080` (differs), `BP-READ-038` note, `GET /channels/inbox/done`, `POST /channels/inbox/undone` |
+| 5 | Web removed the Activity Done, Saved and DMs views (flag `activity_sidebar_inbox_v0`) | Closed 2026-11-17 (WP-INBOX, Kevin 2654e77c): removed in the app too; Activity's Saved is now Web's saved scope | `BP-READ-080` (aligned), `BP-READ-038` note |
 | 6 | Open Raft https links in the app | The platform owner must host `assetlinks.json` and `apple-app-site-association` on the Raft domain; the app side is built and switched off (`RAFT_APP_LINKS`) | `ui:global-ui.routes-external-https-links` |
 | 7 | Product analytics (`POST /product-events/batch`) and the "Share usage data" switch | Record as an intended difference and remove the switch (recommended: today it does nothing), or decide to send events (a separate privacy decision) | `RAW analytics/track.ts`, `ui:global-ui.product-analytics-events` |
 | 8 | Web-only items to record as not applicable in one go: desktop download options, cookie consent and public visit counts, palette audit page, sidebar drag-and-drop probe, desktop multi-window, history menu | One "yes" | `ui:global-ui.desktop-server-windows` and the rows of the other items |
@@ -285,8 +285,8 @@ and bar position, scroll state) are expected and not to be "fixed". Other
 
 Owner decision 2026-10-12: Activity master-detail (single tap = side preview,
 same-row double tap = open) applies at every multi-column width (>= 768 dp,
-`RaftLayoutMetrics.desktopBreakpoint`) regardless of the
-`activity_sidebar_inbox_v0` flag; Web uses 768 with the flag and 1024 without.
+`RaftLayoutMetrics.desktopBreakpoint`) (the flag was retired in
+WP-INBOX; nothing is evaluated); Web used 768 with the flag and 1024 without.
 (`DesktopActivityFlag.masterDetail`; covered by
 `test/activity_fold_widths_test.dart`.)
 

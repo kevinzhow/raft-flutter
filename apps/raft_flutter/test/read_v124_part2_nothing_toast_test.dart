@@ -31,7 +31,6 @@ Future<void> _mount(
         body: ResourceView(
           controller: w,
           section: 'activity',
-          activitySidebarEnabled: true,
           onMessage: (_, _) async {},
         ),
       ),
@@ -42,7 +41,7 @@ Future<void> _mount(
 
 Future<void> _markUnread(WidgetTester tester) async {
   await tester.tap(
-    find.byType(RaftConversationCard).first,
+    find.byType(RaftConversationListRow).first,
     buttons: kSecondaryMouseButton,
     kind: PointerDeviceKind.mouse,
   );

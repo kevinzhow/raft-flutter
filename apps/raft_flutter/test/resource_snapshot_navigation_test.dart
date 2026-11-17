@@ -118,7 +118,7 @@ void main() {
     w.hold!.complete();
     w.hold = null;
     await tester.pumpAndSettle();
-    expect(state.rows, hasLength(30));
+    expect(state.rows, hasLength(50));
     await tester.pumpWidget(away());
     expect(
       w.resourceSnapshots.read('activity', state.identityAuthority),
@@ -162,7 +162,6 @@ void main() {
       'activity',
       const ResourceSnapshot(
         identity: 'a',
-        enabledActivity: false,
         view: 'v',
         rows: [],
         hasMore: false,
@@ -174,11 +173,8 @@ void main() {
         totalCount: null,
         totalUnreadCount: null,
         activityAllCount: null,
-        savedActivityTotal: 0,
         activityGroups: [],
         acceptedActivityItems: [],
-        savedActivityItems: [],
-        doneActivityItems: [],
         channelAccess: {},
         scrollOffset: 0,
       ),

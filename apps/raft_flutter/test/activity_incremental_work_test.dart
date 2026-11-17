@@ -65,7 +65,6 @@ void main() {
             body: ResourceView(
               controller: w,
               section: 'activity',
-              activitySidebarEnabled: true,
               onMessage: (_, _) async {},
             ),
           ),

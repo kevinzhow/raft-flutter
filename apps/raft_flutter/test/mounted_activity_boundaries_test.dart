@@ -46,7 +46,7 @@ Future<void> mount(WidgetTester t, WorkspaceController w, bool dark) async {
 
 void main() {
   for (final dark in raftThemeMatrix([false, true])) {
-    for (final enabled in [false, true]) {
+    for (final enabled in [false]) {
       for (final width in [767.0, 768.0, 1023.0, 1024.0]) {
         testWidgets(
           '[N22a] ${dark ? 'dark' : 'light'} actual evaluated=$enabled width=$width Activity opener',

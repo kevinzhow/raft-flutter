@@ -315,7 +315,7 @@ void main() {
       final finder = find.byKey(
         const ValueKey('activity-thread-thread-msg-agent-reply'),
       );
-      final retired = t.widget<RaftConversationCard>(finder).onOpen;
+      final retired = t.widget<RaftConversationListRow>(finder).onOpen;
       await t.tap(finder);
       await t.pumpAndSettle();
       expect(calls, ['channel-design:msg-visual-activity-reply']);

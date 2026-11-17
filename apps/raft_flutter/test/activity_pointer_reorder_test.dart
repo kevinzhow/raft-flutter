@@ -28,7 +28,6 @@ void main() {
             body: ResourceView(
               controller: workspace,
               section: 'activity',
-              activitySidebarEnabled: true,
               onMessage: (_, _) async {},
               onActivityItem: (row) async =>
                   opened.add(row['channelId'] as String),

@@ -30,7 +30,6 @@ void main() {
           body: ResourceView(
             controller: w,
             section: 'activity',
-            activitySidebarEnabled: false,
             onMessage: (_, _) async {},
           ),
         ),
@@ -44,7 +43,7 @@ void main() {
     t,
   ) async {
     final dynamic state = await mount(t);
-    expect(w.inboxQueries.last['offset'], 30);
+    expect(w.inboxQueries.last['offset'], 50);
     expect(state.rows, hasLength(60));
     expect(state.hasMore, isFalse);
     expect(find.text('Load more'), findsNothing);
@@ -57,9 +56,9 @@ void main() {
   });
 
   testWidgets('a list of exactly one page never shows Load more', (t) async {
-    w.inbox = [for (var i = 0; i < 30; i++) channelRow(i)];
+    w.inbox = [for (var i = 0; i < 50; i++) channelRow(i)];
     final dynamic state = await mount(t);
-    expect(state.rows, hasLength(30));
+    expect(state.rows, hasLength(50));
     expect(state.hasMore, isFalse);
     expect(find.text('Load more'), findsNothing);
   });

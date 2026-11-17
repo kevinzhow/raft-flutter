@@ -12833,12 +12833,12 @@
    "kind": "ui",
    "id": "ui:notifications.activity-conversation-list",
    "area": "notifications",
-   "capability": "Activity as a conversation list: one avatar row per conversation with preview and unread count, sidebar-pinned conversations first under Pinned / All conversations headings",
+   "capability": "Activity as a conversation list: one avatar row per conversation with preview and unread count, always the list form (no Pinned / All conversations headings)",
    "background": false,
    "status": "covered",
-   "webEntry": "components/thread/ThreadsInbox.tsx InboxRow layout=\"list\"; inboxPinnedConversation.ts",
-   "gate": "flag activity_conversation_list_v0",
-   "flutterEntry": "resource_view.dart activityCard -> activity_card_row.dart ActivityCardRow -> activity_list_row.dart ActivityListRowView -> RaftConversationListRow; activityPinnedFirst orders the rows",
+   "webEntry": "components/thread/ThreadsInbox.tsx InboxRow layout=\"list\"",
+   "gate": "none",
+   "flutterEntry": "resource_view.dart activityCard -> activity_card_row.dart ActivityCardRow -> activity_list_row.dart ActivityListRowView -> RaftConversationListRow",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/activity_list_row.dart",
@@ -12958,7 +12958,7 @@
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/resource_view.dart",
-     "needle": "{count} New Updates"
+     "needle": "'{count} new updates'"
     }
    ],
    "justification": "",
@@ -12995,17 +12995,12 @@
    "area": "notifications",
    "capability": "Activity search box (Ctrl/Cmd+F in the sidebar variant) and sort Newest / Oldest",
    "background": false,
-   "status": "covered",
+   "status": "na",
    "webEntry": "ThreadsInbox.tsx search input + sort Select",
    "gate": "",
-   "flutterEntry": "resource_view.dart RaftActivitySearchInput + onSort",
-   "flutterRefs": [
-    {
-     "file": "apps/raft_flutter/lib/features/resource_view.dart",
-     "needle": "RaftActivitySearchInput("
-    }
-   ],
-   "justification": "",
+   "flutterEntry": "",
+   "flutterRefs": [],
+   "justification": "Web v1.24 removed the Activity search box and the sort control; the app removed them too.",
    "impact": "",
    "size": ""
   },
@@ -13013,23 +13008,23 @@
    "kind": "ui",
    "id": "ui:notifications.activity-views-and-filters",
    "area": "notifications",
-   "capability": "Activity views All / Unread / Mentions / Saved / Done (counts), channel-group filter list with 'Clear filters', compact switcher dialog",
+   "capability": "Activity Filter menu: All / Unread / Mentions, then Pinned / Saved / Artifacts (scopes over All), a chip with clear, the choice kept per server",
    "background": false,
-   "status": "covered",
-   "webEntry": "ThreadsInbox.tsx renderActivitySidebarContent / SegmentedControl (activity_sidebar_inbox_v0 for the group list)",
-   "gate": "channel filter list behind activity_sidebar_inbox_v0",
-   "flutterEntry": "resource_view.dart Activity + RaftActivityScopeToolbar + activitySwitcher; desktop_activity_flag.dart",
+   "status": "partial",
+   "webEntry": "ThreadsInbox.tsx filter menu + chip; activityFilterPreference.ts (raft.activity.filter.<serverId>)",
+   "gate": "none",
+   "flutterEntry": "activity_filter_choice.dart (scopes, query, per-server preference); resource_view.dart chooseActivityFilter; the Filter menu widget lands with the list wiring (phone keeps the All / Unread / Mentions strip until then)",
    "flutterRefs": [
     {
-     "file": "apps/raft_flutter/lib/features/resource_view.dart",
-     "needle": "RaftActivityScopeToolbar("
+     "file": "apps/raft_flutter/lib/data/activity_filter_choice.dart",
+     "needle": "class ActivityFilterPreference"
     },
     {
-     "file": "apps/raft_flutter/lib/features/desktop_activity_flag.dart",
-     "needle": "activity_sidebar_inbox_v0"
+     "file": "apps/raft_flutter/lib/features/resource_view.dart",
+     "needle": "void chooseActivityFilter("
     }
    ],
-   "justification": "",
+   "justification": "Scope requests, persistence and reloads are in; Done, DMs, the switcher dialog and the channel filter were removed with Web 1.24 (Kevin 2654e77c). The Filter menu and chip widget are not wired yet.",
    "impact": "",
    "size": ""
   },
@@ -17217,17 +17212,12 @@
    "area": "global-ui",
    "capability": "Cmd/Ctrl+F inside Activity opens the Activity filter/search box",
    "background": false,
-   "status": "covered",
+   "status": "na",
    "webEntry": "components/thread/ThreadsInbox.tsx keydown (meta/ctrl+F) -> setActivitySearchVisible(true) while the Activity surface has focus",
-   "gate": "Activity sidebar inbox enabled",
-   "flutterEntry": "resource_view.dart CallbackShortcuts SingleActivator(keyF control/meta) -> showActivitySearch",
-   "flutterRefs": [
-    {
-     "file": "apps/raft_flutter/lib/features/resource_view.dart",
-     "needle": "showActivitySearch"
-    }
-   ],
-   "justification": "",
+   "gate": "",
+   "flutterEntry": "",
+   "flutterRefs": [],
+   "justification": "Web v1.24 removed Cmd/Ctrl+F in Activity along with the search box; the app removed it too.",
    "impact": "",
    "size": ""
   },

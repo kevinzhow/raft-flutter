@@ -222,8 +222,8 @@ Future<void> _rail(WidgetTester t, String id) async {
 
 /// Keys of every Activity row currently painted as selected.
 List<String> _selected(WidgetTester t) => [
-  for (final card in t.widgetList<RaftConversationCard>(
-    find.byType(RaftConversationCard),
+  for (final card in t.widgetList<RaftConversationListRow>(
+    find.byType(RaftConversationListRow),
   ))
     if (card.selected) (card.key! as ValueKey<String>).value,
 ];

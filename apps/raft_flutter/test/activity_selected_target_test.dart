@@ -60,7 +60,6 @@ void main() {
               body: ResourceView(
                 controller: w,
                 section: 'activity',
-                activitySidebarEnabled: true,
                 activitySelectedTarget: target,
                 onMessage: (_, _) async {},
               ),
@@ -68,14 +67,14 @@ void main() {
           ),
         );
         List<String> selected() => [
-          for (final card in t.widgetList<RaftConversationCard>(
-            find.byType(RaftConversationCard),
+          for (final card in t.widgetList<RaftConversationListRow>(
+            find.byType(RaftConversationListRow),
           ))
             if (card.selected) (card.key! as ValueKey<String>).value,
         ];
         await mount(null);
         await t.pumpAndSettle();
-        expect(find.byType(RaftConversationCard), findsNWidgets(4));
+        expect(find.byType(RaftConversationListRow), findsNWidgets(4));
         expect(selected(), isEmpty);
 
         await mount(

@@ -16,11 +16,6 @@ void main() {
       workspace.dispose();
       await client.dispose();
     });
-    client.responses['POST /feature-flags/evaluate'] = {
-      'evaluations': [
-        {'key': 'activity_conversation_list_v0', 'enabled': true},
-      ],
-    };
     await tester.pumpWidget(
       MaterialApp(
         theme: raftTheme().copyWith(platform: TargetPlatform.macOS),
@@ -28,7 +23,6 @@ void main() {
           body: ResourceView(
             controller: workspace,
             section: 'activity',
-            activitySidebarEnabled: true,
             onMessage: (_, _) async {},
           ),
         ),
@@ -37,12 +31,12 @@ void main() {
     await tester.pumpAndSettle();
     final dynamic page = tester.state(find.byType(ResourceView));
     final scroll = activityScroll(tester);
-    expect(page.rows, hasLength(30));
+    expect(page.rows, hasLength(50));
     scroll.position.jumpTo(scroll.position.maxScrollExtent - 20);
     await tester.pumpAndSettle();
     // Nearing the first page's end accepts the automatic next page. Reach the
     // bottom of that loaded window before beginning the held bounce.
-    expect(workspace.inboxQueries.map((query) => query['offset']), [0, 30]);
+    expect(workspace.inboxQueries.map((query) => query['offset']), [0, 50]);
     expect(page.rows, hasLength(60));
     expect(page.hasMore, isFalse);
     scroll.position.jumpTo(scroll.position.maxScrollExtent);

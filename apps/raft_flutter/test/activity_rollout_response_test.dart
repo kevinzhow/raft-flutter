@@ -7,7 +7,7 @@ import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/features/activity_rollout_flags.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-const _flag = ActivityRolloutFlags.activityConversationListKey;
+const _flag = ActivityRolloutFlags.inboxReadInplaceKey;
 const _scope = ['https://flag-fixture.invalid', 'alice', 's', 'owner'];
 
 class _Client extends RaftClient {
@@ -60,7 +60,7 @@ void main() {
     workspace = WorkspaceController(client)
       ..server = RaftRecord({'id': 's', 'role': 'owner'});
     flags = ActivityRolloutFlags.of(workspace);
-    expect(flags.activityConversationList, isTrue);
+    expect(flags.inboxReadInplace, isTrue);
   });
 
   tearDown(() async {
@@ -106,7 +106,7 @@ void main() {
     test('${entry.key} keeps accepted layout and disk value', () async {
       client.pending.single.complete(entry.value);
       await _settle();
-      expect(flags.activityConversationList, isTrue);
+      expect(flags.inboxReadInplace, isTrue);
       expect(FeatureFlagMemory.read(_scope, _flag), isTrue);
     });
   }
@@ -120,7 +120,7 @@ void main() {
         ],
       });
       await _settle();
-      expect(flags.activityConversationList, isFalse);
+      expect(flags.inboxReadInplace, isFalse);
       flags.reevaluate();
       client.pending.last.complete({
         'evaluations': [
@@ -129,7 +129,7 @@ void main() {
         ],
       });
       await _settle();
-      expect(flags.activityConversationList, isFalse);
+      expect(flags.inboxReadInplace, isFalse);
       expect(FeatureFlagMemory.read(_scope, _flag), isFalse);
     });
   }
@@ -141,7 +141,7 @@ void main() {
       ],
     });
     await _settle();
-    expect(flags.activityConversationList, isFalse);
+    expect(flags.inboxReadInplace, isFalse);
     expect(FeatureFlagMemory.read(_scope, _flag), isFalse);
   });
 
@@ -160,7 +160,7 @@ void main() {
       ],
     });
     await _settle();
-    expect(flags.activityConversationList, isTrue);
+    expect(flags.inboxReadInplace, isTrue);
     expect(FeatureFlagMemory.read(_scope, 'thread_unread_badge_v0'), isNull);
     expect(FeatureFlagMemory.read(_scope, _flag), isTrue);
     expect(FeatureFlagMemory.read(_scope, 'unrequested_flag'), isNull);
@@ -175,11 +175,11 @@ void main() {
       workspace = WorkspaceController(client)
         ..server = RaftRecord({'id': 'cold', 'role': 'owner'});
       flags = ActivityRolloutFlags.of(workspace);
-      expect(flags.activityConversationList, isFalse);
+      expect(flags.inboxReadInplace, isFalse);
       expect(client.pending, hasLength(1));
       client.pending.single.complete({'evaluations': <dynamic>[]});
       await _settle();
-      expect(flags.activityConversationList, isFalse);
+      expect(flags.inboxReadInplace, isFalse);
       expect(
         FeatureFlagMemory.read([
           'https://flag-fixture.invalid',
@@ -197,7 +197,7 @@ void main() {
       const RaftApiException('fixture outage', status: 503),
     );
     await _settle();
-    expect(flags.activityConversationList, isTrue);
+    expect(flags.inboxReadInplace, isTrue);
     expect(FeatureFlagMemory.read(_scope, _flag), isTrue);
   });
 
@@ -207,7 +207,7 @@ void main() {
         RaftApiException('fixture denial', status: status),
       );
       await _settle();
-      expect(flags.activityConversationList, isFalse);
+      expect(flags.inboxReadInplace, isFalse);
       expect(FeatureFlagMemory.read(_scope, _flag), isFalse);
     });
   }
@@ -226,7 +226,7 @@ void main() {
         const RaftApiException('fixture stale denial', status: 403),
       );
       await _settle();
-      expect(flags.activityConversationList, isTrue);
+      expect(flags.inboxReadInplace, isTrue);
       expect(
         FeatureFlagMemory.read([
           'https://flag-fixture.invalid',
@@ -256,14 +256,14 @@ void main() {
       await _settle();
       client.ingress.add(const RaftEvent('connected', null));
       expect(client.pending, hasLength(2));
-      expect(flags.activityConversationList, isTrue);
+      expect(flags.inboxReadInplace, isTrue);
       client.pending.last.complete({
         'evaluations': [
           {'key': _flag, 'enabled': false},
         ],
       });
       await _settle();
-      expect(flags.activityConversationList, isFalse);
+      expect(flags.inboxReadInplace, isFalse);
     },
   );
 }

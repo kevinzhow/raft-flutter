@@ -38,7 +38,6 @@ void main() {
             body: ResourceView(
               controller: w,
               section: section,
-              activitySidebarEnabled: true,
               onMessage: (_, _) async {},
             ),
           ),
@@ -50,7 +49,7 @@ void main() {
 
     Finder card(String title) => find.ancestor(
       of: shown(title),
-      matching: find.byType(RaftConversationCard),
+      matching: find.byType(RaftConversationListRow),
     );
 
     Rect listRect(WidgetTester tester) =>

@@ -200,7 +200,7 @@ ScrollableState activityScroll(WidgetTester tester) => tester.state(
 );
 
 void main() {
-  for (final enabled in [false, true]) {
+  for (final enabled in [false]) {
     final label = enabled ? 'sidebar' : 'legacy';
     late ActivityClient client;
     late ActivityWorkspace w;
@@ -218,7 +218,6 @@ void main() {
             body: ResourceView(
               controller: w,
               section: 'activity',
-              activitySidebarEnabled: enabled,
               onMessage: (_, _) async {},
             ),
           ),
@@ -261,7 +260,7 @@ void main() {
       '[$label] loaded pages and scroll position survive a socket reconcile',
       (tester) async {
         final dynamic state = await mount(tester);
-        expect(state.rows, hasLength(30));
+        expect(state.rows, hasLength(50));
         await state.load(append: true);
         await tester.pumpAndSettle();
         expect(state.rows, hasLength(60));
@@ -362,7 +361,7 @@ void main() {
         await tester.tap(
           find.ancestor(
             of: shown('Channel 1'),
-            matching: find.byType(RaftConversationCard),
+            matching: find.byType(RaftConversationListRow),
           ),
           buttons: kSecondaryMouseButton,
         );
@@ -396,7 +395,7 @@ void main() {
         w.hold = Completer<void>();
         client.emit('channel:updated', {'id': 'ch2'});
         await tester.pump();
-        expect(state.rows, hasLength(30));
+        expect(state.rows, hasLength(50));
         expect(skeleton, findsNothing);
         client.emit('channel:members-updated', {'channelId': 'ch7'});
         await tester.pump();

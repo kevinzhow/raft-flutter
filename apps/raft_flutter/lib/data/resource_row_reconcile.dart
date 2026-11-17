@@ -2,6 +2,8 @@ import 'package:raft_client/raft_client.dart' show RaftClient;
 import 'package:raft_sync/raft_sync.dart'
     show canonicalUint64, canonicalWireSeq, ReadStateLedger;
 
+import 'activity_object_rows.dart';
+
 /// Source inboxStore getInboxItemKey: one row per conversation scope.
 String? activityItemKey(Map row) {
   final kind = row['kind'];
@@ -9,6 +11,8 @@ String? activityItemKey(Map row) {
     final id = row['id'];
     return id is String && id.isNotEmpty ? 'mention_action:$id' : null;
   }
+  // An object row is keyed by its object, not a conversation.
+  if (kind == 'object') return activityObjectKey(row);
   final id = kind == 'thread' ? row['threadChannelId'] : row['channelId'];
   return kind is String && id is String && id.isNotEmpty ? '$kind:$id' : null;
 }
@@ -16,7 +20,7 @@ String? activityItemKey(Map row) {
 /// The read/unread scope of an Activity row (thread rows read their thread).
 String? activityScopeId(Map row) {
   final kind = row['kind'];
-  if (kind == 'mention_action') return null;
+  if (kind == 'mention_action' || kind == 'object') return null;
   final id = kind == 'thread' ? row['threadChannelId'] : row['channelId'];
   return id is String && id.isNotEmpty ? id : null;
 }
@@ -312,4 +316,25 @@ Map<String, dynamic>? advanceActivityRow(
     },
     'latestActivitySeq': incoming ?? row['latestActivitySeq'],
   };
+}
+
+/// The channel groups of an accepted inbox window; a window without `groups`
+/// keeps [previous], and the selected channel survives with a zero count.
+List<Map<String, dynamic>> activityWindowGroups(
+  Map value,
+  List<Map<String, dynamic>> previous,
+  String? selectedId,
+) {
+  if (value['groups'] is! List) return previous;
+  final selected = previous
+      .where((g) => g['channelId'] == selectedId)
+      .firstOrNull;
+  final next = (value['groups'] as List)
+      .whereType<Map>()
+      .map((g) => Map<String, dynamic>.from(g))
+      .toList();
+  if (selected != null && !next.any((g) => g['channelId'] == selectedId)) {
+    next.add({...selected, 'count': 0});
+  }
+  return next;
 }

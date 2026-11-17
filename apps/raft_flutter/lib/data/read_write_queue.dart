@@ -48,6 +48,9 @@ class ReadWriteQueue {
 
   Future<void>? inFlight(String id) => _inFlight[id];
 
+  /// Every read POST in flight now.
+  Iterable<Future<void>> get inFlightAll => _inFlight.values.toList();
+
   /// Sends the pending cursor of [id] through [send] (true: the server took
   /// it). One request per conversation; a cursor queued while it runs is sent
   /// afterwards, exactly once. A failure keeps the cursor for [flushAll].

@@ -58,7 +58,7 @@ void main() {
         expect(find.textContaining('Please retry'), findsNothing);
         // Activity is a tab root (v1.24): TabRootBar's name and counts line.
         expect(find.byType(RaftMobileRootHeader), findsOneWidget);
-        expect(find.text('1 active · 1 unread'), findsOneWidget);
+        expect(find.text('1 in progress · 1 unread'), findsOneWidget);
         expect(
           find.byKey(const ValueKey('activity-channel-ch0')),
           findsOneWidget,

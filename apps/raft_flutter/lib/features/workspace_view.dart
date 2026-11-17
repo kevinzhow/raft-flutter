@@ -1570,8 +1570,6 @@ class _WorkspaceViewState extends State<WorkspaceView>
                 },
                 mobileRoot:
                     !wide && (rootTab == 'activity' || rootTab == 'search'),
-                activitySidebarEnabled:
-                    route == 'activity' && activityFlag.enabled,
                 compactActivitySidebar:
                     route == 'activity' &&
                     wide &&

@@ -101,9 +101,9 @@ void main() {
   ]) {
     testWidgets('near end appends automatically on $platform $size', (t) async {
       final dynamic state = await mount(t, size: size, platform: platform);
-      expect(state.rows, hasLength(30));
+      expect(state.rows, hasLength(50));
       await reachEnd(t);
-      expect(w.inboxQueries.last['offset'], 30);
+      expect(w.inboxQueries.last['offset'], 50);
       expect(state.rows, hasLength(60));
       expect(state.hasMore, isFalse);
       expect(find.text('Load more'), findsNothing);
@@ -114,7 +114,7 @@ void main() {
     t,
   ) async {
     final dynamic state = await mount(t, size: const Size(1000, 4000));
-    expect(w.inboxQueries.map((q) => q['offset']), [0, 30]);
+    expect(w.inboxQueries.map((q) => q['offset']), [0, 50]);
     expect(state.rows, hasLength(60));
     expect(find.text('Load more'), findsNothing);
   });
@@ -126,7 +126,7 @@ void main() {
     w.hold = Completer<void>();
     await t.drag(getList(), const Offset(0, -6000));
     await t.pump();
-    expect(w.inboxQueries.map((q) => q['offset']), [0, 30]);
+    expect(w.inboxQueries.map((q) => q['offset']), [0, 50]);
     expect(find.text('Load more'), findsOneWidget);
     await t.tap(find.text('Load more'));
     await t.pump();
@@ -153,7 +153,7 @@ void main() {
     gate.complete();
     await refresh;
     await t.pumpAndSettle();
-    expect(w.inboxQueries.map((q) => q['offset']), [0, 0, 30]);
+    expect(w.inboxQueries.map((q) => q['offset']), [0, 0, 50]);
     expect(state.rows, hasLength(60));
   });
 
@@ -176,7 +176,7 @@ void main() {
     await t.pumpAndSettle();
     expect(state.activeLoad, isNull);
     expect(state.error, isNull);
-    expect(w.inboxQueries.map((q) => q['offset']), [0, 0, 30]);
+    expect(w.inboxQueries.map((q) => q['offset']), [0, 0, 50]);
     expect(state.rows, hasLength(60));
     expect(find.text('Load more'), findsNothing);
   });
@@ -186,7 +186,7 @@ void main() {
     w.failAppend = true;
     await reachEnd(t);
     expect(w.inboxQueries, hasLength(2));
-    expect(state.rows, hasLength(30));
+    expect(state.rows, hasLength(50));
     await t.drag(getList(), const Offset(0, -50));
     await t.pumpAndSettle();
     expect(w.inboxQueries, hasLength(2));
@@ -205,7 +205,7 @@ void main() {
     w.emptyAppend = true;
     await reachEnd(t);
     expect(w.inboxQueries, hasLength(2));
-    expect(state.rows, hasLength(30));
+    expect(state.rows, hasLength(50));
     for (var frame = 0; frame < 10; frame++) {
       await t.pump(const Duration(milliseconds: 16));
     }
@@ -225,7 +225,7 @@ void main() {
     state.selectActivitySection('all', state.authority);
     await t.pumpAndSettle();
     expect(state.rows, hasLength(60));
-    expect(w.inboxQueries.last['offset'], 30);
+    expect(w.inboxQueries.last['offset'], 50);
   });
 
   testWidgets('inactive retained Activity cannot fill its viewport', (t) async {
@@ -237,14 +237,14 @@ void main() {
       activity: activity,
     );
     expect(w.inboxQueries, hasLength(1));
-    expect(state.rows, hasLength(30));
+    expect(state.rows, hasLength(50));
     activity.value = true;
     await t.pumpAndSettle();
     expect(state.rows, hasLength(60));
   });
 
   testWidgets('a complete first page never requests another page', (t) async {
-    w.inbox = [for (var i = 0; i < 30; i++) channelRow(i)];
+    w.inbox = [for (var i = 0; i < 50; i++) channelRow(i)];
     await mount(t, size: const Size(1000, 4000));
     await reachEnd(t);
     expect(w.inboxQueries, hasLength(1));
@@ -263,7 +263,7 @@ void main() {
     scroll.jumpTo(scroll.position.maxScrollExtent - 120);
     expect(scroll.position.extentAfter, closeTo(120, 0.1));
     await t.pumpAndSettle();
-    expect(w.inboxQueries.map((q) => q['offset']), [0, 30]);
+    expect(w.inboxQueries.map((q) => q['offset']), [0, 50]);
     expect(state.rows, hasLength(60));
   });
 
@@ -273,7 +273,7 @@ void main() {
     state.setState(() {});
     await t.pumpAndSettle();
     await reachEnd(t);
-    expect(w.inboxQueries.map((q) => q['offset']), [0, 30]);
+    expect(w.inboxQueries.map((q) => q['offset']), [0, 50]);
     expect(state.rows, hasLength(60));
   });
 
@@ -285,7 +285,7 @@ void main() {
     final gate = w.hold = Completer<void>();
     await t.drag(getList(), const Offset(0, -6000));
     await t.pump();
-    expect(w.inboxQueries.map((q) => q['offset']), [0, 30]);
+    expect(w.inboxQueries.map((q) => q['offset']), [0, 50]);
     state.selectActivitySection('unread', state.authority);
     await t.pump();
     expect(w.inboxQueries.last['offset'], 0);
@@ -293,7 +293,7 @@ void main() {
     gate.complete();
     w.hold = null;
     await t.pumpAndSettle();
-    expect(state.rows, hasLength(30));
+    expect(state.rows, hasLength(50));
     expect(state.listScroll, isNot(same(oldScroll)));
     final count = w.inboxQueries.length;
     if (oldScroll.hasClients) {
@@ -303,7 +303,7 @@ void main() {
     expect(w.inboxQueries, hasLength(count));
     await reachEnd(t);
     expect(w.inboxQueries.last['filter'], 'unread');
-    expect(w.inboxQueries.last['offset'], 30);
+    expect(w.inboxQueries.last['offset'], 50);
     expect(state.rows, hasLength(60));
   });
 }

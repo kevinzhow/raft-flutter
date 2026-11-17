@@ -34,7 +34,6 @@ void main() {
           body: ResourceView(
             controller: workspace,
             section: 'activity',
-            activitySidebarEnabled: true,
             onMessage: (_, _) async {},
             onActivityWindowAccepted: (window, {firstPage = false}) {
               if (window != null) {
@@ -221,7 +220,7 @@ void main() {
       final firstPageSerial = store.windowSerial;
       await state.load(append: true);
       expect(state.rows, hasLength(60));
-      expect(workspace.inboxQueries.last['offset'], 30);
+      expect(workspace.inboxQueries.last['offset'], 50);
       expect(store.windowSerial, firstPageSerial);
       expect(store.windowSince(0), firstPage);
 
@@ -233,7 +232,7 @@ void main() {
       expect(workspace.inboxQueries.last['limit'], 60);
       expect(state.rows, hasLength(60));
       final window = store.windowSince(0)!;
-      expect(window['items'], hasLength(30));
+      expect(window['items'], hasLength(50));
       expect(window['items'].first['lastMessagePreview'], 'Updated');
       expect(window['hasMore'], isTrue);
       await tester.pumpWidget(const SizedBox());

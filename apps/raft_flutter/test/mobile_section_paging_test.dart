@@ -43,7 +43,7 @@ void main() {
   }
 
   testWidgets(
-    'Activity six sections share owner; revisits retain offset and show cached window before network',
+    'Activity three sections share owner; revisits retain offset and show cached window before network',
     (t) async {
       final (client, w) = activityFixture();
       addTearDown(() async {
@@ -55,7 +55,6 @@ void main() {
         ResourceView(
           controller: w,
           section: 'activity',
-          activitySidebarEnabled: true,
           onMessage: (_, _) async {},
         ),
       );
@@ -66,16 +65,18 @@ void main() {
       await t.pumpAndSettle();
       final double offset = owner.listScroll.offset;
       expect(offset, greaterThan(100));
-      for (final view in ['unread', 'mentions', 'saved', 'dms', 'done']) {
+      for (final view in ['unread', 'mentions']) {
         await swipe(t);
         expect(owner.filter, view);
         expect(t.state(find.byType(ResourceView)), same(originalOwner));
       }
-      expect(w.savedQueries, hasLength(1));
+      expect(w.savedQueries, isEmpty);
       w.hold = Completer<void>();
-      await t.ensureVisible(find.byKey(const ValueKey('activity-view-all')));
-      await t.tap(find.byKey(const ValueKey('activity-view-all')));
-      await t.pump();
+      for (var i = 0; i < 2; i++) {
+        await t.drag(find.byType(PageView).first, const Offset(310, 0));
+        await t.pump();
+        await t.pump(const Duration(seconds: 1));
+      }
       await t.pump();
       expect(owner.filter, 'all');
       expect(owner.rows, isNotEmpty);

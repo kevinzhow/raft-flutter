@@ -62,7 +62,7 @@ void main() {
         await state.load(append: true);
         expect(state.rows, hasLength(60));
         expect(identical(state.rows.first, firstRow), isTrue);
-        expect(workspace.inboxQueries.last['offset'], 30);
+        expect(workspace.inboxQueries.last['offset'], 50);
         expect(state.hasMore, isFalse);
         record('append');
 

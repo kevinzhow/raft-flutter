@@ -41,14 +41,6 @@ Future<ActivityWorkspace> _mount(
     await t.pumpWidget(const SizedBox.shrink());
     await t.pump(Duration.zero);
   });
-  client.responses['POST /feature-flags/evaluate'] = {
-    'evaluations': [
-      {
-        'key': ActivityRolloutFlags.activityConversationListKey,
-        'enabled': true,
-      },
-    ],
-  };
   w
     ..loading = false
     ..section = 'activity';

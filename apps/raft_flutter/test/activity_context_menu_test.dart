@@ -61,7 +61,6 @@ void main() {
                   body: ResourceView(
                     controller: w,
                     section: 'activity',
-                    activitySidebarEnabled: true,
                     onMessage: (_, _) async {
                       opened++;
                     },
@@ -74,7 +73,7 @@ void main() {
             );
             await tester.pumpAndSettle();
             final before = client.posts.length;
-            final card = find.byType(RaftConversationCard);
+            final card = find.byType(RaftConversationListRow);
             expect(card, findsOneWidget);
             if (touch) {
               await tester.longPress(card);

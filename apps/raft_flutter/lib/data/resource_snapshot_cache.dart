@@ -29,7 +29,6 @@ class ResourceViewWindow {
 class ResourceSnapshot extends PageSnapshot {
   const ResourceSnapshot({
     required super.identity,
-    required this.enabledActivity,
     required this.view,
     required this.rows,
     required this.hasMore,
@@ -41,11 +40,8 @@ class ResourceSnapshot extends PageSnapshot {
     required this.totalCount,
     required this.totalUnreadCount,
     required this.activityAllCount,
-    required this.savedActivityTotal,
     required this.activityGroups,
     required this.acceptedActivityItems,
-    required this.savedActivityItems,
-    required this.doneActivityItems,
     required this.channelAccess,
     required this.scrollOffset,
     this.viewWindows = const {},
@@ -55,18 +51,13 @@ class ResourceSnapshot extends PageSnapshot {
 
   /// Id of the newest shared-inbox window already presented in [rows].
   final int inboxSerial;
-  final bool enabledActivity;
   final String? view;
   final List<Map<String, dynamic>> rows;
   final bool hasMore;
   final String filter, activeActivityFilter, query, direction;
   final String? channelId;
   final int? totalCount, totalUnreadCount, activityAllCount;
-  final int savedActivityTotal;
-  final List<Map<String, dynamic>> activityGroups,
-      acceptedActivityItems,
-      savedActivityItems,
-      doneActivityItems;
+  final List<Map<String, dynamic>> activityGroups, acceptedActivityItems;
   final Map<String, Map<String, dynamic>> channelAccess;
   final double scrollOffset;
   final Map<String, double> sectionScrollOffsets;
@@ -81,7 +72,6 @@ class ResourceSnapshot extends PageSnapshot {
     required Map<String, ResourceViewWindow> viewWindows,
   }) => ResourceSnapshot(
     identity: identity,
-    enabledActivity: enabledActivity,
     view: view,
     rows: rows,
     hasMore: hasMore,
@@ -93,11 +83,8 @@ class ResourceSnapshot extends PageSnapshot {
     totalCount: totalCount,
     totalUnreadCount: totalUnreadCount,
     activityAllCount: activityAllCount,
-    savedActivityTotal: savedActivityTotal,
     activityGroups: activityGroups,
     acceptedActivityItems: acceptedActivityItems,
-    savedActivityItems: savedActivityItems,
-    doneActivityItems: doneActivityItems,
     channelAccess: channelAccess,
     scrollOffset: scrollOffset,
     viewWindows: viewWindows,

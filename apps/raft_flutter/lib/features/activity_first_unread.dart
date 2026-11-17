@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 
 import 'package:raft_ui/raft_ui.dart';
 
 import '../data/workspace_controller.dart';
+import 'activity_retap.dart';
 import 'desktop_navigation_policy.dart';
 import 'resource_list_updates.dart';
 import 'stale_counts_notice.dart';
@@ -38,6 +41,25 @@ class ActivityFirstUnread {
     if (after == null) _focused = null;
     w.notifyListeners();
   }
+
+  Timer? _locatedTimer;
+
+  /// Web `setRetapTarget`: the row the phone re-tap went to is lit as
+  /// located for [locatedDuration], then retired.
+  void locate(WorkspaceController w, String key) {
+    _focused = key;
+    _locatedTimer?.cancel();
+    _locatedTimer = Timer(locatedDuration, () {
+      if (_focused == key) {
+        _focused = null;
+        w.notifyListeners();
+      }
+    });
+    w.notifyListeners();
+  }
+
+  /// Web raft-ui `LOCATED_MS`.
+  static const locatedDuration = Duration(milliseconds: 2000);
 
   /// A row open in the preview supersedes the marker, as a click moves Web's
   /// focused row.
@@ -152,10 +174,16 @@ Widget activityHeaderJump(
 Widget activityRootHeader(WorkspaceController w, String subtitle) =>
     activityStaleNotice(
       w,
-      RaftMobileRootHeader(
-        title: 'Activity',
-        subtitle: subtitle,
-        inset: RaftLayoutMetrics.panelInset,
+      // Web `headerContainerProps.onClick = goToNextUnread` on a phone.
+      GestureDetector(
+        key: const ValueKey('activity-header-retap'),
+        behavior: HitTestBehavior.opaque,
+        onTap: () => unawaited(ActivityRetap.of(w).trigger()),
+        child: RaftMobileRootHeader(
+          title: 'Activity',
+          subtitle: subtitle,
+          inset: RaftLayoutMetrics.panelInset,
+        ),
       ),
     );
 

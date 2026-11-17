@@ -318,7 +318,7 @@ void main() {
     ];
     await mount(t, 'activity');
     // Touch exposes Done through the real row menu.
-    await t.longPress(find.byType(RaftConversationCard));
+    await t.longPress(find.byType(RaftConversationListRow));
     await t.pumpAndSettle();
     await t.tap(find.text('Done'));
     await t.pumpAndSettle();
@@ -430,7 +430,7 @@ void main() {
       expect(c.mutations.last.path, '/channels/threads/follow');
       expect(c.mutations.last.data, {'parentMessageId': 'p'});
       // Touch exposes Done through the real row menu.
-      await t.longPress(find.byType(RaftConversationCard));
+      await t.longPress(find.byType(RaftConversationListRow));
       await t.pumpAndSettle();
       await t.tap(find.text('Done'));
       await t.pumpAndSettle();

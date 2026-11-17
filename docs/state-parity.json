@@ -1526,48 +1526,6 @@
       "states": [
         {
           "state": "loading",
-          "variant": "DMs scoped first read / background refresh",
-          "web": "yes",
-          "flutter": "yes",
-          "parityCase": [],
-          "status": "gap",
-          "justification": "Web 1.21.12 ThreadsInbox loads scope=dms lazily and retains rows during refresh. Phone/desktop widget tests cover this contract; a matched React/Flutter DMs capture has not been added.",
-          "size": "S",
-          "gapKind": "case-missing"
-        },
-        {
-          "state": "empty",
-          "variant": "DMs and selected source",
-          "web": "yes",
-          "flutter": "yes",
-          "parityCase": [],
-          "status": "gap",
-          "justification": "The Web 1.21.12 DMs empty copy and selected-source override are ported and widget-tested in English/Chinese. No matched DMs visual case is available yet.",
-          "size": "S",
-          "gapKind": "case-missing"
-        },
-        {
-          "state": "error",
-          "variant": "DMs first read failure",
-          "web": "no",
-          "flutter": "yes",
-          "parityCase": [],
-          "status": "intentional",
-          "justification": "DMs uses the shared Activity first-read failure presentation; Web keeps the empty list. No new error surface is introduced."
-        },
-        {
-          "state": "partial",
-          "variant": "DMs next page",
-          "web": "yes",
-          "flutter": "partial",
-          "parityCase": [],
-          "status": "gap",
-          "justification": "The shared Activity pagination keeps its existing explicit Load more action instead of Web automatic paging. Widget tests verify scoped offsets and removal of the action after the last page; the existing presentation gap remains.",
-          "size": "S",
-          "gapKind": "impl-diff"
-        },
-        {
-          "state": "loading",
           "variant": "ConversationCardSkeleton",
           "web": "yes",
           "flutter": "yes",
@@ -1592,15 +1550,13 @@
         },
         {
           "state": "error",
-          "web": "no",
+          "web": "yes",
           "flutter": "yes",
-          "parityCase": [
-            "components.members-ext.activity.error",
-            "components.list-pages.activity.phone-error"
-          ],
-          "status": "covered",
-          "justification": "Web renders no error line when the first read fails (the empty list stays); Flutter deliberately matches (resource_view.dart:2644). React capture shows \"Activity is empty\", the case compares exactly that.",
-          "caseValidity": "react-checked"
+          "parityCase": [],
+          "status": "gap",
+          "justification": "Web 1.24 shows the load-failed banner (\"Couldn't load Activity.\" with Retry) when no rows and a failed load; Flutter now renders the same (activity_load_failed.dart, widget-tested). The old cases compared the empty list the first-read failure used to leave, so they are retired; a matched React/Flutter banner capture has not been added yet.",
+          "size": "S",
+          "gapKind": "case-missing"
         },
         {
           "state": "empty",

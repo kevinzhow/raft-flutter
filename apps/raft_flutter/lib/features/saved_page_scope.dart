@@ -87,7 +87,6 @@ ResourceSnapshot? takeServerSavedPage(
     cache,
     serverSavedPage,
     identity,
-    accept: (snapshot) => !snapshot.enabledActivity,
   );
 }
 
@@ -155,12 +154,7 @@ void _unbindSavedStore(WorkspaceController controller, ServerSavedWindow window)
   SavedCountStore.of(controller).removeListener(listener);
 }
 
-typedef SavedUnsave = ({
-  List<Map<String, dynamic>> rows,
-  List<Map<String, dynamic>> savedActivityItems,
-  int? totalCount,
-  int savedActivityTotal,
-});
+typedef SavedUnsave = ({List<Map<String, dynamic>> rows, int? totalCount});
 
 int _place(int index, int length) {
   if (index < 0) return 0;
@@ -176,10 +170,7 @@ Future<void> unsaveSavedRow({
   required bool Function() accepts,
   required Map<String, dynamic> row,
   required List<Map<String, dynamic>> Function() readRows,
-  required List<Map<String, dynamic>> Function() readSavedActivityItems,
   required int? Function() readTotalCount,
-  required int Function() readSavedActivityTotal,
-  required bool Function() activitySaved,
   required void Function(SavedUnsave next) apply,
   required SavedCountStore store,
   required Future<void> Function() refreshUnread,
@@ -193,7 +184,6 @@ Future<void> unsaveSavedRow({
   final index = current.indexWhere((item) => item['messageId'] == id);
   final held = index < 0 ? null : current[index];
   final heldTotal = readTotalCount();
-  final heldSaved = readSavedActivityTotal();
   final removes = held != null;
   List<Map<String, dynamic>> without(List<Map<String, dynamic>> list) => [
     for (final item in list)
@@ -201,11 +191,9 @@ Future<void> unsaveSavedRow({
   ];
   apply((
     rows: without(current),
-    savedActivityItems: without(readSavedActivityItems()),
     totalCount: removes && heldTotal != null
         ? savedBoundedCount(heldTotal - 1)
         : heldTotal,
-    savedActivityTotal: removes ? savedBoundedCount(heldSaved - 1) : heldSaved,
   ));
   try {
     await store.setSaved(id, false);
@@ -223,11 +211,7 @@ Future<void> unsaveSavedRow({
         : live;
     apply((
       rows: restored,
-      savedActivityItems: activitySaved()
-          ? List<Map<String, dynamic>>.of(restored)
-          : readSavedActivityItems(),
       totalCount: heldTotal,
-      savedActivityTotal: heldSaved,
     ));
     fail(error);
   }

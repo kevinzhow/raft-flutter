@@ -45,7 +45,6 @@ Future<dynamic> mount(
         body: ResourceView(
           controller: w,
           section: 'activity',
-          activitySidebarEnabled: true,
           onActivityWindowAccepted: onAccepted,
           onMessage: (_, _) async {},
         ),
@@ -58,7 +57,7 @@ Future<dynamic> mount(
 
 Future<void> openMenu(WidgetTester tester) async {
   await tester.tap(
-    find.byType(RaftConversationCard).first,
+    find.byType(RaftConversationListRow).first,
     buttons: kSecondaryMouseButton,
     kind: PointerDeviceKind.mouse,
   );

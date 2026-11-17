@@ -272,7 +272,7 @@ abstract final class TapTargetRegistry {
       'activity-card-rows',
       'features/activity_card_row.dart',
       ['RaftConversationCard'],
-      'activity_row_interaction_test.dart; activity_conversation_list_test.dart (Activity card and list rows)',
+      'activity_row_interaction_test.dart (Activity list rows)',
     ),
     TapContainer('search-rows', 'features/resource_search.dart', [
       'RaftSearchResultSurface',

@@ -79,7 +79,10 @@ class ConversationReadRepository {
   ///
   /// Unlike visible-window receipts, this covers the conversation. Request
   /// coalescing and the captured [identity] remain bound to the client.
-  Future<void> markAllRead(String id, {SourceReadAllIdentity? identity}) async {
+  Future<void> markAllRead(String id, {SourceReadAllIdentity? identity}) =>
+      _toggle(_markAllRead(id, identity: identity));
+
+  Future<void> _markAllRead(String id, {SourceReadAllIdentity? identity}) async {
     final captured = identity ?? SourceReadAllIdentity.capture(client);
     if (_isDisposed() ||
         _revokedChannels().contains(id) ||
@@ -121,6 +124,34 @@ class ConversationReadRepository {
   /// lies past the read point and the conversation stays read (Web
   /// `onNothingUnread`: a toast tells the person).
   Future<bool> markUnreadWithProjection(
+    String id, {
+    void Function()? onNothingUnread,
+  }) => _toggle(_markUnreadWithProjection(id, onNothingUnread: onNothingUnread));
+
+  final _toggles = <Future<void>>{};
+
+  /// Remembers a queued Mark as Read / Mark as Unread write until it settles.
+  Future<T> _toggle<T>(Future<T> write) {
+    final done = write.then<void>((_) {}, onError: (Object _, StackTrace _) {});
+    _toggles.add(done);
+    done.whenComplete(() => _toggles.remove(done));
+    return write;
+  }
+
+  /// Web `activityReadTogglesSettled`: completes once every queued per-row
+  /// read or unread write (and the read cursors in flight) has settled,
+  /// including ones queued while waiting. Never throws.
+  Future<void> readTogglesSettled() async {
+    while (true) {
+      final pending = [..._toggles, ...queue.inFlightAll];
+      if (pending.isEmpty) return;
+      await Future.wait(
+        pending.map((f) => f.then<void>((_) {}, onError: (Object _, StackTrace _) {})),
+      );
+    }
+  }
+
+  Future<bool> _markUnreadWithProjection(
     String id, {
     void Function()? onNothingUnread,
   }) async {

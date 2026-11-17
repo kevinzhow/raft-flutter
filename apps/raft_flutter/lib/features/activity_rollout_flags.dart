@@ -46,9 +46,8 @@ class ActivityRolloutFlags extends ChangeNotifier {
   /// painting their rows. Child controls can read it without starting work.
   static ActivityRolloutFlags? peek(WorkspaceController w) => _owners[w];
 
-  static const activityConversationListKey = 'activity_conversation_list_v0';
   static const inboxReadInplaceKey = inboxReadInplaceFlagKey;
-  static const keys = [activityConversationListKey, inboxReadInplaceKey];
+  static const keys = [inboxReadInplaceKey];
 
   final WorkspaceController w;
   StreamSubscription<RaftEvent>? _events;
@@ -57,8 +56,11 @@ class ActivityRolloutFlags extends ChangeNotifier {
   bool _ended = false;
   Map<String, bool> _enabled = const {};
 
-  bool get activityConversationList =>
-      _enabled[activityConversationListKey] ?? false;
+  /// The retired `activity_conversation_list_v0`: Web always draws the list
+  /// form with no pinned-first sections, so this is never on. Kept only for
+  /// the dead pinned-first helpers of activity_list_row.dart, which the row
+  /// package deletes.
+  bool get activityConversationList => false;
 
   /// Web step 3a (#244): a persisted read of a listed row that already shows
   /// the read sends no Activity re-read. Server-scoped, default off.

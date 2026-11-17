@@ -267,11 +267,6 @@ Future<_Scene> _mount(
   api.routes['GET /agents'] = (_) => [];
   api.routes['GET /servers/s1/members'] = (_) => [];
   api.routes['GET /channels/threads/followed'] = (_) => {'threads': []};
-  api.routes['POST /feature-flags/evaluate'] = (_) => {
-    'evaluations': [
-      {'key': 'activity_conversation_list_v0', 'enabled': true},
-    ],
-  };
   api.routes['GET /servers/s1/setup-projection'] = (_) => {
     'phase': 'complete',
     'surface': 'complete',

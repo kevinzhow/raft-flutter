@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import '../data/channel_activity_scope.dart';
+import '../data/activity_filter_choice.dart';
 import 'search_continuation.dart';
 
 /// Mounted Web request contracts, pinned to source 26f77ef.
@@ -159,7 +159,7 @@ class ResourceFilters {
     int offset = 0,
     int limit = 30,
     String? filter,
-    String? activityView,
+    ActivityFilterChoice? activityChoice,
   }) {
     final base = <String, dynamic>{
       'limit': limit,
@@ -169,9 +169,10 @@ class ResourceFilters {
       if (channelId != null) 'channelId': channelId,
       'filter': ?filter,
     };
-    return activityView == null
+    // Web always sorts the inbox newest first and names the scope itself.
+    return activityChoice == null
         ? base
-        : ChannelActivityScope(activityView).parameters(base);
+        : {...base, ...activityChoice.query, 'sort': 'desc'};
   }
 }
 

@@ -166,7 +166,7 @@ void main() {
         await tester.pumpAndSettle();
         expect(state.rows, hasLength(1));
         expect(state.totalUnreadCount, 3);
-        expect(find.byType(RaftConversationCard), findsOneWidget);
+        expect(find.byType(RaftConversationListRow), findsOneWidget);
       },
     );
     testWidgets(
@@ -302,7 +302,7 @@ void main() {
           isEmpty,
           reason: 'The first ACK refresh is projected while its exact authority marker remains armed.',
         );
-        expect(find.byType(RaftConversationCard), findsNothing);
+        expect(find.byType(RaftConversationListRow), findsNothing);
       },
     );
   }

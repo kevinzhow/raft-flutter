@@ -144,53 +144,6 @@ Future<void> _frames(WidgetTester t, void Function() each, [int n = 12]) async {
 void main() {
   tearDown(DevicePreferences.reset);
 
-  testWidgets(
-    'Activity master-detail uses the remembered flag on the first frame; '
-    'the evaluation lands without moving the layout',
-    (t) async {
-      final held = Completer<dynamic>();
-      final (w, c) = await _mount(
-        t,
-        size: const Size(900, 800),
-        section: 'activity',
-        remembered: {'activity_sidebar_inbox_v0': true},
-        flags: () => held.future,
-      );
-      expect(w.section, 'activity');
-      // The compact (768) breakpoint already applies at 900px on frame one.
-      final toolbar = find.byType(RaftActivityScopeToolbar);
-      expect(toolbar, findsOneWidget);
-      expect(t.widget<RaftActivityScopeToolbar>(toolbar).compact, isTrue);
-      final rect = t.getRect(toolbar);
-      await _frames(t, () => expect(t.getRect(toolbar), rect), 4);
-      held.complete(_evaluations({'activity_sidebar_inbox_v0': true}));
-      await _frames(t, () {
-        expect(toolbar, findsOneWidget);
-        expect(t.getRect(toolbar), rect);
-        expect(t.widget<RaftActivityScopeToolbar>(toolbar).compact, isTrue);
-      });
-      expect(c.calls, contains('POST:/feature-flags/evaluate'));
-      await t.pumpWidget(const SizedBox());
-    },
-  );
-
-  testWidgets('a flag turned off since the last launch is corrected in place', (
-    t,
-  ) async {
-    final (w, c) = await _mount(
-      t,
-      size: const Size(900, 800),
-      section: 'activity',
-      remembered: {'activity_sidebar_inbox_v0': true},
-    );
-    expect(w.section, 'activity');
-    await _frames(t, () {});
-    // Default evaluation (flag off) replaces the remembered value.
-    expect(FeatureFlagMemory.read(_scope, 'activity_sidebar_inbox_v0'), false);
-    await t.pumpWidget(const SizedBox());
-    expect(c.calls, contains('POST:/feature-flags/evaluate'));
-  });
-
   testWidgets('IM Bridges settings entry is present on the first frame', (
     t,
   ) async {

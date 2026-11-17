@@ -232,7 +232,7 @@ void main() {
       );
     }
 
-    for (final enabled in [false, true]) {
+    for (final enabled in [false]) {
       testWidgets(
         '${dark ? 'dark' : 'light'} Activity enabled=$enabled refreshes populated and empty pager sections',
         (t) async {
@@ -253,7 +253,6 @@ void main() {
                 body: ResourceView(
                   controller: w,
                   section: 'activity',
-                  activitySidebarEnabled: enabled,
                   onMessage: (_, _) async {},
                 ),
               ),
@@ -368,7 +367,6 @@ void main() {
             body: ResourceView(
               controller: w,
               section: 'activity',
-              activitySidebarEnabled: true,
               onMessage: (_, _) async {},
             ),
           ),
