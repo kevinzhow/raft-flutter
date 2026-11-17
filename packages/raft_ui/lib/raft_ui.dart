@@ -214,7 +214,10 @@ export 'src/human_pixel_avatar.dart'
         raftHumanAvatarImage,
         raftReleaseHumanAvatarImages;
 export 'src/human_avatar_art.dart'
-    show RaftHumanAvatarPixels, composeRaftHumanAvatar;
+    show
+        RaftHumanAvatarPixels,
+        composeRaftHumanAvatar,
+        raftHumanAvatarHairSwatch;
 export 'src/avatar_image_cache.dart';
 export 'src/sized_image.dart';
 

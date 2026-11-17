@@ -505,7 +505,7 @@ ParityCase _settings(
           'render as "Sign-in methods could not be verified").',
     if (uploadError)
       'Error state reached through the real flow: tap the profile avatar '
-          '(account-profile-image) → file picker (FileSelectorPlatform fixture '
+          '(account-profile-image) → Upload a photo → file picker (FileSelectorPlatform fixture '
           'returns a PNG) → POST /auth/me/avatar fails with the React/Android '
           'fixture message "Avatar upload failed: upload_failed", shown above '
           'the profile form like AccountSection.',
@@ -570,7 +570,11 @@ ParityCase _settings(
                 ),
             true,
           );
+          // v1.24: the avatar opens the HumanAvatarEditMenu; Upload a photo
+          // runs the picker.
           await t.tap(trigger);
+          await t.pump(const Duration(milliseconds: 100));
+          await t.tap(find.text('Upload a photo'));
           await t.pump(const Duration(milliseconds: 100));
           await t.pump(const Duration(milliseconds: 100));
           expect(

@@ -90,7 +90,10 @@ class RaftSettingsProfileRecipe {
   // `border-t border-line-muted`
   static const double dividerWidth = 1;
   static const inset = EdgeInsets.all(16);
-  // SettingsProfileCard.tsx: the shared settings card surface.
+  // SettingsProfileCard.tsx: the shared settings card surface. v1.24 spells the
+  // card's `space-y-4` and the field stack's `space-y-3` as `stack-y-4` /
+  // `stack-y-3` (raft-ui: `:where(& > * + *)` margin, the same 16 / 12px
+  // between siblings; no layout change, only WebKit's style-recalc cost).
   BoxDecoration get surface => RaftSettingsCard.decoration(t);
   // `text-lg font-bold leading-tight text-foreground-strong theme-brutal:text-black`
   TextStyle get title => RaftTypography.body(

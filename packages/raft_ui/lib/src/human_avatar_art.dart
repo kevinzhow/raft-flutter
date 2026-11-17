@@ -87,3 +87,12 @@ RaftHumanAvatarPixels composeRaftHumanAvatar(RaftHumanAvatarRecipe recipe) {
           .artOption(recipe[RaftHumanAvatarField.background])];
   return RaftHumanAvatarPixels(size, _hex(background ?? '#ffd440'), pixels);
 }
+
+/// The art's own hair colour for a `hairColor` option id (ARGB), for the
+/// builder's swatches.
+int raftHumanAvatarHairSwatch(String hairColorId) => _hex(
+  raftHumanAvatarHairPalette[RaftHumanAvatarField.hairColor.artOption(
+        hairColorId,
+      )] ??
+      '#141111',
+);

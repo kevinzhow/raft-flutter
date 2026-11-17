@@ -1114,10 +1114,17 @@ class RaftAuthAvatarField extends StatelessWidget {
     required this.name,
     this.imageUrl,
     required this.onUpload,
+    this.avatar,
   });
   final String name;
   final String? imageUrl;
   final VoidCallback? onUpload;
+
+  /// The avatar as the way to change it (Web v1.24 `HumanAvatarEditMenu`:
+  /// a pencil veil over the avatar, a menu of Upload a photo / Build an
+  /// avatar). It replaces the avatar tile and the Upload button, which v1.24
+  /// no longer has.
+  final Widget? avatar;
 
   @override
   Widget build(BuildContext context) {
@@ -1135,22 +1142,26 @@ class RaftAuthAvatarField extends StatelessWidget {
           children: [
             DecoratedBox(
               decoration: RaftCssBoxDecoration(boxShadow: null),
-              child: RaftAvatar(name: name, size: 56, imageUrl: imageUrl),
+              child:
+                  avatar ??
+                  RaftAvatar(name: name, size: 56, imageUrl: imageUrl),
             ),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  RaftTextButton(
-                    label: tr('Upload'),
-                    // AccountIdentitySetupPage: <Camera size={15} />.
-                    glyph: RaftGlyph.camera,
-                    visualHeight: RaftMetrics.buttonSm,
-                    minimumTargetSize: RaftMetrics.buttonSm,
-                    onPressed: onUpload,
-                  ),
-                  const SizedBox(height: 4),
+                  if (avatar == null) ...[
+                    RaftTextButton(
+                      label: tr('Upload'),
+                      // AccountIdentitySetupPage: <Camera size={15} />.
+                      glyph: RaftGlyph.camera,
+                      visualHeight: RaftMetrics.buttonSm,
+                      minimumTargetSize: RaftMetrics.buttonSm,
+                      onPressed: onUpload,
+                    ),
+                    const SizedBox(height: 4),
+                  ],
                   Text(
                     tr('A default is picked for you.'),
                     style: _helper(t, t.semantic.foregroundHint),

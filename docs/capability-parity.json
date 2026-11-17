@@ -13650,7 +13650,7 @@
    "kind": "endpoint",
    "id": "PATCH /auth/me",
    "area": "account-profile",
-   "capability": "Update my profile and preferences: display name, avatar removal, display language, translation mode/target/view, timezone, time format, usage-data consent, signup survey",
+   "capability": "Update my profile and preferences: display name, display language, translation mode/target/view, timezone, time format, usage-data consent, signup survey",
    "background": false,
    "status": "covered",
    "webEntry": "Settings > Account (Save profile, usage data card) | Language & Region (Save x2) | server setup survey | onboarding identity",
@@ -13741,12 +13741,12 @@
    "kind": "endpoint",
    "id": "POST /auth/me/avatar",
    "area": "account-profile",
-   "capability": "Upload my profile picture (account settings and onboarding identity setup)",
+   "capability": "Upload my profile picture (account settings, my profile, onboarding identity setup): \"Upload a photo\" in the avatar menu",
    "background": false,
    "status": "covered",
-   "webEntry": "Settings > Account avatar upload tile | AccountIdentitySetupPage avatar",
+   "webEntry": "HumanAvatarEditMenu > Upload a photo (Settings > Account | HumanDetailPanel | AccountIdentitySetupPage)",
    "gate": "",
-   "flutterEntry": "account_settings.dart image() -> AccountMediaActions.uploadAvatar; onboarding avatar picker",
+   "flutterEntry": "human_avatar_edit_menu.dart (account_settings.dart image() -> AccountMediaActions.uploadAvatar; member_profile_view.dart; account_onboarding.dart)",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/account_onboarding.dart",
@@ -13755,6 +13755,30 @@
     {
      "file": "apps/raft_flutter/lib/features/account_settings.dart",
      "needle": "account-profile-image"
+    }
+   ],
+   "justification": "",
+   "impact": "",
+   "size": ""
+  },
+  {
+   "kind": "endpoint",
+   "id": "PUT /auth/me/avatar-recipe",
+   "area": "account-profile",
+   "capability": "Build a pixel avatar and make it my avatar (replaces a photo); the answer replaces the signed-in user",
+   "background": false,
+   "status": "covered",
+   "webEntry": "HumanAvatarEditMenu > Build an avatar > HumanAvatarBuilderDialog Save[gate: human_avatar_builder_v0 on for the current server]",
+   "gate": "human_avatar_builder_v0",
+   "flutterEntry": "human_avatar_builder_dialog.dart -> human_avatar_save.dart saveHumanAvatarRecipe",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/features/human_avatar_save.dart",
+     "needle": "/auth/me/avatar-recipe"
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/human_avatar_edit_menu.dart",
+     "needle": "Build an avatar"
     }
    ],
    "justification": "",
@@ -13947,26 +13971,6 @@
     }
    ],
    "justification": "",
-   "impact": "",
-   "size": ""
-  },
-  {
-   "kind": "ui",
-   "id": "ui:account.remove-profile-image",
-   "area": "account-profile",
-   "capability": "Remove my profile image (Flutter-only extra: Web has only upload)",
-   "background": false,
-   "status": "covered",
-   "webEntry": "(not on Web account card)",
-   "gate": "",
-   "flutterEntry": "account_settings.dart 'Remove profile image' action",
-   "flutterRefs": [
-    {
-     "file": "apps/raft_flutter/lib/features/account_settings.dart",
-     "needle": "Remove Profile Image"
-    }
-   ],
-   "justification": "Flutter superset action; recorded so it is not mistaken for a gap.",
    "impact": "",
    "size": ""
   },

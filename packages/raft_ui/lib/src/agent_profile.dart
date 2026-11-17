@@ -748,7 +748,12 @@ class RaftProfileIdentity extends StatelessWidget {
     this.minHeight = 0,
     this.youLabel,
     this.avatarLabel,
+    this.avatarWrap,
   });
+
+  /// Wraps the avatar tile in the host's own control (your own avatar as the
+  /// way to change it: HumanAvatarEditMenu). [onAvatar] is then not used.
+  final Widget Function(Widget avatar)? avatarWrap;
 
   /// The status as a chip with its links ([RaftAgentStatusRow]); replaces the
   /// [statusColor] / [statusText] line.
@@ -805,7 +810,9 @@ class RaftProfileIdentity extends StatelessWidget {
         child: avatar,
       );
     }
-    if (onAvatar != null) {
+    if (avatarWrap != null) {
+      avatar = avatarWrap!(avatar);
+    } else if (onAvatar != null) {
       avatar = _ProfileAvatarAction(
         key: const ValueKey('agent-profile-avatar-trigger'),
         onPressed: onAvatar!,

@@ -12,6 +12,7 @@ import '../platform/file_selection.dart';
 import '../data/cause_notice.dart';
 import '../data/user_error.dart';
 import 'auth_view.dart' show authFailureText, authLinkToken;
+import 'human_avatar_edit_menu.dart';
 
 bool accountNeedsProfile(RaftRecord? user) =>
     user != null &&
@@ -95,11 +96,6 @@ class AccountMediaActions {
     final picked = await pickAvatar(client);
     if (picked == null) return;
     await client.post('/auth/me/avatar', data: picked.form);
-    await client.reloadUser();
-  }
-
-  static Future<void> removeAvatar(RaftClient client) async {
-    await client.patch('/auth/me', data: {'avatarUrl': null});
     await client.reloadUser();
   }
 }
@@ -405,6 +401,11 @@ class _OnboardingState extends State<AccountOnboardingView>
                         name: user?.string('displayName') ?? '',
                         size: size,
                         imageUrl: avatarUrl,
+                        // A new account's avatar is a built pixel one the
+                        // Server picked (Web PersonAvatar).
+                        content: isHumanAvatarUrl(avatarUrl)
+                            ? RaftHumanPixelAvatar(avatarUrl: avatarUrl)
+                            : null,
                       ),
               )
             : null,
@@ -473,6 +474,26 @@ class _OnboardingState extends State<AccountOnboardingView>
                           () => AccountMediaActions.uploadAvatar(client),
                           fallback: 'Failed to upload avatar',
                         ),
+                  // Web v1.24: the avatar is the way to change it (no current
+                  // server yet, so Upload a photo only).
+                  avatar: HumanAvatarEditMenu(
+                    key: const Key('identity-avatar-edit'),
+                    client: client,
+                    avatarUrl: avatarUrl.isEmpty ? null : avatarUrl,
+                    busy: busy,
+                    onUpload: () => run(
+                      () => AccountMediaActions.uploadAvatar(client),
+                      fallback: 'Failed to upload avatar',
+                    ),
+                    avatar: RaftAvatar(
+                      name: user?.string('displayName') ?? '',
+                      size: 56,
+                      imageUrl: avatarUrl.isEmpty ? null : avatarUrl,
+                      content: isHumanAvatarUrl(avatarUrl)
+                          ? RaftHumanPixelAvatar(avatarUrl: avatarUrl)
+                          : null,
+                    ),
+                  ),
                 ),
                 RaftAuthWideButton(
                   key: const Key('onboarding-complete'),

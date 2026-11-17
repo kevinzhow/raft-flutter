@@ -16,6 +16,7 @@ import 'agent_runtime_labels.dart'
     show RuntimeDeprecatedHereState, runtimeLabelWithStatus;
 import 'channel_member_servers.dart' show withPrimedServers;
 import 'member_profile_rules.dart';
+import 'human_avatar_edit_menu.dart';
 import 'member_profile_self_edit.dart';
 import 'feedback_attachment_preview.dart' show showFeedbackImage;
 import 'sender_avatar_projection.dart';
@@ -438,13 +439,20 @@ class _MemberProfileViewState extends ManagementState<MemberProfileView>
   /// provider URLs are ignored. Self uses the signed-in user's own record.
   SenderAvatarProjection _avatar() {
     final id = '${profile['userId'] ?? widget.userId}';
+    final own = w.client.user;
     return projectSenderAvatar(
       origin: w.client.origin,
       senderId: id,
       senderType: 'user',
       agents: const [],
       members: [
-        {...profile, 'userId': id},
+        {
+          ...profile,
+          'userId': id,
+          // Your own avatar is the signed-in user's: a photo or a built one
+          // you just saved shows before the profile is read again.
+          if (own != null && own.id == id) 'avatarUrl': own.json['avatarUrl'],
+        },
       ],
       currentUser: w.client.user?.json,
     );
@@ -459,6 +467,8 @@ class _MemberProfileViewState extends ManagementState<MemberProfileView>
         widget.userId == w.client.user?.id;
     final avatar = _avatar();
     final avatarUrl = avatar.uploadedUrl;
+    // What the avatar draws: the uploaded photo, else the avatar they built.
+    final avatarDrawn = avatarUrl ?? avatar.pixelKey;
     final remoteJoint = isRemoteJointHuman(profile, w.server?.id);
     if (profile.isEmpty) {
       return SourceProfileLoadingPanel(
@@ -480,11 +490,12 @@ class _MemberProfileViewState extends ManagementState<MemberProfileView>
             iconSlot: RaftAvatarSlot(
               name: name,
               agent: false,
-              avatarUrl: avatarUrl,
+              avatarUrl: avatarDrawn,
               slot: RaftAvatarSlotContext.panelHeader,
               content: RaftAvatarContent(
                 name: name,
                 uploadedUrl: avatar.uploadedUrl,
+                pixelKey: avatar.pixelKey,
                 fallback: const Center(
                   child: RaftIcon(RaftGlyph.user, size: 18),
                 ),
@@ -535,6 +546,7 @@ class _MemberProfileViewState extends ManagementState<MemberProfileView>
                   handle,
                   self,
                   avatarUrl,
+                  avatarDrawn,
                   remoteJoint,
                 ),
               ],
@@ -579,6 +591,7 @@ class _MemberProfileViewState extends ManagementState<MemberProfileView>
     String handle,
     bool self,
     String? avatarUrl,
+    String? avatarDrawn,
     bool remoteJoint,
   ) {
     final t = RaftTokens.of(context);
@@ -640,18 +653,25 @@ class _MemberProfileViewState extends ManagementState<MemberProfileView>
         name: name,
         handle: handle,
         agent: false,
-        avatarUrl: avatarUrl,
+        avatarUrl: avatarDrawn,
         youLabel: self ? raftText(context, '(you)') : null,
-        // Web: your own picture changes; anyone else's uploaded picture
-        // opens enlarged.
-        onAvatar: editOwn
-            ? uploadAvatar
-            : avatarUrl != null
-            ? viewAvatar
+        // Web: your own avatar is the way to change it (HumanAvatarEditMenu:
+        // Upload a photo / Build an avatar); anyone else's uploaded picture
+        // opens enlarged, a built one is just drawn.
+        avatarWrap: editOwn
+            ? (slot) => HumanAvatarEditMenu(
+                key: const ValueKey('human-detail-avatar-edit'),
+                client: w.client,
+                workspace: w,
+                avatarUrl: w.client.user?.string('avatarUrl'),
+                busy: avatarSaving,
+                onUpload: uploadAvatar,
+                onBuilt: () => setState(() => avatarError = null),
+                avatar: slot,
+              )
             : null,
-        avatarLabel: editOwn
-            ? (avatarSaving ? 'Uploading avatar' : 'Upload image')
-            : 'View avatar',
+        onAvatar: !editOwn && avatarUrl != null ? viewAvatar : null,
+        avatarLabel: 'View avatar',
       ),
       if (editOwn && avatarError != null)
         RaftPanelSection(

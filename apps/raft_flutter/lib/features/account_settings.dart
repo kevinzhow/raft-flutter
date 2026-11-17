@@ -9,6 +9,7 @@ import 'account_onboarding.dart';
 import 'account_connections_view.dart';
 import 'account_security_passkeys.dart';
 import 'account_security_two_step.dart';
+import 'human_avatar_edit_menu.dart';
 import 'management_support.dart';
 import 'public_avatar_url.dart';
 import 'usage_data_card.dart';
@@ -128,44 +129,15 @@ class _AccountSettingsState extends ManagementState<AccountSettings> {
   // ignore: raft_lints/avoid_imperative_notice_state -- Clears when the next avatar action starts and on account change (clearData).
   String? mediaError;
 
-  Future<void> image({bool remove = false}) async {
+  Future<void> image() async {
     if (mediaBusy) return;
     final sourceScope = authority;
-    if (remove) {
-      final accepted = await scopedDialog<bool>(
-        (context) => RaftAlertDialog(
-          title: Text(raftText(context, 'Remove Profile Image')),
-          content: Text(
-            raftText(
-              context,
-              'Your profile image will be replaced by your initials.',
-            ),
-          ),
-          actions: [
-            RaftButton.text(
-              onPressed: () => Navigator.pop(context, false),
-              child: Text(raftText(context, 'Keep Image')),
-            ),
-            RaftButton(
-              label: raftText(context, 'Remove Profile Image'),
-              destructive: true,
-              onPressed: () => Navigator.pop(context, true),
-            ),
-          ],
-        ),
-      );
-      if (accepted != true || !mounted || sourceScope != authority) return;
-    }
     setState(() {
       mediaBusy = true;
       mediaError = null;
     });
     try {
-      if (remove) {
-        await AccountMediaActions.removeAvatar(controller.client);
-      } else {
-        await AccountMediaActions.uploadAvatar(controller.client);
-      }
+      await AccountMediaActions.uploadAvatar(controller.client);
     } catch (error) {
       if (mounted && sourceScope == authority) {
         setState(
@@ -303,6 +275,15 @@ class _AccountSettingsState extends ManagementState<AccountSettings> {
     );
   }
 
+  /// What RaftAvatarSlot draws for the signed-in person: their uploaded photo
+  /// (resolved against the API origin), else the avatar they built.
+  String? _avatarValue(RaftRecord? user) {
+    final stored = user?.string('avatarUrl');
+    return isHumanAvatarUrl(stored)
+        ? stored
+        : raftPublicAvatarUrl(controller.client.origin, stored);
+  }
+
   @override
   Widget build(BuildContext context) {
     hydrateProfile();
@@ -311,35 +292,37 @@ class _AccountSettingsState extends ManagementState<AccountSettings> {
     // `border-t-2 border-line-muted theme-brutal:border-black`
     final divider = Container(height: 2, color: RaftSettingsText(t).edge);
     final card = RaftSettingsProfileCard(
-      avatar: RaftTooltip(
-        message: raftText(context, 'Change Profile Image'),
-        child: RaftListRowAction(
-          key: const Key('account-profile-image'),
-          onPressed: mediaBusy ? null : () => image(),
-          child: Opacity(
-            opacity: mediaBusy ? .7 : 1,
-            child: t.option('sticker.ring', or: 'none') == 'dieCut'
-                ? RaftAvatarSlot(
-                    key: const Key('account-profile-avatar'),
-                    name: user?.name ?? '',
-                    agent: false,
-                    slot: RaftAvatarSlotContext.profileTile,
-                    avatarUrl: raftPublicAvatarUrl(
-                      controller.client.origin,
-                      user?.string('avatarUrl'),
-                    ),
-                  )
-                : RaftAvatar(
-                    key: const Key('account-profile-avatar'),
-                    name: user?.name ?? '',
-                    size: RaftSettingsProfileRecipe.avatarSize,
-                    imageUrl: raftPublicAvatarUrl(
-                      controller.client.origin,
-                      user?.string('avatarUrl'),
-                    ),
-                  ),
-          ),
-        ),
+      // AccountSection: the avatar is the way to change it (HumanAvatarEditMenu:
+      // pencil veil, Upload a photo / Build an avatar).
+      avatar: HumanAvatarEditMenu(
+        key: const Key('account-profile-image'),
+        client: controller.client,
+        workspace: controller,
+        avatarUrl: user?.string('avatarUrl'),
+        busy: mediaBusy,
+        onUpload: image,
+        // `onBuilt`: a built avatar clears an upload error.
+        onBuilt: () => setState(() => mediaError = null),
+        avatar: t.option('sticker.ring', or: 'none') == 'dieCut'
+            ? RaftAvatarSlot(
+                key: const Key('account-profile-avatar'),
+                name: user?.name ?? '',
+                agent: false,
+                slot: RaftAvatarSlotContext.profileTile,
+                avatarUrl: _avatarValue(user),
+              )
+            : RaftAvatar(
+                key: const Key('account-profile-avatar'),
+                name: user?.name ?? '',
+                size: RaftSettingsProfileRecipe.avatarSize,
+                imageUrl: raftPublicAvatarUrl(
+                  controller.client.origin,
+                  user?.string('avatarUrl'),
+                ),
+                content: isHumanAvatarUrl(user?.string('avatarUrl'))
+                    ? RaftHumanPixelAvatar(avatarUrl: user!.string('avatarUrl'))
+                    : null,
+              ),
       ),
       title: user?.name ?? '',
       subtitle: '@${user?.string('name') ?? ''}',
@@ -470,12 +453,6 @@ class _AccountSettingsState extends ManagementState<AccountSettings> {
             spacing: RaftSpace.x3,
             runSpacing: RaftSpace.x3,
             children: [
-              if (user?.string('avatarUrl').isNotEmpty == true)
-                RaftButton(
-                  label: raftText(context, 'Remove Profile Image'),
-                  secondary: true,
-                  onPressed: mediaBusy ? null : () => image(remove: true),
-                ),
               RaftButton(
                 key: const Key('account-display-language'),
                 label: raftText(context, 'Display Language'),

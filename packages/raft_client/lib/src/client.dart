@@ -1361,7 +1361,21 @@ class RaftClient {
         throw const RaftApiException.staleScope();
       return;
     }
-    final next = RaftRecord(Map<String, dynamic>.from(await get('/auth/me')));
+    await _adoptUser(
+      RaftRecord(Map<String, dynamic>.from(await get('/auth/me'))),
+    );
+  }
+
+  /// Replaces the signed-in user with [json], the user an account route
+  /// answered with (Web `useAuthStore.setState({ user: data })` after
+  /// `PUT /auth/me/avatar-recipe`), without asking `/auth/me` again. Under a
+  /// shared session the authority owns the user, so it is read back.
+  Future<void> replaceUser(Map<String, dynamic> json) async {
+    if (sharedSessionAuthority != null) return reloadUser();
+    await _adoptUser(RaftRecord(Map<String, dynamic>.from(json)));
+  }
+
+  Future<void> _adoptUser(RaftRecord next) async {
     final s = _session;
     if (s == null) return;
     user = next;

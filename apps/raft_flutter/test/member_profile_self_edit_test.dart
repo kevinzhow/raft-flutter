@@ -112,7 +112,10 @@ void main() {
     t,
   ) async {
     await _open(t, _profile('me'));
-    expect(find.byTooltip('Upload image'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('human-detail-avatar-edit')),
+      findsOneWidget,
+    );
     expect(
       find.byKey(const ValueKey('member-edit-description')),
       findsOneWidget,
@@ -123,13 +126,19 @@ void main() {
     t,
   ) async {
     await _open(t, _profile('other'));
-    expect(find.byTooltip('Upload image'), findsNothing);
+    expect(
+      find.byKey(const ValueKey('human-detail-avatar-edit')),
+      findsNothing,
+    );
     expect(find.byKey(const ValueKey('member-edit-description')), findsNothing);
   });
 
   testDesktop('you after leaving the server cannot edit either', (t) async {
     await _open(t, _profile('me', status: 'left'));
-    expect(find.byTooltip('Upload image'), findsNothing);
+    expect(
+      find.byKey(const ValueKey('human-detail-avatar-edit')),
+      findsNothing,
+    );
     expect(find.byKey(const ValueKey('member-edit-description')), findsNothing);
   });
 
@@ -173,9 +182,13 @@ void main() {
     expect(client.patches, isEmpty);
   });
 
-  testDesktop('tapping the picture uploads the chosen image', (t) async {
+  testDesktop('Upload a photo from the avatar menu uploads the chosen image', (
+    t,
+  ) async {
     final client = await _open(t, _profile('me'));
-    await t.tap(find.byTooltip('Upload image'));
+    await t.tap(find.byKey(const ValueKey('human-detail-avatar-edit')));
+    await t.pumpAndSettle();
+    await t.tap(find.text('Upload a photo'));
     await t.pumpAndSettle();
     expect(client.posts, ['/auth/me/avatar']);
     expect(client.reloads, 1, reason: 'the account is re-read');
@@ -185,7 +198,9 @@ void main() {
   testDesktop('a failed upload says so under the identity', (t) async {
     final client = await _open(t, _profile('me'));
     client.avatarFailure = const RaftApiException('nope');
-    await t.tap(find.byTooltip('Upload image'));
+    await t.tap(find.byKey(const ValueKey('human-detail-avatar-edit')));
+    await t.pumpAndSettle();
+    await t.tap(find.text('Upload a photo'));
     await t.pumpAndSettle();
     expect(
       t
