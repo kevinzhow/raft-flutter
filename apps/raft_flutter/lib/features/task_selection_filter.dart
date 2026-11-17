@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/recipes.dart' show RaftSlotStyle;
 
 import 'resource_filters.dart';
 import 'sender_avatar_projection.dart';
@@ -27,7 +28,19 @@ class TaskSelectionFilter extends StatefulWidget {
     this.glyph,
     this.closeOnSelect = false,
     this.combobox = false,
+    this.fit,
+    this.leadingOf,
   });
+
+  /// The Tasks page's toolbar form (raft-ui `FitToolbarPicker`): the label
+  /// then the chosen count after it (mono), the label gone once the toolbar
+  /// gave way, and a tooltip only then. Null: the picker of the resource
+  /// pages ("Creator (2)", always a tooltip).
+  final TaskSelectionFilterFit? fit;
+
+  /// A leading widget per option key (the Status picker's pixels); null
+  /// keeps the avatars of the identity pickers.
+  final Widget? Function(String key)? leadingOf;
 
   /// MessageSearchPage's channel filter uses the public Combobox composition.
   final bool combobox;
@@ -51,6 +64,18 @@ class TaskSelectionFilter extends StatefulWidget {
   final void Function(MenuController, bool) onController;
   @override
   State<TaskSelectionFilter> createState() => _TaskSelectionFilterState();
+}
+
+/// How the Tasks page toolbar shows a [TaskSelectionFilter]'s trigger.
+class TaskSelectionFilterFit {
+  const TaskSelectionFilterFit({
+    required this.labelHidden,
+    this.valueSlot,
+    this.restyle,
+  });
+  final bool labelHidden;
+  final RaftSlotStyle? valueSlot;
+  final RaftSlotStyle Function(RaftSlotStyle style)? restyle;
 }
 
 class _TaskSelectionFilterState extends State<TaskSelectionFilter> {
@@ -138,6 +163,25 @@ class _TaskSelectionFilterState extends State<TaskSelectionFilter> {
     );
   }
 
+  Widget _tooltip(BuildContext context, Widget child) {
+    final fit = widget.fit;
+    if (fit == null) {
+      return RaftTooltip(
+        message: raftText(
+          context,
+          widget.tooltip ?? 'Filter tasks by ${widget.field.toLowerCase()}',
+        ),
+        child: child,
+      );
+    }
+    return fit.labelHidden
+        ? RaftTooltip(
+            message: raftText(context, widget.label ?? widget.field),
+            child: child,
+          )
+        : child;
+  }
+
   @override
   Widget build(BuildContext context) {
     final width = math.min(220.0, MediaQuery.sizeOf(context).width - 24);
@@ -221,7 +265,9 @@ class _TaskSelectionFilterState extends State<TaskSelectionFilter> {
                   disabled: !widget.valid(),
                   italic: _sentinel(option.key),
                   reserveLeadingSlot: widget.field != 'Channel',
-                  leading: widget.field == 'Channel' || _sentinel(option.key)
+                  leading: widget.leadingOf != null
+                      ? widget.leadingOf!(option.key)
+                      : widget.field == 'Channel' || _sentinel(option.key)
                       ? null
                       : _identityAvatar(option.key, option.value),
                   onTap: () {
@@ -234,12 +280,9 @@ class _TaskSelectionFilterState extends State<TaskSelectionFilter> {
             ],
           ),
       ],
-      builder: (context, controller, child) => RaftTooltip(
-        message: raftText(
-          context,
-          widget.tooltip ?? 'Filter tasks by ${widget.field.toLowerCase()}',
-        ),
-        child: Focus(
+      builder: (context, controller, child) => _tooltip(
+        context,
+        Focus(
           key: triggerKey,
           focusNode: widget.combobox ? anchorFocus : null,
           // raft-ui `PickerTriggerButton`: the filter trigger of the tasks
@@ -250,7 +293,15 @@ class _TaskSelectionFilterState extends State<TaskSelectionFilter> {
               focusNode: widget.combobox ? null : anchorFocus,
               label:
                   widget.label ??
-                  '${raftText(context, widget.field)}${widget.selection.isEmpty ? '' : ' (${widget.selection.length})'}',
+                  (widget.fit != null
+                      ? raftText(context, widget.field)
+                      : '${raftText(context, widget.field)}${widget.selection.isEmpty ? '' : ' (${widget.selection.length})'}'),
+              value: widget.fit != null && widget.selection.isNotEmpty
+                  ? '${widget.selection.length}'
+                  : null,
+              valueSlot: widget.fit?.valueSlot,
+              labelHidden: widget.fit?.labelHidden ?? false,
+              restyle: widget.fit?.restyle,
               glyph:
                   widget.glyph ??
                   switch (widget.field) {

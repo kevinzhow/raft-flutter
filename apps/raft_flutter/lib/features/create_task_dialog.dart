@@ -29,6 +29,13 @@ String taskTitleFromMessage(String text) {
       : '${single.substring(0, max - 1).trimRight()}…';
 }
 
+/// The tasks a create answer carries (`{tasks: [...]}`).
+List<Map<String, dynamic>> createdTaskRows(Object? answer) => [
+  if (answer is Map && answer['tasks'] is List)
+    for (final task in answer['tasks'] as List)
+      if (task is Map && task['id'] is String) Map<String, dynamic>.from(task),
+];
+
 class CreateTaskDialog extends StatefulWidget {
   const CreateTaskDialog({
     super.key,
@@ -36,9 +43,13 @@ class CreateTaskDialog extends StatefulWidget {
     this.channelId,
     this.defaultChannelId,
     this.onCreated,
+    this.onCreatedTasks,
     this.sourceMessage,
   });
   final WorkspaceController controller;
+
+  /// The tasks the server made (the Tasks page opens the one it made).
+  final void Function(List<Map<String, dynamic>> created)? onCreatedTasks;
 
   /// The channel the tasks go in; null (the Tasks page) asks for one.
   final String? channelId;
@@ -55,6 +66,7 @@ class CreateTaskDialog extends StatefulWidget {
     String? channelId,
     String? defaultChannelId,
     Future<void> Function()? onCreated,
+    void Function(List<Map<String, dynamic>> created)? onCreatedTasks,
     CreateTaskSourceMessage? sourceMessage,
   }) => sourceMessage == null && TaskV2ConversationsFlag.of(controller).enabled
       ? CreateTaskMessageDialog(
@@ -62,12 +74,14 @@ class CreateTaskDialog extends StatefulWidget {
           channelId: channelId,
           defaultChannelId: defaultChannelId,
           onCreated: onCreated,
+          onCreatedTasks: onCreatedTasks,
         )
       : CreateTaskDialog(
           controller: controller,
           channelId: channelId,
           defaultChannelId: defaultChannelId,
           onCreated: onCreated,
+          onCreatedTasks: onCreatedTasks,
           sourceMessage: sourceMessage,
         );
 
@@ -187,7 +201,7 @@ class _CreateTaskDialogState extends State<CreateTaskDialog> {
     });
     final source = widget.sourceMessage;
     try {
-      await widget.controller.command(
+      final answer = await widget.controller.command(
         'POST',
         '/tasks/channel/$channelId',
         data: {
@@ -204,6 +218,7 @@ class _CreateTaskDialogState extends State<CreateTaskDialog> {
       );
       if (!mounted) return;
       Navigator.of(context).pop();
+      widget.onCreatedTasks?.call(createdTaskRows(answer));
       await widget.onCreated?.call();
     } catch (e) {
       if (mounted) {
@@ -252,19 +267,25 @@ class _CreateTaskDialogState extends State<CreateTaskDialog> {
 /// Web `createFailureMessage`: the create's refusals a person can act on, in
 /// their language; any other shows the server's sentence. [asMessage]: the
 /// task was written as one message (task v2), not as titles.
-String createTaskFailureText(Object error, {bool asMessage = false}) =>
-    switch (serverErrorCode(error)) {
-      'membership_required' => 'Join this channel to create tasks in it: a new task posts its titles here as your message.',
-      'quota_read_only' => "This channel is read-only on your current plan, so tasks can't be created in it.",
-      'channel_archived' =>
-        'This channel is archived: unarchive it to create tasks in it.',
-      'channel_access_changed' =>
-        'Your access to this channel just changed. Refresh and try again.',
-      'task_source_message_too_long' =>
-        asMessage ? 'This message is too long to send as a task: shorten it.' : 'These titles are too long to post as one message: shorten them or create fewer at once.',
-      _ => userErrorText(
-        error,
-        fallback: 'Failed to create task',
-        where: 'create task',
-      ),
-    };
+String createTaskFailureText(
+  Object error, {
+  bool asMessage = false,
+}) => switch (serverErrorCode(error)) {
+  'membership_required' =>
+    'Join this channel to create tasks in it: a new task posts its titles here as your message.',
+  'quota_read_only' =>
+    "This channel is read-only on your current plan, so tasks can't be created in it.",
+  'channel_archived' =>
+    'This channel is archived: unarchive it to create tasks in it.',
+  'channel_access_changed' =>
+    'Your access to this channel just changed. Refresh and try again.',
+  'task_source_message_too_long' =>
+    asMessage
+        ? 'This message is too long to send as a task: shorten it.'
+        : 'These titles are too long to post as one message: shorten them or create fewer at once.',
+  _ => userErrorText(
+    error,
+    fallback: 'Failed to create task',
+    where: 'create task',
+  ),
+};

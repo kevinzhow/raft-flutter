@@ -13,7 +13,7 @@ import '../data/cause_notice.dart';
 import '../data/server_error_code.dart';
 import '../data/workspace_controller.dart';
 import 'create_task_channel.dart';
-import 'create_task_dialog.dart' show createTaskFailureText;
+import 'create_task_dialog.dart' show createTaskFailureText, createdTaskRows;
 
 /// Web `taskFromMessage`: the first line is the title, the rest (trimmed) the
 /// description; null with no title yet.
@@ -46,6 +46,7 @@ class CreateTaskMessageDialog extends StatefulWidget {
     this.channelId,
     this.defaultChannelId,
     this.onCreated,
+    this.onCreatedTasks,
   });
   final WorkspaceController controller;
 
@@ -53,6 +54,9 @@ class CreateTaskMessageDialog extends StatefulWidget {
   final String? channelId;
   final String? defaultChannelId;
   final Future<void> Function()? onCreated;
+
+  /// The tasks the server made (the Tasks page opens the one it made).
+  final void Function(List<Map<String, dynamic>> created)? onCreatedTasks;
 
   @override
   State<CreateTaskMessageDialog> createState() =>
@@ -134,7 +138,7 @@ class _CreateTaskMessageDialogState extends State<CreateTaskMessageDialog> {
         ? sourceKey.id
         : _randomUuid();
     sourceKey = (text: keyText, id: key);
-    Future<void> send(String randomId) => w.command(
+    Future<dynamic> send(String randomId) => w.command(
       'POST',
       '/tasks/channel/$channelId',
       data: {
@@ -146,18 +150,20 @@ class _CreateTaskMessageDialogState extends State<CreateTaskMessageDialog> {
       },
     );
     try {
+      dynamic answer;
       try {
-        await send(key);
+        answer = await send(key);
       } catch (e) {
         // That key went with other text (a race with an earlier send): once
         // more with a new one.
         if (serverErrorCode(e) != 'source_random_id_reused') rethrow;
         final fresh = _randomUuid();
         sourceKey = (text: keyText, id: fresh);
-        await send(fresh);
+        answer = await send(fresh);
       }
       if (!mounted) return;
       Navigator.of(context).pop();
+      widget.onCreatedTasks?.call(createdTaskRows(answer));
       await widget.onCreated?.call();
     } catch (e) {
       if (mounted) {

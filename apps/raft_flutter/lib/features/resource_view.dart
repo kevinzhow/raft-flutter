@@ -68,6 +68,8 @@ import 'desktop_navigation_policy.dart' show DesktopContentTarget;
 import 'search_home.dart';
 import 'search_snapshot.dart';
 import 'task_content_slot.dart';
+import 'message_task_actions.dart' show TaskV2ConversationsFlag;
+import 'tasks_page/tasks_page.dart';
 import 'task_surface.dart';
 import 'task_status_request.dart';
 import 'task_surface_controller.dart';
@@ -1744,8 +1746,9 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
           ? null
           : totalUnreadCount! + next.delta;
       rows = next.window;
-      acceptedActivityItems = ActivityRowWindow.from(acceptedActivityItems)
-          .replaceKey(key, next.row);
+      acceptedActivityItems = ActivityRowWindow.from(
+        acceptedActivityItems,
+      ).replaceKey(key, next.row);
     });
   }
 
@@ -2085,6 +2088,7 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
       reloadWhenActive = true;
       return;
     }
+    if (tasksPageV2) return;
     final acceptActivityWindow = widget.onActivityWindowAccepted;
     saveSearchState();
     final request = ++requestGeneration, scope = authority;
@@ -2540,8 +2544,32 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
         : t.sidebar;
   }
 
+  /// The server Tasks page with task v2 on is its own page (Web TasksRoute
+  /// shows TasksPage, else TasksPanel): it reads through its own store, so
+  /// this loader stays quiet. The flag still loading (or off): this page.
+  bool get tasksPageV2 =>
+      serverTaskPage && TaskV2ConversationsFlag.of(w).enabled;
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => serverTaskPage
+      ? TaskV2FlagBuilder(
+          controller: w,
+          builder: (context, v2) => v2
+              ? TasksPage(
+                  controller: w,
+                  scroll: taskListScroll,
+                  currentTaskId:
+                      TaskSlotScope.maybeOf(context)?.taskId ??
+                      taskSlotId(w.location),
+                  onOpenTask: (row) => widget.onTask != null
+                      ? widget.onTask!(row, () async {})
+                      : unawaited(taskDetails(row)),
+                )
+              : buildResource(context),
+        )
+      : buildResource(context);
+
+  Widget buildResource(BuildContext context) {
     final t = RaftTokens.of(context);
     if (snapshotted) observeListUpdates();
     // ThreadsInbox mounts ActivityInboxPanel with `theme-brutal:!border-l`.

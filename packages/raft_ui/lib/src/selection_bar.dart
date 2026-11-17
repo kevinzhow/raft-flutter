@@ -20,6 +20,7 @@ import 'icons.dart';
 import 'localization.dart';
 import 'raft/button.dart';
 import 'raft/fit_toolbar.dart';
+import 'popover_anchor.dart';
 import 'raft/ui_tokens.dart';
 import 'recipes/recipe_runtime.dart' show CssNum, RaftSlotStyle;
 import 'system_inset.dart';
@@ -48,6 +49,7 @@ class RaftSelectionBarAction {
     this.secondary = false,
     this.enabled = true,
     this.moreEntries = const [],
+    this.popover,
   });
 
   /// Names the action's key (`selection-bar-action-<id>`).
@@ -67,6 +69,11 @@ class RaftSelectionBarAction {
 
   /// The bar opens this menu upward from the action (the status menu).
   final List<RaftMenuEntry>? menuEntries;
+
+  /// The bar opens this popover of the app's (the searchable assignee
+  /// picker) anchored on the action, over it where there is no room under;
+  /// [close] closes it. Implies [menu].
+  final Widget Function(BuildContext context, VoidCallback close)? popover;
 
   /// A chevron after the label: the action opens something. Implied by
   /// [menuEntries] and [onOpen].
@@ -285,7 +292,7 @@ class _BarAction extends RaftFitItem {
     if (a.moreEntries.isNotEmpty) return a.moreEntries;
     final entries = a.menuEntries;
     if (entries != null) return entries;
-    if (a.menu || a.onOpen != null) return const [];
+    if (a.menu || a.onOpen != null || a.popover != null) return const [];
     return [
       RaftMenuEntry(
         label: a.label,
@@ -308,7 +315,10 @@ class _BarAction extends RaftFitItem {
     final t = RaftTokens.of(context);
     final bar = _bar(t);
     final hasMenu =
-        action.menu || action.menuEntries != null || action.onOpen != null;
+        action.menu ||
+        action.menuEntries != null ||
+        action.onOpen != null ||
+        action.popover != null;
     // Labels show with a mouse on a desktop only, and only until the label
     // step is taken (`sr-only md:pointer-fine:not-sr-only
     // md:pointer-fine:in-data-fit-label:sr-only`).
@@ -354,6 +364,13 @@ class _BarAction extends RaftFitItem {
         triggerBuilder: (context, focusNode, press) => button(focusNode, press),
       );
     }
+    if (action.popover != null) {
+      return _BarPopover(
+        key: ValueKey('selection-bar-action-${action.id}'),
+        popover: action.popover!,
+        button: button,
+      );
+    }
     return Builder(
       builder: (anchor) => button(
         null,
@@ -363,6 +380,46 @@ class _BarAction extends RaftFitItem {
       ),
     );
   }
+}
+
+/// An action's popover: anchored on the button, opened by it, closed by an
+/// outside press or the app's own close.
+class _BarPopover extends StatefulWidget {
+  const _BarPopover({super.key, required this.popover, required this.button});
+  final Widget Function(BuildContext context, VoidCallback close) popover;
+  final Widget Function(FocusNode? focusNode, VoidCallback? press) button;
+
+  @override
+  State<_BarPopover> createState() => _BarPopoverState();
+}
+
+class _BarPopoverState extends State<_BarPopover> {
+  final _menu = MenuController();
+  final _anchor = GlobalKey();
+  final _focus = FocusNode(debugLabel: 'selection-bar-popover');
+
+  @override
+  void dispose() {
+    _focus.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => RaftPopoverAnchor(
+    controller: _menu,
+    anchorKey: _anchor,
+    childFocusNode: _focus,
+    gap: 8,
+    collisionPadding: 8,
+    popup: Builder(builder: (context) => widget.popover(context, _menu.close)),
+    builder: (context, controller, child) => KeyedSubtree(
+      key: _anchor,
+      child: widget.button(
+        _focus,
+        () => controller.isOpen ? controller.close() : controller.open(),
+      ),
+    ),
+  );
 }
 
 /// `SelectionToolbarMore`: shown only while some action is in it; its menu

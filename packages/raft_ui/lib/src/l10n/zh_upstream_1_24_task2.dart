@@ -33,6 +33,8 @@ const Map<String, String> zhCatalogUpstream124Task2 = <String, String>{
   "Delete task #{taskNumber}?": "删除任务 #{taskNumber}？",
   "This cannot be undone. The task's discussion is deleted with it.":
       "此操作无法撤销。任务中的讨论会一并删除。",
+  "This cannot be undone. Each task's discussion is deleted with it.":
+      "此操作无法撤销。每个任务中的讨论都会一并删除。",
   "Couldn't delete the task. Try again.": "删除任务失败，请重试。",
   "Task title": "任务标题",
   "Task description": "任务描述",

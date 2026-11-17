@@ -21,8 +21,19 @@ class RaftTaskDeleteConfirmDialog extends StatefulWidget {
     required this.taskNumber,
     required this.onConfirm,
     required this.onCancel,
+    this.count = 1,
+    this.title,
+    this.confirmLabel,
   });
   final int taskNumber;
+
+  /// How many tasks it deletes (the Tasks page's batch Delete): the banner's
+  /// wording says whose discussion goes.
+  final int count;
+
+  /// The question and the red button's words where they are not the one
+  /// task's (`Delete 3 tasks?`, `Delete 3 tasks`), already translated.
+  final String? title, confirmLabel;
   final Future<String?> Function() onConfirm;
   final VoidCallback onCancel;
 
@@ -61,9 +72,11 @@ class _RaftTaskDeleteConfirmDialogState
     bindings: {const SingleActivator(LogicalKeyboardKey.escape): cancel},
     child: RaftDialog.shell(
       key: const ValueKey('task-delete-confirm'),
-      title: raftFormat(context, 'Delete task #{taskNumber}?', {
-        'taskNumber': widget.taskNumber,
-      }),
+      title:
+          widget.title ??
+          raftFormat(context, 'Delete task #{taskNumber}?', {
+            'taskNumber': widget.taskNumber,
+          }),
       onClose: cancel,
       body: Column(
         mainAxisSize: MainAxisSize.min,
@@ -77,7 +90,9 @@ class _RaftTaskDeleteConfirmDialogState
             live: false,
             description: raftText(
               context,
-              "This cannot be undone. The task's discussion is deleted with it.",
+              widget.count == 1
+                  ? "This cannot be undone. The task's discussion is deleted with it."
+                  : "This cannot be undone. Each task's discussion is deleted with it.",
             ),
           ),
           if (error != null)
@@ -100,7 +115,7 @@ class _RaftTaskDeleteConfirmDialogState
         ),
         RaftButton(
           key: const ValueKey('task-delete-confirm-action'),
-          label: 'Delete task',
+          label: widget.confirmLabel ?? 'Delete task',
           uiVariant: RaftButtonVariant.danger,
           uiSize: RaftButtonSize.lg,
           busy: busy,
