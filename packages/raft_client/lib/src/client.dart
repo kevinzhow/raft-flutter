@@ -2241,6 +2241,7 @@ class RaftClient {
     dm ? '/channels/dm' : '/channels',
     query: dm ? null : {'archived': 'include'},
   ) as List).map((e) => RaftChannel(Map<String, dynamic>.from(e))).toList();
+
   /// What the plan's history cutoff hides, as the message pages and a jump's
   /// context 404 reported it (Web `useHiddenHistoryStore`).
   final hiddenHistory = HiddenHistoryStore();
@@ -2267,10 +2268,7 @@ class RaftClient {
 
   /// `GET /messages/context/:target`. A target behind the cutoff answers 404
   /// `history_limited` with the hidden target's preview, kept for the paywall.
-  Future<Map<String, dynamic>> messageContext(
-    String id,
-    String target,
-  ) async {
+  Future<Map<String, dynamic>> messageContext(String id, String target) async {
     try {
       final page = Map<String, dynamic>.from(
         await get('/messages/context/$target', query: {'channelId': id}),

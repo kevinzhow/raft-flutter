@@ -11418,10 +11418,10 @@
    "status": "covered",
    "webEntry": "MessageInput addFiles (limit check) and directAttachmentUpload.ts uploadAttachmentFile (route between multipart and direct)",
    "gate": "none",
-   "flutterEntry": "workspace_editor.dart uploadLimitBytes() (server-owned ceiling, no local clamp) and attachment_direct_upload.dart (route choice per upload)",
+   "flutterEntry": "attachment_selection.dart readSelectionLimits (per selection, server-owned ceiling and monthly quota, no local clamp; Web resolveAttachmentUploadLimits) and attachment_direct_upload.dart (route choice per upload)",
    "flutterRefs": [
     {
-     "file": "apps/raft_flutter/lib/data/workspace_editor.dart",
+     "file": "apps/raft_flutter/lib/data/attachment_selection.dart",
      "needle": "'/attachments/upload-capabilities'"
     },
     {

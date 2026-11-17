@@ -163,9 +163,7 @@ void main() {
         home: Scaffold(
           body: ListView(
             padding: const EdgeInsets.all(20),
-            children: [
-              BillingView(controller: w, now: () => _now),
-            ],
+            children: [BillingView(controller: w, now: () => _now)],
           ),
         ),
       ),

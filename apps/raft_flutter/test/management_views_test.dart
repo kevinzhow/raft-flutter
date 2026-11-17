@@ -923,41 +923,45 @@ void main() {
       findsNothing,
     );
   });
-  testWidgets('admin can read Stripe billing but has no purchase or cancel control', (
-    tester,
-  ) async {
-    final (w, a) = (await tester.runAsync(() => _fixture('admin')))!;
-    addTearDown(w.dispose);
-    a.routes['GET /billing/subscription'] = (_) => {
-      'plan': 'pro',
-      'displayName': 'Pro',
-      'stripeConfigured': true,
-      'permissions': {'canReadBillingSummary': true, 'canManageBilling': false},
-      'usage': {'humans': 2, 'agents': 5},
-      'provisioned': {'humans': 3, 'agents': 10},
-      'subscription': {'status': 'active'},
-    };
-    await tester.pumpWidget(
-      host(ListView(children: [BillingView(controller: w)])),
-    );
-    await tester.pumpAndSettle();
-    expect(find.text('Pro'), findsWidgets);
-    // PlanSection: the portal / cancel / seat controls are owner-only
-    // (canManageBilling is false): they are not on the page at all.
-    for (final k in [
-      'billing-cancel',
-      'billing-manage-stripe',
-      'billing-add-seats',
-    ]) {
-      expect(find.byKey(ValueKey(k)), findsNothing, reason: k);
-    }
-    expect(
-      a.calls.where(
-        (c) => c.path.startsWith('/billing/') && c.method == 'POST',
-      ),
-      isEmpty,
-    );
-  });
+  testWidgets(
+    'admin can read Stripe billing but has no purchase or cancel control',
+    (tester) async {
+      final (w, a) = (await tester.runAsync(() => _fixture('admin')))!;
+      addTearDown(w.dispose);
+      a.routes['GET /billing/subscription'] = (_) => {
+        'plan': 'pro',
+        'displayName': 'Pro',
+        'stripeConfigured': true,
+        'permissions': {
+          'canReadBillingSummary': true,
+          'canManageBilling': false,
+        },
+        'usage': {'humans': 2, 'agents': 5},
+        'provisioned': {'humans': 3, 'agents': 10},
+        'subscription': {'status': 'active'},
+      };
+      await tester.pumpWidget(
+        host(ListView(children: [BillingView(controller: w)])),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Pro'), findsWidgets);
+      // PlanSection: the portal / cancel / seat controls are owner-only
+      // (canManageBilling is false): they are not on the page at all.
+      for (final k in [
+        'billing-cancel',
+        'billing-manage-stripe',
+        'billing-add-seats',
+      ]) {
+        expect(find.byKey(ValueKey(k)), findsNothing, reason: k);
+      }
+      expect(
+        a.calls.where(
+          (c) => c.path.startsWith('/billing/') && c.method == 'POST',
+        ),
+        isEmpty,
+      );
+    },
+  );
   testWidgets(
     'app registration declares scopes and shows the one-time secret under the filters',
     (tester) async {
