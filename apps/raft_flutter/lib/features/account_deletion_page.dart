@@ -252,7 +252,7 @@ class _AccountDeletionPageState extends State<AccountDeletionPage>
       busy: busy,
       notice: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
-        spacing: 8,
+        spacing: RaftSpace.x2,
         children: [
           if (forceConflict)
             RaftBanner(

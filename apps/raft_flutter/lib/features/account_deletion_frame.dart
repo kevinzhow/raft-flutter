@@ -8,6 +8,27 @@ import 'package:flutter/widgets.dart';
 import 'package:intl/intl.dart';
 import 'package:raft_ui/raft_ui.dart';
 
+/// Web metrics (Tailwind steps) that [RaftSpace] has no step for.
+abstract final class AccountDeletionMetrics {
+  /// `gap-2.5`.
+  static const double gap10 = 10;
+
+  /// `py-3.5`, a checklist row.
+  static const double rowPadding = 14;
+
+  /// `size-14`, the heading sticker.
+  static const double sticker = 56;
+
+  /// `size-[9px]`, the attention dot.
+  static const double dot = 9;
+
+  /// `border-[1.5px]`.
+  static const double edge = 1.5;
+
+  /// The Make owner select, `min-w-40` and `sm:max-w-60`.
+  static const double selectMin = 160, selectMax = 240;
+}
+
 class AccountDeletionFrame extends StatelessWidget {
   const AccountDeletionFrame({super.key, required this.child});
   final Widget child;
@@ -37,6 +58,7 @@ class AccountDeletionHeading extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     final ink = t.colors['sticker-ink']!;
+    final radius = t.size('radius.sticker', fallback: 4);
     final subtitleStyle = RaftTypography.heading(
       t,
       size: t.size('type.authDescription.size', fallback: 15),
@@ -44,20 +66,21 @@ class AccountDeletionHeading extends StatelessWidget {
       weight: FontWeight.w400,
     ).copyWith(color: t.muted);
     return Padding(
-      padding: const EdgeInsets.only(bottom: 20),
+      padding: const EdgeInsets.only(bottom: RaftSpace.x5),
       child: Column(
         children: [
           Container(
             key: const ValueKey('account-deletion-sticker'),
-            width: 56,
-            height: 56,
+            width: AccountDeletionMetrics.sticker,
+            height: AccountDeletionMetrics.sticker,
             alignment: Alignment.center,
             decoration: BoxDecoration(
               color: t.colors['you'],
-              borderRadius: BorderRadius.circular(
-                t.size('radius.sticker', fallback: 4),
+              borderRadius: BorderRadius.circular(radius),
+              border: Border.all(
+                color: ink,
+                width: AccountDeletionMetrics.edge,
               ),
-              border: Border.all(color: ink, width: 1.5),
               boxShadow: [
                 BoxShadow(color: t.colors['sticker-edge']!, spreadRadius: 1.5),
               ],
@@ -66,7 +89,7 @@ class AccountDeletionHeading extends StatelessWidget {
               child: RaftIcon(glyph, size: 28, color: ink, strokeWidth: 2),
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: RaftSpace.x5),
           Text(
             title,
             textAlign: TextAlign.center,
@@ -77,14 +100,14 @@ class AccountDeletionHeading extends StatelessWidget {
             ).copyWith(color: t.semantic.foreground),
           ),
           if (subtitleSpan != null) ...[
-            const SizedBox(height: 8),
+            const SizedBox(height: RaftSpace.x2),
             Text.rich(
               subtitleSpan!,
               textAlign: TextAlign.center,
               style: subtitleStyle,
             ),
           ] else if (subtitle != null) ...[
-            const SizedBox(height: 8),
+            const SizedBox(height: RaftSpace.x2),
             Text(subtitle!, textAlign: TextAlign.center, style: subtitleStyle),
           ],
         ],

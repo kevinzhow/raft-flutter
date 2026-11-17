@@ -150,7 +150,7 @@ class _AccountDeletionPendingPageState
   }
 
   Widget banner(String text, {Key? key}) => Padding(
-    padding: const EdgeInsets.only(bottom: 16),
+    padding: const EdgeInsets.only(bottom: RaftSpace.x4),
     child: RaftBanner(
       key: key,
       status: RaftBannerRecipeStatus.warning,
@@ -166,7 +166,7 @@ class _AccountDeletionPendingPageState
     bool loading = false,
     String? loadingLabel,
   }) => Padding(
-    padding: const EdgeInsets.only(bottom: 12),
+    padding: const EdgeInsets.only(bottom: RaftSpace.x3),
     child: RaftButton(
       key: ValueKey(key),
       label: label,
@@ -244,7 +244,7 @@ class _AccountDeletionPendingPageState
           // Every Computer and agent key was revoked at the request:
           // cancelling doesn't bring them back.
           Padding(
-            padding: const EdgeInsets.only(bottom: 20),
+            padding: const EdgeInsets.only(bottom: RaftSpace.x5),
             child: Text(
               tr(
                 'Once cancelled, sign in again on your devices and reconnect your computers.',

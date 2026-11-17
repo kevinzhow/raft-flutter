@@ -11,6 +11,7 @@ import 'package:flutter/widgets.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
+import 'account_deletion_frame.dart' show AccountDeletionMetrics;
 import 'agent_owner_notify.dart';
 
 enum AccountDeletionRowTone { normal, todo, done }
@@ -85,7 +86,7 @@ class AccountDeletionChecklistRow extends StatelessWidget {
     );
     final outcomeColumn = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      spacing: 2,
+      spacing: RaftSpace.half,
       children: [
         DefaultTextStyle.merge(
           style: RaftTypography.heading(
@@ -100,7 +101,7 @@ class AccountDeletionChecklistRow extends StatelessWidget {
       ],
     );
     final icon = Padding(
-      padding: const EdgeInsets.only(top: 2),
+      padding: const EdgeInsets.only(top: RaftSpace.half),
       child: ExcludeSemantics(
         child: RaftIcon(glyph, size: 16, color: iconColor),
       ),
@@ -112,39 +113,47 @@ class AccountDeletionChecklistRow extends StatelessWidget {
             : Border(top: BorderSide(color: t.colors['line-hairline']!)),
       ),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        padding: const EdgeInsets.symmetric(
+          horizontal: RaftSpace.x4,
+          vertical: AccountDeletionMetrics.rowPadding,
+        ),
         child: wide
             ? Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  SizedBox(width: 20, child: icon),
-                  const SizedBox(width: 12),
+                  SizedBox(width: RaftSpace.x5, child: icon),
+                  const SizedBox(width: RaftSpace.x3),
                   Expanded(flex: 5, child: nameText),
-                  const SizedBox(width: 12),
-                  Padding(padding: const EdgeInsets.only(top: 4), child: arrow),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: RaftSpace.x3),
+                  Padding(
+                    padding: const EdgeInsets.only(top: RaftSpace.x1),
+                    child: arrow,
+                  ),
+                  const SizedBox(width: RaftSpace.x3),
                   Expanded(flex: 7, child: outcomeColumn),
                 ],
               )
             : Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  SizedBox(width: 20, child: icon),
-                  const SizedBox(width: 12),
+                  SizedBox(width: RaftSpace.x5, child: icon),
+                  const SizedBox(width: RaftSpace.x3),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      spacing: 6,
+                      spacing: RaftSpace.x1_5,
                       children: [
                         nameText,
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Padding(
-                              padding: const EdgeInsets.only(top: 2),
+                              padding: const EdgeInsets.only(
+                                top: RaftSpace.half,
+                              ),
                               child: arrow,
                             ),
-                            const SizedBox(width: 12),
+                            const SizedBox(width: RaftSpace.x3),
                             Expanded(child: outcomeColumn),
                           ],
                         ),
@@ -288,8 +297,8 @@ class _SoleOwnerTransferRowState extends State<SoleOwnerTransferRow> {
       ),
       outcome: done
           ? Wrap(
-              spacing: 6,
-              runSpacing: 4,
+              spacing: RaftSpace.x1_5,
+              runSpacing: RaftSpace.x1,
               crossAxisAlignment: WrapCrossAlignment.center,
               children: [
                 Text(
@@ -311,7 +320,7 @@ class _SoleOwnerTransferRowState extends State<SoleOwnerTransferRow> {
       children: [
         if (!done && noCandidates)
           Wrap(
-            spacing: 4,
+            spacing: RaftSpace.x1,
             children: [
               AccountDeletionRowNote(
                 tr(
@@ -328,16 +337,16 @@ class _SoleOwnerTransferRowState extends State<SoleOwnerTransferRow> {
           )
         else if (!done)
           Padding(
-            padding: const EdgeInsets.only(top: 8),
+            padding: const EdgeInsets.only(top: RaftSpace.x2),
             child: Wrap(
-              spacing: 8,
-              runSpacing: 8,
+              spacing: RaftSpace.x2,
+              runSpacing: RaftSpace.x2,
               crossAxisAlignment: WrapCrossAlignment.center,
               children: [
                 ConstrainedBox(
                   constraints: const BoxConstraints(
-                    minWidth: 160,
-                    maxWidth: 240,
+                    minWidth: AccountDeletionMetrics.selectMin,
+                    maxWidth: AccountDeletionMetrics.selectMax,
                   ),
                   child: RaftSelectField<String>(
                     key: ValueKey(
@@ -488,11 +497,15 @@ class _OthersAgentsOnComputersState extends State<OthersAgentsOnComputers> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+              padding: const EdgeInsets.only(
+                left: RaftSpace.x4,
+                top: RaftSpace.x3,
+                right: RaftSpace.x4,
+              ),
               child: Wrap(
                 alignment: WrapAlignment.spaceBetween,
                 crossAxisAlignment: WrapCrossAlignment.center,
-                spacing: 12,
+                spacing: RaftSpace.x3,
                 children: [
                   Text(
                     tr("Other people's agents on your computers"),

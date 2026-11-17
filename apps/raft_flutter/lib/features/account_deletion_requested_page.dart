@@ -25,10 +25,12 @@ class AccountDeletionRequestedPage extends StatelessWidget {
     String tr(String s) => raftText(context, s);
     final t = RaftTokens.of(context);
     final date = accountDeletionDate(context, scheduledFor);
-    final strong = TextStyle(
-      fontWeight: FontWeight.w600,
-      color: t.semantic.foreground,
-    );
+    final strong = RaftTypography.heading(
+      t,
+      size: 15,
+      line: 20,
+      weight: FontWeight.w600,
+    ).copyWith(color: t.semantic.foreground);
     final muted = RaftTypography.heading(
       t,
       size: 14,
@@ -52,9 +54,9 @@ class AccountDeletionRequestedPage extends StatelessWidget {
                   ),
           ),
           Padding(
-            padding: const EdgeInsets.only(bottom: 20),
+            padding: const EdgeInsets.only(bottom: RaftSpace.x5),
             child: RaftCard(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(RaftSpace.x4),
               child: Column(
                 key: const ValueKey('account-deletion-how-to-cancel'),
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -68,12 +70,12 @@ class AccountDeletionRequestedPage extends StatelessWidget {
                       weight: FontWeight.w600,
                     ).copyWith(color: t.colors['foreground-hint'] ?? t.muted),
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: AccountDeletionMetrics.gap10),
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Padding(
-                        padding: const EdgeInsets.only(top: 2),
+                        padding: const EdgeInsets.only(top: RaftSpace.half),
                         child: ExcludeSemantics(
                           child: RaftIcon(
                             RaftGlyph.logIn,
@@ -82,7 +84,7 @@ class AccountDeletionRequestedPage extends StatelessWidget {
                           ),
                         ),
                       ),
-                      const SizedBox(width: 10),
+                      const SizedBox(width: AccountDeletionMetrics.gap10),
                       Expanded(
                         child: Text(
                           date.isEmpty
@@ -102,7 +104,7 @@ class AccountDeletionRequestedPage extends StatelessWidget {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: AccountDeletionMetrics.gap10),
                   Text(
                     tr(
                       'Once cancelled, sign in again on your devices and reconnect your computers.',
@@ -115,7 +117,7 @@ class AccountDeletionRequestedPage extends StatelessWidget {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.only(bottom: 20),
+            padding: const EdgeInsets.only(bottom: RaftSpace.x5),
             child: Text(
               tr("You've been signed out on every device."),
               textAlign: TextAlign.center,

@@ -45,12 +45,15 @@ class _AttentionDot extends StatelessWidget {
     final t = RaftTokens.of(context);
     return ExcludeSemantics(
       child: Container(
-        width: 9,
-        height: 9,
+        width: AccountDeletionMetrics.dot,
+        height: AccountDeletionMetrics.dot,
         decoration: BoxDecoration(
           color: t.colors['attention-400'],
-          borderRadius: BorderRadius.circular(2),
-          border: Border.all(color: t.colors['sticker-ink']!, width: 1.5),
+          borderRadius: BorderRadius.circular(RaftSpace.half),
+          border: Border.all(
+            color: t.colors['sticker-ink']!,
+            width: AccountDeletionMetrics.edge,
+          ),
         ),
       ),
     );
@@ -69,9 +72,14 @@ class _GroupLabel extends StatelessWidget {
     return Semantics(
       header: true,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 2),
+        padding: const EdgeInsets.fromLTRB(
+          RaftSpace.x4,
+          RaftSpace.x3,
+          RaftSpace.x4,
+          RaftSpace.half,
+        ),
         child: Row(
-          spacing: 8,
+          spacing: RaftSpace.x2,
           children: [
             if (todo) const _AttentionDot(),
             Flexible(
@@ -309,7 +317,7 @@ class _AccountDeletionChecklistState
     return Column(
       key: const ValueKey('account-deletion-page'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
-      spacing: 20,
+      spacing: RaftSpace.x5,
       children: [
         body,
         RaftCard(
@@ -350,7 +358,7 @@ class _AccountDeletionChecklistState
                   onChanged: widget.onReload,
                 ),
               if (needsAction > 0 && automatic > 0) ...[
-                const SizedBox(height: 12),
+                const SizedBox(height: RaftSpace.x3),
                 _GroupLabel(
                   raftFormat(
                     context,
@@ -460,10 +468,13 @@ class _AccountDeletionChecklistState
             if (learnMoreOpen)
               Padding(
                 key: const ValueKey('account-deletion-more'),
-                padding: const EdgeInsets.fromLTRB(20, 10, 0, 0),
+                padding: const EdgeInsets.only(
+                  left: RaftSpace.x5,
+                  top: AccountDeletionMetrics.gap10,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  spacing: 6,
+                  spacing: RaftSpace.x1_5,
                   children: [
                     for (final line in const [
                       'Messages you sent stay, shown as “Deleted user”.',
@@ -479,7 +490,7 @@ class _AccountDeletionChecklistState
         ),
         Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
-          spacing: 8,
+          spacing: RaftSpace.x2,
           children: [
             RaftButton(
               key: const ValueKey('account-deletion-confirm'),
@@ -501,7 +512,7 @@ class _AccountDeletionChecklistState
               Column(
                 key: const ValueKey('account-deletion-why'),
                 crossAxisAlignment: CrossAxisAlignment.stretch,
-                spacing: 4,
+                spacing: RaftSpace.x1,
                 children: [
                   if (blocking.isNotEmpty)
                     _Why(
@@ -543,7 +554,7 @@ class _AccountDeletionChecklistState
                     : () => openForce(othersAgents),
               ),
             Row(
-              spacing: 6,
+              spacing: RaftSpace.x1_5,
               children: [
                 ExcludeSemantics(
                   child: RaftIcon(
@@ -583,7 +594,7 @@ class _Why extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     return Row(
-      spacing: 8,
+      spacing: RaftSpace.x2,
       children: [
         const _AttentionDot(),
         Expanded(

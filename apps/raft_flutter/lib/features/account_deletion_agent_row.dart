@@ -87,7 +87,7 @@ class _AgentAction extends StatelessWidget {
         ? child
         : Row(
             mainAxisSize: MainAxisSize.min,
-            spacing: 6,
+            spacing: RaftSpace.x1_5,
             children: [
               child,
               RaftBadge(
@@ -344,11 +344,11 @@ class _AccountDeletionAgentRowState extends State<AccountDeletionAgentRow> {
           ),
         if (computer != null && count > 0)
           Padding(
-            padding: const EdgeInsets.only(top: 8),
+            padding: const EdgeInsets.only(top: RaftSpace.x2),
             child: Wrap(
               key: ValueKey('account-deletion-agent-actions-${computer.id}'),
-              spacing: 8,
-              runSpacing: 8,
+              spacing: RaftSpace.x2,
+              runSpacing: RaftSpace.x2,
               crossAxisAlignment: WrapCrossAlignment.center,
               children: [
                 Text(
