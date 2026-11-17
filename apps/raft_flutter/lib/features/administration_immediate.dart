@@ -18,6 +18,7 @@ class ImmediateSave {
   int _sequence = 0;
 
   /// The failure line under the control; null when there is none.
+  // ignore: raft_lints/avoid_imperative_notice_state -- Web useImmediateSave: cleared when the next save of the same setting starts, and only the latest save may set it; the section is remounted on server/account change.
   String? failure;
   bool saving = false;
 
