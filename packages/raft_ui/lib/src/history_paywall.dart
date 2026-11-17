@@ -316,7 +316,11 @@ class _Rows extends StatelessWidget {
             author: row.author,
             timestamp: row.timestamp,
             avatar: row.avatar,
-            content: Text(row.text, maxLines: 2, overflow: TextOverflow.clip),
+            content: Text(
+              row.text,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
             inlineReplies: replies == null
                 ? null
                 : RaftInlineThreadSurface(

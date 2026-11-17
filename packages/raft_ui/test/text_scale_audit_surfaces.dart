@@ -35,8 +35,10 @@ import 'package:raft_ui/computer_connection_previews.dart';
 import 'package:raft_ui/conversation_card_previews.dart';
 import 'package:raft_ui/fit_toolbar_previews.dart';
 import 'package:raft_ui/delegated_face_previews.dart';
+import 'package:raft_ui/history_paywall_previews.dart';
 import 'package:raft_ui/inbox_item_previews.dart';
 import 'package:raft_ui/message_list_end_fade_previews.dart';
+import 'package:raft_ui/meter_previews.dart';
 import 'package:raft_ui/css_recipe_radius_previews.dart';
 import 'package:raft_ui/desktop_title_bar_previews.dart';
 import 'package:raft_ui/dialog_previews.dart';
@@ -1786,5 +1788,33 @@ final auditSurfaces = <AuditSurface>[
     'External agent: offline, create credential',
     externalAgentOfflinePreview,
     Size(390, 520),
+  ),
+  AuditSurface(
+    'meterPreview',
+    'Meter · seats and uploads',
+    meterPreview,
+    Size(390, 400),
+    representative: true,
+  ),
+  AuditSurface(
+    'historyPaywallStartPreview',
+    'History paywall · glimpse and card',
+    historyPaywallStartPreview,
+    Size(390, 700),
+    representative: true,
+  ),
+  AuditSurface(
+    'historyPaywallAllHiddenPreview',
+    'History paywall · every message hidden',
+    historyPaywallAllHiddenPreview,
+    Size(390, 600),
+    representative: true,
+  ),
+  AuditSurface(
+    'historyPaywallTargetPreview',
+    'History paywall · jump target behind the window',
+    historyPaywallTargetPreview,
+    Size(390, 800),
+    representative: true,
   ),
 ];
