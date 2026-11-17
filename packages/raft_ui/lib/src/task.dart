@@ -15,7 +15,6 @@ import 'mounted_task_chip.dart';
 import 'task_status_badge.dart';
 import 'panel_layout.dart' show RaftCssText;
 import 'raft/ui_tokens.dart';
-import 'token_geometry.dart';
 import 'tokens/tokens.dart';
 import '../recipes.dart';
 
@@ -857,6 +856,7 @@ class RaftTaskDragFeedback extends StatelessWidget {
         // (`group-data-[dragging=true]/task-draggable:shadow-float`).
         child: DecoratedBox(
           decoration: BoxDecoration(
+            // ds-allow: the card's own `rounded-container`, lifted
             borderRadius: BorderRadius.circular(
               t.size('radius.container', fallback: 10),
             ),
