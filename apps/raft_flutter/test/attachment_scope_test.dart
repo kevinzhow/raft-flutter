@@ -261,15 +261,17 @@ void main() {
     await client.dispose();
   });
   testWidgets(
-    'closing the host message invalidates its preview even if the channel stays selected',
+    'an attachment on a row the workspace does not present opens and stays open',
     (tester) async {
       final client = _Client()..user = RaftRecord({'id': 'alice'});
       client.selectServer('server');
       final w = WorkspaceController(client)
         ..server = RaftRecord({'id': 'server', 'role': 'owner'})
-        ..channel = RaftChannel({'id': 'channel', 'joined': true});
+        ..channel = RaftChannel({'id': 'other', 'joined': true});
       w.channels = [w.channel!];
       w.messageDomain.ledger.switchServer('server');
+      // The host row is in another conversation and not in any window: Web
+      // opens its attachment all the same (no conversation gate).
       w.messageDomain.ledger.ingest([
         {
           'id': 'host',
@@ -278,7 +280,6 @@ void main() {
           'content': 'private',
         },
       ], expectedGeneration: w.messageDomain.ledger.generation);
-      w.messageDomain.visibleIds['channel'] = {'host'};
       final bytes = base64Decode(
         'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAAGUlEQVR4nGP8V7uCgRTARJLqUQ2jGoaUBgC7qgJDBU0aZAAAAABJRU5ErkJggg==',
       );
@@ -305,23 +306,11 @@ void main() {
       await tester.tap(find.byTooltip('Preview private.png'));
       await tester.pumpAndSettle();
       expect(find.byTooltip('Close Preview'), findsOneWidget);
-      w.messageDomain.visibleIds['channel'] = {};
+      // The workspace moving to yet another conversation leaves it open.
+      w.channel = RaftChannel({'id': 'third', 'joined': true});
       w.notifyListeners();
       await tester.pumpAndSettle();
-      expect(find.byTooltip('Close Preview'), findsNothing);
-      expect(
-        PaintingBinding.instance.imageCache.containsKey(MemoryImage(bytes)),
-        false,
-      );
-      w.messageDomain.visibleIds['channel'] = {'host'};
-      w.notifyListeners();
-      await tester.pump();
-      expect(
-        tester
-            .widget<RaftAttachmentCard>(find.byType(RaftAttachmentCard))
-            .preview,
-        isNull,
-      );
+      expect(find.byTooltip('Close Preview'), findsOneWidget);
       await tester.pumpWidget(const SizedBox());
       w.dispose();
       await client.dispose();
@@ -429,7 +418,7 @@ void main() {
     await client.dispose();
   });
   testWidgets(
-    'export loads a ledger descendant of a visible parent and revokes on parent removal',
+    'export loads a ledger descendant and keeps it when the parent leaves the window',
     (t) async {
       final client = _Client()..user = RaftRecord({'id': 'alice'});
       client.selectServer('server');
@@ -485,19 +474,14 @@ void main() {
         t.widget<RaftAttachmentCard>(find.byType(RaftAttachmentCard)).preview,
         isNotNull,
       );
+      // The parent leaving the window is no revocation (Web has no
+      // conversation gate): the picture stays and export is not re-signalled.
       w.messageDomain.visibleIds['channel'] = {};
       w.notifyListeners();
       await t.pumpAndSettle();
       expect(
         t.widget<RaftAttachmentCard>(find.byType(RaftAttachmentCard)).preview,
-        isNull,
-      );
-      // The fetch had completed, so its token was already released (keeping
-      // it pinned the response bytes); revocation has nothing left to cancel.
-      expect(files.cancellation!.isCancelled, false);
-      expect(
-        PaintingBinding.instance.imageCache.containsKey(MemoryImage(bytes)),
-        false,
+        isNotNull,
       );
       await t.pump();
       expect(ready, 1);

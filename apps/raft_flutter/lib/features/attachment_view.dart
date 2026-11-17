@@ -28,8 +28,6 @@ import 'attachment_shape.dart';
 import 'inline_attachment_media.dart';
 import 'media_browser.dart';
 import 'media_items.dart';
-import 'mobile_route_gate.dart';
-import 'private_route_guard.dart';
 
 bool _isSvgMime(String mime) =>
     mime.toLowerCase().split(';').first.trim() == 'image/svg+xml';
@@ -172,8 +170,7 @@ class _AttachmentViewState extends State<AttachmentView> {
   bool exportReadyReported = false, opening = false;
   ModalRoute<void>? previewRoute;
   late int generation;
-  Map<String, dynamic>? channelAuthority;
-  late String? principal, server, sourceChannel, projectedServer, role;
+  late String? principal, server, projectedServer, role;
   WorkspaceController get w => widget.controller;
   String get name => '${widget.metadata['filename'] ?? 'Attachment'}';
   String get mime =>
@@ -181,15 +178,9 @@ class _AttachmentViewState extends State<AttachmentView> {
   bool get isImage => attachmentIsInlineImage(widget.metadata);
   bool get isSvg => _isSvgMime(mime);
 
-  bool get visibleExportDescendant =>
-      widget.exportMode &&
-      w.messageDomain.messages.any((parent) {
-        final thread = parent.threadId;
-        return thread != null &&
-            w.messageDomain.ledger
-                .messages(thread)
-                .any((m) => m['id'] == widget.messageId);
-      });
+  /// The account, server and role the card was bound under are still the
+  /// workspace's. Like Web, nothing asks whether the workspace presents the
+  /// row's conversation: a card in Saved, Search or a covered page opens.
   bool get authorized =>
       mounted &&
       !invalidated &&
@@ -197,27 +188,7 @@ class _AttachmentViewState extends State<AttachmentView> {
       principal == w.client.user?.id &&
       server == w.client.serverId &&
       projectedServer == w.server?.id &&
-      role == w.server?.string('role') &&
-      (pageIsCovered || presentsConversation);
-
-  /// A phone page that is covered, or popped and animating out, is not the
-  /// page the workspace is on. The workspace's conversation (channel, thread,
-  /// presented rows) already belongs to the next page: closing a thread
-  /// clears it at the first frame of the back. Judging this row against it
-  /// dropped the image of the page still sliding away. Account, server and
-  /// role are still checked, and the row is judged again against the
-  /// workspace the moment its page is current.
-  bool get pageIsCovered => coveredReader();
-
-  /// The workspace is on this row's conversation and still presents it.
-  bool get presentsConversation =>
-      sourceChannel == w.channel?.id &&
-      !channelAuthorityReduced(channelAuthority, w.channel?.json) &&
-      (widget.messageId == null ||
-          w.messageDomain.presentsMessage(widget.messageId) ||
-          w.messageDomain.presentsReply(widget.messageId) ||
-          w.messageDomain.state.threadParent?.id == widget.messageId ||
-          visibleExportDescendant);
+      role == w.server?.string('role');
 
   @override
   void initState() {
@@ -310,13 +281,9 @@ class _AttachmentViewState extends State<AttachmentView> {
     },
   );
 
-  /// Whether this row's phone page is covered or leaving (see [pageIsCovered]).
-  bool Function() coveredReader = () => false;
-
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    coveredReader = MobileRouteGate.coveredReader(context);
     devicePixelRatio = MediaQuery.maybeDevicePixelRatioOf(context) ?? 1;
     tickerEnabled = TickerMode.valuesOf(context).enabled;
     if (begun) {
@@ -399,16 +366,6 @@ class _AttachmentViewState extends State<AttachmentView> {
     generation = w.client.generation;
     principal = w.client.user?.id;
     server = w.client.serverId;
-    sourceChannel = w.channel?.id;
-    channelAuthority = w.channel == null
-        ? null
-        : {
-            ...w.channel!.json,
-            if (w.channel!.json['channelCapabilities'] is Map)
-              'channelCapabilities': {
-                ...(w.channel!.json['channelCapabilities'] as Map),
-              },
-          };
     projectedServer = w.server?.id;
     role = w.server?.string('role');
   }
