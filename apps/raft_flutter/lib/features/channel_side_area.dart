@@ -443,6 +443,9 @@ class _ChannelSideAreaState extends State<ChannelSideArea> {
                 channelId: channelId,
                 compact: true,
                 formatCreatedAt: media.formatter(context).shortDateTime,
+                // Web formatCompactDate, the full time in its tooltip.
+                formatCompactDate: media.formatter(context).compactDate,
+                formatFullDate: media.formatter(context).mediumDateTime,
                 acquireImage: media.acquireImage,
                 peekImage: media.peekImage,
                 // Covering the chat, the message it jumps to would stay hidden.
