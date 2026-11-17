@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/task_page_previews.dart';
 
 class _Log {
   final events = <String>[];
@@ -303,5 +304,31 @@ void main() {
       expect(t.takeException(), isNull, reason: '${scale}x');
     }
     expect(_clear, findsOneWidget);
+  });
+
+  testWidgets('the previews build at their widths', (t) async {
+    t.view.physicalSize = const Size(1200, 600);
+    t.view.devicePixelRatio = 1;
+    addTearDown(t.view.resetPhysicalSize);
+    addTearDown(t.view.resetDevicePixelRatio);
+    for (final build in [
+      selectionBarWidePreview,
+      selectionBarMediumPreview,
+      selectionBarNarrowPreview,
+    ]) {
+      await t.pumpWidget(
+        MaterialApp(
+          theme: raftTheme(),
+          home: RaftInteractionScope(
+            interaction: RaftInteraction.pointerMode,
+            child: Scaffold(body: build()),
+          ),
+        ),
+      );
+      await t.pump();
+      await t.pump();
+      expect(t.takeException(), isNull);
+      expect(_clear, findsOneWidget);
+    }
   });
 }

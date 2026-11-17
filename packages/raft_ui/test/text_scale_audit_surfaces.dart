@@ -94,6 +94,7 @@ import 'package:raft_ui/settings_control_previews.dart';
 import 'package:raft_ui/surface_progress_previews.dart';
 import 'package:raft_ui/switch_previews.dart';
 import 'package:raft_ui/auth_second_factor_previews.dart';
+import 'package:raft_ui/task_page_previews.dart';
 import 'package:raft_ui/task_section_previews.dart';
 import 'package:raft_ui/task_surface_previews.dart';
 import 'package:raft_ui/text_selection_toolbar_previews.dart';
@@ -1197,6 +1198,42 @@ final auditSurfaces = <AuditSurface>[
     'Lazy task sections',
     taskSectionPreview,
     Size(390, 720),
+  ),
+  AuditSurface(
+    'taskPageListWidePreview',
+    'Task page rows, wide',
+    taskPageListWidePreview,
+    Size(720, 300),
+  ),
+  AuditSurface(
+    'taskPageListNarrowPreview',
+    'Task page rows, narrow, selecting',
+    taskPageListNarrowPreview,
+    Size(360, 380),
+  ),
+  AuditSurface(
+    'taskCardSelectionPreview',
+    'Task card, current and selected',
+    taskCardSelectionPreview,
+    Size(360, 420),
+  ),
+  AuditSurface(
+    'selectionBarWidePreview',
+    'Selection bar, wide',
+    selectionBarWidePreview,
+    Size(720, 140),
+  ),
+  AuditSurface(
+    'selectionBarMediumPreview',
+    'Selection bar, medium (secondary actions in More)',
+    selectionBarMediumPreview,
+    Size(520, 140),
+  ),
+  AuditSurface(
+    'selectionBarNarrowPreview',
+    'Selection bar, narrow (labels gone)',
+    selectionBarNarrowPreview,
+    Size(320, 140),
   ),
   AuditSurface(
     'taskModalPreview',
