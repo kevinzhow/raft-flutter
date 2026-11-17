@@ -51655,6 +51655,222 @@
         "familyRefs": [],
         "owner": "WP-TASKS v1.24 alignment",
         "reason": "Source census candidate (WP-TASKS: the server Tasks page with task v2, its toolbar, list and selection bar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/tasks_page/task_card_facts.dart#class:TaskActivityTime": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-TASKS (Web v1.24 Tasks page board / task card facts): resolved widget; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/tasks_page/task_card_facts.dart#class:TaskCardFacts": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-TASKS (Web v1.24 Tasks page board / task card facts): resolved widget; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/tasks_page/task_card_facts.dart#function:taskCardReplies": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-TASKS (Web v1.24 Tasks page board / task card facts): resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/tasks_page/task_card_facts.dart#method:TaskActivityTime.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-TASKS (Web v1.24 Tasks page board / task card facts): resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/tasks_page/task_card_facts.dart#method:TaskCardFacts.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-TASKS (Web v1.24 Tasks page board / task card facts): resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/tasks_page/tasks_board_view.dart#class:TasksBoardView": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-TASKS (Web v1.24 Tasks page board / task card facts): resolved widget; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/tasks_page/tasks_board_view.dart#class:_BoardCard": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-TASKS (Web v1.24 Tasks page board / task card facts): resolved widget; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/tasks_page/tasks_board_view.dart#class:_BoardCardState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-TASKS (Web v1.24 Tasks page board / task card facts): resolved paint_owner; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/tasks_page/tasks_board_view.dart#class:_ColumnBody": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-TASKS (Web v1.24 Tasks page board / task card facts): resolved widget; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/tasks_page/tasks_board_view.dart#class:_LoadMoreEnd": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-TASKS (Web v1.24 Tasks page board / task card facts): resolved widget; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/tasks_page/tasks_board_view.dart#class:_LoadMoreEndState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-TASKS (Web v1.24 Tasks page board / task card facts): resolved paint_owner; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/tasks_page/tasks_board_view.dart#class:_StatusColumn": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-TASKS (Web v1.24 Tasks page board / task card facts): resolved widget; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/tasks_page/tasks_board_view.dart#class:_StatusColumnState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-TASKS (Web v1.24 Tasks page board / task card facts): resolved paint_owner; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/tasks_page/tasks_board_view.dart#class:_TasksBoardViewState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-TASKS (Web v1.24 Tasks page board / task card facts): resolved paint_owner; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/tasks_page/tasks_board_view.dart#method:TasksBoardView.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-TASKS (Web v1.24 Tasks page board / task card facts): resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/tasks_page/tasks_board_view.dart#method:_BoardCard.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-TASKS (Web v1.24 Tasks page board / task card facts): resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/tasks_page/tasks_board_view.dart#method:_BoardCardState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-TASKS (Web v1.24 Tasks page board / task card facts): resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/tasks_page/tasks_board_view.dart#method:_BoardCardState.card": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-TASKS (Web v1.24 Tasks page board / task card facts): resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/tasks_page/tasks_board_view.dart#method:_BoardCardState.didUpdateWidget": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-TASKS (Web v1.24 Tasks page board / task card facts): resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/tasks_page/tasks_board_view.dart#method:_ColumnBody.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-TASKS (Web v1.24 Tasks page board / task card facts): resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/tasks_page/tasks_board_view.dart#method:_LoadMoreEnd.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-TASKS (Web v1.24 Tasks page board / task card facts): resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/tasks_page/tasks_board_view.dart#method:_LoadMoreEndState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-TASKS (Web v1.24 Tasks page board / task card facts): resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/tasks_page/tasks_board_view.dart#method:_LoadMoreEndState.didUpdateWidget": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-TASKS (Web v1.24 Tasks page board / task card facts): resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/tasks_page/tasks_board_view.dart#method:_StatusColumn.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-TASKS (Web v1.24 Tasks page board / task card facts): resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/tasks_page/tasks_board_view.dart#method:_StatusColumnState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-TASKS (Web v1.24 Tasks page board / task card facts): resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/tasks_page/tasks_board_view.dart#method:_TasksBoardViewState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-TASKS (Web v1.24 Tasks page board / task card facts): resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/tasks_page/tasks_board_view.dart#method:_TasksBoardViewState.moveTask": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-TASKS (Web v1.24 Tasks page board / task card facts): resolved surface_factory; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/selection_bar.dart#local-function:CLASS:_BarMore@14007/METHOD:buildForm@14163/FUNCTION:trigger@14378": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-TASKS (Web v1.24 Tasks page board / task card facts): resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/task.dart#class:RaftTaskCardSkeleton": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-TASKS (Web v1.24 Tasks page board / task card facts): resolved widget; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/task.dart#class:RaftTaskDragFeedback": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-TASKS (Web v1.24 Tasks page board / task card facts): resolved widget; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/task.dart#method:RaftTaskCardSkeleton.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-TASKS (Web v1.24 Tasks page board / task card facts): resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/task.dart#method:RaftTaskDragFeedback.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-TASKS (Web v1.24 Tasks page board / task card facts): resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/task_chip_list.dart#class:RaftTaskAssignee": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-TASKS (Web v1.24 Tasks page board / task card facts): resolved widget; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/task_chip_list.dart#class:RaftTaskReplyCount": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-TASKS (Web v1.24 Tasks page board / task card facts): resolved widget; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/task_chip_list.dart#method:RaftTaskAssignee.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-TASKS (Web v1.24 Tasks page board / task card facts): resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/task_chip_list.dart#method:RaftTaskReplyCount.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-TASKS (Web v1.24 Tasks page board / task card facts): resolved builder; real-entry/family/state mapping remains unreviewed."
       }
     },
     "entries": {
@@ -54975,6 +55191,15 @@
         "kind": "surface_factory_candidate",
         "declarationRefs": [
           "apps/raft_flutter/lib/features/tasks_page/tasks_selection_bar.dart#method:_TasksSelectionBarState._toast"
+        ],
+        "mountStatus": "unresolved",
+        "reason": "Resolved function owns a surface call; actual target, route and state are not yet observed."
+      },
+      "surface:apps/raft_flutter/lib/features/tasks_page/tasks_board_view.dart#method:_TasksBoardViewState.moveTask": {
+        "owner": "WP-TASKS v1.24 alignment",
+        "kind": "surface_factory_candidate",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/tasks_page/tasks_board_view.dart#method:_TasksBoardViewState.moveTask"
         ],
         "mountStatus": "unresolved",
         "reason": "Resolved function owns a surface call; actual target, route and state are not yet observed."
