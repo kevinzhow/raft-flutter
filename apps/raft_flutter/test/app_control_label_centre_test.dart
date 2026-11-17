@@ -59,7 +59,12 @@ class _Case {
     this.maxBoxHeight = 64,
     this.page = false,
     this.androidCjkTolerance = 1,
+    this.width = 420,
   });
+
+  /// Window width: a scrolling strip (SearchFilterBar) needs one wide enough
+  /// that no chip sits under its edge fade, which would dim the ink measured.
+  final double width;
 
   /// Android CJK label tolerance (px). Only widened for a control measured on
   /// the emulator to keep a residual no profile height removes.
@@ -230,6 +235,7 @@ final _cases = <_Case>[
       channelLabel: (id) => '#design',
     ),
     () => find.byType(RaftControl),
+    width: 1600,
   ),
   _Case(
     'SearchFilterBar unfiltered chips',
@@ -244,6 +250,7 @@ final _cases = <_Case>[
       onChanged: _noop,
     ),
     () => find.byType(RaftControl),
+    width: 1600,
   ),
   _Case(
     'MigrationSteps indicators',
@@ -401,7 +408,7 @@ void main() {
             await loadAuditFonts(t, AuditFonts.real);
             addTearDown(t.view.resetPhysicalSize);
             addTearDown(t.view.resetDevicePixelRatio);
-            t.view.physicalSize = const Size(420, 480);
+            t.view.physicalSize = Size(c.width, 480);
             t.view.devicePixelRatio = 1;
             t.platformDispatcher.textScaleFactorTestValue = scale;
             addTearDown(t.platformDispatcher.clearTextScaleFactorTestValue);
