@@ -1294,19 +1294,19 @@ class RaftPublicChannelList extends StatelessWidget {
     final t = RaftTokens.of(context), text = RaftSettingsText(t);
     final radius = BorderRadius.circular(6);
     if (channels.isEmpty) {
-      return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
-        decoration: BoxDecoration(
-          color: t.colors['fill-muted']!.withValues(
-            alpha: t.colors['fill-muted']!.a * .4,
-          ),
-          borderRadius: radius,
-          border: Border.all(color: t.colors['line-muted']!, width: 1),
+      // `border border-dashed border-line-hairline`, no fill, hint text.
+      return CustomPaint(
+        foregroundPainter: RaftDashedBorderPainter(
+          t.colors['line-hairline'] ?? t.colors['line-muted']!,
+          1,
         ),
-        child: RaftCssText(
-          raftText(context, 'No channels visible to visitors yet'),
-          textAlign: TextAlign.center,
-          style: raftSettingsBody(t, size: 12, line: 16, color: t.muted),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+          child: RaftCssText(
+            raftText(context, 'No channels visible to visitors yet'),
+            textAlign: TextAlign.center,
+            style: raftSettingsBody(t, size: 12, line: 16, color: t.colors['foreground-hint']),
+          ),
         ),
       );
     }
@@ -1445,7 +1445,7 @@ class RaftPublicVisibilityCard extends StatelessWidget {
       ValueChanged<bool>? onChanged,
       Key key,
     ) => Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Expanded(
           child: Column(
