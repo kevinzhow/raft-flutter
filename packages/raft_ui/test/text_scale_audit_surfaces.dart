@@ -100,6 +100,7 @@ import 'package:raft_ui/thread_reply_previews.dart';
 import 'package:raft_ui/timeline_composition_previews.dart';
 import 'package:raft_ui/toast_previews.dart';
 import 'package:raft_ui/typography_locale_previews.dart';
+import 'package:raft_ui/workspace_button_previews.dart';
 import 'package:raft_ui/workspace_previews.dart';
 import 'package:raft_ui/workspace_shell_previews.dart';
 import 'package:raft_ui/working_agents_previews.dart';
@@ -120,6 +121,12 @@ class AuditSurface {
 }
 
 final auditSurfaces = <AuditSurface>[
+  AuditSurface(
+    'workspaceButtonPreview',
+    'Phone Home band · WorkspaceButton',
+    workspaceButtonPreview,
+    Size(390, 240),
+  ),
   AuditSurface(
     'languageSettingsReferencePreview',
     'Language & Region',

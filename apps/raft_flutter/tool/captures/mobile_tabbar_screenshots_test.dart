@@ -179,6 +179,20 @@ void main() {
       await capture(t, '$theme-02-activity-root');
       await tap(f, 'search');
       await capture(t, '$theme-03-search-root');
+      await tap(f, 'tasks');
+      await capture(t, '$theme-05-tasks-root');
+      // Home band open state: the WorkspaceButton's server switcher.
+      await tap(f, 'home');
+      await t.tap(find.byKey(const Key('mobile-server-selector')));
+      await f.flush(t);
+      for (var i = 0; i < 6; i++) {
+        await t.pump(const Duration(milliseconds: 100));
+      }
+      await capture(t, '$theme-06-home-switcher-open');
+      await t.sendKeyEvent(LogicalKeyboardKey.escape);
+      for (var i = 0; i < 6; i++) {
+        await t.pump(const Duration(milliseconds: 100));
+      }
       await openServerPopover(t, flush: f.flush);
       await capture(t, '$theme-04-server-popover');
       await f.close(t);
