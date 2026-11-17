@@ -4171,6 +4171,71 @@
           "gapKind": "case-missing"
         }
       ]
+    },
+    {
+      "id": "settings.account.delete",
+      "title": "Settings: Account › Delete Account",
+      "webEntry": "packages/web/src/features/settings/account/DeleteAccountPage.tsx (AccountDeletionChecklist)",
+      "flutterEntry": "apps/raft_flutter/lib/features/account_deletion_page.dart",
+      "states": [
+        {
+          "state": "loading",
+          "web": "no",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "na",
+          "justification": "Web draws the page at once with the general agents line and keeps the red button off until the first read settles (loaded); Flutter does the same (test/account_deletion_page_test.dart)."
+        },
+        {
+          "state": "error",
+          "variant": "first read failed",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "gap",
+          "justification": "A failed GET keeps the general \"Your agents\" line and no Needs action rows; the request's own 409 still guards. Both draw it the same; no parity case drives the failed read yet (widget test covers it).",
+          "size": "S",
+          "gapKind": "case-missing"
+        },
+        {
+          "state": "partial",
+          "variant": "others' agents or sole-owner servers still holding the deletion up",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "gap",
+          "justification": "Needs action rows with the red button off and the reason lines under it; needs a fixture account that is a sole owner or has other members' agents on its computers. Widget tests cover each blocker.",
+          "size": "M",
+          "gapKind": "case-missing"
+        }
+      ]
+    },
+    {
+      "id": "account-deletion.pending",
+      "title": "Account deletion scheduled (pending page)",
+      "webEntry": "packages/web/src/pages/AccountDeletionPendingPage.tsx",
+      "flutterEntry": "apps/raft_flutter/lib/features/account_deletion_pending_page.dart",
+      "states": [
+        {
+          "state": "loading",
+          "web": "no",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "na",
+          "justification": "The page draws at once from the date in the 403 and reads the deletion once; Cancel Deletion stays off until the request id is read, on both."
+        },
+        {
+          "state": "error",
+          "variant": "request not confirmed / cancel failed",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "gap",
+          "justification": "Warning banners (request unconfirmed, newer request, cancel failed) with Try again; a signed-in account that is scheduled for deletion is needed to capture them (the deletion is destructive, so the lead runs it). Widget tests cover each banner.",
+          "size": "S",
+          "gapKind": "case-missing"
+        }
+      ]
     }
   ],
   "navigationCoverage": {
@@ -56347,6 +56412,26 @@
         ],
         "mountStatus": "source_reviewed",
         "reason": "Channel section select and versioned sidebar placement."
+      },
+      "screen:settings.account.delete": {
+        "owner": "WP-ACCT delete account",
+        "kind": "route_or_panel_candidate",
+        "lifecycleScreenId": "settings.account.delete",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/account_deletion_page.dart#class:AccountDeletionPage"
+        ],
+        "mountStatus": "source_reviewed",
+        "reason": "Body of the level-2 settings page /settings/account/delete (the settings shell draws the title and breadcrumb); composed from RaftCard, RaftButton, RaftBanner, RaftSelectField, RaftDropdownMenu and RaftConfirmDialog. Widget evidence only (account_deletion_page_test.dart); no visual PASS is asserted."
+      },
+      "screen:account-deletion.pending": {
+        "owner": "WP-ACCT delete account",
+        "kind": "route_or_panel_candidate",
+        "lifecycleScreenId": "account-deletion.pending",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/account_deletion_pending_page.dart#class:AccountDeletionPendingPage"
+        ],
+        "mountStatus": "source_reviewed",
+        "reason": "Mounted by app_root in place of the shell while RaftClient.accountDeletion is active (403 account_deletion_pending, or the confirmation right after a request); reuses RaftAuthShell. Widget evidence only (account_deletion_pending_gate_test.dart, account_deletion_requested_test.dart); no visual PASS is asserted."
       }
     },
     "requirements": {

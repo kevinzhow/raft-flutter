@@ -143,3 +143,16 @@ TextSpan accountDeletionDateSpan(
     ],
   );
 }
+
+/// `Intl.ListFormat` conjunction for the server names.
+String accountDeletionList(BuildContext context, List<String> names) {
+  if (Localizations.localeOf(context).languageCode == 'zh') {
+    return names.join('、');
+  }
+  return switch (names.length) {
+    0 => '',
+    1 => names.single,
+    2 => '${names[0]} and ${names[1]}',
+    _ => '${names.take(names.length - 1).join(', ')}, and ${names.last}',
+  };
+}

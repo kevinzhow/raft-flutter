@@ -59,6 +59,25 @@ class _Adapter implements HttpClientAdapter {
   void close({bool force = false}) {}
 }
 
+/// Every sign-in was revoked at the server: the API and the refresh say 401.
+class _RevokedAdapter implements HttpClientAdapter {
+  @override
+  Future<ResponseBody> fetch(
+    RequestOptions options,
+    Stream<Uint8List>? stream,
+    Future<void>? cancel,
+  ) async => ResponseBody.fromString(
+    jsonEncode({'error': 'Invalid or expired refresh token'}),
+    options.path == '/auth/me' ? 200 : 401,
+    headers: {
+      Headers.contentTypeHeader: ['application/json'],
+    },
+  );
+
+  @override
+  void close({bool force = false}) {}
+}
+
 class _SignInAdapter implements HttpClientAdapter {
   final calls = <String>[];
   @override
@@ -189,4 +208,42 @@ void main() {
       greaterThanOrEqualTo(2),
     );
   });
+
+  for (final requested in [true, false]) {
+    test(
+      'a 401 after the sign-ins were revoked '
+      '${requested ? 'keeps the confirmation' : 'ends the session'}',
+      () async {
+        final store = MemorySessionStore();
+        await store.write(
+          'https://example.invalid',
+          Session(
+            accessToken: 'a',
+            refreshToken: 'r',
+            cachedUser: {'id': 'u1'},
+          ),
+        );
+        final client = RaftClient(
+          origin: 'https://example.invalid',
+          sessionStore: store,
+          transport: Dio()..httpClientAdapter = _RevokedAdapter(),
+        );
+        addTearDown(client.dispose);
+        final events = <RaftEvent>[];
+        client.events.listen(events.add);
+        await client.restore(cachedFirst: true);
+        await client.sessionValidated;
+        if (requested) {
+          (client as dynamic).accountDeletion.markRequested(_scheduledFor);
+        }
+        await expectLater(
+          client.get('/servers'),
+          throwsA(isA<RaftApiException>()),
+        );
+        await Future<void>.delayed(Duration.zero);
+        expect(client.signedIn, requested);
+        expect(events.any((e) => e.name == 'session:ended'), !requested);
+      },
+    );
+  }
 }

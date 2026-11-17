@@ -1,3 +1,4 @@
+import 'close_registry_account_deletion.dart';
 import 'close_registry_artifacts.dart';
 import 'close_registry_community.dart';
 import 'close_registry_channel_announcement.dart';
@@ -43,6 +44,7 @@ List<CloseSurface> get allCloseSurfaces => [
   ...artifactSurfaces,
   ...webLinkChoiceSurfaces,
   ...webPreviewSurfaces,
+  ...accountDeletionSurfaces,
 ];
 
 /// Panels the shell (lib/features/workspace_view*.dart) hosts in its side

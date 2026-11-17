@@ -1205,7 +1205,10 @@ class RaftClient {
     String? endpoint,
   }) async {
     final status = cause is RaftApiException ? cause.status : null;
-    if (!allowSessionEnd) {
+    // A requested deletion signed every sign-in out at the server: whatever
+    // still asks gets a 401, which must not replace the confirmation with the
+    // sign-in page. OK signs out.
+    if (!allowSessionEnd || accountDeletion.requested) {
       _audit(
         'session_end_suppressed',
         reason.code,
