@@ -418,7 +418,7 @@ class _PageRowContent extends StatelessWidget {
                     ),
             ),
             if (task.replyCount > 0 || task.unread)
-              _ReplyCount(task: task, style: mono),
+              RaftTaskReplyCount(task: task, style: mono),
           ],
         ),
         Wrap(
@@ -445,7 +445,7 @@ class _PageRowContent extends StatelessWidget {
                   color: t.ui.foregroundHint,
                 ),
               ),
-            if (showAssignee) _Assignee(task: task),
+            if (showAssignee) RaftTaskAssignee(task: task),
             if (list.showStatus)
               KeyedSubtree(
                 key: const ValueKey('message-task-chip-status'),

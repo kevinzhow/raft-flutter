@@ -142,8 +142,18 @@ class RaftTaskCard extends StatelessWidget {
     this.onTap,
     this.onStatus,
     this.statusOptions = const [],
+    this.titleEnd,
+    this.footerEnd,
   });
   final String title, number, status, channel, description;
+
+  /// Inline after the title (Web TaskCard `titleEnd`, `ml-1.5 inline-block`):
+  /// the Tasks page's number of messages in the task's discussion.
+  final Widget? titleEnd;
+
+  /// Read-only facts after the status chip (Web TaskCard `footerEnd`,
+  /// `ml-auto flex min-w-0 items-center`): the Tasks page's assignee and time.
+  final Widget? footerEnd;
 
   /// Picked for a bulk action (Web TaskCard `selected`): the cell-selected
   /// fill and a 2px `info` inset ring, so a run of picks reads apart.
@@ -293,14 +303,36 @@ class RaftTaskCard extends StatelessWidget {
                       ),
                     ),
                   ),
-                  RaftCssText(
-                    title,
-                    maxLines: 3,
-                    overflow: TextOverflow.ellipsis,
-                    style: plain
-                        ? t.scale(RaftTypeScale.body, weight: FontWeight.w600)
-                        : text(r.title),
-                  ),
+                  if (titleEnd == null)
+                    RaftCssText(
+                      title,
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                      style: plain
+                          ? t.scale(RaftTypeScale.body, weight: FontWeight.w600)
+                          : text(r.title),
+                    )
+                  else
+                    RaftCssText.rich(
+                      TextSpan(
+                        text: title,
+                        children: [
+                          // `ml-1.5 inline-block`.
+                          WidgetSpan(
+                            alignment: PlaceholderAlignment.middle,
+                            child: Padding(
+                              padding: const EdgeInsets.only(left: 6),
+                              child: titleEnd,
+                            ),
+                          ),
+                        ],
+                      ),
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                      style: plain
+                          ? t.scale(RaftTypeScale.body, weight: FontWeight.w600)
+                          : text(r.title),
+                    ),
                   if (description.isNotEmpty)
                     Padding(
                       padding: r.description.margin,
@@ -322,21 +354,31 @@ class RaftTaskCard extends StatelessWidget {
           ),
           Padding(
             padding: const EdgeInsets.only(top: 8), // mt-2
-            child: Align(
-              alignment: Alignment.centerLeft,
-              // The badge is inline content of a block wrapper: it sits on
-              // the line box of the inherited document text (16px / 1.5).
-              child: RaftInlineLineBox(
-                style: document,
-                child: editable
-                    ? RaftTaskStatusEditor(
-                        status: status,
-                        options: statusOptions,
-                        onSelect: onStatus!,
-                        alignRight: false,
-                      )
-                    : RaftTaskStatus(status: status),
-              ),
+            child: Row(
+              // `mt-2 flex min-w-0 items-center gap-2`.
+              spacing: 8,
+              children: [
+                // The badge is inline content of a block wrapper: it sits on
+                // the line box of the inherited document text (16px / 1.5).
+                RaftInlineLineBox(
+                  style: document,
+                  child: editable
+                      ? RaftTaskStatusEditor(
+                          status: status,
+                          options: statusOptions,
+                          onSelect: onStatus!,
+                          alignRight: false,
+                        )
+                      : RaftTaskStatus(status: status),
+                ),
+                if (footerEnd != null)
+                  Expanded(
+                    child: Align(
+                      alignment: Alignment.centerRight,
+                      child: footerEnd,
+                    ),
+                  ),
+              ],
             ),
           ),
         ],

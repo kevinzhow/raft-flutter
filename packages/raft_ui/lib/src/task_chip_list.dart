@@ -259,12 +259,12 @@ class _TaskChipListRow extends StatelessWidget {
                             ),
                           ),
                           if (task.replyCount > 0 || task.unread)
-                            _ReplyCount(task: task, style: mono),
+                            RaftTaskReplyCount(task: task, style: mono),
                         ],
                       ),
                     ),
                     const Spacer(),
-                    if (task.assigneeName != null) _Assignee(task: task),
+                    if (task.assigneeName != null) RaftTaskAssignee(task: task),
                     if (plain)
                       RaftIcon(
                         RaftGlyph.chevronRight,
@@ -319,13 +319,26 @@ class _InsetDivider extends StatelessWidget {
         );
 }
 
-class _ReplyCount extends StatelessWidget {
-  const _ReplyCount({required this.task, required this.style});
+/// Web `TaskReplyCount`: the unread pixel and the number of messages in a
+/// task's conversation, after a title (a list row, a board card).
+class RaftTaskReplyCount extends StatelessWidget {
+  const RaftTaskReplyCount({super.key, required this.task, this.style});
   final RaftTaskChipRow task;
-  final TextStyle style;
+
+  /// The number's style; null is the compact rows' hint-ink mono.
+  final TextStyle? style;
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
+    final style =
+        this.style ??
+        t
+            .scale(
+              RaftTypeScale.monoMeta,
+              mono: true,
+              color: t.ui.foregroundHint,
+            )
+            .copyWith(fontFeatures: const [FontFeature.tabularFigures()]);
     return Row(
       key: const ValueKey('message-task-chip-replies'),
       mainAxisSize: MainAxisSize.min,
@@ -346,8 +359,10 @@ class _ReplyCount extends StatelessWidget {
   }
 }
 
-class _Assignee extends StatelessWidget {
-  const _Assignee({required this.task});
+/// Web `TaskAssignee`: the assignee's avatar and name (You for the viewer),
+/// as the compact task rows and a board card's foot show them.
+class RaftTaskAssignee extends StatelessWidget {
+  const RaftTaskAssignee({super.key, required this.task});
   final RaftTaskChipRow task;
   @override
   Widget build(BuildContext context) {
