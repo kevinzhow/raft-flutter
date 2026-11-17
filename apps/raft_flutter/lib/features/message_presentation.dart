@@ -13,6 +13,7 @@ import 'package:raft_ui/raft_ui.dart';
 
 import 'artifacts/artifact_message_links.dart';
 import 'message_card_read.dart';
+import 'web_link_open.dart';
 import 'resource_cards.dart' show resourceRelativeTime;
 
 import '../data/workspace_controller.dart';
@@ -400,7 +401,13 @@ class MessagePresentation extends StatelessWidget {
             (taskByNumber == null ? null : (n) => taskByNumber!(n) != null),
       );
 
-  Future<void> open(BuildContext context, String href) async {
+  /// [plain]: a card button that isn't `beside` (Web: a plain new tab), which
+  /// the web-link choice (Settings › How web links open) doesn't apply to.
+  Future<void> open(
+    BuildContext context,
+    String href, {
+    bool plain = false,
+  }) async {
     final uri = Uri.tryParse(href);
     if (uri?.scheme != 'raft-ref') {
       // Web handleOpenPermalink: a message link of this server opens in the
@@ -418,6 +425,19 @@ class MessagePresentation extends StatelessWidget {
           !exportMode &&
           context.mounted &&
           openArtifactMessageLink(context, controller, href)) {
+        return;
+      }
+      if (!plain &&
+          localAuthority &&
+          !exportMode &&
+          context.mounted &&
+          await openWebLinkByPreference(
+            context,
+            controller,
+            href,
+            conversationId: message.channelId,
+            openExternal: onExternalLink,
+          )) {
         return;
       }
       onExternalLink(href);
@@ -780,7 +800,7 @@ class MessagePresentation extends StatelessWidget {
     String relative(DateTime at) =>
         resourceRelativeTime(at.toIso8601String(), chinese: chinese);
     final updatedAt = card.updatedAt;
-    return RaftMessageCard(
+    Widget cardOf({bool besideEnabled = false}) => RaftMessageCard(
       key: ValueKey('message-card-${message.id}'),
       header: card.header,
       root: card.root,
@@ -807,6 +827,29 @@ class MessagePresentation extends StatelessWidget {
         });
       },
       onOpen: exportMode ? null : (href) => open(context, href),
+      onOpenButton: exportMode || !localAuthority
+          ? null
+          : (button) {
+              if (!openCardButtonBeside(
+                controller,
+                button,
+                conversationId: message.channelId,
+              )) {
+                unawaited(open(context, button.url, plain: true));
+              }
+            },
+      besideEnabled: besideEnabled,
+    );
+    // The panel icon of a `beside` button follows the flag and the platform.
+    if (exportMode ||
+        !localAuthority ||
+        !raftCardButtons(card.root).any((b) => b.beside)) {
+      return cardOf();
+    }
+    return ListenableBuilder(
+      listenable: webPreviewAvailability(controller),
+      builder: (_, _) =>
+          cardOf(besideEnabled: webPreviewAvailable(controller)),
     );
   }
 

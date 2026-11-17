@@ -238,6 +238,7 @@ ReadMessageCard? readMessageCard(Object? actionMetadata) {
             disabledReason: p['disabledReason'] == null
                 ? null
                 : _text(p['disabledReason'], 1, 200),
+            beside: open == 'beside',
           );
         case 'Markdown':
           return RaftCardMarkdown(

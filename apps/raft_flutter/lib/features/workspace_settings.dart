@@ -22,6 +22,7 @@ import '../platform/native_notifications.dart';
 import 'account_settings.dart';
 import 'app_image_update_text.dart';
 import 'desktop_links_settings.dart';
+import 'web_link_open.dart' show HowWebLinksOpenSetting;
 import 'administration_view.dart';
 import 'resource_cards.dart' show resourceRelativeTime;
 import 'appearance_section.dart';
@@ -222,6 +223,7 @@ class _WorkspaceSettingsState extends State<WorkspaceSettings> {
             onAppearance: widget.onAppearance,
             presentation: widget.presentation,
             railSide: widget.railSide,
+            webLinks: HowWebLinksOpenSetting(controller: w),
           ),
         ),
         if (widget.notifications != null)

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'icons.dart';
+import 'localization.dart' show raftFormat;
 import 'message_body.dart';
 import 'raft/badge.dart';
 import 'separator.dart';
@@ -88,10 +89,16 @@ class RaftCardButton extends RaftCardElement {
     required this.domain,
     this.ghost = false,
     this.disabledReason,
+    this.beside = false,
   });
   final String label, url, domain;
   final bool ghost;
   final String? disabledReason;
+
+  /// The sender's `open: "beside"`: the page opens in the web preview beside
+  /// the conversation where the app can show one (see
+  /// [RaftMessageCard.onOpenButton]).
+  final bool beside;
 }
 
 class RaftCardMarkdown extends RaftCardElement {
@@ -141,6 +148,8 @@ class RaftMessageCard extends StatelessWidget {
     required this.relativeTime,
     required this.duration,
     this.onOpen,
+    this.onOpenButton,
+    this.besideEnabled = false,
   });
   final RaftCardHeader? header;
   final RaftCardElement root;
@@ -152,8 +161,18 @@ class RaftMessageCard extends StatelessWidget {
   final String Function(DateTime at) relativeTime;
   final String Function(DateTime start, DateTime? end) duration;
 
-  /// Opens a button's address (it always leaves Raft).
+  /// Opens a link's address (it always leaves Raft).
   final ValueChanged<String>? onOpen;
+
+  /// A card button was activated. When set it replaces [onOpen] for buttons
+  /// (the Markdown's links still use [onOpen]), so the app can open a
+  /// `beside` button in its web preview (Web `MessageCardLink`).
+  final ValueChanged<RaftCardButton>? onOpenButton;
+
+  /// A `beside` button ends in the panel icon and is announced as opening
+  /// beside the conversation; false (flag off, no WebView here): the same
+  /// button as any other, ending in the arrow.
+  final bool besideEnabled;
 
   @override
   Widget build(BuildContext context) {
@@ -220,6 +239,8 @@ class RaftMessageCard extends StatelessWidget {
                                           later.url == button.url,
                                     ),
                                 onOpen: onOpen,
+                                onOpenButton: onOpenButton,
+                                besideEnabled: besideEnabled,
                               ),
                           ],
                         ),
@@ -511,10 +532,14 @@ class _ButtonLink extends StatelessWidget {
     required this.button,
     required this.showDomain,
     required this.onOpen,
+    required this.onOpenButton,
+    required this.besideEnabled,
   });
   final RaftCardButton button;
   final bool showDomain;
   final ValueChanged<String>? onOpen;
+  final ValueChanged<RaftCardButton>? onOpenButton;
+  final bool besideEnabled;
 
   @override
   Widget build(BuildContext context) {
@@ -537,14 +562,26 @@ class _ButtonLink extends StatelessWidget {
         ),
       );
     }
+    final beside = button.beside && besideEnabled;
+    final name = '${button.label} · ${button.domain}';
+    final activate = onOpenButton != null
+        ? () => onOpenButton!(button)
+        : onOpen == null
+        ? null
+        : () => onOpen!(button.url);
     return Semantics(
       link: true,
-      label: '${button.label} · ${button.domain}',
+      // Web `webPreview.cardButtonLabel`.
+      label: beside
+          ? raftFormat(context, '{name}, opens beside the conversation', {
+              'name': name,
+            })
+          : name,
       excludeSemantics: true,
       child: RaftButton(
         uiVariant: variant,
         uiSize: RaftButtonSize.sm,
-        onPressed: onOpen == null ? null : () => onOpen!(button.url),
+        onPressed: activate,
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -568,7 +605,10 @@ class _ButtonLink extends StatelessWidget {
               ),
             ],
             const SizedBox(width: 6),
-            const RaftIcon(RaftGlyph.arrowUpRight, size: 14),
+            RaftIcon(
+              beside ? RaftGlyph.panelRight : RaftGlyph.arrowUpRight,
+              size: 14,
+            ),
           ],
         ),
       ),

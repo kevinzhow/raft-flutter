@@ -11,6 +11,7 @@ import 'close_registry_raftbench.dart';
 import 'close_registry_server_tab.dart';
 import 'close_registry_task_slot.dart';
 import 'close_registry_viewers.dart';
+import 'close_registry_web_link_choice.dart';
 import 'close_surface.dart';
 
 /// Every closable surface, across the family registries.
@@ -28,6 +29,8 @@ List<CloseSurface> get allCloseSurfaces => [
   ...taskSlotSurfaces,
   ...viewerSurfaces,
   ...artifactSurfaces,
+  ...webLinkChoiceSurfaces,
+  ...webPreviewSurfaces,
 ];
 
 /// Panels the shell (lib/features/workspace_view*.dart) hosts in its side

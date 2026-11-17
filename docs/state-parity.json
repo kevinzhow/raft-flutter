@@ -934,6 +934,39 @@
           "justification": "Flutter retains loaded files and offers same-page retry with an inline load-more error. Existing parity cases cover the Load more button only; dedicated in-flight and error cases are still missing.",
           "size": "S",
           "gapKind": "case-missing"
+        },
+        {
+          "state": "loading",
+          "variant": "conversation Artifacts section (workspace_artifacts_v0)",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "gap",
+          "justification": "The Files panel's own Artifacts rows read before the files can show: a loading line above the files. Behind a flag the Web parity fixture does not turn on; checked by widget tests in test/features/channel_side_files_panel_test.dart.",
+          "size": "S",
+          "gapKind": "case-missing"
+        },
+        {
+          "state": "error",
+          "variant": "conversation Artifacts section (workspace_artifacts_v0)",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "gap",
+          "justification": "A failed Artifacts read keeps the files and shows the error with Try again above them; flag-gated, no parity case. Widget tests in test/features/channel_side_files_panel_test.dart.",
+          "size": "S",
+          "gapKind": "case-missing"
+        },
+        {
+          "state": "partial",
+          "variant": "conversation Artifacts Show more / its error (workspace_artifacts_v0)",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "gap",
+          "justification": "Show more with its own loading and error line under the Artifact rows; flag-gated, no parity case. Widget tests in test/features/channel_side_files_panel_test.dart.",
+          "size": "S",
+          "gapKind": "case-missing"
         }
       ]
     },
@@ -3948,6 +3981,52 @@
           "size": "S",
           "justification": "Covered by widget tests in light and dark (history_paywall_test.dart, packages/raft_ui/test/history_paywall_test.dart); parity cases need a live Free server for the hidden previews. Hand-captured Web | Flutter pairs for channel, target, all-hidden and thread are in the WP-BILL PR description.",
           "parityCase": []
+        }
+      ]
+    },
+    {
+      "id": "channel.side-web-preview",
+      "title": "Web preview beside the conversation (web_preview_v0)",
+      "webEntry": "packages/web/src/features/webPreview/WebPreviewPanel.tsx (Web 1.24)",
+      "flutterEntry": "apps/raft_flutter/lib/features/channel_side_web_preview_panel.dart",
+      "states": [
+        {
+          "state": "loading",
+          "variant": "page loading in the frame",
+          "web": "no",
+          "flutter": "missing",
+          "parityCase": [],
+          "status": "na",
+          "justification": "Neither client draws a loading state: the frame (Web iframe, app WebView) shows the site as it loads."
+        },
+        {
+          "state": "empty",
+          "variant": "http:// page (insecure state)",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "gap",
+          "gapKind": "case-missing",
+          "size": "S",
+          "justification": "Both clients show the shield title, the http:// line and Open in browser (Web: Open in new tab); the Web parity host cannot open a card button page beside a conversation, so no case. Widget test in test/channel_side_web_preview_test.dart."
+        },
+        {
+          "state": "error",
+          "variant": "site that refuses to be shown",
+          "web": "no",
+          "flutter": "missing",
+          "parityCase": [],
+          "status": "na",
+          "justification": "A site that blocks framing shows blank in both clients and neither can detect it; the way out is the always-visible foot line (Page not showing? Open in new tab) and the head's Open in browser."
+        },
+        {
+          "state": "partial",
+          "variant": "macOS with VoiceOver on",
+          "web": "no",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "intentional",
+          "justification": "The app opens an https page in the browser instead of a WebView while macOS VoiceOver is on (the WKWebView platform view crashes Flutter's accessibility bridge, as the Artifact frame); Web has no such state."
         }
       ]
     }
@@ -50161,6 +50240,12 @@
         "familyRefs": [],
         "owner": "Artifact viewer",
         "reason": "WP-ART1 Artifact viewer, cards and attachment save (Web v1.24); compositions of raft_ui parts, real-entry mapping stays with the viewer owner."
+      },
+      "apps/raft_flutter/lib/features/channel_side_web_preview_panel.dart#class:WebPreviewPanel": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-SIDE web preview",
+        "reason": "New panel (Web WebPreviewPanel): composes canonical RaftPanelHeaderBar, RaftPanelAction, RaftEmptyState and RaftButton around a platform WebView. Real entry (the side area's card) and visual acceptance are pending; this registration grants no visual pass."
       }
     },
     "entries": {
@@ -53412,6 +53497,16 @@
         ],
         "mountStatus": "unresolved",
         "reason": "Resolved function owns a surface call (showRaftPresented, a sheet at every width); actual target, route and state are not yet observed."
+      },
+      "screen:channel.side-web-preview": {
+        "owner": "WP-SIDE web preview",
+        "kind": "route_or_panel_candidate",
+        "lifecycleScreenId": "channel.side-web-preview",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/channel_side_web_preview_panel.dart#class:WebPreviewPanel"
+        ],
+        "mountStatus": "unresolved",
+        "reason": "The side area mounts the panel for the channel with an open page (channel_side_area.dart, another package). Widget evidence only (channel_side_web_preview_test.dart); no visual PASS is asserted."
       }
     },
     "requirements": {
