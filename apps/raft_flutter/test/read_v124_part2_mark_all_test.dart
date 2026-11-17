@@ -36,9 +36,7 @@ void main() {
       w.conversationReads.acceptMark('ch1', 4, true);
       w.conversationReads.acceptMark('ch7', 2, true);
       expect(w.conversationReads.marks.marked, {'ch1', 'ch7'});
-      await tester.tap(
-        find.widgetWithText(RaftResourceMarkReadButton, 'Mark all read'),
-      );
+      await tester.tap(find.byKey(const ValueKey('inbox-mark-all-read')));
       await tester.pump();
       expect(client.posts, contains('POST /channels/inbox/read-all'));
       expect(

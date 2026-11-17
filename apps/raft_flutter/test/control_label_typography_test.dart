@@ -1,7 +1,9 @@
 // Guards the Android Chinese control-label profile (RaftControlTypography) on
-// real product surfaces: the Activity page's filter buttons, badges and
-// "mark all read" button. A local TextStyle that restates height or leading
-// would bypass the recipes and fail here (a style-propagation leak).
+// real product surfaces: the Activity page's Filter trigger and the "mark all
+// read" button (Web 1.24 ThreadsInbox). The row's unread count is digits in
+// Space Mono, as in the sidebar, so it has no CJK label to profile. A local
+// TextStyle that restates height or leading would bypass the recipes and fail
+// here (a style-propagation leak).
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -112,10 +114,11 @@ void main() {
     ];
     expect(find.text(markAll), findsOneWidget);
     return {
-      'filters': styles(find.byType(RaftSegmentedControl<String>)),
-      'badges': styles(find.byType(RaftResourceBadge)),
+      'filters': styles(find.byKey(const ValueKey('inbox-filter-button'))),
       // The button's own text: the box wraps nothing else.
-      'mark all read': styles(find.byType(RaftResourceMarkReadButton)),
+      'mark all read': styles(
+        find.byKey(const ValueKey('inbox-mark-all-read')),
+      ),
     };
   }
 
@@ -127,9 +130,9 @@ void main() {
       locale: const Locale('zh', 'CN'),
       platform: TargetPlatform.android,
     );
-    expect(find.text('全部'), findsWidgets);
+    expect(find.text('筛选'), findsOneWidget);
     expect(find.text('全部已读'), findsOneWidget);
-    expect(find.byType(RaftResourceBadge), findsNWidgets(4));
+    expect(find.byType(RaftSidebarUnreadCount), findsOneWidget);
     final labels = controlLabels(t);
     for (final entry in labels.entries) {
       expect(entry.value, isNotEmpty, reason: entry.key);

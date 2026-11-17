@@ -234,7 +234,7 @@ void main() {
 
     for (final enabled in [false]) {
       testWidgets(
-        '${dark ? 'dark' : 'light'} Activity enabled=$enabled refreshes populated and empty pager sections',
+        '${dark ? 'dark' : 'light'} Activity enabled=$enabled refreshes a populated and an empty list',
         (t) async {
           mobile(t);
           final (client, w) = activityFixture();
@@ -282,21 +282,6 @@ void main() {
           await t.pumpAndSettle();
           w.hold = null;
           expect(shown('Updated conversation'), findsOneWidget);
-          // The horizontal gesture changes the section; it never arms refresh.
-          await t.drag(
-            find.byType(RaftSectionPager<String>),
-            const Offset(-340, 0),
-          );
-          await t.pumpAndSettle();
-          expect(find.byType(RefreshProgressIndicator), findsNothing);
-          expect(
-            t
-                .widget<RaftSectionPager<String>>(
-                  find.byType(RaftSectionPager<String>),
-                )
-                .value,
-            'unread',
-          );
           w.inbox.clear();
           await pull(t);
           await t.pumpAndSettle();
@@ -312,14 +297,6 @@ void main() {
           await t.pumpAndSettle();
           expect(w.inboxQueries.length, emptyReads + 1);
           expect(shown('Recovered conversation'), findsOneWidget);
-          expect(
-            t
-                .widget<RaftSectionPager<String>>(
-                  find.byType(RaftSectionPager<String>),
-                )
-                .value,
-            'unread',
-          );
           expect(t.takeException(), isNull);
           await t.pumpWidget(const SizedBox());
         },
