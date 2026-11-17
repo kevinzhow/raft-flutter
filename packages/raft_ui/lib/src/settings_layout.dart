@@ -10,6 +10,7 @@ import 'recipe_surface.dart'
         RaftRecipeBox;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show KeyDownEvent, KeyEvent, LogicalKeyboardKey;
 
 import 'design_primitives.dart' hide RaftPanelHeaderRecipe;
 import 'panel_edge.dart';
@@ -24,6 +25,7 @@ import 'package:raft_theme/recipes/sidebar_section_recipe.g.dart'
 
 import 'recipes/recipe_runtime.dart';
 import 'recipes/recipes.g.dart';
+import 'raft/ui_tokens.dart' show RaftTokensUi;
 import 'recipes/token_binding.dart';
 import 'status_bar.dart';
 import 'text_scaling.dart' show RaftScaled;
@@ -317,9 +319,14 @@ class RaftSettingsPanelHeader extends StatelessWidget {
     this.backKey,
     this.backTooltip = 'Back',
     this.iconTile = false,
+    this.titleSlot,
   });
   final String title;
   final RaftGlyph? glyph;
+
+  /// PanelHeader `titleSlot`: replaces the title (a sub-page's
+  /// [RaftSettingsBreadcrumb] on a desktop width).
+  final Widget? titleSlot;
 
   /// The page passes an icon to its PanelHeader even in the v1.21.23 look
   /// (RaftBench); the settings tabs do not (pageHeader.icon).
@@ -334,6 +341,7 @@ class RaftSettingsPanelHeader extends StatelessWidget {
     final t = RaftTokens.of(context);
     return RaftPanelHeaderBar(
       title: raftText(context, title),
+      titleSlot: mobile ? null : titleSlot,
       // v1.21.23 page heads carry no icon tile (pageHeader.icon).
       iconSlot:
           !mobile &&
@@ -353,6 +361,211 @@ class RaftSettingsPanelHeader extends StatelessWidget {
       onBack: mobile ? onMobileBack : null,
       backKey: backKey,
       backTooltip: raftText(context, backTooltip),
+    );
+  }
+}
+
+/// SettingsSubPageTitle.tsx on a desktop width: `<tab> › <page>` as one
+/// headline title, the tab name muted and linking back, the page name current.
+/// A phone shows the plain title instead (the header's Back leads out), so
+/// the caller passes this as [RaftSettingsPanelHeader.titleSlot] only.
+class RaftSettingsBreadcrumb extends StatelessWidget {
+  const RaftSettingsBreadcrumb({
+    super.key,
+    required this.tabLabel,
+    required this.title,
+    required this.onTab,
+    this.tabKey,
+  });
+  final String tabLabel, title;
+  final VoidCallback onTab;
+
+  /// Key of the tab link (Web `settings-breadcrumb-tab`).
+  final Key? tabKey;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = RaftTokens.of(context);
+    final style = t.scale(t.typeSlot('headline'), weight: FontWeight.w700);
+    return Semantics(
+      container: true,
+      label: raftText(context, 'Breadcrumb'),
+      child: Row(
+        children: [
+          RaftTextLink(
+            key: tabKey,
+            label: raftText(context, tabLabel),
+            variant: RaftTextLinkVariant.muted,
+            typeStyle: style,
+            onPressed: onTab,
+          ),
+          const SizedBox(width: RaftSpace.x1),
+          ExcludeSemantics(
+            child: RaftIcon(
+              RaftGlyph.chevronRight,
+              size: style.fontSize ?? 16,
+              color: t.muted,
+            ),
+          ),
+          const SizedBox(width: RaftSpace.x1),
+          Flexible(
+            child: Semantics(
+              header: true,
+              child: RaftCssText(
+                raftText(context, title),
+                style: style,
+                maxLines: RaftScaled.grows(context) ? null : 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// SettingsSearch.tsx `SettingsSearchResultRow`: raft-ui `SidebarItem wrap`
+/// holding the setting's name over where it is. A focusable button: Enter or
+/// Space opens it as a keyboard jump, a click as a pointer one. Up / Down /
+/// Escape belong to the results list around it.
+class RaftSettingsSearchResultRow extends StatefulWidget {
+  const RaftSettingsSearchResultRow({
+    super.key,
+    required this.title,
+    required this.subtitle,
+    required this.onOpen,
+    this.selected = false,
+    this.focusNode,
+    this.semanticLabel,
+  });
+
+  /// The name and the "Page · Section" line, built with the recipe's text style
+  /// so the caller can mark the matched words.
+  final Widget Function(BuildContext context, TextStyle style) title, subtitle;
+
+  /// Called with whether the keyboard (Enter / Space) opened the row.
+  final void Function(bool fromKeyboard) onOpen;
+
+  /// The open one stays selected, so the next can be opened from here.
+  final bool selected;
+  final FocusNode? focusNode;
+  final String? semanticLabel;
+
+  @override
+  State<RaftSettingsSearchResultRow> createState() =>
+      _RaftSettingsSearchResultRowState();
+}
+
+class _RaftSettingsSearchResultRowState
+    extends State<RaftSettingsSearchResultRow> {
+  bool hovered = false, focused = false;
+
+  KeyEventResult _key(FocusNode node, KeyEvent event) {
+    if (event is! KeyDownEvent) return KeyEventResult.ignored;
+    final key = event.logicalKey;
+    if (key == LogicalKeyboardKey.enter ||
+        key == LogicalKeyboardKey.numpadEnter ||
+        key == LogicalKeyboardKey.space) {
+      widget.onOpen(true);
+      return KeyEventResult.handled;
+    }
+    return KeyEventResult.ignored;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = RaftTokens.of(context);
+    final tokens = RaftRecipeTokens(t);
+    final size = MediaQuery.sizeOf(context);
+    final recipe = RaftSidebarItemRecipe.resolve(
+      wrap: true,
+      states: RaftRecipeStates(
+        {
+          if (hovered) RaftRecipeStates.hover,
+          if (focused &&
+              FocusManager.instance.highlightMode ==
+                  FocusHighlightMode.traditional)
+            RaftRecipeStates.focusVisible,
+          if (widget.selected) ...[
+            'data-active',
+            'group/sidebar-item:data-active',
+          ],
+          if (t.dark) RaftRecipeStates.dark,
+        },
+        size.width,
+        size.height,
+      ),
+      tokens: tokens,
+    );
+    final stacked = RaftSidebarItemRecipe.resolve(
+      wrap: true,
+      stacked: true,
+      states: RaftRecipeStates({if (t.dark) RaftRecipeStates.dark}, size.width, size.height),
+      tokens: tokens,
+    );
+    final s = recipe.sidebarItem;
+    final before = s.before;
+    final titleStyle = RaftControlTypography.of(
+      context,
+      stacked.sidebarItemTitle.textStyle(tokens),
+    );
+    final subtitleStyle = RaftControlTypography.of(
+      context,
+      stacked.sidebarItemSubtitle.textStyle(tokens),
+    );
+    return Semantics(
+      button: true,
+      selected: widget.selected,
+      label: widget.semanticLabel,
+      child: Focus(
+        focusNode: widget.focusNode,
+        onFocusChange: (value) => setState(() => focused = value),
+        onKeyEvent: _key,
+        child: RaftHoverRegion(
+          cursor: SystemMouseCursors.click,
+          onEnter: (_) => setState(() => hovered = true),
+          onExit: (_) => setState(() => hovered = false),
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () => widget.onOpen(false),
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                if (before != null)
+                  Positioned(
+                    left: before.length('left'),
+                    right: before.length('right'),
+                    top: before.length('top'),
+                    bottom: before.length('bottom'),
+                    child: IgnorePointer(
+                      child: RaftRecipeBox(
+                        style: before,
+                        tokens: tokens,
+                        applyText: false,
+                      ),
+                    ),
+                  ),
+                RaftRecipeBox(
+                  style: s,
+                  tokens: tokens,
+                  applyText: false,
+                  alignment: AlignmentDirectional.centerStart,
+                  growWithText: true,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      widget.title(context, titleStyle),
+                      widget.subtitle(context, subtitleStyle),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

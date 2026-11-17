@@ -995,8 +995,12 @@ class RaftInputGroup extends StatefulWidget {
     this.clearOnEscape = false,
     this.kbd,
     this.fieldKey,
+    this.clearKey,
     this.size,
   });
+
+  /// Key of the inline-end clear button (a test's or a focus lookup's handle).
+  final Key? clearKey;
 
   /// `InputGroup size`: the recipe default is `lg` (the forms' 44px); FitToolbarSearch is `md` (32px, 34px with a mouse).
   final RaftInputGroupRecipeSize? size;
@@ -1242,6 +1246,7 @@ class _RaftInputGroupState extends State<RaftInputGroup>
   /// `Button variant="ghost" size="icon-sm"` with the X: the recipe's square and its `svg` size.
   Widget _clearButton(RaftTokens t, RaftTokenResolver rt) {
     return RaftButton(
+      key: widget.clearKey,
       label: '',
       glyph: RaftGlyph.x,
       uiVariant: RaftButtonVariant.ghost,

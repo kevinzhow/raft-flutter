@@ -58,6 +58,7 @@ dependencies:
   path: ^1.9.1
   intl: ^0.20.3
   timezone: ^0.11.1
+  unorm_dart: 0.3.2
   html: ^0.15.6
   media_kit:
     path: ../../packages/media_kit
