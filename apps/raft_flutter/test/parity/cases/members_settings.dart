@@ -94,8 +94,8 @@ final Map<String, ParityCase> membersSettingsCases = {
     },
   ),
   'components.members.agent-lifecycle-actions': _agentDetail(lifecycle: true),
-  'components.channel.settings.panel': _channelSettings(addPanel: false),
-  'components.channel.members.add-panel': _channelSettings(addPanel: true),
+  'components.channel.settings.panel': _channelSettings,
+  'components.channel.members.add-panel': _channelAddMember,
   'components.settings.root.page': _settings('account', root: true),
   'components.settings.account.page': _settings('account'),
   'components.settings.account.error-state': _settings(
@@ -367,75 +367,56 @@ ParityCase _agentDetail({required bool lifecycle}) => agentDetailParityCase(
 );
 
 // ---------------------------------------------------------------------------
-// Channel settings: React mounts EditChannelDialog (default "sheet"
-// presentation) for #design without onLeaveChannel / collapseLongMessages
-// props; Flutter opens the product ChannelSettings sheet the same way
-// WorkspaceView.channelSettings does, with leave/collapse off to match those
-// absent props. The add-member case mounts the product ChannelMembers
-// (trigger + modal) at `p-4` and clicks through to its add view like the
-// React interactions (channel-members-open, then add-member-open).
+// Web v1.24 opens the channel Details page at phone width. Its member
+// capture starts on the full-width roster and opens Add member there.
 
-ParityCase _channelSettings({required bool addPanel}) => addPanel
-    ? _channelAddMember
-    : ParityCase(
-        widgets: const [
-          'raft_flutter:ChannelSettings',
-          'raft_ui:RaftRecipeButton',
-        ],
-        notes: 'Product ChannelSettings sheet (Web EditChannelDialog sheet).',
-        settle: const Duration(milliseconds: 600),
-        build: (ctx) {
-          final fixture = MsFixture(ctx);
-          // React mounts EditChannelDialog without `stopAgentsRow` (Web
-          // ChatPanel passes it only when the viewer may control agent
-          // runtime), so the fixture viewer has no agent-runtime control.
-          // In the shared role model only a guest lacks it; the channel's
-          // own management capabilities keep the actions React renders
-          // (Make Private, Archive, Delete).
-          final channel = Map<String, dynamic>.from(fixture.channel('design'))
-            ..['channelCapabilities'] = {
-              'editChannelMetadata': true,
-              'changeChannelVisibility': true,
-              'archiveChannels': true,
-              'deleteChannels': true,
-            };
-          final (w, _) = fixture.workspace({
-            'GET /channels/${channel['id']}/members': (_) => {
-              'agents': [],
-              'humans': [],
-              'externalMembers': [],
-            },
-          });
-          w
-            ..server = RaftRecord({...w.server!.json, 'role': 'guest'})
-            ..channels = [RaftChannel(channel)];
-          assert(!w.can('controlAgentRuntime'));
-          return _Host(
-            page: const Scaffold(),
-            open: (context) => showDialog(
-              context: context,
-              builder: (_) => ChannelSettings(
-                controller: w,
-                channel: RaftChannel(channel),
-                leave: false,
-                collapseLongMessages: false,
-              ),
-            ),
-          );
-        },
-      );
+final ParityCase _channelSettings = ParityCase(
+  widgets: const ['raft_flutter:ChannelSettings', 'raft_ui:RaftOverflowSheet'],
+  notes: 'Product Details page mounted at the manifest phone viewport.',
+  settle: const Duration(milliseconds: 600),
+  build: (ctx) {
+    final fixture = MsFixture(ctx);
+    final channel = RaftChannel({
+      ...fixture.channel('design'),
+      'channelCapabilities': {
+        'editChannelMetadata': true,
+        'changeChannelVisibility': true,
+        'archiveChannels': true,
+        'deleteChannels': true,
+        'addChannelMembers': true,
+      },
+    });
+    final (w, _) = fixture.workspace({
+      'GET /channels/${channel.id}/members': (_) => {
+        'agents': [],
+        'humans': [],
+        'externalMembers': [],
+      },
+    });
+    w
+      ..channel = channel
+      ..channels = [channel];
+    return Scaffold(
+      body: ChannelSettings(
+        controller: w,
+        channel: channel,
+        isPanel: true,
+        page: true,
+        details: true,
+        onClose: () {},
+      ),
+    );
+  },
+);
 
 final ParityCase _channelAddMember = ParityCase(
   widgets: const [
-    'raft_flutter:ChannelMembersButton',
     'raft_flutter:ChannelMembers',
+    'raft_ui:RaftMemberPickerContent',
   ],
   notes:
-      'Product ChannelMembers trigger at p-4 (React main.p-4), opened and '
-      'switched to the add view with mouse clicks like the Playwright '
-      'interactions, so the pointer rests where add-member-open was. Roster '
-      'mock = react-provider.spec.ts empty channel members; candidates = its '
-      '/servers/visual-server/members and /api/agents payloads.',
+      'Product ChannelMembers page with the Add member action driven from the '
+      'same starting roster and directory as the Web case.',
   settle: const Duration(milliseconds: 600),
   build: (ctx) {
     final fixture = MsFixture(ctx);
@@ -451,40 +432,22 @@ final ParityCase _channelAddMember = ParityCase(
       'GET /servers/visual-server/members': (_) => fixture.members,
       'GET /agents': (_) => fixture.agents,
     });
+    final mounted = RaftChannel(channel);
+    w.channels = [mounted];
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: Align(
-        alignment: Alignment.topLeft,
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: ChannelMembersButton(
-            controller: w,
-            channel: RaftChannel(channel),
-          ),
-        ),
+      body: ChannelMembers(
+        controller: w,
+        channel: mounted,
+        page: true,
+        onClose: () {},
       ),
     );
   },
   interact: (t, ctx) async {
-    final mouse = await t.createGesture(kind: PointerDeviceKind.mouse);
-    addTearDown(mouse.removePointer);
-    Future<void> click(Finder target) async {
-      await mouse.moveTo(t.getCenter(target));
-      await t.pump(const Duration(milliseconds: 50));
-      await mouse.down(t.getCenter(target));
-      await mouse.up();
-      await t.pump(const Duration(milliseconds: 300));
-    }
-
     await t.pump(const Duration(milliseconds: 300));
-    await click(find.byKey(const ValueKey('channel-members-open')));
-    await t.pump(const Duration(milliseconds: 300));
-    await click(find.byKey(const ValueKey('add-member-open')));
-    // Re-dispatch hover at the resting pointer (the add view replaced the
-    // roster under it), then wait for the tooltip.
-    await mouse.moveBy(Offset.zero);
+    final add = find.byKey(const ValueKey('add-member-open'));
+    await t.tap(add);
     await t.pump(const Duration(milliseconds: 250));
-    await t.pump(const Duration(milliseconds: 700));
   },
 );
 

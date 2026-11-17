@@ -2482,6 +2482,46 @@
   },
   {
    "kind": "endpoint",
+   "id": "GET /channels/:id/announcement",
+   "area": "channels",
+   "capability": "Read the version and viewer state of a channel announcement",
+   "background": true,
+   "status": "covered",
+   "webEntry": "store/channelAnnouncementStore.ts useChannelAnnouncement, mounted by ChatPanel and ChannelAnnouncementField",
+   "gate": "channel_announcement_v0; ordinary, private or external channel with read access",
+   "flutterEntry": "ChannelAnnouncementSession and ChannelAnnouncementStore share accepted snapshots between the conversation strip and Details.",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/features/channel_announcement_session.dart",
+     "needle": "/channels/$id/announcement"
+    }
+   ],
+   "justification": "",
+   "impact": "",
+   "size": ""
+  },
+  {
+   "kind": "endpoint",
+   "id": "GET /messages/channel/:id/by-activity",
+   "area": "channels",
+   "capability": "Page top-level messages by latest thread activity",
+   "background": true,
+   "status": "covered",
+   "webEntry": "store/channelActivityStore.ts and hooks/useForumTimeline.ts",
+   "gate": "channel_thread_sort_v0 and channel threadSort=activity",
+   "flutterEntry": "ChannelActivitySession loads an independent display window with a before cursor. Sequence-based read, sync and context navigation keep their existing paths.",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/features/channel_activity_session.dart",
+     "needle": "/messages/channel/$id/by-activity"
+    }
+   ],
+   "justification": "",
+   "impact": "",
+   "size": ""
+  },
+  {
+   "kind": "endpoint",
    "id": "GET /channels/:id/message-display-settings",
    "area": "channels",
    "capability": "Read the per-channel 'collapse long messages' preference",
@@ -2508,24 +2548,24 @@
    "kind": "endpoint",
    "id": "PATCH /channels/:id",
    "area": "channels",
-   "capability": "Edit channel name/description, change visibility (public/private, hide/restore #all), guest visible/joinable policy",
+   "capability": "Change channel metadata, visibility, visitor visibility, thread sort, Slack pairing, or announcement",
    "background": false,
    "status": "covered",
-   "webEntry": "Channel settings drawer: Info form (Name, Description, Save changes/Cancel), 'Make Public'/'Make Private' (#all: 'Hide #all'/'Restore #all') with confirm, Guest access switches 'Visible to Guests'/'Guests can join', Slack channel field",
-   "gate": "editChannelMetadata / changeChannelVisibility / manageGuestAccess capabilities (channel-level channelCapabilities); guest section needs guest feature flag, not archived/joint, private channels excluded except #all",
-   "flutterEntry": "channel_settings.dart panel: RaftChannelInfoForm, visibility action, Guest access switches, Slack channel field, unsaved-changes prompt",
+   "webEntry": "features/channel/EditChannelDialog.tsx, components/channel/ChannelVisitorVisibleField.tsx and store/channelAnnouncementStore.ts",
+   "gate": "Field-specific channel capabilities and enabled server flags. #all hide or restore uses dedicated routes.",
+   "flutterEntry": "ChannelSettings applies metadata and order changes. ChannelAnnouncementSession sets, replaces or clears an Artifact announcement.",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/channel_settings.dart",
-     "needle": "channel-settings-visibility-action"
+     "needle": "Future<void> patchChannel"
     },
     {
      "file": "apps/raft_flutter/lib/features/channel_settings.dart",
-     "needle": "channel-settings-guest-joinable-switch"
+     "needle": "channel-settings-visitor-visible-switch"
     },
     {
-     "file": "apps/raft_flutter/lib/features/channel_settings.dart",
-     "needle": "updateGuestPolicy"
+     "file": "apps/raft_flutter/lib/features/channel_announcement_session.dart",
+     "needle": "{'announcement': artifactId}"
     }
    ],
    "justification": "",
@@ -2927,9 +2967,9 @@
    "capability": "Channel/DM header buttons: Search this channel, Channel details and settings (opens the drawer/sheet)",
    "background": false,
    "status": "covered",
-   "webEntry": "ChannelOverflowMenu.tsx OverflowMenuTrigger search + settings icons",
+   "webEntry": "components/channel/ChannelOverflowMenu.tsx OverflowMenuTrigger",
    "gate": "",
-   "flutterEntry": "workspace_channel_header.dart (channel) / workspace_view.dart dmHeader (onSearch, onSettings)",
+   "flutterEntry": "workspace_channel_header.dart (channel) / workspace_view.dart (DM) and channel_details_host.dart",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/workspace_channel_header.dart",
@@ -2948,16 +2988,20 @@
    "kind": "ui",
    "id": "ui:channels.settings-preferences",
    "area": "channels",
-   "capability": "Settings Preferences: Pin channel (sidebar pin), Mute activity, Collapse long messages",
+   "capability": "Conversation preferences: notification level and mute, sidebar section, and collapse long messages",
    "background": false,
    "status": "covered",
-   "webEntry": "ChannelPreferencesSection.tsx (channels and DMs; DM has no Mute)",
+   "webEntry": "components/channel/ChannelPreferencesSection.tsx + ChannelSectionSelect.tsx",
    "gate": "Mute: joined channel/private/joint",
-   "flutterEntry": "channel_settings.dart Preferences section (channel-settings-pin-switch, channel-overflow-mute-switch, channel-settings-collapse-switch)",
+   "flutterEntry": "channel_settings.dart Your preferences; channel_section_select.dart",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/channel_settings.dart",
      "needle": "channel-settings-pin-switch"
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/channel_section_select.dart",
+     "needle": "channel-settings-section-select"
     }
    ],
    "justification": "",
@@ -2970,8 +3014,8 @@
    "area": "channels",
    "capability": "Closing the settings drawer with an unsaved name/description draft asks Keep editing / Discard changes / Save and close",
    "background": false,
-   "status": "covered",
-   "webEntry": "ChannelOverflowMenu.tsx unsaved prompt (closeGuardRef)",
+   "status": "partial",
+   "webEntry": "components/channel/ChannelOverflowMenu.tsx details close and navigation guard",
    "gate": "",
    "flutterEntry": "channel_settings.dart RaftUnsavedChangesPrompt",
    "flutterRefs": [
@@ -2980,9 +3024,9 @@
      "needle": "RaftUnsavedChangesPrompt("
     }
    ],
-   "justification": "",
-   "impact": "",
-   "size": ""
+   "justification": "Esc and close guard dirty edits. Workspace selection still uses the opening channel identity and does not intercept every navigation away.",
+   "impact": "Switching workspace destinations with an unsaved channel edit.",
+   "size": "S"
   },
   {
    "kind": "ui",
@@ -3623,16 +3667,16 @@
    "kind": "ui",
    "id": "ui:channels.settings-guest-access",
    "area": "members-roles",
-   "capability": "Guest access switches: 'Visible to Guests' and 'Guests can join'",
+   "capability": "Visible to visitors switch",
    "background": false,
    "status": "covered",
-   "webEntry": "EditChannelDialog.tsx guestAccessSection",
-   "gate": "guest feature flag + manageGuestAccess; not archived/joint; private excluded except #all",
-   "flutterEntry": "channel_settings.dart Guest access section",
+   "webEntry": "features/channel/EditChannelDialog.tsx + components/channel/ChannelVisitorVisibleField.tsx",
+   "gate": "manageVisitorAccess, channel/private, active; visibility can be enabled only for public ordinary channels on a live public page without external relations",
+   "flutterEntry": "channel_settings.dart visitorVisibleOffered + updateVisitorVisibility",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/channel_settings.dart",
-     "needle": "channel-settings-guest-visible-switch"
+     "needle": "channel-settings-visitor-visible-switch"
     }
    ],
    "justification": "",
@@ -3646,7 +3690,7 @@
    "capability": "Settings drawer members strip: 'N humans - M agents' count row opens the members page, avatar tiles, +N overflow, dashed + tile jumps straight into Add Member",
    "background": false,
    "status": "covered",
-   "webEntry": "ChannelOverflowMenu.tsx MembersStrip",
+   "webEntry": "components/channel/MembersStrip.tsx mounted by ChannelOverflowMenu.tsx",
    "gate": "+ tile: addChannelMembers, not archived, not #all; strip hidden for #all when hideHumansFromMembers",
    "flutterEntry": "channel_settings.dart RaftMembersStrip (onAdd -> openMembers(add: true))",
    "flutterRefs": [
@@ -3690,7 +3734,7 @@
    "capability": "Member row actions in the channel members list/page: row opens profile, hover 'Make admin'/'Demote', 'Remove <name>', Slack participants read-only, joint-peer badge",
    "background": false,
    "status": "covered",
-   "webEntry": "ChannelMembers.tsx renderMemberActions / ChannelMemberHoverActions / renderExternalRow / JointPeerBadge",
+   "webEntry": "features/channel/ChannelMembers.tsx renderMemberActions / ChannelMemberHoverActions / renderExternalRow / JointPeerBadge",
    "gate": "see PATCH role / DELETE member gates",
    "flutterEntry": "channel_members.dart row() with roleAction, onRemove, externalRow",
    "flutterRefs": [
@@ -7932,7 +7976,7 @@
    "capability": "In Add Member: pinned 'Create a New Agent' entry (promoted with the typed name when search has no hit) that creates an agent and auto-joins it, with a 'created but not joined' banner and Retry join",
    "background": false,
    "status": "covered",
-   "webEntry": "ChannelMembers.tsx add view footer (add-member-create-agent-entry) + CreateAgentDialog prefill + D-state banner",
+   "webEntry": "features/channel/ChannelMembers.tsx add view footer (add-member-create-agent-entry) + CreateAgentDialog prefill + D-state banner",
    "gate": "createAgents capability (disabled row with explanation otherwise)",
    "flutterEntry": "channel_members_view.dart _CreateAgentEntry: pinned entry in the add view, promoted to 'Create Agent “{name}”' when the search has no hit, inert with the owner/admin reason without createAgents; join-failed banner with 'Retry Joining This Channel'",
    "flutterRefs": [
@@ -9717,27 +9761,19 @@
    "area": "integrations-apps-mcp",
    "capability": "Pair a channel with a Slack channel from channel create/settings ('Slack channel' select: Not connected / channel names, already-paired and membership-required options disabled)",
    "background": false,
-   "status": "covered",
-   "webEntry": "ChannelSlackBridgeField.tsx in CreateChannelDialog and EditChannelDialog (Save applies the selection; partial failure message)",
+   "status": "partial",
+   "webEntry": "components/channel/ChannelSlackBridgeField.tsx ChannelSlackBridgeRow in features/channel/EditChannelDialog.tsx",
    "gate": "Slack bridge feature flags + bridge ready + createChannels/edit capabilities",
-   "flutterEntry": "slack_channel_pairing.dart + raft_ui RaftChannelSlackField: 'Connect to Slack' section in the channel settings drawer and the create dialog; Save / Create applies the pick after the channel (remove by binding epoch, save, preflight, enable)",
+   "flutterEntry": "ChannelDetailsSlack opens a separate Connect or Change confirmation. SlackChannelPairing owns the binding snapshot and mutation sequence.",
    "flutterRefs": [
     {
-     "file": "apps/raft_flutter/lib/features/slack_channel_pairing.dart",
-     "needle": "class SlackChannelPairing"
-    },
-    {
-     "file": "apps/raft_flutter/lib/features/channel_settings.dart",
-     "needle": "SlackChannelPairingField"
-    },
-    {
-     "file": "apps/raft_flutter/lib/features/create_channel_dialog.dart",
-     "needle": "SlackChannelPairingField"
+     "file": "apps/raft_flutter/lib/features/channel_details_slack.dart",
+     "needle": "channel-settings-slack-open"
     }
    ],
-   "justification": "Shown only while the bridge flag is on and the bridge is in the health stage, for channels and private channels that are not archived; options of the channel's privacy class, already-paired and app-missing channels disabled; a failed bridge says the channel was saved and a retry never creates a second channel.",
-   "impact": "",
-   "size": ""
+   "justification": "Details has a keyed native Select with typeahead. Web uses an input-backed combobox and renders invalid bindings inline.",
+   "impact": "Search affordances and invalid-binding feedback differ in the Slack dialog.",
+   "size": "S"
   },
   {
    "kind": "ui",
@@ -15471,23 +15507,14 @@
    "kind": "endpoint",
    "id": "POST /channels/:id/convert-to-joint",
    "area": "joint-channels",
-   "capability": "Convert an ordinary/private channel into a joint channel (progress, upload fence)",
+   "capability": "Start a new conversion to a joint channel",
    "background": false,
-   "status": "covered",
-   "webEntry": "Channel settings drawer > JointConversionSection 'Convert to Joint Channel' + progress card",
-   "gate": "federateChannels on server and channel; feature flag channel-to-joint conversion; not #all; channel/private only",
-   "flutterEntry": "channel_conversion_section.dart ChannelConversionSection inside the settings panel (same flag gate)",
-   "flutterRefs": [
-    {
-     "file": "apps/raft_flutter/lib/features/channel_conversion_section.dart",
-     "needle": "/channels/${widget.channelId}/convert-to-joint"
-    },
-    {
-     "file": "apps/raft_flutter/lib/features/channel_conversion_section.dart",
-     "needle": "class ChannelConversionSection"
-    }
-   ],
-   "justification": "",
+   "status": "na",
+   "webEntry": "Retired in Web v1.24. Existing conversions continue under external_channels_v1.",
+   "gate": "Unavailable for new conversions in v1.24.",
+   "flutterEntry": "The former conversion start action has been removed.",
+   "flutterRefs": [],
+   "justification": "WP-PIN handoff retires initiation. Existing uploads and conversion recovery remain available.",
    "impact": "",
    "size": ""
   },
@@ -15662,7 +15689,7 @@
    "capability": "Joint channel settings 'Connected servers' list (name, slug, 'this server', plan Free/Paid, Active/Pending) with the rule tooltip",
    "background": false,
    "status": "covered",
-   "webEntry": "EditChannelDialog.tsx joint section (channel.jointServers / jointPendingInvites)",
+   "webEntry": "features/channel/EditChannelDialog.tsx joint section (channel.jointServers / jointPendingInvites)",
    "gate": "joint channel settings",
    "flutterEntry": "channel_joint_section.dart + raft_ui RaftChannelJointSectionView in the settings drawer",
    "flutterRefs": [
@@ -15683,11 +15710,11 @@
    "kind": "ui",
    "id": "ui:joint-channels.settings-conversion",
    "area": "joint-channels",
-   "capability": "Convert to joint channel (flag-gated), progress, retry/cancel, active attachment-upload list with Cancel upload",
+   "capability": "In-progress joint conversion status, retry/cancel, and active attachment uploads",
    "background": false,
    "status": "covered",
    "webEntry": "JointConversionSection.tsx + JointAttachmentUploadSection.tsx in the settings drawer",
-   "gate": "channel-to-joint conversion flag + federateChannels",
+   "gate": "external_channels_v1 + federateChannels; only existing jobs",
    "flutterEntry": "channel_conversion_section.dart ChannelConversionSection (Cancel upload per active upload)",
    "flutterRefs": [
     {

@@ -102,7 +102,10 @@ const dialogSurfaces = <CloseSurface>[
     phone: {_x, _esc, _scrim, _sys, _drag},
     fold: {_x, _esc, _scrim, _sys},
     desktop: {_x, _esc, _scrim, _sys},
-    files: ['../../packages/raft_ui/lib/src/sidebar_section_dialog.dart'],
+    files: [
+      '../../packages/raft_ui/lib/src/sidebar_section_dialog.dart',
+      'lib/features/channel_section_select.dart',
+    ],
     status: 'approved',
     fix: _sheetOnPhone,
   ),

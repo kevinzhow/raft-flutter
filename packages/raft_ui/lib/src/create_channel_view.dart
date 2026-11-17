@@ -602,58 +602,80 @@ class RaftArchivedNameBanner extends StatelessWidget {
   final VoidCallback? onUnarchive, onOpen;
 
   @override
-  Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
-    return RaftBanner(
-      titleBuilder: (style) => Text.rich(
-        TextSpan(
-          children: raftRichText(
-            context,
-            'The name <mono>#{name}</mono> is held by an archived channel.',
-            {
-              'mono': (text) => TextSpan(
-                text: text,
-                style: TextStyle(fontFamily: t.monoFont),
-              ),
-            },
-            values: {'name': name},
-          ),
+  Widget build(BuildContext context) => raftArchivedNameBanner(
+    context,
+    name: name,
+    canUnarchive: canUnarchive,
+    onChangeName: onChangeName,
+    onUnarchive: onUnarchive,
+    onOpen: onOpen,
+    busy: busy,
+    showHint: showHint,
+  );
+}
+
+RaftBanner raftArchivedNameBanner(
+  BuildContext context, {
+  Key? key,
+  required String name,
+  required bool canUnarchive,
+  VoidCallback? onChangeName,
+  VoidCallback? onUnarchive,
+  VoidCallback? onOpen,
+  bool busy = false,
+  bool showHint = true,
+}) {
+  final t = RaftTokens.of(context);
+  return RaftBanner(
+    key: key,
+    titleBuilder: (style) => Text.rich(
+      TextSpan(
+        children: raftRichText(
+          context,
+          'The name <mono>#{name}</mono> is held by an archived channel.',
+          {
+            'mono': (text) => TextSpan(
+              text: text,
+              style: TextStyle(fontFamily: t.monoFont),
+            ),
+          },
+          values: {'name': name},
         ),
-        style: style,
       ),
-      description: showHint
-          ? canUnarchive
-                ? 'Unarchive it to keep its history, or choose a different name.'
-                : 'Pick a different name, or ask an admin to unarchive it.'
-          : '',
-      actions: [
-        if (canUnarchive)
-          RaftButton(
-            label: busy ? 'Unarchiving…' : 'Unarchive',
-            uiVariant: RaftButtonVariant.outline,
-            uiSize: RaftButtonSize.md,
-            disabled: busy,
-            onPressed: onUnarchive,
-          ),
-        if (onOpen != null)
-          RaftButton(
-            key: const ValueKey('archived-name-collision-open'),
-            label: 'Open channel',
-            uiVariant: canUnarchive
-                ? RaftButtonVariant.ghost
-                : RaftButtonVariant.outline,
-            uiSize: RaftButtonSize.md,
-            disabled: busy,
-            onPressed: onOpen,
-          ),
-        if (onChangeName != null)
-          RaftButton(
-            label: 'Change name',
-            uiVariant: RaftButtonVariant.ghost,
-            uiSize: RaftButtonSize.md,
-            onPressed: onChangeName,
-          ),
-      ],
-    );
-  }
+      style: style,
+    ),
+    description: showHint
+        ? canUnarchive
+              ? 'Unarchive it to keep its history, or choose a different name.'
+              : 'Pick a different name, or ask an admin to unarchive it.'
+        : '',
+    actions: [
+      if (canUnarchive)
+        RaftButton(
+          label: busy ? 'Unarchiving…' : 'Unarchive',
+          uiVariant: RaftButtonVariant.outline,
+          uiSize: RaftButtonSize.md,
+          disabled: busy,
+          onPressed: onUnarchive,
+        ),
+      if (onOpen != null)
+        RaftButton(
+          key: const ValueKey('archived-name-collision-open'),
+          label: 'Open channel',
+          uiVariant: canUnarchive
+              ? RaftButtonVariant.ghost
+              : RaftButtonVariant.outline,
+          uiSize: RaftButtonSize.md,
+          disabled: busy,
+          onPressed: onOpen,
+        ),
+      if (onChangeName != null)
+        RaftButton(
+          label: 'Change name',
+          uiVariant: RaftButtonVariant.ghost,
+          uiSize: RaftButtonSize.md,
+          onPressed: onChangeName,
+        ),
+    ],
+  );
 }

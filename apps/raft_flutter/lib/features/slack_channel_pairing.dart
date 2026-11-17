@@ -43,6 +43,13 @@ class SlackChannelPairing extends ChangeNotifier {
     return p == null ? '' : '${_pairFor(p)?['slackChannelId'] ?? ''}';
   }
 
+  String? get currentName =>
+      snapshot
+              ?.rows('slackChannels')
+              .where((row) => row['id'] == current)
+              .firstOrNull?['name']
+          as String?;
+
   /// `isBridgeDirty`: the pick differs from the saved pairing.
   bool get dirty => available && selected != current;
 
@@ -166,10 +173,16 @@ class SlackChannelPairing extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> refresh() async {
+    final ticket = ++_ticket;
+    final next = SlackBridgeProjection.parse(await w.client.get(base));
+    if (ticket == _ticket) _adopt(next);
+  }
+
   /// `options` of the Select: "Do not connect to Slack", then the Slack
   /// channels of the same privacy class as the channel (Web filters by
   /// `privacyClass`), each marked paired / needing the Raft app.
-  List<RaftSlackChannelOption> options(BuildContext context, String privacy) {
+  List<RaftSlackChannelOption> options(BuildContext context, String? privacy) {
     final p = snapshot;
     final paired = {
       for (final pair in p?.rows('channelPairs') ?? const <Map>[])
@@ -180,10 +193,15 @@ class SlackChannelPairing extends ChangeNotifier {
     return [
       RaftSlackChannelOption(
         value: '',
-        label: raftText(context, 'Do not connect to Slack'),
+        label: raftText(
+          context,
+          privacy == null ? 'Not connected' : 'Do not connect to Slack',
+        ),
       ),
       for (final c in p?.rows('slackChannels') ?? const <Map>[])
-        if (c['privacyClass'] == null || c['privacyClass'] == privacy)
+        if (privacy == null ||
+            c['privacyClass'] == null ||
+            c['privacyClass'] == privacy)
           () {
             final id = '${c['id']}', name = '${c['name']}';
             final occupied = paired.containsKey(id) && id != selected;
@@ -195,6 +213,10 @@ class SlackChannelPairing extends ChangeNotifier {
                     ? '#{name} — invite the Raft app in Slack'
                     : occupied
                     ? '#{name} — already paired'
+                    : privacy == null && c['privacyClass'] == 'private'
+                    ? '#{name} — private in Slack'
+                    : privacy == null && c['privacyClass'] == 'public'
+                    ? '#{name} — public in Slack'
                     : '#{name}',
                 name,
               ),

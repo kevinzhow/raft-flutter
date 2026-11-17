@@ -3,6 +3,15 @@ import 'package:flutter/material.dart';
 import 'previews.dart';
 import 'raft_ui.dart';
 
+@RaftPreviews('Channel details side column', size: Size(1280, 844))
+Widget channelDetailsColumnPreview() => const Align(
+  alignment: Alignment.centerRight,
+  child: SizedBox(width: 400, child: _ChannelPagesPreview(details: true)),
+);
+
+@RaftPreviews('Mobile channel details page', size: Size(390, 844))
+Widget channelDetailsPagePreview() => const _ChannelPagesPreview(details: true);
+
 @RaftPreviews('Mobile channel settings page', size: Size(390, 844))
 Widget channelSettingsPagePreview() => const _ChannelPagesPreview();
 
@@ -23,11 +32,12 @@ Widget channelSettingsErrorPreview() =>
 class _ChannelPagesPreview extends StatefulWidget {
   const _ChannelPagesPreview({
     this.members = false,
+    this.details = false,
     this.dm = false,
     this.loading = false,
     this.error,
   });
-  final bool members, loading, dm;
+  final bool members, loading, dm, details;
   final String? error;
   @override
   State<_ChannelPagesPreview> createState() => _ChannelPagesPreviewState();
@@ -90,7 +100,8 @@ class _ChannelPagesPreviewState extends State<_ChannelPagesPreview> {
               family: t.bodyFont,
             );
             return RaftOverflowSheet(
-              page: true,
+              page: !widget.details || MediaQuery.sizeOf(context).width < 400,
+              details: widget.details,
               title: widget.dm ? 'Alice' : '#general',
               badge: widget.dm ? 'Direct message' : 'Public',
               subtitle: widget.dm
@@ -121,22 +132,24 @@ class _ChannelPagesPreviewState extends State<_ChannelPagesPreview> {
                     children: [
                       if (widget.error != null)
                         RaftOverflowFormError(widget.error!),
-                      const RaftOverflowGroupHeading(
-                        title: 'Info',
-                        description:
-                            'Name and description shown across the server.',
-                      ),
-                      RaftChannelInfoForm(
-                        nameController: name,
-                        descriptionController: description,
-                        onSubmitName: (_) {},
-                        canCancel: true,
-                        canSave: true,
-                        onCancel: () {
-                          name.text = 'general';
-                        },
-                        onSave: () {},
-                      ),
+                      if (!widget.details) ...[
+                        const RaftOverflowGroupHeading(
+                          title: 'Info',
+                          description:
+                              'Name and description shown across the server.',
+                        ),
+                        RaftChannelInfoForm(
+                          nameController: name,
+                          descriptionController: description,
+                          onSubmitName: (_) {},
+                          canCancel: true,
+                          canSave: true,
+                          onCancel: () {
+                            name.text = 'general';
+                          },
+                          onSave: () {},
+                        ),
+                      ],
                       preferences,
                     ],
                   ),

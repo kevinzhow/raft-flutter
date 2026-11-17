@@ -46,6 +46,7 @@ String channelSideDragTitle(BuildContext context, ChannelSideSection s) =>
     switch (s) {
       ChannelSideSection.tasks => raftText(context, 'Tasks'),
       ChannelSideSection.files => raftText(context, 'Files'),
+      ChannelSideSection.details => raftText(context, 'Details'),
       ChannelSideSection.artifact => raftText(context, 'Artifact'),
       _ => s.name,
     };
@@ -180,7 +181,7 @@ class ChannelSideDragController extends ChangeNotifier {
         ? null
         : MatrixUtils.transformPoint(headBox.getTransformTo(area), Offset.zero);
     quietGrip = null;
-    HardwareKeyboard.instance.addHandler(_onKey);
+    FocusManager.instance.addEarlyKeyEventHandler(_onKey);
     active.value = s;
     final picked = raftFormat(at, 'Picked up {name}.', {
       'name': channelSideDragTitle(at, s),
@@ -307,7 +308,7 @@ class ChannelSideDragController extends ChangeNotifier {
     final t = target;
     final how = via;
     final c = _at;
-    HardwareKeyboard.instance.removeHandler(_onKey);
+    FocusManager.instance.removeEarlyKeyEventHandler(_onKey);
     via = null;
     targets = const [];
     target = null;
@@ -345,14 +346,14 @@ class ChannelSideDragController extends ChangeNotifier {
     notifyListeners();
   }
 
-  bool _onKey(KeyEvent e) {
+  KeyEventResult _onKey(KeyEvent e) {
     if (e is KeyDownEvent &&
         e.logicalKey == LogicalKeyboardKey.escape &&
         dragging) {
       end(false);
-      return true;
+      return KeyEventResult.handled;
     }
-    return false;
+    return KeyEventResult.ignored;
   }
 
   String _noRoom() =>
@@ -397,7 +398,7 @@ class ChannelSideDragController extends ChangeNotifier {
   @override
   void dispose() {
     _disposed = true;
-    HardwareKeyboard.instance.removeHandler(_onKey);
+    FocusManager.instance.removeEarlyKeyEventHandler(_onKey);
     active.dispose();
     super.dispose();
   }

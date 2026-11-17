@@ -6,6 +6,7 @@ import 'package:raft_ui/raft_ui.dart';
 import '../data/workspace_controller.dart';
 import '../data/raft_navigation_history.dart';
 import 'channel_files_media.dart';
+import 'channel_announcement_host.dart';
 import 'channel_side_area.dart' show insideChannelSideArea;
 import 'channel_side_flags.dart';
 import 'chat_view.dart';
@@ -79,7 +80,8 @@ class _ConversationPanelState extends State<ConversationPanel> {
         oldWidget.selectionHandle != widget.selectionHandle ||
         (oldWidget.onTask == null) != (widget.onTask == null) ||
         (oldWidget.onMessageTask == null) != (widget.onMessageTask == null) ||
-        (oldWidget.onViewBilling == null) != (widget.onViewBilling == null)) {
+        (oldWidget.onViewBilling == null) != (widget.onViewBilling == null) ||
+        oldWidget.hideHeader != widget.hideHeader) {
       sectionBodies.clear();
     }
   }
@@ -217,16 +219,28 @@ class _ConversationPanelState extends State<ConversationPanel> {
                     // PageView retains the laid-out chat, so swiping back paints
                     // the cached rows immediately. Pager TickerMode gates its
                     // presentation; hiding it with Offstage forced relayout.
-                    child: RaftChatView(
-                      controller: w,
-                      selectionHandle: widget.selectionHandle,
-                      onTask: widget.onMessageTask == null
-                          ? null
-                          : openMessageTask,
-                      onViewBilling: widget.onViewBilling == null
-                          ? null
-                          : viewBilling,
-                      onOpenChannelSettings: widget.onOpenChannelSettings,
+                    child: Column(
+                      children: [
+                        if (!widget.hideHeader && channel != null)
+                          ChannelAnnouncementHost(
+                            controller: w,
+                            channel: channel,
+                            onOpenSettings: widget.onOpenChannelSettings,
+                          ),
+                        Expanded(
+                          child: RaftChatView(
+                            controller: w,
+                            selectionHandle: widget.selectionHandle,
+                            onTask: widget.onMessageTask == null
+                                ? null
+                                : openMessageTask,
+                            onViewBilling: widget.onViewBilling == null
+                                ? null
+                                : viewBilling,
+                            onOpenChannelSettings: widget.onOpenChannelSettings,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   RaftConversationTabId.tasks => ResourceView(

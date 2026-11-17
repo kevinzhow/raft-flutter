@@ -1344,8 +1344,8 @@
     },
     {
       "id": "chat.channel-settings",
-      "title": "Channel settings drawer and members page",
-      "webEntry": "packages/web/src/components/channel/EditChannelDialog.tsx",
+      "title": "Channel Details, announcement settings and members",
+      "webEntry": "packages/web/src/features/channel/EditChannelDialog.tsx (Web v1.24.0)",
       "flutterEntry": "apps/raft_flutter/lib/features/channel_settings.dart",
       "states": [
         {
@@ -1380,6 +1380,69 @@
           "justification": "Web channel-conversion and joint-channel flows show retry / cancel-unavailable / resend-invite errors (channel.edit.retryingConversion, cancelConversionUnavailable, failedResendInvite, connectedMetaUnavailable) with no Flutter strings and no cases.",
           "size": "M",
           "gapKind": "case-missing"
+        },
+        {
+          "state": "empty",
+          "variant": "no announcement with edit permission",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "gap",
+          "gapKind": "case-missing",
+          "size": "S",
+          "justification": "Both product paths offer Set announcement. The official settings panel case does not exercise this state."
+        },
+        {
+          "state": "error",
+          "variant": "archived name conflict on edit",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "gap",
+          "gapKind": "case-missing",
+          "size": "S",
+          "justification": "The inline form keeps its input and offers the archived channel. No dedicated pixel case exercises the rename failure."
+        }
+      ]
+    },
+    {
+      "id": "chat.channel-announcement-picker",
+      "title": "Channel announcement Artifact picker",
+      "webEntry": "packages/web/src/components/channel/ChannelAnnouncementField.tsx",
+      "flutterEntry": "apps/raft_flutter/lib/features/channel_announcement_settings.dart",
+      "states": [
+        {
+          "state": "loading",
+          "variant": "channel Artifacts are being read",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "gap",
+          "gapKind": "case-missing",
+          "size": "S",
+          "justification": "The picker shows its loading state. No dedicated pixel case exercises it."
+        },
+        {
+          "state": "empty",
+          "variant": "no Artifacts or matches",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "gap",
+          "gapKind": "case-missing",
+          "size": "S",
+          "justification": "The picker distinguishes an empty channel from an empty search. No dedicated pixel case exercises either state."
+        },
+        {
+          "state": "error",
+          "variant": "Artifacts cannot be loaded",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "gap",
+          "gapKind": "case-missing",
+          "size": "S",
+          "justification": "The picker reports the query failure. No dedicated pixel case exercises it."
         }
       ]
     },
@@ -52672,6 +52735,14 @@
         "declarationRefs": [],
         "mountStatus": "unresolved",
         "reason": "Existing lifecycle screen record; exact builder/family composition and current mounted state are not yet established."
+      },
+      "screen:chat.channel-announcement-picker": {
+        "owner": "Channel details and settings",
+        "kind": "route_or_panel_candidate",
+        "lifecycleScreenId": "chat.channel-announcement-picker",
+        "declarationRefs": [],
+        "mountStatus": "source_reviewed",
+        "reason": "The announcement picker mounts the shared confirmation dialog and list row composition. Its loading, empty and failure states need dedicated paired captures."
       },
       "screen:chat.channel-settings": {
         "owner": "Choice9 design-system alignment",

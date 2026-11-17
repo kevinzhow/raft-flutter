@@ -22,6 +22,7 @@ import 'package:raft_ui/raft_ui.dart';
 import '../data/source_channel_files_store.dart';
 import '../data/workspace_controller.dart';
 import 'channel_files_media.dart';
+import 'channel_details_host.dart';
 import 'channel_side_card.dart';
 import 'channel_side_cards.dart';
 import 'channel_side_column.dart';
@@ -162,6 +163,7 @@ class _ChannelSideAreaState extends State<ChannelSideArea> {
   WorkspaceController get w => widget.controller;
   late ChannelSideStore store;
   late WebPreviewStore preview;
+  late ChannelDetailsStore details;
   late ChannelFilesMedia media;
   final drag = ChannelSideDragController();
   late Listenable listenable;
@@ -178,8 +180,15 @@ class _ChannelSideAreaState extends State<ChannelSideArea> {
   void bind() {
     store = ChannelSideStore.of(w);
     preview = WebPreviewStore.of(w);
+    details = ChannelDetailsStore.of(w);
     media = ChannelFilesMedia(w);
-    listenable = Listenable.merge([w, store, ChannelSideFlags.of(w), preview]);
+    listenable = Listenable.merge([
+      w,
+      store,
+      ChannelSideFlags.of(w),
+      preview,
+      details,
+    ]);
     previewOpenedAt = preview.openedAt;
   }
 
@@ -238,6 +247,7 @@ class _ChannelSideAreaState extends State<ChannelSideArea> {
               ? ChannelSideSection.tasks
               : ChannelSideSection.files,
       if (page != null) ChannelSideSection.artifact,
+      if (details.channel != null) ChannelSideSection.details,
     };
     final compact = RaftAdaptiveWorkspace.compactOf(context);
     final placement = placeChannelSide(
@@ -340,6 +350,7 @@ class _ChannelSideAreaState extends State<ChannelSideArea> {
   ) => {
     ChannelSideSection.tasks: raftText(context, 'Tasks'),
     ChannelSideSection.files: raftText(context, 'Files'),
+    ChannelSideSection.details: raftText(context, 'Details'),
     if (page != null)
       ChannelSideSection.artifact: webPreviewAddressParts(page.url).host,
   };
@@ -458,6 +469,13 @@ class _ChannelSideAreaState extends State<ChannelSideArea> {
                       }
                     : null,
               ),
+        );
+      case ChannelSideSection.details:
+        return ChannelDetailsHost(
+          key: ValueKey('channel-details-host-${details.channel?.id}'),
+          controller: w,
+          headerWrapper: (context, header) =>
+              (widget.headWrapper ?? _wrapHead)(context, section, header),
         );
       case ChannelSideSection.artifact:
         // The page's panel has the head every card has of its own.

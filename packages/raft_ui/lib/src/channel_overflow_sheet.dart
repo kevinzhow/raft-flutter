@@ -1,9 +1,5 @@
-// Presentation of the Web channel / DM settings drawer, the only surface the
-// product shows for them: `ChannelOverflowMenu` -> `OverflowSheet`
-// (components/ui/OverflowSheet.tsx) holding the `MembersStrip`,
-// `EditChannelDialog presentation="panel"` and `ChannelPreferencesSection`.
-// The app adapter (apps/raft_flutter ChannelSettings) owns data, permissions
-// and commands and passes plain values and callbacks in.
+// Web ChannelDetailsSurface and the standalone OverflowSheet presentation.
+// The app adapter owns channel data, permissions and commands.
 import 'dart:math' as math;
 import 'dart:ui' show SemanticsRole;
 
@@ -11,17 +7,27 @@ import 'package:flutter/material.dart';
 
 import 'channel_header.dart' show raftCollapseWhitespace;
 import 'panel_edge.dart';
+import 'panel_layout.dart';
+import 'raft/icon_tile.dart';
+import 'tokens/tokens.dart';
 import 'design_primitives.dart';
 import 'dialog_card.dart';
 import 'dialog_surface.dart';
 import 'icons.dart';
 import 'indicators.dart';
+import 'interaction.dart';
+import 'adaptive_workspace.dart';
+import 'list_items.dart' show RaftSectionHeader;
 import 'localization.dart';
 import 'mounted_avatar_recipe.dart';
 import 'inline_badge_editor.dart' show RaftTouchTargetExpander;
 import 'tooltip.dart';
 import 'recipes/button_variants.g.dart';
 import 'raft/ui_tokens.dart';
+import 'raft/button.dart';
+import 'raft/list_row.dart';
+import 'raft/switch.dart';
+import 'channel_settings_sheet.dart' show RaftSheetSwitchRow;
 import 'settings_controls.dart' show RaftSettingsRecipeButton;
 import 'space.dart';
 import 'status_bar.dart';
@@ -46,6 +52,11 @@ class RaftOverflowSheet extends StatelessWidget {
     this.closeLabel = 'Close Channel Details and Settings',
     this.bodyKey,
     this.page = false,
+    this.details = false,
+    this.identityAction,
+    this.identityContent,
+    this.archived = false,
+    this.headerWrapper,
   });
 
   /// The visible sheet title (`#general`, a DM peer's name).
@@ -63,6 +74,11 @@ class RaftOverflowSheet extends StatelessWidget {
 
   /// Full-width route content with the shared mobile navigation geometry.
   final bool page;
+
+  /// ChannelDetailsSurface in the side column or the phone page.
+  final bool details, archived;
+  final Widget? identityAction, identityContent;
+  final Widget Function(BuildContext, Widget)? headerWrapper;
   final List<Widget> children;
 
   /// Width of the drawer for a viewport: `max-w-[min(100vw,34rem)]`.
@@ -70,6 +86,7 @@ class RaftOverflowSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (details) return _detailsSurface(context);
     final t = RaftTokens.of(context);
     final size = MediaQuery.sizeOf(context);
     final mobile = size.width < RaftLayoutMetrics.desktopBreakpoint;
@@ -202,6 +219,229 @@ class RaftOverflowSheet extends StatelessWidget {
       ),
     );
   }
+
+  Widget _detailsSurface(BuildContext context) {
+    final t = RaftTokens.of(context);
+    return ColoredBox(
+      key: const ValueKey('channel-details'),
+      color: t.ui.layerCanvas,
+      child: SizedBox.expand(
+        key: const ValueKey('channel-overflow-sheet'),
+        child: Column(
+          children: [
+            _ChannelDetailsHeader(
+              page: page,
+              onClose: onClose,
+              closeLabel: closeLabel,
+              headerWrapper: headerWrapper,
+            ),
+            Expanded(
+              child: CustomScrollView(
+                key: bodyKey,
+                slivers: [
+                  SliverToBoxAdapter(
+                    child:
+                        identityContent ??
+                        _ChannelDetailsIdentity(
+                          title: title,
+                          badge: badge,
+                          description: subtitle,
+                          action: identityAction,
+                          archived: archived,
+                        ),
+                  ),
+                  for (final child in children)
+                    if (child is RaftOverflowPanelBody)
+                      SliverPadding(
+                        key: const Key('channel-settings-panel'),
+                        padding: EdgeInsets.fromLTRB(
+                          16,
+                          0,
+                          16,
+                          16 + MediaQuery.paddingOf(context).bottom,
+                        ),
+                        sliver: SliverList.list(children: child.children),
+                      )
+                    else
+                      SliverToBoxAdapter(child: child),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ChannelDetailsHeader extends StatelessWidget {
+  const _ChannelDetailsHeader({
+    required this.page,
+    required this.onClose,
+    this.closeLabel = 'Close Channel Details and Settings',
+    this.headerWrapper,
+  });
+  final Widget Function(BuildContext, Widget)? headerWrapper;
+  final bool page;
+  final VoidCallback onClose;
+  final String closeLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    final header = RaftPanelHeaderBar(
+      title: raftText(context, 'Details'),
+      background: RaftTokens.of(context).ui.layerCanvas,
+      bottomRule: true,
+      onBack: page ? onClose : null,
+      backKey: const ValueKey('channel-overflow-back'),
+      backTooltip: raftText(context, 'Back'),
+      actions: [
+        if (!page)
+          RaftPanelAction(
+            key: const ValueKey('channel-details-close'),
+            glyph: RaftGlyph.x,
+            tooltip: raftText(context, closeLabel),
+            onPressed: onClose,
+            minHitExtent: RaftMetrics.touchTarget,
+          ),
+      ],
+    );
+    return headerWrapper?.call(context, header) ?? header;
+  }
+}
+
+class _ChannelDetailsIdentity extends StatefulWidget {
+  const _ChannelDetailsIdentity({
+    required this.title,
+    required this.badge,
+    required this.description,
+    required this.action,
+    required this.archived,
+  });
+  final bool archived;
+  final String title;
+  final String? badge, description;
+  final Widget? action;
+
+  @override
+  State<_ChannelDetailsIdentity> createState() =>
+      _ChannelDetailsIdentityState();
+}
+
+class _ChannelDetailsIdentityState extends State<_ChannelDetailsIdentity> {
+  bool expanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = RaftTokens.of(context);
+    final description = widget.description?.trim() ?? '';
+    final style = t.scale(RaftTypeScale.callout);
+    final grows = RaftScaled.grows(context);
+    final trailing = <Widget>[
+      if (widget.badge != null)
+        RaftBadge(
+          key: const ValueKey('channel-overflow-visibility-badge'),
+          label: raftText(context, widget.badge!),
+          appearance: RaftBadgeRecipeAppearance.outline,
+        ),
+      if (widget.archived)
+        RaftBadge(
+          label: raftText(context, 'Archived'),
+          appearance: RaftBadgeRecipeAppearance.soft,
+          variant: RaftBadgeRecipeVariant.muted,
+        ),
+      if (widget.action != null) widget.action!,
+    ];
+    return LayoutBuilder(
+      builder: (context, box) {
+        final stacked = grows || box.maxWidth < 320;
+        return Padding(
+          key: const ValueKey('channel-details-identity'),
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  RaftIconTile(
+                    glyph: widget.badge == 'Private'
+                        ? RaftGlyph.lock
+                        : widget.badge == 'Direct message'
+                        ? RaftGlyph.user
+                        : RaftGlyph.hash,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Semantics(
+                      header: true,
+                      child: Text(
+                        widget.title,
+                        key: const ValueKey('channel-overflow-title-text'),
+                        maxLines: RaftScaled.grows(context) ? null : 1,
+                        overflow: RaftScaled.grows(context)
+                            ? TextOverflow.clip
+                            : TextOverflow.ellipsis,
+                        style: t.scale(RaftTypeScale.headline),
+                      ),
+                    ),
+                  ),
+                  if (!stacked)
+                    for (final item in trailing) ...[
+                      const SizedBox(width: 12),
+                      item,
+                    ],
+                ],
+              ),
+              if (stacked && trailing.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                Wrap(spacing: 12, runSpacing: 12, children: trailing),
+              ],
+              if (description.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                LayoutBuilder(
+                  builder: (context, box) {
+                    final painter = TextPainter(
+                      text: TextSpan(text: description, style: style),
+                      textDirection: Directionality.of(context),
+                      textScaler: MediaQuery.textScalerOf(context),
+                      maxLines: 3,
+                    )..layout(maxWidth: box.maxWidth);
+                    final overflow = painter.didExceedMaxLines;
+                    painter.dispose();
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          description,
+                          key: const ValueKey(
+                            'channel-settings-description-readonly',
+                          ),
+                          style: style,
+                          maxLines: expanded ? null : 3,
+                          overflow: expanded
+                              ? TextOverflow.clip
+                              : TextOverflow.ellipsis,
+                        ),
+                        if (overflow)
+                          RaftTextLink(
+                            label: raftText(
+                              context,
+                              expanded ? 'Show less' : 'Show more',
+                            ),
+                            onPressed: () =>
+                                setState(() => expanded = !expanded),
+                          ),
+                      ],
+                    );
+                  },
+                ),
+              ],
+            ],
+          ),
+        );
+      },
+    );
+  }
 }
 
 /// `OverflowSheet bare`: the same drawer popup without its header, holding a
@@ -211,12 +451,37 @@ class RaftOverflowBareSheet extends StatelessWidget {
     super.key,
     required this.child,
     this.page = false,
-  });
+    this.details = false,
+    this.onClose,
+    this.headerWrapper,
+  }) : assert(!details || onClose != null);
   final Widget child;
-  final bool page;
+  final bool page, details;
+  final VoidCallback? onClose;
+  final Widget Function(BuildContext, Widget)? headerWrapper;
+
   @override
-  Widget build(BuildContext context) =>
-      _OverflowDrawerFrame(page: page, child: child);
+  Widget build(BuildContext context) {
+    if (!details) return _OverflowDrawerFrame(page: page, child: child);
+    return ColoredBox(
+      key: const ValueKey('channel-details'),
+      color: RaftTokens.of(context).ui.layerCanvas,
+      child: SizedBox.expand(
+        key: const ValueKey('channel-overflow-sheet'),
+        child: Column(
+          children: [
+            if (!page)
+              _ChannelDetailsHeader(
+                page: false,
+                onClose: onClose!,
+                headerWrapper: headerWrapper,
+              ),
+            Expanded(child: child),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 /// Drawer popup frame shared by [RaftOverflowSheet] and [RaftOverflowBareSheet]:
@@ -380,6 +645,7 @@ class RaftChannelInfoForm extends StatelessWidget {
     this.nameEnabled = true,
     this.descriptionEnabled = true,
     this.nameHint,
+    this.descriptionHint,
     this.onSubmitName,
     this.canCancel = false,
     this.canSave = false,
@@ -388,7 +654,7 @@ class RaftChannelInfoForm extends StatelessWidget {
   });
   final TextEditingController nameController, descriptionController;
   final bool nameEnabled, descriptionEnabled, canCancel, canSave, saving;
-  final String? nameHint;
+  final String? nameHint, descriptionHint;
   final ValueChanged<String>? onSubmitName;
   final VoidCallback onCancel, onSave;
 
@@ -399,11 +665,14 @@ class RaftChannelInfoForm extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     final hairline = t.colors['line-muted']!;
+    final details = descriptionHint != null;
     final cancelButton = RaftSettingsRecipeButton(
       key: const ValueKey('channel-settings-discard-draft'),
       label: 'Cancel',
-      variant: RaftButtonRecipeVariant.outline,
-      size: RaftButtonRecipeSize.sm,
+      variant: details
+          ? RaftButtonRecipeVariant.ghost
+          : RaftButtonRecipeVariant.outline,
+      size: details ? RaftButtonRecipeSize.md : RaftButtonRecipeSize.sm,
       onPressed: !canCancel || saving ? null : onCancel,
     );
     final saveButton = RaftSettingsRecipeButton(
@@ -414,14 +683,18 @@ class RaftChannelInfoForm extends StatelessWidget {
       variant: savedLabel != null
           ? RaftButtonRecipeVariant.success
           : RaftButtonRecipeVariant.accent,
-      size: RaftButtonRecipeSize.sm,
+      size: details ? RaftButtonRecipeSize.md : RaftButtonRecipeSize.sm,
       onPressed: !canSave || saving ? null : onSave,
     );
     return Container(
-      padding: const EdgeInsets.only(bottom: 20),
-      decoration: BoxDecoration(
-        border: Border(bottom: BorderSide(color: hairline)),
-      ),
+      padding: details
+          ? const EdgeInsets.fromLTRB(16, 16, 16, 0)
+          : const EdgeInsets.only(bottom: 20),
+      decoration: details
+          ? null
+          : BoxDecoration(
+              border: Border(bottom: BorderSide(color: hairline)),
+            ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -443,6 +716,7 @@ class RaftChannelInfoForm extends StatelessWidget {
           RaftProductFormField(
             label: 'Description',
             optional: true,
+            hint: descriptionHint,
             labelWeight: FontWeight.w500,
             family: t.bodyFont,
             child: RaftDialogTextInput(
@@ -458,15 +732,23 @@ class RaftChannelInfoForm extends StatelessWidget {
           // wrap onto a second line when they no longer fit.
           if (RaftScaled.grows(context))
             Wrap(
-              alignment: WrapAlignment.end,
+              alignment: details ? WrapAlignment.start : WrapAlignment.end,
               spacing: 8,
               runSpacing: 8,
-              children: [cancelButton, saveButton],
+              children: details
+                  ? [saveButton, cancelButton]
+                  : [cancelButton, saveButton],
             )
           else
             Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [cancelButton, const SizedBox(width: 8), saveButton],
+              mainAxisAlignment: details
+                  ? MainAxisAlignment.start
+                  : MainAxisAlignment.end,
+              children: [
+                details ? saveButton : cancelButton,
+                const SizedBox(width: 8),
+                details ? cancelButton : saveButton,
+              ],
             ),
         ],
       ),
@@ -483,6 +765,7 @@ class RaftOverflowAction {
     required this.glyph,
     required this.onPressed,
     this.danger = false,
+    this.warning = false,
     this.disabled = false,
     this.id,
     this.semanticLabel,
@@ -490,7 +773,7 @@ class RaftOverflowAction {
   final String label;
   final RaftGlyph glyph;
   final VoidCallback? onPressed;
-  final bool danger, disabled;
+  final bool danger, warning, disabled;
 
   /// Web `data-testid` (also the Flutter widget key).
   final String? id;
@@ -503,11 +786,40 @@ class RaftOverflowActions extends StatelessWidget {
     super.key,
     required this.title,
     required this.actions,
+    this.details = false,
   });
   final String title;
   final List<RaftOverflowAction> actions;
+  final bool details;
   @override
   Widget build(BuildContext context) {
+    if (details) {
+      return Padding(
+        padding: const EdgeInsets.only(top: 24),
+        child: RaftListRowGroup(
+          key: const ValueKey('channel-settings-lifecycle-group'),
+          children: [
+            for (final action in actions)
+              RaftListRow(
+                key: action.id == null ? null : ValueKey<String>(action.id!),
+                variant: RaftListRowVariant.plain,
+                tone: action.danger
+                    ? RaftListRowTone.danger
+                    : action.warning
+                    ? RaftListRowTone.warning
+                    : RaftListRowTone.normal,
+                semanticLabel: action.semanticLabel,
+                disabled: action.disabled,
+                onPressed: action.onPressed,
+                children: [
+                  RaftListRowIcon(action.glyph),
+                  RaftListRowBody(children: [RaftListRowTitle(action.label)]),
+                ],
+              ),
+          ],
+        ),
+      );
+    }
     final t = RaftTokens.of(context);
     return Padding(
       key: const ValueKey('channel-settings-lifecycle-group'),
@@ -557,6 +869,110 @@ class RaftOverflowActions extends StatelessWidget {
   }
 }
 
+RaftListRow raftDetailsPreferenceRow(
+  BuildContext context,
+  RaftSheetSwitchRow row, {
+  bool busy = false,
+}) => RaftListRow(
+  key: row.control != null ? row.key : null,
+  variant: RaftListRowVariant.plain,
+  interactive: false,
+  children: [
+    RaftListRowBody(
+      children: [
+        RaftListRowTitle(raftText(context, row.title)),
+        if (row.description.isNotEmpty)
+          RaftListRowDescription(
+            raftText(context, row.description),
+            wrap: true,
+          ),
+        if (row.control case final control?) ...[
+          const SizedBox(height: 8),
+          control,
+        ],
+      ],
+    ),
+    if (row.control == null)
+      Visibility(
+        visible: !row.pending,
+        maintainSize: true,
+        maintainAnimation: true,
+        maintainState: true,
+        child: RaftSwitch(
+          key: row.key,
+          value: row.value,
+          size: RaftSwitchSize.md,
+          semanticLabel: raftText(context, row.title),
+          minimumTargetSize: 0,
+          onChanged: busy || row.pending ? null : row.onChanged,
+        ),
+      ),
+  ],
+);
+
+RaftListRow raftDetailsActionRow({
+  required String title,
+  required String description,
+  required Widget action,
+  Key? key,
+}) => RaftListRow(
+  key: key,
+  variant: RaftListRowVariant.plain,
+  interactive: false,
+  children: [
+    RaftListRowBody(
+      children: [
+        LayoutBuilder(
+          builder: (context, size) {
+            final label = Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                RaftListRowTitle(title),
+                RaftListRowDescription(description, wrap: true),
+              ],
+            );
+            return size.maxWidth < 260 || RaftScaled.grows(context)
+                ? Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    spacing: 8,
+                    children: [label, action],
+                  )
+                : Row(
+                    spacing: 12,
+                    children: [
+                      Expanded(child: label),
+                      action,
+                    ],
+                  );
+          },
+        ),
+      ],
+    ),
+  ],
+);
+
+Widget raftDetailsSettingsGroup(
+  BuildContext context,
+  String title,
+  RaftGlyph icon,
+  List<Widget> rows, {
+  Key? key,
+}) => Padding(
+  key: key,
+  padding: const EdgeInsets.only(top: 24),
+  child: Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    spacing: 12,
+    children: [
+      RaftSectionHeader(
+        label: raftText(context, title),
+        icon: RaftIcon(icon, size: 16),
+      ),
+      RaftListRowGroup(children: rows),
+    ],
+  ),
+);
+
 /// One avatar tile of the [RaftMembersStrip].
 @immutable
 class RaftStripMember {
@@ -577,6 +993,7 @@ class RaftMembersStrip extends StatelessWidget {
     required this.members,
     required this.onOpen,
     this.loading = false,
+    this.details = false,
     this.onAdd,
     this.addLabel = 'Add member',
   });
@@ -585,12 +1002,19 @@ class RaftMembersStrip extends StatelessWidget {
   final String heading, summary, addLabel;
   final List<RaftStripMember> members;
   final bool loading;
+  final bool details;
   final VoidCallback onOpen;
   final VoidCallback? onAdd;
 
   /// Columns that fit in [width] (`getStripColumnCount`).
   static int columnsFor(double width) =>
       width <= 0 ? 7 : math.max(1, ((width + gap) / (tile + gap)).floor());
+
+  static double detailsTile(BuildContext context) =>
+      !RaftAdaptiveWorkspace.compactOf(context) &&
+          !RaftInteraction.of(context).touch
+      ? 27
+      : 35;
 
   /// `getVisibleMemberLimit`: add always keeps a slot, overflow reserves one.
   static int visibleLimit(int total, int columns) {
@@ -626,6 +1050,143 @@ class RaftMembersStrip extends StatelessWidget {
       size: 14,
       color: summaryStyle.color,
     );
+    final tileSize = details ? detailsTile(context) : tile;
+    final grid = LayoutBuilder(
+      builder: (context, constraints) {
+        final columns = details
+            ? math.max(
+                1,
+                ((constraints.maxWidth + gap) / (tileSize + gap)).floor(),
+              )
+            : columnsFor(constraints.maxWidth);
+        final limit = visibleLimit(members.length, columns);
+        final shown = members.take(limit).toList();
+        final overflow = members.length - shown.length;
+        return Wrap(
+          key: const ValueKey('channel-overflow-members-grid'),
+          spacing: gap,
+          runSpacing: gap,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            if (loading)
+              for (var i = 0; i < 3; i++)
+                SizedBox.square(
+                  key: ValueKey('channel-overflow-member-skeleton-$i'),
+                  dimension: tileSize,
+                  child: RaftSkeleton(
+                    variant: details
+                        ? RaftSkeletonVariant.block
+                        : RaftSkeletonVariant.circle,
+                    width: tileSize,
+                    height: tileSize,
+                  ),
+                ),
+            if (!loading)
+              for (final member in shown)
+                RaftTooltip(
+                  message: member.label,
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: onOpen,
+                    child: Semantics(
+                      button: !details,
+                      label: member.label,
+                      excludeSemantics: true,
+                      child: member.avatar,
+                    ),
+                  ),
+                ),
+            if (!loading && overflow > 0)
+              GestureDetector(
+                key: const ValueKey('channel-overflow-members-more'),
+                behavior: HitTestBehavior.opaque,
+                onTap: onOpen,
+                child: _TextTile(
+                  '+$overflow',
+                  extent: details ? tileSize : null,
+                ),
+              ),
+            if (onAdd != null)
+              RaftTooltip(
+                message: raftText(context, addLabel),
+                child: details
+                    ? CustomPaint(
+                        painter: _DashedEdgePainter(
+                          color: muted,
+                          width: 1.5,
+                          radius: 4,
+                        ),
+                        child: RaftButton(
+                          key: const Key('channel-overflow-members-add-tile'),
+                          glyph: RaftGlyph.userPlus,
+                          glyphSize: tileSize == 27 ? 16 : 20,
+                          semanticLabel: raftText(context, addLabel),
+                          visualHeight: tileSize,
+                          visualWidth: tileSize,
+                          uiVariant: RaftButtonVariant.ghost,
+                          uiSize: RaftButtonSize.iconSm,
+                          onPressed: loading ? null : onAdd,
+                        ),
+                      )
+                    : GestureDetector(
+                        key: const ValueKey(
+                          'channel-overflow-members-add-tile',
+                        ),
+                        behavior: HitTestBehavior.opaque,
+                        onTap: loading ? null : onAdd,
+                        child: Semantics(
+                          button: true,
+                          label: raftText(context, addLabel),
+                          excludeSemantics: true,
+                          child: Opacity(
+                            opacity: loading ? .4 : 1,
+                            child: const _TextTile(
+                              '+',
+                              dashed: true,
+                              large: true,
+                            ),
+                          ),
+                        ),
+                      ),
+              ),
+          ],
+        );
+      },
+    );
+    if (details) {
+      return Padding(
+        key: const ValueKey('channel-overflow-members-strip'),
+        padding: const EdgeInsets.fromLTRB(16, 24, 16, 0),
+        child: RaftListRowGroup(
+          key: const Key('channel-overflow-members-card'),
+          children: [
+            RaftListRow(
+              key: const ValueKey('channel-overflow-members-entry'),
+              variant: RaftListRowVariant.plain,
+              onPressed: onOpen,
+              children: [
+                RaftListRowBody(
+                  children: [
+                    RaftListRowTitle(
+                      raftText(context, heading),
+                      key: const Key('channel-overflow-members-heading'),
+                    ),
+                  ],
+                ),
+                Flexible(child: RaftListRowValue(summary)),
+                const RaftListRowChevron(),
+              ],
+            ),
+            RaftListRow(
+              variant: RaftListRowVariant.plain,
+              interactive: false,
+              attached: true,
+              children: [Expanded(child: grid)],
+            ),
+          ],
+        ),
+      );
+    }
     return Padding(
       key: const ValueKey('channel-overflow-members-strip'),
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
@@ -680,79 +1241,7 @@ class RaftMembersStrip extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final columns = columnsFor(constraints.maxWidth);
-              final limit = visibleLimit(members.length, columns);
-              final shown = members.take(limit).toList();
-              final overflow = members.length - shown.length;
-              return Wrap(
-                key: const ValueKey('channel-overflow-members-grid'),
-                spacing: gap,
-                runSpacing: gap,
-                crossAxisAlignment: WrapCrossAlignment.center,
-                children: [
-                  if (loading)
-                    for (var i = 0; i < 3; i++)
-                      SizedBox.square(
-                        key: ValueKey('channel-overflow-member-skeleton-$i'),
-                        dimension: tile,
-                        child: RaftSkeleton(
-                          variant: RaftSkeletonVariant.circle,
-                          width: tile,
-                          height: tile,
-                        ),
-                      ),
-                  if (!loading)
-                    for (final member in shown)
-                      RaftTooltip(
-                        message: member.label,
-                        child: GestureDetector(
-                          behavior: HitTestBehavior.opaque,
-                          onTap: onOpen,
-                          child: Semantics(
-                            button: true,
-                            label: member.label,
-                            excludeSemantics: true,
-                            child: member.avatar,
-                          ),
-                        ),
-                      ),
-                  if (!loading && overflow > 0)
-                    GestureDetector(
-                      key: const ValueKey('channel-overflow-members-more'),
-                      behavior: HitTestBehavior.opaque,
-                      onTap: onOpen,
-                      child: _TextTile('+$overflow'),
-                    ),
-                  if (onAdd != null)
-                    RaftTooltip(
-                      message: raftText(context, addLabel),
-                      child: GestureDetector(
-                        key: const ValueKey(
-                          'channel-overflow-members-add-tile',
-                        ),
-                        behavior: HitTestBehavior.opaque,
-                        onTap: loading ? null : onAdd,
-                        child: Semantics(
-                          button: true,
-                          label: raftText(context, addLabel),
-                          excludeSemantics: true,
-                          child: Opacity(
-                            opacity: loading ? .4 : 1,
-                            child: const _TextTile(
-                              '+',
-                              dashed: true,
-                              large: true,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                ],
-              );
-            },
-          ),
+          grid,
         ],
       ),
     );
@@ -762,9 +1251,15 @@ class RaftMembersStrip extends StatelessWidget {
 /// `AvatarSlot context="panel-header" type="human"` with a text child (`+N`,
 /// or the dashed `+` add tile).
 class _TextTile extends StatelessWidget {
-  const _TextTile(this.text, {this.dashed = false, this.large = false});
+  const _TextTile(
+    this.text, {
+    this.dashed = false,
+    this.large = false,
+    this.extent,
+  });
   final String text;
   final bool dashed, large;
+  final double? extent;
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
@@ -775,6 +1270,7 @@ class _TextTile extends StatelessWidget {
     );
     final frame = RaftMountedAvatarFrame(
       name: text,
+      extent: extent,
       avatarContext: RaftMountedAvatarContext.panelHeader,
       child: Center(
         child: Text(

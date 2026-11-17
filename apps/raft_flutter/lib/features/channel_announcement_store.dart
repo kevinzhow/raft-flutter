@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:raft_client/raft_client.dart';
 
 class ChannelAnnouncement {
   const ChannelAnnouncement({
@@ -53,6 +54,8 @@ class ChannelAnnouncementStore extends ChangeNotifier {
   int _epoch = 0;
   bool _disposed = false;
 
+  bool hasRead(String id) => _values.containsKey(id);
+
   ChannelAnnouncement? forChannel(String id) => _values[id];
 
   void accept(String id, Object? value) {
@@ -80,14 +83,31 @@ class ChannelAnnouncementStore extends ChangeNotifier {
             accept(id, value);
           }
         }
+      } on RaftApiException catch (error) {
+        if (!_disposed &&
+            epoch == _epoch &&
+            version == (_versions[id] ?? 0) &&
+            const {401, 403, 404}.contains(error.status)) {
+          forget(id);
+        }
       } catch (_) {
-        // Keep the last accepted announcement on a failed refresh.
+        // A failed refresh keeps the last accepted announcement.
       } finally {
         if (identical(_pending[id], request)) _pending.remove(id);
       }
     })();
     _pending[id] = request;
     return request;
+  }
+
+  void forget(String id) {
+    if (_disposed) return;
+    _versions[id] = (_versions[id] ?? 0) + 1;
+    _pending.remove(id);
+    if (_values.containsKey(id)) {
+      _values.remove(id);
+      notifyListeners();
+    }
   }
 
   void reset() {

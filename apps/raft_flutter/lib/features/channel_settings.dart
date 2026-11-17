@@ -6,19 +6,29 @@ import 'package:raft_ui/raft_ui.dart';
 
 import 'notification_level_menu.dart';
 
+import '../data/channel_roster_invalidations.dart';
 import '../data/resource_snapshot_cache.dart' show stableValue;
 import '../data/user_error.dart';
 import '../data/workspace_controller.dart';
+import 'channel_activity_session.dart';
+import 'channel_announcement_settings.dart';
 import 'channel_conversion_section.dart';
+import 'channel_details_slack.dart';
 import 'channel_form_fields.dart';
 import 'channel_joint_section.dart';
 import 'channel_members.dart';
 import 'channel_settings_strip.dart';
+import 'channel_section_select.dart';
 import 'channel_sos.dart';
 import 'slack_channel_pairing.dart';
 import 'composer_directory.dart'
     show cachedChannelRoster, cachedChannelRosterExternals;
-import 'create_channel_dialog.dart' show ChannelMemberCandidate;
+import 'create_channel_dialog.dart'
+    show
+        ArchivedChannelNameCollision,
+        ChannelMemberCandidate,
+        channelNameError,
+        parseArchivedChannelNameCollision;
 import 'management_support.dart'
     show
         cachedServerFlag,
@@ -43,6 +53,8 @@ class ChannelSettings extends StatefulWidget {
     this.collapseLongMessages = true,
     this.isPanel = false,
     this.page = false,
+    this.details = false,
+    this.headerWrapper,
     this.onClose,
     this.onMembers,
     this.dmName,
@@ -53,10 +65,8 @@ class ChannelSettings extends StatefulWidget {
   /// A DM's sheet title: the peer's plain name (ChatPanel `displayName`).
   final String? dmName;
 
-  /// The settings drawer as the product shows it: Web mounts only
-  /// `ChannelOverflowMenu` (OverflowSheet + EditChannelDialog
-  /// `presentation="panel"`). `isPanel: false` is the legacy sheet
-  /// presentation, kept for the official parity case.
+  /// Standalone drawer used by legacy parity fixtures. The workspace mounts
+  /// Details in ChannelDetailsHost on wide layouts and in a page on phones.
   static Future<void> show(
     BuildContext context, {
     required WorkspaceController controller,
@@ -81,6 +91,8 @@ class ChannelSettings extends StatefulWidget {
   /// omitted in standalone EditChannelDialog and for one-to-one DMs.
   final bool isPanel;
   final bool page;
+  final bool details;
+  final Widget Function(BuildContext, Widget)? headerWrapper;
   final VoidCallback? onClose, onMembers;
   @override
   State<ChannelSettings> createState() => _ChannelSettingsState();
@@ -112,7 +124,7 @@ class _ChannelSettingsState extends State<ChannelSettings> {
   final _queued = <String>{};
   String get snapshotKey => 'channel-settings:${widget.channel.id}';
   static const _parts = {'members', 'sidebar', 'display', 'notification'};
-  static const guestFlag = 'server_guest_v0';
+  late final activity = ChannelActivitySession.of(w);
 
   /// The Slack channel this channel is paired with (Web
   /// `useChannelSlackBridgeEditor`): a section only while the bridge is ready.
@@ -155,11 +167,11 @@ class _ChannelSettingsState extends State<ChannelSettings> {
     _draftDescription = description.text;
     name.addListener(draftChanged);
     description.addListener(draftChanged);
-    final guest = cachedServerFlag(w, guestFlag);
-    flagsKnown =
-        guest != null && cachedServerFlag(w, channelConversionFlag) != null;
+    flagsKnown = cachedServerFlag(w, channelConversionFlag) != null;
+    if (widget.details) activity.addListener(activityChanged);
     load();
     loadFlags();
+    ChannelRosterInvalidations.of(w.client).addListener(rosterInvalidated);
     events = w.client.events.listen((event) {
       // Each event refreshes only the part it can change, in place.
       final part = switch (event.name) {
@@ -184,10 +196,23 @@ class _ChannelSettingsState extends State<ChannelSettings> {
     });
   }
 
+  void activityChanged() {
+    if (mounted) setState(() {});
+  }
+
+  void rosterInvalidated() {
+    if (ChannelRosterInvalidations.of(w.client).value.$2 == widget.channel.id) {
+      unawaited(load({'members'}));
+    }
+  }
+
   @override
   void dispose() {
+    ChannelRosterInvalidations.of(w.client).removeListener(rosterInvalidated);
+    if (widget.details) activity.removeListener(activityChanged);
     name.removeListener(draftChanged);
     description.removeListener(draftChanged);
+    editFocus.dispose();
     name.dispose();
     description.dispose();
     slack.dispose();
@@ -221,6 +246,7 @@ class _ChannelSettingsState extends State<ChannelSettings> {
     setState(() {
       if (edited) {
         error = null;
+        renameCollision = null;
         clearSaved();
       }
     });
@@ -237,7 +263,12 @@ class _ChannelSettingsState extends State<ChannelSettings> {
     final id = widget.channel.id;
     final wanted = [
       for (final part in parts)
-        if ((part != 'notification' || channelCanToggleActivityMute(channel)) &&
+        if ((part != 'notification' ||
+                channelCanToggleActivityMute(channel) ||
+                widget.details &&
+                    channel.type == 'dm' &&
+                    (channel.flag('activityMuteSupported') ||
+                        channel.flag('activityMuted'))) &&
             // A 1:1 DM sheet has no members section (ChatPanel #1281).
             !(part == 'members' && drawer && channel.type == 'dm'))
           part,
@@ -366,6 +397,14 @@ class _ChannelSettingsState extends State<ChannelSettings> {
                     );
                     return false;
                   }
+                  if (widget.details) {
+                    return writePreference(
+                      c,
+                      'notification-settings',
+                      'activityMuted',
+                      value,
+                    );
+                  }
                   var ok = true;
                   await run(() async {
                     try {
@@ -385,6 +424,73 @@ class _ChannelSettingsState extends State<ChannelSettings> {
             : null,
       ),
     );
+  }
+
+  Future<bool> writePreference(
+    RaftChannel c,
+    String endpoint,
+    String key,
+    bool next,
+  ) async {
+    if (busy || !mounted || !w.can('viewChannel', resource: channel))
+      return false;
+    final identity = pageIdentity(w);
+    final target = key == 'activityMuted' ? notification : display;
+    final before = Map<String, dynamic>.of(target);
+    void project(Map<String, dynamic> fields) {
+      if (key == 'activityMuted') {
+        w.setActivityMuteState(c.id, fields);
+      } else {
+        w.channelRepository.consumeMessageDisplayPrefs({
+          'serverId': w.server!.id,
+          'scopeId': c.id,
+          'prefs': {key: fields[key] == true},
+          'prefsVersion': fields['prefsVersion'],
+        });
+        w.notifyListeners();
+      }
+    }
+
+    setState(() {
+      busy = true;
+      error = null;
+      target[key] = next;
+    });
+    project(target);
+    try {
+      final result = await w.command(
+        'PATCH',
+        '/channels/${c.id}/$endpoint',
+        data: {key: next},
+      );
+      if (identity != pageIdentity(w)) return false;
+      if (result is! Map)
+        throw const FormatException('Invalid channel preference response');
+      target.addAll(Map<String, dynamic>.from(result));
+      project(target);
+      return true;
+    } catch (e) {
+      if (identity == pageIdentity(w)) {
+        target
+          ..clear()
+          ..addAll(before);
+        project(before);
+        if (mounted)
+          setState(
+            () => error = failText(
+              e,
+              key == 'activityMuted'
+                  ? next
+                        ? 'Failed to mute Activity for this conversation.'
+                        : 'Failed to unmute Activity for this conversation.'
+                  : 'Failed to update message display settings.',
+            ),
+          );
+      }
+      return false;
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
   }
 
   Future<void> run(Future<void> Function() action) async {
@@ -441,18 +547,17 @@ class _ChannelSettingsState extends State<ChannelSettings> {
   );
   bool visitorShown = false;
 
-  /// The guest and joint-conversion flags in one evaluation, remembered for
+  /// The Slack and joint-conversion flags in one evaluation, remembered for
   /// this server identity so later visits render their sections at once.
   Future<void> loadFlags() async {
     final serverId = w.server?.id, identity = pageIdentity(w);
     if (serverId == null) return;
     try {
-      // useServerFeatureFlag(SERVER_GUEST_FEATURE_FLAG_KEY).
       final result = await w.command(
         'POST',
         '/feature-flags/evaluate',
         data: featureFlagEvaluateBody(
-          keys: [guestFlag, channelConversionFlag, SlackChannelPairing.flag],
+          keys: [channelConversionFlag, SlackChannelPairing.flag],
           serverId: serverId,
         ),
       );
@@ -461,7 +566,6 @@ class _ChannelSettingsState extends State<ChannelSettings> {
           (result['evaluations'] as List? ?? []).whereType<Map>().any(
             (f) => f['key'] == key && f['enabled'] == true,
           );
-      rememberServerFlag(w, guestFlag, enabled(guestFlag), identity);
       rememberServerFlag(
         w,
         channelConversionFlag,
@@ -551,7 +655,13 @@ class _ChannelSettingsState extends State<ChannelSettings> {
         title: 'Edit channel',
         fields: [
           if (c.name != 'all')
-            RaftFormField('name', 'Name', initial: c.name, required: true),
+            RaftFormField(
+              'name',
+              'Name',
+              initial: c.name,
+              required: true,
+              validator: (value) => channelNameError(context, value.trim()),
+            ),
           RaftFormField(
             'description',
             'Description',
@@ -559,6 +669,41 @@ class _ChannelSettingsState extends State<ChannelSettings> {
             multiline: true,
           ),
         ],
+        errorContent: (dialogContext, failure) {
+          final collision = parseArchivedChannelNameCollision(failure);
+          if (collision == null) return null;
+          void open() {
+            if (!mounted || identity != pageIdentity(w)) return;
+            Navigator.of(dialogContext).pop();
+            closeSheet();
+            unawaited(w.jumpToMessage(collision.id, null));
+          }
+
+          return raftArchivedNameBanner(
+            dialogContext,
+            name: collision.name,
+            canUnarchive: collision.canUnarchive,
+            showHint: false,
+            onOpen: open,
+            onUnarchive: () async {
+              if (!mounted || identity != pageIdentity(w)) return;
+              try {
+                await w.command('POST', '/channels/${collision.id}/unarchive');
+                if (dialogContext.mounted) open();
+              } catch (error) {
+                if (dialogContext.mounted) {
+                  showRaftToast(
+                    dialogContext,
+                    userErrorText(
+                      error,
+                      fallback: 'Failed to unarchive channel',
+                    ),
+                  );
+                }
+              }
+            },
+          );
+        },
         onSubmit: (values) async {
           if (!mounted ||
               identity != pageIdentity(w) ||
@@ -566,9 +711,7 @@ class _ChannelSettingsState extends State<ChannelSettings> {
               !cap('editChannelMetadata')) {
             throw RaftUserError('Channel editing is no longer available.');
           }
-          await w.command('PATCH', '/channels/${c.id}', data: values);
-          if (identity != pageIdentity(w)) return;
-          await w.refreshChannels();
+          await patchChannel(c, values);
         },
       ),
     );
@@ -808,7 +951,94 @@ class _ChannelSettingsState extends State<ChannelSettings> {
       name.text != channel.name || description.text != channel.description;
 
   /// Mirrors `isDirty`: the host drawer guards every dismissal while true.
-  bool get dirty => nameDescDirty || slack.dirty || jointDraft;
+  bool get dirty =>
+      ((!widget.details || metadataEditing) && nameDescDirty) ||
+      (!widget.details && slack.dirty) ||
+      jointDraft;
+
+  bool metadataEditing = false;
+  ArchivedChannelNameCollision? renameCollision;
+  bool renameUnarchiving = false;
+  final editFocus = FocusNode(debugLabel: 'channel details edit');
+
+  void startMetadataEdit() {
+    resetDraft();
+    setState(() => metadataEditing = true);
+  }
+
+  void finishMetadataEdit() {
+    setState(() => metadataEditing = false);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) editFocus.requestFocus();
+    });
+  }
+
+  Future<void> saveMetadataEdit() async {
+    if (await saveChanges() && mounted) finishMetadataEdit();
+  }
+
+  void openArchivedName(ArchivedChannelNameCollision collision) {
+    closeSheet();
+    unawaited(w.jumpToMessage(collision.id, null));
+  }
+
+  Future<void> unarchiveName(ArchivedChannelNameCollision collision) async {
+    if (renameUnarchiving) return;
+    final identity = pageIdentity(w);
+    setState(() => renameUnarchiving = true);
+    try {
+      await w.command('POST', '/channels/${collision.id}/unarchive');
+      if (mounted && identity == pageIdentity(w)) openArchivedName(collision);
+    } catch (e) {
+      await failWith(e, 'Failed to unarchive channel');
+    } finally {
+      if (mounted) setState(() => renameUnarchiving = false);
+    }
+  }
+
+  Widget metadataForm(RaftChannel c) => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      if (renameCollision case final collision?)
+        raftArchivedNameBanner(
+          context,
+          key: const Key('channel-settings-rename-collision'),
+          name: collision.name,
+          canUnarchive: collision.canUnarchive,
+          busy: renameUnarchiving,
+          showHint: false,
+          onOpen: () => openArchivedName(collision),
+          onUnarchive: () => unarchiveName(collision),
+        ),
+      RaftChannelInfoForm(
+        nameController: name,
+        descriptionController: description,
+        nameEnabled: c.name != 'all' && !c.archived,
+        descriptionEnabled: !c.archived,
+        nameHint: c.name == 'all' ? 'The #all channel cannot be renamed' : null,
+        descriptionHint: c.type == 'joint' || c.hasExternalRelation == true
+            ? raftText(
+                context,
+                'Name and description show on every server in this channel.',
+              )
+            : c.type == 'private'
+            ? raftText(context, "Shown to the channel's members.")
+            : raftFormat(context, 'Shown to everyone in {server}.', {
+                'server': w.server?.name ?? '',
+              }),
+        onSubmitName: (_) => saveMetadataEdit(),
+        canCancel: true,
+        canSave: nameDescDirty && !c.archived,
+        saving: saving,
+        savedLabel: savedLabel,
+        onCancel: () {
+          resetDraft();
+          finishMetadataEdit();
+        },
+        onSave: saveMetadataEdit,
+      ),
+    ],
+  );
 
   /// An invitation typed into the joint section and not sent (Web
   /// `hasInviteDraft`): it blocks Save and close, whose save cannot send it.
@@ -820,7 +1050,10 @@ class _ChannelSettingsState extends State<ChannelSettings> {
     description.text = channel.description;
     slack.reset();
     clearSaved();
-    setState(() => error = null);
+    setState(() {
+      error = null;
+      renameCollision = null;
+    });
   }
 
   void clearSaved() {
@@ -842,7 +1075,7 @@ class _ChannelSettingsState extends State<ChannelSettings> {
         cap('federateChannels');
     setState(() => error = null);
     clearSaved();
-    if (!canEdit) return true;
+    if (!canEdit || (widget.details && !metadataEditing)) return true;
     final all = c.name == 'all';
     if (!all) {
       final invalid = nameError(context, name.text);
@@ -859,13 +1092,17 @@ class _ChannelSettingsState extends State<ChannelSettings> {
           'description': description.text.trim(),
       };
       if (updates.isNotEmpty) {
-        await w.command('PATCH', '/channels/${c.id}', data: updates);
-        await w.refreshChannels();
+        if (widget.details) {
+          await patchChannel(c, updates);
+        } else {
+          await w.command('PATCH', '/channels/${c.id}', data: updates);
+          await w.refreshChannels();
+        }
       }
       // The Slack pairing is applied with the channel; its failure leaves the
       // channel saved and says so (Web `channel.bridge.partialFailure`).
       try {
-        await slack.apply(c.id);
+        if (!widget.details) await slack.apply(c.id);
       } catch (_) {
         if (mounted) {
           setState(
@@ -888,7 +1125,14 @@ class _ChannelSettingsState extends State<ChannelSettings> {
       return true;
     } catch (e) {
       if (mounted) {
-        setState(() => error = failText(e, 'Failed to update channel'));
+        setState(() {
+          renameCollision = widget.details
+              ? parseArchivedChannelNameCollision(e)
+              : null;
+          error = renameCollision == null
+              ? failText(e, 'Failed to update channel')
+              : null;
+        });
       }
       return false;
     } finally {
@@ -1065,7 +1309,7 @@ class _ChannelSettingsState extends State<ChannelSettings> {
               {'name': c.name},
             ),
       confirmLabel: all
-          ? (toPublic ? 'Restore #all' : 'Hide #all')
+          ? (widget.details ? (toPublic ? 'Restore' : 'Hide') : label)
           : (toPublic ? 'Make public' : 'Make private'),
       loadingLabel: 'Updating…',
       action: () async {
@@ -1104,17 +1348,77 @@ class _ChannelSettingsState extends State<ChannelSettings> {
     }
   }
 
+  Widget visibilitySetting(RaftChannel c) {
+    final all = c.name == 'all', isPrivate = c.type == 'private';
+    return raftDetailsActionRow(
+      key: const Key('channel-settings-visibility'),
+      title: raftText(
+        context,
+        all && isPrivate
+            ? 'Hidden'
+            : isPrivate
+            ? 'Private'
+            : 'Public',
+      ),
+      description: isPrivate
+          ? raftText(
+              context,
+              all
+                  ? 'No one can read or post in it. Its history is kept.'
+                  : 'Only its members can find and read it.',
+            )
+          : raftFormat(context, 'Everyone in {server} can find and read it.', {
+              'server': w.server?.name ?? '',
+            }),
+      action: RaftButton(
+        key: const Key('channel-settings-visibility-action'),
+        label: raftText(
+          context,
+          visibilityBusy
+              ? 'Updating…'
+              : all
+              ? isPrivate
+                    ? 'Restore #all'
+                    : 'Hide #all'
+              : isPrivate
+              ? 'Make public'
+              : 'Make private',
+        ),
+        uiVariant: RaftButtonVariant.outline,
+        onPressed: visibilityBusy || saving ? null : changeVisibility,
+      ),
+    );
+  }
+
   Future<void> leave() async {
     final c = channel;
+    final deletes =
+        widget.details && c.type == 'private' && members.length <= 1;
+    final message = widget.details
+        ? switch (c.type) {
+            'private' => "You'll stop getting messages from #{name} and can't post there. To come back, a member has to invite you again.",
+            'joint' => "You'll stop getting messages from #{name} and can't post there. To come back, an admin has to invite you again.",
+            _ => "You'll stop getting messages from #{name} and can't post there. You can rejoin any time. Threads you follow will still notify you until you unfollow them.",
+          }
+        : "You'll stop getting messages from #{name} and can't post there. You can rejoin any time. Threads you follow will still notify you until you unfollow them.";
     final ok = await confirmAction(
-      title: 'Leave channel',
+      title: deletes ? 'Leave and delete channel?' : 'Leave channel',
       message: raftFormat(
         context,
-        "You'll stop getting messages from #{name} and can't post there. You can rejoin any time. Threads you follow will still notify you until you unfollow them.",
+        deletes
+            ? 'You are the last member of this private channel. When you leave, the channel and its messages are deleted and cannot be recovered.'
+            : message,
         {'name': c.name},
       ),
-      confirmLabel: 'Leave channel',
-      cancelLabel: 'Stay in Channel',
+      confirmLabel: deletes
+          ? 'Leave and delete'
+          : widget.details
+          ? 'Leave'
+          : 'Leave channel',
+      cancelLabel: widget.details ? 'Cancel' : 'Stay in Channel',
+      variant: deletes
+          ? RaftButtonRecipeVariant.danger
+          : RaftButtonRecipeVariant.warning,
       loadingLabel: 'Leaving…',
       confirmKey: const ValueKey('channel-overflow-leave-confirm'),
       action: () async {
@@ -1177,6 +1481,43 @@ class _ChannelSettingsState extends State<ChannelSettings> {
     if (next != null) unawaited(w.selectChannel(next));
   }
 
+  Future<void> patchChannel(RaftChannel c, Map<String, dynamic> fields) async {
+    final identity = pageIdentity(w);
+    final result = await w.command('PATCH', '/channels/${c.id}', data: fields);
+    if (identity != pageIdentity(w)) return;
+    if (result is! Map) throw const FormatException('Invalid channel response');
+    w.channelRepository.consumeRealtime('channel:updated', {
+      'id': c.id,
+      'name': c.name,
+      ...fields,
+      ...Map<String, dynamic>.from(result),
+    });
+    if (mounted) setState(() {});
+  }
+
+  bool orderSaving = false;
+  bool? pendingActivityOrder;
+  Future<void> changeThreadSort(RaftChannel c, bool enabled) async {
+    if (orderSaving) return;
+    setState(() {
+      orderSaving = true;
+      pendingActivityOrder = enabled;
+      error = null;
+    });
+    try {
+      await patchChannel(c, {'threadSort': enabled ? 'activity' : 'time'});
+    } catch (e) {
+      await failWith(e, "Couldn't change the message order.");
+    } finally {
+      if (mounted) {
+        setState(() {
+          orderSaving = false;
+          pendingActivityOrder = null;
+        });
+      }
+    }
+  }
+
   bool visitorVisibleOffered(RaftChannel c) {
     final caps = c.json['channelCapabilities'];
     if (caps is! Map ||
@@ -1205,27 +1546,12 @@ class _ChannelSettingsState extends State<ChannelSettings> {
   Future<void> updateVisitorVisibility(bool visible) async {
     if (guestBusy) return;
     final identity = pageIdentity(w);
-    final id = channel.id;
     setState(() {
       guestBusy = true;
       error = null;
     });
     try {
-      final result = await w.command(
-        'PATCH',
-        '/channels/$id',
-        data: {'visitorVisible': visible},
-      );
-      if (!mounted || identity != pageIdentity(w)) return;
-      if (result is Map) {
-        final updated = Map<String, dynamic>.from(result);
-        w.channels = [
-          for (final c in w.channels)
-            if (c.id == id) RaftChannel({...c.json, ...updated}) else c,
-        ];
-        w.notifyListeners();
-      }
-      setState(() {});
+      await patchChannel(channel, {'visitorVisible': visible});
     } catch (e) {
       if (mounted && identity == pageIdentity(w)) {
         setState(
@@ -1287,6 +1613,9 @@ class _ChannelSettingsState extends State<ChannelSettings> {
 
   Widget membersStrip(BuildContext context, RaftChannel c) {
     final origin = w.client.origin;
+    final extent = widget.details
+        ? RaftMembersStrip.detailsTile(context)
+        : null;
     RaftStripMember tile(Map<String, dynamic> m) {
       final agent = m['actorType'] == 'agent';
       final candidate = ChannelMemberCandidate(
@@ -1307,6 +1636,7 @@ class _ChannelSettingsState extends State<ChannelSettings> {
           candidate: candidate,
           avatarContext: RaftMountedAvatarContext.panelHeader,
           origin: origin,
+          extent: extent,
           presence: agent
               ? channelMemberPresence(
                   m,
@@ -1322,6 +1652,7 @@ class _ChannelSettingsState extends State<ChannelSettings> {
     final canAdd = cap('addChannelMembers') && !c.archived;
     final loadingMembers = !known.contains('members');
     return RaftMembersStrip(
+      details: widget.details,
       heading: 'Members',
       summary: loadingMembers
           ? raftText(context, 'Loading members…')
@@ -1336,7 +1667,7 @@ class _ChannelSettingsState extends State<ChannelSettings> {
         for (final m in humans) tile(m),
         for (final m in agents) tile(m),
         for (final m in externalMembers)
-          slackStripMember(context, m, origin: origin),
+          slackStripMember(context, m, origin: origin, extent: extent),
       ],
       onOpen: openMembers,
       onAdd: canAdd ? () => openMembers(add: true) : null,
@@ -1367,7 +1698,13 @@ class _ChannelSettingsState extends State<ChannelSettings> {
     final showManage = canEdit && !archived;
     final showLeave = settingsPresent && widget.leave && !all && !archived;
     final showVisibility =
-        showManage && cap('changeChannelVisibility') && c.type != 'joint';
+        showManage &&
+        cap('changeChannelVisibility') &&
+        c.type != 'joint' &&
+        (!widget.details ||
+            all ||
+            c.type != 'private' ||
+            c.hasExternalRelation != true);
     final archiveRow = !all && cap('archiveChannels');
     final deleteRow = !all && cap('deleteChannels') && showManage;
     final showStopAgents =
@@ -1377,40 +1714,84 @@ class _ChannelSettingsState extends State<ChannelSettings> {
       (p) => p is Map && p['kind'] == 'channel' && p['id'] == c.id,
     );
     final guestSection = visitorVisibleOffered(c);
+    final threadSort =
+        widget.details &&
+        activity.enabled &&
+        cap('editChannelMetadata') &&
+        !archived &&
+        const {'channel', 'private'}.contains(c.type);
     final generation = w.client.generation, serverId = w.server?.id;
 
-    final preferences = RaftSheetSection('Preferences', [
-      RaftSheetSwitchRow(
-        key: const ValueKey('channel-settings-pin-switch'),
-        title: 'Pin channel',
-        description: 'Keep this channel pinned to the top of your sidebar.',
-        value: pinned,
-        pending: !known.contains('sidebar'),
-        onChanged: pin,
-      ),
-      if (!dm && c.joined && serverId != null)
-        notificationLevelRow(c, serverId, generation),
-      if (widget.collapseLongMessages &&
-          (!known.contains('display') ||
-              display.containsKey('collapseLongMessages')))
-        RaftSheetSwitchRow(
-          key: const ValueKey('channel-settings-collapse-switch'),
-          title: 'Collapse long messages',
-          description: 'Fold messages taller than the preview height behind a Show more toggle. Turn off to always show full messages in this channel.',
-          value: display['collapseLongMessages'] != false,
-          pending: !known.contains('display'),
-          onChanged: (v) => run(() async {
-            await w.command(
-              'PATCH',
-              '/channels/${c.id}/message-display-settings',
-              data: {'collapseLongMessages': v},
-            );
-          }),
-        ),
-    ]);
+    final preferences = RaftSheetSection(
+      widget.details ? 'Your preferences' : 'Preferences',
+      [
+        if (!widget.details)
+          RaftSheetSwitchRow(
+            key: const ValueKey('channel-settings-pin-switch'),
+            title: 'Pin channel',
+            description: 'Keep this channel pinned to the top of your sidebar.',
+            value: pinned,
+            pending: !known.contains('sidebar'),
+            onChanged: pin,
+          ),
+        if (!dm &&
+            c.joined &&
+            serverId != null &&
+            (!widget.details || c.loungeAgentId == null))
+          notificationLevelRow(c, serverId, generation),
+        if (widget.details &&
+            (dm || c.loungeAgentId != null) &&
+            (c.flag('activityMuteSupported') ||
+                c.flag('activityMuted') ||
+                c.loungeAgentId != null))
+          RaftSheetSwitchRow(
+            key: const Key('channel-overflow-mute-switch'),
+            title: 'Mute',
+            description: 'Nothing in this conversation notifies you, not even @mentions.',
+            value: notification['activityMuted'] == true,
+            pending: !known.contains('notification'),
+            onChanged: (value) => writePreference(
+              c,
+              'notification-settings',
+              'activityMuted',
+              value,
+            ),
+          ),
+        if (widget.details && c.loungeAgentId == null)
+          RaftSheetSwitchRow.control(
+            title: 'Sidebar section',
+            key: const ValueKey('channel-settings-section'),
+            control: ChannelSectionSelect(controller: w, channel: c),
+          ),
+        if (widget.collapseLongMessages &&
+            (!known.contains('display') ||
+                display.containsKey('collapseLongMessages')))
+          RaftSheetSwitchRow(
+            key: const ValueKey('channel-settings-collapse-switch'),
+            title: 'Collapse long messages',
+            description: widget.details ? '' : 'Fold messages taller than the preview height behind a Show more toggle. Turn off to always show full messages in this channel.',
+            value: display['collapseLongMessages'] != false,
+            pending: !known.contains('display'),
+            onChanged: (v) => widget.details
+                ? writePreference(
+                    c,
+                    'message-display-settings',
+                    'collapseLongMessages',
+                    v,
+                  )
+                : run(() async {
+                    await w.command(
+                      'PATCH',
+                      '/channels/${c.id}/message-display-settings',
+                      data: {'collapseLongMessages': v},
+                    );
+                  }),
+          ),
+      ],
+    );
 
     final actions = [
-      if (showManage && showVisibility)
+      if (!widget.details && showManage && showVisibility)
         RaftOverflowAction(
           id: 'channel-settings-visibility-action',
           label: visibilityBusy
@@ -1438,6 +1819,7 @@ class _ChannelSettingsState extends State<ChannelSettings> {
             id: 'channel-settings-archive-action',
             label: 'Archive channel',
             glyph: RaftGlyph.archive,
+            warning: true,
             onPressed: archive,
           ),
       if (showLeave)
@@ -1445,6 +1827,7 @@ class _ChannelSettingsState extends State<ChannelSettings> {
           id: 'channel-overflow-leave',
           label: 'Leave channel',
           glyph: RaftGlyph.logOut,
+          warning: true,
           onPressed: leave,
         ),
       if (showStopAgents)
@@ -1453,6 +1836,7 @@ class _ChannelSettingsState extends State<ChannelSettings> {
           label: 'Stop all agents',
           semanticLabel: 'Stop All Agents in This Channel',
           glyph: RaftGlyph.circleStop,
+          warning: true,
           onPressed: stopAgents,
         ),
       if (deleteRow)
@@ -1472,16 +1856,39 @@ class _ChannelSettingsState extends State<ChannelSettings> {
     final stripShown = !dm && !hidesMembers;
     final info = canEdit && !dm;
 
-    final Widget body = dm
-        ? RaftOverflowDmBody(
-            child: raftSheetSection(
-              context,
-              t,
-              preferences,
-              busy: busy,
-              family: t.bodyFont,
-            ),
+    final channelRows = [
+      if (threadSort)
+        RaftSheetSwitchRow(
+          key: const Key('channel-settings-thread-sort-switch'),
+          title: 'Sort by latest activity',
+          description: 'Messages with the newest reply move to the bottom, next to the message box. Everyone in this channel sees the same order.',
+          value: pendingActivityOrder ?? c.string('threadSort') == 'activity',
+          onChanged: orderSaving ? null : (value) => changeThreadSort(c, value),
+        ),
+      if (guestSection) visitorVisibleRow(c),
+    ];
+    final showSlack = canEdit && !archived && (c.type == 'channel' || private);
+    final preferenceGroup = widget.details
+        ? raftDetailsSettingsGroup(
+            context,
+            preferences.title,
+            RaftGlyph.userRound,
+            [
+              for (final row in preferences.rows)
+                raftDetailsPreferenceRow(context, row, busy: busy),
+            ],
+            key: const Key('channel-settings-preferences'),
           )
+        : raftSheetSection(
+            context,
+            t,
+            preferences,
+            busy: busy,
+            family: t.bodyFont,
+          );
+
+    final Widget body = dm
+        ? RaftOverflowDmBody(child: preferenceGroup)
         : settingsPresent
         ? (!flagsKnown
               ? const RaftOverflowLoading()
@@ -1502,7 +1909,7 @@ class _ChannelSettingsState extends State<ChannelSettings> {
                         controller: w,
                         channelId: c.id,
                       ),
-                    if (showManage && info)
+                    if (!widget.details && showManage && info)
                       const RaftOverflowGroupHeading(
                         key: ValueKey('channel-settings-manage-group'),
                         title: 'Info',
@@ -1510,7 +1917,7 @@ class _ChannelSettingsState extends State<ChannelSettings> {
                             'Name and description shown across the server.',
                       ),
                     if (error != null) RaftOverflowFormError(error!),
-                    if (info)
+                    if (!widget.details && info)
                       RaftChannelInfoForm(
                         nameController: name,
                         descriptionController: description,
@@ -1527,34 +1934,50 @@ class _ChannelSettingsState extends State<ChannelSettings> {
                         onCancel: resetDraft,
                         onSave: saveChanges,
                       ),
-                    if (canEdit &&
-                        !archived &&
-                        (c.type == 'channel' || c.type == 'private'))
+                    if (!widget.details && showSlack)
                       SlackChannelPairingField(
                         pairing: slack,
                         privacy: private ? 'private' : 'public',
                         enabled: !saving,
                       ),
-                    if (guestSection)
+                    if (widget.details &&
+                        (showVisibility ||
+                            channelRows.isNotEmpty ||
+                            showSlack && slack.available))
+                      raftDetailsSettingsGroup(
+                        context,
+                        'Channel settings',
+                        RaftGlyph.slidersHorizontal,
+                        [
+                          if (showVisibility) visibilitySetting(c),
+                          for (final row in channelRows)
+                            raftDetailsPreferenceRow(
+                              context,
+                              row,
+                              busy: busy || guestBusy || saving,
+                            ),
+                          if (showSlack && slack.available)
+                            ChannelDetailsSlack(
+                              channel: c,
+                              pairing: slack,
+                              enabled: !saving,
+                            ),
+                        ],
+                        key: const Key('channel-settings-manage-group'),
+                      )
+                    else if (channelRows.isNotEmpty)
                       raftSheetSection(
                         context,
                         t,
-                        RaftSheetSection('Channel settings', [
-                          visitorVisibleRow(c),
-                        ]),
+                        RaftSheetSection('Channel settings', channelRows),
                         busy: busy || guestBusy,
                         family: t.bodyFont,
                       ),
-                    raftSheetSection(
-                      context,
-                      t,
-                      preferences,
-                      busy: busy,
-                      family: t.bodyFont,
-                    ),
+                    preferenceGroup,
                     if (actions.isNotEmpty)
                       RaftOverflowActions(
                         title: 'Actions',
+                        details: widget.details,
                         actions: [
                           for (final a in actions)
                             RaftOverflowAction(
@@ -1562,6 +1985,7 @@ class _ChannelSettingsState extends State<ChannelSettings> {
                               label: raftText(context, a.label),
                               glyph: a.glyph,
                               danger: a.danger,
+                              warning: a.warning,
                               disabled: a.disabled || busy,
                               semanticLabel: a.semanticLabel == null
                                   ? null
@@ -1576,6 +2000,9 @@ class _ChannelSettingsState extends State<ChannelSettings> {
 
     final sheet = RaftOverflowSheet(
       page: widget.page,
+      details: widget.details,
+      headerWrapper: membersOpen ? null : widget.headerWrapper,
+      archived: c.archived,
       title: dm ? (widget.dmName ?? c.name) : '#${c.name}',
       badge: dm
           ? 'Direct message'
@@ -1589,8 +2016,30 @@ class _ChannelSettingsState extends State<ChannelSettings> {
           : RaftBadgeRecipeVariant.success,
       subtitle: settingsPresent ? c.description : null,
       onClose: guardedClose,
+      identityContent: widget.details && metadataEditing
+          ? metadataForm(c)
+          : null,
+      identityAction:
+          widget.details && !dm && !archived && cap('editChannelMetadata')
+          ? RaftButton(
+              key: const Key('channel-details-edit'),
+              label: raftText(context, 'Edit'),
+              focusNode: editFocus,
+              glyph: RaftGlyph.pencil,
+              uiVariant: RaftButtonVariant.ghost,
+              onPressed: startMetadataEdit,
+            )
+          : null,
       children: [
         if (stripShown) membersStrip(context, c),
+        if (widget.details &&
+            const {'channel', 'private', 'joint'}.contains(c.type))
+          ChannelAnnouncementSettings(
+            key: ValueKey('announcement-${w.server?.id}-${c.id}'),
+            controller: w,
+            channel: c,
+            details: true,
+          ),
         // Without the settings panel (a DM, a left channel) the failure of a
         // preference write still has to be visible.
         if (error != null && (dm || !settingsPresent || !flagsKnown))
@@ -1601,7 +2050,7 @@ class _ChannelSettingsState extends State<ChannelSettings> {
     // The barrier is the area outside the drawer: a press there is a close
     // attempt like any other (Escape goes through RaftDismissScope, back
     // through PopScope).
-    final root = widget.page
+    final root = (widget.page || widget.details)
         ? sheet
         : Stack(
             children: [
@@ -1627,8 +2076,14 @@ class _ChannelSettingsState extends State<ChannelSettings> {
     return RaftDismissScope(
       // Web OverflowSheet: Escape closes the drawer through the same
       // unsaved-draft guard as the scrim and the X.
-      enabled: !widget.page,
-      onDismiss: guardedClose,
+      enabled: widget.details || !widget.page,
+      onDismiss: () {
+        if (widget.details && metadataEditing && !dirty && !saving) {
+          finishMetadataEdit();
+        } else if (!saving) {
+          unawaited(guardedClose());
+        }
+      },
       child: PopScope(
         // The members page owns back while it is open (it returns to the root
         // view, or from its add view to the roster).
@@ -1648,12 +2103,18 @@ class _ChannelSettingsState extends State<ChannelSettings> {
                     Stack(
                       children: [
                         Positioned.fill(
-                          child: GestureDetector(
-                            behavior: HitTestBehavior.opaque,
-                            onTap: guardedClose,
-                          ),
+                          child: widget.details
+                              ? const SizedBox.shrink()
+                              : GestureDetector(
+                                  behavior: HitTestBehavior.opaque,
+                                  onTap: guardedClose,
+                                ),
                         ),
                         RaftOverflowBareSheet(
+                          page: widget.page,
+                          details: widget.details,
+                          headerWrapper: widget.headerWrapper,
+                          onClose: guardedClose,
                           child: ChannelMembers(
                             key: ValueKey('channel-members-page-${c.id}'),
                             controller: w,

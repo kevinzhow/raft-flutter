@@ -1,5 +1,7 @@
 import 'close_registry_artifacts.dart';
 import 'close_registry_community.dart';
+import 'close_registry_channel_announcement.dart';
+import 'close_registry_channel_details.dart';
 import 'close_registry_dialogs.dart';
 import 'close_registry_limit_notice.dart';
 import 'close_registry_links.dart';
@@ -22,6 +24,8 @@ import 'close_surface.dart';
 List<CloseSurface> get allCloseSurfaces => [
   ...panelSurfaces,
   ...communitySurfaces,
+  ...channelAnnouncementSurfaces,
+  ...channelDetailsSurfaces,
   ...dialogSurfaces,
   ...limitNoticeSurfaces,
   ...linkSurfaces,

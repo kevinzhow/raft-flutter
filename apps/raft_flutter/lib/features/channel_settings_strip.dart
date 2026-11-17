@@ -40,6 +40,7 @@ RaftStripMember slackStripMember(
   BuildContext context,
   Map<String, dynamic> member, {
   String? origin,
+  double? extent,
 }) {
   final name = '${member['displayName'] ?? ''}';
   return RaftStripMember(
@@ -53,6 +54,7 @@ RaftStripMember slackStripMember(
       ),
       avatarContext: RaftMountedAvatarContext.panelHeader,
       origin: origin,
+      extent: extent,
     ),
   );
 }

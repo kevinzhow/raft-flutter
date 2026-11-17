@@ -652,12 +652,12 @@ void main() {
     );
     expect(
       inset(find.byType(RaftMountedAvatarFrame).first),
-      12,
-      reason: 'ChannelMemberRow px-3',
+      16,
+      reason: 'Web v1.24 ChannelMemberList uses the plain ListRow inset',
     );
     expect(inset(_id('add-member-open')), 12, reason: 'footer p-3');
     expect(insetEnd(_id('add-member-open')), 12);
-    // Role tag of the owner row ends at the row's 12px inset.
+    // The owner row does not repeat the channel-admin role tag.
     expect(find.text('Channel admin'), findsNothing);
     await t.tap(_id('add-member-open'));
     await t.pumpAndSettle();

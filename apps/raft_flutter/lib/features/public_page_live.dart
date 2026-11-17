@@ -18,11 +18,11 @@ bool serverPublicPageLive(WorkspaceController w) {
   return (listed ?? current).json['publicPageLive'] == true;
 }
 
-/// `serverPublicPageLive && channel.guestVisible === true && !channel.archivedAt`
+/// `serverPublicPageLive && channel.visitorVisible === true && !channel.archivedAt`
 /// for an ordinary channel: anyone can read it on the public page.
 bool channelOnPublicPage(WorkspaceController w, RaftChannel channel) =>
     channel.type == 'channel' &&
-    channel.json['guestVisible'] == true &&
+    channel.visitorVisible &&
     !channel.archived &&
     serverPublicPageLive(w);
 

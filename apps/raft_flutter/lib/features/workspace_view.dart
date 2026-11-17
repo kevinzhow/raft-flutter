@@ -64,6 +64,7 @@ import 'page_layout.dart';
 import 'channel_side_area.dart';
 import 'section_glyph.dart';
 import 'channel_settings.dart';
+import 'channel_details_host.dart';
 import 'channel_members.dart';
 import 'create_channel_dialog.dart';
 import 'create_joint_channel_dialog.dart' show CreateJointChannelDialog;
@@ -435,13 +436,9 @@ class _WorkspaceViewState extends State<WorkspaceView>
     ].where((channel) => channel.id == page.channelId).firstOrNull;
     if (channel == null || !w.can('viewChannel', resource: channel)) return;
     if (page.kind == RaftChannelPage.settings) {
-      unawaited(
-        ChannelSettings.show(
-          context,
-          controller: w,
-          channel: channel,
-          dmName: channel.type == 'dm' ? dmPeer(channel).name : null,
-        ),
+      ChannelDetailsStore.of(w).open(
+        channel,
+        dmName: channel.type == 'dm' ? dmPeer(channel).name : null,
       );
     } else {
       unawaited(
@@ -3794,12 +3791,9 @@ class _WorkspaceViewState extends State<WorkspaceView>
       openChannelPage(RaftChannelPage.settings, channel);
       return;
     }
-    await ChannelSettings.show(
-      context,
-      controller: w,
-      channel: channel,
-      dmName: channel.type == 'dm' ? dmPeer(channel).name : null,
-    );
+    ChannelDetailsStore.of(
+      w,
+    ).open(channel, dmName: channel.type == 'dm' ? dmPeer(channel).name : null);
   }
 
   void openChannelPage(RaftChannelPage kind, RaftChannel channel) {
@@ -3855,6 +3849,7 @@ class _WorkspaceViewState extends State<WorkspaceView>
                         channel: channel,
                         isPanel: true,
                         page: true,
+                        details: true,
                         dmName: channel.type == 'dm'
                             ? dmPeer(channel).name
                             : null,
