@@ -120,6 +120,9 @@ class RaftTaskStatusEditor extends StatelessWidget {
   }
 }
 
+/// Tailwind `inset-ring-2` (TaskCard.tsx:100).
+const double _selectedRingWidth = 2;
+
 /// raft-ui TaskCard (taskCard recipe) as composed by the product TaskCard
 /// (packages/web/src/components/task/TaskCard.tsx): meta row, title,
 /// description, then `mt-2 flex items-center gap-2` with the status editor at
@@ -199,11 +202,7 @@ class RaftTaskCard extends StatelessWidget {
     }
     final borderWidth = switch (decoration.border) {
       Border(:final top) => top.width,
-      _ => 0.0,
-    };
-    final cornerRadius = switch (decoration.borderRadius) {
-      BorderRadius(:final topLeft) => topLeft.x,
-      _ => 0.0,
+      _ => BorderSide.none.width,
     };
     final ring = selected
         ? Positioned.fill(
@@ -214,12 +213,15 @@ class RaftTaskCard extends StatelessWidget {
                 child: DecoratedBox(
                   key: const ValueKey('task-card-selected-ring'),
                   decoration: BoxDecoration(
-                    border: Border.all(color: t.colors['info']!, width: 2),
-                    borderRadius: BorderRadius.circular(
-                      cornerRadius > borderWidth
-                          ? cornerRadius - borderWidth
-                          : 0,
+                    border: Border.all(
+                      color: t.colors['info']!,
+                      width: _selectedRingWidth,
                     ),
+                    borderRadius: switch (decoration.borderRadius) {
+                      final BorderRadius outer =>
+                        outer - BorderRadius.circular(borderWidth),
+                      _ => null,
+                    },
                   ),
                 ),
               ),

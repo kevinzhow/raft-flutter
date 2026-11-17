@@ -24,6 +24,7 @@ import 'raft/ui_tokens.dart';
 import 'recipes/recipe_runtime.dart' show CssNum, RaftSlotStyle;
 import 'system_inset.dart';
 import 'theme.dart';
+import 'token_geometry.dart';
 import 'tokens/tokens.dart';
 
 /// The order things give way in (selection-toolbar.mjs `HINT_STEP` ...).
@@ -142,9 +143,7 @@ class RaftSelectionBar extends StatelessWidget {
         key: const ValueKey('selection-bar'),
         decoration: BoxDecoration(
           color: t.popover,
-          borderRadius: BorderRadius.circular(
-            t.size('radius.container', fallback: 10),
-          ),
+          borderRadius: t.corner('radius.container', fallback: 10),
           // `ring-1 ring-line-seam shadow-float`, the ring listed first.
           boxShadow: [
             for (final layer in t.shadowLayers('shadow.float').reversed)

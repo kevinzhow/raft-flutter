@@ -20,6 +20,9 @@ class RaftTaskRowSelection {
   final void Function(RaftTaskChipRow task, {required bool range}) onSelect;
 }
 
+/// Tailwind `inset-ring-2`: the keyboard focus ring of a row.
+const double _focusRingWidth = 2;
+
 /// The list's own width under which a row is narrow (Web `@max-md/tasks`,
 /// 28rem of the page's `@container/tasks`): the channel moves into the
 /// trailing group and the status keeps only its pixel.
@@ -303,7 +306,7 @@ class _PageRowState extends State<_PageRow> {
                     decoration: BoxDecoration(
                       // `focus-visible:inset-ring-2 inset-ring-ink`.
                       border: state.focusVisible
-                          ? Border.all(color: t.ink, width: 2)
+                          ? Border.all(color: t.ink, width: _focusRingWidth)
                           : null,
                     ),
                     child: ExcludeSemantics(

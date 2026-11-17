@@ -47937,24 +47937,6 @@
         "owner": "WP-DS5 data-display family",
         "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
-      "packages/raft_ui/lib/src/raft/fit_toolbar.dart#local-function:CLASS:_RaftFitToolbarState@11654/METHOD:_live@20032/FUNCTION:leafWidget@22764": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "WP-DS5 data-display family",
-        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
-      },
-      "packages/raft_ui/lib/src/raft/fit_toolbar.dart#local-function:CLASS:_RaftFitToolbarState@11654/METHOD:_live@20032/FUNCTION:slotWidget@23496": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "WP-DS5 data-display family",
-        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
-      },
-      "packages/raft_ui/lib/src/raft/fit_toolbar.dart#local-function:CLASS:_RaftFitToolbarState@11654/METHOD:build@16684/FUNCTION:probe@16855": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "WP-DS5 data-display family",
-        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
-      },
       "packages/raft_ui/lib/src/raft/fit_toolbar.dart#method:RaftFitButton.buildForm": {
         "role": "unresolved",
         "familyRefs": [],
@@ -51032,6 +51014,228 @@
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "WP-SIDE (Web v1.24 channel side area, Tasks / Files cards, web preview): composes raft_ui parts; real-entry/family/state mapping remains unreviewed. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/raft/fit_toolbar.dart#local-function:CLASS:_RaftFitToolbarState@11922/METHOD:_live@20300/FUNCTION:leafWidget@23032": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS5 data-display family",
+        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/raft/fit_toolbar.dart#local-function:CLASS:_RaftFitToolbarState@11922/METHOD:_live@20300/FUNCTION:slotWidget@23764": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS5 data-display family",
+        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/raft/fit_toolbar.dart#local-function:CLASS:_RaftFitToolbarState@11922/METHOD:build@16952/FUNCTION:probe@17123": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS5 data-display family",
+        "reason": "Source census candidate (WP-DS5, raft-ui 0.95.3 data-display family: list row, card parts, badge, status, banner, empty state, progress, text link, fit toolbar); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/selection_bar.dart#class:RaftSelectionBar": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-TASKS (Web v1.24 Tasks page, TaskChipList page variant / SelectionToolbar): resolved widget; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/selection_bar.dart#class:RaftSelectionBarDock": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-TASKS (Web v1.24 Tasks page, TaskChipList page variant / SelectionToolbar): resolved widget; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/selection_bar.dart#local-function:CLASS:_BarAction@9090/METHOD:buildForm@9894/FUNCTION:button@10454": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-TASKS (Web v1.24 Tasks page, TaskChipList page variant / SelectionToolbar): resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/selection_bar.dart#local-function:CLASS:_BarMore@12316/METHOD:buildForm@12472/FUNCTION:trigger@12687": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-TASKS (Web v1.24 Tasks page, TaskChipList page variant / SelectionToolbar): resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/selection_bar.dart#method:RaftSelectionBar.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-TASKS (Web v1.24 Tasks page, TaskChipList page variant / SelectionToolbar): resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/selection_bar.dart#method:RaftSelectionBarDock.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-TASKS (Web v1.24 Tasks page, TaskChipList page variant / SelectionToolbar): resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/selection_bar.dart#method:_BarAction.buildForm": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-TASKS (Web v1.24 Tasks page, TaskChipList page variant / SelectionToolbar): resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/selection_bar.dart#method:_BarClose.buildForm": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-TASKS (Web v1.24 Tasks page, TaskChipList page variant / SelectionToolbar): resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/selection_bar.dart#method:_BarCount.buildForm": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-TASKS (Web v1.24 Tasks page, TaskChipList page variant / SelectionToolbar): resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/selection_bar.dart#method:_BarMore.buildForm": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-TASKS (Web v1.24 Tasks page, TaskChipList page variant / SelectionToolbar): resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/task_chip_page.dart#class:RaftTaskPageList": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-TASKS (Web v1.24 Tasks page, TaskChipList page variant / SelectionToolbar): resolved widget; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/task_chip_page.dart#class:_PageRow": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-TASKS (Web v1.24 Tasks page, TaskChipList page variant / SelectionToolbar): resolved widget; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/task_chip_page.dart#class:_PageRowContent": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-TASKS (Web v1.24 Tasks page, TaskChipList page variant / SelectionToolbar): resolved widget; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/task_chip_page.dart#class:_PageRowState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-TASKS (Web v1.24 Tasks page, TaskChipList page variant / SelectionToolbar): resolved state owner; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/task_chip_page.dart#class:_RenderRowFlow": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-TASKS (Web v1.24 Tasks page, TaskChipList page variant / SelectionToolbar): resolved state owner; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/task_chip_page.dart#class:_RowFlow": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-TASKS (Web v1.24 Tasks page, TaskChipList page variant / SelectionToolbar): resolved widget; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/task_chip_page.dart#method:RaftTaskPageList.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-TASKS (Web v1.24 Tasks page, TaskChipList page variant / SelectionToolbar): resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/task_chip_page.dart#method:_PageRow.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-TASKS (Web v1.24 Tasks page, TaskChipList page variant / SelectionToolbar): resolved state owner; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/task_chip_page.dart#method:_PageRowContent.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-TASKS (Web v1.24 Tasks page, TaskChipList page variant / SelectionToolbar): resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/task_chip_page.dart#method:_PageRowContent.unassignedLabel": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-TASKS (Web v1.24 Tasks page, TaskChipList page variant / SelectionToolbar): resolved state owner; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/task_chip_page.dart#method:_PageRowState._activate": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-TASKS (Web v1.24 Tasks page, TaskChipList page variant / SelectionToolbar): resolved state owner; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/task_chip_page.dart#method:_PageRowState._selection": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-TASKS (Web v1.24 Tasks page, TaskChipList page variant / SelectionToolbar): resolved state owner; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/task_chip_page.dart#method:_PageRowState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-TASKS (Web v1.24 Tasks page, TaskChipList page variant / SelectionToolbar): resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/task_page_previews.dart#class:_PageList": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-TASKS (Web v1.24 Tasks page, TaskChipList page variant / SelectionToolbar): resolved widget; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/task_page_previews.dart#class:_PageListState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-TASKS (Web v1.24 Tasks page, TaskChipList page variant / SelectionToolbar): resolved state owner; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/task_page_previews.dart#function:_bar": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-TASKS (Web v1.24 Tasks page, TaskChipList page variant / SelectionToolbar): resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/task_page_previews.dart#function:selectionBarMediumPreview": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-TASKS (Web v1.24 Tasks page, TaskChipList page variant / SelectionToolbar): resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/task_page_previews.dart#function:selectionBarNarrowPreview": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-TASKS (Web v1.24 Tasks page, TaskChipList page variant / SelectionToolbar): resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/task_page_previews.dart#function:selectionBarWidePreview": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-TASKS (Web v1.24 Tasks page, TaskChipList page variant / SelectionToolbar): resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/task_page_previews.dart#function:taskCardSelectionPreview": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-TASKS (Web v1.24 Tasks page, TaskChipList page variant / SelectionToolbar): resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/task_page_previews.dart#function:taskPageListNarrowPreview": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-TASKS (Web v1.24 Tasks page, TaskChipList page variant / SelectionToolbar): resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/task_page_previews.dart#function:taskPageListWidePreview": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-TASKS (Web v1.24 Tasks page, TaskChipList page variant / SelectionToolbar): resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/task_page_previews.dart#method:_PageList.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-TASKS (Web v1.24 Tasks page, TaskChipList page variant / SelectionToolbar): resolved state owner; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/task_page_previews.dart#method:_PageListState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-TASKS (Web v1.24 Tasks page, TaskChipList page variant / SelectionToolbar): resolved builder; real-entry/family/state mapping remains unreviewed."
       }
     },
     "entries": {
