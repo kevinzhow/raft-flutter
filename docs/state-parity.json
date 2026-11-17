@@ -49342,19 +49342,19 @@
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
-      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5702/METHOD:buildWorkspace@48067/FUNCTION:<anonymous>@48305/FUNCTION:conversation@51419": {
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5590/METHOD:buildWorkspace@47408/FUNCTION:<anonymous>@47626/FUNCTION:conversation@50740": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
-      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5702/METHOD:buildWorkspace@48067/FUNCTION:<anonymous>@48305/FUNCTION:workspace@64735": {
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5590/METHOD:buildWorkspace@47408/FUNCTION:<anonymous>@47626/FUNCTION:workspace@64056": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
-      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5702/METHOD:settingsRailAction@108886/FUNCTION:action@108920": {
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5590/METHOD:settingsRailAction@108207/FUNCTION:action@108241": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
@@ -49413,12 +49413,6 @@
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
-      },
-      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@5000/METHOD:buildTimeline@113772/FUNCTION:timelineFor@117315": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "WP-BILL history paywall (Web v1.24 HistoryPaywall): resolved builder; real-entry/family/state mapping remains unreviewed."
       },
       "apps/raft_flutter/lib/features/history_paywall_view.dart#class:RaftHistoryPaywallView": {
         "role": "unresolved",
@@ -49546,7 +49540,7 @@
         "owner": "design-system alignment",
         "reason": "WP-BILL history paywall (Web v1.24 HistoryPaywall): resolved builder; real-entry/family/state mapping remains unreviewed."
       },
-      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@5000/METHOD:buildTimeline@113929/FUNCTION:timelineFor@117472": {
+      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4999/METHOD:buildTimeline@113673/FUNCTION:timelineFor@117216": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
