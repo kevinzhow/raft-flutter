@@ -7,6 +7,7 @@ import 'package:dio/dio.dart';
 import 'package:socket_io_client/socket_io_client.dart' as io;
 import 'package:uuid/uuid.dart';
 
+import 'account_deletion.dart';
 import 'account_link.dart';
 import 'client_config.dart';
 import 'hidden_history.dart';
@@ -169,6 +170,10 @@ Map<String, dynamic> _errorDetails(Map? body) {
     'current_scopes',
     'current_groups',
     'current_text_revision_id',
+    // Account deletion (routes/accountDeletion.ts): the 403 `scheduledFor`,
+    // and the 409 `sole_owner_servers` list of servers to hand over first.
+    'scheduledFor',
+    'servers',
     // others_agents_on_computer (revoke-computer-key, 409): other people's
     // agents on the Computer, each with its owner and reminder times, which
     // Delete Computer lists with Notify owner (Web othersAgentsApi.ts).
@@ -208,6 +213,7 @@ Map<String, dynamic> _errorDetails(Map? body) {
       'providerCode',
       'error_description',
       'lockedUntil',
+      'scheduledFor',
     }.contains(key)) {
       return value is String ? value : null;
     }
@@ -254,6 +260,14 @@ Map<String, dynamic> _errorDetails(Map? body) {
     if (key == 'agreement') {
       return receipt(value, {'id', 'title', 'bodyMarkdown', 'version'});
     }
+    if (key == 'servers') {
+      return [
+        if (value is List)
+          for (final server in value)
+            if (server is Map)
+              receipt(server, {'id', 'name', 'slug', 'memberCount'}),
+      ];
+    }
     if (key == 'agents') {
       return [
         if (value is List)
@@ -269,6 +283,12 @@ Map<String, dynamic> _errorDetails(Map? body) {
                 }),
                 if (agent['owner'] is Map)
                   'owner': receipt(agent['owner'], {'id', 'name'}),
+                // others_agents_on_computers (account deletion, 409): where
+                // each one is.
+                if (agent['server'] is Map)
+                  'server': receipt(agent['server'], {'id', 'name', 'slug'}),
+                if (agent['computer'] is Map)
+                  'computer': receipt(agent['computer'], {'id', 'name'}),
               },
       ];
     }
@@ -423,6 +443,7 @@ class RaftClient {
              ),
            ) {
     http.options.baseUrl = '${this.origin}/api';
+    accountDeletion.addListener(_accountDeletionChanged);
     _sharedSubscription = sharedSessionAuthority?.changes.listen(
       _acceptSharedSession,
     );
@@ -519,6 +540,16 @@ class RaftClient {
     ssoRequired = message.isEmpty ? ssoRequiredText : message;
     _audit('sso_required', 'refused');
     _emit(RaftEvent('auth:sso-required', {'message': ssoRequired}));
+  }
+
+  /// A scheduled account deletion (403 `account_deletion_pending`): the app
+  /// shows its own page in place of the shell. See account_deletion.dart.
+  final accountDeletion = AccountDeletionGate();
+
+  void _accountDeletionChanged() {
+    // The socket is refused too; don't let it keep reconnecting behind the page.
+    if (accountDeletion.active) suspendConnection();
+    _emit(const RaftEvent(accountDeletionEventName, null));
   }
 
   String? serverId;
@@ -754,6 +785,15 @@ class RaftClient {
         // Ended (a definitive rejection already signed out) or superseded.
         return false;
       }
+      if (e is RaftApiException && accountDeletion.pending) {
+        // Scheduled for deletion: every API but the deletion's own answers
+        // 403, /auth/me too. The sign-in is good; the app shows the pending
+        // page, which needs no account record.
+        user = RaftRecord(
+          Map<String, dynamic>.from(s.cachedUser ?? {'id': _tokenSubject}),
+        );
+        return true;
+      }
       if (e is RaftApiException &&
           credentialVerdict(e) == SessionVerdict.endSession) {
         await _endSession(
@@ -925,6 +965,7 @@ class RaftClient {
 
   void _scheduleRecovery() {
     if (_closed ||
+        accountDeletion.active ||
         _session == null ||
         recoveryBackoff.isEmpty ||
         _recoveryTimer != null) {
@@ -1063,6 +1104,9 @@ class RaftClient {
     }
     _session = session;
     user = RaftRecord(Map<String, dynamic>.from(result['user']));
+    // Scheduled for deletion: the pending page before any boot request
+    // answers 403 (Web `applyPasswordSignIn`).
+    accountDeletion.noteSignIn(result['accountDeletion']);
     _generation++;
     await _persist(_session);
     _reportTimezone();
@@ -1188,6 +1232,7 @@ class RaftClient {
     _recoveryTimer?.cancel();
     _recoveryTimer = null;
     _authRetry?.cancel();
+    accountDeletion.clear();
     sessionDegraded = false;
     restoredOffline = false;
     _recoveryAttempt = 0;
@@ -1358,6 +1403,21 @@ class RaftClient {
         workspaceScoped: false,
         headers: {'X-Server-Id': server},
       );
+
+  /// Any write addressed to [server] while the active workspace stays as it
+  /// is (Delete Account hands over, or archives an agent of, another server).
+  Future<dynamic> requestForServer(
+    String method,
+    String server,
+    String path, {
+    dynamic data,
+  }) => _request(
+    method,
+    path,
+    data: data,
+    workspaceScoped: false,
+    headers: {'X-Server-Id': server},
+  );
   Future<dynamic> post(String path, {dynamic data}) =>
       request('POST', path, data: data);
   Future<dynamic> patch(String path, {dynamic data}) =>
@@ -1853,6 +1913,7 @@ class RaftClient {
           body['code'] == 'SSO_REQUIRED') {
         _noteSsoRequired('${body['error'] ?? ''}');
       }
+      if (authorized) accountDeletion.noteRefusal(status, body);
       throw RaftApiException.response(
         body is Map
             ? (body['error'] ?? body['message'] ?? 'Request failed').toString()
@@ -2016,6 +2077,23 @@ class RaftClient {
     'serverId': serverId,
     'clientKind': clientKind,
   };
+
+  /// The `sub` of the access token: the account it belongs to.
+  String get _tokenSubject {
+    try {
+      final payload = jsonDecode(
+        utf8.decode(
+          base64Url.decode(
+            base64Url.normalize(_session!.accessToken.split('.')[1]),
+          ),
+        ),
+      );
+      return payload['sub'] is String ? payload['sub'] as String : '';
+    } catch (_) {
+      return '';
+    }
+  }
+
   bool get _accessNeedsRefresh {
     try {
       final payload = jsonDecode(
@@ -2053,7 +2131,12 @@ class RaftClient {
   void connect() => _connectOwned();
 
   void _connectOwned() {
-    if (_closed || _session == null || serverId == null) return;
+    if (_closed ||
+        _session == null ||
+        serverId == null ||
+        accountDeletion.active) {
+      return;
+    }
     _socket?.dispose();
     final epoch = _generation;
     // ignore: raft_lints/avoid_unproxied_network_client -- The socket.io client; applyProxyTransport() wires it through the proxy hook (proxy_hook_guard_test).
@@ -2159,7 +2242,12 @@ class RaftClient {
         : recoveryBackoff[math.min(_socketRetries, recoveryBackoff.length - 1)];
     _socketRetries++;
     _authRetry = Timer(delay, () {
-      if (_closed || epoch != _generation || _session == null) return;
+      if (_closed ||
+          epoch != _generation ||
+          _session == null ||
+          accountDeletion.active) {
+        return;
+      }
       socket.auth = _authenticateSocket;
       socket.connect();
     });

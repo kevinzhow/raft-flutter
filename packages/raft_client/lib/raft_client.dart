@@ -1,5 +1,6 @@
 library;
 
+export 'src/account_deletion.dart';
 export 'src/account_link.dart';
 export 'src/client.dart';
 export 'src/client_config.dart';

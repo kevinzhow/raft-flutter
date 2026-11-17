@@ -41,6 +41,7 @@ import 'features/workspace_view.dart';
 import 'features/auth_view.dart';
 import 'features/sso_required_page.dart';
 import 'features/session_recovery_view.dart';
+import 'features/account_deletion_gate.dart';
 import 'features/account_onboarding.dart';
 import 'features/private_route_guard.dart';
 import 'platform/auth_audit_log.dart';
@@ -903,6 +904,7 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
     if (!mounted || !identical(c, client) || accountNeedsOnboarding(c.user)) {
       return;
     }
+    if (c.accountDeletion.active) return;
     await resumePendingInvite();
     if (!mounted || !identical(c, client) || accountNeedsOnboarding(c.user)) {
       return;
@@ -1826,7 +1828,10 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
         authenticate: authenticate,
       );
     }
-    if (active!.ssoRequired != null) return SsoRequiredPage(active, logout);
+    if (active!.accountDeletion.active) {
+      return AccountDeletionGateView(active, reopenAfterCancel, logout);
+    }
+    if (active.ssoRequired != null) return SsoRequiredPage(active, logout);
     if (invite != null) return inviteHome(true);
     if (accountNeedsOnboarding(active.user)) {
       return AccountOnboardingView(
@@ -1967,7 +1972,11 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
         if (directoryLoading) unawaited(discoverServers());
         setState(() {});
       }
-      if (e.name == 'auth:sso-required' && mounted && identical(c, client)) {
+      if ((e.name == 'auth:sso-required' ||
+              e.name == accountDeletionEventName) &&
+          mounted &&
+          identical(c, client)) {
+        syncWorkspaceForeground();
         setState(() {});
       }
       if (e.name == 'session:ended' && mounted && identical(c, client)) {
@@ -2064,6 +2073,23 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
     if (oldWorkspace == null) await c?.dispose();
   }
 
+  /// Cancel Deletion went through: the session starts over as after a full
+  /// reload, in Settings > Account of the server the person was in.
+  Future<void> reopenAfterCancel() async {
+    final old = workspace;
+    final to = await accountSettingsAfterCancel(old, '$serverMemoryKey.last');
+    if (!mounted) return;
+    requestedLocation = to;
+    workspace = null;
+    old?.removeListener(workspaceChanged);
+    content.bindWorkspace(null);
+    serverSurfaces.clear();
+    showServerSelector = true;
+    setState(() => restoring = true);
+    await restore();
+    old?.dispose();
+  }
+
   Future<void> setAppearance(RaftAppearance value) =>
       appearance.save(value).then((_) => NativeLaunchTheme.instance.set(value));
 
@@ -2071,6 +2097,7 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
     if (!mounted) return;
     workspace?.setForeground(
       content.appForeground &&
+          client?.accountDeletion.active != true &&
           !showServerSelector &&
           serverSwitchLocation == null,
     );
