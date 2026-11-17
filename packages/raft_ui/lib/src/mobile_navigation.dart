@@ -9,7 +9,6 @@ import 'package:flutter/services.dart';
 import 'mobile_page_header.dart';
 import 'status_bar.dart';
 import 'tap_slop.dart';
-import 'raft/status.dart' show RaftAttentionDot;
 
 import 'design_primitives.dart';
 import 'components.dart' show RaftSidebarUnreadCount;
@@ -17,6 +16,7 @@ import 'icons.dart';
 import 'localization.dart';
 import 'primitive_tokens.dart';
 import 'public_page_mark.dart';
+import 'workspace_button.dart';
 import 'workspace_shell.dart' show RaftWorkspaceRailAction;
 import 'recipe_surface.dart';
 import 'tokens/tokens.dart';
@@ -495,9 +495,13 @@ class RaftMobileServerSelector extends StatelessWidget {
     this.attentionLabel,
     this.focusNode,
     this.publicPageLive = false,
+    this.avatarUrl,
   });
   final String label;
   final VoidCallback? onPressed;
+
+  /// The server's avatar (Raft look: [RaftWorkspaceButton]).
+  final String? avatarUrl;
   final bool attention;
   final String? attentionLabel;
   final double? viewportHeight;
@@ -514,9 +518,9 @@ class RaftMobileServerSelector extends StatelessWidget {
       viewportHeight: viewportHeight ?? MediaQuery.sizeOf(context).height,
     );
     if (_stickerWorkspace(t)) {
-      return _StickerWorkspaceSelector(
-        recipe: recipe,
-        label: label,
+      return RaftWorkspaceButton(
+        name: label,
+        avatarUrl: avatarUrl,
         onPressed: onPressed,
         attention: attention,
         attentionLabel: attentionLabel,

@@ -144,6 +144,7 @@ export 'src/attachment_preview_shell.dart';
 export 'src/attachment_transfer.dart';
 
 export 'src/mobile_navigation.dart';
+export 'src/workspace_button.dart';
 export 'src/section_pager.dart';
 export 'src/pull_to_refresh.dart';
 export 'src/mermaid_toolbar_recipe.dart';

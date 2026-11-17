@@ -277,6 +277,7 @@ class _RaftServerSwitcherState extends State<RaftServerSwitcher> {
                   leading: RaftMobileServerSelector(
                     key: const Key('mobile-server-selector'),
                     label: widget.workspaceName,
+                    avatarUrl: widget.workspaceAvatarUrl,
                     attention: widget.attention,
                     publicPageLive: widget.publicPageLive,
                     attentionLabel: raftText(
