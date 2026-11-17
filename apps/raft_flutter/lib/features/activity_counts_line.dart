@@ -62,6 +62,7 @@ List<InlineSpan> activityCountsSpans(
   {
     'mono': (inner) => TextSpan(
       text: inner,
+      // ds-allow: only the face changes (Web `font-mono`); size and colour come from the header's own text
       style: TextStyle(fontFamily: RaftTokens.of(context).monoFont),
     ),
   },

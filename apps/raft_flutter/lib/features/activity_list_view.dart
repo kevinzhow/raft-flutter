@@ -13,6 +13,12 @@ const double _phoneTop = 8, _desktopTop = 4, _bottom = 4;
 /// `InboxItemListGroup` margin between two days.
 const double _groupGap = 6;
 
+/// `first:mt-0`: the first day has no margin above it.
+const double _firstGroupGap = 0;
+
+/// `gap-0.5` between the rows of a day.
+const double _rowGap = 2;
+
 typedef ActivityRowBuilder =
     Widget Function(BuildContext context, Map<String, dynamic> row, int index);
 
@@ -65,11 +71,12 @@ class ActivityListView extends StatelessWidget {
     ];
     for (final (g, group) in groups.indexed) {
       final first = start;
+      final gapBefore = g == 0 ? _firstGroupGap : _groupGap;
       start += group.rows.length;
       slivers.add(
         SliverPadding(
           key: ValueKey(group.key),
-          padding: EdgeInsets.only(top: g == 0 ? 0 : _groupGap),
+          padding: EdgeInsets.only(top: gapBefore),
           sliver: SliverMainAxisGroup(
             slivers: [
               if (group.label.isNotEmpty)
@@ -86,7 +93,7 @@ class ActivityListView extends StatelessWidget {
                 ),
               SliverList.separated(
                 itemCount: group.rows.length,
-                separatorBuilder: (_, _) => const SizedBox(height: 2),
+                separatorBuilder: (_, _) => const SizedBox(height: _rowGap),
                 findItemIndexCallback: (key) {
                   final at = indexOfKey(key);
                   return at == null || at < first || at >= first + group.rows.length

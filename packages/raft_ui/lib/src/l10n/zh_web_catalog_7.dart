@@ -14,7 +14,6 @@ const Map<String, String> zhCatalogWeb7 = <String, String>{
   "Could not load your servers. Try again.": "无法加载你的服务器，请重试。",
   "The transfer did not finish. Try again.": "传输未完成，请重试。",
   "Sort": "排序",
-  "Sort Activity": "排序动态",
   "Sort by Newest": "按最新排序",
   "Sort sidebar conversations": "对侧栏会话排序",
   "Source": "来源",

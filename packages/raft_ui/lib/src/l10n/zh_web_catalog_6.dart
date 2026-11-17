@@ -307,7 +307,6 @@ const Map<String, String> zhCatalogWeb6 = <String, String>{
   "Scroll Thread to First Message": "将消息列滚动到第一条消息",
   "Scroll to first message": "滚动到第一条消息",
   "Search": "搜索",
-  "Search Activity": "搜索动态",
   "Search history": "搜索历史",
   "Search servers": "搜索服务器",
   "Search apps…": "搜索应用…",

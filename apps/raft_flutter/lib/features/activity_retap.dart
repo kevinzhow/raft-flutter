@@ -13,6 +13,9 @@ import 'resource_list_updates.dart';
 /// Nothing is marked read.
 
 /// A row of the list, in list order.
+/// The smooth scroll to the target row.
+const Duration _retapScroll = Duration(milliseconds: 300);
+
 class ActivityRetapRow {
   const ActivityRetapRow({
     required this.key,
@@ -299,7 +302,7 @@ class ActivityRetap {
     final position = scroll.position;
     await position.animateTo(
       to.clamp(position.minScrollExtent, position.maxScrollExtent),
-      duration: const Duration(milliseconds: 300),
+      duration: _retapScroll,
       curve: Curves.easeOutCubic,
     );
     if (key == null || !host.context.mounted) return;

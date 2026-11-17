@@ -37,3 +37,17 @@ class ActivityPageState {
   /// Ends the Activity visit / the phone re-tap registration on dispose.
   VoidCallback? leaveVisit, unregisterRetap;
 }
+
+/// What one mounted Saved page keeps beside its rows (held outside the State
+/// class for the same reason as [ActivityPageState]).
+class SavedPageState {
+  SavedPageState._();
+  static final _owners = Expando<SavedPageState>();
+  static SavedPageState of(Object owner) => _owners[owner] ??= SavedPageState._();
+
+  /// Saved rows behind the plan's history window (`historyHidden.count` of the
+  /// first page); the page says how many in a banner.
+  int hiddenCount = 0;
+  bool refreshing = false;
+  int loadFailures = 0;
+}

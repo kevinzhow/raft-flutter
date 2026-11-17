@@ -104,6 +104,9 @@ Finder row(String key) => find.byKey(ValueKey(key));
 class ServerClient extends ActivityClient {
   ActivityWorkspace? server;
   final unfollowed = <String>{};
+
+  /// `METHOD path`s the server refuses (500).
+  final failPaths = <String>{};
   @override
   Future<dynamic> request(
     String method,
@@ -118,6 +121,11 @@ class ServerClient extends ActivityClient {
     bool acceptServerExit = false,
     Duration? receiveTimeout,
   }) {
+    if (failPaths.contains('$method $path')) {
+      posts.add('$method $path');
+      bodies.add(data);
+      return Future.error(const RaftApiException('Server error', status: 500));
+    }
     final rows = server?.inbox;
     if (method == 'POST' && rows != null && data is Map) {
       if (path == '/channels/inbox/done') {

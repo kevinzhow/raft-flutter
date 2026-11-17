@@ -101,6 +101,8 @@ import 'package:raft_ui/thread_composition_previews.dart';
 import 'package:raft_ui/thread_reply_previews.dart';
 import 'package:raft_ui/timeline_composition_previews.dart';
 import 'package:raft_ui/toast_previews.dart';
+import 'package:raft_ui/swipe_row_previews.dart';
+import 'package:raft_ui/activity_filter_bar_previews.dart';
 import 'package:raft_ui/typography_locale_previews.dart';
 import 'package:raft_ui/workspace_button_previews.dart';
 import 'package:raft_ui/workspace_previews.dart';
@@ -231,6 +233,25 @@ final auditSurfaces = <AuditSurface>[
     'Find a conversation',
     conversationFinderPreview,
     Size(280, 360),
+  ),
+  AuditSurface('swipeRowPreview', 'Swipe row', swipeRowPreview, Size(390, 260)),
+  AuditSurface(
+    'activityFilterBarPreview',
+    'Activity filter bar',
+    activityFilterBarPreview,
+    Size(640, 120),
+  ),
+  AuditSurface(
+    'activityFilterBarChipPreview',
+    'Activity filter bar, chip',
+    activityFilterBarChipPreview,
+    Size(640, 120),
+  ),
+  AuditSurface(
+    'activityFilterBarNarrowPreview',
+    'Activity filter bar, narrow',
+    activityFilterBarNarrowPreview,
+    Size(390, 120),
   ),
   AuditSurface(
     'activityLoadingPreview',

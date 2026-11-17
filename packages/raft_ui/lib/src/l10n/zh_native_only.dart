@@ -27,7 +27,6 @@ const Map<String, String> zhCatalogNativeOnly = <String, String>{
   "Create direct message": "创建私信",
   "Mention action failed. Try again.": "提及操作失败，请重试。",
   "Channel name is required.": "请填写频道名称。",
-  "Activity filters": "动态筛选",
   "Conversion complete. Invite another server from Joint Channels.":
       "转换完成。可在联合频道中邀请其他服务器。",
   "Conversion canceled. The original channel is available.": "转换已取消，原频道仍可使用。",

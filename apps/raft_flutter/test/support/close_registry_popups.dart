@@ -29,6 +29,7 @@ const popupSurfaces = <CloseSurface>[
     desktop: {_esc, _scrim, _sys},
     files: [
       '../../packages/raft_ui/lib/src/design_primitives.dart',
+      'lib/features/activity_toolbar_mount.dart',
       'lib/features/desktop_directory_view.dart',
       'lib/features/search_filter_bar.dart',
     ],

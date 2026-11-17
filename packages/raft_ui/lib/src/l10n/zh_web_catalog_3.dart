@@ -172,7 +172,6 @@ const Map<String, String> zhCatalogWeb3 = <String, String>{
   "Customized permissions": "已自定义权限",
   "DIRECT MESSAGES": "私信",
   "DM": "私信",
-  "DM and Channels": "私信与频道",
   "DM and agent task boards are intentionally excluded from this server-wide view.":
       "服务器级视图有意排除私信与 Agent 任务看板。",
   "DMs": "私信",

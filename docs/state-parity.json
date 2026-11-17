@@ -49513,6 +49513,624 @@
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Resolved surface_factory; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/activity_counts_line.dart#function:activityCountsLine": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "apps/raft_flutter/lib/features/activity_inbox_row.dart#class:ActivityInboxRow": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "apps/raft_flutter/lib/features/activity_inbox_row.dart#class:ActivityRowActivation": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "apps/raft_flutter/lib/features/activity_inbox_row.dart#class:_ActivityRowActivationState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "apps/raft_flutter/lib/features/activity_inbox_row.dart#class:_AppBadge": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "apps/raft_flutter/lib/features/activity_inbox_row.dart#function:activityPhoneTouch": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "apps/raft_flutter/lib/features/activity_inbox_row.dart#function:activityRowDone": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "apps/raft_flutter/lib/features/activity_inbox_row.dart#local-function:CLASS:ActivityInboxRow@4023/METHOD:_leading@6381/FUNCTION:badgeOf@6648": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "apps/raft_flutter/lib/features/activity_inbox_row.dart#method:ActivityInboxRow._leading": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "apps/raft_flutter/lib/features/activity_inbox_row.dart#method:ActivityInboxRow._peerFace": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "apps/raft_flutter/lib/features/activity_inbox_row.dart#method:ActivityInboxRow._slot": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "apps/raft_flutter/lib/features/activity_inbox_row.dart#method:ActivityInboxRow.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "apps/raft_flutter/lib/features/activity_inbox_row.dart#method:ActivityRowActivation.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "apps/raft_flutter/lib/features/activity_inbox_row.dart#method:_ActivityRowActivationState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "apps/raft_flutter/lib/features/activity_inbox_row.dart#method:_AppBadge.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "apps/raft_flutter/lib/features/activity_list_view.dart#class:ActivityListView": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "apps/raft_flutter/lib/features/activity_list_view.dart#method:ActivityListView.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "apps/raft_flutter/lib/features/activity_load_failed.dart#class:ActivityLoadFailed": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "apps/raft_flutter/lib/features/activity_load_failed.dart#method:ActivityLoadFailed.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "apps/raft_flutter/lib/features/activity_object_row.dart#class:ActivityObjectRow": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "apps/raft_flutter/lib/features/activity_object_row.dart#class:_ObjectLine": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "apps/raft_flutter/lib/features/activity_object_row.dart#method:ActivityObjectRow._faceContent": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "apps/raft_flutter/lib/features/activity_object_row.dart#method:ActivityObjectRow.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "apps/raft_flutter/lib/features/activity_object_row.dart#method:_ObjectLine.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "apps/raft_flutter/lib/features/activity_row_time.dart#class:ActivityRowTimeBuilder": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "apps/raft_flutter/lib/features/activity_row_time.dart#class:_ActivityRowTimeBuilderState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "apps/raft_flutter/lib/features/activity_row_time.dart#method:ActivityRowTimeBuilder.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "apps/raft_flutter/lib/features/activity_row_time.dart#method:_ActivityRowTimeBuilderState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "apps/raft_flutter/lib/features/activity_swipe_actions.dart#class:ActivitySwipeBarGuard": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "apps/raft_flutter/lib/features/activity_swipe_actions.dart#class:ActivitySwipeRow": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "apps/raft_flutter/lib/features/activity_swipe_actions.dart#class:ActivitySwipeScope": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "apps/raft_flutter/lib/features/activity_swipe_actions.dart#class:_ActivitySwipeRowState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "apps/raft_flutter/lib/features/activity_swipe_actions.dart#class:_ActivitySwipeScopeState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "apps/raft_flutter/lib/features/activity_swipe_actions.dart#method:ActivitySwipeBarGuard.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "apps/raft_flutter/lib/features/activity_swipe_actions.dart#method:ActivitySwipeRow.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "apps/raft_flutter/lib/features/activity_swipe_actions.dart#method:ActivitySwipeScope.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "apps/raft_flutter/lib/features/activity_swipe_actions.dart#method:_ActivitySwipeRowState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "apps/raft_flutter/lib/features/activity_swipe_actions.dart#method:_ActivitySwipeRowState.didUpdateWidget": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "apps/raft_flutter/lib/features/activity_swipe_actions.dart#method:_ActivitySwipeScopeState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "apps/raft_flutter/lib/features/activity_swipe_actions.dart#method:_ActivitySwipeScopeState.didUpdateWidget": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "apps/raft_flutter/lib/features/activity_toolbar_mount.dart#function:activityFilterBar": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "apps/raft_flutter/lib/features/activity_undo.dart#method:ActivityUndo._setMute": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "apps/raft_flutter/lib/features/activity_undo.dart#method:ActivityUndo._wait": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "apps/raft_flutter/lib/features/activity_undo.dart#method:ActivityUndo.mute": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "apps/raft_flutter/lib/features/resource_view.dart#local-function:CLASS:_ResourceViewState@7358/METHOD:activityList@109298/FUNCTION:bar@109520": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "apps/raft_flutter/lib/features/resource_view.dart#local-function:CLASS:_ResourceViewState@7358/METHOD:scopedDialog@49369/FUNCTION:buildOwned@49596": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "apps/raft_flutter/lib/features/resource_view.dart#local-function:CLASS:_ResourceViewState@7358/METHOD:scopedMenu@50417/FUNCTION:buildOwned@50624": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "apps/raft_flutter/lib/features/resource_view.dart#method:_ResourceViewState.activityList": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "apps/raft_flutter/lib/features/resource_view.dart#method:_ResourceViewState.activityPhoneBar": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "apps/raft_flutter/lib/features/resource_view.dart#method:_ResourceViewState.refreshSaved": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "apps/raft_flutter/lib/features/resource_view.dart#method:_ResourceViewState.savedBanner": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "apps/raft_flutter/lib/features/resource_view.dart#method:_ResourceViewState.savedSentinelRow": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "apps/raft_flutter/lib/features/resource_view.dart#method:_ResourceViewState.writeActivityObject": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "apps/raft_flutter/lib/features/saved_page_rows.dart#class:SavedHistoryBanner": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "apps/raft_flutter/lib/features/saved_page_rows.dart#class:SavedRowCard": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "apps/raft_flutter/lib/features/saved_page_rows.dart#function:savedMenuContent": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "apps/raft_flutter/lib/features/saved_page_rows.dart#function:savedSentinel": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "apps/raft_flutter/lib/features/saved_page_rows.dart#method:SavedHistoryBanner.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "apps/raft_flutter/lib/features/saved_page_rows.dart#method:SavedRowCard.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5662/METHOD:buildWorkspace@47883/FUNCTION:<anonymous>@48121/FUNCTION:conversation@51235": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5662/METHOD:buildWorkspace@47883/FUNCTION:<anonymous>@48121/FUNCTION:workspace@64446": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5662/METHOD:settingsRailAction@108597/FUNCTION:action@108631": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/activity_filter_bar_previews.dart#class:_Bar": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/activity_filter_bar_previews.dart#class:_BarState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/activity_filter_bar_previews.dart#function:activityFilterBarChipPreview": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/activity_filter_bar_previews.dart#function:activityFilterBarNarrowPreview": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/activity_filter_bar_previews.dart#function:activityFilterBarPreview": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/activity_filter_bar_previews.dart#method:_Bar.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/activity_filter_bar_previews.dart#method:_BarState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/activity_filter_bar.dart#class:RaftActivityFilterBar": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/activity_filter_bar.dart#class:_FilterChip": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/activity_filter_bar.dart#class:_MarkAllRead": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/activity_filter_bar.dart#class:_RaftActivityFilterBarState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/activity_filter_bar.dart#method:RaftActivityFilterBar.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/activity_filter_bar.dart#method:_FilterChip.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/activity_filter_bar.dart#method:_MarkAllRead.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/activity_filter_bar.dart#method:_RaftActivityFilterBarState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/design_primitives.dart#local-function:CLASS:_RaftDropdownMenuState@68130/METHOD:build@74540/FUNCTION:toggle@74770": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/error_presentation.dart#function:showRaftToastHandle": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/raft/inbox_item.dart#class:RaftInboxItemStatus": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/raft/inbox_item.dart#class:_InboxRowWidth": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/raft/inbox_item.dart#local-function:CLASS:RaftInboxItemSkeleton@23882/METHOD:build@24031/FUNCTION:line@24789": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/raft/inbox_item.dart#local-function:CLASS:_RaftInboxItemState@5171/METHOD:build@7568/FUNCTION:content@8698": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/raft/inbox_item.dart#method:RaftInboxItemStatus.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/raft/inbox_item.dart#method:_InboxRowWidth.of": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/raft/inbox_item.dart#method:_InboxRowWidth.updateShouldNotify": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/raft/inbox_item.dart#method:_RaftInboxItemState.didUpdateWidget": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/raft/inbox_row_done.dart#class:RaftInboxRowDone": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/raft/inbox_row_done.dart#method:RaftInboxRowDone.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/raft/swipe_row.dart#class:RaftSwipeRow": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/raft/swipe_row.dart#class:RaftSwipeRowState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/raft/swipe_row.dart#method:RaftSwipeRow.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/raft/swipe_row.dart#method:RaftSwipeRowState._button": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/raft/swipe_row.dart#method:RaftSwipeRowState._layer": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/raft/swipe_row.dart#method:RaftSwipeRowState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/raft/swipe_row.dart#method:RaftSwipeRowState.didUpdateWidget": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/swipe_row_previews.dart#function:swipeRowPreview": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/swipe_row_previews.dart#local-function:FUNCTION:swipeRowPreview@832/FUNCTION:<anonymous>@873/FUNCTION:row@950": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "apps/raft_flutter/lib/features/resource_view.dart#local-function:CLASS:_ResourceViewState@7358/METHOD:activityList@109649/FUNCTION:bar@109871": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "apps/raft_flutter/lib/features/resource_view.dart#local-function:CLASS:_ResourceViewState@7358/METHOD:scopedDialog@49720/FUNCTION:buildOwned@49947": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "apps/raft_flutter/lib/features/resource_view.dart#local-function:CLASS:_ResourceViewState@7358/METHOD:scopedMenu@50768/FUNCTION:buildOwned@50975": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "apps/raft_flutter/lib/features/resource_view.dart#method:_ResourceViewState.persistActivityRead": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "apps/raft_flutter/lib/features/resource_view.dart#method:_ResourceViewState.toggleActivityRead": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
       }
     },
     "entries": {
@@ -52665,6 +53283,87 @@
         ],
         "mountStatus": "unresolved",
         "reason": "Resolved function owns a surface call; actual target, route and state are not yet observed."
+      },
+      "surface:ActivityUndo._setMute": {
+        "owner": "design-system alignment",
+        "kind": "toast",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/activity_undo.dart#method:ActivityUndo._setMute"
+        ],
+        "mountStatus": "unresolved",
+        "reason": "New entry function (WP-INBOX Activity list / Saved); no real-entry capture acceptance is inferred."
+      },
+      "surface:ActivityUndo._wait": {
+        "owner": "design-system alignment",
+        "kind": "toast",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/activity_undo.dart#method:ActivityUndo._wait"
+        ],
+        "mountStatus": "unresolved",
+        "reason": "New entry function (WP-INBOX Activity list / Saved); no real-entry capture acceptance is inferred."
+      },
+      "surface:ActivityUndo.mute": {
+        "owner": "design-system alignment",
+        "kind": "toast",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/activity_undo.dart#method:ActivityUndo.mute"
+        ],
+        "mountStatus": "unresolved",
+        "reason": "New entry function (WP-INBOX Activity list / Saved); no real-entry capture acceptance is inferred."
+      },
+      "surface:_ResourceViewState.persistActivityRead": {
+        "owner": "design-system alignment",
+        "kind": "toast",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/resource_view.dart#method:_ResourceViewState.persistActivityRead"
+        ],
+        "mountStatus": "unresolved",
+        "reason": "New entry function (WP-INBOX Activity list / Saved); no real-entry capture acceptance is inferred."
+      },
+      "surface:_ResourceViewState.refreshSaved": {
+        "owner": "design-system alignment",
+        "kind": "toast",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/resource_view.dart#method:_ResourceViewState.refreshSaved"
+        ],
+        "mountStatus": "unresolved",
+        "reason": "New entry function (WP-INBOX Activity list / Saved); no real-entry capture acceptance is inferred."
+      },
+      "surface:_ResourceViewState.toggleActivityRead": {
+        "owner": "design-system alignment",
+        "kind": "toast",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/resource_view.dart#method:_ResourceViewState.toggleActivityRead"
+        ],
+        "mountStatus": "unresolved",
+        "reason": "New entry function (WP-INBOX Activity list / Saved); no real-entry capture acceptance is inferred."
+      },
+      "surface:_ResourceViewState.writeActivityObject": {
+        "owner": "design-system alignment",
+        "kind": "toast",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/resource_view.dart#method:_ResourceViewState.writeActivityObject"
+        ],
+        "mountStatus": "unresolved",
+        "reason": "New entry function (WP-INBOX Activity list / Saved); no real-entry capture acceptance is inferred."
+      },
+      "surface:local-CLASS:_RaftDropdownMenuState@68130/METHOD:build@74540/FUNCTION:toggle@74770": {
+        "owner": "design-system alignment",
+        "kind": "toast",
+        "declarationRefs": [
+          "packages/raft_ui/lib/src/design_primitives.dart#local-function:CLASS:_RaftDropdownMenuState@68130/METHOD:build@74540/FUNCTION:toggle@74770"
+        ],
+        "mountStatus": "unresolved",
+        "reason": "New entry function (WP-INBOX Activity list / Saved); no real-entry capture acceptance is inferred."
+      },
+      "surface:showRaftToastHandle": {
+        "owner": "design-system alignment",
+        "kind": "toast",
+        "declarationRefs": [
+          "packages/raft_ui/lib/src/error_presentation.dart#function:showRaftToastHandle"
+        ],
+        "mountStatus": "unresolved",
+        "reason": "New entry function (WP-INBOX Activity list / Saved); no real-entry capture acceptance is inferred."
       }
     },
     "requirements": {
@@ -57941,6 +58640,31 @@
         "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
       },
       "packages/raft_ui/lib/src/history_paywall.dart#method:_Notice.build|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+        "applicability": "unknown",
+        "owner": "design-system alignment",
+        "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/activity_filter_bar.dart#method:_FilterChip.build|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:focusVisible": {
+        "applicability": "unknown",
+        "owner": "design-system alignment",
+        "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/activity_filter_bar.dart#method:_FilterChip.build|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:hovered": {
+        "applicability": "unknown",
+        "owner": "design-system alignment",
+        "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/activity_filter_bar.dart#method:_FilterChip.build|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:pressed": {
+        "applicability": "unknown",
+        "owner": "design-system alignment",
+        "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/activity_filter_bar.dart#method:_FilterChip.build|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+        "applicability": "unknown",
+        "owner": "design-system alignment",
+        "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/design_primitives.dart#method:_RaftMenuItemState.build|state:data-checked": {
         "applicability": "unknown",
         "owner": "design-system alignment",
         "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."

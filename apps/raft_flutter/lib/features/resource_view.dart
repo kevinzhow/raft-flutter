@@ -571,9 +571,13 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
 
   /// Saved rows behind the plan's history window (`historyHidden.count` of
   /// the first page); the page says how many in a banner.
-  int historyHiddenCount = 0;
-  bool savedRefreshing = false;
-  int savedLoadFailures = 0;
+  SavedPageState get savedFacets => SavedPageState.of(this);
+  int get historyHiddenCount => savedFacets.hiddenCount;
+  set historyHiddenCount(int value) => savedFacets.hiddenCount = value;
+  bool get savedRefreshing => savedFacets.refreshing;
+  set savedRefreshing(bool value) => savedFacets.refreshing = value;
+  int get savedLoadFailures => savedFacets.loadFailures;
+  set savedLoadFailures(int value) => savedFacets.loadFailures = value;
   int? totalUnreadCount;
   final collapsedTaskStatuses = <String>{'done', 'closed'};
   final taskAdvanced = TaskResourceFilters();
@@ -3671,7 +3675,11 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
   /// Source ThreadsInbox handleOpen / double-click: opening an unread row
   /// marks its scope read. The row presents read at once; the persisted
   /// read-all and its ledger receipt follow.
-  void markActivityRead(Map<String, dynamic> row, String scope) {
+  void markActivityRead(
+    Map<String, dynamic> row,
+    String scope, {
+    bool report = false,
+  }) {
     if (widget.section != 'activity' || !accepts(scope)) return;
     final key = rowKey(row);
     if (key == null) return;
@@ -3679,7 +3687,11 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
         rows.where((candidate) => rowKey(candidate) == key).firstOrNull ?? row;
     final scopeId = activityScopeId(current);
     final unread = (current['unreadCount'] as num? ?? 0).toInt();
-    if (scopeId == null || unread <= 0) return;
+    // A row marked unread with no count is read like any unread row (Web).
+    if (scopeId == null ||
+        (unread <= 0 && !activityRowMarkedUnread(w, current))) {
+      return;
+    }
     final frontier = activityFrontier(current);
     if (frontier != null) {
       final serverId = w.client.serverId, principal = w.client.user?.id;
@@ -3752,14 +3764,15 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
         });
       }
     }
-    unawaited(persistActivityRead(key, scopeId, scope));
+    unawaited(persistActivityRead(key, scopeId, scope, report: report));
   }
 
   Future<void> persistActivityRead(
     String key,
     String scopeId,
-    String scope,
-  ) async {
+    String scope, {
+    bool report = false,
+  }) async {
     final controller = w;
     final identity = SourceReadAllIdentity.capture(controller.client);
     try {
@@ -3769,6 +3782,11 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
       );
     } catch (_) {
       if (!identity.current(controller.client)) return;
+      // A Mark as Read the person asked for (menu, swipe) says it failed, as
+      // Web's `toggleActivityRowRead` does; opening a row does not.
+      if (report && mounted) {
+        showRaftToast(context, "Couldn't mark it as read. Try again.");
+      }
       // Source forgets the suppression and refreshes the inbox in background.
       if (mounted) activityReadMarkers.remove(key);
       await controller.conversationReads.reconcileUnread();
@@ -3969,7 +3987,7 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
     String scope,
     bool unread,
   ) async {
-    if (unread) return markActivityRead(row, scope);
+    if (unread) return markActivityRead(row, scope, report: true);
     final id = row[row['kind'] == 'thread' ? 'threadChannelId' : 'channelId'];
     if (id is! String) return;
     var projected = false;
@@ -3978,7 +3996,9 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
         id,
         onNothingUnread: () => showNothingUnreadToast(this),
       );
-    } catch (_) {}
+    } catch (_) {
+      if (mounted) showRaftToast(context, "Couldn't mark it as unread. Try again.");
+    }
     if (!mounted || !accepts(scope)) return;
     if (!projected) await load(keep: true, quietErrors: true);
   }

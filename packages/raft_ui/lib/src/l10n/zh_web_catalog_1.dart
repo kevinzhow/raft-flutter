@@ -26,8 +26,6 @@ const Map<String, String> zhCatalogWeb1 = <String, String>{
       "这里的评论仅关联 {filename}。如需一般性讨论，请在消息列中回复。",
   "Comment on {filename}…": "评论 {filename}…",
   "Row {n}": "第 {n} 行",
-  "{count} New Update": "{count} 条新更新",
-  "{count} New Updates": "{count} 条新更新",
   "Row {start}–{end}": "第 {start}–{end} 行",
   "Only {max} attachments per message. {extra} extra files skipped.":
       "每条消息最多 {max} 个附件。已跳过 {extra} 个多余文件。",
@@ -147,7 +145,6 @@ const Map<String, String> zhCatalogWeb1 = <String, String>{
   "Add workspace": "添加服务器",
   "Local members (optional)": "本地成员（可选）",
   "Filter Activity": "筛选动态",
-  "Group by Channel": "按频道分组",
   "Conversation": "会话",
   "Apply": "应用",
   "React 👍": "回应 👍",

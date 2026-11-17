@@ -204,7 +204,6 @@ const Map<String, String> zhCatalogWeb5 = <String, String>{
   "No results": "没有结果",
   "No results for \"{query}\"": "没有找到“{query}”的结果",
   "No saved messages yet": "还没有收藏的消息",
-  "No saved threads yet": "还没有收藏的消息列",
   "No skills in this agent's workspace yet": "此 Agent 工作区内还没有 skill",
   "No snapshot yet": "还没有快照",
   "No subscriptions": "没有订阅",
