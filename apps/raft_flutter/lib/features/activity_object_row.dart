@@ -25,7 +25,6 @@ class ActivityObjectRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final w = host.controller;
-    final t = RaftTokens.of(context);
     final excerpt = artifactActivityExcerpt(row);
     final latest = row['latestEvent'] is Map ? row['latestEvent'] as Map : const {};
     // A comment's text is its author's, who may not be the newest event's actor.
@@ -243,77 +242,80 @@ class _ObjectLine extends StatelessWidget {
         final avail = constraints.maxWidth - faceWidth;
         final actorW = actor == null ? 0.0 : measure(actor!, actorStyle);
         final textW = measure(text, textStyle);
-        final newsW = [for (final n in news) measure(n, style) + 4];
-        final homeW = home == null ? 0.0 : measure(home!, style) + 4;
-        var rest = avail - actorW - newsW.fold(0.0, (a, b) => a + b) - homeW;
-        // Home shrinks first, then the text to its 12ch floor.
-        var homeShown = homeW, textShown = textW;
-        if (rest < textShown) {
+        final newsW = [for (final n in news) measure(n, style)];
+        final homeW = home == null ? 0.0 : measure(home!, style);
+        final newsTotal = newsW.fold(0.0, (a, b) => a + b) + 4.0 * news.length;
+        final shared = avail - actorW - newsTotal - (home == null ? 0 : 4);
+        // Where it lives truncates first, then the text, down to 12 characters.
+        var textShown = textW, homeShown = homeW;
+        if (shared < textW + homeW) {
           final floor = textW < 12 * charWidth ? textW : 12 * charWidth;
-          final room = (avail - actorW - newsW.fold(0.0, (a, b) => a + b))
-              .clamp(0.0, double.infinity);
-          // Give the text what the news and the actor leave, home gets the rest.
-          textShown = room < floor ? floor : (room < textW ? room : textW);
-          homeShown = (room - textShown).clamp(0.0, homeW);
-          if (room >= textW) textShown = textW;
+          textShown = shared >= textW
+              ? textW
+              : (shared < floor ? floor : shared);
+          homeShown = (shared - textShown).clamp(0.0, homeW);
         }
-        rest = 0;
+        // Laid out at its own width and clipped: a line narrower than its
+        // floors cuts off at the edge, as Web's overflow does.
         return ClipRect(
-          child: Row(
-            children: [
-              face,
-              const SizedBox(width: 4),
-              if (actor != null)
-                Flexible(
-                  child: Text(
+          child: OverflowBox(
+            alignment: AlignmentDirectional.centerStart,
+            minWidth: 0,
+            maxWidth: double.infinity,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                face,
+                const SizedBox(width: 4),
+                if (actor != null)
+                  Text(
                     actor!,
                     key: const ValueKey('object-card-actor'),
                     maxLines: 1,
                     softWrap: false,
-                    overflow: TextOverflow.ellipsis,
                     style: actorStyle,
                   ),
-                ),
-              SizedBox(
-                width: textShown,
-                child: Text(
-                  text,
-                  key: const ValueKey('object-card-text'),
-                  maxLines: 1,
-                  softWrap: false,
-                  overflow: TextOverflow.ellipsis,
-                  style: textStyle,
-                ),
-              ),
-              for (final (i, n) in news.indexed)
-                Padding(
-                  padding: const EdgeInsetsDirectional.only(start: 4),
-                  child: SizedBox(
-                    width: newsW[i] - 4,
-                    child: Text(
-                      n,
-                      key: const ValueKey('object-card-news'),
-                      maxLines: 1,
-                      softWrap: false,
-                      overflow: TextOverflow.ellipsis,
-                    ),
+                SizedBox(
+                  width: textShown,
+                  child: Text(
+                    text,
+                    key: const ValueKey('object-card-text'),
+                    maxLines: 1,
+                    softWrap: false,
+                    overflow: TextOverflow.ellipsis,
+                    style: textStyle,
                   ),
                 ),
-              if (home != null && homeShown > 4)
-                Padding(
-                  padding: const EdgeInsetsDirectional.only(start: 4),
-                  child: SizedBox(
-                    width: homeShown - 4,
-                    child: Text(
-                      home!,
-                      key: const ValueKey('object-card-home'),
-                      maxLines: 1,
-                      softWrap: false,
-                      overflow: TextOverflow.ellipsis,
+                for (final (i, n) in news.indexed)
+                  Padding(
+                    padding: const EdgeInsetsDirectional.only(start: 4),
+                    child: SizedBox(
+                      width: newsW[i],
+                      child: Text(
+                        n,
+                        key: const ValueKey('object-card-news'),
+                        maxLines: 1,
+                        softWrap: false,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                   ),
-                ),
-            ],
+                if (home != null && homeShown > 0)
+                  Padding(
+                    padding: const EdgeInsetsDirectional.only(start: 4),
+                    child: SizedBox(
+                      width: homeShown,
+                      child: Text(
+                        home!,
+                        key: const ValueKey('object-card-home'),
+                        maxLines: 1,
+                        softWrap: false,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
           ),
         );
       },
