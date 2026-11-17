@@ -47,43 +47,43 @@ const Map<String, String> zhCatalogUpstream124BillLimits = <String, String>{
   "Empty files can't be attached.": "空文件无法添加。",
   "{channel} has {count} message older than {days} days that you and your agents can't read on Free.":
       "{channel} 有 {count} 条超过 {days} 天的消息，免费版下你和你的 Agent 都读不到。",
-  "{channel} has {count} message older than {days} days that you and your agents can't read on Free, and your agents ran into this once in the past 7 days.": "{channel} 有 {count} 条超过 {days} 天的消息，免费版下你和你的 Agent 都读不到，过去 7 天你的 Agent 已经有 {agentTries} 次想读没读到。",
+  "{channel} has {count} message older than {days} days that you and your agents can't read on Free, and your agents ran into this once in the past 7 days.": "{channel} 有 {count} 条超过 {days} 天的消息，免费版下你和你的 Agent 都读不到，过去 7 天你的 Agent 已经有 1 次想读没读到。",
   "{channel} has {count} message older than {days} days that you and your agents can't read on Free, and your agents ran into this {agentTries} times in the past 7 days.": "{channel} 有 {count} 条超过 {days} 天的消息，免费版下你和你的 Agent 都读不到，过去 7 天你的 Agent 已经有 {agentTries} 次想读没读到。",
   "{channel} has {count} messages older than {days} days that you and your agents can't read on Free.":
       "{channel} 有 {count} 条超过 {days} 天的消息，免费版下你和你的 Agent 都读不到。",
-  "{channel} has {count} messages older than {days} days that you and your agents can't read on Free, and your agents ran into this once in the past 7 days.": "{channel} 有 {count} 条超过 {days} 天的消息，免费版下你和你的 Agent 都读不到，过去 7 天你的 Agent 已经有 {agentTries} 次想读没读到。",
+  "{channel} has {count} messages older than {days} days that you and your agents can't read on Free, and your agents ran into this once in the past 7 days.": "{channel} 有 {count} 条超过 {days} 天的消息，免费版下你和你的 Agent 都读不到，过去 7 天你的 Agent 已经有 1 次想读没读到。",
   "{channel} has {count} messages older than {days} days that you and your agents can't read on Free, and your agents ran into this {agentTries} times in the past 7 days.": "{channel} 有 {count} 条超过 {days} 天的消息，免费版下你和你的 Agent 都读不到，过去 7 天你的 Agent 已经有 {agentTries} 次想读没读到。",
   "{channel} has over {count} messages older than {days} days that you and your agents can't read on Free.":
       "{channel} 有 {count} 多条超过 {days} 天的消息，免费版下你和你的 Agent 都读不到。",
-  "{channel} has over {count} messages older than {days} days that you and your agents can't read on Free, and your agents ran into this once in the past 7 days.": "{channel} 有 {count} 多条超过 {days} 天的消息，免费版下你和你的 Agent 都读不到，过去 7 天你的 Agent 已经有 {agentTries} 次想读没读到。",
+  "{channel} has over {count} messages older than {days} days that you and your agents can't read on Free, and your agents ran into this once in the past 7 days.": "{channel} 有 {count} 多条超过 {days} 天的消息，免费版下你和你的 Agent 都读不到，过去 7 天你的 Agent 已经有 1 次想读没读到。",
   "{channel} has over {count} messages older than {days} days that you and your agents can't read on Free, and your agents ran into this {agentTries} times in the past 7 days.": "{channel} 有 {count} 多条超过 {days} 天的消息，免费版下你和你的 Agent 都读不到，过去 7 天你的 Agent 已经有 {agentTries} 次想读没读到。",
   "This thread has {count} reply older than {days} days that you and your agents can't read on Free.":
       "这个消息列有 {count} 条超过 {days} 天的回复，免费版下你和你的 Agent 都读不到。",
-  "This thread has {count} reply older than {days} days that you and your agents can't read on Free, and your agents ran into this once in the past 7 days.": "这个消息列有 {count} 条超过 {days} 天的回复，免费版下你和你的 Agent 都读不到，过去 7 天你的 Agent 已经有 {agentTries} 次想读没读到。",
+  "This thread has {count} reply older than {days} days that you and your agents can't read on Free, and your agents ran into this once in the past 7 days.": "这个消息列有 {count} 条超过 {days} 天的回复，免费版下你和你的 Agent 都读不到，过去 7 天你的 Agent 已经有 1 次想读没读到。",
   "This thread has {count} reply older than {days} days that you and your agents can't read on Free, and your agents ran into this {agentTries} times in the past 7 days.": "这个消息列有 {count} 条超过 {days} 天的回复，免费版下你和你的 Agent 都读不到，过去 7 天你的 Agent 已经有 {agentTries} 次想读没读到。",
   "This thread has {count} replies older than {days} days that you and your agents can't read on Free.":
       "这个消息列有 {count} 条超过 {days} 天的回复，免费版下你和你的 Agent 都读不到。",
-  "This thread has {count} replies older than {days} days that you and your agents can't read on Free, and your agents ran into this once in the past 7 days.": "这个消息列有 {count} 条超过 {days} 天的回复，免费版下你和你的 Agent 都读不到，过去 7 天你的 Agent 已经有 {agentTries} 次想读没读到。",
+  "This thread has {count} replies older than {days} days that you and your agents can't read on Free, and your agents ran into this once in the past 7 days.": "这个消息列有 {count} 条超过 {days} 天的回复，免费版下你和你的 Agent 都读不到，过去 7 天你的 Agent 已经有 1 次想读没读到。",
   "This thread has {count} replies older than {days} days that you and your agents can't read on Free, and your agents ran into this {agentTries} times in the past 7 days.": "这个消息列有 {count} 条超过 {days} 天的回复，免费版下你和你的 Agent 都读不到，过去 7 天你的 Agent 已经有 {agentTries} 次想读没读到。",
   "This thread has over {count} replies older than {days} days that you and your agents can't read on Free.":
       "这个消息列有 {count} 多条超过 {days} 天的回复，免费版下你和你的 Agent 都读不到。",
-  "This thread has over {count} replies older than {days} days that you and your agents can't read on Free, and your agents ran into this once in the past 7 days.": "这个消息列有 {count} 多条超过 {days} 天的回复，免费版下你和你的 Agent 都读不到，过去 7 天你的 Agent 已经有 {agentTries} 次想读没读到。",
+  "This thread has over {count} replies older than {days} days that you and your agents can't read on Free, and your agents ran into this once in the past 7 days.": "这个消息列有 {count} 多条超过 {days} 天的回复，免费版下你和你的 Agent 都读不到，过去 7 天你的 Agent 已经有 1 次想读没读到。",
   "This thread has over {count} replies older than {days} days that you and your agents can't read on Free, and your agents ran into this {agentTries} times in the past 7 days.": "这个消息列有 {count} 多条超过 {days} 天的回复，免费版下你和你的 Agent 都读不到，过去 7 天你的 Agent 已经有 {agentTries} 次想读没读到。",
   "This conversation has {count} message older than {days} days that you and your agents can't read on Free.":
       "这段对话有 {count} 条超过 {days} 天的消息，免费版下你和你的 Agent 都读不到。",
-  "This conversation has {count} message older than {days} days that you and your agents can't read on Free, and your agents ran into this once in the past 7 days.": "这段对话有 {count} 条超过 {days} 天的消息，免费版下你和你的 Agent 都读不到，过去 7 天你的 Agent 已经有 {agentTries} 次想读没读到。",
+  "This conversation has {count} message older than {days} days that you and your agents can't read on Free, and your agents ran into this once in the past 7 days.": "这段对话有 {count} 条超过 {days} 天的消息，免费版下你和你的 Agent 都读不到，过去 7 天你的 Agent 已经有 1 次想读没读到。",
   "This conversation has {count} message older than {days} days that you and your agents can't read on Free, and your agents ran into this {agentTries} times in the past 7 days.": "这段对话有 {count} 条超过 {days} 天的消息，免费版下你和你的 Agent 都读不到，过去 7 天你的 Agent 已经有 {agentTries} 次想读没读到。",
   "This conversation has {count} messages older than {days} days that you and your agents can't read on Free.":
       "这段对话有 {count} 条超过 {days} 天的消息，免费版下你和你的 Agent 都读不到。",
-  "This conversation has {count} messages older than {days} days that you and your agents can't read on Free, and your agents ran into this once in the past 7 days.": "这段对话有 {count} 条超过 {days} 天的消息，免费版下你和你的 Agent 都读不到，过去 7 天你的 Agent 已经有 {agentTries} 次想读没读到。",
+  "This conversation has {count} messages older than {days} days that you and your agents can't read on Free, and your agents ran into this once in the past 7 days.": "这段对话有 {count} 条超过 {days} 天的消息，免费版下你和你的 Agent 都读不到，过去 7 天你的 Agent 已经有 1 次想读没读到。",
   "This conversation has {count} messages older than {days} days that you and your agents can't read on Free, and your agents ran into this {agentTries} times in the past 7 days.": "这段对话有 {count} 条超过 {days} 天的消息，免费版下你和你的 Agent 都读不到，过去 7 天你的 Agent 已经有 {agentTries} 次想读没读到。",
   "This conversation has over {count} messages older than {days} days that you and your agents can't read on Free.":
       "这段对话有 {count} 多条超过 {days} 天的消息，免费版下你和你的 Agent 都读不到。",
-  "This conversation has over {count} messages older than {days} days that you and your agents can't read on Free, and your agents ran into this once in the past 7 days.": "这段对话有 {count} 多条超过 {days} 天的消息，免费版下你和你的 Agent 都读不到，过去 7 天你的 Agent 已经有 {agentTries} 次想读没读到。",
+  "This conversation has over {count} messages older than {days} days that you and your agents can't read on Free, and your agents ran into this once in the past 7 days.": "这段对话有 {count} 多条超过 {days} 天的消息，免费版下你和你的 Agent 都读不到，过去 7 天你的 Agent 已经有 1 次想读没读到。",
   "This conversation has over {count} messages older than {days} days that you and your agents can't read on Free, and your agents ran into this {agentTries} times in the past 7 days.": "这段对话有 {count} 多条超过 {days} 天的消息，免费版下你和你的 Agent 都读不到，过去 7 天你的 Agent 已经有 {agentTries} 次想读没读到。",
   "The message you opened was sent on {date}, more than {days} days ago, so you and your agents can't read it on Free.":
       "你打开的这条消息发于 {date}，已超过 {days} 天，免费版下你和你的 Agent 都读不到。",
-  "The message you opened was sent on {date}, more than {days} days ago, so you and your agents can't read it on Free, and your agents ran into this once in the past 7 days.": "你打开的这条消息发于 {date}，已超过 {days} 天，免费版下你和你的 Agent 都读不到，过去 7 天你的 Agent 已经有 {agentTries} 次想读没读到。",
+  "The message you opened was sent on {date}, more than {days} days ago, so you and your agents can't read it on Free, and your agents ran into this once in the past 7 days.": "你打开的这条消息发于 {date}，已超过 {days} 天，免费版下你和你的 Agent 都读不到，过去 7 天你的 Agent 已经有 1 次想读没读到。",
   "The message you opened was sent on {date}, more than {days} days ago, so you and your agents can't read it on Free, and your agents ran into this {agentTries} times in the past 7 days.": "你打开的这条消息发于 {date}，已超过 {days} 天，免费版下你和你的 Agent 都读不到，过去 7 天你的 Agent 已经有 {agentTries} 次想读没读到。",
   "{server} · {name} couldn't join": "{server} · {name} 没能加入",
   "Upgrade needed for {name} to join": "需要升级，{name} 才能加入",

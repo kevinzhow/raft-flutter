@@ -168,10 +168,7 @@ void main() {
       await t.tap(find.byKey(const ValueKey('history-older-message-upgrade')));
       await t.pump();
       await t.pump(const Duration(milliseconds: 100));
-      expect(
-        find.text("Couldn't open the billing page. Try again."),
-        findsOneWidget,
-      );
+      expect(find.text('Could not open this address.'), findsOneWidget);
       await t.pump(const Duration(seconds: 6));
     });
 

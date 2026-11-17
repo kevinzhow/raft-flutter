@@ -140,11 +140,11 @@
    "status": "partial",
    "webEntry": "MessageItem handleOpenPermalink / handleOpenMessageRef / handleOpenForwardedSource / QuotedMessagePermalinkPreview onOpen | MainLayout loadContext | ThreadPanel jump | useRefNavigation",
    "gate": "read access to the target channel",
-   "flutterEntry": "workspace_controller.dart jumpToMessage / thread context loads via message_history_pages.dart; quoted_permalink_cache.dart (quoted card); content_coordinator.dart permalink open",
+   "flutterEntry": "workspace_controller.dart jumpToMessage / thread context loads via message_history_pages.dart (RaftClient.messageContext, which records a hidden target); quoted_permalink_cache.dart (quoted card; quoted_message_preview.dart shows the older-than-window state); content_coordinator.dart permalink open",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/data/message_history_pages.dart",
-     "needle": "'/messages/context/$target'"
+     "needle": "messageContext("
     },
     {
      "file": "apps/raft_flutter/lib/features/quoted_permalink_cache.dart",
@@ -1442,23 +1442,23 @@
    "kind": "ui",
    "id": "ui:messages.history-limit-and-back-to-bottom",
    "area": "messages",
-   "capability": "Plan history-limit banner with 'View Billing', 'Back to bottom' / 'N new messages' pill",
+   "capability": "Plan history paywall (card with count, glimpse of the newest hidden messages, target mode, Upgrade to Pro opening the Web billing page), 'Back to bottom' / 'N new messages' pill",
    "background": false,
    "status": "covered",
-   "webEntry": "HistoryLimitBanner, ChatPanel back-to-bottom button",
+   "webEntry": "HistoryPaywall (components/message/HistoryPaywall.tsx), ChatPanel back-to-bottom button",
    "gate": "plan history limit",
-   "flutterEntry": "chat_view.dart history banner + ChatBottomControls (RaftTimelineBottomButtonBody)",
+   "flutterEntry": "history_paywall_view.dart RaftHistoryPaywallView (wired from chat_view.dart) + ChatBottomControls (RaftTimelineBottomButtonBody)",
    "flutterRefs": [
     {
-     "file": "apps/raft_flutter/lib/features/chat_view.dart",
-     "needle": "'Message history is limited to {days} days on the {plan} plan.'"
+     "file": "apps/raft_flutter/lib/features/history_paywall_view.dart",
+     "needle": "class RaftHistoryPaywallView"
     },
     {
      "file": "apps/raft_flutter/lib/features/chat_view.dart",
      "needle": "ChatBottomControls("
     }
    ],
-   "justification": "",
+   "justification": "Upgrade opens the Web Plan & Billing page with the history gate instead of the in-app upgrade dialog (Kevin 2654e77c).",
    "impact": "",
    "size": ""
   },

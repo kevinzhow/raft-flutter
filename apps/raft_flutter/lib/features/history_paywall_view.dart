@@ -228,15 +228,8 @@ int historyPaywallDays(WorkspaceController w) {
 /// The one paid action of every history surface: the Web's billing page with
 /// the history gate (Web: the upgrade dialog). Web's dialog cannot fail to
 /// open; the browser can, and that is said, not swallowed.
-Future<void> openHistoryUpgrade(
-  BuildContext context,
-  WorkspaceController w,
-) async {
-  final opened = await w.openWebBilling(gate: WebBillingGate.history);
-  if (!opened && context.mounted) {
-    showRaftToast(context, 'Couldn\'t open the billing page. Try again.');
-  }
-}
+Future<void> openHistoryUpgrade(BuildContext context, WorkspaceController w) =>
+    openWebBillingOrToast(context, w, gate: WebBillingGate.history);
 
 /// Web `DateDivider recentHistory`: the first day divider under the paywall
 /// reads "Last 30 days · day".
