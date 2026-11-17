@@ -365,10 +365,7 @@ class _BarAction extends RaftFitItem {
       );
     }
     if (action.popover != null) {
-      return _BarPopover(
-        popover: action.popover!,
-        button: button,
-      );
+      return _BarPopover(popover: action.popover!, button: button);
     }
     return Builder(
       builder: (anchor) => button(
@@ -384,7 +381,7 @@ class _BarAction extends RaftFitItem {
 /// An action's popover: anchored on the button, opened by it, closed by an
 /// outside press or the app's own close.
 class _BarPopover extends StatefulWidget {
-  const _BarPopover({super.key, required this.popover, required this.button});
+  const _BarPopover({required this.popover, required this.button});
   final Widget Function(BuildContext context, VoidCallback close) popover;
   final Widget Function(FocusNode? focusNode, VoidCallback? press) button;
 

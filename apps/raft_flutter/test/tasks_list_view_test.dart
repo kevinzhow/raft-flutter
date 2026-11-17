@@ -5,7 +5,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_flutter/features/tasks_page/tasks_page.dart';
-import 'package:raft_flutter/features/tasks_page/tasks_page_model.dart';
 import 'package:raft_flutter/features/tasks_page/tasks_page_rows.dart';
 import 'package:raft_flutter/features/tasks_page/tasks_page_store.dart';
 import 'package:raft_ui/raft_ui.dart';

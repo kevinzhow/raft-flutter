@@ -1,3 +1,4 @@
+// budget: per-surface (one case group per registered Tasks page popup, menu and dialog in the close registry)
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';

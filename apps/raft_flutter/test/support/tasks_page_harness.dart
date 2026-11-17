@@ -39,7 +39,7 @@ Map<String, dynamic> pageTask(
   'createdByType': 'user',
   'createdById': createdBy,
   if (claimedBy != null) 'claimedByType': 'user',
-  if (claimedBy != null) 'claimedById': claimedBy,
+  'claimedById': ?claimedBy,
   'isLegacy': false,
   'conversationAnchored': true,
   'conversationChannelId': 'conv-$id',
