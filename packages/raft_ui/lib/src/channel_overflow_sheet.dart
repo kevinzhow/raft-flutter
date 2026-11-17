@@ -420,6 +420,7 @@ class _ChannelDetailsIdentityState extends State<_ChannelDetailsIdentity> {
                     final overflow = painter.didExceedMaxLines;
                     painter.dispose();
                     return Column(
+                      key: const ValueKey('channel-overflow-identity-desc'),
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(

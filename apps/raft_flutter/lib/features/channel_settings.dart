@@ -432,8 +432,9 @@ class _ChannelSettingsState extends State<ChannelSettings> {
     String key,
     bool next,
   ) async {
-    if (busy || !mounted || !w.can('viewChannel', resource: channel))
+    if (busy || !mounted || !w.can('viewChannel', resource: channel)) {
       return false;
+    }
     final identity = pageIdentity(w);
     final target = key == 'activityMuted' ? notification : display;
     final before = Map<String, dynamic>.of(target);
@@ -464,8 +465,9 @@ class _ChannelSettingsState extends State<ChannelSettings> {
         data: {key: next},
       );
       if (identity != pageIdentity(w)) return false;
-      if (result is! Map)
+      if (result is! Map) {
         throw const FormatException('Invalid channel preference response');
+      }
       target.addAll(Map<String, dynamic>.from(result));
       project(target);
       return true;
@@ -475,7 +477,7 @@ class _ChannelSettingsState extends State<ChannelSettings> {
           ..clear()
           ..addAll(before);
         project(before);
-        if (mounted)
+        if (mounted) {
           setState(
             () => error = failText(
               e,
@@ -486,6 +488,7 @@ class _ChannelSettingsState extends State<ChannelSettings> {
                   : 'Failed to update message display settings.',
             ),
           );
+        }
       }
       return false;
     } finally {

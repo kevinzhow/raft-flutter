@@ -347,7 +347,6 @@ class _MemberPickerContentState extends State<RaftMemberPickerContent> {
             controller: widget.search,
             focusNode: focus,
             enabled: widget.onToggle != null,
-            autofocus: RaftInteraction.of(context).pointer,
             semanticLabel: raftText(context, 'Search'),
             hintText: raftText(context, widget.searchPlaceholder),
             leading: const RaftInputGroupAddon.icon(RaftGlyph.search),

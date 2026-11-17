@@ -91,8 +91,9 @@ void main() {
             find.byKey(const Key('channel-settings-announcement-actions')),
           );
           await frames(t, 15);
-          if (id == 'channel-announcement-confirm')
+          if (id == 'channel-announcement-confirm') {
             await t.tap(find.text('Remove'));
+          }
         }
         await frames(t, 15);
         final surface = switch (id) {

@@ -259,11 +259,10 @@ class _ChannelAnnouncementSettingsState
     return widget.details
         ? Padding(
             key: anchor,
-            padding: const EdgeInsets.fromLTRB(
-              RaftSpace.x4,
-              RaftSpace.x6,
-              RaftSpace.x4,
-              0,
+            padding: const EdgeInsets.only(
+              left: RaftSpace.x4,
+              top: RaftSpace.x6,
+              right: RaftSpace.x4,
             ),
             child: group,
           )
@@ -310,7 +309,7 @@ class _AnnouncementPickerState extends State<_AnnouncementPicker> {
     try {
       final response = await widget.controller.query(
         '/artifacts/conversations/${widget.channel.id}',
-        query: {if (after != null) 'cursor': after},
+        query: {'cursor': ?after},
       );
       if (response is! Map || response['rows'] is! List) {
         throw const FormatException('Invalid Artifact list');
@@ -319,8 +318,9 @@ class _AnnouncementPickerState extends State<_AnnouncementPicker> {
       setState(() {
         for (final row in (response['rows'] as List).whereType<Map>()) {
           final card = ArtifactCard.fromJson(row['card']);
-          if (card != null && card.id != widget.currentId)
+          if (card != null && card.id != widget.currentId) {
             cards[card.id] = card;
+          }
         }
         cursor = response['nextCursor'] as String?;
       });
@@ -391,12 +391,12 @@ class _AnnouncementPickerState extends State<_AnnouncementPicker> {
                     ),
                   );
                 }
-                if (matches.isEmpty)
+                if (matches.isEmpty) {
                   return Text(raftText(context, 'No Artifacts match'));
+                }
+                final listHeight = MediaQuery.sizeOf(context).height / 4;
                 return ConstrainedBox(
-                  constraints: BoxConstraints(
-                    maxHeight: MediaQuery.sizeOf(context).height / 4,
-                  ),
+                  constraints: BoxConstraints(maxHeight: listHeight),
                   child: SingleChildScrollView(
                     child: RaftListRowGroup(
                       children: [

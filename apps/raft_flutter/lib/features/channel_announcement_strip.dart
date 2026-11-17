@@ -38,7 +38,7 @@ class ChannelAnnouncementStrip extends StatelessWidget {
               ? raftFormat(context, '{name} updated it', {'name': name})
               : raftFormat(context, '{name}: {note}', {
                   'name': name,
-                  'note': announcement.note!,
+                  'note': announcement.note,
                 })
         : announcement.excerpt?.isNotEmpty == true
         ? announcement.excerpt!

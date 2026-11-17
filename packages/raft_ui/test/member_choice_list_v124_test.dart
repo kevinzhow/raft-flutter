@@ -1,5 +1,6 @@
+import 'dart:ui' show CheckedState;
+
 import 'package:flutter/material.dart';
-import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
@@ -48,8 +49,8 @@ void main() {
         final row = find.byKey(const ValueKey('add-candidate-agent:a'));
         final semantics = t.ensureSemantics();
         expect(
-          t.getSemantics(row).hasFlag(SemanticsFlag.hasCheckedState),
-          isTrue,
+          t.getSemantics(row).flagsCollection.isChecked,
+          CheckedState.isFalse,
         );
         await t.tap(row);
         await t.pump();

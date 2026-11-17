@@ -75,21 +75,23 @@ void main() {
           expect(mobilePageEntries(w.navigation), hasLength(pages + 1));
           expect(find.byType(RaftOverflowSheet), findsOneWidget);
           expect(find.byType(RaftChannelSettingsSheet), findsNothing);
-          expect(find.byType(RaftChannelInfoForm), findsOneWidget);
+          expect(find.byType(RaftChannelInfoForm), findsNothing);
+          expect(
+            find.byKey(const ValueKey('channel-details-edit')),
+            findsOneWidget,
+          );
           expect(t.testTextInput.isVisible, isFalse);
-          // Web's Drawer header below md: px-4 and the shared Button
-          // `icon-sm` Back (raft-ui 0.7.0 `iconMd`: `size-8`, 32px in the Raft
-          // look; 28px in the a57b9dab looks). Owner decision 2026-10-12: no
-          // left edge line on the phone.
-          expect(find.byType(RaftMobilePageHeader), findsNothing);
+          // Details uses the phone PanelHeader and its leading action.
+          expect(find.byType(RaftPanelHeaderBar), findsOneWidget);
           expect(
             t.getCenter(find.byKey(const ValueKey('channel-overflow-back'))).dx,
-            16 + 16,
+            25,
           );
-          expect(
-            t.getSemantics(find.text('#test')).flagsCollection.isHeader,
-            isTrue,
+          final title = find.byKey(
+            const ValueKey('channel-overflow-title-text'),
           );
+          expect(t.widget<Text>(title).data, 'test');
+          expect(t.getSemantics(title).flagsCollection.isHeader, isTrue);
           expect(
             find.byKey(const ValueKey('channel-overflow-identity-desc')),
             findsOneWidget,
@@ -134,6 +136,8 @@ void main() {
         await t.tap(find.byTooltip('Channel Details and Settings'));
         await flush(t);
         await t.pumpAndSettle();
+        await t.tap(find.byKey(const ValueKey('channel-details-edit')));
+        await t.pumpAndSettle();
         await t.enterText(
           find.byKey(const ValueKey('channel-settings-name')),
           'renamed',
@@ -154,7 +158,14 @@ void main() {
         await flush(t);
         await t.pumpAndSettle();
         expect(find.byType(ChannelSettings), findsOneWidget);
-        expect(find.text('#renamed'), findsOneWidget);
+        expect(
+          t
+              .widget<Text>(
+                find.byKey(const ValueKey('channel-overflow-title-text')),
+              )
+              .data,
+          'renamed',
+        );
         expect(
           api.calls.where(
             (r) => r.method == 'PATCH' && r.path == '/channels/c1',
@@ -164,6 +175,8 @@ void main() {
         FocusManager.instance.primaryFocus?.unfocus();
         await t.pumpAndSettle();
         // Both the button and Android system back guard an unsaved draft.
+        await t.tap(find.byKey(const ValueKey('channel-details-edit')));
+        await t.pumpAndSettle();
         await t.enterText(
           find.byKey(const ValueKey('channel-settings-name')),
           'draft',

@@ -36,8 +36,9 @@ ArchivedChannelNameCollision? parseArchivedChannelNameCollision(
       name is! String ||
       name.isEmpty ||
       type is! String ||
-      !types.contains(type))
+      !types.contains(type)) {
     return null;
+  }
   return (
     id: id,
     name: name,

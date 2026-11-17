@@ -64,8 +64,9 @@ class ChannelSectionSelect extends StatelessWidget {
 
       Future<void> choose(String next, {Map<String, dynamic>? section}) async {
         if (identity != pageIdentity(controller)) {
-          if (context.mounted)
+          if (context.mounted) {
             showRaftToast(context, 'The channel is no longer available.');
+          }
           return;
         }
         final pins = [
