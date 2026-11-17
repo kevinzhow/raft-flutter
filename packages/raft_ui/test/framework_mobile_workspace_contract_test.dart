@@ -51,35 +51,31 @@ void main() {
             );
             await t.pumpAndSettle();
             final selector = find.byKey(const Key('selector'));
+            // Web v1.24: the band's WorkspaceButton (on-frame md, 36 tall),
+            // its avatar on the 20px edge, the bell 9px from the other.
             final control = find.descendant(
               of: selector,
-              matching: find.byType(RaftControl),
+              matching: find.byType(RaftButton),
             );
-            expect(t.widget<RaftControl>(control).visualHeight, 36);
+            expect(t.getSize(control).height, 36);
             expect(
               t.getSize(find.byType(RaftAttentionDot)),
               const Size(10, 10),
             );
-            final label = t.widget<Text>(find.text('Visual Server'));
-            expect(label.style!.fontSize, 17);
-            expect(label.style!.height, 22 / 17);
-            final recipe = RaftMobileServerSelectorRecipe(
-              RaftTokens.of(t.element(selector)),
-              viewportHeight: height,
+            expect(
+              t
+                  .getRect(
+                    find.descendant(
+                      of: selector,
+                      matching: find.byType(RaftAvatar),
+                    ),
+                  )
+                  .left,
+              20,
             );
-            expect(recipe.chevronAngle, 0);
             final bell = find.byType(RaftMobileNotificationButton);
             expect(t.getSize(bell), const Size(44, 44));
-            if (height <= 600) {
-              expect(t.getRect(selector).left, 16);
-              expect(t.getRect(selector).top, 5.5);
-              // Blink advances quantize to 1/64 CSS px; the DOM dump rounds
-              // to .01px. Keep that precision allowance separate from pixels.
-              expect(t.getRect(selector).width, closeTo(129.55, .02));
-              final dot = t.getRect(find.byType(RaftAttentionDot));
-              expect(dot.left, closeTo(139.55, .02));
-              expect(dot.top, 1.5);
-            }
+            expect(t.getRect(bell).right, t.view.physicalSize.width - 9);
             await t.sendKeyEvent(LogicalKeyboardKey.tab);
             await t.sendKeyEvent(LogicalKeyboardKey.enter);
             await t.pump();
