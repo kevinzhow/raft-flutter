@@ -16,6 +16,7 @@ import 'page_layout.dart';
 import 'panel_width_store.dart';
 import 'message_task_actions.dart' show TaskV2ConversationsFlag;
 import 'task_v2_mode.dart';
+import 'tasks_page/tasks_selection_escape.dart';
 
 /// The routes whose list a task opens beside (Web TasksRoute, InboxContentRoute,
 /// SearchContentRoute).
@@ -126,6 +127,8 @@ class TaskContentSlot extends StatelessWidget {
         // A field's Escape (the composer's, an input method's) is its own:
         // it neither closes the task nor reaches the shell's Escape.
         if (_isField(focused!)) return KeyEventResult.skipRemainingHandlers;
+        // The Tasks page's selection ends first (its own Escape).
+        if (TasksSelectionEscape.pending) return KeyEventResult.handled;
         close();
         return KeyEventResult.handled;
       },

@@ -4,10 +4,13 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/features/message_task_actions.dart';
 import 'package:raft_flutter/features/resource_view.dart';
+import 'package:raft_flutter/features/task_content_slot.dart';
 import 'package:raft_flutter/features/tasks_page/tasks_page.dart';
 import 'package:raft_flutter/features/tasks_page/tasks_page_model.dart';
 import 'package:raft_ui/raft_ui.dart';
@@ -354,6 +357,173 @@ void main() {
     await t.tap(find.byKey(const Key('tasks-page-row-open-a2')));
     await settleTasks(t, rounds: 2);
     expect(opened.map((r) => r['id']), ['a2']);
+    await t.pumpWidget(const SizedBox());
+  });
+
+  group('New task', () {
+    Future<void> openDialog(WidgetTester t) async {
+      await t.tap(find.byKey(const Key('tasks-page-new-task')));
+      await settleTasks(t, rounds: 4);
+    }
+
+    testWidgets('opens the create dialog with the one channel filtered to, '
+        'and the task it made opens when exactly one was made', (t) async {
+      final (w, server) = (await t.runAsync(
+        () => tasksFixture(tasks: fixtureTasks()),
+      ))!;
+      addTearDown(w.dispose);
+      await t.runAsync(() => TaskV2ConversationsFlag.of(w).ensure());
+      server.routes['POST /tasks/channel/c1'] = (_) => (
+        200,
+        {
+          'tasks': [pageTask('n1', number: 30)],
+        },
+      );
+      final opened = await mountPage(t, w, size: const Size(2600, 900));
+      await t.tap(find.byKey(const ValueKey('tasks-page-filter-channel')));
+      await settleTasks(t, rounds: 3);
+      await t.tap(find.byKey(const ValueKey('task-filter-Channel-c1')));
+      await settleTasks(t);
+      await t.tapAt(const Offset(5, 5));
+      await settleTasks(t, rounds: 2);
+      await openDialog(t);
+      expect(
+        find.byKey(const ValueKey('create-task-message-dialog')),
+        findsOneWidget,
+      );
+      // The channel filtered to is the channel it is in.
+      expect(find.textContaining('test'), findsWidgets);
+      await t.enterText(
+        find.descendant(
+          of: find.byKey(const ValueKey('create-task-message')),
+          matching: find.byType(EditableText),
+        ),
+        'Ship it',
+      );
+      await t.pump();
+      await t.tap(find.byKey(const ValueKey('create-task-submit')));
+      await settleTasks(t, rounds: 14);
+      expect(
+        server.requests.where(
+          (r) => r.method == 'POST' && r.path == '/tasks/channel/c1',
+        ),
+        hasLength(1),
+      );
+      expect(opened.map((r) => r['id']), ['n1']);
+      expect(
+        find.byKey(const ValueKey('create-task-message-dialog')),
+        findsNothing,
+      );
+      await t.pumpWidget(const SizedBox());
+    });
+
+    testWidgets('a guest has no New task', (t) async {
+      final (w, _) = (await t.runAsync(
+        () => tasksFixture(tasks: fixtureTasks(), role: 'guest'),
+      ))!;
+      addTearDown(w.dispose);
+      await mountPage(t, w, size: const Size(2600, 900));
+      expect(find.byKey(const Key('tasks-page-new-task')), findsNothing);
+      await t.pumpWidget(const SizedBox());
+    });
+  });
+
+  testWidgets('Escape ends the selection before the open task\'s own '
+      'Escape (the slot\'s)', (t) async {
+    final (w, _) = (await t.runAsync(
+      () => tasksFixture(tasks: fixtureTasks()),
+    ))!;
+    addTearDown(w.dispose);
+    sizeWindow(t, const Size(1280, 900));
+    var closed = 0;
+    final taskFocus = FocusNode();
+    addTearDown(taskFocus.dispose);
+    await t.pumpWidget(
+      tasksApp(
+        TaskSlotScope(
+          taskId: 'a1',
+          onClose: () => closed++,
+          surface: (_) => Focus(focusNode: taskFocus, child: const SizedBox()),
+          child: Row(
+            children: [
+              Expanded(
+                child: TasksPage(
+                  controller: w,
+                  onOpenTask: (_) {},
+                  currentTaskId: 'a1',
+                ),
+              ),
+              const SizedBox(width: 300, child: TaskContentSlot()),
+            ],
+          ),
+        ),
+      ),
+    );
+    await settleTasks(t);
+    // Focus is in the open task (as its composer's would be).
+    taskFocus.requestFocus();
+    await t.pump();
+    await t.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+    await t.tap(find.byKey(const Key('tasks-page-row-open-a2')));
+    await t.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+    await settleTasks(t, rounds: 2);
+    expect(find.byKey(const Key('tasks-page-selection-bar')), findsOneWidget);
+    taskFocus.requestFocus();
+    await t.pump();
+    await t.sendKeyEvent(LogicalKeyboardKey.escape);
+    await settleTasks(t, rounds: 2);
+    expect(find.byKey(const Key('tasks-page-selection-bar')), findsNothing);
+    expect(closed, 0);
+    // Nothing selected: the task's Escape is its own.
+    await t.sendKeyEvent(LogicalKeyboardKey.escape);
+    expect(closed, 1);
+    await t.pumpWidget(const SizedBox());
+  });
+
+  testWidgets('in Chinese the page says it as Web does', (t) async {
+    final (w, _) = (await t.runAsync(
+      () => tasksFixture(tasks: fixtureTasks()),
+    ))!;
+    addTearDown(w.dispose);
+    sizeWindow(t, const Size(2600, 900));
+    await t.pumpWidget(
+      MaterialApp(
+        locale: const Locale('zh'),
+        supportedLocales: const [Locale('zh')],
+        localizationsDelegates: GlobalMaterialLocalizations.delegates,
+        theme: raftTheme(),
+        home: RaftToastHost(
+          child: Scaffold(
+            body: TasksPage(
+              controller: w,
+              onOpenTask: (_) {},
+              currentTaskId: null,
+            ),
+          ),
+        ),
+      ),
+    );
+    await settleTasks(t);
+    for (final word in [
+      '任务',
+      '我的',
+      '全部',
+      '分配给你',
+      '你发起的',
+      '新建任务',
+      '搜索任务',
+      '最近更新',
+      '列表',
+      '看板',
+    ]) {
+      expect(find.text(word), findsWidgets, reason: word);
+    }
+    // Select one: the bar's count and the Delete confirmation's words.
+    await t.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+    await t.tap(find.byKey(const Key('tasks-page-row-open-a1')));
+    await t.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+    await settleTasks(t, rounds: 2);
+    expect(find.textContaining('已选'), findsWidgets);
     await t.pumpWidget(const SizedBox());
   });
 }

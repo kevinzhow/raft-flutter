@@ -33,6 +33,7 @@ import 'tasks_page_store.dart';
 import 'tasks_page_toolbar.dart';
 import 'tasks_selection.dart';
 import 'tasks_selection_bar.dart';
+import 'tasks_selection_escape.dart';
 
 /// The page's window onto the socket, kept for the session: the store takes
 /// live task changes whether or not the page is on screen (leaving Tasks and
@@ -154,12 +155,15 @@ class _TasksPageState extends State<TasksPage> {
       selection.removeListener(_changed);
     }
     store.setShown(false);
+    TasksSelectionEscape.active = false;
+    TasksSelectionEscape.consumed = false;
     params.dispose();
     selection.dispose();
     super.dispose();
   }
 
   void _changed() {
+    TasksSelectionEscape.active = selection.selecting;
     if (mounted) setState(() {});
   }
 
@@ -252,6 +256,9 @@ class _TasksPageState extends State<TasksPage> {
   }
 
   bool _key(KeyEvent event) {
+    if (event is KeyUpEvent && event.logicalKey == LogicalKeyboardKey.escape) {
+      TasksSelectionEscape.consumed = false;
+    }
     if (event is! KeyDownEvent) return false;
     final key = event.logicalKey;
     final isEscape = key == LogicalKeyboardKey.escape;
@@ -266,7 +273,8 @@ class _TasksPageState extends State<TasksPage> {
     if (isEscape) {
       if (!selection.selecting) return false;
       // Before the page's own Esc (closing the open task), which sees it
-      // taken.
+      // taken ([TasksSelectionEscape], until the key goes up).
+      TasksSelectionEscape.consumed = true;
       selection.clear();
       return true;
     }
