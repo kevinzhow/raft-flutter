@@ -34,7 +34,8 @@ class RaftLanguageRegionView extends StatelessWidget {
     required this.translationNotice,
     required this.translationTarget,
     required this.translationTargetOptions,
-    required this.translationTargetDescription,
+    this.translationTargetDescription,
+    this.anchor,
     required this.translationDisplay,
     required this.languageError,
     required this.languageDirty,
@@ -63,7 +64,11 @@ class RaftLanguageRegionView extends StatelessWidget {
   final String? translationNotice;
   final String translationTarget;
   final List<RaftLanguageOption> translationTargetOptions;
-  final String translationTargetDescription;
+  final String? translationTargetDescription;
+
+  /// Marks a setting's row as the target of `#<id>` (Web: `id="<id>"` on the
+  /// row); the app wraps it in its anchor. Null leaves the rows plain.
+  final RaftSettingsAnchorBuilder? anchor;
   final String translationDisplay; // translated | original | bilingual
   final String? languageError;
   final bool languageDirty;
@@ -163,6 +168,8 @@ class RaftLanguageRegionView extends StatelessWidget {
     ),
   );
 
+  Widget _anchored(String id, Widget row) => anchor?.call(id, row) ?? row;
+
   Widget _selectBlock(Widget block) =>
       Padding(padding: const EdgeInsets.only(bottom: 12), child: block);
 
@@ -183,17 +190,21 @@ class RaftLanguageRegionView extends StatelessWidget {
               // A Select's trailing hidden <input> makes `space-y-3` leave the
               // Select a 12px bottom margin inside its block.
               _selectBlock(
-                RaftSettingsPreference(
-                  semanticTypography: true,
-                  title: 'Display language',
-                  description: 'Choose the language for the app interface. This is separate from message translation.',
-                  child: _select(
-                    context,
-                    key: const ValueKey('display-language-select'),
-                    label: 'Display language',
-                    value: displayLanguage,
-                    options: displayLanguageOptions,
-                    onChanged: onDisplayLanguage,
+                _anchored(
+                  'display-language',
+                  RaftSettingsPreference(
+                    semanticTypography: true,
+                    title: 'Display language',
+                    description:
+                        'Choose the language for the app interface. This is separate from message translation.',
+                    child: _select(
+                      context,
+                      key: const ValueKey('display-language-select'),
+                      label: 'Display language',
+                      value: displayLanguage,
+                      options: displayLanguageOptions,
+                      onChanged: onDisplayLanguage,
+                    ),
                   ),
                 ),
               ),
@@ -212,23 +223,27 @@ class RaftLanguageRegionView extends StatelessWidget {
                     ).description,
                   ),
                 ),
-              RaftSettingsPreference(
-                semanticTypography: true,
-                gapBefore: 16,
-                title: 'Translation mode',
-                description: 'Auto translates visible messages. Manual adds Translate to each message menu. Off keeps originals only.',
-                notice: translationNotice,
-                child: _segmented(
-                  context,
-                  key: const ValueKey('translation-mode'),
-                  label: 'Message translation mode',
-                  value: translationMode,
-                  options: const [
-                    ('auto', 'Auto'),
-                    ('manual', 'Manual'),
-                    ('off', 'Off'),
-                  ],
-                  onChanged: onTranslationMode,
+              _anchored(
+                'translation-mode',
+                RaftSettingsPreference(
+                  semanticTypography: true,
+                  gapBefore: 16,
+                  title: 'Translation mode',
+                  description:
+                      'Auto translates visible messages. Manual adds Translate to each message menu. Off keeps originals only.',
+                  notice: translationNotice,
+                  child: _segmented(
+                    context,
+                    key: const ValueKey('translation-mode'),
+                    label: 'Message translation mode',
+                    value: translationMode,
+                    options: const [
+                      ('auto', 'Auto'),
+                      ('manual', 'Manual'),
+                      ('off', 'Off'),
+                    ],
+                    onChanged: onTranslationMode,
+                  ),
                 ),
               ),
               if (translationMode != 'off') ...[
@@ -252,7 +267,8 @@ class RaftLanguageRegionView extends StatelessWidget {
                   semanticTypography: true,
                   gapBefore: 16,
                   title: 'Default view',
-                  description: 'Choose whether messages show translation, original, or both.',
+                  description:
+                      'Choose whether messages show translation, original, or both.',
                   child: _segmented(
                     context,
                     key: const ValueKey('translation-display'),
@@ -291,32 +307,38 @@ class RaftLanguageRegionView extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              RaftSettingsPreference(
-                semanticTypography: true,
-                title: 'Timezone',
-                description:
-                    'Used for local timestamps and scheduling defaults.',
-                child: _select(
-                  context,
-                  key: const ValueKey('timezone-select'),
-                  label: 'Timezone',
-                  value: timezone,
-                  options: timezoneOptions,
-                  onChanged: onTimezone,
+              _anchored(
+                'timezone',
+                RaftSettingsPreference(
+                  semanticTypography: true,
+                  title: 'Timezone',
+                  description:
+                      'Used for local timestamps and scheduling defaults.',
+                  child: _select(
+                    context,
+                    key: const ValueKey('timezone-select'),
+                    label: 'Timezone',
+                    value: timezone,
+                    options: timezoneOptions,
+                    onChanged: onTimezone,
+                  ),
                 ),
               ),
-              RaftSettingsPreference(
-                semanticTypography: true,
-                gapBefore: 12,
-                title: 'Time format',
-                description: 'Display only. Does not affect agent behavior.',
-                child: _segmented(
-                  context,
-                  key: const ValueKey('time-format'),
-                  label: 'Time format',
-                  value: timeFormat,
-                  options: const [('12h', '12-hour'), ('24h', '24-hour')],
-                  onChanged: onTimeFormat,
+              _anchored(
+                'time-format',
+                RaftSettingsPreference(
+                  semanticTypography: true,
+                  gapBefore: 12,
+                  title: 'Time format',
+                  description: 'Display only. Does not affect agent behavior.',
+                  child: _segmented(
+                    context,
+                    key: const ValueKey('time-format'),
+                    label: 'Time format',
+                    value: timeFormat,
+                    options: const [('12h', '12-hour'), ('24h', '24-hour')],
+                    onChanged: onTimeFormat,
+                  ),
                 ),
               ),
               if (dateTimeError != null) ...[

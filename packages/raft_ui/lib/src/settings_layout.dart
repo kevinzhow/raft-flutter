@@ -10,7 +10,8 @@ import 'recipe_surface.dart'
         RaftRecipeBox;
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart' show KeyDownEvent, KeyEvent, LogicalKeyboardKey;
+import 'package:flutter/services.dart'
+    show KeyDownEvent, KeyEvent, LogicalKeyboardKey;
 
 import 'design_primitives.dart' hide RaftPanelHeaderRecipe;
 import 'panel_edge.dart';
@@ -44,6 +45,11 @@ import 'viewport_breakpoints.dart' show raftBreakpointWidth;
 /// - [RaftSettingsCard]: the bordered settings card class list shared by
 ///   DangerActionCard / Notifications / Appearance cards.
 
+/// Wraps a settings row as the target of `/settings/<tab>#<id>` and of a
+/// Settings search result (Web `id="<id>"` on the row). The app supplies it
+/// (`RaftSettingsAnchor`); the package draws the rows and only marks them.
+typedef RaftSettingsAnchorBuilder = Widget Function(String id, Widget child);
+
 class RaftSettingsNavEntry {
   const RaftSettingsNavEntry({
     required this.id,
@@ -52,10 +58,27 @@ class RaftSettingsNavEntry {
     required this.onTap,
     this.attention = false,
     this.attentionDanger = false,
+    this.semanticLabel,
+    this.trailingText,
+    this.external = false,
   });
   final String id, label;
   final RaftGlyph glyph;
   final VoidCallback onTap;
+
+  /// The row's accessible name when the label alone repeats another row's
+  /// (the server's Notifications next to the personal one): SettingsSidebarItem
+  /// `ariaLabel`.
+  final String? semanticLabel;
+
+  /// Text before the row's end in the hint colour (`settings.serverNotifications.muted`
+  /// on the server's Notifications row): SettingsSidebarItem `trailing`.
+  final String? trailingText;
+
+  /// The row leaves Raft (Documentation): it opens in a new tab and ends in
+  /// the lucide ArrowUpRight (raft-design navigation.md "Links that leave
+  /// Raft").
+  final bool external;
 
   /// Paint the [attention] dot in the `--danger` red ("update available").
   final bool attentionDanger;
@@ -213,10 +236,14 @@ class _RaftSettingsSidebarItemState extends State<RaftSettingsSidebarItem> {
       widget.entry.label == 'Providers' ? 'AI Providers' : widget.entry.label,
     );
     final before = s.before;
+    final hint = t.colors['foreground-hint'] ?? t.muted;
     return Semantics(
       button: true,
       selected: widget.active,
-      label: widget.entry.label,
+      label: widget.entry.external
+          ? '${widget.entry.semanticLabel ?? widget.entry.label} '
+                '${raftText(context, '(opens in a new tab)')}'
+          : widget.entry.semanticLabel ?? widget.entry.label,
       child: RaftHoverRegion(
         cursor: SystemMouseCursors.click,
         onEnter: (_) => setState(() => hovered = true),
@@ -294,6 +321,31 @@ class _RaftSettingsSidebarItemState extends State<RaftSettingsSidebarItem> {
                               ),
                             ),
                     ),
+                    if (widget.entry.trailingText case final trailing?)
+                      Padding(
+                        padding: const EdgeInsetsDirectional.only(start: 8),
+                        child: ExcludeSemantics(
+                          child: Text(
+                            raftText(context, trailing),
+                            maxLines: 1,
+                            style: RaftControlTypography.of(
+                              context,
+                              text,
+                            ).copyWith(fontSize: 12, color: hint),
+                          ),
+                        ),
+                      ),
+                    if (widget.entry.external)
+                      Padding(
+                        padding: const EdgeInsetsDirectional.only(start: 8),
+                        child: ExcludeSemantics(
+                          child: RaftIcon(
+                            RaftGlyph.arrowUpRight,
+                            size: 14,
+                            color: hint,
+                          ),
+                        ),
+                      ),
                     if (widget.entry.attention)
                       RaftAttentionDot(danger: widget.entry.attentionDanger),
                   ],
@@ -501,7 +553,11 @@ class _RaftSettingsSearchResultRowState
     final stacked = RaftSidebarItemRecipe.resolve(
       wrap: true,
       stacked: true,
-      states: RaftRecipeStates({if (t.dark) RaftRecipeStates.dark}, size.width, size.height),
+      states: RaftRecipeStates(
+        {if (t.dark) RaftRecipeStates.dark},
+        size.width,
+        size.height,
+      ),
       tokens: tokens,
     );
     final s = recipe.sidebarItem;

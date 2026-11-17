@@ -23,4 +23,6 @@ const Map<String, String> zhCatalogUpstream124AcctSettings = <String, String>{
   "Sign out everywhere and schedule your account for deletion. You can cancel until the date it's deleted.":
       "在所有设备上退出登录，并安排注销你的账号。在注销日期之前，你随时可以取消。",
   "Single sign-on (SSO)": "单点登录（SSO）",
+  // settings.common.undoOtherServer (the undo of an immediate change after switching server).
+  "Not undone: you've switched to another server": "未撤销：你已切换到其他服务器",
 };

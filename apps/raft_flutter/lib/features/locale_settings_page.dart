@@ -10,6 +10,8 @@ import '../data/message_translation_store.dart';
 import '../data/user_error.dart';
 import '../data/workspace_controller.dart';
 import 'management_support.dart';
+import 'settings_anchor.dart';
+import 'translation_language_options.dart';
 
 /// Source Language & Region preference contract. Delayed acknowledgements never
 /// apply a previous principal's values to the next account's controls.
@@ -86,7 +88,7 @@ class _LocaleSettingsPageState extends ManagementState<LocaleSettingsPage> {
 
   String get savedMode => translations.settings.mode.name;
   String get savedTarget =>
-      translations.settings.preferredLanguage ?? 'browser';
+      translations.settings.preferredLanguage ?? followDisplayLanguageTarget;
   String get savedDisplay => translations.settings.display.name;
   String get savedTimezone =>
       w.client.user?.string('preferredTimezone').trim() ?? '';
@@ -209,7 +211,9 @@ class _LocaleSettingsPageState extends ManagementState<LocaleSettingsPage> {
       if ((draftDisplayLanguage ?? liveLocale(context)) != liveLocale(context))
         'displayLanguage': draftDisplayLanguage,
       if ((draftTarget ?? savedTarget) != savedTarget)
-        'preferredLanguage': draftTarget == 'browser' ? null : draftTarget,
+        'preferredLanguage': draftTarget == followDisplayLanguageTarget
+            ? null
+            : draftTarget,
       if ((draftMode ?? savedMode) != savedMode)
         'preferredTranslationMode': draftMode,
       if ((draftDisplay ?? savedDisplay) != savedDisplay)
@@ -235,7 +239,6 @@ class _LocaleSettingsPageState extends ManagementState<LocaleSettingsPage> {
     final settings = translations.settings;
     final busy = translations.settingsLoading;
     final mode = draftMode ?? savedMode;
-    final effective = settings.effectiveLanguage.toUpperCase();
     final zones = _timezoneOptions(savedTimezone);
     return RaftLanguageRegionView(
       displayLanguage: draftDisplayLanguage ?? liveLocale(context),
@@ -250,15 +253,7 @@ class _LocaleSettingsPageState extends ManagementState<LocaleSettingsPage> {
                 : 'Translation is not enabled on this server yet.'
           : 'This deployment has no translation provider configured, so translations cannot run yet.',
       translationTarget: draftTarget ?? savedTarget,
-      translationTargetOptions: [
-        ('browser', 'Browser language'),
-        for (final e in messageTranslationLanguages.entries) (e.key, e.value),
-      ],
-      translationTargetDescription: raftFormat(
-        context,
-        'Browser language resolves to {language} for this browser.',
-        {'language': effective},
-      ),
+      translationTargetOptions: translationTargetOptions(context),
       translationDisplay: draftDisplay ?? savedDisplay,
       languageError: languageError ?? translations.settingsError,
       languageDirty: languageDirty(context),
@@ -286,6 +281,7 @@ class _LocaleSettingsPageState extends ManagementState<LocaleSettingsPage> {
       onTimezone: (v) => edit(() => draftTimezone = v, language: false),
       onTimeFormat: (v) => edit(() => draftTimeFormat = v, language: false),
       onSaveDateTime: saveDateTime,
+      anchor: (id, child) => RaftSettingsAnchor(id: id, child: child),
     );
   }
 }
@@ -348,12 +344,15 @@ int _offsetMinutes(String zone, DateTime now) {
   return tz.TZDateTime.from(now, tz.getLocation(zone)).timeZoneOffset.inMinutes;
 }
 
-/// `formatTimezoneLabel`: `UTC+08:00 Asia/Shanghai`.
+/// Web `formatTimezoneLabel`: `UTC+08:00 Shanghai`, the offset then the
+/// zone's city with spaces (Jasper, #triage:c95a5e53); a zone without a
+/// region (UTC) keeps its id.
 String _timezoneLabel(String zone, DateTime now) {
   final minutes = _offsetMinutes(zone, now);
   final abs = minutes.abs();
   final sign = minutes < 0 ? '-' : '+';
-  return 'UTC$sign${(abs ~/ 60).toString().padLeft(2, '0')}:${(abs % 60).toString().padLeft(2, '0')} $zone';
+  final city = zone.substring(zone.lastIndexOf('/') + 1).replaceAll('_', ' ');
+  return 'UTC$sign${(abs ~/ 60).toString().padLeft(2, '0')}:${(abs % 60).toString().padLeft(2, '0')} $city';
 }
 
 /// The browser's IANA zone: `TZ` when it names one (Linux hosts, tests), else

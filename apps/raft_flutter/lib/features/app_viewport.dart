@@ -13,6 +13,7 @@ import 'app_theme.dart';
 import 'workspace_host_scope.dart';
 import '../platform/desktop_title_bar.dart';
 import '../platform/keyboard_inset_guard.dart';
+import 'display_language_follower.dart';
 import '../platform/system_bars.dart';
 import 'private_app_invite.dart';
 
@@ -77,6 +78,7 @@ Widget buildRaftApplication({
   required Future<void> Function(Uri) openLocation,
 }) {
   final workspace = session.$2;
+  followDisplayLanguage(locale);
   final textLocale = WidgetsBinding.instance.platformDispatcher.locale;
   ThemeData themed({bool dark = false}) => raftAppTheme(
     dark: dark,

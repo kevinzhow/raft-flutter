@@ -20,7 +20,13 @@ const messageTranslationLanguages = <String, String>{
   'de': 'German',
   'pt-br': 'Portuguese (Brazil)',
   'it': 'Italian',
+  'ru': 'Russian',
 };
+
+/// Web `FOLLOW_DISPLAY_LANGUAGE_TARGET`: the translation-target choice that
+/// stores no preference, so messages are translated into the display
+/// language. Older builds stored the same choice as `browser`.
+const followDisplayLanguageTarget = 'display';
 
 /// raft-shared `normalizeTranslationLanguageCode`.
 String? normalizeTranslationLanguage(String? language) {
@@ -234,6 +240,7 @@ abstract interface class MessageTranslationAuthority {
 /// account.
 class MessageTranslationStore extends ChangeNotifier {
   MessageTranslationStore(this.w) {
+    _followers.add(this);
     _events = w.client.events.listen((event) {
       if (event.name == 'account:updated') {
         _adopt();
@@ -243,11 +250,46 @@ class MessageTranslationStore extends ChangeNotifier {
   }
 
   /// Device languages, most preferred first (Web `navigator.languages`).
+  /// They only seed [displayLanguageTarget] until the app reports its locale.
   @visibleForTesting
   static List<String> Function() deviceLanguages = () => [
     for (final locale in WidgetsBinding.instance.platformDispatcher.locales)
       locale.toLanguageTag(),
   ];
+
+  /// The display locale the no-preference translation target follows (Web
+  /// translationStore `displayLanguageTarget`), in translation-language ids
+  /// (`en`, `zh-cn`). Seeded from the device like the first render's locale;
+  /// [followDisplayLanguage] keeps it current.
+  static String get displayLanguageTarget =>
+      _followed ??
+      (deviceLanguages().firstOrNull?.toLowerCase().startsWith('zh') == true
+          ? 'zh-cn'
+          : 'en');
+  static String? _followed;
+
+  /// The live stores, told when the display language changes (Web's one
+  /// module-level store; here each workspace has its own).
+  static final _followers = <MessageTranslationStore>{};
+
+  /// Web `followDisplayLanguage(locale)`: the display language changed, so the
+  /// translation target of a person with no preference follows it.
+  static void followDisplayLanguage(String locale) {
+    final next = normalizeTranslationLanguage(locale) ?? 'en';
+    final changed = displayLanguageTarget != next;
+    _followed = next;
+    if (changed) {
+      for (final store in [..._followers]) {
+        store._displayLanguageChanged();
+      }
+    }
+  }
+
+  void _displayLanguageChanged() {
+    if (_disposed) return;
+    _memo = null;
+    notifyListeners();
+  }
 
   /// Web `PENDING_TIMEOUT_MS` (+250 ms scheduling slack).
   static const pendingTimeout = Duration(milliseconds: 30250);
@@ -391,8 +433,6 @@ class MessageTranslationStore extends ChangeNotifier {
 
   MessageTranslationSettings? _memo;
   Object? _memoUser, _memoGate;
-  String? _device;
-  bool _deviceRead = false;
 
   /// Settings are read for every row build: memoised on the identity of the
   /// accepted user record and server gate they derive from.
@@ -416,16 +456,6 @@ class MessageTranslationStore extends ChangeNotifier {
     final preferred = normalizeTranslationLanguage(
       (user['preferredLanguage'] ?? user['targetLanguage'])?.toString(),
     );
-    String? device() {
-      if (_deviceRead) return _device;
-      _deviceRead = true;
-      for (final tag in deviceLanguages()) {
-        final normalized = normalizeTranslationLanguage(tag);
-        if (normalized != null) return _device = normalized;
-      }
-      return null;
-    }
-
     final mode = switch (user['preferredTranslationMode'] ??
         user['translationMode']) {
       'auto' => MessageTranslationMode.auto,
@@ -438,7 +468,7 @@ class MessageTranslationStore extends ChangeNotifier {
     };
     return MessageTranslationSettings(
       preferredLanguage: preferred,
-      effectiveLanguage: preferred ?? device() ?? 'en',
+      effectiveLanguage: preferred ?? displayLanguageTarget,
       mode: mode,
       display: switch (user['preferredTranslationDisplay']) {
         'bilingual' => MessageTranslationDisplay.bilingual,
@@ -968,6 +998,7 @@ class MessageTranslationStore extends ChangeNotifier {
   @override
   void dispose() {
     _disposed = true;
+    _followers.remove(this);
     _epoch++;
     _events?.cancel();
     _flush?.cancel();

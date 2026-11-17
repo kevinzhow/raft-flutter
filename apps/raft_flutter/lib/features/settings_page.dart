@@ -29,6 +29,9 @@ class RaftSettingsDestination {
     this.ownHeader = false,
     this.contentColor,
     this.headerIcon = false,
+    this.semanticLabel,
+    this.trailingText,
+    this.external = false,
   }) : assert(builder != null || onOpen != null);
 
   /// A row that leaves the Settings page (external link or another route),
@@ -41,7 +44,10 @@ class RaftSettingsDestination {
     this.group = 'Personal',
     this.mobileOnly = false,
     this.attention = false,
+    this.external = false,
   }) : builder = null,
+       semanticLabel = null,
+       trailingText = null,
        attentionDanger = false,
        scroll = false,
        title = null,
@@ -50,6 +56,15 @@ class RaftSettingsDestination {
        headerIcon = false,
        contentColor = null;
   final String id, label, group;
+
+  /// The row's accessible name when the label alone repeats another row's.
+  final String? semanticLabel;
+
+  /// Hint text before the row's end ("Muted").
+  final String? trailingText;
+
+  /// The row leaves Raft: it ends in the ArrowUpRight mark.
+  final bool external;
 
   /// Listed only in the mobile Settings root (Sidebar.tsx adds Computers to
   /// the Settings sub-nav on mobile only; desktop has its own rail mode).
@@ -284,6 +299,9 @@ class _RaftSettingsPageState extends State<RaftSettingsPage> {
               onTap: () => open(d),
               attention: d.attention,
               attentionDanger: d.attentionDanger,
+              semanticLabel: d.semanticLabel,
+              trailingText: d.trailingText,
+              external: d.external,
             ),
         ]),
     ];

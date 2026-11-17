@@ -3464,7 +3464,7 @@
     {
       "id": "settings.nav",
       "title": "Settings navigation (rail / root list)",
-      "webEntry": "packages/web/src/components/settings/SettingsSidebarList.tsx",
+      "webEntry": "packages/web/src/components/settings/SettingsSidebarList.tsx, features/settings/search/SettingsSearch.tsx (Web v1.24)",
       "flutterEntry": "apps/raft_flutter/lib/features/settings_page.dart",
       "states": [
         {
@@ -3476,6 +3476,17 @@
             "components.ext-settings.nav.*"
           ],
           "status": "covered"
+        },
+        {
+          "state": "empty",
+          "variant": "Search settings: no setting matches the query",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "gap",
+          "gapKind": "case-missing",
+          "size": "S",
+          "justification": "settings_shell_test.dart and settings_shell_workspace_test.dart cover the empty result, its Search everywhere button and the query's lifetime; no paired Web | Flutter capture of the empty results yet."
         }
       ]
     },

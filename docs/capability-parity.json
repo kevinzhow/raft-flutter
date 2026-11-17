@@ -681,13 +681,17 @@
    "capability": "Message translation settings (mode Auto/Manual/Off, target language, default view Translated/Original/Bilingual) and per-message Translate / Show original toggles",
    "background": false,
    "status": "covered",
-   "webEntry": "Settings > Language & Region translation panel (settings.language.translation*), store/translationStore.ts, MessageItem translate toggles",
+   "webEntry": "Settings > Language & Region translation rows (features/settings/language-region/LanguageRegionSection.tsx, settings.language.translation*; target 'Same as display language'), store/translationStore.ts (followDisplayLanguage), MessageItem translate toggles",
    "gate": "",
-   "flutterEntry": "raft_ui settings_language.dart ('Translation mode'), data/message_translation_store.dart, chat_view.dart 'Translate' / 'Show original' / 'Show translation'",
+   "flutterEntry": "raft_ui settings_language.dart ('Translation mode'), features/translation_language_options.dart, data/message_translation_store.dart (followDisplayLanguage), chat_view.dart 'Translate' / 'Show original' / 'Show translation'",
    "flutterRefs": [
     {
      "file": "packages/raft_ui/lib/src/settings_language.dart",
      "needle": "Translation mode"
+    },
+    {
+     "file": "apps/raft_flutter/lib/data/message_translation_store.dart",
+     "needle": "static void followDisplayLanguage"
     },
     {
      "file": "apps/raft_flutter/lib/features/chat_view.dart",

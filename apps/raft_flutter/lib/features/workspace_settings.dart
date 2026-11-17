@@ -49,6 +49,7 @@ import 'provider_views.dart';
 import 'raftbench_page.dart';
 import 'server_views.dart';
 import 'settings_page.dart';
+import 'settings_link.dart';
 import 'settings_sub_pages.dart';
 import 'workspace_settings_shell.dart';
 import 'source_feedback_view.dart';
@@ -74,10 +75,7 @@ class WorkspaceSettings extends StatefulWidget {
     this.mobileResetRevision = 0,
     this.onMobileDetailChanged,
     this.onMobileLocationChanged,
-    this.subPage,
-    this.subPageQuery = const {},
-    this.anchor,
-    this.anchorRevision = 0,
+    this.link = const SettingsLink(),
     this.openLocation,
     this.providerEnabled = false,
     this.bridgeEnabled = false,
@@ -110,15 +108,9 @@ class WorkspaceSettings extends StatefulWidget {
   final ValueChanged<bool>? onMobileDetailChanged;
   final ValueChanged<String?>? onMobileLocationChanged;
 
-  /// The level-2 page open over [initialTab] (`/settings/account/<subPage>`),
-  /// with the query it was opened with.
-  final String? subPage;
-  final Map<String, String> subPageQuery;
-
-  /// The `#fragment` of `/settings/<tab>#<anchor>` and the navigation
-  /// revision that opened it (opening it again is a new jump).
-  final String? anchor;
-  final int anchorRevision;
+  /// The level-2 page open over [initialTab] and the `#<id>` section the tab
+  /// opens scrolled to (`/settings/account/delete`, `/settings/account#two-step`).
+  final SettingsLink link;
 
   /// Pushes a location from inside Settings (a sub-page, a search result, the
   /// global search); the host checks it still owns the page.
@@ -234,8 +226,8 @@ class _WorkspaceSettingsState extends State<WorkspaceSettings> {
       mobileResetRevision: widget.mobileResetRevision,
       onMobileDetailChanged: widget.onMobileDetailChanged,
       onMobileLocationChanged: widget.onMobileLocationChanged,
-      subPage: settingsSubPageFor(widget.initialTab, widget.subPage),
-      subPageQuery: widget.subPageQuery,
+      subPage: settingsSubPageFor(widget.initialTab, widget.link.subPage),
+      subPageQuery: widget.link.query,
       onSubPageOpen: (id, query) => openLocation(
         settingsSubPageLocation(
           w.location.serverSlug,
@@ -245,14 +237,10 @@ class _WorkspaceSettingsState extends State<WorkspaceSettings> {
       ),
       // Back from a level-2 page is the page before it, as from a tab.
       onSubPageBack: () => widget.onMobileLocationChanged?.call(null),
-      search: workspaceSettingsSearchHost(
-        context,
-        w,
-        open: openLocation,
-      ),
-      anchor: widget.anchor,
-      anchorRevision: widget.anchorRevision,
-      anchorFromKeyboard: keyboardJumpRevision == widget.anchorRevision,
+      search: workspaceSettingsSearchHost(context, w, open: openLocation),
+      anchor: widget.link.anchor,
+      anchorRevision: widget.link.revision,
+      anchorFromKeyboard: keyboardJumpRevision == widget.link.revision,
       destinations: [
         RaftSettingsDestination(
           'account',
@@ -315,6 +303,14 @@ class _WorkspaceSettingsState extends State<WorkspaceSettings> {
             group: raftFormat(context, 'On {serverName}', {
               'serverName': w.server!.name,
             }),
+            // The row says it is the server's, and when it is muted (Web
+            // useSidebarRoute `ariaLabel` and `trailing`).
+            semanticLabel: raftFormat(
+              context,
+              'Notifications on {serverName}',
+              {'serverName': w.server!.name},
+            ),
+            trailingText: w.server!.flag('serverPushMuted') ? 'Muted' : null,
           ),
         if (w.server != null) ...[
           RaftSettingsDestination(
@@ -470,6 +466,7 @@ class _WorkspaceSettingsState extends State<WorkspaceSettings> {
           'Documentation',
           RaftGlyph.bookOpenText,
           group: WorkspaceSettings.resources,
+          external: true,
           onOpen: () => launchUrl(
             Uri.parse(WorkspaceSettings.documentationUrl),
             mode: LaunchMode.externalApplication,

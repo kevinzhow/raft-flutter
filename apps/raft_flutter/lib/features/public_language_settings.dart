@@ -11,6 +11,7 @@ import '../data/display_language_preferences.dart';
 import 'locale_settings_page.dart'
     show effectiveTimeFormat, localeTimezoneOptions;
 import 'public_translation.dart';
+import 'translation_language_options.dart';
 
 class PublicLanguageRegionPage extends StatefulWidget {
   const PublicLanguageRegionPage({
@@ -48,7 +49,8 @@ class _PublicLanguageRegionPageState extends State<PublicLanguageRegionPage> {
   Map<String, dynamic> get saved => widget.preferences.json;
 
   String get savedMode => settings.mode.name;
-  String get savedTarget => settings.preferredLanguage ?? 'browser';
+  String get savedTarget =>
+      settings.preferredLanguage ?? followDisplayLanguageTarget;
   String get savedDisplay => settings.display.name;
   String get savedTimezone => '${saved['preferredTimezone'] ?? ''}'.trim();
   String get savedTimeFormat => effectiveTimeFormat(
@@ -115,7 +117,9 @@ class _PublicLanguageRegionPageState extends State<PublicLanguageRegionPage> {
         : displayLanguage.save(draftDisplayLanguage!);
     await widget.preferences.update({
       if ((draftTarget ?? savedTarget) != savedTarget)
-        'preferredLanguage': draftTarget == 'browser' ? null : draftTarget,
+        'preferredLanguage': draftTarget == followDisplayLanguageTarget
+            ? null
+            : draftTarget,
       if ((draftMode ?? savedMode) != savedMode)
         'preferredTranslationMode': draftMode,
       if ((draftDisplay ?? savedDisplay) != savedDisplay)
@@ -165,15 +169,7 @@ class _PublicLanguageRegionPageState extends State<PublicLanguageRegionPage> {
           ? 'Translation is not enabled on this server yet.'
           : 'This deployment has no translation provider configured, so translations cannot run yet.',
       translationTarget: draftTarget ?? savedTarget,
-      translationTargetOptions: [
-        ('browser', 'Browser language'),
-        for (final e in messageTranslationLanguages.entries) (e.key, e.value),
-      ],
-      translationTargetDescription: raftFormat(
-        context,
-        'Browser language resolves to {language} for this browser.',
-        {'language': s.effectiveLanguage.toUpperCase()},
-      ),
+      translationTargetOptions: translationTargetOptions(context),
       translationDisplay: draftDisplay ?? savedDisplay,
       languageError: null,
       languageDirty:

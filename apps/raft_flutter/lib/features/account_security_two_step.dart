@@ -20,6 +20,7 @@ import 'account_security_answer.dart';
 import 'account_security_dialogs.dart';
 import 'account_security_qr.dart';
 import 'icu_message.dart';
+import 'settings_anchor.dart';
 
 /// What the Account page's Passkeys and Two-step verification sections share
 /// (Web `useSecondFactorSettings`): either one changing reloads both, and
@@ -378,77 +379,78 @@ class _TwoStepState extends State<TwoStepVerificationSection> {
     return Padding(
       key: const ValueKey('two-step-verification-section'),
       padding: const EdgeInsets.only(bottom: RaftSpace.x6),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const RaftSettingsSectionHeader(
-            label: 'Two-step verification',
-            glyph: RaftGlyph.shieldCheck,
-          ),
-          if (s == null)
-            secondFactorBanner(
-              raftText(
-                context,
-                "Couldn't load two-step verification. Reload the page to try again.",
-              ),
-            )
-          else
-            RaftListRowGroup(
-              key: const ValueKey('two-step-verification-rows'),
-              children: [
-                _settingRow(context, s),
-                if (s.enabled) ...[
-                  if (s.totp)
+      // `#two-step` (settings search index; TwoStepVerificationSection.tsx `id`).
+      child: RaftSettingsAnchor(
+        id: 'two-step',
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const RaftSettingsSectionHeader(
+              label: 'Two-step verification',
+              glyph: RaftGlyph.shieldCheck,
+            ),
+            if (s == null)
+              secondFactorBanner(
+                raftText(
+                  context,
+                  "Couldn't load two-step verification. Reload the page to try again.",
+                ),
+              )
+            else
+              RaftListRowGroup(
+                key: const ValueKey('two-step-verification-rows'),
+                children: [
+                  _settingRow(context, s),
+                  if (s.enabled) ...[
+                    if (s.totp)
+                      _methodRow(
+                        glyph: RaftGlyph.smartphone,
+                        title: 'Authenticator app',
+                      ),
+                    if (s.passkeys > 0)
+                      _methodRow(
+                        key: const ValueKey('two-step-passkeys-row'),
+                        glyph: RaftGlyph.keyRound,
+                        title: 'Passkeys',
+                        description: icuText(
+                          context,
+                          '{count, plural, one {# passkey also works for this step} other {# passkeys also work for this step}}',
+                          {'count': s.passkeys},
+                        ),
+                      ),
                     _methodRow(
-                      glyph: RaftGlyph.smartphone,
-                      title: 'Authenticator app',
-                    ),
-                  if (s.passkeys > 0)
-                    _methodRow(
-                      key: const ValueKey('two-step-passkeys-row'),
-                      glyph: RaftGlyph.keyRound,
-                      title: 'Passkeys',
-                      description: icuText(
-                        context,
-                        '{count, plural, one {# passkey also works for this step} other {# passkeys also work for this step}}',
-                        {'count': s.passkeys},
+                      key: const ValueKey('two-step-backup-codes-row'),
+                      glyph: RaftGlyph.ticket,
+                      title: 'Backup codes',
+                      description:
+                          raftFormat(context, '{remaining} of {total} left', {
+                            'remaining': s.backupCodesRemaining,
+                            'total': backupCodeSetSize,
+                          }),
+                      notice: s.backupCodesRemaining <= lowBackupCodes
+                          ? secondFactorBanner(
+                              icuText(
+                                context,
+                                "{count, plural, one {Only # backup code left.} other {Only # backup codes left.}} Regenerate them so you don't get locked out.",
+                                {'count': s.backupCodesRemaining},
+                              ),
+                              live: false,
+                              key: const ValueKey('two-step-low-codes'),
+                            )
+                          : null,
+                      action: RaftButton(
+                        key: const ValueKey('two-step-regenerate'),
+                        label: raftText(context, 'Regenerate'),
+                        tone: RaftButtonRecipeVariant.outline,
+                        size: RaftButtonRecipeSize.md,
+                        onPressed: regenerate,
                       ),
                     ),
-                  _methodRow(
-                    key: const ValueKey('two-step-backup-codes-row'),
-                    glyph: RaftGlyph.ticket,
-                    title: 'Backup codes',
-                    description: raftFormat(
-                      context,
-                      '{remaining} of {total} left',
-                      {
-                        'remaining': s.backupCodesRemaining,
-                        'total': backupCodeSetSize,
-                      },
-                    ),
-                    notice: s.backupCodesRemaining <= lowBackupCodes
-                        ? secondFactorBanner(
-                            icuText(
-                              context,
-                              "{count, plural, one {Only # backup code left.} other {Only # backup codes left.}} Regenerate them so you don't get locked out.",
-                              {'count': s.backupCodesRemaining},
-                            ),
-                            live: false,
-                            key: const ValueKey('two-step-low-codes'),
-                          )
-                        : null,
-                    action: RaftButton(
-                      key: const ValueKey('two-step-regenerate'),
-                      label: raftText(context, 'Regenerate'),
-                      tone: RaftButtonRecipeVariant.outline,
-                      size: RaftButtonRecipeSize.md,
-                      onPressed: regenerate,
-                    ),
-                  ),
+                  ],
                 ],
-              ],
-            ),
-        ],
+              ),
+          ],
+        ),
       ),
     );
   }

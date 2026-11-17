@@ -22,6 +22,7 @@ import 'account_security_answer.dart';
 import 'account_security_dialogs.dart';
 import 'account_security_two_step.dart';
 import 'second_factor_step_up.dart';
+import 'settings_anchor.dart';
 
 const _nameMaxLength = 64;
 
@@ -123,7 +124,8 @@ class _PasskeysState extends State<PasskeysSection> {
       RaftConfirmDialog(
         surfaceKey: const ValueKey('passkeys-delete-dialog'),
         title: raftFormat(context, 'Delete “{name}”?', {'name': passkey.name}),
-        message: "You can't sign in or verify with this passkey after this. It stays in your password manager until you remove it there too. Your other browsers are signed out. Computers and the raft CLI stay connected.",
+        message:
+            "You can't sign in or verify with this passkey after this. It stays in your password manager until you remove it there too. Your other browsers are signed out. Computers and the raft CLI stay connected.",
         confirmLabel: 'Delete passkey',
         confirmKey: const ValueKey('passkeys-delete-confirm'),
         onConfirm: () async {
@@ -183,45 +185,49 @@ class _PasskeysState extends State<PasskeysSection> {
     return Padding(
       key: const ValueKey('passkeys-section'),
       padding: const EdgeInsets.only(bottom: RaftSpace.x6),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const RaftSettingsSectionHeader(
-            label: 'Passkeys',
-            glyph: RaftGlyph.keyRound,
-          ),
-          if (rows == null)
-            secondFactorBanner(
-              raftText(
-                context,
-                "Couldn't load your passkeys. Reload the page to try again.",
-              ),
-            )
-          else ...[
-            RaftListRowGroup(
-              key: const ValueKey('passkeys-rows'),
-              children: [
-                _addRow(context, rows.isEmpty),
-                for (final passkey in rows)
-                  _PasskeyRow(
-                    key: ValueKey('passkey-row-${passkey.id}'),
-                    client: client,
-                    passkey: passkey,
-                    deleteDisabled: lastFactor,
-                    onRename: () => rename(passkey),
-                    onDelete: () => delete(passkey),
-                  ),
-              ],
+      // `#passkeys` (settings search index; PasskeysSection.tsx `id`).
+      child: RaftSettingsAnchor(
+        id: 'passkeys',
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const RaftSettingsSectionHeader(
+              label: 'Passkeys',
+              glyph: RaftGlyph.keyRound,
             ),
-            if (lastFactor)
-              Padding(
-                padding: const EdgeInsets.only(top: RaftSpace.x3),
-                child: _LastFactorNote(
-                  onTurnOff: widget.settings.requestTurnOff,
+            if (rows == null)
+              secondFactorBanner(
+                raftText(
+                  context,
+                  "Couldn't load your passkeys. Reload the page to try again.",
                 ),
+              )
+            else ...[
+              RaftListRowGroup(
+                key: const ValueKey('passkeys-rows'),
+                children: [
+                  _addRow(context, rows.isEmpty),
+                  for (final passkey in rows)
+                    _PasskeyRow(
+                      key: ValueKey('passkey-row-${passkey.id}'),
+                      client: client,
+                      passkey: passkey,
+                      deleteDisabled: lastFactor,
+                      onRename: () => rename(passkey),
+                      onDelete: () => delete(passkey),
+                    ),
+                ],
               ),
+              if (lastFactor)
+                Padding(
+                  padding: const EdgeInsets.only(top: RaftSpace.x3),
+                  child: _LastFactorNote(
+                    onTurnOff: widget.settings.requestTurnOff,
+                  ),
+                ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }

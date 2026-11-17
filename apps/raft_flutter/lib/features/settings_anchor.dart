@@ -43,6 +43,10 @@ class SettingsAnchorRegistry {
       _timer?.cancel();
       anchor.reveal(focus: jump.fromKeyboard);
     });
+    // A jump started outside a frame (a link opened while the page is idle)
+    // needs one frame for the section to be laid out and landed on.
+    // ignore: raft_lints/avoid_unreviewed_idle_work -- One frame, once per jump; the callback above ends it, and the wait timer drops a jump whose section never comes.
+    WidgetsBinding.instance.ensureVisualUpdate();
   }
 
   void _register(String id, _RaftSettingsAnchorState state) {

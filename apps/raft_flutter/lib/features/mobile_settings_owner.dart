@@ -11,7 +11,10 @@ import '../data/workspace_controller.dart';
 import '../data/workspace_navigation.dart';
 import '../platform/app_services.dart';
 import '../platform/native_notifications.dart';
+import 'settings_link.dart';
 import 'workspace_settings.dart';
+
+export 'settings_link.dart' show clearWorkspaceSettingsCache;
 
 /// Notifies only when the settings page's workspace inputs change.
 class MobileSettingsSelection extends ChangeNotifier {
@@ -31,9 +34,7 @@ class MobileSettingsSelection extends ChangeNotifier {
     _json(controller.server?.json),
     controller.location.serverSlug,
     controller.location.settingsPath.join('\u0000'),
-    // `/settings/<tab>#<id>`: a link to a section is a new jump each time.
-    controller.location.uri.fragment,
-    controller.location.uri.fragment.isEmpty ? 0 : controller.navigation.revision,
+    SettingsLink.of(controller),
   );
 
   static String _json(Object? value) {
@@ -118,20 +119,6 @@ class _MobileSettingsDirectPageState extends State<MobileSettingsDirectPage> {
   }
 }
 
-class _AccountSettingsCache {
-  Object? inputs;
-  Widget? widget;
-}
-
-final _accountSettingsCache = Expando<_AccountSettingsCache>();
-
-void clearWorkspaceSettingsCache(Object key) {
-  final cache = _accountSettingsCache[key];
-  if (cache == null) return;
-  cache.inputs = null;
-  cache.widget = null;
-}
-
 /// The settings surface shared by the desktop page and both phone paths.
 Widget workspaceSettingsSurface({
   required Object cacheKey,
@@ -156,15 +143,8 @@ Widget workspaceSettingsSurface({
   final tab = WorkspaceNavigation.settingsTab(
     controller.location.settingsPath.firstOrNull ?? 'account',
   );
-  final location = controller.location;
-  final subPage = location.settingsPath.elementAtOrNull(1);
-  final anchor = location.uri.fragment.isEmpty ? null : location.uri.fragment;
-  final anchorRevision = anchor == null ? 0 : controller.navigation.revision;
   final inputs = (
-    subPage,
-    anchor,
-    anchorRevision,
-    location.uri.query,
+    SettingsLink.of(controller),
     authority,
     scope,
     jsonEncode(controller.client.user?.json),
@@ -183,7 +163,7 @@ Widget workspaceSettingsSurface({
     labsEnabled,
     wide,
   );
-  final cache = _accountSettingsCache[cacheKey] ??= _AccountSettingsCache();
+  final cache = accountSettingsCacheOf(cacheKey);
   final Widget page;
   if (tab == 'account' && inputs == cache.inputs && cache.widget != null) {
     page = cache.widget!;
@@ -204,15 +184,8 @@ Widget workspaceSettingsSurface({
           notifications: notifications,
           onLogout: onLogout,
           mobileRoot: controller.location.settingsPath.isEmpty,
-          subPage: subPage,
-          subPageQuery: location.uri.queryParameters,
-          anchor: anchor,
-          anchorRevision: anchorRevision,
-          openLocation: (next) => _openSettingsLocation(
-            controller: controller,
-            allowed: allowed(),
-            location: next,
-          ),
+          link: SettingsLink.of(controller),
+          openLocation: settingsLocationOpener(controller, allowed: allowed()),
           mobileResetRevision: revision + hostRevision,
           railSide: railSide,
           onMobileLocationChanged: (next) => _openSettingsTab(
@@ -231,16 +204,6 @@ Widget workspaceSettingsSurface({
     cache.widget = tab == 'account' ? page : null;
   }
   return page;
-}
-
-void _openSettingsLocation({
-  required WorkspaceController controller,
-  required bool allowed,
-  required RaftLocation location,
-}) {
-  if (!allowed) return;
-  controller.navigation.navigate(location, kind: RaftNavigationKind.push);
-  controller.notifyListeners();
 }
 
 void _openSettingsTab({
