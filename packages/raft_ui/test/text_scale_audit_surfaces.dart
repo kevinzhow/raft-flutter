@@ -33,6 +33,7 @@ import 'package:raft_ui/collapsible_section_previews.dart';
 import 'package:raft_ui/composer_expand_previews.dart';
 import 'package:raft_ui/computer_connection_previews.dart';
 import 'package:raft_ui/conversation_card_previews.dart';
+import 'package:raft_ui/danger_action_previews.dart';
 import 'package:raft_ui/fit_toolbar_previews.dart';
 import 'package:raft_ui/delegated_face_previews.dart';
 import 'package:raft_ui/history_paywall_previews.dart';
@@ -1135,6 +1136,18 @@ final auditSurfaces = <AuditSurface>[
     'Administration: checkbox, switch and links',
     administrationFormsPreview,
     Size(760, 760),
+  ),
+  AuditSurface(
+    'administrationOnboardingPreview',
+    'Administration: onboarding and context access',
+    administrationOnboardingPreview,
+    Size(760, 640),
+  ),
+  AuditSurface(
+    'dangerActionRowPreview',
+    'Settings: danger action rows',
+    dangerActionRowPreview,
+    Size(760, 320),
   ),
   AuditSurface(
     'longApplicationCatalogPreview',
