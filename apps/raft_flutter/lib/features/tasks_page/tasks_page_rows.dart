@@ -11,7 +11,6 @@ import '../../data/workspace_controller.dart';
 import '../message_task_list.dart' show messageTaskChipRow;
 import '../task_v2_mode.dart' show formatTaskConversationRef;
 import 'task_card_facts.dart' show TaskActivityTime;
-import 'tasks_page_model.dart';
 
 /// A count as the message says it: English's `#` groups thousands
 /// (`2,000`), the Chinese `{count}` does not.
