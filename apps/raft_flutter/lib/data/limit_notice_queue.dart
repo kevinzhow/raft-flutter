@@ -28,6 +28,14 @@ class LimitNoticeRequest {
 /// Limit notices the data layer raised and the workspace shell has not shown
 /// yet (`LimitNoticeHost`). A plain queue: it holds no UI.
 class LimitNoticeQueue extends ChangeNotifier {
+  static final _of = Expando<LimitNoticeQueue>('limitNotices');
+
+  /// The queue of one owner (the session's uploads): created on first use.
+  static LimitNoticeQueue of(Object owner) => _of[owner] ??= LimitNoticeQueue();
+
+  /// Ends the queue of [owner] (its session closed).
+  static void release(Object owner) => _of[owner]?.dispose();
+
   final _pending = <LimitNoticeRequest>[];
 
   bool get isEmpty => _pending.isEmpty;

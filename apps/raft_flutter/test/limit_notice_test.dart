@@ -5,6 +5,8 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/attachment_limit_decision.dart';
+import 'package:raft_flutter/data/attachment_selection.dart';
+import 'package:raft_flutter/data/limit_notice_queue.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/features/composer_attachments_view.dart';
 import 'package:raft_flutter/features/limit_notice.dart';
@@ -107,7 +109,7 @@ Future<_Rig> _boot(
       builder: (context, child) => RaftToastHost(child: child!),
       home: LimitNoticeHost(
         controller: w,
-        queue: w.composer.uploads.limitNotices,
+        queue: LimitNoticeQueue.of(w.composer.uploads),
         child: Scaffold(
           body: Builder(
             builder: (context) => ListenableBuilder(
@@ -455,7 +457,7 @@ void main() {
         await _select(t, rig, [_file('disk.iso', 201 * mb)]);
         expect(find.byKey(const ValueKey('limit-notice')), findsNothing);
         final kept = rig.w.uploads().single;
-        expect(kept.notAttached!.reason, NotAttachedReason.size);
+        expect(notAttachedOf[kept]!.reason, NotAttachedReason.size);
         expect(find.text('Too large'), findsOneWidget);
         expect(
           find.bySemanticsLabel(

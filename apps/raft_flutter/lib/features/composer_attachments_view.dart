@@ -4,6 +4,7 @@ import 'package:flutter/widgets.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import '../data/attachment_limit_decision.dart';
+import '../data/attachment_selection.dart' show notAttachedOf;
 import '../data/upload_mime.dart';
 import '../data/upload_failure.dart';
 import '../data/upload_reorder.dart';
@@ -32,13 +33,13 @@ RaftComposerAttachment composerAttachmentFor(
       ? RaftComposerAttachmentStatus.ready
       : RaftComposerAttachmentStatus.uploading;
   final mime = draft.mimeType;
-  final notAttached = draft.notAttached == null
+  final notAttached = notAttachedOf[draft] == null
       ? null
       : notAttachedCopy(
           context,
-          reason: draft.notAttached!.reason,
+          reason: notAttachedOf[draft]!.reason,
           size: draft.sizeBytes,
-          maxBytes: draft.notAttached!.maxBytes,
+          maxBytes: notAttachedOf[draft]!.maxBytes,
           freePlan: freePlan,
         );
   return RaftComposerAttachment(
@@ -120,7 +121,7 @@ ComposerSendBlock? composerSendBlockOf(List<UploadDraft> drafts) {
   if (drafts.any((d) => d.error == null && d.id == null && !d.queued)) {
     return ComposerSendBlock.uploading;
   }
-  if (drafts.any((d) => d.notAttached != null)) {
+  if (drafts.any((d) => notAttachedOf[d] != null)) {
     return ComposerSendBlock.notAttached;
   }
   if (drafts.any((d) => d.error != null)) return ComposerSendBlock.failed;

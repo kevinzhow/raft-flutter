@@ -4,7 +4,6 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:raft_client/raft_client.dart';
 
-import 'attachment_limit_decision.dart';
 import 'cause_notice.dart';
 import 'composer_visit_state.dart';
 import 'shared_draft_attachment.dart';
@@ -363,28 +362,8 @@ class WorkspaceEditor implements WorkspaceEditorEntrypoints {
   }
 
   @override
-  Future<int?> uploadLimitBytes() async {
-    try {
-      return uploadLimitFromCapabilities(
-        await query('/attachments/upload-capabilities'),
-      );
-    } catch (_) {
-      return null;
-    }
-  }
-
-  /// Web `resolveAttachmentUploadLimits`: the server's single-file ceiling and
-  /// monthly quota, fetched per selection (never cached: the plan can change
-  /// without an event the client sees). Null when it cannot be established.
-  Future<AttachmentUploadLimits?> uploadLimits() async {
-    try {
-      return AttachmentUploadLimits.parse(
-        await query('/attachments/upload-capabilities'),
-      );
-    } catch (_) {
-      return null;
-    }
-  }
+  Future<int?> uploadLimitBytes() async =>
+      (await readSelectionLimits(query, null)).limits?.maxBytes;
 
   Future<void> attachSelection(
     List<({String name, Uint8List bytes})> files, {
@@ -424,11 +403,7 @@ class WorkspaceEditor implements WorkspaceEditorEntrypoints {
           scope == entrypoints.draftScope(thread: thread) &&
           authority == _uploadAuthority(),
       resolveThread: ensureThread,
-      limit: entrypoints.uploadLimitBytes,
-      limits: uploadLimits,
-      // Web `currentServerIsFree`: `plan || "free"` is free.
-      freePlan: () => (server?.string('plan') ?? 'free') == 'free',
-      serverId: server?.id,
+      limit: () => readSelectionLimits(query, server?.json),
       upload: (id, draft, progress) => uploadDraft(client, id, draft, progress),
       persist: saveDraftScope,
       notice: (message) => _raiseComposerNotice(scope, message),

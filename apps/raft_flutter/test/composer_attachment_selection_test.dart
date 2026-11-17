@@ -5,6 +5,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/attachment_limit_decision.dart';
+import 'package:raft_flutter/data/attachment_selection.dart';
+import 'package:raft_flutter/data/limit_notice_queue.dart';
 import 'package:raft_flutter/data/upload_mime.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
 
@@ -89,7 +91,7 @@ void main() {
     // Web v1.24 `attachmentRejectionPlan`: what no plan changes stays in the
     // row, failed, saying why; no banner.
     final kept = w.uploads().single;
-    expect(kept.notAttached!.reason, NotAttachedReason.empty);
+    expect(notAttachedOf[kept]!.reason, NotAttachedReason.empty);
     expect(kept.canRetry, false);
     expect(w.composerErrorFor(), isNull);
     w.removeUpload(kept);
@@ -97,7 +99,10 @@ void main() {
     // stay, and the limit notice is queued for the upgrade.
     await w.attachSelection([_file('big.png', 8192)], text: _text);
     expect(w.uploads(), isEmpty);
-    expect(w.composer.uploads.limitNotices.take()?.gate, 'upload_file_size');
+    expect(
+      LimitNoticeQueue.of(w.composer.uploads).take()?.gate,
+      'upload_file_size',
+    );
   });
 
   test('the eleventh file stays failed as too many', () async {
@@ -109,7 +114,7 @@ void main() {
     await Future<void>.delayed(Duration.zero);
     await Future<void>.delayed(Duration.zero);
     expect(w.uploads(), hasLength(11));
-    expect(w.uploads().last.notAttached!.reason, NotAttachedReason.count);
+    expect(notAttachedOf[w.uploads().last]!.reason, NotAttachedReason.count);
     for (var i = 0; i < 10; i++) {
       client.uploads['f$i.txt']!.complete([
         {'id': 'id'},
@@ -144,7 +149,10 @@ void main() {
     final w = controller(client);
     await w.attachSelection([_file('a.png', 4)], text: _text);
     // Web v1.24: the file stays, failed, as "Not checked".
-    expect(w.uploads().single.notAttached!.reason, NotAttachedReason.unchecked);
+    expect(
+      notAttachedOf[w.uploads().single]!.reason,
+      NotAttachedReason.unchecked,
+    );
     expect(client.uploads, isEmpty);
   });
 

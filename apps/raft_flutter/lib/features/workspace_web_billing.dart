@@ -25,10 +25,6 @@ Future<void> openWebBillingOrToast(
   String? gate,
 }) async {
   if (!await w.openWebBilling(gate: gate) && context.mounted) {
-    showRaftToast(
-      context,
-      'Could not open this address.',
-      tone: RaftToastRecipeTone.error,
-    );
+    showRaftToast(context, 'Could not open this address.');
   }
 }

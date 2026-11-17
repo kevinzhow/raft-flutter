@@ -49342,19 +49342,19 @@
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
-      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5660/METHOD:buildWorkspace@48017/FUNCTION:<anonymous>@48255/FUNCTION:conversation@51369": {
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5702/METHOD:buildWorkspace@48067/FUNCTION:<anonymous>@48305/FUNCTION:conversation@51419": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
-      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5660/METHOD:buildWorkspace@48017/FUNCTION:<anonymous>@48255/FUNCTION:workspace@64685": {
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5702/METHOD:buildWorkspace@48067/FUNCTION:<anonymous>@48305/FUNCTION:workspace@64735": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
-      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5660/METHOD:settingsRailAction@108836/FUNCTION:action@108870": {
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5702/METHOD:settingsRailAction@108886/FUNCTION:action@108920": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
@@ -49557,6 +49557,12 @@
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "WP-BILL history paywall (Web v1.24 HistoryPaywall): resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/workspace_web_billing.dart#function:openWebBillingOrToast": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved surface_factory; real-entry/family/state mapping remains unreviewed."
       }
     },
     "entries": {
@@ -52700,6 +52706,15 @@
         ],
         "mountStatus": "source_reviewed",
         "reason": "Mounted by RaftChatView at the top of a limited channel, in a limited thread panel and as the empty body of a fully hidden channel (WP-BILL). Widget evidence only (history_paywall_test.dart); no visual PASS is asserted."
+      },
+      "surface:apps/raft_flutter/lib/features/workspace_web_billing.dart#function:openWebBillingOrToast": {
+        "owner": "design-system alignment",
+        "kind": "surface_factory_candidate",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/workspace_web_billing.dart#function:openWebBillingOrToast"
+        ],
+        "mountStatus": "unresolved",
+        "reason": "Resolved function owns a surface call; actual target, route and state are not yet observed."
       }
     },
     "requirements": {
@@ -55524,6 +55539,12 @@
       },
       "surface:apps/raft_flutter/lib/features/limit_notice.dart#function:showLimitNotice:applicability": {
         "entryId": "surface:apps/raft_flutter/lib/features/limit_notice.dart#function:showLimitNotice",
+        "applicability": "unknown",
+        "owner": "design-system alignment",
+        "reason": "Real entry and applicable theme/input/state dimensions require source review and bound execution."
+      },
+      "surface:apps/raft_flutter/lib/features/workspace_web_billing.dart#function:openWebBillingOrToast:applicability": {
+        "entryId": "surface:apps/raft_flutter/lib/features/workspace_web_billing.dart#function:openWebBillingOrToast",
         "applicability": "unknown",
         "owner": "design-system alignment",
         "reason": "Real entry and applicable theme/input/state dimensions require source review and bound execution."

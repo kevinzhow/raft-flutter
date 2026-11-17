@@ -1,5 +1,6 @@
 import 'mobile_server_tab.dart';
 import 'limit_notice.dart';
+import '../data/limit_notice_queue.dart';
 import 'server_menu_model.dart';
 import 'agent_lounge.dart' show AgentLoungeFlag;
 import 'agent_runtime_labels.dart' show runtimeDisplayNameOf;
@@ -1329,7 +1330,7 @@ class _WorkspaceViewState extends State<WorkspaceView>
           ? body
           : LimitNoticeHost(
               controller: w,
-              queue: w.composer.uploads.limitNotices,
+              queue: LimitNoticeQueue.of(w.composer.uploads),
               child: AnnouncementHost(controller: w, child: body),
             ),
     );

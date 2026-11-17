@@ -5,10 +5,13 @@ import 'dart:typed_data';
 import 'package:raft_client/raft_client.dart';
 
 import 'attachment_limit_decision.dart';
+import 'attachment_selection.dart';
 import 'limit_notice_queue.dart';
 import 'shared_draft_attachment.dart';
 import 'upload_failure.dart';
 import 'upload_mime.dart';
+
+export 'attachment_selection.dart' show SelectionLimits, readSelectionLimits;
 
 class UploadDraft {
   UploadDraft(this.filename, this.bytes, {required this.key}) : local = null;
@@ -37,11 +40,6 @@ class UploadDraft {
   /// Web `uploadCanRetry`: false once the selection check was interrupted.
   bool canRetry = true;
 
-  /// Web `PendingFile.notAttached`: the selection check refused this file for a
-  /// reason no plan changes. It stays in the row, failed, saying why, until it
-  /// is removed; [error] carries the whole reason.
-  NotAttached? notAttached;
-
   /// Browser `File.type` of the picked name (file card meta, image preview).
   String get mimeType => local?.mimeType ?? composerMimeType(filename);
 
@@ -69,16 +67,16 @@ class ComposerUploadVisit {
     required this.upload,
     required this.persist,
     required this.notice,
-    this.limits,
-    this.freePlan,
-    this.serverId,
   });
   final String scope;
   final String? channelId;
   final bool thread;
   final bool Function() selectionCurrent;
   final Future<String?> Function() resolveThread;
-  final Future<int?> Function() limit;
+
+  /// The server's rule for this selection, read per selection
+  /// (`readSelectionLimits`).
+  final Future<SelectionLimits> Function() limit;
   final Future<List<Map<String, dynamic>>> Function(
     String id,
     UploadDraft draft,
@@ -87,19 +85,6 @@ class ComposerUploadVisit {
   upload;
   final ComposerUploadPersist persist;
   final void Function(String? message) notice;
-
-  /// The server's ceiling and monthly quota (`GET /attachments/upload-capabilities`),
-  /// read per selection and never cached; null when it could not be read.
-  /// When set, the selection is decided as Web v1.24 does (limit notice for
-  /// what Pro would take, failed rows for what no plan changes); without it
-  /// the older single-ceiling check runs.
-  final Future<AttachmentUploadLimits?> Function()? limits;
-
-  /// The current server is on the Free plan (Web `currentServerIsFree`).
-  final bool Function()? freePlan;
-
-  /// The server the selection was made on, for the limit notice it raises.
-  final String? serverId;
 }
 
 class _UploadOperation {
@@ -120,9 +105,6 @@ class WorkspaceUploads {
   final _scopeEpochs = <String, int>{};
   final _operations = <UploadDraft, _UploadOperation>{};
   Future<void> _selectionQueue = Future<void>.value();
-
-  /// Limit notices a selection raised, shown by `LimitNoticeHost`.
-  final limitNotices = LimitNoticeQueue();
   int nextKey = 0, _nextOperation = 0, _epoch = 0;
   bool _closed = false;
 
@@ -257,7 +239,7 @@ class WorkspaceUploads {
   }
 
   void clear() {
-    limitNotices.clear();
+    LimitNoticeQueue.of(this).clear();
     _epoch++;
     for (final files in byScope.values) {
       for (final draft in files) {
@@ -274,7 +256,7 @@ class WorkspaceUploads {
   void dispose() {
     clear();
     _closed = true;
-    limitNotices.dispose();
+    LimitNoticeQueue.release(this);
   }
 
   static Future<void> release(Iterable<UploadDraft> files) async {
@@ -329,11 +311,7 @@ class WorkspaceUploads {
     required String Function(String key, Map<String, Object> args) text,
   }) async {
     if (!sessionCurrent()) return;
-    final limits = visit.limits;
-    final decidedLimits = limits == null ? null : await limits();
-    final limit = limits == null
-        ? await visit.limit()
-        : decidedLimits?.maxBytes;
+    final env = await visit.limit();
     if (!sessionCurrent()) return;
     final list = byScope[scope];
     if (!current()) {
@@ -354,83 +332,26 @@ class WorkspaceUploads {
         if (list?.contains(d) ?? false) d,
     ];
     if (alive.isEmpty) return;
-    if (limits != null) {
-      final accepted = _decideWithLimits(
-        scope,
-        list!,
-        alive,
-        decidedLimits,
-        visit,
-      );
-      await _transferAccepted(scope, accepted, visit, sessionCurrent, current);
-      return;
-    }
-    final accepted = <UploadDraft>[];
-    var count = 0, empty = 0;
-    final oversize = <int>[];
-    var slots = (10 - list!.where((d) => !d.checking).length).clamp(0, 10);
-    if (limit != null) {
-      for (final draft in alive) {
-        if (draft.bytes.isEmpty) {
-          empty++;
-        } else if (draft.bytes.length > limit) {
-          oversize.add(draft.bytes.length);
-        } else if (slots <= 0) {
-          count++;
-        } else {
-          accepted.add(draft);
-          slots--;
-        }
-      }
-    }
-    for (final draft in alive) {
-      draft.checking = false;
-      if (!accepted.contains(draft)) list.remove(draft);
-    }
-    final parts = <String>[
-      if (limit == null)
-        text(
-          'The upload size limit could not be checked. Try again in a moment.',
-          const {},
-        ),
-      // Web ICU plurals (`one` / `other`).
-      if (count > 0)
-        text(
-          count == 1
-              ? 'Only {max} attachments per message. {extra} extra file skipped.'
-              : 'Only {max} attachments per message. {extra} extra files skipped.',
-          {'max': 10, 'extra': count},
-        ),
-      if (empty > 0)
-        text(
-          empty == 1
-              ? '{count} empty file skipped.'
-              : '{count} empty files skipped.',
-          {'count': empty},
-        ),
-      if (oversize.isNotEmpty)
-        text('Max {maxSize} per file. Current largest file is {largest}.', {
-          'maxSize': _limitLabel(limit!),
-          'largest': _bytesLabel(oversize.reduce((a, b) => a > b ? a : b)),
-        }),
-    ];
-    visit.notice(parts.isEmpty ? null : parts.join(' '));
+    final decided = applySelectionLimits(list!, alive, env);
+    visit.notice(null);
     if (list.isEmpty) byScope.remove(scope);
     changed(scope);
-    await _transferAccepted(scope, accepted, visit, sessionCurrent, current);
-  }
-
-  /// One transfer at a time, each fenced by the authority the selection was
-  /// made under: after a conversation, role or account change the files that
-  /// have not started are dropped rather than sent under the new authority.
-  Future<void> _transferAccepted(
-    String scope,
-    List<UploadDraft> accepted,
-    ComposerUploadVisit visit,
-    bool Function() sessionCurrent,
-    bool Function() current,
-  ) async {
-    for (final draft in accepted) {
+    final gate = decided.plan.upgradeGate;
+    if (gate != null) {
+      LimitNoticeQueue.of(this).add(
+        LimitNoticeRequest(
+          serverId: env.serverId,
+          gate: gate == AttachmentUpgradeGate.monthlyQuota
+              ? 'upload_monthly_quota'
+              : 'upload_file_size',
+          upload: decided.plan.upgradeContext,
+        ),
+      );
+    }
+    // One transfer at a time, each fenced by the authority the selection was
+    // made under: after a conversation, role or account change the files that
+    // have not started are dropped rather than sent under the new authority.
+    for (final draft in decided.accepted) {
       if (!sessionCurrent()) return;
       if (!current()) {
         byScope[scope]?.remove(draft);
@@ -442,83 +363,5 @@ class WorkspaceUploads {
     }
   }
 
-  /// Web `decideMessageAttachmentSelection` + `attachmentRejectionPlan`
-  /// (MessageInput `validateSelection`): the files the plan would take leave
-  /// the row and raise one limit notice; the files no plan changes stay,
-  /// failed, with their reason; the rest are accepted. Returns the accepted
-  /// drafts, to transfer.
-  List<UploadDraft> _decideWithLimits(
-    String scope,
-    List<UploadDraft> list,
-    List<UploadDraft> alive,
-    AttachmentUploadLimits? limits,
-    ComposerUploadVisit visit,
-  ) {
-    final existing = list
-        .where(
-          (d) => !d.checking && d.notAttached == null && !alive.contains(d),
-        )
-        .length;
-    final decision = decideAttachmentSelection<UploadDraft>(
-      existingCount: existing,
-      candidates: alive,
-      sizeOf: (d) => d.sizeBytes,
-      limits: limits,
-    );
-    final plan = planAttachmentRejection<UploadDraft>(
-      rejected: decision.rejected,
-      limits: limits,
-      freePlan: visit.freePlan?.call() ?? true,
-      nameOf: (d) => d.filename,
-      sizeOf: (d) => d.sizeBytes,
-    );
-    final kept = {for (final k in plan.keep) k.file: k.reason};
-    for (final draft in alive) {
-      draft.checking = false;
-      final reason = kept[draft];
-      if (reason != null) {
-        draft.canRetry = false;
-        draft.notAttached = NotAttached(reason, limits?.maxBytes);
-        // The whole reason is shown by the row's copy (`notAttachedCopy`);
-        // [error] only marks the file failed.
-        draft.error = 'Not attached';
-      } else if (!decision.accepted.contains(draft)) {
-        list.remove(draft);
-      }
-    }
-    visit.notice(null);
-    if (list.isEmpty) byScope.remove(scope);
-    changed(scope);
-    final gate = plan.upgradeGate;
-    if (gate != null) {
-      limitNotices.add(
-        LimitNoticeRequest(
-          serverId: visit.serverId,
-          gate: gate == AttachmentUpgradeGate.monthlyQuota
-              ? 'upload_monthly_quota'
-              : 'upload_file_size',
-          upload: plan.upgradeContext,
-        ),
-      );
-    }
-    return decision.accepted;
-  }
-
   static String uploadErrorText(Object failure) => uploadFailureText(failure);
-
-  static String _limitLabel(int bytes) => bytes % (1024 * 1024) == 0
-      ? '${bytes ~/ (1024 * 1024)}MB'
-      : _bytesLabel(bytes);
-
-  static String _bytesLabel(int bytes) {
-    if (bytes <= 0) return '0B';
-    const units = ['B', 'KB', 'MB', 'GB'];
-    var value = bytes.toDouble();
-    var unit = 0;
-    while (value >= 1024 && unit < units.length - 1) {
-      value /= 1024;
-      unit++;
-    }
-    return '${unit == 0 ? value.toStringAsFixed(0) : value.toStringAsFixed(1)}${units[unit]}';
-  }
 }
