@@ -92,10 +92,7 @@ class RaftAdminRows extends StatelessWidget {
       return RaftListRowGroup(
         children: [
           for (var i = 0; i < rows.length; i++)
-            KeyedSubtree(
-              key: rows[i].key,
-              child: _row(rows[i], narrow, i > 0),
-            ),
+            KeyedSubtree(key: rows[i].key, child: _row(rows[i], narrow, i > 0)),
         ],
       );
     },
@@ -160,9 +157,8 @@ class RaftAdminRowSelect<T> extends StatelessWidget {
       placeholder: placeholder,
     );
     if (_ControlBelow.of(context)) return select;
-    final style = RaftTokens.of(
-      context,
-    ).scale(RaftTypeScale.body, weight: FontWeight.w500);
+    final style = RaftTokens.of(context)
+        .scale(RaftTypeScale.body, weight: FontWeight.w500);
     var widest = 0.0;
     for (final text in [
       for (final item in items) item.label,
@@ -286,7 +282,9 @@ class RaftAdminSwitchCard extends StatelessWidget {
               link: link,
               onLink: onDescriptionLink,
             ),
-      footer: [if (error case final error?) RaftErrorBanner(error, small: true)],
+      footer: [
+        if (error case final error?) RaftErrorBanner(error, small: true),
+      ],
     );
   }
 }
@@ -635,9 +633,7 @@ class RaftGrantContextBody extends StatelessWidget {
             for (final (id, label) in options)
               RaftSelectItem(value: id, label: label, cssText: true),
           ],
-          onChanged: options.isEmpty
-              ? null
-              : (value) => onAgent(value ?? ''),
+          onChanged: options.isEmpty ? null : (value) => onAgent(value ?? ''),
         ),
         const SizedBox(height: RaftSpace.x4),
         RaftBanner(

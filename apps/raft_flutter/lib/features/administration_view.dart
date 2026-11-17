@@ -15,10 +15,7 @@ import 'administration_switch_sections.dart';
 import 'agent_detail_view.dart' show agentTimeFormatter;
 import 'member_removal_impact.dart';
 import 'management_support.dart'
-    show
-        managementMap,
-        managementRows,
-        pageIdentity;
+    show managementMap, managementRows, pageIdentity;
 
 /// Settings > Workspace > Administration: SettingsPanel.tsx
 /// AdministrationTabContent. Each section owns its data and requests like the
@@ -251,10 +248,7 @@ class _AdminsSectionState extends State<_AdminsSection> {
         effectiveRole == 'owner' &&
         selected != null &&
         !selected.agent;
-    impact.sync(
-      w.server?.id,
-      grantsOwner ? w.client.user?.id : null,
-    );
+    impact.sync(w.server?.id, grantsOwner ? w.client.user?.id : null);
     return RaftAdminSection(
       regionKey: adminRegion('admins'),
       label: 'Owners & admins',
@@ -616,7 +610,8 @@ class _AgreementState extends State<_AgreementSection>
         );
         clearSaved();
       },
-      failed: (e) => error = adminApiError(e, 'Failed to load pre-join agreement'),
+      failed: (e) =>
+          error = adminApiError(e, 'Failed to load pre-join agreement'),
       done: () => loading = false,
     );
   }
@@ -783,4 +778,3 @@ class _ProductAnalyticsState extends State<_ProductAnalyticsSection>
     );
   }
 }
-

@@ -361,7 +361,8 @@ class RaftAdminsCard extends StatelessWidget {
                     ],
                   )
                 else
-                  for (final row in rows) _AdminListRow(row: row, saving: saving),
+                  for (final row in rows)
+                    _AdminListRow(row: row, saving: saving),
               ],
             );
           },
@@ -727,9 +728,7 @@ class _EmptyRow extends StatelessWidget {
     variant: RaftListRowVariant.plain,
     interactive: false,
     children: [
-      RaftListRowBody(
-        children: [RaftListRowDescription(message, wrap: true)],
-      ),
+      RaftListRowBody(children: [RaftListRowDescription(message, wrap: true)]),
     ],
   );
 }
@@ -840,7 +839,8 @@ class RaftAdminJoinLinksCard extends StatelessWidget {
               ],
             ),
             if (links.isEmpty)
-              if (!loading) const _EmptyRow('No active invite links')
+              if (!loading)
+                const _EmptyRow('No active invite links')
               else
                 const SizedBox.shrink()
             else

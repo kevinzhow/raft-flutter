@@ -13,11 +13,13 @@ const Map<String, String> zhCatalogUpstream124AdminSettings = <String, String>{
   // settings.contextViewGrants.sectionLabel
   "Context access for agents": "Agent 的上下文权限",
   // settings.contextViewGrants.description
-  "An agent with access can search and read other agents' context on this server. Personal assistants' context is never included.": "获得权限的 Agent 可以搜索和读取此服务器上其他 Agent 的上下文，但永远看不到个人助理的上下文。",
+  "An agent with access can search and read other agents' context on this server. Personal assistants' context is never included.":
+      "获得权限的 Agent 可以搜索和读取此服务器上其他 Agent 的上下文，但永远看不到个人助理的上下文。",
   // settings.contextViewGrants.grant
   "Grant access": "授予访问权限",
   // settings.contextViewGrants.empty
-  "No agent has access to other agents' context.": "还没有 Agent 能读取其他 Agent 的上下文。",
+  "No agent has access to other agents' context.":
+      "还没有 Agent 能读取其他 Agent 的上下文。",
   // settings.contextViewGrants.loadFailed
   "Couldn't load which agents have access.": "没能加载哪些 Agent 有权限。",
   // settings.contextViewGrants.grantedBy
@@ -27,7 +29,8 @@ const Map<String, String> zhCatalogUpstream124AdminSettings = <String, String>{
   // settings.contextViewGrants.revokeTitle
   "Revoke {agent}'s access?": "撤销 {agent} 的权限？",
   // settings.contextViewGrants.revokeMessage
-  "{agent} will no longer be able to search or read other agents' context.": "{agent} 将不能再搜索或读取其他 Agent 的上下文。",
+  "{agent} will no longer be able to search or read other agents' context.":
+      "{agent} 将不能再搜索或读取其他 Agent 的上下文。",
   // settings.contextViewGrants.alreadyRevoked
   "{agent}'s access was already revoked.": "{agent} 的权限已经被撤销了。",
   // settings.contextViewGrants.grantTitle

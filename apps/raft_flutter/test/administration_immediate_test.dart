@@ -14,7 +14,10 @@ typedef _Route = Object? Function(dynamic data);
 
 class _Client extends RaftClient {
   _Client(this.routes)
-    : super(origin: 'https://raft.invalid', sessionStore: MemorySessionStore()) {
+    : super(
+        origin: 'https://raft.invalid',
+        sessionStore: MemorySessionStore(),
+      ) {
     user = RaftRecord({'id': 'u-owner', 'name': 'owner'});
     selectServer('s1');
   }
@@ -88,7 +91,8 @@ Map<String, _Route> _routes({
     _member('u-dana', 'dana', 'member'),
   ],
   'GET /agents': (_) =>
-      agents ?? [_agent('a-bot', 'bot', 'admin'), _agent('a-helper', 'helper', 'member')],
+      agents ??
+      [_agent('a-bot', 'bot', 'admin'), _agent('a-helper', 'helper', 'member')],
   'GET /servers/s1/invites': (_) => [],
   'GET /servers/s1/join-links': (_) => [],
   'GET /servers/s1/agreement': (_) => {
@@ -122,8 +126,7 @@ Map<String, _Route> _routes({
     'productAnalyticsEnabled': true,
     'canManageProductAnalytics': true,
   },
-  'GET /servers/s1/agent-context-view-grants': (_) =>
-      grants ?? {'grants': []},
+  'GET /servers/s1/agent-context-view-grants': (_) => grants ?? {'grants': []},
   'GET /channels': (_) => [
     {'id': 'c-all', 'name': 'all', 'type': 'channel', 'joined': true},
   ],
@@ -485,10 +488,7 @@ void main() {
       await _pump(t, w);
       await pickDana(t);
       // Admin role: no read, no note.
-      expect(
-        c.sent('GET /servers/s1/members/u-owner/removal-impact'),
-        isEmpty,
-      );
+      expect(c.sent('GET /servers/s1/members/u-owner/removal-impact'), isEmpty);
       await t.tap(_key('admin-role-select'));
       await t.pumpAndSettle();
       await t.tap(find.text('Owner').last);
@@ -625,9 +625,8 @@ void main() {
       final (w, c) = _workspace(_routes(contextFlag: true));
       addTearDown(w.dispose);
       var fail = true;
-      c.routes['GET /servers/s1/agent-context-view-grants'] = (_) => fail
-          ? const RaftApiException('Boom', status: 500)
-          : {'grants': []};
+      c.routes['GET /servers/s1/agent-context-view-grants'] = (_) =>
+          fail ? const RaftApiException('Boom', status: 500) : {'grants': []};
       await _pump(t, w);
       expect(
         find.text("Couldn't load which agents have access."),
@@ -635,7 +634,9 @@ void main() {
       );
       // Grant access waits for the list.
       expect(
-        t.widget<RaftSettingsRecipeButton>(_key('context-view-grant-open')).onPressed,
+        t
+            .widget<RaftSettingsRecipeButton>(_key('context-view-grant-open'))
+            .onPressed,
         isNull,
       );
       fail = false;

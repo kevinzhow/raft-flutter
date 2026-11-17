@@ -6,7 +6,8 @@ import 'package:raft_ui/raft_ui.dart';
 
 import '../data/user_error.dart';
 import '../data/workspace_controller.dart';
-import 'management_support.dart' show pageIdentity, readPageSnapshot, writePageSnapshot;
+import 'management_support.dart'
+    show pageIdentity, readPageSnapshot, writePageSnapshot;
 
 /// `err.response?.data?.error || fallback`.
 String adminApiError(Object error, String fallback) =>
@@ -78,4 +79,3 @@ Future<bool> adminConfirm(
       ),
     ) ==
     true;
-

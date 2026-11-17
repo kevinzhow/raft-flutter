@@ -77,10 +77,7 @@ class _AdminsPreviewState extends State<_AdminsPreview> {
   );
 }
 
-@RaftPreviews(
-  'Administration: switch rows and links',
-  size: Size(760, 760),
-)
+@RaftPreviews('Administration: switch rows and links', size: Size(760, 760))
 Widget administrationFormsPreview() => const _FormsPreview();
 
 class _FormsPreview extends StatefulWidget {
@@ -150,7 +147,10 @@ class _FormsPreviewState extends State<_FormsPreview> {
   );
 }
 
-@RaftPreviews('Administration: onboarding and context access', size: Size(760, 820))
+@RaftPreviews(
+  'Administration: onboarding and context access',
+  size: Size(760, 820),
+)
 Widget administrationOnboardingPreview() => const _OnboardingPreview();
 
 class _OnboardingPreview extends StatefulWidget {
@@ -177,7 +177,9 @@ class _OnboardingPreviewState extends State<_OnboardingPreview> {
             onAgent: (v) => setState(() => agent = v),
             greeting: greeting,
             onGreeting: (v) => setState(() => greeting = v),
-            greetingFailure: greeting ? null : 'Failed to save the new agent greeting',
+            greetingFailure: greeting
+                ? null
+                : 'Failed to save the new agent greeting',
             showSetup: true,
             onFinishSetup: () {},
           ),

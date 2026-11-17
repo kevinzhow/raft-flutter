@@ -121,12 +121,12 @@ class _OnboardingState extends State<AdminOnboardingSection>
     setState(() => agentId = value);
     unawaited(
       agentSave.run(
-        () => saveSettings({
-          'onboardingAgentId': value.isEmpty ? null : value,
-        }).catchError((Object e) {
-          if (mounted) setState(() => agentId = previous);
-          throw e;
-        }),
+        () =>
+            saveSettings({'onboardingAgentId': value.isEmpty ? null : value})
+                .catchError((Object e) {
+                  if (mounted) setState(() => agentId = previous);
+                  throw e;
+                }),
         (e) => adminApiError(e, 'Failed to save onboarding agent'),
       ),
     );
@@ -136,11 +136,12 @@ class _OnboardingState extends State<AdminOnboardingSection>
     setState(() => greeting = checked);
     unawaited(
       greetingSave.run(
-        () => saveSettings({'agentAllChannelGreetingEnabled': checked})
-            .catchError((Object e) {
-              if (mounted) setState(() => greeting = !checked);
-              throw e;
-            }),
+        () =>
+            saveSettings({'agentAllChannelGreetingEnabled': checked})
+                .catchError((Object e) {
+                  if (mounted) setState(() => greeting = !checked);
+                  throw e;
+                }),
         (e) => adminApiError(e, 'Failed to save the new agent greeting'),
       ),
     );
@@ -164,7 +165,9 @@ class _OnboardingState extends State<AdminOnboardingSection>
       refreshServerSetup(w);
     } catch (e) {
       if (mounted) {
-        setState(() => error = adminApiError(e, 'Failed to reopen server setup'));
+        setState(
+          () => error = adminApiError(e, 'Failed to reopen server setup'),
+        );
       }
     } finally {
       if (mounted) setState(() => openingSetup = false);

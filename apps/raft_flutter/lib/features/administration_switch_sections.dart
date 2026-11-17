@@ -53,17 +53,14 @@ class _SystemChannelsState extends State<AdminSystemChannelsSection>
 
   Future<bool> saveHidden(bool checked) async {
     pending = checked;
-    final saved = await hideAllSave.run(
-      () async {
-        // #all has dedicated hide/restore endpoints; they need no channel id.
-        await w.command(
-          'POST',
-          '/channels/system/all/${checked ? 'hide' : 'restore'}',
-        );
-        await w.refreshChannels();
-      },
-      (e) => adminApiError(e, 'Failed to update #all channel setting'),
-    );
+    final saved = await hideAllSave.run(() async {
+      // #all has dedicated hide/restore endpoints; they need no channel id.
+      await w.command(
+        'POST',
+        '/channels/system/all/${checked ? 'hide' : 'restore'}',
+      );
+      await w.refreshChannels();
+    }, (e) => adminApiError(e, 'Failed to update #all channel setting'));
     pending = null;
     refresh();
     return saved;
@@ -81,8 +78,7 @@ class _SystemChannelsState extends State<AdminSystemChannelsSection>
       adminConfirm(
         context,
         title: 'Hide #all',
-        message:
-            '#all will disappear from channel lists, and server members and agents will no longer be able to read or post there — including you. Existing history is preserved. To bring it back, go to Settings → Administration → System Channels and turn off "Hide #all channel".',
+        message: '#all will disappear from channel lists, and server members and agents will no longer be able to read or post there — including you. Existing history is preserved. To bring it back, go to Settings → Administration → System Channels and turn off "Hide #all channel".',
         confirmLabel: 'Hide',
         loadingLabel: 'Updating…',
         confirmVariant: RaftButtonRecipeVariant.warning,
@@ -102,8 +98,7 @@ class _SystemChannelsState extends State<AdminSystemChannelsSection>
     child: RaftAdminImmediateSwitchRow(
       switchKey: const ValueKey('admin-hide-all'),
       title: 'Hide #all channel',
-      description:
-          'When enabled, #all disappears from channel lists, search, posting, members, and agent channel surfaces. Existing history is preserved.',
+      description: 'When enabled, #all disappears from channel lists, search, posting, members, and agent channel surfaces. Existing history is preserved.',
       checked: pending ?? currentHidden,
       onChanged: hideAllSave.saving ? null : changed,
       failure: hideAllSave.failure,
@@ -143,17 +138,14 @@ class _MemberPermissionsState extends State<AdminMemberPermissionsSection>
 
   Future<bool> saveHideHumans(bool checked) async {
     pending = checked;
-    final saved = await hideHumansSave.run(
-      () async {
-        await w.command(
-          'PATCH',
-          '/servers/${w.server!.id}',
-          data: {'hideHumansFromMembers': checked},
-        );
-        await w.recoverMembership();
-      },
-      (e) => adminApiError(e, 'Failed to update member permissions'),
-    );
+    final saved = await hideHumansSave.run(() async {
+      await w.command(
+        'PATCH',
+        '/servers/${w.server!.id}',
+        data: {'hideHumansFromMembers': checked},
+      );
+      await w.recoverMembership();
+    }, (e) => adminApiError(e, 'Failed to update member permissions'));
     pending = null;
     refresh();
     return saved;
@@ -186,8 +178,7 @@ class _MemberPermissionsState extends State<AdminMemberPermissionsSection>
       child: RaftAdminImmediateSwitchRow(
         switchKey: const ValueKey('admin-hide-humans'),
         title: 'Hide human directory and counts from members',
-        description:
-            'Member role users cannot see server-wide human lists or human counts.',
+        description: 'Member role users cannot see server-wide human lists or human counts.',
         checked: pending ?? stored,
         onChanged: !canEdit || hideHumansSave.saving
             ? null
@@ -230,18 +221,15 @@ class _TranslationState extends State<AdminTranslationSection> with _Refresh {
 
   Future<bool> saveEnabled(bool checked) async {
     pending = checked;
-    final saved = await enabledSave.run(
-      () async {
-        final response = await w.command(
-          'PATCH',
-          '/servers/${w.server!.id}/translation-settings',
-          data: {'translationEnabled': checked},
-        );
-        // Message rows follow the accepted gate without a reload.
-        w.services.translations.adoptServerSettings(response);
-      },
-      (e) => adminApiError(e, 'Failed to update server translation setting'),
-    );
+    final saved = await enabledSave.run(() async {
+      final response = await w.command(
+        'PATCH',
+        '/servers/${w.server!.id}/translation-settings',
+        data: {'translationEnabled': checked},
+      );
+      // Message rows follow the accepted gate without a reload.
+      w.services.translations.adoptServerSettings(response);
+    }, (e) => adminApiError(e, 'Failed to update server translation setting'));
     pending = null;
     refresh();
     return saved;
@@ -276,8 +264,7 @@ class _TranslationState extends State<AdminTranslationSection> with _Refresh {
       child: RaftAdminImmediateSwitchRow(
         switchKey: const ValueKey('admin-translation'),
         title: 'Enable message translation for this server',
-        description:
-            "Turn on message translation for this server. When this is off, members' language and display preferences will not translate messages here.",
+        description: "Turn on message translation for this server. When this is off, members' language and display preferences will not translate messages here.",
         checked: enabled,
         onChanged:
             enabledSave.saving || store.settingsLoading || !settings.canManage

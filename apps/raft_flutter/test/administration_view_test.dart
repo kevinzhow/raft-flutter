@@ -338,7 +338,9 @@ void main() {
       expect(_section('member-permissions'), findsOneWidget);
       // No editServerSettings: the switch is disabled.
       expect(
-        t.widget<RaftSwitch>(find.byKey(const ValueKey('admin-hide-humans'))).enabled,
+        t
+            .widget<RaftSwitch>(find.byKey(const ValueKey('admin-hide-humans')))
+            .enabled,
         isFalse,
       );
     });
@@ -431,7 +433,9 @@ void main() {
       ]);
     });
 
-    testWidgets('owners & admins: an admin may remove an admin agent', (t) async {
+    testWidgets('owners & admins: an admin may remove an admin agent', (
+      t,
+    ) async {
       final (w, _) = _workspace(_routes(), role: 'admin');
       addTearDown(w.dispose);
       await _pump(t, w);

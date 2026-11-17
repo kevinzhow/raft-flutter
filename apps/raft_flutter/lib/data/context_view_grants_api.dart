@@ -3,7 +3,14 @@
 // list, grant and revoke. Every route is behind `agent_context_view_v0`.
 import 'package:raft_client/raft_client.dart';
 
-import 'workspace_controller.dart';
+/// The workspace's fenced reads and writes (`WorkspaceController.query` /
+/// `.command`), passed in so this layer has no root dependency.
+class ContextViewGrantsApi {
+  const ContextViewGrantsApi({required this.query, required this.command});
+  final Future<dynamic> Function(String path) query;
+  final Future<dynamic> Function(String method, String path, {dynamic data})
+  command;
+}
 
 /// One active grant as the list shows it.
 class ContextViewGrant {
@@ -40,10 +47,10 @@ class ContextViewGrant {
 String _path(String serverId) => '/servers/$serverId/agent-context-view-grants';
 
 Future<List<ContextViewGrant>> listContextViewGrants(
-  WorkspaceController w,
+  ContextViewGrantsApi api,
   String serverId,
 ) async {
-  final data = await w.query(_path(serverId));
+  final data = await api.query(_path(serverId));
   final grants = data is Map ? data['grants'] : null;
   if (grants is! List) throw StateError('Malformed grants list');
   return [for (final g in grants) ?ContextViewGrant.parse(g)];
@@ -52,11 +59,11 @@ Future<List<ContextViewGrant>> listContextViewGrants(
 /// POST {agentId}: the active grant (an agent that already had one gets the
 /// same grant back).
 Future<ContextViewGrant> grantContextView(
-  WorkspaceController w,
+  ContextViewGrantsApi api,
   String serverId,
   String agentId,
 ) async {
-  final data = await w.command(
+  final data = await api.command(
     'POST',
     _path(serverId),
     data: {'agentId': agentId},
@@ -71,12 +78,12 @@ Future<ContextViewGrant> grantContextView(
 /// caller may not revoke, which reads the same) or says `revoked: false`. Any
 /// other failure throws.
 Future<bool> revokeContextViewGrant(
-  WorkspaceController w,
+  ContextViewGrantsApi api,
   String serverId,
   String grantId,
 ) async {
   try {
-    final data = await w.command('DELETE', '${_path(serverId)}/$grantId');
+    final data = await api.command('DELETE', '${_path(serverId)}/$grantId');
     return data is Map && data['revoked'] == true;
   } on RaftApiException catch (e) {
     if (e.status == 404 && e.code == 'context_view_grant_not_found') {

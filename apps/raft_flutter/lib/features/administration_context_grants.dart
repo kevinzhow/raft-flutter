@@ -88,6 +88,10 @@ class _GrantsCard extends StatefulWidget {
 class _GrantsState extends State<_GrantsCard> {
   WorkspaceController get w => widget.w;
   WorkspaceEntityDirectory get directory => w.services.entityDirectory;
+  late final api = ContextViewGrantsApi(
+    query: (path) => w.query(path),
+    command: (method, path, {data}) => w.command(method, path, data: data),
+  );
   List<ContextViewGrant>? grants;
   bool failed = false;
   int _ticket = 0;
@@ -119,7 +123,7 @@ class _GrantsState extends State<_GrantsCard> {
       grants = null;
       failed = false;
     });
-    listContextViewGrants(w, widget.serverId).then(
+    listContextViewGrants(api, widget.serverId).then(
       (value) {
         if (mounted && ticket == _ticket && identity == pageIdentity(w)) {
           setState(() => grants = value);
@@ -153,7 +157,9 @@ class _GrantsState extends State<_GrantsCard> {
   /// assistant, not an App Bot, not deleted, and not one that already has
   /// access.
   List<Map<String, dynamic>> get candidates {
-    final granted = {for (final g in grants ?? const <ContextViewGrant>[]) g.agentId};
+    final granted = {
+      for (final g in grants ?? const <ContextViewGrant>[]) g.agentId,
+    };
     return [
       for (final a in directory.authorAgents)
         if (a['id'] is String &&
@@ -205,7 +211,7 @@ class _GrantsState extends State<_GrantsCard> {
           onConfirm: () async {
             if (picked.value.isEmpty) return;
             final grant = await grantContextView(
-              w,
+              api,
               widget.serverId,
               picked.value,
             );
@@ -242,7 +248,7 @@ class _GrantsState extends State<_GrantsCard> {
         confirmKey: const ValueKey('context-view-revoke-confirm'),
         onConfirm: () async {
           final revoked = await revokeContextViewGrant(
-            w,
+            api,
             widget.serverId,
             grant.id,
           );
