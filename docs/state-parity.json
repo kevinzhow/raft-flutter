@@ -50114,7 +50114,7 @@
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
-      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@5035/METHOD:buildTimeline@114730/FUNCTION:timelineFor@118229": {
+      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@5035/METHOD:buildTimeline@113878/FUNCTION:timelineFor@117421": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
