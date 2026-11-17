@@ -22831,12 +22831,6 @@
         "owner": "design-system alignment",
         "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
       },
-      "packages/raft_ui/lib/src/composer_attachments.dart#local-function:CLASS:_AttachmentChipState@9629/METHOD:_buildRaft@10002/FUNCTION:wash@13631": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
-      },
       "packages/raft_ui/lib/src/composer_attachments.dart#method:RaftComposerAttachments.build": {
         "role": "unresolved",
         "familyRefs": [],
@@ -48590,24 +48584,6 @@
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
-      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5632/METHOD:buildWorkspace@47853/FUNCTION:<anonymous>@48091/FUNCTION:conversation@51205": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
-      },
-      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5632/METHOD:buildWorkspace@47853/FUNCTION:<anonymous>@48091/FUNCTION:workspace@64521": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
-      },
-      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5632/METHOD:settingsRailAction@108672/FUNCTION:action@108706": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
-      },
       "packages/raft_ui/lib/src/mobile_nav_server.dart#local-function:CLASS:_RaftMobileNavServerTabState@5642/METHOD:_popover@14647/FUNCTION:barrier@15930": {
         "role": "unresolved",
         "familyRefs": [],
@@ -49309,6 +49285,84 @@
         "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
       },
       "packages/raft_ui/lib/src/meter.dart#method:RaftMeter.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/composer_attachments.dart#local-function:CLASS:_AttachmentChipState@10081/METHOD:_buildRaft@10454/FUNCTION:wash@14083": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5660/METHOD:buildWorkspace@48017/FUNCTION:<anonymous>@48255/FUNCTION:conversation@51369": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5660/METHOD:buildWorkspace@48017/FUNCTION:<anonymous>@48255/FUNCTION:workspace@64685": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5660/METHOD:settingsRailAction@108836/FUNCTION:action@108870": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/limit_notice.dart#class:LimitNoticeHost": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/limit_notice.dart#class:_LimitNoticeHostState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/limit_notice.dart#function:openWebBillingOrToast": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved surface_factory; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/limit_notice.dart#function:showLimitNotice": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved surface_factory; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/limit_notice.dart#method:LimitNoticeHost.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/limit_notice.dart#method:_LimitNoticeHostState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/limit_notice.dart#method:_LimitNoticeHostState.didUpdateWidget": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/composer_attachments.dart#function:_failedReason": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/composer_attachments.dart#function:_withReason": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
@@ -52419,6 +52473,24 @@
         ],
         "mountStatus": "unresolved",
         "reason": "Resolved function owns a surface call; actual target, route and state are not yet observed."
+      },
+      "surface:apps/raft_flutter/lib/features/limit_notice.dart#function:openWebBillingOrToast": {
+        "owner": "design-system alignment",
+        "kind": "surface_factory_candidate",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/limit_notice.dart#function:openWebBillingOrToast"
+        ],
+        "mountStatus": "unresolved",
+        "reason": "Resolved function owns a surface call; actual target, route and state are not yet observed."
+      },
+      "surface:apps/raft_flutter/lib/features/limit_notice.dart#function:showLimitNotice": {
+        "owner": "design-system alignment",
+        "kind": "surface_factory_candidate",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/limit_notice.dart#function:showLimitNotice"
+        ],
+        "mountStatus": "unresolved",
+        "reason": "Resolved function owns a surface call; actual target, route and state are not yet observed."
       }
     },
     "requirements": {
@@ -55233,6 +55305,18 @@
         "entryId": "surface:apps/raft_flutter/lib/features/computer_runtime_claude_limit_resets.dart#function:showComputerClaudeLimitResetsDialog",
         "applicability": "unknown",
         "owner": "WP-COMP2 runtime usage card",
+        "reason": "Real entry and applicable theme/input/state dimensions require source review and bound execution."
+      },
+      "surface:apps/raft_flutter/lib/features/limit_notice.dart#function:openWebBillingOrToast:applicability": {
+        "entryId": "surface:apps/raft_flutter/lib/features/limit_notice.dart#function:openWebBillingOrToast",
+        "applicability": "unknown",
+        "owner": "design-system alignment",
+        "reason": "Real entry and applicable theme/input/state dimensions require source review and bound execution."
+      },
+      "surface:apps/raft_flutter/lib/features/limit_notice.dart#function:showLimitNotice:applicability": {
+        "entryId": "surface:apps/raft_flutter/lib/features/limit_notice.dart#function:showLimitNotice",
+        "applicability": "unknown",
+        "owner": "design-system alignment",
         "reason": "Real entry and applicable theme/input/state dimensions require source review and bound execution."
       }
     },

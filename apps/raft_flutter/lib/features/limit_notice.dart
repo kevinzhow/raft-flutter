@@ -297,6 +297,22 @@ LimitNoticeCopy limitNoticeCopyFor(
   }
 }
 
+/// Opens the Web's Plan & Billing page at once (no request first). A browser
+/// that cannot open is a visible toast, never a silent close.
+Future<void> openWebBillingOrToast(
+  BuildContext context,
+  WorkspaceController w, {
+  String? gate,
+}) async {
+  if (!await w.openWebBilling(gate: gate) && context.mounted) {
+    showRaftToast(
+      context,
+      "Stripe checkout didn't open. Try again.",
+      tone: RaftToastRecipeTone.error,
+    );
+  }
+}
+
 /// Shows the limit notice: [title] and [hint] (from [limitNoticeCopy]), one
 /// "Upgrade to Pro" that opens the Web's Plan & Billing page for [gate]
 /// (Web reopens its upgrade dialog for that paywall there) and Close.
@@ -321,15 +337,7 @@ Future<void> showLimitNotice(
       initialFocusCancel: true,
       // No request before the browser opens (Kevin 2654e77c). A browser that
       // cannot open is a visible toast, not a silent close.
-      onConfirm: () async {
-        if (!await w.openWebBilling(gate: gate) && context.mounted) {
-          showRaftToast(
-            context,
-            "Stripe checkout didn't open. Try again.",
-            tone: RaftToastRecipeTone.error,
-          );
-        }
-      },
+      onConfirm: () => openWebBillingOrToast(context, w, gate: gate),
     ),
   );
 }

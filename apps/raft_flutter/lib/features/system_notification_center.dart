@@ -22,7 +22,7 @@ import 'fleet_views.dart';
 import 'account_security_recovery.dart';
 import 'joint_invite_errors.dart';
 import 'source_feedback_view.dart';
-import 'workspace_web_billing.dart';
+import 'limit_notice.dart' show openWebBillingOrToast;
 import 'system_notification_copy.dart';
 
 /// The mounted Web system-notification aggregator, separate from message Activity
@@ -507,7 +507,12 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
               managesBilling ? 'Add seats' : 'Ask an owner',
             ),
             primary: true,
-            onPressed: () => unawaited(openSeatJoinBilling(n, scope)),
+            onPressed: () {
+              if (!live(n, scope)) return;
+              final host = context;
+              close();
+              unawaited(openWebBillingOrToast(host, w));
+            },
           )
         else if (n.destination == SystemNoticeDestination.jointInvite)
           RaftNotificationAction(
@@ -588,19 +593,6 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
     } finally {
       if (mounted) setState(() => acceptingJointInvite = null);
       if (!disposed) unawaited(store.refreshJointInvites());
-    }
-  }
-
-  Future<void> openSeatJoinBilling(SystemNotice n, String captured) async {
-    if (!live(n, captured)) return;
-    final overlayContext = context;
-    close();
-    if (!await w.openWebBilling() && overlayContext.mounted) {
-      showRaftToast(
-        overlayContext,
-        "Stripe checkout didn't open. Try again.",
-        tone: RaftToastRecipeTone.error,
-      );
     }
   }
 
