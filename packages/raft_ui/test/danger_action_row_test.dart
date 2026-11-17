@@ -2,31 +2,27 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
 
-Widget _host(
-  double width, {
-  bool dark = false,
-  bool warning = false,
-}) => MaterialApp(
-  theme: raftTheme(dark: dark),
-  home: Scaffold(
-    body: Align(
-      alignment: Alignment.topLeft,
-      child: SizedBox(
-        width: width,
-        child: RaftDangerActionRow(
-          title: 'Delete server',
-          description:
-              'Permanently remove this server and all its data. This cannot be undone.',
-          actionLabel: 'Delete server',
-          actionGlyph: warning ? null : RaftGlyph.trash2,
-          warning: warning,
-          actionKey: const Key('action'),
-          onAction: () {},
+Widget _host(double width, {bool dark = false, bool warning = false}) =>
+    MaterialApp(
+      theme: raftTheme(dark: dark),
+      home: Scaffold(
+        body: Align(
+          alignment: Alignment.topLeft,
+          child: SizedBox(
+            width: width,
+            child: RaftDangerActionRow(
+              title: 'Delete server',
+              description: 'Permanently remove this server and all its data. This cannot be undone.',
+              actionLabel: 'Delete server',
+              actionGlyph: warning ? null : RaftGlyph.trash2,
+              warning: warning,
+              actionKey: const Key('action'),
+              onAction: () {},
+            ),
+          ),
         ),
       ),
-    ),
-  ),
-);
+    );
 
 void main() {
   // DangerActionRow.tsx: the button sits at the row's end, and drops under

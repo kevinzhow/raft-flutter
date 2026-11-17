@@ -43,7 +43,10 @@ void main() {
     final calls = <String>[];
     await t.pumpWidget(
       _host(
-        _about(onAndroid: () => calls.add('apk'), onIos: () => calls.add('ios')),
+        _about(
+          onAndroid: () => calls.add('apk'),
+          onIos: () => calls.add('ios'),
+        ),
         open: calls.add,
       ),
     );
@@ -95,28 +98,29 @@ void main() {
       ['Get it on Google Play', 'Download Android APK'],
     ),
   ]) {
-    testWidgets('$platform phone: its store as a button, the others as links, no QR', (
-      t,
-    ) async {
-      await t.pumpWidget(_host(_about(), platform: platform));
-      expect(find.byKey(const ValueKey('mobile-download-qr')), findsNothing);
-      expect(find.text("Scan with your phone's camera."), findsNothing);
-      final button = _storeButton;
-      expect(button, findsOneWidget);
-      expect(
-        find.descendant(of: button, matching: find.text(store)),
-        findsOneWidget,
-      );
-      for (final label in others) {
-        expect(find.text(label), findsOneWidget);
+    testWidgets(
+      '$platform phone: its store as a button, the others as links, no QR',
+      (t) async {
+        await t.pumpWidget(_host(_about(), platform: platform));
+        expect(find.byKey(const ValueKey('mobile-download-qr')), findsNothing);
+        expect(find.text("Scan with your phone's camera."), findsNothing);
+        final button = _storeButton;
+        expect(button, findsOneWidget);
         expect(
-          find.descendant(of: button, matching: find.text(label)),
-          findsNothing,
+          find.descendant(of: button, matching: find.text(store)),
+          findsOneWidget,
         );
-      }
-      // The store is the button, not also a link.
-      expect(find.text(store), findsOneWidget);
-    });
+        for (final label in others) {
+          expect(find.text(label), findsOneWidget);
+          expect(
+            find.descendant(of: button, matching: find.text(label)),
+            findsNothing,
+          );
+        }
+        // The store is the button, not also a link.
+        expect(find.text(store), findsOneWidget);
+      },
+    );
   }
 
   testWidgets('Version card links to the source code and names the license', (
@@ -124,10 +128,7 @@ void main() {
   ) async {
     final opened = <String>[];
     await t.pumpWidget(
-      _host(
-        const RaftSettingsAbout(version: '1.24.0'),
-        open: opened.add,
-      ),
+      _host(const RaftSettingsAbout(version: '1.24.0'), open: opened.add),
     );
     expect(find.text('Raft License'), findsOneWidget);
     await t.tap(find.text('Source code'));

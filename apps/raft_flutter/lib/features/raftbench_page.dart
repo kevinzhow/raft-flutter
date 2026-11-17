@@ -72,8 +72,7 @@ class _RaftbenchPageState extends State<RaftbenchPage> {
     if (!canUseRaftBench(w.server?.string('role'))) {
       return const RaftbenchNotice(
         title: 'RaftBench is for server administrators',
-        help:
-            'Only this server’s owner or administrators can open this overview. Existing channel permissions still apply.',
+        help: 'Only this server’s owner or administrators can open this overview. Existing channel permissions still apply.',
       );
     }
     final flag = widget.flag;
@@ -85,8 +84,7 @@ class _RaftbenchPageState extends State<RaftbenchPage> {
       }
       return const RaftbenchNotice(
         title: 'RaftBench is not enabled for this server',
-        help:
-            'This pilot is off by default and only available to explicitly enrolled servers.',
+        help: 'This pilot is off by default and only available to explicitly enrolled servers.',
       );
     }
     return _AdminPage(

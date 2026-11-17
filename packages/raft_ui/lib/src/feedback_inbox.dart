@@ -191,7 +191,11 @@ class RaftFeedbackInbox extends StatelessWidget {
                         ? emptyState
                         : Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [notice!, const SizedBox(height: 12), emptyState],
+                            children: [
+                              notice!,
+                              const SizedBox(height: 12),
+                              emptyState,
+                            ],
                           ),
                   ),
                 ),

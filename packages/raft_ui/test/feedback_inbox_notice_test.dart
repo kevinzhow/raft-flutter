@@ -35,11 +35,16 @@ RaftFeedbackInbox _inbox({
 );
 
 void main() {
-  testWidgets('the agent hint sits above the rows, with a bold lead', (t) async {
+  testWidgets('the agent hint sits above the rows, with a bold lead', (
+    t,
+  ) async {
     await t.pumpWidget(_host(_inbox()));
     final hint = find.byKey(const ValueKey('settings-feedback-agent-hint'));
     expect(hint, findsOneWidget);
-    expect(find.textContaining('Any agent can draft your feedback'), findsOneWidget);
+    expect(
+      find.textContaining('Any agent can draft your feedback'),
+      findsOneWidget,
+    );
     expect(
       t.getBottomLeft(hint).dy,
       lessThanOrEqualTo(
@@ -63,15 +68,24 @@ void main() {
       find.byKey(const ValueKey('settings-feedback-list-degraded')),
       findsOneWidget,
     );
-    expect(find.text("Feedback can't load right now. Retrying…"), findsOneWidget);
-    expect(find.byKey(const ValueKey('settings-feedback-agent-hint')), findsNothing);
+    expect(
+      find.text("Feedback can't load right now. Retrying…"),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey('settings-feedback-agent-hint')),
+      findsNothing,
+    );
     // The list stays loading under it: never the "No feedback yet" state.
     expect(find.text('No feedback yet'), findsNothing);
   });
 
   testWidgets('the hint is gone once an agent draft was sent', (t) async {
     await t.pumpWidget(_host(_inbox(showAgentHint: false)));
-    expect(find.byKey(const ValueKey('settings-feedback-agent-hint')), findsNothing);
+    expect(
+      find.byKey(const ValueKey('settings-feedback-agent-hint')),
+      findsNothing,
+    );
     expect(find.byKey(const ValueKey('feedback-ticket-t1')), findsOneWidget);
   });
 

@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:raft_client/raft_client.dart' show RaftApiException;
 
 import 'raftbench_reader_controller.dart';
+
 import 'package:raft_ui/raft_ui.dart'
     show
         RaftForegroundPeriodic,
@@ -19,13 +20,12 @@ import 'package:raft_ui/raft_ui.dart'
         raftbenchHistoryDays;
 
 /// One HTTP call of the signed-in session (`RaftClient.request`).
-typedef RaftbenchRequest =
-    Future<dynamic> Function(
-      String method,
-      String path, {
-      Object? data,
-      Map<String, dynamic>? query,
-    });
+typedef RaftbenchRequest = Future<dynamic> Function(
+  String method,
+  String path, {
+  Object? data,
+  Map<String, dynamic>? query,
+});
 
 /// The conversation-insights panel (Web `HostedAnalysis.tsx`): reads the
 /// server-owned dashboard every 5 seconds while the page is open, and writes

@@ -12,36 +12,42 @@ Widget _host(Widget child) => MaterialApp(
 );
 
 void main() {
-  testWidgets('switch rows centre the switch against their text (v1.24 items-center)', (t) async {
-    await t.pumpWidget(
-      _host(
-        RaftPublicVisibilityCard(
-          publiclyVisible: true,
-          onPublic: (_) {},
-          searchEngines: true,
-          onSearchEngines: (_) {},
-          channels: const [],
+  testWidgets(
+    'switch rows centre the switch against their text (v1.24 items-center)',
+    (t) async {
+      await t.pumpWidget(
+        _host(
+          RaftPublicVisibilityCard(
+            publiclyVisible: true,
+            onPublic: (_) {},
+            searchEngines: true,
+            onSearchEngines: (_) {},
+            channels: const [],
+          ),
         ),
-      ),
-    );
-    for (final key in const ['public-visibility-switch', 'public-search-switch']) {
-      final s = find.byKey(ValueKey(key));
-      if (s.evaluate().isEmpty) continue;
-      final row = t.widget<Row>(
-        find.ancestor(of: s, matching: find.byType(Row)).first,
       );
-      expect(row.crossAxisAlignment, CrossAxisAlignment.center, reason: key);
-    }
-  });
+      for (final key in const [
+        'public-visibility-switch',
+        'public-search-switch',
+      ]) {
+        final s = find.byKey(ValueKey(key));
+        if (s.evaluate().isEmpty) continue;
+        final row = t.widget<Row>(
+          find.ancestor(of: s, matching: find.byType(Row)).first,
+        );
+        expect(row.crossAxisAlignment, CrossAxisAlignment.center, reason: key);
+      }
+    },
+  );
 
-  testWidgets('an empty channel list is a dashed hairline box with no fill', (t) async {
+  testWidgets('an empty channel list is a dashed hairline box with no fill', (
+    t,
+  ) async {
     await t.pumpWidget(_host(const RaftPublicChannelList(channels: [])));
     final text = find.text('No channels visible to visitors yet');
     expect(text, findsOneWidget);
     final paint = t.widget<CustomPaint>(
-      find
-          .ancestor(of: text, matching: find.byType(CustomPaint))
-          .first,
+      find.ancestor(of: text, matching: find.byType(CustomPaint)).first,
     );
     final painter = paint.foregroundPainter;
     expect(painter, isA<RaftDashedBorderPainter>());

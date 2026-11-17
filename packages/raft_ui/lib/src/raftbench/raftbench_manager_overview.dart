@@ -399,9 +399,9 @@ class _Overview extends StatelessWidget {
     final window = controller.window;
     String span(int start, int end) {
       final locale = RaftbenchFormat(context).locale;
-      String day(int millis) => DateFormat.MMMd(
-        locale,
-      ).format(DateTime.fromMillisecondsSinceEpoch(millis, isUtc: true));
+      String day(int millis) =>
+          DateFormat.MMMd(locale)
+              .format(DateTime.fromMillisecondsSinceEpoch(millis, isUtc: true));
       return '${day(start)} – ${day(end - 86400000)}';
     }
 

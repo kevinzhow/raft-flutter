@@ -9,8 +9,7 @@ import '../../raft_ui.dart';
 import 'raftbench_parts.dart';
 
 const _statusText = {
-  'stale':
-      'A source message changed or was deleted. The old result is hidden; the service will analyze refreshed material.',
+  'stale': 'A source message changed or was deleted. The old result is hidden; the service will analyze refreshed material.',
   'queued': 'Waiting for the analysis agent…',
   'running': 'Reading channel messages…',
   'ready': 'Analysis complete',

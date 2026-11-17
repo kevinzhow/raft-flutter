@@ -13,12 +13,9 @@ String _label(RaftbenchSignal kind) => switch (kind) {
   RaftbenchSignal.repetition => 'Repeated agent messages',
 };
 String _rule(RaftbenchSignal kind) => switch (kind) {
-  RaftbenchSignal.frustration =>
-    'Explicit English/Chinese frustration phrase. Quotations, negation and sarcasm can be misread; inspect the context.',
-  RaftbenchSignal.negative =>
-    'Negative wording in a human message. This is a review cue, not proof of failure.',
-  RaftbenchSignal.repetition =>
-    'Identical text after case/whitespace normalization, at least 16 characters, from the same agent in the same channel within 15 minutes. Legitimate reminders can match.',
+  RaftbenchSignal.frustration => 'Explicit English/Chinese frustration phrase. Quotations, negation and sarcasm can be misread; inspect the context.',
+  RaftbenchSignal.negative => 'Negative wording in a human message. This is a review cue, not proof of failure.',
+  RaftbenchSignal.repetition => 'Identical text after case/whitespace normalization, at least 16 characters, from the same agent in the same channel within 15 minutes. Legitimate reminders can match.',
 };
 String _reviewLabel(RaftbenchReview status) => switch (status) {
   RaftbenchReview.needsReview => 'Needs review',

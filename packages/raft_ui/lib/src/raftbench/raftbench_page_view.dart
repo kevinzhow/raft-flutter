@@ -82,8 +82,7 @@ class RaftbenchServiceDmNotice extends StatelessWidget {
     child: const RaftBanner(
       status: RaftBannerRecipeStatus.info,
       textAlign: TextAlign.center,
-      description:
-          'This read-only analysis agent does not reply to DMs. Results appear on the RaftBench page.',
+      description: 'This read-only analysis agent does not reply to DMs. Results appear on the RaftBench page.',
     ),
   );
 }

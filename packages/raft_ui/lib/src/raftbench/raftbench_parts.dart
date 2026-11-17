@@ -53,9 +53,9 @@ class RaftbenchType {
 /// `react-intl` formats with the page's defaults: numeric date, `h:mm` time.
 class RaftbenchFormat {
   RaftbenchFormat(BuildContext context)
-    : locale = Localizations.localeOf(
-        context,
-      ).toLanguageTag().replaceAll('-', '_');
+    : locale = Localizations.localeOf(context)
+          .toLanguageTag()
+          .replaceAll('-', '_');
   final String locale;
 
   String number(num value, {int maximumFractionDigits = 3}) =>

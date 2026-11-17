@@ -11,8 +11,11 @@ import 'raftbench_rules.dart';
 /// `EvidenceChip`). [channelId] is the cited channel's id, [target] the
 /// reference as written (`#name` or `#name:shortId`). Completes with false
 /// when the source no longer resolves, so the chip turns static.
-typedef RaftbenchOpenEvidence =
-    Future<bool> Function(String channelId, String target, String messageId);
+typedef RaftbenchOpenEvidence = Future<bool> Function(
+  String channelId,
+  String target,
+  String messageId,
+);
 
 /// The `all` scope of the page's channel picker.
 const raftbenchWorkspaceScope = 'workspace';

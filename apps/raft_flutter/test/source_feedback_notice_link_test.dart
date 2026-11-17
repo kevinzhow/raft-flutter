@@ -188,10 +188,14 @@ void main() {
       );
       await t.pumpAndSettle();
       requests = 0;
-      addTearDown(() => expect(requests, 0, reason: 'copying makes no request'));
+      addTearDown(
+        () => expect(requests, 0, reason: 'copying makes no request'),
+      );
     }
 
-    final button = find.byKey(const ValueKey('settings-feedback-ticket-copy-link'));
+    final button = find.byKey(
+      const ValueKey('settings-feedback-ticket-copy-link'),
+    );
 
     testWidgets('copies the ticket link at once and says so', (t) async {
       await open(t, link: (id) => 'https://app.example/s/acme/t/$id');
@@ -229,6 +233,9 @@ void main() {
       'https://app.example.com/s/acme/settings/feedback/ticket/a%20b',
     );
     expect(feedbackTicketUrl(origin: origin, slug: '', ticketId: 'x'), isNull);
-    expect(feedbackTicketUrl(origin: origin, slug: null, ticketId: 'x'), isNull);
+    expect(
+      feedbackTicketUrl(origin: origin, slug: null, ticketId: 'x'),
+      isNull,
+    );
   });
 }

@@ -688,9 +688,7 @@ class _Analysis extends StatelessWidget {
           Text(
             raftFormat(
               context,
-              batch
-                  ? 'Reading new messages. Findings so far stay visible.'
-                  : '{count} messages read. The total is not known yet; this bar does not show a percentage.',
+              batch ? 'Reading new messages. Findings so far stay visible.' : '{count} messages read. The total is not known yet; this bar does not show a percentage.',
               {'count': RaftbenchFormat(context).number(count)},
             ),
             style: hint,

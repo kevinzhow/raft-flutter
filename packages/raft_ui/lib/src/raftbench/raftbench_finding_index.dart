@@ -164,14 +164,10 @@ class RaftbenchFindingIndex extends StatelessWidget {
   /// The ICU plural of the retry lines, one catalog key per arm.
   static String _retry(BuildContext context, String stream, int count) {
     final key = switch ((stream == 'thread', count == 1)) {
-      (true, true) =>
-        'Thread replies failed to load 1 time; unread history is kept for retry.',
-      (true, false) =>
-        'Thread replies failed to load {count} times; unread history is kept for retry.',
-      (false, true) =>
-        'Channel messages failed to load 1 time; unread history is kept for retry.',
-      (false, false) =>
-        'Channel messages failed to load {count} times; unread history is kept for retry.',
+      (true, true) => 'Thread replies failed to load 1 time; unread history is kept for retry.',
+      (true, false) => 'Thread replies failed to load {count} times; unread history is kept for retry.',
+      (false, true) => 'Channel messages failed to load 1 time; unread history is kept for retry.',
+      (false, false) => 'Channel messages failed to load {count} times; unread history is kept for retry.',
     };
     return raftFormat(context, key, {'count': count});
   }

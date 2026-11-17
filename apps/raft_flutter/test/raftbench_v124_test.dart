@@ -392,9 +392,8 @@ void main() {
       expect(d.run!.unreadFailures, {'thread': 2});
       expect(d.triage!.usage, 13);
       expect(
-        RaftbenchDashboard.parse(
-          raftbenchFixture('dashboard-ready'),
-        ).kindCounts,
+        RaftbenchDashboard.parse(raftbenchFixture('dashboard-ready'))
+            .kindCounts,
         isNull,
       );
     });

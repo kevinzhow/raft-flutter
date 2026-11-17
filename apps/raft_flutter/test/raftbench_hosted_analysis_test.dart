@@ -170,36 +170,40 @@ void main() {
     await unmount(t);
   });
 
-  testWidgets('queued and running show the progress bar and the batch counters', (
-    t,
-  ) async {
-    final c = await _mount(t, 'dashboard-running');
-    await _openCoverage(t);
-    expect(_text('Reading channel messages…'), findsOneWidget);
-    expect(_text('Read 96 of 189 messages so far'), findsOneWidget);
-    expect(
-      _text('Reading new messages. Findings so far stay visible.'),
-      findsOneWidget,
-    );
-    expect(
-      _text(
-        'New messages are read in the background. Findings so far stay visible.',
-      ),
-      findsOneWidget,
-    );
-    expect(_text('Current cloud agent model: DeepSeek Flash'), findsOneWidget);
-    expect(
-      find.textContaining(
-        '2 channels · history continues in background; checks for new messages every 15 minutes',
-      ),
-      findsOneWidget,
-    );
-    // Selected sources match the saved ones.
-    expect(c.controller.selected, [_c1, _c2]);
-    // A running analysis shows no verdict line yet.
-    expect(_text('Analysis complete'), findsNothing);
-    await unmount(t);
-  });
+  testWidgets(
+    'queued and running show the progress bar and the batch counters',
+    (t) async {
+      final c = await _mount(t, 'dashboard-running');
+      await _openCoverage(t);
+      expect(_text('Reading channel messages…'), findsOneWidget);
+      expect(_text('Read 96 of 189 messages so far'), findsOneWidget);
+      expect(
+        _text('Reading new messages. Findings so far stay visible.'),
+        findsOneWidget,
+      );
+      expect(
+        _text(
+          'New messages are read in the background. Findings so far stay visible.',
+        ),
+        findsOneWidget,
+      );
+      expect(
+        _text('Current cloud agent model: DeepSeek Flash'),
+        findsOneWidget,
+      );
+      expect(
+        find.textContaining(
+          '2 channels · history continues in background; checks for new messages every 15 minutes',
+        ),
+        findsOneWidget,
+      );
+      // Selected sources match the saved ones.
+      expect(c.controller.selected, [_c1, _c2]);
+      // A running analysis shows no verdict line yet.
+      expect(_text('Analysis complete'), findsNothing);
+      await unmount(t);
+    },
+  );
 
   testWidgets('ready: findings, evidence references and the proposal', (
     t,

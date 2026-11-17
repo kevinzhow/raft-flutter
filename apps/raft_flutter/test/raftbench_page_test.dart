@@ -332,9 +332,8 @@ void main() {
     expect(location.route, RaftRoute.settings);
     expect(location.settingsPath, ['raftbench']);
     expect(
-      RaftLocation.fromUri(
-        Uri.parse('/s/acme/settings/raftbench'),
-      ).settingsPath,
+      RaftLocation.fromUri(Uri.parse('/s/acme/settings/raftbench'))
+          .settingsPath,
       ['raftbench'],
     );
     expect(

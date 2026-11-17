@@ -476,8 +476,7 @@ class RaftMessagingBridgesSection extends StatelessWidget {
             size: RaftBannerRecipeSize.lg,
             glyph: RaftGlyph.circleAlert,
             title: 'Raft for Slack',
-            description:
-                'The Slack bridge operation failed. No setup state was assumed.',
+            description: 'The Slack bridge operation failed. No setup state was assumed.',
           )
         else
           ?child,
