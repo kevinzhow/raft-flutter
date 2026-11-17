@@ -37,6 +37,14 @@ class _ArchivedChannelsSectionState extends State<ArchivedChannelsSection> {
   static bool _archived(RaftChannel c) =>
       c.archived && const {'channel', 'private', 'joint'}.contains(c.type);
 
+  /// `isSidebarExternalSectionChannel`: a joint channel, or a public or private
+  /// one with a Guest or an open external invite (`hasExternalRelation`).
+  /// External comes first in the type label (Q12 A), as the header tags it.
+  static bool _external(RaftChannel c) =>
+      c.type == 'joint' ||
+      c.hasExternalRelation == true &&
+          const {'channel', 'private'}.contains(c.type);
+
   List<RaftChannel> get archived =>
       [...w.channels.where(_archived)]..sort((a, b) {
         final byDate = b.string('archivedAt').compareTo(a.string('archivedAt'));
@@ -106,7 +114,10 @@ class _ArchivedChannelsSectionState extends State<ArchivedChannelsSection> {
               name: c.name,
               type: c.type,
               metadata: raftFormat(context, '{type} · Archived {date}', {
-                'type': RaftArchivedChannelsSection.typeLabel(context, c.type),
+                'type': RaftArchivedChannelsSection.typeLabel(
+                  context,
+                  _external(c) ? 'joint' : c.type,
+                ),
                 'date': formatter.mediumDateTime(c.json['archivedAt']),
               }),
             ),
