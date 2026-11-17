@@ -80,7 +80,11 @@ class ChannelActivityStore extends ChangeNotifier {
   VoidCallback retain(String id) {
     _retained[id] = (_retained[id] ?? 0) + 1;
     final retainedWindow = windows.putIfAbsent(id, ChannelActivityWindow.new);
-    unawaited(loadLatest(id));
+    // A mounting conversation reads the loading state in its first build.
+    // A synchronous notification here would dirty siblings during layout.
+    if (!retainedWindow.loading) {
+      unawaited(loadLatest(id, notifyLoading: false));
+    }
     var released = false;
     return () {
       if (released) return;
@@ -124,13 +128,13 @@ class ChannelActivityStore extends ChangeNotifier {
     window.historyLimited = page['historyLimited'] == true;
   }
 
-  Future<void> loadLatest(String id) async {
+  Future<void> loadLatest(String id, {bool notifyLoading = true}) async {
     final window = windows[id];
     if (_ended || window == null) return;
     final generation = window.generation = ++_generation;
     window.loading = true;
     window.loadingOlder = false;
-    notifyListeners();
+    if (notifyLoading) notifyListeners();
     try {
       final page = await read(id, null);
       if (!_current(id, window, generation)) return;

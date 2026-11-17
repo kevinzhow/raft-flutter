@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
+import 'package:raft_flutter/data/workspace_controller.dart';
+import 'package:raft_flutter/features/channel_activity_session.dart';
 import 'package:raft_flutter/features/chat_view.dart';
 import 'package:raft_ui/raft_ui.dart';
 
+import 'activity_incremental_refresh_test.dart' show ActivityClient;
 import 'message_presentation_test.dart' show fixture;
 
 Map<String, dynamic> activityRow(String id, int seq, String at) => {
@@ -18,6 +21,55 @@ Map<String, dynamic> activityRow(String id, int seq, String at) => {
 };
 
 void main() {
+  testWidgets('mounting a second conversation does not notify during layout', (
+    t,
+  ) async {
+    final client = ActivityClient();
+    await client.login('fixture', 'fixture');
+    client.selectServer('s1');
+    final w = WorkspaceController(client)
+      ..server = RaftRecord({'id': 's1', 'role': 'owner'})
+      ..channel = RaftChannel({
+        'id': 'c1',
+        'type': 'channel',
+        'threadSort': 'activity',
+      });
+    addTearDown(w.dispose);
+    client.responses['POST /feature-flags/evaluate'] = {
+      'evaluations': [
+        {'key': 'channel_thread_sort_v0', 'enabled': true},
+      ],
+    };
+    client.responses['GET /messages/channel/c1/by-activity'] = {'messages': []};
+    final session = ChannelActivitySession.of(w);
+    await session.ready;
+    Widget view({required bool show}) => MaterialApp(
+      theme: raftTheme(),
+      home: Scaffold(
+        body: Column(
+          children: [
+            ListenableBuilder(
+              listenable: session,
+              builder: (_, _) => const SizedBox(),
+            ),
+            Expanded(
+              child: LayoutBuilder(
+                builder: (_, _) =>
+                    show ? RaftChatView(controller: w) : const SizedBox(),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+    await t.pumpWidget(view(show: false));
+    await t.pumpWidget(view(show: true));
+    await t.pumpAndSettle();
+    expect(t.takeException(), isNull);
+    expect(client.posts.where((p) => p.endsWith('/by-activity')), hasLength(1));
+    await t.pumpWidget(const SizedBox.shrink());
+  });
+
   testWidgets('activity channel reads its page and renders standalone order', (
     t,
   ) async {
