@@ -2795,13 +2795,33 @@
    "capability": "Settings > Server 'Archived channels' list: type + archived date, open channel, Unarchive",
    "background": false,
    "status": "covered",
-   "webEntry": "ArchivedChannelsSection.tsx in SettingsPanel",
+   "webEntry": "components/settings/ArchivedChannelsSection.tsx (Settings > Server, features/settings/server/ServerTabContent.tsx)",
    "gate": "archiveChannels",
    "flutterEntry": "archived_channels_section.dart (rendered by server_views.dart)",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/server_views.dart",
      "needle": "ArchivedChannelsSection(controller: w)"
+    }
+   ],
+   "justification": "Web 1.24 labels external channels (a joint channel, or one with Guests or an open invite) 'Joint channel' first. Flutter draws the type icon from channel.type: Web 1.24's external-channel glyph (lock with an arrow out) waits for the channel-kind icon of the external-channels package.",
+   "impact": "",
+   "size": ""
+  },
+  {
+   "kind": "ui",
+   "id": "ui:channels.orphaned-joint-channels-section",
+   "area": "channels",
+   "capability": "Settings > Server 'External channels nobody here is in': joint channels with no member of this server, with Disconnect (confirm, success toast, guests_present message)",
+   "background": false,
+   "status": "covered",
+   "webEntry": "components/settings/OrphanedJointChannelsSection.tsx (Settings > Server, features/settings/server/ServerTabContent.tsx)",
+   "gate": "federateChannels; host copies are not listed while external_channels_v1 is on",
+   "flutterEntry": "orphaned_joint_channels_section.dart (rendered by server_views.dart)",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/features/server_views.dart",
+     "needle": "OrphanedJointChannelsSection(controller: w)"
     }
    ],
    "justification": "",
@@ -18023,6 +18043,26 @@
     {
      "file": "apps/raft_flutter/lib/data/raftbench_overview_controller.dart",
      "needle": "'/billing/hosted-runtime-usage'"
+    }
+   ],
+   "justification": "",
+   "impact": "",
+   "size": ""
+  },
+  {
+   "kind": "endpoint",
+   "id": "GET /channels/joint-connections",
+   "area": "channels",
+   "capability": "List the joint channel copies this server holds (owner/admin), to offer Disconnect on the ones nobody here is in",
+   "background": false,
+   "status": "covered",
+   "webEntry": "components/settings/OrphanedJointChannelsSection.tsx (Settings > Server)",
+   "gate": "federateChannels capability",
+   "flutterEntry": "orphaned_joint_channels_section.dart: read once when the Server tab opens; a failed read lists nothing",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/features/orphaned_joint_channels_section.dart",
+     "needle": "/channels/joint-connections"
     }
    ],
    "justification": "",

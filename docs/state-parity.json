@@ -2908,6 +2908,33 @@
       ]
     },
     {
+      "id": "settings.orphaned-joint-channels",
+      "title": "Settings: External channels nobody here is in",
+      "webEntry": "packages/web/src/components/settings/OrphanedJointChannelsSection.tsx",
+      "flutterEntry": "apps/raft_flutter/lib/features/orphaned_joint_channels_section.dart",
+      "states": [
+        {
+          "state": "empty",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "na",
+          "justification": "Web renders nothing without federateChannels or while no joint copy is orphaned (and while the read has not answered or failed); the section is simply absent (orphaned_joint_channels_section_test)."
+        },
+        {
+          "state": "error",
+          "variant": "disconnect failed",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "gap",
+          "justification": "Web warning banner (orphaned-joint-channels-error) after a failed Disconnect, the guests_present sentence or the server text; no parity case (only unit tests) because the section needs a second server's joint copy.",
+          "size": "S",
+          "gapKind": "case-missing"
+        }
+      ]
+    },
+    {
       "id": "settings.billing",
       "title": "Settings: Plan & Billing",
       "webEntry": "packages/web/src/features/settings/billing/BillingTabContent.tsx, PlanSection.tsx, PlanBillingLoadingSection.tsx, DowngradeWarningCard.tsx; packages/web/src/components/settings/PlanSectionContent.tsx",
@@ -52653,6 +52680,14 @@
         "mountStatus": "unresolved",
         "reason": "Existing lifecycle screen record; exact builder/family composition and current mounted state are not yet established."
       },
+      "screen:settings.orphaned-joint-channels": {
+        "owner": "design-system alignment",
+        "kind": "route_or_panel_candidate",
+        "lifecycleScreenId": "settings.orphaned-joint-channels",
+        "declarationRefs": [],
+        "mountStatus": "unresolved",
+        "reason": "Existing lifecycle screen record; exact builder/family composition and current mounted state are not yet established."
+      },
       "screen:settings.billing": {
         "owner": "design-system alignment",
         "kind": "route_or_panel_candidate",
@@ -55730,6 +55765,12 @@
       },
       "screen:settings.archived-channels:applicability": {
         "entryId": "screen:settings.archived-channels",
+        "applicability": "unknown",
+        "owner": "design-system alignment",
+        "reason": "Review the real entry and applicable theme/input/state dimensions; historical case names do not establish current visual coverage."
+      },
+      "screen:settings.orphaned-joint-channels:applicability": {
+        "entryId": "screen:settings.orphaned-joint-channels",
         "applicability": "unknown",
         "owner": "design-system alignment",
         "reason": "Review the real entry and applicable theme/input/state dimensions; historical case names do not establish current visual coverage."
