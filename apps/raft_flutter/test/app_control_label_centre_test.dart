@@ -164,12 +164,14 @@ final _cases = <_Case>[
   _Case(
     'Activity badges',
     (_) => _activity(),
-    () => find.byType(RaftResourceBadge),
+    // Web 1.24 InboxRow: the unread count mark (the reply / "N new" badges
+    // of the old card row are gone, as on Web).
+    () => find.byType(RaftSidebarUnreadCount),
     page: true,
-    // With the bundled Space Grotesk as primary face the Activity reply badge
-    // keeps its CJK ink ~1 dp high on the Android emulator at every profile
-    // height (-1.0 dp off and at 1.35, docs/android-cjk-control-typography.md);
-    // the harness shows -1.25 px at 1.0x. Bounded here, not centred.
+    // With the bundled Space Grotesk as primary face a count badge keeps its
+    // CJK ink ~1 dp high on the Android emulator at every profile height
+    // (-1.0 dp off and at 1.35, docs/android-cjk-control-typography.md); the
+    // harness showed -1.25 px at 1.0x. Bounded here, not centred.
     androidCjkTolerance: 1.5,
   ),
   _Case(
