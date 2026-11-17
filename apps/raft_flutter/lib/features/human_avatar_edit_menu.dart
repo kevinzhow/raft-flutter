@@ -133,7 +133,7 @@ class _AvatarEditTrigger extends StatelessWidget {
         child: RaftIcon(
           RaftGlyph.pencil,
           size: 20,
-          color: t.colors['foreground-on-hud']!,
+          color: t.colors['foreground-on-hud'],
         ),
       ),
     );
