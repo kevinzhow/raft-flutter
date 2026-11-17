@@ -88,32 +88,33 @@ void main() {
         _at(DateTime(2025, 12, 3, 9, 5))!.words,
         'December 3, 2025 at 9:05 AM',
       );
-      expect(_at(DateTime(2026, 11, 14, 9, 5), twentyFour: true)!.shown, '9:05');
+      expect(
+        _at(DateTime(2026, 11, 14, 9, 5), twentyFour: true)!.shown,
+        '9:05',
+      );
     });
     test('not a time reads as none', () {
       expect(
-        formatRowTime(
-          'soon',
-          now: fixedNow,
-          formatter: _fmt(),
-          copy: _copy,
-        ),
+        formatRowTime('soon', now: fixedNow, formatter: _fmt(), copy: _copy),
         isNull,
       );
     });
     test('the key changes exactly when the words do', () {
-      String key(Duration ago, [DateTime? now]) => rowTimeKey(
-        (now ?? fixedNow).subtract(ago),
-        now ?? fixedNow,
-        _fmt(),
-      );
+      String key(Duration ago, [DateTime? now]) =>
+          rowTimeKey((now ?? fixedNow).subtract(ago), now ?? fixedNow, _fmt());
       expect(key(const Duration(seconds: 5)), key(const Duration(seconds: 59)));
       expect(
         key(const Duration(seconds: 59)),
         isNot(key(const Duration(seconds: 60))),
       );
-      expect(key(const Duration(minutes: 3)), key(const Duration(minutes: 3, seconds: 40)));
-      expect(key(const Duration(hours: 2)), key(const Duration(hours: 2, minutes: 59)));
+      expect(
+        key(const Duration(minutes: 3)),
+        key(const Duration(minutes: 3, seconds: 40)),
+      );
+      expect(
+        key(const Duration(hours: 2)),
+        key(const Duration(hours: 2, minutes: 59)),
+      );
       // An older row says "yesterday at", then "Saturday at": its key has today.
       final old = DateTime(2026, 11, 10, 9);
       expect(
@@ -147,46 +148,61 @@ void main() {
           platform: platform,
         );
         expect(find.text('3m'), findsOneWidget);
-        expect(find.byKey(const ValueKey('conversation-card-timestamp')), findsOneWidget);
-        expect(find.bySemanticsLabel(RegExp(r'3 minutes ago$')), findsOneWidget);
-        handle.dispose();
-      });
-
-      testWidgets('$name: an older row hides its clock until hover (never on touch)', (
-        tester,
-      ) async {
-        useFixedClock();
-        final f = RowFixture();
-        addTearDown(f.dispose);
-        final handle = tester.ensureSemantics();
-        await pumpRowApp(
-          tester,
-          ActivityInboxRow(
-            row: channelRow(at: DateTime(2026, 11, 16, 17, 20)),
-            host: f.host(),
-          ),
-          size: size,
-          platform: platform,
-        );
-        final clock = find.byKey(const ValueKey('conversation-card-timestamp'));
-        expect(clock, findsNothing);
-        // The words are the row's name, shown or not.
         expect(
-          find.bySemanticsLabel(RegExp(r'yesterday at 5:20 PM$')),
+          find.byKey(const ValueKey('conversation-card-timestamp')),
           findsOneWidget,
         );
-        final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
-        await mouse.addPointer(location: Offset.zero);
-        addTearDown(mouse.removePointer);
-        await mouse.moveTo(tester.getCenter(find.byKey(const ValueKey('inbox-item-open'))));
-        await tester.pump();
-        expect(clock, touch ? findsNothing : findsOneWidget);
-        if (!touch) expect(find.text('5:20 PM'), findsOneWidget);
+        expect(
+          find.bySemanticsLabel(RegExp(r'3 minutes ago$')),
+          findsOneWidget,
+        );
         handle.dispose();
       });
+
+      testWidgets(
+        '$name: an older row hides its clock until hover (never on touch)',
+        (tester) async {
+          useFixedClock();
+          final f = RowFixture();
+          addTearDown(f.dispose);
+          final handle = tester.ensureSemantics();
+          await pumpRowApp(
+            tester,
+            ActivityInboxRow(
+              row: channelRow(at: DateTime(2026, 11, 16, 17, 20)),
+              host: f.host(),
+            ),
+            size: size,
+            platform: platform,
+          );
+          final clock = find.byKey(
+            const ValueKey('conversation-card-timestamp'),
+          );
+          expect(clock, findsNothing);
+          // The words are the row's name, shown or not.
+          expect(
+            find.bySemanticsLabel(RegExp(r'yesterday at 5:20 PM$')),
+            findsOneWidget,
+          );
+          final mouse = await tester.createGesture(
+            kind: PointerDeviceKind.mouse,
+          );
+          await mouse.addPointer(location: Offset.zero);
+          addTearDown(mouse.removePointer);
+          await mouse.moveTo(
+            tester.getCenter(find.byKey(const ValueKey('inbox-item-open'))),
+          );
+          await tester.pump();
+          expect(clock, touch ? findsNothing : findsOneWidget);
+          if (!touch) expect(find.text('5:20 PM'), findsOneWidget);
+          handle.dispose();
+        },
+      );
     }
 
-    testWidgets('mouse: the long words are the time\'s tooltip', (tester) async {
+    testWidgets('mouse: the long words are the time\'s tooltip', (
+      tester,
+    ) async {
       useFixedClock();
       final f = RowFixture();
       addTearDown(f.dispose);
@@ -205,44 +221,45 @@ void main() {
       expect(tester.widget<RaftTooltip>(tip).message, '2 hours ago');
     });
 
-    testWidgets('one shared clock: a minute turns the text, rows share one timer', (
-      tester,
-    ) async {
-      var now = fixedNow;
-      useFixedClock();
-      sourceTimeNow = () => now;
-      final f = RowFixture();
-      addTearDown(f.dispose);
-      await pumpRowApp(
-        tester,
-        Column(
-          children: [
-            for (final id in ['a', 'b', 'c'])
-              ActivityInboxRow(
-                key: ValueKey(id),
-                row: channelRow(
-                  id: id,
-                  name: 'room-$id',
-                  at: fixedNow.subtract(const Duration(seconds: 50)),
+    testWidgets(
+      'one shared clock: a minute turns the text, rows share one timer',
+      (tester) async {
+        var now = fixedNow;
+        useFixedClock();
+        sourceTimeNow = () => now;
+        final f = RowFixture();
+        addTearDown(f.dispose);
+        await pumpRowApp(
+          tester,
+          Column(
+            children: [
+              for (final id in ['a', 'b', 'c'])
+                ActivityInboxRow(
+                  key: ValueKey(id),
+                  row: channelRow(
+                    id: id,
+                    name: 'room-$id',
+                    at: fixedNow.subtract(const Duration(seconds: 50)),
+                  ),
+                  host: f.host(),
                 ),
-                host: f.host(),
-              ),
-          ],
-        ),
-      );
-      expect(find.text('now'), findsNWidgets(3));
-      expect(ActivityRowClock.instance.listenerCount, 3);
-      expect(ActivityRowClock.instance.running, isTrue);
-      // The clock ticks every 15 s; a row rebuilds only when its words changed.
-      now = fixedNow.add(const Duration(seconds: 20));
-      await tester.pump(const Duration(seconds: 15));
-      expect(find.text('1m'), findsNWidgets(3));
-      now = fixedNow.add(const Duration(minutes: 5, seconds: 20));
-      await tester.pump(const Duration(seconds: 15));
-      expect(find.text('6m'), findsNWidgets(3));
-      await tester.pumpWidget(const SizedBox.shrink());
-      expect(ActivityRowClock.instance.listenerCount, 0);
-      expect(ActivityRowClock.instance.running, isFalse);
-    });
+            ],
+          ),
+        );
+        expect(find.text('now'), findsNWidgets(3));
+        expect(ActivityRowClock.instance.listenerCount, 3);
+        expect(ActivityRowClock.instance.running, isTrue);
+        // The clock ticks every 15 s; a row rebuilds only when its words changed.
+        now = fixedNow.add(const Duration(seconds: 20));
+        await tester.pump(const Duration(seconds: 15));
+        expect(find.text('1m'), findsNWidgets(3));
+        now = fixedNow.add(const Duration(minutes: 5, seconds: 20));
+        await tester.pump(const Duration(seconds: 15));
+        expect(find.text('6m'), findsNWidgets(3));
+        await tester.pumpWidget(const SizedBox.shrink());
+        expect(ActivityRowClock.instance.listenerCount, 0);
+        expect(ActivityRowClock.instance.running, isFalse);
+      },
+    );
   });
 }

@@ -82,7 +82,10 @@ class ConversationReadRepository {
   Future<void> markAllRead(String id, {SourceReadAllIdentity? identity}) =>
       _toggle(_markAllRead(id, identity: identity));
 
-  Future<void> _markAllRead(String id, {SourceReadAllIdentity? identity}) async {
+  Future<void> _markAllRead(
+    String id, {
+    SourceReadAllIdentity? identity,
+  }) async {
     final captured = identity ?? SourceReadAllIdentity.capture(client);
     if (_isDisposed() ||
         _revokedChannels().contains(id) ||
@@ -126,7 +129,8 @@ class ConversationReadRepository {
   Future<bool> markUnreadWithProjection(
     String id, {
     void Function()? onNothingUnread,
-  }) => _toggle(_markUnreadWithProjection(id, onNothingUnread: onNothingUnread));
+  }) =>
+      _toggle(_markUnreadWithProjection(id, onNothingUnread: onNothingUnread));
 
   final _toggles = <Future<void>>{};
 
@@ -146,7 +150,9 @@ class ConversationReadRepository {
       final pending = [..._toggles, ...queue.inFlightAll];
       if (pending.isEmpty) return;
       await Future.wait(
-        pending.map((f) => f.then<void>((_) {}, onError: (Object _, StackTrace _) {})),
+        pending.map(
+          (f) => f.then<void>((_) {}, onError: (Object _, StackTrace _) {}),
+        ),
       );
     }
   }

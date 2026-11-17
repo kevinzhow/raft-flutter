@@ -2,7 +2,6 @@
 // ThreadsInbox.tsx (`openSwipeKey`, press elsewhere, scroll) at v1.24.0.
 // A phone with touch swipes a row: left uncovers Done (and Unfollow, Mute),
 // right uncovers Read / Unread. One row is open at a time.
-import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/rendering.dart' show RenderMetaData;
 import 'package:flutter/material.dart';
@@ -268,7 +267,11 @@ class _ActivitySwipeRowState extends State<ActivitySwipeRow> {
 /// open row, and so does a press anywhere else (a press in the list is
 /// swallowed by its rows; one outside it, a toast or the tab bar, also acts).
 class ActivitySwipeScope extends StatefulWidget {
-  const ActivitySwipeScope({super.key, required this.open, required this.child});
+  const ActivitySwipeScope({
+    super.key,
+    required this.open,
+    required this.child,
+  });
   final ActivitySwipeOpen open;
   final Widget child;
 
@@ -320,11 +323,7 @@ class _ActivitySwipeScopeState extends State<ActivitySwipeScope> {
   void _pointer(PointerEvent event) {
     if (event is! PointerDownEvent || !widget.open.hasOpen) return;
     final result = HitTestResult();
-    GestureBinding.instance.hitTestInView(
-      result,
-      event.position,
-      event.viewId,
-    );
+    GestureBinding.instance.hitTestInView(result, event.position, event.viewId);
     final openKey = widget.open.key;
     final onOpenRow = result.path.any((entry) {
       final target = entry.target;
@@ -356,13 +355,18 @@ class ActivitySwipeRowMark {
 /// The phone's pinned filter row ignores a press while a row is open: that
 /// press closes the row and is swallowed, as the rows' own are.
 class ActivitySwipeBarGuard extends StatelessWidget {
-  const ActivitySwipeBarGuard({super.key, required this.open, required this.child});
+  const ActivitySwipeBarGuard({
+    super.key,
+    required this.open,
+    required this.child,
+  });
   final ActivitySwipeOpen open;
   final Widget child;
 
   @override
   Widget build(BuildContext context) => ListenableBuilder(
     listenable: open,
-    builder: (context, _) => IgnorePointer(ignoring: open.hasOpen, child: child),
+    builder: (context, _) =>
+        IgnorePointer(ignoring: open.hasOpen, child: child),
   );
 }

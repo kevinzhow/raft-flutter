@@ -15,12 +15,14 @@ import 'message_task_actions.dart' show TaskV2ConversationsFlag;
 
 /// The server's text for a retracted message, kept for servers that have no
 /// `latestRetracted` / `parentRetracted` flag (Web `isRetractedPreview`).
-const String serverRetractedContent = 'This message was retracted by its sender.';
+const String serverRetractedContent =
+    'This message was retracted by its sender.';
 
 /// Web `isRetractedPreviewOf`: the server's flag when it sent one, else the
 /// placeholder text decides.
-bool isRetractedPreviewOf(Object? flag, Object? text) =>
-    flag is bool ? flag : text is String && text.trim() == serverRetractedContent;
+bool isRetractedPreviewOf(Object? flag, Object? text) => flag is bool
+    ? flag
+    : text is String && text.trim() == serverRetractedContent;
 
 String _trim(Object? value) => value is String ? value.trim() : '';
 String _stripPrefix(String value) => value.replaceFirst(RegExp(r'^[@#]+'), '');
@@ -291,11 +293,15 @@ class ActivityRowFacts {
         ? row['messagePreview']
         : row['lastMessagePreview'];
     final previewRetracted =
-        !mention && isRetractedPreviewOf(row['latestRetracted'], activityPreview);
+        !mention &&
+        isRetractedPreviewOf(row['latestRetracted'], activityPreview);
     final hasPreview = previewRetracted || _trim(activityPreview).isNotEmpty;
     final parentRetracted =
         thread &&
-        isRetractedPreviewOf(row['parentRetracted'], row['parentMessagePreview']);
+        isRetractedPreviewOf(
+          row['parentRetracted'],
+          row['parentMessagePreview'],
+        );
 
     // Tasks.
     final parentPreview = _trim(row['parentMessagePreview']);
@@ -323,7 +329,8 @@ class ActivityRowFacts {
           ? raftFormat(context, '{channel} task', {'channel': channelLabel})
           : null;
     }
-    final legacyTaskRow = !taskConversation && taskNumber != null && taskStatus != null;
+    final legacyTaskRow =
+        !taskConversation && taskNumber != null && taskStatus != null;
     final legacyBadge = legacyTaskRow && !taskV2;
     final statusInMarks =
         taskStatus != null && (taskConversation || (legacyTaskRow && taskV2));
@@ -353,7 +360,9 @@ class ActivityRowFacts {
       final peer = lookups.agent('${dmChannel!.json['peerId']}');
       if (peer != null && peer['managedByAppInstallId'] != null) {
         final app = peer['managedByApp'];
-        appBadge = app is Map && app['name'] is String ? app['name'] as String : '';
+        appBadge = app is Map && app['name'] is String
+            ? app['name'] as String
+            : '';
       }
     }
 
@@ -391,7 +400,8 @@ class ActivityRowFacts {
           });
 
     final mutedId = thread ? row['parentChannelId'] : row['channelId'];
-    final muted = (find(mutedId) ?? dmChannel ?? threadDmChannel)?.flag(
+    final muted =
+        (find(mutedId) ?? dmChannel ?? threadDmChannel)?.flag(
           'activityMuted',
         ) ==
         true;
@@ -420,7 +430,11 @@ class ActivityRowFacts {
       senderType: senderType,
       senderId: senderId,
       isSystemSender: system,
-      preview: previewRetracted ? retractedLine : _trim(activityPreview) == '' ? '' : '$activityPreview',
+      preview: previewRetracted
+          ? retractedLine
+          : _trim(activityPreview) == ''
+          ? ''
+          : '$activityPreview',
       previewRetracted: previewRetracted,
       hasPreview: hasPreview,
       retractedLine: retractedLine,
@@ -431,7 +445,9 @@ class ActivityRowFacts {
       muted: muted,
       mentionBadge:
           filter != 'mentions' && row['hasMention'] == true && unread > 0,
-      draft: thread && (w.drafts['${row['threadChannelId']}'] ?? '').trim().isNotEmpty,
+      draft:
+          thread &&
+          (w.drafts['${row['threadChannelId']}'] ?? '').trim().isNotEmpty,
       dmChannel: dmChannel,
       threadDmChannel: threadDmChannel,
       loungeAgentId: loungeAgentId,

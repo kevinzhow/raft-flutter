@@ -22,11 +22,23 @@ void main() {
 
   test('a read row the store stops listing stays, shown read, in place', () {
     final a = row('a'), b = row('b'), c = row('c');
-    expect(ids(store.shown([a, b, c], list: 'L', visit: visit)), ['a:1', 'b:1', 'c:1']);
+    expect(ids(store.shown([a, b, c], list: 'L', visit: visit)), [
+      'a:1',
+      'b:1',
+      'c:1',
+    ]);
     store.noteRead(['channel:b']);
-    expect(ids(store.shown([a, c], list: 'L', visit: visit)), ['a:1', 'b:0', 'c:1']);
+    expect(ids(store.shown([a, c], list: 'L', visit: visit)), [
+      'a:1',
+      'b:0',
+      'c:1',
+    ]);
     // Shown again: the same copy, nothing changes.
-    expect(ids(store.shown([a, c], list: 'L', visit: visit)), ['a:1', 'b:0', 'c:1']);
+    expect(ids(store.shown([a, c], list: 'L', visit: visit)), [
+      'a:1',
+      'b:0',
+      'c:1',
+    ]);
   });
 
   test('a row that left for another reason is not kept', () {
@@ -64,7 +76,11 @@ void main() {
     store.shown([a, b], list: 'L', visit: visit);
     store.noteRead(['channel:a']);
     final n = row('n');
-    expect(ids(store.shown([n, b], list: 'L', visit: visit)), ['n:1', 'a:0', 'b:1']);
+    expect(ids(store.shown([n, b], list: 'L', visit: visit)), [
+      'n:1',
+      'a:0',
+      'b:1',
+    ]);
   });
 
   test('a row read, then unread again, is no longer read', () {
@@ -93,7 +109,11 @@ void main() {
     final undo = store.take('channel:b')!;
     expect(ids(store.shown([a, c], list: 'L', visit: visit)), ['a:1', 'c:1']);
     undo();
-    expect(ids(store.shown([a, c], list: 'L', visit: visit)), ['a:1', 'b:0', 'c:1']);
+    expect(ids(store.shown([a, c], list: 'L', visit: visit)), [
+      'a:1',
+      'b:0',
+      'c:1',
+    ]);
   });
 
   test('object rows keep by their object key and read by their own rule', () {

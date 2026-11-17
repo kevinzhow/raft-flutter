@@ -6,7 +6,10 @@ import 'package:raft_flutter/features/desktop_activity_flag.dart';
 void main() {
   test('the split-preview threshold is 768; nothing is evaluated (no variant flag)', () {
     final w = WorkspaceController(
-      RaftClient(origin: 'https://flag.invalid', sessionStore: MemorySessionStore()),
+      RaftClient(
+        origin: 'https://flag.invalid',
+        sessionStore: MemorySessionStore(),
+      ),
     )..server = RaftRecord({'id': 's', 'role': 'member'});
     final flag = DesktopActivityFlag(w);
     addTearDown(() {

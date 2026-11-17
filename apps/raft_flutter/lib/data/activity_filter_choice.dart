@@ -44,10 +44,7 @@ enum ActivityFilterChoice {
   };
 
   /// `GET /channels/inbox` query of this choice, without the window.
-  Map<String, String> get query => {
-    'filter': readFilter,
-    'scope': ?scope,
-  };
+  Map<String, String> get query => {'filter': readFilter, 'scope': ?scope};
 
   /// Empty-state copy, scope first, then mentions, then unread (Web
   /// ThreadsInbox). Keys of the zh catalog are these English strings.
@@ -61,13 +58,10 @@ enum ActivityFilterChoice {
   };
 
   String get emptyDescription => switch (this) {
-    pinned =>
-      'Channels and DMs you pin in the sidebar show up here, with their threads.',
+    pinned => 'Channels and DMs you pin in the sidebar show up here, with their threads.',
     saved => 'Save a message and its thread shows up here.',
-    artifacts =>
-      'Comment on an Artifact or follow it, and its new comments and versions show up here.',
-    mentions =>
-      'Channels, DMs, and threads where someone @mentions you will appear here.',
+    artifacts => 'Comment on an Artifact or follow it, and its new comments and versions show up here.',
+    mentions => 'Channels, DMs, and threads where someone @mentions you will appear here.',
     _ => 'Channels, DMs, and followed threads stay here until they are done.',
   };
 }

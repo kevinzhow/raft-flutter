@@ -100,7 +100,9 @@ class ActivityUnreadSnapshot {
     final leaving = <String>{};
     for (final row in previous.rows) {
       final key = _key(row);
-      if (key != null && !listed.containsKey(key) && previous.read.contains(key)) {
+      if (key != null &&
+          !listed.containsKey(key) &&
+          previous.read.contains(key)) {
         leaving.add(key);
       }
     }
@@ -125,7 +127,9 @@ class ActivityUnreadSnapshot {
     final wasKept = previous.kept.toSet();
     bool stays(Map<String, dynamic> row, String key) {
       final now = listed[key];
-      return now != null && !wasKept.contains(key) && activityOf(now) == activityOf(row);
+      return now != null &&
+          !wasKept.contains(key) &&
+          activityOf(now) == activityOf(row);
     }
 
     final followers = <String, List<Map<String, dynamic>>>{};
@@ -212,7 +216,8 @@ class ActivityUnreadSnapshotStore {
       _snapshot = null;
       return items;
     }
-    final previous = _snapshot != null &&
+    final previous =
+        _snapshot != null &&
             _snapshot!.list == list &&
             _snapshot!.visit == visit
         ? _snapshot
@@ -244,7 +249,8 @@ class ActivityUnreadSnapshotStore {
   }
 
   static bool _sameRows(List a, List b) =>
-      a.length == b.length && Iterable<int>.generate(a.length).every((i) => identical(a[i], b[i]));
+      a.length == b.length &&
+      Iterable<int>.generate(a.length).every((i) => identical(a[i], b[i]));
 
   /// The visit ended, or another server: take the next snapshot afresh.
   void drop() => _snapshot = null;
@@ -256,7 +262,8 @@ class ActivityUnreadSnapshotStore {
     if (snapshot == null) return;
     Set<String>? read;
     for (final key in keys) {
-      if (snapshot.read.contains(key) || (read?.contains(key) ?? false)) continue;
+      if (snapshot.read.contains(key) || (read?.contains(key) ?? false))
+        continue;
       read ??= {...snapshot.read};
       read.add(key);
     }
@@ -276,7 +283,9 @@ class ActivityUnreadSnapshotStore {
             key,
     ];
     if (again.isEmpty) return;
-    _snapshot = snapshot.copyWith(read: snapshot.read.difference(again.toSet()));
+    _snapshot = snapshot.copyWith(
+      read: snapshot.read.difference(again.toSet()),
+    );
   }
 
   /// The snapshot's copy of the row [key] when it is kept (the store no
@@ -284,7 +293,9 @@ class ActivityUnreadSnapshotStore {
   Map<String, dynamic>? keptRow(String key) {
     final snapshot = _snapshot;
     if (snapshot == null || !snapshot.kept.contains(key)) return null;
-    return snapshot.rows.where((row) => activityItemKey(row) == key).firstOrNull;
+    return snapshot.rows
+        .where((row) => activityItemKey(row) == key)
+        .firstOrNull;
   }
 
   /// Where to put the row [key] among [items] so it stays where the list
@@ -293,8 +304,9 @@ class ActivityUnreadSnapshotStore {
     final rows = _snapshot?.rows ?? const <Map<String, dynamic>>[];
     final at = rows.indexWhere((row) => activityItemKey(row) == key);
     if (at == -1) return items.length;
-    int indexIn(Map<String, dynamic> row) =>
-        items.indexWhere((item) => activityItemKey(item) == activityItemKey(row));
+    int indexIn(Map<String, dynamic> row) => items.indexWhere(
+      (item) => activityItemKey(item) == activityItemKey(row),
+    );
     for (final row in rows.skip(at + 1)) {
       final index = indexIn(row);
       if (index != -1) return index;
@@ -310,11 +322,17 @@ class ActivityUnreadSnapshotStore {
   void dropWhere(bool Function(Map<String, dynamic> row) matches) {
     final snapshot = _snapshot;
     if (snapshot == null || !snapshot.rows.any(matches)) return;
-    final rows = [for (final row in snapshot.rows) if (!matches(row)) row];
+    final rows = [
+      for (final row in snapshot.rows)
+        if (!matches(row)) row,
+    ];
     final left = {for (final row in rows) activityItemKey(row)};
     _snapshot = snapshot.copyWith(
       rows: rows,
-      kept: [for (final key in snapshot.kept) if (left.contains(key)) key],
+      kept: [
+        for (final key in snapshot.kept)
+          if (left.contains(key)) key,
+      ],
     );
   }
 
@@ -332,7 +350,8 @@ class ActivityUnreadSnapshotStore {
     dropWhere((row) => activityItemKey(row) == key);
     return () {
       final now = _snapshot;
-      if (now == null || now.list != taken.list || now.visit != taken.visit) return;
+      if (now == null || now.list != taken.list || now.visit != taken.visit)
+        return;
       if (now.rows.any((row) => activityItemKey(row) == key)) return;
       final keys = [for (final row in now.rows) activityItemKey(row)];
       final anchor = above.where(keys.contains).firstOrNull;
@@ -350,6 +369,7 @@ class ActivityUnreadSnapshotStore {
     final snapshot = _snapshot;
     if (snapshot == null) return;
     final rows = [for (final row in snapshot.rows) apply(row)];
-    if (!_sameRows(rows, snapshot.rows)) _snapshot = snapshot.copyWith(rows: rows);
+    if (!_sameRows(rows, snapshot.rows))
+      _snapshot = snapshot.copyWith(rows: rows);
   }
 }

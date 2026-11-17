@@ -67,7 +67,10 @@ void main() {
       final double offset = owner.listScroll.offset;
       expect(offset, greaterThan(100));
       // Web: the Filter menu picks the view (no horizontal paging).
-      for (final view in [ActivityFilterChoice.unread, ActivityFilterChoice.mentions]) {
+      for (final view in [
+        ActivityFilterChoice.unread,
+        ActivityFilterChoice.mentions,
+      ]) {
         owner.chooseActivityFilter(view);
         await settle(t);
         await t.pumpAndSettle();

@@ -148,7 +148,9 @@ void main() {
   // Web 1.24 retired `thread_unread_badge_v0` and `sidebar_mark_all_read_v0`:
   // they are neither asked nor taken from an answer that still carries them.
   test('retired and unrequested keys in the answer change nothing', () async {
-    expect(ActivityRolloutFlags.keys, [ActivityRolloutFlags.inboxReadInplaceKey]);
+    expect(ActivityRolloutFlags.keys, [
+      ActivityRolloutFlags.inboxReadInplaceKey,
+    ]);
     expect(_flag, ActivityRolloutFlags.inboxReadInplaceKey);
     client.pending.single.complete({
       'evaluations': [

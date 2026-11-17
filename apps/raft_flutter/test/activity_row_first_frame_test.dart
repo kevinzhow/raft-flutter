@@ -52,88 +52,94 @@ void main() {
       rowEnvs[3],
       rowEnvs[4],
     ]) {
-      testWidgets('${dark ? 'dark' : 'light'} $name: a live update to another row leaves a shown row unchanged', (
-        tester,
-      ) async {
-        useFixedClock();
-        final f = RowFixture(
-          channels: [
-            channelRecord('c1', 'launch-week'),
-            channelRecord('c2', 'design'),
-          ],
-        );
-        addTearDown(f.dispose);
-        var rows = <Map<String, dynamic>>[
-          threadRow(id: 't1', unread: 1, extra: {'hasMention': true}),
-          channelRow(id: 'c2', name: 'design'),
-          objectRow(unread: 2, preview: {'text': 'hi'}),
-        ];
-        late StateSetter set;
-        await pumpRowApp(
-          tester,
-          StatefulBuilder(
-            builder: (context, setState) {
-              set = setState;
-              return Column(
-                children: [
-                  for (final row in rows)
-                    ActivityCardRow(
-                      key: ValueKey(
-                        row['kind'] == 'object'
-                            ? 'o-${row['objectId']}'
-                            : 'r-${row['threadChannelId'] ?? row['channelId']}',
-                      ),
-                      row: row,
-                      host: f.host(),
-                    ),
-                ],
-              );
-            },
-          ),
-          size: size,
-          platform: platform,
-          dark: dark,
-        );
-        // The wrapper keys sit on the ActivityCardRow; read the row under it.
-        Finder item(String key) => find.descendant(
-          of: find.byKey(ValueKey(key)),
-          matching: find.byType(RaftInboxItem),
-        );
-        Key inner(String key) => tester.widget<RaftInboxItem>(item(key)).key!;
-        final keys = {
-          for (final k in ['r-t1', 'r-c2', 'o-art1']) k: inner(k),
-        };
-        final before = {
-          for (final e in keys.entries) e.key: _Snapshot(tester, e.value),
-        };
-        // A live update: the middle row (another conversation) gets a new
-        // message and an unread count.
-        set(() {
-          rows = [
-            rows[0],
-            channelRow(
-              id: 'c2',
-              name: 'design',
-              preview: 'A new message',
-              unread: 4,
-              sender: 'Carol',
-              senderId: 'carol',
-            ),
-            rows[2],
+      testWidgets(
+        '${dark ? 'dark' : 'light'} $name: a live update to another row leaves a shown row unchanged',
+        (tester) async {
+          useFixedClock();
+          final f = RowFixture(
+            channels: [
+              channelRecord('c1', 'launch-week'),
+              channelRecord('c2', 'design'),
+            ],
+          );
+          addTearDown(f.dispose);
+          var rows = <Map<String, dynamic>>[
+            threadRow(id: 't1', unread: 1, extra: {'hasMention': true}),
+            channelRow(id: 'c2', name: 'design'),
+            objectRow(unread: 2, preview: {'text': 'hi'}),
           ];
-        });
-        for (var frame = 0; frame < 6; frame++) {
-          await tester.pump(const Duration(milliseconds: 16));
-          for (final k in ['r-t1', 'o-art1']) {
-            before[k]!.expectSame(_Snapshot(tester, keys[k]!), 'frame $frame $k');
+          late StateSetter set;
+          await pumpRowApp(
+            tester,
+            StatefulBuilder(
+              builder: (context, setState) {
+                set = setState;
+                return Column(
+                  children: [
+                    for (final row in rows)
+                      ActivityCardRow(
+                        key: ValueKey(
+                          row['kind'] == 'object'
+                              ? 'o-${row['objectId']}'
+                              : 'r-${row['threadChannelId'] ?? row['channelId']}',
+                        ),
+                        row: row,
+                        host: f.host(),
+                      ),
+                  ],
+                );
+              },
+            ),
+            size: size,
+            platform: platform,
+            dark: dark,
+          );
+          // The wrapper keys sit on the ActivityCardRow; read the row under it.
+          Finder item(String key) => find.descendant(
+            of: find.byKey(ValueKey(key)),
+            matching: find.byType(RaftInboxItem),
+          );
+          Key inner(String key) => tester.widget<RaftInboxItem>(item(key)).key!;
+          final keys = {
+            for (final k in ['r-t1', 'r-c2', 'o-art1']) k: inner(k),
+          };
+          final before = {
+            for (final e in keys.entries) e.key: _Snapshot(tester, e.value),
+          };
+          // A live update: the middle row (another conversation) gets a new
+          // message and an unread count.
+          set(() {
+            rows = [
+              rows[0],
+              channelRow(
+                id: 'c2',
+                name: 'design',
+                preview: 'A new message',
+                unread: 4,
+                sender: 'Carol',
+                senderId: 'carol',
+              ),
+              rows[2],
+            ];
+          });
+          for (var frame = 0; frame < 6; frame++) {
+            await tester.pump(const Duration(milliseconds: 16));
+            for (final k in ['r-t1', 'o-art1']) {
+              before[k]!.expectSame(
+                _Snapshot(tester, keys[k]!),
+                'frame $frame $k',
+              );
+            }
           }
-        }
-        // The updated row did change, and only it.
-        expect(
-          tester.widget<RaftInboxItem>(find.byKey(keys['r-c2']!)).semanticLabel,
-          contains('A new message'),
-        );
-      });
+          // The updated row did change, and only it.
+          expect(
+            tester
+                .widget<RaftInboxItem>(find.byKey(keys['r-c2']!))
+                .semanticLabel,
+            contains('A new message'),
+          );
+        },
+      );
     }
   }
 }

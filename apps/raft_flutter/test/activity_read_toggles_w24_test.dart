@@ -19,7 +19,9 @@ void main() {
 
   Finder rowOf(String key) => find.byKey(ValueKey(key));
 
-  testWidgets('right swipe on an unread row reads it, once, with no toast', (t) async {
+  testWidgets('right swipe on an unread row reads it, once, with no toast', (
+    t,
+  ) async {
     await mountActivity(t, w, phoneTouch);
     await t.drag(rowOf('activity-channel-ch0'), const Offset(260, 0));
     await t.pumpAndSettle();
@@ -28,7 +30,9 @@ void main() {
     expect(rowOf('activity-channel-ch0'), findsOneWidget);
   });
 
-  testWidgets('a failed Mark as Read says so (Web thread.row.markReadFailed)', (t) async {
+  testWidgets('a failed Mark as Read says so (Web thread.row.markReadFailed)', (
+    t,
+  ) async {
     client.failPaths.add('POST /channels/ch0/read-all');
     await mountActivity(t, w, phoneTouch);
     await t.drag(rowOf('activity-channel-ch0'), const Offset(260, 0));
@@ -38,11 +42,17 @@ void main() {
     expect(rowOf('activity-channel-ch0'), findsOneWidget);
   });
 
-  testWidgets('a failed Mark as Unread says so (Web thread.row.markUnreadFailed)', (t) async {
-    client.failPaths.add('POST /channels/ch1/unread');
-    await mountActivity(t, w, phoneTouch);
-    await t.drag(rowOf('activity-channel-ch1'), const Offset(260, 0));
-    await t.pumpAndSettle();
-    expect(find.text("Couldn't mark it as unread. Try again."), findsOneWidget);
-  });
+  testWidgets(
+    'a failed Mark as Unread says so (Web thread.row.markUnreadFailed)',
+    (t) async {
+      client.failPaths.add('POST /channels/ch1/unread');
+      await mountActivity(t, w, phoneTouch);
+      await t.drag(rowOf('activity-channel-ch1'), const Offset(260, 0));
+      await t.pumpAndSettle();
+      expect(
+        find.text("Couldn't mark it as unread. Try again."),
+        findsOneWidget,
+      );
+    },
+  );
 }

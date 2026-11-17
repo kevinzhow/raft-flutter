@@ -25,7 +25,8 @@ Map<String, dynamic> objectRow({
   'objectKind': 'artifact',
   'objectId': 'art1',
   'summary': {'title': title, 'kind': 'html', 'latestVersion': 3},
-  'home': home ?? {'kind': 'channel', 'label': 'launch-week', 'channelId': 'c1'},
+  'home':
+      home ?? {'kind': 'channel', 'label': 'launch-week', 'channelId': 'c1'},
   'latestEvent': {
     'eventKind': eventKind,
     'reason': reason,
@@ -74,27 +75,30 @@ void main() {
   group('sentence and excerpt (artifactActivityRow.ts)', () {
     for (final dark in [false, true]) {
       final mode = dark ? 'dark' : 'light';
-      testWidgets('$mode a comment with text: "{actor}: {text}", the home after', (
-        tester,
-      ) async {
-        final f = RowFixture();
-        addTearDown(f.dispose);
-        await _pump(
-          tester,
-          f,
-          objectRow(preview: {'text': 'Can you check row 3?', 'truncated': false}),
-          dark: dark,
-        );
-        expect(find.text('Q4 roadmap'), findsOneWidget);
-        expect(find.text('Judith: '), findsOneWidget);
-        expect(find.text('Can you check row 3?'), findsOneWidget);
-        expect(find.text('#launch-week'), findsNothing);
-        expect(find.text('· #launch-week'), findsOneWidget);
-        expect(
-          _label(tester),
-          'Q4 roadmap Judith: Can you check row 3? · #launch-week 12 minutes ago',
-        );
-      });
+      testWidgets(
+        '$mode a comment with text: "{actor}: {text}", the home after',
+        (tester) async {
+          final f = RowFixture();
+          addTearDown(f.dispose);
+          await _pump(
+            tester,
+            f,
+            objectRow(
+              preview: {'text': 'Can you check row 3?', 'truncated': false},
+            ),
+            dark: dark,
+          );
+          expect(find.text('Q4 roadmap'), findsOneWidget);
+          expect(find.text('Judith: '), findsOneWidget);
+          expect(find.text('Can you check row 3?'), findsOneWidget);
+          expect(find.text('#launch-week'), findsNothing);
+          expect(find.text('· #launch-week'), findsOneWidget);
+          expect(
+            _label(tester),
+            'Q4 roadmap Judith: Can you check row 3? · #launch-week 12 minutes ago',
+          );
+        },
+      );
 
       testWidgets('$mode a comment of images alone says "Image" / "3 images"', (
         tester,
@@ -125,21 +129,34 @@ void main() {
         (objectRow(reason: 'mentioned'), 'Judith mentioned you'),
         (objectRow(), 'Judith commented'),
         (objectRow(eventKind: 'comment_edited'), 'Judith edited a comment'),
-        (objectRow(eventKind: 'version', target: {'version': 4}), 'Judith published v4'),
         (
-          {...objectRow(eventKind: 'version'), 'summary': {'title': 'T', 'kind': 'html'}},
+          objectRow(eventKind: 'version', target: {'version': 4}),
+          'Judith published v4',
+        ),
+        (
+          {
+            ...objectRow(eventKind: 'version'),
+            'summary': {'title': 'T', 'kind': 'html'},
+          },
           'Judith published a new version',
         ),
         (objectRow(eventKind: 'other'), 'Judith updated it'),
         (
-          objectRow(eventKind: 'review', target: {'review': {'id': 'r1', 'comments': 3}}),
+          objectRow(
+            eventKind: 'review',
+            target: {
+              'review': {'id': 'r1', 'comments': 3},
+            },
+          ),
           'Judith reviewed it (3 comments)',
         ),
         (
           objectRow(
             eventKind: 'review',
             reason: 'mentioned',
-            target: {'review': {'id': 'r1', 'comments': 1}},
+            target: {
+              'review': {'id': 'r1', 'comments': 1},
+            },
           ),
           'Judith mentioned you in a review (1 comment)',
         ),
@@ -184,42 +201,59 @@ void main() {
       expect(artifactActivityNews(objectRow(unread: 2)), isEmpty);
     });
 
-    testWidgets('"· 3 new comments" after the line, the count and @ in the marks', (
-      tester,
-    ) async {
-      final f = RowFixture();
-      addTearDown(f.dispose);
-      await _pump(
-        tester,
-        f,
-        objectRow(
-          preview: {'text': 'hi'},
-          unread: 3,
-          unreadParts: {'versions': 0, 'comments': 3},
-          mention: true,
-        ),
-      );
-      expect(find.text('· 3 new comments'), findsOneWidget);
-      expect(find.byKey(const ValueKey('inbox-mention-badge')), findsOneWidget);
-      final count = find.byKey(const ValueKey('conversation-card-new-badge'));
-      expect(find.descendant(of: count, matching: find.text('3')), findsOneWidget);
-      expect(tester.widget<RaftInboxItem>(find.byType(RaftInboxItem)).unread, isTrue);
-    });
+    testWidgets(
+      '"· 3 new comments" after the line, the count and @ in the marks',
+      (tester) async {
+        final f = RowFixture();
+        addTearDown(f.dispose);
+        await _pump(
+          tester,
+          f,
+          objectRow(
+            preview: {'text': 'hi'},
+            unread: 3,
+            unreadParts: {'versions': 0, 'comments': 3},
+            mention: true,
+          ),
+        );
+        expect(find.text('· 3 new comments'), findsOneWidget);
+        expect(
+          find.byKey(const ValueKey('inbox-mention-badge')),
+          findsOneWidget,
+        );
+        final count = find.byKey(const ValueKey('conversation-card-new-badge'));
+        expect(
+          find.descendant(of: count, matching: find.text('3')),
+          findsOneWidget,
+        );
+        expect(
+          tester.widget<RaftInboxItem>(find.byType(RaftInboxItem)).unread,
+          isTrue,
+        );
+      },
+    );
 
-    testWidgets('no home for a server, public or deleted conversation; DM home is @peer', (
-      tester,
-    ) async {
-      final f = RowFixture();
-      addTearDown(f.dispose);
-      await _pump(tester, f, objectRow(home: {'kind': 'server', 'label': ''}));
-      expect(find.byKey(const ValueKey('object-card-home')), findsNothing);
-      await _pump(
-        tester,
-        f,
-        objectRow(home: {'kind': 'dm', 'label': 'bob', 'peerDisplayName': 'Bobby'}),
-      );
-      expect(find.text('· @Bobby'), findsOneWidget);
-    });
+    testWidgets(
+      'no home for a server, public or deleted conversation; DM home is @peer',
+      (tester) async {
+        final f = RowFixture();
+        addTearDown(f.dispose);
+        await _pump(
+          tester,
+          f,
+          objectRow(home: {'kind': 'server', 'label': ''}),
+        );
+        expect(find.byKey(const ValueKey('object-card-home')), findsNothing);
+        await _pump(
+          tester,
+          f,
+          objectRow(
+            home: {'kind': 'dm', 'label': 'bob', 'peerDisplayName': 'Bobby'},
+          ),
+        );
+        expect(find.text('· @Bobby'), findsOneWidget);
+      },
+    );
 
     testWidgets('an untitled Artifact', (tester) async {
       final f = RowFixture();
@@ -246,7 +280,10 @@ void main() {
           platform: platform,
         );
         final phone = touch && size.width == 390;
-        expect(find.byType(RaftInboxRowDone), phone ? findsNothing : findsOneWidget);
+        expect(
+          find.byType(RaftInboxRowDone),
+          phone ? findsNothing : findsOneWidget,
+        );
         expect(
           find.byKey(const ValueKey('activity-object-art1')),
           findsOneWidget,
@@ -257,14 +294,18 @@ void main() {
         expect(f.calls.opened, 0);
         if (!phone) {
           expect(
-            tester.widget<RaftInboxRowDone>(find.byType(RaftInboxRowDone)).semanticLabel,
+            tester
+                .widget<RaftInboxRowDone>(find.byType(RaftInboxRowDone))
+                .semanticLabel,
             'Mark Q4 roadmap as Done',
           );
         }
       });
     }
 
-    testWidgets('without an object opener the page\'s open runs', (tester) async {
+    testWidgets('without an object opener the page\'s open runs', (
+      tester,
+    ) async {
       final f = RowFixture();
       addTearDown(f.dispose);
       await _pump(tester, f, objectRow());
@@ -275,34 +316,36 @@ void main() {
   });
 
   group('narrow line', () {
-    testWidgets('home truncates first, then the text to about a dozen characters', (
-      tester,
-    ) async {
-      useFixedClock();
-      final f = RowFixture();
-      addTearDown(f.dispose);
-      final row = objectRow(
-        preview: {'text': 'Check the numbers'},
-        home: {'kind': 'channel', 'label': 'channel-name'},
-      );
-      double widthOf(String key) => tester.getSize(find.byKey(ValueKey(key))).width;
-      Future<void> at(double width) => pumpRowApp(
-        tester,
-        ActivityObjectRow(row: row, host: f.host()),
-        width: width,
-        size: const Size(1000, 600),
-      );
-      await at(800);
-      final fullText = widthOf('object-card-text');
-      final fullHome = widthOf('object-card-home');
-      await at(520);
-      expect(widthOf('object-card-home'), lessThan(fullHome));
-      expect(widthOf('object-card-text'), fullText);
-      await at(420);
-      expect(find.byKey(const ValueKey('object-card-home')), findsNothing);
-      // 12 characters at least, down from the text's own width.
-      expect(widthOf('object-card-text'), lessThan(fullText));
-      expect(widthOf('object-card-text'), greaterThanOrEqualTo(12 * 14));
-    });
+    testWidgets(
+      'home truncates first, then the text to about a dozen characters',
+      (tester) async {
+        useFixedClock();
+        final f = RowFixture();
+        addTearDown(f.dispose);
+        final row = objectRow(
+          preview: {'text': 'Check the numbers'},
+          home: {'kind': 'channel', 'label': 'channel-name'},
+        );
+        double widthOf(String key) =>
+            tester.getSize(find.byKey(ValueKey(key))).width;
+        Future<void> at(double width) => pumpRowApp(
+          tester,
+          ActivityObjectRow(row: row, host: f.host()),
+          width: width,
+          size: const Size(1000, 600),
+        );
+        await at(800);
+        final fullText = widthOf('object-card-text');
+        final fullHome = widthOf('object-card-home');
+        await at(520);
+        expect(widthOf('object-card-home'), lessThan(fullHome));
+        expect(widthOf('object-card-text'), fullText);
+        await at(420);
+        expect(find.byKey(const ValueKey('object-card-home')), findsNothing);
+        // 12 characters at least, down from the text's own width.
+        expect(widthOf('object-card-text'), lessThan(fullText));
+        expect(widthOf('object-card-text'), greaterThanOrEqualTo(12 * 14));
+      },
+    );
   });
 }

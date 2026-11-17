@@ -27,16 +27,36 @@ void main() {
   for (final (dark) in [(false), (true)]) {
     for (final touch in [false, true]) {
       for (final (label, row, labels) in [
-        ('unread channel', channelRow(1, unread: 2), ['Mark as read', 'Mark as Done', 'Mute Activity']),
-        ('read channel', channelRow(1), ['Mark as unread', 'Mark as Done', 'Mute Activity']),
+        (
+          'unread channel',
+          channelRow(1, unread: 2),
+          ['Mark as read', 'Mark as Done', 'Mute Activity'],
+        ),
+        (
+          'read channel',
+          channelRow(1),
+          ['Mark as unread', 'Mark as Done', 'Mute Activity'],
+        ),
         (
           'direct message',
           {...channelRow(1), 'kind': 'dm', 'channelType': 'dm'},
           ['Mark as unread', 'Mark as Done'],
         ),
-        ('followed thread', thread(), ['Mark as read', 'Mark as Done', 'Unfollow']),
-        ('unfollowed thread', thread(following: false), ['Mark as Done', 'Follow']),
-        ('pending mention', pendingMention(), ['Mark as unread', 'Mark as Done']),
+        (
+          'followed thread',
+          thread(),
+          ['Mark as read', 'Mark as Done', 'Unfollow'],
+        ),
+        (
+          'unfollowed thread',
+          thread(following: false),
+          ['Mark as Done', 'Follow'],
+        ),
+        (
+          'pending mention',
+          pendingMention(),
+          ['Mark as unread', 'Mark as Done'],
+        ),
       ]) {
         testWidgets(
           '${dark ? 'dark' : 'light'} ${touch ? 'touch long press' : 'mouse right click'} $label matches Web menu',

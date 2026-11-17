@@ -58,12 +58,11 @@ Map? artifactActivityExcerpt(Map row) {
 }
 
 /// "Image" / "3 images" for a comment of images alone, else null.
-String? artifactActivityImagesOnly(
-  BuildContext context,
-  Map excerpt,
-) {
+String? artifactActivityImagesOnly(BuildContext context, Map excerpt) {
   final images = excerpt['images'];
-  if (_str(excerpt['text']).trim().isNotEmpty || !_count(images) || images == 0) {
+  if (_str(excerpt['text']).trim().isNotEmpty ||
+      !_count(images) ||
+      images == 0) {
     return null;
   }
   return icuText(context, '{count, plural, =1 {Image} other {# images}}', {

@@ -13,7 +13,11 @@ import 'icu_message.dart';
 
 /// What a row's time says (`RowTime`).
 class RowTime {
-  const RowTime({required this.shown, required this.older, required this.words});
+  const RowTime({
+    required this.shown,
+    required this.older,
+    required this.words,
+  });
 
   /// "now", "3m", "2h"; on an older row its clock.
   final String shown;
@@ -110,8 +114,12 @@ DateTime? _parse(Object? value) {
 String formatRowClock(DateTime at, SourceTimeFormatter formatter) {
   final wall = formatter.wallTime(at);
   if (formatter.effectiveTimeFormat == SourceTimeFormat.twelveHour) {
-    final chinese = formatter.locale == 'zh' || formatter.locale.startsWith('zh_');
-    return DateFormat(chinese ? 'ah:mm' : 'h:mm a', formatter.locale).format(wall);
+    final chinese =
+        formatter.locale == 'zh' || formatter.locale.startsWith('zh_');
+    return DateFormat(
+      chinese ? 'ah:mm' : 'h:mm a',
+      formatter.locale,
+    ).format(wall);
   }
   return '${wall.hour}:${wall.minute.toString().padLeft(2, '0')}';
 }
@@ -148,21 +156,24 @@ RowTime? formatRowTime(
           .subtract(const Duration(days: 1));
       final yesterdayKey = yesterday.toIso8601String().substring(0, 10);
       if (day == yesterdayKey) {
-        return RowTime(shown: clock, older: true, words: copy.yesterdayAt(clock));
+        return RowTime(
+          shown: clock,
+          older: true,
+          words: copy.yesterdayAt(clock),
+        );
       }
-      final daysAgo =
-          DateTime.parse('${today}T12:00:00Z')
-              .difference(DateTime.parse('${day}T12:00:00Z'))
-              .inDays;
+      final daysAgo = DateTime.parse('${today}T12:00:00Z')
+          .difference(DateTime.parse('${day}T12:00:00Z'))
+          .inDays;
       final wall = formatter.wallTime(at);
       // A weekday names a day only within the last week; past that the name
       // needs its date.
       final name = daysAgo < 7
           ? DateFormat.EEEE(formatter.locale).format(wall)
           : (day.substring(0, 4) == today.substring(0, 4)
-                ? DateFormat.MMMMd(formatter.locale)
-                : DateFormat.yMMMMd(formatter.locale))
-              .format(wall);
+                    ? DateFormat.MMMMd(formatter.locale)
+                    : DateFormat.yMMMMd(formatter.locale))
+                .format(wall);
       return RowTime(shown: clock, older: true, words: copy.dayAt(name, clock));
   }
 }

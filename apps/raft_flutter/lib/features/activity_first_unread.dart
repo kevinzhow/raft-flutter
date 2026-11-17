@@ -200,22 +200,21 @@ Widget activityRootHeader(
   WorkspaceController w,
   String subtitle, {
   bool loadFailed = false,
-}) =>
-    activityStaleNotice(
-      w,
-      loadFailed: loadFailed,
-      // Web `headerContainerProps.onClick = goToNextUnread` on a phone.
-      GestureDetector(
-        key: const ValueKey('activity-header-retap'),
-        behavior: HitTestBehavior.opaque,
-        onTap: () => unawaited(ActivityRetap.of(w).trigger()),
-        child: RaftMobileRootHeader(
-          title: 'Activity',
-          subtitle: subtitle,
-          inset: RaftLayoutMetrics.panelInset,
-        ),
-      ),
-    );
+}) => activityStaleNotice(
+  w,
+  loadFailed: loadFailed,
+  // Web `headerContainerProps.onClick = goToNextUnread` on a phone.
+  GestureDetector(
+    key: const ValueKey('activity-header-retap'),
+    behavior: HitTestBehavior.opaque,
+    onTap: () => unawaited(ActivityRetap.of(w).trigger()),
+    child: RaftMobileRootHeader(
+      title: 'Activity',
+      subtitle: subtitle,
+      inset: RaftLayoutMetrics.panelInset,
+    ),
+  ),
+);
 
 /// ThreadsInbox: the Activity notice of task #164 sits under the head.
 Widget activityStaleNotice(

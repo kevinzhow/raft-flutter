@@ -12,34 +12,36 @@ import 'support/close_registry_popups.dart';
 import 'support/close_runner.dart';
 import 'support/close_support.dart';
 import 'support/close_surface.dart';
+
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   final surface = popupSurfaces.firstWhere((s) => s.id == 'dropdown-menu');
-  registerCloseTests([
-    surface,
-  ], {
-    'dropdown-menu': (t, size) async {
-      await mountHost(
-        t,
-        size,
-        (context) => SizedBox(
-          width: 360,
-          child: activityFilterBar(
-            context,
-            choice: ActivityFilterChoice.all,
-            onChoice: (_) {},
-            showMarkAllRead: false,
-            onMarkAllRead: () {},
+  registerCloseTests(
+    [surface],
+    {
+      'dropdown-menu': (t, size) async {
+        await mountHost(
+          t,
+          size,
+          (context) => SizedBox(
+            width: 360,
+            child: activityFilterBar(
+              context,
+              choice: ActivityFilterChoice.all,
+              onChoice: (_) {},
+              showMarkAllRead: false,
+              onMarkAllRead: () {},
+            ),
           ),
-        ),
-      );
-      await t.tap(find.text('Filter'));
-      await frames(t, 15);
-      return SurfaceProbe(
-        isOpen: openWhile(find.text('Artifacts')),
-        scrim: farPoint(size),
-      );
+        );
+        await t.tap(find.text('Filter'));
+        await frames(t, 15);
+        return SurfaceProbe(
+          isOpen: openWhile(find.text('Artifacts')),
+          scrim: farPoint(size),
+        );
+      },
     },
-  });
+  );
 }

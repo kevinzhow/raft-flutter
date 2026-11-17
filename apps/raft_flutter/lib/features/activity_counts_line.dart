@@ -98,9 +98,8 @@ Widget activityCountsLine(
 /// nothing has settled, which keeps the line's height.
 String activityCountsString(BuildContext context, ActivityCountsLine line) =>
     line.known
-    ? raftFormat(
-        context,
-        '{activeCount} in progress · {unreadCount} unread',
-        {'activeCount': line.active, 'unreadCount': line.unread},
-      )
+    ? raftFormat(context, '{activeCount} in progress · {unreadCount} unread', {
+        'activeCount': line.active,
+        'unreadCount': line.unread,
+      })
     : ' ';

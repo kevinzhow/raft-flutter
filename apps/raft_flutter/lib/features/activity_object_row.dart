@@ -26,7 +26,9 @@ class ActivityObjectRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final w = host.controller;
     final excerpt = artifactActivityExcerpt(row);
-    final latest = row['latestEvent'] is Map ? row['latestEvent'] as Map : const {};
+    final latest = row['latestEvent'] is Map
+        ? row['latestEvent'] as Map
+        : const {};
     // A comment's text is its author's, who may not be the newest event's actor.
     final actor =
         (excerpt?['author'] is Map ? excerpt!['author'] as Map : null) ??
@@ -59,7 +61,8 @@ class ActivityObjectRow extends StatelessWidget {
     final parts = objectRowParts(context, row, name);
     final home = objectRowHome(row);
     final unread = (row['unreadCount'] as num? ?? 0).toInt();
-    final mention = host.filter != 'mentions' && row['hasMention'] == true && unread > 0;
+    final mention =
+        host.filter != 'mentions' && row['hasMention'] == true && unread > 0;
     final images = excerpt == null
         ? null
         : artifactActivityImagesOnly(context, excerpt);
@@ -82,7 +85,13 @@ class ActivityObjectRow extends StatelessWidget {
       name: shownName,
       slot: RaftAvatarSlotContext.compactList,
       agent: actorType == 'agent',
-      content: _faceContent(context, w.client.origin, actorType, actorId, shownName),
+      content: _faceContent(
+        context,
+        w.client.origin,
+        actorType,
+        actorId,
+        shownName,
+      ),
     );
     return ActivityRowTimeBuilder(
       at: row['lastActivityAt'],
@@ -241,8 +250,10 @@ class _ObjectLine extends StatelessWidget {
         final textW = measure(text, textStyle);
         final newsW = [for (final n in news) measure(n, style)];
         final homeW = home == null ? 0.0 : measure(home!, style);
-        final newsTotal = newsW.fold(0.0, (a, b) => a + b) + _pieceGap * news.length;
-        final shared = avail - actorW - newsTotal - (home == null ? 0 : _pieceGap);
+        final newsTotal =
+            newsW.fold(0.0, (a, b) => a + b) + _pieceGap * news.length;
+        final shared =
+            avail - actorW - newsTotal - (home == null ? 0 : _pieceGap);
         // Where it lives truncates first, then the text, down to 12 characters.
         var textShown = textW, homeShown = homeW;
         if (shared < textW + homeW) {

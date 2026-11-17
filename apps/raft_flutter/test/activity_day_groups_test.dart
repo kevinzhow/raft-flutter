@@ -17,18 +17,29 @@ void main() {
   );
 
   test('time of a row follows its kind', () {
-    expect(activityRowTime(thread('a', '2026-11-17T01:00:00Z')),
-        DateTime.utc(2026, 11, 17, 1));
     expect(
-      activityRowTime({'kind': 'mention_action', 'createdAt': '2026-11-16T01:00:00Z'}),
+      activityRowTime(thread('a', '2026-11-17T01:00:00Z')),
+      DateTime.utc(2026, 11, 17, 1),
+    );
+    expect(
+      activityRowTime({
+        'kind': 'mention_action',
+        'createdAt': '2026-11-16T01:00:00Z',
+      }),
       DateTime.utc(2026, 11, 16, 1),
     );
     expect(
-      activityRowTime({'kind': 'channel', 'lastMessageAt': '2026-11-15T01:00:00Z'}),
+      activityRowTime({
+        'kind': 'channel',
+        'lastMessageAt': '2026-11-15T01:00:00Z',
+      }),
       DateTime.utc(2026, 11, 15, 1),
     );
     expect(
-      activityRowTime({'kind': 'object', 'lastActivityAt': '2026-11-14T01:00:00Z'}),
+      activityRowTime({
+        'kind': 'object',
+        'lastActivityAt': '2026-11-14T01:00:00Z',
+      }),
       DateTime.utc(2026, 11, 14, 1),
     );
     expect(activityRowTime({'kind': 'channel'}), isNull);
@@ -72,7 +83,10 @@ void main() {
 
   test('a time ahead of the clock counts as today', () {
     final groups = groupActivityRowsByDay(
-      [thread('a', '2026-11-17T20:00:00Z'), thread('b', '2026-11-19T01:00:00Z')],
+      [
+        thread('a', '2026-11-17T20:00:00Z'),
+        thread('b', '2026-11-19T01:00:00Z'),
+      ],
       formatter: formatter,
       now: now,
     );
@@ -105,10 +119,16 @@ void main() {
       thread('b', '2026-11-17T09:00:00Z'),
       thread('c', '2026-11-17T10:00:00Z'),
     ];
-    expect(sortActivityRowsByTime(rows).map((r) => r['threadChannelId']),
-        ['c', 'a', 'b']);
+    expect(sortActivityRowsByTime(rows).map((r) => r['threadChannelId']), [
+      'c',
+      'a',
+      'b',
+    ]);
     expect(
-      sortActivityRowsByTime(rows, direction: 'asc').map((r) => r['threadChannelId']),
+      sortActivityRowsByTime(
+        rows,
+        direction: 'asc',
+      ).map((r) => r['threadChannelId']),
       ['a', 'b', 'c'],
     );
   });

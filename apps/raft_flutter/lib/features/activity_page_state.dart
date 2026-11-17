@@ -43,7 +43,8 @@ class ActivityPageState {
 class SavedPageState {
   SavedPageState._();
   static final _owners = Expando<SavedPageState>();
-  static SavedPageState of(Object owner) => _owners[owner] ??= SavedPageState._();
+  static SavedPageState of(Object owner) =>
+      _owners[owner] ??= SavedPageState._();
 
   /// Saved rows behind the plan's history window (`historyHidden.count` of the
   /// first page); the page says how many in a banner.

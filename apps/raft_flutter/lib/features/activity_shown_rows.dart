@@ -57,7 +57,8 @@ class ActivityShownRows {
     final today = formatter.dayKey(now);
     final key = (stamp, today);
     if (identical(rows, _groupRows) && _groupStamp == key) return _groups!;
-    final groups = <String, ({String label, List<Map<String, dynamic>> rows})>{};
+    final groups =
+        <String, ({String label, List<Map<String, dynamic>> rows})>{};
     for (final row in rows) {
       final info = _of(row);
       final at = info.at;

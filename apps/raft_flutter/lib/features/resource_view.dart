@@ -2816,8 +2816,9 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
             final opened =
                 uri != null && await savedOpenWeb(uri).catchError((_) => false);
             if (!opened) {
-              if (mounted)
+              if (mounted) {
                 showRaftToast(context, 'Could not open this address.');
+              }
             }
           },
         )
@@ -4011,8 +4012,9 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
         onNothingUnread: () => showNothingUnreadToast(this),
       );
     } catch (_) {
-      if (mounted)
+      if (mounted) {
         showRaftToast(context, "Couldn't mark it as unread. Try again.");
+      }
     }
     if (!mounted || !accepts(scope)) return;
     if (!projected) await load(keep: true, quietErrors: true);

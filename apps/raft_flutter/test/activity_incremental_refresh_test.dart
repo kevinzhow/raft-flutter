@@ -195,7 +195,10 @@ Finder get skeleton => find.byWidgetPredicate(
 
 ScrollableState activityScroll(WidgetTester tester) => tester.state(
   find
-      .descendant(of: find.byType(ResourceView), matching: find.byType(Scrollable))
+      .descendant(
+        of: find.byType(ResourceView),
+        matching: find.byType(Scrollable),
+      )
       .first,
 );
 
@@ -376,7 +379,9 @@ void main() {
         });
         await tester.pump();
         expect(state.rows.first['lastMessagePreview'], 'Newer');
-        await tester.tap(find.widgetWithText(RaftMenuButtonItem, 'Mark as Done'));
+        await tester.tap(
+          find.widgetWithText(RaftMenuButtonItem, 'Mark as Done'),
+        );
         await tester.pumpAndSettle();
         // Web `swipeDoneCommitItem`: a Done asked on an older version of the
         // row is not written; the row stays, with its news.

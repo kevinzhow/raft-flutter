@@ -119,7 +119,10 @@ Future<void> pumpRowApp(
       home: Scaffold(
         body: Align(
           alignment: Alignment.topLeft,
-          child: SizedBox(width: width < size.width ? width : size.width, child: child),
+          child: SizedBox(
+            width: width < size.width ? width : size.width,
+            child: child,
+          ),
         ),
       ),
     ),

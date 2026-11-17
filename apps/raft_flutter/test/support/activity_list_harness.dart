@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
-import 'package:raft_flutter/data/activity_filter_choice.dart';
 import 'package:raft_flutter/data/device_preferences.dart';
 import 'package:raft_flutter/data/source_time_formatter.dart';
 import 'package:raft_flutter/features/resource_view.dart';
@@ -9,7 +8,7 @@ import 'package:raft_ui/raft_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../activity_incremental_refresh_test.dart'
-    show ActivityClient, ActivityWorkspace, activityFixture, channelRow;
+    show ActivityClient, ActivityWorkspace, channelRow;
 
 export '../activity_incremental_refresh_test.dart'
     show ActivityClient, ActivityWorkspace, activityFixture, channelRow;
@@ -24,17 +23,38 @@ class ListEnv {
   bool get phone => size.width < 768;
 }
 
-const phoneTouch = ListEnv('390x844 Android', Size(390, 844), TargetPlatform.android);
-const phoneMouse = ListEnv('390x844 Linux', Size(390, 844), TargetPlatform.linux);
-const foldA = ListEnv('856x944 Android', Size(856, 944), TargetPlatform.android);
-const foldB = ListEnv('944x856 Android', Size(944, 856), TargetPlatform.android);
-const desktop = ListEnv('1440x900 Linux', Size(1440, 900), TargetPlatform.linux);
+const phoneTouch = ListEnv(
+  '390x844 Android',
+  Size(390, 844),
+  TargetPlatform.android,
+);
+const phoneMouse = ListEnv(
+  '390x844 Linux',
+  Size(390, 844),
+  TargetPlatform.linux,
+);
+const foldA = ListEnv(
+  '856x944 Android',
+  Size(856, 944),
+  TargetPlatform.android,
+);
+const foldB = ListEnv(
+  '944x856 Android',
+  Size(944, 856),
+  TargetPlatform.android,
+);
+const desktop = ListEnv(
+  '1440x900 Linux',
+  Size(1440, 900),
+  TargetPlatform.linux,
+);
 
 /// A row of day [day] (2026-10-DD), channel [i].
-Map<String, dynamic> dayRow(int i, {int day = 10, int unread = 0, int? seq}) => {
-  ...channelRow(i, unread: unread, seq: seq),
-  'lastMessageAt': '2026-10-${day.toString().padLeft(2, '0')}T12:00:00Z',
-};
+Map<String, dynamic> dayRow(int i, {int day = 10, int unread = 0, int? seq}) =>
+    {
+      ...channelRow(i, unread: unread, seq: seq),
+      'lastMessageAt': '2026-10-${day.toString().padLeft(2, '0')}T12:00:00Z',
+    };
 
 Map<String, dynamic> threadRow(int i, {int unread = 0, int day = 10}) => {
   'kind': 'thread',
@@ -131,7 +151,9 @@ class ServerClient extends ActivityClient {
       if (path == '/channels/inbox/done') {
         rows.removeWhere((r) => r['channelId'] == data['channelId']);
       } else if (path == '/channels/threads/done') {
-        rows.removeWhere((r) => r['threadChannelId'] == data['threadChannelId']);
+        rows.removeWhere(
+          (r) => r['threadChannelId'] == data['threadChannelId'],
+        );
       } else if (path == '/channels/threads/unfollow') {
         for (final r in rows) {
           if (r['threadChannelId'] == data['threadChannelId']) {

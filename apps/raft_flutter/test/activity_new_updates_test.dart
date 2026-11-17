@@ -47,10 +47,8 @@ void main() {
       return tester.state(find.byType(ResourceView));
     }
 
-    Finder card(String title) => find.ancestor(
-      of: shown(title),
-      matching: find.byType(RaftInboxItem),
-    );
+    Finder card(String title) =>
+        find.ancestor(of: shown(title), matching: find.byType(RaftInboxItem));
 
     Rect listRect(WidgetTester tester) =>
         tester.getRect(find.byType(Scrollable).last);
@@ -188,7 +186,9 @@ void main() {
         // Web ThreadsInbox: `py-1`, then the day's heading (26 + 2px gap).
         expect(
           tester.getRect(card('Channel 20')).top,
-          list.top + 4 + tester.getSize(find.byType(RaftInboxItemListGroup).first).height,
+          list.top +
+              4 +
+              tester.getSize(find.byType(RaftInboxItemListGroup).first).height,
         );
         serverMoves(20, 2000, 't1');
         await tester.pump(const Duration(milliseconds: 150));

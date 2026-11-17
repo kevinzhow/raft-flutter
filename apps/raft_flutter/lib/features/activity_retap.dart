@@ -249,11 +249,8 @@ class ActivityRetap {
     }
   }
 
-  List<ActivityRetapRow> _rows(ActivityRetapHost host) => activityRetapRows(
-    host.context,
-    host.rowKeys(),
-    host.isUnread,
-  );
+  List<ActivityRetapRow> _rows(ActivityRetapHost host) =>
+      activityRetapRows(host.context, host.rowKeys(), host.isUnread);
 
   Future<void> _step(ActivityRetapHost host) async {
     var loads = 0;

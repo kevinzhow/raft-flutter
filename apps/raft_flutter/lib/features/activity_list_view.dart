@@ -19,8 +19,11 @@ const double _firstGroupGap = 0;
 /// `gap-0.5` between the rows of a day.
 const double _rowGap = 2;
 
-typedef ActivityRowBuilder =
-    Widget Function(BuildContext context, Map<String, dynamic> row, int index);
+typedef ActivityRowBuilder = Widget Function(
+  BuildContext context,
+  Map<String, dynamic> row,
+  int index,
+);
 
 /// The scroller of the Activity page. [groups] hold the rows in shown order; [phoneBar] is
 /// its first, pinned child on a phone. [indexOfKey] maps a row's list key to
@@ -65,7 +68,7 @@ class ActivityListView extends StatelessWidget {
     );
     var start = 0;
     final slivers = <Widget>[
-      ?(phoneBar == null ? null : PinnedHeaderSliver(child: phoneBar!)),
+      ?(phoneBar == null ? null : PinnedHeaderSliver(child: phoneBar)),
       ?(lead == null ? null : SliverToBoxAdapter(child: lead)),
       SliverToBoxAdapter(child: SizedBox(height: padding.top)),
     ];
@@ -96,7 +99,9 @@ class ActivityListView extends StatelessWidget {
                 separatorBuilder: (_, _) => const SizedBox(height: _rowGap),
                 findItemIndexCallback: (key) {
                   final at = indexOfKey(key);
-                  return at == null || at < first || at >= first + group.rows.length
+                  return at == null ||
+                          at < first ||
+                          at >= first + group.rows.length
                       ? null
                       : at - first;
                 },

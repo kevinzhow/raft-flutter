@@ -34,109 +34,125 @@ void main() {
   for (final dark in [false, true]) {
     final mode = dark ? 'dark' : 'light';
 
-    testWidgets('$mode 1440 mouse: ghost 28px Done appears on hover, with the tooltip', (
-      tester,
-    ) async {
+    testWidgets(
+      '$mode 1440 mouse: ghost 28px Done appears on hover, with the tooltip',
+      (tester) async {
+        useFixedClock();
+        final f = RowFixture(channels: [channelRecord('c1', 'launch-week')]);
+        addTearDown(f.dispose);
+        await pumpRowApp(
+          tester,
+          ActivityInboxRow(row: channelRow(), host: f.host()),
+          dark: dark,
+        );
+        expect(_touchDone, findsNothing);
+        expect(_actionsOpacity(tester), 0);
+        await _hover(tester, find.byKey(const ValueKey('inbox-item-open')));
+        expect(_actionsOpacity(tester), 1);
+        expect(tester.getSize(_mouseDone), const Size(28, 28));
+        final button = tester.widget<RaftInboxRowDone>(
+          find.byType(RaftInboxRowDone),
+        );
+        expect(button.tooltip, 'Mark as Done');
+        expect(button.semanticLabel, 'Mark #launch-week as Done');
+        await tester.tap(_mouseDone);
+        expect(f.calls.actions, ['done']);
+      },
+    );
+
+    for (final (name, size, platform) in rowEnvs) {
+      final touch = platform == TargetPlatform.android;
+      final phone = size.width == 390;
+      testWidgets(
+        '$mode $name: Done is ${phone && touch
+            ? 'only a screen-reader action'
+            : touch
+            ? 'the resting outline button'
+            : 'a hover button'}',
+        (tester) async {
+          useFixedClock();
+          final f = RowFixture(channels: [channelRecord('c1', 'launch-week')]);
+          addTearDown(f.dispose);
+          final handle = tester.ensureSemantics();
+          await pumpRowApp(
+            tester,
+            ActivityInboxRow(row: channelRow(), host: f.host()),
+            size: size,
+            platform: platform,
+            dark: dark,
+          );
+          if (touch && phone) {
+            // A phone: no button is mounted, the swipe and the menu are the way.
+            expect(_touchDone, findsNothing);
+            expect(_mouseDone, findsNothing);
+            expect(find.byType(RaftInboxRowDone), findsNothing);
+            final node = tester.getSemantics(
+              find.bySemanticsLabel(RegExp('^launch-week')),
+            );
+            final data = node.getSemanticsData();
+            final action = CustomSemanticsAction.getAction(
+              data.customSemanticsActionIds!.single,
+            )!;
+            expect(action.label, 'Mark #launch-week as Done');
+            tester.binding.performSemanticsAction(
+              SemanticsActionEvent(
+                type: SemanticsAction.customAction,
+                viewId: tester.view.viewId,
+                nodeId: node.id,
+                arguments: data.customSemanticsActionIds!.single,
+              ),
+            );
+            expect(f.calls.actions, ['done']);
+          } else if (touch) {
+            // A tablet: finger-operated at any width, so it rests in the row.
+            expect(_mouseDone, findsNothing);
+            expect(_touchDone, findsOneWidget);
+            expect(_actionsOpacity(tester), 1);
+            expect(tester.getSize(_touchDone), const Size(32, 32));
+            expect(
+              tester
+                  .widget<RaftInboxRowDone>(find.byType(RaftInboxRowDone))
+                  .semanticLabel,
+              'Mark #launch-week as Done',
+            );
+            await tester.tap(_touchDone);
+            expect(f.calls.actions, ['done']);
+          } else {
+            // A mouse, a narrow window too: the hover button.
+            expect(_touchDone, findsNothing);
+            expect(_actionsOpacity(tester), 0);
+            await _hover(tester, find.byKey(const ValueKey('inbox-item-open')));
+            expect(_actionsOpacity(tester), 1);
+            expect(_mouseDone, findsOneWidget);
+            // 28px bar button from 768 wide with a mouse, 32 below.
+            expect(
+              tester.getSize(_mouseDone),
+              size.width >= 768 ? const Size(28, 28) : const Size(32, 32),
+            );
+            await tester.tap(_mouseDone);
+            expect(f.calls.actions, ['done']);
+          }
+          handle.dispose();
+        },
+      );
+    }
+  }
+
+  testWidgets(
+    'a tablet (wide, touch) is not a phone even when the host says nothing',
+    (tester) async {
       useFixedClock();
       final f = RowFixture(channels: [channelRecord('c1', 'launch-week')]);
       addTearDown(f.dispose);
       await pumpRowApp(
         tester,
         ActivityInboxRow(row: channelRow(), host: f.host()),
-        dark: dark,
+        size: const Size(856, 944),
+        platform: TargetPlatform.android,
       );
-      expect(_touchDone, findsNothing);
-      expect(_actionsOpacity(tester), 0);
-      await _hover(tester, find.byKey(const ValueKey('inbox-item-open')));
-      expect(_actionsOpacity(tester), 1);
-      expect(tester.getSize(_mouseDone), const Size(28, 28));
-      final button = tester.widget<RaftInboxRowDone>(find.byType(RaftInboxRowDone));
-      expect(button.tooltip, 'Mark as Done');
-      expect(button.semanticLabel, 'Mark #launch-week as Done');
-      await tester.tap(_mouseDone);
-      expect(f.calls.actions, ['done']);
-    });
-
-    for (final (name, size, platform) in rowEnvs) {
-      final touch = platform == TargetPlatform.android;
-      final phone = size.width == 390;
-      testWidgets('$mode $name: Done is ${phone && touch ? 'only a screen-reader action' : touch ? 'the resting outline button' : 'a hover button'}', (
-        tester,
-      ) async {
-        useFixedClock();
-        final f = RowFixture(channels: [channelRecord('c1', 'launch-week')]);
-        addTearDown(f.dispose);
-        final handle = tester.ensureSemantics();
-        await pumpRowApp(
-          tester,
-          ActivityInboxRow(row: channelRow(), host: f.host()),
-          size: size,
-          platform: platform,
-          dark: dark,
-        );
-        if (touch && phone) {
-          // A phone: no button is mounted, the swipe and the menu are the way.
-          expect(_touchDone, findsNothing);
-          expect(_mouseDone, findsNothing);
-          expect(find.byType(RaftInboxRowDone), findsNothing);
-          final node = tester.getSemantics(find.bySemanticsLabel(RegExp('^launch-week')));
-          final data = node.getSemanticsData();
-          final action = CustomSemanticsAction.getAction(
-            data.customSemanticsActionIds!.single,
-          )!;
-          expect(action.label, 'Mark #launch-week as Done');
-          tester.binding.performSemanticsAction(
-            SemanticsActionEvent(
-              type: SemanticsAction.customAction,
-              viewId: tester.view.viewId,
-              nodeId: node.id,
-              arguments: data.customSemanticsActionIds!.single,
-            ),
-          );
-          expect(f.calls.actions, ['done']);
-        } else if (touch) {
-          // A tablet: finger-operated at any width, so it rests in the row.
-          expect(_mouseDone, findsNothing);
-          expect(_touchDone, findsOneWidget);
-          expect(_actionsOpacity(tester), 1);
-          expect(tester.getSize(_touchDone), const Size(32, 32));
-          expect(
-            tester.widget<RaftInboxRowDone>(find.byType(RaftInboxRowDone)).semanticLabel,
-            'Mark #launch-week as Done',
-          );
-          await tester.tap(_touchDone);
-          expect(f.calls.actions, ['done']);
-        } else {
-          // A mouse, a narrow window too: the hover button.
-          expect(_touchDone, findsNothing);
-          expect(_actionsOpacity(tester), 0);
-          await _hover(tester, find.byKey(const ValueKey('inbox-item-open')));
-          expect(_actionsOpacity(tester), 1);
-          expect(_mouseDone, findsOneWidget);
-          // 28px bar button from 768 wide with a mouse, 32 below.
-          expect(tester.getSize(_mouseDone), size.width >= 768 ? const Size(28, 28) : const Size(32, 32));
-          await tester.tap(_mouseDone);
-          expect(f.calls.actions, ['done']);
-        }
-        handle.dispose();
-      });
-    }
-  }
-
-  testWidgets('a tablet (wide, touch) is not a phone even when the host says nothing', (
-    tester,
-  ) async {
-    useFixedClock();
-    final f = RowFixture(channels: [channelRecord('c1', 'launch-week')]);
-    addTearDown(f.dispose);
-    await pumpRowApp(
-      tester,
-      ActivityInboxRow(row: channelRow(), host: f.host()),
-      size: const Size(856, 944),
-      platform: TargetPlatform.android,
-    );
-    expect(_touchDone, findsOneWidget);
-  });
+      expect(_touchDone, findsOneWidget);
+    },
+  );
 
   testWidgets('the host may say it is a phone with touch', (tester) async {
     useFixedClock();
@@ -149,59 +165,66 @@ void main() {
     expect(find.byType(RaftInboxRowDone), findsNothing);
   });
 
-  testWidgets('thread rows: "Mark the thread in #channel as Done"; task rows name the task', (
-    tester,
-  ) async {
-    useFixedClock();
-    final f = RowFixture(channels: [channelRecord('c1', 'launch-week')]);
-    addTearDown(f.dispose);
-    await pumpRowApp(
-      tester,
-      ActivityInboxRow(row: threadRow(), host: f.host()),
-    );
-    expect(
-      tester.widget<RaftInboxRowDone>(find.byType(RaftInboxRowDone)).semanticLabel,
-      'Mark the thread in #launch-week as Done',
-    );
-    await pumpRowApp(
-      tester,
-      ActivityInboxRow(
-        row: threadRow(
-          parentPreview: '',
-          extra: {
-            'conversationKind': 'task',
-            'taskNumber': 7,
-            'taskStatus': 'todo',
-            'taskTitle': 'Fix the login bug',
-          },
+  testWidgets(
+    'thread rows: "Mark the thread in #channel as Done"; task rows name the task',
+    (tester) async {
+      useFixedClock();
+      final f = RowFixture(channels: [channelRecord('c1', 'launch-week')]);
+      addTearDown(f.dispose);
+      await pumpRowApp(
+        tester,
+        ActivityInboxRow(row: threadRow(), host: f.host()),
+      );
+      expect(
+        tester
+            .widget<RaftInboxRowDone>(find.byType(RaftInboxRowDone))
+            .semanticLabel,
+        'Mark the thread in #launch-week as Done',
+      );
+      await pumpRowApp(
+        tester,
+        ActivityInboxRow(
+          row: threadRow(
+            parentPreview: '',
+            extra: {
+              'conversationKind': 'task',
+              'taskNumber': 7,
+              'taskStatus': 'todo',
+              'taskTitle': 'Fix the login bug',
+            },
+          ),
+          host: f.host(taskV2: true),
         ),
-        host: f.host(taskV2: true),
-      ),
-    );
-    expect(
-      tester.widget<RaftInboxRowDone>(find.byType(RaftInboxRowDone)).semanticLabel,
-      'Mark Fix the login bug as Done',
-    );
-    await pumpRowApp(
-      tester,
-      ActivityInboxRow(
-        row: threadRow(
-          parentPreview: '',
-          extra: {
-            'conversationKind': 'task',
-            'taskNumber': 7,
-            'taskStatus': 'todo',
-            'taskTitle': 'Fix the login bug',
-          },
+      );
+      expect(
+        tester
+            .widget<RaftInboxRowDone>(find.byType(RaftInboxRowDone))
+            .semanticLabel,
+        'Mark Fix the login bug as Done',
+      );
+      await pumpRowApp(
+        tester,
+        ActivityInboxRow(
+          row: threadRow(
+            parentPreview: '',
+            extra: {
+              'conversationKind': 'task',
+              'taskNumber': 7,
+              'taskStatus': 'todo',
+              'taskTitle': 'Fix the login bug',
+            },
+          ),
+          host: f.host(taskV2: false),
         ),
-        host: f.host(taskV2: false),
-      ),
-    );
-    expect(
-      tester.widget<RaftInboxRowDone>(find.byType(RaftInboxRowDone)).semanticLabel,
-      'Mark #launch-week:#7 as Done',
-    );
-  });
+      );
+      expect(
+        tester
+            .widget<RaftInboxRowDone>(find.byType(RaftInboxRowDone))
+            .semanticLabel,
+        'Mark #launch-week:#7 as Done',
+      );
+    },
+  );
 
   testWidgets('a mention_action row has no Done', (tester) async {
     useFixedClock();
@@ -236,7 +259,10 @@ void main() {
     addTearDown(f.dispose);
     await pumpRowApp(
       tester,
-      ActivityInboxRow(row: channelRow(), host: f.host(filter: 'done')),
+      ActivityInboxRow(
+        row: channelRow(),
+        host: f.host(filter: 'done'),
+      ),
     );
     expect(find.byTooltip('Restore conversation'), findsNothing);
     expect(find.byTooltip('Mark conversation done'), findsNothing);

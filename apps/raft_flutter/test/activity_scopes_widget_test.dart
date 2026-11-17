@@ -64,7 +64,9 @@ void main() {
     w = ScopeWorkspace(c)
       ..server = base.server
       ..channels = base.channels
-      ..inbox = [for (var i = 0; i < 4; i++) channelRow(i, unread: i == 1 ? 2 : 0)];
+      ..inbox = [
+        for (var i = 0; i < 4; i++) channelRow(i, unread: i == 1 ? 2 : 0),
+      ];
   });
   tearDown(() async {
     w.dispose();
@@ -72,21 +74,26 @@ void main() {
     DevicePreferences.reset();
   });
 
-  testWidgets('a scope asks Web exact query: filter all, its scope, sort desc, 50', (t) async {
-    final dynamic state = await mount(t);
-    expect(w.inboxQueries.first['limit'], 50);
-    expect(w.inboxQueries.first['filter'], 'all');
-    expect(w.inboxQueries.first.containsKey('scope'), isFalse);
-    state.chooseActivityFilter(ActivityFilterChoice.pinned);
-    await t.pumpAndSettle();
-    final scoped = w.inboxQueries.where((q) => q['scope'] == 'pinned').first;
-    expect(scoped['filter'], 'all');
-    expect(scoped['sort'], 'desc');
-    expect(scoped['limit'], 50);
-    expect(w.inboxQueries.where((q) => q['scope'] == 'pinned').length, 1);
-  });
+  testWidgets(
+    'a scope asks Web exact query: filter all, its scope, sort desc, 50',
+    (t) async {
+      final dynamic state = await mount(t);
+      expect(w.inboxQueries.first['limit'], 50);
+      expect(w.inboxQueries.first['filter'], 'all');
+      expect(w.inboxQueries.first.containsKey('scope'), isFalse);
+      state.chooseActivityFilter(ActivityFilterChoice.pinned);
+      await t.pumpAndSettle();
+      final scoped = w.inboxQueries.where((q) => q['scope'] == 'pinned').first;
+      expect(scoped['filter'], 'all');
+      expect(scoped['sort'], 'desc');
+      expect(scoped['limit'], 50);
+      expect(w.inboxQueries.where((q) => q['scope'] == 'pinned').length, 1);
+    },
+  );
 
-  testWidgets('the choice is kept per server and read on the first frame', (t) async {
+  testWidgets('the choice is kept per server and read on the first frame', (
+    t,
+  ) async {
     final dynamic state = await mount(t);
     state.chooseActivityFilter(ActivityFilterChoice.saved);
     await t.pumpAndSettle();
@@ -97,7 +104,9 @@ void main() {
     expect(w.inboxQueries.last['scope'], 'saved');
   });
 
-  testWidgets('an empty scope shows its own copy, never the default', (t) async {
+  testWidgets('an empty scope shows its own copy, never the default', (
+    t,
+  ) async {
     final dynamic state = await mount(t);
     state.chooseActivityFilter(ActivityFilterChoice.artifacts);
     await t.pumpAndSettle();
@@ -105,7 +114,9 @@ void main() {
     expect(find.text('No conversations'), findsNothing);
   });
 
-  testWidgets('no rows and a failed load show the banner, Retry resolves it', (t) async {
+  testWidgets('no rows and a failed load show the banner, Retry resolves it', (
+    t,
+  ) async {
     final dynamic state = await mount(t);
     w.failScope = true;
     state.chooseActivityFilter(ActivityFilterChoice.pinned);
@@ -125,26 +136,29 @@ void main() {
     expect(find.byKey(const ValueKey('inbox-load-failed')), findsNothing);
   });
 
-  testWidgets('an object row is keyed by its object and does not crash the list', (t) async {
-    w.objects = [
-      {
-        'kind': 'object',
-        'objectKind': 'artifact',
-        'objectId': 'o1',
-        'lastActivityAt': '2026-10-10T00:00:00Z',
-        'unreadCount': 1,
-        'hasMention': false,
-        'doneFrontierSeq': '9',
-      },
-    ];
-    final dynamic state = await mount(t);
-    state.chooseActivityFilter(ActivityFilterChoice.artifacts);
-    await t.pumpAndSettle();
-    expect(t.takeException(), isNull);
-    expect(state.rows, hasLength(1));
-    expect(state.rowKey(state.rows.single), 'object:artifact:o1');
-    expect(state.activityFacets.objects.objectCount, 0);
-  });
+  testWidgets(
+    'an object row is keyed by its object and does not crash the list',
+    (t) async {
+      w.objects = [
+        {
+          'kind': 'object',
+          'objectKind': 'artifact',
+          'objectId': 'o1',
+          'lastActivityAt': '2026-10-10T00:00:00Z',
+          'unreadCount': 1,
+          'hasMention': false,
+          'doneFrontierSeq': '9',
+        },
+      ];
+      final dynamic state = await mount(t);
+      state.chooseActivityFilter(ActivityFilterChoice.artifacts);
+      await t.pumpAndSettle();
+      expect(t.takeException(), isNull);
+      expect(state.rows, hasLength(1));
+      expect(state.rowKey(state.rows.single), 'object:artifact:o1');
+      expect(state.activityFacets.objects.objectCount, 0);
+    },
+  );
 
   testWidgets('Pinned reloads when the sidebar pins change', (t) async {
     final dynamic state = await mount(t);
@@ -159,7 +173,10 @@ void main() {
     };
     w.notifyListeners();
     await t.pumpAndSettle();
-    expect(w.inboxQueries.where((q) => q['scope'] == 'pinned').length, before + 1);
+    expect(
+      w.inboxQueries.where((q) => q['scope'] == 'pinned').length,
+      before + 1,
+    );
   });
 
   testWidgets('Saved reloads when savedRevision changes', (t) async {
@@ -170,19 +187,25 @@ void main() {
     w.savedRevision++;
     w.notifyListeners();
     await t.pumpAndSettle();
-    expect(w.inboxQueries.where((q) => q['scope'] == 'saved').length, before + 1);
+    expect(
+      w.inboxQueries.where((q) => q['scope'] == 'saved').length,
+      before + 1,
+    );
   });
 
-  testWidgets('the counts line says in progress / unread and keeps the settled values', (t) async {
-    final dynamic state = await mount(t);
-    expect(find.text('4 in progress · 2 unread'), findsOneWidget);
-    final hold = Completer<void>();
-    w.hold = hold;
-    state.chooseActivityFilter(ActivityFilterChoice.unread);
-    await t.pump();
-    expect(find.text('4 in progress · 2 unread'), findsOneWidget);
-    hold.complete();
-    w.hold = null;
-    await t.pumpAndSettle();
-  });
+  testWidgets(
+    'the counts line says in progress / unread and keeps the settled values',
+    (t) async {
+      final dynamic state = await mount(t);
+      expect(find.text('4 in progress · 2 unread'), findsOneWidget);
+      final hold = Completer<void>();
+      w.hold = hold;
+      state.chooseActivityFilter(ActivityFilterChoice.unread);
+      await t.pump();
+      expect(find.text('4 in progress · 2 unread'), findsOneWidget);
+      hold.complete();
+      w.hold = null;
+      await t.pumpAndSettle();
+    },
+  );
 }

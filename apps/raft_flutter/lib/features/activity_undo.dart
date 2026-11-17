@@ -94,13 +94,15 @@ class ActivityUndo extends ChangeNotifier with WidgetsBindingObserver {
   /// unfollowed while this list is shown.
   bool hides(String? key) =>
       key != null &&
-      (_unfollowed.contains(key) || (_pending?.key == key && !_pending!.settled));
+      (_unfollowed.contains(key) ||
+          (_pending?.key == key && !_pending!.settled));
 
   bool get hasPending => _pending != null;
   bool get hasHidden => _pending != null || _unfollowed.isNotEmpty;
 
   /// Done on every route.
-  void done(Map<String, dynamic> row) => _wait('done', row, 'Marked as done', {});
+  void done(Map<String, dynamic> row) =>
+      _wait('done', row, 'Marked as done', {});
 
   /// Unfollow on every route (a followed thread).
   void unfollow(Map<String, dynamic> row, String conversation) => _wait(
@@ -230,7 +232,10 @@ class ActivityUndo extends ChangeNotifier with WidgetsBindingObserver {
     }
   }
 
-  Future<void> _writeUnfollow(Map<String, dynamic> row, String? serverId) async {
+  Future<void> _writeUnfollow(
+    Map<String, dynamic> row,
+    String? serverId,
+  ) async {
     final mutation = activityMutation(row, 'unfollow');
     if (mutation != null) await _post(mutation.path, mutation.data, serverId);
   }
@@ -350,7 +355,7 @@ class ActivityUndo extends ChangeNotifier with WidgetsBindingObserver {
           held.json['prefsVersion'] == previous['prefsVersion']) {
         deps.w.setActivityMuteState(id, previous);
         final context = deps.context();
-        if (context != null) {
+        if (context != null && context.mounted) {
           showRaftToast(
             context,
             next

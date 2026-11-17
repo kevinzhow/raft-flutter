@@ -11,8 +11,7 @@ const Map<String, String> zhCatalogUpstream124Inbox = <String, String>{
   "{count, plural, one {# more saved message is older than {days} days and isn't listed.} other {# more saved messages are older than {days} days and aren't listed.}}":
       "另有 {count, number} 条保存的消息超过了 {days} 天，没有列出。",
   // saved.historyHidden.bannerAll
-  "{count, plural, =1 {Your saved message is older than {days} days.} other {All # of your saved messages are older than {days} days.}}":
-      "{count, plural, =1 {你保存的这条消息超过了 {days} 天。} other {你保存的 # 条消息都超过了 {days} 天。}}",
+  "{count, plural, =1 {Your saved message is older than {days} days.} other {All # of your saved messages are older than {days} days.}}": "{count, plural, =1 {你保存的这条消息超过了 {days} 天。} other {你保存的 # 条消息都超过了 {days} 天。}}",
   // saved.loadError
   "Couldn't load saved messages.": "无法加载已保存消息。",
   // thread.contextMenu.muteActivity
@@ -92,6 +91,5 @@ const Map<String, String> zhCatalogUpstream124Inbox = <String, String>{
   // agent.appBadgeTooltip
   "Created by the {app} app": "由 {app} 应用创建",
   // artifacts.dashboard.newVersions
-  "{count, plural, one {# new version} other {# new versions}}":
-      "{count} 个新版本",
+  "{count, plural, one {# new version} other {# new versions}}": "{count} 个新版本",
 };

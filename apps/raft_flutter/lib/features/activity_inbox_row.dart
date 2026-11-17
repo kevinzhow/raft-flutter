@@ -25,7 +25,8 @@ bool activityPhoneTouch(BuildContext context, ActivityRowHost host) =>
 
 /// The row's Done: the visible button, or on a phone with touch the
 /// screen-reader action. `mention_action` rows have none.
-({List<Widget> actions, Map<String, VoidCallback> semanticActions}) activityRowDone(
+({List<Widget> actions, Map<String, VoidCallback> semanticActions})
+activityRowDone(
   BuildContext context,
   ActivityRowHost host, {
   required String label,
@@ -237,7 +238,9 @@ class ActivityInboxRow extends StatelessWidget {
     }
     return (
       RaftIconTile(
-        glyph: kind == 'dm' ? RaftGlyph.atSign : channelGlyph('${row['channelType'] ?? ''}'),
+        glyph: kind == 'dm'
+            ? RaftGlyph.atSign
+            : channelGlyph('${row['channelType'] ?? ''}'),
       ),
       null,
     );
@@ -311,11 +314,12 @@ class ActivityInboxRow extends StatelessWidget {
           key: const ValueKey('conversation-card-primary'),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: f.titleMuted ? DefaultTextStyle.of(context).style.copyWith(color: hint) : null,
+          style: f.titleMuted
+              ? DefaultTextStyle.of(context).style.copyWith(color: hint)
+              : null,
         );
         final badges = [
-          if (f.appBadge != null)
-            _AppBadge(app: f.appBadge!, botName: f.title),
+          if (f.appBadge != null) _AppBadge(app: f.appBadge!, botName: f.title),
           if (f.legacyTaskNumber != null && f.taskStatus != null)
             RaftListRowTaskBadge(
               key: const ValueKey('conversation-card-task-badge'),
@@ -326,7 +330,9 @@ class ActivityInboxRow extends StatelessWidget {
         final body = Text.rich(
           key: const ValueKey('conversation-card-body'),
           TextSpan(
-            style: f.strong ? DefaultTextStyle.of(context).style.copyWith(color: t.strong) : null,
+            style: f.strong
+                ? DefaultTextStyle.of(context).style.copyWith(color: t.strong)
+                : null,
             children: [
               if (f.threadPrefix != null)
                 f.threadPrefixHidden
@@ -349,7 +355,9 @@ class ActivityInboxRow extends StatelessWidget {
               if (f.hasPreview)
                 TextSpan(
                   text: f.preview,
-                  style: f.previewRetracted ? DefaultTextStyle.of(context).style.copyWith(color: hint) : null,
+                  style: f.previewRetracted
+                      ? DefaultTextStyle.of(context).style.copyWith(color: hint)
+                      : null,
                 ),
             ],
           ),
@@ -422,7 +430,10 @@ class ActivityInboxRow extends StatelessWidget {
                 : Row(
                     mainAxisSize: MainAxisSize.min,
                     spacing: _titleBadgeGap,
-                    children: [Flexible(child: titleText), ...badges],
+                    children: [
+                      Flexible(child: titleText),
+                      ...badges,
+                    ],
                   ),
             timestamp: time == null
                 ? null
@@ -432,7 +443,8 @@ class ActivityInboxRow extends StatelessWidget {
                   ),
             timestampAtRest: time != null && !time.older,
             timestampTooltip: time?.words,
-            body: f.hasPreview || f.senderLabel != null || f.threadPrefix != null
+            body:
+                f.hasPreview || f.senderLabel != null || f.threadPrefix != null
                 ? body
                 : null,
             marks: marks,

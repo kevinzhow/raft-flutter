@@ -50102,7 +50102,7 @@
         "owner": "design-system alignment",
         "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
       },
-      "apps/raft_flutter/lib/features/resource_view.dart#local-function:CLASS:_ResourceViewState@7358/METHOD:activityList@110085/FUNCTION:bar@110307": {
+      "apps/raft_flutter/lib/features/resource_view.dart#local-function:CLASS:_ResourceViewState@7358/METHOD:activityList@110103/FUNCTION:bar@110325": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",

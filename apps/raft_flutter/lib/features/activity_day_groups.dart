@@ -70,7 +70,9 @@ List<ActivityDayGroup> groupActivityRowsByDay(
     final group = groups.putIfAbsent(
       day,
       () => (
-        label: at == null ? '' : formatter.dayLabel(at.isAfter(now) ? now : at, now: now),
+        label: at == null
+            ? ''
+            : formatter.dayLabel(at.isAfter(now) ? now : at, now: now),
         rows: <Map<String, dynamic>>[],
       ),
     );

@@ -37,6 +37,9 @@ void main() {
   test('read state of an object row', () {
     expect(activityObjectRowIsRead(row), isFalse);
     expect(activityObjectRowIsRead({...row, 'unreadCount': 0}), isTrue);
-    expect(activityObjectRowIsRead({...row, 'unreadCount': 0, 'hasMention': true}), isFalse);
+    expect(
+      activityObjectRowIsRead({...row, 'unreadCount': 0, 'hasMention': true}),
+      isFalse,
+    );
   });
 }
