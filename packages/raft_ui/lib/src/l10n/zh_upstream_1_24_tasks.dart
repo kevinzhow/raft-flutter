@@ -50,7 +50,4 @@ const Map<String, String> zhCatalogUpstream124Tasks = <String, String>{
   "Delete {count} tasks": "删除 {count} 个任务",
   "{count} task wasn't deleted. Try again.": "有 {count} 个任务未能删除，请重试。",
   "{count} tasks weren't deleted. Try again.": "有 {count} 个任务未能删除，请重试。",
-  "{count}m ago": "{count} 分钟前",
-  "{count}h ago": "{count} 小时前",
-  "{count}d ago": "{count} 天前",
 };

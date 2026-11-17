@@ -9,7 +9,6 @@
 const Map<String, String> zhCatalogUpstream124TasksBoard = <String, String>{
   "Can't move from {from} to {to}": "无法从{from}移到{to}",
   "Task #{taskNumber} moved to {status}": "任务 #{taskNumber} 已移到{status}",
-  "no update for {days} days": "{days} 天没有更新",
   "To pick up an item, press Space. Use the arrow keys to move it, Space to drop it, Escape to cancel.":
       "要拿起项目，请按空格键；用方向键移动，按空格键放下，按 Esc 取消。",
   "Picked up task #{number}. Over {place}.": "已拿起任务 #{number}，位于{place}。",
