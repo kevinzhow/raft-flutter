@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
 
-import 'components.dart' show RaftAvatar, RaftAvatarKind;
-import 'design_primitives.dart' show RaftMetrics;
+import 'agent_profile.dart' show RaftAvatarSlot, RaftAvatarSlotContext;
+import 'delegated_face.dart' show RaftAvatarCorner;
+import 'design_primitives.dart' show RaftMetrics, RaftTypography;
 import 'icons.dart';
 import 'interaction.dart';
 import 'tap_slop.dart';
-import 'mounted_avatar_recipe.dart' show RaftMountedAvatarContext;
 import 'public_page_mark.dart';
 import 'raft/button.dart';
 import 'raft/status.dart' show RaftAttentionDot;
+import 'text_scaling.dart' show RaftChrome;
+import 'theme.dart';
 
 /// raft-ui `WorkspaceButton` (0.95.3): an `on-frame` `md` Button holding the
 /// server's avatar, its name (`WorkspaceButtonName`, `max-w-[200px]`
@@ -45,15 +47,38 @@ class RaftWorkspaceButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final avatar = RaftAvatar(
-      name: name.trim().isEmpty ? 'R' : name,
-      kind: RaftAvatarKind.server,
-      mountedContext: RaftMountedAvatarContext.compactRow,
-      imageUrl: avatarUrl,
-      corner: attention
-          ? const ExcludeSemantics(child: RaftAttentionDot())
-          : null,
+    final t = RaftTokens.of(context);
+    final initial = Center(
+      child: Text(
+        name.trim().isEmpty ? 'R' : name.trim().characters.first.toUpperCase(),
+        textScaler: RaftChrome.boundedScalerOf(context),
+        // Web AvatarSlot `compact-row` server fallback: 13/700 on the ink tile.
+        style: RaftTypography.body(
+          t,
+          size: 13,
+          line: 16,
+          weight: FontWeight.w700,
+          color: t.colors['foreground-avatar-server'] ?? t.strong,
+        ),
+      ),
     );
+    // The server tile (ink fill, sticker-yellow initial), the same one the
+    // bar's server tab shows, at AvatarSlot `compact-row` size 27.
+    final tile = RaftAvatarSlot(
+      name: name,
+      slot: RaftAvatarSlotContext.compactList,
+      agent: false,
+      server: true,
+      sizeOverride: 27,
+      avatarUrl: avatarUrl,
+      content: avatarUrl == null ? initial : null,
+    );
+    final avatar = attention
+        ? RaftAvatarCorner(
+            avatar: tile,
+            corner: const ExcludeSemantics(child: RaftAttentionDot()),
+          )
+        : tile;
     final content = Row(
       mainAxisSize: MainAxisSize.min,
       children: [

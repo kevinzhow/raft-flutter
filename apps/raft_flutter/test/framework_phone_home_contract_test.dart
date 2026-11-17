@@ -65,7 +65,7 @@ void main() {
           );
           expect(t.getSize(control).height, 36);
           expect(
-            find.descendant(of: selector, matching: find.byType(RaftAvatar)),
+            find.descendant(of: selector, matching: find.byType(RaftAvatarSlot)),
             findsOneWidget,
           );
           expect(

@@ -67,12 +67,24 @@ void main() {
       );
       final avatar = find.descendant(
         of: find.byType(RaftWorkspaceButton),
-        matching: find.byType(RaftAvatar),
+        matching: find.byType(RaftAvatarSlot),
       );
       expect(avatar, findsOneWidget);
       final rect = t.getRect(avatar);
       expect(rect.left, 20, reason: 'button -ml-[11px] puts the avatar on 20');
       expect(rect.size, const Size.square(27), reason: 'compact-row avatar');
+      // Web AvatarSlot type="server": the ink tile with the sticker-ink edge,
+      // the same tile as the bar's server tab (not a neutral human fallback).
+      final tile = t.widget(
+        find.descendant(
+          of: avatar,
+          matching: find.byWidgetPredicate(
+            (w) => w.runtimeType.toString() == 'RaftCssBox',
+          ),
+        ),
+      );
+      expect((tile as dynamic).fill, tokens.colors['layer-avatar-server']);
+      expect((tile as dynamic).borderColor, tokens.colors['sticker-ink']);
     });
 
     testWidgets('$mode name truncates at 200, chevron and globe follow', (
@@ -118,7 +130,7 @@ void main() {
       final avatar = t.getRect(
         find.descendant(
           of: find.byType(RaftWorkspaceButton),
-          matching: find.byType(RaftAvatar),
+          matching: find.byType(RaftAvatarSlot),
         ),
       );
       expect(dot.center.dx, greaterThan(avatar.center.dx));

@@ -46,7 +46,7 @@ void main() {
         );
         final avatar = find.descendant(
           of: button,
-          matching: find.byType(RaftAvatar),
+          matching: find.byType(RaftAvatarSlot),
         );
         expect(avatar, findsOneWidget);
         expect(t.getRect(avatar).left, 20, reason: '-ml-[11px] on the 20 edge');

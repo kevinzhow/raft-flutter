@@ -67,7 +67,7 @@ void main() {
                   .getRect(
                     find.descendant(
                       of: selector,
-                      matching: find.byType(RaftAvatar),
+                      matching: find.byType(RaftAvatarSlot),
                     ),
                   )
                   .left,
