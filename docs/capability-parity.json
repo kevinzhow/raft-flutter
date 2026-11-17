@@ -16525,22 +16525,18 @@
    "status": "covered",
    "webEntry": "store/mobileNavStore.ts + components/layout/MainLayout.tsx MobileTabBar + components/layout/MobileServerTab.tsx",
    "gate": "",
-   "flutterEntry": "mobile_workspace_navigation.dart WorkspaceMobileTabBar (home, activity, tasks, search + the server tab of mobile_server_tab.dart) with configurable order/visibility of the four tabs in mobile_tabbar_settings_page.dart (Flutter-only 'Bottom bar' setting)",
+   "flutterEntry": "mobile_workspace_navigation.dart WorkspaceMobileTabBar (home, activity, tasks, search + the server tab of mobile_server_tab.dart). The bar is fixed like Web: no per-device tab choice, a value stored by the removed 'Bottom bar' setting is ignored",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/mobile_workspace_navigation.dart",
      "needle": "class WorkspaceMobileTabBar"
     },
     {
-     "file": "apps/raft_flutter/lib/features/mobile_tabbar_settings_page.dart",
-     "needle": "class MobileTabbarSettingsPage"
-    },
-    {
      "file": "apps/raft_flutter/lib/features/mobile_server_tab.dart",
      "needle": "class MobileServerTab"
     }
    ],
-   "justification": "Flutter keeps the device-local Bottom bar setting (order and visibility of the four tabs); recorded DIFF in docs/navigation-audit.md. The server tab's pages row shows Members, Computers and Settings; Artifacts and Apps join it with their pages (Web owners see five destinations in a 3-column grid).",
+   "justification": "The bar is fixed like Web (no tab customisation); the old device-local Bottom bar setting was removed and a value it stored is ignored. The server tab's pages row shows Members, Computers and Settings; Artifacts and Apps join it with their pages (Web owners see five destinations in a 3-column grid).",
    "impact": "",
    "size": ""
   },

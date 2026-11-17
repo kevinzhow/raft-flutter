@@ -20,7 +20,6 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:raft_flutter/platform/app_services.dart';
 import 'package:raft_flutter/data/device_preferences.dart';
-import 'package:raft_flutter/data/mobile_tabbar_preferences.dart';
 import 'package:raft_flutter/data/source_time_formatter.dart';
 import 'package:raft_flutter/main.dart' as app;
 import 'package:raft_flutter/platform/android_performance_hint.dart';
@@ -206,19 +205,9 @@ Future<void> main() async {
         o.path.endsWith('/url'),
     (o) => {'url': files.url(originals[o.path.split('/')[2]]!)},
   ));
-  const tabs = MobileTabbarSettings(
-    order: MobileTabs.configurable,
-    enabled: {
-      MobileTabs.home,
-      MobileTabs.tasks,
-      MobileTabs.activity,
-      MobileTabs.search,
-    },
-  );
   SharedPreferences.setMockInitialValues({
     'raft.origin': client.origin,
     'raft.mode': 'light',
-    MobileTabbarStore.preferenceKey: tabs.encode(),
   });
   Timer.periodic(const Duration(seconds: 3), (_) {
     debugPrint('attach-progress: api hits=${api.hits} misses=${api.misses}');

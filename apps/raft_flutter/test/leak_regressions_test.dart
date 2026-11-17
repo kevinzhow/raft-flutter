@@ -64,7 +64,6 @@ void main() {
   test('the app leak ignore list never hides what these tests guard', () {
     final ignored = LeakTesting.settings.ignoredLeaks.notDisposed.byClass.keys;
     for (final guarded in [
-      'MobileTabbarStore',
       'AttachmentTransfer',
       'ValueNotifier<AttachmentTransferProgress?>',
       'ImageInfo',

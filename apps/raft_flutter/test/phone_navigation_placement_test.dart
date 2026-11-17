@@ -335,17 +335,13 @@ void main() {
         closeTo(24, .5),
       );
       expect(find.byKey(const Key('mobile-detail-back')), findsNothing);
-      // Settings: the rail stays and the Bottom bar row is not offered
-      // (and neither is the bottom-bar-only Computers shortcut).
+      // Settings: the rail stays and the bottom-bar-only Computers shortcut
+      // is not offered.
       await r.tapRail('settings');
       expect(r.w.location.route, RaftRoute.settings);
       expect(
         find.byKey(const ValueKey('workspace-settings-nav-appearance')),
         findsOneWidget,
-      );
-      expect(
-        find.byKey(const ValueKey('workspace-settings-nav-bottom-bar')),
-        findsNothing,
       );
       expect(
         find.byKey(const ValueKey('workspace-settings-nav-computers')),
@@ -380,16 +376,6 @@ void main() {
       await r.settle();
       expect(r.w.location.route, RaftRoute.settings);
       expect(tester.takeException(), isNull);
-    });
-
-    testWidgets('bottom bar keeps its Settings Bottom bar row', (tester) async {
-      final r = _Rig(tester, size: const Size(390, 844));
-      await r.start();
-      await openServerPage(tester, 'settings', flush: (_) => r.settle());
-      expect(
-        find.byKey(const ValueKey('workspace-settings-nav-bottom-bar')),
-        findsOneWidget,
-      );
     });
 
     testWidgets('live-activity-free rail keeps the system inset', (

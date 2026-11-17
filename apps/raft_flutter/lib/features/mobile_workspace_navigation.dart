@@ -44,7 +44,6 @@ String mobileWorkspaceBackSection(String section) => switch (section) {
 /// MobileTabBar (Web v1.24 MainLayout.tsx): Home, Activity, Tasks and Search,
 /// then the server tab ([serverTab]), which opens the server list and the
 /// server's pages (Members, Computers, Settings are pushed pages, not tabs).
-/// The device's Bottom bar setting chooses and orders the four tabs.
 class WorkspaceMobileTabBar extends StatelessWidget {
   const WorkspaceMobileTabBar({
     super.key,
@@ -53,15 +52,10 @@ class WorkspaceMobileTabBar extends StatelessWidget {
     required this.onSelected,
     this.onReselected,
     this.bottomInset = 0,
-    this.tabs,
     this.activityUnread,
     this.serverTab,
   });
   final WorkspaceController controller;
-
-  /// The configurable tabs to show, in order (the server tab is appended).
-  /// Null is the default bar; callers pass the account-filtered device choice.
-  final List<String>? tabs;
 
   /// The shared Activity unread total (the one the desktop rail's Activity
   /// attention reads): the Activity tab shows a dot while it has attention and
@@ -93,17 +87,10 @@ class WorkspaceMobileTabBar extends StatelessWidget {
 
   Widget bar(BuildContext context, bool activityAttention) {
     String tr(String s) => raftText(context, s);
-    final w = controller;
     final nativeMobile =
         !kIsWeb &&
         (defaultTargetPlatform == TargetPlatform.android ||
             defaultTargetPlatform == TargetPlatform.iOS);
-    final tabIds =
-        tabs ??
-        MobileTabbarSettings.defaults.effective(
-          guest: w.server?.string('role') == 'guest',
-          can: w.can,
-        );
     RaftMobileNavItem item(String id) => switch (id) {
       MobileTabs.tasks => RaftMobileNavItem(
         id: id,
@@ -141,7 +128,7 @@ class WorkspaceMobileTabBar extends StatelessWidget {
       onSelected: (id) => id == selectedId && onReselected != null
           ? onReselected!(id)
           : onSelected(id),
-      items: [for (final id in tabIds) item(id)],
+      items: [for (final id in MobileTabs.bar) item(id)],
       trailing: serverTab,
     );
     navigation = Semantics(

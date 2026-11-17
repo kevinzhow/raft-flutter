@@ -89,10 +89,6 @@
    "cases": 85,
    "seconds": 30.9
   },
-  "apps/raft_flutter/test/mobile_tabbar_config_test.dart": {
-   "cases": 33,
-   "seconds": 32.0
-  },
   "apps/raft_flutter/test/navigation_registry_test.dart": {
    "cases": 23,
    "seconds": 51.1

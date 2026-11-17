@@ -6,7 +6,6 @@ import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_updater/raft_updater.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../data/mobile_tabbar_preferences.dart';
 import '../data/rail_side_preference.dart';
 import '../data/personal_presentation.dart';
 import '../data/raftbench_access.dart';
@@ -31,7 +30,6 @@ import 'im_bridges_view.dart';
 import 'integrations_views.dart';
 import 'labs_view.dart';
 import 'locale_settings_page.dart';
-import 'mobile_tabbar_settings_page.dart';
 import 'feedback_unread.dart';
 import 'pushed_server_page.dart';
 import 'management_support.dart'
@@ -65,7 +63,6 @@ class WorkspaceSettings extends StatefulWidget {
     required this.onAppearance,
     required this.presentation,
     this.notifications,
-    this.mobileTabbar,
     this.railSide,
     this.onLogout,
     this.initialTab = 'account',
@@ -94,10 +91,6 @@ class WorkspaceSettings extends StatefulWidget {
   final ValueChanged<RaftAppearance> onAppearance;
   final PersonalPresentationStore presentation;
   final NativeNotificationService? notifications;
-
-  /// The device's bottom-bar choice; without it the mobile Bottom bar row is
-  /// not offered.
-  final MobileTabbarStore? mobileTabbar;
 
   /// The device's rail side choice; without it Appearance does not offer one.
   final RailSideStore? railSide;
@@ -231,18 +224,6 @@ class _WorkspaceSettingsState extends State<WorkspaceSettings> {
             railSide: widget.railSide,
           ),
         ),
-        if (widget.mobileTabbar != null)
-          RaftSettingsDestination(
-            'bottom-bar',
-            'Bottom bar',
-            RaftGlyph.smartphone,
-            (_) => MobileTabbarSettingsPage(
-              controller: w,
-              store: widget.mobileTabbar!,
-            ),
-            scroll: false,
-            mobileOnly: true,
-          ),
         if (widget.notifications != null)
           RaftSettingsDestination(
             'notifications',

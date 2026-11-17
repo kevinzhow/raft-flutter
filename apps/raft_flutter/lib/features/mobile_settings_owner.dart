@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'package:flutter/widgets.dart';
 import 'package:raft_ui/raft_ui.dart';
 
-import '../data/mobile_tabbar_preferences.dart';
 import '../data/personal_presentation.dart';
 import '../data/raft_location.dart';
 import '../data/raft_navigation_history.dart';
@@ -143,7 +142,6 @@ Widget workspaceSettingsSurface({
   required PersonalPresentationStore presentation,
   required NativeNotificationService? notifications,
   required Future<void> Function() onLogout,
-  required MobileTabbarStore mobileTabbar,
   required RailSideStore railSide,
   required bool providerEnabled,
   required bool bridgeEnabled,
@@ -168,7 +166,6 @@ Widget workspaceSettingsSurface({
     notifications,
     onLogout,
     presentation,
-    mobileTabbar.settings,
     railSide.side,
     providerEnabled,
     bridgeEnabled,
@@ -197,7 +194,6 @@ Widget workspaceSettingsSurface({
           onLogout: onLogout,
           mobileRoot: controller.location.settingsPath.isEmpty,
           mobileResetRevision: revision + hostRevision,
-          mobileTabbar: mobileTabbar,
           railSide: railSide,
           onMobileLocationChanged: (next) => _openSettingsTab(
             controller: controller,

@@ -1,6 +1,5 @@
 // Run from apps/raft_flutter with RAFT_TABBAR_EVIDENCE_DIR set:
 //   ../../tool/flutter test tool/captures/mobile_tabbar_screenshots_test.dart
-import 'dart:convert';
 import 'dart:io';
 import 'dart:ui' as ui;
 
@@ -9,8 +8,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../../../tool/testing/system_fonts.dart';
-
-import 'package:raft_flutter/data/mobile_tabbar_preferences.dart';
 
 import '../../../../packages/raft_ui/test/task_typography_test.dart'
     show loadTaskFonts;
@@ -72,12 +69,6 @@ const computer = <String, dynamic>{
   'runtimes': ['codex'],
 };
 
-final fullBar = jsonEncode({
-  'order': ['chat', 'activity', 'tasks', 'search'],
-  'enabled': ['chat', 'activity', 'tasks', 'search'],
-});
-const activityBar = '["chat","tasks","activity"]';
-
 Future<void> capture(WidgetTester t, String name) async {
   // The outermost full-screen boundary, so overlays (the server popover) are in.
   RenderObject? object = t
@@ -138,8 +129,7 @@ void main() {
       t.platformDispatcher.localeTestValue = locale;
       addTearDown(t.platformDispatcher.clearAllTestValues);
 
-      Future<RootFixture> mount(
-        String bar, {
+      Future<RootFixture> mount({
         int unread = 2,
         String path = '/s/alpha',
       }) async {
@@ -163,7 +153,6 @@ void main() {
           theme,
           390,
           uri: Uri.parse(path),
-          preferences: {MobileTabbarStore.preferenceKey: bar},
         );
         // Web reference: 390x844 viewport, no safe-area insets.
         t.view.padding = FakeViewPadding.zero;
@@ -184,7 +173,7 @@ void main() {
 
       if (evidence == null) return;
       // Wired bar (Web v1.24): Home, Activity, Tasks, Search + the server tab.
-      var f = await mount(fullBar);
+      var f = await mount();
       await capture(t, '$theme-01-bar-home');
       await tap(f, 'activity');
       await capture(t, '$theme-02-activity-root');
@@ -192,19 +181,6 @@ void main() {
       await capture(t, '$theme-03-search-root');
       await openServerPopover(t, flush: f.flush);
       await capture(t, '$theme-04-server-popover');
-      await f.close(t);
-
-      // Badge / Home entry design for Kevin.
-      f = await mount(activityBar, unread: 3);
-      await capture(t, '$theme-10-home-activity-in-bar-badge-3');
-      await tap(f, 'activity');
-      await capture(t, '$theme-12-activity-selected-badge-3');
-      await f.close(t);
-      f = await mount(activityBar, unread: 120);
-      await capture(t, '$theme-11-home-activity-in-bar-badge-120');
-      await f.close(t);
-      f = await mount('["chat","tasks","members"]', unread: 3);
-      await capture(t, '$theme-13-home-default-bar-activity-entry');
       await f.close(t);
     });
   }

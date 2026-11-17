@@ -799,10 +799,6 @@
   "packages/raft_ui/lib/src/mobile_page_header.dart": {
    "contract.stroke_width_literal": 1
   },
-  "packages/raft_ui/lib/src/mobile_tabbar_config.dart": {
-   "contract.color_literal": 1,
-   "contract.stroke_width_literal": 2
-  },
   "packages/raft_ui/lib/src/mobile_workspace_header.dart": {
    "contract.radius_literal": 2,
    "duplicate.button": 1

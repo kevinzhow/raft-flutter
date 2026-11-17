@@ -65,7 +65,6 @@ import 'package:raft_ui/mobile_detail_previews.dart';
 import 'package:raft_ui/mobile_nav_server_previews.dart';
 import 'package:raft_ui/mobile_navigation_previews.dart';
 import 'package:raft_ui/mobile_page_header_previews.dart';
-import 'package:raft_ui/mobile_tabbar_config_previews.dart';
 import 'package:raft_ui/mounted_avatar_previews.dart';
 import 'package:raft_ui/notification_previews.dart';
 import 'package:raft_ui/notification_settings_previews.dart';
@@ -965,56 +964,6 @@ final auditSurfaces = <AuditSurface>[
     'Mobile page navigation',
     mobilePageHeaderPreview,
     Size(390, 600),
-  ),
-  AuditSurface(
-    'mobileSettingsRootBottomBarPreview',
-    'Mobile settings root with Bottom bar entry',
-    mobileSettingsRootBottomBarPreview,
-    Size(390, 844),
-  ),
-  AuditSurface(
-    'mobileSettingsRootCurrentPreview',
-    'Mobile settings root (current)',
-    mobileSettingsRootCurrentPreview,
-    Size(390, 844),
-    representative: true,
-  ),
-  AuditSurface(
-    'mobileTabbarConfigDefaultPreview',
-    'Mobile Bottom bar settings (default)',
-    mobileTabbarConfigDefaultPreview,
-    Size(390, 844),
-  ),
-  AuditSurface(
-    'mobileTabbarConfigGesturePreview',
-    'Mobile Bottom bar settings (gesture inset)',
-    mobileTabbarConfigGesturePreview,
-    Size(390, 844),
-  ),
-  AuditSurface(
-    'mobileTabbarConfigButtonsPreview',
-    'Mobile Bottom bar settings (3-button inset)',
-    mobileTabbarConfigButtonsPreview,
-    Size(390, 844),
-  ),
-  AuditSurface(
-    'mobileTabbarConfigFullPreview',
-    'Mobile Bottom bar settings (limit reached)',
-    mobileTabbarConfigFullPreview,
-    Size(390, 844),
-  ),
-  AuditSurface(
-    'mobileTabbarConfigMinimumPreview',
-    'Mobile Bottom bar settings (minimum)',
-    mobileTabbarConfigMinimumPreview,
-    Size(390, 844),
-  ),
-  AuditSurface(
-    'mobileTabbarFiveItemsPreview',
-    'Mobile bottom bar, 5 items at 360dp',
-    mobileTabbarFiveItemsPreview,
-    Size(360, 120),
-    representative: true,
   ),
   AuditSurface(
     'mountedAvatarPreview',

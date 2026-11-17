@@ -130,7 +130,8 @@ void main() {
       ]);
       expect(paths(stack(at(RaftRoute.search))), ['', '/search']);
       expect(paths(stack(at(RaftRoute.saved))), ['', '/saved']);
-      expect(paths(stack(at(RaftRoute.activity))), ['', '/activity']);
+      // Activity is a tab root on the phone bar and in the rail alike.
+      expect(paths(stack(at(RaftRoute.activity))), ['/activity']);
     });
 
     test('a content slot is its own page above its list', () {
@@ -144,15 +145,20 @@ void main() {
         ]) {
           final slot = at(route, query: {'open': open, 'msg': 'm1'});
           final s = stack(slot);
-          expect(s, hasLength(3), reason: open);
-          expect(tail(s[1]), '/${route.name}');
+          // Activity is always a tab root; Search is one only on the phone bar.
+          final root = route == RaftRoute.activity ? 0 : 1;
+          expect(s, hasLength(root + 2), reason: open);
+          expect(tail(s[root]), '/${route.name}');
           expect(s.last.uri, slot.uri);
         }
         final thread = at(
           route,
           query: {'open': 'thread:t1', 'thread': 'ca:ma', 'msg': 'r1'},
         );
-        expect(stack(thread), hasLength(3));
+        expect(
+          stack(thread),
+          hasLength(route == RaftRoute.activity ? 2 : 3),
+        );
         expect(stack(thread).last.uri, thread.uri);
       }
     });
@@ -308,7 +314,7 @@ void main() {
         final entries = [at(RaftRoute.home), activity, thread];
         expect(openedDirectly(entries, 2, thread), isTrue);
         final s = phoneStackFor(thread, noTabs, source: activity, direct: true);
-        expect(paths(s), ['', '/activity', tail(thread)]);
+        expect(paths(s), ['/activity', tail(thread)]);
       },
     );
 
@@ -384,11 +390,7 @@ void main() {
       expect(paths(n.entries), ['', '/activity', '/channel/ca?msg=m1']);
       expect(n.index, 2);
       expect(n.translateForLayout(compact: true), isNull);
-      expect(paths(mobilePageStack(n)), [
-        '',
-        '/activity',
-        '/channel/ca?msg=m1',
-      ]);
+      expect(paths(mobilePageStack(n)), ['/activity', '/channel/ca?msg=m1']);
       backMobilePage(n);
       expect(tail(n.location), '/activity');
       backMobilePage(n);

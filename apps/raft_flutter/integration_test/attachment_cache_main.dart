@@ -29,7 +29,6 @@ import 'package:path_provider/path_provider.dart';
 import 'package:raft_flutter/platform/app_services.dart';
 import 'package:raft_flutter/data/attachment_disk_cache.dart';
 import 'package:raft_flutter/data/device_preferences.dart';
-import 'package:raft_flutter/data/mobile_tabbar_preferences.dart';
 import 'package:raft_flutter/data/source_time_formatter.dart';
 import 'package:raft_flutter/main.dart' as app;
 import 'package:raft_flutter/platform/android_performance_hint.dart';
@@ -258,19 +257,9 @@ Future<void> main() async {
       };
     },
   ));
-  const tabs = MobileTabbarSettings(
-    order: MobileTabs.configurable,
-    enabled: {
-      MobileTabs.home,
-      MobileTabs.tasks,
-      MobileTabs.activity,
-      MobileTabs.search,
-    },
-  );
   SharedPreferences.setMockInitialValues({
     'raft.origin': client.origin,
     'raft.mode': 'light',
-    MobileTabbarStore.preferenceKey: tabs.encode(),
   });
   final dir = await Directory.systemTemp.createTemp('raft-attach-cache-');
   const location = String.fromEnvironment(

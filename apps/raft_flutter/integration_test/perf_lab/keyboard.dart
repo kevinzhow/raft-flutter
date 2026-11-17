@@ -13,7 +13,6 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:raft_flutter/data/mobile_tabbar_preferences.dart';
 import 'package:raft_flutter/features/chat_view.dart';
 import 'package:raft_flutter/main.dart' as app;
 import 'package:raft_flutter/platform/app_services.dart';
@@ -70,14 +69,9 @@ Future<Future<void> Function()> mountKeyboardChat(
     'tickets': <dynamic>[],
   };
   api.routes['GET /tasks/server'] = (_) => {'tasks': <dynamic>[]};
-  const tabs = MobileTabbarSettings(
-    order: MobileTabs.configurable,
-    enabled: {MobileTabs.home, MobileTabs.tasks, MobileTabs.activity, MobileTabs.search},
-  );
   SharedPreferences.setMockInitialValues({
     'raft.origin': client.origin,
     'raft.mode': dark ? 'dark' : 'light',
-    MobileTabbarStore.preferenceKey: tabs.encode(),
   });
   final dir = await Directory.systemTemp.createTemp('raft-lab-keyboard-');
   final content = LabNavigationContent();

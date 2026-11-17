@@ -1,12 +1,10 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/device_preferences.dart';
-import 'package:raft_flutter/data/mobile_tabbar_preferences.dart';
 import 'package:raft_flutter/data/raft_location.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/features/channel_form_fields.dart';
@@ -61,12 +59,7 @@ Future<void> _settle(WidgetTester tester) async {
 Future<(WorkspaceController, _Client, List<Map<String, dynamic>>)> _mount(
   WidgetTester tester,
 ) async {
-  SharedPreferences.setMockInitialValues({
-    MobileTabbarStore.preferenceKey: jsonEncode({
-      'order': ['chat', 'tasks', 'activity', 'computers', 'members'],
-      'enabled': ['chat', 'tasks', 'activity', 'computers'],
-    }),
-  });
+  SharedPreferences.setMockInitialValues({});
   addTearDown(DevicePreferences.reset);
   await tester.runAsync(DevicePreferences.load);
   tester.view.physicalSize = const Size(390, 900);

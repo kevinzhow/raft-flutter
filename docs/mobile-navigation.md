@@ -19,7 +19,7 @@
 
 这只替换导航外壳。`RaftAdaptiveWorkspace.compactOf`（768）仍决定路由、弹窗和页面栈，页面栈、`WorkspaceNavigation`、返回行为不变；侧栏条目走与底栏同一条手机导航路径（`selectMobileTab`；搜索是首页列表的推入页）。栏只出现在底栏会出现的根页面上，推入的频道 / 详情页仍是全宽。
 
-- 侧栏模式下底栏自定义不适用（与桌面一致）：设置里的 “Bottom bar” 与仅手机的 “Computers” 快捷行隐藏；Activity、Computers 是侧栏的根页面。
+- 侧栏模式下仅手机的 “Computers” 快捷行隐藏（底栏固定为 Home、Activity、Tasks、Search，无自定义，与 Web 一致）；Activity、Computers 是侧栏的根页面。
 - 内容区在 `_MobileKeyboardLayout` 里让出侧栏；内容与侧栏各占固定的 `LayoutId` 槽，切换位置不重建页面栈，滚动位置、草稿、当前页保留。侧栏延伸到起始边的系统 inset（刘海 / 侧导航栏）下，按钮自身避让；键盘只缩内容区。
 - 首页列表的胶囊预留在侧栏模式下取消；实时活动条改为贴内容区底部。
 - 触摸目标 ≥ 48 dp（侧栏按钮在手机上使用满宽，不套桌面的内边距）。

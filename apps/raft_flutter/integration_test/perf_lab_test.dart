@@ -19,7 +19,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:raft_flutter/platform/app_services.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
-import 'package:raft_flutter/data/mobile_tabbar_preferences.dart';
 import 'package:raft_flutter/data/raft_location.dart';
 import 'package:raft_flutter/features/chat_view.dart';
 import 'package:raft_flutter/features/conversation_panel.dart';
@@ -1305,10 +1304,6 @@ void main() {
           (_) => {'state': 'unavailable'},
         ));
         napi.routes['GET /channels/mix/threads/${parent['id']}'] = (_) => {'threadChannelId': threadId};
-        const navTabs = MobileTabbarSettings(
-          order: MobileTabs.configurable,
-          enabled: {MobileTabs.home, MobileTabs.tasks, MobileTabs.activity, MobileTabs.search},
-        );
         napi.routes['GET /auth/me'] = (_) => {
           'id': 'alice', 'name': 'Alice Zhang', 'email': 'alice@example.invalid', 'emailVerified': true, 'displayLanguage': 'en',
         };
@@ -1322,7 +1317,6 @@ void main() {
         SharedPreferences.setMockInitialValues({
           'raft.origin': nclient.origin,
           'raft.mode': dark ? 'dark' : 'light',
-          MobileTabbarStore.preferenceKey: navTabs.encode(),
         });
         final cacheDirectory = await Directory.systemTemp.createTemp('raft-live-navigation-');
         final navCache = LabNavigationCache(File('${cacheDirectory.path}/workspace.sqlite'));

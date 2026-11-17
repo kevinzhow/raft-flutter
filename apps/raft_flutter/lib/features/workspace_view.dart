@@ -122,7 +122,6 @@ class WorkspaceView extends StatefulWidget {
     this.notifications,
     this.sharing,
     this.presentation,
-    this.mobileTabbar,
     this.railSide,
     this.onChooseServer,
     this.onSwitchServer,
@@ -137,8 +136,6 @@ class WorkspaceView extends StatefulWidget {
   final NativeSharing? sharing;
   final PersonalPresentationStore? presentation;
 
-  /// The device-local bottom-bar choice; the workspace owns one by default.
-  final MobileTabbarStore? mobileTabbar;
 
   /// The device-local side of the phone layout's rail (left / right); the
   /// workspace owns one by default.
@@ -495,21 +492,13 @@ class _WorkspaceViewState extends State<WorkspaceView>
   PersonalPresentationStore get presentation =>
       widget.presentation ?? ownedPresentation;
 
-  /// Read synchronously from the preloaded device preferences, so the first
-  /// frame already has the configured bar.
-  MobileTabbarStore? _ownedMobileTabbar;
-  MobileTabbarStore get ownedMobileTabbar =>
-      _ownedMobileTabbar ??= MobileTabbarStore();
-  MobileTabbarStore get mobileTabbar =>
-      widget.mobileTabbar ?? ownedMobileTabbar;
-
   RailSideStore? _ownedRailSide;
   RailSideStore get railSideStore =>
       widget.railSide ?? (_ownedRailSide ??= RailSideStore());
 
   /// Ids of the tabs the bar shows for this account (Settings not included).
   ///
-  /// With the left rail the bottom-bar choice does not apply: every
+  /// With the left rail every
   /// destination the desktop rail lists is a root tab (Home, Activity, Tasks,
   /// Members, Computers; Search and Settings are the rail's own entries).
   List<String> get mobileTabIds => railNavigation
@@ -521,10 +510,7 @@ class _WorkspaceViewState extends State<WorkspaceView>
           if (w.can('viewMachines')) MobileTabs.computers,
           MobileTabs.settings,
         ]
-      : mobileTabbar.settings.effective(
-          guest: w.server?.string('role') == 'guest',
-          can: w.can,
-        );
+      : MobileTabs.bar;
   final sidebarDisclosure = SidebarDisclosureStore();
 
   /// Cmd/Ctrl+K quick switcher: visit history, shared search memory and the
@@ -990,7 +976,6 @@ class _WorkspaceViewState extends State<WorkspaceView>
     w.removeListener(syncMobileAppBadge);
     mobileAppBadge.removeListener(chatSelectionChanged);
     mobileAppBadge.dispose();
-    _ownedMobileTabbar?.dispose();
     _ownedRailSide?.dispose();
     activityUnread.removeListener(activityUnreadChanged);
     if (mobileHost == null) w.resumes.removeListener(appResumed);
@@ -1304,7 +1289,6 @@ class _WorkspaceViewState extends State<WorkspaceView>
       body = ListenableBuilder(
         listenable: Listenable.merge([
           mobileNavigationSelection,
-          mobileTabbar,
           railSideStore,
         ]),
         builder: (context, _) {
@@ -1350,7 +1334,6 @@ class _WorkspaceViewState extends State<WorkspaceView>
     listenable: Listenable.merge([
       w,
       presentation,
-      mobileTabbar,
       railSideStore,
       shellIdentities,
       sidebarDisclosure,
@@ -3110,7 +3093,6 @@ class _WorkspaceViewState extends State<WorkspaceView>
     return WorkspaceMobileTabBar(
       controller: w,
       selectedId: selectedId,
-      tabs: mobileTabIds,
       activityUnread: activityUnread,
       // Native tab bars consume the system inset once, outside the nav recipe.
       bottomInset: 0,
@@ -3668,32 +3650,6 @@ class _WorkspaceViewState extends State<WorkspaceView>
                                   onTap: () => select('search'),
                                 ),
                               ),
-                            // Activity is a bottom-bar tab: no second entry here.
-                            if (mobileHome &&
-                                !mobileTabIds.contains(MobileTabs.activity))
-                              SliverToBoxAdapter(
-                                child: RaftNavItem(
-                                  key: const Key('nav-activity'),
-                                  role: RaftNavItemRole.activity,
-                                  precededByEntry: true,
-                                  viewportHeight: MediaQuery.sizeOf(context)
-                                      .height,
-                                  label: tr('Activity'),
-                                  glyph: RaftGlyph.activity,
-                                  selected: w.section == 'activity',
-                                  // Sidebar.tsx: the server's own activityUnreadCount;
-                                  // an absent value is unknown, never the
-                                  // broader per-conversation sum. The open
-                                  // server follows its accepted Activity
-                                  // window (activityCountOf).
-                                  unread:
-                                      activityCountOf(w.server?.id ?? '') ?? 0,
-                                  onTap: () => select('activity'),
-                                  onDoubleClick: () =>
-                                      ActivityFirstUnread.of(w).request(w),
-                                  ignoreSecondClick: true,
-                                ),
-                              ),
                             SliverToBoxAdapter(
                               child: SavedSidebarEntry(
                                 key: const Key('nav-saved'),
@@ -3950,7 +3906,6 @@ class _WorkspaceViewState extends State<WorkspaceView>
       notifications: widget.notifications,
       onLogout: widget.onLogout,
       presentation: presentation,
-      mobileTabbar: mobileTabbar,
       railSide: railSideStore,
       providerEnabled: providerEnabled,
       bridgeEnabled: bridgeEnabled,

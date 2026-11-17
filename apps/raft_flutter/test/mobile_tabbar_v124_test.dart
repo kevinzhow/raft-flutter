@@ -29,59 +29,8 @@ String tail(RaftLocation l) => l.toString().replaceFirst('/s/alpha', '');
 void main() {
   const barTabs = {'chat', 'activity', 'tasks', 'search'};
 
-  group('Web v1.24 bottom bar preferences', () {
-    test('the configurable tabs are Home, Activity, Tasks, Search', () {
-      expect(MobileTabs.configurable, ['chat', 'activity', 'tasks', 'search']);
-      expect(MobileTabbarSettings.defaults.visible, [
-        'chat',
-        'activity',
-        'tasks',
-        'search',
-      ]);
-      expect(MobileTabbarSettings.parse(null), MobileTabbarSettings.defaults);
-      expect(MobileTabbarSettings.defaults.isDefault, isTrue);
-    });
-
-    test('a value stored by the last release keeps its choice', () {
-      // Release with Members / Computers tabs, customised bar.
-      final next = MobileTabbarSettings.parse(
-        '{"order":["chat","tasks","members","computers","activity"],'
-        '"enabled":["chat","activity","members"]}',
-      );
-      // Members is gone, Search is new and fits, the rest is kept in order.
-      expect(next.visible, ['chat', 'activity', 'search']);
-      expect(next.order, ['chat', 'tasks', 'activity', 'search']);
-    });
-
-    test('Search that was already placed stays where the user put it', () {
-      final next = MobileTabbarSettings.parse(
-        '{"order":["search","chat","activity","tasks"],"enabled":["chat"]}',
-      );
-      expect(next.visible, ['chat']);
-      expect(next.order.first, 'search');
-    });
-
-    test('a value that only held removed tabs reads as the default bar', () {
-      final next = MobileTabbarSettings.parse(
-        '{"order":["members","computers","chat","tasks","activity"],'
-        '"enabled":["members","computers"]}',
-      );
-      expect(next, MobileTabbarSettings.defaults);
-      final none = MobileTabbarSettings.parse('{"order":[],"enabled":[]}');
-      expect(none, MobileTabbarSettings.defaults);
-    });
-
-    test('a bare list of ids is read as the enabled ids', () {
-      final next = MobileTabbarSettings.parse('["tasks","members","chat"]');
-      expect(next.visible, ['tasks', 'chat']);
-    });
-
-    test('no account rule hides a configurable tab', () {
-      expect(
-        MobileTabbarSettings.defaults.effective(guest: true, can: (_) => false),
-        ['chat', 'activity', 'tasks', 'search'],
-      );
-    });
+  test('the phone bar is Home, Activity, Tasks, Search', () {
+    expect(MobileTabs.bar, ['chat', 'activity', 'tasks', 'search']);
   });
 
   group('Web v1.24 tab roots and phone stack', () {

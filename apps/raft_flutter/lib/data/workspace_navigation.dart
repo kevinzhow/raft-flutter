@@ -407,10 +407,10 @@ class WorkspaceNavigation {
 
   String get section => sectionFor(location);
 
-  /// The tabs besides the always-root Home and Tasks: the bottom bar's
-  /// Activity and Search (Web v1.24), or with the left rail the destinations it
-  /// lists (Activity, Members, Computers, Settings). A location of a tab
-  /// listed here is a tab root; otherwise it is a pushed page with Back.
+  /// The tabs besides the always-root Home, Tasks and Activity: Search on the
+  /// phone bar (Web v1.24), or with the left rail the destinations it lists
+  /// (Members, Computers, Settings). A location of a tab listed here is a tab
+  /// root; otherwise it is a pushed page with Back.
   Set<String> mobileTabs = const {};
 
   String? get mobileRootTab => mobileRootTabOf(location);
@@ -462,7 +462,7 @@ class WorkspaceNavigation {
       RaftRoute.tasks => 'tasks',
       RaftRoute.members when tabs.contains('members') => 'members',
       RaftRoute.computers when tabs.contains('computers') => 'computers',
-      RaftRoute.activity when tabs.contains('activity') => 'activity',
+      RaftRoute.activity => 'activity',
       RaftRoute.search when tabs.contains('search') => 'search',
       RaftRoute.settings
           when tabs.contains('settings') && location.settingsPath.isEmpty =>

@@ -100,13 +100,6 @@ abstract final class NavigationRegistry {
     NavigationSettingsTab('account'),
     NavigationSettingsTab('language-region'),
     NavigationSettingsTab('appearance'),
-    NavigationSettingsTab(
-      'bottom-bar',
-      wide: false,
-      reason:
-          'Phone-only device preference (no Web counterpart); hidden while '
-          'the left rail replaces the bottom bar (wide foldable, landscape).',
-    ),
     NavigationSettingsTab('notifications'),
     NavigationSettingsTab(
       'desktop',

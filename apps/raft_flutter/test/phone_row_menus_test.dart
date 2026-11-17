@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/device_preferences.dart';
-import 'package:raft_flutter/data/mobile_tabbar_preferences.dart';
 import 'package:raft_flutter/data/user_error.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/features/create_joint_channel_dialog.dart';
@@ -37,11 +36,7 @@ void main() {
     Set<String> mentions = const {},
     List<Map<String, dynamic>>? serverSummary,
   }) async {
-    // Home lists the Search and Activity rows only while they are no tabs
-    // (Web v1.24): this file's Home is the bar without them.
-    SharedPreferences.setMockInitialValues({
-      MobileTabbarStore.preferenceKey: '["chat","tasks"]',
-    });
+    SharedPreferences.setMockInitialValues({});
     await DevicePreferences.load();
     addTearDown(DevicePreferences.reset);
     tester.view.physicalSize = const Size(390, 844);
@@ -572,61 +567,6 @@ void main() {
   }
 
   group('Home list indicators (Sidebar.tsx)', () {
-    Finder activityBadge(String text) => find.descendant(
-      of: find.byKey(const Key('nav-activity')),
-      matching: find.text(text),
-    );
-
-    testWidgets('Activity shows the server activityUnreadCount, not the sum '
-        'of the row counts', (tester) async {
-      await setup(
-        tester,
-        unread: {'c1': 50, 'd1': 60},
-        serverSummary: [
-          {
-            'serverId': 's1',
-            'unreadCount': 110,
-            'activityUnreadCount': 3,
-            'serverPushMuted': false,
-          },
-        ],
-      );
-      await tester.pump(const Duration(milliseconds: 400));
-      await tester.pumpAndSettle();
-      expect(activityBadge('3'), findsOneWidget);
-      expect(activityBadge('99+'), findsNothing);
-    });
-
-    testWidgets('Activity caps at 99+ and hides when the count is unknown', (
-      tester,
-    ) async {
-      await setup(
-        tester,
-        unread: {'c1': 5},
-        serverSummary: [
-          {
-            'serverId': 's1',
-            'unreadCount': 5,
-            'activityUnreadCount': 120,
-            'serverPushMuted': false,
-          },
-        ],
-      );
-      await tester.pump(const Duration(milliseconds: 400));
-      await tester.pumpAndSettle();
-      expect(activityBadge('99+'), findsOneWidget);
-    });
-
-    testWidgets('Activity has no badge before the summary is known', (
-      tester,
-    ) async {
-      await setup(tester, unread: {'c1': 5, 'd1': 7});
-      await tester.pump(const Duration(milliseconds: 400));
-      await tester.pumpAndSettle();
-      expect(activityBadge('12'), findsNothing);
-      expect(activityBadge('99+'), findsNothing);
-    });
-
     testWidgets('the @ marker shows on a joined channel with an unread '
         'mention, before the count', (tester) async {
       await setup(tester, unread: {'c1': 2, 'c2': 1}, mentions: {'c1'});

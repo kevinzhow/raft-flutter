@@ -164,7 +164,7 @@ void main() {
     });
 
     test('bottom-bar tabs and rail ids resolve to registered sections', () {
-      for (final id in [...MobileTabs.configurable, MobileTabs.settings]) {
+      for (final id in [...MobileTabs.bar, MobileTabs.settings]) {
         final section = id == 'chat' ? 'home' : id;
         expect(NavigationRegistry.knowsSection(section), isTrue, reason: id);
       }

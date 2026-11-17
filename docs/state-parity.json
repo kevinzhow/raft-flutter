@@ -2794,22 +2794,6 @@
       ]
     },
     {
-      "id": "settings.bottom-bar",
-      "title": "Settings: Bottom bar (phone only)",
-      "webEntry": "packages/web/src (no counterpart)",
-      "flutterEntry": "apps/raft_flutter/lib/features/mobile_tabbar_settings_page.dart",
-      "states": [
-        {
-          "state": "loading",
-          "web": "no",
-          "flutter": "yes",
-          "parityCase": [],
-          "status": "na",
-          "justification": "Phone-only device preference with no Web counterpart and no async state."
-        }
-      ]
-    },
-    {
       "id": "settings.notifications",
       "title": "Settings: Notifications",
       "webEntry": "packages/web/src/components/settings/notifications/NotificationSettingsSection.tsx",
@@ -4024,9 +4008,6 @@
       ],
       "appearance": [
         "settings.appearance"
-      ],
-      "bottom-bar": [
-        "settings.bottom-bar"
       ],
       "notifications": [
         "settings.notifications"
@@ -10344,18 +10325,6 @@
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
-      },
-      "apps/raft_flutter/lib/features/mobile_tabbar_settings_page.dart#class:MobileTabbarSettingsPage": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
-      },
-      "apps/raft_flutter/lib/features/mobile_tabbar_settings_page.dart#method:MobileTabbarSettingsPage.build": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
       "apps/raft_flutter/lib/features/mobile_workspace_navigation.dart#class:WorkspaceMobileHomeHeader": {
         "role": "unresolved",
@@ -16912,108 +16881,6 @@
         "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
       },
       "packages/raft_ui/lib/mobile_page_header_previews.dart#method:_MobileHeaderPreviewState.build": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
-      },
-      "packages/raft_ui/lib/mobile_tabbar_config_previews.dart#class:MobileSettingsRootPreview": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
-      },
-      "packages/raft_ui/lib/mobile_tabbar_config_previews.dart#class:MobileTabbarConfigPagePreview": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
-      },
-      "packages/raft_ui/lib/mobile_tabbar_config_previews.dart#class:MobileTabbarFiveItems": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
-      },
-      "packages/raft_ui/lib/mobile_tabbar_config_previews.dart#class:_MobileTabbarConfigPagePreviewState": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
-      },
-      "packages/raft_ui/lib/mobile_tabbar_config_previews.dart#function:_insetPreview": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
-      },
-      "packages/raft_ui/lib/mobile_tabbar_config_previews.dart#function:mobileSettingsRootBottomBarPreview": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
-      },
-      "packages/raft_ui/lib/mobile_tabbar_config_previews.dart#function:mobileSettingsRootCurrentPreview": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
-      },
-      "packages/raft_ui/lib/mobile_tabbar_config_previews.dart#function:mobileTabbarConfigButtonsPreview": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
-      },
-      "packages/raft_ui/lib/mobile_tabbar_config_previews.dart#function:mobileTabbarConfigDefaultPreview": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
-      },
-      "packages/raft_ui/lib/mobile_tabbar_config_previews.dart#function:mobileTabbarConfigFullPreview": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
-      },
-      "packages/raft_ui/lib/mobile_tabbar_config_previews.dart#function:mobileTabbarConfigGesturePreview": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
-      },
-      "packages/raft_ui/lib/mobile_tabbar_config_previews.dart#function:mobileTabbarConfigMinimumPreview": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
-      },
-      "packages/raft_ui/lib/mobile_tabbar_config_previews.dart#function:mobileTabbarFiveItemsPreview": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
-      },
-      "packages/raft_ui/lib/mobile_tabbar_config_previews.dart#method:MobileSettingsRootPreview.build": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
-      },
-      "packages/raft_ui/lib/mobile_tabbar_config_previews.dart#method:MobileTabbarConfigPagePreview.createState": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
-      },
-      "packages/raft_ui/lib/mobile_tabbar_config_previews.dart#method:MobileTabbarFiveItems.build": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
-      },
-      "packages/raft_ui/lib/mobile_tabbar_config_previews.dart#method:_MobileTabbarConfigPagePreviewState.build": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
@@ -29453,36 +29320,6 @@
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
-      "packages/raft_ui/lib/src/mobile_tabbar_config.dart#class:RaftMobileTabbarConfigView": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
-      },
-      "packages/raft_ui/lib/src/mobile_tabbar_config.dart#class:_PreviewDock": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
-      },
-      "packages/raft_ui/lib/src/mobile_tabbar_config.dart#local-function:CLASS:RaftMobileTabbarConfigView@2462/METHOD:build@3136/FUNCTION:row@3408": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
-      },
-      "packages/raft_ui/lib/src/mobile_tabbar_config.dart#method:RaftMobileTabbarConfigView.build": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
-      },
-      "packages/raft_ui/lib/src/mobile_tabbar_config.dart#method:_PreviewDock.build": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
-      },
       "packages/raft_ui/lib/src/mobile_workspace_header.dart#class:_MobileWorkspaceHeader": {
         "role": "unresolved",
         "familyRefs": [],
@@ -38942,14 +38779,6 @@
         "familyRefs": [],
         "owner": "P1 dialogs / canonical Choice integration",
         "reason": "Resolved builder composes the current render/state/input path; it owns 0 resolved paint use(s) and 0 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
-      },
-      "packages/raft_ui/lib/src/mobile_tabbar_config.dart#local-function:CLASS:RaftMobileTabbarConfigView@2467/METHOD:build@3141/FUNCTION:row@3413": {
-        "role": "entry_composition",
-        "familyRefs": [
-          "switch"
-        ],
-        "owner": "P1 dialogs / canonical Choice integration",
-        "reason": "Resolved builder composes the current render/state/input path; it owns 4 resolved paint use(s) and 1 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
       },
       "packages/raft_ui/lib/src/overlays/dialog.dart#class:_DialogPartScope": {
         "role": "internal_part",
@@ -49079,14 +48908,6 @@
         "owner": "design-system alignment",
         "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
       },
-      "packages/raft_ui/lib/src/mobile_tabbar_config.dart#local-function:CLASS:RaftMobileTabbarConfigView@2483/METHOD:build@3157/FUNCTION:row@3429": {
-        "role": "entry_composition",
-        "familyRefs": [
-          "switch"
-        ],
-        "owner": "P1 dialogs / canonical Choice integration",
-        "reason": "Resolved builder composes the current render/state/input path; it owns 4 resolved paint use(s) and 1 direct canonical delegation target(s). It is not a second canonical API; mounted-entry/state/visual acceptance remains pending."
-      },
       "packages/raft_ui/lib/delegated_face_previews.dart#function:delegatedFacePreview": {
         "role": "unresolved",
         "familyRefs": [],
@@ -50163,14 +49984,6 @@
         ],
         "mountStatus": "source_reviewed",
         "reason": "Source-reviewed canonical control delegation only; current matched-state mounting and visual acceptance remain pending. Required conditions are registered separately; no visual PASS is asserted."
-      },
-      "screen:settings.bottom-bar": {
-        "owner": "design-system alignment",
-        "kind": "route_or_panel_candidate",
-        "lifecycleScreenId": "settings.bottom-bar",
-        "declarationRefs": [],
-        "mountStatus": "unresolved",
-        "reason": "Existing lifecycle screen record; exact builder/family composition and current mounted state are not yet established."
       },
       "screen:settings.notifications": {
         "owner": "design-system alignment",
@@ -53020,12 +52833,6 @@
       },
       "screen:settings.appearance:applicability": {
         "entryId": "screen:settings.appearance",
-        "applicability": "unknown",
-        "owner": "design-system alignment",
-        "reason": "Review the real entry and applicable theme/input/state dimensions; historical case names do not establish current visual coverage."
-      },
-      "screen:settings.bottom-bar:applicability": {
-        "entryId": "screen:settings.bottom-bar",
         "applicability": "unknown",
         "owner": "design-system alignment",
         "reason": "Review the real entry and applicable theme/input/state dimensions; historical case names do not establish current visual coverage."

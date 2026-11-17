@@ -31,7 +31,7 @@ wrong destination).
     `openHelpSettings('x')` and `settingsPath: ['x']` literal in `lib/` must be
     registered (a new unregistered literal fails the test);
   * registry consistency with `WorkspaceNavigation.settingsSections`,
-    `settingsTab` aliases, bottom-bar ids and rail ids;
+    `settingsTab` aliases, phone-bar ids and rail ids;
   * for phone and wide: every registered section lands on its intended route
     and page (settings sub-pages find their own tab page, never Account); every
     Settings row is registered, offered on exactly the layouts the registry
@@ -63,7 +63,7 @@ difference), GAP (Web has it, Flutter does not; not a fallback).
 | Section menu sort / display / New section / Rename / Delete | in-place | no navigation | same | same | OK | tested |
 | Row menus (channel, human DM, agent DM): Move, Mark read, Pin, Mute, Archive, Close Chat | in-place | no navigation (Close Chat on the open DM: Home) | closes detail | closeDm | OK | tested |
 | Sidebar Search row (`workspace_view.dart:3357`) | `select('search')` | Search page | rail Search opens overlay | toSearch | OK | tested |
-| Sidebar Activity row (:3379) | `select('activity')` | Activity page (hidden when Activity is a bottom tab) | rail | Activity | OK | tested |
+| Sidebar Activity row (:3379) | `select('activity')` | Activity page (a bottom tab) | rail | Activity | OK | tested |
 | Sidebar Saved row (:3386) | `select('saved')` | Saved page | Saved page | toSaved | OK | tested |
 | Rail buttons (:2433) | search, chat, activity, tasks, members, computers | n/a (bottom bar) | pages | LeftRail | OK | registry |
 | Rail Settings (:2506), Cmd/Ctrl+, (:2112), phone fallback page header (:2909) | `select('settings')` | Settings root list | Account | toSettings | OK | tested |
@@ -81,10 +81,9 @@ difference), GAP (Web has it, Flutter does not; not a fallback).
 | Help menu Mobile App / Feedback (`openHelpSettings`, :2470, :2476) | settings `about`, `feedback` | n/a (rail only) | Settings tab | toSettings | OK | lint |
 | Help menu Documentation / Join Community | external / server | n/a | external / `setSection('home')` | same | OK | registry |
 | Server menu Switch or Create Server, Invite human | callbacks / dialog | same | same | same | OK | n/a |
-| Settings rows (`workspace_settings.dart`) | account, language-region, appearance, bottom-bar, notifications, server, billing, administration, im-bridges, integrations, labs, mcp, providers, about, network (native-only), feedback, release-notes | tab page via `onMobileLocationChanged` (:3662) | in-panel tab | SettingsNavList | OK | tested row by row |
+| Settings rows (`workspace_settings.dart`) | account, language-region, appearance, notifications, server, billing, administration, im-bridges, integrations, labs, mcp, providers, about, network (native-only), feedback, release-notes | tab page via `onMobileLocationChanged` (:3662) | in-panel tab | SettingsNavList | OK | tested row by row |
 | Settings row Computers (`workspace_settings.dart:275`) | `selectSection('computers')` | Computers route | row hidden (Computers rail) | navigate(/computers) | OK | declared `wide: false` |
 | Settings row Documentation | external URL | opens browser | opens browser | link | OK | declared `page: false` |
-| Settings row Bottom bar | `bottom-bar` | page | hidden | none | DIFF (phone-only device preference; the four tabs Home, Activity, Tasks, Search) | declared `wide: false` |
 | Settings tab not in the page | any other id | Account | Account | normalizeSettingsTab -> account | FIXED (loud in debug) | `reportFallback('settings tab')` |
 | `select('joint-channels')` (removed by c88601bc) | settings joint-channels | Account | Account | no page | FIXED | `unsupportedSections`; the unreachable `JointChannelsView` page was removed (accept lives in the notification center, manage in the channel settings drawer) |
 | `select('sidebar-settings')` | settings sidebar-settings | Account | Account | no page | FIXED | `unsupportedSections`; no caller left |
@@ -104,8 +103,8 @@ Entry points audited: 41 rows covering about 70 call sites. Issues found: 7
 (Create Agent upgrade, feedback notice, settings-tab fallback, the two
 unsupported sections, the dead route branches, the `server-labs` alias) plus 4
 silent fallbacks in `statusbar_audit_test`. Fixed: all of them. Declared
-unsupported: `joint-channels`, `sidebar-settings` (both layouts), `bottom-bar`
-(wide), `computers` row (wide), and the `documentation` row has no page. Left
+unsupported: `joint-channels`, `sidebar-settings` (both layouts), `computers` row
+(wide) (wide), and the `documentation` row has no page. Left
 as recorded differences or gaps: system notice computer pages, channel
 settings / members phone pages, Create Channel and Add computer limit banners,
 unknown external routes.

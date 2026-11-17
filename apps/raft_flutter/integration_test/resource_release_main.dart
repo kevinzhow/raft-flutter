@@ -14,7 +14,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:raft_flutter/platform/app_services.dart';
 import 'package:raft_flutter/data/device_preferences.dart';
-import 'package:raft_flutter/data/mobile_tabbar_preferences.dart';
 import 'package:raft_flutter/data/source_time_formatter.dart';
 import 'package:raft_flutter/main.dart' as app;
 import 'package:raft_flutter/platform/android_performance_hint.dart';
@@ -186,19 +185,9 @@ Future<Widget> buildResourceReleaseApp({
       return {'url': '$_base/files/$file?X-Amz-Expires=3600&X-Amz-Signature=x'};
     },
   ));
-  const tabs = MobileTabbarSettings(
-    order: MobileTabs.configurable,
-    enabled: {
-      MobileTabs.home,
-      MobileTabs.tasks,
-      MobileTabs.activity,
-      MobileTabs.search,
-    },
-  );
   SharedPreferences.setMockInitialValues({
     'raft.origin': client.origin,
     'raft.mode': 'light',
-    MobileTabbarStore.preferenceKey: tabs.encode(),
   });
   final dir = await Directory.systemTemp.createTemp('raft-resource-release-');
   return app.RaftApp(

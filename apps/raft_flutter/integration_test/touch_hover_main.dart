@@ -10,7 +10,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:raft_flutter/platform/app_services.dart';
 import 'package:raft_flutter/data/device_preferences.dart';
-import 'package:raft_flutter/data/mobile_tabbar_preferences.dart';
 import 'package:raft_flutter/data/source_time_formatter.dart';
 import 'package:raft_flutter/main.dart' as app;
 import 'package:raft_flutter/platform/native_sharing.dart';
@@ -42,14 +41,9 @@ Future<void> main() async {
   api.routes['GET /announcements/active'] = (_) => {'announcements': <dynamic>[]};
   api.routes['GET /product-feedback/tickets'] = (_) => {'unread_total': 0, 'tickets': <dynamic>[]};
   api.routes['GET /tasks/server'] = (_) => {'tasks': <dynamic>[]};
-  const tabs = MobileTabbarSettings(
-    order: MobileTabs.configurable,
-    enabled: {MobileTabs.home, MobileTabs.tasks, MobileTabs.activity, MobileTabs.search},
-  );
   SharedPreferences.setMockInitialValues({
     'raft.origin': client.origin,
     'raft.mode': 'light',
-    MobileTabbarStore.preferenceKey: tabs.encode(),
   });
   final dir = await Directory.systemTemp.createTemp('raft-keyboard-repro-');
   runApp(app.RaftApp(

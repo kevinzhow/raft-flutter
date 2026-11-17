@@ -31,7 +31,6 @@ import 'package:raft_flutter/platform/app_services.dart';
 import 'package:raft_flutter/data/attachment_disk_cache.dart';
 import 'package:raft_flutter/data/avatar_image_store.dart'; // NEW-ONLY
 import 'package:raft_flutter/data/device_preferences.dart';
-import 'package:raft_flutter/data/mobile_tabbar_preferences.dart';
 import 'package:raft_flutter/data/source_time_formatter.dart';
 import 'package:raft_flutter/main.dart' as app;
 import 'package:raft_flutter/platform/android_performance_hint.dart';
@@ -545,19 +544,9 @@ Future<void> main() async {
         },
     ],
   };
-  const tabs = MobileTabbarSettings(
-    order: MobileTabs.configurable,
-    enabled: {
-      MobileTabs.home,
-      MobileTabs.tasks,
-      MobileTabs.activity,
-      MobileTabs.search,
-    },
-  );
   SharedPreferences.setMockInitialValues({
     'raft.origin': client.origin,
     'raft.mode': 'light',
-    MobileTabbarStore.preferenceKey: tabs.encode(),
   });
   runApp(
     app.RaftApp(

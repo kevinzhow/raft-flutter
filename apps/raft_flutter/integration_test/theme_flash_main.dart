@@ -18,7 +18,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:raft_flutter/platform/app_services.dart';
 import 'package:raft_flutter/data/device_preferences.dart';
-import 'package:raft_flutter/data/mobile_tabbar_preferences.dart';
 import 'package:raft_flutter/data/source_time_formatter.dart';
 import 'package:raft_flutter/features/root_error_boundary.dart';
 import 'package:raft_flutter/main.dart' as app;
@@ -63,11 +62,6 @@ Future<void> main() async {
       await icon.select(RaftAppIconPalette.values.byName(parts[2]));
       print('theme-flash: icon=${icon.selected.name} error=${icon.error}');
     }
-    final tabs = const MobileTabbarSettings(
-      order: MobileTabs.configurable,
-      enabled: {MobileTabs.home, MobileTabs.tasks, MobileTabs.activity, MobileTabs.search},
-    );
-    await p.setString(MobileTabbarStore.preferenceKey, tabs.encode());
   }
   // First frames read saved layout choices synchronously from this.
   await DevicePreferences.load();

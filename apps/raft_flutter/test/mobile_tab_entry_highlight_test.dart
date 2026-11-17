@@ -1,13 +1,11 @@
 @Tags(['slow'])
 library;
 
-import 'dart:convert';
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:raft_flutter/data/mobile_tabbar_preferences.dart';
 import 'package:raft_flutter/platform/desktop_title_bar.dart';
 import 'package:raft_ui/raft_ui.dart';
 
@@ -18,13 +16,6 @@ enum _EntryInput { touch, mouse, keyboard }
 
 const _barKey = Key('workspace-mobile-navigation');
 const _notificationsKey = ValueKey('workspace-settings-nav-notifications');
-
-final _preferences = {
-  MobileTabbarStore.preferenceKey: jsonEncode({
-    'order': ['chat', 'activity', 'members', 'computers', 'tasks'],
-    'enabled': ['chat', 'activity', 'members', 'computers'],
-  }),
-};
 
 void _assertSettingsBar(WidgetTester t, {required bool pointer}) {
   // Web v1.24: Settings is pushed over Home, whose bar stays under it. The
@@ -146,7 +137,6 @@ void main() {
           theme,
           390,
           uri: Uri.parse('/s/alpha'),
-          preferences: _preferences,
         );
         t.view.physicalSize = const Size(390, 844);
         await f.flush(t);
@@ -203,7 +193,6 @@ void main() {
         'light',
         856,
         uri: Uri.parse('/s/alpha/settings'),
-        preferences: _preferences,
       );
       t.view.physicalSize = const Size(856, 944);
       await f.flush(t);

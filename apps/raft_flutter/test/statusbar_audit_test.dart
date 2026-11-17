@@ -274,7 +274,6 @@ const pages = <Page>[
   Page('09-saved', '/s/alpha/saved'),
   Page('10-settings-account', '/s/alpha/settings/account'),
   Page('11-settings-workspace', '/s/alpha/settings/server'),
-  Page('12-settings-bottom-bar', '/s/alpha/settings/bottom-bar'),
   Page('13-computers', '/s/alpha/computers'),
   Page('14-member-detail', '/s/alpha/human/bob'),
   Page(

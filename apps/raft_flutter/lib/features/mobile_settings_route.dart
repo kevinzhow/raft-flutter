@@ -67,7 +67,6 @@ class _MobileWorkspaceRouteState extends State<_MobileWorkspaceRoute> {
       notifications: host.widget.notifications,
       sharing: host.widget.sharing,
       presentation: host.presentation,
-      mobileTabbar: host.mobileTabbar,
       railSide: host.railSideStore,
       onChooseServer: host.widget.onChooseServer,
       onSwitchServer: host.widget.onSwitchServer,

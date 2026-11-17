@@ -335,7 +335,6 @@ class Scenario {
     this.root = false,
     this.bottomControl = false,
     this.dark = false,
-    this.tabBarSurface = false,
   });
   final String name, path;
   final Nav nav;
@@ -350,10 +349,6 @@ class Scenario {
 
   /// Also captured in the dark theme.
   final bool dark;
-
-  /// The Bottom bar settings preview is a tab bar surface: its nav sits at
-  /// the system bar line.
-  final bool tabBarSurface;
 }
 
 Future<void> settle(WidgetTester t, [int frames = 12]) async {
@@ -453,20 +448,6 @@ final scenarios = <Scenario>[
   ),
   const Scenario('17-computers', '/s/alpha/computers'),
   const Scenario('17-computers', '/s/alpha/computers', nav: Nav.buttons),
-  const Scenario(
-    '19-bottom-bar-settings',
-    '/s/alpha/settings/bottom-bar',
-    bottomControl: true,
-    dark: true,
-    tabBarSurface: true,
-  ),
-  const Scenario(
-    '19-bottom-bar-settings',
-    '/s/alpha/settings/bottom-bar',
-    nav: Nav.buttons,
-    bottomControl: true,
-    tabBarSurface: true,
-  ),
   const Scenario('18-member-detail', '/s/alpha/human/bob'),
   const Scenario(
     '20-channel-settings-page',
@@ -635,16 +616,6 @@ Future<void> assertEdgeToEdge(
       bottomControlReachesEdge(t),
       isTrue,
       reason: '$label: bottom control does not reach the screen bottom',
-    );
-  }
-  if (s.tabBarSurface) {
-    final nav = find.descendant(
-      of: find.byKey(const Key('mobile-tabbar-preview')),
-      matching: find.byType(RaftMobileNav),
-    );
-    expect(
-      t.getRect(nav).bottom,
-      closeTo(_size.height / _dpr - s.nav.px / _dpr, .5),
     );
   }
   // Last item scrolls clear of the bar (and of the floating capsule).

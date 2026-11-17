@@ -7,7 +7,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/device_preferences.dart';
-import 'package:raft_flutter/data/mobile_tabbar_preferences.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/features/workspace_view.dart';
 import 'package:raft_flutter/platform/attachment_http.dart';
@@ -85,12 +84,7 @@ dynamic _state(WidgetTester tester) =>
 Future<(WorkspaceController, dynamic)> _openThreadWithImage(
   WidgetTester tester,
 ) async {
-  SharedPreferences.setMockInitialValues({
-    MobileTabbarStore.preferenceKey: jsonEncode({
-      'order': ['chat', 'tasks', 'activity', 'computers', 'members'],
-      'enabled': ['chat', 'tasks', 'activity', 'computers'],
-    }),
-  });
+  SharedPreferences.setMockInitialValues({});
   addTearDown(DevicePreferences.reset);
   await tester.runAsync(DevicePreferences.load);
   tester.view.physicalSize = const Size(390, 900);

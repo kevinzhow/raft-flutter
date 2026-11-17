@@ -12,7 +12,6 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:raft_flutter/data/mobile_tabbar_preferences.dart';
 import 'package:raft_flutter/data/personal_presentation.dart';
 import 'package:raft_flutter/data/raft_location.dart';
 import 'package:raft_flutter/data/search_memory.dart';
@@ -28,11 +27,11 @@ import 'workspace_source_location_contract_test.dart' show frames, pageFixture;
 import 'support/app_services_fixture.dart';
 
 /// Destinations only one layout lists on purpose (Sidebar.tsx mobileInline:
-/// the phone has a bottom-bar choice and a Computers row; desktop has a
+/// the phone has a Computers row; desktop has a
 /// Computers rail mode), or that a platform gates: Desktop is the Linux
 /// AppImage URI-scheme registration, so it appears wherever the test host does
 /// and never because of the width.
-const _phoneOnly = {'bottom-bar', 'computers'};
+const _phoneOnly = {'computers'};
 const _platformGated = {'desktop'};
 
 /// Rows that leave the Settings page instead of showing a panel.
@@ -54,7 +53,6 @@ class _Notifications extends NativeNotificationService {
 class _Services {
   final notifications = _Notifications();
   final presentation = PersonalPresentationStore(storage: _Memory());
-  final mobileTabbar = MobileTabbarStore();
   late final appUpdate = AppUpdateService(
     currentVersion: '0.1.0',
     currentBuild: 20,
@@ -80,7 +78,6 @@ class _Services {
   void dispose() {
     notifications.dispose();
     presentation.dispose();
-    mobileTabbar.dispose();
     appUpdate.dispose();
   }
 }
@@ -113,7 +110,6 @@ Future<WorkspaceController> _mount(
           onLogout: () async {},
           notifications: services.notifications,
           presentation: services.presentation,
-          mobileTabbar: services.mobileTabbar,
         ),
         update: services.appUpdate,
       ),
