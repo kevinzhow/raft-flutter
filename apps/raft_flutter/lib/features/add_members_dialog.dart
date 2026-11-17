@@ -10,6 +10,8 @@ import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import '../data/user_error.dart';
+import '../data/channel_roster_invalidations.dart';
+import 'channel_members.dart' show isLocalChannelMember;
 
 import '../data/workspace_controller.dart';
 import 'channel_form_fields.dart';
@@ -70,6 +72,7 @@ class _AddMembersDialogState extends State<AddMembersDialog> {
   List<Map<String, dynamic>> members = [], agents = [];
   final selectedHumans = <String>{}, selectedAgents = <String>{};
   bool seeded = false, submitting = false;
+  StreamSubscription<RaftEvent>? _events;
 
   /// Which lists are known (a local copy or a response). Until all three are,
   /// the list stays empty rather than claiming there is nothing to add.
@@ -92,12 +95,16 @@ class _AddMembersDialogState extends State<AddMembersDialog> {
     adoptDirectory();
     seed();
     w.services.entityDirectory.addListener(directoryChanged);
+    ChannelRosterInvalidations.of(w.client).addListener(rosterInvalidated);
+    _events = w.client.events.listen(rosterEvent);
     load();
   }
 
   @override
   void dispose() {
     w.services.entityDirectory.removeListener(directoryChanged);
+    ChannelRosterInvalidations.of(w.client).removeListener(rosterInvalidated);
+    unawaited(_events?.cancel());
     super.dispose();
   }
 
@@ -112,8 +119,11 @@ class _AddMembersDialogState extends State<AddMembersDialog> {
     roster,
   ) {
     if (roster == null) return;
+    final target = channel;
     existingHumans = {
-      for (final h in roster.humans) '${h['userId'] ?? h['id']}',
+      for (final h in roster.humans)
+        if (target == null || isLocalChannelMember(h, target))
+          '${h['userId'] ?? h['id']}',
     };
     existingAgents = {for (final a in roster.agents) '${a['id']}'};
     rosterKnown = true;
@@ -125,6 +135,20 @@ class _AddMembersDialogState extends State<AddMembersDialog> {
     members = d.rows(WorkspaceEntityKind.members);
     agents = d.rows(WorkspaceEntityKind.agents);
     peopleKnown = agentsKnown = true;
+  }
+
+  void rosterEvent(RaftEvent event) {
+    if (event.name != 'channel:members-updated') return;
+    final payload = event.payload;
+    if (payload is Map && payload['channelId'] == widget.channelId) {
+      unawaited(load());
+    }
+  }
+
+  void rosterInvalidated() {
+    if (ChannelRosterInvalidations.of(w.client).value.$2 == widget.channelId) {
+      unawaited(load());
+    }
   }
 
   void directoryChanged() {

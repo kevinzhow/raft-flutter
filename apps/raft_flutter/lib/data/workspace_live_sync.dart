@@ -23,6 +23,7 @@ import 'package:raft_sync/raft_sync.dart';
 
 import 'actor_directory.dart';
 import 'channel_access_loss.dart';
+import 'channel_roster_invalidations.dart';
 import 'workspace_entity_directory.dart';
 import 'workspace_session.dart';
 
@@ -229,10 +230,12 @@ class WorkspaceLiveSync {
         ),
       },
       refreshChannel: s.directory.refreshChannel,
-      notifyChannelMembers: (id) => s.directory.channelRealtime(
-        'channel:members-updated',
-        {'channelId': id},
-      ),
+      notifyChannelMembers: (id) {
+        s.directory.channelRealtime('channel:members-updated', {
+          'channelId': id,
+        });
+        ChannelRosterInvalidations.of(client).invalidate(id);
+      },
       // RFC 082 §4.4: a message changed in place while away; same path as
       // its live `message:updated`.
       applyMessage: (row) {

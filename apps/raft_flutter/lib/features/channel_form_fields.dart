@@ -25,12 +25,14 @@ class ChannelCandidateAvatar extends StatelessWidget {
     this.humanPlaceholder = false,
     this.origin,
     this.presence,
+    this.extent,
   });
   final ChannelMemberCandidate candidate;
   final RaftMountedAvatarContext avatarContext;
   final bool humanPlaceholder;
   final String? origin;
   final RaftAvatarPresence? presence;
+  final double? extent;
   @override
   Widget build(BuildContext context) {
     final agent = candidate.kind == 'agent';
@@ -44,6 +46,7 @@ class ChannelCandidateAvatar extends StatelessWidget {
     return RaftMountedAvatarFrame(
       name: candidate.label,
       avatarContext: avatarContext,
+      extent: extent,
       identity: agent
           ? RaftMountedAvatarIdentity.agent
           : RaftMountedAvatarIdentity.human,

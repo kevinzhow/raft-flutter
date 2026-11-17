@@ -1,10 +1,4 @@
-// Presentation of the Web ChannelMembers "modal" presentation
-// (packages/web/src/components/agent/ChannelMembers.tsx): header trigger,
-// Modal Card `max-w-sm p-6` with the roster and the staged multi-select
-// Add Member view (search, AGENTS / HUMANS candidates with CheckMarker +
-// AvatarSlot compact-list + description tooltip, pinned "Create a New Agent"
-// entry, "Add selected (N)"). The app adapter owns roster data, selection and
-// commands.
+// Web features/channel/ChannelMembers.tsx modal and members-page presentation.
 import 'card.dart' show RaftCard;
 import 'interaction.dart';
 import 'hover_region.dart';
@@ -13,6 +7,8 @@ import 'package:flutter/material.dart';
 
 import 'banner.dart';
 import 'create_channel_view.dart';
+import 'recipe_surface.dart';
+import 'recipes/recipe_router.dart' show resolveRecipeClasses;
 import 'design_primitives.dart';
 import 'dialog_card.dart';
 import 'icons.dart';
@@ -76,6 +72,8 @@ class RaftMemberRowData {
     this.onRemove,
     this.secondary,
     this.secondaryMono = false,
+    this.searchText,
+    this.badge,
     this.roleLabel,
     this.guest = false,
     this.human = false,
@@ -88,6 +86,7 @@ class RaftMemberRowData {
     this.testId,
   });
   final String label;
+  final String? searchText;
 
   /// `JointServerBadges`: the servers a joint-channel member participates
   /// through, shown after the name. Empty for a purely local member.
@@ -97,6 +96,7 @@ class RaftMemberRowData {
   /// (`<id>-open`), role action (`<id>-role`) and remove button (`<id>-remove`).
   final String? testId;
   final Widget avatar;
+  final Widget? badge;
   final VoidCallback? onRemove;
 
   /// Members page: the row body IS the profile button (`onRowClick`).
@@ -138,6 +138,7 @@ class RaftChannelMembersModal extends StatelessWidget {
     this.hasCandidates = false,
     this.candidateAgents = const [],
     this.candidateHumans = const [],
+    this.matchedCandidateKeys,
     this.chips = const [],
     required this.isChecked,
     required this.onToggle,
@@ -175,6 +176,7 @@ class RaftChannelMembersModal extends StatelessWidget {
   final VoidCallback? onAdd;
   final VoidCallback? onBack;
   final List<RaftPickerItem> candidateAgents, candidateHumans;
+  final List<String>? matchedCandidateKeys;
 
   /// Selected `(key, label)` pairs in selection order.
   final List<(String, String)> chips;
@@ -271,38 +273,8 @@ class RaftChannelMembersModal extends StatelessWidget {
         child: Center(child: RaftSpinner()),
       );
     }
-    Widget row(RaftMemberRowData m) => Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      child: Row(
-        children: [
-          m.avatar,
-          const SizedBox(width: 8),
-          Expanded(
-            child: RaftMemberNameLine(
-              labels: m.serverBadges,
-              name: Text(
-                m.label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: raftCssTextStyle(
-                  family: t.headingFont,
-                  step: RaftTextSteps.sm,
-                  weight: FontWeight.w500,
-                  color: t.strong,
-                ),
-              ),
-            ),
-          ),
-          if (m.onRemove != null)
-            RaftIconButton(
-              glyph: RaftGlyph.x,
-              tooltip: 'Remove ${m.label}',
-              visualSize: 24,
-              onPressed: m.onRemove,
-            ),
-        ],
-      ),
-    );
+    Widget row(RaftMemberRowData member, int index) =>
+        _MemberPageRow(row: member, topRule: index > 0);
 
     final eyebrowFill = t.colors['fill-muted'];
     return RaftCard(
@@ -321,7 +293,7 @@ class RaftChannelMembersModal extends StatelessWidget {
                   ),
                   background: eyebrowFill,
                 ),
-                for (final h in humans) row(h),
+                for (var i = 0; i < humans.length; i++) row(humans[i], i),
               ],
               if (agents.isNotEmpty) ...[
                 RaftDialogSectionEyebrow(
@@ -332,7 +304,7 @@ class RaftChannelMembersModal extends StatelessWidget {
                   ),
                   background: eyebrowFill,
                 ),
-                for (final a in agents) row(a),
+                for (var i = 0; i < agents.length; i++) row(agents[i], i),
               ],
               if (humans.isEmpty && agents.isEmpty)
                 Padding(
@@ -362,91 +334,25 @@ class RaftChannelMembersModal extends StatelessWidget {
     RaftTokens t, {
     bool fill = false,
   }) {
-    final query = search.text;
-    Widget eyebrow(String text) => RaftDialogSectionEyebrow(
-      text,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      background: t.colors['fill-muted'],
-      color: null,
-    );
-    Widget candidateRow(RaftPickerItem c) => _CandidateRow(
-      key: ValueKey('add-candidate-${c.key}'),
-      candidate: c,
-      checked: isChecked(c.key),
-      disabled: adding,
-      onTap: () => onToggle(c.key),
-    );
-
-    final mutedText = raftCssTextStyle(
-      family: t.monoFont,
-      step: RaftTextSteps.sm,
-      color: t.colors['foreground-muted'],
-    );
-    final list = Container(
-      // ChannelMemberListShell: raft-ui `Card` (`bg-layer-card`), max-h-72 (the
-      // members page fills the remaining height: `min-h-0 flex-1`).
-      constraints: fill ? null : const BoxConstraints(maxHeight: 288),
-      decoration: BoxDecoration(
-        color: t.colors['layer-member-list'],
-        border: Border.all(color: t.colors['line-muted']!, width: 1),
-        boxShadow: t.themeShadows.sm.outer,
-      ),
-      child: Column(
-        mainAxisSize: fill ? MainAxisSize.max : MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Flexible(
-            fit: fill ? FlexFit.tight : FlexFit.loose,
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  if (candidateAgents.isNotEmpty) ...[
-                    eyebrow('Agents'),
-                    for (final c in candidateAgents) candidateRow(c),
-                  ],
-                  if (candidateHumans.isNotEmpty) ...[
-                    eyebrow('Humans'),
-                    for (final c in candidateHumans) candidateRow(c),
-                  ],
-                  if (!hasCandidates)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 16,
-                      ),
-                      child: Text(
-                        raftText(context, 'All members added'),
-                        textAlign: TextAlign.center,
-                        style: mutedText,
-                      ),
-                    )
-                  else if (candidateAgents.isEmpty && candidateHumans.isEmpty)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 16,
-                      ),
-                      child: Text(
-                        raftFormat(context, 'No members match "{query}"', {
-                          'query': query.trim(),
-                        }),
-                        textAlign: TextAlign.center,
-                        style: mutedText,
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          ),
-          _CreateAgentEntry(
-            channelName: channelName,
-            canCreate: canCreateAgent,
-            enabled: !adding,
-            promotedName: createAgentName,
-            onTap: onCreateAgent,
-          ),
-        ],
+    final list = RaftMemberPickerContent(
+      search: search,
+      agents: candidateAgents,
+      humans: candidateHumans,
+      hasCandidates: hasCandidates,
+      matchedKeys: matchedCandidateKeys,
+      isSelected: isChecked,
+      onToggle: adding ? null : onToggle,
+      fill: fill,
+      showDescriptions: true,
+      rowKeyPrefix: 'add-candidate-',
+      searchPlaceholder: 'Name',
+      emptyLabel: 'All members added',
+      footer: _CreateAgentEntry(
+        channelName: channelName,
+        canCreate: canCreateAgent,
+        enabled: !adding,
+        promotedName: createAgentName,
+        onTap: onCreateAgent,
       ),
     );
     return [
@@ -500,19 +406,6 @@ class RaftChannelMembersModal extends StatelessWidget {
         ),
         const SizedBox(height: 12),
       ],
-      if (hasCandidates)
-        Padding(
-          padding: const EdgeInsets.only(bottom: 12), // mb-3
-          child: RaftProductFormField(
-            label: 'Search',
-            child: RaftDialogTextInput(
-              controller: search,
-              placeholder: 'Name',
-              leadingGlyph: RaftGlyph.search,
-              autofocus: !page && RaftInteraction.of(context).pointer,
-            ),
-          ),
-        ),
       if (fill) Expanded(child: list) else list,
       const SizedBox(height: 16), // mt-4
       RaftRecipeButton(
@@ -535,129 +428,6 @@ class RaftChannelMembersModal extends StatelessWidget {
         onPressed: onConfirm,
       ),
     ];
-  }
-}
-
-/// Multi-select candidate: `flex w-full items-center gap-2 px-3 py-2`,
-/// CheckMarker sm, AvatarSlot compact-list (+ activity badge) and the
-/// name / truncated description (description carries a Tooltip).
-class _CandidateRow extends StatefulWidget {
-  const _CandidateRow({
-    super.key,
-    required this.candidate,
-    required this.checked,
-    required this.disabled,
-    required this.onTap,
-  });
-  final RaftPickerItem candidate;
-  final bool checked, disabled;
-  final VoidCallback onTap;
-  @override
-  State<_CandidateRow> createState() => _CandidateRowState();
-}
-
-class _CandidateRowState extends State<_CandidateRow> {
-  bool hovered = false;
-  @override
-  Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
-    final c = widget.candidate;
-    final description = c.description?.trim();
-    final fill = hovered && !widget.disabled ? (t.colors['fill-muted']) : null;
-    final ink = t.strong;
-    return Semantics(
-      button: true,
-      toggled: widget.checked,
-      child: RaftHoverRegion(
-        cursor: SystemMouseCursors.click,
-        onEnter: (_) => setState(() => hovered = true),
-        onExit: (_) => setState(() => hovered = false),
-        child: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: widget.disabled ? null : widget.onTap,
-          child: Opacity(
-            opacity: widget.disabled ? .6 : 1,
-            child: Container(
-              color: fill,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              child: Row(
-                children: [
-                  _CheckMarker(checked: widget.checked),
-                  const SizedBox(width: 8),
-                  c.avatar,
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          c.label,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: raftCssTextStyle(
-                            family: t.headingFont,
-                            step: RaftTextSteps.sm,
-                            weight: FontWeight.w500,
-                            color: ink,
-                          ),
-                        ),
-                        if (description != null && description.isNotEmpty)
-                          RaftTooltip(
-                            message: description,
-                            onlyWhenTruncated: true,
-                            child: SizedBox(
-                              width: double.infinity,
-                              child: Text(
-                                description,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: raftCssTextStyle(
-                                  family: t.headingFont,
-                                  step: RaftTextSteps.xs,
-                                  color: t.colors['foreground-muted'],
-                                ),
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Web CheckMarker sm: `size-3.5 border border-line-strong
-/// theme-brutal:border-2 theme-brutal:border-black`, checked black fill with
-/// a white `Check size={10} strokeWidth={4}`.
-class _CheckMarker extends StatelessWidget {
-  const _CheckMarker({required this.checked});
-  final bool checked;
-  @override
-  Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
-    return Container(
-      width: 14,
-      height: 14,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: checked ? (t.strong) : (t.panel),
-        border: Border.all(color: t.colors['line-strong']!, width: 1),
-      ),
-      child: checked
-          ? RaftIcon(
-              RaftGlyph.check,
-              size: 10,
-              strokeWidth: 4,
-              color: t.colors['foreground-inverse'],
-            )
-          : null,
-    );
   }
 }
 
@@ -684,23 +454,19 @@ class _CreateAgentEntry extends StatelessWidget {
     final t = RaftTokens.of(context);
     final ink = t.strong;
     final hint = t.colors['foreground-muted'];
-    final seam = t.colors['line-strong']!;
     final promoted = promotedName != null && promotedName!.isNotEmpty;
     Widget plus(Color color) => SizedBox.square(
       dimension: 24,
       child: CustomPaint(
-        painter: _DashedBoxPainter(color: color, width: 1),
+        painter: _DashedBoxPainter(color: color, width: 1.5),
         child: Center(child: RaftIcon(RaftGlyph.plus, size: 14, color: color)),
       ),
     );
     if (!canCreate) {
       return Container(
         key: const ValueKey('add-member-create-agent-entry-disabled'),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        decoration: BoxDecoration(
-          color: t.panel,
-          border: Border(top: BorderSide(color: seam, width: 1)),
-        ),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        decoration: BoxDecoration(color: t.panel),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -744,14 +510,13 @@ class _CreateAgentEntry extends StatelessWidget {
         opacity: enabled ? 1 : .5,
         child: Container(
           key: const ValueKey('add-member-create-agent-entry'),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
           decoration: BoxDecoration(
             color: promoted
                 ? (t.colors['primary-soft'])
                 : st.hovered
                 ? t.colors['fill-pressed']
                 : (t.panel),
-            border: Border(top: BorderSide(color: seam, width: 1)),
           ),
           child: Row(
             children: [
@@ -1044,7 +809,8 @@ class _MembersPageState extends State<_MembersPage> {
   Widget _roster(BuildContext context, RaftTokens t, double bottomInset) {
     final query = rosterSearch.text.trim().toLowerCase();
     bool matches(RaftMemberRowData r) =>
-        query.isEmpty || r.label.toLowerCase().contains(query);
+        query.isEmpty ||
+        (r.searchText ?? r.label).toLowerCase().contains(query);
     final humans = [
       for (final h in m.humans)
         if (matches(h)) h,
@@ -1289,21 +1055,18 @@ class _MemberSectionState extends State<_MemberSection> {
           ),
         ),
         if (open)
-          for (final r in widget.rows) _MemberPageRow(row: r),
+          for (var i = 0; i < widget.rows.length; i++)
+            _MemberPageRow(row: widget.rows[i], topRule: i > 0),
       ],
     );
   }
 }
 
-/// `ChannelMemberRow` (row = profile button) with its `MemberRoleTag`
-/// trailing slot: `group flex items-start gap-2 px-3 py-2 hover:bg-fill-muted`,
-/// avatar `mt-1`, name `truncate text-sm` (human bold, agent medium) over a
-/// `truncate text-xs text-foreground-muted` line. From md the role tag and the
-/// hover actions share one grid cell (the tag hides while the actions show);
-/// below md they sit side by side.
+/// The shared Web ChannelMemberList row, with separate profile and action targets.
 class _MemberPageRow extends StatefulWidget {
-  const _MemberPageRow({required this.row});
+  const _MemberPageRow({required this.row, this.topRule = false});
   final RaftMemberRowData row;
+  final bool topRule;
   @override
   State<_MemberPageRow> createState() => _MemberPageRowState();
 }
@@ -1317,15 +1080,11 @@ class _MemberPageRowState extends State<_MemberPageRow> {
     final r = widget.row;
     final wide =
         MediaQuery.sizeOf(context).width >= RaftLayoutMetrics.desktopBreakpoint;
-    final ink = t.strong;
     final tag = r.roleLabel == null
         ? null
         : RaftBadge(
             label: r.roleLabel!,
-            appearance: RaftBadgeRecipeAppearance.soft,
-            variant: r.guest
-                ? RaftBadgeRecipeVariant.information
-                : RaftBadgeRecipeVariant.muted,
+            appearance: RaftBadgeRecipeAppearance.outline,
             fontFamily: t.monoFont,
           );
     final roleAction = r.onRoleAction == null || r.roleActionLabel == null
@@ -1394,88 +1153,133 @@ class _MemberPageRowState extends State<_MemberPageRow> {
     final grows = RaftScaled.grows(context);
     final stacked = grows ? trailing : null;
     if (grows) trailing = null;
+    final short = MediaQuery.sizeOf(context).height <= 600;
+    final rowStyle = resolveRecipeClasses(
+      [
+        'font-sans',
+        'items-center',
+        'gap-3',
+        'px-4',
+        short ? 'min-h-0' : 'min-h-16',
+        short ? 'py-1.5' : 'py-2.5',
+        if (!short && wide) 'pointer-coarse:min-h-14',
+        'hover:bg-fill-subtle',
+      ],
+      t.recipeStates(
+        hovered: hovered,
+        responsive: true,
+        pointerCoarse: RaftInteraction.of(context).touch,
+      ),
+      t.recipeTokens,
+    );
+    final titleStyle = resolveRecipeClasses(
+      const ['text-subhead', 'font-semibold', 'text-foreground'],
+      t.recipeStates(),
+      t.recipeTokens,
+    ).text(t.recipeTokens, base: TextStyle(fontFamily: t.headingFont));
+    final subStyle =
+        resolveRecipeClasses(
+          const ['text-caption', 'text-foreground-hint'],
+          t.recipeStates(),
+          t.recipeTokens,
+        ).text(
+          t.recipeTokens,
+          base: TextStyle(
+            fontFamily: r.secondaryMono ? t.monoFont : t.headingFont,
+          ),
+        );
     return RaftHoverRegion(
       key: r.testId == null ? null : ValueKey<String>(r.testId!),
       onEnter: (_) => setState(() => hovered = true),
       onExit: (_) => setState(() => hovered = false),
-      child: Container(
-        color: hovered ? t.colors['fill-muted'] : null,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        child: Row(
-          children: [
-            Expanded(
-              child: _RowTap(
-                key: r.testId == null ? null : ValueKey('${r.testId}-open'),
-                onTap: r.onTap,
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.only(top: 4),
-                      child: r.avatar,
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          SizedBox(
-                            width: double.infinity,
-                            child: RaftMemberNameLine(
-                              labels: r.serverBadges,
-                              name: Text(
-                                r.label,
-                                maxLines: grows ? null : 1,
-                                overflow: grows
-                                    ? TextOverflow.clip
-                                    : TextOverflow.ellipsis,
-                                style: raftCssTextStyle(
-                                  family: t.headingFont,
-                                  step: RaftTextSteps.sm,
-                                  weight: r.human
-                                      ? FontWeight.w700
-                                      : FontWeight.w500,
-                                  color: ink,
-                                ),
+      child: Stack(
+        children: [
+          RaftRecipeBox(
+            style: rowStyle,
+            tokens: t.recipeTokens,
+            applyText: false,
+            child: Row(
+              children: [
+                Expanded(
+                  child: _RowTap(
+                    key: r.testId == null ? null : ValueKey('${r.testId}-open'),
+                    onTap: r.onTap,
+                    child: Row(
+                      children: [
+                        r.avatar,
+                        SizedBox(width: rowStyle.columnGap ?? 0),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: RaftMemberNameLine(
+                                      labels: r.serverBadges,
+                                      name: Text(
+                                        r.label,
+                                        maxLines: grows ? null : 1,
+                                        overflow: grows
+                                            ? TextOverflow.clip
+                                            : TextOverflow.ellipsis,
+                                        style: titleStyle,
+                                      ),
+                                    ),
+                                  ),
+                                  if (r.badge case final badge?) ...[
+                                    const SizedBox(width: 6),
+                                    badge,
+                                  ],
+                                ],
                               ),
-                            ),
+                              if (r.secondary case final secondary?
+                                  when secondary.isNotEmpty)
+                                Text(
+                                  secondary,
+                                  maxLines: grows ? null : 1,
+                                  overflow: grows
+                                      ? TextOverflow.clip
+                                      : TextOverflow.ellipsis,
+                                  style: subStyle,
+                                ),
+                              if (stacked != null)
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 4),
+                                  child: Align(
+                                    alignment: AlignmentDirectional.centerStart,
+                                    child: stacked,
+                                  ),
+                                ),
+                            ],
                           ),
-                          if (r.secondary != null && r.secondary!.isNotEmpty)
-                            SizedBox(
-                              width: double.infinity,
-                              child: Text(
-                                r.secondary!,
-                                maxLines: grows ? null : 1,
-                                overflow: grows
-                                    ? TextOverflow.clip
-                                    : TextOverflow.ellipsis,
-                                style: raftCssTextStyle(
-                                  family: r.secondaryMono
-                                      ? t.monoFont
-                                      : t.headingFont,
-                                  step: RaftTextSteps.xs,
-                                  color: t.colors['foreground-muted'],
-                                ),
-                              ),
-                            ),
-                          if (stacked != null)
-                            Padding(
-                              padding: const EdgeInsets.only(top: 4),
-                              child: Align(
-                                alignment: AlignmentDirectional.centerStart,
-                                child: stacked,
-                              ),
-                            ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
+                ),
+                if (trailing != null) ...[
+                  SizedBox(width: rowStyle.columnGap ?? 0),
+                  trailing,
+                ],
+              ],
+            ),
+          ),
+          if (widget.topRule)
+            Positioned(
+              top: 0,
+              left: 63,
+              right: 0,
+              height: 1,
+              child: IgnorePointer(
+                child: ColoredBox(
+                  key: r.testId == null ? null : ValueKey('${r.testId}-rule'),
+                  color: t.colors['line-hairline']!,
                 ),
               ),
             ),
-            if (trailing != null) ...[const SizedBox(width: 8), trailing],
-          ],
-        ),
+        ],
       ),
     );
   }
@@ -1530,14 +1334,7 @@ class _RowTap extends StatelessWidget {
   @override
   Widget build(BuildContext context) => onTap == null
       ? child
-      : Semantics(
-          button: true,
-          child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: onTap,
-            child: child,
-          ),
-        );
+      : RaftInteractive(onPressed: onTap, builder: (context, state) => child);
 }
 
 /// `ChannelMemberHoverActions` role action: outline `Button size="sm"` with

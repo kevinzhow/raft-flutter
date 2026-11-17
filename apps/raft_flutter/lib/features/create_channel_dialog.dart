@@ -1,7 +1,4 @@
-// Create-channel dialog: the Web CreateChannelDialog
-// (packages/web/src/components/channel/CreateChannelDialog.tsx) — DialogCard
-// with Name, Description (optional), Visibility (Public/Private segmented
-// control), Members (optional) search + AGENTS/HUMANS picker, Cancel/Create.
+// Web components/channel/CreateChannelDialog.tsx ordinary channel adapter.
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -13,8 +10,41 @@ import '../data/user_error.dart';
 
 import '../data/workspace_controller.dart';
 import 'slack_channel_pairing.dart';
+import 'search_ranking.dart';
 import '../data/workspace_entity_directory.dart';
 import 'channel_form_fields.dart';
+
+typedef ArchivedChannelNameCollision = ({
+  String id,
+  String name,
+  String type,
+  bool canUnarchive,
+});
+
+ArchivedChannelNameCollision? parseArchivedChannelNameCollision(
+  Object error, {
+  Set<String> types = const {'channel', 'private', 'joint'},
+}) {
+  if (error is! RaftApiException) return null;
+  final details = error.details;
+  if (details['code'] != 'archived_name_collision') return null;
+  final id = details['archivedChannelId'];
+  final name = details['archivedChannelName'];
+  final type = details['archivedChannelType'];
+  if (id is! String ||
+      id.isEmpty ||
+      name is! String ||
+      name.isEmpty ||
+      type is! String ||
+      !types.contains(type))
+    return null;
+  return (
+    id: id,
+    name: name,
+    type: type,
+    canUnarchive: details['canUnarchiveArchivedChannel'] == true,
+  );
+}
 
 /// One selectable member row of the picker (an agent or a human).
 @immutable
@@ -26,18 +56,55 @@ class ChannelMemberCandidate {
     this.displayName,
     this.description,
     this.avatarUrl,
+    this.sourceServerLabel,
+    this.managedByAppInstallId,
+    this.managedByAppName,
   });
   final String kind; // 'agent' | 'human'
   final String id, name;
-  final String? displayName, description, avatarUrl;
+  final String? displayName, description, avatarUrl, sourceServerLabel;
+  final String? managedByAppInstallId, managedByAppName;
   String get label =>
       (displayName?.trim().isNotEmpty ?? false) ? displayName! : name;
-  bool matches(String query) {
-    final q = query.trim().toLowerCase();
-    if (q.isEmpty) return true;
-    return name.toLowerCase().contains(q) ||
-        (displayName ?? '').toLowerCase().contains(q);
-  }
+  bool matches(String query) =>
+      searchChannelMemberCandidates(query, [this]).isNotEmpty;
+}
+
+List<ChannelMemberCandidate> searchChannelMemberCandidates(
+  String query,
+  List<ChannelMemberCandidate> candidates,
+) => rankSearchEntries(query, [
+  for (final candidate in candidates)
+    SearchRankEntry(candidate, [
+      (text: candidate.name, priority: 0),
+      (text: candidate.displayName ?? '', priority: 1),
+      (text: candidate.description ?? '', priority: 3),
+      (text: candidate.sourceServerLabel ?? '', priority: 4),
+    ]),
+]);
+
+Widget? channelCandidateAppBadge(
+  BuildContext context,
+  ChannelMemberCandidate candidate,
+) {
+  if (candidate.managedByAppInstallId == null) return null;
+  final app = candidate.managedByAppName;
+  final badge = RaftBadge(
+    key: const ValueKey('app-bot-badge'),
+    label: app == null || app.isEmpty || app == candidate.label
+        ? raftText(context, 'App')
+        : raftFormat(context, 'App · {app}', {'app': app}),
+    appearance: RaftBadgeRecipeAppearance.soft,
+    variant: RaftBadgeRecipeVariant.muted,
+  );
+  return app == null || app.isEmpty
+      ? badge
+      : RaftTooltip(
+          message: raftFormat(context, 'Created by the {app} app', {
+            'app': app,
+          }),
+          child: badge,
+        );
 }
 
 /// Candidate rows from agent and member rows (the `/agents` and
@@ -50,7 +117,9 @@ List<ChannelMemberCandidate> channelMemberCandidatesFrom(
   String? me,
 ) => [
   for (final a in agents)
-    if (a['deletedAt'] == null)
+    if (a['deletedAt'] == null &&
+        a['inMemberLists'] != false &&
+        (a['assistantOwnerUserId'] == null || a['assistantOwnerUserId'] == ''))
       ChannelMemberCandidate(
         kind: 'agent',
         id: '${a['id']}',
@@ -58,6 +127,10 @@ List<ChannelMemberCandidate> channelMemberCandidatesFrom(
         displayName: a['displayName'] as String?,
         description: a['description'] as String?,
         avatarUrl: a['avatarUrl'] as String?,
+        managedByAppInstallId: a['managedByAppInstallId'] as String?,
+        managedByAppName: a['managedByApp'] is Map
+            ? (a['managedByApp'] as Map)['name'] as String?
+            : null,
       ),
   if (members != null)
     for (final m in members)
@@ -68,6 +141,7 @@ List<ChannelMemberCandidate> channelMemberCandidatesFrom(
           name: '${m['name'] ?? ''}',
           displayName: m['displayName'] as String?,
           description: m['description'] as String?,
+          sourceServerLabel: (m['serverName'] ?? m['serverSlug']) as String?,
           avatarUrl: m['avatarUrl'] as String?,
         ),
 ];
@@ -233,7 +307,7 @@ class _CreateChannelDialogState extends State<CreateChannelDialog> {
   /// The name rule that rejected the last submit: it holds only while the
   /// name still breaks it.
   final nameInvalid = CauseNotice();
-  Map<String, dynamic>? archivedCollision;
+  ArchivedChannelNameCollision? archivedCollision;
 
   @override
   void initState() {
@@ -259,25 +333,37 @@ class _CreateChannelDialogState extends State<CreateChannelDialog> {
 
   void close() => Navigator.of(context).maybePop();
 
+  void openCollision() {
+    final held = archivedCollision;
+    if (held == null || unarchiving) return;
+    final id = held.id;
+    final channel =
+        w.channels.where((c) => c.id == id).firstOrNull ??
+        RaftChannel({
+          'id': id,
+          'name': held.name,
+          'type': held.type,
+          'archivedAt': 'archived',
+        });
+    Navigator.of(context).pop();
+    unawaited(w.selectChannel(channel));
+  }
+
   Future<void> unarchiveCollision() async {
     final held = archivedCollision;
     if (held == null || unarchiving) return;
     setState(() => unarchiving = true);
     try {
-      final result = await w.command(
-        'POST',
-        '/channels/${held['archivedChannelId']}/unarchive',
-      );
+      final result = await w.command('POST', '/channels/${held.id}/unarchive');
       await w.refreshChannels();
       if (!mounted) return;
       Navigator.of(context).pop();
-      await widget.onCreated?.call(
+      await w.selectChannel(
         RaftChannel(Map<String, dynamic>.from(result as Map)),
       );
     } catch (e) {
       if (mounted) {
         setState(() {
-          archivedCollision = null;
           error = raftText(
             context,
             userErrorText(
@@ -356,11 +442,13 @@ class _CreateChannelDialogState extends State<CreateChannelDialog> {
       await widget.onCreated?.call(created);
     } catch (e) {
       if (mounted) {
-        final details = e is RaftApiException ? e.details : const {};
+        final collision = parseArchivedChannelNameCollision(
+          e,
+          types: const {'channel', 'private'},
+        );
         setState(() {
-          if (details['code'] == 'archived_name_collision' &&
-              details['archivedChannelId'] != null) {
-            archivedCollision = Map<String, dynamic>.from(details);
+          if (collision != null) {
+            archivedCollision = collision;
           } else {
             error = raftText(
               context,
@@ -384,12 +472,14 @@ class _CreateChannelDialogState extends State<CreateChannelDialog> {
       key: '${c.kind}:${c.id}',
       label: c.label,
       description: c.description,
+      badge: channelCandidateAppBadge(context, c),
       avatar: ChannelCandidateAvatar(
         candidate: c,
         avatarContext: RaftMountedAvatarContext.sidebarList,
         humanPlaceholder: true,
       ),
     );
+    final matching = searchChannelMemberCandidates(search.text, candidates);
     return RaftCreateChannelDialogView(
       name: name,
       description: description,
@@ -398,13 +488,14 @@ class _CreateChannelDialogState extends State<CreateChannelDialog> {
       onVisibilityChanged: (v) => setState(() => visibility = v),
       agents: [
         for (final c in candidates)
-          if (c.kind == 'agent' && c.matches(search.text)) item(c),
+          if (c.kind == 'agent') item(c),
       ],
       humans: [
         for (final c in candidates)
-          if (c.kind == 'human' && c.matches(search.text)) item(c),
+          if (c.kind == 'human') item(c),
       ],
       hasCandidates: candidates.isNotEmpty,
+      matchedMemberKeys: [for (final c in matching) '${c.kind}:${c.id}'],
       isSelected: (key) => key.startsWith('agent:')
           ? agentIds.contains(key.substring(6))
           : humanIds.contains(key.substring(6)),
@@ -427,11 +518,11 @@ class _CreateChannelDialogState extends State<CreateChannelDialog> {
       notice: archivedCollision == null
           ? null
           : RaftArchivedNameBanner(
-              name: '${archivedCollision!['archivedChannelName']}',
-              canUnarchive:
-                  archivedCollision!['canUnarchiveArchivedChannel'] == true,
+              name: archivedCollision!.name,
+              canUnarchive: archivedCollision!.canUnarchive,
               busy: unarchiving,
               onUnarchive: unarchiveCollision,
+              onOpen: openCollision,
               onChangeName: () => setState(() {
                 archivedCollision = null;
                 name.clear();

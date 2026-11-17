@@ -373,7 +373,11 @@ class RootFixture {
         'hasNewer': false,
       };
       adapter.routes['POST /channels/c$id/read'] = (_) => {};
-      adapter.routes['GET /channels/c$id/members'] = (_) => [];
+      adapter.routes['GET /channels/c$id/members'] = (_) => {
+        'humans': [],
+        'agents': [],
+        'externalMembers': [],
+      };
     }
     adapter.routes.addAll(overrides);
     for (final held in holds.entries) {

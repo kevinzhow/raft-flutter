@@ -1,9 +1,5 @@
 import 'overlays/dialog.dart' show RaftDialog;
-// Presentation of the Web CreateChannelDialog
-// (packages/web/src/components/channel/CreateChannelDialog.tsx): DialogCard
-// with Name, Description (optional), Visibility segmented control, Members
-// (optional) search + AGENTS/HUMANS picker and Cancel/Create Channel. The app
-// adapter owns loading, selection state and the create command.
+// Channel creation form and shared Web MemberChoiceList presentation.
 import 'raft/segmented_control.dart'
     show RaftSegmentedControl, RaftSegmentedOption;
 import 'card.dart' show RaftCard;
@@ -18,6 +14,9 @@ import 'dialog_card.dart';
 import 'icons.dart';
 import 'localization.dart';
 import 'recipe_surface.dart';
+import 'form_controls.dart' show RaftInputGroup, RaftInputGroupAddon;
+import 'interaction.dart';
+import 'recipes/choice_list.g.dart';
 import 'raft/button.dart';
 import 'raft/checkbox.dart' show RaftCheckboxIndicator;
 import 'recipes/web_member_picker.g.dart';
@@ -25,6 +24,7 @@ import 'separator.dart';
 import 'settings_layout.dart' show RaftSpace;
 import 'error_presentation.dart' show RaftErrorBanner;
 import 'theme.dart';
+import 'tooltip.dart';
 
 /// One selectable picker row: stable [key], [label], optional
 /// [description] and the adapter-built `AvatarSlot` [avatar].
@@ -35,10 +35,12 @@ class RaftPickerItem {
     required this.label,
     required this.avatar,
     this.description,
+    this.badge,
   });
   final String key, label;
   final String? description;
   final Widget avatar;
+  final Widget? badge;
 }
 
 class RaftCreateChannelDialogView extends StatelessWidget {
@@ -57,6 +59,7 @@ class RaftCreateChannelDialogView extends StatelessWidget {
     required this.onClose,
     required this.onSubmit,
     this.error,
+    this.matchedMemberKeys,
     this.notice,
     this.slackField,
     this.submitting = false,
@@ -69,6 +72,7 @@ class RaftCreateChannelDialogView extends StatelessWidget {
   final Widget? slackField;
   final ValueChanged<String> onVisibilityChanged;
   final List<RaftPickerItem> agents, humans;
+  final List<String>? matchedMemberKeys;
   final bool hasCandidates, submitting;
   final bool Function(String key) isSelected;
   final ValueChanged<String> onToggle;
@@ -144,6 +148,7 @@ class RaftCreateChannelDialogView extends StatelessWidget {
                 search: search,
                 agents: agents,
                 humans: humans,
+                matchedKeys: matchedMemberKeys,
                 hasCandidates: hasCandidates,
                 isSelected: isSelected,
                 onToggle: submitting ? null : onToggle,
@@ -194,7 +199,7 @@ class RaftCreateChannelDialogView extends StatelessWidget {
 /// The member picker body shared by the create dialogs: `No members
 /// available`, or the search `Input` (`pl-9` + Search glyph) over the
 /// `Card max-h-48` AGENTS / HUMANS list.
-class RaftMemberPickerContent extends StatelessWidget {
+class RaftMemberPickerContent extends StatefulWidget {
   const RaftMemberPickerContent({
     super.key,
     required this.search,
@@ -203,50 +208,163 @@ class RaftMemberPickerContent extends StatelessWidget {
     required this.hasCandidates,
     required this.isSelected,
     required this.onToggle,
+    this.matchedKeys,
+    this.footer,
+    this.fill = false,
+    this.showDescriptions = false,
+    this.rowKeyPrefix = 'member-choice-',
+    this.searchPlaceholder = 'Search members by name',
+    this.emptyLabel = 'No members to add',
   });
   final TextEditingController search;
   final List<RaftPickerItem> agents, humans;
-  final bool hasCandidates;
+  final List<String>? matchedKeys;
+  final bool hasCandidates, fill, showDescriptions;
   final bool Function(String key) isSelected;
   final ValueChanged<String>? onToggle;
+  final Widget? footer;
+  final String rowKeyPrefix, searchPlaceholder, emptyLabel;
+
+  @override
+  State<RaftMemberPickerContent> createState() => _MemberPickerContentState();
+}
+
+class _MemberPickerContentState extends State<RaftMemberPickerContent> {
+  final focus = FocusNode();
+  String? pinnedFor;
+  Set<String> pinned = {};
+
+  @override
+  void initState() {
+    super.initState();
+    widget.search.addListener(changed);
+  }
+
+  void changed() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void didUpdateWidget(covariant RaftMemberPickerContent oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.search != widget.search) {
+      oldWidget.search.removeListener(changed);
+      widget.search.addListener(changed);
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.search.removeListener(changed);
+    focus.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    if (!hasCandidates) {
-      return Text(
-        raftText(context, 'No members to add'),
-        style: raftCssTextStyle(
-          family: t.monoFont,
-          step: RaftTextSteps.sm,
-          color: t.colors['foreground-muted'],
-        ),
-      );
+    final recipe = RaftChoiceListRecipe.resolve(
+      fill: widget.fill,
+      scroll: widget.hasCandidates && !widget.fill,
+      states: t.recipeStates(
+        responsive: true,
+        pointerCoarse: RaftInteraction.of(context).touch,
+      ),
+      tokens: t.recipeTokens,
+    );
+    final all = [...widget.agents, ...widget.humans];
+    final query = widget.search.text;
+    if (pinnedFor != query) {
+      pinnedFor = query;
+      pinned = {
+        for (final item in all)
+          if (widget.isSelected(item.key)) item.key,
+      };
     }
+    final byKey = {for (final item in all) item.key: item};
+    final needle = query.trim().toLowerCase();
+    final rankedKeys = widget.matchedKeys;
+    final matches = needle.isEmpty
+        ? all
+        : rankedKeys != null
+        ? [
+            for (final key in rankedKeys)
+              if (byKey[key] case final item?) item,
+          ]
+        : [
+            for (final item in all)
+              if ('${item.label} ${item.description ?? ''}'
+                  .toLowerCase()
+                  .contains(needle))
+                item,
+          ];
+    final matched = matches.map((item) => item.key).toSet();
+    final top = needle.isEmpty
+        ? <RaftPickerItem>[]
+        : [
+            for (final item in all)
+              if (pinned.contains(item.key) ||
+                  (widget.isSelected(item.key) && !matched.contains(item.key)))
+                item,
+          ];
+    final topKeys = top.map((item) => item.key).toSet();
+    final visible = [
+      ...top,
+      for (final item in matches)
+        if (!topKeys.contains(item.key)) item,
+    ];
+    final agentKeys = widget.agents.map((item) => item.key).toSet();
+    final frame = _RecipeMemberPicker(
+      agents: [
+        for (final item in visible)
+          if (agentKeys.contains(item.key)) item,
+      ],
+      humans: [
+        for (final item in visible)
+          if (!agentKeys.contains(item.key)) item,
+      ],
+      selected: widget.isSelected,
+      query: query,
+      onToggle: widget.onToggle,
+      fill: widget.fill,
+      footer: widget.footer,
+      showDescriptions: widget.showDescriptions,
+      rowKeyPrefix: widget.rowKeyPrefix,
+      note: !widget.hasCandidates
+          ? raftText(context, widget.emptyLabel)
+          : needle.isNotEmpty && matches.isEmpty
+          ? raftFormat(context, 'No members match "{query}"', {
+              'query': query.trim(),
+            })
+          : null,
+    );
     return Column(
-      mainAxisSize: MainAxisSize.min,
+      mainAxisSize: widget.fill ? MainAxisSize.max : MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        RaftDialogTextInput(
-          controller: search,
-          placeholder: 'Search members by name',
-          leadingGlyph: RaftGlyph.search,
-        ),
-        const SizedBox(height: 8), // space-y-2
-        _RecipeMemberPicker(
-          agents: agents,
-          humans: humans,
-          selected: isSelected,
-          query: search.text,
-          onToggle: onToggle,
-        ),
+        if (widget.hasCandidates) ...[
+          RaftInputGroup(
+            controller: widget.search,
+            focusNode: focus,
+            enabled: widget.onToggle != null,
+            autofocus: RaftInteraction.of(context).pointer,
+            semanticLabel: raftText(context, 'Search'),
+            hintText: raftText(context, widget.searchPlaceholder),
+            leading: const RaftInputGroupAddon.icon(RaftGlyph.search),
+            clearLabel: raftText(context, 'Clear search'),
+            onClear: () {
+              widget.search.clear();
+              focus.requestFocus();
+            },
+          ),
+          SizedBox(height: recipe.root.rowGap ?? 0),
+        ],
+        if (widget.fill) Expanded(child: frame) else frame,
       ],
     );
   }
 }
 
-/// Current Web member-picker composition, extracted from its product source:
-/// `Card max-h-48 overflow-y-auto` with group headers and member rows.
 class _RecipeMemberPicker extends StatelessWidget {
   const _RecipeMemberPicker({
     required this.agents,
@@ -254,20 +372,39 @@ class _RecipeMemberPicker extends StatelessWidget {
     required this.selected,
     required this.onToggle,
     required this.query,
+    required this.fill,
+    required this.showDescriptions,
+    required this.rowKeyPrefix,
+    this.footer,
+    this.note,
   });
-
   final List<RaftPickerItem> agents, humans;
   final bool Function(String key) selected;
   final ValueChanged<String>? onToggle;
-  final String query;
+  final String query, rowKeyPrefix;
+  final bool fill, showDescriptions;
+  final Widget? footer;
+  final String? note;
 
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     final tokens = t.recipeTokens;
     final recipe = RaftWebMemberPickerRecipe.resolve(
-      states: t.recipeStates(),
+      fill: fill,
+      states: t.recipeStates(
+        responsive: true,
+        pointerCoarse: RaftInteraction.of(context).touch,
+      ),
       tokens: tokens,
+    );
+    final choice = RaftChoiceListRecipe.resolve(
+      fill: fill,
+      tokens: tokens,
+      states: t.recipeStates(
+        responsive: true,
+        pointerCoarse: RaftInteraction.of(context).touch,
+      ),
     );
     Widget group(String label) => RaftRecipeBox(
       style: recipe.group,
@@ -282,51 +419,62 @@ class _RecipeMemberPicker extends StatelessWidget {
       ),
     );
     Widget row(RaftPickerItem candidate) => _RecipeMemberRow(
+      key: ValueKey('$rowKeyPrefix${candidate.key}'),
       candidate: candidate,
       selected: selected(candidate.key),
+      showDescription: showDescriptions,
       onTap: onToggle == null ? null : () => onToggle!(candidate.key),
     );
-    return ConstrainedBox(
-      constraints: BoxConstraints(
-        maxHeight:
-            (recipe.scroller.maxHeight ?? double.infinity) +
-            recipe.root.borderWidth.vertical,
-      ),
-      child: RaftCard(
-        padding: recipe.scroller.padding,
-        clip: true,
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            spacing: recipe.rows.rowGap ?? 0,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              if (agents.isNotEmpty) ...[
-                group('Agents'),
-                for (final candidate in agents) row(candidate),
-              ],
-              if (humans.isNotEmpty) ...[
-                group('Humans'),
-                for (final candidate in humans) row(candidate),
-              ],
-              if (agents.isEmpty && humans.isEmpty)
-                RaftRecipeBox(
-                  style: recipe.empty,
-                  tokens: tokens,
-                  applyText: false,
-                  child: Text(
-                    raftFormat(context, 'No members match "{query}"', {
-                      'query': query.trim(),
-                    }),
-                    style: recipe.empty.text(
-                      tokens,
-                      base: TextStyle(fontFamily: t.headingFont),
-                    ),
-                  ),
+    final rows = SingleChildScrollView(
+      padding: recipe.scroller.padding,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        spacing: recipe.rows.rowGap ?? 0,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (agents.isNotEmpty) ...[
+            group('Agents'),
+            for (final candidate in agents) row(candidate),
+          ],
+          if (humans.isNotEmpty) ...[
+            group('Humans'),
+            for (final candidate in humans) row(candidate),
+          ],
+          if (note case final message?)
+            RaftRecipeBox(
+              style: recipe.empty,
+              tokens: tokens,
+              applyText: false,
+              child: Text(
+                message,
+                style: recipe.empty.text(
+                  tokens,
+                  base: TextStyle(fontFamily: t.headingFont),
                 ),
-            ],
-          ),
-        ),
+              ),
+            ),
+        ],
+      ),
+    );
+    final scroller = fill
+        ? rows
+        : ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: recipe.scroller.maxHeight ?? double.infinity,
+            ),
+            child: rows,
+          );
+    return RaftCard(
+      padding: EdgeInsets.zero,
+      clip: true,
+      child: Column(
+        mainAxisSize: fill ? MainAxisSize.max : MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (fill) Expanded(child: scroller) else scroller,
+          if (footer != null)
+            RaftRecipeBox(style: choice.footer, tokens: tokens, child: footer!),
+        ],
       ),
     );
   }
@@ -334,12 +482,14 @@ class _RecipeMemberPicker extends StatelessWidget {
 
 class _RecipeMemberRow extends StatelessWidget {
   const _RecipeMemberRow({
+    super.key,
     required this.candidate,
     required this.selected,
     required this.onTap,
+    required this.showDescription,
   });
   final RaftPickerItem candidate;
-  final bool selected;
+  final bool selected, showDescription;
   final VoidCallback? onTap;
 
   @override
@@ -348,13 +498,23 @@ class _RecipeMemberRow extends StatelessWidget {
     final tokens = t.recipeTokens;
     return RaftInteractive(
       onPressed: onTap,
-      selected: selected,
+      button: false,
+      checked: selected,
       builder: (context, state) {
+        final states = t.recipeStates(
+          hovered: state.hovered,
+          pressed: state.pressed,
+          focusVisible: state.focusVisible,
+          disabled: onTap == null,
+          responsive: true,
+          pointerCoarse: RaftInteraction.of(context).touch,
+        );
         final recipe = RaftWebMemberPickerRecipe.resolve(
-          states: t.recipeStates(
-            hovered: state.hovered,
-            focusVisible: state.focusVisible,
-          ),
+          states: states,
+          tokens: tokens,
+        );
+        final choice = RaftChoiceListRecipe.resolve(
+          states: states,
           tokens: tokens,
         );
         final text = recipe.row.text(
@@ -366,17 +526,50 @@ class _RecipeMemberRow extends StatelessWidget {
           tokens: tokens,
           applyText: false,
           child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               RaftCheckboxIndicator(checked: selected),
               SizedBox(width: recipe.row.columnGap ?? 0),
               candidate.avatar,
               SizedBox(width: recipe.row.columnGap ?? 0),
               Expanded(
-                child: Text(
-                  candidate.label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: recipe.label.text(tokens, base: text),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  spacing: choice.body.rowGap ?? 0,
+                  children: [
+                    Row(
+                      children: [
+                        Flexible(
+                          child: RaftTooltip(
+                            message: candidate.label,
+                            onlyWhenTruncated: true,
+                            child: Text(
+                              candidate.label,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: recipe.label.text(tokens, base: text),
+                            ),
+                          ),
+                        ),
+                        if (candidate.badge case final badge?) ...[
+                          SizedBox(width: recipe.badge.columnGap ?? 0),
+                          badge,
+                        ],
+                      ],
+                    ),
+                    if (showDescription &&
+                        (candidate.description?.isNotEmpty ?? false))
+                      RaftTooltip(
+                        message: candidate.description ?? '',
+                        onlyWhenTruncated: true,
+                        child: Text(
+                          candidate.description ?? '',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: choice.description.text(tokens, base: text),
+                        ),
+                      ),
+                  ],
                 ),
               ),
             ],
@@ -394,8 +587,9 @@ class RaftArchivedNameBanner extends StatelessWidget {
     super.key,
     required this.name,
     required this.canUnarchive,
-    required this.onChangeName,
+    this.onChangeName,
     this.onUnarchive,
+    this.onOpen,
     this.busy = false,
     this.showHint = true,
   });
@@ -404,8 +598,8 @@ class RaftArchivedNameBanner extends StatelessWidget {
 
   /// CreateChannelDialog's second line; the joint dialog's banner has none.
   final bool showHint;
-  final VoidCallback onChangeName;
-  final VoidCallback? onUnarchive;
+  final VoidCallback? onChangeName;
+  final VoidCallback? onUnarchive, onOpen;
 
   @override
   Widget build(BuildContext context) {
@@ -435,18 +629,30 @@ class RaftArchivedNameBanner extends StatelessWidget {
       actions: [
         if (canUnarchive)
           RaftButton(
-            label: busy && showHint ? 'Unarchiving…' : 'Unarchive',
+            label: busy ? 'Unarchiving…' : 'Unarchive',
             uiVariant: RaftButtonVariant.outline,
-            uiSize: RaftButtonSize.sm,
+            uiSize: RaftButtonSize.md,
             disabled: busy,
             onPressed: onUnarchive,
           ),
-        RaftButton(
-          label: 'Change name',
-          uiVariant: RaftButtonVariant.ghost,
-          uiSize: RaftButtonSize.sm,
-          onPressed: onChangeName,
-        ),
+        if (onOpen != null)
+          RaftButton(
+            key: const ValueKey('archived-name-collision-open'),
+            label: 'Open channel',
+            uiVariant: canUnarchive
+                ? RaftButtonVariant.ghost
+                : RaftButtonVariant.outline,
+            uiSize: RaftButtonSize.md,
+            disabled: busy,
+            onPressed: onOpen,
+          ),
+        if (onChangeName != null)
+          RaftButton(
+            label: 'Change name',
+            uiVariant: RaftButtonVariant.ghost,
+            uiSize: RaftButtonSize.md,
+            onPressed: onChangeName,
+          ),
       ],
     );
   }

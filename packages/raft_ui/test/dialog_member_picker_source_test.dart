@@ -4,7 +4,7 @@ import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_ui/test_themes.dart';
 
 Widget host(Widget child, {bool dark = false, double scale = 1}) => MaterialApp(
-  theme: raftTheme(dark: dark),
+  theme: raftTheme(dark: dark).copyWith(platform: TargetPlatform.linux),
   home: MediaQuery(
     data: MediaQueryData(textScaler: TextScaler.linear(scale)),
     child: Scaffold(

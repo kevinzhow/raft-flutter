@@ -135,7 +135,16 @@ void main() {
         );
         expect(restoreCalls.length, restore ? 1 : 0);
         if (restore) {
-          expect(resolved, 'archived-1');
+          if (joint) {
+            expect(resolved, 'archived-1');
+          } else {
+            expect(workspace.selected, 'archived-1');
+            expect(
+              resolved,
+              isNull,
+              reason: 'unarchive does not create a channel',
+            );
+          }
         } else {
           expect(
             tester

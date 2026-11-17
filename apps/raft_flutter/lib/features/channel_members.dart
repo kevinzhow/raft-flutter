@@ -1,9 +1,4 @@
-// Channel members: the Web ChannelMembers "modal" presentation
-// (packages/web/src/components/agent/ChannelMembers.tsx) — a header trigger
-// (Users + participant count) opening a Modal Card `max-w-sm p-6` with the
-// roster and the staged multi-select "Add member" view (search, AGENTS /
-// HUMANS candidates with CheckMarker + AvatarSlot compact-list, pinned
-// "Create a New Agent" entry, "Add selected (N)").
+// Web features/channel/ChannelMembers.tsx roster and staged membership adapter.
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -11,6 +6,7 @@ import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import '../data/cause_notice.dart';
+import '../data/channel_roster_invalidations.dart';
 import '../data/user_error.dart';
 
 import '../data/workspace_controller.dart';
@@ -19,7 +15,10 @@ import '../data/workspace_entity_directory.dart';
 import 'channel_form_fields.dart';
 import 'channel_member_servers.dart';
 import 'composer_directory.dart'
-    show cachedChannelRoster, rememberChannelRoster;
+    show
+        cachedChannelRoster,
+        cachedChannelRosterExternals,
+        rememberChannelRoster;
 import 'create_channel_dialog.dart';
 import 'fleet_views.dart';
 import 'managed_agent_launcher.dart';
@@ -122,24 +121,74 @@ class ChannelMembersButton extends StatefulWidget {
 
 class _ChannelMembersButtonState extends State<ChannelMembersButton> {
   int? count;
+  int _requestVersion = 0;
   @override
   void initState() {
     super.initState();
     // The roster the composer read when the channel opened is shown at once.
     final roster = cachedChannelRoster(widget.controller, widget.channel.id);
-    if (roster != null) count = roster.humans.length + roster.agents.length;
+    if (roster != null) {
+      count =
+          roster.humans.length +
+          roster.agents.length +
+          cachedChannelRosterExternals(
+            widget.controller,
+            widget.channel.id,
+          ).length;
+    }
+    ChannelRosterInvalidations.of(widget.controller.client)
+        .addListener(_rosterInvalidated);
     refresh();
   }
 
+  @override
+  void didUpdateWidget(covariant ChannelMembersButton oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.controller != widget.controller) {
+      ChannelRosterInvalidations.of(oldWidget.controller.client)
+          .removeListener(_rosterInvalidated);
+      ChannelRosterInvalidations.of(widget.controller.client)
+          .addListener(_rosterInvalidated);
+    }
+    if (oldWidget.channel.id != widget.channel.id ||
+        oldWidget.controller != widget.controller) {
+      final roster = cachedChannelRoster(widget.controller, widget.channel.id);
+      count = roster == null
+          ? null
+          : roster.humans.length +
+                roster.agents.length +
+                cachedChannelRosterExternals(
+                  widget.controller,
+                  widget.channel.id,
+                ).length;
+      unawaited(refresh());
+    }
+  }
+
+  void _rosterInvalidated() {
+    if (ChannelRosterInvalidations.of(widget.controller.client).value.$2 ==
+        widget.channel.id) {
+      unawaited(refresh());
+    }
+  }
+
+  @override
+  void dispose() {
+    ChannelRosterInvalidations.of(widget.controller.client)
+        .removeListener(_rosterInvalidated);
+    super.dispose();
+  }
+
   Future<void> refresh() async {
+    final version = ++_requestVersion;
     try {
       final roster = await widget.controller.query(
         '/channels/${widget.channel.id}/members',
       );
-      if (!mounted) return;
+      if (!mounted || version != _requestVersion) return;
       setState(() => count = channelRosterCount(roster));
     } catch (_) {
-      if (mounted) setState(() => count = 0);
+      if (mounted && version == _requestVersion) setState(() => count = 0);
     }
   }
 
@@ -233,7 +282,7 @@ class _ChannelMembersState extends State<ChannelMembers> {
       ].where((channel) => channel.id == widget.channel.id).firstOrNull ??
       widget.channel;
   List<Map<String, dynamic>> humans = [], agents = [], externalMembers = [];
-  late final ChannelCandidateFeed _feed = ChannelCandidateFeed(w);
+  late ChannelCandidateFeed _feed = ChannelCandidateFeed(w);
   List<ChannelMemberCandidate> get candidates => [
     for (final c in _feed.value)
       if (!_inChannel.contains('${c.kind}:${c.id}')) c,
@@ -245,7 +294,8 @@ class _ChannelMembersState extends State<ChannelMembers> {
       '${a['id']}': a,
   };
   Set<String> get _inChannel => {
-    for (final h in humans) 'human:${h['userId'] ?? h['id']}',
+    for (final h in humans)
+      if (isLocalChannelMember(h, channel)) 'human:${h['userId'] ?? h['id']}',
     for (final a in agents) 'agent:${a['id']}',
   };
 
@@ -281,6 +331,7 @@ class _ChannelMembersState extends State<ChannelMembers> {
     if (roster != null) {
       humans = roster.humans;
       agents = roster.agents;
+      externalMembers = cachedChannelRosterExternals(w, widget.channel.id);
       rosterKnown = true;
     }
     _feed.addListener(_directoryChanged);
@@ -288,7 +339,50 @@ class _ChannelMembersState extends State<ChannelMembers> {
     // Source useChannelMembers: a member change in this channel re-reads the
     // roster in place, so a newly joined agent appears while the view is open.
     _events = w.client.events.listen(_event);
+    ChannelRosterInvalidations.of(w.client).addListener(_rosterInvalidated);
     load();
+  }
+
+  @override
+  void didUpdateWidget(covariant ChannelMembers oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.controller != widget.controller) {
+      _feed.removeListener(_directoryChanged);
+      _feed.dispose();
+      oldWidget.controller.services.entityDirectory.removeListener(
+        _directoryChanged,
+      );
+      ChannelRosterInvalidations.of(oldWidget.controller.client)
+          .removeListener(_rosterInvalidated);
+      unawaited(_events?.cancel());
+      _feed = ChannelCandidateFeed(w)..addListener(_directoryChanged);
+      w.services.entityDirectory.addListener(_directoryChanged);
+      ChannelRosterInvalidations.of(w.client).addListener(_rosterInvalidated);
+      _events = w.client.events.listen(_event);
+    }
+    if (oldWidget.channel.id != widget.channel.id ||
+        oldWidget.controller != widget.controller) {
+      _reload?.cancel();
+      profile = null;
+      pendingJoin = null;
+      selected.clear();
+      search.clear();
+      addView = widget.startInAdd;
+      error = null;
+      loadError.clear();
+      final roster = cachedChannelRoster(w, widget.channel.id);
+      humans = roster?.humans ?? [];
+      agents = roster?.agents ?? [];
+      externalMembers = cachedChannelRosterExternals(w, widget.channel.id);
+      rosterKnown = roster != null;
+      unawaited(load());
+    }
+  }
+
+  void _rosterInvalidated() {
+    if (ChannelRosterInvalidations.of(w.client).value.$2 == channel.id) {
+      unawaited(load());
+    }
   }
 
   void _directoryChanged() {
@@ -311,6 +405,7 @@ class _ChannelMembersState extends State<ChannelMembers> {
 
   @override
   void dispose() {
+    ChannelRosterInvalidations.of(w.client).removeListener(_rosterInvalidated);
     unawaited(_events?.cancel());
     _reload?.cancel();
     _feed.removeListener(_directoryChanged);
@@ -320,12 +415,15 @@ class _ChannelMembersState extends State<ChannelMembers> {
     super.dispose();
   }
 
+  int _loadVersion = 0;
+
   Future<void> load() async {
+    final version = ++_loadVersion;
     // The authority the roster is read under (a later reduction drops it).
     final readUnder = channel;
     try {
       final roster = await w.query('/channels/${readUnder.id}/members');
-      if (!mounted) return;
+      if (!mounted || version != _loadVersion) return;
       setState(() {
         humans = [
           for (final h in (roster['humans'] as List? ?? []).whereType<Map>())
@@ -351,7 +449,7 @@ class _ChannelMembersState extends State<ChannelMembers> {
         externalMembers: externalMembers,
       );
     } catch (e) {
-      if (mounted) {
+      if (mounted && version == _loadVersion) {
         setState(() {
           rosterKnown = true;
           loadError.raise(
@@ -372,7 +470,8 @@ class _ChannelMembersState extends State<ChannelMembers> {
 
   /// The search text doubles as the new agent's suggested name; the leading
   /// "@" is display notation, so it is dropped (Web `createAgentPrefillName`).
-  String get createAgentName => search.text.trim().replaceFirst('@', '');
+  String get createAgentName =>
+      search.text.trim().replaceFirst(RegExp(r'^@'), '');
 
   /// The name carries over only from the promoted (no-hit) entry: a generic
   /// "Create Agent" row never smuggles the search text into the dialog.
@@ -474,7 +573,7 @@ class _ChannelMembersState extends State<ChannelMembers> {
   /// `useChannelMemberRemoval`: stage the target, then the destructive
   /// ConfirmDialog runs the same DELETE.
   Future<void> requestRemove(String kind, String id, String name) async {
-    if (channel.archived || !w.can('removeChannelMembers', resource: channel)) {
+    if (channel.archived || isAllChannel) {
       return;
     }
     await RaftConfirmDialog.show(
@@ -617,26 +716,37 @@ class _ChannelMembersState extends State<ChannelMembers> {
       return RaftMemberRowData(
         testId: 'member-page-row-external-$id',
         human: true,
+        secondaryMono: true,
         secondary: handle.isEmpty ? null : '@$handle',
         roleLabel: raftText(context, 'Slack'),
         label: '${m['displayName'] ?? ''}',
+        searchText:
+            '${m['displayName'] ?? ''} ${handles is List ? handles.join(' ') : ''}',
         avatar: ChannelCandidateAvatar(
           candidate: candidate,
           avatarContext: widget.page
               ? RaftMountedAvatarContext.membersRow
               : RaftMountedAvatarContext.compactList,
           origin: origin,
+          extent: 35,
         ),
       );
     }
 
     RaftMemberRowData row(String kind, Map<String, dynamic> m) {
       final id = '${kind == 'agent' ? m['id'] : (m['userId'] ?? m['id'])}';
+      if (kind == 'agent') {
+        m = {...m, ...?w.services.entityDirectory.agent(id)};
+      }
       final candidate = ChannelMemberCandidate(
         kind: kind,
         id: id,
         name: '${m['name'] ?? ''}',
         displayName: m['displayName'] as String?,
+        managedByAppInstallId: m['managedByAppInstallId'] as String?,
+        managedByAppName: m['managedByApp'] is Map
+            ? (m['managedByApp'] as Map)['name'] as String?
+            : null,
         avatarUrl: kind == 'agent'
             ? agentAvatarWithDirectory(
                 w.services.entityDirectory.agent(id),
@@ -666,6 +776,7 @@ class _ChannelMembersState extends State<ChannelMembers> {
       return RaftMemberRowData(
         testId: 'member-page-row-$kind-$id',
         human: kind != 'agent',
+        badge: channelCandidateAppBadge(context, candidate),
         secondary: display != null
             ? agentDisplayText(
                 display,
@@ -687,7 +798,7 @@ class _ChannelMembersState extends State<ChannelMembers> {
                     raftFormat(context, source, values),
               )
             : (description.isEmpty ? null : description),
-        secondaryMono: kind == 'agent',
+        secondaryMono: false,
         roleLabel: switch (role) {
           'guest' => raftText(context, 'Guest'),
           'member' => null,
@@ -695,6 +806,7 @@ class _ChannelMembersState extends State<ChannelMembers> {
         },
         guest: role == 'guest',
         label: candidate.label,
+        searchText: '${candidate.name} ${candidate.displayName ?? ''}',
         avatar: ChannelCandidateAvatar(
           candidate: candidate,
           // ChannelMemberRow mounts AvatarSlot `members-row` (28px, presence
@@ -703,7 +815,8 @@ class _ChannelMembersState extends State<ChannelMembers> {
               ? RaftMountedAvatarContext.membersRow
               : RaftMountedAvatarContext.compactList,
           origin: origin,
-          presence: widget.page ? presence : null,
+          presence: candidate.managedByAppInstallId == null ? presence : null,
+          extent: 35,
         ),
         serverBadges: channelMemberServerLabels(m, channel),
         onTap: widget.page
@@ -719,7 +832,10 @@ class _ChannelMembersState extends State<ChannelMembers> {
                 profile = (kind: kind, id: id);
               })
             : null,
-        onRemove: canRemove && !isAllChannel && local
+        onRemove:
+            !channel.archived &&
+                !isAllChannel &&
+                (m['canRemoveFromChannel'] as bool? ?? (canRemove && local))
             ? () => requestRemove(
                 kind,
                 id,
@@ -754,11 +870,15 @@ class _ChannelMembersState extends State<ChannelMembers> {
       key: '${c.kind}:${c.id}',
       label: c.label,
       description: c.description,
+      badge: channelCandidateAppBadge(context, c),
       avatar: ChannelCandidateAvatar(
         candidate: c,
         avatarContext: RaftMountedAvatarContext.compactList,
         origin: origin,
-        presence: c.kind == 'agent' && agentRows[c.id] != null
+        presence:
+            c.kind == 'agent' &&
+                c.managedByAppInstallId == null &&
+                agentRows[c.id] != null
             ? channelMemberPresence(
                 // ignore: raft_lints/avoid_render_index_assertion -- Guarded by `agentRows[c.id] != null` on the line above.
                 agentRows[c.id]!,
@@ -767,7 +887,7 @@ class _ChannelMembersState extends State<ChannelMembers> {
             : null,
       ),
     );
-    final query = search.text;
+    final matching = searchChannelMemberCandidates(search.text, candidates);
     final content = RaftChannelMembersModal(
       page: widget.page,
       onClose: close,
@@ -790,13 +910,14 @@ class _ChannelMembersState extends State<ChannelMembers> {
         search.clear();
       }),
       hasCandidates: candidates.isNotEmpty,
+      matchedCandidateKeys: [for (final c in matching) '${c.kind}:${c.id}'],
       candidateAgents: [
         for (final c in candidates)
-          if (c.kind == 'agent' && c.matches(query)) item(c),
+          if (c.kind == 'agent') item(c),
       ],
       candidateHumans: [
         for (final c in candidates)
-          if (c.kind == 'human' && c.matches(query)) item(c),
+          if (c.kind == 'human') item(c),
       ],
       chips: [
         for (final key in selected)
