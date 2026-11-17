@@ -3948,6 +3948,52 @@
           "justification": "Disabled stand-in composer; widget-tested in agent_lounge_shell_test.dart. No official case drives a Lounge channel."
         }
       ]
+    },
+    {
+      "id": "chat.history-paywall",
+      "title": "History paywall (Free plan cutoff)",
+      "webEntry": "packages/web/src/components/message/HistoryPaywall.tsx",
+      "flutterEntry": "apps/raft_flutter/lib/features/history_paywall_view.dart",
+      "states": [
+        {
+          "state": "loading",
+          "web": "no",
+          "flutter": "missing",
+          "status": "na",
+          "justification": "Web draws the paywall from the message page that already carried hiddenHistory; there is no separate loading state, and neither does Flutter (the uncounted card shows until the first page lands, as in Web).",
+          "parityCase": []
+        },
+        {
+          "state": "empty",
+          "variant": "every message hidden (allHidden notice) / no recent replies",
+          "web": "yes",
+          "flutter": "yes",
+          "status": "gap",
+          "gapKind": "case-missing",
+          "size": "S",
+          "justification": "Widget tests (history_paywall_test.dart, light and dark) cover the DM / channel / task all-hidden titles and the 'No new messages in the last N days' notice; there is no parity case because the React host cannot render a hidden-history page without a live Free server. Web | Flutter side by side was captured by hand from the local Free server.",
+          "parityCase": []
+        },
+        {
+          "state": "error",
+          "web": "no",
+          "flutter": "missing",
+          "status": "na",
+          "justification": "The paywall has no error state; a failed context request keeps the plain 'Message not found' banner, and a browser that cannot open the billing page raises a toast.",
+          "parityCase": []
+        },
+        {
+          "state": "partial",
+          "variant": "counted / capped / uncounted card with glimpse; target mode with neighbours and replies box; thread parent hidden",
+          "web": "yes",
+          "flutter": "yes",
+          "status": "gap",
+          "gapKind": "case-missing",
+          "size": "S",
+          "justification": "Covered by widget tests in light and dark (history_paywall_test.dart, packages/raft_ui/test/history_paywall_test.dart); parity cases need a live Free server for the hidden previews. Hand-captured Web | Flutter pairs for channel, target, all-hidden and thread are in the WP-BILL PR description.",
+          "parityCase": []
+        }
+      ]
     }
   ],
   "navigationCoverage": {
@@ -49367,6 +49413,150 @@
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@5000/METHOD:buildTimeline@113772/FUNCTION:timelineFor@117315": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-BILL history paywall (Web v1.24 HistoryPaywall): resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/history_paywall_view.dart#class:RaftHistoryPaywallView": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-BILL history paywall (Web v1.24 HistoryPaywall): resolved widget; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/history_paywall_view.dart#function:_avatar": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-BILL history paywall (Web v1.24 HistoryPaywall): resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/history_paywall_view.dart#function:_preview": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-BILL history paywall (Web v1.24 HistoryPaywall): resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/history_paywall_view.dart#function:openHistoryUpgrade": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-BILL history paywall (Web v1.24 HistoryPaywall): resolved surface_factory; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/history_paywall_view.dart#method:RaftHistoryPaywallView.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-BILL history paywall (Web v1.24 HistoryPaywall): resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/history_paywall_previews.dart#class:_Frame": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-BILL history paywall (Web v1.24 HistoryPaywall): resolved widget; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/history_paywall_previews.dart#function:historyPaywallAllHiddenPreview": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-BILL history paywall (Web v1.24 HistoryPaywall): resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/history_paywall_previews.dart#function:historyPaywallStartPreview": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-BILL history paywall (Web v1.24 HistoryPaywall): resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/history_paywall_previews.dart#function:historyPaywallTargetPreview": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-BILL history paywall (Web v1.24 HistoryPaywall): resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/history_paywall_previews.dart#method:_Frame.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-BILL history paywall (Web v1.24 HistoryPaywall): resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/history_paywall.dart#class:RaftHistoryPaywall": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-BILL history paywall (Web v1.24 HistoryPaywall): resolved widget; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/history_paywall.dart#class:RaftOlderMessageNotice": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-BILL history paywall (Web v1.24 HistoryPaywall): resolved widget; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/history_paywall.dart#class:_Glimpse": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-BILL history paywall (Web v1.24 HistoryPaywall): resolved widget; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/history_paywall.dart#class:_Notice": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-BILL history paywall (Web v1.24 HistoryPaywall): resolved widget; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/history_paywall.dart#class:_Rows": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-BILL history paywall (Web v1.24 HistoryPaywall): resolved widget; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/history_paywall.dart#method:RaftHistoryPaywall._build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-BILL history paywall (Web v1.24 HistoryPaywall): resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/history_paywall.dart#method:RaftHistoryPaywall.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-BILL history paywall (Web v1.24 HistoryPaywall): resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/history_paywall.dart#method:RaftOlderMessageNotice.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-BILL history paywall (Web v1.24 HistoryPaywall): resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/history_paywall.dart#method:_Glimpse.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-BILL history paywall (Web v1.24 HistoryPaywall): resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/history_paywall.dart#method:_Notice.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-BILL history paywall (Web v1.24 HistoryPaywall): resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/history_paywall.dart#method:_Rows.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-BILL history paywall (Web v1.24 HistoryPaywall): resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@5000/METHOD:buildTimeline@113929/FUNCTION:timelineFor@117472": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-BILL history paywall (Web v1.24 HistoryPaywall): resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/history_paywall_view.dart#function:historyDividerLabel": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-BILL history paywall (Web v1.24 HistoryPaywall): resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
       }
     },
     "entries": {
@@ -52491,6 +52681,25 @@
         ],
         "mountStatus": "unresolved",
         "reason": "Resolved function owns a surface call; actual target, route and state are not yet observed."
+      },
+      "surface:openHistoryUpgrade": {
+        "owner": "design-system alignment",
+        "kind": "surface_factory_candidate",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/history_paywall_view.dart#function:openHistoryUpgrade"
+        ],
+        "mountStatus": "unresolved",
+        "reason": "WP-BILL history paywall: opens the Web billing page with the history gate (and a toast when the browser cannot open); no real-entry capture acceptance is inferred."
+      },
+      "screen:chat.history-paywall": {
+        "owner": "design-system alignment",
+        "kind": "route_or_panel_candidate",
+        "lifecycleScreenId": "chat.history-paywall",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/history_paywall_view.dart#class:RaftHistoryPaywallView"
+        ],
+        "mountStatus": "source_reviewed",
+        "reason": "Mounted by RaftChatView at the top of a limited channel, in a limited thread panel and as the empty body of a fully hidden channel (WP-BILL). Widget evidence only (history_paywall_test.dart); no visual PASS is asserted."
       }
     },
     "requirements": {
@@ -57756,6 +57965,11 @@
         "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
       },
       "packages/raft_ui/lib/src/meter.dart#method:RaftMeter.build|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+        "applicability": "unknown",
+        "owner": "design-system alignment",
+        "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/history_paywall.dart#method:_Notice.build|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
         "applicability": "unknown",
         "owner": "design-system alignment",
         "reason": "Resolved state atom use; look/input/real-entry applicability remains unreviewed."

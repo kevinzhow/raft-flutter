@@ -364,6 +364,8 @@ void main() {
         findsWidgets,
       );
       expect(find.bySemanticsLabel('older note'), findsNothing);
+      // The first day divider under the card carries the window too.
+      expect(find.text('Last 30 days · Tuesday, November 10'), findsOneWidget);
       // The visible window is still there.
       expect(find.textContaining('visible message 2'), findsOneWidget);
 

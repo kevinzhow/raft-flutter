@@ -238,6 +238,20 @@ Future<void> openHistoryUpgrade(
   }
 }
 
+/// Web `DateDivider recentHistory`: the first day divider under the paywall
+/// reads "Last 30 days · day".
+String historyDividerLabel(
+  BuildContext context,
+  WorkspaceController w,
+  String day, {
+  required bool first,
+}) => first && RaftHistoryPaywallView.atTop(w)
+    ? raftFormat(context, 'Last {days} days · {date}', {
+        'days': historyPaywallDays(w),
+        'date': day,
+      })
+    : day;
+
 /// Web `HistoryPaywall`: reads what the store holds for the open channel (or
 /// thread) and draws it. [allHidden]: nothing sits in the window. [recentDivider]:
 /// visible messages follow and no date divider says "last N days" (threads).

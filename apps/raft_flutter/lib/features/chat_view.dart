@@ -2988,7 +2988,12 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
               ))
             RaftConversationDateHeader(
               key: ValueKey('message-day-$key'),
-              label: timeFormatter.dayLabel(stamp),
+              label: historyDividerLabel(
+                context,
+                w,
+                timeFormatter.dayLabel(stamp),
+                first: previous == null && !widget.thread,
+              ),
             ),
           Padding(
             key: ValueKey('message-wrapper-$key'),
