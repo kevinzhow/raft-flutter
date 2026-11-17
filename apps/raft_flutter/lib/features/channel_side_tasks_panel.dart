@@ -188,7 +188,7 @@ class _ChannelSideTasksPanelState extends State<ChannelSideTasksPanel> {
                     primary: false,
                     padding: raftScrollPadding(
                       context,
-                      const EdgeInsets.only(bottom: 16),
+                      const EdgeInsets.only(bottom: RaftSpace.x4),
                     ),
                     children: [
                       for (var i = 0; i < groups.length; i++)
@@ -235,7 +235,10 @@ class _FilterBar extends StatelessWidget {
     final inset = RaftTaskCardList.insetOf(context);
     final touch = RaftInteraction.of(context).touch;
     return Padding(
-      padding: EdgeInsets.fromLTRB(inset, 12, inset, touch ? 12 : 0),
+      // 12 above; 12 below by touch, none with a mouse (the lanes start
+      // right under the filter).
+      padding: EdgeInsets.symmetric(horizontal: inset)
+          .copyWith(top: RaftSpace.x3, bottom: touch ? RaftSpace.x3 : null),
       child: Align(
         alignment: AlignmentDirectional.centerStart,
         child: RaftSegmentedControl<ChannelTasksFilter>(
@@ -314,19 +317,20 @@ class _Lane extends StatelessWidget {
                 // A 40px box, the words 6px above its bottom: 16px of room
                 // above them; with a mouse the first heading is 7px under the
                 // filter. A minimum, so larger text grows it.
+                // ds-allow: Web ChannelTasksPanel CompactStatusGroup heading box h-10 (40px), no token
                 constraints: BoxConstraints(minHeight: first && fine ? 0 : 40),
                 child: Padding(
                   padding: EdgeInsets.fromLTRB(
                     inset,
-                    first && fine ? 8 : 16,
+                    first && fine ? RaftSpace.x2 : RaftSpace.x4,
                     inset,
-                    6,
+                    RaftSpace.x1_5,
                   ),
                   child: Align(
                     alignment: AlignmentDirectional.bottomStart,
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
-                      spacing: 6,
+                      spacing: RaftSpace.x1_5,
                       children: [
                         RaftMessageTaskStatusIcon(
                           status: raftTaskStatusOf(status),

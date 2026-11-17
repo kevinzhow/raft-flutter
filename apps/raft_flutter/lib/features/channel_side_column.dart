@@ -25,12 +25,11 @@ typedef ChannelSideFold = ({
   ValueChanged<bool>? onCollapsedChanged,
 });
 
-typedef ChannelSideCardBuilder =
-    Widget Function(
-      BuildContext context,
-      ChannelSideSection section,
-      ChannelSideFold fold,
-    );
+typedef ChannelSideCardBuilder = Widget Function(
+  BuildContext context,
+  ChannelSideSection section,
+  ChannelSideFold fold,
+);
 
 /// With [sections] stacked, one under the other when their column is at least
 /// this high, else one at a time (Web `sideCardsStackMinHeight`).
@@ -168,7 +167,7 @@ class _ChannelSideColumnViewState extends State<ChannelSideColumnView> {
                   left: 0,
                   top: 0,
                   bottom: 0,
-                  width: touch ? 24 : 12,
+                  width: touch ? RaftSpace.x6 : RaftSpace.x3,
                   child: _SeamHandle(
                     key: Key(
                       'channel-side-column-resize-${widget.resize!.column}',
@@ -230,7 +229,7 @@ class _ChannelSideColumnViewState extends State<ChannelSideColumnView> {
     return Container(
       key: const Key('channel-side-switch'),
       height: height,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.symmetric(horizontal: RaftSpace.x4),
       alignment: AlignmentDirectional.centerStart,
       decoration: BoxDecoration(
         border: Border(bottom: BorderSide(color: t.colors['line-seam']!)),
@@ -351,7 +350,7 @@ class _ChannelSideColumnViewState extends State<ChannelSideColumnView> {
       left: 0,
       right: 0,
       top: at,
-      height: 1,
+      height: RaftSpace.hairline,
       child: ColoredBox(color: t.colors['line-seam']!),
     );
     if (!splittable) return line;
@@ -370,8 +369,8 @@ class _ChannelSideColumnViewState extends State<ChannelSideColumnView> {
     final handle = Positioned(
       left: 0,
       right: 0,
-      top: at - (touch ? 12 : 6),
-      height: touch ? 24 : 12,
+      top: at - (touch ? RaftSpace.x3 : RaftSpace.x1_5),
+      height: touch ? RaftSpace.x6 : RaftSpace.x3,
       child: _SeamHandle(
         key: Key('channel-side-split-$i'),
         vertical: false,
