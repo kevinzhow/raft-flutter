@@ -605,19 +605,6 @@ void main() {
     expect(find.byType(RaftOverflowSheet), findsOneWidget);
   });
 
-  testWidgets('Guest access switches send the Web payloads', (t) async {
-    final (_, api) = await _open(t);
-    expect(find.text('Guest access'), findsOneWidget);
-    api.routes['PATCH /channels/c1'] = (_) => _row();
-    await t.ensureVisible(_id('channel-settings-guest-joinable-switch'));
-    await t.tap(_id('channel-settings-guest-joinable-switch'));
-    await t.pumpAndSettle(const Duration(milliseconds: 100));
-    expect(_writes(api).last.data, {
-      'guestVisible': true,
-      'guestJoinable': true,
-    });
-  });
-
   testWidgets(
     'the members strip opens the roster; the add tile opens its add view',
     (t) async {

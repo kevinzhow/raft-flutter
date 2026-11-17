@@ -158,7 +158,6 @@ class _ChannelSettingsState extends State<ChannelSettings> {
     final guest = cachedServerFlag(w, guestFlag);
     flagsKnown =
         guest != null && cachedServerFlag(w, channelConversionFlag) != null;
-    guestFeature = guest ?? false;
     load();
     loadFlags();
     events = w.client.events.listen((event) {
@@ -440,7 +439,7 @@ class _ChannelSettingsState extends State<ChannelSettings> {
   late final description = TextEditingController(
     text: widget.channel.description,
   );
-  bool guestFeature = false;
+  bool visitorShown = false;
 
   /// The guest and joint-conversion flags in one evaluation, remembered for
   /// this server identity so later visits render their sections at once.
@@ -471,7 +470,6 @@ class _ChannelSettingsState extends State<ChannelSettings> {
       );
       if (mounted && identity == pageIdentity(w)) {
         setState(() {
-          guestFeature = enabled(guestFlag);
           flagsKnown = true;
         });
         unawaited(
@@ -651,36 +649,8 @@ class _ChannelSettingsState extends State<ChannelSettings> {
       nameHint: all ? 'The #all channel cannot be renamed.' : null,
       onSubmitName: (_) => save(),
       sections: [
-        if (guestFeature && cap('manageGuestAccess') && !archived && !dm)
-          RaftSheetSection('Guest access', [
-            RaftSheetSwitchRow(
-              title: 'Guests can see this channel',
-              description:
-                  'Guests in this server can find and read this channel.',
-              value: c.flag('guestVisible'),
-              onChanged: (v) => run(() async {
-                await w.command(
-                  'PATCH',
-                  '/channels/${c.id}',
-                  data: {'guestVisible': v},
-                );
-              }),
-            ),
-            RaftSheetSwitchRow(
-              title: 'Guests can join this channel',
-              description: 'Guests can join and post in this channel.',
-              value: c.flag('guestJoinable'),
-              onChanged: (v) => run(() async {
-                await w.command(
-                  'PATCH',
-                  '/channels/${c.id}',
-                  data: v
-                      ? {'guestVisible': true, 'guestJoinable': true}
-                      : {'guestJoinable': false},
-                );
-              }),
-            ),
-          ]),
+        if (visitorVisibleOffered(c))
+          RaftSheetSection('Channel settings', [visitorVisibleRow(c)]),
         RaftSheetSection('Preferences', [
           RaftSheetSwitchRow(
             title: 'Pin channel',
@@ -1207,17 +1177,77 @@ class _ChannelSettingsState extends State<ChannelSettings> {
     if (next != null) unawaited(w.selectChannel(next));
   }
 
-  Future<void> updateGuestPolicy(Map<String, dynamic> updates) async {
+  bool visitorVisibleOffered(RaftChannel c) {
+    final caps = c.json['channelCapabilities'];
+    if (caps is! Map ||
+        caps['manageVisitorAccess'] != true ||
+        c.archived ||
+        (c.type != 'channel' && c.type != 'private')) {
+      return false;
+    }
+    final canTurnOn =
+        c.type == 'channel' &&
+        c.name != 'all' &&
+        w.server?.json['publicPageLive'] != false &&
+        c.hasExternalRelation != true;
+    if (c.visitorVisible || canTurnOn) visitorShown = true;
+    return visitorShown;
+  }
+
+  RaftSheetSwitchRow visitorVisibleRow(RaftChannel c) => RaftSheetSwitchRow(
+    key: const ValueKey('channel-settings-visitor-visible-switch'),
+    title: 'Visible to visitors',
+    description: "Anyone can read its messages and replies on this server's public page, without signing in.",
+    value: c.visitorVisible,
+    onChanged: (v) => updateVisitorVisibility(v),
+  );
+
+  Future<void> updateVisitorVisibility(bool visible) async {
     if (guestBusy) return;
+    final identity = pageIdentity(w);
+    final id = channel.id;
     setState(() {
       guestBusy = true;
       error = null;
     });
     try {
-      await w.command('PATCH', '/channels/${channel.id}', data: updates);
-      await w.refreshChannels();
+      final result = await w.command(
+        'PATCH',
+        '/channels/$id',
+        data: {'visitorVisible': visible},
+      );
+      if (!mounted || identity != pageIdentity(w)) return;
+      if (result is Map) {
+        final updated = Map<String, dynamic>.from(result);
+        w.channels = [
+          for (final c in w.channels)
+            if (c.id == id) RaftChannel({...c.json, ...updated}) else c,
+        ];
+        w.notifyListeners();
+      }
+      setState(() {});
     } catch (e) {
-      await failWith(e, 'Failed to update Guest access');
+      if (mounted && identity == pageIdentity(w)) {
+        setState(
+          () => error = raftText(
+            context,
+            userErrorText(
+              e,
+              fallback:
+                  "Couldn't change whether visitors can see this channel.",
+              codeText: const {
+                'visitor_visibility_forbidden':
+                    'Only server owners and admins can change this.',
+                'visitor_visibility_requires_public_server':
+                    'Make this server public first.',
+                'visitor_visibility_requires_public_channel':
+                    'Only a public channel can be visible to visitors.',
+                'visitor_visibility_unsupported_channel': "This channel can't be visible to visitors: only an ordinary channel with no people or invites from outside this server can be.",
+              },
+            ),
+          ),
+        );
+      }
     } finally {
       if (mounted) setState(() => guestBusy = false);
     }
@@ -1346,13 +1376,7 @@ class _ChannelSettingsState extends State<ChannelSettings> {
     final pinned = (sidebar['pinned'] as List? ?? []).any(
       (p) => p is Map && p['kind'] == 'channel' && p['id'] == c.id,
     );
-    final guestSection =
-        guestFeature &&
-        cap('manageGuestAccess') &&
-        !archived &&
-        (c.type == 'channel' || c.type == 'private') &&
-        // A private channel has no guest policy; #all keeps its switch.
-        !(private && !all);
+    final guestSection = visitorVisibleOffered(c);
     final generation = w.client.generation, serverId = w.server?.id;
 
     final preferences = RaftSheetSection('Preferences', [
@@ -1515,45 +1539,9 @@ class _ChannelSettingsState extends State<ChannelSettings> {
                       raftSheetSection(
                         context,
                         t,
-                        RaftSheetSection(
-                          'Guest access',
-                          description: 'Choose whether Guests can discover this channel and join it themselves.',
-                          [
-                            RaftSheetSwitchRow(
-                              key: const ValueKey(
-                                'channel-settings-guest-visible-switch',
-                              ),
-                              title: 'Visible to guests',
-                              description: 'Guests can read this channel without joining. If this server is public, it also appears on the public page.',
-                              value: c.flag('guestVisible'),
-                              onChanged: (v) => updateGuestPolicy(
-                                v
-                                    ? {'guestVisible': true}
-                                    : {
-                                        'guestVisible': false,
-                                        'guestJoinable': false,
-                                      },
-                              ),
-                            ),
-                            if (!all)
-                              RaftSheetSwitchRow(
-                                key: const ValueKey(
-                                  'channel-settings-guest-joinable-switch',
-                                ),
-                                title: 'Allow Guests to join',
-                                description: 'Guests can join this channel themselves. It then stays in their sidebar, new messages show as unread, and they appear in its member list.',
-                                value: c.flag('guestJoinable'),
-                                onChanged: (v) => updateGuestPolicy(
-                                  v
-                                      ? {
-                                          'guestVisible': true,
-                                          'guestJoinable': true,
-                                        }
-                                      : {'guestJoinable': false},
-                                ),
-                              ),
-                          ],
-                        ),
+                        RaftSheetSection('Channel settings', [
+                          visitorVisibleRow(c),
+                        ]),
                         busy: busy || guestBusy,
                         family: t.bodyFont,
                       ),
