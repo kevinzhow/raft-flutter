@@ -61,6 +61,8 @@ import 'package:flutter/scheduler.dart';
 import 'resource_view.dart';
 import 'workspace_task_host.dart';
 import 'page_layout.dart';
+import 'channel_side_area.dart';
+import 'section_glyph.dart';
 import 'channel_settings.dart';
 import 'channel_members.dart';
 import 'create_channel_dialog.dart';
@@ -1876,7 +1878,11 @@ class _WorkspaceViewState extends State<WorkspaceView>
                                 : rootTab == null || w.server == null
                                 ? null
                                 : mobileNavigation(rootTab),
-                            content: Column(
+                            content: ChannelSideArea(
+                              controller: w,
+                              headerExtent: wide ? raftPageHeaderHeight(context) : 0,
+                              onOpenTask: openTaskSurface,
+                              child: Column(
                               children: [
                                 // The Computers root header sits in the
                                 // content region beside the rail.
@@ -1956,6 +1962,7 @@ class _WorkspaceViewState extends State<WorkspaceView>
                                   ),
                                 ),
                               ],
+                            ),
                             ),
                             thread: thread
                                 ? RaftConversationSurface(
@@ -2683,18 +2690,6 @@ class _WorkspaceViewState extends State<WorkspaceView>
           )
         : content;
   }
-
-  RaftGlyph sectionGlyph(String section) => switch (section) {
-    'chat' => RaftGlyph.hash,
-    'activity' => RaftGlyph.activity,
-    'search' => RaftGlyph.search,
-    'tasks' => RaftGlyph.checkSquare,
-    'saved' => RaftGlyph.bookmark,
-    'members' => RaftGlyph.users,
-    'agents' => RaftGlyph.bot,
-    'computers' => RaftGlyph.monitor,
-    _ => RaftGlyph.settings,
-  };
 
   Widget railIcon(RaftGlyph glyph) => RaftIcon(
     glyph,

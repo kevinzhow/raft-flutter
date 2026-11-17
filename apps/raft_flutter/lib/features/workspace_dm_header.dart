@@ -6,6 +6,7 @@ import '../data/raft_location.dart';
 import '../data/workspace_controller.dart';
 import 'agent_dm_header_extras.dart';
 import 'agent_hosted_cindy_banner.dart';
+import 'channel_side_cards.dart';
 import 'agent_tool_stuck_notice.dart' show agentToolStuckText;
 import 'agent_metadata_projection.dart';
 import 'resource_cards.dart' show resourceRelativeTime;
@@ -42,7 +43,10 @@ class WorkspaceDmHeader extends StatelessWidget {
   final Key? backKey;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) =>
+      channelSideListener(controller, _header);
+
+  Widget _header(BuildContext context) {
     final display = !agent || profile == null
         ? null
         : agentRowAmbientDisplay(profile!);
@@ -87,7 +91,7 @@ class WorkspaceDmHeader extends StatelessWidget {
           context,
           'Activity muted. Direct mentions can still notify you.',
         ),
-        onBack: onBack,
+        onBack: channelBackClosingSide(controller, onBack),
         backKey: backKey,
         backLabel: raftText(
           context,
@@ -107,7 +111,10 @@ class WorkspaceDmHeader extends StatelessWidget {
         searchLabel: raftText(context, 'Search This Channel'),
         settingsLabel: raftText(context, 'Channel Details and Settings'),
         activityTextWarning: stuck != null,
-        middleActions: agentDmLoungeActions(context, controller, profile),
+        middleActions: [
+          ...agentDmLoungeActions(context, controller, profile),
+          ...channelSideToggles(context, controller),
+        ],
       ),
     );
     final cloud = profile;

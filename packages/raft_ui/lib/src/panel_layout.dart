@@ -119,9 +119,9 @@ class RaftInfoRow extends StatelessWidget {
   }
 
   /// [detailsStyleOf] in the mono face (`font-mono`).
-  static TextStyle monoStyleOf(BuildContext context) =>
-      detailsStyleOf(context)
-          .copyWith(fontFamily: RaftTokens.of(context).monoFont);
+  static TextStyle monoStyleOf(BuildContext context) => detailsStyleOf(
+    context,
+  ).copyWith(fontFamily: RaftTokens.of(context).monoFont);
 
   /// [detailsStyleOf] in `text-foreground-muted`.
   static TextStyle mutedStyleOf(BuildContext context) {
@@ -426,7 +426,11 @@ class RaftPanelHeaderBar extends StatelessWidget {
     this.titleSuffix,
     this.profileHandle = false,
     this.background,
+    this.leading,
   });
+
+  /// A control before the title, after Back (a side card's fold chevron).
+  final Widget? leading;
 
   /// The page surface under this header; null keeps the recipe fill.
   final Color? background;
@@ -535,6 +539,7 @@ class RaftPanelHeaderBar extends StatelessWidget {
               ),
               SizedBox(width: gap),
             ],
+            if (leading != null) ...[leading!, SizedBox(width: gap)],
             if (iconSlot != null && (!narrow || iconAlwaysVisible)) ...[
               // PanelHeaderIcon[icon-kind=avatar] retains a transparent used 1px edge.
               Padding(
@@ -662,6 +667,7 @@ class RaftPanelHeaderBar extends StatelessWidget {
             ),
             SizedBox(width: gap),
           ],
+          if (leading != null) ...[leading!, SizedBox(width: gap)],
           // PanelHeaderIcon is `hidden md:flex` unless the surface is an
           // identity panel (`iconAlwaysVisible`).
           if (iconSlot != null && (!narrow || iconAlwaysVisible)) ...[

@@ -38,7 +38,8 @@ class _Client extends RaftClient {
     bool acceptServerExit = false,
     Duration? receiveTimeout,
   }) async {
-    calls.add('$method $path');
+    // The header's one Task v2 flag read is not the hosted-runtime read this counts.
+    if (path != '/feature-flags/evaluate') calls.add('$method $path');
     if (path == '/agents/cindy-1/hosted-runtime') {
       final out = setup;
       if (out is Exception) throw out;

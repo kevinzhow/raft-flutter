@@ -3,18 +3,16 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:raft_ui/raft_ui.dart';
 
-import '../data/source_time_formatter.dart';
 import '../data/workspace_controller.dart';
 import '../data/raft_navigation_history.dart';
-import '../data/attachment_image_repository.dart';
-import '../data/source_channel_files_store.dart';
-import '../platform/attachment_files.dart';
+import 'channel_files_media.dart';
+import 'channel_side_area.dart' show insideChannelSideArea;
+import 'channel_side_flags.dart';
 import 'chat_view.dart';
 import 'conversation_tab_reorder.dart';
 import 'message_selection.dart';
 import 'resource_view.dart';
 import 'source_channel_files_view.dart';
-import 'source_channel_files_actions.dart';
 
 /// Mounted ChatPanel tabs. The editor remains owned by the same element while
 /// data-only tab bodies mount on demand; each owner keeps its authority fences.
@@ -52,15 +50,30 @@ class _ConversationPanelState extends State<ConversationPanel> {
   final sectionBodies = <RaftConversationTabId, Widget>{};
   Object? fileFormatting;
   final chatSlot = GlobalKey();
-  final files = AttachmentFiles();
+  late ChannelFilesMedia media = ChannelFilesMedia(w);
   WorkspaceController get w => widget.controller;
+  late ChannelSideFlags sideFlags;
+
+  @override
+  void initState() {
+    super.initState();
+    sideFlags = ChannelSideFlags.of(w)..addListener(sideFlagsChanged);
+  }
+
+  /// Task v2: Tasks and Files are cards beside the chat, so no tab row.
+  void sideFlagsChanged() {
+    if (mounted) setState(() {});
+  }
 
   @override
   void didUpdateWidget(ConversationPanel oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.controller != w) {
+      sideFlags.removeListener(sideFlagsChanged);
+      sideFlags = ChannelSideFlags.of(w)..addListener(sideFlagsChanged);
       oldWidget.controller.releaseChatTabPresentation(this);
       scope = null;
+      media = ChannelFilesMedia(w);
     }
     if (oldWidget.controller != w ||
         oldWidget.selectionHandle != widget.selectionHandle ||
@@ -81,23 +94,10 @@ class _ConversationPanelState extends State<ConversationPanel> {
 
   @override
   void dispose() {
+    sideFlags.removeListener(sideFlagsChanged);
     w.releaseChatTabPresentation(this);
     super.dispose();
   }
-
-  SourceTimeFormatter formatter(BuildContext context) => SourceTimeFormatter(
-    locale: Localizations.localeOf(context).toLanguageTag(),
-    preferredTimezone:
-        w.client.user?.string('preferredTimezone') ??
-        w.client.user?.string('timezone'),
-    preferredTimeFormat: sourceTimeFormatPreference(
-      w.client.user?.string('preferredTimeFormat') ??
-          w.client.user?.string('timeFormat'),
-    ),
-    systemTimeFormat: MediaQuery.alwaysUse24HourFormatOf(context)
-        ? SourceTimeFormat.twentyFourHour
-        : null,
-  );
 
   void selectTab(RaftConversationTabId value) {
     setState(() => tab = value);
@@ -109,98 +109,6 @@ class _ConversationPanelState extends State<ConversationPanel> {
         kind: RaftNavigationKind.replace,
       );
       w.notifyListeners();
-    }
-  }
-
-  bool _usesThumbnail(
-    SourceChannelFileEntry file,
-    SourceChannelImageRendition rendition,
-  ) {
-    final thumbnail = file.metadata['thumbnailUrl'];
-    return thumbnail is String &&
-        thumbnail.isNotEmpty &&
-        (rendition == SourceChannelImageRendition.thumbnail ||
-            file.mimeType.toLowerCase().split(';').first.trim() ==
-                'image/svg+xml');
-  }
-
-  AttachmentImageKey _imageKey(
-    SourceChannelFileEntry file,
-    SourceChannelImageRendition rendition,
-  ) => AttachmentImageKey.fromMetadata(
-    scope: w.attachmentImageScope,
-    channelId: file.channelId,
-    metadata: file.metadata,
-    rendition: _usesThumbnail(file, rendition) ? 'thumbnail' : 'original',
-    // The Files row tile is 56px: never decode the original for it (bounded
-    // for the densest displays, 3x). Previews decode at full size.
-    target: rendition == SourceChannelImageRendition.thumbnail
-        ? AttachmentDecodeTarget.box(56, 56, devicePixelRatio: 3, cover: true)
-        : null,
-  );
-
-  /// Already decoded Files images (tab revisit) paint in the first frame.
-  SourceChannelImageLease? peekImage(
-    SourceChannelFileEntry file,
-    bool Function() authorized,
-    SourceChannelImageRendition rendition,
-  ) {
-    if (!authorized()) return null;
-    final lease = w.attachmentMedia.peekImage(
-      _imageKey(file, rendition),
-      authorized: authorized,
-    );
-    final provider = lease?.lease.value;
-    if (lease == null) return null;
-    if (provider == null) {
-      lease.release();
-      return null;
-    }
-    return SourceChannelImageLease(
-      provider: provider,
-      release: () async => lease.release(),
-    );
-  }
-
-  Future<SourceChannelImageLease?> acquireImage(
-    SourceChannelFileEntry file,
-    bool Function() authorized,
-    SourceChannelImageRendition rendition,
-  ) async {
-    if (!authorized()) return null;
-    final usesThumbnail = _usesThumbnail(file, rendition);
-    final thumbnail = file.metadata['thumbnailUrl'];
-    final key = _imageKey(file, rendition);
-    final lease = w.attachmentMedia.acquireImage(
-      key,
-      authorized: authorized,
-      // The 56px row tile takes whichever version is already on disk; a
-      // preview (no decode target) needs its own full-size rendition.
-      bestAvailable: rendition == SourceChannelImageRendition.thumbnail,
-      load: (cancel) async {
-        String url;
-        if (usesThumbnail) {
-          url = thumbnail;
-        } else {
-          url = await w.attachmentMedia.url(
-            file.id,
-            disposition: null,
-            channelId: file.channelId,
-          );
-          if (cancel.isCancelled) throw const StaleAttachmentImage();
-        }
-        return files.image(url, cancel: cancel);
-      },
-    );
-    try {
-      final provider = await lease.lease.ready;
-      return SourceChannelImageLease(
-        provider: provider,
-        release: () async => lease.release(),
-      );
-    } catch (_) {
-      lease.release();
-      rethrow;
     }
   }
 
@@ -234,7 +142,13 @@ class _ConversationPanelState extends State<ConversationPanel> {
       );
     }
     final channel = w.channel;
-    final hasTabs = channel != null && channel.type != 'thread';
+    // Task v2 moves Tasks and Files into cards beside the chat; a panel with
+    // no side area around it (the Search / Activity detail pane) keeps them
+    // as tabs, so they stay reachable.
+    final hasTabs =
+        channel != null &&
+        channel.type != 'thread' &&
+        !(sideFlags.taskV2 && insideChannelSideArea(context));
     if (!hasTabs) tab = RaftConversationTabId.chat;
     w.setChatTabPresentation(this, tab == RaftConversationTabId.chat);
     final order = <RaftConversationTabId>[];
@@ -331,9 +245,9 @@ class _ConversationPanelState extends State<ConversationPanel> {
                     key: ValueKey('channel-files-$currentScope'),
                     controller: w,
                     channelId: channel!.id,
-                    formatCreatedAt: formatter(context).shortDateTime,
-                    acquireImage: acquireImage,
-                    peekImage: peekImage,
+                    formatCreatedAt: media.formatter(context).shortDateTime,
+                    acquireImage: media.acquireImage,
+                    peekImage: media.peekImage,
                     onOpenSource: (file) async {
                       setState(() => tab = RaftConversationTabId.chat);
                       w.setChatTabPresentation(this, true);

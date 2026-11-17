@@ -11,6 +11,8 @@ import 'avatar_button.dart';
 import 'channel_description_links.dart';
 import 'design_primitives.dart' hide RaftPanelHeaderRecipe;
 import 'icons.dart';
+import 'inline_badge_editor.dart' show RaftTouchTargetExpander;
+import 'interaction.dart';
 import 'indicators.dart';
 import 'panel_layout.dart';
 import 'public_page_mark.dart';
@@ -18,6 +20,7 @@ import 'raft/button.dart';
 import 'raft/css_box.dart' show raftControlBorderPx;
 import 'recipe_surface.dart';
 import 'recipes/panel_header.g.dart';
+import 'recipes/panel_toggle_action.g.dart';
 import 'recipes/recipe_runtime.dart';
 import 'recipes/token_binding.dart';
 import 'status_bar.dart';
@@ -333,6 +336,88 @@ Widget raftConversationHeaderAction({
   onPressed: onPressed,
 );
 
+/// The conversation head's own toggle between Search and Settings (the
+/// Tasks and Files buttons, raft-ui `PanelToggleAction`): the panel action
+/// that shows [pressed] while what it opens is open. [label] is both its
+/// tooltip and its accessible name ("Open Tasks" / "Close Tasks").
+Widget raftConversationHeaderToggle({
+  Key? key,
+  required RaftGlyph glyph,
+  required String label,
+  required bool pressed,
+  VoidCallback? onPressed,
+}) => _ConversationHeaderToggle(
+  key: key,
+  glyph: glyph,
+  label: label,
+  pressed: pressed,
+  onPressed: onPressed,
+);
+
+class _ConversationHeaderToggle extends StatelessWidget {
+  const _ConversationHeaderToggle({
+    super.key,
+    required this.glyph,
+    required this.label,
+    required this.pressed,
+    this.onPressed,
+  });
+  final RaftGlyph glyph;
+  final String label;
+  final bool pressed;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) => RaftTouchTargetExpander(
+    minSize: Size.square(
+      RaftInteraction.of(context).touch ? RaftMetrics.touchTarget : 0,
+    ),
+    child: RaftInteractive(
+      onPressed: onPressed,
+      semanticLabel: label,
+      tooltip: label,
+      toggled: pressed,
+      builder: (context, state) {
+        final t = RaftTokens.of(context), rt = RaftRecipeTokens(t);
+        final s = RaftPanelToggleActionRecipe.resolve(
+          states: RaftRecipeStates({
+            if (pressed) 'data-pressed',
+            if (state.hovered) RaftRecipeStates.hover,
+            if (state.pressed) RaftRecipeStates.active,
+            if (state.focusVisible) RaftRecipeStates.focusVisible,
+            if (!state.enabled) RaftRecipeStates.disabled,
+            if (t.dark) RaftRecipeStates.dark,
+          }),
+          tokens: rt,
+        ).base;
+        final svg = s.target('& > svg');
+        return CustomPaint(
+          foregroundPainter: RaftCssFocusOutline(
+            enabled: state.focusVisible,
+            color: t.colors['line-strong']!,
+            radius: s.borderRadius ?? BorderRadius.zero,
+          ),
+          child: Opacity(
+            opacity: s.opacity ?? 1,
+            child: Transform.translate(
+              offset: s.translate ?? Offset.zero,
+              child: Container(
+                padding: s.padding,
+                decoration: s.decoration(rt),
+                child: RaftIcon(
+                  glyph,
+                  size: svg?.width ?? 14,
+                  color: s.color?.resolve(rt) ?? t.strong,
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    ),
+  );
+}
+
 class _ConversationHeaderAction extends StatelessWidget {
   const _ConversationHeaderAction({
     super.key,
@@ -386,8 +471,13 @@ class RaftChannelHeader extends StatelessWidget {
     this.onOpenLink,
     this.publicPage = false,
     this.workingAgents = const [],
+    this.middleActions = const [],
   });
   final String name, description, kind, backLabel, searchLabel, settingsLabel;
+
+  /// The head's own buttons between Search and Settings (Tasks and Files,
+  /// `useChannelHeadToggles`). Empty keeps the head as it was.
+  final List<Widget> middleActions;
 
   /// Agents working in this channel (members only), in the order they
   /// started. The subtitle then starts with up to three faces and
@@ -574,6 +664,7 @@ class RaftChannelHeader extends StatelessWidget {
         settingsLabel: settingsLabel,
         onSearch: onSearch,
         onSettings: onSettings,
+        middleActions: middleActions,
       ),
     );
   }

@@ -10,6 +10,7 @@ import '../data/raft_location.dart';
 import '../data/user_error.dart' show userErrorText;
 import '../data/workspace_controller.dart';
 import 'agent_lounge.dart';
+import 'channel_side_cards.dart';
 import 'sender_avatar_projection.dart';
 import 'workspace_channel_header.dart' show WorkspaceChannelHeader;
 
@@ -53,7 +54,8 @@ Widget? loungeHeaderFor(BuildContext context, WorkspaceChannelHeader header) {
       context,
       'Activity muted. Direct mentions can still notify you.',
     ),
-    onBack: header.onBack,
+    onBack: channelBackClosingSide(controller, header.onBack),
+    middleActions: channelSideToggles(context, controller),
     backKey: header.backKey,
     backLabel: header.backLabel,
     onSearch: header.onSearch,
