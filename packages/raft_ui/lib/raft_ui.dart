@@ -117,6 +117,7 @@ export 'src/keyboard_reveal.dart';
 export 'src/root_error_fallback.dart';
 export 'src/server_access_denied.dart';
 export 'src/archived_channels_section.dart';
+export 'src/orphaned_joint_channels_section.dart';
 export 'src/danger_action_row.dart';
 export 'src/archived_agents_section.dart';
 export 'src/agent_archive_dialog.dart';

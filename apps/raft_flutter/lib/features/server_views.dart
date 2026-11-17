@@ -11,6 +11,7 @@ import '../platform/content_links.dart';
 import 'account_onboarding.dart' show AccountMediaActions, PickedAvatar;
 import 'archived_channels_section.dart';
 import 'archived_agents_section.dart';
+import 'orphaned_joint_channels_section.dart';
 import 'member_profile_rules.dart';
 import 'invite_accept_view.dart';
 import 'public_avatar_url.dart';
@@ -410,6 +411,8 @@ class _ServerSettingsViewState extends State<ServerSettingsView> {
         ),
         // ArchivedChannelsSection (may archive channels, any archived).
         ArchivedChannelsSection(controller: w),
+        // OrphanedJointChannelsSection (federateChannels, one nobody here is in).
+        OrphanedJointChannelsSection(controller: w),
         // ArchivedAgentsSection (archived agents of this server, if any).
         ArchivedAgentsSection(controller: w),
         const RaftSettingsSectionHeader(
