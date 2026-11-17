@@ -134,11 +134,20 @@ class RaftTaskCard extends StatelessWidget {
     this.description = '',
     this.assignee,
     this.legacy = false,
+    this.selected = false,
+    this.current = false,
     this.onTap,
     this.onStatus,
     this.statusOptions = const [],
   });
   final String title, number, status, channel, description;
+
+  /// Picked for a bulk action (Web TaskCard `selected`): the cell-selected
+  /// fill and a 2px `info` inset ring, so a run of picks reads apart.
+  final bool selected;
+
+  /// The task open beside the board (Web TaskCard `current`): the fill only.
+  final bool current;
 
   /// A pre-thread task: TaskCardLegacy badge after the number.
   final bool legacy;
@@ -174,133 +183,170 @@ class RaftTaskCard extends StatelessWidget {
         .copyWith(fontSize: 16, height: 1.5);
     final plain = t.option('listGroup.frame', or: 'framed') == 'plain';
     final editable = onStatus != null && statusOptions.isNotEmpty;
+    // `border-[0.5px]` resolves to the used 1px border box.
+    var decoration = plain
+        ? BoxDecoration(
+            color: t.ui.layerCard,
+            border: Border.all(color: t.ui.lineHairline),
+            borderRadius: BorderRadius.circular(
+              t.size('radius.container', fallback: 10),
+            ),
+          )
+        : r.root.withCssUsedBorderWidths().decoration(rt);
+    // `bg-fill-cell-selected` replaces the card fill (TaskCard.tsx:100-110).
+    if (selected || current) {
+      decoration = decoration.copyWith(color: t.colors['fill-cell-selected']);
+    }
+    final borderWidth = switch (decoration.border) {
+      Border(:final top) => top.width,
+      _ => 0.0,
+    };
+    final cornerRadius = switch (decoration.borderRadius) {
+      BorderRadius(:final topLeft) => topLeft.x,
+      _ => 0.0,
+    };
+    final ring = selected
+        ? Positioned.fill(
+            child: IgnorePointer(
+              child: Padding(
+                // `inset-ring-2`: inside the border, over the fill.
+                padding: EdgeInsets.all(borderWidth),
+                child: DecoratedBox(
+                  key: const ValueKey('task-card-selected-ring'),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: t.colors['info']!, width: 2),
+                    borderRadius: BorderRadius.circular(
+                      cornerRadius > borderWidth
+                          ? cornerRadius - borderWidth
+                          : 0,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          )
+        : null;
+    final card = Container(
+      key: const ValueKey('task-card-surface'),
+      width: double.infinity,
+      padding: r.root.padding,
+      decoration: decoration,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          RaftInlineLineBox(
+            style: document,
+            // Web TaskCard's open button (`inline-block w-full rounded-control
+            // focus-visible:shadow-focus`): a Tab stop that Enter or Space
+            // opens. The card-level Semantics above exposes the open action.
+            child: _TaskPressable(
+              onPressed: onTap,
+              radius: BorderRadius.circular(
+                t.size('radius.control', fallback: 8),
+              ),
+              builder: (_) => Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Padding(
+                    padding: plain
+                        ? const EdgeInsets.only(bottom: 8)
+                        : r.meta.margin,
+                    child: _TaskMetaBaseline(
+                      child: Row(
+                        spacing: r.meta.columnGap ?? 8,
+                        children: [
+                          if (channel.isNotEmpty)
+                            Flexible(
+                              child: RaftCssText(
+                                '#$channel',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: plain
+                                    ? t.scale(
+                                        RaftTypeScale.monoMeta,
+                                        mono: true,
+                                        color: t.ui.foregroundHint,
+                                      )
+                                    : text(r.channel),
+                              ),
+                            ),
+                          RaftCssText(
+                            '#$number',
+                            style: plain
+                                ? t.scale(
+                                    RaftTypeScale.monoMeta,
+                                    mono: true,
+                                    color: t.ui.foregroundHint,
+                                  )
+                                : text(r.number),
+                          ),
+                          if (legacy)
+                            RaftCssText(
+                              raftText(context, 'Legacy'),
+                              style: text(r.legacy),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  RaftCssText(
+                    title,
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                    style: plain
+                        ? t.scale(RaftTypeScale.body, weight: FontWeight.w600)
+                        : text(r.title),
+                  ),
+                  if (description.isNotEmpty)
+                    Padding(
+                      padding: r.description.margin,
+                      child: RaftCssText(
+                        description,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: plain
+                            ? t.scale(
+                                RaftTypeScale.callout,
+                                color: t.ui.foregroundMuted,
+                              )
+                            : text(r.description),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(top: 8), // mt-2
+            child: Align(
+              alignment: Alignment.centerLeft,
+              // The badge is inline content of a block wrapper: it sits on
+              // the line box of the inherited document text (16px / 1.5).
+              child: RaftInlineLineBox(
+                style: document,
+                child: editable
+                    ? RaftTaskStatusEditor(
+                        status: status,
+                        options: statusOptions,
+                        onSelect: onStatus!,
+                        alignRight: false,
+                      )
+                    : RaftTaskStatus(status: status),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
     return Semantics(
       button: onTap != null,
+      selected: selected || current,
       label: 'Open task #$number: $title',
       onTap: onTap,
       explicitChildNodes: true,
-      child: Container(
-        width: double.infinity,
-        padding: r.root.padding,
-        // `border-[0.5px]` resolves to the used 1px border box.
-        decoration: plain
-            ? BoxDecoration(
-                color: t.ui.layerCard,
-                border: Border.all(color: t.ui.lineHairline),
-                borderRadius: BorderRadius.circular(
-                  t.size('radius.container', fallback: 10),
-                ),
-              )
-            : r.root.withCssUsedBorderWidths().decoration(rt),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            RaftInlineLineBox(
-              style: document,
-              // Web TaskCard's open button (`inline-block w-full rounded-control
-              // focus-visible:shadow-focus`): a Tab stop that Enter or Space
-              // opens. The card-level Semantics above exposes the open action.
-              child: _TaskPressable(
-                onPressed: onTap,
-                radius: BorderRadius.circular(
-                  t.size('radius.control', fallback: 8),
-                ),
-                builder: (_) => Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Padding(
-                      padding: plain
-                          ? const EdgeInsets.only(bottom: 8)
-                          : r.meta.margin,
-                      child: _TaskMetaBaseline(
-                        child: Row(
-                          spacing: r.meta.columnGap ?? 8,
-                          children: [
-                            if (channel.isNotEmpty)
-                              Flexible(
-                                child: RaftCssText(
-                                  '#$channel',
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: plain
-                                      ? t.scale(
-                                          RaftTypeScale.monoMeta,
-                                          mono: true,
-                                          color: t.ui.foregroundHint,
-                                        )
-                                      : text(r.channel),
-                                ),
-                              ),
-                            RaftCssText(
-                              '#$number',
-                              style: plain
-                                  ? t.scale(
-                                      RaftTypeScale.monoMeta,
-                                      mono: true,
-                                      color: t.ui.foregroundHint,
-                                    )
-                                  : text(r.number),
-                            ),
-                            if (legacy)
-                              RaftCssText(
-                                raftText(context, 'Legacy'),
-                                style: text(r.legacy),
-                              ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    RaftCssText(
-                      title,
-                      maxLines: 3,
-                      overflow: TextOverflow.ellipsis,
-                      style: plain
-                          ? t.scale(RaftTypeScale.body, weight: FontWeight.w600)
-                          : text(r.title),
-                    ),
-                    if (description.isNotEmpty)
-                      Padding(
-                        padding: r.description.margin,
-                        child: RaftCssText(
-                          description,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: plain
-                              ? t.scale(
-                                  RaftTypeScale.callout,
-                                  color: t.ui.foregroundMuted,
-                                )
-                              : text(r.description),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.only(top: 8), // mt-2
-              child: Align(
-                alignment: Alignment.centerLeft,
-                // The badge is inline content of a block wrapper: it sits on
-                // the line box of the inherited document text (16px / 1.5).
-                child: RaftInlineLineBox(
-                  style: document,
-                  child: editable
-                      ? RaftTaskStatusEditor(
-                          status: status,
-                          options: statusOptions,
-                          onSelect: onStatus!,
-                          alignRight: false,
-                        )
-                      : RaftTaskStatus(status: status),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
+      child: ring == null ? card : Stack(children: [card, ring]),
     );
   }
 }
@@ -633,12 +679,12 @@ class RaftTaskSectionBadge extends StatelessWidget {
       // column's label in `foreground-muted`, the list section's in
       // `foreground-hint`; the status pixel in front.
       final ink = board
-          ? RaftTaskBoardColumnRecipe.resolve(tokens: rt).badge
-                .textStyle(rt)
-                .color
-          : RaftTaskListSectionRecipe.resolve(tokens: rt).badge
-                .textStyle(rt)
-                .color;
+          ? RaftTaskBoardColumnRecipe.resolve(
+              tokens: rt,
+            ).badge.textStyle(rt).color
+          : RaftTaskListSectionRecipe.resolve(
+              tokens: rt,
+            ).badge.textStyle(rt).color;
       return Row(
         mainAxisSize: MainAxisSize.min,
         spacing: 8,

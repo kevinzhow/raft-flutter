@@ -1,4 +1,7 @@
+import 'package:flutter/gestures.dart' show kPrimaryButton;
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 
 import 'components.dart' show RaftAvatar, RaftAvatarKind;
 import 'design_primitives.dart';
@@ -6,12 +9,15 @@ import 'interaction.dart';
 import 'icons.dart';
 import 'localization.dart';
 import 'mounted_avatar_recipe.dart';
+import 'raft/checkbox.dart';
 import 'raft/ui_tokens.dart';
 import 'task.dart' show raftTaskStatusLabel;
 import 'task_status_badge.dart';
 import 'theme.dart';
 import 'tokens/tokens.dart';
 import 'viewport_breakpoints.dart' show raftBreakpointWidth;
+
+part 'task_chip_page.dart';
 
 /// One task row of [RaftTaskChipList]: facts the app resolved (the list never
 /// reads a store or requests anything).
@@ -28,6 +34,9 @@ class RaftTaskChipRow {
     this.assigneeIsAgent = false,
     this.assigneeIsViewer = false,
     this.assigneeAvatarUrl,
+    this.ref,
+    this.channelName,
+    this.time,
   });
   final String id;
   final int number;
@@ -46,6 +55,18 @@ class RaftTaskChipRow {
   final String? assigneeName;
   final bool assigneeIsAgent, assigneeIsViewer;
   final String? assigneeAvatarUrl;
+
+  /// The Tasks page across channels: the task's conversation ref
+  /// (`#design:#25`, `dm:@peer:#25`), shown instead of `#25` where the list is
+  /// wide. Null: the bare number.
+  final String? ref;
+
+  /// The Tasks page across channels: the channel's name, shown in the
+  /// trailing group (`#design`) where the list is narrow. Null: none.
+  final String? channelName;
+
+  /// The page variant's last slot, after the status (the app's relative time).
+  final Widget? time;
 }
 
 /// Web v1.24 `TaskChipList` (components/task/TaskChipList.tsx), the boxed

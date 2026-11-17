@@ -31,10 +31,15 @@ class RaftTaskStatusBadge extends StatelessWidget {
     required this.status,
     required this.label,
     this.trailing,
+    this.labelHidden = false,
   });
   final RaftMessageTaskStatus status;
   final String label;
   final Widget? trailing;
+
+  /// The label is the accessible name only (Web `sr-only` on the label, the
+  /// Tasks page's narrow list): the badge shows its pixel and takes no gap.
+  final bool labelHidden;
 
   @override
   Widget build(BuildContext context) {
@@ -48,7 +53,7 @@ class RaftTaskStatusBadge extends StatelessWidget {
       decoration: TextDecoration.none,
       fontFamilyFallback: inherited.fontFamilyFallback,
     );
-    return Container(
+    final badge = Container(
       // The chip height is a minimum: a taller line box (Android Chinese
       // control profile, larger text) grows the pill instead of clipping.
       constraints: BoxConstraints(minHeight: recipe.chipHeight),
@@ -66,18 +71,25 @@ class RaftTaskStatusBadge extends StatelessWidget {
             status: status,
             color: recipe.iconForeground,
           ),
-          Flexible(
-            child: RaftCssText(
-              label,
-              style: style,
-              controlLabel: true,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+          if (!labelHidden)
+            Flexible(
+              child: RaftCssText(
+                label,
+                style: style,
+                controlLabel: true,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
-          ),
           ?trailing,
         ],
       ),
+    );
+    if (!labelHidden) return badge;
+    return Semantics(
+      label: label,
+      container: true,
+      child: ExcludeSemantics(child: badge),
     );
   }
 }

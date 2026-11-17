@@ -363,9 +363,15 @@ class RaftFitToolbar extends StatefulWidget {
     this.wrap = false,
     this.semanticLabel,
     this.gap = 8,
+    this.shrinkWrap = false,
   });
   final List<RaftFitNode> children;
   final bool wrap;
+
+  /// Each line is as wide as its content (a floating bar sized by what it
+  /// holds, raft-ui `SelectionToolbar` `w-fit`) instead of the width it is
+  /// measured in. The steps are still chosen for that width.
+  final bool shrinkWrap;
   final String? semanticLabel;
   final double gap;
 
@@ -826,7 +832,7 @@ class _RaftFitToolbarState extends State<RaftFitToolbar> {
       }
       lines.add(
         SizedBox(
-          width: width.isFinite ? width : null,
+          width: width.isFinite && !widget.shrinkWrap ? width : null,
           child: OverflowBox(
             alignment: AlignmentDirectional.centerStart,
             minWidth: 0,
