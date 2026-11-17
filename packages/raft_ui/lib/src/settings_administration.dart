@@ -1302,14 +1302,19 @@ class RaftPublicChannelList extends StatelessWidget {
         ),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
-          child: RaftCssText(
-            raftText(context, 'No channels visible to visitors yet'),
-            textAlign: TextAlign.center,
-            style: raftSettingsBody(
-              t,
-              size: 12,
-              line: 16,
-              color: t.colors['foreground-hint'],
+          child: SizedBox(
+            width: double.infinity,
+            child: Center(
+              child: RaftCssText(
+                raftText(context, 'No channels visible to visitors yet'),
+                textAlign: TextAlign.center,
+                style: raftSettingsBody(
+                  t,
+                  size: 12,
+                  line: 16,
+                  color: t.colors['foreground-hint'],
+                ),
+              ),
             ),
           ),
         ),

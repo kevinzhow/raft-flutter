@@ -62,4 +62,20 @@ void main() {
       if (d is BoxDecoration) expect(d.color, isNull);
     }
   });
+
+  testWidgets('the empty channel line is centred in the full-width box', (
+    t,
+  ) async {
+    await t.pumpWidget(
+      _host(
+        const SizedBox(width: 600, child: RaftPublicChannelList(channels: [])),
+      ),
+    );
+    final text = find.text('No channels visible to visitors yet');
+    final box = find
+        .ancestor(of: text, matching: find.byType(CustomPaint))
+        .first;
+    expect(t.getSize(box).width, 600);
+    expect(t.getCenter(text).dx, closeTo(t.getCenter(box).dx, 1));
+  });
 }
