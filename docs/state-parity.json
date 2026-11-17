@@ -25815,7 +25815,7 @@
         "owner": "design-system alignment",
         "reason": "Resolved paint_owner; real-entry/family/state mapping remains unreviewed."
       },
-      "packages/raft_ui/lib/src/feedback_workspace.dart#local-function:CLASS:_RaftFeedbackCloseSplitState@38920/METHOD:build@40769/FUNCTION:part@41799": {
+      "packages/raft_ui/lib/src/feedback_workspace.dart#local-function:CLASS:_RaftFeedbackCloseSplitState@38993/METHOD:build@40842/FUNCTION:part@41844": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
@@ -53933,6 +53933,12 @@
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/source_feedback_view.dart#method:_SourceFeedbackProjectionViewState._copyLink": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       }
     },
     "entries": {
@@ -57453,6 +57459,15 @@
         "declarationRefs": [],
         "mountStatus": "unresolved",
         "reason": "Existing lifecycle screen record; exact builder/family composition and current mounted state are not yet established."
+      },
+      "surface:apps/raft_flutter/lib/features/source_feedback_view.dart#method:_SourceFeedbackProjectionViewState._copyLink": {
+        "owner": "design-system alignment",
+        "kind": "surface_factory_candidate",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/source_feedback_view.dart#method:_SourceFeedbackProjectionViewState._copyLink"
+        ],
+        "mountStatus": "unresolved",
+        "reason": "Resolved function owns a surface call; actual target, route and state are not yet observed."
       }
     },
     "requirements": {
