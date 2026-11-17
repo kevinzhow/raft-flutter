@@ -60,6 +60,16 @@ class _Overview extends StatelessWidget {
     );
   }
 
+  /// `rounded-container bg-layer-sidebar p-3`: one figure of the snapshot.
+  Widget _stat(RaftTokens t, Widget child) => Container(
+    padding: const EdgeInsets.all(12),
+    decoration: BoxDecoration(
+      color: t.sidebar,
+      borderRadius: BorderRadius.circular(10),
+    ),
+    child: child,
+  );
+
   String _hours(BuildContext context, double? v) {
     if (v == null) return raftText(context, 'Unavailable');
     return raftFormat(context, '{value} h', {
@@ -183,13 +193,9 @@ class _Overview extends StatelessWidget {
               columns: 3,
               children: [
                 for (final (label, value, total) in tiles)
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: t.sidebar,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Column(
+                  _stat(
+                    t,
+                    Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -223,13 +229,9 @@ class _Overview extends StatelessWidget {
                     (tr('Median time to complete'), snap.medianHours),
                     (tr('90% completed within'), snap.p90Hours),
                   ])
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: t.sidebar,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Column(
+                    _stat(
+                      t,
+                      Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisSize: MainAxisSize.min,
                         children: [

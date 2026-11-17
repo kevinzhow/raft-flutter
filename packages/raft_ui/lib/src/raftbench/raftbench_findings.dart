@@ -259,7 +259,7 @@ class RaftbenchFindings extends StatelessWidget {
                           ),
                         }),
                         variant: RaftButtonRecipeVariant.ghost,
-                        onPressed: () => c.showMore(kind),
+                        onPressed: () => c.expandGroup(kind),
                       ),
                     ),
                   ),

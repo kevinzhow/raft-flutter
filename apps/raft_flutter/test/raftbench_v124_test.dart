@@ -205,7 +205,7 @@ void main() {
       h.controller.start();
       await _pump();
       await _pump();
-      h.controller.showMore('unsupported_completion');
+      h.controller.expandGroup('unsupported_completion');
       await _pump();
       await _pump();
       final more = h.api

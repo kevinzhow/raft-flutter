@@ -149,7 +149,7 @@ abstract interface class RaftbenchHostedPanel implements Listenable {
   void setPage(int value);
   void choosePeriod(String value);
   void filterKind(String? value);
-  void showMore(String kind);
+  void expandGroup(String kind);
   Future<void> reviewFinding(RaftbenchFeedback feedback, String vote);
   Future<void> toggleAnalysis();
   Future<void> applySettings();

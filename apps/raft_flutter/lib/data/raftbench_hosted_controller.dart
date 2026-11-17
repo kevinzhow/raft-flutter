@@ -618,7 +618,7 @@ class RaftbenchHostedController extends ChangeNotifier
 
   /// "Show N more" of one group: one more server page of that kind.
   @override
-  void showMore(String value) {
+  void expandGroup(String value) {
     if (!raftbenchPatternKinds.contains(value)) return;
     _groupPages = {..._groupPages, value: (_groupPages[value] ?? 1) + 1};
     _reload();

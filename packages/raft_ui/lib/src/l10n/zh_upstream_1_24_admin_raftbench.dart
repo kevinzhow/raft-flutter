@@ -32,13 +32,13 @@ const Map<String, String> zhCatalogUpstream124AdminRaftbench = <String, String>{
       "频道消息已读 {channel} 条 · 消息列回复已读 {thread} 条",
   // raftbench.aiStreamRetryChannel
   "Channel messages failed to load 1 time; unread history is kept for retry.":
-      "频道消息读取失败 {count} 次，未读的历史会保留，等待重试。",
+      "频道消息读取失败 1 次，未读的历史会保留，等待重试。",
   // raftbench.aiStreamRetryChannel
   "Channel messages failed to load {count} times; unread history is kept for retry.":
       "频道消息读取失败 {count} 次，未读的历史会保留，等待重试。",
   // raftbench.aiStreamRetryThread
   "Thread replies failed to load 1 time; unread history is kept for retry.":
-      "消息列回复读取失败 {count} 次，未读的历史会保留，等待重试。",
+      "消息列回复读取失败 1 次，未读的历史会保留，等待重试。",
   // raftbench.aiStreamRetryThread
   "Thread replies failed to load {count} times; unread history is kept for retry.":
       "消息列回复读取失败 {count} 次，未读的历史会保留，等待重试。",

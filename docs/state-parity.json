@@ -32044,11 +32044,53 @@
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
+      "packages/raft_ui/lib/src/raftbench/raftbench_finding_index.dart#class:RaftbenchFindingIndex": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/raftbench/raftbench_finding_index.dart#class:RaftbenchTriageLine": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/raftbench/raftbench_finding_index.dart#local-function:CLASS:RaftbenchFindingIndex@1705/METHOD:build@1886/FUNCTION:at@2332": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/raftbench/raftbench_finding_index.dart#method:RaftbenchFindingIndex.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/raftbench/raftbench_finding_index.dart#method:RaftbenchTriageLine.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
       "packages/raft_ui/lib/src/raftbench/raftbench_findings.dart#class:RaftbenchFindings": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/raftbench/raftbench_findings.dart#class:_EvidenceChip": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/raftbench/raftbench_findings.dart#class:_EvidenceChipState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
       "packages/raft_ui/lib/src/raftbench/raftbench_findings.dart#class:_Finding": {
         "role": "unresolved",
@@ -32056,13 +32098,49 @@
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
-      "packages/raft_ui/lib/src/raftbench/raftbench_findings.dart#local-function:CLASS:RaftbenchFindings@1607/METHOD:build@1899/FUNCTION:live@2695": {
+      "packages/raft_ui/lib/src/raftbench/raftbench_findings.dart#local-function:CLASS:RaftbenchFindings@2033/METHOD:build@2299/FUNCTION:at@3128": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
-        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/raftbench/raftbench_findings.dart#local-function:CLASS:RaftbenchFindings@2033/METHOD:build@2299/FUNCTION:live@3052": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/raftbench/raftbench_findings.dart#method:RaftbenchFindings._flat": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/raftbench/raftbench_findings.dart#method:RaftbenchFindings._groups": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/raftbench/raftbench_findings.dart#method:RaftbenchFindings._pages": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
       "packages/raft_ui/lib/src/raftbench/raftbench_findings.dart#method:RaftbenchFindings.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/raftbench/raftbench_findings.dart#method:_EvidenceChip.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/raftbench/raftbench_findings.dart#method:_EvidenceChipState.build": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
@@ -32092,17 +32170,29 @@
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
-      "packages/raft_ui/lib/src/raftbench/raftbench_hosted_analysis.dart#local-function:CLASS:_Analysis@1155/METHOD:build@1519/FUNCTION:at@2460": {
+      "packages/raft_ui/lib/src/raftbench/raftbench_hosted_analysis.dart#local-function:CLASS:_Analysis@1238/METHOD:_coverageDetails@6849/FUNCTION:at@7120": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
-        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
-      "packages/raft_ui/lib/src/raftbench/raftbench_hosted_analysis.dart#local-function:CLASS:_Analysis@1155/METHOD:build@1519/FUNCTION:live@2581": {
+      "packages/raft_ui/lib/src/raftbench/raftbench_hosted_analysis.dart#local-function:CLASS:_Analysis@1238/METHOD:_coverageDetails@6849/FUNCTION:live@7044": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
-        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/raftbench/raftbench_hosted_analysis.dart#local-function:CLASS:_Analysis@1238/METHOD:build@1596/FUNCTION:at@2463": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/raftbench/raftbench_hosted_analysis.dart#local-function:CLASS:_Analysis@1238/METHOD:build@1596/FUNCTION:live@2584": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
       "packages/raft_ui/lib/src/raftbench/raftbench_hosted_analysis.dart#method:RaftbenchHostedAnalysis.build": {
         "role": "unresolved",
@@ -32129,6 +32219,18 @@
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
       "packages/raft_ui/lib/src/raftbench/raftbench_hosted_analysis.dart#method:_Analysis._coverage": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/raftbench/raftbench_hosted_analysis.dart#method:_Analysis._coverageDetails": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/raftbench/raftbench_hosted_analysis.dart#method:_Analysis._error": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
@@ -32224,6 +32326,18 @@
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
+      "packages/raft_ui/lib/src/raftbench/raftbench_manager_overview.dart#local-function:CLASS:_Overview@803/METHOD:_compare@13565/FUNCTION:cell@14654": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/raftbench/raftbench_manager_overview.dart#local-function:CLASS:_Overview@803/METHOD:_compare@13565/FUNCTION:row@14829": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
       "packages/raft_ui/lib/src/raftbench/raftbench_manager_overview.dart#method:RaftbenchManagerOverview.build": {
         "role": "unresolved",
         "familyRefs": [],
@@ -32231,6 +32345,12 @@
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
       "packages/raft_ui/lib/src/raftbench/raftbench_manager_overview.dart#method:_Grid.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/raftbench/raftbench_manager_overview.dart#method:_Overview._compare": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
@@ -32267,6 +32387,12 @@
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
       "packages/raft_ui/lib/src/raftbench/raftbench_manager_overview.dart#method:_Overview._snapshot": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/raftbench/raftbench_manager_overview.dart#method:_Overview._stat": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
@@ -32319,18 +32445,6 @@
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
-      },
-      "packages/raft_ui/lib/src/raftbench/raftbench_page_view.dart#local-function:CLASS:_RaftbenchAdminViewState@3846/METHOD:build@4388/FUNCTION:tile@4847": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Same unresolved builder after the shared service notice Safe Area migration shifted its source offsets; real-entry/family/state mapping remains unreviewed."
-      },
-      "packages/raft_ui/lib/src/raftbench/raftbench_page_view.dart#local-function:CLASS:_RaftbenchAdminViewState@3867/METHOD:build@4409/FUNCTION:tile@4868": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
       "packages/raft_ui/lib/src/raftbench/raftbench_page_view.dart#method:RaftbenchAdminView.createState": {
         "role": "unresolved",
@@ -32463,6 +32577,18 @@
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/raftbench/raftbench_reader_access.dart#class:RaftbenchReaderAccess": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "packages/raft_ui/lib/src/raftbench/raftbench_reader_access.dart#method:RaftbenchReaderAccess.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
       "packages/raft_ui/lib/src/rail_attention.dart#class:RaftRailAttention": {
         "role": "unresolved",
