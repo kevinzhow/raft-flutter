@@ -131,8 +131,14 @@ void main() {
         drag.handle('t1', 'b', down(LogicalKeyboardKey.arrowLeft));
         drag.handle('t1', 'b', down(LogicalKeyboardKey.arrowLeft));
         expect(drag.over, 'a');
-        drag.handle('t1', 'b', down(LogicalKeyboardKey.enter));
-        expect(events.last, 'drop t1 a', reason: 'Enter drops too');
+        expect(
+          drag.handle('t1', 'b', down(LogicalKeyboardKey.enter)),
+          KeyEventResult.handled,
+          reason: 'taken, so it does not open the card under the drag',
+        );
+        expect(drag.active, isTrue, reason: 'raft-ui drops on Space only');
+        drag.handle('t1', 'b', down(LogicalKeyboardKey.space));
+        expect(events.last, 'drop t1 a');
       },
     );
 

@@ -96,10 +96,12 @@ class TaskBoardKeyboardDrag extends ChangeNotifier {
       }
       return KeyEventResult.handled;
     }
-    if (key == LogicalKeyboardKey.space || key == LogicalKeyboardKey.enter) {
+    // raft-ui drag-sensors: Space drops; Enter is taken and does nothing.
+    if (key == LogicalKeyboardKey.space) {
       if (down) _end(drop: true);
       return KeyEventResult.handled;
     }
+    if (key == LogicalKeyboardKey.enter) return KeyEventResult.handled;
     if (key == LogicalKeyboardKey.escape) {
       if (down) _end(drop: false);
       return KeyEventResult.handled;
