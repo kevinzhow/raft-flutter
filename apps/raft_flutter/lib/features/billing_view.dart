@@ -151,12 +151,8 @@ class _BillingState extends ManagementState<BillingView> {
 
   DateTime get now => widget.now?.call() ?? DateTime.now();
 
-  Future<void> _openWeb({String? gate}) async {
-    final opened = await w.openWebBilling(gate: gate);
-    if (!opened && mounted) {
-      showRaftToast(context, 'Could not open this address.');
-    }
-  }
+  Future<void> _openWeb({String? gate}) =>
+      openWebBillingOrToast(context, w, gate: gate);
 
   Future<void> _compare() async {
     // The pricing page, in the browser like every page that leaves Raft.
@@ -164,7 +160,11 @@ class _BillingState extends ManagementState<BillingView> {
       Uri.parse(RaftBillingPlans.comparePlansUrl),
     );
     if (!opened && mounted) {
-      showRaftToast(context, 'Could not open this address.');
+      showRaftToast(
+        context,
+        'Could not open this address.',
+        tone: RaftToastRecipeTone.error,
+      );
     }
   }
 

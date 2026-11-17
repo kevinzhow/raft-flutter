@@ -364,10 +364,7 @@ void main() {
       await openCenter(t);
       await t.tap(find.text('Add seats'));
       await t.pump(const Duration(milliseconds: 300));
-      expect(
-        find.text("Stripe checkout didn't open. Try again."),
-        findsOneWidget,
-      );
+      expect(find.text('Could not open this address.'), findsOneWidget);
     });
 
     testWidgets('a member: Ask an owner, and it opens the same page', (

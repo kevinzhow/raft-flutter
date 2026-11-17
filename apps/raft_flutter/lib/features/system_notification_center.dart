@@ -22,7 +22,7 @@ import 'fleet_views.dart';
 import 'account_security_recovery.dart';
 import 'joint_invite_errors.dart';
 import 'source_feedback_view.dart';
-import 'limit_notice.dart' show openWebBillingOrToast;
+import 'workspace_web_billing.dart' show openWebBillingOrToast;
 import 'system_notification_copy.dart';
 
 /// The mounted Web system-notification aggregator, separate from message Activity

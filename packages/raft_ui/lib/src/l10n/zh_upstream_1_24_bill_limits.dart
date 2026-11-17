@@ -85,9 +85,7 @@ const Map<String, String> zhCatalogUpstream124BillLimits = <String, String>{
       "你打开的这条消息发于 {date}，已超过 {days} 天，免费版下你和你的 Agent 都读不到。",
   "The message you opened was sent on {date}, more than {days} days ago, so you and your agents can't read it on Free, and your agents ran into this once in the past 7 days.": "你打开的这条消息发于 {date}，已超过 {days} 天，免费版下你和你的 Agent 都读不到，过去 7 天你的 Agent 已经有 {agentTries} 次想读没读到。",
   "The message you opened was sent on {date}, more than {days} days ago, so you and your agents can't read it on Free, and your agents ran into this {agentTries} times in the past 7 days.": "你打开的这条消息发于 {date}，已超过 {days} 天，免费版下你和你的 Agent 都读不到，过去 7 天你的 Agent 已经有 {agentTries} 次想读没读到。",
-  "Stripe checkout didn't open. Try again.": "无法打开 Stripe 结账，请重试。",
   "{server} · {name} couldn't join": "{server} · {name} 没能加入",
   "Upgrade needed for {name} to join": "需要升级，{name} 才能加入",
-  "Add seats": "加席位",
   "Ask an owner": "找所有者加席位",
 };

@@ -394,10 +394,7 @@ void main() {
         await t.tap(find.byKey(const ValueKey('limit-notice-upgrade')));
         await t.pump();
         await t.pump(const Duration(milliseconds: 300));
-        expect(
-          find.text("Stripe checkout didn't open. Try again."),
-          findsOneWidget,
-        );
+        expect(find.text('Could not open this address.'), findsOneWidget);
       },
     );
 
