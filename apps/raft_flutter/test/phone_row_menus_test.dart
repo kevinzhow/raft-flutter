@@ -679,8 +679,9 @@ void main() {
       );
       await tester.pump(const Duration(milliseconds: 400));
       await tester.pumpAndSettle();
+      // Web: the dot's aria-label is part of the WorkspaceButton's name.
       expect(
-        find.bySemanticsLabel('Other servers have unread messages'),
+        find.bySemanticsLabel(RegExp('Other servers have unread messages')),
         findsOneWidget,
       );
     });
@@ -698,7 +699,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 400));
       await tester.pumpAndSettle();
       expect(
-        find.bySemanticsLabel('Other servers have unread messages'),
+        find.bySemanticsLabel(RegExp('Other servers have unread messages')),
         findsNothing,
       );
     });
