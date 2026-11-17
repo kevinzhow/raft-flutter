@@ -7,11 +7,11 @@ Pixel parity, field parity (`docs/field-parity.md`) and the page inventory (`doc
 
 ## Summary
 
-Total capabilities: 832 (390 endpoint/network keys, 442 client-side).
+Total capabilities: 833 (391 endpoint/network keys, 442 client-side).
 
 | Status | Count |
 | --- | ---: |
-| ✅ covered | 713 |
+| ✅ covered | 714 |
 | ⚠️ partial | 28 |
 | ❌ missing | 2 |
 | ➖ na | 89 |
@@ -30,7 +30,7 @@ Total capabilities: 832 (390 endpoint/network keys, 442 client-side).
 | Tasks | 42 | 0 | 0 | 5 |
 | Files and attachments | 25 | 3 | 0 | 2 |
 | Search | 19 | 0 | 0 | 1 |
-| Notifications | 32 | 4 | 0 | 6 |
+| Notifications | 33 | 4 | 0 | 6 |
 | Account and profile | 52 | 0 | 0 | 13 |
 | Onboarding and auth | 37 | 1 | 0 | 8 |
 | Joint channels | 12 | 0 | 0 | 0 |
@@ -685,7 +685,8 @@ Legend: ✅ covered (endpoint called and a reachable entry point with equivalent
 | ✅ | Activity 'Done' view: list conversations marked done | `GET /channels/inbox/done` | Activity > 'Done' view (ThreadsInbox loadDoneItems; rows show a Restore button)[gate: any member] | channel_activity_scope.dart Done endpoint, wired by ResourceView |  |
 | ➖ | Load unfollowed-thread Activity history | `GET /channels/inbox/unfollowed` | inboxStore.loadUnfollowed is defined but no component calls it (dead store code; unfollowed rows stay visible in the normal list with isFollowing=false) | Flutter exposes it anyway: Activity 'Unfollowed threads' filter (resource_view.dart) | N/A: No Web user path reaches this endpoint (grep: only the store references loadUnfollowed); Flutter has an extra view for it. |
 | ✅ | Load per-channel unread counts for sidebar badges (bg) | `GET /channels/unread` | messageStore.loadUnreadCounts (bootstrap/focus/resync, background) | conversation_read_repository.dart refreshUnread() via workspace_controller.dart facade |  |
-| ✅ | Read the replace-snapshot of usage-limit attention incidents for the Notification Center (polled every 60 s) | `GET /servers/:id/system-notifications-v2` | useUsageLimitAttention.ts (Notification Center, usage-limit attention cards)[gate: current server (usage_limit_attention_v0 is retired in Web 1.24)] | system_notification_store.dart refreshUsageLimit() (parseUsageLimitSnapshot, 60 s poll, fail closed) |  |
+| ✅ | People a full invite or join link turned away from the server: a warning entry per person in the Notification Center (read on mount, on the seat-join-blocks:changed ping, when pro_seat_add changes, after a reconnect, and a 5-minute safety poll while visible) | `GET /servers/:id/seat-join-blocks` | packages/web/src/components/layout/useSeatJoinBlocks.ts; useSystemNotifications.tsx section 0b[gate: pro_seat_add server flag and a role that is not guest] | system_notification_store.dart refreshSeatJoinBlocks(); the entry's action (Add seats / Ask an owner) opens the Web Plan & Billing page (workspace_web_billing.dart) |  |
+| ✅ | Read the replace-snapshot of usage-limit attention incidents for the Notification Center (polled every 60 s) | `GET /servers/:id/system-notifications-v2` | packages/web/src/components/layout/useUsageLimitAttention.ts (v1.24: no feature flag; startVisiblePoll 60 s, paused while hidden, refreshOnFocus)[gate: current server (usage_limit_attention_v0 is retired in Web 1.24: useUsageLimitAttention.ts reads no flag)] | system_notification_store.dart refreshUsageLimit() (parseUsageLimitSnapshot, RaftForegroundPeriodic 60 s + resume read, fail closed) |  |
 | ✅ | Mute / unmute Activity notifications for one channel (per user) | `PATCH /channels/:id/notification-settings` | Sidebar channel row 'Notifications ▸' Mute and Channel settings › Your preferences › Notifications select (v1.24 NotificationLevelMenu mute control; ChatPanel handleToggleActivityMute)[gate: joined channel/private/joint only (canToggleActivityMute); never DM/thread] | workspace_view_sidebar_menus.dart _toggleMute through notification_level_menu.dart channelNotificationSubmenu (Mute) \| channel_settings.dart notificationLevelRow (Mute choice of the Notifications select) |  |
 | ✅ | Report read position (mark messages read as the user scrolls/opens a channel) (bg) | `POST /channels/:id/read` | messageStore.flushPendingRead (background while viewing a channel) | conversation_read_repository.dart markRead via workspace_controller.dart receiver dispatch |  |
 | ✅ | Mark an Activity conversation done | `POST /channels/inbox/done` | Activity row hover check button 'Mark as done' \| row context menu 'Done'[gate: any member; not mention_action rows] | resource_view.dart row action 'Mark conversation done' + context menu 'Done' |  |

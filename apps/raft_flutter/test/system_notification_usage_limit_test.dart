@@ -83,7 +83,10 @@ class _Client extends RaftClient {
   @override
   Future<dynamic> post(String path, {dynamic data}) async {
     if (path == '/feature-flags/evaluate') {
-      flagReads++;
+      // Only the retired flag counts: the seat-join notices ask pro_seat_add.
+      if ('${(data as Map?)?['keys']}'.contains('usage_limit_attention_v0')) {
+        flagReads++;
+      }
       return {
         'evaluations': [
           {'key': 'usage_limit_attention_v0', 'enabled': flag},

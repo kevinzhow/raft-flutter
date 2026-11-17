@@ -12592,13 +12592,33 @@
    "capability": "Read the replace-snapshot of usage-limit attention incidents for the Notification Center (polled every 60 s)",
    "background": false,
    "status": "covered",
-   "webEntry": "useUsageLimitAttention.ts (Notification Center, usage-limit attention cards)",
-   "gate": "current server (usage_limit_attention_v0 is retired in Web 1.24)",
-   "flutterEntry": "system_notification_store.dart refreshUsageLimit() (parseUsageLimitSnapshot, 60 s poll, fail closed)",
+   "webEntry": "packages/web/src/components/layout/useUsageLimitAttention.ts (v1.24: no feature flag; startVisiblePoll 60 s, paused while hidden, refreshOnFocus)",
+   "gate": "current server (usage_limit_attention_v0 is retired in Web 1.24: useUsageLimitAttention.ts reads no flag)",
+   "flutterEntry": "system_notification_store.dart refreshUsageLimit() (parseUsageLimitSnapshot, RaftForegroundPeriodic 60 s + resume read, fail closed)",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/data/system_notification_store.dart",
      "needle": "'/servers/$serverId/system-notifications-v2'"
+    }
+   ],
+   "justification": "",
+   "impact": "",
+   "size": ""
+  },
+  {
+   "kind": "endpoint",
+   "id": "GET /servers/:id/seat-join-blocks",
+   "area": "notifications",
+   "capability": "People a full invite or join link turned away from the server: a warning entry per person in the Notification Center (read on mount, on the seat-join-blocks:changed ping, when pro_seat_add changes, after a reconnect, and a 5-minute safety poll while visible)",
+   "background": false,
+   "status": "covered",
+   "webEntry": "packages/web/src/components/layout/useSeatJoinBlocks.ts; useSystemNotifications.tsx section 0b",
+   "gate": "pro_seat_add server flag and a role that is not guest",
+   "flutterEntry": "system_notification_store.dart refreshSeatJoinBlocks(); the entry's action (Add seats / Ask an owner) opens the Web Plan & Billing page (workspace_web_billing.dart)",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/data/system_notification_store.dart",
+     "needle": "'/servers/$serverId/seat-join-blocks'"
     }
    ],
    "justification": "",
