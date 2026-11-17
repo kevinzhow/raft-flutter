@@ -8,6 +8,11 @@ import 'package:raft_ui/raft_ui.dart';
 
 import '../data/source_channel_files_store.dart';
 import '../data/workspace_controller.dart';
+import 'artifacts/artifact_models.dart';
+import 'artifacts/artifact_session.dart';
+import 'artifacts/artifact_viewer_page.dart' show openWorkspaceArtifact;
+import 'channel_side_files_artifacts.dart';
+import 'channel_side_files_rows.dart';
 import 'source_channel_file_glyph.dart';
 import 'source_channel_files_actions.dart';
 
@@ -26,6 +31,11 @@ class SourceChannelFilesView extends StatefulWidget {
     this.thumbnailBuilder,
     this.acquireImage,
     this.peekImage,
+    this.compact = false,
+    this.formatCompactDate,
+    this.formatFullDate,
+    this.onOpenArtifact,
+    this.showArtifacts = true,
   });
   final WorkspaceController controller;
   final String channelId;
@@ -36,6 +46,16 @@ class SourceChannelFilesView extends StatefulWidget {
   final ChannelFileThumbnailBuilder? thumbnailBuilder;
   final SourceChannelImageAcquire? acquireImage;
   final SourceChannelImagePeek? peekImage;
+
+  /// The Files card's compact rows (see [SourceChannelFilesProjectionView]).
+  final bool compact;
+  final String Function(String instant)? formatCompactDate, formatFullDate;
+
+  /// Opens an Artifact row; default: the Artifact viewer.
+  final void Function(ArtifactCard)? onOpenArtifact;
+
+  /// The conversation's Artifacts above the files (workspace_artifacts_v0).
+  final bool showArtifacts;
   @override
   State<SourceChannelFilesView> createState() => _SourceChannelFilesState();
 }
@@ -43,6 +63,8 @@ class SourceChannelFilesView extends StatefulWidget {
 class _SourceChannelFilesState extends State<SourceChannelFilesView> {
   late SourceChannelFilesStore store;
   late SourceChannelFilesActions actions;
+  ConversationArtifactsStore? artifacts;
+  ArtifactSession? artifactSession;
   StreamSubscription<RaftEvent>? session;
   bool tabActive = true;
   bool dependenciesReady = false;
@@ -51,7 +73,10 @@ class _SourceChannelFilesState extends State<SourceChannelFilesView> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     final active = TickerMode.valuesOf(context).enabled;
-    if (active && (!dependenciesReady || !tabActive)) unawaited(store.load());
+    if (active && (!dependenciesReady || !tabActive)) {
+      unawaited(store.load());
+      unawaited(artifacts?.load());
+    }
     tabActive = active;
     dependenciesReady = true;
   }
@@ -69,7 +94,25 @@ class _SourceChannelFilesState extends State<SourceChannelFilesView> {
     store.addListener(storeChanged);
     widget.controller.addListener(changed);
     session = widget.controller.client.events.listen((_) => changed());
-    if (dependenciesReady && tabActive) unawaited(store.load());
+    if (widget.showArtifacts) {
+      artifacts = ConversationArtifactsStore.of(
+        widget.controller,
+        widget.channelId,
+      );
+      // The flag arrives after the first frame: read when it turns on.
+      artifactSession = ArtifactSession.of(widget.controller)
+        ..addListener(artifactsFlagChanged);
+    }
+    if (dependenciesReady && tabActive) {
+      unawaited(store.load());
+      unawaited(artifacts?.load());
+    }
+  }
+
+  void artifactsFlagChanged() {
+    if (!mounted) return;
+    if (tabActive) unawaited(artifacts?.load());
+    setState(() {});
   }
 
   // The projection listens to the store itself; only revoke open actions here.
@@ -96,6 +139,9 @@ class _SourceChannelFilesState extends State<SourceChannelFilesView> {
     unawaited(session?.cancel());
     session = null;
     store.removeListener(storeChanged);
+    artifactSession?.removeListener(artifactsFlagChanged);
+    artifactSession = null;
+    artifacts = null;
     actions.dispose();
   }
 
@@ -132,6 +178,19 @@ class _SourceChannelFilesState extends State<SourceChannelFilesView> {
     await widget.controller.jumpToMessage(widget.channelId, file.messageId);
   }
 
+  void openArtifact(ArtifactCard card) {
+    final open = widget.onOpenArtifact;
+    if (open != null) return open(card);
+    unawaited(
+      openWorkspaceArtifact(
+        context,
+        widget.controller,
+        ArtifactLinkTarget(card.id),
+        seed: card,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) =>
       // Visible only for the open channel; never reuse a list for another one.
@@ -143,6 +202,11 @@ class _SourceChannelFilesState extends State<SourceChannelFilesView> {
           onPreview: actions.preview,
           onDownload: actions.download,
           onOpenSource: openSource,
+          artifacts: artifacts,
+          compact: widget.compact,
+          formatCompactDate: widget.formatCompactDate,
+          formatFullDate: widget.formatFullDate,
+          onOpenArtifact: openArtifact,
           thumbnailBuilder:
               widget.thumbnailBuilder ??
               (file, authorized) => SourceChannelFileThumbnail(
@@ -187,6 +251,10 @@ class SourceChannelFilesRecipe {
   final RaftTokens tokens;
   EdgeInsets get listInset => const EdgeInsets.all(12);
   double get listGap => 8;
+
+  /// The compact list has no gap: its rows carry their own hairlines.
+  double listGapFor({required bool compact}) => compact ? 0 : listGap;
+  Duration get hoverTransition => const Duration(milliseconds: 150);
   EdgeInsets get rowInset =>
       const EdgeInsets.symmetric(horizontal: 12, vertical: 8);
   double get bodyGap => 12;
@@ -289,6 +357,11 @@ class SourceChannelFilesProjectionView extends StatelessWidget {
     required this.onDownload,
     required this.onOpenSource,
     this.thumbnailBuilder,
+    this.artifacts,
+    this.onOpenArtifact,
+    this.compact = false,
+    this.formatCompactDate,
+    this.formatFullDate,
   });
   final SourceChannelFilesStore store;
   final String Function(String) formatCreatedAt;
@@ -296,15 +369,70 @@ class SourceChannelFilesProjectionView extends StatelessWidget {
       onDownload,
       onOpenSource;
   final ChannelFileThumbnailBuilder? thumbnailBuilder;
+
+  /// The conversation's Artifacts, above the files (null: none shown).
+  final ConversationArtifactsStore? artifacts;
+  final void Function(ArtifactCard)? onOpenArtifact;
+
+  /// The Files card's compact row (Web `variant: "compact"`): one line per
+  /// file, hairlines between rows, no card per row.
+  final bool compact;
+
+  /// A compact row's time (Web `formatCompactDate`): the clock today, the
+  /// month and day this year, the ISO date before. Default: [formatCreatedAt].
+  final String Function(String)? formatCompactDate;
+
+  /// The full date and time a compact time gives on hover.
+  final String Function(String)? formatFullDate;
+
+  /// Pull to refresh (Web `usePagePullToRefresh`): the first page again,
+  /// swapped in when it arrives; a failure keeps the rows and toasts. By
+  /// finger only: the Web hook answers a finger, on a phone width.
+  Future<void> _refresh(BuildContext context) async {
+    final ok = await store.refresh();
+    if (!ok && context.mounted) {
+      showRaftToast(
+        context,
+        'Could not load files.',
+        tone: RaftToastRecipeTone.warning,
+      );
+    }
+  }
+
+  Widget _pullable(BuildContext context, Widget child) => RaftPullToRefresh(
+    enabled: RaftInteraction.of(context).touch && !store.initialLoading,
+    onRefresh: () => _refresh(context),
+    child: child,
+  );
+
+  /// A state with no list (empty, error) still answers a pull.
+  Widget _stateView(BuildContext context, Widget content) => _pullable(
+    context,
+    LayoutBuilder(
+      builder: (context, constraints) => SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minHeight: constraints.maxHeight),
+          child: Center(child: content),
+        ),
+      ),
+    ),
+  );
+
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context),
         recipe = SourceChannelFilesRecipe(RaftTokens.of(context));
     return ListenableBuilder(
-      listenable: store,
+      listenable: Listenable.merge([store, ?artifacts]),
       builder: (context, _) {
         if (!store.authorized) return const SizedBox.shrink();
-        if (store.initialLoading) {
+        final shown = artifacts?.status ?? ConversationArtifactsStatus.hidden;
+        // Web: the files never wait for the Artifacts; with no files the list
+        // waits, so it does not flash empty.
+        if (store.initialLoading ||
+            (store.files.isEmpty &&
+                shown == ConversationArtifactsStatus.loading)) {
           return Center(
             child: Text(
               raftText(context, 'Loading files…'),
@@ -313,8 +441,9 @@ class SourceChannelFilesProjectionView extends StatelessWidget {
           );
         }
         if (store.error != null && store.files.isEmpty) {
-          return Center(
-            child: Column(
+          return _stateView(
+            context,
+            Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
@@ -335,9 +464,24 @@ class SourceChannelFilesProjectionView extends StatelessWidget {
             ),
           );
         }
-        if (store.files.isEmpty) {
-          return Center(
-            child: Column(
+        final artifactRows = switch (shown) {
+          ConversationArtifactsStatus.hidden => 0,
+          ConversationArtifactsStatus.loading ||
+          ConversationArtifactsStatus.failed => 1,
+          ConversationArtifactsStatus.ready =>
+            artifacts!.cards.length +
+                (artifacts!.nextCursor != null ||
+                        artifacts!.more == ConversationArtifactsMore.failed
+                    ? 1
+                    : 0),
+        };
+        if (store.files.isEmpty &&
+            (shown == ConversationArtifactsStatus.hidden ||
+                (shown == ConversationArtifactsStatus.ready &&
+                    artifacts!.cards.isEmpty))) {
+          return _stateView(
+            context,
+            Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 const RaftIcon(RaftGlyph.paperclip, size: 36),
@@ -360,9 +504,79 @@ class SourceChannelFilesProjectionView extends StatelessWidget {
             ),
           );
         }
-        return ColoredBox(
-          color: recipe.background,
-          child: NotificationListener<ScrollNotification>(
+        final filesAt = artifactRows;
+        final footer = store.nextCursor != null || store.loadingMore;
+        String compactDate(String at) =>
+            (formatCompactDate ?? formatCreatedAt)(at);
+        Widget artifactRow(int index) {
+          final art = artifacts!;
+          if (shown == ConversationArtifactsStatus.loading) {
+            return const ConversationArtifactsNote(
+              kind: ConversationArtifactsNoteKind.loading,
+            );
+          }
+          if (shown == ConversationArtifactsStatus.failed) {
+            return ConversationArtifactsNote(
+              kind: ConversationArtifactsNoteKind.failed,
+              onPressed: () => unawaited(art.retry()),
+            );
+          }
+          if (index == art.cards.length) {
+            return ConversationArtifactsNote(
+              kind: ConversationArtifactsNoteKind.more,
+              more: art.more,
+              onPressed: () => unawaited(art.showMore()),
+            );
+          }
+          final card = art.cards[index];
+          final updated = card.updatedAt?.toIso8601String();
+          return ConversationArtifactRow(
+            key: ValueKey('conversation-artifact-${card.id}'),
+            card: card,
+            compact: compact,
+            divider: index > 0,
+            formattedDate: updated == null
+                ? ''
+                : (compact ? compactDate(updated) : formatCreatedAt(updated)),
+            fullDate: updated == null ? null : formatFullDate?.call(updated),
+            onOpen: () => onOpenArtifact?.call(card),
+          );
+        }
+
+        Widget fileRow(int index) {
+          final file = store.files[index];
+          bool allowed() => store.contains(file);
+          void guarded(Future<void> Function(SourceChannelFileEntry) run) {
+            if (allowed()) unawaited(run(file));
+          }
+
+          if (compact) {
+            return ChannelFilesCompactRow(
+              key: ValueKey('channel-file-${file.id}'),
+              file: file,
+              divider: filesAt + index > 0,
+              formattedDate: compactDate(file.createdAt),
+              fullDate: formatFullDate?.call(file.createdAt),
+              thumbnail: thumbnailBuilder?.call(file, allowed),
+              onPreview: () => guarded(onPreview),
+              onDownload: () => guarded(onDownload),
+              onOpenSource: () => guarded(onOpenSource),
+            );
+          }
+          return SourceChannelFileRow(
+            key: ValueKey('channel-file-${file.id}'),
+            file: file,
+            formattedDate: formatCreatedAt(file.createdAt),
+            thumbnail: thumbnailBuilder?.call(file, allowed),
+            onPreview: () => guarded(onPreview),
+            onDownload: () => guarded(onDownload),
+            onOpenSource: () => guarded(onOpenSource),
+          );
+        }
+
+        final list = _pullable(
+          context,
+          NotificationListener<ScrollNotification>(
             onNotification: (event) {
               if (event.depth == 0 &&
                   event.metrics.extentAfter < recipe.fetchRemainingExtent &&
@@ -376,19 +590,27 @@ class SourceChannelFilesProjectionView extends StatelessWidget {
             },
             child: ListView.separated(
               primary: false,
-              padding: raftScrollPadding(context, recipe.listInset),
-              itemCount:
-                  store.files.length +
-                  (store.nextCursor != null || store.loadingMore ? 1 : 0),
-              separatorBuilder: (_, _) => SizedBox(height: recipe.listGap),
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: raftScrollPadding(
+                context,
+                compact ? EdgeInsets.zero : recipe.listInset,
+              ),
+              itemCount: artifactRows + store.files.length + (footer ? 1 : 0),
+              // Compact rows carry their own hairlines.
+              separatorBuilder: (_, _) =>
+                  SizedBox(height: recipe.listGapFor(compact: compact)),
               itemBuilder: (context, index) {
+                if (index < artifactRows) return artifactRow(index);
+                index -= artifactRows;
                 if (index == store.files.length) {
                   return Padding(
                     // Source closes the p-3 FilesList before its p-4 footer.
                     // Our single scrollable has already inserted listGap.
                     padding: EdgeInsets.fromLTRB(
                       16,
-                      16 + recipe.listInset.bottom - recipe.listGap,
+                      compact
+                          ? 16
+                          : 16 + recipe.listInset.bottom - recipe.listGap,
                       16,
                       16,
                     ),
@@ -425,27 +647,14 @@ class SourceChannelFilesProjectionView extends StatelessWidget {
                     ),
                   );
                 }
-                final file = store.files[index];
-                bool allowed() => store.contains(file);
-                return SourceChannelFileRow(
-                  key: ValueKey('channel-file-${file.id}'),
-                  file: file,
-                  formattedDate: formatCreatedAt(file.createdAt),
-                  thumbnail: thumbnailBuilder?.call(file, allowed),
-                  onPreview: () {
-                    if (allowed()) unawaited(onPreview(file));
-                  },
-                  onDownload: () {
-                    if (allowed()) unawaited(onDownload(file));
-                  },
-                  onOpenSource: () {
-                    if (allowed()) unawaited(onOpenSource(file));
-                  },
-                );
+                return fileRow(index);
               },
             ),
           ),
         );
+        return compact
+            ? list
+            : ColoredBox(color: recipe.background, child: list);
       },
     );
   }
@@ -453,21 +662,25 @@ class SourceChannelFilesProjectionView extends StatelessWidget {
 
 /// The mounted source row uses a plain, naturally sized button. A fixed-height
 /// generic control clips wrapped metadata and changes the source content flow.
-class _FileOpen extends StatefulWidget {
-  const _FileOpen({
+class ChannelFileOpen extends StatefulWidget {
+  const ChannelFileOpen({
     super.key,
     required this.label,
     required this.onPressed,
     required this.child,
+    this.minHeight = 56,
   });
   final String label;
   final VoidCallback onPressed;
   final Widget child;
+
+  /// The card row's thumbnail height; a compact row sets its own.
+  final double minHeight;
   @override
-  State<_FileOpen> createState() => _FileOpenState();
+  State<ChannelFileOpen> createState() => _ChannelFileOpenState();
 }
 
-class _FileOpenState extends State<_FileOpen> {
+class _ChannelFileOpenState extends State<ChannelFileOpen> {
   final node = FocusNode();
   bool highlight = false;
   @override
@@ -528,7 +741,7 @@ class _FileOpenState extends State<_FileOpen> {
               ? _FileFocusOutline(RaftTokens.of(context).strong)
               : null,
           child: ConstrainedBox(
-            constraints: const BoxConstraints(minHeight: 56),
+            constraints: BoxConstraints(minHeight: widget.minHeight),
             child: widget.child,
           ),
         ),
@@ -553,6 +766,71 @@ class _FileFocusOutline extends CustomPainter {
       color != oldDelegate.color;
 }
 
+/// The row's "⋯" menu: Jump to original message and Download file (Web
+/// ChannelFileOverflowMenu). The card row and the compact row share it.
+class ChannelFileOverflowMenu extends StatelessWidget {
+  const ChannelFileOverflowMenu({
+    super.key,
+    required this.file,
+    required this.onOpenSource,
+    required this.onDownload,
+    this.compact = false,
+  });
+  final SourceChannelFileEntry file;
+  final VoidCallback onOpenSource, onDownload;
+
+  /// In a compact row the touch target hangs outside the row's line instead
+  /// of making the row taller (Web: the button's negative margin).
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
+    final label = raftFormat(context, 'Actions for {filename}', {
+      'filename': file.filename,
+    });
+    return RaftDropdownMenu(
+      label: label,
+      surfaceKey: ValueKey('channel-file-overflow-menu-${file.id}'),
+      kind: RaftMenuKind.dropdownMenu,
+      side: RaftDropdownSide.bottom,
+      align: RaftDropdownAlign.end,
+      sideOffset: 4,
+      entries: [
+        RaftMenuEntry(
+          label: raftText(context, 'Jump to original message'),
+          leading: const ChannelFileGlyph(
+            SourceChannelFileGlyph.jump,
+            size: 16,
+          ),
+          onPressed: onOpenSource,
+        ),
+        RaftMenuEntry(
+          label: raftText(context, 'Download file'),
+          leading: const RaftIcon(RaftGlyph.download, size: 16),
+          onPressed: onDownload,
+        ),
+      ],
+      triggerBuilder: (context, focus, onPressed) => RaftButton(
+        key: ValueKey('channel-file-overflow-${file.id}'),
+        uiSize: RaftButtonSize.iconSm,
+        uiVariant: RaftButtonVariant.ghost,
+        layoutTouchTarget: !compact,
+        expandTouchTarget: compact,
+        semanticContainer: false,
+        focusNode: focus,
+        semanticLabel: label,
+        tooltip: label,
+        onPressed: onPressed,
+        iconBuilder: (size, color) => ChannelFileGlyph(
+          SourceChannelFileGlyph.more,
+          size: size,
+          color: color,
+        ),
+      ),
+    );
+  }
+}
+
 class SourceChannelFileRow extends StatefulWidget {
   const SourceChannelFileRow({
     super.key,
@@ -573,49 +851,11 @@ class SourceChannelFileRow extends StatefulWidget {
 
 class _FileRowState extends State<SourceChannelFileRow> {
   var hovered = false;
-  Widget _overflowMenu(BuildContext context) {
-    final label = 'Actions for ${widget.file.filename}';
-    return RaftDropdownMenu(
-      label: label,
-      surfaceKey: ValueKey('channel-file-overflow-menu-${widget.file.id}'),
-      kind: RaftMenuKind.dropdownMenu,
-      side: RaftDropdownSide.bottom,
-      align: RaftDropdownAlign.end,
-      sideOffset: 4,
-      entries: [
-        RaftMenuEntry(
-          label: raftText(context, 'Jump to original message'),
-          leading: const ChannelFileGlyph(
-            SourceChannelFileGlyph.jump,
-            size: 16,
-          ),
-          onPressed: widget.onOpenSource,
-        ),
-        RaftMenuEntry(
-          label: raftText(context, 'Download file'),
-          leading: const RaftIcon(RaftGlyph.download, size: 16),
-          onPressed: widget.onDownload,
-        ),
-      ],
-      triggerBuilder: (context, focus, onPressed) => RaftButton(
-        key: ValueKey('channel-file-overflow-${widget.file.id}'),
-        uiSize: RaftButtonSize.iconSm,
-        uiVariant: RaftButtonVariant.ghost,
-        layoutTouchTarget: true,
-        expandTouchTarget: false,
-        semanticContainer: false,
-        focusNode: focus,
-        semanticLabel: label,
-        tooltip: label,
-        onPressed: onPressed,
-        iconBuilder: (size, color) => ChannelFileGlyph(
-          SourceChannelFileGlyph.more,
-          size: size,
-          color: color,
-        ),
-      ),
-    );
-  }
+  Widget _overflowMenu(BuildContext context) => ChannelFileOverflowMenu(
+    file: widget.file,
+    onOpenSource: widget.onOpenSource,
+    onDownload: widget.onDownload,
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -673,7 +913,7 @@ class _FileRowState extends State<SourceChannelFileRow> {
         child: AnimatedContainer(
           duration: MediaQuery.disableAnimationsOf(context)
               ? Duration.zero
-              : const Duration(milliseconds: 150),
+              : recipe.hoverTransition,
           decoration: RaftCssBoxDecoration(
             color: recipe.rowBackground,
             borderRadius: recipe.radius,
@@ -685,9 +925,9 @@ class _FileRowState extends State<SourceChannelFileRow> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Expanded(
-                child: _FileOpen(
+                child: ChannelFileOpen(
                   key: ValueKey('channel-file-preview-${widget.file.id}'),
-                  label: raftText(context, 'Preview File'),
+                  label: raftText(context, 'Preview file'),
                   onPressed: widget.onPreview,
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -753,7 +993,7 @@ class _FileRowState extends State<SourceChannelFileRow> {
                     RaftControl(
                       key: ValueKey('channel-file-jump-${widget.file.id}'),
                       visualHeight: recipe.actionSize,
-                      tooltip: raftText(context, 'Jump to Original Message'),
+                      tooltip: raftText(context, 'Jump to original message'),
                       variant: RaftControlVariant.ghost,
                       onPressed: widget.onOpenSource,
                       child: const ChannelFileGlyph(
@@ -767,7 +1007,7 @@ class _FileRowState extends State<SourceChannelFileRow> {
                       visualSize: recipe.actionSize,
                       glyphSize: 14,
                       glyph: RaftGlyph.download,
-                      tooltip: raftText(context, 'Download File'),
+                      tooltip: raftText(context, 'Download file'),
                       variant: RaftControlVariant.ghost,
                       onPressed: widget.onDownload,
                     ),

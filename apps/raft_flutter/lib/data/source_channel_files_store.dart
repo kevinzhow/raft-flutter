@@ -1,7 +1,9 @@
 import 'package:flutter/foundation.dart';
 
-typedef ChannelFilesGet =
-    Future<dynamic> Function(String path, {Map<String, dynamic>? query});
+typedef ChannelFilesGet = Future<dynamic> Function(
+  String path, {
+  Map<String, dynamic>? query,
+});
 
 @immutable
 class SourceChannelFileEntry {
@@ -158,6 +160,17 @@ class SourceChannelFilesStore extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Pull to refresh (Web `refreshFiles`): the first page again, swapped in
+  /// when it arrives. False when it could not be read: the rows stay and the
+  /// caller says so (no error state replaces them).
+  Future<bool> refresh() async {
+    await load();
+    return !_failed;
+  }
+
+  // The last first-page read of this store failed (kept rows or not).
+  bool _failed = false;
+
   Future<void> load({bool more = false}) async {
     syncAuthority();
     if (!authorized ||
@@ -172,6 +185,7 @@ class SourceChannelFilesStore extends ChangeNotifier {
       loading = true;
     }
     error = null;
+    if (!more) _failed = false;
     notifyListeners();
     bool current() =>
         !_disposed &&
@@ -224,6 +238,7 @@ class SourceChannelFilesStore extends ChangeNotifier {
       loaded = true;
     } on ChannelFilesRequestFailure catch (failure) {
       if (current()) {
+        if (!more) _failed = true;
         if (failure.failure == ChannelFilesFailure.unauthorized) {
           _files = const [];
           nextCursor = null;
@@ -235,6 +250,7 @@ class SourceChannelFilesStore extends ChangeNotifier {
       }
     } on FormatException {
       if (current()) {
+        if (!more) _failed = true;
         // A page that fails validation is never merged into accepted rows.
         if (!more) {
           _files = const [];
@@ -244,8 +260,9 @@ class SourceChannelFilesStore extends ChangeNotifier {
         error = ChannelFilesFailure.malformed;
       }
     } catch (_) {
-      if (current() && (!loaded || more)) {
-        error = ChannelFilesFailure.unavailable;
+      if (current()) {
+        if (!more) _failed = true;
+        if (!loaded || more) error = ChannelFilesFailure.unavailable;
       }
     } finally {
       if (current()) {
