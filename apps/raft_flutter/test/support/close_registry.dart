@@ -12,6 +12,7 @@ import 'close_registry_server_tab.dart';
 import 'close_registry_side_cards.dart';
 import 'close_registry_task_slot.dart';
 import 'close_registry_tasks_board.dart';
+import 'close_registry_tasks_page.dart';
 import 'close_registry_viewers.dart';
 import 'close_registry_web_link_choice.dart';
 import 'close_surface.dart';
@@ -31,6 +32,7 @@ List<CloseSurface> get allCloseSurfaces => [
   ...sideCardSurfaces,
   ...taskSlotSurfaces,
   ...tasksBoardSurfaces,
+  ...tasksPageSurfaces,
   ...viewerSurfaces,
   ...artifactSurfaces,
   ...webLinkChoiceSurfaces,
@@ -88,7 +90,8 @@ const closeScanExempt = <String, String>{
   '../../packages/raft_ui/lib/src/error_presentation.dart':
       'RaftToastHost overlay only paints the toast viewport; a toast is not '
       'a closable layer',
-  '../../packages/raft_ui/lib/src/panel_layout.dart': 'RaftPanelHeaderBar primitive: each panel that uses it is a listed surface',
+  '../../packages/raft_ui/lib/src/panel_layout.dart':
+      'RaftPanelHeaderBar primitive: each panel that uses it is a listed surface',
   '../../packages/raft_ui/lib/src/large_content_viewer.dart':
       'Large Content Viewer overlay only lives while a finger is held on a '
       'bounded chrome item and goes away when it lifts; it is not a closable '
