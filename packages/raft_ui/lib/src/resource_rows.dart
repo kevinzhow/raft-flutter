@@ -22,7 +22,7 @@ import 'text_scaling.dart' show RaftScaled;
 
 /// SavedItem metadata row (packages/web/src/components/saved/SavedPanel.tsx):
 /// `flex items-center gap-2 text-xs` with the channel label, the optional
-/// thread marker (MessageSquare 10), the sender (avatar + name, inline-flex
+/// thread marker (ThreadIcon 12), the sender (avatar + name, inline-flex
 /// gap-1) and the mono relative time.
 class RaftSavedItemMeta extends StatelessWidget {
   const RaftSavedItemMeta({
@@ -52,20 +52,27 @@ class RaftSavedItemMeta extends StatelessWidget {
       truncating: flat,
       fixed: flat
           ? {
-              0,
+              // The channel label and the sender truncate (`min-w-0
+              // truncate`); the thread mark and the time stay whole.
               if (thread) 1,
               1 + (thread ? 1 : 0) + (sender.isNotEmpty ? 1 : 0),
             }
           : const {},
       gap: 8, // gap-2
       children: [
-        Text(channelLabel, style: meta(muted)),
+        Text(
+          channelLabel,
+          maxLines: flat ? 1 : null,
+          softWrap: !flat,
+          overflow: flat ? TextOverflow.ellipsis : TextOverflow.clip,
+          style: meta(muted),
+        ),
         if (thread)
           Row(
             mainAxisSize: MainAxisSize.min,
             spacing: 4, // gap-1
             children: [
-              RaftIcon(RaftGlyph.messageSquare, size: 10, color: muted),
+              RaftIcon(RaftGlyph.thread, size: 12, color: muted),
               Flexible(
                 child: Text(raftText(context, 'Thread'), style: meta(muted)),
               ),
@@ -114,7 +121,7 @@ class RaftSavedItemMeta extends StatelessWidget {
 
 /// SavedItem's remove control: raft-ui PanelToggleAction `pressed` with
 /// `data-pressed:text-accent-strong theme-brutal:data-pressed:text-brutal-orange
-/// data-pressed:bg-accent-soft/30` and a filled Bookmark 14.
+/// data-pressed:bg-accent-soft/30` and BookmarkMinus 14.
 class RaftSavedToggle extends StatefulWidget {
   const RaftSavedToggle({super.key, required this.onPressed, this.label});
   final VoidCallback onPressed;
@@ -129,13 +136,13 @@ class _RaftSavedToggleState extends State<RaftSavedToggle> {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context), rt = RaftRecipeTokens(t);
     if (t.option('resource.rows', or: 'cards') == 'flat') {
-      // SavedPanel.tsx:149-159: pressed state is carried by the filled bookmark,
+      // SavedPanel.tsx:149-159: the unsave toggle is BookmarkMinus (v1.24),
       // with transparent surface/border and foreground ink (no pink sticker).
       return Semantics(
         toggled: true,
         child: RaftButton(
           label: '',
-          glyph: RaftGlyph.bookmarkFilled,
+          glyph: RaftGlyph.bookmarkMinus,
           semanticLabel: raftText(
             context,
             widget.label ?? 'Remove Saved Message',
@@ -179,7 +186,7 @@ class _RaftSavedToggleState extends State<RaftSavedToggle> {
               padding: base.padding,
               decoration: base.decoration(rt).copyWith(color: pressedFill),
               child: RaftIcon(
-                RaftGlyph.bookmarkFilled,
+                RaftGlyph.bookmarkMinus,
                 size: svg?.width ?? 14,
                 color: t.colors['accent-strong']!,
               ),

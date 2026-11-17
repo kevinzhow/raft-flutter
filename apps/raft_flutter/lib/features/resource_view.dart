@@ -35,6 +35,7 @@ import '../data/server_page_window.dart';
 import '../data/server_task_window.dart';
 import '../data/server_saved_window.dart';
 import 'server_task_scope.dart';
+import 'saved_page_rows.dart';
 import 'saved_page_scope.dart';
 import '../data/task_board_reconcile.dart';
 import '../data/task_view_mode_preference.dart';
@@ -514,6 +515,12 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
   bool initializedTaskLayout = false;
   bool extraFilters = false;
   int? totalCount;
+
+  /// Saved rows behind the plan's history window (`historyHidden.count` of
+  /// the first page); the page says how many in a banner.
+  int historyHiddenCount = 0;
+  bool savedRefreshing = false;
+  int savedLoadFailures = 0;
   int? totalUnreadCount;
   final collapsedTaskStatuses = <String>{'done', 'closed'};
   final taskAdvanced = TaskResourceFilters();
@@ -1146,6 +1153,7 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
     activeActivityFilter = 'all';
     ++activityFacetRequest;
     totalCount = null;
+    historyHiddenCount = 0;
     totalUnreadCount = null;
     taskAdvanced.clear();
   }
@@ -2178,7 +2186,7 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
         _ => throw const RaftApiException('This page is not available.'),
       };
       final pageSize = widget.section == 'saved'
-          ? 20
+          ? 50
           : widget.section == 'activity'
           ? activityPageSize
           : 30;
@@ -2338,6 +2346,12 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
             totalCount = ((value['total'] ?? value['totalCount']) as num?)
                 ?.toInt();
             totalUnreadCount = (value['totalUnreadCount'] as num?)?.toInt();
+            if (widget.section == 'saved' && !append) {
+              final hidden = value['historyHidden'];
+              historyHiddenCount = hidden is Map && hidden['count'] is num
+                  ? (hidden['count'] as num).toInt()
+                  : 0;
+            }
             if (widget.section == 'activity') {
               activityFacets.objects = ActivityObjectCounts.fromWindow(value);
             }
@@ -2376,6 +2390,7 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
       }
     } catch (e) {
       final denied = e is RaftApiException && [401, 403].contains(e.status);
+      if (widget.section == 'saved') savedLoadFailures++;
       if (!quietErrors || denied) fail(e, scope, request: request);
     } finally {
       if (accepts(scope, request) && loading) {
@@ -2684,8 +2699,11 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
     // horizontal pager's notifications instead of this vertical list's.
     final results = RaftPullToRefresh(
       enabled: mobileActivityRefresh,
-      onRefresh: () =>
-          accepts(scope) && filter == view ? load(keep: true) : Future.value(),
+      onRefresh: () => savedPage
+          ? refreshSaved(scope)
+          : accepts(scope) && filter == view
+          ? load(keep: true)
+          : Future.value(),
       child: GestureDetector(
         behavior: HitTestBehavior.translucent,
         // A blank tap has no item identity and ends double-click recognition.
@@ -2716,14 +2734,54 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
   }
 
   bool get mobileActivityRefresh =>
-      widget.section == 'activity' && RaftInteraction.of(context).touch;
+      (widget.section == 'activity' || savedPage) &&
+      RaftInteraction.of(context).touch;
+
+  /// SavedPanel `refreshSaved`: a phone pull loads the list again in place; a
+  /// failure keeps the rows and says so in a warning toast.
+  Future<void> refreshSaved(String scope) async {
+    if (!accepts(scope)) return;
+    final failures = savedLoadFailures;
+    setState(() => savedRefreshing = true);
+    await load(keep: true, quietErrors: true);
+    if (!mounted) return;
+    setState(() => savedRefreshing = false);
+    if (savedLoadFailures != failures && accepts(scope)) {
+      showRaftToast(
+        context,
+        "Couldn't load saved messages.",
+        tone: RaftToastRecipeTone.warning,
+      );
+    }
+  }
+
+  /// Web `firstLoad`: nothing read yet, so no count and no empty state.
+  bool get savedFirstLoad =>
+      loading && rows.isEmpty && historyHiddenCount == 0 && !savedRefreshing;
+
+  Widget? savedBanner() => historyHiddenCount > 0
+      ? SavedHistoryBanner(
+          count: historyHiddenCount,
+          listEmpty: rows.isEmpty,
+          onUpgrade: () {
+            final uri = savedBillingUri(
+              origin: w.client.origin,
+              slug: w.server?.string('slug') ?? '',
+            );
+            if (uri != null) unawaited(savedOpenWeb(uri));
+          },
+        )
+      : null;
 
   Widget resourceResultsBody(BuildContext context) {
     final scope = authority;
     final searchHomeNow = atSearchHome;
     // Search keeps its summary, entity matches and a messages skeleton while
     // the first read is in flight (Source `showInitialSkeleton`).
-    final searching = loading && visibleRows.isEmpty;
+    final searching =
+        loading &&
+        visibleRows.isEmpty &&
+        !(savedPage && historyHiddenCount > 0);
     return searching && !(widget.section == 'search' && !searchHomeNow)
         // ConversationCardSkeleton: Inbox and Saved share the card
         // placeholder list.
@@ -2785,7 +2843,9 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
                   : null,
               child: ConstrainedBox(
                 constraints: BoxConstraints(minHeight: constraints.maxHeight),
-                child: widget.section == 'activity' || widget.section == 'saved'
+                child: widget.section == 'saved' && historyHiddenCount > 0
+                    ? savedBanner()
+                    : widget.section == 'activity' || widget.section == 'saved'
                     // ui/EmptyState: Inbox and Saved share the product empty
                     // state (recipe icon tile, title, copy).
                     ? RaftProductEmptyState(
@@ -2823,7 +2883,16 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
                 : RaftTokens.of(context).sidebar,
             child: Stack(
               children: [
-                Positioned.fill(child: resourceList()),
+                Positioned.fill(
+                  child: savedPage && historyHiddenCount > 0
+                      ? Column(
+                          children: [
+                            savedBanner()!,
+                            Expanded(child: resourceList()),
+                          ],
+                        )
+                      : resourceList(),
+                ),
                 if (snapshotted && listUpdates.count > 0)
                   RaftNewUpdatesButton(
                     label: raftFormat(
@@ -2904,7 +2973,7 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
       ),
       itemBuilder: (context, index) => index == shown.length
           ? widget.section == 'saved'
-                ? savedSentinel()
+                ? savedSentinelRow()
                 : RaftButton.text(
                     onPressed: () => load(append: true),
                     child: Text(raftText(context, 'Load more')),
@@ -3484,6 +3553,8 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
       }),
       subtitle: switch (widget.section) {
         'tasks' => '$count ${raftText(context, 'channel tasks')}',
+        // No count before the list is read: the line's box stays, empty.
+        'saved' when savedFirstLoad => '\u00a0',
         'saved' =>
           '$count ${raftText(context, count == 1 ? 'saved item' : 'saved items')}',
         'activity' => activityCountsString(context, activityFacets.counts),
@@ -3729,10 +3800,6 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
     String scope, {
     bool topRule = false,
   }) {
-    final recipe = RaftConversationCardRecipe(
-      RaftTokens.of(context),
-      saved: true,
-    );
     final thread = row['channelType'] == 'thread';
     final dm = (thread ? row['parentChannelType'] : row['channelType']) == 'dm';
     final senderId = '${row['senderId'] ?? ''}';
@@ -3766,89 +3833,29 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
           ? row['senderAvatarUrl'] as String
           : null,
     );
-    final label = dm
-        ? '@$sender'
-        : '#${thread ? row['parentChannelName'] : row['channelName']}';
-    // SavedItem (packages/web/src/components/saved/SavedPanel.tsx): meta row
-    // `flex items-center gap-2 mb-1 text-xs`, content `text-sm line-clamp-3`,
-    // PanelToggleAction on the right (`ml-auto shrink-0 self-center`, gap-3).
-    return RaftConversationCard(
-      key: ValueKey('saved-${row['messageId']}'),
-      saved: true,
+    return SavedRowCard(
+      row: row,
+      label: dm
+          ? '@$sender'
+          : '#${thread ? row['parentChannelName'] : row['channelName']}',
+      sender: sender,
+      projection: projection,
+      time: relativeTime(row['createdAt']),
       topRule: topRule,
       onOpen: () => openConversation(row, scope),
       onContextMenu: (at) => savedMenu(row, scope, at),
       popupOpen: menuRowKey == '${row['messageId']}',
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                RaftSavedItemMeta(
-                  channelLabel: label,
-                  thread: thread,
-                  sender: sender,
-                  time: relativeTime(row['createdAt']),
-                  avatar: RaftAvatarSlot(
-                    name: sender,
-                    slot: RaftAvatarSlotContext.previewMini,
-                    agent: projection.kind == 'agent',
-                    avatarUrl: projection.uploadedUrl,
-                    content: RaftAvatarContent(
-                      name: sender,
-                      kind: switch (projection.kind) {
-                        'agent' => RaftAvatarContentKind.agent,
-                        'app' => RaftAvatarContentKind.app,
-                        _ => RaftAvatarContentKind.human,
-                      },
-                      pixelKey: projection.pixelKey,
-                      uploadedUrl: projection.uploadedUrl,
-                      fallback: projection.kind == 'human'
-                          ? Center(
-                              child: RaftIcon(
-                                RaftGlyph.user,
-                                size: 10,
-                                color: RaftTokens.of(context).muted,
-                              ),
-                            )
-                          : null,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '${row['content'] ?? ''}',
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
-                  style: recipe.body,
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 12),
-          RaftSavedToggle(
-            label: 'Remove Saved Message',
-            onPressed: () => removeSaved(row, scope),
-          ),
-        ],
-      ),
+      onRemove: () => removeSaved(row, scope),
     );
   }
 
-  /// SavedPanel `saved-infinite-scroll-sentinel`: `flex min-h-10
-  /// items-center justify-center py-3`, "Loading" while a page is in flight.
-  Widget savedSentinel() {
-    if (!loading && hasMore) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted && !loading && hasMore) load(append: true);
-      });
-    }
-    return RaftInfiniteScrollSentinel(loading: loading);
-  }
+  Widget savedSentinelRow() => savedSentinel(
+    loading: loading,
+    hasMore: hasMore,
+    mounted: () => mounted && !loading && hasMore,
+    loadMore: () => load(append: true),
+  );
 
-  /// SavedPanel `ContextMenuContent`: Copy link, Copy Markdown, a separator,
-  /// Remove from Saved.
   Future<void> savedMenu(
     Map<String, dynamic> row,
     String scope,
@@ -3857,59 +3864,44 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
     await scopedMenu<void>(
       scope,
       at,
-      (context) => RaftContextMenuContent(
+      (context) => savedMenuContent(
+        context,
         onDismiss: () => closeOwnedDialog(context, scope),
-        entries: [
-          RaftContextMenuContentItem(
-            label: raftText(context, 'Copy link'),
-            glyph: RaftGlyph.link,
-            onPressed: w.server?.string('slug').isEmpty != false
-                ? null
-                : () async {
-                    if (!accepts(scope)) return;
-                    final thread = row['channelType'] == 'thread';
-                    final text = ContentLinks.messageUrl(
-                      origin: ContentLinks.originFor(w.client.origin),
-                      slug: w.server!.string('slug'),
-                      channelId:
-                          '${row['parentChannelId'] ?? row['channelId']}',
-                      messageId: '${row['messageId']}',
-                      kind:
-                          '${thread ? row['parentChannelType'] : row['channelType']}',
-                      parentMessageId: thread
-                          ? row['parentMessageId'] as String?
-                          : null,
-                    ).toString();
-                    closeOwnedDialog(context, scope);
-                    if (accepts(scope)) {
-                      await Clipboard.setData(ClipboardData(text: text));
-                    }
-                  },
-          ),
-          RaftContextMenuContentItem(
-            label: raftText(context, 'Copy Markdown'),
-            glyph: RaftGlyph.copy,
-            onPressed: () async {
-              if (!accepts(scope)) return;
-              closeOwnedDialog(context, scope);
-              if (accepts(scope)) {
-                await Clipboard.setData(
-                  ClipboardData(text: '${row['content'] ?? ''}'),
-                );
-              }
-            },
-          ),
-          const RaftContextMenuContentSeparator(),
-          RaftContextMenuContentItem(
-            label: raftText(context, 'Remove from Saved'),
-            glyph: RaftGlyph.bookmark,
-            onPressed: () {
-              if (!accepts(scope)) return;
-              closeOwnedDialog(context, scope);
-              removeSaved(row, scope);
-            },
-          ),
-        ],
+        onCopyLink: w.server?.string('slug').isEmpty != false
+            ? null
+            : () async {
+                if (!accepts(scope)) return;
+                final thread = row['channelType'] == 'thread';
+                final text = ContentLinks.messageUrl(
+                  origin: ContentLinks.originFor(w.client.origin),
+                  slug: w.server!.string('slug'),
+                  channelId: '${row['parentChannelId'] ?? row['channelId']}',
+                  messageId: '${row['messageId']}',
+                  kind:
+                      '${thread ? row['parentChannelType'] : row['channelType']}',
+                  parentMessageId: thread
+                      ? row['parentMessageId'] as String?
+                      : null,
+                ).toString();
+                closeOwnedDialog(context, scope);
+                if (accepts(scope)) {
+                  await Clipboard.setData(ClipboardData(text: text));
+                }
+              },
+        onCopyMarkdown: () async {
+          if (!accepts(scope)) return;
+          closeOwnedDialog(context, scope);
+          if (accepts(scope)) {
+            await Clipboard.setData(
+              ClipboardData(text: '${row['content'] ?? ''}'),
+            );
+          }
+        },
+        onRemove: () {
+          if (!accepts(scope)) return;
+          closeOwnedDialog(context, scope);
+          removeSaved(row, scope);
+        },
       ),
       rowKey: '${row['messageId']}',
     );

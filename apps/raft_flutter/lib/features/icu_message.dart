@@ -68,7 +68,7 @@ String _placeholder(
   num? hash,
 ) {
   final parts = RegExp(
-    r'^\s*([A-Za-z0-9_]+)\s*(?:,\s*plural\s*,(.*))?$',
+    r'^\s*([A-Za-z0-9_]+)\s*(?:,\s*(?:plural\s*,(.*)|number\s*))?$',
     dotAll: true,
   ).firstMatch(inner);
   if (parts == null) return '{$inner}';
