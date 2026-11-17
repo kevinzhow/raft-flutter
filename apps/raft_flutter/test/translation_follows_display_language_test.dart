@@ -185,9 +185,9 @@ void main() {
       await t.pumpAndSettle();
       final state = t.state(find.byType(LocaleSettingsPage)) as dynamic;
       expect(state.savedTarget, 'ja');
-      state.edit(() => state.draftTarget = 'display');
-      await t.pump();
-      await state.saveLanguage(t.element(find.byType(LocaleSettingsPage)));
+      await t.tap(find.byKey(const ValueKey('translation-target')));
+      await t.pumpAndSettle();
+      await t.tap(find.text('Same as display language').last);
       await t.pumpAndSettle();
       expect(client.patches.single, {'preferredLanguage': null});
       // The old explanation of the browser's language is gone.

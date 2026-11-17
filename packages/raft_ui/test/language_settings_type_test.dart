@@ -17,17 +17,14 @@ void main() {
       );
       await t.pumpAndSettle();
       final title = t.widget<Text>(find.text('Display language'));
-      final description = t.widget<Text>(
-        find.text(
-          'Choose the language for the app interface. This is separate from message translation.',
-        ),
-      );
-      // Pinned Web db5e399: subhead 15/20 semibold, footnote 13/18.
-      expect(title.style!.fontSize, 15);
+      // Web v1.24 ListRowTitle: 16/24 semibold; the rows carry no description.
+      expect(title.style!.fontSize, 16);
       expect(title.style!.fontWeight, FontWeight.w600);
-      expect(title.style!.fontSize! * title.style!.height!, 20);
-      expect(description.style!.fontSize, 13);
-      expect(description.style!.fontSize! * description.style!.height!, 18);
+      expect(title.style!.fontSize! * title.style!.height!, 24);
+      expect(
+        find.textContaining('Choose the language for the app interface'),
+        findsNothing,
+      );
       expect(t.takeException(), isNull);
     });
   }

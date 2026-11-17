@@ -9,12 +9,16 @@ import 'package:timezone/timezone.dart' as tz;
 import '../data/message_translation_store.dart';
 import '../data/user_error.dart';
 import '../data/workspace_controller.dart';
+import 'immediate_save.dart';
 import 'management_support.dart';
 import 'settings_anchor.dart';
 import 'translation_language_options.dart';
 
-/// Source Language & Region preference contract. Delayed acknowledgements never
-/// apply a previous principal's values to the next account's controls.
+/// Web `LanguageRegionSection`: every choice applies the moment it is made.
+/// One request per change, nothing said once it is stored, and a failure
+/// shows under its row while the control goes back to the stored value.
+/// Delayed acknowledgements never apply a previous principal's values to the
+/// next account's controls.
 class LocaleSettingsPage extends StatefulWidget {
   const LocaleSettingsPage({super.key, required this.controller});
   final WorkspaceController controller;
@@ -54,37 +58,38 @@ class _LocaleSettingsPageState extends ManagementState<LocaleSettingsPage> {
 
   @override
   void dispose() {
-    for (final timer in savedTimers.values) {
-      timer.cancel();
-    }
     translations.removeListener(translationChanged);
     super.dispose();
   }
 
   @override
   void clearData() {
-    draftDisplayLanguage = draftMode = draftTarget = draftDisplay = null;
-    draftTimezone = draftTimeFormat = null;
-    languageError = dateTimeError = null;
-    savingLanguage = savingDateTime = false;
+    for (final save in saves) {
+      save.reset();
+    }
   }
 
   @override
   Future<void> loadData(int request, int generation) async {}
 
-  // Drafts of the two forms; null follows the saved value (Web re-syncs the
-  // form state whenever the saved value changes).
-  String? draftDisplayLanguage,
-      draftMode,
-      draftTarget,
-      draftDisplay,
-      draftTimezone,
-      draftTimeFormat;
-  final savedTimers = <bool, Timer>{};
-  // ignore: raft_lints/avoid_imperative_notice_state -- Each clears when its form is edited, when its save starts, and on account change (clearData).
-  String? languageError, dateTimeError;
-  bool savingLanguage = false, savingDateTime = false;
-  bool languageSaved = false, dateTimeSaved = false;
+  void changed() {
+    if (mounted) setState(() {});
+  }
+
+  late final displayLanguageSave = ImmediateSave<String>(changed),
+      modeSave = ImmediateSave<String>(changed),
+      targetSave = ImmediateSave<String>(changed),
+      displaySave = ImmediateSave<String>(changed),
+      timezoneSave = ImmediateSave<String>(changed),
+      timeFormatSave = ImmediateSave<String>(changed);
+  List<ImmediateSave<String>> get saves => [
+    displayLanguageSave,
+    modeSave,
+    targetSave,
+    displaySave,
+    timezoneSave,
+    timeFormatSave,
+  ];
 
   String get savedMode => translations.settings.mode.name;
   String get savedTarget =>
@@ -113,138 +118,97 @@ class _LocaleSettingsPageState extends ManagementState<LocaleSettingsPage> {
   String liveLocale(BuildContext context) =>
       Localizations.localeOf(context).languageCode == 'zh' ? 'zh-cn' : 'en';
 
-  bool languageDirty(BuildContext context) =>
-      (draftDisplayLanguage ?? liveLocale(context)) != liveLocale(context) ||
-      (draftTarget ?? savedTarget) != savedTarget ||
-      (draftMode ?? savedMode) != savedMode ||
-      (draftDisplay ?? savedDisplay) != savedDisplay;
-  bool get dateTimeDirty =>
-      (draftTimezone ?? savedTimezone) != savedTimezone ||
-      (draftTimeFormat ?? savedTimeFormat) != savedTimeFormat;
-
-  void edit(void Function() change, {bool language = true}) => setState(() {
-    change();
-    if (language) {
-      languageSaved = false;
-      languageError = null;
-    } else {
-      dateTimeSaved = false;
-      dateTimeError = null;
-    }
-  });
-
-  Future<void> patch(
-    Map<String, Object?> fields, {
-    required bool language,
-    required String failure,
-  }) async {
-    if (fields.isEmpty) return;
+  /// One `PATCH /auth/me`, then the answer joins the signed-in user (Web
+  /// `useAuthStore.setState({ user: { ...user, ...data } })`): no second read.
+  /// What was sent holds where the answer does not name it. An answer for a
+  /// previous account is dropped.
+  Future<void> _store(Map<String, Object?> fields) async {
     final scope = authority;
-    setState(() {
-      // Web handleSave*: the previous attempt's error and "saved" end here.
-      if (language) {
-        savingLanguage = true;
-        languageSaved = false;
-        languageError = null;
-      } else {
-        savingDateTime = true;
-        dateTimeSaved = false;
-        dateTimeError = null;
-      }
+    final data = await w.client.patch('/auth/me', data: fields);
+    if (!mounted || scope != authority) return;
+    final current = w.client.user?.json;
+    if (current == null) return;
+    await w.client.replaceUser({
+      ...current,
+      ...fields,
+      if (data is Map) ...Map<String, dynamic>.from(data),
     });
-    try {
-      await w.client.patch('/auth/me', data: fields);
-      if (!mounted || scope != authority) return;
-      await w.client.reloadUser();
-      if (!mounted || scope != authority) return;
-      setState(() {
-        if (language) {
-          draftDisplayLanguage = draftMode = draftTarget = draftDisplay = null;
-          languageSaved = true;
-        } else {
-          draftTimezone = draftTimeFormat = null;
-          dateTimeSaved = true;
-        }
-      });
-      savedTimers[language]?.cancel();
-      savedTimers[language] = Timer(const Duration(milliseconds: 1500), () {
-        if (mounted) {
-          setState(() {
-            if (language) {
-              languageSaved = false;
-            } else {
-              dateTimeSaved = false;
-            }
-          });
-        }
-      });
-    } catch (e) {
-      if (mounted && scope == authority) {
-        setState(() {
-          final message = userErrorText(
-            e,
-            fallback: failure,
-            where: 'locale settings',
-          );
-          if (language) {
-            languageError = message;
-          } else {
-            dateTimeError = message;
-          }
-        });
-      }
-    } finally {
-      if (mounted && scope == authority) {
-        setState(() {
-          if (language) {
-            savingLanguage = false;
-          } else {
-            savingDateTime = false;
-          }
-        });
-      }
-    }
   }
 
-  Future<void> saveLanguage(BuildContext context) => patch(
-    {
-      if ((draftDisplayLanguage ?? liveLocale(context)) != liveLocale(context))
-        'displayLanguage': draftDisplayLanguage,
-      if ((draftTarget ?? savedTarget) != savedTarget)
-        'preferredLanguage': draftTarget == followDisplayLanguageTarget
-            ? null
-            : draftTarget,
-      if ((draftMode ?? savedMode) != savedMode)
-        'preferredTranslationMode': draftMode,
-      if ((draftDisplay ?? savedDisplay) != savedDisplay)
-        'preferredTranslationDisplay': draftDisplay,
-    },
-    language: true,
-    failure: 'Failed to update language preferences',
+  String _languageFailure(Object e) => userErrorText(
+    e,
+    fallback: 'Failed to update language preferences',
+    where: 'language settings',
+  );
+  String _dateTimeFailure(Object e) => userErrorText(
+    e,
+    fallback: 'Failed to update date and time preferences',
+    where: 'date and time settings',
   );
 
-  Future<void> saveDateTime() => patch(
-    {
-      if ((draftTimezone ?? savedTimezone) != savedTimezone)
-        'preferredTimezone': draftTimezone!.isEmpty ? null : draftTimezone,
-      if ((draftTimeFormat ?? savedTimeFormat) != savedTimeFormat)
-        'preferredTimeFormat': draftTimeFormat,
-    },
-    language: false,
-    failure: 'Failed to update date and time preferences',
+  void changeDisplayLanguage(String next) {
+    if (next == liveLocale(context)) return;
+    // Web persistDisplayLanguage: whatever went wrong, the select says the
+    // setting's own message, not the server's.
+    unawaited(
+      displayLanguageSave.run(
+        next,
+        () => _store({'displayLanguage': next}),
+        (_) => 'Failed to update language preferences',
+      ),
+    );
+  }
+
+  void changeMode(String next) => unawaited(
+    modeSave.run(
+      next,
+      () => _store({'preferredTranslationMode': next}),
+      _languageFailure,
+    ),
+  );
+
+  void changeTarget(String next) => unawaited(
+    targetSave.run(
+      next,
+      () => _store({
+        'preferredLanguage': next == followDisplayLanguageTarget ? null : next,
+      }),
+      _languageFailure,
+    ),
+  );
+
+  void changeDisplay(String next) => unawaited(
+    displaySave.run(
+      next,
+      () => _store({'preferredTranslationDisplay': next}),
+      _languageFailure,
+    ),
+  );
+
+  void changeTimezone(String next) => unawaited(
+    timezoneSave.run(
+      next,
+      () => _store({'preferredTimezone': next.isEmpty ? null : next}),
+      _dateTimeFailure,
+    ),
+  );
+
+  void changeTimeFormat(String next) => unawaited(
+    timeFormatSave.run(
+      next,
+      () => _store({'preferredTimeFormat': next}),
+      _dateTimeFailure,
+    ),
   );
 
   @override
   Widget build(BuildContext context) {
     final settings = translations.settings;
-    final busy = translations.settingsLoading;
-    final mode = draftMode ?? savedMode;
-    final zones = _timezoneOptions(savedTimezone);
+    final choices = localeTimezoneChoices(savedTimezone);
     return RaftLanguageRegionView(
-      displayLanguage: draftDisplayLanguage ?? liveLocale(context),
+      displayLanguage: displayLanguageSave.pending ?? liveLocale(context),
       displayLanguageOptions: const [('en', 'English'), ('zh-cn', '简体中文')],
-      showChineseCoverageNotice: liveLocale(context) == 'zh-cn',
-      translationMode: mode,
+      translationMode: modeSave.pending ?? savedMode,
       translationNotice: !settings.loaded || settings.available
           ? null
           : !settings.serverEnabled
@@ -252,35 +216,27 @@ class _LocaleSettingsPageState extends ManagementState<LocaleSettingsPage> {
                 ? 'Translation is not enabled on this server yet. Turn it on under Administration → Translation.'
                 : 'Translation is not enabled on this server yet.'
           : 'This deployment has no translation provider configured, so translations cannot run yet.',
-      translationTarget: draftTarget ?? savedTarget,
+      translationTarget: targetSave.pending ?? savedTarget,
       translationTargetOptions: translationTargetOptions(context),
-      translationDisplay: draftDisplay ?? savedDisplay,
-      languageError: languageError ?? translations.settingsError,
-      languageDirty: languageDirty(context),
-      languageSave: savingLanguage
-          ? RaftLanguageSaveState.saving
-          : languageSaved
-          ? RaftLanguageSaveState.saved
-          : RaftLanguageSaveState.idle,
-      timezone: draftTimezone ?? savedTimezone,
-      timezoneOptions: zones,
-      timeFormat: draftTimeFormat ?? savedTimeFormat,
-      dateTimeError: dateTimeError ?? translations.settingsError,
-      dateTimeDirty: dateTimeDirty,
-      dateTimeSave: savingDateTime
-          ? RaftLanguageSaveState.saving
-          : dateTimeSaved
-          ? RaftLanguageSaveState.saved
-          : RaftLanguageSaveState.idle,
-      disabled: busy || savingLanguage || savingDateTime,
-      onDisplayLanguage: (v) => edit(() => draftDisplayLanguage = v),
-      onTranslationMode: (v) => edit(() => draftMode = v),
-      onTranslationTarget: (v) => edit(() => draftTarget = v),
-      onTranslationDisplay: (v) => edit(() => draftDisplay = v),
-      onSaveLanguage: () => saveLanguage(context),
-      onTimezone: (v) => edit(() => draftTimezone = v, language: false),
-      onTimeFormat: (v) => edit(() => draftTimeFormat = v, language: false),
-      onSaveDateTime: saveDateTime,
+      translationDisplay: displaySave.pending ?? savedDisplay,
+      timezone: timezoneSave.pending ?? savedTimezone,
+      timezoneOptions: choices.options,
+      timezoneUnlisted: choices.unlisted,
+      timeFormat: timeFormatSave.pending ?? savedTimeFormat,
+      displayLanguageSave: displayLanguageSave.state,
+      translationModeSave: modeSave.state,
+      translationTargetSave: targetSave.state,
+      translationDisplaySave: displaySave.state,
+      timezoneSave: timezoneSave.state,
+      timeFormatSave: timeFormatSave.state,
+      settingsError: translations.settingsError,
+      loading: translations.settingsLoading,
+      onDisplayLanguage: changeDisplayLanguage,
+      onTranslationMode: changeMode,
+      onTranslationTarget: changeTarget,
+      onTranslationDisplay: changeDisplay,
+      onTimezone: changeTimezone,
+      onTimeFormat: changeTimeFormat,
       anchor: (id, child) => RaftSettingsAnchor(id: id, child: child),
     );
   }
@@ -379,7 +335,12 @@ void _initializeTimezones() {
   _timezonesReady = true;
 }
 
-List<RaftLanguageOption> _timezoneOptions(String preferred) {
+/// The timezone choices of Language & Region for a [preferred] zone ('' = the
+/// device's) and the values the open list leaves out (`hiddenTimezoneOptionValues`:
+/// the empty choice and, with no preference, the device zone it stands for).
+({List<RaftLanguageOption> options, Set<String> unlisted}) _timezoneChoices(
+  String preferred,
+) {
   final now = DateTime.now();
   final effective = preferred.isEmpty ? _detectTimezone(now) : preferred;
   final ids = {..._commonTimezones, effective}.toList()
@@ -387,15 +348,23 @@ List<RaftLanguageOption> _timezoneOptions(String preferred) {
       final byOffset = _offsetMinutes(a, now).compareTo(_offsetMinutes(b, now));
       return byOffset != 0 ? byOffset : a.compareTo(b);
     });
-  return [
-    ('', _timezoneLabel(effective, now)),
-    for (final id in ids) (id, _timezoneLabel(id, now)),
-  ];
+  return (
+    options: [
+      ('', _timezoneLabel(effective, now)),
+      for (final id in ids) (id, _timezoneLabel(id, now)),
+    ],
+    unlisted: {'', if (preferred.isEmpty) effective},
+  );
 }
 
-/// The timezone choices of Language & Region for a [preferred] zone ('' = the
-/// device's), for the signed-out public page's own preferences form.
-List<RaftLanguageOption> localeTimezoneOptions(String preferred) {
+/// The timezone choices of Language & Region for a [preferred] zone, and the
+/// values its open list leaves out; also for the signed-out public page.
+({List<RaftLanguageOption> options, Set<String> unlisted})
+localeTimezoneChoices(String preferred) {
   _initializeTimezones();
-  return _timezoneOptions(preferred);
+  return _timezoneChoices(preferred);
 }
+
+/// The timezone options of [localeTimezoneChoices].
+List<RaftLanguageOption> localeTimezoneOptions(String preferred) =>
+    localeTimezoneChoices(preferred).options;

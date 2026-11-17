@@ -9,7 +9,7 @@ import 'package:raft_ui/raft_ui.dart';
 import '../data/message_translation_store.dart';
 import '../data/display_language_preferences.dart';
 import 'locale_settings_page.dart'
-    show effectiveTimeFormat, localeTimezoneOptions;
+    show effectiveTimeFormat, localeTimezoneChoices;
 import 'public_translation.dart';
 import 'translation_language_options.dart';
 
@@ -30,19 +30,10 @@ class PublicLanguageRegionPage extends StatefulWidget {
 }
 
 class _PublicLanguageRegionPageState extends State<PublicLanguageRegionPage> {
-  // Drafts of the two forms; null follows the saved value.
-  String? draftDisplayLanguage,
-      draftMode,
-      draftTarget,
-      draftDisplay,
-      draftTimezone,
-      draftTimeFormat;
   DisplayLanguagePreferences? localDisplayLanguage;
   DisplayLanguagePreferences get displayLanguage =>
       widget.displayLanguage ??
       (localDisplayLanguage ??= DisplayLanguagePreferences());
-  bool languageSaved = false, dateTimeSaved = false;
-  final timers = <bool, Timer>{};
   bool device24Hour = false;
 
   MessageTranslationSettings get settings => widget.translations.settings;
@@ -77,78 +68,24 @@ class _PublicLanguageRegionPageState extends State<PublicLanguageRegionPage> {
 
   @override
   void dispose() {
-    for (final timer in timers.values) {
-      timer.cancel();
-    }
     localDisplayLanguage?.dispose();
     widget.preferences.removeListener(changed);
     widget.translations.removeListener(changed);
     super.dispose();
   }
 
-  void edit(void Function() change, {bool language = true}) => setState(() {
-    change();
-    if (language) {
-      languageSaved = false;
-    } else {
-      dateTimeSaved = false;
-    }
-  });
-
-  void flash(bool language) {
-    timers[language]?.cancel();
-    timers[language] = Timer(const Duration(milliseconds: 1500), () {
-      if (!mounted) return;
-      setState(() {
-        if (language) {
-          languageSaved = false;
-        } else {
-          dateTimeSaved = false;
-        }
-      });
-    });
+  /// Web `browserLocalPreferences`: a choice is written on this device at once
+  /// (the store's update returns without a request), so there is nothing to
+  /// wait for and nothing that can fail.
+  void store(Map<String, Object?> fields) {
+    unawaited(widget.preferences.update(fields));
+    widget.translations.publicPreferencesChanged();
   }
 
-  Future<void> saveLanguage() async {
+  void changeDisplayLanguage(String next) {
     // Apply the UI choice before any asynchronous local write. A page may
     // close while storage is pending; the app-root owner outlives the form.
-    final languageWrite = draftDisplayLanguage == null
-        ? Future<void>.value()
-        : displayLanguage.save(draftDisplayLanguage!);
-    await widget.preferences.update({
-      if ((draftTarget ?? savedTarget) != savedTarget)
-        'preferredLanguage': draftTarget == followDisplayLanguageTarget
-            ? null
-            : draftTarget,
-      if ((draftMode ?? savedMode) != savedMode)
-        'preferredTranslationMode': draftMode,
-      if ((draftDisplay ?? savedDisplay) != savedDisplay)
-        'preferredTranslationDisplay': draftDisplay,
-    });
-    await languageWrite;
-    if (!mounted) return;
-    widget.translations.publicPreferencesChanged();
-    setState(() {
-      draftDisplayLanguage = draftMode = draftTarget = draftDisplay = null;
-      languageSaved = true;
-    });
-    flash(true);
-  }
-
-  Future<void> saveDateTime() async {
-    await widget.preferences.update({
-      if ((draftTimezone ?? savedTimezone) != savedTimezone)
-        'preferredTimezone': draftTimezone!.isEmpty ? null : draftTimezone,
-      if ((draftTimeFormat ?? savedTimeFormat) != savedTimeFormat)
-        'preferredTimeFormat': draftTimeFormat,
-    });
-    if (!mounted) return;
-    widget.translations.publicPreferencesChanged();
-    setState(() {
-      draftTimezone = draftTimeFormat = null;
-      dateTimeSaved = true;
-    });
-    flash(false);
+    unawaited(displayLanguage.save(next));
   }
 
   @override
@@ -157,48 +94,39 @@ class _PublicLanguageRegionPageState extends State<PublicLanguageRegionPage> {
     final live = Localizations.localeOf(context).languageCode == 'zh'
         ? 'zh-cn'
         : 'en';
-    final mode = draftMode ?? savedMode;
+    final choices = localeTimezoneChoices(savedTimezone);
     return RaftLanguageRegionView(
-      displayLanguage: draftDisplayLanguage ?? live,
+      displayLanguage: live,
       displayLanguageOptions: displayLanguageOptions,
-      showChineseCoverageNotice: live == 'zh-cn',
-      translationMode: mode,
+      translationMode: savedMode,
       translationNotice: !s.loaded || s.available
           ? null
           : !s.serverEnabled
           ? 'Translation is not enabled on this server yet.'
           : 'This deployment has no translation provider configured, so translations cannot run yet.',
-      translationTarget: draftTarget ?? savedTarget,
+      translationTarget: savedTarget,
       translationTargetOptions: translationTargetOptions(context),
-      translationDisplay: draftDisplay ?? savedDisplay,
-      languageError: null,
-      languageDirty:
-          (draftDisplayLanguage ?? live) != live ||
-          (draftTarget ?? savedTarget) != savedTarget ||
-          mode != savedMode ||
-          (draftDisplay ?? savedDisplay) != savedDisplay,
-      languageSave: languageSaved
-          ? RaftLanguageSaveState.saved
-          : RaftLanguageSaveState.idle,
-      timezone: draftTimezone ?? savedTimezone,
-      timezoneOptions: localeTimezoneOptions(savedTimezone),
-      timeFormat: draftTimeFormat ?? savedTimeFormat,
-      dateTimeError: null,
-      dateTimeDirty:
-          (draftTimezone ?? savedTimezone) != savedTimezone ||
-          (draftTimeFormat ?? savedTimeFormat) != savedTimeFormat,
-      dateTimeSave: dateTimeSaved
-          ? RaftLanguageSaveState.saved
-          : RaftLanguageSaveState.idle,
-      disabled: false,
-      onDisplayLanguage: (v) => edit(() => draftDisplayLanguage = v),
-      onTranslationMode: (v) => edit(() => draftMode = v),
-      onTranslationTarget: (v) => edit(() => draftTarget = v),
-      onTranslationDisplay: (v) => edit(() => draftDisplay = v),
-      onSaveLanguage: () => unawaited(saveLanguage()),
-      onTimezone: (v) => edit(() => draftTimezone = v, language: false),
-      onTimeFormat: (v) => edit(() => draftTimeFormat = v, language: false),
-      onSaveDateTime: () => unawaited(saveDateTime()),
+      translationDisplay: savedDisplay,
+      timezone: savedTimezone,
+      timezoneOptions: choices.options,
+      timezoneUnlisted: choices.unlisted,
+      timeFormat: savedTimeFormat,
+      displayLanguageSave: RaftImmediateSaveState.idle,
+      translationModeSave: RaftImmediateSaveState.idle,
+      translationTargetSave: RaftImmediateSaveState.idle,
+      translationDisplaySave: RaftImmediateSaveState.idle,
+      timezoneSave: RaftImmediateSaveState.idle,
+      timeFormatSave: RaftImmediateSaveState.idle,
+      settingsError: null,
+      loading: false,
+      onDisplayLanguage: changeDisplayLanguage,
+      onTranslationMode: (v) => store({'preferredTranslationMode': v}),
+      onTranslationTarget: (v) => store({
+        'preferredLanguage': v == followDisplayLanguageTarget ? null : v,
+      }),
+      onTranslationDisplay: (v) => store({'preferredTranslationDisplay': v}),
+      onTimezone: (v) => store({'preferredTimezone': v.isEmpty ? null : v}),
+      onTimeFormat: (v) => store({'preferredTimeFormat': v}),
     );
   }
 }

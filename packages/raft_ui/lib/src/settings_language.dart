@@ -1,9 +1,12 @@
-// Presentation of the Web Settings "Language & Region" tab
-// (packages/web/src/components/settings/SettingsPanel.tsx
-// LanguageRegionSection): a Language card (display language, translation
-// mode, translation target, default view, Save) and a Date & Time card
-// (timezone, time format, Save). The app page owns the draft state, loading
-// and saving.
+// Presentation of the Web v1.24 Settings "Language & Region" tab
+// (packages/web/src/features/settings/language-region/LanguageRegionSection.tsx):
+// a Language group (display language, translation mode, translation target,
+// default view) and a Date & time group (timezone, time format), each a
+// `ListRowGroup` of plain settings rows whose control ends the row (under the
+// text when the group is narrower than 32rem). Every choice applies the moment
+// it is made: there is no Save button, nothing is said once it is stored, and
+// a failed change shows its message under the row (`SaveStatus`). The app page
+// owns the values, the requests and the failures.
 import 'raft/segmented_control.dart'
     show RaftSegmentedControl, RaftSegmentedOption;
 
@@ -12,170 +15,209 @@ import 'package:flutter/material.dart';
 import 'error_presentation.dart';
 import 'icons.dart';
 import 'localization.dart';
-import 'recipes/button_variants.g.dart';
+import 'notification_settings_rows.dart';
+import 'save_status.dart';
 import 'select_field.dart';
-import 'settings_controls.dart';
 import 'settings_layout.dart';
 import 'theme.dart';
 
 /// One select / segmented option (`value`, English label key).
 typedef RaftLanguageOption = (String value, String label);
 
-/// The Save button of a card: `Save` / `Saving…` / `<Check /> Saved`.
-enum RaftLanguageSaveState { idle, saving, saved }
-
 class RaftLanguageRegionView extends StatelessWidget {
   const RaftLanguageRegionView({
     super.key,
     required this.displayLanguage,
     required this.displayLanguageOptions,
-    required this.showChineseCoverageNotice,
     required this.translationMode,
     required this.translationNotice,
     required this.translationTarget,
     required this.translationTargetOptions,
-    this.translationTargetDescription,
     this.anchor,
     required this.translationDisplay,
-    required this.languageError,
-    required this.languageDirty,
-    required this.languageSave,
     required this.timezone,
     required this.timezoneOptions,
+    required this.timezoneUnlisted,
     required this.timeFormat,
-    required this.dateTimeError,
-    required this.dateTimeDirty,
-    required this.dateTimeSave,
-    required this.disabled,
+    required this.displayLanguageSave,
+    required this.translationModeSave,
+    required this.translationTargetSave,
+    required this.translationDisplaySave,
+    required this.timezoneSave,
+    required this.timeFormatSave,
+    required this.settingsError,
+    required this.loading,
     required this.onDisplayLanguage,
     required this.onTranslationMode,
     required this.onTranslationTarget,
     required this.onTranslationDisplay,
-    required this.onSaveLanguage,
     required this.onTimezone,
     required this.onTimeFormat,
-    required this.onSaveDateTime,
   });
 
   final String displayLanguage;
   final List<RaftLanguageOption> displayLanguageOptions;
-  final bool showChineseCoverageNotice;
   final String translationMode; // auto | manual | off
   final String? translationNotice;
   final String translationTarget;
   final List<RaftLanguageOption> translationTargetOptions;
-  final String? translationTargetDescription;
 
   /// Marks a setting's row as the target of `#<id>` (Web: `id="<id>"` on the
   /// row); the app wraps it in its anchor. Null leaves the rows plain.
   final RaftSettingsAnchorBuilder? anchor;
   final String translationDisplay; // translated | original | bilingual
-  final String? languageError;
-  final bool languageDirty;
-  final RaftLanguageSaveState languageSave;
   final String timezone;
   final List<RaftLanguageOption> timezoneOptions;
+
+  /// Timezone values the open list leaves out: the empty choice and, with no
+  /// preference, the device's zone it stands for (`hiddenTimezoneOptionValues`).
+  final Set<String> timezoneUnlisted;
   final String timeFormat; // 12h | 24h
-  final String? dateTimeError;
-  final bool dateTimeDirty;
-  final RaftLanguageSaveState dateTimeSave;
-  final bool disabled;
+
+  /// Each row's own save: its control is disabled while it saves and a failure
+  /// shows under it until its next change.
+  final RaftImmediateSaveState displayLanguageSave,
+      translationModeSave,
+      translationTargetSave,
+      translationDisplaySave,
+      timezoneSave,
+      timeFormatSave;
+
+  /// The failed read of the translation settings, under both groups.
+  final String? settingsError;
+
+  /// The translation settings are being read: every control waits.
+  final bool loading;
   final ValueChanged<String> onDisplayLanguage,
       onTranslationMode,
       onTranslationTarget,
       onTranslationDisplay,
       onTimezone,
       onTimeFormat;
-  final VoidCallback onSaveLanguage, onSaveDateTime;
-
-  static const _maxSelectWidth = 384.0; // max-w-sm
 
   Widget _select(
     BuildContext context, {
+    required Key key,
     required String value,
     required List<RaftLanguageOption> options,
     required ValueChanged<String> onChanged,
     required String label,
-    Key? key,
-  }) => Align(
-    alignment: Alignment.centerLeft,
-    child: ConstrainedBox(
-      constraints: const BoxConstraints(maxWidth: _maxSelectWidth),
-      child: RaftSelectField<String>(
-        key: key,
-        label: label,
-        value: options.any((o) => o.$1 == value) ? value : null,
-        items: [
-          for (final (v, text) in options)
-            RaftSelectItem(value: v, label: raftText(context, text)),
-        ],
-        onChanged: disabled
-            ? null
-            : (v) {
-                if (v != null) onChanged(v);
-              },
-      ),
-    ),
+    required RaftImmediateSaveState save,
+    String? placeholder,
+    Set<String> unlisted = const {},
+    bool hideSelected = false,
+  }) => RaftSettingsSelect<String>(
+    key: key,
+    label: label,
+    placeholder: placeholder,
+    // An empty value is no choice (base-ui Select): the field shows its
+    // placeholder, as Web's Timezone does with no preference.
+    value: value.isNotEmpty && options.any((o) => o.$1 == value) ? value : null,
+    items: [
+      for (final (v, text) in options)
+        RaftSelectItem(
+          value: v,
+          label: raftText(context, text),
+          listed: !unlisted.contains(v) && !(hideSelected && v == value),
+        ),
+    ],
+    onChanged: loading || save.saving
+        ? null
+        : (v) {
+            if (v != null && v != value) onChanged(v);
+          },
   );
 
   Widget _segmented(
     BuildContext context, {
+    required Key key,
     required String value,
     required List<RaftLanguageOption> options,
     required ValueChanged<String> onChanged,
     required String label,
-    Key? key,
-  }) => Align(
-    alignment: Alignment.centerLeft,
-    child: RaftSegmentedControl<String>(
-      key: key,
-      label: raftText(context, label),
-      value: value,
-      // settings.language.modeOff is 关闭; the plain `Off` catalog entry is
-      // 已关闭 (a state), which other Web keys use.
-      items: [
-        for (final (v, text) in options)
-          RaftSegmentedOption(
-            value: v,
-            label: text == 'Off' ? raftTextZh(context, 'Off', '关闭') : text,
-          ),
-      ],
-      onChanged: disabled ? null : onChanged,
-    ),
+    required RaftImmediateSaveState save,
+  }) => RaftSegmentedControl<String>(
+    key: key,
+    label: raftText(context, label),
+    value: value,
+    // settings.language.modeOff is 关闭; the plain `Off` catalog entry is
+    // 已关闭 (a state), which other Web keys use.
+    items: [
+      for (final (v, text) in options)
+        RaftSegmentedOption(
+          value: v,
+          label: text == 'Off' ? raftTextZh(context, 'Off', '关闭') : text,
+        ),
+    ],
+    onChanged: loading || save.saving
+        ? null
+        : (v) {
+            if (v != value) onChanged(v);
+          },
   );
 
-  Widget _save(
-    RaftLanguageSaveState state,
-    bool dirty,
-    VoidCallback onPressed, {
-    Key? key,
-  }) => Align(
-    alignment: Alignment.centerLeft,
-    child: RaftSettingsRecipeButton(
-      key: key,
-      label: switch (state) {
-        RaftLanguageSaveState.saving => 'Saving…',
-        RaftLanguageSaveState.saved => 'Saved',
-        _ => 'Save',
+  /// The row as the target of `#<id>`.
+  Widget Function(Widget row)? _anchored(String id) =>
+      anchor == null ? null : (row) => anchor!(id, row);
+
+  RaftSettingsRowSpec _row({
+    required Key key,
+    required String title,
+    required Widget control,
+    required RaftImmediateSaveState save,
+    Widget Function(Widget row)? wrap,
+    String? notice,
+    bool wrapNarrow = true,
+  }) => RaftSettingsRowSpec(
+    key: key,
+    title: title,
+    status: _status(notice: notice, save: save),
+    control: control,
+    wrapNarrow: wrapNarrow,
+    wrap: wrap,
+  );
+
+  // Notice then failure, both under the title (Web: the unavailable line, then
+  // `ImmediateSaveStatus`).
+  Widget? _status({String? notice, required RaftImmediateSaveState save}) {
+    if (notice == null && save.failure == null) return null;
+    return Builder(
+      builder: (context) {
+        final t = RaftTokens.of(context);
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (notice != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 2),
+                child: Text(
+                  raftText(context, notice),
+                  key: const ValueKey('translation-unavailable-notice'),
+                  style: RaftSettingsText(t, semanticTypography: true)
+                      .description
+                      .copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: t.colors['warning-strong'],
+                      ),
+                ),
+              ),
+            if (save.failure case final failure?) RaftSaveStatus(failure),
+          ],
+        );
       },
-      glyph: state == RaftLanguageSaveState.saved ? RaftGlyph.check : null,
-      glyphSize: 14,
-      variant: RaftButtonRecipeVariant.accent,
-      size: RaftButtonRecipeSize.sm,
-      onPressed: !dirty || state == RaftLanguageSaveState.saving || disabled
-          ? null
-          : onPressed,
-    ),
-  );
+    );
+  }
 
-  Widget _anchored(String id, Widget row) => anchor?.call(id, row) ?? row;
-
-  Widget _selectBlock(Widget block) =>
-      Padding(padding: const EdgeInsets.only(bottom: 12), child: block);
+  Widget _banner(String? message) => message == null
+      ? const SizedBox.shrink()
+      : Padding(
+          padding: const EdgeInsets.only(top: 12), // mt-3
+          child: RaftErrorBanner(message, small: true),
+        );
 
   @override
   Widget build(BuildContext context) {
-    const gap = SizedBox(height: 16); // `space-y-4`
+    final off = translationMode == 'off';
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -183,176 +225,127 @@ class RaftLanguageRegionView extends StatelessWidget {
           label: 'Language',
           glyph: RaftGlyph.languages,
         ),
-        RaftSettingsCard(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // A Select's trailing hidden <input> makes `space-y-3` leave the
-              // Select a 12px bottom margin inside its block.
-              _selectBlock(
-                _anchored(
-                  'display-language',
-                  RaftSettingsPreference(
-                    semanticTypography: true,
-                    title: 'Display language',
-                    description: 'Choose the language for the app interface. This is separate from message translation.',
-                    child: _select(
-                      context,
-                      key: const ValueKey('display-language-select'),
-                      label: 'Display language',
-                      value: displayLanguage,
-                      options: displayLanguageOptions,
-                      onChanged: onDisplayLanguage,
-                    ),
-                  ),
+        RaftSettingsRowGroup(
+          key: const ValueKey('language-region-card'),
+          rows: [
+            _row(
+              key: const ValueKey('display-language'),
+              wrap: _anchored('display-language'),
+              title: 'Display language',
+              save: displayLanguageSave,
+              control: _select(
+                context,
+                key: const ValueKey('display-language-select'),
+                label: 'Display language',
+                value: displayLanguage,
+                options: displayLanguageOptions,
+                onChanged: onDisplayLanguage,
+                save: displayLanguageSave,
+              ),
+            ),
+            _row(
+              key: const ValueKey('translation-mode-row'),
+              wrap: _anchored('translation-mode'),
+              title: 'Translation mode',
+              notice: translationNotice,
+              save: translationModeSave,
+              control: _segmented(
+                context,
+                key: const ValueKey('translation-mode'),
+                label: 'Message translation mode',
+                value: translationMode,
+                options: const [
+                  ('auto', 'Auto'),
+                  ('manual', 'Manual'),
+                  ('off', 'Off'),
+                ],
+                onChanged: onTranslationMode,
+                save: translationModeSave,
+              ),
+            ),
+            if (!off)
+              _row(
+                key: const ValueKey('translation-target-row'),
+                title: 'Translation target',
+                save: translationTargetSave,
+                control: _select(
+                  context,
+                  key: const ValueKey('translation-target'),
+                  label: 'Translation target',
+                  placeholder: 'Preferred language',
+                  value: translationTarget,
+                  options: translationTargetOptions,
+                  onChanged: onTranslationTarget,
+                  save: translationTargetSave,
+                  hideSelected: true,
                 ),
               ),
-              if (showChineseCoverageNotice)
-                Padding(
-                  padding: const EdgeInsets.only(top: 2),
-                  child: Text(
-                    raftTextZh(
-                      context,
-                      'Simplified Chinese is still being refined; some pages may still appear in English.',
-                      '简体中文仍在完善，部分页面可能仍显示英文。',
-                    ),
-                    style: RaftSettingsText(
-                      RaftTokens.of(context),
-                      semanticTypography: true,
-                    ).description,
-                  ),
-                ),
-              _anchored(
-                'translation-mode',
-                RaftSettingsPreference(
-                  semanticTypography: true,
-                  gapBefore: 16,
-                  title: 'Translation mode',
-                  description: 'Auto translates visible messages. Manual adds Translate to each message menu. Off keeps originals only.',
-                  notice: translationNotice,
-                  child: _segmented(
-                    context,
-                    key: const ValueKey('translation-mode'),
-                    label: 'Message translation mode',
-                    value: translationMode,
-                    options: const [
-                      ('auto', 'Auto'),
-                      ('manual', 'Manual'),
-                      ('off', 'Off'),
-                    ],
-                    onChanged: onTranslationMode,
-                  ),
+            if (!off)
+              _row(
+                key: const ValueKey('translation-display-row'),
+                title: 'Default view',
+                save: translationDisplaySave,
+                control: _segmented(
+                  context,
+                  key: const ValueKey('translation-display'),
+                  label: 'Message translation display',
+                  value: translationDisplay,
+                  options: const [
+                    ('translated', 'Translated'),
+                    ('original', 'Original'),
+                    ('bilingual', 'Bilingual'),
+                  ],
+                  onChanged: onTranslationDisplay,
+                  save: translationDisplaySave,
                 ),
               ),
-              if (translationMode != 'off') ...[
-                _selectBlock(
-                  RaftSettingsPreference(
-                    semanticTypography: true,
-                    gapBefore: 16,
-                    title: 'Translation target',
-                    description: translationTargetDescription,
-                    child: _select(
-                      context,
-                      key: const ValueKey('translation-target'),
-                      label: 'Translation target',
-                      value: translationTarget,
-                      options: translationTargetOptions,
-                      onChanged: onTranslationTarget,
-                    ),
-                  ),
-                ),
-                RaftSettingsPreference(
-                  semanticTypography: true,
-                  gapBefore: 16,
-                  title: 'Default view',
-                  description: 'Choose whether messages show translation, original, or both.',
-                  child: _segmented(
-                    context,
-                    key: const ValueKey('translation-display'),
-                    label: 'Message translation display',
-                    value: translationDisplay,
-                    options: const [
-                      ('translated', 'Translated'),
-                      ('original', 'Original'),
-                      ('bilingual', 'Bilingual'),
-                    ],
-                    onChanged: onTranslationDisplay,
-                  ),
-                ),
-              ],
-              if (languageError != null) ...[
-                gap,
-                // `<Banner intent="warning" density="sm" className="font-bold">`
-                RaftErrorBanner(languageError!, small: true, bold: true),
-              ],
-              gap,
-              _save(
-                languageSave,
-                languageDirty,
-                onSaveLanguage,
-                key: const ValueKey('language-save'),
-              ),
-            ],
-          ),
+          ],
         ),
+        _banner(settingsError),
         const SizedBox(height: 24), // mb-6
         const RaftSettingsSectionHeader(
           label: 'Date & time',
           glyph: RaftGlyph.clock,
         ),
-        RaftSettingsCard(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _anchored(
-                'timezone',
-                RaftSettingsPreference(
-                  semanticTypography: true,
-                  title: 'Timezone',
-                  description:
-                      'Used for local timestamps and scheduling defaults.',
-                  child: _select(
-                    context,
-                    key: const ValueKey('timezone-select'),
-                    label: 'Timezone',
-                    value: timezone,
-                    options: timezoneOptions,
-                    onChanged: onTimezone,
-                  ),
-                ),
+        RaftSettingsRowGroup(
+          key: const ValueKey('date-time-card'),
+          rows: [
+            _row(
+              key: const ValueKey('timezone-row'),
+              wrap: _anchored('timezone'),
+              title: 'Timezone',
+              save: timezoneSave,
+              control: _select(
+                context,
+                key: const ValueKey('timezone-select'),
+                label: 'Timezone',
+                placeholder: 'Timezone',
+                value: timezone,
+                options: timezoneOptions,
+                onChanged: onTimezone,
+                save: timezoneSave,
+                unlisted: timezoneUnlisted,
+                hideSelected: true,
               ),
-              _anchored(
-                'time-format',
-                RaftSettingsPreference(
-                  semanticTypography: true,
-                  gapBefore: 12,
-                  title: 'Time format',
-                  description: 'Display only. Does not affect agent behavior.',
-                  child: _segmented(
-                    context,
-                    key: const ValueKey('time-format'),
-                    label: 'Time format',
-                    value: timeFormat,
-                    options: const [('12h', '12-hour'), ('24h', '24-hour')],
-                    onChanged: onTimeFormat,
-                  ),
-                ),
+            ),
+            _row(
+              key: const ValueKey('time-format-row'),
+              wrap: _anchored('time-format'),
+              title: 'Time format',
+              save: timeFormatSave,
+              control: _segmented(
+                context,
+                key: const ValueKey('time-format'),
+                label: 'Time format',
+                value: timeFormat,
+                options: const [('12h', '12-hour'), ('24h', '24-hour')],
+                onChanged: onTimeFormat,
+                save: timeFormatSave,
               ),
-              if (dateTimeError != null) ...[
-                gap,
-                // `<Banner intent="warning" density="sm" className="font-bold">`
-                RaftErrorBanner(dateTimeError!, small: true, bold: true),
-              ],
-              gap,
-              _save(
-                dateTimeSave,
-                dateTimeDirty,
-                onSaveDateTime,
-                key: const ValueKey('date-time-save'),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
+        _banner(settingsError),
         const SizedBox(height: 24), // mb-6
       ],
     );

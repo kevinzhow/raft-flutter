@@ -13657,7 +13657,7 @@
    "capability": "Update my profile and preferences: display name, display language, translation mode/target/view, timezone, time format, usage-data consent, signup survey",
    "background": false,
    "status": "covered",
-   "webEntry": "Settings > Account (Save profile, usage data card) | Language & Region (Save x2) | server setup survey | onboarding identity",
+   "webEntry": "Settings > Account (Save profile, usage data card) | Language & Region (each choice applies at once) | server setup survey | onboarding identity",
    "gate": "",
    "flutterEntry": "account_settings.dart saveProfile/language, locale_settings_page.dart, usage_data_card.dart, server_setup_gate.dart submitSurvey",
    "flutterRefs": [
@@ -14272,7 +14272,7 @@
    "capability": "Choose the app display language (English / Simplified Chinese)",
    "background": false,
    "status": "covered",
-   "webEntry": "Settings > Language & Region > Display language select + Save",
+   "webEntry": "Settings > Language & Region > Display language select (applies at once)",
    "gate": "",
    "flutterEntry": "locale_settings_page.dart signed-in language card; public_language_settings.dart anonymous device-only UI language; display_language_preferences.dart resolves account/device/system priority",
    "flutterRefs": [
@@ -14300,17 +14300,17 @@
    "capability": "Choose timezone (device default or specific zone) and 12h/24h time format",
    "background": false,
    "status": "covered",
-   "webEntry": "Language & Region > Date & time: Timezone select, Time format 12h/24h, Save",
+   "webEntry": "Language & Region > Date & time: Timezone select, Time format 12h/24h (each applies at once)",
    "gate": "",
    "flutterEntry": "locale_settings_page.dart timezoneOptions / timeFormat",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/locale_settings_page.dart",
-     "needle": "timezoneOptions: zones"
+     "needle": "timezoneOptions: choices.options"
     },
     {
      "file": "apps/raft_flutter/lib/features/locale_settings_page.dart",
-     "needle": "timeFormat: draftTimeFormat"
+     "needle": "timeFormat: timeFormatSave.pending"
     }
    ],
    "justification": "",
@@ -14330,7 +14330,7 @@
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/locale_settings_page.dart",
-     "needle": "translationDisplay: draftDisplay"
+     "needle": "translationDisplay: displaySave.pending"
     }
    ],
    "justification": "",
@@ -14354,7 +14354,7 @@
     },
     {
      "file": "apps/raft_flutter/lib/features/locale_settings_page.dart",
-     "needle": "translationMode: mode"
+     "needle": "translationMode: modeSave.pending"
     }
    ],
    "justification": "",

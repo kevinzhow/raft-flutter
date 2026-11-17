@@ -8,11 +8,13 @@ import 'package:raft_flutter/features/public_server_view.dart';
 
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
+  // Heights short enough that the page (now plain list rows, no Save buttons)
+  // still has to scroll to its last row.
   for (final entry in [
-    (const Size(1280, 900), TargetPlatform.linux),
+    (const Size(1280, 560), TargetPlatform.linux),
     (const Size(390, 844), TargetPlatform.android),
-    (const Size(856, 944), TargetPlatform.android),
-    (const Size(944, 856), TargetPlatform.android),
+    (const Size(856, 560), TargetPlatform.android),
+    (const Size(944, 560), TargetPlatform.android),
   ]) {
     testWidgets(
       'public settings reopen resets the closed form scroll ${entry.$1}',
@@ -45,7 +47,7 @@ void main() {
         await settings();
         final selector = find.byKey(const ValueKey('display-language-select'));
         expect(selector.hitTestable(), findsOneWidget);
-        final footer = find.byKey(const ValueKey('date-time-save'));
+        final footer = find.byKey(const ValueKey('time-format'));
         expect(
           footer.hitTestable(),
           findsNothing,

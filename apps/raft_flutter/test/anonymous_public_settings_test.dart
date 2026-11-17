@@ -182,7 +182,7 @@ void main() {
     );
 
     testWidgets(
-      'anonymous UI language $size is a Save draft and stays separate from translation preferences on reopen and restart',
+      'anonymous UI language $size applies at once and stays separate from translation preferences on reopen and restart',
       (t) async {
         t.view.physicalSize = size;
         t.view.devicePixelRatio = 1;
@@ -210,25 +210,16 @@ void main() {
           ('en', 'English'),
           ('zh-cn', '简体中文'),
         ]);
-        expect(view.languageDirty, isFalse);
-        expect(view.languageSave, RaftLanguageSaveState.idle);
-        // Use the actual select and Save controls, not the view callbacks.
+        // Use the actual select, not the view callbacks.
         await t.tap(find.byKey(const ValueKey('display-language-select')));
         await t.pumpAndSettle();
         await t.tap(find.text('简体中文').last);
         await t.pumpAndSettle();
         expect(
           _app(t).locale,
-          const Locale('en'),
-          reason: 'Only Save applies a UI language draft.',
+          const Locale('zh', 'CN'),
+          reason: 'The choice applies the moment it is made.',
         );
-        final save = find.byKey(const ValueKey('language-save'));
-        await t.ensureVisible(save);
-        await t.pumpAndSettle();
-        expect(save.hitTestable(), findsOneWidget);
-        await t.tap(save);
-        await t.pumpAndSettle();
-        expect(_app(t).locale, const Locale('zh', 'CN'));
         final p = await SharedPreferences.getInstance();
         expect(p.getString(_localeKey), 'zh-cn');
         expect(
@@ -244,12 +235,6 @@ void main() {
           find.byType(RaftLanguageRegionView),
         );
         expect(view.displayLanguage, 'zh-cn');
-        expect(
-          view.languageSave,
-          RaftLanguageSaveState.idle,
-          reason: 'No saved notice when reopened.',
-        );
-        expect(view.languageDirty, isFalse);
         await t.pumpWidget(const SizedBox());
         final disk = await SharedPreferences.getInstance();
         SharedPreferences.setMockInitialValues({
@@ -266,7 +251,6 @@ void main() {
         expect(view.displayLanguage, 'zh-cn');
         expect(view.translationTarget, 'ja');
         expect(view.translationDisplay, 'original');
-        expect(view.languageSave, RaftLanguageSaveState.idle);
         expect(
           [
             ...first.calls,

@@ -35,6 +35,8 @@ class RaftSettingsRowSpec {
     this.controlBelow = false,
     this.wrapNarrow = true,
     this.attached = false,
+    this.status,
+    this.wrap,
   });
   final Key? key;
   final String? title;
@@ -57,6 +59,14 @@ class RaftSettingsRowSpec {
 
   /// `ListRow attached`: belongs to the row above, no hairline between them.
   final bool attached;
+
+  /// The failure line of a setting that applies at once (`SaveStatus`): right
+  /// after the title and description, before a control that moved under the
+  /// text. Null while there is no failure: it takes no room.
+  final Widget? status;
+
+  /// Wraps the finished row (the target of `#<id>`).
+  final Widget Function(Widget row)? wrap;
 }
 
 /// `ListRowGroup` of plain, non-interactive settings rows.
@@ -67,21 +77,31 @@ class RaftSettingsRowGroup extends StatelessWidget {
   @override
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, constraints) {
+      // 32rem grows with the text size, as it does with a Web page's zoom: a
+      // control that no longer fits beside the text goes under it.
       final narrow =
           constraints.maxWidth.isFinite &&
-          constraints.maxWidth < raftSettingsRowNarrowWidth;
+          constraints.maxWidth <
+              MediaQuery.textScalerOf(context)
+                  .scale(raftSettingsRowNarrowWidth);
       return RaftListRowGroup(
         children: [
           for (var i = 0; i < rows.length; i++)
             // Not a bare ListRow, so the group leaves the rules to us.
             KeyedSubtree(
               key: rows[i].key,
-              child: _row(context, rows[i], narrow, i > 0 && !rows[i].attached),
+              child: _wrapped(
+                rows[i],
+                _row(context, rows[i], narrow, i > 0 && !rows[i].attached),
+              ),
             ),
         ],
       );
     },
   );
+
+  static Widget _wrapped(RaftSettingsRowSpec row, Widget built) =>
+      row.wrap?.call(built) ?? built;
 
   Widget _row(
     BuildContext context,
@@ -110,6 +130,7 @@ class RaftSettingsRowGroup extends StatelessWidget {
                     ),
             if (row.description != null)
               RaftListRowDescription(row.description!, wrap: true),
+            if (row.status != null) row.status!,
             // Under the text the control comes first, then the rest (Web
             // ServerLevelRow: title, select, "N channels customized").
             if (below)

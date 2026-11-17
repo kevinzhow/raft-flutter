@@ -496,10 +496,6 @@ void main() {
         patches.add(o.data as Map);
         return {'id': 'alice'};
       };
-      a.routes['GET /auth/me'] = (_) => {
-        'id': 'alice',
-        'preferredTranslationMode': 'manual',
-      };
       await t.pumpWidget(
         MaterialApp(
           theme: raftTheme(),
@@ -522,22 +518,13 @@ void main() {
       expect(find.text('Default view'), findsOneWidget);
       await t.tap(find.text('Manual'));
       await _settle(t);
-      // The form saves with its Save button (nothing is sent on selection).
-      expect(patches, isEmpty);
-      await t.tap(find.text('Save').first);
-      await _settle(t);
+      // The choice applies at once: one request, no Save button.
       expect(patches.single, {'preferredTranslationMode': 'manual'});
       expect(w.translations.settings.mode, MessageTranslationMode.manual);
-      a.routes['GET /auth/me'] = (_) => {
-        'id': 'alice',
-        'preferredTranslationMode': 'off',
-      };
       await t.tap(find.text('Off'));
       await _settle(t);
       // Off keeps originals only: no target or default view controls.
       expect(find.text('Default view'), findsNothing);
-      await t.tap(find.text('Save').first);
-      await _settle(t);
       expect(patches.last, {'preferredTranslationMode': 'off'});
       await t.pumpWidget(const SizedBox());
     },

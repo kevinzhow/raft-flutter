@@ -60,6 +60,7 @@ class RaftSelectItem<T> {
     this.badge,
     this.suffix,
     this.suffixInList = true,
+    this.listed = true,
   }) : onAction = null;
 
   /// A row at the end of the list that changes what the list shows ("Show all supported"). It is reached by
@@ -77,9 +78,15 @@ class RaftSelectItem<T> {
        description = null,
        badge = null,
        suffix = null,
-       suffixInList = true;
+       suffixInList = true,
+       listed = true;
 
   final T value;
+
+  /// False leaves the row out of the open list while the closed field still
+  /// resolves its label (Web `getSelectMenuOptions` `hideSelectedOption`: the
+  /// chosen language is not offered again; `items` stays the full collection).
+  final bool listed;
 
   /// The text, already localised by the caller.
   final String label;
@@ -406,6 +413,7 @@ class _RaftSelectFieldState<T> extends State<RaftSelectField<T>> {
     String? openGroup;
     for (var i = 0; i < widget.items.length; i++) {
       final item = widget.items[i];
+      if (!item.listed) continue;
       if (structured) {
         final group = item.isAction ? null : item.group;
         if (i > 0 && (item.isAction || group != openGroup)) {

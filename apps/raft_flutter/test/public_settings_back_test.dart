@@ -119,55 +119,47 @@ void main() {
     },
   );
 
-  for (final save in [false, true]) {
-    testWidgets(
-      'public Settings Back ${save ? 'keeps saved' : 'discards unsaved'} UI language on reopen',
-      (t) async {
-        await cleanup(t);
-        final app = _PublicApp();
-        await app.mount(t);
-        await _settings(t, 'language-region');
-        await t.tap(find.byKey(const ValueKey('display-language-select')));
-        await t.pumpAndSettle();
-        await t.tap(find.text('简体中文').last);
-        await t.pumpAndSettle();
-        if (save) {
-          await t.tap(find.byKey(const ValueKey('language-save')));
-          await t.pumpAndSettle();
-        }
-        await _resize(t, 390);
-        expect(back.hitTestable(), findsOneWidget);
-        await t.tap(back);
-        await t.pumpAndSettle();
-        expect(find.byType(PublicServerView), findsNothing);
-        expect(find.byType(AuthView), findsOneWidget);
-        expect(
-          t.widget<MaterialApp>(find.byType(MaterialApp)).locale,
-          save ? const Locale('zh', 'CN') : const Locale('en'),
-        );
-        await t.pumpWidget(const SizedBox());
-        await t.pumpAndSettle();
-        DevicePreferences.reset();
-        final reopened = _PublicApp();
-        await reopened.mount(t);
-        await _settings(t, 'language-region');
-        final form = t.widget<RaftLanguageRegionView>(
-          find.byType(RaftLanguageRegionView),
-        );
-        expect(form.displayLanguage, save ? 'zh-cn' : 'en');
-        expect(form.languageDirty, isFalse);
-        expect(form.languageSave, RaftLanguageSaveState.idle);
-        expect(
-          [
-            ...app.f.adapter.calls,
-            ...reopened.f.adapter.calls,
-          ].where((c) => c.method == 'PATCH' || c.path.startsWith('/auth/')),
-          isEmpty,
-        );
-        expect(t.takeException(), isNull);
-      },
-    );
-  }
+  testWidgets(
+    'public Settings Back keeps the UI language chosen at once on reopen',
+    (t) async {
+      await cleanup(t);
+      final app = _PublicApp();
+      await app.mount(t);
+      await _settings(t, 'language-region');
+      await t.tap(find.byKey(const ValueKey('display-language-select')));
+      await t.pumpAndSettle();
+      await t.tap(find.text('简体中文').last);
+      await t.pumpAndSettle();
+      await _resize(t, 390);
+      expect(back.hitTestable(), findsOneWidget);
+      await t.tap(back);
+      await t.pumpAndSettle();
+      expect(find.byType(PublicServerView), findsNothing);
+      expect(find.byType(AuthView), findsOneWidget);
+      expect(
+        t.widget<MaterialApp>(find.byType(MaterialApp)).locale,
+        const Locale('zh', 'CN'),
+      );
+      await t.pumpWidget(const SizedBox());
+      await t.pumpAndSettle();
+      DevicePreferences.reset();
+      final reopened = _PublicApp();
+      await reopened.mount(t);
+      await _settings(t, 'language-region');
+      final form = t.widget<RaftLanguageRegionView>(
+        find.byType(RaftLanguageRegionView),
+      );
+      expect(form.displayLanguage, 'zh-cn');
+      expect(
+        [
+          ...app.f.adapter.calls,
+          ...reopened.f.adapter.calls,
+        ].where((c) => c.method == 'PATCH' || c.path.startsWith('/auth/')),
+        isEmpty,
+      );
+      expect(t.takeException(), isNull);
+    },
+  );
 
   testWidgets(
     'public Settings uses the canonical responsive content inset through Root',
@@ -179,11 +171,11 @@ void main() {
         await _resize(t, width);
         final frame = t.getTopLeft(find.byType(RaftSettingsPanelFrame));
         final select = t.getTopLeft(
-          find.byKey(const ValueKey('display-language-select')),
+          find.byKey(const ValueKey('language-region-card')),
         );
-        // Web px-4/md:px-5 (16/20) + SurfaceList border/padding (1+16).
+        // Web px-4/md:px-5 (16/20) to the ListRowGroup's own edge.
         // The existing attached Flutter frame adds one seam from md up.
-        expect(select.dx - frame.dx, width < 768 ? 33 : 38);
+        expect(select.dx - frame.dx, width < 768 ? 16 : 21);
       }
       expect(t.takeException(), isNull);
     },

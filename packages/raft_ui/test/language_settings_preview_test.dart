@@ -1,5 +1,3 @@
-import 'dart:ui' show Tristate;
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -51,7 +49,7 @@ void main() {
     }
   }
   testWidgets(
-    'Language preview exposes named Save state and keyboard-selects a draft',
+    'Language preview applies a keyboard choice at once and names a failure',
     (t) async {
       final semantics = t.ensureSemantics();
       try {
@@ -63,6 +61,7 @@ void main() {
           ),
         );
         await t.pumpAndSettle();
+        expect(find.byType(RaftSaveStatus), findsNothing);
         final selector = find.byKey(const ValueKey('display-language-select'));
         await t.tap(selector);
         await t.pumpAndSettle();
@@ -73,24 +72,19 @@ void main() {
           find.byType(RaftLanguageRegionView),
         );
         expect(view.displayLanguage, 'zh-cn');
-        expect(view.languageDirty, isTrue);
-        final save = find.byKey(const ValueKey('language-save'));
-        await t.ensureVisible(save);
+        expect(find.byKey(const ValueKey('language-save')), findsNothing);
+        // The preview's timezone choice fails: the line is an alert under it.
+        final timezone = find.byKey(const ValueKey('timezone-select'));
+        await t.ensureVisible(timezone);
+        await t.tap(timezone);
         await t.pumpAndSettle();
-        final node = t.getSemantics(save);
-        expect(node.label, contains('Save'));
-        expect(node.flagsCollection.isButton, isTrue);
-        expect(node.flagsCollection.isEnabled, Tristate.isTrue);
-        await t.tap(save);
+        await t.tap(find.text('UTC+00:00 UTC').last);
         await t.pumpAndSettle();
-        expect(
-          t
-              .widget<RaftLanguageRegionView>(
-                find.byType(RaftLanguageRegionView),
-              )
-              .languageSave,
-          RaftLanguageSaveState.saved,
-        );
+        final failure = find.text('Failed to update date and time preferences');
+        expect(failure, findsOneWidget);
+        final node = t.getSemantics(failure);
+        expect(node.label, contains('Failed to update date and time'));
+        expect(node.flagsCollection.isLiveRegion, isTrue);
         expect(t.takeException(), isNull);
       } finally {
         semantics.dispose();

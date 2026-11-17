@@ -206,7 +206,7 @@ void main() {
   });
 
   group('LocaleSettingsPage', () {
-    testWidgets('a retried save that succeeds ends the previous error', (
+    testWidgets('a retried change that is stored ends the previous error', (
       t,
     ) async {
       var fail = true;
@@ -237,15 +237,13 @@ void main() {
       addTearDown(t.view.reset);
       await t.pumpWidget(_app(LocaleSettingsPage(controller: w)));
       await t.pumpAndSettle();
-      final state = t.state(find.byType(LocaleSettingsPage)) as dynamic;
-      state.edit(() => state.draftTimezone = 'Asia/Tokyo', language: false);
-      await t.pump();
-      await state.saveDateTime();
+      await t.tap(find.text('24-hour'));
       await t.pumpAndSettle();
       expect(find.text('Timezone rejected'), findsOneWidget);
 
+      // The same row's next change, which is stored, ends it.
       fail = false;
-      await state.saveDateTime();
+      await t.tap(find.text('24-hour'));
       await t.pumpAndSettle();
       expect(find.text('Timezone rejected'), findsNothing);
     });

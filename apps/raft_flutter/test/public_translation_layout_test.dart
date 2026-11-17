@@ -235,10 +235,6 @@ void main() {
         find.byType(RaftLanguageRegionView),
       );
       view.onTranslationMode('manual');
-      await t.pump();
-      t
-          .widget<RaftLanguageRegionView>(find.byType(RaftLanguageRegionView))
-          .onSaveLanguage();
       await t.pumpAndSettle();
       final saved = jsonDecode(
         (await SharedPreferences.getInstance()).getString(

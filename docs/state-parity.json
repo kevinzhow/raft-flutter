@@ -2813,7 +2813,7 @@
     {
       "id": "settings.language",
       "title": "Settings: Language & Region",
-      "webEntry": "packages/web/src/components/settings/SettingsPanel.tsx (LanguageRegionSection)",
+      "webEntry": "packages/web/src/features/settings/language-region/LanguageRegionSection.tsx",
       "flutterEntry": "apps/raft_flutter/lib/features/locale_settings_page.dart",
       "states": [
         {
@@ -2826,6 +2826,17 @@
             "components.wp6.settings.language-server-off"
           ],
           "status": "covered"
+        },
+        {
+          "state": "error",
+          "variant": "a change that failed: SaveStatus under its row, control back at the stored value",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "gap",
+          "gapKind": "case-missing",
+          "size": "S",
+          "justification": "language_region_immediate_test.dart covers every row (message under its own row, control back, until that row's next change, display-language fallback text, parallel rows, fold and narrow sizes); a paired Web capture of a refused change is not present."
         }
       ]
     },
@@ -35156,12 +35167,6 @@
         "owner": "Choice9 design-system alignment",
         "reason": "Reviewed production choice composition/delegation, not a thin-wrapper/no-paint claim or a visual PASS."
       },
-      "packages/raft_ui/lib/src/settings_language.dart#method:RaftLanguageRegionView._save": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
-      },
       "packages/raft_ui/lib/src/settings_language.dart#method:RaftLanguageRegionView._segmented": {
         "role": "entry_composition",
         "familyRefs": [
@@ -35179,12 +35184,6 @@
         ],
         "owner": "Choice9 design-system alignment",
         "reason": "Reviewed production choice composition/delegation, not a thin-wrapper/no-paint claim or a visual PASS."
-      },
-      "packages/raft_ui/lib/src/settings_language.dart#method:RaftLanguageRegionView._selectBlock": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
       "packages/raft_ui/lib/src/settings_language.dart#method:RaftLanguageRegionView.build": {
         "role": "unresolved",
@@ -53881,6 +53880,42 @@
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
       "apps/raft_flutter/lib/features/workspace_settings.dart#method:_WorkspaceSettingsState.deletionPage": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/notification_settings_rows.dart#method:RaftSettingsRowGroup._wrapped": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/save_status.dart#class:RaftSaveStatus": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved widget; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/save_status.dart#method:RaftSaveStatus.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/settings_language.dart#method:RaftLanguageRegionView._banner": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/settings_language.dart#method:RaftLanguageRegionView._row": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/settings_language.dart#method:RaftLanguageRegionView._status": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
