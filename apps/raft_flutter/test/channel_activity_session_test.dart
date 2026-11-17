@@ -93,15 +93,22 @@ void main() {
         'messages': [],
       };
       w.channel = RaftChannel({'id': 'c1', 'type': type, 'threadSort': sort});
+      final needsFlag =
+          sort == 'activity' && (type == 'channel' || type == 'private');
       late ChannelActivityPresentation p;
       await t.runAsync(() async {
         p = ChannelActivityPresentation(w, thread: false);
-        await p.session.ready;
+        if (needsFlag) await p.session.ready;
         await Future<void>.delayed(const Duration(milliseconds: 30));
       });
       addTearDown(p.dispose);
       await t.pumpAndSettle();
       expect(p.mode, expected, reason: '$enabled/$type/$sort');
+      expect(
+        api.calls.where((call) => call.path == '/feature-flags/evaluate'),
+        hasLength(needsFlag ? 1 : 0),
+        reason: '$type/$sort',
+      );
       final calls = api.calls
           .where((call) => call.path.endsWith('/by-activity'))
           .toList();

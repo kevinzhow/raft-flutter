@@ -10,15 +10,14 @@ Widget channelActivityHeader(
   RaftChannel channel,
   Widget Function(BuildContext context, Widget? suffix) builder,
 ) {
+  if (!isActivityChannel(channel)) {
+    return Builder(builder: (context) => builder(context, null));
+  }
   final session = ChannelActivitySession.of(w);
   return ListenableBuilder(
     listenable: session,
-    builder: (context, _) => builder(
-      context,
-      session.enabled && isActivityChannel(channel)
-          ? const ChannelActivityBadge()
-          : null,
-    ),
+    builder: (context, _) =>
+        builder(context, session.enabled ? const ChannelActivityBadge() : null),
   );
 }
 

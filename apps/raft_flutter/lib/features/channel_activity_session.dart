@@ -184,25 +184,25 @@ class ChannelActivitySession extends ChangeNotifier {
 /// A mounted channel retains only its activity pages. Seq metadata, reads and
 /// context navigation stay with WorkspaceMessages throughout.
 class ChannelActivityPresentation extends ChangeNotifier {
-  ChannelActivityPresentation(this.w, {required this.thread})
-    : session = ChannelActivitySession.of(w) {
-    session.addListener(_changed);
+  ChannelActivityPresentation(this.w, {required this.thread}) {
     update();
   }
   final WorkspaceController w;
   final bool thread;
-  final ChannelActivitySession session;
+  ChannelActivitySession? _session;
+  ChannelActivitySession get session =>
+      _session ??= (ChannelActivitySession.of(w)..addListener(_changed));
   (String, int)? _retained;
   VoidCallback? _release;
 
   bool get forumChannel =>
       !thread &&
-      session.enabled &&
       isActivityChannel(w.channel) &&
-      !w.sessionScope.revokedChannels.contains(w.channel?.id);
+      !w.sessionScope.revokedChannels.contains(w.channel?.id) &&
+      session.enabled;
   bool get mode => forumChannel && !w.messageDomain.state.hasNewer;
   ChannelActivityWindow? get window =>
-      _retained == (w.channel?.id, session.epoch)
+      _retained != null && _retained == (w.channel?.id, session.epoch)
       ? session.store.windows[_retained?.$1]
       : null;
   bool get hasMore =>
@@ -223,10 +223,7 @@ class ChannelActivityPresentation extends ChangeNotifier {
       : w.messageDomain.state.channelLoading;
 
   void update() {
-    final next =
-        forumChannel && !w.sessionScope.revokedChannels.contains(w.channel?.id)
-        ? (w.channel!.id, session.epoch)
-        : null;
+    final next = forumChannel ? (w.channel!.id, session.epoch) : null;
     if (_retained == next) return;
     _release?.call();
     _release = null;
@@ -280,7 +277,7 @@ class ChannelActivityPresentation extends ChangeNotifier {
 
   @override
   void dispose() {
-    session.removeListener(_changed);
+    _session?.removeListener(_changed);
     _release?.call();
     super.dispose();
   }

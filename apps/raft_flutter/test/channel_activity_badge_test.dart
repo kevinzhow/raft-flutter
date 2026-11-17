@@ -1,12 +1,42 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
+import 'package:raft_flutter/features/channel_activity_badge.dart';
 import 'package:raft_flutter/features/workspace_channel_header.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import 'message_presentation_test.dart' show fixture;
 
 void main() {
+  testWidgets('a sequence-ordered header skips the activity flag request', (
+    t,
+  ) async {
+    final (w, api) = (await t.runAsync(() => fixture('owner')))!;
+    addTearDown(w.dispose);
+    api.routes['POST /feature-flags/evaluate'] = (_) => {
+      'evaluations': [
+        {'key': 'channel_thread_sort_v0', 'enabled': true},
+      ],
+    };
+    final channel = RaftChannel({'id': 'c1', 'type': 'channel'});
+
+    await t.pumpWidget(
+      Builder(
+        builder: (_) => channelActivityHeader(
+          w,
+          channel,
+          (_, badge) => badge ?? const SizedBox(),
+        ),
+      ),
+    );
+    await t.pumpAndSettle();
+
+    expect(
+      api.calls.where((call) => call.path == '/feature-flags/evaluate'),
+      isEmpty,
+    );
+  });
+
   for (final dark in [false, true]) {
     testWidgets(
       'header activity suffix preserves title and actions dark=$dark',
