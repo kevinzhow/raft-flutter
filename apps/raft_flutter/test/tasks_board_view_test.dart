@@ -597,6 +597,80 @@ void main() {
     });
   });
 
+  group('drop states paint', () {
+    testWidgets('an allowed folded column is outlined, a blocked one says why '
+        'in the muted ink, light and dark', (t) async {
+      for (final dark in [false, true]) {
+        await mountBoard(
+          t,
+          dark: dark,
+          rows: [
+            boardTask('t1', 1, 'todo'),
+            boardTask('t2', 2, 'todo', readOnlyReason: 'historical_joint'),
+          ],
+        );
+        final tokens = RaftTokens.of(t.element(card('t1')));
+        // Over the folded Closed column: allowed, so its outline shows.
+        final g = await t.startGesture(
+          topOf(t, card('t1')),
+          kind: PointerDeviceKind.mouse,
+        );
+        await g.moveBy(const Offset(12, 0));
+        await t.pump();
+        await g.moveTo(t.getCenter(column('closed')));
+        await t.pump();
+        final closed = find.descendant(
+          of: column('closed'),
+          matching: find.byType(RaftTaskBoardColumn),
+        );
+        expect(t.widget<RaftTaskBoardColumn>(closed).dropActive, isTrue);
+        expect(
+          find.descendant(
+            of: column('closed'),
+            matching: find.byWidgetPredicate(
+              (w) => w is CustomPaint && w.foregroundPainter != null,
+            ),
+          ),
+          findsOneWidget,
+          reason: 'the dashed outline of a folded column a card may drop on',
+        );
+        await g.up();
+        await settle(t);
+
+        // A read-only card over the empty Backlog: blocked, with its reason.
+        final blocked = await t.startGesture(
+          topOf(t, card('t2')),
+          kind: PointerDeviceKind.mouse,
+        );
+        await blocked.moveBy(const Offset(12, 0));
+        await t.pump();
+        await blocked.moveTo(t.getCenter(column('backlog')));
+        await t.pump();
+        final reason = t.widget<Text>(
+          find.descendant(
+            of: column('backlog'),
+            matching: find.textContaining('created before other servers'),
+          ),
+        );
+        expect(reason.style?.color, tokens.ui.foregroundMuted);
+        expect(
+          t
+              .widget<RaftTaskBoardColumn>(
+                find.descendant(
+                  of: column('backlog'),
+                  matching: find.byType(RaftTaskBoardColumn),
+                ),
+              )
+              .dropActive,
+          isFalse,
+        );
+        await blocked.up();
+        await settle(t);
+        await t.pumpWidget(const SizedBox());
+      }
+    });
+  });
+
   group('the Backlog reason', () {
     testWidgets('a drop on Backlog asks first, from the column heading', (
       t,
