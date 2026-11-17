@@ -8,6 +8,7 @@ import 'delegated_message.dart';
 
 import '../data/raft_permalink.dart';
 import '../data/workspace_controller.dart';
+import 'quoted_permalink_cache.dart';
 
 /// Opens a Raft message permalink of this server (Web `handleOpenPermalink` /
 /// `handleOpenQuotedPermalink`): a thread link opens its thread focused on the
@@ -91,39 +92,38 @@ class _QuotedMessagePermalinkPreviewState
     super.dispose();
   }
 
+  /// A link that resolved before shows its last result at once (no
+  /// skeleton); the cache refreshes it in the background.
   Future<void> load() async {
     final mine = ++ticket;
     final link = widget.permalink;
-    setState(() {
-      target = null;
-      unavailable = false;
-    });
-    try {
-      final data = await w.client.get(
-        '/messages/context/${link.messageId}',
-        query: {'channelId': link.channelId},
-      );
-      if (!mounted || mine != ticket) return;
-      final rows = (data is Map ? data['messages'] as List? : null) ?? const [];
-      final id =
-          (data is Map ? data['targetMessageId'] : null) ?? link.messageId;
-      final row = rows.whereType<Map>().where((m) => m['id'] == id).firstOrNull;
-      if (row == null) {
-        fail();
-        return;
-      }
+    final cache = QuotedPermalinkCache.of(w);
+    final cached = cache.peek(link);
+    if (cached != null) {
+      show(cached);
+    } else {
       setState(() {
-        target = RaftMessage(Map<String, dynamic>.from(row));
-        archived = data is Map && data['channelArchived'] == true;
+        target = null;
+        unavailable = false;
       });
+    }
+    try {
+      final result = await cache.load(link);
+      if (result != null && mounted && mine == ticket) show(result);
     } catch (_) {
-      if (mounted && mine == ticket) fail();
+      if (mounted && mine == ticket) show((target: null, archived: false));
     }
   }
 
-  void fail() {
-    setState(() => unavailable = true);
-    widget.onUnavailable();
+  void show(QuotedPermalinkResult result) {
+    final gone = result.target == null;
+    if (gone && unavailable) return;
+    setState(() {
+      target = result.target;
+      archived = result.archived;
+      unavailable = gone;
+    });
+    if (gone) widget.onUnavailable();
   }
 
   @override

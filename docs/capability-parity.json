@@ -140,14 +140,14 @@
    "status": "partial",
    "webEntry": "MessageItem handleOpenPermalink / handleOpenMessageRef / handleOpenForwardedSource / QuotedMessagePermalinkPreview onOpen | MainLayout loadContext | ThreadPanel jump | useRefNavigation",
    "gate": "read access to the target channel",
-   "flutterEntry": "workspace_controller.dart jumpToMessage / thread context loads via message_history_pages.dart; quoted_message_preview.dart; content_coordinator.dart permalink open",
+   "flutterEntry": "workspace_controller.dart jumpToMessage / thread context loads via message_history_pages.dart; quoted_permalink_cache.dart (quoted card); content_coordinator.dart permalink open",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/data/message_history_pages.dart",
      "needle": "'/messages/context/$target'"
     },
     {
-     "file": "apps/raft_flutter/lib/features/quoted_message_preview.dart",
+     "file": "apps/raft_flutter/lib/features/quoted_permalink_cache.dart",
      "needle": "/messages/context/"
     }
    ],
@@ -1567,10 +1567,10 @@
    "status": "covered",
    "webEntry": "QuotedMessagePermalinkPreview",
    "gate": "read access to the quoted message",
-   "flutterEntry": "quoted_message_preview.dart via chat_view.dart withQuotedPreview",
+   "flutterEntry": "quoted_message_preview.dart via chat_view.dart withQuotedPreview; result cached per link in quoted_permalink_cache.dart (Flutter keeps it across mounts, Web refetches per mount)",
    "flutterRefs": [
     {
-     "file": "apps/raft_flutter/lib/features/quoted_message_preview.dart",
+     "file": "apps/raft_flutter/lib/features/quoted_permalink_cache.dart",
      "needle": "/messages/context/"
     },
     {
