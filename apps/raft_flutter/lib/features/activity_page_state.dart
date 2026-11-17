@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import '../data/activity_object_rows.dart';
 import 'activity_counts_line.dart';
 import 'activity_scope_reload.dart';
+import 'activity_shown_rows.dart';
 import 'activity_swipe_actions.dart';
 import 'activity_undo.dart';
 
@@ -30,6 +31,7 @@ class ActivityPageState {
   /// The row open under a swipe, and the Done / Unfollow / Mute waiting out
   /// their Undo.
   final open = ActivitySwipeOpen();
+  final shown = ActivityShownRows();
   ActivityUndo? undo;
 
   /// Ends the Activity visit / the phone re-tap registration on dispose.

@@ -20,14 +20,14 @@
    "status": "covered",
    "webEntry": "MessageHoverToolbar bookmark (active) | context menu 'Remove from Saved' | footer 'Saved' badge | SavedPanel row remove button / context menu 'Remove from Saved'",
    "gate": "none",
-   "flutterEntry": "chat_view.dart saveMessage() toggle, the Saved footer badge (RaftMessageSavedIndicator), Saved page row menu (resource_view.dart savedMenu 'Remove from Saved')",
+   "flutterEntry": "chat_view.dart saveMessage() toggle, the Saved footer badge (RaftMessageSavedIndicator), Saved page row menu (saved_page_rows.dart savedMenuContent 'Remove from Saved')",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/saved_sidebar_entry.dart",
      "needle": "'/channels/saved/$messageId'"
     },
     {
-     "file": "apps/raft_flutter/lib/features/resource_view.dart",
+     "file": "apps/raft_flutter/lib/features/saved_page_rows.dart",
      "needle": "'Remove from Saved'"
     },
     {
@@ -1899,14 +1899,14 @@
    "status": "covered",
    "webEntry": "SavedPanel ContextMenu",
    "gate": "none",
-   "flutterEntry": "resource_view.dart savedMenu()",
+   "flutterEntry": "saved_page_rows.dart savedMenuContent()",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/resource_view.dart",
      "needle": "Future<void> savedMenu("
     },
     {
-     "file": "apps/raft_flutter/lib/features/resource_view.dart",
+     "file": "apps/raft_flutter/lib/features/saved_page_rows.dart",
      "needle": "'Copy Markdown'"
     }
    ],
@@ -2070,15 +2070,19 @@
    "status": "covered",
    "webEntry": "ThreadsInbox row check icon 'Mark as Done' | row context menu 'Done'",
    "gate": "none beyond membership",
-   "flutterEntry": "resource_view.dart row action 'Mark conversation done' + activityMenu Done -> resource_filters.dart activityMutation",
+   "flutterEntry": "activity_undo.dart ActivityUndo (Done waits out its Undo toast, then writes): the row's Mark as Done button, the swipe and activity_context_menu.dart; resource_filters.dart activityMutation",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/resource_filters.dart",
      "needle": "'/channels/${thread ? 'threads' : 'inbox'}/$action'"
     },
     {
-     "file": "apps/raft_flutter/lib/features/activity_card_row.dart",
-     "needle": "'Mark Conversation Done'"
+     "file": "apps/raft_flutter/lib/features/activity_context_menu.dart",
+     "needle": "'Mark as Done'"
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/activity_undo.dart",
+     "needle": "class ActivityUndo"
     }
    ],
    "justification": "",
@@ -2115,21 +2119,12 @@
    "area": "threads",
    "capability": "Restore a done Activity item (thread or conversation) back to the inbox",
    "background": false,
-   "status": "covered",
+   "status": "na",
    "webEntry": "ThreadsInbox > Done filter > row icon 'Restore' (RotateCcw)",
    "gate": "none beyond membership",
-   "flutterEntry": "resource_view.dart Done filter row action 'Restore conversation' -> resource_filters.dart activityMutation",
-   "flutterRefs": [
-    {
-     "file": "apps/raft_flutter/lib/features/resource_filters.dart",
-     "needle": "'/channels/${thread ? 'threads' : 'inbox'}/$action'"
-    },
-    {
-     "file": "apps/raft_flutter/lib/features/activity_card_row.dart",
-     "needle": "'Restore Conversation'"
-    }
-   ],
-   "justification": "",
+   "flutterEntry": "",
+   "flutterRefs": [],
+   "justification": "Web 1.24 removed the Done view (Kevin 2654e77c). Undo of a Done is the 8 s toast: the write has not been made yet, so it sends no request.",
    "impact": "",
    "size": ""
   },
@@ -12497,20 +12492,16 @@
    "kind": "endpoint",
    "id": "GET /channels/inbox",
    "area": "notifications",
-   "capability": "Load the Activity list (all/unread/mentions and independent DMs scope, search, sort, channel filter, paging) and unread totals",
+   "capability": "Load the Activity list (the Filter menu: All / Unread / Mentions, and the Pinned / Saved / Artifacts scopes; paging) and unread totals",
    "background": false,
    "status": "covered",
    "webEntry": "Activity page / rail > ThreadsInbox (All/Unread/Mentions; Web 1.21.12 adds DMs with filter=all and scope=dms; search, Newest/Oldest, channel group filter, paging; also unscoped badge refresh)",
    "gate": "any member",
-   "flutterEntry": "channel_activity_scope.dart mounted query contracts; ResourceFilters/ResourceView Activity wiring; source_activity_unread_store.dart keeps the unscoped badge separate",
+   "flutterEntry": "activity_filter_choice.dart (filter, scope, page size 50); ResourceView Activity wiring; source_activity_unread_store.dart keeps the unscoped badge separate",
    "flutterRefs": [
     {
-     "file": "apps/raft_flutter/lib/data/channel_activity_scope.dart",
-     "needle": "_ => '/channels/inbox',"
-    },
-    {
-     "file": "apps/raft_flutter/lib/data/channel_activity_scope.dart",
-     "needle": "if (directMessages) 'scope': 'dms'"
+     "file": "apps/raft_flutter/lib/data/activity_filter_choice.dart",
+     "needle": "activityPageSize"
     },
     {
      "file": "apps/raft_flutter/lib/data/source_activity_unread_store.dart",
@@ -12527,17 +12518,12 @@
    "area": "notifications",
    "capability": "Activity 'Done' view: list conversations marked done",
    "background": false,
-   "status": "covered",
+   "status": "na",
    "webEntry": "Activity > 'Done' view (ThreadsInbox loadDoneItems; rows show a Restore button)",
    "gate": "any member",
-   "flutterEntry": "channel_activity_scope.dart Done endpoint, wired by ResourceView",
-   "flutterRefs": [
-    {
-     "file": "apps/raft_flutter/lib/data/channel_activity_scope.dart",
-     "needle": "'done' => '/channels/inbox/done'"
-    }
-   ],
-   "justification": "",
+   "flutterEntry": "",
+   "flutterRefs": [],
+   "justification": "Web 1.24 removed the Done view (Kevin 2654e77c); nothing lists done conversations.",
    "impact": "",
    "size": ""
   },
@@ -12678,15 +12664,19 @@
    "status": "covered",
    "webEntry": "Activity row hover check button 'Mark as done' | row context menu 'Done'",
    "gate": "any member; not mention_action rows",
-   "flutterEntry": "resource_view.dart row action 'Mark conversation done' + context menu 'Done'",
+   "flutterEntry": "activity_undo.dart ActivityUndo (Done waits out its Undo toast, then writes): the row's Mark as Done button, the swipe and activity_context_menu.dart; resource_filters.dart activityMutation",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/resource_filters.dart",
      "needle": "/channels/${thread ? 'threads' : 'inbox'}/$action"
     },
     {
-     "file": "apps/raft_flutter/lib/features/activity_card_row.dart",
-     "needle": "Mark Conversation Done"
+     "file": "apps/raft_flutter/lib/features/activity_context_menu.dart",
+     "needle": "'Mark as Done'"
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/activity_undo.dart",
+     "needle": "class ActivityUndo"
     }
    ],
    "justification": "",
@@ -12723,21 +12713,12 @@
    "area": "notifications",
    "capability": "Restore a done conversation back into Activity",
    "background": false,
-   "status": "covered",
+   "status": "na",
    "webEntry": "Activity > Done view row 'Restore to Activity' (RotateCcw) button (ThreadsInbox restoreDoneItem)",
    "gate": "any member",
-   "flutterEntry": "resource_view.dart row action 'Restore conversation' in the Done view (activityAction undone)",
-   "flutterRefs": [
-    {
-     "file": "apps/raft_flutter/lib/features/resource_filters.dart",
-     "needle": "/channels/${thread ? 'threads' : 'inbox'}/$action"
-    },
-    {
-     "file": "apps/raft_flutter/lib/features/activity_card_row.dart",
-     "needle": "Restore Conversation"
-    }
-   ],
-   "justification": "",
+   "flutterEntry": "",
+   "flutterRefs": [],
+   "justification": "Web 1.24 removed the Done view (Kevin 2654e77c). Undo of a Done is the 8 s toast: the write has not been made yet, so it sends no request.",
    "impact": "",
    "size": ""
   },
@@ -12833,20 +12814,20 @@
    "kind": "ui",
    "id": "ui:notifications.activity-conversation-list",
    "area": "notifications",
-   "capability": "Activity as a conversation list: one avatar row per conversation with preview and unread count, always the list form (no Pinned / All conversations headings)",
+   "capability": "Activity as one RaftInboxItem list: day groups with a sticky heading, 2px between rows, one row for conversations and Artifacts",
    "background": false,
    "status": "covered",
    "webEntry": "components/thread/ThreadsInbox.tsx InboxRow layout=\"list\"",
    "gate": "none",
-   "flutterEntry": "resource_view.dart activityCard -> activity_card_row.dart ActivityCardRow -> activity_list_row.dart ActivityListRowView -> RaftConversationListRow",
+   "flutterEntry": "resource_view.dart activityList -> activity_list_view.dart ActivityListView -> activity_card_row.dart ActivityCardRow -> activity_inbox_row.dart ActivityInboxRow (RaftInboxItem)",
    "flutterRefs": [
     {
-     "file": "apps/raft_flutter/lib/features/activity_list_row.dart",
-     "needle": "class ActivityListRowView"
+     "file": "apps/raft_flutter/lib/features/activity_list_view.dart",
+     "needle": "class ActivityListView"
     },
     {
-     "file": "packages/raft_ui/lib/src/conversation_list_row.dart",
-     "needle": "class RaftConversationListRow"
+     "file": "apps/raft_flutter/lib/features/activity_inbox_row.dart",
+     "needle": "class ActivityInboxRow"
     }
    ],
    "justification": "",
@@ -12974,15 +12955,19 @@
    "status": "covered",
    "webEntry": "InboxContextMenu.tsx + ThreadsInbox.tsx conversation-card-actions",
    "gate": "thread follow only on thread rows",
-   "flutterEntry": "resource_view.dart activityMenu + RaftConversationCard actions",
+   "flutterEntry": "activity_context_menu.dart buildActivityContextMenu (Read/Unread, Mark as Done, Unfollow/Follow, Mute/Unmute Activity); the row button and swipe in activity_inbox_row.dart / activity_swipe_actions.dart; Done and Unfollow through activity_undo.dart",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/activity_context_menu.dart",
      "needle": "'Unfollow' : 'Follow'"
     },
     {
-     "file": "apps/raft_flutter/lib/features/activity_card_row.dart",
-     "needle": "Mark Conversation Done"
+     "file": "apps/raft_flutter/lib/features/activity_context_menu.dart",
+     "needle": "'Mark as Done'"
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/activity_undo.dart",
+     "needle": "class ActivityUndo"
     }
    ],
    "justification": "",
@@ -13010,10 +12995,10 @@
    "area": "notifications",
    "capability": "Activity Filter menu: All / Unread / Mentions, then Pinned / Saved / Artifacts (scopes over All), a chip with clear, the choice kept per server",
    "background": false,
-   "status": "partial",
+   "status": "covered",
    "webEntry": "ThreadsInbox.tsx filter menu + chip; activityFilterPreference.ts (raft.activity.filter.<serverId>)",
    "gate": "none",
-   "flutterEntry": "activity_filter_choice.dart (scopes, query, per-server preference); resource_view.dart chooseActivityFilter; the Filter menu widget lands with the list wiring (phone keeps the All / Unread / Mentions strip until then)",
+   "flutterEntry": "activity_toolbar_mount.dart activityFilterBar -> raft_ui RaftActivityFilterBar (Filter menu, chip, Mark all read); activity_filter_choice.dart (scopes, query, per-server preference); resource_view.dart chooseActivityFilter",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/data/activity_filter_choice.dart",
@@ -13022,9 +13007,13 @@
     {
      "file": "apps/raft_flutter/lib/features/resource_view.dart",
      "needle": "void chooseActivityFilter("
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/activity_toolbar_mount.dart",
+     "needle": "RaftActivityFilterBar("
     }
    ],
-   "justification": "Scope requests, persistence and reloads are in; Done, DMs, the switcher dialog and the channel filter were removed with Web 1.24 (Kevin 2654e77c). The Filter menu and chip widget are not wired yet.",
+   "justification": "",
    "impact": "",
    "size": ""
   },

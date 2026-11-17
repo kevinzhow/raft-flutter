@@ -59,7 +59,7 @@ void main() {
     });
     await tester.pump();
     expect(find.text('Edited saved body'), findsOneWidget);
-    expect(state.rows, hasLength(20));
+    expect(state.rows, hasLength(30));
     // Saved lists no computers: machine events never re-read its senders.
     final catalogs = w.agentQueries;
     for (final name in ['machine:status', 'machine:updated']) {

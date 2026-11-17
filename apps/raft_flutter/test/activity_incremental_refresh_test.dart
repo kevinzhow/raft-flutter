@@ -195,7 +195,7 @@ Finder get skeleton => find.byWidgetPredicate(
 
 ScrollableState activityScroll(WidgetTester tester) => tester.state(
   find
-      .descendant(of: find.byType(ListView), matching: find.byType(Scrollable))
+      .descendant(of: find.byType(ResourceView), matching: find.byType(Scrollable))
       .first,
 );
 
@@ -355,7 +355,7 @@ void main() {
     });
 
     testWidgets(
-      '[$label] a context menu opened before a row update still acts on that conversation',
+      '[$label] a context menu opened before a row update does not write a Done for the older row',
       (tester) async {
         final dynamic state = await mount(tester);
         await tester.tap(
@@ -378,9 +378,10 @@ void main() {
         expect(state.rows.first['lastMessagePreview'], 'Newer');
         await tester.tap(find.widgetWithText(RaftMenuButtonItem, 'Mark as Done'));
         await tester.pumpAndSettle();
-        final done = client.posts.indexOf('POST /channels/inbox/done');
-        expect(done, isNot(-1));
-        expect(client.bodies[done]['channelId'], 'ch1');
+        // Web `swipeDoneCommitItem`: a Done asked on an older version of the
+        // row is not written; the row stays, with its news.
+        expect(client.posts.indexOf('POST /channels/inbox/done'), -1);
+        expect(state.rows.first['lastMessagePreview'], 'Newer');
       },
     );
 

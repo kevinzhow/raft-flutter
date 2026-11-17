@@ -136,7 +136,7 @@ void main() {
     tester,
   ) async {
     final dynamic state = await mount(tester, 'saved');
-    expect(state.rows, hasLength(20));
+    expect(state.rows, hasLength(30));
 
     state.query.text = 'needle';
     w.hold = Completer<void>();
@@ -153,12 +153,12 @@ void main() {
     unawaited(state.load());
     await tester.pump();
     expect(skeleton, findsNothing);
-    expect(state.rows, hasLength(20));
+    expect(state.rows, hasLength(30));
     expect(find.text('Saved body 0'), findsOneWidget);
     w.hold!.complete();
     w.hold = null;
     await tester.pumpAndSettle();
-    expect(state.rows, hasLength(20));
+    expect(state.rows, hasLength(30));
   });
 
   testWidgets('visited filter windows survive leaving the page', (

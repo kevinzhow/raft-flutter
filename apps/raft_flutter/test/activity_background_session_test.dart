@@ -41,6 +41,7 @@ void main() {
         final f = RootFixture(sessionOwner: ui);
         f.overrides['GET /channels/inbox'] = (_) => {
           'items': [channelRow(0, unread: 1)],
+          'totalCount': 1,
           'hasMore': false,
           'totalUnreadCount': 1,
         };

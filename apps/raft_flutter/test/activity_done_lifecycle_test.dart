@@ -101,7 +101,8 @@ void main() {
           ),
         );
         await tester.pumpAndSettle();
-        expect(find.textContaining('Refresh failed'), findsOneWidget);
+        // Web: an empty list whose load failed shows its banner, not the cause.
+        expect(find.byKey(const ValueKey('inbox-load-failed')), findsOneWidget);
         workspace.inbox = null;
         await state.load();
         await tester.pumpAndSettle();
@@ -203,7 +204,7 @@ void main() {
         await tester.pumpAndSettle();
         expect(state.rows, isEmpty);
         expect(state.totalUnreadCount, isNull);
-        expect(find.textContaining('Denied'), findsOneWidget);
+        expect(find.byKey(const ValueKey('inbox-load-failed')), findsOneWidget);
       },
     );
     testWidgets(

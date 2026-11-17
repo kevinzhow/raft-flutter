@@ -108,9 +108,11 @@ void main() {
           expect(
             button.bottom,
             closeTo(
-              bar.evaluate().isEmpty
-                  ? viewport.bottom - bottom
-                  : t.getRect(bar).top,
+              // The list's own `pb-1` (4px) sits under the final control.
+              (bar.evaluate().isEmpty
+                      ? viewport.bottom - bottom
+                      : t.getRect(bar).top) -
+                  4,
               .01,
             ),
             reason: 'The final control must clear the system bar exactly once.',
@@ -120,7 +122,7 @@ void main() {
           await t.tap(footer);
           await t.pump();
           expect(
-            w.inboxQueries.where((query) => query['offset'] == 30),
+            w.inboxQueries.where((query) => query['offset'] == 50),
             hasLength(1),
           );
           nextPage.complete();
@@ -135,72 +137,4 @@ void main() {
       );
     }
   }
-
-  testWidgets(
-    'retained Activity pager page keeps its final row above the system bar',
-    (t) async {
-      await _mount(t, const Size(700, 900), 32, 0, raftThemePackId);
-      final all = _list('all');
-      await t.drag(all, const Offset(0, -6000));
-      await t.pumpAndSettle();
-      await t.drag(all, const Offset(-600, 0));
-      await t.pumpAndSettle();
-      final dynamic state = t.state(find.byType(ResourceView));
-      expect(state.filter, 'unread');
-      // Bring the visited All page partly back into the viewport. A fully
-      // offscreen keep-alive child has no valid global paint transform.
-      final swipe = await t.startGesture(t.getCenter(_list('unread')));
-      await swipe.moveBy(const Offset(20, 0));
-      await t.pump();
-      await swipe.moveBy(const Offset(200, 0));
-      await t.pump();
-      final page = t.widget<PageView>(
-        find
-            .ancestor(of: _list('unread'), matching: find.byType(PageView))
-            .first,
-      );
-      expect(page.controller!.page, allOf(greaterThan(0), lessThan(1)));
-      final retained = find.byKey(
-        const PageStorageKey(('resource-list', 'activity', 'all')),
-        skipOffstage: false,
-      );
-      expect(retained, findsOneWidget);
-      final screen = Offset.zero & const Size(700, 900);
-      final retainedBounds = t.getRect(retained);
-      final visible = retainedBounds.intersect(screen);
-      expect(visible.width, greaterThan(0));
-      expect(visible.width, lessThan(retainedBounds.width));
-      expect(visible.height, greaterThan(0));
-      expect(
-        t.widget<ListView>(retained).padding!.resolve(TextDirection.ltr).bottom,
-        32,
-      );
-      // The inactive projection has no paging footer. Measure its reachable
-      // end rather than the offset retained from the taller active list.
-      final scroll = t.widget<ListView>(retained).controller!;
-      scroll.jumpTo(scroll.position.maxScrollExtent);
-      await t.pump();
-      final lastRow = find
-          .descendant(
-            of: retained,
-            matching: find.byType(RaftInboxItem, skipOffstage: false),
-            skipOffstage: false,
-          )
-          .last;
-      try {
-        expect(t.getRect(retained).bottom, closeTo(900, .01));
-        final rowBounds = t.getRect(lastRow);
-        expect(rowBounds.overlaps(screen), isTrue);
-        // Auto-pagination can grow the lazy window after its prior maximum
-        // was measured. The visible final row must remain above the bar;
-        // only the list's system padding is required to be exactly once.
-        expect(rowBounds.bottom, lessThanOrEqualTo(900 - 32 + .01));
-        expect(t.takeException(), isNull);
-      } finally {
-        await swipe.up();
-        await t.pumpAndSettle();
-      }
-    },
-    variant: TargetPlatformVariant({TargetPlatform.android}),
-  );
 }

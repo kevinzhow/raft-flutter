@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
+import 'package:raft_flutter/data/activity_filter_choice.dart';
 import 'package:raft_flutter/data/source_feedback_store.dart';
 import 'package:raft_flutter/features/agent_activity_pane.dart';
 import 'package:raft_flutter/features/agent_detail_view.dart';
@@ -43,7 +44,7 @@ void main() {
   }
 
   testWidgets(
-    'Activity three sections share owner; revisits retain offset and show cached window before network',
+    'Activity filter choices share owner; revisits retain offset and show cached window before network',
     (t) async {
       final (client, w) = activityFixture();
       addTearDown(() async {
@@ -61,22 +62,23 @@ void main() {
       final dynamic owner = t.state(find.byType(ResourceView));
       final originalOwner = owner;
       expect(w.savedQueries, isEmpty);
-      await t.drag(find.byType(PageView), const Offset(0, -300));
+      await t.drag(find.byType(CustomScrollView), const Offset(0, -300));
       await t.pumpAndSettle();
       final double offset = owner.listScroll.offset;
       expect(offset, greaterThan(100));
-      for (final view in ['unread', 'mentions']) {
-        await swipe(t);
-        expect(owner.filter, view);
+      // Web: the Filter menu picks the view (no horizontal paging).
+      for (final view in [ActivityFilterChoice.unread, ActivityFilterChoice.mentions]) {
+        owner.chooseActivityFilter(view);
+        await settle(t);
+        await t.pumpAndSettle();
+        expect(owner.filter, view.name);
         expect(t.state(find.byType(ResourceView)), same(originalOwner));
       }
       expect(w.savedQueries, isEmpty);
       w.hold = Completer<void>();
-      for (var i = 0; i < 2; i++) {
-        await t.drag(find.byType(PageView).first, const Offset(310, 0));
-        await t.pump();
-        await t.pump(const Duration(seconds: 1));
-      }
+      owner.chooseActivityFilter(ActivityFilterChoice.all);
+      await t.pump();
+      await t.pump(const Duration(seconds: 1));
       await t.pump();
       expect(owner.filter, 'all');
       expect(owner.rows, isNotEmpty);

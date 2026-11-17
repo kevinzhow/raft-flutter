@@ -22,6 +22,17 @@ class ActivityFirstUnread {
   static ActivityFirstUnread of(WorkspaceController w) =>
       _owners[w] ??= ActivityFirstUnread._();
 
+  /// Bumped when the located row (or the pending jump) changes, so the Activity
+  /// page rebuilds on its own.
+  final _changeListeners = <VoidCallback>[];
+  void addChangeListener(VoidCallback f) => _changeListeners.add(f);
+  void removeChangeListener(VoidCallback f) => _changeListeners.remove(f);
+  void _changed() {
+    for (final f in [..._changeListeners]) {
+      f();
+    }
+  }
+
   bool _pending = false;
   String? _focused, _after;
 
@@ -39,6 +50,7 @@ class ActivityFirstUnread {
     _pending = true;
     _after = after;
     if (after == null) _focused = null;
+    _changed();
     w.notifyListeners();
   }
 
@@ -52,9 +64,11 @@ class ActivityFirstUnread {
     _locatedTimer = Timer(locatedDuration, () {
       if (_focused == key) {
         _focused = null;
+        _changed();
         w.notifyListeners();
       }
     });
+    _changed();
     w.notifyListeners();
   }
 
@@ -89,6 +103,7 @@ class ActivityFirstUnread {
     _locatedTimer = Timer(locatedDuration, () {
       if (_focused == key) {
         _focused = null;
+        _changed();
         w.notifyListeners();
       }
     });

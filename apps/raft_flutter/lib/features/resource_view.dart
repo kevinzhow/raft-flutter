@@ -518,6 +518,7 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
       ),
     )..addListener(activityUndoChanged);
     activityFacets.undo = undo;
+    ActivityFirstUnread.of(w).addChangeListener(activityUndoChanged);
   }
 
   void activityUndoChanged() {
@@ -525,6 +526,7 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
   }
 
   void disposeActivityUndo() {
+    ActivityFirstUnread.of(w).removeChangeListener(activityUndoChanged);
     activityFacets.undo
       ?..removeListener(activityUndoChanged)
       ..dispose();
@@ -3007,10 +3009,17 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
     final list = ActivityListView(
       key: PageStorageKey(('resource-list', widget.section, filter)),
       controller: listScroll,
-      rows: shown,
+      groups: facets.shown.groups(
+        shown,
+        formatter: activityRowFormatter(context, w.client.user?.json),
+        now: sourceTimeNow(),
+        stamp: (
+          Localizations.localeOf(context),
+          w.client.user?.json['preferredTimezone'],
+          w.client.user?.json['preferredTimeFormat'],
+        ),
+      ),
       surface: resourceSurface,
-      formatter: activityRowFormatter(context, w.client.user?.json),
-      now: sourceTimeNow(),
       physics: mobileActivityRefresh
           ? const AlwaysScrollableScrollPhysics()
           : null,
@@ -4002,11 +4011,13 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
   /// The stored channel a row's Mute acts on (a channel, or a DM).
   RaftChannel? activityMuteChannel(Map<String, dynamic> row) {
     final id = row['channelId'];
-    return row['kind'] == 'channel' || row['kind'] == 'dm'
-        ? id is String
-              ? w.channelById(id)
-              : null
-        : null;
+    if (id is! String) return null;
+    // A DM row's channel is a stored DM (Web `dmChannel`), never a channel.
+    return switch (row['kind']) {
+      'channel' => w.channels.where((c) => c.id == id).firstOrNull,
+      'dm' => w.dms.where((c) => c.id == id).firstOrNull,
+      _ => null,
+    };
   }
 
   /// Done and Unfollow wait out their Undo on every route; the rest is the
@@ -4775,7 +4786,7 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
       final base = activityGestureCurrent
           ? ActivityRowWindow.from(rows).retaining(activityGestureRows!)
           : unreadSnapshotRows(rows);
-      return activityRowsInShownOrder(activityUndoShown(base));
+      return activityFacets.shown.order(activityUndoShown(base));
     }
     if (widget.section != 'tasks') return rows;
     return rows.where(matchesTask).toList()..sort((a, b) {

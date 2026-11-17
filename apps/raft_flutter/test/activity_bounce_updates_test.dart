@@ -47,7 +47,7 @@ void main() {
     );
     expect(scroll.position.outOfRange, isFalse);
     final gesture = await tester.startGesture(
-      tester.getCenter(find.byType(ListView).last),
+      tester.getCenter(find.byType(CustomScrollView).last),
     );
     try {
       await gesture.moveBy(const Offset(0, -100));

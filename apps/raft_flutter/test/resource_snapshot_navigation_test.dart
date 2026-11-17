@@ -97,7 +97,7 @@ void main() {
     await tester.pumpWidget(page('activity'));
     final dynamic state = tester.state(find.byType(ResourceView));
     expect(state.rows.where((r) => r['channelId'] == 'ch1'), isEmpty);
-    expect(state.rows, hasLength(29));
+    expect(state.rows, hasLength(49));
     expect(shown('Channel 1'), findsNothing);
     w.hold!.complete();
     await tester.pumpAndSettle();
@@ -139,7 +139,7 @@ void main() {
     await tester.pumpWidget(page('saved'));
     await tester.pumpAndSettle();
     dynamic state = tester.state(find.byType(ResourceView));
-    expect(state.rows, hasLength(20));
+    expect(state.rows, hasLength(30));
     await tester.pumpWidget(away());
     final held = heldSaved();
     expect(held, isNotNull);
@@ -148,12 +148,12 @@ void main() {
     await tester.pumpWidget(page('saved'));
     state = tester.state(find.byType(ResourceView));
     expect(skeleton, findsNothing);
-    expect(state.rows, hasLength(20));
+    expect(state.rows, hasLength(30));
     expect(find.text('Saved body 0'), findsOneWidget);
-    expect(w.savedQueries.last['limit'], 20);
+    expect(w.savedQueries.last['limit'], 50);
     w.hold!.complete();
     await tester.pumpAndSettle();
-    expect(state.rows, hasLength(20));
+    expect(state.rows, hasLength(30));
   });
 
   test('snapshots are bound to the identity that accepted them', () {

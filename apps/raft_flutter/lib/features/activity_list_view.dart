@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:raft_ui/raft_ui.dart';
 
-import '../data/source_time_formatter.dart';
 import 'activity_day_groups.dart';
 
 /// Web `ThreadsInbox`'s list `pt-2 pb-1` on a phone, `py-1` on desktop.
@@ -14,44 +13,21 @@ const double _phoneTop = 8, _desktopTop = 4, _bottom = 4;
 /// `InboxItemListGroup` margin between two days.
 const double _groupGap = 6;
 
-/// Rows already in the order they are shown (newest first); a list that is
-/// not is sorted by the time the rows show, stably (Web `sortInboxRowsByTime`).
-List<Map<String, dynamic>> activityRowsInShownOrder(
-  List<Map<String, dynamic>> rows,
-) {
-  DateTime? previous;
-  var unreadable = false;
-  for (final row in rows) {
-    final at = activityRowTime(row);
-    if (at == null) {
-      unreadable = true;
-      continue;
-    }
-    if (unreadable || (previous != null && at.isAfter(previous))) {
-      return sortActivityRowsByTime(rows);
-    }
-    previous = at;
-  }
-  return rows;
-}
-
 typedef ActivityRowBuilder =
     Widget Function(BuildContext context, Map<String, dynamic> row, int index);
 
-/// The scroller of the Activity page. [rows] are in shown order; [phoneBar] is
+/// The scroller of the Activity page. [groups] hold the rows in shown order; [phoneBar] is
 /// its first, pinned child on a phone. [indexOfKey] maps a row's list key to
-/// its index in [rows].
+/// its index in the shown rows.
 class ActivityListView extends StatelessWidget {
   const ActivityListView({
     super.key,
     required this.controller,
-    required this.rows,
+    required this.groups,
     required this.rowBuilder,
     required this.keyFor,
     required this.indexOfKey,
     required this.surface,
-    required this.formatter,
-    required this.now,
     this.phoneBar,
     this.physics,
     this.tail,
@@ -59,15 +35,13 @@ class ActivityListView extends StatelessWidget {
   });
 
   final ScrollController? controller;
-  final List<Map<String, dynamic>> rows;
+  final List<ActivityDayGroup> groups;
   final ActivityRowBuilder rowBuilder;
   final Key? Function(Map<String, dynamic> row) keyFor;
   final int? Function(Key key) indexOfKey;
 
   /// The list's own surface: a stuck heading paints it, so no row shows through.
   final Color surface;
-  final SourceTimeFormatter formatter;
-  final DateTime now;
   final Widget? phoneBar, tail, lead;
   final ScrollPhysics? physics;
 
@@ -76,11 +50,6 @@ class ActivityListView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final groups = groupActivityRowsByDay(
-      rows,
-      formatter: formatter,
-      now: now,
-    );
     final padding = raftScrollPadding(
       context,
       EdgeInsets.only(

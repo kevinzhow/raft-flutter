@@ -76,7 +76,10 @@ void main() {
           ),
         );
         await tester.pumpAndSettle();
-        await tester.tap(find.text('Unread').first);
+        // The Filter menu (Web): Filter, then its Unread item.
+        await tester.tap(find.text('Filter'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Unread').last);
         await tester.pumpAndSettle();
         final card = find.byKey(const ValueKey('activity-thread-thread-1'));
         final next = find.byKey(const ValueKey('activity-thread-thread-2'));
@@ -99,10 +102,14 @@ void main() {
           expect(preview, hasLength(1));
         } else if (mode == 'expire') {
           await tester.pump(const Duration(milliseconds: 151));
-          expect(card, findsNothing);
+          // Web: the Unread list keeps a row read here, shown read, until the
+          // list changes (activityUnreadSnapshot).
+          expect(card, findsOneWidget);
           expect(canonical, isEmpty);
         } else if (mode == 'filter') {
-          await tester.tap(find.text('All').first);
+          await tester.tap(find.text('Filter'));
+          await tester.pumpAndSettle();
+          await tester.tap(find.text('All').last);
           await tester.pump();
           final dynamic state = tester.state(find.byType(ResourceView));
           expect(state.activityGestureCurrent, false);

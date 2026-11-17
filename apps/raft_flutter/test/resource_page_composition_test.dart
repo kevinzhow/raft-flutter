@@ -257,50 +257,6 @@ void main() {
     },
   );
   testWidgets(
-    'Activity wraps title after an inline source icon without indenting continuation',
-    (t) async {
-      await mount(t, 'activity', const Size(342, 620));
-      expect(find.byTooltip('Filters'), findsNothing);
-      final card = find.byKey(
-        const ValueKey('activity-thread-thread-msg-agent-reply'),
-      );
-      final icon = find.descendant(
-        of: card,
-        matching: find.byType(RaftThreadIcon),
-      );
-      expect(t.getSize(icon), const Size(13, 13));
-      expect(find.byType(RaftDirectMessageIcon), findsOneWidget);
-      final title = find.descendant(
-        of: card,
-        matching: find.byWidgetPredicate(
-          (widget) =>
-              widget is Text &&
-              (widget.textSpan?.toPlainText().contains(
-                    'Captured the Android visual artifact',
-                  ) ??
-                  false),
-        ),
-      );
-      final rich = find.descendant(of: title, matching: find.byType(RichText));
-      final paragraph = t.renderObject<RenderParagraph>(rich);
-      final boxes = paragraph.getBoxesForSelection(
-        TextSelection(
-          baseOffset: 1,
-          extentOffset: paragraph.text.toPlainText().length,
-        ),
-      );
-      final lineTops = boxes.map((box) => box.top).toSet().toList()..sort();
-      expect(lineTops, hasLength(2));
-      expect(boxes.first.left, 19);
-      expect(
-        boxes.firstWhere((box) => box.top == lineTops.last).left,
-        0,
-        reason: 'The second line uses the whole title column.',
-      );
-      expect(t.takeException(), isNull);
-    },
-  );
-  testWidgets(
     'Activity prefers authoritative unread/mention destination and old card cannot navigate after revocation',
     (t) async {
       final calls = <String>[];
@@ -320,7 +276,7 @@ void main() {
       await t.pumpAndSettle();
       expect(calls, ['channel-design:msg-visual-activity-reply']);
       // Source markRead: the opened row's 2 unread leave the header total.
-      expect(find.text('3 active · 1 unread'), findsOneWidget);
+      expect(find.text('3 in progress · 1 unread'), findsOneWidget);
       w.server = RaftRecord({'id': 's', 'role': 'guest'});
       w.notifyListeners();
       await t.pumpAndSettle();

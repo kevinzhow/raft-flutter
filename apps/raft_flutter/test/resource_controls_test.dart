@@ -162,9 +162,10 @@ void main() {
       expect(find.byTooltip('Activity Actions'), findsNothing);
       expect(find.text('Unfollowed Threads'), findsNothing);
       expect(find.text('Group by Channel'), findsNothing);
-      expect(find.text('All'), findsOneWidget);
-      expect(find.text('Unread'), findsOneWidget);
-      expect(find.text('Mentions'), findsOneWidget);
+      // Web 1.24: one Filter menu (All, Unread, Mentions, Pinned, Saved,
+      // Artifacts), not a segmented strip.
+      expect(find.text('Filter'), findsOneWidget);
+      expect(find.byType(RaftSegmentedControl<String>), findsNothing);
       expect(
         find.byWidgetPredicate(
           (widget) =>
@@ -355,56 +356,6 @@ void main() {
     );
     expect(t.takeException(), isNull);
   });
-  for (final special in [
-    ('Done Conversations', '/channels/inbox/done'),
-    ('Unfollowed Threads', '/channels/inbox/unfollowed'),
-  ]) {
-    testWidgets(
-      'Activity ${special.$1} protocol state returns to visible All with one click',
-      (t) async {
-        await mount(t, 'activity');
-        // The classic Source header exposes only All/Unread/Mentions. The
-        // historical terminal-view request remains a protocol contract; seed the
-        // real ResourceView state without inventing an unsupported UI entry.
-        final dynamic state = t.state(find.byType(ResourceView));
-        state.filter = special.$1 == 'Done Conversations'
-            ? 'done'
-            : 'unfollowed';
-        await state.load();
-        await t.pumpAndSettle();
-        expect(w.calls.last.path, special.$2);
-        await t.tap(
-          find.descendant(
-            of: find.byType(RaftSegmentedControl<String>),
-            matching: find.text('All'),
-          ),
-        );
-        await t.pumpAndSettle();
-        expect(w.calls.last.path, '/channels/inbox');
-        expect(w.calls.last.query!['filter'], 'all');
-        final count = w.calls.length;
-        // Empty-selection support must not let the current All selection crash.
-        await t.tap(
-          find.descendant(
-            of: find.byType(RaftSegmentedControl<String>),
-            matching: find.text('All'),
-          ),
-        );
-        await t.pumpAndSettle();
-        expect(t.takeException(), isNull);
-        expect(w.calls.length, count);
-        expect(
-          t
-              .widget<RaftSegmentedControl<String>>(
-                find.byType(RaftSegmentedControl<String>),
-              )
-              .value,
-          'all',
-        );
-      },
-    );
-  }
-
   testWidgets(
     'Activity thread actions use thread-specific storage and parent contracts',
     (t) async {
@@ -415,7 +366,7 @@ void main() {
           'parentMessageId': 'p',
           'parentChannelId': 'c',
           'parentChannelName': 'General',
-          'latestActivityPreview': 'Thread body',
+          'parentMessagePreview': 'Thread body',
           'doneFrontierSeq': '12',
           'latestActivitySeq': '999',
           'isFollowing': false,
@@ -499,10 +450,7 @@ void main() {
       // This exercises retained protocol/projection behavior, not Source's
       // feature-gated sidebar/switcher, which is not implemented here.
       final dynamic state = t.state(find.byType(ResourceView));
-      state.advanced.groupByChannel = true;
-      await state.load();
-      await t.pumpAndSettle();
-      expect(find.text('General · 1'), findsOneWidget);
+      // Group by Channel is gone with Web 1.24's day groups.
       state.query.text = 'body';
       await state.load();
       await t.pumpAndSettle();

@@ -86,12 +86,12 @@ void main() {
 
         workspace.inbox = [channelRow(9, unread: 4)];
         state.advanced.channelId = 'ch9';
-        state.advanced.direction = 'asc';
         state.query.text = 'Preview 9';
         await state.load();
         expect(state.rows.single['channelId'], 'ch9');
         expect(workspace.inboxQueries.last['channelId'], 'ch9');
-        expect(workspace.inboxQueries.last['sort'], 'asc');
+        // Web has no sort control: the list is always newest first.
+        expect(workspace.inboxQueries.last['sort'], 'desc');
         expect(workspace.inboxQueries.last['q'], 'Preview 9');
         record('channel-query-ascending');
         // Machine-comparable fixture observations, identical on both refs.

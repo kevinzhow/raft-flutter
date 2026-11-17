@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
+import 'package:raft_flutter/data/activity_filter_choice.dart';
 import 'package:raft_flutter/features/resource_view.dart';
 import 'package:raft_ui/raft_ui.dart';
 
@@ -87,7 +88,7 @@ void main() {
     return t.state(find.byType(ResourceView));
   }
 
-  Finder getList() => find.byType(ListView).last;
+  Finder getList() => find.byType(CustomScrollView).last;
 
   Future<void> reachEnd(WidgetTester t) async {
     await t.drag(getList(), const Offset(0, -6000));
@@ -219,10 +220,10 @@ void main() {
     w.failAppend = true;
     await reachEnd(t);
     expect(w.inboxQueries, hasLength(2));
-    state.selectActivitySection('unread', state.authority);
+    state.chooseActivityFilter(ActivityFilterChoice.unread);
     await t.pumpAndSettle();
     w.failAppend = false;
-    state.selectActivitySection('all', state.authority);
+    state.chooseActivityFilter(ActivityFilterChoice.all);
     await t.pumpAndSettle();
     expect(state.rows, hasLength(60));
     expect(w.inboxQueries.last['offset'], 50);
@@ -286,7 +287,7 @@ void main() {
     await t.drag(getList(), const Offset(0, -6000));
     await t.pump();
     expect(w.inboxQueries.map((q) => q['offset']), [0, 50]);
-    state.selectActivitySection('unread', state.authority);
+    state.chooseActivityFilter(ActivityFilterChoice.unread);
     await t.pump();
     expect(w.inboxQueries.last['offset'], 0);
     expect(w.inboxQueries.last['filter'], 'unread');

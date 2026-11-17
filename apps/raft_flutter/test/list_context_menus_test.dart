@@ -108,7 +108,11 @@ void main() {
     await tester.tap(find.text('Mark as Done'));
     await tester.pumpAndSettle();
     expect(client.posts, contains('POST /channels/inbox/done'));
-    expect(client.bodies.last.toString(), contains('ch0'));
+    expect(
+      client.bodies[client.posts.indexOf('POST /channels/inbox/done')]
+          .toString(),
+      contains('ch0'),
+    );
   });
 
   testWidgets(

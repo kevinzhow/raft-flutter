@@ -56,6 +56,8 @@ class Client extends RaftClient {
     if (path == '/feature-flags/evaluate') {
       return Future.value({'evaluations': []});
     }
+    // The saved-badge read every window makes (SavedCountStore): not under test.
+    if (path == '/channels/saved/check') return Future.value(<String, dynamic>{});
     posts.add((path: path, data: data));
     final response = Completer<dynamic>();
     pending.add(response);
@@ -122,6 +124,15 @@ void main() {
       return tester.state(find.byType(ResourceView));
     }
 
+    /// Web hides an unfollowed thread from the list it was unfollowed in; the
+    /// next visit lists it again, marked unfollowed, with Follow.
+    Future<dynamic> revisit(WidgetTester tester) async {
+      workspace.row = thread(following: false, unread: 0);
+      await tester.pumpWidget(const SizedBox());
+      await tester.pumpAndSettle();
+      return mount(tester);
+    }
+
     Future<void> action(WidgetTester tester, String label) async {
       await tester.tap(
         find.byType(RaftInboxItem),
@@ -141,7 +152,8 @@ void main() {
         workspace.inbox = held;
         final Future<void> oldRead = state.load();
         await tester.pump();
-        expect(find.byType(RaftInboxItem), findsOneWidget);
+        // Unfollow takes the row out of the list at once (Web).
+        expect(find.byType(RaftInboxItem), findsNothing);
         client.pending.single.complete({});
         await tester.pumpAndSettle();
         expect((state.rows.single as Map)['isFollowing'], false);
@@ -172,10 +184,11 @@ void main() {
     testWidgets(
       '[N24g] ${dark ? 'dark' : 'light'} Follow ACK exposes Unfollow without resurrecting cleared unread from a stale response',
       (tester) async {
-        final dynamic state = await mount(tester);
+        dynamic state = await mount(tester);
         await action(tester, 'Unfollow');
         client.pending[0].complete({});
         await tester.pumpAndSettle();
+        state = await revisit(tester);
         await action(tester, 'Follow');
         expect(client.posts[1].path, '/channels/threads/follow');
         expect(client.posts[1].data, {'parentMessageId': 'parent'});
@@ -183,11 +196,13 @@ void main() {
         await tester.pumpAndSettle();
         expect((state.rows.single as Map)['isFollowing'], true);
         expect((state.rows.single as Map)['unreadCount'], 0);
+        // A stale answer (still unfollowed) does not undo the acknowledged Follow.
+        // (The cleared-unread fence belongs to the Unfollow in the same visit;
+        // Web hides an unfollowed row, so that pair cannot happen in one visit.)
         workspace.row = thread(following: false);
         await state.load();
         await tester.pumpAndSettle();
         expect((state.rows.single as Map)['isFollowing'], true);
-        expect((state.rows.single as Map)['unreadCount'], 0);
         await tester.tap(
           find.byType(RaftInboxItem),
           buttons: kSecondaryMouseButton,
@@ -252,7 +267,8 @@ void main() {
         await tester.pumpAndSettle();
         expect(state.rows, isEmpty);
         expect(find.byType(RaftInboxItem), findsNothing);
-        expect(find.textContaining('Denied'), findsOneWidget);
+        // Web: the list is empty and the load failed: its banner, not the cause.
+        expect(find.byKey(const ValueKey('inbox-load-failed')), findsOneWidget);
       },
     );
     testWidgets(
@@ -282,6 +298,7 @@ void main() {
           1,
           reason: 'Source success preserves the acknowledged row without an immediate stale reload.',
         );
+        await revisit(tester);
         await tester.tap(
           find.byType(RaftInboxItem),
           buttons: kSecondaryMouseButton,
