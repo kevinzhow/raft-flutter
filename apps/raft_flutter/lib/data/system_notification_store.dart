@@ -536,7 +536,7 @@ class SystemNotificationStore extends ChangeNotifier {
   static bool validFingerprint(String value) =>
       value.length <= 4096 &&
       RegExp(
-        r'^(plan-downgrade|joint-over-limit|joint-invite|computer-attention|machine-offline|machine-disk-low):[a-zA-Z0-9_:.,+=\-]+$',
+        r'^(plan-downgrade|joint-over-limit|joint-invite|seat-join-blocked|computer-attention|machine-offline|machine-disk-low):[a-zA-Z0-9_:.,+=\-]+$',
       ).hasMatch(value);
 
   bool reconcileFeedback(String scope, int unread) {

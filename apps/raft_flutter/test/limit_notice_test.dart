@@ -1,6 +1,3 @@
-import 'dart:async';
-import 'dart:typed_data';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -83,7 +80,6 @@ Future<_Rig> _boot(
     opened.add(uri);
     return true;
   };
-  debugDefaultTargetPlatformOverride = platform;
   final client = _Client(capabilities);
   final w = WorkspaceController(client)
     ..server = RaftRecord({
@@ -96,7 +92,6 @@ Future<_Rig> _boot(
     ..channel = RaftChannel({'id': 'channel', 'name': 'general'});
   await t.binding.setSurfaceSize(size);
   addTearDown(() async {
-    debugDefaultTargetPlatformOverride = null;
     webBillingLauncher = (_) async => false;
     await t.pumpWidget(const SizedBox.shrink());
     w.dispose();
@@ -108,14 +103,18 @@ Future<_Rig> _boot(
       locale: locale,
       supportedLocales: const [Locale('en'), Locale('zh', 'CN')],
       localizationsDelegates: GlobalMaterialLocalizations.delegates,
-      theme: raftTheme(),
+      theme: raftTheme(platform: platform),
+      builder: (context, child) => RaftToastHost(child: child!),
       home: LimitNoticeHost(
         controller: w,
         queue: w.composer.uploads.limitNotices,
         child: Scaffold(
           body: Builder(
             builder: (context) => ListenableBuilder(
-              listenable: w,
+              listenable: Listenable.merge([
+                w,
+                w.composer.changes(w.draftScope()),
+              ]),
               builder: (context, _) =>
                   composerAttachmentsFor(
                     context,
@@ -385,6 +384,22 @@ void main() {
         },
       );
     }
+
+    testWidgets(
+      'a browser that cannot open shows a toast, not a silent close',
+      (t) async {
+        final rig = await _boot(t, capabilities: fileSizeCaps);
+        webBillingLauncher = (_) async => false;
+        await _select(t, rig, [_file('demo.mov', 63 * mb)]);
+        await t.tap(find.byKey(const ValueKey('limit-notice-upgrade')));
+        await t.pump();
+        await t.pump(const Duration(milliseconds: 300));
+        expect(
+          find.text("Stripe checkout didn't open. Try again."),
+          findsOneWidget,
+        );
+      },
+    );
 
     testWidgets('Close and Escape leave without opening the Web', (t) async {
       final rig = await _boot(t, capabilities: fileSizeCaps);

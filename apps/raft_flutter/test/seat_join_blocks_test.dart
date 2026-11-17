@@ -1,12 +1,12 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/search_memory.dart';
 import 'package:raft_flutter/data/seat_join_blocks.dart';
+import 'package:raft_flutter/data/system_notification_projection.dart';
 import 'package:raft_flutter/data/system_notification_store.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/features/system_notification_center.dart';
@@ -212,7 +212,7 @@ void main() {
         var store = build(storage: memory, seat: (_) async => blocks(rows));
         await store.bind(scope('one'));
         await flush();
-        await store.dismiss('one', 'seat-join-blocked:b1');
+        store.dismiss('one', 'seat-join-blocked:b1');
         await flush();
         expect(
           store.entries.where(
@@ -274,7 +274,6 @@ void main() {
       bool mobile = true,
     }) async {
       SharedPreferences.setMockInitialValues({});
-      debugDefaultTargetPlatformOverride = platform;
       client = _Client(flag: flag);
       final w = WorkspaceController(client)
         ..server = RaftRecord({
@@ -286,7 +285,6 @@ void main() {
         ..section = 'home';
       await t.binding.setSurfaceSize(size);
       addTearDown(() async {
-        debugDefaultTargetPlatformOverride = null;
         webBillingLauncher = (_) async => false;
         await t.pumpWidget(const SizedBox.shrink());
         w.dispose();
@@ -297,7 +295,8 @@ void main() {
         MaterialApp(
           supportedLocales: const [Locale('en'), Locale('zh', 'CN')],
           localizationsDelegates: GlobalMaterialLocalizations.delegates,
-          theme: raftTheme(),
+          theme: raftTheme(platform: platform),
+          builder: (context, child) => RaftToastHost(child: child!),
           home: Scaffold(
             body: Align(
               alignment: Alignment.topRight,
@@ -358,6 +357,18 @@ void main() {
         );
       });
     }
+
+    testWidgets('a browser that cannot open shows a toast', (t) async {
+      webBillingLauncher = (_) async => false;
+      await boot(t);
+      await openCenter(t);
+      await t.tap(find.text('Add seats'));
+      await t.pump(const Duration(milliseconds: 300));
+      expect(
+        find.text("Stripe checkout didn't open. Try again."),
+        findsOneWidget,
+      );
+    });
 
     testWidgets('a member: Ask an owner, and it opens the same page', (
       t,

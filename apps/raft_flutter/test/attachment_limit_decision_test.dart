@@ -8,27 +8,27 @@ import 'package:raft_flutter/data/attachment_limit_decision.dart';
 // no plan changes).
 const mb = 1024 * 1024;
 
-typedef _File = ({String name, int size});
+typedef FileRow = ({String name, int size});
 
-_File f(String name, int size) => (name: name, size: size);
+FileRow f(String name, int size) => (name: name, size: size);
 
-AttachmentSelectionDecision<_File> decide(
-  List<_File> files, {
+AttachmentSelectionDecision<FileRow> decide(
+  List<FileRow> files, {
   AttachmentUploadLimits? limits = const AttachmentUploadLimits(
     maxBytes: 50 * mb,
   ),
   int existing = 0,
-}) => decideAttachmentSelection<_File>(
+}) => decideAttachmentSelection<FileRow>(
   existingCount: existing,
   candidates: files,
   sizeOf: (x) => x.size,
   limits: limits,
 );
 
-AttachmentRejectionPlan<_File> plan(
-  AttachmentSelectionDecision<_File> decision, {
+AttachmentRejectionPlan<FileRow> plan(
+  AttachmentSelectionDecision<FileRow> decision, {
   bool free = true,
-}) => planAttachmentRejection<_File>(
+}) => planAttachmentRejection<FileRow>(
   rejected: decision.rejected,
   limits: decision.limits,
   freePlan: free,

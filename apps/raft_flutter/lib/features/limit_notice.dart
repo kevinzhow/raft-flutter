@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/widgets.dart';
 import 'package:intl/intl.dart';
-import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import '../data/attachment_limit_decision.dart';
@@ -309,7 +308,6 @@ Future<void> showLimitNotice(
   required String title,
   required String hint,
 }) async {
-  final failure = raftText(context, "Stripe checkout didn't open. Try again.");
   await RaftConfirmDialog.show(
     context,
     RaftConfirmDialog(
@@ -321,9 +319,15 @@ Future<void> showLimitNotice(
       cancelLabel: raftText(context, 'Close'),
       confirmVariant: RaftButtonRecipeVariant.primary,
       initialFocusCancel: true,
+      // No request before the browser opens (Kevin 2654e77c). A browser that
+      // cannot open is a visible toast, not a silent close.
       onConfirm: () async {
-        if (!await w.openWebBilling(gate: gate)) {
-          throw RaftApiException(failure);
+        if (!await w.openWebBilling(gate: gate) && context.mounted) {
+          showRaftToast(
+            context,
+            "Stripe checkout didn't open. Try again.",
+            tone: RaftToastRecipeTone.error,
+          );
         }
       },
     ),

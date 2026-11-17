@@ -474,6 +474,7 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
       return secondFactorRecoveryEntry(context, w.client, n, store, scope);
     }
     final copy = systemNotificationCopy(context, n);
+    final managesBilling = w.can('manageBilling');
     return RaftNotificationEntry(
       id: n.id,
       kind: switch (n.kind) {
@@ -503,7 +504,7 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
             // Both happen on the Web's Plan & Billing page.
             label: raftText(
               context,
-              w.can('manageBilling') ? 'Add seats' : 'Ask an owner',
+              managesBilling ? 'Add seats' : 'Ask an owner',
             ),
             primary: true,
             onPressed: () => unawaited(openSeatJoinBilling(n, scope)),
@@ -592,8 +593,15 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
 
   Future<void> openSeatJoinBilling(SystemNotice n, String captured) async {
     if (!live(n, captured)) return;
+    final overlayContext = context;
     close();
-    await w.openWebBilling();
+    if (!await w.openWebBilling() && overlayContext.mounted) {
+      showRaftToast(
+        overlayContext,
+        "Stripe checkout didn't open. Try again.",
+        tone: RaftToastRecipeTone.error,
+      );
+    }
   }
 
   Future<void> navigate(SystemNotice n, String captured) async {
