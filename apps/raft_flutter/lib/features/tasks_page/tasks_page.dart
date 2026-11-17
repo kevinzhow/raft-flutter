@@ -139,6 +139,10 @@ class _TasksPageState extends State<TasksPage> {
     doneSince = recentDoneSince();
     store.setShown(widget.shown);
     _watch();
+    // The people and agents the filters and the assignee picker list.
+    w.services.entityDirectory
+      ..ensureAuthors()
+      ..addListener(_changed);
     store.addListener(_changed);
     params.addListener(_paramsChanged);
     selection.addListener(_changed);
@@ -156,6 +160,7 @@ class _TasksPageState extends State<TasksPage> {
   void dispose() {
     HardwareKeyboard.instance.removeHandler(_key);
     if (_listening) {
+      w.services.entityDirectory.removeListener(_changed);
       store.removeListener(_changed);
       params.removeListener(_paramsChanged);
       selection.removeListener(_changed);
@@ -255,7 +260,11 @@ class _TasksPageState extends State<TasksPage> {
     }
     var inMenu = false;
     focused.visitAncestorElements((element) {
-      if (element.widget is RawMenuAnchor) inMenu = true;
+      // A menu or popover's own layer (Web: a [role=menu] / [role=dialog]
+      // in the document takes the key).
+      if (element.widget is RawMenuAnchor || element.widget is OverlayPortal) {
+        inMenu = true;
+      }
       return !inMenu;
     });
     return inMenu;

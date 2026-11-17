@@ -106,6 +106,27 @@ void main() {
       await t.pumpWidget(const SizedBox());
     });
 
+    testWidgets('Escape closes the bar\'s menu and leaves the selection', (
+      t,
+    ) async {
+      final (w, _) = (await t.runAsync(() => tasksFixture(tasks: mine(3))))!;
+      addTearDown(w.dispose);
+      await mountPage(t, w);
+      await selectAll(t);
+      await t.tap(find.byKey(const Key('selection-bar-action-status')));
+      await settleTasks(t, rounds: 3);
+      expect(find.text('Done'), findsOneWidget);
+      await t.sendKeyEvent(LogicalKeyboardKey.escape);
+      await settleTasks(t, rounds: 3);
+      // The menu's Escape is the menu's.
+      expect(find.text('Done'), findsNothing);
+      expect(bar, findsOneWidget);
+      await t.sendKeyEvent(LogicalKeyboardKey.escape);
+      await settleTasks(t, rounds: 3);
+      expect(bar, findsNothing);
+      await t.pumpWidget(const SizedBox());
+    });
+
     testWidgets('Escape and Ctrl+A are a field\'s while the search has '
         'focus', (t) async {
       final (w, _) = (await t.runAsync(() => tasksFixture(tasks: mine(3))))!;
