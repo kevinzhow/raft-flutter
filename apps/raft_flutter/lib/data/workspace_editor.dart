@@ -362,8 +362,8 @@ class WorkspaceEditor implements WorkspaceEditorEntrypoints {
   }
 
   @override
-  Future<int?> uploadLimitBytes() async =>
-      (await readSelectionLimits(query, null)).limits?.maxBytes;
+  Future<SelectionLimits> uploadLimits() =>
+      readSelectionLimits(query, server?.json);
 
   Future<void> attachSelection(
     List<({String name, Uint8List bytes})> files, {
@@ -403,7 +403,7 @@ class WorkspaceEditor implements WorkspaceEditorEntrypoints {
           scope == entrypoints.draftScope(thread: thread) &&
           authority == _uploadAuthority(),
       resolveThread: ensureThread,
-      limit: () => readSelectionLimits(query, server?.json),
+      limit: entrypoints.uploadLimits,
       upload: (id, draft, progress) => uploadDraft(client, id, draft, progress),
       persist: saveDraftScope,
       notice: (message) => _raiseComposerNotice(scope, message),
@@ -508,7 +508,7 @@ class WorkspaceEditor implements WorkspaceEditorEntrypoints {
           if (!current()) return null;
           return thread ? await ensureThread() : intendedChannel;
         },
-        limit: entrypoints.uploadLimitBytes,
+        limit: () async => (await entrypoints.uploadLimits()).limits?.maxBytes,
         transfer: (file) => _transferUpload(file, thread: thread),
         started: () {
           _composerNotices.clear(scope);

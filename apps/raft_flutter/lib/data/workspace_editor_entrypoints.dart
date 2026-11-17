@@ -15,7 +15,9 @@ abstract interface class WorkspaceEditorEntrypoints {
   void saveDraft(String text, {bool thread = false});
   List<UploadDraft> uploads({bool thread = false});
   bool sharedBlocked({bool thread = false});
-  Future<int?> uploadLimitBytes();
+
+  /// The server's upload rule for one selection (`readSelectionLimits`).
+  Future<SelectionLimits> uploadLimits();
   Future<Map<String, Map<String, dynamic>>> executeMentionActionResults(
     String action,
     List<String> resolutionIds,

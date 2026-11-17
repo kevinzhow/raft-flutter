@@ -697,7 +697,7 @@ class WorkspaceController extends ChangeNotifier
   static int? uploadLimitFromCapabilities(dynamic value) =>
       WorkspaceEditor.uploadLimitFromCapabilities(value);
 
-  Future<int?> uploadLimitBytes() => _editor.uploadLimitBytes();
+  Future<SelectionLimits> uploadLimits() => _editor.uploadLimits();
 
   Future<void> attachSelection(
     List<({String name, Uint8List bytes})> files, {
@@ -1702,7 +1702,7 @@ class _WorkspaceMessageBindings extends _WorkspaceSessionBindings
   @override
   bool sharedBlocked({bool thread = false}) => w.sharedBlocked(thread: thread);
   @override
-  Future<int?> uploadLimitBytes() => w.uploadLimitBytes();
+  Future<SelectionLimits> uploadLimits() => w.uploadLimits();
   @override
   Future<Map<String, Map<String, dynamic>>> executeMentionActionResults(
     String action,

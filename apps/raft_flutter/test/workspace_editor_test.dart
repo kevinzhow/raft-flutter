@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
+import 'package:raft_flutter/data/attachment_limit_decision.dart';
 import 'package:raft_flutter/data/shared_draft_attachment.dart';
 import 'package:raft_flutter/data/workspace_composer.dart';
 import 'package:raft_flutter/data/workspace_domain_ports.dart';
@@ -286,8 +287,16 @@ class _Fixture extends Fake
   bool sharedBlocked({bool thread = false}) =>
       blocked ?? owner.sharedBlocked(thread: thread);
   @override
-  Future<int?> uploadLimitBytes() =>
-      limit == null ? owner.uploadLimitBytes() : limit!();
+  Future<SelectionLimits> uploadLimits() async {
+    if (limit == null) return owner.uploadLimits();
+    final bytes = await limit!();
+    return (
+      limits: bytes == null ? null : AttachmentUploadLimits(maxBytes: bytes),
+      freePlan: false,
+      serverId: server?.id,
+    );
+  }
+
   @override
   Future<Map<String, Map<String, dynamic>>> executeMentionActionResults(
     String action,
