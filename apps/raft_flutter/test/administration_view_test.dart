@@ -336,10 +336,10 @@ void main() {
       }
       expect(_section('translation'), findsOneWidget);
       expect(_section('member-permissions'), findsOneWidget);
-      // No editServerSettings: no Save.
+      // No editServerSettings: the switch is disabled.
       expect(
-        find.byKey(const ValueKey('admin-hide-humans-save')),
-        findsNothing,
+        t.widget<RaftSwitch>(find.byKey(const ValueKey('admin-hide-humans'))).enabled,
+        isFalse,
       );
     });
 
@@ -436,9 +436,10 @@ void main() {
       addTearDown(w.dispose);
       await _pump(t, w);
       expect(_in('admins', find.text('Owner only')), findsOneWidget);
+      // v1.24 canChangeAgentMemberRole: an admin can demote an admin agent.
       expect(
         find.byKey(const ValueKey('admin-remove-agent:a-bot')),
-        findsNothing,
+        findsOneWidget,
       );
     });
 
@@ -456,34 +457,6 @@ void main() {
       await t.tap(find.byKey(const ValueKey('admin-remove-agent:a-bot')));
       await t.pumpAndSettle();
       expect(_in('admins', find.text('Agent is busy')), findsOneWidget);
-    });
-
-    testWidgets('system channels: hide #all through its endpoint', (t) async {
-      final (w, c) = _workspace(_routes());
-      addTearDown(w.dispose);
-      c.routes['POST /channels/system/all/hide'] = (_) => {'id': 'c-all'};
-      c.routes['GET /channels'] = (_) => [];
-      await _pump(t, w);
-      final save = find.byKey(const ValueKey('admin-hide-all-save'));
-      await t.tap(save);
-      await t.pumpAndSettle();
-      expect(c.sent('POST /channels/system/all/hide'), isEmpty);
-      await t.tap(find.byKey(const ValueKey('admin-hide-all')));
-      await t.pump();
-      await t.tap(save);
-      await t.pump();
-      await t.pump();
-      expect(c.sent('POST /channels/system/all/hide'), hasLength(1));
-      await t.pumpAndSettle();
-      expect(
-        find.descendant(of: save, matching: find.text('Saved')),
-        findsOneWidget,
-      );
-      await t.pump(const Duration(seconds: 3));
-      expect(
-        find.descendant(of: save, matching: find.text('Save')),
-        findsOneWidget,
-      );
     });
 
     testWidgets('pending invites: revoke after confirmation', (t) async {
@@ -671,93 +644,11 @@ void main() {
       await t.pump(const Duration(seconds: 2));
     });
 
-    testWidgets('onboarding: save and finish setup', (t) async {
-      final (w, c) = _workspace(
-        _routes(
-          projection: {'surface': 'create_agent', 'phase': 'in_progress'},
-        ),
-      );
-      addTearDown(w.dispose);
-      c.routes['PATCH /servers/s1/onboarding-settings'] = (_) => {};
-      c.routes['POST /servers/s1/setup-transition'] = (_) => {
-        'surface': 'create_agent',
-        'phase': 'in_progress',
-      };
-      await _pump(t, w);
-      expect(
-        _in('onboarding', find.text('Disabled (no automatic onboarding)')),
-        findsOneWidget,
-      );
-      await t.tap(find.byKey(const ValueKey('admin-onboarding-greeting')));
-      await t.pumpAndSettle();
-      await t.tap(find.text('No').last);
-      await t.pumpAndSettle();
-      await t.tap(find.byKey(const ValueKey('admin-onboarding-save')));
-      await t.pumpAndSettle();
-      expect(c.sent('PATCH /servers/s1/onboarding-settings'), [
-        {'onboardingAgentId': null, 'agentAllChannelGreetingEnabled': false},
-      ]);
-      await t.tap(find.byKey(const ValueKey('finish-server-setup')));
-      await t.pumpAndSettle();
-      expect(c.sent('POST /servers/s1/setup-transition'), [
-        {'action': 'start'},
-      ]);
-      await t.pump(const Duration(seconds: 2));
-    });
-
     testWidgets('onboarding: complete setup hides Finish setup', (t) async {
       final (w, _) = _workspace(_routes());
       addTearDown(w.dispose);
       await _pump(t, w);
       expect(find.byKey(const ValueKey('finish-server-setup')), findsNothing);
-    });
-
-    testWidgets('translation: provider warning and save', (t) async {
-      final (w, c) = _workspace(_routes(providerAvailable: false));
-      addTearDown(w.dispose);
-      c.routes['PATCH /servers/s1/translation-settings'] = (_) => {
-        'translationEnabled': true,
-        'translationAvailable': false,
-        'canManageTranslation': true,
-      };
-      await _pump(t, w);
-      const warning =
-          'Translation is enabled for this server, but no translation provider is configured.';
-      expect(find.text(warning), findsNothing);
-      await t.tap(find.byKey(const ValueKey('admin-translation')));
-      await t.pumpAndSettle();
-      expect(find.text(warning), findsOneWidget);
-      await t.tap(find.byKey(const ValueKey('admin-translation-save')));
-      await t.pumpAndSettle();
-      expect(c.sent('PATCH /servers/s1/translation-settings'), [
-        {'translationEnabled': true},
-      ]);
-      expect(w.translations.settings.serverEnabled, isTrue);
-      await t.pump(const Duration(seconds: 3));
-    });
-
-    testWidgets('member permissions: save hideHumansFromMembers', (t) async {
-      final (w, c) = _workspace(_routes());
-      addTearDown(w.dispose);
-      c.routes['PATCH /servers/s1'] = (_) => {};
-      c.routes['GET /servers'] = (_) => [
-        {
-          'id': 's1',
-          'name': 'Fixture',
-          'slug': 'fixture',
-          'role': 'owner',
-          'hideHumansFromMembers': true,
-        },
-      ];
-      await _pump(t, w);
-      await t.tap(find.byKey(const ValueKey('admin-hide-humans')));
-      await t.pump();
-      await t.tap(find.byKey(const ValueKey('admin-hide-humans-save')));
-      await t.pumpAndSettle();
-      expect(c.sent('PATCH /servers/s1'), [
-        {'hideHumansFromMembers': true},
-      ]);
-      await t.pump(const Duration(seconds: 3));
     });
 
     testWidgets('revisit paints accepted invites and links at once', (t) async {

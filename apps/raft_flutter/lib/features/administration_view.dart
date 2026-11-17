@@ -4,20 +4,20 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:raft_ui/raft_ui.dart';
 
-import '../data/user_error.dart';
 import '../data/workspace_controller.dart';
 import '../data/workspace_entity_directory.dart';
 import '../platform/content_links.dart';
+import 'administration_context_grants.dart';
 import 'administration_model.dart';
+import 'administration_onboarding_section.dart';
+import 'administration_support.dart';
+import 'administration_switch_sections.dart';
 import 'agent_detail_view.dart' show agentTimeFormatter;
 import 'management_support.dart'
     show
         managementMap,
         managementRows,
-        pageIdentity,
-        readPageSnapshot,
-        writePageSnapshot;
-import 'server_setup_gate.dart' show refreshServerSetup;
+        pageIdentity;
 
 /// Settings > Workspace > Administration: SettingsPanel.tsx
 /// AdministrationTabContent. Each section owns its data and requests like the
@@ -34,6 +34,7 @@ import 'server_setup_gate.dart' show refreshServerSetup;
 /// | Translation | (server) | translation store gate |
 /// | Product analytics | editServerSettings | GET .../product-analytics-settings |
 /// | Member Permissions | (server); edit needs editServerSettings | server `hideHumansFromMembers` |
+/// | Context access | owner/admin + `agent_context_view_v0` | GET .../agent-context-view-grants |
 ///
 /// Revisits paint each section's last accepted reads (in-memory page
 /// snapshots under [pageIdentity]) and revalidate in place.
@@ -65,15 +66,17 @@ class AdministrationView extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           if (w.can('changeMemberRoles')) _AdminsSection(w: w),
-          if (w.can('changeChannelVisibility')) _SystemChannelsSection(w: w),
+          if (w.can('changeChannelVisibility'))
+            AdminSystemChannelsSection(w: w),
           if (w.can('inviteMembers')) _InvitesSection(w: w),
           if (w.can('inviteMembers'))
             _JoinLinksSection(w: w, origin: origin.origin),
           if (w.can('editServerSettings')) _AgreementSection(w: w),
-          if (w.can('editServerSettings')) _OnboardingSection(w: w),
-          _TranslationSection(w: w),
+          if (w.can('editServerSettings')) AdminOnboardingSection(w: w),
+          AdminTranslationSection(w: w),
           if (w.can('editServerSettings')) _ProductAnalyticsSection(w: w),
-          _MemberPermissionsSection(w: w),
+          AdminMemberPermissionsSection(w: w),
+          AdminContextViewGrantsSection(w: w),
         ],
       ),
     );
@@ -89,12 +92,6 @@ class AdministrationView extends StatelessWidget {
         : sections;
   }
 }
-
-/// `err.response?.data?.error || fallback`.
-String _apiError(Object error, String fallback) =>
-    userErrorText(error, fallback: fallback, where: 'administration');
-
-Key _region(String section) => ValueKey('admin-section-$section');
 
 /// The `saved` flag Web clears after a delay (1.5 s / 2 s).
 mixin _SavedFlash<T extends StatefulWidget> on State<T> {
@@ -209,7 +206,7 @@ class _AdminsSectionState extends State<_AdminsSection> {
       if (next != 'member') selectedKey = null;
     } catch (e) {
       if (mounted && identity == pageIdentity(w)) {
-        error = _apiError(e, failure);
+        error = adminApiError(e, failure);
       }
     } finally {
       if (mounted) setState(() => savingKey = null);
@@ -241,7 +238,7 @@ class _AdminsSectionState extends State<_AdminsSection> {
       avatarUrl: p.avatarUrl,
     );
     return RaftAdminSection(
-      regionKey: _region('admins'),
+      regionKey: adminRegion('admins'),
       label: 'Owners & admins',
       glyph: RaftGlyph.shield,
       count: admins.length,
@@ -284,165 +281,6 @@ class _AdminsSectionState extends State<_AdminsSection> {
   }
 }
 
-// ------------------------------------------------------------ System Channels
-
-class _SystemChannelsSection extends StatefulWidget {
-  const _SystemChannelsSection({required this.w});
-  final WorkspaceController w;
-  @override
-  State<_SystemChannelsSection> createState() => _SystemChannelsState();
-}
-
-class _SystemChannelsState extends State<_SystemChannelsSection>
-    with _SavedFlash {
-  WorkspaceController get w => widget.w;
-  late bool current = currentHidden, hidden = current;
-  bool saving = false;
-  // ignore: raft_lints/avoid_imperative_notice_state -- Each section's error clears when its next save/action starts, on a successful load, and when the real server state it describes changes (_resync); sections are remounted on server/account change.
-  String? error;
-
-  bool get currentHidden => !w.channels.any((c) => c.name == 'all');
-
-  @override
-  void initState() {
-    super.initState();
-    w.addListener(_resync);
-  }
-
-  @override
-  void dispose() {
-    w.removeListener(_resync);
-    super.dispose();
-  }
-
-  /// Settings-scoped re-sync when the real #all state changes.
-  void _resync() {
-    final next = currentHidden;
-    if (next == current || !mounted) return;
-    setState(() {
-      current = next;
-      hidden = next;
-      clearSaved();
-      error = null;
-    });
-  }
-
-  Future<void> save() async {
-    setState(() {
-      error = null;
-      clearSaved();
-      saving = true;
-    });
-    try {
-      // #all has dedicated hide/restore endpoints.
-      await w.command(
-        'POST',
-        '/channels/system/all/${hidden ? 'hide' : 'restore'}',
-      );
-      await w.refreshChannels();
-      if (!mounted) return;
-      current = currentHidden;
-      flashSaved(const Duration(seconds: 2));
-    } catch (e) {
-      if (mounted) {
-        setState(
-          () => error = _apiError(e, 'Failed to update #all channel setting'),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => saving = false);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) => RaftAdminSection(
-    regionKey: _region('system-channels'),
-    label: 'System channels',
-    glyph: RaftGlyph.eye,
-    child: RaftAdminCheckboxForm(
-      checkboxKey: const ValueKey('admin-hide-all'),
-      saveKey: const ValueKey('admin-hide-all-save'),
-      title: 'Hide #all channel',
-      description: 'When enabled, #all disappears from channel lists, search, posting, members, and agent channel surfaces. Existing history is preserved.',
-      checked: hidden,
-      dimmed: saving,
-      onChanged: saving
-          ? null
-          : (value) => setState(() {
-              hidden = value;
-              clearSaved();
-            }),
-      warnings: [?error],
-      save: _saveState(saving, saved),
-      onSave: hidden != current && !saving ? save : null,
-    ),
-  );
-}
-
-// ------------------------------------------------------------ list loaders
-
-/// Section reads fenced by [pageIdentity]; accepted results are kept as the
-/// section's page snapshot so a revisit paints them in the first frame.
-mixin _SectionLoad<T extends StatefulWidget> on State<T> {
-  WorkspaceController get w;
-  String get snapshotKey;
-  int _ticket = 0;
-
-  Map<String, Object?>? readSnapshot() => readPageSnapshot(w, snapshotKey);
-
-  /// Runs [read]; [accept] applies the result when it is still current.
-  Future<void> load<R>(
-    Future<R> Function() read,
-    void Function(R value) accept, {
-    void Function(Object error)? failed,
-    VoidCallback? done,
-  }) async {
-    final ticket = ++_ticket, identity = pageIdentity(w);
-    try {
-      final value = await read();
-      if (!mounted || ticket != _ticket || identity != pageIdentity(w)) {
-        return;
-      }
-      setState(() => accept(value));
-      writePageSnapshot(w, snapshotKey, identity, captureSnapshot());
-    } catch (e) {
-      if (mounted && ticket == _ticket && identity == pageIdentity(w)) {
-        setState(() => failed?.call(e));
-      }
-    } finally {
-      if (mounted && ticket == _ticket) setState(() => done?.call());
-    }
-  }
-
-  Map<String, Object?> captureSnapshot();
-  void saveSnapshot() =>
-      writePageSnapshot(w, snapshotKey, pageIdentity(w), captureSnapshot());
-}
-
-Future<bool> _confirm(
-  BuildContext context, {
-  required String title,
-  required String message,
-  required String confirmLabel,
-  String cancelLabel = 'Cancel',
-  required String loadingLabel,
-  required Future<void> Function() onConfirm,
-}) async =>
-    await RaftConfirmDialog.show(
-      context,
-      RaftConfirmDialog(
-        surfaceKey: const ValueKey('admin-confirm-dialog'),
-        confirmKey: const ValueKey('admin-confirm'),
-        title: title,
-        message: message,
-        confirmLabel: confirmLabel,
-        cancelLabel: cancelLabel,
-        loadingLabel: loadingLabel,
-        onConfirm: onConfirm,
-      ),
-    ) ==
-    true;
-
 // ------------------------------------------------------------ Pending Invites
 
 class _InvitesSection extends StatefulWidget {
@@ -453,7 +291,7 @@ class _InvitesSection extends StatefulWidget {
 }
 
 class _InvitesState extends State<_InvitesSection>
-    with _SectionLoad<_InvitesSection> {
+    with AdminSectionLoad<_InvitesSection> {
   @override
   WorkspaceController get w => widget.w;
   @override
@@ -486,7 +324,7 @@ class _InvitesState extends State<_InvitesSection>
     );
   }
 
-  Future<void> revoke(Map<String, dynamic> invite) => _confirm(
+  Future<void> revoke(Map<String, dynamic> invite) => adminConfirm(
     context,
     title: 'Revoke invite',
     message: raftFormat(
@@ -514,7 +352,7 @@ class _InvitesState extends State<_InvitesSection>
   Widget build(BuildContext context) {
     final f = agentTimeFormatter(context, w);
     return RaftAdminSection(
-      regionKey: _region('invites'),
+      regionKey: adminRegion('invites'),
       label: 'Pending invites',
       glyph: RaftGlyph.mail,
       count: invites.isEmpty ? null : invites.length,
@@ -545,7 +383,7 @@ class _JoinLinksSection extends StatefulWidget {
 }
 
 class _JoinLinksState extends State<_JoinLinksSection>
-    with _SectionLoad<_JoinLinksSection> {
+    with AdminSectionLoad<_JoinLinksSection> {
   @override
   WorkspaceController get w => widget.w;
   @override
@@ -607,7 +445,7 @@ class _JoinLinksState extends State<_JoinLinksSection>
     } catch (e) {
       if (mounted) {
         setState(
-          () => createError = _apiError(e, 'Failed to create join link'),
+          () => createError = adminApiError(e, 'Failed to create join link'),
         );
       }
     } finally {
@@ -626,7 +464,7 @@ class _JoinLinksState extends State<_JoinLinksSection>
     });
   }
 
-  Future<void> revoke(Map<String, dynamic> link) => _confirm(
+  Future<void> revoke(Map<String, dynamic> link) => adminConfirm(
     context,
     title: 'Revoke invite link',
     message: 'Revoke this invite link? Anyone who still has the URL will stop being able to join with it.',
@@ -670,7 +508,7 @@ class _JoinLinksState extends State<_JoinLinksSection>
     }
 
     return RaftAdminSection(
-      regionKey: _region('join-links'),
+      regionKey: adminRegion('join-links'),
       label: 'Invite links',
       glyph: RaftGlyph.link2,
       count: links.isEmpty ? null : links.length,
@@ -708,7 +546,7 @@ class _AgreementSection extends StatefulWidget {
 }
 
 class _AgreementState extends State<_AgreementSection>
-    with _SectionLoad<_AgreementSection>, _SavedFlash {
+    with AdminSectionLoad<_AgreementSection>, _SavedFlash {
   @override
   WorkspaceController get w => widget.w;
   @override
@@ -759,7 +597,7 @@ class _AgreementState extends State<_AgreementSection>
         );
         clearSaved();
       },
-      failed: (e) => error = _apiError(e, 'Failed to load pre-join agreement'),
+      failed: (e) => error = adminApiError(e, 'Failed to load pre-join agreement'),
       done: () => loading = false,
     );
   }
@@ -819,7 +657,7 @@ class _AgreementState extends State<_AgreementSection>
     } catch (e) {
       if (mounted) {
         setState(
-          () => error = _apiError(e, 'Failed to save pre-join agreement'),
+          () => error = adminApiError(e, 'Failed to save pre-join agreement'),
         );
       }
     } finally {
@@ -831,7 +669,7 @@ class _AgreementState extends State<_AgreementSection>
   Widget build(BuildContext context) {
     final busy = saving || loading;
     return RaftAdminSection(
-      regionKey: _region('pre-join-agreement'),
+      regionKey: adminRegion('pre-join-agreement'),
       label: 'Pre-join agreement',
       glyph: RaftGlyph.fileText,
       child: RaftAdminAgreementCard(
@@ -852,297 +690,6 @@ class _AgreementState extends State<_AgreementSection>
   }
 }
 
-// ------------------------------------------------------------ Onboarding
-
-class _OnboardingSection extends StatefulWidget {
-  const _OnboardingSection({required this.w});
-  final WorkspaceController w;
-  @override
-  State<_OnboardingSection> createState() => _OnboardingState();
-}
-
-class _OnboardingState extends State<_OnboardingSection>
-    with _SectionLoad<_OnboardingSection>, _SavedFlash {
-  @override
-  WorkspaceController get w => widget.w;
-  @override
-  String get snapshotKey => 'admin:onboarding';
-  String agentId = '', savedAgentId = '';
-  bool greeting = true, savedGreeting = true;
-  bool loading = true, saving = false, openingSetup = false;
-  Map<String, dynamic>? projection;
-  // ignore: raft_lints/avoid_imperative_notice_state -- Each section's error clears when its next save/action starts, on a successful load, and when the real server state it describes changes (_resync); sections are remounted on server/account change.
-  String? error;
-
-  @override
-  Map<String, Object?> captureSnapshot() => {
-    'agentId': savedAgentId,
-    'greeting': savedGreeting,
-    'projection': projection,
-  };
-
-  String get base => '/servers/${w.server!.id}';
-
-  void adopt(Object? settings) {
-    final onboard = managementMap(
-      managementMap(managementMap(settings)['settings'])['onboardSettings'],
-    );
-    agentId = savedAgentId = onboard['onboardingAgentId'] is String
-        ? onboard['onboardingAgentId'] as String
-        : '';
-    greeting = savedGreeting =
-        onboard['agentAllChannelGreetingEnabled'] != false;
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    w.services.entityDirectory.addListener(_changed);
-    w.services.entityDirectory.ensure(const [WorkspaceEntityKind.agents]);
-    final snapshot = readSnapshot();
-    if (snapshot != null) {
-      agentId = savedAgentId = snapshot['agentId'] as String;
-      greeting = savedGreeting = snapshot['greeting'] as bool;
-      projection = snapshot['projection'] as Map<String, dynamic>?;
-      loading = false;
-    }
-    load(
-      () => Future.wait<Object?>([
-        w.query('$base/settings'),
-        w.query('$base/setup-projection').catchError((_) => null),
-      ]),
-      (values) {
-        final settings = managementMap(values[0])['settings'];
-        if (managementMap(managementMap(settings)['onboardSettings']).isEmpty) {
-          throw StateError('Server settings unavailable');
-        }
-        adopt(values[0]);
-        projection = values[1] is Map
-            ? Map<String, dynamic>.from(values[1] as Map)
-            : null;
-        clearSaved();
-        error = null;
-      },
-      failed: (_) => error = 'Failed to load onboarding settings',
-      done: () => loading = false,
-    );
-  }
-
-  @override
-  void dispose() {
-    w.services.entityDirectory.removeListener(_changed);
-    super.dispose();
-  }
-
-  void _changed() {
-    if (mounted) setState(() {});
-  }
-
-  Future<void> save() async {
-    final identity = pageIdentity(w);
-    setState(() {
-      saving = true;
-      clearSaved();
-      error = null;
-    });
-    try {
-      await w.command(
-        'PATCH',
-        '$base/onboarding-settings',
-        data: {
-          'onboardingAgentId': agentId.isEmpty ? null : agentId,
-          'agentAllChannelGreetingEnabled': greeting,
-        },
-      );
-      if (!mounted || identity != pageIdentity(w)) return;
-      savedAgentId = agentId;
-      savedGreeting = greeting;
-      saveSnapshot();
-      flashSaved(const Duration(milliseconds: 1500));
-    } catch (e) {
-      if (mounted) {
-        setState(() => error = _apiError(e, 'Failed to save onboarding agent'));
-      }
-    } finally {
-      if (mounted) setState(() => saving = false);
-    }
-  }
-
-  Future<void> finishSetup() async {
-    if (openingSetup) return;
-    setState(() {
-      openingSetup = true;
-      error = null;
-    });
-    try {
-      final data = await w.command(
-        'POST',
-        '$base/setup-transition',
-        data: {'action': 'start'},
-      );
-      if (!mounted) return;
-      if (data is Map) projection = Map<String, dynamic>.from(data);
-      // Tell the setup gate: the reopened setup shows its modal.
-      refreshServerSetup(w);
-    } catch (e) {
-      if (mounted) {
-        setState(() => error = _apiError(e, 'Failed to reopen server setup'));
-      }
-    } finally {
-      if (mounted) setState(() => openingSetup = false);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final agents = [
-      for (final a in w.services.entityDirectory.authorAgents)
-        if (a['deletedAt'] == null && a['id'] is String)
-          (
-            a['id'] as String,
-            '@${a['name']}${a['displayName'] is String && (a['displayName'] as String).isNotEmpty ? ' (${a['displayName']})' : ''}',
-          ),
-    ];
-    final p = projection;
-    // The server's projection alone decides whether setup is offered.
-    final showSetup =
-        p != null && p['phase'] != 'complete' && p['surface'] != 'none';
-    final dirty = agentId != savedAgentId || greeting != savedGreeting;
-    return RaftAdminSection(
-      regionKey: _region('onboarding'),
-      label: 'Onboarding',
-      glyph: RaftGlyph.bot,
-      child: RaftAdminOnboardingCard(
-        agentId: agentId,
-        agents: agents,
-        onAgent: (value) => setState(() {
-          agentId = value;
-          clearSaved();
-        }),
-        greeting: greeting,
-        onGreeting: (value) => setState(() {
-          greeting = value;
-          clearSaved();
-        }),
-        disabled: saving || loading,
-        error: error,
-        save: _saveState(saving, saved),
-        onSave: dirty && !saving && !loading ? save : null,
-        showSetup: showSetup,
-        openingSetup: openingSetup,
-        onFinishSetup: finishSetup,
-      ),
-    );
-  }
-}
-
-// ------------------------------------------------------------ Translation
-
-class _TranslationSection extends StatefulWidget {
-  const _TranslationSection({required this.w});
-  final WorkspaceController w;
-  @override
-  State<_TranslationSection> createState() => _TranslationState();
-}
-
-class _TranslationState extends State<_TranslationSection> with _SavedFlash {
-  WorkspaceController get w => widget.w;
-  late bool accepted = w.services.translations.settings.serverEnabled;
-  late bool enabled = accepted;
-  bool saving = false;
-  // ignore: raft_lints/avoid_imperative_notice_state -- Each section's error clears when its next save/action starts, on a successful load, and when the real server state it describes changes (_resync); sections are remounted on server/account change.
-  String? error;
-
-  @override
-  void initState() {
-    super.initState();
-    w.services.translations.addListener(_resync);
-    w.services.translations.ensureSettings();
-  }
-
-  @override
-  void dispose() {
-    w.services.translations.removeListener(_resync);
-    super.dispose();
-  }
-
-  /// Re-sync when the accepted server gate changes.
-  void _resync() {
-    if (!mounted) return;
-    final next = w.services.translations.settings.serverEnabled;
-    setState(() {
-      if (next != accepted) {
-        accepted = next;
-        enabled = next;
-        clearSaved();
-        error = null;
-      }
-    });
-  }
-
-  Future<void> save() async {
-    setState(() {
-      saving = true;
-      clearSaved();
-      error = null;
-    });
-    try {
-      final response = await w.command(
-        'PATCH',
-        '/servers/${w.server!.id}/translation-settings',
-        data: {'translationEnabled': enabled},
-      );
-      // Message rows follow the accepted gate without a reload.
-      w.services.translations.adoptServerSettings(response);
-      if (!mounted) return;
-      flashSaved(const Duration(seconds: 2));
-    } catch (e) {
-      if (mounted) {
-        setState(
-          () => error = _apiError(
-            e,
-            'Failed to update server translation setting',
-          ),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => saving = false);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final store = w.services.translations, settings = store.settings;
-    final loading = store.settingsLoading;
-    final canManage = settings.canManage;
-    final failure = error ?? store.settingsError;
-    return RaftAdminSection(
-      regionKey: _region('translation'),
-      label: 'Translation',
-      glyph: RaftGlyph.languages,
-      child: RaftAdminCheckboxForm(
-        checkboxKey: const ValueKey('admin-translation'),
-        saveKey: const ValueKey('admin-translation-save'),
-        title: 'Enable message translation for this server',
-        description: "Turn on message translation for this server. When this is off, members' language and display preferences will not translate messages here.",
-        checked: enabled,
-        dimmed: loading || !canManage,
-        onChanged: saving || loading || !canManage
-            ? null
-            : (value) => setState(() => enabled = value),
-        warnings: [
-          if (enabled && !settings.providerAvailable) 'Translation is enabled for this server, but no translation provider is configured.',
-          ?failure,
-        ],
-        save: canManage ? _saveState(saving, saved) : null,
-        onSave: enabled != settings.serverEnabled && !saving && !loading
-            ? save
-            : null,
-      ),
-    );
-  }
-}
-
 // ------------------------------------------------------------ Product analytics
 
 class _ProductAnalyticsSection extends StatefulWidget {
@@ -1153,7 +700,7 @@ class _ProductAnalyticsSection extends StatefulWidget {
 }
 
 class _ProductAnalyticsState extends State<_ProductAnalyticsSection>
-    with _SectionLoad<_ProductAnalyticsSection> {
+    with AdminSectionLoad<_ProductAnalyticsSection> {
   @override
   WorkspaceController get w => widget.w;
   @override
@@ -1201,7 +748,7 @@ class _ProductAnalyticsState extends State<_ProductAnalyticsSection>
   Widget build(BuildContext context) {
     final s = settings;
     return RaftAdminSection(
-      regionKey: _region('product-analytics'),
+      regionKey: adminRegion('product-analytics'),
       label: 'Product analytics',
       glyph: RaftGlyph.barChart3,
       child: RaftAdminSwitchCard(
@@ -1218,96 +765,3 @@ class _ProductAnalyticsState extends State<_ProductAnalyticsSection>
   }
 }
 
-// ------------------------------------------------------------ Member Permissions
-
-class _MemberPermissionsSection extends StatefulWidget {
-  const _MemberPermissionsSection({required this.w});
-  final WorkspaceController w;
-  @override
-  State<_MemberPermissionsSection> createState() => _MemberPermissionsState();
-}
-
-class _MemberPermissionsState extends State<_MemberPermissionsSection>
-    with _SavedFlash {
-  WorkspaceController get w => widget.w;
-  late bool current = currentValue, hidden = current;
-  bool saving = false;
-  // ignore: raft_lints/avoid_imperative_notice_state -- Each section's error clears when its next save/action starts, on a successful load, and when the real server state it describes changes (_resync); sections are remounted on server/account change.
-  String? error;
-
-  bool get currentValue => w.server?.json['hideHumansFromMembers'] == true;
-
-  @override
-  void initState() {
-    super.initState();
-    w.addListener(_resync);
-  }
-
-  @override
-  void dispose() {
-    w.removeListener(_resync);
-    super.dispose();
-  }
-
-  void _resync() {
-    final next = currentValue;
-    if (next == current || !mounted) return;
-    setState(() {
-      current = next;
-      hidden = next;
-      clearSaved();
-      error = null;
-    });
-  }
-
-  Future<void> save() async {
-    setState(() {
-      saving = true;
-      clearSaved();
-      error = null;
-    });
-    try {
-      await w.command(
-        'PATCH',
-        '/servers/${w.server!.id}',
-        data: {'hideHumansFromMembers': hidden},
-      );
-      await w.recoverMembership();
-      if (!mounted) return;
-      current = hidden;
-      flashSaved(const Duration(seconds: 2));
-    } catch (e) {
-      if (mounted) {
-        setState(
-          () => error = _apiError(e, 'Failed to update member permissions'),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => saving = false);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final canEdit = w.can('editServerSettings');
-    return RaftAdminSection(
-      regionKey: _region('member-permissions'),
-      label: 'Member permissions',
-      glyph: RaftGlyph.users,
-      child: RaftAdminCheckboxForm(
-        checkboxKey: const ValueKey('admin-hide-humans'),
-        saveKey: const ValueKey('admin-hide-humans-save'),
-        title: 'Hide human directory and counts from members',
-        description: 'Member role users cannot see server-wide human lists or human counts.',
-        checked: hidden,
-        dimmed: !canEdit,
-        onChanged: !canEdit || saving
-            ? null
-            : (value) => setState(() => hidden = value),
-        warnings: [?error],
-        save: canEdit ? _saveState(saving, saved) : null,
-        onSave: hidden != current && !saving ? save : null,
-      ),
-    );
-  }
-}

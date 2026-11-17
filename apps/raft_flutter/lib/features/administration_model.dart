@@ -10,6 +10,13 @@ bool canChangeMemberRole(String? actor, String? target, String next) {
   return false;
 }
 
+/// shared/serverPermissions.ts `canChangeAgentMemberRole` (v1.24): as
+/// [canChangeMemberRole], plus an admin demoting an admin agent to member (an
+/// agent is not a peer).
+bool canChangeAgentMemberRole(String? actor, String? target, String next) =>
+    canChangeMemberRole(actor, target, next) ||
+    (actor == 'admin' && target == 'admin' && next == 'member');
+
 /// `ServerAdminSettingsPrincipal`: a human member or an agent.
 class AdminPrincipal {
   const AdminPrincipal({
@@ -147,7 +154,7 @@ List<String> adminRoleOptions(String? actor, AdminPrincipal principal) {
 bool canRemoveAdmin(String? actor, AdminPrincipal principal, int ownerCount) {
   if (principal.agent) {
     return principal.role == 'admin' &&
-        canChangeMemberRole(actor, principal.role, 'member');
+        canChangeAgentMemberRole(actor, principal.role, 'member');
   }
   if (principal.role != 'owner' && principal.role != 'admin') return false;
   if (principal.role == 'owner' && ownerCount <= 1) return false;

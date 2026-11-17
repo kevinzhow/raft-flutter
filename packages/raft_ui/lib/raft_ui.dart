@@ -187,6 +187,7 @@ export 'src/agent_unavailable_panel.dart';
 export 'src/settings_controls.dart';
 export 'src/settings_language.dart';
 export 'src/settings_administration.dart';
+export 'src/settings_administration_rows.dart';
 export 'src/appearance_picker.dart';
 
 export 'src/notification_center.dart';

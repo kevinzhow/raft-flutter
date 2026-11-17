@@ -171,12 +171,12 @@ void main() {
       _host(
         Column(
           children: [
-            RaftAdminCheckboxForm(
+            RaftAdminImmediateSwitchRow(
               title: 'Hide #all channel',
               description: 'd',
               checked: true,
-              save: RaftAdminSaveState.saved,
-              warnings: const ['Translation is enabled'],
+              onChanged: (_) {},
+              failure: 'Failed to update #all channel setting',
             ),
             RaftAdminInvitesCard(
               invites: [
@@ -203,14 +203,12 @@ void main() {
               save: RaftAdminSaveState.idle,
               onSave: null,
             ),
-            RaftAdminOnboardingCard(
+            RaftAdminOnboardingRows(
               agentId: '',
               agents: const [('a', '@a (A)')],
               onAgent: (_) {},
               greeting: true,
               onGreeting: (_) {},
-              save: RaftAdminSaveState.idle,
-              onSave: null,
               showSetup: true,
             ),
             const RaftPublicVisibilityCard(
@@ -224,7 +222,7 @@ void main() {
       ),
     );
     expect(t.takeException(), isNull);
-    expect(find.text('Saved'), findsOneWidget);
+    expect(find.text('Failed to update #all channel setting'), findsOneWidget);
     expect(find.text('No active invite links'), findsOneWidget);
     expect(find.text('06/19/2026, 08:24 PM'), findsOneWidget);
     expect(find.text('Finish setup'), findsOneWidget);

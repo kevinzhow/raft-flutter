@@ -54,18 +54,23 @@ class _UsageDataSettingsCardState extends State<UsageDataSettingsCard> {
 
   @override
   Widget build(BuildContext context) {
-    return RaftAdminSwitchCard(
-      cardKey: const ValueKey('usage-data-card'),
-      topGap: 24, // mt-6
-      switchKey: const ValueKey('usage-data-switch'),
-      title: 'Share usage data',
-      description: 'Help improve Raft by sharing which pages and features you use. Never includes your messages or other content.',
-      descriptionLink: 'Learn More',
-      onDescriptionLink: () =>
-          launchUrl(privacyUrl, mode: LaunchMode.externalApplication),
-      checked: shared,
-      onChanged: saving ? null : change,
-      error: failed ? "Couldn't save this setting. Try again." : null,
+    // A section of its own, with the same header as Administration's
+    // workspace switch (v1.24 UsageDataSettings.tsx).
+    return RaftAdminSection(
+      regionKey: const ValueKey('usage-data-card'),
+      label: 'Product analytics',
+      glyph: RaftGlyph.barChart3,
+      child: RaftAdminSwitchCard(
+        switchKey: const ValueKey('usage-data-switch'),
+        title: 'Share usage data',
+        description: 'Help improve Raft by sharing which pages and features you use. Never includes your messages or other content.',
+        descriptionLink: 'Learn more',
+        onDescriptionLink: () =>
+            launchUrl(privacyUrl, mode: LaunchMode.externalApplication),
+        checked: shared,
+        onChanged: saving ? null : change,
+        error: failed ? "Couldn't save this setting. Try again." : null,
+      ),
     );
   }
 }
