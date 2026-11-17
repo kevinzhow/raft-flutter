@@ -7,18 +7,18 @@ Pixel parity, field parity (`docs/field-parity.md`) and the page inventory (`doc
 
 ## Summary
 
-Total capabilities: 833 (391 endpoint/network keys, 442 client-side).
+Total capabilities: 837 (391 endpoint/network keys, 446 client-side).
 
 | Status | Count |
 | --- | ---: |
-| ✅ covered | 709 |
+| ✅ covered | 713 |
 | ⚠️ partial | 28 |
 | ❌ missing | 2 |
 | ➖ na | 94 |
 
 | Area | ✅ | ⚠️ | ❌ | ➖ |
 | --- | ---: | ---: | ---: | ---: |
-| Messages | 79 | 3 | 0 | 2 |
+| Messages | 83 | 3 | 0 | 2 |
 | Threads | 16 | 0 | 0 | 2 |
 | Channels | 35 | 0 | 0 | 0 |
 | DMs | 6 | 0 | 0 | 0 |
@@ -106,10 +106,14 @@ Legend: ✅ covered (endpoint called and a reachable entry point with equivalent
 | ✅ | Context menu: Copy Link (message permalink) | `ui:messages.context-menu-copy-link` | MessageItem ctx menu > 'Copy Link'[gate: none] | chat_view.dart actions() item 'copy-link' -> copyMessageLink (local permalink, clipboard at once) |  |
 | ✅ | Context menu: Copy Markdown (raw message text) | `ui:messages.context-menu-copy-markdown` | MessageItem ctx menu > 'Copy Markdown'[gate: none] | chat_view.dart actions() item 'copy-markdown' |  |
 | ✅ | Context menu: Follow Thread / Unfollow Thread | `ui:messages.context-menu-follow-thread` | MessageItem ctx menu > 'Follow Thread' / 'Unfollow Thread' (also shown on the thread parent row inside ThreadPanel via showThreadFollowAction)[gate: message has a thread conversation] | chat_view.dart actions() follow/unfollow items; on the thread-panel root row too (parentTile) | The thread panel's root row offers Follow / Unfollow like Web (showThreadFollowAction); its replies do not. |
-| ✅ | Context menu: Open Thread | `ui:messages.context-menu-open-thread` | MessageItem ctx menu > 'Open Thread'[gate: hidden inside the thread panel (hideThreadActions)] | chat_view.dart actions() 'Open Thread' |  |
+| ✅ | Context menu: Forward (one message) | `ui:messages.context-menu-forward` | MessageItem ctx menu > 'Forward' (handleForward, canForwardThisMessage)[gate: not for system rows, action cards or bundles (getForwardableMessages)] | MessageMenuTargets.forward -> forwardMessages(context, w, [message]) (the hover toolbar's flow) |  |
+| ✅ | Context menu: Mark channel / DM as unread | `ui:messages.context-menu-mark-conversation-unread` | MessageItem ctx menu > 'Mark channel as unread' / 'Mark DM as unread' (messageMenuMarkUnread.ts)[gate: top-level rows of a channel or DM list, not in a thread panel, not in a channel the person hasn't joined] | MessageMenuTargets.markConversation -> conversationReads.markUnread (POST /channels/:id/unread, then the counts reload) |  |
+| ✅ | Context menu: Mark thread as unread | `ui:messages.context-menu-mark-thread-unread` | MessageItem ctx menu > 'Mark thread as unread' (useEnclosingThreadMarkUnread / messageMenuMarkUnread.ts)[gate: followed thread only: every row of its thread panel, or its parent row in the list] | MessageMenuTargets.markThread -> conversationReads.markUnread(threadChannelId) |  |
+| ✅ | Context menu: Reply in thread | `ui:messages.context-menu-open-thread` | MessageItem ctx menu > 'Reply in thread'[gate: hidden inside the thread panel (hideThreadActions)] | message_context_menu_sections.dart item 'thread' ('Reply in thread') |  |
 | ✅ | Quick reaction row (7 emojis) at the top of the message context / long-press menu | `ui:messages.context-menu-quick-reactions` | MessageItem ctx menu reaction-quick-row[gate: canReact] | chat_view.dart actions() RaftMessageContextMenu onReact |  |
 | ✅ | Context menu: Save Message / Remove from Saved | `ui:messages.context-menu-save-message` | MessageItem ctx menu > 'Save Message' / 'Remove from Saved'[gate: none] | chat_view.dart actions() save item |  |
 | ✅ | Context menu: Select Message (enter multi-select mode) | `ui:messages.context-menu-select-message` | MessageItem ctx menu > 'Select Message'[gate: hidden for system messages and for guests] | chat_view.dart actions() 'Select Message' (guest hidden; system rows never open the menu) |  |
+| ✅ | Context menu: Select text (touch) and its bottom sheet | `ui:messages.context-menu-select-text` | MessageItem ctx menu > 'Select text' (source touch) -> MessageSelectTextDrawer (Copy / Quote)[gate: touch-opened menu, non-system message with text] | MessageMenuTargets.selectText -> showMessageSelectTextSheet |  |
 | ⚠️ | Context menu: Convert to Task / Mark as Done / Reopen Task | `ui:messages.context-menu-task-actions` | MessageItem ctx menu task item[gate: only top-level messages (not thread replies) in non-thread channels, and not external (Slack-projected) messages] | chat_view.dart actions() taskItems -> messageTaskMenuItem (Convert to Task, or Create task from message with task v2) -> POST /tasks/convert-message; PATCH /tasks/:id/status. Server v1.24 task v2 (task_v2_conversations_v0): "Create task from message" -> CreateTaskDialog with sourceMessageId; a 409 task_v2_use_create from convert opens the same dialog (message_task_actions.dart). | Impact: External-bridge messages offer a task action Web hides; server likely rejects. Flutter gates on !threadReply && supportsTasks but has no isExternal (external_projection) exclusion that Web applies (MessageItem.tsx:5268). Size S |
 | ✅ | Context menu: Translate (manual translation mode) | `ui:messages.context-menu-translate` | MessageItem ctx menu > 'Translate' / 'Translating...'[gate: translation mode manual + server translation enabled] | chat_view.dart actions() 'message-menu-translate' when translation.manualAction |  |
 | ✅ | Forward dialog banner: 'Join {targets} before forwarding' with Join button | `ui:messages.forward-join-selected-channels-banner` | ForwardComposerWarnings joinTargetCount banner[gate: destinations not joined] | forward_warnings.dart forwardWarningBanners (banner + Join), wired into forward_composer_page.dart (desktop dialog and phone note page) |  |

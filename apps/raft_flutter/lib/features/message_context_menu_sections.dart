@@ -2,16 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import '../data/workspace_controller.dart';
+import 'message_menu_targets.dart';
 import 'message_task_actions.dart';
 
-/// The message context menu's content (Web MessageItem context menu): the
-/// reaction row, then Copy Link / Copy Markdown / Translate / Select, then
-/// Open Thread / Save / Follow and the task entry. [pick] receives the chosen
+/// The message context menu's content (Web v1.24 MessageItem context menu,
+/// MessageItem.tsx:4777-5000): the reaction row, then the sections by what
+/// the action does. Keep going here: Reply in thread, Follow, Mark thread as
+/// unread, the task entry. Take it elsewhere: Copy link, Copy Markdown,
+/// Select text (touch), Forward, Select message. Just for me: Save,
+/// Translate, Mark the channel or DM as unread. [pick] receives the chosen
 /// entry's id; the caller runs it after the menu closes.
 ///
 /// [translate] is null when manual translation is not offered, else whether
 /// it is pending. [follow] is null when the thread cannot be followed here,
-/// else whether it is followed.
+/// else whether it is followed. View Context (agent messages) is not here
+/// yet.
 RaftMessageContextMenu messageContextMenu(
   BuildContext menuContext,
   WorkspaceController w, {
@@ -24,6 +29,7 @@ RaftMessageContextMenu messageContextMenu(
   required bool thread,
   required bool saved,
   required bool? follow,
+  required MessageMenuTargets targets,
 }) {
   RaftMessageContextMenuItem item(String value, String label, Widget icon) =>
       RaftMessageContextMenuItem(
@@ -32,22 +38,7 @@ RaftMessageContextMenu messageContextMenu(
         icon: icon,
         onPressed: () => pick(value),
       );
-  final tasks = [
-    if (taskItems)
-      task == null
-          ? messageTaskMenuItem(w, item)
-          : task['status'] == 'done'
-          ? item(
-              'task-reopen',
-              'Reopen task',
-              raftMessageMenuIcon(RaftGlyph.rotateCcw),
-            )
-          : item(
-              'task-done',
-              'Mark as Done',
-              raftMessageMenuIcon(RaftGlyph.checkCircle),
-            ),
-  ];
+  final unreadIcon = raftMessageMenuIcon(RaftGlyph.messageSquareDot);
   return RaftMessageContextMenu(
     onDismiss: () => Navigator.of(menuContext).pop(),
     reactionLabel: (emoji) =>
@@ -55,36 +46,10 @@ RaftMessageContextMenu messageContextMenu(
     onReact: onReact,
     sections: [
       [
-        item('copy-link', 'Copy link', raftMessageMenuIcon(RaftGlyph.link)),
-        item(
-          'copy-markdown',
-          'Copy Markdown',
-          raftMessageMenuIcon(RaftGlyph.copy),
-        ),
-        // Web: manual mode offers Translate (Translating… while the request
-        // is pending) after Copy Markdown.
-        if (translate != null)
-          RaftMessageContextMenuItem(
-            key: const ValueKey('message-menu-translate'),
-            label: raftText(
-              menuContext,
-              translate ? 'Translating…' : 'Translate',
-            ),
-            icon: raftMessageMenuIcon(RaftGlyph.languages),
-            onPressed: translate ? null : () => pick('translate'),
-          ),
-        if (select)
-          item(
-            'select',
-            'Select message',
-            raftMessageMenuIcon(RaftGlyph.checkCircle),
-          ),
-      ],
-      [
         if (thread)
           item(
             'thread',
-            'Open Thread',
+            'Reply in thread',
             Builder(
               builder: (c) => RaftMessageThreadGlyph(
                 size: 14,
@@ -92,11 +57,6 @@ RaftMessageContextMenu messageContextMenu(
               ),
             ),
           ),
-        item(
-          'save',
-          saved ? 'Remove from Saved' : 'Save',
-          raftMessageMenuIcon(RaftGlyph.bookmark),
-        ),
         if (follow != null)
           follow
               ? item(
@@ -109,10 +69,71 @@ RaftMessageContextMenu messageContextMenu(
                   'Follow thread',
                   raftMessageMenuIcon(RaftGlyph.messageCirclePlus),
                 ),
-        // Without the follow divider the task row joins this group.
-        if (follow == null) ...tasks,
+        if (targets.markThread != null)
+          item('mark-thread-unread', 'Mark thread as unread', unreadIcon),
+        if (taskItems)
+          task == null
+              ? messageTaskMenuItem(w, item)
+              : task['status'] == 'done'
+              ? item(
+                  'task-reopen',
+                  'Reopen task',
+                  raftMessageMenuIcon(RaftGlyph.rotateCcw),
+                )
+              : item(
+                  'task-done',
+                  'Mark as Done',
+                  raftMessageMenuIcon(RaftGlyph.checkCircle),
+                ),
       ],
-      if (follow != null) tasks,
+      [
+        item('copy-link', 'Copy link', raftMessageMenuIcon(RaftGlyph.link)),
+        item(
+          'copy-markdown',
+          'Copy Markdown',
+          raftMessageMenuIcon(RaftGlyph.copy),
+        ),
+        if (targets.selectText)
+          item(
+            'select-text',
+            'Select text',
+            raftMessageMenuIcon(RaftGlyph.squareDashedText),
+          ),
+        if (targets.forward)
+          item('forward', 'Forward', raftMessageMenuIcon(RaftGlyph.forward)),
+        if (select)
+          item(
+            'select',
+            'Select message',
+            raftMessageMenuIcon(RaftGlyph.listChecks),
+          ),
+      ],
+      [
+        item(
+          'save',
+          saved ? 'Remove from Saved' : 'Save',
+          raftMessageMenuIcon(
+            saved ? RaftGlyph.bookmarkMinus : RaftGlyph.bookmark,
+          ),
+        ),
+        // Translating… while the request is pending.
+        if (translate != null)
+          RaftMessageContextMenuItem(
+            key: const ValueKey('message-menu-translate'),
+            label: raftText(
+              menuContext,
+              translate ? 'Translating…' : 'Translate',
+            ),
+            icon: raftMessageMenuIcon(RaftGlyph.languages),
+            onPressed: translate ? null : () => pick('translate'),
+          ),
+        if (targets.markConversation != null)
+          item(
+            'mark-conversation-unread',
+            targets.dm ? 'Mark DM as unread' : 'Mark channel as unread',
+            unreadIcon,
+          ),
+      ],
     ],
   );
 }

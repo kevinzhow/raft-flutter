@@ -1198,16 +1198,16 @@
    "kind": "ui",
    "id": "ui:messages.context-menu-open-thread",
    "area": "messages",
-   "capability": "Context menu: Open Thread",
+   "capability": "Context menu: Reply in thread",
    "background": false,
    "status": "covered",
-   "webEntry": "MessageItem ctx menu > 'Open Thread'",
+   "webEntry": "MessageItem ctx menu > 'Reply in thread'",
    "gate": "hidden inside the thread panel (hideThreadActions)",
-   "flutterEntry": "chat_view.dart actions() 'Open Thread'",
+   "flutterEntry": "message_context_menu_sections.dart item 'thread' ('Reply in thread')",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/message_context_menu_sections.dart",
-     "needle": "'Open Thread'"
+     "needle": "'Reply in thread'"
     }
    ],
    "justification": "",
@@ -1324,6 +1324,98 @@
     {
      "file": "apps/raft_flutter/lib/features/message_context_menu_sections.dart",
      "needle": "message-menu-translate"
+    }
+   ],
+   "justification": "",
+   "impact": "",
+   "size": ""
+  },
+  {
+   "kind": "ui",
+   "id": "ui:messages.context-menu-forward",
+   "area": "messages",
+   "capability": "Context menu: Forward (one message)",
+   "background": false,
+   "status": "covered",
+   "webEntry": "MessageItem ctx menu > 'Forward' (handleForward, canForwardThisMessage)",
+   "gate": "not for system rows, action cards or bundles (getForwardableMessages)",
+   "flutterEntry": "MessageMenuTargets.forward -> forwardMessages(context, w, [message]) (the hover toolbar's flow)",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/features/message_context_menu_sections.dart",
+     "needle": "item('forward', 'Forward'"
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/message_menu_targets.dart",
+     "needle": "'forward' => forwardMessages("
+    }
+   ],
+   "justification": "",
+   "impact": "",
+   "size": ""
+  },
+  {
+   "kind": "ui",
+   "id": "ui:messages.context-menu-mark-conversation-unread",
+   "area": "messages",
+   "capability": "Context menu: Mark channel / DM as unread",
+   "background": false,
+   "status": "covered",
+   "webEntry": "MessageItem ctx menu > 'Mark channel as unread' / 'Mark DM as unread' (messageMenuMarkUnread.ts)",
+   "gate": "top-level rows of a channel or DM list, not in a thread panel, not in a channel the person hasn't joined",
+   "flutterEntry": "MessageMenuTargets.markConversation -> conversationReads.markUnread (POST /channels/:id/unread, then the counts reload)",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/features/message_context_menu_sections.dart",
+     "needle": "'Mark channel as unread'"
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/message_menu_targets.dart",
+     "needle": "w.conversationReads.markUnread(unread)"
+    }
+   ],
+   "justification": "",
+   "impact": "",
+   "size": ""
+  },
+  {
+   "kind": "ui",
+   "id": "ui:messages.context-menu-mark-thread-unread",
+   "area": "messages",
+   "capability": "Context menu: Mark thread as unread",
+   "background": false,
+   "status": "covered",
+   "webEntry": "MessageItem ctx menu > 'Mark thread as unread' (useEnclosingThreadMarkUnread / messageMenuMarkUnread.ts)",
+   "gate": "followed thread only: every row of its thread panel, or its parent row in the list",
+   "flutterEntry": "MessageMenuTargets.markThread -> conversationReads.markUnread(threadChannelId)",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/features/message_context_menu_sections.dart",
+     "needle": "'Mark thread as unread'"
+    }
+   ],
+   "justification": "",
+   "impact": "",
+   "size": ""
+  },
+  {
+   "kind": "ui",
+   "id": "ui:messages.context-menu-select-text",
+   "area": "messages",
+   "capability": "Context menu: Select text (touch) and its bottom sheet",
+   "background": false,
+   "status": "covered",
+   "webEntry": "MessageItem ctx menu > 'Select text' (source touch) -> MessageSelectTextDrawer (Copy / Quote)",
+   "gate": "touch-opened menu, non-system message with text",
+   "flutterEntry": "MessageMenuTargets.selectText -> showMessageSelectTextSheet",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/features/message_context_menu_sections.dart",
+     "needle": "'Select text'"
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/message_select_text_sheet.dart",
+     "needle": "Future<void> showMessageSelectTextSheet("
     }
    ],
    "justification": "",

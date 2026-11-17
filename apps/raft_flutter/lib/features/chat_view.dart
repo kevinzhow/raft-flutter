@@ -49,6 +49,7 @@ import 'agent_typing_line_host.dart';
 import 'channel_composer_hint.dart';
 import 'lounge_channel_presentation.dart';
 import 'message_context_menu_sections.dart';
+import 'message_menu_targets.dart';
 import '../data/reaction_favorite.dart';
 import 'message_task_actions.dart';
 import 'message_sender_menu.dart';
@@ -1499,9 +1500,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
   }
 
   /// Web MessageItem.tsx context menu (desktop right-click and mobile
-  /// long-press share it): quick reactions; Copy Link / Copy Markdown /
-  /// Select Message; Open Thread / Save / Follow Thread; task action.
-  /// [anchor] is the global press point (`ctxMenu.anchorX/Y`).
+  /// long-press share it; [messageContextMenu] lists it). [anchor] is the global press point (`ctxMenu.anchorX/Y`).
   Future<void> actions(
     RaftMessage message, {
     Offset? anchor,
@@ -1541,6 +1540,15 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
         message.string('senderType') != 'external_projection';
     final saved = SavedCountStore.of(w).isSaved(message.id);
     final translation = w.services.translations.present(message);
+    final targets = MessageMenuTargets.of(
+      context,
+      w,
+      message,
+      threadPanel: hideThreadActions,
+      parentTile: parentTile,
+      summary: summary,
+      active: presentationActive,
+    );
     String? result;
     void pick(BuildContext menuContext, String value) {
       result = value;
@@ -1568,6 +1576,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
         thread: !hideThreadActions,
         saved: saved,
         follow: canFollow && hasThreadConversation ? followed : null,
+        targets: targets,
       ),
     );
     if (mounted) setState(() => menuMessageId = null);
@@ -1590,21 +1599,25 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
       if (choice == 'save') await saveMessage(message);
       // Optimistic in the shared store; it reverts before rethrowing.
       if (choice == 'follow') await followedThreads.follow(message.id);
-      if (choice == 'unfollow') {
-        final threadId =
-            followedThreads.threadChannelIdFor(message.id) ??
-            (summary is Map ? summary['threadChannelId'] : null) ??
-            message.json['threadChannelId'] ??
-            (parentTile ? w.threadChannelId : null);
-        if (threadId is String) {
-          await followedThreads.unfollow(message.id, threadChannelId: threadId);
-        }
+      final threadId = targets.threadChannelId;
+      if (choice == 'unfollow' && threadId != null) {
+        await followedThreads.unfollow(message.id, threadChannelId: threadId);
       }
       if (choice.startsWith('react:')) {
         await react(message, choice.substring(6));
       }
       if ((choice == 'task' || choice == 'task-from-message') && mounted) {
         await runMessageTaskAction(context, w, message, choice);
+      }
+      if (mounted) {
+        await targets.run(
+          context,
+          w,
+          message,
+          choice,
+          time: () => timeFormatter.messageTime(message.createdAt),
+          quote: composerHandle.quoteSelection,
+        );
       }
       if ((choice == 'task-done' || choice == 'task-reopen') && task != null) {
         await w.command(

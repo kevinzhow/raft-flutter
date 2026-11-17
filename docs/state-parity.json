@@ -44110,12 +44110,6 @@
         "owner": "Artifact viewer",
         "reason": "WP-ART1 Artifact viewer, cards and attachment save (Web v1.24); compositions of raft_ui parts, real-entry mapping stays with the viewer owner."
       },
-      "apps/raft_flutter/lib/features/attachment_view.dart#local-function:CLASS:_AttachmentViewState@4555/METHOD:previewImage@38428/FUNCTION:image@38661": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "Artifact viewer",
-        "reason": "WP-ART1 Artifact viewer, cards and attachment save (Web v1.24); compositions of raft_ui parts, real-entry mapping stays with the viewer owner."
-      },
       "apps/raft_flutter/lib/features/message_presentation.dart#method:MessagePresentation._body": {
         "role": "unresolved",
         "familyRefs": [],
@@ -46625,24 +46619,6 @@
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
       "apps/raft_flutter/lib/features/agent_task_open.dart#function:openAgentActivityTask": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
-      },
-      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4999/METHOD:attachmentGallery@66154/FUNCTION:view@67308": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
-      },
-      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4999/METHOD:buildTimeline@114525/FUNCTION:timelineFor@118024": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
-      },
-      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4999/METHOD:senderAvatar@78732/FUNCTION:avatar@81207": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
@@ -50131,6 +50107,60 @@
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+      },
+      "apps/raft_flutter/lib/features/attachment_view.dart#local-function:CLASS:_AttachmentViewState@4487/METHOD:previewImage@36606/FUNCTION:image@36839": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Artifact viewer",
+        "reason": "WP-ART1 Artifact viewer, cards and attachment save (Web v1.24); compositions of raft_ui parts, real-entry mapping stays with the viewer owner."
+      },
+      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@5035/METHOD:attachmentGallery@66359/FUNCTION:view@67513": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@5035/METHOD:buildTimeline@114730/FUNCTION:timelineFor@118229": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@5035/METHOD:senderAvatar@78937/FUNCTION:avatar@81412": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/message_select_text_sheet.dart#class:_SelectTextSheet": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "MSG-MENU (Web v1.24 MessageSelectTextDrawer): a composition of raft_ui RaftSheet / RaftSheetClose / RaftButton / RaftSelectionArea; real-entry mapping stays unreviewed."
+      },
+      "apps/raft_flutter/lib/features/message_select_text_sheet.dart#class:_SelectTextSheetState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "MSG-MENU (Web v1.24 MessageSelectTextDrawer): a composition of raft_ui RaftSheet / RaftSheetClose / RaftButton / RaftSelectionArea; real-entry mapping stays unreviewed."
+      },
+      "apps/raft_flutter/lib/features/message_select_text_sheet.dart#function:showMessageSelectTextSheet": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "MSG-MENU (Web v1.24 MessageSelectTextDrawer): a composition of raft_ui RaftSheet / RaftSheetClose / RaftButton / RaftSelectionArea; real-entry mapping stays unreviewed."
+      },
+      "apps/raft_flutter/lib/features/message_select_text_sheet.dart#method:_SelectTextSheet.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "MSG-MENU (Web v1.24 MessageSelectTextDrawer): a composition of raft_ui RaftSheet / RaftSheetClose / RaftButton / RaftSelectionArea; real-entry mapping stays unreviewed."
+      },
+      "apps/raft_flutter/lib/features/message_select_text_sheet.dart#method:_SelectTextSheetState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "MSG-MENU (Web v1.24 MessageSelectTextDrawer): a composition of raft_ui RaftSheet / RaftSheetClose / RaftButton / RaftSelectionArea; real-entry mapping stays unreviewed."
       }
     },
     "entries": {
@@ -53373,6 +53403,15 @@
         ],
         "mountStatus": "unresolved",
         "reason": "New entry function (WP-INBOX Saved: Upgrade to Pro says when the browser cannot open); no real-entry capture acceptance is inferred."
+      },
+      "surface:apps/raft_flutter/lib/features/message_select_text_sheet.dart#function:showMessageSelectTextSheet": {
+        "owner": "design-system alignment",
+        "kind": "surface_factory_candidate",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/message_select_text_sheet.dart#function:showMessageSelectTextSheet"
+        ],
+        "mountStatus": "unresolved",
+        "reason": "Resolved function owns a surface call (showRaftPresented, a sheet at every width); actual target, route and state are not yet observed."
       }
     },
     "requirements": {
