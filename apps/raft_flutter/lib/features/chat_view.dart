@@ -68,6 +68,7 @@ import 'message_grouping.dart';
 import 'message_image_export.dart';
 import 'forward_messages_dialog.dart';
 import 'channel_footer_states.dart';
+import 'composer_task_mode.dart';
 import 'channel_footer_widgets.dart';
 import 'composer_directory.dart';
 import 'composer_attachment_input.dart';
@@ -3600,20 +3601,24 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
                   'compose-${thread ? _messages.threadParentMessageId : w.channel?.id}',
                 ),
                 taskAction: !thread && w.channel?.type != 'thread'
-                    ? RaftComposerTaskToggle(
-                        key: const Key('composer-as-task'),
-                        checked: alsoCreateTask,
-                        label: raftText(context, 'As task'),
-                        onChanged:
-                            presentationActive &&
-                                currentComposer() &&
-                                !w.conversationPaused &&
-                                w.channel?.archived != true
-                            ? (checked) => setState(() {
-                                taskChoiceRevision++;
-                                alsoCreateTask = checked;
-                              })
-                            : null,
+                    ? ComposerTaskModeTarget(
+                        channelId: w.channel?.id,
+                        onTurnOn: () => setState(() => alsoCreateTask = true),
+                        child: RaftComposerTaskToggle(
+                          key: const Key('composer-as-task'),
+                          checked: alsoCreateTask,
+                          label: raftText(context, 'As task'),
+                          onChanged:
+                              presentationActive &&
+                                  currentComposer() &&
+                                  !w.conversationPaused &&
+                                  w.channel?.archived != true
+                              ? (checked) => setState(() {
+                                  taskChoiceRevision++;
+                                  alsoCreateTask = checked;
+                                })
+                              : null,
+                        ),
                       )
                     : null,
                 onAttach: () {

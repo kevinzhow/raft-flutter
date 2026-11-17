@@ -8,6 +8,8 @@ import 'dart:async';
 import 'package:flutter/widgets.dart';
 import 'package:raft_ui/raft_ui.dart';
 
+import 'composer_task_mode.dart';
+
 import '../data/message_task_cache.dart';
 import '../data/workspace_controller.dart';
 import 'create_task_dialog.dart';
@@ -39,35 +41,6 @@ bool channelTaskIsOnViewer(Map<String, dynamic> task, String? viewerId) =>
     viewerId.isNotEmpty &&
     task['claimedByType'] == 'user' &&
     task['claimedById'] == viewerId;
-
-/// Web `composerTaskMode.ts`: a composer that offers "As task" for a channel
-/// says so here; "+" on the Tasks card then writes the task in that channel's
-/// own composer instead of opening a dialog. A request reaches the composer
-/// that registered last.
-abstract final class ComposerTaskModeTargets {
-  static final _targets = <String, List<VoidCallback>>{};
-
-  /// Registers [turnOn] (As task on, composer focused) for [channelId];
-  /// returns the call that withdraws it (the composer is gone).
-  static VoidCallback register(String channelId, VoidCallback turnOn) {
-    (_targets[channelId] ??= []).add(turnOn);
-    return () {
-      final list = _targets[channelId];
-      if (list == null) return;
-      list.remove(turnOn);
-      if (list.isEmpty) _targets.remove(channelId);
-    };
-  }
-
-  /// Turns As task on in [channelId]'s composer. False when none of that
-  /// channel is mounted (the caller falls back to the New task dialog).
-  static bool request(String channelId) {
-    final list = _targets[channelId];
-    if (list == null || list.isEmpty) return false;
-    list.last();
-    return true;
-  }
-}
 
 /// "+ New task" (Web ChannelTasksPanel `openCreate`): with task v2, not
 /// [covering] the conversation and a composer of the channel mounted, "As

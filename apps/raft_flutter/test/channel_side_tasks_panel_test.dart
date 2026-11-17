@@ -15,6 +15,7 @@ import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/features/channel_side_store.dart'
     show ChannelTasksFilter;
 import 'package:raft_flutter/features/channel_side_tasks_panel.dart';
+import 'package:raft_flutter/features/composer_task_mode.dart';
 import 'package:raft_flutter/features/message_task_actions.dart';
 import 'package:raft_ui/raft_ui.dart';
 
@@ -183,9 +184,8 @@ Future<List<Map<String, dynamic>>> _pump(
     MaterialApp(
       theme: raftTheme(dark: brightness == Brightness.dark, platform: platform),
       builder: (context, child) => MediaQuery(
-        data: MediaQuery.of(
-          context,
-        ).copyWith(textScaler: TextScaler.linear(textScale)),
+        data: MediaQuery.of(context)
+            .copyWith(textScaler: TextScaler.linear(textScale)),
         child: child!,
       ),
       home: Scaffold(
