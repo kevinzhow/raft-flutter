@@ -148,6 +148,30 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Resolved (1)'), findsNothing);
   });
+  testWidgets('Escape leaves the comment list open after starting an edit', (
+    tester,
+  ) async {
+    await open(tester, const Size(1200, 850), TargetPlatform.linux);
+    await tester.tap(openComments);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('artifact-comment-more-root')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Edit'));
+    await tester.pumpAndSettle();
+    expect(find.text('Cancel'), findsOneWidget);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+    expect(find.text('Cancel'), findsNothing);
+    expect(find.text('Initial comment'), findsOneWidget);
+    expect(client.requests, isNot(contains('PATCH $_path/root')));
+    await tester.sendKeyEvent(LogicalKeyboardKey.space);
+    await tester.pumpAndSettle();
+    expect(find.text('Edit'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpAndSettle();
+  });
+
   testWidgets('retains a typed mention and retries a refused send', (
     tester,
   ) async {

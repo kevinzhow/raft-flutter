@@ -33,6 +33,7 @@ import 'artifact_frame_confirm.dart';
 import 'artifact_frame_view.dart';
 import 'artifact_models.dart';
 import 'artifact_open_in_browser.dart';
+import 'artifact_review_store.dart';
 import 'artifact_session.dart';
 import 'artifact_text.dart';
 import 'artifact_viewer_actions.dart';
@@ -139,19 +140,22 @@ class _ArtifactWorkspaceViewerState extends State<ArtifactWorkspaceViewer> {
   ({int version, String? publisher})? newer;
   RaftForegroundPeriodic? poll;
   ArtifactCommentStore? discussion;
+  ArtifactReviewStore? review;
   final commentsFocus = FocusNode();
   bool discussionLanding = false;
 
   void _mountDiscussion() {
     final shown = data?.card;
-    if (!widget.session.enabled || shown == null || shown.fromAnotherServer)
+    if (!widget.session.enabled || shown == null || shown.fromAnotherServer) {
       return;
+    }
     if (discussion != null) return;
     discussion = ArtifactCommentStore(
       w,
       shown.id,
       reviewId: widget.target.reviewId,
     );
+    if (data!.capabilities.comment) review = ArtifactReviewStore(discussion!);
     if (widget.target.commentId != null || widget.target.reviewId != null) {
       panel = _Panel.comments;
       discussionLanding = true;
@@ -165,6 +169,8 @@ class _ArtifactWorkspaceViewerState extends State<ArtifactWorkspaceViewer> {
         _mountDiscussion();
       } else {
         if (panel == _Panel.comments) panel = _Panel.none;
+        review?.dispose();
+        review = null;
         discussion?.dispose();
         discussion = null;
       }
@@ -215,6 +221,7 @@ class _ArtifactWorkspaceViewerState extends State<ArtifactWorkspaceViewer> {
   void dispose() {
     poll?.dispose();
     widget.session.removeListener(_discussionAvailability);
+    review?.dispose();
     discussion?.dispose();
     commentsFocus.dispose();
     _voiceOver.removeListener(_voiceOverChanged);
@@ -695,6 +702,7 @@ class _ArtifactWorkspaceViewerState extends State<ArtifactWorkspaceViewer> {
             ? null
             : ArtifactCommentsPanel(
                 store: discussion!,
+                review: review,
                 data: data,
                 initialComment: discussionLanding
                     ? widget.target.commentId

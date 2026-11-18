@@ -3,13 +3,13 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/device_preferences.dart';
 import 'package:raft_flutter/data/source_activity_unread_store.dart';
 import 'package:raft_flutter/data/source_server_unread.dart';
 import 'package:raft_flutter/features/artifacts/artifact_models.dart';
-import 'package:raft_flutter/features/artifacts/artifact_open_in_browser.dart';
 import 'package:raft_flutter/features/artifacts/artifact_viewer_page.dart';
 import 'package:raft_flutter/features/resource_view.dart';
 import 'package:raft_ui/raft_ui.dart';
@@ -240,6 +240,45 @@ void main() {
         client.answers[path] = (_) => artifactViewerJson(
           card: {...summary, 'version': version, 'pinned': pinned},
         );
+        final reviewId = (target['review'] as Map?)?['id'] as String?;
+        final commentId = target['comment'] as String?;
+        final commentsPath = Uri(
+          path: '/artifacts/$id/comments',
+          queryParameters: reviewId == null ? null : {'review': reviewId},
+        ).toString();
+        const commentText = 'Comment from the Activity target';
+        const reviewText = 'Review summary from the Activity target';
+        client.answers['GET $commentsPath'] = (_) => {
+          'comments': [
+            if (commentId != null && reviewId == null)
+              {
+                'id': commentId,
+                'version': version,
+                'author': artifactActor(),
+                'target': {'scope': 'artifact'},
+                'body': [
+                  {'type': 'text', 'text': commentText},
+                ],
+              },
+          ],
+          if (reviewId != null)
+            'review': {
+              'id': reviewId,
+              'body': [
+                {'type': 'text', 'text': reviewText},
+              ],
+            },
+        };
+        final launches = <Uri>[];
+        final messenger = tester.binding.defaultBinaryMessenger;
+        const launcher = MethodChannel('plugins.flutter.io/url_launcher');
+        messenger.setMockMethodCallHandler(launcher, (call) async {
+          if (call.method == 'launch') {
+            launches.add(Uri.parse((call.arguments as Map)['url'] as String));
+          }
+          return true;
+        });
+        addTearDown(() => messenger.setMockMethodCallHandler(launcher, null));
 
         await mount(tester, env: env);
         await tester.tap(rowOf(row));
@@ -251,23 +290,48 @@ void main() {
           'objectId': id,
           'throughSeq': row['doneFrontierSeq'],
         });
-        if (event == 'comment' || event == 'review') {
-          final browser = tester.widget<ArtifactOpenInBrowser>(
-            find.byType(ArtifactOpenInBrowser),
+        if (commentId != null || reviewId != null) {
+          expect(
+            find.byKey(const ValueKey('artifact-comments-panel')),
+            findsOneWidget,
           );
+          expect(
+            find.text(reviewId == null ? commentText : reviewText),
+            findsOneWidget,
+          );
+          expect(client.requests, contains('GET $commentsPath'));
+          expect(launches, isEmpty);
+
+          await tester.tap(
+            find.byKey(const ValueKey('artifact-viewer-menu-trigger')),
+          );
+          await tester.pumpAndSettle();
+          await tester.tap(
+            find
+                .descendant(
+                  of: find.byKey(
+                    const ValueKey('artifact-viewer-menu-surface'),
+                  ),
+                  matching: find.text('Open in browser'),
+                )
+                .hitTestable(),
+          );
+          await tester.pumpAndSettle();
+          expect(launches, hasLength(1));
+          final browserUrl = launches.single;
           final shortId = artifactLinkId(id);
-          if (event == 'comment') {
-            expect(browser.pageUrl.path, '/artifacts/$shortId/v/$version');
-            expect(browser.pageUrl.queryParameters, {
+          if (reviewId == null) {
+            expect(browserUrl.path, '/artifacts/$shortId/v/$version');
+            expect(browserUrl.queryParameters, {
               'panel': 'comments',
-              'comment': target['comment'],
+              'comment': commentId,
             });
           } else {
-            expect(browser.pageUrl.path, '/s/demo/activity');
-            expect(browser.pageUrl.queryParameters, {
+            expect(browserUrl.path, '/s/demo/activity');
+            expect(browserUrl.queryParameters, {
               'artifact': shortId,
               'version': '$version',
-              'review': (target['review'] as Map)['id'],
+              'review': reviewId,
             });
           }
         }

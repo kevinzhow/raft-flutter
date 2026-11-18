@@ -23,6 +23,19 @@ void main() {
         scrim: const Offset(10, 140),
       );
     },
+    'artifact-review-discard': (tester, size) async {
+      await _openPanel(tester, size, withDraft: true);
+      await tester.tap(find.text('Discard all').hitTestable());
+      await tester.pumpAndSettle();
+      return SurfaceProbe(
+        isOpen: () => find
+            .byKey(const ValueKey('artifact-review-discard-dialog'))
+            .evaluate()
+            .isNotEmpty,
+        back: find.text('Cancel'),
+        scrim: const Offset(10, 140),
+      );
+    },
     'artifact-comment-delete': (tester, size) async {
       await _openMenu(tester, size);
       await tester.tap(find.text('Delete'));
@@ -39,7 +52,11 @@ void main() {
   });
 }
 
-Future<SurfaceProbe> _openPanel(WidgetTester tester, Size size) async {
+Future<SurfaceProbe> _openPanel(
+  WidgetTester tester,
+  Size size, {
+  bool withDraft = false,
+}) async {
   await tester.pumpWidget(const SizedBox.shrink());
   await tester.pumpAndSettle();
   final client = ArtifactFakeClient();
@@ -49,6 +66,19 @@ Future<SurfaceProbe> _openPanel(WidgetTester tester, Size size) async {
   client.answers['GET /artifacts/$artifactId'] = (_) => {
     ...artifactViewerJson(frame: false),
     'capabilities': {'comment': true, 'delete': true},
+  };
+  client.answers['GET /artifacts/$artifactId/review/drafts'] = (_) => {
+    'drafts': [
+      if (withDraft)
+        {
+          'id': 'own-draft',
+          'body': [
+            {'type': 'text', 'text': 'A private draft'},
+          ],
+          'version': 1,
+          'target': {'scope': 'artifact'},
+        },
+    ],
   };
   client.answers['GET /artifacts/$artifactId/comments'] = (_) => {
     'comments': [

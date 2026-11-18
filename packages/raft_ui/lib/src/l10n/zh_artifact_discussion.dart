@@ -10,6 +10,7 @@ const Map<String, String> zhCatalogArtifactDiscussion = <String, String>{
   "Couldn't load the comments.": "评论加载失败。",
   "No comments yet": "还没有评论",
   "Whole Artifact": "整个 Artifact",
+  "Your drafts": "你的草稿",
   "Show all comments": "显示全部评论",
   "This review isn't on this Artifact.": "这次评审不属于这个 Artifact。",
   "Load earlier comments": "加载更早的评论",
@@ -33,6 +34,30 @@ const Map<String, String> zhCatalogArtifactDiscussion = <String, String>{
       "只能添加 PNG、JPEG、WebP 和 GIF 图片。",
   "It didn't upload. Retry, or remove it.": "没有上传成功。请重试或移除。",
   "Couldn't load": "加载失败",
+  "Send {count}": "发送 {count, number} 条",
+  "Save draft": "先存草稿",
+  "Couldn't save the draft. Try again.": "草稿没存上，再试一次。",
+  "Discard all": "放弃全部",
+  "Discard {count, plural, one {# draft} other {# drafts}}?": "放弃 {count} 条草稿？",
+  "This can't be undone.": "此操作无法撤销。",
+  "Discard drafts": "放弃草稿",
+  "Couldn't send. Your drafts are kept; try again.": "没能发送，草稿都还在，再试一次。",
+  "Someone this draft mentions can't see this Artifact. Remove the mention or delete the draft.":
+      "这条草稿 @ 的人看不到这个 Artifact。去掉 @，或者删掉这条。",
+  "The file this draft is on isn't in the Artifact any more. Delete the draft.":
+      "这条草稿所在的文件已经不在 Artifact 里了，删掉这条。",
+  "The comment this draft replies to was deleted. Delete the draft.":
+      "这条草稿回复的评论已经被删除了，删掉这条。",
+  "Your drafts changed while this was being sent, so nothing was sent. They're up to date now: check them and send again.":
+      "发送时你的草稿有变化，所以什么都没发出。草稿已更新：检查后再发送一次。",
+  "These drafts were already sent.": "这些草稿已经发送过了。",
+  "No drafts to send: they were sent or discarded.": "没有可发送的草稿：它们已发出或已丢弃。",
+  "Nothing was sent: this version can't be reviewed any more. Open the current version and send again.":
+      "什么都没发出：这个版本已无法评审。请打开当前版本再发送。",
+  "Drafts didn't load · Retry": "草稿没加载出来 · 重试",
+  "Couldn't delete the draft. Try again.": "无法删除草稿，请重试。",
+  "Delete this draft?": "删除这条草稿？",
+  "Delete draft": "删除草稿",
   " · ": " · ",
   "Someone mentioned can't see this Artifact.": "提到的人无法查看此 Artifact。",
   "Couldn't delete the comment. Try again.": "无法删除评论，请重试。",

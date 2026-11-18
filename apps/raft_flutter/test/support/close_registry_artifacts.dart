@@ -44,4 +44,14 @@ const artifactDiscussionSurfaces = <CloseSurface>[
     desktop: {Affordance.back, Affordance.esc, Affordance.systemBack},
     files: ['lib/features/artifacts/artifact_comments_panel.dart'],
   ),
+  CloseSurface(
+    'artifact-review-discard',
+    kind: SurfaceKind.dialog,
+    web: 'ArtifactReviewPanel.tsx: ConfirmDialog for discarding drafts. Cancel, Escape, and outside press stays.',
+    webOutside: WebOutside.stays,
+    phone: {Affordance.back, Affordance.esc, Affordance.systemBack},
+    fold: {Affordance.back, Affordance.esc, Affordance.systemBack},
+    desktop: {Affordance.back, Affordance.esc, Affordance.systemBack},
+    files: ['lib/features/artifacts/artifact_comments_panel.dart'],
+  ),
 ];

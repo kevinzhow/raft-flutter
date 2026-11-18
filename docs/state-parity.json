@@ -55550,7 +55550,17 @@
         "familyRefs": [],
         "owner": "Artifact discussion"
       },
-      "apps/raft_flutter/lib/features/artifacts/artifact_viewer_page.dart#local-function:FUNCTION:openWorkspaceArtifact@1820/FUNCTION:viewer@2022": {
+      "apps/raft_flutter/lib/features/artifacts/artifact_comments_panel.dart#method:_ArtifactCommentsPanelState._discard": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Artifact discussion"
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_comments_panel.dart#method:_ArtifactCommentsPanelState._drafts": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Artifact discussion"
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_viewer_page.dart#local-function:FUNCTION:openWorkspaceArtifact@1870/FUNCTION:viewer@2066": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "Artifact viewer",
@@ -59261,6 +59271,14 @@
         "kind": "artifact-discussion",
         "declarationRefs": [
           "apps/raft_flutter/lib/features/artifacts/artifact_comments_panel.dart#method:_ArtifactCommentsPanelState._resolve"
+        ],
+        "mountStatus": "source_reviewed"
+      },
+      "surface:apps/raft_flutter/lib/features/artifacts/artifact_comments_panel.dart#method:_ArtifactCommentsPanelState._discard": {
+        "owner": "Artifact discussion",
+        "kind": "artifact-discussion",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/artifacts/artifact_comments_panel.dart#method:_ArtifactCommentsPanelState._discard"
         ],
         "mountStatus": "source_reviewed"
       }

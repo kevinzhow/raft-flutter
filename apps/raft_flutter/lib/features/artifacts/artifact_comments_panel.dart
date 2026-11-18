@@ -4,10 +4,12 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:raft_ui/raft_ui.dart';
 
+import '../icu_message.dart';
 import 'artifact_comment_composer.dart';
 import 'artifact_comment_models.dart';
 import 'artifact_comment_store.dart';
 import 'artifact_models.dart';
+import 'artifact_review_store.dart';
 
 class ArtifactCommentsPanel extends StatefulWidget {
   const ArtifactCommentsPanel({
@@ -17,12 +19,14 @@ class ArtifactCommentsPanel extends StatefulWidget {
     required this.onClose,
     this.initialComment,
     this.path,
+    this.review,
   });
 
   final ArtifactCommentStore store;
   final ArtifactViewerData data;
   final VoidCallback onClose;
   final String? initialComment, path;
+  final ArtifactReviewStore? review;
 
   @override
   State<ArtifactCommentsPanel> createState() => _ArtifactCommentsPanelState();
@@ -33,6 +37,7 @@ class _ArtifactCommentsPanelState extends State<ArtifactCommentsPanel> {
   final _landing = GlobalKey();
   bool _resolvedOpen = false, _landed = false, _file = false;
   ArtifactComment? _reply, _edit;
+  ArtifactReviewDraft? _editDraft;
 
   ArtifactCommentStore get store => widget.store;
   bool get _canComment => widget.data.capabilities.comment;
@@ -57,6 +62,7 @@ class _ArtifactCommentsPanelState extends State<ArtifactCommentsPanel> {
       _file = false;
       _reply = null;
       _edit = null;
+      _editDraft = null;
     }
   }
 
@@ -71,8 +77,9 @@ class _ArtifactCommentsPanelState extends State<ArtifactCommentsPanel> {
       _resolvedOpen = thread.resolved;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         final target = _landing.currentContext;
-        if (mounted && target != null)
+        if (mounted && target != null) {
           unawaited(Scrollable.ensureVisible(target));
+        }
       });
       break;
     }
@@ -89,6 +96,7 @@ class _ArtifactCommentsPanelState extends State<ArtifactCommentsPanel> {
     setState(() {
       _reply = null;
       _edit = null;
+      _editDraft = null;
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted && _scroll.hasClients) {
@@ -111,11 +119,12 @@ class _ArtifactCommentsPanelState extends State<ArtifactCommentsPanel> {
     try {
       await store.delete(comment.id);
     } catch (_) {
-      if (mounted)
+      if (mounted) {
         showRaftToast(
           context,
           raftText(context, "Couldn't delete the comment. Try again."),
         );
+      }
     }
   }
 
@@ -123,11 +132,12 @@ class _ArtifactCommentsPanelState extends State<ArtifactCommentsPanel> {
     try {
       await store.changeThread(root, root.resolvedAt == null);
     } catch (_) {
-      if (mounted)
+      if (mounted) {
         showRaftToast(
           context,
           raftText(context, "Couldn't update the comment. Try again."),
         );
+      }
     }
   }
 
@@ -213,6 +223,7 @@ class _ArtifactCommentsPanelState extends State<ArtifactCommentsPanel> {
           glyph: RaftGlyph.pencil,
           onPressed: () => setState(() {
             _reply = null;
+            _editDraft = null;
             _edit = comment;
           }),
         ),
@@ -283,6 +294,7 @@ class _ArtifactCommentsPanelState extends State<ArtifactCommentsPanel> {
                     size: RaftButtonRecipeSize.sm,
                     onPressed: () => setState(() {
                       _edit = null;
+                      _editDraft = null;
                       _reply = root;
                     }),
                   ),
@@ -305,8 +317,13 @@ class _ArtifactCommentsPanelState extends State<ArtifactCommentsPanel> {
     );
   }
 
-  Widget _composer({ArtifactComment? reply, ArtifactComment? edit}) {
+  Widget _composer({
+    ArtifactComment? reply,
+    ArtifactComment? edit,
+    ArtifactReviewDraft? draft,
+  }) {
     final place =
+        draft?.place ??
         edit?.place ??
         reply?.place ??
         ArtifactCommentPlace(_file ? widget.path : null);
@@ -316,19 +333,23 @@ class _ArtifactCommentsPanelState extends State<ArtifactCommentsPanel> {
         place.path,
         reply?.id,
         edit?.id,
+        draft?.id,
       )),
       store: store,
       place: place,
-      version: widget.data.card.version,
+      version: draft?.version ?? widget.data.card.version,
       reply: reply,
       edit: edit,
-      autofocus: reply != null || edit != null,
-      onCancel: reply == null && edit == null
+      review: widget.review,
+      draft: draft,
+      autofocus: reply != null || edit != null || draft != null,
+      onCancel: reply == null && edit == null && draft == null
           ? null
           : () {
               setState(() {
                 _reply = null;
                 _edit = null;
+                _editDraft = null;
               });
             },
       onDone: _done,
@@ -351,6 +372,140 @@ class _ArtifactCommentsPanelState extends State<ArtifactCommentsPanel> {
           for (final thread in group) _thread(thread),
         ],
     ];
+  }
+
+  List<Widget> _drafts(ArtifactReviewStore review) {
+    final t = RaftTokens.of(context);
+    return [
+      if (review.failed)
+        RaftButton(
+          label: raftText(context, "Drafts didn't load · Retry"),
+          onPressed: review.load,
+        ),
+      if (review.problem.message case final problem?)
+        Semantics(
+          liveRegion: true,
+          child: Text(
+            raftText(context, problem),
+            style: t.scale(
+              RaftTypeScale.footnote,
+              color: t.semantic.dangerStrong,
+            ),
+          ),
+        ),
+      if (review.drafts.isNotEmpty) ...[
+        Text(
+          raftText(context, 'Your drafts'),
+          style: t.scale(RaftTypeScale.caption),
+        ),
+        for (final draft in review.drafts)
+          DecoratedBox(
+            decoration: BoxDecoration(
+              border: Border.all(color: t.ui.lineHairline),
+              borderRadius: BorderRadius.circular(t.radius),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(RaftSpace.x3),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                spacing: RaftSpace.x1,
+                children: [
+                  Text(draft.place.path ?? raftText(context, 'Whole Artifact')),
+                  if (_editDraft?.id == draft.id)
+                    _composer(draft: draft)
+                  else
+                    ArtifactCommentBody(body: draft.body),
+                  for (final id in draft.images)
+                    _ArtifactCommentImage(
+                      key: ValueKey(id),
+                      store: store,
+                      id: id,
+                    ),
+                  if (_editDraft?.id != draft.id)
+                    Wrap(
+                      spacing: RaftSpace.x1,
+                      children: [
+                        RaftButton(
+                          label: raftText(context, 'Edit'),
+                          tone: RaftButtonRecipeVariant.ghost,
+                          onPressed: review.busy
+                              ? null
+                              : () => setState(() {
+                                  _reply = null;
+                                  _edit = null;
+                                  _editDraft = draft;
+                                }),
+                        ),
+                        RaftButton(
+                          label: raftText(context, 'Delete'),
+                          tone: RaftButtonRecipeVariant.ghost,
+                          onPressed: review.busy
+                              ? null
+                              : () => _discard(review, draft.id),
+                        ),
+                      ],
+                    ),
+                ],
+              ),
+            ),
+          ),
+        Wrap(
+          alignment: WrapAlignment.end,
+          spacing: RaftSpace.x2,
+          children: [
+            RaftButton(
+              label: raftText(context, 'Discard all'),
+              tone: RaftButtonRecipeVariant.ghost,
+              onPressed: review.busy ? null : () => _discard(review, null),
+            ),
+            RaftButton(
+              key: const ValueKey('artifact-review-submit'),
+              label: raftFormat(context, 'Send {count}', {
+                'count': review.drafts.length,
+              }),
+              onPressed: review.busy || _editDraft != null
+                  ? null
+                  : () => review.submit(widget.data.card.version),
+            ),
+          ],
+        ),
+      ],
+    ];
+  }
+
+  Future<void> _discard(ArtifactReviewStore review, String? id) async {
+    final yes = await RaftConfirmDialog.show(
+      context,
+      RaftConfirmDialog(
+        surfaceKey: const ValueKey('artifact-review-discard-dialog'),
+        title: id == null
+            ? icuText(
+                context,
+                'Discard {count, plural, one {# draft} other {# drafts}}?',
+                {'count': review.drafts.length},
+              )
+            : raftText(context, 'Delete this draft?'),
+        message: raftText(context, "This can't be undone."),
+        confirmLabel: raftText(
+          context,
+          id == null ? 'Discard drafts' : 'Delete draft',
+        ),
+      ),
+    );
+    if (!mounted || yes != true) return;
+    try {
+      await review.delete(id);
+      if (mounted && (id == null || _editDraft?.id == id)) {
+        setState(() => _editDraft = null);
+      }
+    } catch (_) {
+      if (mounted) {
+        showRaftToast(
+          context,
+          raftText(context, "Couldn't delete the draft. Try again."),
+        );
+      }
+    }
   }
 
   Widget _discussion(BuildContext context) {
@@ -397,6 +552,7 @@ class _ArtifactCommentsPanelState extends State<ArtifactCommentsPanel> {
             onPressed: store.loadingEarlier ? null : store.earlier,
           ),
         ],
+        if (widget.review case final review?) ..._drafts(review),
         if (threads.isEmpty) Text(raftText(context, 'No comments yet')),
         for (final child in _groups(unresolved))
           Padding(
@@ -431,7 +587,7 @@ class _ArtifactCommentsPanelState extends State<ArtifactCommentsPanel> {
       key: const ValueKey('artifact-comments-panel'),
       color: t.panel,
       child: ListenableBuilder(
-        listenable: store,
+        listenable: Listenable.merge([store, widget.review]),
         builder: (context, _) => Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -454,7 +610,8 @@ class _ArtifactCommentsPanelState extends State<ArtifactCommentsPanel> {
                 _canComment &&
                 store.reviewId == null &&
                 _reply == null &&
-                _edit == null)
+                _edit == null &&
+                _editDraft == null)
               SafeArea(
                 top: false,
                 child: DecoratedBox(

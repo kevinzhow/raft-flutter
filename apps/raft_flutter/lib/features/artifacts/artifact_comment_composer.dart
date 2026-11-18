@@ -14,6 +14,7 @@ import 'artifact_comment_api.dart';
 import 'artifact_comment_models.dart';
 import 'artifact_comment_store.dart';
 import 'artifact_models.dart';
+import 'artifact_review_store.dart';
 
 String artifactCommentActorName(BuildContext context, ArtifactActor actor) =>
     actor.shownName(
@@ -32,10 +33,12 @@ String? _imageType(List<int> bytes) {
     return 'image/png';
   }
   if (starts([0xff, 0xd8, 0xff])) return 'image/jpeg';
-  if (starts('GIF87a'.codeUnits) || starts('GIF89a'.codeUnits))
+  if (starts('GIF87a'.codeUnits) || starts('GIF89a'.codeUnits)) {
     return 'image/gif';
-  if (starts('RIFF'.codeUnits) && starts('WEBP'.codeUnits, 8))
+  }
+  if (starts('RIFF'.codeUnits) && starts('WEBP'.codeUnits, 8)) {
     return 'image/webp';
+  }
   return null;
 }
 
@@ -47,6 +50,8 @@ class ArtifactCommentComposer extends StatefulWidget {
     required this.place,
     this.reply,
     this.edit,
+    this.review,
+    this.draft,
     this.onCancel,
     this.onDone,
     this.autofocus = false,
@@ -56,6 +61,10 @@ class ArtifactCommentComposer extends StatefulWidget {
   final int version;
   final ArtifactCommentPlace place;
   final ArtifactComment? reply, edit;
+  final ArtifactReviewStore? review;
+  final ArtifactReviewDraft? draft;
+
+  bool get editing => edit != null || draft != null;
   final VoidCallback? onCancel, onDone;
   final bool autofocus;
 
@@ -80,7 +89,7 @@ class _ArtifactCommentComposerState extends State<ArtifactCommentComposer> {
   final _problem = CauseNotice();
 
   late final String _key =
-      'artifact-comment-v1:${jsonEncode([widget.store.workspace.client.origin, widget.store.workspace.client.user?.id, widget.store.serverId, widget.store.api.artifactId, widget.version, widget.place.toJson(), widget.reply?.id, widget.edit?.id])}';
+      'artifact-comment-v1:${jsonEncode([widget.store.workspace.client.origin, widget.store.workspace.client.user?.id, widget.store.serverId, widget.store.api.artifactId, widget.version, widget.place.toJson(), widget.reply?.id, widget.edit?.id, if (widget.draft != null) widget.draft!.id])}';
 
   @override
   void initState() {
@@ -103,20 +112,27 @@ class _ArtifactCommentComposerState extends State<ArtifactCommentComposer> {
       } on FormatException {
         _text.clear();
       }
-    } else if (widget.edit case final edit?) {
+    } else if ((widget.edit?.body ?? widget.draft?.body) case final body?) {
       var offset = 0;
-      for (final part in edit.body) {
+      for (final part in body) {
         if (part.actor case final actor?) {
           _mentions.add((start: offset, actor: actor));
         }
         offset += part.display.length;
       }
-      _text.text = edit.body.map((part) => part.display).join();
+      _text.text = body.map((part) => part.display).join();
     }
     _before = _text.text;
     _text.addListener(_changed);
     _focus.addListener(_changed);
-    if (widget.edit == null) unawaited(_readRecipients());
+    if (!widget.editing) unawaited(_readRecipients());
+    if (widget.autofocus) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || !widget.store.current) return;
+        _text.selection = TextSelection.collapsed(offset: _text.text.length);
+        _focus.requestFocus();
+      });
+    }
   }
 
   Future<void> _readRecipients() async {
@@ -255,8 +271,9 @@ class _ArtifactCommentComposerState extends State<ArtifactCommentComposer> {
     var offset = 0;
     for (final token in _mentions) {
       final label = '@${token.actor.name}';
-      if (token.start < offset || !text.startsWith(label, token.start))
+      if (token.start < offset || !text.startsWith(label, token.start)) {
         continue;
+      }
       if (token.start > offset) {
         parts.add(
           ArtifactCommentPart.text(text.substring(offset, token.start)),
@@ -265,8 +282,9 @@ class _ArtifactCommentComposerState extends State<ArtifactCommentComposer> {
       parts.add(ArtifactCommentPart.mention(token.actor));
       offset = token.start + label.length;
     }
-    if (offset < text.length)
+    if (offset < text.length) {
       parts.add(ArtifactCommentPart.text(text.substring(offset)));
+    }
     return parts;
   }
 
@@ -275,27 +293,37 @@ class _ArtifactCommentComposerState extends State<ArtifactCommentComposer> {
       !_uploading &&
       (_text.text.trim().isNotEmpty ||
           _images.isNotEmpty ||
-          widget.edit?.images.isNotEmpty == true);
+          widget.edit?.images.isNotEmpty == true ||
+          widget.draft?.images.isNotEmpty == true);
 
-  Future<void> _send() async {
-    if (!_canSend) return;
+  Future<void> _send({bool asDraft = false}) async {
+    if (!_canSend ||
+        ((asDraft || widget.draft != null) && widget.review?.busy == true)) {
+      return;
+    }
     setState(() {
       _busy = true;
       _problem.clear();
     });
     try {
+      final body = _body;
       if (widget.edit case final edit?) {
-        await widget.store.edit(edit.id, _body);
+        await widget.store.edit(edit.id, body);
+      } else if (widget.draft case final draft?) {
+        await widget.review!.edit(draft.id, body);
       } else {
-        await widget.store.send(
-          ArtifactCommentInput(
-            version: widget.version,
-            place: widget.place,
-            replyTo: widget.reply?.id,
-            body: _body,
-            images: _images.map((image) => image.id).toList(),
-          ),
+        final input = ArtifactCommentInput(
+          version: widget.version,
+          place: widget.place,
+          replyTo: widget.reply?.id,
+          body: body,
+          images: _images.map((image) => image.id).toList(),
         );
+        if (asDraft) {
+          await widget.review!.save(input);
+        } else {
+          await widget.store.send(input);
+        }
       }
       if (!mounted || !widget.store.current) return;
       _images.clear();
@@ -311,6 +339,8 @@ class _ArtifactCommentComposerState extends State<ArtifactCommentComposer> {
           RaftApiException(code: 'FIELD_TOO_LONG') =>
             'This comment is too long.',
           RaftApiException(code: 'IMAGE_NOT_FOUND') => 'This image expired before it was sent. Remove it and attach it again.',
+          _ when asDraft || widget.draft != null =>
+            "Couldn't save the draft. Try again.",
           _ => "Couldn't send the comment. Try again.",
         }),
       );
@@ -358,12 +388,13 @@ class _ArtifactCommentComposerState extends State<ArtifactCommentComposer> {
           'image/webp',
           'image/gif',
         ].contains(type)) {
-          if (mounted)
+          if (mounted) {
             setState(
               () => _problem.raise(
                 'Only PNG, JPEG, WebP and GIF images can be attached.',
               ),
             );
+          }
           continue;
         }
         if (!mounted || !widget.store.current) return;
@@ -373,10 +404,11 @@ class _ArtifactCommentComposerState extends State<ArtifactCommentComposer> {
         _save();
       }
     } catch (_) {
-      if (mounted)
+      if (mounted) {
         setState(
           () => _problem.raise("It didn't upload. Retry, or remove it."),
         );
+      }
     } finally {
       if (mounted) setState(() => _uploading = false);
     }
@@ -481,7 +513,6 @@ class _ArtifactCommentComposerState extends State<ArtifactCommentComposer> {
             fieldKey: const ValueKey('artifact-comment-input'),
             controller: _text,
             focusNode: _focus,
-            autofocus: widget.autofocus,
             enabled: !_busy,
             hintText: placeholder,
             semanticLabel: placeholder,
@@ -531,7 +562,7 @@ class _ArtifactCommentComposerState extends State<ArtifactCommentComposer> {
                   tone: RaftButtonRecipeVariant.ghost,
                   onPressed: _busy ? null : widget.onCancel,
                 ),
-              if (widget.edit == null)
+              if (!widget.editing)
                 RaftButton(
                   key: const ValueKey('artifact-comment-attach'),
                   glyph: RaftGlyph.paperclip,
@@ -543,12 +574,23 @@ class _ArtifactCommentComposerState extends State<ArtifactCommentComposer> {
                       ? null
                       : _attach,
                 ),
+              if (!widget.editing && widget.review != null)
+                RaftButton(
+                  key: const ValueKey('artifact-comment-save-draft'),
+                  label: raftText(context, 'Save draft'),
+                  tone: RaftButtonRecipeVariant.ghost,
+                  size: RaftButtonRecipeSize.sm,
+                  onPressed:
+                      _canSend && widget.review!.loaded && !widget.review!.busy
+                      ? () => unawaited(_send(asDraft: true))
+                      : null,
+                ),
               RaftButton(
                 key: const ValueKey('artifact-comment-send'),
-                glyph: widget.edit == null ? RaftGlyph.send : RaftGlyph.check,
+                glyph: widget.editing ? RaftGlyph.check : RaftGlyph.send,
                 semanticLabel: raftText(
                   context,
-                  widget.edit == null ? 'Send' : 'Save',
+                  widget.editing ? 'Save' : 'Send',
                 ),
                 size: RaftButtonRecipeSize.iconSm,
                 onPressed: _canSend ? _send : null,

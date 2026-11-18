@@ -247,8 +247,9 @@ class ArtifactCommentStore extends ChangeNotifier {
   }
 
   void _requireCurrent() {
-    if (!current)
+    if (!current) {
       throw const RaftApiException('Artifact is no longer available.');
+    }
   }
 
   @override
