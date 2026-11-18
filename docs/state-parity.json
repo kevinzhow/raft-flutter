@@ -16996,6 +16996,14 @@
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
+      "packages/raft_ui/lib/directory_navigation_previews.dart#function:mountedSidebarLoadingPreview": {
+        "role": "preview_fixture",
+        "familyRefs": [
+          "sidebar"
+        ],
+        "owner": "WP-DS4",
+        "reason": "Light and dark SDK preview for the shared mounted sidebar loading rows."
+      },
       "packages/raft_ui/lib/directory_navigation_previews.dart#function:mountedSidebarPreview": {
         "role": "unresolved",
         "familyRefs": [],

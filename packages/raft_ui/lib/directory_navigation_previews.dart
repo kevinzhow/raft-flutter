@@ -90,6 +90,15 @@ Widget mountedSidebarPreview() {
   );
 }
 
+@RaftPreviews('Mounted sidebar: loading rows', size: Size(390, 240))
+Widget mountedSidebarLoadingPreview() => const RaftMountedSidebarFrame(
+  header: RaftChatSidebarHeading(label: 'Channels'),
+  body: Align(
+    alignment: Alignment.topCenter,
+    child: RaftSidebarRowsSkeleton(icon: true),
+  ),
+);
+
 @RaftPreviews(
   'Mounted channel unread, mute and draft states',
   size: Size(390, 240),
