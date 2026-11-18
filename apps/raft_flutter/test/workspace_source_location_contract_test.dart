@@ -95,13 +95,15 @@ Future<void> mountPage(
   WorkspaceController w,
   bool dark, {
   double width = 1440,
+  double height = 900,
+  TargetPlatform? platform,
 }) async {
-  tester.view.physicalSize = Size(width, 900);
+  tester.view.physicalSize = Size(width, height);
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);
   await tester.pumpWidget(
     MaterialApp(
-      theme: raftTheme(dark: dark),
+      theme: raftTheme(dark: dark).copyWith(platform: platform),
       home: withAppServices(
         WorkspaceView(
           controller: w,

@@ -3111,7 +3111,7 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
     setState(() => selectedSearchKey = 'message:$message');
     final committed = query.text;
     rememberSearchOpen(scope, queryText: committed);
-    if (openTaskFromList(w, row, wide: wide)) return;
+    if (openTaskFromList(w, row, wide: wide, focusedMessageId: message)) return;
     if (widget.onSearchMessage case final open?) {
       await open(row);
     } else {

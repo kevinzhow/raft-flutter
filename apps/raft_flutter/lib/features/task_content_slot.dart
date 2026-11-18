@@ -277,6 +277,7 @@ bool openTaskFromList(
   WorkspaceController w,
   Map<String, dynamic> row, {
   required bool wide,
+  String? focusedMessageId,
 }) {
   final taskId = row['taskId'], channelId = row['parentChannelId'];
   final task =
@@ -285,12 +286,16 @@ bool openTaskFromList(
       row['channelType'] == 'task';
   if (!task || taskId is! String || channelId is! String) return false;
   final at = w.location;
-  final base = wide
+  final base = wide && taskSlotRoutes.contains(at.route)
       ? taskSlotLocation(at, {'id': taskId})
       : at.withQuery({'thread': null, 'profile': null, 'legacyTask': null});
   w.closeThread(navigate: false);
   w.navigation.navigateTask(
-    base.withQuery({'task': '$channelId:$taskConversationItemPrefix$taskId'}),
+    base.withTaskConversation(
+      channelId,
+      taskId,
+      focusedMessageId: focusedMessageId,
+    ),
     kind: taskSlotNavigationKind(at),
   );
   w.notifyListeners();

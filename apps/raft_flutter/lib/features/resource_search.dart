@@ -5,6 +5,7 @@ import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_ui/recipes.dart' as rui;
 
+import 'activity_row_label.dart' show formatTaskConversationRef;
 import 'quick_switcher.dart' show QuickSwitcherFailure;
 import 'sender_avatar_projection.dart';
 import 'resource_cards.dart';
@@ -319,15 +320,32 @@ String searchSourceLabel(
   Map<String, dynamic> row,
   Iterable<Map<String, dynamic>> dms,
 ) {
-  final thread = row['channelType'] == 'thread';
-  final dm = (thread ? row['parentChannelType'] : row['channelType']) == 'dm';
-  final id = thread ? row['parentChannelId'] : row['channelId'];
-  var name =
-      '${(thread ? row['parentChannelName'] : row['channelName']) ?? ''}';
+  final task = row['channelType'] == 'task';
+  final child = task || row['channelType'] == 'thread';
+  final kind = child ? row['parentChannelType'] : row['channelType'];
+  final dm = kind == 'dm';
+  final id = child ? row['parentChannelId'] : row['channelId'];
+  var name = '${(child ? row['parentChannelName'] : row['channelName']) ?? ''}';
+  String? peerName;
   if (dm) {
     final peer = dms.where((c) => c['id'] == id).firstOrNull;
     final label = peer?['peerDisplayName'] ?? peer?['peerName'];
-    if (label is String && label.isNotEmpty) name = label;
+    if (label is String && label.isNotEmpty) peerName = name = label;
+  }
+  if (task) {
+    final number = row['taskNumber'], title = row['taskTitle'];
+    final ref = number is int
+        ? formatTaskConversationRef(
+            taskNumber: number,
+            channelName: name,
+            channelType: kind is String ? kind : null,
+            dmPeerName: peerName,
+          )
+        : null;
+    if (title is String && title.isNotEmpty) {
+      return ref == null ? title : '$ref $title';
+    }
+    if (ref != null) return ref;
   }
   return '${dm ? '@' : '#'}$name';
 }

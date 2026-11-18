@@ -19,6 +19,7 @@ import 'quick_switcher_model.dart';
 import 'rail_location_memory.dart';
 import 'resource_search.dart';
 import 'search_home.dart';
+import 'task_content_slot.dart' show openTaskFromList;
 
 /// Navigation the switcher asks of the workspace; each one mirrors what a
 /// click on the same destination does elsewhere in the app.
@@ -448,6 +449,11 @@ class QuickSwitcherHost {
     close();
     final channelId = row['channelId'], messageId = row['id'];
     if (channelId is! String || messageId is! String) return;
+    if (row['channelType'] == 'task' &&
+        openTaskFromList(w, row, wide: false, focusedMessageId: messageId)) {
+      unawaited(remember(query: query));
+      return;
+    }
     if (row['channelType'] == 'thread') {
       final parentChannel = row['parentChannelId'];
       final parentMessage = row['parentMessageId'];
