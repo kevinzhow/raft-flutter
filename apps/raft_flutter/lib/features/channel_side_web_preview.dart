@@ -199,6 +199,28 @@ class WebPreviewStore extends ChangeNotifier {
   }
 }
 
+/// Links in the visible side thread use its parent conversation's preview.
+String? webPreviewConversationHost(
+  WorkspaceController w,
+  String conversationId,
+) {
+  final channelId = w.channel?.id;
+  if (channelId == conversationId) return channelId;
+  final thread = w.threadIdentity;
+  final presentation = w.messageDomain.presentation;
+  if (channelId == null ||
+      thread == null ||
+      thread.taskId != null ||
+      w.section != 'chat' ||
+      thread.parentChannelId != channelId ||
+      w.threadChannelId != conversationId ||
+      !presentation.mainPresented ||
+      !presentation.threadPresented) {
+    return null;
+  }
+  return channelId;
+}
+
 /// Opens [url] beside the conversation [conversationId] (Web
 /// `openWebPreviewBeside`). False when it can't open there: the flag is off,
 /// the page is one Raft doesn't show (its own hosts, credentials, plain http),
@@ -216,9 +238,8 @@ bool openWebPreviewBeside(
   if (!ChannelSideFlags.of(w).webPreview || !store.platform.frames) {
     return false;
   }
-  if (w.channel?.id != conversationId) return false;
-  store.open(
-    WebPreviewPage(url: target.toString(), conversationId: conversationId),
-  );
+  final host = webPreviewConversationHost(w, conversationId);
+  if (host == null) return false;
+  store.open(WebPreviewPage(url: target.toString(), conversationId: host));
   return true;
 }

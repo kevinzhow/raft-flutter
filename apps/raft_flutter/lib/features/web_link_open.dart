@@ -91,7 +91,7 @@ Future<bool> openWebLinkByPreference(
 }) async {
   if (!webPreviewAvailable(w)) return false;
   if (webPreviewTarget(href, raftAppHostnames(w)) == null) return false;
-  if (w.channel?.id != conversationId) return false;
+  if (webPreviewConversationHost(w, conversationId) == null) return false;
   final preference = WebLinkOpenPreferences.instance.value;
   if (preference == WebLinkOpenPreference.browser) return false;
   void beside() {

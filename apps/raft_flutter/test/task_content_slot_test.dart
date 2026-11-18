@@ -58,6 +58,29 @@ Future<WorkspaceController> mountTasks(
   addTearDown(() => FlutterError.onError = previous);
   final (w, api) = await pageFixture(t, section: section);
   taskRoutes(api, v2Task);
+  if (section == 'activity') {
+    api.routes['GET /channels/inbox'] = (_) => {
+      'items': [
+        {
+          'kind': 'task',
+          'threadChannelId': 'task-conv',
+          'parentChannelId': 'c1',
+          'parentChannelName': 'test',
+          'parentChannelType': 'channel',
+          'taskId': 'task-1',
+          'taskTitle': v2Task['title'],
+          'taskNumber': 8,
+          'taskStatus': 'todo',
+          'lastActivityAt': '2026-11-18T12:00:00Z',
+          'unreadCount': 0,
+          'isFollowing': true,
+        },
+      ],
+      'hasMore': false,
+      'totalCount': 1,
+      'totalUnreadCount': 0,
+    };
+  }
   api.routes['GET /tasks/channel/c1'] = (_) => {
     'tasks': [v2Task],
   };
@@ -214,28 +237,36 @@ void main() {
     expect(card, findsOneWidget);
   });
 
-  testWidgets('Activity: a task row opens the task in the detail column', (
-    t,
-  ) async {
-    final w = await mountTasks(t, desktop, section: 'activity');
-    final opened = openTaskFromList(w, {
-      'kind': 'task',
-      'taskId': 'task-1',
-      'parentChannelId': 'c1',
-      'threadChannelId': 'task-conv',
-    }, wide: true);
-    expect(opened, isTrue);
-    await settle(t);
-    expect(w.location.route, RaftRoute.activity);
-    expect(w.location.query('open'), 'task:task-1');
-    expect(slot, findsOneWidget);
-    expect(find.byType(SourceTaskSurface), findsOneWidget);
-    await t.tap(find.byKey(const ValueKey('task-modal-close')));
-    await settle(t);
-    expect(slot, findsNothing);
-    expect(w.location.query('open'), isNull);
-    expect(w.location.query('task'), isNull);
-  });
+  for (final escape in [false, true]) {
+    testWidgets(
+      'Activity: ${escape ? 'Escape' : '×'} restores task row focus',
+      (t) async {
+        final w = await mountTasks(t, desktop, section: 'activity');
+        final row = find.byKey(const ValueKey('activity-thread-task-conv'));
+        expect(row.hitTestable(), findsOneWidget);
+        await t.tap(row);
+        await settle(t);
+        expect(w.location.route, RaftRoute.activity);
+        expect(w.location.query('open'), 'task:task-1');
+        expect(slot, findsOneWidget);
+        expect(find.byType(SourceTaskSurface), findsOneWidget);
+        final close = find.byKey(const ValueKey('task-modal-close'));
+        Focus.maybeOf(t.element(close))?.requestFocus();
+        await t.pump();
+        expect(focusIn(slot), isTrue);
+        if (escape) {
+          await t.sendKeyEvent(LogicalKeyboardKey.escape);
+        } else {
+          await t.tap(close);
+        }
+        await settle(t);
+        expect(slot, findsNothing);
+        expect(w.location.query('open'), isNull);
+        expect(w.location.query('task'), isNull);
+        expect(focusIn(row), isTrue);
+      },
+    );
+  }
 
   test('only task conversation rows and hits open the slot', () {
     expect(

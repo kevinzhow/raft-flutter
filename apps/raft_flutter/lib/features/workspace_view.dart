@@ -2659,23 +2659,8 @@ class _WorkspaceViewState extends State<WorkspaceView>
     Widget header() {
       if (thread) return sourceThreadHeader(onClose: closeDesktopDetail);
       if (wide && channel != null && channel.type == 'dm') {
-        final peer = dmPeer(channel);
-        return WorkspaceDmHeader(
+        return dmHeader(
           headerKey: const Key('workspace-content-dm-header'),
-          controller: w,
-          channel: channel,
-          agent: peer.agent,
-          name: peer.name,
-          profile: peer.profile,
-          avatar: mountedPeerAvatar(
-            peer.name,
-            peer.agent,
-            peer.avatar,
-            avatarContext: RaftMountedAvatarContext.panelHeader,
-          ),
-          selectionActive: () => mainSelection.active,
-          onSearch: searchThisChannel,
-          onSettings: channelSettings,
           trailingActions: [close],
         );
       }
@@ -3192,13 +3177,21 @@ class _WorkspaceViewState extends State<WorkspaceView>
 
   /// ChatPanel's DM header: identity from the DM record (first frame), the
   /// agent's status from the server-scoped agent directory.
-  Widget dmHeader({bool mobile = false}) {
+  Widget dmHeader({
+    bool mobile = false,
+    Key? headerKey,
+    List<Widget> trailingActions = const [],
+  }) {
     final c = w.channel!;
     final peer = dmPeer(c);
     return WorkspaceDmHeader(
-      headerKey: Key(
-        mobile ? 'workspace-mobile-detail-header' : 'workspace-channel-header',
-      ),
+      headerKey:
+          headerKey ??
+          Key(
+            mobile
+                ? 'workspace-mobile-detail-header'
+                : 'workspace-channel-header',
+          ),
       controller: w,
       channel: c,
       agent: peer.agent,
@@ -3215,6 +3208,7 @@ class _WorkspaceViewState extends State<WorkspaceView>
       backKey: mobile ? const Key('mobile-detail-back') : null,
       onSearch: searchThisChannel,
       onSettings: channelSettings,
+      trailingActions: trailingActions,
     );
   }
 
