@@ -31,6 +31,8 @@ import 'features/app_viewport.dart';
 import 'features/community_join.dart';
 import 'features/chinese_community.dart';
 import 'features/invite_accept_view.dart';
+import 'features/external_invite_root.dart';
+import 'features/external_invite_route.dart';
 import 'features/server_invite_home.dart';
 import 'features/private_app_invite.dart';
 import 'features/private_app_invite_view.dart';
@@ -859,7 +861,8 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
       rootRequest++;
       clearAccessDenied();
       if (Uri.parse(origin).origin != Uri.parse(base.trim()).origin &&
-          PrivateAppInviteLink.parse(requestedLocation, origin) != null) {
+          (PrivateAppInviteLink.parse(requestedLocation, origin) != null ||
+              externalInviteRoute != null)) {
         // A relative pending token belongs to the coordinator that admitted
         // it, never a different server chosen on the native login form.
         requestedLocation = Uri(path: '/');
@@ -948,9 +951,33 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
   String get serverMemoryKey =>
       desktopServerMemoryKey(origin, client?.user?.id, desktopWindows);
 
+  ({ExternalInviteRoute kind, String id})? get externalInviteRoute =>
+      ExternalInviteRoute.parse(requestedLocation, origin);
+
+  Future<bool> openInvitedChannel(String server, String? channel) {
+    final request = rootRequest, link = invite, w = workspace, c = client;
+    return openExternalChannel(
+      w,
+      server,
+      channel,
+      refreshDirectory: link != null,
+      current: () =>
+          mounted &&
+          request == rootRequest &&
+          identical(link, invite) &&
+          identical(w, workspace) &&
+          identical(c, client),
+      choose: (server, route) {
+        if (link != null) clearInvite();
+        return chooseServer(server, location: route);
+      },
+    );
+  }
+
   bool get showingStandalonePage =>
       PrivateAppInviteLink.parse(requestedLocation, origin) != null ||
-      requestedLocation.path == chineseCommunityPagePath;
+      requestedLocation.path == chineseCommunityPagePath ||
+      externalInviteRoute != null;
 
   Future<void> discoverServers() async {
     final w = workspace, c = client;
@@ -1212,7 +1239,8 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
         mounted &&
         request == rootRequest &&
         invite == null &&
-        PrivateAppInviteLink.parse(requestedLocation, origin) == null) {
+        PrivateAppInviteLink.parse(requestedLocation, origin) == null &&
+        externalInviteRoute == null) {
       showInvite(InviteLink(token));
     }
   }
@@ -1229,29 +1257,9 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
   }
 
   Future<bool> enterInvitedServer(String serverId) async {
-    final w = workspace, c = client;
-    final link = invite, request = rootRequest;
-    if (c?.user == null || link == null) return false;
-    if (w == null) {
-      // Account setup is still pending: the server list loads after it.
-      clearInvite();
-      return true;
-    }
-    if (!await w.loadServerDirectory() ||
-        !mounted ||
-        request != rootRequest ||
-        !identical(invite, link) ||
-        !identical(workspace, w) ||
-        !identical(client, c)) {
-      return false;
-    }
-    final joined = w.servers.where((s) => s.id == serverId).firstOrNull;
-    if (joined == null) return false;
+    if (client?.user == null || invite == null) return false;
+    if (workspace != null) return openInvitedChannel(serverId, null);
     clearInvite();
-    await chooseServer(
-      joined,
-      location: Uri(path: '/s/${joined.string('slug')}'),
-    );
     return true;
   }
 
@@ -1413,7 +1421,9 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
       return;
     }
     final appInvite = PrivateAppInviteLink.parse(location, origin);
-    if (appInvite != null || location.path == chineseCommunityPagePath) {
+    if (appInvite != null ||
+        location.path == chineseCommunityPagePath ||
+        ExternalInviteRoute.parse(location, origin) != null) {
       if (!showServerSelector) {
         chooserReturn = workspace?.navigation.location.uri;
       }
@@ -1801,6 +1811,16 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
     if (active?.user == null) {
       workspaceRootInputs = null;
       if (invite != null) return inviteHome(false);
+      if (externalInviteRoute
+          case (kind: ExternalInviteRoute.invitation, :final id)
+          when authMode == null) {
+        return buildExternalInviteLanding(
+          inviteClient ??= makeClient(origin, MemorySessionStore()),
+          widget.services.localNetwork,
+          id,
+          leaveInviteFor,
+        );
+      }
       final route = publicRoute(requestedLocation);
       if (route != null && !publicDismissed) {
         return PublicServerView(
@@ -1823,6 +1843,7 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
         initialMode: authMode ?? 'login',
         origin: origin,
         bootError: bootError,
+        purpose: externalInviteRoute?.kind.signInPurpose,
         onLogin: login,
         onRegister: register,
         authenticate: authenticate,
@@ -1838,6 +1859,16 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
         client: active,
         onComplete: () => finishOnboarding(active),
         onSignOut: logout,
+      );
+    }
+    if (externalInviteRoute case final route?) {
+      return buildExternalInviteHome(
+        active,
+        workspace,
+        route,
+        onSignOut: logout,
+        onClose: returnFromSelector,
+        open: openInvitedChannel,
       );
     }
     final appInvite = PrivateAppInviteLink.parse(requestedLocation, origin);

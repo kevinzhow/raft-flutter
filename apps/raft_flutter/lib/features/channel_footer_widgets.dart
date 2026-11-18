@@ -9,6 +9,7 @@ import 'agent_lounge.dart' show isLoungeChannel;
 import 'channel_footer_states.dart';
 import 'lounge_channel_presentation.dart' show unarchiveLounge;
 import 'raftbench_service_notice.dart';
+import 'workspace_web_billing.dart';
 
 /// Null shows the composer. The RaftBench service agent's DM comes first: it
 /// never replies, whatever else the footer chain would say.
@@ -39,6 +40,7 @@ Widget? channelFooterReplacement(
           ? () => unarchiveLounge(context, w)
           : onOpenChannelSettings,
     ),
+    ChannelFooterKind.externalFrozen => _externalFrozenFooter(context, w),
     ChannelFooterKind.jointLocked => RaftChannelBannerFooter(
       message: "This Joint Channel is read-only because it has more than 2 free servers. It becomes writable again when one server's admin upgrades or a free server leaves.",
       linkLabel: onViewBilling == null ? null : 'View billing',
@@ -72,12 +74,15 @@ Widget? threadFooterReplacement(
   final guest = w.server?.string('role') == 'guest';
   final joined = parent.joined;
   final guestJoinable = parent.json['guestJoinable'] == true;
-  if (guest && (joined || !guestJoinable)) {
+  if (guest && !canBoundGuestPost(parent) && (joined || !guestJoinable)) {
     return const RaftChannelBannerFooter(
       message: 'Guest access is read-only. You can read and follow this thread, but you cannot reply or react.',
     );
   }
   if (selectionActive) return null;
+  if (externalFreezeActive(parent.json, now)) {
+    return _externalFrozenFooter(context, w);
+  }
   if (jointChannelReadOnly(parent.json, now)) {
     return RaftChannelBannerFooter(
       message: "This Joint Channel is read-only because it has more than 2 free servers. It becomes writable again when one server's admin upgrades or a free server leaves.",
@@ -93,5 +98,33 @@ Widget? threadFooterReplacement(
     explanation: guest
         ? 'Joining follows the parent channel. Guest access remains read-only.'
         : null,
+  );
+}
+
+Widget _externalFrozenFooter(BuildContext context, WorkspaceController w) {
+  final role = w.server?.string('role');
+  final manager = const {'owner', 'admin'}.contains(role);
+  final free = w.server?.string('plan') == 'free';
+  final title = raftFormat(
+    context,
+    "{server} can't post in external channels right now",
+    {'server': w.server?.name ?? ''},
+  );
+  final body = raftText(
+    context,
+    manager
+        ? 'Free allows 1 external channel. Upgrade, or leave the extra channels, to post again.'
+        : 'Free allows 1 external channel. Ask an owner to upgrade.',
+  );
+  return RaftChannelBannerFooter(
+    message: '$title\n$body',
+    linkLabel: free
+        ? (role == 'owner' ? 'Upgrade to Pro' : 'Ask owner')
+        : 'View billing',
+    onLink: () => openWebBillingOrToast(
+      context,
+      w,
+      gate: WebBillingGate.externalChannelFrozen,
+    ),
   );
 }

@@ -67,6 +67,8 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="raft" android:host="v1" android:pathPrefix="/integration-invites/" />
+                <data android:scheme="raft" android:host="v1" android:pathPrefix="/external-invite/" />
+                <data android:scheme="raft" android:host="v1" android:pathPrefix="/server-connect-requests/" />
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.SEND" />
@@ -90,6 +92,8 @@
                 <data android:pathPattern="/s/.*/dm/.*" />
                 <data android:pathPrefix="/join/" />
                 <data android:pathPrefix="/integration-invites/" />
+                <data android:pathPrefix="/external-invite/" />
+                <data android:pathPrefix="/server-connect-requests/" />
             </intent-filter>
         </activity-alias>
         <activity android:name=".YellowIconEntry" android:exported="false"

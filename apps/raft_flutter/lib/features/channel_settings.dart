@@ -16,6 +16,7 @@ import 'channel_conversion_section.dart';
 import 'channel_details_slack.dart';
 import 'channel_form_fields.dart';
 import 'channel_joint_section.dart';
+import 'channel_joint_section_actions.dart' show jointHostExternal;
 import 'channel_members.dart';
 import 'channel_settings_strip.dart';
 import 'channel_section_select.dart';
@@ -894,7 +895,10 @@ class _ChannelSettingsState extends State<ChannelSettings> {
             RaftButtonRecipeVariant.outline,
             stopAgents,
           ),
-        if (!all && !archived && cap('deleteChannels'))
+        if (!all &&
+            !archived &&
+            cap('deleteChannels') &&
+            !jointHostExternal(w, c))
           // A joint channel cannot be deleted (the server answers 400): the
           // action is Disconnect (Web `showCompletedJointSettings`).
           if (joint)
@@ -1842,7 +1846,7 @@ class _ChannelSettingsState extends State<ChannelSettings> {
           warning: true,
           onPressed: stopAgents,
         ),
-      if (deleteRow)
+      if (deleteRow && !jointHostExternal(w, c))
         RaftOverflowAction(
           id: 'channel-settings-delete-action',
           label: joint ? 'Disconnect channel' : 'Delete channel',
@@ -1897,7 +1901,7 @@ class _ChannelSettingsState extends State<ChannelSettings> {
               ? const RaftOverflowLoading()
               : RaftOverflowPanelBody(
                   children: [
-                    if (c.type == 'joint')
+                    if (c.type == 'joint' || c.type == 'private')
                       ChannelJointSection(
                         key: jointKey,
                         controller: w,

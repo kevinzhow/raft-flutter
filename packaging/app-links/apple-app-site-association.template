@@ -17,6 +17,12 @@
           },
           {
             "/": "/integration-invites/*"
+          },
+          {
+            "/": "/external-invite/*"
+          },
+          {
+            "/": "/server-connect-requests/*"
           }
         ]
       }

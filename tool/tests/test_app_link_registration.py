@@ -30,7 +30,7 @@ class AppLinkRegistrationTests(unittest.TestCase):
         self.assertEqual({row.get(A + 'pathPattern') for row in data if row.get(A + 'pathPattern')},
                          {'/s/.*/channel/.*', '/s/.*/dm/.*'})
         self.assertEqual({row.get(A + 'pathPrefix') for row in data if row.get(A + 'pathPrefix')},
-                         {'/join/', '/integration-invites/'})
+                         {'/join/', '/integration-invites/', '/external-invite/', '/server-connect-requests/'})
         self.assertEqual({row.get(A + 'name') for row in filters[0].findall('category')},
                          {'android.intent.category.DEFAULT', 'android.intent.category.BROWSABLE'})
 
@@ -70,7 +70,8 @@ class AppLinkRegistrationTests(unittest.TestCase):
         details, = template['applinks']['details']
         self.assertEqual(details['appIDs'], ['<OWNER_VERIFIED_APP_ID_PREFIX>.app.raft.raftFlutter'])
         self.assertEqual({row['/'] for row in details['components']},
-                         {'/s/*/channel/*', '/s/*/dm/*', '/join/*', '/integration-invites/*'})
+                         {'/s/*/channel/*', '/s/*/dm/*', '/join/*', '/integration-invites/*',
+                          '/external-invite/*', '/server-connect-requests/*'})
 
     def test_linux_does_not_claim_global_https(self):
         launcher = (APP / 'lib/platform/linux_uri_scheme.dart').read_text()

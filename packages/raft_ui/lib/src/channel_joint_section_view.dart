@@ -27,6 +27,9 @@ class RaftJointServerRow {
     required this.active,
     this.isCurrent = false,
     this.plan,
+    this.role,
+    this.showActive = true,
+    this.action,
   });
   final String name, slug;
 
@@ -34,7 +37,9 @@ class RaftJointServerRow {
   final bool active, isCurrent;
 
   /// `free`, `paid` or null (no badge).
-  final String? plan;
+  final String? plan, role;
+  final bool showActive;
+  final Widget? action;
 }
 
 class RaftChannelJointSectionView extends StatelessWidget {
@@ -47,6 +52,7 @@ class RaftChannelJointSectionView extends StatelessWidget {
     required this.slug,
     required this.people,
     required this.onSendInvite,
+    this.headerAction,
     this.showResend = false,
     this.resendBusy = false,
     this.resendDone = false,
@@ -70,7 +76,7 @@ class RaftChannelJointSectionView extends StatelessWidget {
   final VoidCallback onSendInvite;
   final VoidCallback? onResend;
   final String? resendError, slugError, peopleError, submitError, status;
-  final Widget? sameAdminNotice;
+  final Widget? sameAdminNotice, headerAction;
 
   @override
   Widget build(BuildContext context) {
@@ -143,14 +149,21 @@ class RaftChannelJointSectionView extends StatelessWidget {
             ),
             const SizedBox(width: 8),
           ],
-          RaftBadge(
-            key: const ValueKey('channel-settings-joint-server-status'),
-            label: raftText(context, server.active ? 'active' : 'pending'),
-            appearance: RaftBadgeRecipeAppearance.soft,
-            variant: server.active
-                ? RaftBadgeRecipeVariant.success
-                : RaftBadgeRecipeVariant.warning,
-          ),
+          if (server.role == 'host')
+            RaftBadge(
+              label: raftText(context, 'Host'),
+              appearance: RaftBadgeRecipeAppearance.outline,
+            ),
+          if (!server.active || server.showActive)
+            RaftBadge(
+              key: const ValueKey('channel-settings-joint-server-status'),
+              label: raftText(context, server.active ? 'active' : 'pending'),
+              appearance: RaftBadgeRecipeAppearance.soft,
+              variant: server.active
+                  ? RaftBadgeRecipeVariant.success
+                  : RaftBadgeRecipeVariant.warning,
+            ),
+          ?server.action,
         ],
       ),
     );
@@ -192,6 +205,7 @@ class RaftChannelJointSectionView extends StatelessWidget {
                   ),
                 ),
               ),
+              if (headerAction case final action?) ...[const Spacer(), action],
             ],
           ),
           if (servers.isNotEmpty)

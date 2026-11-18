@@ -63,7 +63,8 @@ abstract final class RaftAppLinks {
     }
     return ContentTarget.parse(uri, origin: Uri.parse(uri.origin)) != null ||
         _invitePath(uri, 'join') ||
-        _invitePath(uri, 'integration-invites');
+        _invitePath(uri, 'integration-invites') ||
+        isExternalInvite(uri);
   }
 
   static bool _invitePath(Uri uri, String path) =>
@@ -74,6 +75,10 @@ abstract final class RaftAppLinks {
       RegExp(r'^[A-Za-z0-9_-]{1,256}$').hasMatch(uri.pathSegments.last);
 
   /// Called after either the native v1 origin or HTTPS allowlist was checked.
+  static bool isExternalInvite(Uri uri) =>
+      _invitePath(uri, 'external-invite') ||
+      _invitePath(uri, 'server-connect-requests');
+
   static bool isPrivateInvite(Uri uri) =>
       _invitePath(uri, 'integration-invites');
 }

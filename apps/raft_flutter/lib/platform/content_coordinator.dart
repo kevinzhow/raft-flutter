@@ -412,8 +412,15 @@ class NativeContentCoordinator with WidgetsBindingObserver {
         uri.userInfo.isEmpty &&
         uri.toString().length <= 2048;
     if (!native && !appLink) return;
-    if (uri.pathSegments.firstOrNull == 'integration-invites') {
-      if (!RaftAppLinks.isPrivateInvite(uri)) return;
+    if (const {
+      'integration-invites',
+      'external-invite',
+      'server-connect-requests',
+    }.contains(uri.pathSegments.firstOrNull)) {
+      if (!RaftAppLinks.isPrivateInvite(uri) &&
+          !RaftAppLinks.isExternalInvite(uri)) {
+        return;
+      }
       final handler = _onPrivateAppInvite;
       if (handler == null) {
         _pendingPrivateAppInvite = uri;

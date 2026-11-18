@@ -15705,7 +15705,7 @@
    "capability": "Accept a joint-channel invitation sent to this server",
    "background": false,
    "status": "covered",
-   "webEntry": "App.tsx effect: opening a server URL carrying ?jointInvite=<id> (the invite email/link) auto-POSTs accept, then navigates to the new channel; failure shows an error toast. No button; link-driven, runs for whoever opens the link",
+   "webEntry": "App.tsx server-route effect accepts ?jointInvite=<id>; components/layout/useSystemNotifications.tsx also accepts from the notification bell. Success opens the channel; failure shows a toast",
    "gate": "server enforces federateChannels/owner-admin; no client role gate",
    "flutterEntry": "system_notification_center.dart: bell > 'Invitation to join #channel' > Accept (acceptJointInvite), then the new channel opens",
    "flutterRefs": [
@@ -18167,7 +18167,7 @@
    "capability": "List pending joint-channel invitations for the server (owner/admin; Web polls it and offers Accept in notifications)",
    "background": false,
    "status": "covered",
-   "webEntry": "useSystemNotifications / App.tsx joint invite polling (60 s and on focus)",
+   "webEntry": "components/layout/usePendingJointInvites.ts: initial read, joint-invites:changed, reconnect, focus and 60 s fallback",
    "gate": "none",
    "flutterEntry": "system_notification_store.dart refreshJointInvites: owners and admins only, every 60 s while the app is in the foreground and on resume; entries come first in the bell",
    "flutterRefs": [

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
+import 'external_invite_channel_members.dart';
 import '../data/cause_notice.dart';
 import '../data/channel_roster_invalidations.dart';
 import '../data/user_error.dart';
@@ -930,6 +931,11 @@ class _ChannelMembersState extends State<ChannelMembers> {
       onClose: close,
       search: search,
       channelName: channel.name,
+      afterRoster: ChannelExternalInvites(
+        key: ValueKey('external-invites-${channel.id}'),
+        workspace: w,
+        channel: channel,
+      ),
       addView: addView,
       loading: loading,
       adding: adding,

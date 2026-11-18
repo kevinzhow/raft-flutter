@@ -151,7 +151,9 @@ class RaftChannelMembersModal extends StatelessWidget {
     this.retryingJoin = false,
     this.onConfirm,
     this.page = false,
+    this.afterRoster,
   });
+  final Widget? afterRoster;
   final VoidCallback onClose;
   final TextEditingController search;
   final String channelName;
@@ -262,6 +264,7 @@ class RaftChannelMembersModal extends StatelessWidget {
               const SizedBox(height: 12),
             ],
             if (addView) ..._addView(context, t) else _roster(context, t),
+            if (addView) ?afterRoster,
           ],
         ),
       ),
@@ -308,6 +311,7 @@ class RaftChannelMembersModal extends StatelessWidget {
                 ),
                 for (var i = 0; i < agents.length; i++) row(agents[i], i),
               ],
+              ?afterRoster,
               if (humans.isEmpty && agents.isEmpty)
                 Padding(
                   padding: const EdgeInsets.symmetric(
@@ -893,6 +897,7 @@ class _MembersPageState extends State<_MembersPage> {
                     count: agents.length,
                     rows: agents,
                   ),
+                ?m.afterRoster,
                 if (!m.loading && total == 0)
                   Padding(
                     padding: const EdgeInsets.symmetric(

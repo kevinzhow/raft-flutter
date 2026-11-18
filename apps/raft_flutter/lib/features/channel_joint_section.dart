@@ -14,6 +14,9 @@ import '../data/user_error.dart';
 import '../data/workspace_controller.dart';
 import 'create_joint_channel_dialog.dart' show maxJointChannelServers;
 import 'joint_same_admin.dart';
+import 'channel_joint_section_actions.dart';
+import 'external_invite_channel_members.dart';
+import 'management_support.dart' show cachedServerFlag;
 
 /// The servers a joint channel row lists: `jointServers`, else the single
 /// legacy peer (`jointPeer*`), else none.
@@ -85,6 +88,7 @@ class ChannelJointSectionState extends State<ChannelJointSection> {
   (String, String)? confirmedFor;
   Timer? resendTimer;
   bool _hadDraft = false;
+  late bool? _external = cachedServerFlag(w, 'external_channels_v1');
 
   bool get hasDraft => slug.text.isNotEmpty || people.text.isNotEmpty;
 
@@ -93,6 +97,12 @@ class ChannelJointSectionState extends State<ChannelJointSection> {
     super.initState();
     slug.addListener(_edited);
     people.addListener(_edited);
+    if (_external == null) unawaited(_loadExternal());
+  }
+
+  Future<void> _loadExternal() async {
+    final enabled = await readExternalChannelFlag(w);
+    if (mounted) setState(() => _external = enabled);
   }
 
   String _lastSlug = '', _lastPeople = '';
@@ -307,9 +317,37 @@ class ChannelJointSectionState extends State<ChannelJointSection> {
     listenable: w,
     builder: (context, _) {
       final c = channel;
-      if (c == null || c.type != 'joint') return const SizedBox.shrink();
-      final rows = jointServerRows(c);
-      final manage = w.can('federateChannels', resource: c) && !c.archived;
+      if (c == null) return const SizedBox.shrink();
+      final external = _external == true;
+      final joint = c.type == 'joint';
+      final connectRows = external
+          ? jointConnectRows(w, c)
+          : const <JointConnectRow>[];
+      final canConnect = connectRows.any((row) => row.eligible);
+      if (!joint && !canConnect) return const SizedBox.shrink();
+      final rows = joint
+          ? jointServerRows(c)
+          : [
+              {
+                'serverId': w.server?.id,
+                'serverName': w.server?.name,
+                'serverSlug': w.server?.string('slug'),
+                'status': 'active',
+                'isCurrentServer': true,
+                'role': 'host',
+              },
+            ];
+      final manage =
+          joint && w.can('federateChannels', resource: c) && !c.archived;
+      final recordedServers = c.json['jointServers'];
+      final canDisconnect =
+          joint &&
+          external &&
+          c.string('jointRole') == 'host' &&
+          recordedServers is List &&
+          recordedServers.isNotEmpty &&
+          c.json['channelCapabilities'] is Map &&
+          c.json['channelCapabilities']['federateChannels'] == true;
       final target = _sameAdminTarget;
       final slugInvalid = _slugValidation;
       final invited = jointPeople(people.text);
@@ -321,11 +359,40 @@ class ChannelJointSectionState extends State<ChannelJointSection> {
               slug: '${s['serverSlug'] ?? ''}',
               active: s['status'] == 'active',
               isCurrent: s['isCurrentServer'] == true,
-              plan: s['plan'] is String ? s['plan'] as String : null,
+              plan: !external && s['plan'] is String
+                  ? s['plan'] as String
+                  : null,
+              role: s['role'] as String?,
+              showActive: !external,
+              action:
+                  canDisconnect &&
+                      s['status'] == 'active' &&
+                      s['role'] != 'host' &&
+                      s['isCurrentServer'] != true &&
+                      s['serverId'] is String &&
+                      s['serverId'] != w.server?.id
+                  ? RaftButton(
+                      key: ValueKey('joint-disconnect-${s['serverId']}'),
+                      glyph: RaftGlyph.unplug,
+                      uiSize: RaftButtonSize.iconMd,
+                      uiVariant: RaftButtonVariant.ghost,
+                      tooltip: _text('Disconnect server'),
+                      onPressed: () => confirmJointServerDisconnect(
+                        context,
+                        w,
+                        c,
+                        s['serverId'] as String,
+                        s['serverName'] as String? ?? '',
+                      ),
+                    )
+                  : null,
             ),
         ],
-        showInvite: manage,
-        showResend: jointHasPendingInvites(c),
+        headerAction: canConnect
+            ? JointConnectMenu(workspace: w, channel: c, rows: connectRows)
+            : null,
+        showInvite: manage && !external,
+        showResend: joint && !external && jointHasPendingInvites(c),
         resendBusy: resendBusy,
         resendDone: resendDone,
         resendError: resendError,

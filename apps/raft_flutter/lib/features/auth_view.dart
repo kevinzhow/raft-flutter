@@ -83,6 +83,7 @@ class AuthView extends StatefulWidget {
     required this.onLogin,
     required this.onRegister,
     this.bootError,
+    this.purpose,
     this.onOAuth,
     this.anonymousClientFactory,
     this.oauthBrokerFactory,
@@ -111,7 +112,7 @@ class AuthView extends StatefulWidget {
   /// The browser sign-in broker (tests inject a fake launcher).
   final NativeOAuthBroker Function()? oauthBrokerFactory;
   final String origin;
-  final String? bootError;
+  final String? bootError, purpose;
   final Future<void> Function(String, String, String) onLogin;
   final Future<void> Function(String, String, String, bool) onRegister;
   @override
@@ -970,7 +971,7 @@ class _AuthState extends State<AuthView> {
                 onCancel: busy ? null : cancelLink,
                 onRestart: busy ? null : restartLink,
               ),
-        notice: notice,
+        notice: notice ?? (widget.purpose == null ? null : tr(widget.purpose!)),
         emailError: emailError == null ? null : tr(emailError!),
         tokenError: tokenError == null ? null : tr(tokenError!),
         passwordError: passwordError == null ? null : tr(passwordError!),

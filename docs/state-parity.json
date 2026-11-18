@@ -4291,6 +4291,274 @@
           "justification": "A failed list read leaves the section hidden on both, with no message. A failed revoke keeps the confirm dialog open with its own error line on both (test/account_app_logins_test.dart)."
         }
       ]
+    },
+    {
+      "id": "channel.external-invite-dialog",
+      "title": "Invite people outside the server",
+      "webEntry": "packages/web/src/components/channel/ExternalInviteSteps.tsx (v1.24.0)",
+      "flutterEntry": "apps/raft_flutter/lib/features/external_invite_channel_dialog.dart",
+      "states": [
+        {
+          "state": "loading",
+          "variant": "checking or sending",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "gap",
+          "gapKind": "case-missing",
+          "size": "S",
+          "justification": "No paired v1.24 visual case is registered for this state."
+        },
+        {
+          "state": "empty",
+          "variant": "no valid recipients",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "gap",
+          "gapKind": "case-missing",
+          "size": "S",
+          "justification": "No paired v1.24 visual case is registered for this state."
+        },
+        {
+          "state": "error",
+          "variant": "preview or send refused",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "gap",
+          "gapKind": "case-missing",
+          "size": "S",
+          "justification": "No paired v1.24 visual case is registered for this state."
+        },
+        {
+          "state": "partial",
+          "variant": "some entries skipped",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "gap",
+          "gapKind": "case-missing",
+          "size": "S",
+          "justification": "No paired v1.24 visual case is registered for this state."
+        }
+      ]
+    },
+    {
+      "id": "channel.external-invite-roster",
+      "title": "Pending external invitations",
+      "webEntry": "packages/web/src/components/channel/ExternalInviteRows.tsx (v1.24.0)",
+      "flutterEntry": "apps/raft_flutter/lib/features/external_invite_channel_members.dart",
+      "states": [
+        {
+          "state": "loading",
+          "variant": "initial invitations read",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "gap",
+          "gapKind": "case-missing",
+          "size": "S",
+          "justification": "No paired v1.24 visual case is registered for this state."
+        },
+        {
+          "state": "empty",
+          "variant": "no pending invitations",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "gap",
+          "gapKind": "case-missing",
+          "size": "S",
+          "justification": "No paired v1.24 visual case is registered for this state."
+        },
+        {
+          "state": "error",
+          "variant": "invitation list retry",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "gap",
+          "gapKind": "case-missing",
+          "size": "S",
+          "justification": "No paired v1.24 visual case is registered for this state."
+        },
+        {
+          "state": "partial",
+          "variant": "failed refresh preserves rows",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "gap",
+          "gapKind": "case-missing",
+          "size": "S",
+          "justification": "No paired v1.24 visual case is registered for this state."
+        }
+      ]
+    },
+    {
+      "id": "channel.external-invite-landing",
+      "title": "External invite before sign-in",
+      "webEntry": "packages/web/src/pages/ExternalInviteLandingPage.tsx (v1.24.0)",
+      "flutterEntry": "apps/raft_flutter/lib/features/external_invite_page_frame.dart",
+      "states": [
+        {
+          "state": "loading",
+          "variant": "anonymous preview",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "gap",
+          "gapKind": "case-missing",
+          "size": "S",
+          "justification": "No paired v1.24 visual case is registered for this state."
+        },
+        {
+          "state": "error",
+          "variant": "unavailable link or retry",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "gap",
+          "gapKind": "case-missing",
+          "size": "S",
+          "justification": "No paired v1.24 visual case is registered for this state."
+        }
+      ]
+    },
+    {
+      "id": "channel.external-invite-accept",
+      "title": "External invite after sign-in",
+      "webEntry": "packages/web/src/pages/ExternalInvitePage.tsx (v1.24.0)",
+      "flutterEntry": "apps/raft_flutter/lib/features/external_invite_page.dart",
+      "states": [
+        {
+          "state": "loading",
+          "variant": "invitation read",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "gap",
+          "gapKind": "case-missing",
+          "size": "S",
+          "justification": "No paired v1.24 visual case is registered for this state."
+        },
+        {
+          "state": "empty",
+          "variant": "no available join options",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "gap",
+          "gapKind": "case-missing",
+          "size": "S",
+          "justification": "No paired v1.24 visual case is registered for this state."
+        },
+        {
+          "state": "error",
+          "variant": "unavailable, mismatch or refusal",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "gap",
+          "gapKind": "case-missing",
+          "size": "S",
+          "justification": "No paired v1.24 visual case is registered for this state."
+        },
+        {
+          "state": "partial",
+          "variant": "per-server progress",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "gap",
+          "gapKind": "case-missing",
+          "size": "S",
+          "justification": "No paired v1.24 visual case is registered for this state."
+        }
+      ]
+    },
+    {
+      "id": "channel.server-connect-request",
+      "title": "Server connection approval",
+      "webEntry": "packages/web/src/pages/ServerConnectRequestPage.tsx (v1.24.0)",
+      "flutterEntry": "apps/raft_flutter/lib/features/external_invite_approval.dart",
+      "states": [
+        {
+          "state": "loading",
+          "variant": "approval read",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "gap",
+          "gapKind": "case-missing",
+          "size": "S",
+          "justification": "No paired v1.24 visual case is registered for this state."
+        },
+        {
+          "state": "error",
+          "variant": "unavailable or decision refused",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "gap",
+          "gapKind": "case-missing",
+          "size": "S",
+          "justification": "No paired v1.24 visual case is registered for this state."
+        },
+        {
+          "state": "partial",
+          "variant": "request decided or connecting",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "gap",
+          "gapKind": "case-missing",
+          "size": "S",
+          "justification": "No paired v1.24 visual case is registered for this state."
+        }
+      ]
+    },
+    {
+      "id": "channel.connect-your-servers",
+      "title": "Connect your servers",
+      "webEntry": "packages/web/src/components/channel/ConnectYourServersDialog.tsx (v1.24.0)",
+      "flutterEntry": "apps/raft_flutter/lib/features/channel_joint_section_actions.dart",
+      "states": [
+        {
+          "state": "loading",
+          "variant": "limits resolve in place",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "gap",
+          "gapKind": "case-missing",
+          "size": "S",
+          "justification": "No paired v1.24 visual case is registered for this state."
+        },
+        {
+          "state": "error",
+          "variant": "request refused",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "gap",
+          "gapKind": "case-missing",
+          "size": "S",
+          "justification": "No paired v1.24 visual case is registered for this state."
+        },
+        {
+          "state": "partial",
+          "variant": "some servers connected and some refused",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "gap",
+          "gapKind": "case-missing",
+          "size": "S",
+          "justification": "No paired v1.24 visual case is registered for this state."
+        }
+      ]
     }
   ],
   "navigationCoverage": {
@@ -21935,12 +22203,6 @@
         "owner": "design-system alignment",
         "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
       },
-      "packages/raft_ui/lib/src/channel_joint_section_view.dart#local-function:CLASS:RaftChannelJointSectionView@1196/METHOD:build@2295/FUNCTION:rowFor@2910": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
-      },
       "packages/raft_ui/lib/src/channel_joint_section_view.dart#method:RaftChannelJointSectionView.build": {
         "role": "unresolved",
         "familyRefs": [],
@@ -22048,18 +22310,6 @@
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
-      },
-      "packages/raft_ui/lib/src/channel_members_view.dart#local-function:CLASS:RaftChannelMembersModal@4128/METHOD:_addView@11629/FUNCTION:candidateRow@11970": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
-      },
-      "packages/raft_ui/lib/src/channel_members_view.dart#local-function:CLASS:RaftChannelMembersModal@4128/METHOD:_addView@11629/FUNCTION:eyebrow@11757": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
       "packages/raft_ui/lib/src/channel_members_view.dart#method:RaftChannelMembersModal._addView": {
         "role": "unresolved",
@@ -52300,10 +52550,10 @@
         "role": "unresolved"
       },
       "apps/raft_flutter/lib/features/source_feedback_view.dart#method:_SourceFeedbackProjectionViewState._copyLink": {
+        "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
-        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance.",
-        "role": "unresolved"
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
       "packages/raft_ui/lib/danger_action_previews.dart#function:dangerActionRowPreview": {
         "familyRefs": [],
@@ -54009,12 +54259,6 @@
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
-      "apps/raft_flutter/lib/features/source_feedback_view.dart#method:_SourceFeedbackProjectionViewState._copyLink": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
-      },
       "apps/raft_flutter/lib/features/account_deletion_agent_row.dart#local-function:CLASS:_AgentAction@2179/METHOD:build@2594/FUNCTION:button@2635": {
         "role": "unresolved",
         "familyRefs": [],
@@ -54106,6 +54350,582 @@
         "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
       },
       "packages/raft_ui/lib/src/settings_language.dart#method:RaftLanguageRegionView._status": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/auth_view.dart#local-function:CLASS:_AuthState@4703/METHOD:build@31133/FUNCTION:bars@33670": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-EXT",
+        "reason": "Composes existing Raft controls for external-channel actions."
+      },
+      "apps/raft_flutter/lib/features/channel_footer_widgets.dart#function:_externalFrozenFooter": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-EXT",
+        "reason": "Composes existing Raft controls for external-channel actions."
+      },
+      "apps/raft_flutter/lib/features/channel_joint_section_actions.dart#class:JointConnectMenu": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button",
+          "dialog",
+          "checkbox",
+          "banner"
+        ],
+        "owner": "WP-EXT",
+        "reason": "Composes existing Raft controls for external-channel actions."
+      },
+      "apps/raft_flutter/lib/features/channel_joint_section_actions.dart#class:_JointConnectDialog": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button",
+          "dialog",
+          "checkbox",
+          "banner"
+        ],
+        "owner": "WP-EXT",
+        "reason": "Composes existing Raft controls for external-channel actions."
+      },
+      "apps/raft_flutter/lib/features/channel_joint_section_actions.dart#class:_JointConnectDialogState": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button",
+          "dialog",
+          "checkbox",
+          "banner"
+        ],
+        "owner": "WP-EXT",
+        "reason": "Composes existing Raft controls for external-channel actions."
+      },
+      "apps/raft_flutter/lib/features/channel_joint_section_actions.dart#function:confirmJointServerDisconnect": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-EXT",
+        "reason": "Composes existing Raft controls for external-channel actions."
+      },
+      "apps/raft_flutter/lib/features/channel_joint_section_actions.dart#function:showJointConnectDialog": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button",
+          "dialog",
+          "checkbox",
+          "banner"
+        ],
+        "owner": "WP-EXT",
+        "reason": "Composes existing Raft controls for external-channel actions."
+      },
+      "apps/raft_flutter/lib/features/channel_joint_section_actions.dart#method:JointConnectMenu.build": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button",
+          "dialog",
+          "checkbox",
+          "banner"
+        ],
+        "owner": "WP-EXT",
+        "reason": "Composes existing Raft controls for external-channel actions."
+      },
+      "apps/raft_flutter/lib/features/channel_joint_section_actions.dart#method:_JointConnectDialog.createState": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button",
+          "dialog",
+          "checkbox",
+          "banner"
+        ],
+        "owner": "WP-EXT",
+        "reason": "Composes existing Raft controls for external-channel actions."
+      },
+      "apps/raft_flutter/lib/features/channel_joint_section_actions.dart#method:_JointConnectDialogState.build": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button",
+          "dialog",
+          "checkbox",
+          "banner"
+        ],
+        "owner": "WP-EXT",
+        "reason": "Composes existing Raft controls for external-channel actions."
+      },
+      "apps/raft_flutter/lib/features/channel_members.dart#local-function:CLASS:_ChannelMembersState@7746/METHOD:build@20304/FUNCTION:externalRow@20634": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-EXT",
+        "reason": "Composes existing Raft controls for external-channel actions."
+      },
+      "apps/raft_flutter/lib/features/channel_members.dart#local-function:CLASS:_ChannelMembersState@7746/METHOD:build@20304/FUNCTION:item@26399": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-EXT",
+        "reason": "Composes existing Raft controls for external-channel actions."
+      },
+      "apps/raft_flutter/lib/features/channel_members.dart#local-function:CLASS:_ChannelMembersState@7746/METHOD:build@20304/FUNCTION:row@21567": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-EXT",
+        "reason": "Composes existing Raft controls for external-channel actions."
+      },
+      "apps/raft_flutter/lib/features/external_invite_approval.dart#class:ExternalInviteApproval": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button"
+        ],
+        "owner": "WP-EXT",
+        "reason": "Composes existing Raft controls for external-channel actions."
+      },
+      "apps/raft_flutter/lib/features/external_invite_approval.dart#class:_ExternalInviteApprovalState": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button"
+        ],
+        "owner": "WP-EXT",
+        "reason": "Composes existing Raft controls for external-channel actions."
+      },
+      "apps/raft_flutter/lib/features/external_invite_approval.dart#method:ExternalInviteApproval.createState": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button"
+        ],
+        "owner": "WP-EXT",
+        "reason": "Composes existing Raft controls for external-channel actions."
+      },
+      "apps/raft_flutter/lib/features/external_invite_approval.dart#method:_ExternalInviteApprovalState.build": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button"
+        ],
+        "owner": "WP-EXT",
+        "reason": "Composes existing Raft controls for external-channel actions."
+      },
+      "apps/raft_flutter/lib/features/external_invite_channel_dialog.dart#class:_ExternalInviteDialog": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button",
+          "dialog",
+          "checkbox",
+          "banner"
+        ],
+        "owner": "WP-EXT",
+        "reason": "Composes existing Raft controls for external-channel actions."
+      },
+      "apps/raft_flutter/lib/features/external_invite_channel_dialog.dart#class:_ExternalInviteDialogState": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button",
+          "dialog",
+          "checkbox",
+          "banner"
+        ],
+        "owner": "WP-EXT",
+        "reason": "Composes existing Raft controls for external-channel actions."
+      },
+      "apps/raft_flutter/lib/features/external_invite_channel_dialog.dart#class:_ExternalReviewRow": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button",
+          "dialog",
+          "checkbox",
+          "banner"
+        ],
+        "owner": "WP-EXT",
+        "reason": "Composes existing Raft controls for external-channel actions."
+      },
+      "apps/raft_flutter/lib/features/external_invite_channel_dialog.dart#function:showExternalInviteDialog": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button",
+          "dialog",
+          "checkbox",
+          "banner"
+        ],
+        "owner": "WP-EXT",
+        "reason": "Composes existing Raft controls for external-channel actions."
+      },
+      "apps/raft_flutter/lib/features/external_invite_channel_dialog.dart#method:_ExternalInviteDialog.createState": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button",
+          "dialog",
+          "checkbox",
+          "banner"
+        ],
+        "owner": "WP-EXT",
+        "reason": "Composes existing Raft controls for external-channel actions."
+      },
+      "apps/raft_flutter/lib/features/external_invite_channel_dialog.dart#method:_ExternalInviteDialogState.build": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button",
+          "dialog",
+          "checkbox",
+          "banner"
+        ],
+        "owner": "WP-EXT",
+        "reason": "Composes existing Raft controls for external-channel actions."
+      },
+      "apps/raft_flutter/lib/features/external_invite_channel_dialog.dart#method:_ExternalReviewRow.build": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button",
+          "dialog",
+          "checkbox",
+          "banner"
+        ],
+        "owner": "WP-EXT",
+        "reason": "Composes existing Raft controls for external-channel actions."
+      },
+      "apps/raft_flutter/lib/features/external_invite_channel_members.dart#class:ChannelExternalInvites": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button",
+          "dialog",
+          "checkbox",
+          "banner"
+        ],
+        "owner": "WP-EXT",
+        "reason": "Composes existing Raft controls for external-channel actions."
+      },
+      "apps/raft_flutter/lib/features/external_invite_channel_members.dart#class:_ChannelExternalInvites": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button",
+          "dialog",
+          "checkbox",
+          "banner"
+        ],
+        "owner": "WP-EXT",
+        "reason": "Composes existing Raft controls for external-channel actions."
+      },
+      "apps/raft_flutter/lib/features/external_invite_channel_members.dart#class:_ChannelExternalInvitesState": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button",
+          "dialog",
+          "checkbox",
+          "banner"
+        ],
+        "owner": "WP-EXT",
+        "reason": "Composes existing Raft controls for external-channel actions."
+      },
+      "apps/raft_flutter/lib/features/external_invite_channel_members.dart#class:_ExternalInviteRowLabel": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button",
+          "dialog",
+          "checkbox",
+          "banner"
+        ],
+        "owner": "WP-EXT",
+        "reason": "Composes existing Raft controls for external-channel actions."
+      },
+      "apps/raft_flutter/lib/features/external_invite_channel_members.dart#function:showExternalConnectionOutcomes": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button",
+          "dialog",
+          "checkbox",
+          "banner"
+        ],
+        "owner": "WP-EXT",
+        "reason": "Composes existing Raft controls for external-channel actions."
+      },
+      "apps/raft_flutter/lib/features/external_invite_channel_members.dart#local-function:CLASS:_ChannelExternalInvitesState@3470/METHOD:_manage@7206/FUNCTION:run@7399": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button",
+          "dialog",
+          "checkbox",
+          "banner"
+        ],
+        "owner": "WP-EXT",
+        "reason": "Composes existing Raft controls for external-channel actions."
+      },
+      "apps/raft_flutter/lib/features/external_invite_channel_members.dart#method:ChannelExternalInvites.build": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button",
+          "dialog",
+          "checkbox",
+          "banner"
+        ],
+        "owner": "WP-EXT",
+        "reason": "Composes existing Raft controls for external-channel actions."
+      },
+      "apps/raft_flutter/lib/features/external_invite_channel_members.dart#method:_ChannelExternalInvites.createState": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button",
+          "dialog",
+          "checkbox",
+          "banner"
+        ],
+        "owner": "WP-EXT",
+        "reason": "Composes existing Raft controls for external-channel actions."
+      },
+      "apps/raft_flutter/lib/features/external_invite_channel_members.dart#method:_ChannelExternalInvitesState._build": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button",
+          "dialog",
+          "checkbox",
+          "banner"
+        ],
+        "owner": "WP-EXT",
+        "reason": "Composes existing Raft controls for external-channel actions."
+      },
+      "apps/raft_flutter/lib/features/external_invite_channel_members.dart#method:_ChannelExternalInvitesState._inviteRow": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button",
+          "dialog",
+          "checkbox",
+          "banner"
+        ],
+        "owner": "WP-EXT",
+        "reason": "Composes existing Raft controls for external-channel actions."
+      },
+      "apps/raft_flutter/lib/features/external_invite_channel_members.dart#method:_ChannelExternalInvitesState._manage": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button",
+          "dialog",
+          "checkbox",
+          "banner"
+        ],
+        "owner": "WP-EXT",
+        "reason": "Composes existing Raft controls for external-channel actions."
+      },
+      "apps/raft_flutter/lib/features/external_invite_channel_members.dart#method:_ChannelExternalInvitesState._open": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button",
+          "dialog",
+          "checkbox",
+          "banner"
+        ],
+        "owner": "WP-EXT",
+        "reason": "Composes existing Raft controls for external-channel actions."
+      },
+      "apps/raft_flutter/lib/features/external_invite_channel_members.dart#method:_ChannelExternalInvitesState.build": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button",
+          "dialog",
+          "checkbox",
+          "banner"
+        ],
+        "owner": "WP-EXT",
+        "reason": "Composes existing Raft controls for external-channel actions."
+      },
+      "apps/raft_flutter/lib/features/external_invite_channel_members.dart#method:_ExternalInviteRowLabel.build": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button",
+          "dialog",
+          "checkbox",
+          "banner"
+        ],
+        "owner": "WP-EXT",
+        "reason": "Composes existing Raft controls for external-channel actions."
+      },
+      "apps/raft_flutter/lib/features/external_invite_page.dart#class:ExternalInvitePage": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button"
+        ],
+        "owner": "WP-EXT",
+        "reason": "Composes existing Raft controls for external-channel actions."
+      },
+      "apps/raft_flutter/lib/features/external_invite_page.dart#class:_ExternalInvitePageState": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button"
+        ],
+        "owner": "WP-EXT",
+        "reason": "Composes existing Raft controls for external-channel actions."
+      },
+      "apps/raft_flutter/lib/features/external_invite_page.dart#local-function:CLASS:_ExternalInvitePageState@3178/METHOD:build@14982/FUNCTION:back@16238": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button"
+        ],
+        "owner": "WP-EXT",
+        "reason": "Composes existing Raft controls for external-channel actions."
+      },
+      "apps/raft_flutter/lib/features/external_invite_page.dart#local-function:CLASS:_ExternalInvitePageState@3178/METHOD:build@14982/FUNCTION:frame@15983": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button"
+        ],
+        "owner": "WP-EXT",
+        "reason": "Composes existing Raft controls for external-channel actions."
+      },
+      "apps/raft_flutter/lib/features/external_invite_page.dart#local-function:CLASS:_ExternalInvitePageState@3178/METHOD:build@14982/FUNCTION:open@16501": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button"
+        ],
+        "owner": "WP-EXT",
+        "reason": "Composes existing Raft controls for external-channel actions."
+      },
+      "apps/raft_flutter/lib/features/external_invite_page.dart#local-function:CLASS:_ExternalInvitePageState@3178/METHOD:build@14982/FUNCTION:primary@16343": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button"
+        ],
+        "owner": "WP-EXT",
+        "reason": "Composes existing Raft controls for external-channel actions."
+      },
+      "apps/raft_flutter/lib/features/external_invite_page.dart#method:ExternalInvitePage.createState": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button"
+        ],
+        "owner": "WP-EXT",
+        "reason": "Composes existing Raft controls for external-channel actions."
+      },
+      "apps/raft_flutter/lib/features/external_invite_page.dart#method:_ExternalInvitePageState._cancel": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button"
+        ],
+        "owner": "WP-EXT",
+        "reason": "Composes existing Raft controls for external-channel actions."
+      },
+      "apps/raft_flutter/lib/features/external_invite_page.dart#method:_ExternalInvitePageState._wayIn": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button"
+        ],
+        "owner": "WP-EXT",
+        "reason": "Composes existing Raft controls for external-channel actions."
+      },
+      "apps/raft_flutter/lib/features/external_invite_page.dart#method:_ExternalInvitePageState.build": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button"
+        ],
+        "owner": "WP-EXT",
+        "reason": "Composes existing Raft controls for external-channel actions."
+      },
+      "apps/raft_flutter/lib/features/external_invite_page_frame.dart#class:ExternalInviteFrame": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button"
+        ],
+        "owner": "WP-EXT",
+        "reason": "Composes existing Raft controls for external-channel actions."
+      },
+      "apps/raft_flutter/lib/features/external_invite_page_frame.dart#class:ExternalInviteLanding": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button"
+        ],
+        "owner": "WP-EXT",
+        "reason": "Composes existing Raft controls for external-channel actions."
+      },
+      "apps/raft_flutter/lib/features/external_invite_page_frame.dart#class:_ExternalInviteLandingState": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button"
+        ],
+        "owner": "WP-EXT",
+        "reason": "Composes existing Raft controls for external-channel actions."
+      },
+      "apps/raft_flutter/lib/features/external_invite_page_frame.dart#function:externalInviteButton": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button"
+        ],
+        "owner": "WP-EXT",
+        "reason": "Composes existing Raft controls for external-channel actions."
+      },
+      "apps/raft_flutter/lib/features/external_invite_page_frame.dart#function:openExternalChannelOrToast": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button"
+        ],
+        "owner": "WP-EXT",
+        "reason": "Composes existing Raft controls for external-channel actions."
+      },
+      "apps/raft_flutter/lib/features/external_invite_page_frame.dart#function:upgradeExternalServerOrToast": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button"
+        ],
+        "owner": "WP-EXT",
+        "reason": "Composes existing Raft controls for external-channel actions."
+      },
+      "apps/raft_flutter/lib/features/external_invite_page_frame.dart#method:ExternalInviteFrame.build": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button"
+        ],
+        "owner": "WP-EXT",
+        "reason": "Composes existing Raft controls for external-channel actions."
+      },
+      "apps/raft_flutter/lib/features/external_invite_page_frame.dart#method:ExternalInviteLanding.createState": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button"
+        ],
+        "owner": "WP-EXT",
+        "reason": "Composes existing Raft controls for external-channel actions."
+      },
+      "apps/raft_flutter/lib/features/external_invite_page_frame.dart#method:_ExternalInviteLandingState.build": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button"
+        ],
+        "owner": "WP-EXT",
+        "reason": "Composes existing Raft controls for external-channel actions."
+      },
+      "apps/raft_flutter/lib/features/external_invite_root.dart#function:buildExternalInviteHome": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-EXT",
+        "reason": "Composes existing Raft controls for external-channel actions."
+      },
+      "apps/raft_flutter/lib/features/external_invite_root.dart#function:buildExternalInviteLanding": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-EXT",
+        "reason": "Composes existing Raft controls for external-channel actions."
+      },
+      "apps/raft_flutter/lib/features/channel_settings.dart#local-function:CLASS:_ChannelSettingsState@3007/METHOD:membersStrip@43833/FUNCTION:tile@43941": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/channel_joint_section_view.dart#local-function:CLASS:RaftChannelJointSectionView@1311/METHOD:build@2447/FUNCTION:rowFor@3062": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/channel_members_view.dart#local-function:CLASS:RaftChannelMembersModal@4128/METHOD:_addView@11747/FUNCTION:candidateRow@12088": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/channel_members_view.dart#local-function:CLASS:RaftChannelMembersModal@4128/METHOD:_addView@11747/FUNCTION:eyebrow@11875": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/channel_members_view.dart#local-function:CLASS:RaftChannelMembersModal@4128/METHOD:_roster@8815/FUNCTION:row@9016": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/channel_members_view.dart#local-function:CLASS:_CreateAgentEntry@22504/METHOD:build@23036/FUNCTION:plus@23302": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
@@ -57478,12 +58298,12 @@
         "reason": "Resolved function owns a surface call; actual target, route and state are not yet observed."
       },
       "surface:apps/raft_flutter/lib/features/source_feedback_view.dart#method:_SourceFeedbackProjectionViewState._copyLink": {
+        "owner": "design-system alignment",
+        "kind": "surface_factory_candidate",
         "declarationRefs": [
           "apps/raft_flutter/lib/features/source_feedback_view.dart#method:_SourceFeedbackProjectionViewState._copyLink"
         ],
-        "kind": "surface_factory_candidate",
         "mountStatus": "unresolved",
-        "owner": "design-system alignment",
         "reason": "Resolved function owns a surface call; actual target, route and state are not yet observed."
       },
       "surface:apps/raft_flutter/lib/features/channel_announcement_settings.dart#method:_ChannelAnnouncementSettingsState.pick": {
@@ -57631,14 +58451,127 @@
         "mountStatus": "unresolved",
         "reason": "Existing lifecycle screen record; exact builder/family composition and current mounted state are not yet established."
       },
-      "surface:apps/raft_flutter/lib/features/source_feedback_view.dart#method:_SourceFeedbackProjectionViewState._copyLink": {
-        "owner": "design-system alignment",
-        "kind": "surface_factory_candidate",
+      "factory:apps/raft_flutter/lib/features/channel_joint_section_actions.dart#function:confirmJointServerDisconnect": {
+        "owner": "WP-EXT",
+        "kind": "surface_factory",
         "declarationRefs": [
-          "apps/raft_flutter/lib/features/source_feedback_view.dart#method:_SourceFeedbackProjectionViewState._copyLink"
+          "apps/raft_flutter/lib/features/channel_joint_section_actions.dart#function:confirmJointServerDisconnect"
         ],
-        "mountStatus": "unresolved",
-        "reason": "Resolved function owns a surface call; actual target, route and state are not yet observed."
+        "mountStatus": "source_reviewed"
+      },
+      "factory:apps/raft_flutter/lib/features/channel_joint_section_actions.dart#function:showJointConnectDialog": {
+        "owner": "WP-EXT",
+        "kind": "surface_factory",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/channel_joint_section_actions.dart#function:showJointConnectDialog"
+        ],
+        "mountStatus": "source_reviewed"
+      },
+      "factory:apps/raft_flutter/lib/features/external_invite_channel_dialog.dart#function:showExternalInviteDialog": {
+        "owner": "WP-EXT",
+        "kind": "surface_factory",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/external_invite_channel_dialog.dart#function:showExternalInviteDialog"
+        ],
+        "mountStatus": "source_reviewed"
+      },
+      "factory:apps/raft_flutter/lib/features/external_invite_channel_members.dart#function:showExternalConnectionOutcomes": {
+        "owner": "WP-EXT",
+        "kind": "surface_factory",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/external_invite_channel_members.dart#function:showExternalConnectionOutcomes"
+        ],
+        "mountStatus": "source_reviewed"
+      },
+      "factory:apps/raft_flutter/lib/features/external_invite_channel_members.dart#local-function:CLASS:_ChannelExternalInvitesState@3470/METHOD:_manage@7206/FUNCTION:run@7399": {
+        "owner": "WP-EXT",
+        "kind": "surface_factory",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/external_invite_channel_members.dart#local-function:CLASS:_ChannelExternalInvitesState@3470/METHOD:_manage@7206/FUNCTION:run@7399"
+        ],
+        "mountStatus": "source_reviewed"
+      },
+      "factory:apps/raft_flutter/lib/features/external_invite_channel_members.dart#method:_ChannelExternalInvitesState._manage": {
+        "owner": "WP-EXT",
+        "kind": "surface_factory",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/external_invite_channel_members.dart#method:_ChannelExternalInvitesState._manage"
+        ],
+        "mountStatus": "source_reviewed"
+      },
+      "factory:apps/raft_flutter/lib/features/external_invite_channel_members.dart#method:_ChannelExternalInvitesState._open": {
+        "owner": "WP-EXT",
+        "kind": "surface_factory",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/external_invite_channel_members.dart#method:_ChannelExternalInvitesState._open"
+        ],
+        "mountStatus": "source_reviewed"
+      },
+      "factory:apps/raft_flutter/lib/features/external_invite_page.dart#method:_ExternalInvitePageState._cancel": {
+        "owner": "WP-EXT",
+        "kind": "surface_factory",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/external_invite_page.dart#method:_ExternalInvitePageState._cancel"
+        ],
+        "mountStatus": "source_reviewed"
+      },
+      "factory:apps/raft_flutter/lib/features/external_invite_page_frame.dart#function:openExternalChannelOrToast": {
+        "owner": "WP-EXT",
+        "kind": "surface_factory",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/external_invite_page_frame.dart#function:openExternalChannelOrToast"
+        ],
+        "mountStatus": "source_reviewed"
+      },
+      "factory:apps/raft_flutter/lib/features/external_invite_page_frame.dart#function:upgradeExternalServerOrToast": {
+        "owner": "WP-EXT",
+        "kind": "surface_factory",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/external_invite_page_frame.dart#function:upgradeExternalServerOrToast"
+        ],
+        "mountStatus": "source_reviewed"
+      },
+      "screen:channel.external-invite-dialog": {
+        "owner": "WP-EXT",
+        "kind": "route_or_panel_candidate",
+        "lifecycleScreenId": "channel.external-invite-dialog",
+        "declarationRefs": [],
+        "mountStatus": "source_reviewed"
+      },
+      "screen:channel.external-invite-roster": {
+        "owner": "WP-EXT",
+        "kind": "route_or_panel_candidate",
+        "lifecycleScreenId": "channel.external-invite-roster",
+        "declarationRefs": [],
+        "mountStatus": "source_reviewed"
+      },
+      "screen:channel.external-invite-landing": {
+        "owner": "WP-EXT",
+        "kind": "route_or_panel_candidate",
+        "lifecycleScreenId": "channel.external-invite-landing",
+        "declarationRefs": [],
+        "mountStatus": "source_reviewed"
+      },
+      "screen:channel.external-invite-accept": {
+        "owner": "WP-EXT",
+        "kind": "route_or_panel_candidate",
+        "lifecycleScreenId": "channel.external-invite-accept",
+        "declarationRefs": [],
+        "mountStatus": "source_reviewed"
+      },
+      "screen:channel.server-connect-request": {
+        "owner": "WP-EXT",
+        "kind": "route_or_panel_candidate",
+        "lifecycleScreenId": "channel.server-connect-request",
+        "declarationRefs": [],
+        "mountStatus": "source_reviewed"
+      },
+      "screen:channel.connect-your-servers": {
+        "owner": "WP-EXT",
+        "kind": "route_or_panel_candidate",
+        "lifecycleScreenId": "channel.connect-your-servers",
+        "declarationRefs": [],
+        "mountStatus": "source_reviewed"
       }
     },
     "requirements": {

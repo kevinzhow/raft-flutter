@@ -141,6 +141,8 @@ void main() {
         'raft://v1:123/integration-invites/token',
         'raft://user@v1/integration-invites/token',
         'raft://v1/integration-invites/${'a' * 257}',
+        'raft://v1/external-invite/token/extra',
+        'raft://v1/server-connect-requests/token?query=other',
       ]) {
         owner.receiveLink(Uri.parse(location));
       }

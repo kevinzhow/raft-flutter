@@ -13,7 +13,11 @@ RaftComposerSuggestion? externalMentionSuggestion(
   String origin,
   Map<String, dynamic> member,
 ) {
-  if (member['provider'] != 'slack' || member['id'] is! String) return null;
+  if (member['mentionable'] == false ||
+      member['provider'] != 'slack' ||
+      member['id'] is! String) {
+    return null;
+  }
   final display = member['displayName'] as String? ?? '';
   final handles = member['handles'];
   final raw =
