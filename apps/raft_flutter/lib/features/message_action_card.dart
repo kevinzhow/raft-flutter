@@ -1067,7 +1067,7 @@ class _MessageActionCardState extends State<MessageActionCard> {
   }
 
   List<ActionCardCandidate> _candidates(ActionCardField field) {
-    if (field.type == ActionCardFieldType.ChannelPicker) {
+    if (field.type == ActionCardFieldType.channelPicker) {
       return [
         for (final channel in w.channels)
           if (!channel.archived &&
@@ -1081,7 +1081,7 @@ class _MessageActionCardState extends State<MessageActionCard> {
       if (kinds.contains('human'))
         ...directory.rows(WorkspaceEntityKind.members),
       if (kinds.contains('agent') ||
-          field.type == ActionCardFieldType.AgentPicker)
+          field.type == ActionCardFieldType.agentPicker)
         ...directory.rows(WorkspaceEntityKind.agents),
     ];
     return [
@@ -1180,7 +1180,7 @@ class _MessageActionCardState extends State<MessageActionCard> {
           form.inline &&
           form.fields.isNotEmpty &&
           form.fields.every(
-            (field) => field.type == ActionCardFieldType.Choice,
+            (field) => field.type == ActionCardFieldType.choice,
           )) {
         return (button: node, form: form);
       }
@@ -1363,8 +1363,9 @@ class _MessageActionCardState extends State<MessageActionCard> {
               );
             }
           } catch (_) {
-            if (current(authority))
+            if (current(authority)) {
               unawaited(event('action_card.execute_fail'));
+            }
             rethrow;
           }
         },
@@ -1420,8 +1421,9 @@ class _MessageActionCardState extends State<MessageActionCard> {
     }
     final app = cardString(action['mcpServerId']);
     final agent = cardString(action['agentId']);
-    if (app == null || agent == null || metadata['state'] != 'prepared')
+    if (app == null || agent == null || metadata['state'] != 'prepared') {
       return null;
+    }
     final authority = workspaceAuthority(w);
     final version = metadata['confirmationVersion'];
     void verify() {
@@ -1510,8 +1512,9 @@ class _MessageActionCardState extends State<MessageActionCard> {
         return form == null ? _openCardInBrowser() : _openSpecForm(form);
       case ActionCardCommand.execute:
         if (metadata['state'] == 'reconfirm_required') return confirm();
-        if (type == 'integration:install_marketplace_app')
+        if (type == 'integration:install_marketplace_app') {
           return _openInstall();
+        }
         if (actionCardExpired(metadata) ||
             blocked != null ||
             busy ||

@@ -14,17 +14,21 @@ typedef ActionCardFormDraft = ({int page, CardJson values});
 typedef ActionCardCandidate = ({String id, String label});
 
 enum ActionCardFieldType {
-  TextInput,
-  TextArea,
-  Select,
-  Toggle,
-  Choice,
-  MemberPicker,
-  ChannelPicker,
-  AgentPicker;
+  textInput('TextInput'),
+  textArea('TextArea'),
+  select('Select'),
+  toggle('Toggle'),
+  choice('Choice'),
+  memberPicker('MemberPicker'),
+  channelPicker('ChannelPicker'),
+  agentPicker('AgentPicker');
+
+  const ActionCardFieldType(this.wireName);
+
+  final String wireName;
 
   bool get picker => switch (this) {
-    MemberPicker || ChannelPicker || AgentPicker => true,
+    memberPicker || channelPicker || agentPicker => true,
     _ => false,
   };
 }
@@ -47,8 +51,8 @@ class ActionCardField {
             (type.picker ? 50 : options.length + (other.isEmpty ? 0 : 1));
 
   Object initial() => switch (type) {
-    ActionCardFieldType.Toggle => spec['default'] == true,
-    ActionCardFieldType.Choice => {
+    ActionCardFieldType.toggle => spec['default'] == true,
+    ActionCardFieldType.choice => {
       'selected': cardList(cardObject(spec['default'])['selected']),
       if (cardObject(spec['default'])['other'] case final String other)
         'other': other,
@@ -61,7 +65,7 @@ class ActionCardField {
   };
 
   Object? submission(Object? value) {
-    if (type == ActionCardFieldType.Choice) {
+    if (type == ActionCardFieldType.choice) {
       final choice = cardObject(value);
       final selected = cardList(choice['selected']);
       final other = cardString(choice['other'])?.trim() ?? '';
@@ -77,7 +81,7 @@ class ActionCardField {
       if (required && value.isEmpty) return 'Required';
       if (limit is int && value.runes.length > limit) return 'Too long';
     }
-    if (type == ActionCardFieldType.Choice) {
+    if (type == ActionCardFieldType.choice) {
       final choice = cardObject(value);
       final otherText = cardString(choice['other']);
       final otherLimit = other['maxLength'];
@@ -126,7 +130,7 @@ class ActionCardForm {
       final field = cardObject(row);
       final name = cardString(field['name']);
       final type = ActionCardFieldType.values
-          .where((value) => value.name == field['type'])
+          .where((value) => value.wireName == field['type'])
           .firstOrNull;
       if (name == null ||
           type == null ||
@@ -134,8 +138,8 @@ class ActionCardForm {
           !_hasText(field['label'])) {
         return null;
       }
-      if (type == ActionCardFieldType.Select ||
-          type == ActionCardFieldType.Choice) {
+      if (type == ActionCardFieldType.select ||
+          type == ActionCardFieldType.choice) {
         final options = cardList(field['options']);
         final values = <String>{};
         if (options.isEmpty || options.length > 32) return null;
@@ -234,7 +238,7 @@ class _ActionCardFormViewState extends State<ActionCardFormView>
     final field = _form.fields.singleOrNull;
     return widget.question &&
         field != null &&
-        field.type == ActionCardFieldType.Choice &&
+        field.type == ActionCardFieldType.choice &&
         !field.multiple &&
         !cardObject(_values[field.name]).containsKey('other');
   }
@@ -534,7 +538,7 @@ class _ActionCardFormViewState extends State<ActionCardFormView>
     final focus = _focus.putIfAbsent(field.name, FocusNode.new);
     Widget control;
     switch (field.type) {
-      case ActionCardFieldType.TextInput:
+      case ActionCardFieldType.textInput:
         control = RaftTextInput(
           initialValue: value as String?,
           hintText: hint,
@@ -544,7 +548,7 @@ class _ActionCardFormViewState extends State<ActionCardFormView>
           onSubmitted: (_) => _submit(),
           onChanged: (text) => _edit(field, text),
         );
-      case ActionCardFieldType.TextArea:
+      case ActionCardFieldType.textArea:
         control = RaftTextarea(
           initialValue: value as String?,
           hintText: hint,
@@ -555,7 +559,7 @@ class _ActionCardFormViewState extends State<ActionCardFormView>
           invalid: issue != null,
           onChanged: (text) => _edit(field, text),
         );
-      case ActionCardFieldType.Select:
+      case ActionCardFieldType.select:
         control = RaftSelectField<String>(
           key: ValueKey('action-card-select-${field.name}'),
           label: label,
@@ -569,14 +573,14 @@ class _ActionCardFormViewState extends State<ActionCardFormView>
           ],
           onChanged: enabled ? (next) => _edit(field, next ?? '') : null,
         );
-      case ActionCardFieldType.Toggle:
+      case ActionCardFieldType.toggle:
         control = RaftSwitch(
           value: value == true,
           semanticLabel: label,
           focusNode: focus,
           onChanged: enabled ? (next) => _edit(field, next) : null,
         );
-      case ActionCardFieldType.Choice:
+      case ActionCardFieldType.choice:
         control = _choice(field, cardObject(value), enabled);
       default:
         final choices = widget.candidates(field);

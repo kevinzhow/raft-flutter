@@ -44,7 +44,7 @@ Map<String, Object> spec({
   'catalog': 'action-card.v1',
   'title': copy('Approval requested'),
   'spec': tree(action: action ?? const {'kind': 'execute'}),
-  if (forms != null) 'forms': forms,
+  'forms': ?forms,
   'result': {
     'root': 'result',
     'elements': {

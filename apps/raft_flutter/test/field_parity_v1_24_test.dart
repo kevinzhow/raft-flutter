@@ -287,8 +287,8 @@ void main() {
       expect(author.profileUnresolved, isTrue);
     });
 
-    testWidgets('a v1.24 card type this client has no renderer for draws the '
-        'generic card and fails closed', (t) async {
+    testWidgets('an unsupported v1.24 card tree draws its summary and fails '
+        'closed', (t) async {
       final (w, _) = (await t.runAsync(() => fixture('owner')))!;
       addTearDown(w.dispose);
       final message = _map(_rows(body['messages'])[2]);
@@ -309,7 +309,7 @@ void main() {
       final drawn = t.widget<RaftActionCard>(find.byType(RaftActionCard));
       expect(drawn.title, 'Add 2 seats');
       expect(drawn.details, [(label: 'Seats', value: '2')]);
-      expect(drawn.blockedReason, 'This action needs a newer client.');
+      expect(drawn.blockedReason, 'View only');
     });
   });
 
