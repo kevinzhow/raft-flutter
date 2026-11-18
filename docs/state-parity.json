@@ -55191,7 +55191,7 @@
         "owner": "Raft Flutter component wiring",
         "reason": "Resolves a public forward into its authorized conversation and reply. Reuses the task, timeline, history paywall and toast surfaces."
       },
-      "apps/raft_flutter/lib/features/system_notification_center.dart#local-function:CLASS:_SystemNotificationBellState@1820/METHOD:navigate@21821/FUNCTION:openAgent@22897": {
+      "apps/raft_flutter/lib/features/system_notification_center.dart#local-function:CLASS:_SystemNotificationBellState@1820/METHOD:navigate@21999/FUNCTION:openAgent@23075": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "Raft Flutter component wiring",
@@ -55268,12 +55268,6 @@
         "familyRefs": [],
         "owner": "WP-CHAN",
         "reason": "Offset update from the channel Details workspace route. Exact family placement and state-specific visual acceptance are pending."
-      },
-      "packages/raft_ui/lib/src/channel_header.dart#local-function:CLASS:_RaftCssShrinkRow@32796/METHOD:build@33120/FUNCTION:<anonymous>@33763/FUNCTION:text@34043": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "WP-CHAN",
-        "reason": "Shared channel heading and activity badge placement. Exact family placement and state-specific visual acceptance are pending."
       },
       "apps/raft_flutter/lib/features/channel_members.dart#local-function:CLASS:_ChannelMembersState@9124/METHOD:build@24360/FUNCTION:item@31636": {
         "role": "entry_composition",
@@ -55383,7 +55377,7 @@
         "owner": "WP-DS4",
         "reason": "Shared sidebar loading presentation. State-specific visual acceptance is pending."
       },
-      "packages/raft_ui/lib/src/channel_header.dart#local-function:CLASS:_RaftCssShrinkRow@32867/METHOD:build@33191/FUNCTION:<anonymous>@33834/FUNCTION:text@34114": {
+      "packages/raft_ui/lib/src/channel_header.dart#local-function:CLASS:_RaftCssShrinkRow@32985/METHOD:build@33309/FUNCTION:<anonymous>@33952/FUNCTION:text@34232": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "WP-CHAN",
@@ -59064,7 +59058,7 @@
         "owner": "Raft Flutter component wiring",
         "kind": "route_or_panel_candidate",
         "declarationRefs": [
-          "apps/raft_flutter/lib/features/system_notification_center.dart#local-function:CLASS:_SystemNotificationBellState@1820/METHOD:navigate@21821/FUNCTION:openAgent@22897"
+          "apps/raft_flutter/lib/features/system_notification_center.dart#local-function:CLASS:_SystemNotificationBellState@1820/METHOD:navigate@21999/FUNCTION:openAgent@23075"
         ],
         "mountStatus": "source_reviewed",
         "reason": "The Agent row in the Computer details opened by the notification bell presents the existing Agent detail page."
