@@ -10,6 +10,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_flutter/data/raft_location.dart';
 import 'package:raft_flutter/features/profile_preview.dart';
+import 'package:raft_flutter/platform/desktop_title_bar.dart';
 
 import 'app_global_server_selector_test.dart' show RootFixture;
 import 'mobile_computer_navigation_test.dart' show computer;
@@ -47,6 +48,8 @@ Future<RootFixture> _openRack(WidgetTester t, double width) async {
 }
 
 void main() {
+  tearDownAll(() => DesktopTitleBarController.platform.state.dispose());
+
   testWidgets('desktop: a slot opens its agent beside the rack, not the '
       'computer', (t) async {
     final f = await _openRack(t, 1400);
