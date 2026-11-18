@@ -121,9 +121,6 @@ class WorkspaceLiveSync {
               : row,
         );
         s.context.changed();
-      case ActivityChangedEvent update when update.serverId == client.serverId:
-        // Object rows changed for this person: Activity reads again.
-        unawaited(s.activityUnreadIfBound?.refresh());
       default:
     }
   }

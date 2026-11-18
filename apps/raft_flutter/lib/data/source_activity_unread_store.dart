@@ -5,8 +5,13 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_sync/raft_sync.dart'
-    show canonicalUint64, canonicalWireSeq, ReadStateLedger;
+    show
+        ActivityChangedEvent,
+        canonicalUint64,
+        canonicalWireSeq,
+        ReadStateLedger;
 
+import 'activity_object_rows.dart';
 import 'device_preferences.dart';
 import 'inbox_background_refresh.dart';
 import 'inbox_convergence.dart';
@@ -130,6 +135,7 @@ class SourceActivityUnreadStore extends ChangeNotifier {
   /// over its stale answer: what a convergence wait is judged against.
   List<Map<String, dynamic>> _served = [];
   int? _total;
+  int _objectUnread = 0;
 
   /// The newest-first first-page inbox window accepted by this session, kept
   /// whole so a page opened later paints it at once (Web's single inboxStore
@@ -153,17 +159,22 @@ class SourceActivityUnreadStore extends ChangeNotifier {
   /// for that mount; creating a store later does not rebind that subscription.
   Stream<RaftEvent> get pageEvents => _pageEvents.stream;
 
-  static bool reconcilesPage(String name) =>
-      name.startsWith('message:') ||
-      name.startsWith('read_state:') ||
-      name.startsWith('scope_read:') ||
-      name.startsWith('thread:') ||
-      name == 'sync:resume:response';
+  static bool reconcilesPage(RaftEvent event, String? serverId) {
+    final name = event.name;
+    if (name == ActivityChangedEvent.name) {
+      return serverId != null && objectActivityChangedServer(event) == serverId;
+    }
+    return name.startsWith('message:') ||
+        name.startsWith('read_state:') ||
+        name.startsWith('scope_read:') ||
+        name.startsWith('thread:') ||
+        name == 'sync:resume:response';
+  }
 
-  static bool _pageEvent(String name) =>
-      reconcilesPage(name) ||
-      changesAuthority(name) ||
-      const {'task:updated', 'task:created'}.contains(name);
+  bool _pageEvent(RaftEvent event) =>
+      reconcilesPage(event, workspace.client.serverId) ||
+      changesAuthority(event.name) ||
+      const {'task:updated', 'task:created'}.contains(event.name);
 
   static bool changesAuthority(String name) => const {
     'channel:removed',
@@ -211,7 +222,8 @@ class SourceActivityUnreadStore extends ChangeNotifier {
   int get authorityEpoch => _authorityEpoch;
   bool get hasAcceptedWindow =>
       !_disposed && _scope == scope && _total != null && !_denied;
-  int? get totalUnreadCount => hasAcceptedWindow ? _total : null;
+  int? get totalUnreadCount =>
+      hasAcceptedWindow ? _total! + _objectUnread : null;
   bool get hasAttention => (totalUnreadCount ?? 0) > 0;
 
   /// A copy of the currently accepted server window, never raw socket rows.
@@ -293,7 +305,7 @@ class SourceActivityUnreadStore extends ChangeNotifier {
       return;
     }
     _handleEvent(event);
-    if (!_disposed && _pageEvent(event.name)) _pageEvents.add(event);
+    if (!_disposed && _pageEvent(event)) _pageEvents.add(event);
   }
 
   /// Whether the session already owns this event's default-window refresh.
@@ -309,6 +321,10 @@ class SourceActivityUnreadStore extends ChangeNotifier {
             (payload['latestReply'] is! Map ||
                 _messageRelevant(payload['latestReply'] as Map)),
       'notification_prefs:updated' => true,
+      ActivityChangedEvent.name => reconcilesPage(
+        event,
+        workspace.client.serverId,
+      ),
       'dm:new' =>
         payload is Map && ((payload['channelId'] ?? payload['id']) is String),
       _ => false,
@@ -729,7 +745,9 @@ class SourceActivityUnreadStore extends ChangeNotifier {
     final rows = kept.rows;
     final supplied = window['totalUnreadCount'];
     final served0 = supplied == null
-        ? rows.fold<int>(0, (sum, row) => sum + _count(row['unreadCount']))
+        ? rows
+              .where((row) => !isActivityObjectRow(row))
+              .fold<int>(0, (sum, row) => sum + _count(row['unreadCount']))
         : _validCount(supplied);
     final count = served0 == null || supplied == null
         ? served0
@@ -740,6 +758,7 @@ class SourceActivityUnreadStore extends ChangeNotifier {
     _rows = rows;
     _served = served;
     _total = count;
+    _objectUnread = ActivityObjectCounts.fromWindow(window).objectUnreadCount;
     _projectReadStateRows(retainedRows: retained);
     if (firstPage) {
       _window = RaftApiGateway.copyDecoded({

@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:raft_client/raft_client.dart';
 
 import '../data/activity_attention.dart';
+import '../data/activity_object_rows.dart';
 import '../data/notification_levels.dart';
 import '../data/notification_settings_store.dart';
 import '../data/source_activity_unread_store.dart';
@@ -225,18 +226,19 @@ class AccountActivityUnread extends ChangeNotifier {
         notifyListeners();
       }
     }
-    if (const {
-      'rooms:joined',
-      'message:new',
-      'notification:push',
-      'message:deleted',
-      'thread:updated',
-      'dm:new',
-      'scope_read:updated',
-      'notification_prefs:updated',
-      'server:membership-removed',
-      'server:member-updated',
-    }.contains(event.name)) {
+    if (objectActivityChangedServer(event) != null ||
+        const {
+          'rooms:joined',
+          'message:new',
+          'notification:push',
+          'message:deleted',
+          'thread:updated',
+          'dm:new',
+          'scope_read:updated',
+          'notification_prefs:updated',
+          'server:membership-removed',
+          'server:member-updated',
+        }.contains(event.name)) {
       _schedule();
     }
   }

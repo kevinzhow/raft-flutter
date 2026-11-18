@@ -2,8 +2,24 @@
 // packages/web/src/store/{inboxStore,objectActivityRow}.ts at v1.24.0.
 // `kind: "object"` rows ride in `/channels/inbox` items beside conversations.
 
-/// Whether [row] is an object (Artifact) Activity row.
+import 'package:raft_client/raft_client.dart' show RaftEvent;
+import 'package:raft_sync/raft_sync.dart' show ActivityChangedEvent;
+
+/// Whether [row] is an object Activity row.
 bool isActivityObjectRow(Map row) => row['kind'] == 'object';
+
+bool isArtifactActivityRow(Map row) =>
+    isActivityObjectRow(row) && row['objectKind'] == 'artifact';
+
+String? objectActivityChangedServer(RaftEvent event) {
+  if (event.name != ActivityChangedEvent.name) return null;
+  return switch (ActivityChangedEvent.read(event.payload)) {
+    ActivityChangedEvent(source: 'object', :final serverId)
+        when serverId.isNotEmpty =>
+      serverId,
+    _ => null,
+  };
+}
 
 /// Row key `object:<objectKind>:<objectId>` (Web `getInboxItemKey`).
 String? activityObjectKey(Map row) {

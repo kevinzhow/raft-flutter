@@ -59,7 +59,7 @@ import 'activity_swipe_actions.dart';
 import 'activity_toolbar_mount.dart';
 import 'activity_undo.dart';
 import '../data/object_activity_api.dart';
-import 'artifacts/artifact_models.dart' show ArtifactLinkTarget;
+import 'activity_object_text.dart' show artifactActivityTarget;
 import 'artifacts/artifact_viewer_page.dart' show openWorkspaceArtifact;
 import 'activity_row_label.dart' show ActivityRowLookups;
 import 'activity_row_time.dart' show activityRowFormatter;
@@ -1515,7 +1515,10 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
         return;
       }
       final relevant = switch (widget.section) {
-        'activity' => SourceActivityUnreadStore.reconcilesPage(event.name),
+        'activity' => SourceActivityUnreadStore.reconcilesPage(
+          event,
+          client.serverId,
+        ),
         // Source catchUpServerTasksOnReconnect: events missed while the
         // socket was down are recovered by revalidating the loaded lanes.
         'tasks' => event.name.startsWith('task:') || event.name == 'connected',
@@ -2918,7 +2921,7 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
             unavailable: activityFacets.unavailable,
             onRetry: () => load(),
           )
-        : visibleRows.isEmpty
+        : visibleRows.isEmpty && !(activityPage && hasMore)
         ? LayoutBuilder(
             builder: (context, constraints) => SingleChildScrollView(
               primary: false,
@@ -3541,7 +3544,7 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
   bool get activityShowsList =>
       !(loading && visibleRows.isEmpty) &&
       !activityLoadFailed &&
-      visibleRows.isNotEmpty;
+      (visibleRows.isNotEmpty || hasMore);
 
   Widget activityToolbar(String scope) => activityFilterBar(
     context,
@@ -4166,12 +4169,12 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
   /// An Artifact row opens its viewer and reads (Web `openObjectRow`).
   void openActivityObject(Map<String, dynamic> row, String scope) {
     if (!accepts(scope)) return;
-    final id = row['objectId'];
-    if (id is! String) return;
+    final target = artifactActivityTarget(row);
+    if (target == null) return;
     if (((row['unreadCount'] as num?) ?? 0) > 0) {
       unawaited(markActivityObjectRead(row, scope));
     }
-    unawaited(openWorkspaceArtifact(context, w, ArtifactLinkTarget(id)));
+    unawaited(openWorkspaceArtifact(context, w, target));
   }
 
   Widget activityCard(

@@ -18,6 +18,7 @@ import 'package:raft_ui/raft_ui.dart';
 import 'package:webview_flutter_platform_interface/webview_flutter_platform_interface.dart'
     show WebViewPlatform;
 
+import '../../data/raft_location.dart';
 import '../../data/workspace_controller.dart';
 import '../../platform/macos_voice_over.dart';
 import '../../platform/system_bars.dart';
@@ -414,6 +415,16 @@ class _ArtifactWorkspaceViewerState extends State<ArtifactWorkspaceViewer> {
 
   Widget _content(BuildContext context, ArtifactViewerData data) {
     final card = data.card;
+    final activityAddress = shownPath == null
+        ? _activityBrowserAddress(card)
+        : null;
+    if (activityAddress != null) {
+      return ArtifactOpenInBrowser(
+        title: card.title,
+        pageUrl: activityAddress,
+        open: actions.openExternal,
+      );
+    }
     if (_framed(data)) return _frame(context, data);
     final file = _shownFile(data);
     final kind = shownPath == null ? card.kind : (file?.kind ?? card.kind);
@@ -430,6 +441,32 @@ class _ArtifactWorkspaceViewerState extends State<ArtifactWorkspaceViewer> {
       );
     }
     return ArtifactNoPreview(onDownload: download);
+  }
+
+  Uri? _activityBrowserAddress(ArtifactCard card) {
+    final target = widget.target;
+    if (card.version != (target.version ?? card.latestVersion)) return null;
+    final review = target.reviewId;
+    final slug = w.server?.string('slug');
+    if (review != null && slug != null && slug.isNotEmpty) {
+      final location = RaftLocation.at(
+        serverSlug: slug,
+        route: RaftRoute.activity,
+        query: {
+          'artifact': artifactLinkId(target.id),
+          if (target.version case final version?) 'version': '$version',
+          'review': review,
+        },
+      );
+      return actions.webOrigin.resolveUri(location.uri);
+    }
+    final comment = target.commentId;
+    if (comment == null) return null;
+    return artifactUrl(
+      actions.webOrigin,
+      target.id,
+      target.version,
+    ).replace(queryParameters: {'panel': 'comments', 'comment': comment});
   }
 
   List<RaftMenuEntry> _menu(BuildContext context, ArtifactViewerData data) {
@@ -460,7 +497,14 @@ class _ArtifactWorkspaceViewerState extends State<ArtifactWorkspaceViewer> {
       RaftMenuEntry(
         label: tr('Open in browser'),
         glyph: RaftGlyph.arrowUpRight,
-        onPressed: () => unawaited(actions.openInBrowser(card)),
+        onPressed: () {
+          final address = _activityBrowserAddress(card);
+          unawaited(
+            address == null
+                ? actions.openInBrowser(card)
+                : actions.openExternal(address),
+          );
+        },
       ),
       if (_framed(data) && _webView && frame.ready)
         RaftMenuEntry(

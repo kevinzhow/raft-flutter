@@ -6,6 +6,8 @@ import 'package:raft_client/raft_client.dart' show RaftEvent;
 import 'package:raft_sync/raft_sync.dart' show readNotificationPrefsUpdate;
 import 'package:raft_ui/raft_ui.dart' show RaftForegroundPeriodic;
 
+import 'activity_attention.dart';
+import 'activity_object_rows.dart';
 import 'rw_freshness.dart';
 import 'server_summary_read_refresh.dart';
 import 'workspace_controller.dart';
@@ -74,7 +76,9 @@ class SourceServerUnreadStore extends ChangeNotifier {
     _prefsEvents ??= workspace.client.events.listen((event) {
       // Web v1.24 socketBridge `activity:changed`: object rows of a server
       // changed for this person; the cross-server summary reads again.
-      if (event.name == 'activity:changed') return unawaited(refresh());
+      if (objectActivityChangedServer(event) != null) {
+        return unawaited(refresh());
+      }
       // Web serverUnreadSummaryRefresh: a read frame reads the summary 300 ms
       // later, a burst as one request.
       if (event.name == 'read_state:updated' &&
@@ -139,16 +143,8 @@ class SourceServerUnreadStore extends ChangeNotifier {
               !_sourceNumber(row['unreadCount']).isFinite) {
             continue;
           }
-          final activity = row['activityUnreadCount'];
           next[row['serverId']] = SourceServerUnread(
-            activityUnreadCount:
-                activity is num &&
-                    activity.isFinite &&
-                    activity >= 0 &&
-                    activity % 1 == 0 &&
-                    activity <= 9007199254740991
-                ? activity.toInt()
-                : null,
+            activityUnreadCount: activitySummaryCount(row),
             pushMuted: row['serverPushMuted'] == true,
           );
         }

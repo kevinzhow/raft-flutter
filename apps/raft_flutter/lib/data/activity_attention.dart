@@ -3,17 +3,14 @@ import 'resource_row_reconcile.dart' show activityScopeId;
 /// The one rule behind every number that says "how much needs me": the app
 /// icon badge, the system notification set and the in-app Activity badge.
 ///
-/// The unit is the server's Activity unread count, `totalUnreadCount` of
-/// `/channels/inbox` (the sum of each listed conversation's `unreadCount`: unread
-/// messages of channels, DMs and followed threads; muted conversations and
-/// Done rows are not listed by the server). The server's own mobile push
-/// badge is the same number summed over the member servers
-/// (pushService.loadMobilePushBadge), so the app icon badge is that sum.
+/// Each server contributes its unread conversation messages and its separately
+/// reported unread objects, one per object. The server's mobile push badge
+/// still counts only conversation messages (pushService.loadMobilePushBadge).
 ///
 /// The server the app has open uses its live inbox window (the number the
 /// Activity badge shows); every other member server uses its
-/// `/servers/unread-summary` `activityUnreadCount`. An unknown count is 0: a
-/// broader per-conversation count never stands in for it.
+/// `/servers/unread-summary` Activity counts. An unknown count is 0: a broader
+/// per-conversation count never stands in for it.
 int activityBadgeTotal({
   required String? currentServerId,
   required int? currentTotal,
@@ -48,17 +45,25 @@ Map<String, int?>? activitySummaryCounts(dynamic value) {
   return {
     for (final row in value.whereType<Map>())
       if (row['serverId'] is String && (row['serverId'] as String).isNotEmpty)
-        row['serverId'] as String: switch (row['activityUnreadCount']) {
-          num count
-              when count.isFinite &&
-                  count >= 0 &&
-                  count % 1 == 0 &&
-                  count <= 9007199254740991 =>
-            count.toInt(),
-          _ => null,
-        },
+        row['serverId'] as String: activitySummaryCount(row),
   };
 }
+
+int? activitySummaryCount(Map row) {
+  final conversations = _summaryCount(row['activityUnreadCount']);
+  if (conversations == null) return null;
+  return conversations + (_summaryCount(row['activityObjectUnreadCount']) ?? 0);
+}
+
+int? _summaryCount(Object? value) => switch (value) {
+  num count
+      when count.isFinite &&
+          count >= 0 &&
+          count % 1 == 0 &&
+          count <= 9007199254740991 =>
+    count.toInt(),
+  _ => null,
+};
 
 /// OS badges must not turn an unavailable member count into a smaller total.
 ///

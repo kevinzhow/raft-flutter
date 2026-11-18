@@ -5,7 +5,8 @@
 import 'package:flutter/widgets.dart';
 import 'package:raft_ui/raft_ui.dart';
 
-import 'artifacts/artifact_models.dart' show ArtifactKind;
+import '../data/activity_object_rows.dart' show isArtifactActivityRow;
+import 'artifacts/artifact_models.dart' show ArtifactKind, ArtifactLinkTarget;
 import 'artifacts/artifact_text.dart' show artifactKindGlyph;
 import 'icu_message.dart';
 
@@ -26,6 +27,24 @@ typedef ObjectNews = ({String part, int count});
     return null;
   }
   return (id: id, comments: comments);
+}
+
+ArtifactLinkTarget? artifactActivityTarget(Map row) {
+  final id = row['objectId'];
+  if (!isArtifactActivityRow(row) || id is! String || id.isEmpty) return null;
+  final target = _map(row['target']);
+  final version = target?['version'];
+  final latest = _map(row['summary'])?['latestVersion'];
+  final review = artifactActivityReview(row)?.id;
+  final comment = target?['comment'];
+  return ArtifactLinkTarget.activity(
+    id,
+    version is int && version > 0 && version != latest ? version : null,
+    reviewId: review,
+    commentId: review == null && comment is String && comment.isNotEmpty
+        ? comment
+        : null,
+  );
 }
 
 /// `unreadParts` while the row is unread and the server split it.

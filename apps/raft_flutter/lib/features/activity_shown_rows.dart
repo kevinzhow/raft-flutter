@@ -2,20 +2,24 @@
 // row so a resize or one live event does not read the whole window again
 // (activity_row_key_work_test, activity_incremental_work_test).
 
+import '../data/activity_object_rows.dart';
 import '../data/source_time_formatter.dart';
 import 'activity_day_groups.dart';
 
 class _RowTime {
-  _RowTime(this.at);
+  _RowTime(this.at, {required this.supported});
   final DateTime? at;
+  final bool supported;
   String? day, stamp;
 }
 
 class ActivityShownRows {
   static final _times = Expando<_RowTime>();
 
-  static _RowTime _of(Map<String, dynamic> row) =>
-      _times[row] ??= _RowTime(activityRowTime(row));
+  static _RowTime _of(Map<String, dynamic> row) => _times[row] ??= _RowTime(
+    activityRowTime(row),
+    supported: !isActivityObjectRow(row) || isArtifactActivityRow(row),
+  );
 
   List<Map<String, dynamic>>? _base, _ordered;
 
@@ -23,9 +27,11 @@ class ActivityShownRows {
   /// stable, rows with no time last): [rows] itself when it already is.
   List<Map<String, dynamic>> order(List<Map<String, dynamic>> rows) {
     if (identical(rows, _base)) return _ordered!;
+    bool supported(Map<String, dynamic> row) => _of(row).supported;
+    final shown = rows.every(supported) ? rows : rows.where(supported).toList();
     DateTime? previous;
     var unreadable = false, sorted = true;
-    for (final row in rows) {
+    for (final row in shown) {
       final at = _of(row).at;
       if (at == null) {
         unreadable = true;
@@ -36,9 +42,8 @@ class ActivityShownRows {
         previous = at;
       }
     }
-    final result = sorted ? rows : sortActivityRowsByTime(rows);
     _base = rows;
-    return _ordered = result;
+    return _ordered = sorted ? shown : sortActivityRowsByTime(shown);
   }
 
   List<Map<String, dynamic>>? _groupRows;

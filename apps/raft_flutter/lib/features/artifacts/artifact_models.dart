@@ -482,18 +482,33 @@ class ArtifactViewerData {
       );
 }
 
-/// An Artifact a link names: its id and the version it pins (none: latest).
+/// An Artifact destination, optionally pinned to a version or focused on news.
 class ArtifactLinkTarget {
-  const ArtifactLinkTarget(this.id, [this.version]);
+  const ArtifactLinkTarget(this.id, [this.version])
+    : commentId = null,
+      reviewId = null;
+
+  const ArtifactLinkTarget.activity(
+    this.id,
+    this.version, {
+    this.commentId,
+    this.reviewId,
+  });
+
   final String id;
   final int? version;
+  final String? commentId, reviewId;
 
   @override
   bool operator ==(Object other) =>
-      other is ArtifactLinkTarget && other.id == id && other.version == version;
+      other is ArtifactLinkTarget &&
+      other.id == id &&
+      other.version == version &&
+      other.commentId == commentId &&
+      other.reviewId == reviewId;
 
   @override
-  int get hashCode => Object.hash(id, version);
+  int get hashCode => Object.hash(id, version, commentId, reviewId);
 
   @override
   String toString() => version == null ? id : '$id@v$version';
