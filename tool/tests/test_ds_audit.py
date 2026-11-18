@@ -548,8 +548,9 @@ class FamilyRegistryTest(unittest.TestCase):
                                                'card', 'banner', 'list_row', 'checkbox', 'select', 'switch',
                                                'radio_group', 'toggle_group', 'tabs', 'picker_trigger', 'combobox',
                                                'steps', 'htmlRegionComments', 'nativeSurfaceOcclusion', 'fit_toolbar',
-                                               'mobile_nav_server', 'workspace_button'})
+                                               'mobile_nav_server', 'workspace_button', 'side-panel-frame'})
         self.assert_registry_ownership(json.loads(ds_audit.FAMILIES.read_text()))
+        self.assertEqual(self.families['side-panel-frame']['canonical'], ['RaftSidePanelFrame'])
         self.assertIn('RaftArchivedNameBanner', self.families['banner']['deprecated'])
         self.assertNotIn('RaftAgentBanner', self.families['banner']['deprecated'])  # thin adapter over RaftBanner
 
