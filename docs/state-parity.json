@@ -51197,13 +51197,13 @@
         "owner": "design-system alignment",
         "reason": "WP-SIDE (Web v1.24 channel side area, Tasks / Files cards, web preview): composes raft_ui parts; real-entry/family/state mapping remains unreviewed. This registration grants no style exemption or visual acceptance."
       },
-      "apps/raft_flutter/lib/features/source_channel_files_view.dart#local-function:CLASS:SourceChannelFilesProjectionView@11406/METHOD:build@13898/FUNCTION:<anonymous>@14135/FUNCTION:artifactRow@17370": {
+      "apps/raft_flutter/lib/features/source_channel_files_view.dart#local-function:CLASS:SourceChannelFilesProjectionView@11841/METHOD:build@14333/FUNCTION:<anonymous>@14570/FUNCTION:artifactRow@17805": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "WP-SIDE (Web v1.24 channel side area, Tasks / Files cards, web preview): composes raft_ui parts; real-entry/family/state mapping remains unreviewed. This registration grants no style exemption or visual acceptance."
       },
-      "apps/raft_flutter/lib/features/source_channel_files_view.dart#local-function:CLASS:SourceChannelFilesProjectionView@11406/METHOD:build@13898/FUNCTION:<anonymous>@14135/FUNCTION:fileRow@18743": {
+      "apps/raft_flutter/lib/features/source_channel_files_view.dart#local-function:CLASS:SourceChannelFilesProjectionView@11841/METHOD:build@14333/FUNCTION:<anonymous>@14570/FUNCTION:fileRow@19178": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
@@ -52455,7 +52455,7 @@
         "owner": "design-system alignment",
         "reason": "Registered by the current resolved runtime census. Exact family/part ownership and real-entry applicability still require review; this creates no mount or visual acceptance claim."
       },
-      "apps/raft_flutter/lib/features/channel_side_area.dart#local-function:CLASS:_ChannelSideAreaState@5894/METHOD:_measureComposer@17072/FUNCTION:<anonymous>@17142/FUNCTION:visit@17368": {
+      "apps/raft_flutter/lib/features/channel_side_area.dart#local-function:CLASS:_ChannelSideAreaState@5844/METHOD:_measureComposer@16920/FUNCTION:<anonymous>@16990/FUNCTION:visit@17216": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
