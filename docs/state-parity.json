@@ -55191,7 +55191,7 @@
         "owner": "Raft Flutter component wiring",
         "reason": "Resolves a public forward into its authorized conversation and reply. Reuses the task, timeline, history paywall and toast surfaces."
       },
-      "apps/raft_flutter/lib/features/system_notification_center.dart#local-function:CLASS:_SystemNotificationBellState@1820/METHOD:navigate@21999/FUNCTION:openAgent@23075": {
+      "apps/raft_flutter/lib/features/system_notification_center.dart#local-function:CLASS:_SystemNotificationBellState@1859/METHOD:navigate@22038/FUNCTION:openAgent@23114": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "Raft Flutter component wiring",
@@ -59058,7 +59058,7 @@
         "owner": "Raft Flutter component wiring",
         "kind": "route_or_panel_candidate",
         "declarationRefs": [
-          "apps/raft_flutter/lib/features/system_notification_center.dart#local-function:CLASS:_SystemNotificationBellState@1820/METHOD:navigate@21999/FUNCTION:openAgent@23075"
+          "apps/raft_flutter/lib/features/system_notification_center.dart#local-function:CLASS:_SystemNotificationBellState@1859/METHOD:navigate@22038/FUNCTION:openAgent@23114"
         ],
         "mountStatus": "source_reviewed",
         "reason": "The Agent row in the Computer details opened by the notification bell presents the existing Agent detail page."

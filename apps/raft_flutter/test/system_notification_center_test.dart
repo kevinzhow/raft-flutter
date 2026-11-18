@@ -184,10 +184,14 @@ void main() {
         find.descendant(of: profile, matching: find.text('Sensor Agent')),
         findsWidgets,
       );
+      final back = find.byTooltip('Back').hitTestable();
+      expect(back, findsOneWidget);
       await t.pageBack();
       await t.pumpAndSettle();
       expect(profile, findsNothing);
       expect(computer, findsOneWidget);
+      expect(find.byKey(const Key('computer-mobile-back')), findsOneWidget);
+      expect(back, findsOneWidget);
       await t.pageBack();
       await t.pumpAndSettle();
       expect(find.byType(RaftMobileNotificationButton), findsOneWidget);

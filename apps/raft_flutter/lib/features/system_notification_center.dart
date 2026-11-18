@@ -18,6 +18,7 @@ import '../data/system_notification_projection.dart';
 import '../data/system_notification_store.dart';
 import '../data/workspace_controller.dart';
 import '../data/workspace_entity_directory.dart';
+import '../platform/system_bars.dart';
 import 'fleet_views.dart';
 import 'account_security_recovery.dart';
 import 'joint_invite_errors.dart';
@@ -653,17 +654,13 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
     }
 
     final route = MaterialPageRoute<void>(
-      builder: (context) => Scaffold(
-        appBar: raftPageAppBar(
-          context,
-          title: raftText(
-            context,
-            n.destination == SystemNoticeDestination.feedback
-                ? 'Feedback'
-                : 'Computers',
-          ),
-        ),
-        body: n.destination == SystemNoticeDestination.feedback
+      builder: (context) {
+        final computerOwnsHeader =
+            row != null &&
+            MediaQuery.sizeOf(context).width <
+                RaftLayoutMetrics.desktopBreakpoint;
+        final feedback = n.destination == SystemNoticeDestination.feedback;
+        final body = feedback
             ? SourceFeedbackView(
                 controller: w,
                 onUnreadChanged: (count) {
@@ -685,8 +682,22 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
                 controller: w,
                 computers: true,
                 attentionOnly: n.incidentId == null,
-              ),
-      ),
+              );
+        return Scaffold(
+          appBar: computerOwnsHeader
+              ? null
+              : raftPageAppBar(
+                  context,
+                  title: raftText(context, feedback ? 'Feedback' : 'Computers'),
+                ),
+          body: computerOwnsHeader
+              ? RaftSystemBarSurface(
+                  statusBarFallback: RaftTokens.of(context).panel,
+                  child: SafeArea(bottom: false, child: body),
+                )
+              : body,
+        );
+      },
     );
     void revoked() {
       if (current(captured)) return;
