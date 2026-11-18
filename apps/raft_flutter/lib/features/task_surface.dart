@@ -240,6 +240,18 @@ class _SourceTaskSurfaceState extends State<SourceTaskSurface> {
         }
       }
 
+      Widget timeline({Widget? header}) => ChatNavigationScope(
+        navigation: navigation!,
+        child: RaftChatView(
+          controller: discussion!,
+          thread: true,
+          hideThreadParent: header != null,
+          threadParentSlot: header,
+          onTask: widget.onTask,
+          onViewBilling: widget.onViewBilling,
+        ),
+      );
+
       return RaftTaskSurface(
         conversation: v2,
         page: widget.page,
@@ -290,25 +302,13 @@ class _SourceTaskSurfaceState extends State<SourceTaskSurface> {
                 retryLabel: raftText(context, 'Retry'),
                 onRetry: o.parentRemoved ? null : o.start,
               )
-            : RaftChatView(
-                controller: discussion!,
-                navigation: navigation,
-                thread: true,
-                onTask: widget.onTask,
-                onViewBilling: widget.onViewBilling,
-              ),
+            : timeline(),
         discussionBuilder: discussion == null
             ? null
-            : (head) => RaftChatView(
-                controller: discussion,
-                navigation: navigation,
-                thread: true,
-                hideThreadParent: true,
-                threadParentSlot: v2 == null
+            : (head) => timeline(
+                header: v2 == null
                     ? head
                     : taskConversationHead(context, o, head),
-                onTask: widget.onTask,
-                onViewBilling: widget.onViewBilling,
               ),
       );
     },

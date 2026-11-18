@@ -112,10 +112,8 @@ class ChatViewportHandle {
 
 /// Opens a task from a message (footer chip, in-body `#N` reference) in the
 /// host's task slot; [refresh] re-reads the message's task facts afterwards.
-typedef ChatTaskOpener = void Function(
-  Map<String, dynamic> task,
-  Future<void> Function() refresh,
-);
+typedef ChatTaskOpener =
+    void Function(Map<String, dynamic> task, Future<void> Function() refresh);
 
 class RaftChatView extends StatefulWidget {
   const RaftChatView({
@@ -129,10 +127,8 @@ class RaftChatView extends StatefulWidget {
     this.onTask,
     this.onViewBilling,
     this.onOpenChannelSettings,
-    this.navigation,
   });
   final WorkspaceController controller;
-  final ChatNavigation? navigation;
 
   /// ChatPanel's archived banner "Unarchive" link (Web `setOverflowOpen(true)`):
   /// opens the channel settings the header gear opens.
@@ -759,7 +755,8 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
             context,
             userErrorText(
               e,
-              fallback: "One or more selected items can't be forwarded. Select regular messages instead.",
+              fallback:
+                  "One or more selected items can't be forwarded. Select regular messages instead.",
               where: 'forward selection',
             ),
           ),
@@ -2302,7 +2299,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
   bool senderIsAgent(RaftMessage m) => m.string('senderType') == 'agent';
 
   ChatProfileOpener get openProfile =>
-      widget.navigation?.openProfile ?? w.openProfile;
+      ChatNavigationScope.maybeOf(context)?.openProfile ?? w.openProfile;
 
   /// Web MessageItem `handleNavigateAgent` / `Human` / `External`: the kind a
   /// sender avatar opens, or null (system rows, another server's sender).
@@ -2336,18 +2333,11 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
           ),
         );
       case final kind?:
-        final channelId = widget.thread
-            ? w.threadIdentity?.parentChannelId ?? m.channelId
-            : m.channelId;
-        final selected = w.channel;
-        final channel = selected?.id == channelId
-            ? selected
-            : w.channelById(channelId);
         openProfile(
           kind,
           m.string('senderId'),
-          channelId: kind == RaftProfileKind.human && channel?.type == 'joint'
-              ? channelId
+          channelId: kind == RaftProfileKind.human
+              ? jointSenderProfileChannel(w, m, thread: widget.thread)
               : null,
         );
       case null:
@@ -2465,7 +2455,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
     final quoted = quotedPermalink(m);
     final body = MessagePresentation(
       controller: w,
-      navigation: widget.navigation,
+      navigation: ChatNavigationScope.maybeOf(context),
       message: m,
       unavailablePermalink: quoted == null ? null : unavailableQuoted[m.id],
       content: translation.translatedContent,
@@ -2490,7 +2480,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
             label: raftText(context, 'Original'),
             child: MessagePresentation(
               controller: w,
-              navigation: widget.navigation,
+              navigation: ChatNavigationScope.maybeOf(context),
               message: m,
               taskByNumber: taskProjection.taskByNumber,
               onExternalLink: link,
@@ -2544,7 +2534,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
             subtitle: senderSubtitle,
             formatTimestamp: quotedTimestamp(),
             onOpen: (link) => unawaited(
-              widget.navigation?.openPermalink(link) ??
+              ChatNavigationScope.maybeOf(context)?.openPermalink(link) ??
                   openRaftPermalink(w, link),
             ),
             onUnavailable: () {

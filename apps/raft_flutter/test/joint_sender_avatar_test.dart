@@ -6,7 +6,10 @@ import 'package:flutter/gestures.dart' show PointerDeviceKind;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
+import 'package:raft_flutter/data/raft_location.dart';
 import 'package:raft_flutter/features/chat_view.dart';
+import 'package:raft_flutter/features/management_support.dart';
+import 'package:raft_flutter/features/member_profile_view.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_ui/test_themes.dart';
 
@@ -21,10 +24,13 @@ const _peerId = 'u2000000-0000-4000-8000-0000000000c2';
 /// the peer server's human (`serverId` != the open server) listed with an
 /// uploaded avatar, and a peer agent.
 Map<String, dynamic> roster() {
-  final body = jsonDecode(
-    File('test/fixtures/field_parity/channels-members-roster-joint.json')
-        .readAsStringSync(),
-  ) as Map<String, dynamic>;
+  final body =
+      jsonDecode(
+            File(
+              'test/fixtures/field_parity/channels-members-roster-joint.json',
+            ).readAsStringSync(),
+          )
+          as Map<String, dynamic>;
   return {
     ...body,
     'humans': [
@@ -223,6 +229,61 @@ void main() {
       }
     });
   }
+
+  testWidgets(
+    'channel revocation closes a scoped profile and retires its read',
+    (t) async {
+      final (w, api) = await pageFixture(t);
+      const path = '/servers/s1/members/$_peerId/profile';
+      final profile = {
+        'name': 'partner',
+        'displayName': 'Scoped partner profile',
+        'description': 'Scoped description',
+      };
+      final channel = RaftChannel({
+        'id': 'c1',
+        'serverId': 's1',
+        'name': 'Joint channel',
+        'type': 'joint',
+        'joined': true,
+      });
+      w.channel = RaftChannel({
+        'id': 'c2',
+        'name': 'Other channel',
+        'joined': true,
+      });
+      w.channels = [channel, w.channel!];
+      api.routes['GET $path'] = (_) => profile;
+      await mountPage(t, w, false, platform: TargetPlatform.linux);
+      try {
+        w.openProfile(RaftProfileKind.human, _peerId, channelId: 'c1');
+        await t.pumpAndSettle();
+        expect(find.text('Scoped description'), findsOneWidget);
+
+        final delayed = Completer<Map<String, dynamic>>();
+        api.routes['GET $path'] = (_) => delayed.future;
+        final view = t.state<ManagementState<MemberProfileView>>(
+          find.byType(MemberProfileView),
+        );
+        unawaited(view.reload());
+        await settle(t);
+        expect(api.calls.where((call) => call.path == path), hasLength(2));
+
+        api.routes['GET /channels/c1'] = (_) => (404, {'error': 'Not found'});
+        await t.runAsync(() => w.refreshChannel('c1'));
+        await t.pumpAndSettle();
+        expect(w.location.profile, isNull);
+        expect(find.text('Scoped description'), findsNothing);
+
+        delayed.complete({...profile, 'description': 'Retired profile reply'});
+        await t.pumpAndSettle();
+        expect(find.text('Retired profile reply'), findsNothing);
+      } finally {
+        await t.pumpWidget(const SizedBox.shrink());
+        await t.pumpAndSettle();
+      }
+    },
+  );
 
   for (final (dark) in raftThemeMatrix([(false)])) {
     testWidgets(

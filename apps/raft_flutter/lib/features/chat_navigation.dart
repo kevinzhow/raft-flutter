@@ -1,7 +1,42 @@
+import 'package:flutter/widgets.dart';
+import 'package:raft_client/raft_client.dart';
+
 import '../data/raft_location.dart';
 import '../data/raft_permalink.dart';
 import '../data/workspace_controller.dart';
 import 'quoted_message_preview.dart';
+
+/// The actions owned by a surface that presents a borrowed timeline.
+class ChatNavigationScope extends InheritedWidget {
+  const ChatNavigationScope({
+    super.key,
+    required this.navigation,
+    required super.child,
+  });
+
+  final ChatNavigation navigation;
+
+  static ChatNavigation? maybeOf(BuildContext context) => context
+      .dependOnInheritedWidgetOfExactType<ChatNavigationScope>()
+      ?.navigation;
+
+  @override
+  bool updateShouldNotify(ChatNavigationScope oldWidget) =>
+      oldWidget.navigation != navigation;
+}
+
+String? jointSenderProfileChannel(
+  WorkspaceController controller,
+  RaftMessage message, {
+  required bool thread,
+}) {
+  final id = thread
+      ? controller.threadIdentity?.parentChannelId ?? message.channelId
+      : message.channelId;
+  final selected = controller.channel;
+  final channel = selected?.id == id ? selected : controller.channelById(id);
+  return channel?.type == 'joint' ? id : null;
+}
 
 typedef ChatProfileOpener =
     void Function(

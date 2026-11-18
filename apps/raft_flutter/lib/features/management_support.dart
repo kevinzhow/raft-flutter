@@ -113,6 +113,8 @@ abstract class ManagementState<T extends StatefulWidget> extends State<T>
   String get authority => pageIdentity(w);
   Future<void> loadData(int request, int generation);
   void clearData();
+  bool deniesLoad(Object failure) =>
+      failure is RaftApiException && [401, 403].contains(failure.status);
 
   /// Page/route id plus the request inputs that select its data. Null keeps
   /// the page uncached.
@@ -265,7 +267,7 @@ abstract class ManagementState<T extends StatefulWidget> extends State<T>
       saveSnapshot();
     } catch (e) {
       if (mounted && request == _request && generation == w.client.generation) {
-        if (e is RaftApiException && [401, 403].contains(e.status)) {
+        if (deniesLoad(e)) {
           _dropSnapshot();
           clearData();
         }

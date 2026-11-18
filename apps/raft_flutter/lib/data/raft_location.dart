@@ -343,6 +343,20 @@ class RaftLocation {
     query('profile'),
     humanChannelId: query('profileChannel'),
   );
+  RaftLocation withProfile(
+    RaftProfileKind kind,
+    String id, {
+    String? agentTab,
+    String? channelId,
+    Map<String, dynamic>? externalAuthor,
+  }) => withQuery({
+    'profile': RaftProfileLocation.query(kind, id, channelId, externalAuthor),
+    'agentTab': kind == RaftProfileKind.agent ? agentTab : null,
+    'profileChannel': kind == RaftProfileKind.human ? channelId : null,
+  });
+  RaftLocation withoutProfile() =>
+      withQuery({'profile': null, 'agentTab': null, 'profileChannel': null});
+
   String? get agentTab => query('agentTab');
   RaftChannelPageLocation? get channelPage =>
       RaftChannelPageLocation.parse(query('channelPage'));

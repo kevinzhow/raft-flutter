@@ -3,7 +3,9 @@
 // reply read the thread open shares with them.
 import 'package:raft_client/raft_client.dart';
 
+import 'message_history.dart';
 import 'message_history_pages.dart';
+import 'message_window_snapshot.dart';
 import 'workspace_message_windows.dart' show MessageWindowRequest;
 import 'thread_rooms.dart';
 import 'workspace_messages.dart';
@@ -125,17 +127,24 @@ Future<Map<String, dynamic>?> focusedThreadReplyPage(
       target: final target,
       sequence: final sequence?,
     ) when target.id == focusedMessageId) {
+      const limit = 50;
+      final channelId = m.state.threadChannelId!;
       final page = await MessageHistoryPages.read(
         m,
         request,
-        m.state.threadChannelId!,
+        channelId,
         thread: true,
         after: sequence,
+        limit: limit,
         localFirst: false,
       );
+      if (!request.current) return null;
+      final wire = page is MessageHistoryPage ? page.remotePage ?? page : page;
+      final rows = acceptedWindowRows(wire['messages'], channelId);
       return page
         ..['historyLimited'] = true
-        ..['hasOlder'] = false;
+        ..['hasOlder'] = false
+        ..['hasNewer'] = rows.length >= limit;
     }
     return null;
   }

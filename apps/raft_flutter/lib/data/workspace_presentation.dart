@@ -339,11 +339,13 @@ class WorkspacePresentation {
       return;
     }
     if (externalAuthor != null) _externalProfiles[id] = externalAuthor;
-    final next = location.withQuery({
-      'profile': RaftProfileLocation.query(kind, id, channelId, externalAuthor),
-      'agentTab': kind == RaftProfileKind.agent ? agentTab : null,
-      'profileChannel': kind == RaftProfileKind.human ? channelId : null,
-    });
+    final next = location.withProfile(
+      kind,
+      id,
+      agentTab: agentTab,
+      channelId: channelId,
+      externalAuthor: externalAuthor,
+    );
     if (next.uri == location.uri) return;
     navigation.navigateProfile(
       next,
@@ -353,14 +355,15 @@ class WorkspacePresentation {
   }
 
   /// Web `closeProfile`: removing a slot replaces the history entry.
-  void closeProfile() {
+  void closeProfile({String? channelId}) {
+    if (channelId != null && location.profile?.channelId != channelId) return;
     final source = presentationSource;
     if (source != null) {
       source.closeProfile();
       return;
     }
     if (location.profile == null) return;
-    final next = location.withQuery({'profile': null, 'agentTab': null});
+    final next = location.withoutProfile();
     navigation.navigateProfile(
       next,
       kind: location.panelNavigationKindTo(next),

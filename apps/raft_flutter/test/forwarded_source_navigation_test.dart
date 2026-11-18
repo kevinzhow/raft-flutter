@@ -6,7 +6,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/raft_location.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
-import 'package:raft_ui/raft_ui.dart' show RaftToastHost;
+import 'package:raft_ui/raft_ui.dart'
+    show RaftTimelineBottomButtonBody, RaftToastHost;
 
 import 'message_context_transition_test.dart' show row;
 import 'message_presentation_test.dart' show MessageAdapter;
@@ -138,17 +139,20 @@ Map<String, dynamic> _taskReply({bool deleted = false}) => {
 };
 
 void main() {
-  for (final (platform, width, height) in [
-    (TargetPlatform.linux, 1440.0, 900.0),
-    (TargetPlatform.linux, 390.0, 844.0),
-    (TargetPlatform.android, 856.0, 944.0),
-    (TargetPlatform.android, 944.0, 856.0),
+  for (final (platform, width, height, fullPage) in [
+    (TargetPlatform.linux, 1440.0, 900.0, false),
+    (TargetPlatform.linux, 390.0, 844.0, false),
+    (TargetPlatform.android, 856.0, 944.0, false),
+    (TargetPlatform.android, 944.0, 856.0, false),
+    (TargetPlatform.linux, 1440.0, 900.0, true),
   ]) {
     final pointer = platform == TargetPlatform.linux
         ? PointerDeviceKind.mouse
         : PointerDeviceKind.touch;
     testWidgets(
-      'forwarded old reply opens the history limit on $platform at $width',
+      fullPage
+          ? 'a full visible page after a forwarded hidden reply can page newer'
+          : 'forwarded old reply opens the history limit on $platform at $width',
       (t) async {
         final (w, api) = await _forward(t, _thread);
         api.routes['GET /messages/context/thread-parent'] = (_) => {
@@ -184,9 +188,20 @@ void main() {
             },
           },
         );
-        api.routes['GET /messages/channel/thread-1'] = (_) => {
-          'messages': [row('visible-reply', 'thread-1', 6)],
-          'historyLimited': true,
+        final last = fullPage ? 55 : 6;
+        api.routes['GET /messages/channel/thread-1'] = (request) => {
+          'messages': [
+            if (fullPage && request.queryParameters['after'] != '5')
+              row('newer-reply', 'thread-1', 56)
+            else
+              for (var seq = 6; seq <= last; seq++)
+                row(
+                  seq == last ? 'visible-reply' : 'reply-$seq',
+                  'thread-1',
+                  seq,
+                ),
+          ],
+          'historyLimited': false,
         };
         api.routes['POST /channels/thread-1/read'] = (_) => {};
         await mountPage(
@@ -203,11 +218,14 @@ void main() {
         expect(w.location.entityId, 'c1');
         expect(w.location.thread?.itemId, 'thread-parent');
         expect(w.threadChannelId, 'thread-1');
-        expect(
-          find.byKey(const ValueKey('history-paywall-target')),
-          findsOneWidget,
-        );
-        expect(find.text('The original older reply'), findsOneWidget);
+        expect(w.messageWindows.contextHasNewer('thread-1'), fullPage);
+        if (!fullPage) {
+          expect(
+            find.byKey(const ValueKey('history-paywall-target')),
+            findsOneWidget,
+          );
+          expect(find.text('The original older reply'), findsOneWidget);
+        }
         expect(
           api.calls
               .where((r) => r.path == '/messages/context/old-reply')
@@ -220,9 +238,18 @@ void main() {
               .queryParameters['after'],
           '5',
         );
+        if (fullPage) {
+          await t.tap(
+            find.byType(RaftTimelineBottomButtonBody).hitTestable().last,
+            kind: pointer,
+          );
+          await waitForPainted(t, 'newer-reply');
+          expect(w.messageWindows.contextHasNewer('thread-1'), isFalse);
+        }
       },
     );
 
+    if (fullPage) continue;
     testWidgets(
       'forwarded task reply opens in context on $platform at $width',
       (t) async {

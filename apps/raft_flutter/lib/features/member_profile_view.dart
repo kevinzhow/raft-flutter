@@ -76,13 +76,21 @@ class _MemberProfileViewState extends ManagementState<MemberProfileView>
   /// The detail read settled (accepted, restored, or failed): a failed read
   /// shows the empty sections it always showed rather than a shorter panel.
   bool get detailSettled => detailLoaded || !loading;
+  bool get channelRevoked =>
+      w.sessionScope.revokedChannels.contains(widget.channelId);
   @override
   String get authority =>
-      '${super.authority}|${identityHashCode(w)}|${w.client.origin}|${widget.userId}|${widget.channelId}';
+      '${super.authority}|${identityHashCode(w)}|${w.client.origin}|${widget.userId}|${widget.channelId}|$channelRevoked';
+  // A channel-scoped response is authorized anew on every open.
   @override
-  String get snapshotKey => widget.channelId == null
-      ? 'member-profile:${widget.userId}'
-      : 'member-profile:${widget.userId}:${widget.channelId}';
+  String? get snapshotKey =>
+      widget.channelId == null ? 'member-profile:${widget.userId}' : null;
+  @override
+  bool deniesLoad(Object failure) =>
+      super.deniesLoad(failure) ||
+      (widget.channelId != null &&
+          failure is RaftApiException &&
+          failure.status == 404);
   @override
   Map<String, Object?> captureSnapshot() => {'profile': profile};
   @override
@@ -173,6 +181,9 @@ class _MemberProfileViewState extends ManagementState<MemberProfileView>
     if (w.server == null) {
       clearData();
       return;
+    }
+    if (channelRevoked) {
+      throw const RaftApiException('Channel unavailable.', status: 404);
     }
     final server = w.server!.id, id = widget.userId;
     final channelId = widget.channelId;
@@ -611,8 +622,9 @@ class _MemberProfileViewState extends ManagementState<MemberProfileView>
         .toList();
     final joinedRaw = profile['joinedAt'];
     final joined = joinedRaw is String && DateTime.tryParse(joinedRaw) != null
-        ? DateFormat.yMMMd(Localizations.localeOf(context).toLanguageTag())
-              .format(DateTime.parse(joinedRaw).toLocal())
+        ? DateFormat.yMMMd(
+            Localizations.localeOf(context).toLanguageTag(),
+          ).format(DateTime.parse(joinedRaw).toLocal())
         : null;
     final status = profile['membershipStatus'];
     final departure = humanDepartureLabel(status);
