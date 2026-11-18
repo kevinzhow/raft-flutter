@@ -11,15 +11,7 @@ Future<void> clickActivityDone(WidgetTester tester) async {
   try {
     await mouse.moveTo(tester.getCenter(row));
     await tester.pump(const Duration(milliseconds: 200));
-    // The mouse button (revealed by hover), or on a touch screen the outline
-    // button resting in the row (`inbox-row-done-touch`).
-    final action = find
-        .byWidgetPredicate(
-          (w) =>
-              w.key == const ValueKey('inbox-row-done') ||
-              w.key == const ValueKey('inbox-row-done-touch'),
-        )
-        .hitTestable();
+    final action = find.byKey(const ValueKey('inbox-row-done')).hitTestable();
     expect(action, findsOneWidget);
     await tester.tap(action);
   } finally {

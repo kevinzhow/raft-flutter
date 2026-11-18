@@ -268,39 +268,49 @@ void main() {
   });
 
   for (final env in [foldA, foldB, phoneMouse, desktop]) {
-    testWidgets('${env.name}: no swipe; Done keeps its Undo from the button', (
+    final entry = env.touch ? 'long-press menu' : 'hover button';
+    testWidgets('${env.name}: no swipe; Done from the $entry offers Undo', (
       t,
     ) async {
       await mountActivity(t, w, env);
-      await t.drag(rowOf('activity-channel-ch1'), const Offset(-220, 0));
+      final row = rowOf('activity-channel-ch1');
+      await t.drag(row, const Offset(-220, 0));
       await t.pumpAndSettle();
       expect(find.byKey(const ValueKey('inbox-row-swipe-done')), findsNothing);
-      final button = env.touch
-          ? find.descendant(
-              of: rowOf('activity-channel-ch1'),
-              matching: find.byKey(const ValueKey('inbox-row-done-touch')),
-            )
-          : find.descendant(
-              of: rowOf('activity-channel-ch1'),
-              matching: find.byKey(const ValueKey('inbox-row-done')),
-            );
-      if (!env.touch) {
+      if (env.touch) {
+        await t.longPress(row);
+        await t.pumpAndSettle();
+        final done = find.text('Mark as Done').hitTestable();
+        expect(done, findsOneWidget);
+        await t.tap(done);
+      } else {
         final mouse = await t.createGesture(kind: PointerDeviceKind.mouse);
-        await mouse.addPointer(
-          location: t.getCenter(rowOf('activity-channel-ch1')),
+        await mouse.addPointer(location: t.getCenter(row));
+        addTearDown(mouse.removePointer);
+        await t.pump(const Duration(milliseconds: 200));
+        final done = find.descendant(
+          of: row,
+          matching: find.byKey(const ValueKey('inbox-row-done')),
         );
-        await t.pump();
+        await t.tap(done.hitTestable(), kind: PointerDeviceKind.mouse);
       }
-      await t.tap(button.first, warnIfMissed: false);
       await t.pump();
       await t.pump(const Duration(milliseconds: 300));
-      expect(rowOf('activity-channel-ch1'), findsNothing);
+      expect(row, findsNothing);
       expect(find.text('Marked as done'), findsOneWidget);
       expect(writes(), isEmpty);
       await t.tap(find.text('Undo'));
       await t.pumpAndSettle();
-      expect(rowOf('activity-channel-ch1'), findsOneWidget);
+      expect(row, findsOneWidget);
+      expect(find.text('Marked as done'), findsNothing);
       expect(writes(), isEmpty);
+      if (env.touch) {
+        await t.pump(const Duration(seconds: 10));
+        await remount(t, env);
+        expect(row, findsOneWidget);
+        expect(find.text('Marked as done'), findsNothing);
+        expect(writes(), isEmpty);
+      }
     });
   }
 

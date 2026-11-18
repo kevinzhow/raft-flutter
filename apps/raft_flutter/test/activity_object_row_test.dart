@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_flutter/features/activity_object_row.dart';
 import 'package:raft_flutter/features/activity_object_text.dart';
@@ -279,10 +280,9 @@ void main() {
           size: size,
           platform: platform,
         );
-        final phone = touch && size.width == 390;
         expect(
           find.byType(RaftInboxRowDone),
-          phone ? findsNothing : findsOneWidget,
+          touch ? findsNothing : findsOneWidget,
         );
         expect(
           find.byKey(const ValueKey('activity-object-art1')),
@@ -292,7 +292,32 @@ void main() {
         await tester.pump();
         expect(f.calls.objects.single['objectId'], 'art1');
         expect(f.calls.opened, 0);
-        if (!phone) {
+        if (touch) {
+          final semantics = tester.ensureSemantics();
+          try {
+            await tester.pump();
+            final node = tester.getSemantics(
+              find.bySemanticsLabel(RegExp('^Q4 roadmap')),
+            );
+            final data = node.getSemanticsData();
+            final actionId = data.customSemanticsActionIds!.single;
+            expect(
+              CustomSemanticsAction.getAction(actionId)!.label,
+              'Mark Q4 roadmap as Done',
+            );
+            tester.binding.performSemanticsAction(
+              SemanticsActionEvent(
+                type: SemanticsAction.customAction,
+                viewId: tester.view.viewId,
+                nodeId: node.id,
+                arguments: actionId,
+              ),
+            );
+            expect(f.calls.actions, ['done']);
+          } finally {
+            semantics.dispose();
+          }
+        } else {
           expect(
             tester
                 .widget<RaftInboxRowDone>(find.byType(RaftInboxRowDone))

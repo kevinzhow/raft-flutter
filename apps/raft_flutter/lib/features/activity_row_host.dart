@@ -60,11 +60,8 @@ class ActivityRowHost {
   /// A second click upgrades to the canonical page (Activity master/detail).
   final bool canonical;
 
-  /// Whether the viewer is a phone with touch: a narrow width AND a touch
-  /// pointer (Web `phoneTouch`). Null reads it from the row's context
-  /// (`RaftAdaptiveWorkspace.compactOf` and `RaftInteraction`). Such a row
-  /// mounts no Done button; Done is the swipe, the menu, and the row's
-  /// screen-reader action.
+  /// Overrides compact touch swipe eligibility. Null uses the layout width
+  /// and input mode. True also gives the row the touch Done presentation.
   final bool? phoneTouch;
 
   /// Task v2 is on for this server (null reads the server's flag).

@@ -50037,7 +50037,7 @@
         "owner": "design-system alignment",
         "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
       },
-      "apps/raft_flutter/lib/features/activity_inbox_row.dart#local-function:CLASS:ActivityInboxRow@4023/METHOD:_leading@6381/FUNCTION:badgeOf@6648": {
+      "apps/raft_flutter/lib/features/activity_inbox_row.dart#local-function:CLASS:ActivityInboxRow@3653/METHOD:_leading@6011/FUNCTION:badgeOf@6278": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",

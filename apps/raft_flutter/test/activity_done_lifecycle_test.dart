@@ -44,7 +44,7 @@ void main() {
     Future<dynamic> mount(WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          theme: raftTheme(dark: dark),
+          theme: raftTheme(dark: dark).copyWith(platform: TargetPlatform.linux),
           home: Scaffold(
             body: ResourceView(
               controller: workspace,

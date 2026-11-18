@@ -1,18 +1,14 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_flutter/features/activity_inbox_row.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import 'support/activity_row_harness.dart';
 
-// Kevin 497dd65a, R40, C43: Mark as Done on an Activity row, as Web
-// `InboxRowDone`: a ghost 28px button revealed by hover with a mouse, the
-// outline 32px button resting in the row on a touch tablet, and on a phone with
-// touch no button at all, only the screen-reader action.
 Finder get _mouseDone => find.byKey(const ValueKey('inbox-row-done'));
-Finder get _touchDone => find.byKey(const ValueKey('inbox-row-done-touch'));
 Finder get _actions => find.byKey(const ValueKey('inbox-item-actions'));
 
 double _actionsOpacity(WidgetTester tester) => tester
@@ -45,7 +41,6 @@ void main() {
           ActivityInboxRow(row: channelRow(), host: f.host()),
           dark: dark,
         );
-        expect(_touchDone, findsNothing);
         expect(_actionsOpacity(tester), 0);
         await _hover(tester, find.byKey(const ValueKey('inbox-item-open')));
         expect(_actionsOpacity(tester), 1);
@@ -62,64 +57,63 @@ void main() {
 
     for (final (name, size, platform) in rowEnvs) {
       final touch = platform == TargetPlatform.android;
-      final phone = size.width == 390;
       testWidgets(
-        '$mode $name: Done is ${phone && touch
-            ? 'only a screen-reader action'
-            : touch
-            ? 'the resting outline button'
-            : 'a hover button'}',
+        '$mode $name: Done is ${touch ? 'a row semantics action' : 'a hover button'}',
         (tester) async {
           useFixedClock();
           final f = RowFixture(channels: [channelRecord('c1', 'launch-week')]);
           addTearDown(f.dispose);
-          final handle = tester.ensureSemantics();
+          final row = ActivityInboxRow(row: channelRow(), host: f.host());
+          final excerpt = find.byKey(const ValueKey('conversation-card-body'));
+          double? compactExcerptWidth;
+          if (touch && size.width > 390) {
+            await pumpRowApp(
+              tester,
+              row,
+              size: const Size(390, 844),
+              platform: platform,
+              dark: dark,
+            );
+            compactExcerptWidth = tester.getSize(excerpt).width;
+          }
           await pumpRowApp(
             tester,
-            ActivityInboxRow(row: channelRow(), host: f.host()),
+            row,
             size: size,
             platform: platform,
             dark: dark,
           );
-          if (touch && phone) {
-            // A phone: no button is mounted, the swipe and the menu are the way.
-            expect(_touchDone, findsNothing);
-            expect(_mouseDone, findsNothing);
+          if (touch) {
             expect(find.byType(RaftInboxRowDone), findsNothing);
-            final node = tester.getSemantics(
-              find.bySemanticsLabel(RegExp('^launch-week')),
-            );
-            final data = node.getSemanticsData();
-            final action = CustomSemanticsAction.getAction(
-              data.customSemanticsActionIds!.single,
-            )!;
-            expect(action.label, 'Mark #launch-week as Done');
-            tester.binding.performSemanticsAction(
-              SemanticsActionEvent(
-                type: SemanticsAction.customAction,
-                viewId: tester.view.viewId,
-                nodeId: node.id,
-                arguments: data.customSemanticsActionIds!.single,
-              ),
-            );
-            expect(f.calls.actions, ['done']);
-          } else if (touch) {
-            // A tablet: finger-operated at any width, so it rests in the row.
-            expect(_mouseDone, findsNothing);
-            expect(_touchDone, findsOneWidget);
-            expect(_actionsOpacity(tester), 1);
-            expect(tester.getSize(_touchDone), const Size(32, 32));
-            expect(
-              tester
-                  .widget<RaftInboxRowDone>(find.byType(RaftInboxRowDone))
-                  .semanticLabel,
-              'Mark #launch-week as Done',
-            );
-            await tester.tap(_touchDone);
-            expect(f.calls.actions, ['done']);
+            expect(_actions, findsNothing);
+            if (compactExcerptWidth != null) {
+              expect(tester.getSize(excerpt).width, compactExcerptWidth);
+            }
+            final semantics = tester.ensureSemantics();
+            try {
+              await tester.pump();
+              final node = tester.getSemantics(
+                find.bySemanticsLabel(RegExp('^launch-week')),
+              );
+              final data = node.getSemanticsData();
+              final actionId = data.customSemanticsActionIds!.single;
+              expect(
+                CustomSemanticsAction.getAction(actionId)!.label,
+                'Mark #launch-week as Done',
+              );
+              tester.binding.performSemanticsAction(
+                SemanticsActionEvent(
+                  type: SemanticsAction.customAction,
+                  viewId: tester.view.viewId,
+                  nodeId: node.id,
+                  arguments: actionId,
+                ),
+              );
+              expect(f.calls.actions, ['done']);
+            } finally {
+              semantics.dispose();
+            }
           } else {
-            // A mouse, a narrow window too: the hover button.
-            expect(_touchDone, findsNothing);
             expect(_actionsOpacity(tester), 0);
             await _hover(tester, find.byKey(const ValueKey('inbox-item-open')));
             expect(_actionsOpacity(tester), 1);
@@ -132,27 +126,45 @@ void main() {
             await tester.tap(_mouseDone);
             expect(f.calls.actions, ['done']);
           }
-          handle.dispose();
         },
       );
     }
   }
 
-  testWidgets(
-    'a tablet (wide, touch) is not a phone even when the host says nothing',
-    (tester) async {
-      useFixedClock();
-      final f = RowFixture(channels: [channelRecord('c1', 'launch-week')]);
-      addTearDown(f.dispose);
-      await pumpRowApp(
-        tester,
-        ActivityInboxRow(row: channelRow(), host: f.host()),
-        size: const Size(856, 944),
-        platform: TargetPlatform.android,
-      );
-      expect(_touchDone, findsOneWidget);
-    },
-  );
+  testWidgets('narrow Linux: keyboard focus reveals and activates Done', (
+    tester,
+  ) async {
+    useFixedClock();
+    final f = RowFixture(channels: [channelRecord('c1', 'launch-week')]);
+    addTearDown(f.dispose);
+    await pumpRowApp(
+      tester,
+      ActivityInboxRow(row: channelRow(), host: f.host()),
+      size: const Size(390, 844),
+    );
+    expect(_actionsOpacity(tester), 0);
+    await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+    await tester.pump();
+    expect(_actionsOpacity(tester), 1);
+    await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    expect(f.calls.actions, ['done']);
+  });
+
+  testWidgets('wide touch hides the button even with phone swipes disabled', (
+    tester,
+  ) async {
+    useFixedClock();
+    final f = RowFixture(channels: [channelRecord('c1', 'launch-week')]);
+    addTearDown(f.dispose);
+    await pumpRowApp(
+      tester,
+      ActivityInboxRow(row: channelRow(), host: f.host(phoneTouch: false)),
+      size: const Size(856, 944),
+      platform: TargetPlatform.android,
+    );
+    expect(find.byType(RaftInboxRowDone), findsNothing);
+  });
 
   testWidgets('the host may say it is a phone with touch', (tester) async {
     useFixedClock();

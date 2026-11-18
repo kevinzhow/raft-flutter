@@ -15,16 +15,8 @@ import 'activity_row_time.dart';
 import 'agent_lounge.dart' show loungeAgentName;
 import 'sender_avatar_projection.dart';
 
-/// Whether [context] is a phone with touch: a narrow width AND a touch pointer
-/// (Web `phoneTouch`, `isPhoneTabRoot && coarsePointer`). A narrow desktop
-/// window is not a phone: it keeps the mouse Done button.
-bool activityPhoneTouch(BuildContext context, ActivityRowHost host) =>
-    host.phoneTouch ??
-    (RaftAdaptiveWorkspace.compactOf(context) &&
-        RaftInteraction.of(context).touch);
-
-/// The row's Done: the visible button, or on a phone with touch the
-/// screen-reader action. `mention_action` rows have none.
+/// Offers Done as a row semantics action on touch and a row button for pointer
+/// input. `mention_action` rows have no Done action.
 ({List<Widget> actions, Map<String, VoidCallback> semanticActions})
 activityRowDone(
   BuildContext context,
@@ -34,7 +26,7 @@ activityRowDone(
 }) {
   if (!offered) return (actions: const [], semanticActions: const {});
   void done() => host.action('done');
-  if (activityPhoneTouch(context, host)) {
+  if (RaftInteraction.of(context).touch || host.phoneTouch == true) {
     return (actions: const [], semanticActions: {label: done});
   }
   return (

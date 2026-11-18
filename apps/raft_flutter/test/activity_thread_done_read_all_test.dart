@@ -58,7 +58,7 @@ class _MountedDone {
     final epoch = result.attention.authorityEpoch;
     await tester.pumpWidget(
       MaterialApp(
-        theme: raftTheme(dark: dark),
+        theme: raftTheme(dark: dark).copyWith(platform: TargetPlatform.linux),
         home: Scaffold(
           body: ResourceView(
             key: result.viewKey,
