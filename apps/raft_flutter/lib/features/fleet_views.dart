@@ -630,6 +630,7 @@ class FleetDetail extends StatefulWidget {
     this.clock,
     this.initialTrajectoryLog = const [],
     this.onOpenAgent,
+    this.onOpenCreator,
     this.feedbackExportUrl,
   });
   final List<Map<String, dynamic>> initialTrajectoryLog;
@@ -640,6 +641,7 @@ class FleetDetail extends StatefulWidget {
 
   /// Computers: open an agent row of "Agents on this computer".
   final ValueChanged<String>? onOpenAgent;
+  final void Function(RaftProfileKind kind, String id)? onOpenCreator;
   final WorkspaceController controller;
   final bool computers;
   final Map<String, dynamic> initial;
@@ -1009,7 +1011,7 @@ class _FleetDetailState extends State<FleetDetail> {
   /// Info > Creator: their profile replaces this one.
   void openCreator(String type, String creatorId) {
     if (!current) return;
-    w.openProfile(
+    (widget.onOpenCreator ?? w.openProfile)(
       type == 'human' ? RaftProfileKind.human : RaftProfileKind.agent,
       creatorId,
     );

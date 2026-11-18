@@ -21,6 +21,7 @@ import '../data/workspace_controller.dart';
 import '../platform/attachment_files.dart';
 import '../platform/content_links.dart';
 import 'foreign_permalink.dart';
+import 'chat_navigation.dart';
 import 'message_action_card.dart';
 import 'attachment_view.dart';
 import 'private_route_guard.dart';
@@ -187,6 +188,7 @@ class MessagePresentation extends StatelessWidget {
     this.searchHighlight,
     this.unavailablePermalink,
     this.onOpenTask,
+    this.navigation,
   });
 
   /// Web `onOpenTaskRef`: an in-body `#N` / `task #N` reference opens the task
@@ -217,6 +219,7 @@ class MessagePresentation extends StatelessWidget {
   /// directory. Explicit `task #N` still resolves through [taskByNumber].
   final bool Function(int number)? knownTaskNumber;
   final WorkspaceController controller;
+  final ChatNavigation? navigation;
   final RaftMessage message;
   final ValueChanged<String> onExternalLink;
   final double fontSize;
@@ -409,6 +412,7 @@ class MessagePresentation extends StatelessWidget {
     String href, {
     bool plain = false,
   }) async {
+    if (navigation?.current() == false) return;
     final uri = Uri.tryParse(href);
     if (uri?.scheme != 'raft-ref') {
       // Web handleOpenPermalink: a message link of this server opens in the
@@ -417,7 +421,12 @@ class MessagePresentation extends StatelessWidget {
       if (link != null &&
           localAuthority &&
           !exportMode &&
-          await openPermalinkInApp(context, controller, link)) {
+          await openPermalinkInApp(
+            context,
+            controller,
+            link,
+            openLocal: navigation?.openPermalink,
+          )) {
         return;
       }
       // Web openArtifactOnPlainClick: an Artifact of this server opens in
@@ -446,7 +455,10 @@ class MessagePresentation extends StatelessWidget {
     }
     if (!localAuthority) return;
     final w = controller, authority = workspaceAuthority(controller);
-    bool current() => context.mounted && authority == workspaceAuthority(w);
+    bool current() =>
+        context.mounted &&
+        authority == workspaceAuthority(w) &&
+        (navigation?.current() ?? true);
     try {
       final parts = uri!.pathSegments;
       if (uri.host == 'channel' && parts.length == 1) {
@@ -454,11 +466,16 @@ class MessagePresentation extends StatelessWidget {
           ...w.channels,
           ...w.dms,
         ].where((c) => c.id == parts[0]).firstOrNull;
-        if (channel != null) await w.selectChannel(channel);
+        if (channel != null) {
+          await (navigation?.navigate(
+                (host) => host.jumpToMessage(channel.id, null),
+              ) ??
+              w.selectChannel(channel));
+        }
         return;
       }
       if (uri.host == 'message' && parts.length == 2) {
-        await w.jumpToMessage(parts[0], parts[1]);
+        await navigate((host) => host.jumpToMessage(parts[0], parts[1]));
         return;
       }
       if (uri.host == 'mention' &&
@@ -466,7 +483,7 @@ class MessagePresentation extends StatelessWidget {
           parts[0] == 'external') {
         final member = externalMember(parts[1]);
         if (member != null) {
-          w.openProfile(
+          openProfile(
             RaftProfileKind.external,
             '${member['id']}',
             channelId: externalMentionChannelId(w, message.channelId),
@@ -479,7 +496,7 @@ class MessagePresentation extends StatelessWidget {
       if (uri.host == 'mention' &&
           parts.length == 2 &&
           ['agent', 'user'].contains(parts[0])) {
-        w.openProfile(
+        openProfile(
           parts[0] == 'agent' ? RaftProfileKind.agent : RaftProfileKind.human,
           parts[1],
         );
@@ -492,7 +509,7 @@ class MessagePresentation extends StatelessWidget {
             w.messageDomain.ledger
                 .messages(parts[0])
                 .any((row) => row['id'] == parts[1])) {
-          await w.jumpToMessage(parts[0], parts[1]);
+          await navigate((host) => host.jumpToMessage(parts[0], parts[1]));
           return;
         }
         final resolved = await w.query(
@@ -507,9 +524,11 @@ class MessagePresentation extends StatelessWidget {
                 ? target['messageId'] ?? target['threadParentMessageId']
                 : null);
         if (id is String) {
-          await w.jumpToMessage(
-            target is Map ? target['channelId'] ?? parts[0] : parts[0],
-            id,
+          await navigate(
+            (host) => host.jumpToMessage(
+              target is Map ? target['channelId'] ?? parts[0] : parts[0],
+              id,
+            ),
           );
         } else {
           throw const RaftApiException('This thread is no longer available.');
@@ -604,6 +623,12 @@ class MessagePresentation extends StatelessWidget {
     }
   }
 
+  Future<void> navigate(Future<void> Function(WorkspaceController) action) =>
+      navigation?.navigate(action) ?? action(controller);
+
+  ChatProfileOpener get openProfile =>
+      navigation?.openProfile ?? controller.openProfile;
+
   Widget mentionDialog(
     BuildContext ctx,
     String title,
@@ -611,7 +636,6 @@ class MessagePresentation extends StatelessWidget {
     bool Function() current, {
     bool loading = false,
   }) {
-    final w = controller;
     return RaftAlertDialog(
       title: Text(title),
       content: SizedBox(
@@ -652,9 +676,11 @@ class MessagePresentation extends StatelessWidget {
                   onPressed: () async {
                     Navigator.pop(ctx);
                     if (current()) {
-                      await w.jumpToMessage(
-                        data['channelId'],
-                        data['messageId'],
+                      await navigate(
+                        (host) => host.jumpToMessage(
+                          data['channelId'],
+                          data['messageId'],
+                        ),
                       );
                     }
                   },
@@ -1022,7 +1048,7 @@ class MessagePresentation extends StatelessWidget {
                   fallbackLabel: handle,
                   readReceipt: agentRead,
                   onOpenActivity: parts[0] == 'agent'
-                      ? (id) => controller.openProfile(
+                      ? (id) => openProfile(
                           RaftProfileKind.agent,
                           id,
                           agentTab: 'activity',

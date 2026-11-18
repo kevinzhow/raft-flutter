@@ -3,8 +3,12 @@ import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_client/raft_client.dart';
 
 import '../data/source_time_formatter.dart';
+import '../data/workspace_controller.dart';
 import '../data/workspace_entity_directory.dart';
+import 'chat_navigation.dart';
 import 'chat_view.dart';
+import 'mobile_route_gate.dart';
+import 'profile_side_panel.dart';
 import 'task_conversation_facts.dart';
 import 'task_conversation_surface.dart';
 import 'task_surface_controller.dart';
@@ -109,6 +113,73 @@ class _SourceTaskSurfaceState extends State<SourceTaskSurface> {
     return name is String && name.isNotEmpty ? name : null;
   }
 
+  Widget discussionWithProfile(
+    WorkspaceController profiles,
+    Widget conversation,
+  ) => ListenableBuilder(
+    listenable: profiles,
+    child: conversation,
+    builder: (context, child) {
+      final profile = profiles.location.profile;
+      return LayoutBuilder(
+        builder: (context, constraints) {
+          final docked = constraints.maxWidth >= 720;
+          final cover = profile != null && !docked;
+          return Stack(
+            children: [
+              PositionedDirectional(
+                start: 0,
+                end: profile != null && docked ? 400 : 0,
+                top: 0,
+                bottom: 0,
+                child: Offstage(
+                  offstage: cover,
+                  child: ExcludeFocus(
+                    excluding: cover,
+                    child: TickerMode(enabled: !cover, child: child!),
+                  ),
+                ),
+              ),
+              if (profile != null)
+                PositionedDirectional(
+                  end: 0,
+                  start: docked ? null : 0,
+                  width: docked ? 400 : null,
+                  top: 0,
+                  bottom: 0,
+                  child: PopScope(
+                    canPop: false,
+                    onPopInvokedWithResult: (didPop, _) {
+                      if (!didPop) profiles.closeProfile();
+                    },
+                    child: RaftDismissScope(
+                      onDismiss: profiles.closeProfile,
+                      takeFocus: true,
+                      child: RaftSidePanelFrame(
+                        placement: docked
+                            ? RaftSidePanelPlacement.docked
+                            : RaftSidePanelPlacement.overlay,
+                        child: ProfileSidePanel(
+                          controller: o.parent,
+                          profileHost: profiles,
+                          profile: profile,
+                          agentTab: profiles.location.agentTab,
+                          onClose: profiles.closeProfile,
+                          onBack: RaftAdaptiveWorkspace.compactOf(context)
+                              ? profiles.closeProfile
+                              : null,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          );
+        },
+      );
+    },
+  );
+
   @override
   Widget build(BuildContext context) => AnimatedBuilder(
     animation: o,
@@ -147,6 +218,28 @@ class _SourceTaskSurfaceState extends State<SourceTaskSurface> {
               onLeave: widget.onClose,
             )
           : null;
+      final discussion = o.discussion;
+      final covered = MobileRouteGate.coveredReader(context);
+      final navigation = discussion == null
+          ? null
+          : ChatNavigation(
+              workspace: o.parent,
+              profiles: widget.inPlace ? o.parent : discussion,
+              current: () =>
+                  mounted &&
+                  o.current &&
+                  identical(discussion, o.discussion) &&
+                  !covered(),
+              onConversationOpened: widget.onClose,
+            );
+      void close() {
+        if (!widget.inPlace && discussion?.location.profile != null) {
+          discussion!.closeProfile();
+        } else {
+          widget.onClose();
+        }
+      }
+
       return RaftTaskSurface(
         conversation: v2,
         page: widget.page,
@@ -166,7 +259,10 @@ class _SourceTaskSurfaceState extends State<SourceTaskSurface> {
         statusOptions: o.statusOptions,
         error: o.error,
         historyError: o.historyError,
-        onClose: widget.onClose,
+        onClose: close,
+        panelBuilder: discussion == null || widget.inPlace
+            ? null
+            : (conversation) => discussionWithProfile(discussion, conversation),
         onBack: widget.onBack,
         onViewInThread: widget.onViewInThread,
         onRetry: o.parentReady ? o.refresh : o.start,
@@ -195,15 +291,17 @@ class _SourceTaskSurfaceState extends State<SourceTaskSurface> {
                 onRetry: o.parentRemoved ? null : o.start,
               )
             : RaftChatView(
-                controller: o.discussion!,
+                controller: discussion!,
+                navigation: navigation,
                 thread: true,
                 onTask: widget.onTask,
                 onViewBilling: widget.onViewBilling,
               ),
-        discussionBuilder: o.discussion == null
+        discussionBuilder: discussion == null
             ? null
             : (head) => RaftChatView(
-                controller: o.discussion!,
+                controller: discussion,
+                navigation: navigation,
                 thread: true,
                 hideThreadParent: true,
                 threadParentSlot: v2 == null

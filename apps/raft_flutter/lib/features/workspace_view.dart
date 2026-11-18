@@ -60,6 +60,7 @@ import 'package:flutter/scheduler.dart';
 
 import 'resource_view.dart';
 import 'workspace_task_host.dart';
+import 'task_content_slot.dart' show taskSlotId;
 import 'page_layout.dart';
 import 'channel_side_area.dart';
 import 'section_glyph.dart';
@@ -1046,6 +1047,10 @@ class _WorkspaceViewState extends State<WorkspaceView>
     if (host != null) {
       if (threadSelection.dismiss() || mainSelection.dismiss()) return;
       host.dismissPanel();
+      return;
+    }
+    if (wide && taskSlotId(w.location) != null && w.location.profile != null) {
+      w.closeProfile();
       return;
     }
     if (w.location.task != null || w.location.legacyTask != null) {

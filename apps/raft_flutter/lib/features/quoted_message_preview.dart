@@ -16,15 +16,28 @@ import 'quoted_permalink_cache.dart';
 /// message, any other link jumps to the message in its channel or DM.
 Future<void> openRaftPermalink(
   WorkspaceController w,
-  RaftPermalink permalink,
-) async {
+  RaftPermalink permalink, {
+  bool selectChannelRoute = false,
+}) async {
   final channel = [
     ...w.channels,
     ...w.dms,
   ].where((c) => c.id == permalink.channelId).firstOrNull;
   final parent = permalink.threadParentMessageId;
   if (parent != null) {
-    if (channel != null && w.channel?.id != channel.id) {
+    if (selectChannelRoute) {
+      final generation = w.client.generation;
+      final selecting = w.jumpToMessage(permalink.channelId, null);
+      final revision = w.navigationRevision;
+      final resolved = w.location.entityId == permalink.channelId;
+      await selecting;
+      if (w.client.generation != generation ||
+          w.location.entityId != permalink.channelId ||
+          w.section != 'chat' ||
+          (resolved && w.navigationRevision != revision)) {
+        return;
+      }
+    } else if (channel != null && w.channel?.id != channel.id) {
       await w.selectChannel(channel);
     }
     await w.openThreadIdentity(

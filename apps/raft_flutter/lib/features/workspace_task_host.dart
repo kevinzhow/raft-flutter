@@ -389,6 +389,7 @@ class _WorkspaceTaskHostState extends State<WorkspaceTaskHost> {
           child: TaskSlotScope(
             taskId: slotId,
             onClose: close,
+            onEscape: w.location.profile == null ? null : w.closeProfile,
             surface: slotId == null || !visible
                 ? null
                 : (onClose) => SourceTaskSurface(

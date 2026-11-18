@@ -15,10 +15,13 @@ import 'quoted_message_preview.dart';
 Future<bool> openPermalinkInApp(
   BuildContext context,
   WorkspaceController w,
-  RaftPermalink link,
-) async {
+  RaftPermalink link, {
+  Future<void> Function(RaftPermalink)? openLocal,
+}) async {
+  Future<void> open(RaftPermalink target) =>
+      openLocal?.call(target) ?? openRaftPermalink(w, target);
   if (link.serverSlug == w.server?.string('slug')) {
-    await openRaftPermalink(w, link);
+    await open(link);
     return true;
   }
   final authority = workspaceAuthority(w);
@@ -38,7 +41,7 @@ Future<bool> openPermalinkInApp(
       );
       return true;
     case ForeignPermalinkOutcome.local:
-      await openRaftPermalink(w, resolved.local!);
+      await open(resolved.local!);
       return true;
   }
 }

@@ -84,6 +84,7 @@ class TaskSlotScope extends InheritedWidget {
     required this.taskId,
     required this.surface,
     required this.onClose,
+    this.onEscape,
     required super.child,
   });
 
@@ -91,13 +92,17 @@ class TaskSlotScope extends InheritedWidget {
   final String? taskId;
   final Widget Function(VoidCallback onClose)? surface;
   final VoidCallback onClose;
+  final VoidCallback? onEscape;
 
   static TaskSlotScope? maybeOf(BuildContext context) =>
       context.dependOnInheritedWidgetOfExactType<TaskSlotScope>();
 
   @override
   bool updateShouldNotify(TaskSlotScope old) =>
-      old.taskId != taskId || old.surface != surface || old.onClose != onClose;
+      old.taskId != taskId ||
+      old.surface != surface ||
+      old.onClose != onClose ||
+      old.onEscape != onEscape;
 }
 
 /// The Tasks route's content row. The slot takes its width from the list,
@@ -201,7 +206,7 @@ class TaskContentSlot extends StatelessWidget {
         if (_isField(focused!)) return KeyEventResult.skipRemainingHandlers;
         // The Tasks page's selection ends first (its own Escape).
         if (TasksSelectionEscape.pending) return KeyEventResult.handled;
-        close();
+        (scope.onEscape ?? close)();
         return KeyEventResult.handled;
       },
       child: KeyedSubtree(

@@ -41,6 +41,7 @@ import 'attachment_view.dart';
 import 'media_items.dart';
 import 'attachment_shape.dart';
 import 'message_presentation.dart';
+import 'chat_navigation.dart';
 import 'message_saved_action.dart';
 import 'message_hover_toolbar.dart';
 import 'external_sender.dart';
@@ -128,8 +129,10 @@ class RaftChatView extends StatefulWidget {
     this.onTask,
     this.onViewBilling,
     this.onOpenChannelSettings,
+    this.navigation,
   });
   final WorkspaceController controller;
+  final ChatNavigation? navigation;
 
   /// ChatPanel's archived banner "Unarchive" link (Web `setOverflowOpen(true)`):
   /// opens the channel settings the header gear opens.
@@ -2287,7 +2290,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
               child: sender,
             ),
             onOpenActivity: senderIsAgent(message)
-                ? (id) => w.openProfile(
+                ? (id) => openProfile(
                     RaftProfileKind.agent,
                     id,
                     agentTab: 'activity',
@@ -2297,6 +2300,9 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
   }
 
   bool senderIsAgent(RaftMessage m) => m.string('senderType') == 'agent';
+
+  ChatProfileOpener get openProfile =>
+      widget.navigation?.openProfile ?? w.openProfile;
 
   /// Web MessageItem `handleNavigateAgent` / `Human` / `External`: the kind a
   /// sender avatar opens, or null (system rows, another server's sender).
@@ -2321,7 +2327,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
     if (selection.active) return;
     switch (senderProfileTarget(m)) {
       case RaftProfileKind.external:
-        w.openProfile(
+        openProfile(
           RaftProfileKind.external,
           m.id,
           channelId: m.channelId,
@@ -2337,7 +2343,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
         final channel = selected?.id == channelId
             ? selected
             : w.channelById(channelId);
-        w.openProfile(
+        openProfile(
           kind,
           m.string('senderId'),
           channelId: kind == RaftProfileKind.human && channel?.type == 'joint'
@@ -2459,6 +2465,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
     final quoted = quotedPermalink(m);
     final body = MessagePresentation(
       controller: w,
+      navigation: widget.navigation,
       message: m,
       unavailablePermalink: quoted == null ? null : unavailableQuoted[m.id],
       content: translation.translatedContent,
@@ -2483,6 +2490,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
             label: raftText(context, 'Original'),
             child: MessagePresentation(
               controller: w,
+              navigation: widget.navigation,
               message: m,
               taskByNumber: taskProjection.taskByNumber,
               onExternalLink: link,
@@ -2535,7 +2543,10 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
             avatar: (target) => senderAvatar(target, compact: true),
             subtitle: senderSubtitle,
             formatTimestamp: quotedTimestamp(),
-            onOpen: (link) => unawaited(openRaftPermalink(w, link)),
+            onOpen: (link) => unawaited(
+              widget.navigation?.openPermalink(link) ??
+                  openRaftPermalink(w, link),
+            ),
             onUnavailable: () {
               // Web: the chip reads "Unavailable linked message" and the card
               // is dropped; the row repaints after the current frame.

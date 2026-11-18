@@ -80,6 +80,7 @@ class RaftTaskSurface extends StatefulWidget {
     this.error,
     this.historyError,
     this.discussionBuilder,
+    this.panelBuilder,
     this.onCleanupDelete,
     this.onBack,
     this.unresolvedBody,
@@ -135,6 +136,9 @@ class RaftTaskSurface extends StatefulWidget {
   final String? viewerId;
   final String Function(dynamic) formatTime;
   final Widget Function(Widget parentSlot)? discussionBuilder;
+
+  /// Composes an auxiliary panel within the task frame.
+  final Widget Function(Widget conversation)? panelBuilder;
   final VoidCallback? onCleanupDelete;
   @override
   State<RaftTaskSurface> createState() => _RaftTaskSurfaceState();
@@ -225,10 +229,8 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
             ? size.height
             : math.min(legacy ? 720 : 900, size.height * (legacy ? .78 : .86)) -
                   2 * borderWidth,
-        child: pullDown(
-          context,
-          mobile,
-          (dismissable) => Column(
+        child: pullDown(context, mobile, (dismissable) {
+          final conversation = Column(
             children: [
               CompositedTransformTarget(
                 link: barLink,
@@ -255,8 +257,9 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
                       ),
               ),
             ],
-          ),
-        ),
+          );
+          return widget.panelBuilder?.call(conversation) ?? conversation;
+        }),
       ),
     );
     final edge = side && size.width >= 1024

@@ -33,10 +33,12 @@ class ProfileSidePanel extends StatelessWidget {
     required this.profile,
     required this.agentTab,
     required this.onClose,
+    this.profileHost,
     this.onBack,
     this.onMessage,
   });
   final WorkspaceController controller;
+  final WorkspaceController? profileHost;
   final RaftProfileLocation profile;
 
   /// `?agentTab=` deep link (the hover card's "Recent activity").
@@ -50,6 +52,7 @@ class ProfileSidePanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final w = controller;
+    final profiles = profileHost ?? w;
     final key = ValueKey('profile-${profile.kind.name}-${profile.id}');
     final Widget body = switch (profile.kind) {
       RaftProfileKind.agent => FleetDetail(
@@ -68,7 +71,8 @@ class ProfileSidePanel extends StatelessWidget {
         // profile's Message); `onBack` would pop the DM opened after it.
         onLeaveForMessage: onClose,
         // Nested creator / created-agent navigation stays in this panel.
-        onOpenAgent: (id) => w.openProfile(RaftProfileKind.agent, id),
+        onOpenAgent: (id) => profiles.openProfile(RaftProfileKind.agent, id),
+        onOpenCreator: profileHost == null ? null : profiles.openProfile,
       ),
       RaftProfileKind.human => MemberProfileView(
         key: key,
@@ -77,13 +81,16 @@ class ProfileSidePanel extends StatelessWidget {
         channelId: profile.channelId,
         onClose: onClose,
         onBack: onBack,
+        onOpenAgent: profileHost == null
+            ? null
+            : (id) => profiles.openProfile(RaftProfileKind.agent, id),
         onMessage: onMessage == null
             ? null
             : () => onMessage!(RaftProfileKind.human, profile.id),
       ),
       RaftProfileKind.external => ExternalProfileSource(
         key: key,
-        controller: w,
+        controller: profiles,
         messageId: profile.id,
         channelId: profile.channelId ?? '',
         isMention: profile.isMention,
