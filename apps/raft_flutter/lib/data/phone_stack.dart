@@ -19,6 +19,7 @@ bool hasContentSlot(RaftLocation location) =>
 /// Closing a task shown in a list's detail slot closes the slot with it.
 Map<String, String?> taskSlotRemoval(RaftLocation location) => {
   if (location.query('taskMsg') != null) 'taskMsg': null,
+  if (location.query('taskConversation') != null) 'taskConversation': null,
   if (location.content?.kind == RaftContentKind.task) ...{
     'open': null,
     'msg': null,
@@ -33,6 +34,7 @@ RaftLocation contentList(RaftLocation location) => _tidy(
     if (location.content?.kind == RaftContentKind.task) ...{
       'task': null,
       'taskMsg': null,
+      'taskConversation': null,
     },
   }),
 );
@@ -54,6 +56,7 @@ RaftLocation locationForPhone(RaftLocation location) {
       'agentTab',
       'task',
       'taskMsg',
+      'taskConversation',
       'legacyTask',
       'channelPageAdd',
     ])

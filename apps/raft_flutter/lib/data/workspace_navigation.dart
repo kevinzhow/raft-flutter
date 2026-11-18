@@ -78,6 +78,7 @@ class WorkspaceNavigation {
     'task': null,
     'legacyTask': null,
     'taskMsg': null,
+    'taskConversation': null,
   };
 
   /// The profile side panel owns its own slot (`profile=` and its agent tab):
@@ -146,6 +147,7 @@ class WorkspaceNavigation {
     ++_revision;
     if (previous.query('task') != next.query('task') ||
         previous.taskFocusedMessageId != next.taskFocusedMessageId ||
+        previous.taskFocusedConversationId != next.taskFocusedConversationId ||
         previous.query('legacyTask') != next.query('legacyTask') ||
         (next.query('task') == '1' &&
             previous.query('thread') != next.query('thread'))) {

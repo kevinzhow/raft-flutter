@@ -26,6 +26,7 @@ class TaskSurfaceController extends ChangeNotifier {
     this.hydrateParent = false,
     this.taskKeyed = false,
     this.focusedMessageId,
+    this.focusedConversationId,
   }) : task = {...row} {
     seedKnown();
     events = parent.client.events.listen((event) {
@@ -82,6 +83,7 @@ class TaskSurfaceController extends ChangeNotifier {
   /// conversation, whatever the flag says.
   final bool taskKeyed;
   final String? focusedMessageId;
+  final String? focusedConversationId;
 
   /// The task was deleted (here or elsewhere): the host closes the dialog.
   bool deleted = false;
@@ -331,12 +333,34 @@ class TaskSurfaceController extends ChangeNotifier {
       changed();
       return;
     }
-    openDiscussion();
+    String? acceptedConversationId;
+    final conversationId = focusedConversationId;
+    if (conversationId != null && conversation && canViewParent) {
+      try {
+        await authorizeTaskConversation(
+          parent.client,
+          conversationId: conversationId,
+          serverId: parent.server!.id,
+          taskId: task['id'] as String,
+          parentChannelId: task['channelId'] as String,
+          current: accepts,
+        );
+        acceptedConversationId = conversationId;
+      } on RaftApiException {
+        // A rejected hint can never provide the conversation identity.
+      }
+    }
+    if (!accepts()) return;
+    openDiscussion(conversationId: acceptedConversationId);
     await refresh();
   }
 
-  void openDiscussion() {
-    if (!current || discussion != null || legacy || !canViewParent) return;
+  void openDiscussion({String? conversationId}) {
+    if (!current || legacy || !canViewParent) return;
+    if (discussion != null) {
+      if (conversationId != null) bindConversation(conversationId);
+      return;
+    }
     if (conversation
         ? task['id'] is! String
         : task['messageId'] is! String || '${task['messageId']}'.isEmpty) {
@@ -378,7 +402,10 @@ class TaskSurfaceController extends ChangeNotifier {
     admitTaskDiscussion(c);
     discussion = c;
     if (conversation) {
-      openConversation(c, directTaskConversationChannelId(task));
+      openConversation(
+        c,
+        conversationId ?? directTaskConversationChannelId(task),
+      );
     } else {
       unawaited(
         c.openThreadIdentity(
@@ -409,7 +436,10 @@ class TaskSurfaceController extends ChangeNotifier {
       ),
     );
     final canonical = task['conversationChannelId'];
-    if (channelId == null && canonical is String && canonical.isNotEmpty) {
+    if (focusedConversationId == null &&
+        channelId == null &&
+        canonical is String &&
+        canonical.isNotEmpty) {
       unawaited(() async {
         try {
           final data = await parent.client.post(

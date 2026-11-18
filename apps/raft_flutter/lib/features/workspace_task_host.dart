@@ -164,6 +164,7 @@ class _WorkspaceTaskHostState extends State<WorkspaceTaskHost> {
       anchor.channelId,
       anchor.itemId,
       w.location.taskFocusedMessageId,
+      w.location.taskFocusedConversationId,
     ]);
   }
 
@@ -216,6 +217,7 @@ class _WorkspaceTaskHostState extends State<WorkspaceTaskHost> {
       hydrateParent: !legacy && knownChannel == null,
       taskKeyed: taskId != null,
       focusedMessageId: w.location.taskFocusedMessageId,
+      focusedConversationId: w.location.taskFocusedConversationId,
       row:
           accepted ??
           {

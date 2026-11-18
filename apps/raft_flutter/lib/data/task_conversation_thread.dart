@@ -12,6 +12,29 @@ import 'workspace_messages.dart';
 /// message (Web AuthenticatedThreadPanel `conversationKey`).
 String taskConversationKey(String taskId) => 'task:$taskId';
 
+Future<void> authorizeTaskConversation(
+  RaftClient client, {
+  required String conversationId,
+  required String serverId,
+  required String taskId,
+  required String parentChannelId,
+  required bool Function() current,
+  Map? channelDetail,
+}) async {
+  final detail =
+      channelDetail ??
+      await client.get('/channels/${Uri.encodeComponent(conversationId)}');
+  if (!current() ||
+      detail is! Map ||
+      detail['id'] != conversationId ||
+      detail['serverId'] != serverId ||
+      detail['type'] != 'task' ||
+      detail['taskId'] != taskId ||
+      detail['parentChannelId'] != parentChannelId) {
+    throw const RaftApiException('Unavailable task conversation.');
+  }
+}
+
 /// A task conversation has no parent to resolve. One that does not exist yet
 /// (created lazily, like a thread before its first reply) opens empty with
 /// its composer ready: there is nothing to look up either.

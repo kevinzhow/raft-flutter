@@ -315,13 +315,26 @@ class RaftLocation {
         : null;
   }
 
+  String? get taskFocusedConversationId {
+    final conversation = RaftAnchor.parse(query('taskConversation'));
+    return conversation != null &&
+            task?.itemId == 'task:${conversation.channelId}' &&
+            taskFocusedMessageId != null
+        ? conversation.itemId
+        : null;
+  }
+
   RaftLocation withTaskConversation(
     String parentChannelId,
     String taskId, {
     String? focusedMessageId,
+    String? conversationId,
   }) => withQuery({
     'task': '$parentChannelId:task:$taskId',
     'taskMsg': focusedMessageId == null ? null : '$taskId:$focusedMessageId',
+    'taskConversation': focusedMessageId == null || conversationId == null
+        ? null
+        : '$taskId:$conversationId',
   });
 
   RaftAnchor? get legacyTask => RaftAnchor.parse(query('legacyTask'));
