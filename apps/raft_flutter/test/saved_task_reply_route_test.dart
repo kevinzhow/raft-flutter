@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_flutter/platform/content_coordinator.dart';
+import 'package:raft_flutter/platform/content_links.dart';
+import 'package:raft_flutter/platform/content_target.dart';
 
 import 'message_context_transition_test.dart' show row;
 import 'task_content_slot_test.dart' show v2Task;
@@ -75,20 +77,17 @@ void main() {
     };
     api.routes['GET /channels/task-conv'] = (_) => _taskChannel;
     api.routes['GET /messages/channel/c1'] = (_) => {'messages': []};
-    api.routes['GET /messages/context/matched-reply'] = (call) {
-      expect(call.queryParameters['channelId'], 'task-conv');
-      return {
-        'channelId': 'task-conv',
-        'targetMessageId': 'matched-reply',
-        'messages': [row('matched-reply', 'task-conv', 7)],
-        'canonicalTarget': {
-          'kind': 'thread',
-          'channelId': 'c1',
-          'threadChannelId': 'task-conv',
-          'threadParentMessageId': null,
-          'messageId': 'matched-reply',
-        },
-      };
+    api.routes['GET /messages/context/matched-reply'] = (_) => {
+      'channelId': 'task-conv',
+      'targetMessageId': 'matched-reply',
+      'messages': [row('matched-reply', 'task-conv', 7)],
+      'canonicalTarget': {
+        'kind': 'thread',
+        'channelId': 'c1',
+        'threadChannelId': 'task-conv',
+        'threadParentMessageId': null,
+        'messageId': 'matched-reply',
+      },
     };
     final notifications = LocalNotifications();
     final coordinator = NativeContentCoordinator(
@@ -122,10 +121,23 @@ void main() {
         clipboard,
         'https://example.invalid/s/demo/channel/task-conv?msg=matched-reply',
       );
-      coordinator.receiveLink(Uri.parse(clipboard!));
-      await waitForPainted(t, 'matched-reply');
-      expect(w.location.entityId, 'c1');
+      final target = ContentTarget.parse(
+        Uri.parse(clipboard!),
+        origin: ContentLinks.originFor(w.client.origin),
+      )!;
+      await t.runAsync(() => coordinator.navigate(target));
+      await frames(t, () {});
       expect(w.location.query('task'), 'c1:task:task-1');
+      expect(w.location.entityId, 'c1');
+      await waitForPainted(t, 'matched-reply');
+      final contexts = api.calls.where(
+        (call) => call.path == '/messages/context/matched-reply',
+      );
+      expect(contexts, isNotEmpty);
+      expect(
+        contexts.map((call) => call.queryParameters['channelId']),
+        everyElement('task-conv'),
+      );
       expect(
         api.calls.where((call) => call.path == '/tasks/task-1/conversation'),
         isEmpty,
