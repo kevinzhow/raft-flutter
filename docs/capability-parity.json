@@ -14219,6 +14219,30 @@
   },
   {
    "kind": "ui",
+   "id": "ui:feedback.ticket-copy-link",
+   "area": "account-profile",
+   "capability": "Copy the open ticket's link from its header (Web v1.24)",
+   "background": false,
+   "status": "covered",
+   "webEntry": "Settings > Feedback > ticket header > Copy link (FeedbackTicketLinkAction)",
+   "gate": "",
+   "flutterEntry": "source_feedback_view.dart _copyLink, header button 'settings-feedback-ticket-copy-link' (WP-ADMIN)",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/features/source_feedback_view.dart",
+     "needle": "_copyLink"
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/source_feedback_view.dart",
+     "needle": "settings-feedback-ticket-copy-link"
+    }
+   ],
+   "justification": "",
+   "impact": "",
+   "size": ""
+  },
+  {
+   "kind": "ui",
    "id": "ui:feedback.pending-attachment-preview",
    "area": "account-profile",
    "capability": "Tap a not-yet-sent pending attachment to preview it (onOpenPendingAttachment)",

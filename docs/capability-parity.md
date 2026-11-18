@@ -7,11 +7,11 @@ Pixel parity, field parity (`docs/field-parity.md`) and the page inventory (`doc
 
 ## Summary
 
-Total capabilities: 846 (400 endpoint/network keys, 446 client-side).
+Total capabilities: 847 (400 endpoint/network keys, 447 client-side).
 
 | Status | Count |
 | --- | ---: |
-| ✅ covered | 719 |
+| ✅ covered | 720 |
 | ⚠️ partial | 30 |
 | ❌ missing | 2 |
 | ➖ na | 95 |
@@ -31,7 +31,7 @@ Total capabilities: 846 (400 endpoint/network keys, 446 client-side).
 | Files and attachments | 25 | 3 | 0 | 2 |
 | Search | 19 | 0 | 0 | 1 |
 | Notifications | 30 | 4 | 0 | 9 |
-| Account and profile | 54 | 0 | 0 | 13 |
+| Account and profile | 55 | 0 | 0 | 13 |
 | Onboarding and auth | 37 | 1 | 0 | 8 |
 | Joint channels | 11 | 0 | 0 | 1 |
 | Public and guest | 19 | 1 | 0 | 4 |
@@ -790,6 +790,7 @@ Legend: ✅ covered (endpoint called and a reachable entry point with equivalent
 | ✅ | Feedback inbox: Active / Ended / All filter, Refresh, load more | `ui:feedback.inbox-filter-refresh` | Feedback workspace inbox | source_feedback_view.dart store.filter + Refresh + load more |  |
 | ✅ | New feedback: Idea/Problem toggle, description, image attachments (up to the limit), Submit/Retry upload | `ui:feedback.new-feedback-form` | Feedback workspace 'New feedback' (hands-feedback-react NewFeedbackForm) | source_feedback_view.dart _create() RaftFeedbackNewForm |  |
 | ✅ | Tap a not-yet-sent pending attachment to preview it (onOpenPendingAttachment) | `ui:feedback.pending-attachment-preview` | Feedback composer pending attachment chip click -> Lightbox | A pending attachment tile opens the same lightbox before sending |  |
+| ✅ | Copy the open ticket's link from its header (Web v1.24) | `ui:feedback.ticket-copy-link` | Settings > Feedback > ticket header > Copy link (FeedbackTicketLinkAction) | source_feedback_view.dart _copyLink, header button 'settings-feedback-ticket-copy-link' (WP-ADMIN) |  |
 | ✅ | Choose the app display language (English / Simplified Chinese) | `ui:language.display-language` | Settings > Language & Region > Display language select + Save | locale_settings_page.dart signed-in language card; public_language_settings.dart anonymous device-only UI language; display_language_preferences.dart resolves account/device/system priority | The two shipped UI languages remain English and Simplified Chinese. Anonymous selection persists on this device without account writes; account language takes precedence after sign-in. |
 | ✅ | Choose timezone (device default or specific zone) and 12h/24h time format | `ui:language.timezone-and-time-format` | Language & Region > Date & time: Timezone select, Time format 12h/24h, Save | locale_settings_page.dart timezoneOptions / timeFormat |  |
 | ✅ | Default translated-message view: Translated / Original / Bilingual | `ui:language.translation-default-view` | Language & Region > Default view segmented control | locale_settings_page.dart translationDisplay |  |
