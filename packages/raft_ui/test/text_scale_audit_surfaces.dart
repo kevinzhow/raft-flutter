@@ -793,6 +793,12 @@ final auditSurfaces = <AuditSurface>[
     Size(390, 420),
   ),
   AuditSurface(
+    'mountedSidebarLoadingPreview',
+    'Mounted sidebar: loading rows',
+    mountedSidebarLoadingPreview,
+    Size(390, 240),
+  ),
+  AuditSurface(
     'sidebarUnreadIndicatorsPreview',
     'Mounted channel unread, mute and draft states',
     sidebarUnreadIndicatorsPreview,
