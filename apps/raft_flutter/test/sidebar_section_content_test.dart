@@ -65,7 +65,7 @@ void main() {
     );
 
     testWidgets(
-      'Raft $dark adjacent sidebar margins collapse like the mounted source',
+      'Raft $dark adjacent desktop sidebar rows keep the mounted Source gap',
       (t) async {
         final (w, _) = await pageFixture(t);
         w.channels = [
@@ -81,7 +81,7 @@ void main() {
         await mountPage(t, w, dark);
         final first = find.byKey(const ValueKey('sidebar-channel-first'));
         final second = find.byKey(const ValueKey('sidebar-channel-second'));
-        expect(t.getTopLeft(second).dy - t.getTopLeft(first).dy, 37);
+        expect(t.getTopLeft(second).dy - t.getTopLeft(first).dy, 36);
         await t.pumpWidget(const SizedBox());
       },
       variant: TargetPlatformVariant.only(TargetPlatform.linux),

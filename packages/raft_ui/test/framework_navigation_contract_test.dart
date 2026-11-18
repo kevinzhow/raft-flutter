@@ -291,7 +291,7 @@ void main() {
             ),
           ),
         );
-        expect(t.getSize(find.byType(RaftNavItem)), const Size(223, 35));
+        expect(t.getSize(find.byType(RaftNavItem)), const Size(223, 36));
         final title = t.widget<Text>(find.text('design'));
         expect(title.style!.fontSize, 15);
         expect(title.style!.height, 20 / 15);

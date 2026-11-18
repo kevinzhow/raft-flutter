@@ -298,9 +298,9 @@ void main() {
           matching: find.byType(RaftControl),
         );
         const controlHeight = 34.0;
-        final trailingMargin = 1.0;
+        const rowGap = 2.0;
         expect(t.getSize(control).height, controlHeight);
-        expect(t.getSize(row).height, controlHeight + trailingMargin);
+        expect(t.getSize(row).height, controlHeight + rowGap);
         expect(t.getRect(control).top, t.getRect(row).top + 1);
         final title = t.widget<Text>(
           find.descendant(of: row, matching: find.text('Cindy')),

@@ -55341,12 +55341,6 @@
         "owner": "WP-DS4",
         "reason": "Mounted navigation row density shared with its skeleton. State-specific visual acceptance is pending."
       },
-      "packages/raft_ui/lib/src/design_primitives.dart#local-function:CLASS:_RaftDropdownMenuState@68441/METHOD:build@74851/FUNCTION:toggle@75081": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "WP-DS4",
-        "reason": "Shell and sidebar density. Unchanged local builders retain their previous ownership. State-specific visual acceptance is pending."
-      },
       "packages/raft_ui/lib/src/pull_to_refresh.dart#class:_RaftPullToRefreshState": {
         "role": "unresolved",
         "familyRefs": [],
@@ -55394,6 +55388,12 @@
         "familyRefs": [],
         "owner": "WP-CHAN",
         "reason": "Shared channel heading and activity badge placement. Exact family placement and state-specific visual acceptance are pending."
+      },
+      "packages/raft_ui/lib/src/design_primitives.dart#local-function:CLASS:_RaftDropdownMenuState@68482/METHOD:build@74892/FUNCTION:toggle@75122": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS4",
+        "reason": "Shell and sidebar density. Unchanged local builders retain their previous ownership. State-specific visual acceptance is pending."
       }
     },
     "entries": {
@@ -59069,10 +59069,10 @@
         "mountStatus": "source_reviewed",
         "reason": "The Agent row in the Computer details opened by the notification bell presents the existing Agent detail page."
       },
-      "surface:packages/raft_ui/lib/src/design_primitives.dart#local-function:CLASS:_RaftDropdownMenuState@68441/METHOD:build@74851/FUNCTION:toggle@75081": {
+      "surface:packages/raft_ui/lib/src/design_primitives.dart#local-function:CLASS:_RaftDropdownMenuState@68482/METHOD:build@74892/FUNCTION:toggle@75122": {
         "kind": "surface",
         "declarationRefs": [
-          "packages/raft_ui/lib/src/design_primitives.dart#local-function:CLASS:_RaftDropdownMenuState@68441/METHOD:build@74851/FUNCTION:toggle@75081"
+          "packages/raft_ui/lib/src/design_primitives.dart#local-function:CLASS:_RaftDropdownMenuState@68482/METHOD:build@74892/FUNCTION:toggle@75122"
         ],
         "owner": "WP-DS4",
         "mountStatus": "source_reviewed",
@@ -61965,8 +61965,8 @@
         "owner": "WP-CHAN",
         "reason": "The source entry is registered. Bound visual state and input coverage are pending."
       },
-      "surface:packages/raft_ui/lib/src/design_primitives.dart#local-function:CLASS:_RaftDropdownMenuState@68441/METHOD:build@74851/FUNCTION:toggle@75081:applicability": {
-        "entryId": "surface:packages/raft_ui/lib/src/design_primitives.dart#local-function:CLASS:_RaftDropdownMenuState@68441/METHOD:build@74851/FUNCTION:toggle@75081",
+      "surface:packages/raft_ui/lib/src/design_primitives.dart#local-function:CLASS:_RaftDropdownMenuState@68482/METHOD:build@74892/FUNCTION:toggle@75122:applicability": {
+        "entryId": "surface:packages/raft_ui/lib/src/design_primitives.dart#local-function:CLASS:_RaftDropdownMenuState@68482/METHOD:build@74892/FUNCTION:toggle@75122",
         "applicability": "unknown",
         "owner": "WP-DS4",
         "reason": "Bound visual state and input coverage are pending."

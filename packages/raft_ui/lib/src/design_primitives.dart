@@ -109,6 +109,7 @@ abstract final class RaftLayoutMetrics {
   }
 
   static const double desktopControl = 34;
+  static const double sidebarRowGap = 2;
 
   static double sidebarRowHeight(RaftTokens tokens, double width) =>
       width < desktopBreakpoint ? 44 : (tokens.desktop ? desktopControl : 38);

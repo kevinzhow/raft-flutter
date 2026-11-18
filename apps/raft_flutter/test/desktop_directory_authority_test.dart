@@ -52,7 +52,7 @@ void main() {
   for (final dark in raftThemeMatrix([false, true])) {
     for (final width in [390.0, 1280.0]) {
       testWidgets(
-        'directory ${dark ? 'dark' : 'light'}/$width retains Source avatar, row and pointer selection',
+        'touch directory ${dark ? 'dark' : 'light'}/$width retains Source avatar, row and selection',
         (t) async {
           t.view.physicalSize = Size(width, 844);
           t.view.devicePixelRatio = 1;
@@ -68,7 +68,8 @@ void main() {
           DesktopContentTarget? selected;
           await t.pumpWidget(
             MaterialApp(
-              theme: raftTheme(dark: dark),
+              theme: raftTheme(dark: dark)
+                  .copyWith(platform: TargetPlatform.android),
               home: Scaffold(
                 body: DesktopDirectoryView(
                   controller: w,
@@ -96,9 +97,10 @@ void main() {
             of: row,
             matching: find.byType(RaftControl),
           );
-          // SidebarItem has independent 4px/2px margin and md:py-1/1.5.
-          expect(t.getSize(control).height, width < 768 ? 44 : 36);
-          expect(t.getSize(row).height - t.getSize(control).height, 1);
+          // SidebarItem uses the phone and wide touch heights independently
+          // of the row's trailing margin.
+          expect(t.getSize(control).height, width < 768 ? 44 : 38);
+          expect(t.getSize(row).height - t.getSize(control).height, 2);
           await t.tap(row);
           expect(selected!.kind, DesktopContentKind.agent);
           expect(selected!.id, 'agent');

@@ -267,7 +267,7 @@ class _SidebarRowsSkeletonState extends State<RaftSidebarRowsSkeleton>
         opacity: opacity,
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          spacing: 2,
+          spacing: RaftLayoutMetrics.sidebarRowGap,
           children: [
             for (var index = 0; index < widget.rows; index++)
               Padding(

@@ -1408,6 +1408,8 @@ class RaftNavItem extends StatelessWidget {
           conversationKind != null)
         raftText(context, 'Draft'),
     ].join(', ');
+    const halfRowGap = RaftLayoutMetrics.sidebarRowGap / 2;
+    final geometry = t.themeOverrides?.geometry;
     final item = Semantics(
       selected: selected,
       onTap: _tap,
@@ -1418,12 +1420,12 @@ class RaftNavItem extends StatelessWidget {
           ? row(false)
           : Padding(
               padding: EdgeInsets.only(
-                top: t.size('space.sidebarItemMarginTop', fallback: 0),
-                bottom: t.size('space.sidebarItemMarginBottom', fallback: 2),
+                top: geometry?['space.sidebarItemMarginTop'] ?? halfRowGap,
+                bottom:
+                    geometry?['space.sidebarItemMarginBottom'] ?? halfRowGap,
               ),
               child: _MountedNavigationPointerSurface(
-                // Touch density keeps Web's row box (34 / 40 / 32 / 30) and
-                // expands only the hit / semantic area to 48dp.
+                // Touch density expands the hit and semantic area to 48dp.
                 builder: (pressed) =>
                     RaftDensityScope.of(context) == RaftDensity.touch
                     ? RaftTouchTarget(child: row(pressed))
