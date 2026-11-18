@@ -29046,7 +29046,7 @@
         "owner": "design-system alignment",
         "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
       },
-      "packages/raft_ui/lib/src/message_reference_chip.dart#class:_AgentReadBadge": {
+      "packages/raft_ui/lib/src/message_reference_chip.dart#class:_AgentReadMark": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
@@ -29082,7 +29082,7 @@
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
-      "packages/raft_ui/lib/src/message_reference_chip.dart#method:_AgentReadBadge.build": {
+      "packages/raft_ui/lib/src/message_reference_chip.dart#method:_AgentReadMark.build": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",

@@ -775,7 +775,7 @@
    "status": "covered",
    "webEntry": "MessageItem showDmReadReceipt | MentionLink projectAgentReadReceipt",
    "gate": "accepted peer frontier; own human sender; DM status on the current live last row",
-   "flutterEntry": "agent_read_badge.dart agentMentionRead for mention chips; dm_read_status.dart dmReadStatusMessageId -> RaftMessageReadStatus below the current live DM last message",
+   "flutterEntry": "agentMentionRead projects the mention check and the profile hover card receipt. dmReadStatusMessageId selects the live DM row for RaftMessageReadStatus.",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/agent_read_badge.dart",
@@ -783,7 +783,11 @@
     },
     {
      "file": "packages/raft_ui/lib/src/message_reference_chip.dart",
-     "needle": "class _AgentReadBadge"
+     "needle": "class _AgentReadMark"
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/profile_preview.dart",
+     "needle": "final bool? readReceipt"
     },
     {
      "file": "apps/raft_flutter/lib/features/dm_read_status.dart",
@@ -794,7 +798,7 @@
      "needle": "class RaftMessageReadStatus"
     }
    ],
-   "justification": "Mention chips and the separate last-message DM line use the accepted read frontier. Managed App bots have no mention marker. The DM line is restricted to the current live conversation and own human sender. Context windows, pending sends and other senders do not show it.",
+   "justification": "The accepted read frontier drives the mention check and the separate DM line. The mention check appears once the agent reads the message. The hover card shows the known receipt state, and managed App bots carry no receipt. The DM line is restricted to the current live conversation and own human sender. Context windows, pending sends and other senders do not show it.",
    "impact": "",
    "size": ""
   },
