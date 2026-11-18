@@ -2,6 +2,7 @@ import '../data/navigation_registry.dart';
 import '../data/raft_location.dart';
 import '../data/raft_navigation_history.dart';
 import '../data/workspace_navigation.dart';
+import 'task_content_slot.dart' show taskSlotId;
 
 /// Classic mounted MainLayout/useSidebarTab projection. Workspace-grid is a
 /// separate feature/preference branch; this policy never enables it implicitly.
@@ -115,6 +116,21 @@ class DesktopContentTarget {
   final String? channelId, messageId, parentMessageId;
   final bool dm;
 }
+
+RaftLocation desktopContentLocation(
+  RaftLocation current, {
+  String? open,
+  String? messageId,
+  String? thread,
+  bool clearProfile = false,
+}) => current.withQuery({
+  'open': open,
+  'msg': messageId,
+  'thread': thread,
+  if (clearProfile) 'profile': null,
+  if (open != current.query('open') && taskSlotId(current) != null)
+    'task': null,
+});
 
 /// A compatibility projection of the same location used by the workspace.
 /// Selected message data cannot independently change the master or rail.
@@ -233,16 +249,17 @@ class DesktopNavigationState {
         DesktopContentKind.computer => 'machine',
         _ => value.kind.name,
       };
-      final next = current.withQuery({
-        'open': '$prefix:${value.id}',
-        'msg': value.messageId,
-        'thread':
+      final next = desktopContentLocation(
+        current,
+        open: '$prefix:${value.id}',
+        messageId: value.messageId,
+        thread:
             value.kind == DesktopContentKind.thread &&
                 value.channelId != null &&
                 value.parentMessageId != null
             ? '${value.channelId}:${value.parentMessageId}'
             : null,
-      });
+      );
       navigation.navigate(next, kind: kind);
     }
     return navigation.revision;
@@ -275,12 +292,7 @@ class DesktopNavigationState {
       );
     } else {
       navigation.navigate(
-        navigation.location.withQuery({
-          'open': null,
-          'msg': null,
-          'thread': null,
-          'profile': null,
-        }),
+        desktopContentLocation(navigation.location, clearProfile: true),
         kind: RaftNavigationKind.replace,
       );
     }

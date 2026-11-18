@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:raft_flutter/data/raft_location.dart';
 import 'package:raft_flutter/features/desktop_master_detail.dart';
 import 'package:raft_flutter/features/desktop_navigation_policy.dart';
 import 'package:raft_ui/raft_ui.dart';
@@ -67,6 +68,35 @@ void main() {
       expect(navigation.masterRoute, isNull);
     },
   );
+  for (final paired in [true, false]) {
+    test(
+      'closing detail ${paired ? 'retires its task' : 'keeps the overlay'}',
+      () {
+        final desktop = DesktopNavigationState()
+          ..bind('principal/server/owner');
+        final navigation = desktop.navigation;
+        const anchor = 'c1:task:task-1';
+        navigation.navigate(
+          RaftLocation.at(serverSlug: '_', route: RaftRoute.activity).withQuery(
+            {
+              'open': paired ? 'task:task-1' : 'channel:c1',
+              'task': anchor,
+              'profile': 'human:alice',
+            },
+          ),
+        );
+        final entries = navigation.entries.length;
+
+        desktop.closeTarget();
+
+        expect(navigation.location.route, RaftRoute.activity);
+        expect(navigation.location.content, isNull);
+        expect(navigation.location.query('task'), paired ? null : anchor);
+        expect(navigation.location.query('profile'), isNull);
+        expect(navigation.entries.length, entries);
+      },
+    );
+  }
   testWidgets('absent conversation sidebar is not mounted or resized', (
     t,
   ) async {

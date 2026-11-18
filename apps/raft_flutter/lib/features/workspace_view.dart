@@ -2360,7 +2360,7 @@ class _WorkspaceViewState extends State<WorkspaceView>
         w.location.route == RaftRoute.activity &&
         w.location.content != null) {
       w.navigation.navigate(
-        w.location.withQuery({'open': null, 'msg': null, 'thread': null}),
+        desktopContentLocation(w.location),
         kind: RaftNavigationKind.replace,
       );
     }

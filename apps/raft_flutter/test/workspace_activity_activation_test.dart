@@ -1,11 +1,13 @@
 import 'dart:async';
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/raft_location.dart';
 import 'package:raft_flutter/features/chat_view.dart';
 import 'package:raft_flutter/features/resource_view.dart';
+import 'package:raft_flutter/features/task_surface.dart';
 import 'package:raft_flutter/features/workspace_view.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_ui/test_themes.dart';
@@ -13,6 +15,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'message_presentation_test.dart' show fixture;
 import 'support/app_services_fixture.dart';
+import 'task_content_slot_test.dart' show v2Task;
+import 'task_surface_test.dart' show flush, taskRoutes;
 
 const threadRow = <String, dynamic>{
   'kind': 'thread',
@@ -46,6 +50,166 @@ Map<String, dynamic> message(String id, String channel) => {
 };
 
 void main() {
+  for (final destination in ['channel', 'thread', 'canonical', 'overlay']) {
+    testWidgets('[#329] Activity task to $destination', (tester) async {
+      SharedPreferences.setMockInitialValues({});
+      tester.view.physicalSize = const Size(1440, 900);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      final (w, api) = (await tester.runAsync(() => fixture('owner')))!;
+      addTearDown(w.dispose);
+      w.loading = false;
+      w.messageDomain.ledger.switchServer('s1');
+      w.section = 'activity';
+      taskRoutes(api, v2Task);
+      api.routes['GET /tasks/channel/c1'] = (_) => {
+        'tasks': [v2Task],
+      };
+      api.routes['GET /tasks/task-1'] = (_) => {'task': v2Task};
+      api.routes['GET /messages/channel/task-conv'] = (_) => {'messages': []};
+      api.routes['POST /channels/task-conv/read'] = (_) => {};
+      api.routes['GET /channels/inbox'] = (_) => {
+        'items': [
+          {
+            'kind': 'task',
+            'threadChannelId': 'task-conv',
+            'parentChannelId': 'c1',
+            'parentChannelName': 'test',
+            'parentChannelType': 'channel',
+            'parentMessageId': null,
+            'parentMessagePreview': v2Task['title'],
+            'taskId': 'task-1',
+            'taskTitle': v2Task['title'],
+            'taskNumber': 8,
+            'taskStatus': 'todo',
+            'latestActivityPreview': 'A task reply',
+            'unreadCount': 0,
+          },
+          threadRow,
+          channelRow,
+        ],
+      };
+      for (final (id, channel) in [
+        ('parent', 'c1'),
+        ('reply', 'thread-1'),
+        ('first-channel', 'c1'),
+      ]) {
+        api.routes['GET /messages/context/$id'] = (_) => {
+          'messages': [message(id, channel)],
+        };
+      }
+      api.routes['GET /channels/threads/followed'] = (_) => {'threads': []};
+      api.routes['POST /channels/thread-1/read'] = (_) => {};
+      api.routes['POST /channels/c1/read'] = (_) => {};
+      api.routes['POST /feature-flags/evaluate'] = (_) => {'evaluations': []};
+      api.routes['GET /servers/s1/setup-projection'] = (_) => {
+        'phase': 'complete',
+        'surface': 'complete',
+        'blocksChat': false,
+      };
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: raftTheme(),
+          home: withAppServices(
+            WorkspaceView(
+              controller: w,
+              appearance: RaftAppearance(),
+              onAppearance: (_) async {},
+              onLogout: () async {},
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      const taskAnchor = 'c1:task:task-1';
+      final taskSurface = find.byType(SourceTaskSurface);
+      final taskSlot = find.byKey(const ValueKey('task-content-slot'));
+      final taskModal = find.descendant(
+        of: taskSurface,
+        matching: find.byType(RaftModalBackdrop),
+      );
+      final independent = destination == 'overlay';
+      if (independent) {
+        w.navigation.navigateTask(w.location.withQuery({'task': taskAnchor}));
+        w.notifyListeners();
+      } else {
+        final taskRow = find.byKey(const ValueKey('activity-thread-task-conv'));
+        expect(taskRow.hitTestable(), findsOneWidget);
+        await tester.tap(taskRow, kind: PointerDeviceKind.mouse);
+      }
+      await flush(tester);
+      expect(w.location.route, RaftRoute.activity);
+      expect(w.location.query('open'), independent ? null : 'task:task-1');
+      expect(w.location.query('task'), taskAnchor);
+      expect(taskSurface, findsOneWidget);
+      expect(taskSlot, independent ? findsNothing : findsOneWidget);
+      expect(taskModal, independent ? findsOneWidget : findsNothing);
+
+      final before = w.navigation.entries.length;
+      final canonical = destination == 'canonical';
+      final thread = destination == 'thread';
+      final observed = <RaftLocation>[];
+      void observe() => observed.add(w.location);
+      w.addListener(observe);
+      addTearDown(() => w.removeListener(observe));
+      if (canonical || independent) {
+        final list = tester.widget<ResourceView>(find.byType(ResourceView));
+        if (canonical) {
+          unawaited(list.onActivityCanonical!(channelRow));
+        } else {
+          unawaited(list.onActivityItem!(channelRow));
+        }
+      } else {
+        final row = find.byKey(
+          ValueKey(thread ? 'activity-thread-thread-1' : 'activity-channel-c1'),
+        );
+        expect(row.hitTestable(), findsOneWidget);
+        await tester.tap(row, kind: PointerDeviceKind.mouse);
+      }
+      await flush(tester);
+
+      expect(taskSlot, findsNothing);
+      expect(taskModal, independent ? findsOneWidget : findsNothing);
+      expect(taskSurface, independent ? findsOneWidget : findsNothing);
+      expect(w.location.query('task'), independent ? taskAnchor : null);
+      expect(observed, isNotEmpty);
+      expect(
+        observed.map((location) => location.query('task')),
+        everyElement(independent ? taskAnchor : isNull),
+      );
+      expect(w.navigation.entries.length, before + (canonical ? 1 : 0));
+      if (canonical) {
+        expect(w.location.route, RaftRoute.channel);
+        expect(w.location.entityId, 'c1');
+        final backEntry = w.navigation.entries[before - 1];
+        expect(backEntry.route, RaftRoute.activity);
+        expect(backEntry.content, isNull);
+        expect(backEntry.task, isNull);
+        w.navigation.back();
+        w.notifyListeners();
+        await flush(tester);
+        expect(w.location, backEntry);
+        expect(taskSurface, findsNothing);
+      } else {
+        expect(w.location.route, RaftRoute.activity);
+        expect(
+          w.location.content?.kind,
+          thread ? RaftContentKind.thread : RaftContentKind.channel,
+        );
+        expect(w.location.content?.id, thread ? 'thread-1' : 'c1');
+        expect(w.location.thread?.itemId, thread ? 'parent' : null);
+        expect(
+          find.byType(RaftThreadHeader),
+          thread ? findsOneWidget : findsNothing,
+        );
+      }
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump();
+      expect(tester.takeException(), isNull);
+    });
+  }
+
   for (final dark in raftThemeMatrix([false, true])) {
     for (final scenario in ['thread', 'channel', 'dm']) {
       final channelAfterThread = scenario != 'thread';
