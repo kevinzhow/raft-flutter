@@ -316,10 +316,17 @@ class WorkspaceComposer {
     if (files != null) {
       for (final file in files.where((file) => file.id == null)) {
         file.cancel = UploadCancellation();
+        if (file.error != null) continue;
+        final checking = file.checking;
         file.checking = false;
-        file.queued = file.local != null;
-        file.canRetry = true;
-        file.error = file.queued ? null : 'Upload interrupted. Tap to retry.';
+        file.progress = 0;
+        file.queued = !checking && file.local != null;
+        file.canRetry = !checking;
+        file.error = checking
+            ? 'File checking was interrupted. Remove it and attach again.'
+            : file.queued
+            ? null
+            : 'File upload was interrupted. Tap to retry.';
       }
       (uploads.byScope[to] ??= []).addAll(files);
     }
