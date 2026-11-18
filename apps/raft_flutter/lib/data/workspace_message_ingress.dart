@@ -4,10 +4,77 @@ import 'package:raft_client/raft_client.dart';
 import 'package:raft_sync/raft_sync.dart';
 
 import 'message_gap_sync.dart';
+import 'task_discussion_read.dart';
 import 'thread_reply_updates.dart';
 import 'workspace_message_windows.dart';
 import 'workspace_messages.dart';
 import 'workspace_session_context.dart';
+
+void recoverTaskDiscussion(
+  WorkspaceMessages m,
+  RaftEvent? event,
+  bool Function() acceptsSource,
+) {
+  final identity = m.threadIdentity;
+  final request = m.state.threadVisit;
+  final id = m.state.threadChannelId;
+  if (!isTaskDiscussion(m.context.receiverKey) ||
+      !m.presentation.threadPresented ||
+      identity == null ||
+      request == null ||
+      !request.current ||
+      id == null) {
+    return;
+  }
+  if (event == null || event.name == 'rooms:joined') {
+    if (event != null) m.transport.client.joinChannel(id);
+    if (!m.state.threadLoading && !m.messageWindows.contextHasNewer(id)) {
+      // Global replay omits unfollowed task replies.
+      unawaited(
+        MessageGapSync.run(
+          m,
+          id,
+          allowed: () => request.current && acceptsSource(),
+        ),
+      );
+    }
+    return;
+  }
+  final payload = event.payload;
+  if (event.name != 'sync:resume:response' ||
+      payload is! Map ||
+      payload['messages'] is! List ||
+      m.state.threadLoading) {
+    return;
+  }
+  final ledger = m.ledger, windows = m.messageWindows;
+  final rows = <Map<String, dynamic>>[];
+  final seen = <String>{};
+  for (final row in (payload['messages'] as List).whereType<Map>()) {
+    final key = row['id'];
+    if (row['channelId'] != id || key is! String || ledger.contains(id, key)) {
+      continue;
+    }
+    final anchor = row['conversationContext'];
+    if (anchor is Map &&
+        (anchor['parentChannelId'] != null &&
+                anchor['parentChannelId'] != identity.parentChannelId ||
+            anchor['taskId'] != null && anchor['taskId'] != identity.taskId)) {
+      continue;
+    }
+    if (seen.add(key)) rows.add(Map<String, dynamic>.from(row));
+  }
+  if (rows.isEmpty) return;
+  // The session owns persistence and the replay cursor. This visit only
+  // projects missing rows into its local window.
+  windows.acceptRows(
+    request,
+    id,
+    rows,
+    visible: windows.contextHasNewer(id) ? const [] : null,
+  );
+  m.context.changed();
+}
 
 /// Live presentation facts and existing side effects for message ingress.
 /// Every getter remains live; no snapshot replaces an original admission check.

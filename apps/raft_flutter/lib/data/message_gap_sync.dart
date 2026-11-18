@@ -16,7 +16,9 @@ abstract final class MessageGapSync {
     WorkspaceMessages m,
     String id, {
     BigInt? since,
+    bool Function()? allowed,
   }) async {
+    if (allowed?.call() == false) return false;
     // A channel this person was removed from: its sync is refused each time.
     if (ChannelAccessLoss.of(m.transport.client).isLost(id)) return true;
     final fill = LiveGapFill.of(m.ledger);
@@ -33,10 +35,12 @@ abstract final class MessageGapSync {
     final request = m.windowRequest(
       id,
       thread: thread,
-      allowed: () => thread
-          ? m.state.threadChannelId == id &&
-                !m.messageWindows.contextHasNewer(id)
-          : m.presentation.channel?.id == id && !m.state.hasNewer,
+      allowed: () =>
+          (allowed?.call() ?? true) &&
+          (thread
+              ? m.state.threadChannelId == id &&
+                    !m.messageWindows.contextHasNewer(id)
+              : m.presentation.channel?.id == id && !m.state.hasNewer),
     );
     try {
       while (true) {
@@ -120,7 +124,7 @@ abstract final class MessageGapSync {
         id,
         read,
         outcome,
-        (since) => unawaited(run(m, id, since: since)),
+        (since) => unawaited(run(m, id, since: since, allowed: allowed)),
       );
     }
   }

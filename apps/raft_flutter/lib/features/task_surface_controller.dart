@@ -9,6 +9,7 @@ import '../data/task_conversation_thread.dart';
 import '../data/task_discussion_read.dart';
 import '../data/user_error.dart';
 import '../data/workspace_controller.dart';
+import '../data/workspace_message_ingress.dart';
 import 'message_task_actions.dart' show TaskV2ConversationsFlag;
 import 'task_status_request.dart';
 import 'task_v2_mode.dart';
@@ -30,6 +31,11 @@ class TaskSurfaceController extends ChangeNotifier {
   }) : task = {...row} {
     seedKnown();
     events = parent.client.events.listen((event) {
+      if (event.name == 'sync:resume:response' ||
+          event.name == 'rooms:joined') {
+        _recoverDiscussion(event);
+        return;
+      }
       final data = event.payload;
       if (hydrateParent &&
           current &&
@@ -72,6 +78,7 @@ class TaskSurfaceController extends ChangeNotifier {
       }
     });
     parent.addListener(_parentChanged);
+    parent.resumes.addListener(_resumeDiscussion);
   }
   final WorkspaceController parent;
   final bool Function() valid;
@@ -122,6 +129,7 @@ class TaskSurfaceController extends ChangeNotifier {
   bool historyKnown = false;
   int revision = 0, historyRevision = 0;
   WorkspaceController? discussion;
+  ({String parentId, String authority})? _discussionScope;
   late final StreamSubscription<RaftEvent> events;
   final presentationOwner = Object();
   bool get current => !closed && valid();
@@ -132,6 +140,32 @@ class TaskSurfaceController extends ChangeNotifier {
     // authority, before the host's next frame removes the old widget tree.
     discussion?.dispose();
     discussion = null;
+  }
+
+  void _resumeDiscussion() {
+    if (parent.foreground && parent.client.connected) _recoverDiscussion();
+  }
+
+  void _recoverDiscussion([RaftEvent? event]) {
+    final child = discussion;
+    final scope = _discussionScope;
+    final id = child?.threadChannelId;
+    final serverId = parent.client.serverId;
+    if (child == null || scope == null || id == null || serverId == null) {
+      return;
+    }
+    bool accepts() =>
+        current &&
+        !deleted &&
+        identical(discussion, child) &&
+        child.threadChannelId == id &&
+        canViewParent &&
+        parentChannel?.id == scope.parentId &&
+        parent.navigationAuthority == scope.authority &&
+        !parent.sessionScope.revokedServers.contains(serverId) &&
+        parent.messageWindows.notRevoked(scope.parentId) &&
+        parent.messageWindows.notRevoked(id);
+    if (accepts()) recoverTaskDiscussion(child.messageDomain, event, accepts);
   }
 
   bool get legacy => task['isLegacy'] == true;
@@ -400,6 +434,10 @@ class TaskSurfaceController extends ChangeNotifier {
       thread: false,
     );
     admitTaskDiscussion(c);
+    _discussionScope = (
+      parentId: real.id,
+      authority: parent.navigationAuthority,
+    );
     discussion = c;
     if (conversation) {
       openConversation(
@@ -726,6 +764,7 @@ class TaskSurfaceController extends ChangeNotifier {
   void dispose() {
     closed = true;
     parent.removeListener(_parentChanged);
+    parent.resumes.removeListener(_resumeDiscussion);
     revision++;
     historyRevision++;
     parentRevision++;

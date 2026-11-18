@@ -200,12 +200,19 @@ class RootClient extends RaftClient {
     forwardedEvents = super.events.listen(injectedEvents.add);
   }
   final injectedEvents = StreamController<RaftEvent>.broadcast();
+  final joinedChannels = <String>[];
   late final StreamSubscription<RaftEvent> forwardedEvents;
   int disposalCount = 0;
   @override
   Stream<RaftEvent> get events => injectedEvents.stream;
   @override
   void connect() {}
+  @override
+  void joinChannel(String channelId) {
+    joinedChannels.add(channelId);
+    super.joinChannel(channelId);
+  }
+
   void event(String name, dynamic payload) =>
       injectedEvents.add(RaftEvent(name, payload));
   Future<void>? disposing;
