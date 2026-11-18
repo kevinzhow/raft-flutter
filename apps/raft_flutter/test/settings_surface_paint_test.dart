@@ -71,7 +71,7 @@ void main() {
             'administration' => 'Administration',
             _ => 'Applications',
           });
-          final headerTop = width >= 768 ? 48.0 : 0.0;
+          final headerTop = width >= 768 ? 44.0 : 0.0;
           expect(t.getRect(header).top, headerTop);
           expect(
             find.byType(RaftWorkspaceTopBar),

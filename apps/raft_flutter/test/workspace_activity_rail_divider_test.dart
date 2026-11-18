@@ -20,9 +20,9 @@ void main() {
         await shellFonts(t);
         await mountShell(t, w, dark);
         final help = find.byKey(const Key('rail-help'));
-        final expectedCenter = 28.0;
+        final expectedCenter = 24.0;
         void checkGeometry() {
-          expect(t.getRect(help).width, 40);
+          expect(t.getRect(help).width, 36);
           expect(t.getCenter(help).dx, expectedCenter);
           final rail = find.byType(RaftWorkspaceRail);
           final border = find.descendant(
@@ -43,10 +43,9 @@ void main() {
                       .border!
                   as Border;
           expect(edge.right.width, 1);
-          expect(t.getRect(rail).width, 57);
+          expect(t.getRect(rail).width, 49);
         }
 
-        expect(t.getRect(help).width, 40);
         checkGeometry();
         await t.tap(find.byKey(const Key('rail-chat')));
         await frames(t, () {});

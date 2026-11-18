@@ -46,15 +46,15 @@ void main() {
         final help = find.byKey(const Key('rail-help'));
         final settings = find.byKey(const Key('rail-settings'));
         final bell = find.byType(RaftMobileNotificationButton);
-        // Notifications move into the 48px global row. Help and Settings keep
-        // their 40px footer slots, 6px gap and 8px bottom inset.
+        // The desktop global row is 44px. The 36px actions are centered in
+        // the existing footer slots.
         expect(
           find.ancestor(of: bell, matching: find.byType(RaftWorkspaceTopBar)),
           findsOneWidget,
         );
-        expect(t.getRect(bell).top, 5.5);
-        expect(t.getRect(help).top, 706);
-        expect(t.getRect(settings).top, 752);
+        expect(t.getRect(bell).top, 3.5);
+        expect(t.getRect(help).top, 708);
+        expect(t.getRect(settings).top, 754);
         expect(t.getSize(bell), const Size(36, 36));
         expect(t.widget<RaftWorkspaceHelpMenu>(help).attention, true);
         final attention = find.descendant(

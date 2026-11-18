@@ -122,8 +122,9 @@ void main() {
         final shows = width >= 768;
         expect(bar, shows ? findsOneWidget : findsNothing);
         if (shows) {
-          expect(t.getRect(bar), Rect.fromLTWH(0, 0, width, 48));
-          expect(t.getTopLeft(find.byType(RaftWorkspaceRail)).dy, 48);
+          final barHeight = platform == TargetPlatform.android ? 48.0 : 44.0;
+          expect(t.getRect(bar), Rect.fromLTWH(0, 0, width, barHeight));
+          expect(t.getTopLeft(find.byType(RaftWorkspaceRail)).dy, barHeight);
           expect(find.byKey(const Key('rail-search')), findsNothing);
           expect(find.byKey(const Key('rail-workspace')), findsNothing);
           expect(find.byType(RaftChatSidebarHeading), findsNothing);
@@ -133,7 +134,7 @@ void main() {
           await t.pumpAndSettle();
           final menu = find.byKey(const Key('server-switcher-menu'));
           expect(menu, findsOneWidget);
-          expect(t.getTopLeft(menu).dy, greaterThanOrEqualTo(48));
+          expect(t.getTopLeft(menu).dy, greaterThanOrEqualTo(barHeight));
           await t.sendKeyEvent(LogicalKeyboardKey.escape);
           await t.pumpAndSettle();
           expect(menu, findsNothing);
