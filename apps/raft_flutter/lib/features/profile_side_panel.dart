@@ -74,6 +74,7 @@ class ProfileSidePanel extends StatelessWidget {
         key: key,
         controller: w,
         userId: profile.id,
+        channelId: profile.channelId,
         onClose: onClose,
         onBack: onBack,
         onMessage: onMessage == null

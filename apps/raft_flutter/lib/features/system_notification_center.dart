@@ -625,6 +625,32 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
     }
     close();
     if (!current(captured)) return;
+    Route<void>? agentRoute;
+    Future<void> openAgent(BuildContext computerContext, String id) async {
+      if (!current(captured) || !w.can('viewAgents') || agentRoute != null) {
+        return;
+      }
+      final navigator = Navigator.of(computerContext);
+      final detail = MaterialPageRoute<void>(
+        builder: (_) => Scaffold(
+          body: SafeArea(
+            child: FleetDetail(
+              controller: w,
+              computers: false,
+              initial: w.services.entityDirectory.agent(id) ?? {'id': id},
+              backAlways: true,
+            ),
+          ),
+        ),
+      );
+      agentRoute = detail;
+      try {
+        await navigator.push(detail);
+      } finally {
+        agentRoute = null;
+      }
+    }
+
     final route = MaterialPageRoute<void>(
       builder: (context) => Scaffold(
         appBar: raftPageAppBar(
@@ -646,7 +672,14 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
                 },
               )
             : row != null
-            ? FleetDetail(controller: w, computers: true, initial: row)
+            ? FleetDetail(
+                controller: w,
+                computers: true,
+                initial: row,
+                onOpenAgent: w.can('viewAgents')
+                    ? (id) => unawaited(openAgent(context, id))
+                    : null,
+              )
             : FleetView(
                 controller: w,
                 computers: true,
@@ -655,9 +688,12 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
       ),
     );
     void revoked() {
-      if (!current(captured) && route.isActive) {
-        route.navigator?.removeRoute(route);
+      if (current(captured)) return;
+      final agent = agentRoute;
+      if (agent != null && agent.isActive) {
+        agent.navigator?.removeRoute(agent);
       }
+      if (route.isActive) route.navigator?.removeRoute(route);
     }
 
     w.addListener(revoked);

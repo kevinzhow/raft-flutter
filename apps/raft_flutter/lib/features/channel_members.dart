@@ -811,6 +811,42 @@ class _ChannelMembersState extends State<ChannelMembers> {
           '${m['effectiveChannelRole'] ?? (kind == 'agent' ? serverRole : m['role'] ?? 'member')}';
       final description = '${m['description'] ?? ''}'.trim();
       final roleAction = _roleAction(kind, id, m, role, serverRole);
+      final profileKind = kind == 'agent'
+          ? RaftProfileKind.agent
+          : RaftProfileKind.human;
+      void openProfile() {
+        if (widget.page && profileKind == RaftProfileKind.human) {
+          primeHumanProfileServers(
+            w,
+            channel.json['serverId'] as String?,
+            id,
+            m['servers'],
+          );
+        }
+        if (widget.page) {
+          setState(() => profile = (kind: kind, id: id));
+        } else {
+          close();
+          w.openProfile(
+            profileKind,
+            id,
+            channelId:
+                profileKind == RaftProfileKind.human && channel.type == 'joint'
+                ? channel.id
+                : null,
+          );
+        }
+      }
+
+      final avatar = ChannelCandidateAvatar(
+        candidate: candidate,
+        avatarContext: widget.page
+            ? RaftMountedAvatarContext.membersRow
+            : RaftMountedAvatarContext.compactList,
+        origin: origin,
+        presence: candidate.managedByAppInstallId == null ? presence : null,
+        extent: 35,
+      );
       return RaftMemberRowData(
         testId: 'member-page-row-$kind-$id',
         human: kind != 'agent',
@@ -845,31 +881,15 @@ class _ChannelMembersState extends State<ChannelMembers> {
         guest: role == 'guest',
         label: candidate.label,
         searchText: '${candidate.name} ${candidate.displayName ?? ''}',
-        avatar: ChannelCandidateAvatar(
-          candidate: candidate,
-          // ChannelMemberRow mounts AvatarSlot `members-row` (28px, presence
-          // badge for agents); the modal list keeps the compact slot.
-          avatarContext: widget.page
-              ? RaftMountedAvatarContext.membersRow
-              : RaftMountedAvatarContext.compactList,
-          origin: origin,
-          presence: candidate.managedByAppInstallId == null ? presence : null,
-          extent: 35,
-        ),
+        avatar: widget.page
+            ? avatar
+            : RaftAvatarButton(
+                semanticLabel: candidate.label,
+                onPressed: openProfile,
+                child: avatar,
+              ),
         serverBadges: channelMemberServerLabels(m, channel),
-        onTap: widget.page
-            ? () => setState(() {
-                if (kind != 'agent') {
-                  primeHumanProfileServers(
-                    w,
-                    channel.json['serverId'] as String?,
-                    id,
-                    m['servers'],
-                  );
-                }
-                profile = (kind: kind, id: id);
-              })
-            : null,
+        onTap: widget.page ? openProfile : null,
         onRemove:
             !channel.archived &&
                 !isAllChannel &&

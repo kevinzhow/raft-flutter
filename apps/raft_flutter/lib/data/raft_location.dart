@@ -120,7 +120,7 @@ class RaftProfileLocation {
   final String id;
   final String? channelId;
   final bool isMention;
-  static RaftProfileLocation? parse(String? value) {
+  static RaftProfileLocation? parse(String? value, {String? humanChannelId}) {
     if (value == null) return null;
     final split = value.indexOf(':');
     if (split <= 0 || split == value.length - 1) return null;
@@ -129,6 +129,7 @@ class RaftProfileLocation {
       return RaftProfileLocation(
         prefix == 'agent' ? RaftProfileKind.agent : RaftProfileKind.human,
         id,
+        channelId: prefix == 'human' ? humanChannelId : null,
       );
     }
     if (prefix != 'external' && prefix != 'external-mention') return null;
@@ -338,8 +339,10 @@ class RaftLocation {
   });
 
   RaftAnchor? get legacyTask => RaftAnchor.parse(query('legacyTask'));
-  RaftProfileLocation? get profile =>
-      RaftProfileLocation.parse(query('profile'));
+  RaftProfileLocation? get profile => RaftProfileLocation.parse(
+    query('profile'),
+    humanChannelId: query('profileChannel'),
+  );
   String? get agentTab => query('agentTab');
   RaftChannelPageLocation? get channelPage =>
       RaftChannelPageLocation.parse(query('channelPage'));
@@ -382,6 +385,7 @@ class RaftLocation {
       for (final entry in uri.queryParametersAll.entries)
         entry.key: List.of(entry.value),
     };
+    if (changes.containsKey('profile')) next.remove('profileChannel');
     for (final entry in changes.entries) {
       if (entry.value == null) {
         next.remove(entry.key);

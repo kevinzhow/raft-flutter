@@ -2650,23 +2650,46 @@ class _WorkspaceViewState extends State<WorkspaceView>
     // above a bare "Loading thread…".
     final resolving =
         pendingDesktopSelection && w.channel?.id != target.channelId;
+    final channel = resolving ? null : w.channel;
+    final close = RaftIconButton(
+      glyph: RaftGlyph.x,
+      tooltip: 'Close Detail',
+      onPressed: closeDesktopDetail,
+    );
+    Widget header() {
+      if (thread) return sourceThreadHeader(onClose: closeDesktopDetail);
+      if (wide && channel != null && channel.type == 'dm') {
+        final peer = dmPeer(channel);
+        return WorkspaceDmHeader(
+          headerKey: const Key('workspace-content-dm-header'),
+          controller: w,
+          channel: channel,
+          agent: peer.agent,
+          name: peer.name,
+          profile: peer.profile,
+          avatar: mountedPeerAvatar(
+            peer.name,
+            peer.agent,
+            peer.avatar,
+            avatarContext: RaftMountedAvatarContext.panelHeader,
+          ),
+          selectionActive: () => mainSelection.active,
+          onSearch: searchThisChannel,
+          onSettings: channelSettings,
+          trailingActions: [close],
+        );
+      }
+      return RaftPageHeader(
+        title: channel?.name ?? '',
+        height: raftPageHeaderHeight(context),
+        actions: [close],
+      );
+    }
+
     final content = Column(
       key: key,
       children: [
-        if (thread)
-          sourceThreadHeader(onClose: closeDesktopDetail)
-        else
-          RaftPageHeader(
-            title: resolving ? '' : w.channel?.name ?? '',
-            height: raftPageHeaderHeight(context),
-            actions: [
-              RaftIconButton(
-                glyph: RaftGlyph.x,
-                tooltip: 'Close Detail',
-                onPressed: closeDesktopDetail,
-              ),
-            ],
-          ),
+        header(),
         Expanded(
           child: resolving
               ? thread

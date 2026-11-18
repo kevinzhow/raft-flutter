@@ -29,6 +29,7 @@ class MemberProfileView extends StatefulWidget {
     super.key,
     required this.controller,
     required this.userId,
+    this.channelId,
     required this.onClose,
     this.onMessage,
     this.onBack,
@@ -46,6 +47,9 @@ class MemberProfileView extends StatefulWidget {
   /// passes `onClose`); the desktop detail pane hides it.
   final bool showClose;
   final String userId;
+
+  /// The channel whose authorized joint membership names this person's servers.
+  final String? channelId;
   final VoidCallback onClose;
 
   /// Mobile route back (PanelHeader `onMobileBack`); without it the desktop
@@ -74,9 +78,11 @@ class _MemberProfileViewState extends ManagementState<MemberProfileView>
   bool get detailSettled => detailLoaded || !loading;
   @override
   String get authority =>
-      '${super.authority}|${identityHashCode(w)}|${w.client.origin}|${widget.userId}';
+      '${super.authority}|${identityHashCode(w)}|${w.client.origin}|${widget.userId}|${widget.channelId}';
   @override
-  String get snapshotKey => 'member-profile:${widget.userId}';
+  String get snapshotKey => widget.channelId == null
+      ? 'member-profile:${widget.userId}'
+      : 'member-profile:${widget.userId}:${widget.channelId}';
   @override
   Map<String, Object?> captureSnapshot() => {'profile': profile};
   @override
@@ -111,7 +117,8 @@ class _MemberProfileViewState extends ManagementState<MemberProfileView>
         ...profile,
         ...?w.services.entityDirectory.member(widget.userId),
       };
-    } else if (oldWidget.userId != widget.userId) {
+    } else if (oldWidget.userId != widget.userId ||
+        oldWidget.channelId != widget.channelId) {
       refreshAuthority();
       profile = {
         ...profile,
@@ -168,7 +175,11 @@ class _MemberProfileViewState extends ManagementState<MemberProfileView>
       return;
     }
     final server = w.server!.id, id = widget.userId;
-    final value = await w.query('/servers/$server/members/$id/profile');
+    final channelId = widget.channelId;
+    final value = await w.query(
+      '/servers/$server/members/$id/profile',
+      query: channelId == null ? null : {'channelId': channelId},
+    );
     if (value is! Map || value['name'] is! String) {
       throw const FormatException('Invalid member profile response.');
     }
@@ -181,15 +192,13 @@ class _MemberProfileViewState extends ManagementState<MemberProfileView>
       }
       // resolveHumanProfile.ts:4–17: accepted live membership wins over a
       // fallback detail projection; preserve detail-only fields.
-      profile = withPrimedServers(
-        w,
-        {
-          ...Map<String, dynamic>.from(value),
-          ...?w.services.entityDirectory.member(widget.userId),
-        },
-        w.server?.id,
-        widget.userId,
-      );
+      final merged = {
+        ...Map<String, dynamic>.from(value),
+        ...?w.services.entityDirectory.member(id),
+      };
+      profile = channelId == null
+          ? withPrimedServers(w, merged, server, id)
+          : {...merged, 'servers': value['servers']};
       detailLoaded = true;
       // `useServerFeatureFlag(server_guest_v0)` feeds the role options
       // (humanRoleTransitions.ts:11): a Guest target has no options while the
@@ -508,6 +517,7 @@ class _MemberProfileViewState extends ManagementState<MemberProfileView>
             actions: [
               // canMessageHuman: not for a guest (no existing DM known here).
               if (widget.onMessage != null &&
+                  !isChannelSummaryHuman(profile) &&
                   canMessageHuman(
                     membershipStatus: profile['membershipStatus'],
                     remoteJoint: remoteJoint,

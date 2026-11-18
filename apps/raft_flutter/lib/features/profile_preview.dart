@@ -12,6 +12,7 @@ import '../data/runtime_config.dart';
 import '../data/workspace_controller.dart';
 import '../data/workspace_entity_directory.dart';
 import 'agent_detail_view.dart' show agentTimeFormatter;
+import 'agent_profile_rules.dart' show isBoundedPublicAgent;
 import 'agent_runtime_labels.dart'
     show RuntimeDeprecatedHereState, runtimeLabelWithStatus;
 import 'agent_trajectory_log.dart';
@@ -327,7 +328,9 @@ class _ProfilePreviewContentState extends State<ProfilePreviewContent>
   /// canViewAgentPrivateSurfaces: agent editors, or the human creator.
   bool get private {
     final a = profile;
-    if (!widget.agent || a == null) return false;
+    if (!widget.agent || a == null || isBoundedPublicAgent(a, w.server?.id)) {
+      return false;
+    }
     if (w.can('editAgents')) return true;
     final me = w.client.user?.id;
     return me != null && a['creatorType'] == 'user' && a['creatorId'] == me;
@@ -503,7 +506,7 @@ class _ProfilePreviewContentState extends State<ProfilePreviewContent>
         external: external && row['online'] != true,
         text: statusText,
       ),
-      facts: row['profileProjection'] == 'channel_summary'
+      facts: isBoundedPublicAgent(row, w.server?.id)
           ? null
           : [
               if (computer != null)

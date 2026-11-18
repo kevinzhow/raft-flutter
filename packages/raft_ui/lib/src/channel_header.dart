@@ -858,6 +858,7 @@ class RaftDmHeader extends StatelessWidget {
     this.settingsLabel = 'Channel Settings',
     this.mutedLabel = 'Activity muted',
     this.middleActions = const [],
+    this.trailingActions = const [],
     this.activityTextWarning = false,
   });
 
@@ -879,7 +880,7 @@ class RaftDmHeader extends StatelessWidget {
 
   /// The conversation head's own buttons between Search and Settings (an agent
   /// DM's Lounge, `useChannelHeadToggles`). Empty keeps the head as it was.
-  final List<Widget> middleActions;
+  final List<Widget> middleActions, trailingActions;
 
   /// [activityText] in `warning-strong` (a tool call the agent is stuck on,
   /// AgentDMStatus `text-warning-strong`) instead of the hint colour.
@@ -946,14 +947,17 @@ class RaftDmHeader extends StatelessWidget {
           ),
         ],
       ),
-      actions: raftConversationHeaderActions(
-        searchLabel: searchLabel,
-        settingsLabel: settingsLabel,
-        onSearch: onSearch,
-        onSettings: onSettings,
-        settingsPressed: settingsPressed,
-        middleActions: middleActions,
-      ),
+      actions: [
+        ...raftConversationHeaderActions(
+          searchLabel: searchLabel,
+          settingsLabel: settingsLabel,
+          onSearch: onSearch,
+          onSettings: onSettings,
+          settingsPressed: settingsPressed,
+          middleActions: middleActions,
+        ),
+        ...trailingActions,
+      ],
     );
   }
 }

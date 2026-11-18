@@ -342,6 +342,7 @@ class WorkspacePresentation {
     final next = location.withQuery({
       'profile': RaftProfileLocation.query(kind, id, channelId, externalAuthor),
       'agentTab': kind == RaftProfileKind.agent ? agentTab : null,
+      'profileChannel': kind == RaftProfileKind.human ? channelId : null,
     });
     if (next.uri == location.uri) return;
     navigation.navigateProfile(

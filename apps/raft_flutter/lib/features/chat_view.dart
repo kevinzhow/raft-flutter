@@ -2271,7 +2271,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
           );
     // Web SenderAvatar `<button>` + PreviewCard (profile / external identity
     // on hover): a click opens the profile side panel.
-    return compact
+    return compact || !local
         ? sender
         : senderProfileHoverCard(
             controller: w,
@@ -2330,7 +2330,20 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
           ),
         );
       case final kind?:
-        w.openProfile(kind, m.string('senderId'));
+        final channelId = widget.thread
+            ? w.threadIdentity?.parentChannelId ?? m.channelId
+            : m.channelId;
+        final selected = w.channel;
+        final channel = selected?.id == channelId
+            ? selected
+            : w.channelById(channelId);
+        w.openProfile(
+          kind,
+          m.string('senderId'),
+          channelId: kind == RaftProfileKind.human && channel?.type == 'joint'
+              ? channelId
+              : null,
+        );
       case null:
         break;
     }

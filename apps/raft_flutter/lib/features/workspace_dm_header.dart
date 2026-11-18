@@ -29,6 +29,7 @@ class WorkspaceDmHeader extends StatelessWidget {
     required this.onSettings,
     this.onBack,
     this.backKey,
+    this.trailingActions = const [],
   });
 
   final Key headerKey;
@@ -42,6 +43,7 @@ class WorkspaceDmHeader extends StatelessWidget {
   final VoidCallback onSearch, onSettings;
   final VoidCallback? onBack;
   final Key? backKey;
+  final List<Widget> trailingActions;
 
   @override
   Widget build(BuildContext context) => channelSideListener(
@@ -115,6 +117,7 @@ class WorkspaceDmHeader extends StatelessWidget {
         searchLabel: raftText(context, 'Search This Channel'),
         settingsLabel: raftText(context, 'Channel Details and Settings'),
         activityTextWarning: stuck != null,
+        trailingActions: trailingActions,
         middleActions: [
           ...agentDmLoungeActions(context, controller, profile),
           ...channelSideToggles(context, controller),

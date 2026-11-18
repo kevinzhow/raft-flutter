@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/gestures.dart' show PointerDeviceKind;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
@@ -10,6 +11,8 @@ import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_ui/test_themes.dart';
 
 import 'message_presentation_test.dart' show fixture;
+import 'workspace_source_location_contract_test.dart'
+    show mountPage, pageFixture, waitForPainted;
 
 const _peerAvatar = '/api/avatars/users/9f2c4b7a1d3e5f60.webp';
 const _peerId = 'u2000000-0000-4000-8000-0000000000c2';
@@ -81,6 +84,146 @@ Future<void> settle(WidgetTester t) async {
 }
 
 void main() {
+  for (final (kind, listed) in [
+    ('human', true),
+    ('human', false),
+    ('agent', true),
+  ]) {
+    final scenario = listed ? kind : 'human absent from this channel roster';
+    testWidgets('joint $scenario opens only the authorized profile', (t) async {
+      final (w, api) = await pageFixture(t, section: 'chat');
+      final channel = RaftChannel({
+        'id': 'c1',
+        'serverId': 's1',
+        'name': 'Joint channel',
+        'type': 'joint',
+        'joined': true,
+      });
+      w.channel = channel;
+      w.channels = [channel];
+      final human = kind == 'human';
+      final message = messages()[human ? 0 : 1];
+      final senderId = message['senderId'] as String;
+      final messageId = message['id'] as String;
+      w.messageDomain.ledger.ingest([
+        message,
+      ], expectedGeneration: w.messageDomain.ledger.generation);
+      w.messageDomain.visibleIds['c1'] = {messageId};
+      final path = human
+          ? '/servers/s1/members/$senderId/profile'
+          : '/agents/$senderId';
+      const name = 'Partner Profile', serverName = 'Displayed joint partner';
+      api.routes.addAll({
+        'GET /channels/c1/members': (_) => {
+          ...roster(),
+          if (!listed) 'humans': [],
+        },
+        'GET /agents': (_) => [],
+        'GET /servers/s1/members': (_) => [],
+        'GET /servers/s1/machines': (_) => {'machines': []},
+        'GET $path': (request) => {
+          'id': senderId,
+          if (human) 'userId': senderId,
+          'name': 'partner',
+          'displayName': name,
+          'serverId': listed || request.queryParameters['channelId'] == null
+              ? 'partner'
+              : '',
+          'serverName': human && request.queryParameters['channelId'] != 'c1'
+              ? 'Different joint channel'
+              : listed
+              ? serverName
+              : '',
+          'avatarUrl': null,
+          'description': 'Public description',
+          if (human) ...{
+            'createdAgents': [],
+            'email': null,
+            'role': null,
+            'membershipStatus': 'active',
+            'profileProjection': 'channel_summary',
+            if (!listed && request.queryParameters['channelId'] == 'c1')
+              'servers': [],
+          } else
+            'status': 'active',
+        },
+      });
+      await mountPage(t, w, false, platform: TargetPlatform.linux);
+      try {
+        await waitForPainted(t, messageId);
+        final avatar = find
+            .byKey(ValueKey('sender-avatar-$messageId'))
+            .hitTestable();
+        if (!human) {
+          final mouse = await t.createGesture(kind: PointerDeviceKind.mouse);
+          await mouse.addPointer(location: Offset.zero);
+          await mouse.moveTo(t.getCenter(avatar));
+          await t.pump(const Duration(milliseconds: 210));
+          await t.pump(const Duration(milliseconds: 300));
+          await t.pumpAndSettle();
+          final hover = find.byType(RaftProfilePreviewCard);
+          expect(hover, findsOneWidget);
+          expect(
+            find.descendant(of: hover, matching: find.text('Computer')),
+            findsNothing,
+          );
+          expect(
+            find.descendant(of: hover, matching: find.text('Recent activity')),
+            findsNothing,
+          );
+          expect(
+            api.calls.where((call) => call.path == '$path/activity-log'),
+            isEmpty,
+          );
+          await mouse.removePointer();
+          await t.pumpAndSettle();
+        }
+        await t.tap(avatar, kind: PointerDeviceKind.mouse);
+        await t.pumpAndSettle();
+
+        final profile = find.byKey(ValueKey('profile-$kind-$senderId'));
+        expect(
+          find.descendant(of: profile, matching: find.text(name)),
+          findsWidgets,
+        );
+        expect(
+          find.descendant(of: profile, matching: find.text(serverName)),
+          listed ? findsWidgets : findsNothing,
+        );
+        expect(
+          find.descendant(
+            of: profile,
+            matching: find.text('Different joint channel'),
+          ),
+          findsNothing,
+        );
+        expect(
+          find.descendant(
+            of: profile,
+            matching: find.byTooltip(human ? 'Message' : 'Direct message'),
+          ),
+          findsNothing,
+        );
+        expect(
+          find.descendant(of: profile, matching: find.text('Reminders')),
+          findsNothing,
+        );
+        final requests = api.calls.where((call) => call.path == path);
+        expect(requests, isNotEmpty);
+        for (final request in requests) {
+          expect(request.queryParameters['channelId'], human ? 'c1' : isNull);
+        }
+        expect(
+          api.calls.where((call) => call.path.startsWith('$path/')),
+          isEmpty,
+        );
+      } finally {
+        await t.pumpWidget(const SizedBox.shrink());
+        await t.pumpAndSettle();
+      }
+    });
+  }
+
   for (final (dark) in raftThemeMatrix([(false)])) {
     testWidgets(
       '${dark ? 'dark' : 'light'} joint peer sender avatar comes from the channel roster, once, and rows update when it arrives',
