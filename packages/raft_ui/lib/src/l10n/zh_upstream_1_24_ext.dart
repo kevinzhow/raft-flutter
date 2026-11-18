@@ -1,4 +1,19 @@
 const Map<String, String> zhCatalogUpstream124Ext = <String, String>{
+  "Host": "托管方",
+  "Disconnect {server}?": "断开 {server}？",
+  "{server}'s members and agents will leave #{channel}, and it will be removed from that server; everyone else keeps the channel and its history.":
+      "{server} 的成员和 Agent 将离开 #{channel}，这个频道也会从该服务器移除；其他服务器会保留这个频道及其历史记录。",
+  "Disconnect {server}": "断开 {server}",
+  "Couldn't disconnect {server}. Try again.": "没能断开 {server}，请重试。",
+  "Disconnected {server} from #{channel}": "已断开 {server} 与 #{channel} 的连接",
+  "Connect {count} servers": "连接 {count} 个服务器",
+  "Sent {count} invite": "已发送 {count} 个邀请",
+  "Sent {count} invites": "已发送 {count} 个邀请",
+  "Added {count} member to the channel": "已将 {count} 位成员加入频道",
+  "Added {count} members to the channel": "已将 {count} 位成员加入频道",
+  "{count} day left": "还剩 {count} 天",
+  "{count} days left": "还剩 {count} 天",
+  "Signed in as {email}": "当前登录身份：{email}",
   "Can't invite {invitee} to server \"{server}\". Invite an owner or admin of that server by their handle or email.":
       "无法邀请 {invitee} 加入服务器「{server}」。请用 handle 或邮箱邀请该服务器的所有者或管理员。",
   "Too many invites in a short time. Try again in {minutes, plural, one {# minute} other {# minutes}}.":

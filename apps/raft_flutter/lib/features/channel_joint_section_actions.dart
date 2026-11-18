@@ -348,7 +348,7 @@ class _JointConnectDialogState extends State<_JointConnectDialog> {
                   ? 'Only an owner or admin can connect it'
                   : _limits[row.server.id]?['atLimit'] == true
                   ? 'Free · in another external channel'
-                  : row.server.string('role') == 'owner'
+                  : row.server.json['role'] == 'owner'
                   ? "You're the owner"
                   : "You're an admin",
             ),
