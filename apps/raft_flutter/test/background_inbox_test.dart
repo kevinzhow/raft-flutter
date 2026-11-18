@@ -127,7 +127,7 @@ void main() {
 
   test('poll delivers the served task row at its parent level and deduplicates the reply', () async {
     final response = jsonDecode(
-      File('test/fixtures/field_parity/route-task-unread-v1_24.json')
+      File('test/fixtures/background_inbox/route-task-unread-v1_24.json')
           .readAsStringSync(),
     ) as Map;
     client.rows = (response['items'] as List).cast<Map<String, dynamic>>();
