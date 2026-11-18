@@ -2321,7 +2321,7 @@ class _RaftComposerState extends State<RaftComposer> {
               (trigger!.prefix == '#'
                   ? s.type == 'channel'
                   : s.type != 'channel') &&
-              ('${s.name} ${s.title ?? ''} ${s.detail ?? ''} ${s.serverLabel ?? ''}')
+              ('${s.name} ${s.title ?? ''} ${s.detail ?? ''} ${s.serverLabel ?? ''} ${s.originServers.join(' ')}')
                   .toLowerCase()
                   .contains(q),
         )
@@ -3728,12 +3728,26 @@ class _MentionSuggestionBody extends StatelessWidget {
         );
         handlePainter.dispose();
         final hasDescription = description != null && description.isNotEmpty;
-        final server = s.serverLabel?.trim() ?? '';
+        final origins = s.originServers;
+        final server = origins.length > 1
+            ? '${origins.first} +${origins.length - 1}'
+            : origins.firstOrNull ?? s.serverLabel?.trim() ?? '';
         final hasServer = server.isNotEmpty;
+        final meta = recipe.suggestionMetaFor(highlighted: highlighted);
+        final guest = s.guest ? raftText(context, 'Guest') : null;
+        final guestPainter = TextPainter(
+          text: TextSpan(text: guest, style: meta),
+          textDirection: Directionality.of(context),
+          textScaler: MediaQuery.textScalerOf(context),
+          maxLines: 1,
+        )..layout();
+        final guestWidth = guest == null ? 0.0 : guestPainter.width + 6;
+        guestPainter.dispose();
         final titleMaximum =
             (constraints.maxWidth -
                     badge.naturalWidth(context) -
                     handleWidth -
+                    guestWidth -
                     (hasDescription ? 18 : 12) -
                     (hasServer ? 6 : 0))
                 .clamp(0.0, 192.0);
@@ -3755,10 +3769,18 @@ class _MentionSuggestionBody extends StatelessWidget {
                       titlePainter.width.clamp(0.0, titleMaximum) -
                       badge.naturalWidth(context) -
                       handleWidth -
+                      guestWidth -
                       (hasDescription ? 24 : 18))
                   .clamp(0.0, double.infinity);
           titlePainter.dispose();
-          serverWidth = (hasDescription ? free / 2 : free).clamp(0.0, 160.0);
+          final serverPainter = TextPainter(
+            text: TextSpan(text: server, style: meta),
+            textDirection: Directionality.of(context),
+            textScaler: MediaQuery.textScalerOf(context),
+            maxLines: 1,
+          )..layout();
+          serverWidth = serverPainter.width.clamp(0.0, free.clamp(0.0, 128.0));
+          serverPainter.dispose();
         }
         return Row(
           children: [
@@ -3775,6 +3797,29 @@ class _MentionSuggestionBody extends StatelessWidget {
             ),
             const SizedBox(width: 6),
             badge,
+            if (hasServer) ...[
+              const SizedBox(width: 6),
+              SizedBox(
+                width: serverWidth,
+                child: RaftTooltip(
+                  message: raftFormat(context, 'Source server: {server}', {
+                    'server': origins.isEmpty ? server : origins.join(', '),
+                  }),
+                  child: Text(
+                    server,
+                    key: const ValueKey('mention-source-server'),
+                    maxLines: 1,
+                    softWrap: false,
+                    overflow: TextOverflow.ellipsis,
+                    style: meta,
+                  ),
+                ),
+              ),
+            ],
+            if (guest != null) ...[
+              const SizedBox(width: 6),
+              Text(guest, style: meta),
+            ],
             if (hasDescription) ...[
               const SizedBox(width: 6),
               Expanded(
@@ -3783,31 +3828,11 @@ class _MentionSuggestionBody extends StatelessWidget {
                   maxLines: 1,
                   softWrap: false,
                   overflow: TextOverflow.ellipsis,
-                  style: recipe.suggestionMetaFor(highlighted: highlighted),
+                  style: meta,
                 ),
               ),
-            ] else if (!hasServer)
+            ] else
               const Spacer(),
-            if (hasServer) ...[
-              const SizedBox(width: 6),
-              SizedBox(
-                width: serverWidth,
-                child: RaftTooltip(
-                  message: raftFormat(context, 'Source server: {server}', {
-                    'server': server,
-                  }),
-                  child: Text(
-                    server,
-                    key: const ValueKey('mention-source-server'),
-                    maxLines: 1,
-                    softWrap: false,
-                    overflow: TextOverflow.ellipsis,
-                    style: recipe.suggestionMetaFor(highlighted: highlighted),
-                  ),
-                ),
-              ),
-              if (!hasDescription) const Spacer(),
-            ],
             const SizedBox(width: 6),
             SizedBox(width: handleWidth, child: handle),
           ],

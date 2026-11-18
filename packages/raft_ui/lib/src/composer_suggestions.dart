@@ -10,6 +10,8 @@ class RaftComposerSuggestion {
     this.title,
     this.detail,
     this.serverLabel,
+    this.originServers = const [],
+    this.guest = false,
     this.inChannel = true,
     this.threadRank,
     this.archived = false,
@@ -25,6 +27,8 @@ class RaftComposerSuggestion {
   /// as a second meta with the "Source server: {server}" tooltip and matched
   /// by the query.
   final String? serverLabel;
+  final List<String> originServers;
+  final bool guest;
 
   /// Web MentionCandidateAvatar (`AvatarSlot context="compact-list"`),
   /// supplied by the authority-checked adapter; [mutedAvatar] is the

@@ -7,6 +7,7 @@ import 'package:raft_ui/raft_ui.dart';
 import '../data/workspace_controller.dart';
 import 'agent_avatar_projection.dart';
 import 'agent_metadata_projection.dart';
+import 'composer_mention_origin.dart';
 import 'message_agent_presentation.dart';
 import 'private_route_guard.dart';
 import 'sender_avatar_projection.dart';
@@ -389,14 +390,22 @@ class ComposerDirectory extends ChangeNotifier {
           currentUser: w.client.user?.json,
         );
         final row = Map<String, dynamic>.of(value);
+        final origin = composerMentionOrigin(value, w.server?.id);
         entries[key] = RaftComposerSuggestion(
           type: type,
           id: id,
           name: name,
           title: value['displayName'] as String? ?? previous?.title,
-          detail: describe
+          detail: type == 'agent' && origin.external
+              ? null
+              : describe
               ? value['description'] as String? ?? previous?.detail
               : previous?.detail,
+          originServers: origin.servers,
+          guest:
+              type == 'user' &&
+              !origin.external &&
+              (value['effectiveChannelRole'] ?? value['role']) == 'guest',
           serverLabel: mentionServerLabel(
             value,
             currentServerId: w.server?.id,
