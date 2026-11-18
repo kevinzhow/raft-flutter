@@ -65,10 +65,8 @@ void main() {
             .press(preview, button.key, button.value, (_) async => true);
         expect(view.operation(_url).phase, AppLinkPhase.pending);
         await first.deviceStore.settled;
-      final saved = await first.deviceStore.read('link-card-operations', '');
-      expect(saved, [
-        containsPair('operation_id', _operation),
-      ]);
+        final saved = await first.deviceStore.read('link-card-operations', '');
+        expect(saved, [containsPair('operation_id', _operation)]);
       } finally {
         view.detach();
         first.dispose();
