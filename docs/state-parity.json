@@ -1396,12 +1396,12 @@
       "id": "chat.action-card-form",
       "title": "Action card form and installation review",
       "webEntry": "packages/web/src/components/actions/ActionCardFormSheet.tsx and InstallAppCardDialog.tsx",
-      "flutterEntry": "apps/raft_flutter/lib/features/action_card_form.dart and action_card_install.dart",
+      "flutterEntry": "apps/raft_flutter/lib/features/message_action_card.dart",
       "states": [
-        {"state":"loading","variant":"Marketplace lookup","web":"yes","flutter":"yes","status":"gap","gapKind":"case-missing","size":"S","justification":"The installation dialog waits for the listing and shows a spinner. The upstream visual cases do not mount it."},
-        {"state":"empty","variant":"No picker candidates or Marketplace listing","web":"yes","flutter":"yes","status":"gap","gapKind":"case-missing","size":"S","justification":"The form shows its empty label and installation shows the unavailable message. The upstream visual cases do not mount these states."},
-        {"state":"error","variant":"Validation, loading retry or stale permissions","web":"yes","flutter":"yes","status":"gap","gapKind":"case-missing","size":"S","justification":"The form can show local validation and request errors. The installation dialog distinguishes a failed read from a stale binding."},
-        {"state":"partial","variant":"Paged draft","web":"yes","flutter":"yes","status":"gap","gapKind":"case-missing","size":"S","justification":"The paged form restores its values and current page for this account and card."}
+        {"state":"loading","variant":"Marketplace lookup","web":"yes","flutter":"yes","status":"gap","gapKind":"case-missing","size":"S","parityCase":[],"justification":"The installation dialog waits for the listing and shows a spinner. The upstream visual cases do not mount it."},
+        {"state":"empty","variant":"No picker candidates or Marketplace listing","web":"yes","flutter":"yes","status":"gap","gapKind":"case-missing","size":"S","parityCase":[],"justification":"The form shows its empty label and installation shows the unavailable message. The upstream visual cases do not mount these states."},
+        {"state":"error","variant":"Validation, loading retry or stale permissions","web":"yes","flutter":"yes","status":"gap","gapKind":"case-missing","size":"S","parityCase":[],"justification":"The form can show local validation and request errors. The installation dialog distinguishes a failed read from a stale binding."},
+        {"state":"partial","variant":"Paged draft","web":"yes","flutter":"yes","status":"gap","gapKind":"case-missing","size":"S","parityCase":[],"justification":"The paged form restores its values and current page for this account and card."}
       ]
     },
     {
@@ -1410,10 +1410,10 @@
       "webEntry": "packages/web/src/components/actions/McpConnectCardBody.tsx",
       "flutterEntry": "apps/raft_flutter/lib/features/action_card_mcp.dart",
       "states": [
-        {"state":"loading","variant":"Authorization query","web":"yes","flutter":"yes","status":"gap","gapKind":"case-missing","size":"S","justification":"The official fixture resolves its query before capture."},
-        {"state":"empty","variant":"No connections","web":"yes","flutter":"yes","status":"gap","gapKind":"case-missing","size":"S","justification":"The official fixture has two connections."},
-        {"state":"error","variant":"Load or grant failed","web":"yes","flutter":"yes","status":"gap","gapKind":"case-missing","size":"S","justification":"The official fixture only provides a successful result."},
-        {"state":"partial","variant":"New OAuth authorization","web":"yes","flutter":"partial","status":"intentional","justification":"The browser owns new authorization because the server binds the callback to a cookie from its OAuth start response. The native client can grant an existing or pending connection."}
+        {"state":"loading","variant":"Authorization query","web":"yes","flutter":"yes","status":"gap","gapKind":"case-missing","size":"S","parityCase":[],"justification":"The official fixture resolves its query before capture."},
+        {"state":"empty","variant":"No connections","web":"yes","flutter":"yes","status":"gap","gapKind":"case-missing","size":"S","parityCase":[],"justification":"The official fixture has two connections."},
+        {"state":"error","variant":"Load or grant failed","web":"yes","flutter":"yes","status":"gap","gapKind":"case-missing","size":"S","parityCase":[],"justification":"The official fixture only provides a successful result."},
+        {"state":"partial","variant":"New OAuth authorization","web":"yes","flutter":"partial","status":"intentional","parityCase":[],"justification":"The browser owns new authorization because the server binds the callback to a cookie from its OAuth start response. The native client can grant an existing or pending connection."}
       ]
     },
     {
@@ -55920,6 +55920,22 @@
         "declarationRefs": [],
         "mountStatus": "unresolved",
         "reason": "Existing lifecycle screen record; exact builder/family composition and current mounted state are not yet established."
+      },
+      "screen:chat.action-card-form": {
+        "owner": "WP-ACTION",
+        "kind": "route_or_panel_candidate",
+        "lifecycleScreenId": "chat.action-card-form",
+        "declarationRefs": [],
+        "mountStatus": "source_reviewed",
+        "reason": "The message action card mounts the canonical dialog, form fields and buttons. Matched-state visual acceptance is pending."
+      },
+      "screen:chat.action-card-mcp-connect": {
+        "owner": "WP-ACTION",
+        "kind": "route_or_panel_candidate",
+        "lifecycleScreenId": "chat.action-card-mcp-connect",
+        "declarationRefs": [],
+        "mountStatus": "source_reviewed",
+        "reason": "The message action card mounts the canonical select, switch and confirmation components. Matched-state visual acceptance is pending."
       },
       "screen:chat.channel-announcement-picker": {
         "owner": "Channel details and settings",
