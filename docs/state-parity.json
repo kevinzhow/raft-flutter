@@ -44395,7 +44395,7 @@
         "owner": "Artifact viewer",
         "reason": "WP-ART1 Artifact viewer, cards and attachment save (Web v1.24); compositions of raft_ui parts, real-entry mapping stays with the viewer owner."
       },
-      "apps/raft_flutter/lib/features/artifacts/artifact_viewer_page.dart#local-function:FUNCTION:openWorkspaceArtifact@1716/FUNCTION:viewer@1912": {
+      "apps/raft_flutter/lib/features/artifacts/artifact_viewer_page.dart#local-function:FUNCTION:openWorkspaceArtifact@1756/FUNCTION:viewer@1952": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "Artifact viewer",
@@ -50489,13 +50489,13 @@
         "owner": "design-system alignment",
         "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
       },
-      "apps/raft_flutter/lib/features/resource_view.dart#local-function:CLASS:_ResourceViewState@7572/METHOD:scopedDialog@50205/FUNCTION:buildOwned@50432": {
+      "apps/raft_flutter/lib/features/resource_view.dart#local-function:CLASS:_ResourceViewState@7571/METHOD:scopedDialog@50204/FUNCTION:buildOwned@50431": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
       },
-      "apps/raft_flutter/lib/features/resource_view.dart#local-function:CLASS:_ResourceViewState@7572/METHOD:scopedMenu@51253/FUNCTION:buildOwned@51460": {
+      "apps/raft_flutter/lib/features/resource_view.dart#local-function:CLASS:_ResourceViewState@7571/METHOD:scopedMenu@51252/FUNCTION:buildOwned@51459": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
@@ -52151,7 +52151,7 @@
         "owner": "design-system alignment",
         "reason": "WP-TASKS (Web v1.24 Tasks page board / task card facts): resolved builder; real-entry/family/state mapping remains unreviewed."
       },
-      "apps/raft_flutter/lib/features/resource_view.dart#local-function:CLASS:_ResourceViewState@7572/METHOD:activityList@111716/FUNCTION:bar@111938": {
+      "apps/raft_flutter/lib/features/resource_view.dart#local-function:CLASS:_ResourceViewState@7571/METHOD:activityList@111788/FUNCTION:bar@112010": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
