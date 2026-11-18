@@ -52827,23 +52827,125 @@
         "owner": "WP-CHAN",
         "reason": "Channel Details preferences, actions, edit and member entry. Exact family placement and state-specific visual acceptance are pending."
       },
-      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@5109/METHOD:attachmentGallery@66302/FUNCTION:view@67456": {
+      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@5109/METHOD:attachmentGallery@66380/FUNCTION:view@67534": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "WP-CHAN",
         "reason": "Offset update from the activity timeline integration. Exact family placement and state-specific visual acceptance are pending."
       },
-      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@5109/METHOD:buildTimeline@113870/FUNCTION:timelineFor@117383": {
+      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@5109/METHOD:buildTimeline@113402/FUNCTION:timelineFor@117144": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "WP-CHAN",
         "reason": "Offset update from the activity timeline integration. Exact family placement and state-specific visual acceptance are pending."
       },
-      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@5109/METHOD:senderAvatar@78880/FUNCTION:avatar@81355": {
+      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@5109/METHOD:senderAvatar@78958/FUNCTION:avatar@81433": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "WP-CHAN",
         "reason": "Offset update from the activity timeline integration. Exact family placement and state-specific visual acceptance are pending."
+      },
+      "apps/raft_flutter/lib/features/agent_read_progress.dart#method:AgentReadProgressPresentation.faces": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Message row / Agent read progress",
+        "reason": "Adapts timeline receipt data for RaftMessageReadFaces."
+      },
+      "apps/raft_flutter/lib/features/agent_read_progress.dart#method:AgentReadProgressPresentation.status": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Message row / Agent read progress",
+        "reason": "Adapts reachability reasons for RaftMessageReadStatus."
+      },
+      "apps/raft_flutter/lib/features/agent_read_progress.dart#method:AgentReadProgressPresentation.system": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Message row / Agent read progress",
+        "reason": "Mounts the system message read slot."
+      },
+      "packages/raft_ui/lib/previews.dart#function:agentReadProgressPreview": {
+        "role": "preview_fixture",
+        "familyRefs": [],
+        "owner": "Message row / Agent read progress",
+        "reason": "Exercises the agent face group and reachability caption in the SDK."
+      },
+      "packages/raft_ui/lib/src/message_body_trailing.dart#class:RaftMessageBodyTrailing": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Message row / Agent read progress",
+        "reason": "Mounts the MessageItem body and its trailing read slot."
+      },
+      "packages/raft_ui/lib/src/message_body_trailing.dart#class:_RenderMessageBodyTrailing": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Message row / Agent read progress",
+        "reason": "Positions the trailing slot at the end of the final body line when it fits."
+      },
+      "packages/raft_ui/lib/src/message_read_faces.dart#class:RaftMessageReadFaces": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Message row / Agent read progress",
+        "reason": "Shared AgentReadFaces composition for messages and system rows."
+      },
+      "packages/raft_ui/lib/src/message_read_faces.dart#class:RaftMessageSystemTrailing": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Message row / Agent read progress",
+        "reason": "Places the shared read slot beside a standalone system row."
+      },
+      "packages/raft_ui/lib/src/message_read_faces.dart#method:RaftMessageReadFaces._avatar": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Message row / Agent read progress",
+        "reason": "Composes the shared sticker avatar, presence and read tooltip."
+      },
+      "packages/raft_ui/lib/src/message_read_faces.dart#method:RaftMessageReadFaces.build": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Message row / Agent read progress",
+        "reason": "Lays out the read mark, stack and overflow count with a group label."
+      },
+      "packages/raft_ui/lib/src/message_read_faces.dart#method:RaftMessageSystemTrailing.build": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Message row / Agent read progress",
+        "reason": "Lays out the one-line system message and trailing read slot."
+      },
+      "packages/raft_ui/lib/src/message_read_status.dart#class:_AgentStatus": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Message row / Agent read progress",
+        "reason": "Agent reachability variant of the existing read status line."
+      },
+      "packages/raft_ui/lib/src/message_read_status.dart#method:_AgentStatus._text": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Message row / Agent read progress",
+        "reason": "Renders a caption fragment using the message read status typography."
+      },
+      "packages/raft_ui/lib/src/message_read_status.dart#method:_AgentStatus.build": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Message row / Agent read progress",
+        "reason": "Measures name and count forms and supplies the full label and tooltip."
+      },
+      "packages/raft_ui/lib/src/message_row_recipe.dart#method:_RaftMessageRowState._withBodyTrailing": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Message row / Agent read progress",
+        "reason": "Mounts the shared trailing layout when a message row supplies a read slot."
+      },
+      "packages/raft_ui/lib/src/system_message.dart#method:RaftSystemMessageGroup._trailing": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Message row / Agent read progress",
+        "reason": "Places the read slot on the existing group disclosure header."
+      },
+      "packages/raft_ui/lib/src/system_message.dart#method:RaftSystemMessageGroup.containsExpandedRows": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Message row / Agent read progress",
+        "reason": "Keeps the group's read faces on the header when its children are expanded."
       },
       "apps/raft_flutter/lib/features/create_channel_dialog.dart#function:channelCandidateAppBadge": {
         "role": "unresolved",
