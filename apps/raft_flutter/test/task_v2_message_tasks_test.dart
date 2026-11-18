@@ -9,7 +9,9 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show LogicalKeyboardKey, SystemChannels;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
@@ -87,6 +89,10 @@ Future<(WorkspaceController, _Adapter)> _fixture({
     },
   );
   a.routes['GET /tasks/channel/c1'] = (_) => (200, {'tasks': tasks});
+  a.routes['GET /channels/c1/threads/m'] = (_) => (
+    404,
+    {'code': 'THREAD_NOT_FOUND', 'error': 'No thread found for this message'},
+  );
   final client = RaftClient(
     origin: 'https://example.invalid',
     sessionStore: MemorySessionStore(),
@@ -117,11 +123,13 @@ Future<void> _settle(WidgetTester t) async {
 
 Future<List<Map<String, dynamic>>> _chat(
   WidgetTester t,
-  WorkspaceController w,
-) async {
+  WorkspaceController w, {
+  Size size = const Size(1280, 900),
+  String content = 'Plan the release',
+}) async {
   t.view
     ..devicePixelRatio = 1
-    ..physicalSize = const Size(1280, 900);
+    ..physicalSize = size;
   addTearDown(t.view.reset);
   w.messageDomain.ledger.switchServer('s1');
   w.messageDomain.ledger.ingest([
@@ -130,7 +138,7 @@ Future<List<Map<String, dynamic>>> _chat(
       'channelId': 'c1',
       'seq': '1',
       'messageType': 'chat',
-      'content': 'Plan the release',
+      'content': content,
       'senderName': 'Alice',
     },
   ], expectedGeneration: w.messageDomain.ledger.generation);
@@ -152,6 +160,178 @@ Future<List<Map<String, dynamic>>> _chat(
 }
 
 void main() {
+  for (final (platform, size) in [
+    (TargetPlatform.android, const Size(856, 944)),
+    (TargetPlatform.android, const Size(944, 856)),
+    (TargetPlatform.linux, const Size(390, 844)),
+  ]) {
+    final touch = platform == TargetPlatform.android;
+    final kind = touch ? PointerDeviceKind.touch : PointerDeviceKind.mouse;
+    final variant = TargetPlatformVariant({platform});
+
+    testWidgets('task navigation stays on the chip at $size', (t) async {
+      final (w, _) = (await t.runAsync(
+        () => _fixture(
+          flag: true,
+          tasks: [_task('t1', 11, 'todo'), _task('t2', 12, 'backlog')],
+        ),
+      ))!;
+      addTearDown(w.dispose);
+      final opened = await _chat(t, w, size: size);
+      final body = find.text('Plan the release', findRichText: true);
+      final firstChip = find.byKey(const ValueKey('message-task-chip-t1'));
+      final secondChip = find.byKey(const ValueKey('message-task-chip-t2'));
+      expect(body, findsOneWidget);
+      expect(firstChip, findsOneWidget);
+      expect(secondChip, findsOneWidget);
+      try {
+        final prose = t.getRect(body);
+        final chip = t.getRect(firstChip);
+        final down = Offset(prose.left + 10, chip.top + 1);
+        final up = Offset(down.dx, prose.bottom - 1);
+        expect(chip.contains(down), isTrue);
+        expect(prose.contains(up), isTrue);
+        expect((down - up).distance, lessThan(kTouchSlop));
+        final gesture = await t.startGesture(down, kind: kind);
+        await gesture.moveTo(up);
+        await gesture.up();
+        await t.pump(const Duration(milliseconds: 300));
+        expect(
+          opened.map((task) => task['id']),
+          isEmpty,
+          reason: 'A press on the chip released over prose must cancel.',
+        );
+        expect(w.threadIdentity, isNull);
+
+        await t.tap(secondChip, kind: kind);
+        await t.pump(const Duration(milliseconds: 300));
+        expect(opened.map((task) => task['id']), ['t2']);
+        expect(w.threadIdentity, isNull);
+
+        final first = t.getRect(firstChip);
+        await t.tapAt(Offset(first.center.dx, first.bottom - 1), kind: kind);
+        await t.pump(const Duration(milliseconds: 300));
+        expect(opened.map((task) => task['id']), ['t2', 't1']);
+      } finally {
+        await t.pumpWidget(const SizedBox());
+      }
+    }, variant: variant);
+
+    testWidgets('the message body keeps its own gestures at $size', (t) async {
+      final (w, _) = (await t.runAsync(
+        () => _fixture(
+          flag: true,
+          tasks: [_task('t1', 11, 'todo'), _task('t2', 12, 'backlog')],
+        ),
+      ))!;
+      addTearDown(w.dispose);
+      final opened = await _chat(
+        t,
+        w,
+        size: size,
+        content: 'Plan the release #11\n\n[Notes](obsidian://open?vault=work)',
+      );
+      try {
+        final taskRef = find.byWidgetPredicate(
+          (widget) =>
+              widget is RaftReferenceChip &&
+              widget.appearance.kind == RaftReferenceKind.task,
+        );
+        final paragraph = find
+            .ancestor(of: taskRef, matching: find.byType(RichText))
+            .first;
+        final prose = t.getRect(paragraph);
+        final plain = Offset(prose.left + 10, prose.center.dy);
+        expect(t.getRect(taskRef).contains(plain), isFalse);
+        await t.tapAt(plain, kind: kind);
+        await t.pump(const Duration(milliseconds: 300));
+        expect(
+          opened,
+          isEmpty,
+          reason: 'A stationary tap on prose opens no task.',
+        );
+        expect(w.threadIdentity?.parentMessageId, touch ? 'm' : null);
+        expect(w.threadIdentity?.taskId, isNull);
+        if (touch) {
+          w.closeThread();
+          await _settle(t);
+        }
+
+        await t.tap(taskRef, kind: kind);
+        await t.pump(const Duration(milliseconds: 300));
+        expect(opened.map((task) => task['id']), ['t1']);
+        expect(w.threadIdentity, isNull);
+        await t.tap(find.text('Notes', findRichText: true), kind: kind);
+        await t.pumpAndSettle();
+        expect(find.text('Open external link?'), findsOneWidget);
+        expect(opened.map((task) => task['id']), ['t1']);
+        expect(w.threadIdentity, isNull);
+        await t.tap(find.text('Cancel'), kind: kind);
+        await t.pumpAndSettle();
+
+        final row = t.getRect(find.byKey(const ValueKey('message-m')));
+        final gutter = Offset(row.left + 2, row.center.dy);
+        if (touch) {
+          await t.longPressAt(gutter);
+        } else {
+          await t.tapAt(gutter, kind: kind, buttons: kSecondaryMouseButton);
+        }
+        await t.pumpAndSettle();
+        expect(find.text('Select message'), findsOneWidget);
+        expect(opened.map((task) => task['id']), ['t1']);
+        expect(w.threadIdentity, isNull);
+        await t.sendKeyEvent(LogicalKeyboardKey.escape);
+        await t.pumpAndSettle();
+
+        final currentProse = t.getRect(paragraph);
+        final start = Offset(currentProse.left + 1, currentProse.center.dy);
+        if (touch) {
+          await t.longPressAt(start);
+          await t.pumpAndSettle();
+          expect(find.byType(RaftTextSelectionToolbar), findsOneWidget);
+        } else {
+          final clipboard = <String>[];
+          final messenger = t.binding.defaultBinaryMessenger;
+          messenger.setMockMethodCallHandler(SystemChannels.platform, (
+            call,
+          ) async {
+            if (call.method == 'Clipboard.setData') {
+              clipboard.add((call.arguments as Map)['text'] as String);
+            }
+            return null;
+          });
+          addTearDown(
+            () => messenger.setMockMethodCallHandler(
+              SystemChannels.platform,
+              null,
+            ),
+          );
+          final selection = await t.startGesture(start, kind: kind);
+          await t.pump();
+          final end = Offset(t.getRect(taskRef).left - 3, start.dy);
+          await selection.moveTo(
+            end,
+            timeStamp: const Duration(milliseconds: 100),
+          );
+          await t.pump();
+          await selection.moveBy(const Offset(1, 0));
+          await t.pump();
+          await selection.up();
+          await t.pump();
+          await t.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+          await t.sendKeyEvent(LogicalKeyboardKey.keyC);
+          await t.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+          await t.pump();
+          expect(clipboard.single, startsWith('Plan the'));
+          expect(w.threadIdentity, isNull);
+        }
+        expect(opened.map((task) => task['id']), ['t1']);
+      } finally {
+        await t.pumpWidget(const SizedBox());
+      }
+    }, variant: variant);
+  }
+
   testWidgets('task v2: every task created from a message hangs under it, '
       'Backlog included', (t) async {
     final (w, _) = (await t.runAsync(
