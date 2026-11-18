@@ -41,6 +41,9 @@ const _inlineActions = {
   'integration:update_app_registration',
   'integration:recover_app_owner',
 };
+final _feedbackTicketId = RegExp(
+  r'^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$',
+);
 final _formDrafts =
     Expando<
       BoundedLruMap<(String, String, String, Object?), ActionCardFormDraft>
@@ -1307,6 +1310,36 @@ class _MessageActionCardState extends State<MessageActionCard> {
     );
   }
 
+  RaftLocation? get _feedbackTicketLocation {
+    final viewer = w.client.user?.id;
+    final slug = w.server?.string('slug');
+    final result = cardObject(metadata['result']);
+    if (type != 'feedback:submit' ||
+        metadata['state'] != 'executed' ||
+        viewer == null ||
+        viewer != metadata['executedByUserId'] ||
+        slug == null ||
+        slug.isEmpty ||
+        slug != w.location.serverSlug ||
+        actionCardReadOnlyInServer(metadata, w.server?.id) ||
+        result['kind'] != 'product-feedback' ||
+        (result['source'] ?? 'web') != 'web') {
+      return null;
+    }
+    final ticket = cardString(result['ticketId']);
+    return RaftLocation.at(
+      serverSlug: slug,
+      route: RaftRoute.settings,
+      settingsPath: [
+        'feedback',
+        if (ticket != null && _feedbackTicketId.hasMatch(ticket)) ...[
+          'ticket',
+          ticket,
+        ],
+      ],
+    );
+  }
+
   Future<void> _openMigration() async {
     final agent = _migrationAgent;
     final agentId = cardString(agent?['id']);
@@ -1487,7 +1520,14 @@ class _MessageActionCardState extends State<MessageActionCard> {
           return _openFeedback();
         }
         if (press.argument == 'feedback_ticket' && type == 'feedback:submit') {
-          return _openCardInBrowser();
+          final location = _feedbackTicketLocation;
+          if (location == null) {
+            showRaftToast(context, 'This action is no longer available.');
+            return;
+          }
+          w.navigation.navigate(location);
+          w.notifyListeners();
+          return;
         }
         if (press.argument == 'migrate_agent' && type == 'agent:migrate') {
           return _openMigration();
@@ -1797,6 +1837,7 @@ class _MessageActionCardState extends State<MessageActionCard> {
             : (entity) => unawaited(_navigateCard(entity)),
         blocked: blocked,
         hiddenButton: question?.button.id,
+        canOpenFeedbackTicket: _feedbackTicketLocation != null,
         inlineForm: question == null
             ? null
             : _formView(

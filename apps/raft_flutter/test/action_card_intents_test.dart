@@ -6,10 +6,11 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
+import 'package:raft_flutter/data/raft_location.dart';
 import 'package:raft_flutter/features/message_action_card.dart';
 import 'package:raft_flutter/platform/web_billing.dart';
 
-import 'action_card_spec_test.dart' show message, metadata, spec;
+import 'action_card_spec_test.dart' show copy, message, metadata, spec;
 import 'message_presentation_test.dart' show fixture, host;
 
 void main() {
@@ -257,5 +258,73 @@ void main() {
     expect(payload['action_card_message_id'], 'm1');
     expect(payload['expected_confirmation_version'], '7');
     expect(find.text('Done'), findsOneWidget);
+  });
+
+  testWidgets('only the feedback sender can open the completed ticket', (
+    tester,
+  ) async {
+    final (workspace, transport) = (await tester.runAsync(
+      () => fixture('owner'),
+    ))!;
+    addTearDown(workspace.dispose);
+    workspace.server = RaftRecord({
+      'id': 's1',
+      'role': 'owner',
+      'slug': 'fixture',
+    });
+    workspace.navigation.bind(
+      'feedback-ticket-fixture',
+      RaftLocation.at(serverSlug: 'fixture', route: RaftRoute.home),
+    );
+    const ticket = '8c9a7336-7e9f-4844-8726-786e7bf05cd5';
+    final card = spec()
+      ..['result'] = {
+        'root': 'result',
+        'elements': {
+          'result': {
+            'type': 'Button',
+            'props': {
+              'label': copy('View in Settings'),
+              'action': {'kind': 'open', 'intent': 'feedback_ticket'},
+            },
+          },
+        },
+      };
+    Future<void> open(String sender) async {
+      await tester.pumpWidget(
+        host(
+          MessageActionCard(
+            key: ValueKey(sender),
+            controller: workspace,
+            message: message(
+              metadata(
+                card,
+                state: 'executed',
+                type: 'feedback:submit',
+                extra: {
+                  'executedByUserId': sender,
+                  'result': {'kind': 'product-feedback', 'ticketId': ticket},
+                },
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(
+        find.byKey(const ValueKey('action-card-toggle-details')),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    await open('bob');
+    expect(find.text('View in Settings'), findsNothing);
+    await open('alice');
+    await tester.tap(find.text('View in Settings'));
+    await tester.pumpAndSettle();
+    expect(workspace.location.settingsPath, ['feedback', 'ticket', ticket]);
+    expect(
+      transport.calls.where((call) => call.path.contains('/actions/')),
+      isEmpty,
+    );
   });
 }

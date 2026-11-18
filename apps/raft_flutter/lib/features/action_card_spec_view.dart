@@ -27,6 +27,7 @@ class ActionCardSpecView extends StatefulWidget {
     this.inlineForm,
     this.trailing,
     this.hiddenButton,
+    this.canOpenFeedbackTicket = false,
     this.completedOnCurrentPlan,
   });
 
@@ -38,6 +39,7 @@ class ActionCardSpecView extends StatefulWidget {
   final ValueChanged<CardJson>? onEntity;
   final String? blocked, error;
   final bool busy;
+  final bool canOpenFeedbackTicket;
   final Widget? inlineForm, trailing;
   final String? hiddenButton, completedOnCurrentPlan;
 
@@ -198,6 +200,11 @@ class _ActionCardSpecViewState extends State<ActionCardSpecView> {
   }) {
     if (widget.hiddenButton == node.id && !result) return null;
     final press = widget.resolvePress(node);
+    if (press.command == ActionCardCommand.intent &&
+        press.argument == 'feedback_ticket' &&
+        (!result || !widget.canOpenFeedbackTicket)) {
+      return null;
+    }
     final mutates = switch (press.command) {
       ActionCardCommand.form || ActionCardCommand.execute => true,
       ActionCardCommand.intent => !const {
