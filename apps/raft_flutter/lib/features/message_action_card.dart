@@ -1,22 +1,38 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:dio/dio.dart' show FormData;
 import 'package:flutter/material.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
+import '../data/app_install_expectation.dart' show appPromptTextConsent;
 import '../data/cause_notice.dart';
+import '../data/message_history_events.dart';
+import '../data/raft_location.dart';
 import '../data/user_error.dart';
 import '../data/workspace_controller.dart';
 import '../data/workspace_entity_directory.dart';
+import '../platform/bounded_lru.dart';
+import '../platform/content_links.dart';
+import '../platform/web_billing.dart' show openInBrowser, WebBillingGate;
+import 'action_card_form.dart';
+import 'action_card_install.dart';
+import 'action_card_mcp.dart';
+import 'action_card_spec.dart';
+import 'action_card_spec_view.dart';
 import 'add_members_dialog.dart';
+import 'agent_migration_start_dialog.dart';
+import 'agent_profile_rules.dart' show canViewAgentPrivateSurfaces;
 import 'app_setup.dart';
 import 'integrations_views.dart'
     show integrationScopeCopy, integrationVisibleScopes;
 import 'managed_agent_launcher.dart';
 import 'management_support.dart' show managementLaunch;
+import 'message_card_read.dart' show publicCardUrl;
 import 'private_route_guard.dart';
 import 'second_factor_step_up.dart';
+import 'workspace_web_billing.dart';
 
 const _inlineActions = {
   'integration:approve_agent_login',
@@ -25,6 +41,10 @@ const _inlineActions = {
   'integration:update_app_registration',
   'integration:recover_app_owner',
 };
+final _formDrafts =
+    Expando<
+      BoundedLruMap<(String, String, String, Object?), ActionCardFormDraft>
+    >();
 Map<String, dynamic> _map(dynamic value) =>
     value is Map ? Map<String, dynamic>.from(value) : {};
 
@@ -104,6 +124,24 @@ class _MessageActionCardState extends State<MessageActionCard> {
 
   Map<String, dynamic> get action => _map(metadata['action']);
   String get type => '${action['type'] ?? ''}';
+  Object? _lastRawSpec;
+  ActionCardSpec? _lastSpec;
+  Object? get rawSpec => _map(metadata['presentation'])['card'];
+  Map<String, dynamic>? get _migrationAgent {
+    final id = cardString(action['agentId']);
+    final agent = id == null ? null : w.services.entityDirectory.agent(id);
+    return agent?['deletedAt'] == null ? agent : null;
+  }
+
+  ActionCardSpec? get spec {
+    final raw = rawSpec;
+    if (!identical(raw, _lastRawSpec)) {
+      _lastRawSpec = raw;
+      _lastSpec = ActionCardSpec.read(raw);
+    }
+    return _lastSpec;
+  }
+
   RaftChannel? get carrier =>
       [...w.channels, ...w.dms]
           .where(
@@ -130,7 +168,9 @@ class _MessageActionCardState extends State<MessageActionCard> {
     if (c.archived) {
       return 'This channel is archived, so its actions can no longer be run.';
     }
-    if (w.server?.string('role') == 'guest') {
+    if (w.server?.string('role') == 'guest' &&
+        !(c.joined &&
+            const {'question:ask', 'feedback:submit'}.contains(type))) {
       return "Guests can't run channel actions.";
     }
     if (!c.joined &&
@@ -140,6 +180,51 @@ class _MessageActionCardState extends State<MessageActionCard> {
     }
     if (type == 'agent:create' && !w.can('createAgents')) {
       return 'You need the Create Agents permission — ask a server owner or admin to run this.';
+    }
+    if (type == 'agent:migrate') {
+      final agent = _migrationAgent;
+      final assistantOwner = agent?['assistantOwnerUserId'];
+      if (agent == null ||
+          (assistantOwner != null
+              ? assistantOwner != w.client.user?.id
+              : !canViewAgentPrivateSurfaces(
+                  agent,
+                  w.client.user?.id,
+                  w.can('migrateAgents'),
+                ))) {
+        return raftFormat(
+          context,
+          "Only {agent}'s creator or someone with permission to migrate agents can do this.",
+          {
+            'agent':
+                cardString(agent?['displayName']) ??
+                cardString(agent?['name']) ??
+                raftText(context, 'Agent'),
+          },
+        );
+      }
+    }
+    if (type == 'seats:add' &&
+        (w.server?.string('role') != 'owner' || !w.can('manageBilling'))) {
+      return raftText(context, 'Only an owner can add seats.');
+    }
+    final viewer = w.client.user?.id;
+    final questionAddressee = cardObject(action['addressee']);
+    final addressee = questionAddressee['kind'] == 'user'
+        ? cardString(questionAddressee['userId'])
+        : null;
+    if (type == 'question:ask' &&
+        addressee != null &&
+        addressee.toLowerCase() != viewer?.toLowerCase()) {
+      return raftFormat(context, 'Waiting for {person} to answer.', {
+        'person': _memberName(addressee),
+      });
+    }
+    if (viewer != null && metadata['requesterUserId'] == viewer) {
+      return raftText(
+        context,
+        "You sent this; it's for the other person to act on.",
+      );
     }
     if (type == 'channel:create' && !w.can('createChannels')) {
       return 'You do not have permission to create channels.';
@@ -154,7 +239,8 @@ class _MessageActionCardState extends State<MessageActionCard> {
         return 'You do not have permission to add members to this channel.';
       }
     }
-    if (!_inlineActions.contains(type) &&
+    if (spec == null &&
+        !_inlineActions.contains(type) &&
         !{
           'agent:create',
           'channel:create',
@@ -162,12 +248,13 @@ class _MessageActionCardState extends State<MessageActionCard> {
         }.contains(type)) {
       return 'This action needs a newer client.';
     }
-    if (!{
-      'prepared',
-      'executed',
-      'frozen',
-      'reconfirm_required',
-    }.contains(metadata['state'])) {
+    if (spec == null &&
+        !{
+          'prepared',
+          'executed',
+          'frozen',
+          'reconfirm_required',
+        }.contains(metadata['state'])) {
       return 'This action needs a newer client.';
     }
     return null;
@@ -246,17 +333,47 @@ class _MessageActionCardState extends State<MessageActionCard> {
     String path,
     Map<String, dynamic>? data,
     String authority,
+  ) => _apply(w, widget.message, path, data, authority);
+
+  Future<void> _apply(
+    WorkspaceController workspace,
+    RaftMessage message,
+    String path,
+    Map<String, dynamic>? data,
+    String authority,
   ) async {
-    final out = await w.client.request(
+    final out = await workspace.client.request(
       'POST',
-      '/actions/${widget.message.id}/$path',
+      '/actions/${message.id}/$path',
       data: data,
     );
-    if (current(authority) &&
+    _acceptActionResponse(workspace, message, authority, out);
+  }
+
+  void _acceptActionResponse(
+    WorkspaceController workspace,
+    RaftMessage message,
+    String authority,
+    Object? out,
+  ) {
+    if (authority == workspaceAuthority(workspace) &&
         out is Map &&
-        out['messageId'] == widget.message.id &&
+        out['messageId'] == message.id &&
         out['metadata'] is Map) {
-      setState(() => responseMetadata = _map(out['metadata']));
+      final next = _map(out['metadata']);
+      if (mounted && widget.message.id == message.id) {
+        setState(() => responseMetadata = next);
+      }
+      final stored = workspace.messageDomain.ledger
+          .messages(message.channelId)
+          .where((row) => row['id'] == message.id)
+          .firstOrNull;
+      if (stored != null) {
+        MessageHistoryEvents.store(workspace, {
+          ...stored,
+          'actionMetadata': next,
+        }, updateOnly: true);
+      }
     }
   }
 
@@ -333,14 +450,21 @@ class _MessageActionCardState extends State<MessageActionCard> {
     },
   );
 
-  Future<bool?> form(String authority, Widget Function(BuildContext) builder) =>
-      showRaftForm<bool>(
-        context,
-        builder: (ctx) {
-          ownedDialog = ModalRoute.of(ctx);
-          return builder(ctx);
-        },
-      );
+  Future<bool?> form(
+    String authority,
+    Widget Function(BuildContext) builder, {
+    bool guardUnsaved = true,
+    bool dismissible = true,
+  }) => showRaftForm<bool>(
+    context,
+    guardUnsaved: guardUnsaved,
+    dismissible: dismissible,
+    dragDismissible: dismissible,
+    builder: (ctx) {
+      ownedDialog = ModalRoute.of(ctx);
+      return builder(ctx);
+    },
+  );
   Future<void> confirm() async {
     if (busy ||
         blocked != null ||
@@ -838,6 +962,714 @@ class _MessageActionCardState extends State<MessageActionCard> {
   static Widget? _note(Object? value) =>
       _nonEmpty(value) ? RaftActionNote(value as String) : null;
 
+  String _entityName(CardJson ref) {
+    final id = cardString(ref['id']);
+    final fallback = cardString(ref['fallback']) ?? '';
+    if (id == null ||
+        actionCardReadOnlyInServer(metadata, w.server?.id) ||
+        ref['serverId'] != null && ref['serverId'] != w.server?.id) {
+      return fallback;
+    }
+    final directory = w.services.entityDirectory;
+    final entity = switch (ref['kind']) {
+      'user' => directory.member(id),
+      'agent' => directory.agent(id),
+      'computer' => directory.computer(id),
+      'channel' => w.channelById(id)?.json,
+      _ => null,
+    };
+    return cardString(entity?['displayName']) ??
+        cardString(entity?['name']) ??
+        fallback;
+  }
+
+  ActionCardPress _resolvePress(ActionCardSpec card, ActionCardElement node) {
+    final press = node.press;
+    final argument = press.argument;
+    return switch (press.command) {
+      ActionCardCommand.execute
+          when argument != null && card.confirmation(argument) == null =>
+        actionCardBrowser,
+      ActionCardCommand.form
+          when argument == null ||
+              ActionCardForm.read(argument, card.forms[argument]) == null =>
+        actionCardBrowser,
+      ActionCardCommand.intent
+          when !const {
+            'create_channel',
+            'add_members',
+            'create_agent',
+            'add_seats',
+            'upgrade_dialog',
+            'feedback_form',
+            'feedback_ticket',
+            'migrate_agent',
+            'send_create_agent_card',
+          }.contains(argument) =>
+        actionCardBrowser,
+      ActionCardCommand.url when publicCardUrl(argument ?? '') == null =>
+        actionCardBrowser,
+      ActionCardCommand.target when !_canNavigate(press.target ?? const {}) =>
+        actionCardBrowser,
+      _ => press,
+    };
+  }
+
+  bool _canNavigate(CardJson target) =>
+      cardString(target['id']) != null &&
+      !actionCardReadOnlyInServer(metadata, w.server?.id) &&
+      (target['serverId'] == null || target['serverId'] == w.server?.id) &&
+      switch (target['kind']) {
+        'agent' || 'user' => true,
+        'channel' => w.channelById('${target['id']}') != null,
+        'message' => cardString(target['channelId']) != null,
+        _ => false,
+      };
+
+  Future<void> _openCardInBrowser([Uri? url]) async {
+    final slug = w.server?.string('slug');
+    if (url == null && slug != null && slug.isNotEmpty) {
+      final thread = widget.message.channelId == w.threadChannelId
+          ? w.messageDomain.state.threadParent
+          : null;
+      url = ContentLinks.messageUrl(
+        origin: ContentLinks.originFor(w.client.origin),
+        slug: slug,
+        channelId: thread?.channelId ?? widget.message.channelId,
+        messageId: widget.message.id,
+        kind: carrier?.type ?? 'channel',
+        parentMessageId: thread?.id,
+      );
+    }
+    if ((url == null || !await openInBrowser(url)) && mounted) {
+      showRaftToast(context, 'Could not open this address.');
+    }
+  }
+
+  Future<void> _navigateCard(CardJson target) async {
+    final id = cardString(target['id']);
+    if (id == null || !_canNavigate(target)) {
+      await _openCardInBrowser();
+      return;
+    }
+    switch (target['kind']) {
+      case 'agent':
+        w.openProfile(RaftProfileKind.agent, id);
+      case 'user':
+        w.openProfile(RaftProfileKind.human, id);
+      case 'channel':
+        final channel = w.channelById(id);
+        if (channel != null) await w.selectChannel(channel);
+      case 'message':
+        final channelId = cardString(target['channelId']);
+        if (channelId != null) await w.jumpToMessage(channelId, id);
+    }
+  }
+
+  List<ActionCardCandidate> _candidates(ActionCardField field) {
+    if (field.type == ActionCardFieldType.ChannelPicker) {
+      return [
+        for (final channel in w.channels)
+          if (!channel.archived &&
+              (field.spec['scope'] != 'joined' || channel.joined))
+            (id: channel.id, label: '#${channel.name}'),
+      ];
+    }
+    final kinds = cardList(field.spec['kinds']);
+    final directory = w.services.entityDirectory;
+    final rows = [
+      if (kinds.contains('human'))
+        ...directory.rows(WorkspaceEntityKind.members),
+      if (kinds.contains('agent') ||
+          field.type == ActionCardFieldType.AgentPicker)
+        ...directory.rows(WorkspaceEntityKind.agents),
+    ];
+    return [
+      for (final row in rows)
+        if (row['deletedAt'] == null)
+          if (cardString(row['userId'] ?? row['id']) case final String id)
+            (
+              id: id,
+              label: cardString(row['displayName'] ?? row['name']) ?? id,
+            ),
+    ];
+  }
+
+  Widget _formView(
+    ActionCardForm cardForm, {
+    bool inline = false,
+    Object? buttonLabel,
+    Key? key,
+  }) {
+    final workspace = w;
+    final message = widget.message;
+    final authority = workspaceAuthority(workspace);
+    final before = metadata;
+    final version = before['confirmationVersion'];
+    final question = type == 'question:ask';
+    final enabled =
+        !widget.exportMode &&
+        blocked == null &&
+        before['state'] == 'prepared' &&
+        !actionCardExpired(before);
+    final draftKey = (authority, message.id, cardForm.id, version);
+    final drafts = _formDrafts[workspace] ??= BoundedLruMap(64);
+    final keepDraft = question || cardForm.paged;
+    return ActionCardFormView(
+      key: key,
+      form: cardForm,
+      entityName: _entityName,
+      candidates: _candidates,
+      enabled: enabled,
+      question: question,
+      inline: inline,
+      buttonLabel: buttonLabel,
+      draft: enabled && keepDraft ? drafts[draftKey] : null,
+      onDraft: !keepDraft || !enabled
+          ? null
+          : (draft) {
+              if (draft == null) {
+                drafts.remove(draftKey);
+              } else {
+                drafts[draftKey] = draft;
+              }
+            },
+      onSubmit: (values) async {
+        final stored = workspace.messageDomain.ledger
+            .messages(message.channelId)
+            .where((row) => row['id'] == message.id)
+            .firstOrNull;
+        final latest = mounted
+            ? metadata
+            : stored == null
+            ? before
+            : cardObject(stored['actionMetadata']);
+        if (!enabled ||
+            workspaceAuthority(workspace) != authority ||
+            latest['state'] != 'prepared' ||
+            latest['confirmationVersion'] != version ||
+            actionCardExpired(latest)) {
+          throw const RaftUserError(
+            'Not sent: the card changed. Answer again.',
+          );
+        }
+        await _apply(workspace, message, 'execute', {
+          'expectedState': 'prepared',
+          if (version is int) 'expectedConfirmationVersion': version,
+          'form': {'id': cardForm.id, 'values': values},
+        }, authority);
+        if (keepDraft) drafts.remove(draftKey);
+      },
+    );
+  }
+
+  ({ActionCardElement button, ActionCardForm form})? _inlineQuestion(
+    ActionCardSpec card,
+  ) {
+    if (type != 'question:ask' ||
+        metadata['state'] != 'prepared' ||
+        actionCardExpired(metadata)) {
+      return null;
+    }
+    for (final node in card.body.nodes.where((node) => node.type == 'Button')) {
+      final press = node.press;
+      final id = press.argument;
+      if (press.command != ActionCardCommand.form || id == null) continue;
+      final form = ActionCardForm.read(id, card.forms[id]);
+      if (form != null &&
+          form.inline &&
+          form.fields.isNotEmpty &&
+          form.fields.every(
+            (field) => field.type == ActionCardFieldType.Choice,
+          )) {
+        return (button: node, form: form);
+      }
+    }
+    return null;
+  }
+
+  Future<void> _openSpecForm(ActionCardForm cardForm) async {
+    await _openSpecDialog(
+      (_) => _formView(cardForm),
+      guardUnsaved: !(type == 'question:ask' || cardForm.paged),
+    );
+  }
+
+  Future<void> _openSpecDialog(
+    Widget Function(BuildContext) builder, {
+    bool guardUnsaved = true,
+    bool dismissible = true,
+  }) async {
+    if (busy ||
+        blocked != null ||
+        actionCardExpired(metadata) ||
+        metadata['state'] != 'prepared') {
+      showRaftToast(context, 'This action is no longer available.');
+      return;
+    }
+    final authority = workspaceAuthority(w);
+    openingAuthority = authority;
+    openingVersion = metadata['confirmationVersion'];
+    setState(() {
+      busy = true;
+      errorNotice.clear();
+    });
+    unawaited(event('action_card.open'));
+    try {
+      final submitted = await form(
+        authority,
+        builder,
+        guardUnsaved: guardUnsaved,
+        dismissible: dismissible,
+      );
+      if (submitted != true && mounted && current(authority)) {
+        unawaited(event('action_card.dismiss'));
+      }
+    } finally {
+      ownedDialog = null;
+      openingAuthority = null;
+      openingVersion = null;
+      if (mounted) setState(() => busy = false);
+    }
+  }
+
+  Future<void> _openFeedback() async {
+    final workspace = w;
+    final message = widget.message;
+    final authority = workspaceAuthority(workspace);
+    final version = metadata['confirmationVersion'];
+    final submissionId = workspace.client.newRandomId();
+    final draft = action;
+    await _openSpecDialog(
+      (_) => RaftFormDialog(
+        title: 'Submit feedback',
+        submitLabel: 'Submit',
+        fields: [
+          RaftFormField(
+            'type',
+            'Feedback type',
+            initial: cardString(draft['feedbackType']) ?? 'idea',
+            choices: const {'idea': 'Idea', 'problem': 'Problem'},
+          ),
+          RaftFormField(
+            'message',
+            'Feedback',
+            initial: cardString(draft['message']) ?? '',
+            required: true,
+            multiline: true,
+            validator: (text) => text.runes.length > 3000 ? 'Too long' : null,
+          ),
+        ],
+        extra: Text(
+          raftText(
+            context,
+            'It will be sent as your feedback to the Raft team. You can follow it in Settings.',
+          ),
+        ),
+        onSubmit: (values) async {
+          requireCurrent(authority);
+          unawaited(event('action_card.execute_attempt'));
+          try {
+            final response = cardObject(
+              await workspace.client.post(
+                '/product-feedback',
+                data: FormData.fromMap({
+                  'type': values['type'],
+                  'message': values['message'],
+                  'metadata': jsonEncode({
+                    'locale': Localizations.localeOf(context).toLanguageTag(),
+                  }),
+                  'submission_id': submissionId,
+                  'may_contact': 'false',
+                  'action_card_message_id': message.id,
+                  if (version is int)
+                    'expected_confirmation_version': '$version',
+                }),
+              ),
+            );
+            final result = cardObject(response['action_card']);
+            if (result.isNotEmpty) {
+              _acceptActionResponse(workspace, message, authority, {
+                'messageId': result['message_id'],
+                'metadata': result['metadata'],
+              });
+            }
+          } catch (_) {
+            if (mounted && current(authority)) {
+              unawaited(event('action_card.execute_fail'));
+            }
+            rethrow;
+          }
+        },
+      ),
+      guardUnsaved: false,
+      dismissible: false,
+    );
+  }
+
+  Future<void> _openMigration() async {
+    final agent = _migrationAgent;
+    final agentId = cardString(agent?['id']);
+    if (agent == null || agentId == null || blocked != null) {
+      showRaftToast(context, 'This action is no longer available.');
+      return;
+    }
+    final source = cardString(agent['machineId']);
+    final suggested = cardString(action['suggestedComputer']);
+    final plan = w.server?.string('plan');
+    final canPlace =
+        agent['executionMode'] == 'byoc' &&
+        (source == null || agent['blockedReason'] == 'computer_access_revoked');
+    if (!canPlace && plan == 'free') {
+      return openWebBillingOrToast(
+        context,
+        w,
+        gate: WebBillingGate.agentMigration,
+      );
+    }
+    final authority = workspaceAuthority(w);
+    final version = metadata['confirmationVersion'];
+    final machines = w.services.entityDirectory.rows(
+      WorkspaceEntityKind.computers,
+    );
+    await _openSpecDialog(
+      (_) => AgentMigrationStartDialog(
+        targets: machines.where((machine) => machine['id'] != source).toList(),
+        controller: w,
+        initialTarget: suggested,
+        sourceName: machines
+            .where((machine) => machine['id'] == source)
+            .map((machine) => cardString(machine['name']))
+            .firstOrNull,
+        openComputers: (_) => unawaited(_openCardInBrowser()),
+        start: (target) async {
+          requireCurrent(authority);
+          unawaited(event('action_card.execute_attempt'));
+          try {
+            await w.command(
+              'POST',
+              '/agents/$agentId/migrate',
+              data: {'targetComputer': target},
+            );
+            if (current(authority)) {
+              await mark(
+                {
+                  'kind': 'agent-migration',
+                  'agentId': agentId,
+                  'targetMachineId': target,
+                },
+                authority,
+                version,
+              );
+            }
+          } catch (_) {
+            if (current(authority))
+              unawaited(event('action_card.execute_fail'));
+            rethrow;
+          }
+        },
+      ),
+    );
+  }
+
+  Future<void> _openInstall() async {
+    final authority = workspaceAuthority(w);
+    final version = metadata['confirmationVersion'];
+    final snapshot = action;
+    final author =
+        cardString(snapshot['agentName']) ?? raftText(context, 'Agent');
+    await _openSpecDialog(
+      (_) => ActionCardInstallDialog(
+        action: snapshot,
+        agent: author,
+        readMarketplace: (_) async {
+          final client = w.client;
+          final server = w.server?.id;
+          final marketplace = client.get('/integrations/marketplace');
+          final consent = server == null
+              ? Future.value(false)
+              : appPromptTextConsent(client, server);
+          final (records, promptConsent) = await (marketplace, consent).wait;
+          return (
+            apps: cardList(records).map(cardObject).toList(),
+            promptConsent: promptConsent,
+          );
+        },
+        execute: (context) {
+          requireCurrent(authority);
+          return withSecondFactorStepUp(context, w.client, () {
+            requireCurrent(authority);
+            return apply('execute', {
+              'expectedState': 'prepared',
+              if (version is int) 'expectedConfirmationVersion': version,
+            }, authority);
+          }, reason: StepUpReason.actionCard);
+        },
+      ),
+      guardUnsaved: false,
+      dismissible: false,
+    );
+  }
+
+  Widget? _mcpPicker() {
+    if (type != 'integration:connect_mcp' ||
+        blocked != null ||
+        widget.exportMode ||
+        actionCardExpired(metadata)) {
+      return null;
+    }
+    final app = cardString(action['mcpServerId']);
+    final agent = cardString(action['agentId']);
+    if (app == null || agent == null || metadata['state'] != 'prepared')
+      return null;
+    final authority = workspaceAuthority(w);
+    final version = metadata['confirmationVersion'];
+    void verify() {
+      if (!current(authority) ||
+          actionCardExpired(metadata) ||
+          metadata['state'] != 'prepared' ||
+          metadata['confirmationVersion'] != version) {
+        throw const RaftUserError('This action is no longer available.');
+      }
+    }
+
+    return ActionCardMcpPicker(
+      key: ValueKey((authority, widget.message.id, version, app, agent)),
+      api: RaftActionCardMcpApi(w.client, app, agent),
+      agent: _entityName({
+        'kind': 'agent',
+        'id': agent,
+        'fallback': raftText(context, 'Agent'),
+      }),
+      verify: verify,
+      onOpenWeb: () => unawaited(_openCardInBrowser()),
+      onGranted: () async {
+        verify();
+        unawaited(event('action_card.execute_attempt'));
+        await apply('mark-executed', {
+          'result': {
+            'kind': 'mcp-connection',
+            'mcpServerId': app,
+            'agentId': agent,
+          },
+          if (version is int) 'expectedConfirmationVersion': version,
+        }, authority);
+      },
+    );
+  }
+
+  Future<void> _pressSpec(
+    ActionCardSpec card,
+    ActionCardPress press,
+    ActionCardElement element,
+  ) async {
+    switch (press.command) {
+      case ActionCardCommand.browser:
+        return _openCardInBrowser();
+      case ActionCardCommand.url:
+        return _openCardInBrowser(publicCardUrl(press.argument ?? ''));
+      case ActionCardCommand.target:
+        return _navigateCard(press.target ?? const {});
+      case ActionCardCommand.intent:
+        if (const {'add_seats', 'upgrade_dialog'}.contains(press.argument)) {
+          if (blocked != null) {
+            showRaftToast(
+              context,
+              blocked ?? 'This action is no longer available.',
+            );
+            return;
+          }
+          return openWebBillingOrToast(context, w, gate: press.gate);
+        }
+        if (press.argument == 'feedback_form' && type == 'feedback:submit') {
+          return _openFeedback();
+        }
+        if (press.argument == 'feedback_ticket' && type == 'feedback:submit') {
+          return _openCardInBrowser();
+        }
+        if (press.argument == 'migrate_agent' && type == 'agent:migrate') {
+          return _openMigration();
+        }
+        if (press.argument == 'send_create_agent_card' && type == 'seats:add') {
+          return _sendCreateAgentCard();
+        }
+        if (!const {
+          ('create_channel', 'channel:create'),
+          ('create_agent', 'agent:create'),
+          ('add_members', 'channel:add_member'),
+        }.contains((press.argument, type))) {
+          return _openCardInBrowser();
+        }
+        return confirm();
+      case ActionCardCommand.form:
+        if (metadata['state'] == 'reconfirm_required') return confirm();
+        final id = press.argument;
+        final form = id == null
+            ? null
+            : ActionCardForm.read(id, card.forms[id]);
+        return form == null ? _openCardInBrowser() : _openSpecForm(form);
+      case ActionCardCommand.execute:
+        if (metadata['state'] == 'reconfirm_required') return confirm();
+        if (type == 'integration:install_marketplace_app')
+          return _openInstall();
+        if (actionCardExpired(metadata) ||
+            blocked != null ||
+            busy ||
+            metadata['state'] != 'prepared') {
+          showRaftToast(context, 'This action is no longer available.');
+          return;
+        }
+        final id = press.argument;
+        final confirmation = id == null ? null : card.confirmation(id);
+        if (id != null && confirmation == null) return _openCardInBrowser();
+        final authority = workspaceAuthority(w);
+        final version = metadata['confirmationVersion'];
+        openingAuthority = authority;
+        openingVersion = version;
+        setState(() {
+          busy = true;
+          errorNotice.clear();
+        });
+        Future<void> execute() async {
+          requireCurrent(authority);
+          final data = {
+            'expectedState': 'prepared',
+            if (version is int) 'expectedConfirmationVersion': version,
+          };
+          if (_inlineActions.contains(type)) {
+            await withSecondFactorStepUp(
+              context,
+              w.client,
+              () => apply('execute', data, authority),
+              reason: StepUpReason.actionCard,
+            );
+          } else {
+            await apply('execute', data, authority);
+          }
+        }
+
+        try {
+          if (confirmation == null) {
+            await execute();
+          } else {
+            unawaited(event('action_card.open'));
+            await modal(
+              authority,
+              (context) => RaftConfirmDialog(
+                title: actionCardCopy(
+                  context,
+                  confirmation.data['title'],
+                  _entityName,
+                ),
+                confirmLabel: actionCardCopy(
+                  context,
+                  confirmation.data['confirmLabel'],
+                  _entityName,
+                ),
+                confirmVariant: element.props['emphasis'] == 'destructive'
+                    ? RaftButtonRecipeVariant.danger
+                    : RaftButtonRecipeVariant.primary,
+                plainMessage: true,
+                content: ActionCardSpecTree(
+                  root: confirmation.body,
+                  entityName: _entityName,
+                ),
+                onConfirm: execute,
+              ),
+            );
+          }
+        } catch (failure) {
+          if (current(authority) && !isSecondFactorStepUpCancelled(failure)) {
+            setState(
+              () => raiseError(
+                userErrorText(
+                  failure,
+                  fallback: 'Failed to execute action',
+                  where: 'action card',
+                ),
+                authority,
+              ),
+            );
+          }
+        } finally {
+          ownedDialog = null;
+          openingAuthority = null;
+          openingVersion = null;
+          if (mounted) setState(() => busy = false);
+        }
+    }
+  }
+
+  Future<void> _sendCreateAgentCard() async {
+    final person = cardString(metadata['requesterUserId']);
+    final outcome = cardObject(metadata['seatOutcome']);
+    final name = cardString(outcome['name']);
+    if (person == null ||
+        name == null ||
+        metadata['state'] != 'executed' ||
+        actionCardReadOnlyInServer(metadata, w.server?.id) ||
+        w.server?.string('role') != 'owner') {
+      showRaftToast(context, 'This action is no longer available.');
+      return;
+    }
+    final authority = workspaceAuthority(w);
+    final workspace = w;
+    final id = widget.message.id;
+    final requester = _memberName(person);
+    final sent = await RaftConfirmDialog.show(
+      context,
+      RaftConfirmDialog(
+        title: raftFormat(
+          context,
+          'Send {requester} a card to create {name}?',
+          {'requester': requester, 'name': name},
+        ),
+        message: raftFormat(
+          context,
+          'It goes to your DM with {requester}. They create {name} from it, as with any agent card.',
+          {'requester': requester, 'name': name},
+        ),
+        confirmLabel: 'Send',
+        confirmVariant: RaftButtonRecipeVariant.outline,
+        onConfirm: () async {
+          if (!mounted || workspaceAuthority(workspace) != authority) {
+            throw const RaftUserError('This action is no longer available.');
+          }
+          await workspace.client.post(
+            '/actions/$id/send-create-agent-card',
+            data: {},
+          );
+        },
+      ),
+    );
+    if (sent == true && mounted) {
+      setState(() => _sentCreateCard = true);
+    }
+  }
+
+  bool _sentCreateCard = false;
+
+  Widget? _specTrailing(BuildContext context) {
+    if (metadata['state'] != 'executed') return _mcpPicker();
+    final outcome = cardObject(metadata['seatOutcome']);
+    if (!_sentCreateCard &&
+        type == 'seats:add' &&
+        blocked == null &&
+        outcome['kind'] == 'ready' &&
+        outcome['purpose'] == 'agent:create') {
+      return Align(
+        alignment: Alignment.centerRight,
+        child: RaftButton(
+          label: 'Send',
+          uiVariant: RaftButtonVariant.outline,
+          uiSize: RaftButtonSize.md,
+          onPressed: widget.exportMode ? null : _sendCreateAgentCard,
+        ),
+      );
+    }
+    return _resultAction(context);
+  }
+
   /// ResultLink of an installed Marketplace App that needs setup: the
   /// "Continue setup" button, when the setup page is a safe web URL.
   Widget? _resultAction(BuildContext context) {
@@ -944,7 +1776,58 @@ class _MessageActionCardState extends State<MessageActionCard> {
 
   @override
   Widget build(BuildContext context) {
-    if (_known.contains(type)) return _knownCard(context);
+    final card = spec;
+    if (card != null) {
+      final question = _inlineQuestion(card);
+      final plan = w.server?.string('plan');
+      return ActionCardSpecView(
+        key: ValueKey('action-card-spec-${widget.message.id}'),
+        spec: card,
+        metadata: metadata,
+        entityName: _entityName,
+        resolvePress: (element) => _resolvePress(card, element),
+        onPress: widget.exportMode
+            ? null
+            : (press, element) => unawaited(_pressSpec(card, press, element)),
+        onEntity: widget.exportMode
+            ? null
+            : (entity) => unawaited(_navigateCard(entity)),
+        blocked: blocked,
+        hiddenButton: question?.button.id,
+        inlineForm: question == null
+            ? null
+            : _formView(
+                question.form,
+                key: ValueKey((
+                  question.form.id,
+                  metadata['confirmationVersion'],
+                )),
+                inline: true,
+                buttonLabel: question.button.props['label'],
+              ),
+        busy: busy,
+        error: error,
+        trailing: _specTrailing(context),
+        completedOnCurrentPlan:
+            type == 'plan:upgrade' &&
+                plan != null &&
+                plan.isNotEmpty &&
+                plan != 'free' &&
+                !actionCardReadOnlyInServer(metadata, w.server?.id)
+            ? raftText(
+                context,
+                plan == 'pro'
+                    ? 'Upgraded to Pro'
+                    : 'No longer limited by the Free plan',
+              )
+            : null,
+      );
+    }
+    if (_known.contains(type) &&
+        rawSpec == null &&
+        !actionCardExpired(metadata)) {
+      return _knownCard(context);
+    }
     final presentation = _map(metadata['presentation']);
     final labels = {
       'channel:create': 'Create Channel',
@@ -1013,7 +1896,9 @@ class _MessageActionCardState extends State<MessageActionCard> {
       targetServer: metadata['targetServerName'],
       completedBy: metadata['executedByUserName'],
       confirmLabel: labels[type] ?? 'Confirm Action',
-      blockedReason: blocked,
+      blockedReason: rawSpec != null || actionCardExpired(metadata)
+          ? raftText(context, 'View only')
+          : blocked,
       error: error,
       busy:
           busy &&

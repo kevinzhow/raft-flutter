@@ -1,18 +1,146 @@
 import 'package:flutter/material.dart';
+import 'package:raft_theme/recipes/recipe_runtime.dart';
 
 import 'design_primitives.dart' show RaftTypography;
 import 'error_presentation.dart' show RaftErrorBanner;
 import 'dialog_card.dart' show RaftRecipeButton;
 import 'recipes/button_variants.g.dart';
+import 'recipes/message_action_card.g.dart';
+import 'recipes/message_action_card_content.g.dart';
+import 'raft/status.dart';
+import 'raft/button.dart';
 import 'localization.dart';
 import 'space.dart';
 import 'theme.dart';
 import 'icons.dart';
 import 'message_embed_frame.dart';
 import 'message_row_recipe.dart' show RaftMessageBodyMargin;
+import 'recipe_surface.dart' show RaftRecipeBinding;
 import 'rich_card_tokens.dart';
 import 'text_measure.dart';
 import 'text_scaling.dart' show RaftScaled;
+
+class RaftSpecActionCard extends StatelessWidget {
+  const RaftSpecActionCard({
+    super.key,
+    required this.title,
+    required this.body,
+    this.icon,
+    this.description,
+    this.status,
+    this.statusVariant = RaftStatusVariant.muted,
+    this.expanded = true,
+    this.onToggle,
+  });
+
+  final String title;
+  final Widget body;
+  final RaftGlyph? icon;
+  final String? description, status;
+  final RaftStatusVariant statusVariant;
+  final bool expanded;
+  final VoidCallback? onToggle;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = RaftTokens.of(context);
+    final states = RaftRecipeStates({
+      if (tokens.dark) RaftRecipeStates.dark,
+    }, MediaQuery.sizeOf(context).width);
+    final recipe = RaftMessageActionCardRecipe.resolve(
+      states: states,
+      tokens: tokens.recipeTokens,
+    );
+    final content = RaftMessageActionCardContentRecipe.resolve(
+      states: states,
+      tokens: tokens.recipeTokens,
+    );
+    final glyph = icon;
+    final statusText = status;
+    final descriptionText = description;
+    return Padding(
+      padding: EdgeInsets.only(top: RaftMessageBodyMargin.collapse(context, 4)),
+      child: RaftMessageEmbedFrame(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: recipe.header.padding,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                spacing: 8,
+                children: [
+                  if (glyph != null)
+                    DecoratedBox(
+                      decoration: recipe.headerIcon.decoration(
+                        tokens.recipeTokens,
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(6),
+                        child: RaftIcon(glyph, size: 16),
+                      ),
+                    ),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          title,
+                          style: raftSlotTextStyle(tokens, recipe.headerTitle),
+                        ),
+                        if (descriptionText != null)
+                          Text(
+                            descriptionText,
+                            style: raftSlotTextStyle(
+                              tokens,
+                              recipe.headerDescription,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  if (statusText != null)
+                    Flexible(
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        spacing: 4,
+                        children: [
+                          RaftStatus(variant: statusVariant),
+                          Flexible(
+                            child: Text(
+                              statusText,
+                              style: raftSlotTextStyle(tokens, recipe.status),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  if (onToggle != null)
+                    Semantics(
+                      expanded: expanded,
+                      child: RaftButton(
+                        key: const ValueKey('action-card-toggle-details'),
+                        glyph: expanded
+                            ? RaftGlyph.chevronUp
+                            : RaftGlyph.chevronDown,
+                        tooltip: raftText(context, 'Show or hide details'),
+                        uiVariant: RaftButtonVariant.ghost,
+                        uiSize: RaftButtonSize.iconXs,
+                        onPressed: onToggle,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            if (expanded) Padding(padding: content.root.padding, child: body),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
 /// A safe presentation of server-owned action metadata. Execution and current
 /// permissions belong to the application adapter, never this component.

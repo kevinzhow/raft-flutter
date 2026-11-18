@@ -1393,6 +1393,30 @@
       ]
     },
     {
+      "id": "chat.action-card-form",
+      "title": "Action card form and installation review",
+      "webEntry": "packages/web/src/components/actions/ActionCardFormSheet.tsx and InstallAppCardDialog.tsx",
+      "flutterEntry": "apps/raft_flutter/lib/features/action_card_form.dart and action_card_install.dart",
+      "states": [
+        {"state":"loading","variant":"Marketplace lookup","web":"yes","flutter":"yes","status":"gap","gapKind":"case-missing","size":"S","justification":"The installation dialog waits for the listing and shows a spinner. The upstream visual cases do not mount it."},
+        {"state":"empty","variant":"No picker candidates or Marketplace listing","web":"yes","flutter":"yes","status":"gap","gapKind":"case-missing","size":"S","justification":"The form shows its empty label and installation shows the unavailable message. The upstream visual cases do not mount these states."},
+        {"state":"error","variant":"Validation, loading retry or stale permissions","web":"yes","flutter":"yes","status":"gap","gapKind":"case-missing","size":"S","justification":"The form can show local validation and request errors. The installation dialog distinguishes a failed read from a stale binding."},
+        {"state":"partial","variant":"Paged draft","web":"yes","flutter":"yes","status":"gap","gapKind":"case-missing","size":"S","justification":"The paged form restores its values and current page for this account and card."}
+      ]
+    },
+    {
+      "id": "chat.action-card-mcp-connect",
+      "title": "MCP connection picker in an action card",
+      "webEntry": "packages/web/src/components/actions/McpConnectCardBody.tsx",
+      "flutterEntry": "apps/raft_flutter/lib/features/action_card_mcp.dart",
+      "states": [
+        {"state":"loading","variant":"Authorization query","web":"yes","flutter":"yes","status":"gap","gapKind":"case-missing","size":"S","justification":"The official fixture resolves its query before capture."},
+        {"state":"empty","variant":"No connections","web":"yes","flutter":"yes","status":"gap","gapKind":"case-missing","size":"S","justification":"The official fixture has two connections."},
+        {"state":"error","variant":"Load or grant failed","web":"yes","flutter":"yes","status":"gap","gapKind":"case-missing","size":"S","justification":"The official fixture only provides a successful result."},
+        {"state":"partial","variant":"New OAuth authorization","web":"yes","flutter":"partial","status":"intentional","justification":"The browser owns new authorization because the server binds the callback to a cookie from its OAuth start response. The native client can grant an existing or pending connection."}
+      ]
+    },
+    {
       "id": "chat.channel-settings",
       "title": "Channel Details, announcement settings and members",
       "webEntry": "packages/web/src/features/channel/EditChannelDialog.tsx (Web v1.24.0)",

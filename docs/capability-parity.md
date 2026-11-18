@@ -7,18 +7,18 @@ Pixel parity, field parity (`docs/field-parity.md`) and the page inventory (`doc
 
 ## Summary
 
-Total capabilities: 848 (400 endpoint/network keys, 448 client-side).
+Total capabilities: 849 (401 endpoint/network keys, 448 client-side).
 
 | Status | Count |
 | --- | ---: |
-| ✅ covered | 722 |
+| ✅ covered | 723 |
 | ⚠️ partial | 29 |
 | ❌ missing | 2 |
 | ➖ na | 95 |
 
 | Area | ✅ | ⚠️ | ❌ | ➖ |
 | --- | ---: | ---: | ---: | ---: |
-| Messages | 85 | 2 | 0 | 2 |
+| Messages | 86 | 2 | 0 | 2 |
 | Threads | 16 | 0 | 0 | 2 |
 | Channels | 38 | 1 | 0 | 0 |
 | DMs | 6 | 0 | 0 | 0 |
@@ -67,6 +67,7 @@ Legend: ✅ covered (endpoint called and a reachable entry point with equivalent
 | ✅ | Execute an inline action card server-side (Approve agent login, Install marketplace app, Register app, Update app registration, Recover app owner) | `POST /actions/:id/execute` | ActionCard verb button ('Approve Login' / 'Install App' / 'Register App' / 'Update App' / 'Recover Owner') for integration:* actions[gate: canOperateCard, not frozen, source server not read-only] | message_action_card.dart confirm() -> apply('execute') for _inlineActions |  |
 | ✅ | Mark an action card executed after the dialog-driven create succeeded (channel:create, agent:create, channel:add_member) | `POST /actions/:id/mark-executed` | ActionCard > markExecuted after CreateChannelDialog / CreateAgentDialog / AddMembersDialog onCreated[gate: canOperateCard; createChannels/createAgents/add-member permissions] | message_action_card.dart mark() after RaftFormDialog / AddMembersDialog success |  |
 | ✅ | Re-confirm an action card whose state is reconfirm_required (card button 'Reconfirm') | `POST /actions/:id/reconfirm` | ActionCard verb button labelled 'Reconfirm' when metadata.state == reconfirm_required[gate: canOperateCard (viewer must hold the permission for the card action) and not frozen / read-only source] | message_action_card.dart confirm() calls apply('reconfirm') from the card verb button |  |
+| ✅ | Send the requester an Agent creation card for a completed seat request | `POST /actions/:id/send-create-agent-card` | actionCardIntentFlows.tsx sendCreateAgentCard[gate: Owner and an executed seat request with a ready Agent outcome] | MessageActionCard send-back confirmation |  |
 | ✅ | Sidebar "Mark All as Read" over the channel and its threads | `POST /channels/:id/conversation-read-all` | messageStore markConversationRead[gate: joined channel (sidebar_mark_all_read_v0 and thread_unread_badge_v0 are retired in Web 1.24)] | Sidebar channel row menu 'Mark All as Read' (workspace_view_sidebar_menus.dart _readItem -> SidebarReadToggle.run -> markConversationRead, features/sidebar_read_all.dart) |  |
 | ✅ | Save (bookmark) a message | `POST /channels/saved` | MessageHoverToolbar bookmark \| context menu 'Save Message'[gate: none (any member who can see the message; guests blocked server-side)] | chat_view.dart saveMessage() -> SavedCountStore.setSaved (optimistic) |  |
 | ✅ | Mark which Activity items' messages are already saved (so the menu shows 'Remove from Saved') (bg) | `POST /channels/saved/check` | ThreadsInbox checkSaved(items) after Activity list loads (automatic)[gate: Activity sidebar inbox (activity_sidebar_inbox_v0)] | saved_sidebar_entry.dart SavedCountStore.check / checkActivityRows, called when the Activity page (all, unread, mentions, DMs views) loads its rows | Web v1.21.23 no longer calls checkSaved from Activity (the helper stays in savedStore, unused): the app keeps the call with the Activity Done/Saved/DMs views it keeps (plan decision 5, open). |

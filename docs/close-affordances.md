@@ -135,6 +135,12 @@ in `apps/raft_flutter`.
 | `claude-limit-resets-dialog` | dialog | x esc sysback | x esc sysback | x esc sysback | ClaudeLimitResetsDialog.tsx -> ConfirmDialog.tsx:138-165 Dialog disablePointerDismissal (size md; the consent step is the same ConfirmDialog, max-w-md): X + Esc, no pointer dismissal | ok |  |
 | `claude-limit-reset-confirm-dialog` | dialog | x esc sysback | x esc sysback | x esc sysback | ClaudeLimitResetConfirmDialog (ClaudeLimitResetsDialog.tsx) -> ConfirmDialog.tsx:138-165 Dialog disablePointerDismissal (max-w-md): X + Esc, no pointer dismissal, gated on the redeem in flight; over the list (layer 1) Cancel returns to it | ok |  |
 | `runtime-provider-connect-dialog` | dialog | x esc sysback | x esc sysback | x esc sysback | RuntimeProviderConnectDialog.tsx:230 `<Dialog open disablePointerDismissal>`: X + Esc, no outside press; a sheet on a phone (NarrowDialogContent narrow="sheet"); the key is dropped with the dialog | ok |  |
+| `action-card-confirm` | dialog | x esc sysback | x esc sysback | x esc sysback | ActionCardSpecConfirmDialog.tsx ConfirmDialog | ok |  |
+| `action-card-form` | dialog | x esc scrim sysback | x esc scrim sysback | x esc scrim sysback | ActionCardFormSheet.tsx DialogSheet: close, Escape and outside press | ok |  |
+| `action-card-install` | dialog | x esc sysback | x esc sysback | x esc sysback | InstallAppCardDialog.tsx:327 NarrowDialogContent, pointer dismissal disabled | ok |  |
+| `action-card-feedback` | dialog | x esc sysback | x esc sysback | x esc sysback | FeedbackCardDialog.tsx:69 NarrowDialogContent, pointer dismissal disabled | ok |  |
+| `action-card-mcp-default` | dialog | x esc sysback | x esc sysback | x esc sysback | McpConnectCardBody.tsx:307 ConfirmDialog | ok |  |
+| `action-card-send-create-agent` | dialog | x esc sysback | x esc sysback | x esc sysback | actionCardIntentFlows.tsx:730 ConfirmDialog | ok |  |
 | `add-external-member-dialog` | dialog | x esc sysback | x esc sysback | x esc sysback | AddExternalMemberDialog.tsx uses DialogCard with X and Escape | ok |  |
 | `external-invite-withdraw-dialog` | dialog | x esc sysback | x esc sysback | x esc sysback | ExternalInviteRows.tsx uses ConfirmDialog with X and Escape | ok |  |
 | `external-invite-cancel-dialog` | dialog | x esc sysback | x esc sysback | x esc sysback | ExternalInvitePage.tsx CancelRequestConfirm uses ConfirmDialog with X and Escape | ok |  |

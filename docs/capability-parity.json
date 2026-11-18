@@ -348,7 +348,27 @@
     },
     {
      "file": "apps/raft_flutter/lib/features/message_action_card.dart",
-     "needle": "'/actions/${widget.message.id}/$path'"
+     "needle": "'/actions/${message.id}/$path'"
+    }
+   ],
+   "justification": "",
+   "impact": "",
+   "size": ""
+  },
+  {
+   "kind": "endpoint",
+   "id": "POST /actions/:id/send-create-agent-card",
+   "area": "messages",
+   "capability": "Send the requester an Agent creation card for a completed seat request",
+   "background": false,
+   "status": "covered",
+   "webEntry": "actionCardIntentFlows.tsx sendCreateAgentCard",
+   "gate": "Owner and an executed seat request with a ready Agent outcome",
+   "flutterEntry": "MessageActionCard send-back confirmation",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/features/message_action_card.dart",
+     "needle": "'/actions/$id/send-create-agent-card'"
     }
    ],
    "justification": "",

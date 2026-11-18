@@ -133,6 +133,7 @@ Map<String, dynamic> _errorDetails(Map? body, int? status) {
     // Form-validation issues (`[{code, pointer}]`); the pointer names the
     // field that failed (runtime form v2 create / edit).
     'issues',
+    'errorCode',
     // account_link_required: the pending "sign in and connect" handle and
     // what it is for (`pendingLinkToken`, `provider`, `email`, `expiresAt`,
     // `signInMethods`); LEGAL_ACCEPTANCE_REQUIRED / TERMS_CHANGED: the
@@ -205,6 +206,7 @@ Map<String, dynamic> _errorDetails(Map? body, int? status) {
       : {};
   dynamic selected(String key) {
     final value = body![key];
+    if (key == 'errorCode') return value == 'FORM_INVALID' ? value : null;
     if (const {
       'targetServerSlug',
       'invitee',
@@ -254,10 +256,17 @@ Map<String, dynamic> _errorDetails(Map? body, int? status) {
         'reservationIds',
       });
     if (key == 'issues') {
+      final actionCardForm = body['errorCode'] == 'FORM_INVALID';
       return [
         if (value is List)
-          for (final issue in value)
-            if (issue is Map) receipt(issue, {'code', 'pointer'}),
+          for (final issue in actionCardForm ? value.take(24) : value)
+            if (issue is Map)
+              receipt(
+                issue,
+                actionCardForm
+                    ? {'code', 'field', 'message'}
+                    : {'code', 'pointer'},
+              ),
       ];
     }
     if (key == 'agreement') {

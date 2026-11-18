@@ -46,9 +46,16 @@ class RaftCardStack extends RaftCardElement {
     required this.children,
     this.row = false,
     this.wrap = false,
+    this.actions = false,
   });
   final List<RaftCardElement> children;
-  final bool row, wrap;
+  final bool row, wrap, actions;
+}
+
+class RaftCardSlot extends RaftCardElement {
+  const RaftCardSlot(this.child);
+
+  final Widget child;
 }
 
 enum RaftCardTextTone { normal, muted, warning }
@@ -58,10 +65,12 @@ class RaftCardText extends RaftCardElement {
     this.text, {
     this.tone = RaftCardTextTone.normal,
     this.mono = false,
+    this.clamp,
   });
   final String text;
   final RaftCardTextTone tone;
   final bool mono;
+  final int? clamp;
 }
 
 /// A state in the sender's words: always a neutral soft badge.
@@ -177,6 +186,8 @@ class RaftMessageCard extends StatelessWidget {
   final bool besideEnabled;
   final bool contentOnly;
 
+  Widget buildBody(BuildContext context) => _node(context, root, inRow: false);
+
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
@@ -285,9 +296,24 @@ class RaftMessageCard extends StatelessWidget {
     final ui = t.ui;
     final muted = t.scale(RaftTypeScale.monoMeta, color: ui.foregroundMuted);
     switch (element) {
-      case RaftCardStack(:final children, :final row, :final wrap):
+      case RaftCardStack(
+        :final children,
+        :final row,
+        :final wrap,
+        :final actions,
+      ):
         final shown = children.where(raftCardDrawsSomething).toList();
         if (shown.isEmpty) return const SizedBox.shrink();
+        if (actions) {
+          return Wrap(
+            alignment: WrapAlignment.end,
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final child in shown) _node(context, child, inRow: false),
+            ],
+          );
+        }
         if (!row)
           return _column([
             for (final c in shown) _node(context, c, inRow: false),
@@ -311,7 +337,7 @@ class RaftMessageCard extends StatelessWidget {
                 : _row(context, segment, wrap: wrap),
         ];
         return drawn.length == 1 ? drawn.first : _column(drawn);
-      case RaftCardText(:final text, :final tone, :final mono):
+      case RaftCardText(:final text, :final tone, :final mono, :final clamp):
         final color = switch (tone) {
           RaftCardTextTone.muted => ui.foregroundMuted,
           RaftCardTextTone.warning => t.colors['warning-strong'] ?? ui.warning,
@@ -319,9 +345,11 @@ class RaftMessageCard extends StatelessWidget {
         };
         return Text(
           text,
-          maxLines: inRow ? 1 : null,
+          maxLines: inRow ? 1 : clamp,
           softWrap: !inRow,
-          overflow: inRow ? TextOverflow.ellipsis : TextOverflow.clip,
+          overflow: inRow || clamp != null
+              ? TextOverflow.ellipsis
+              : TextOverflow.clip,
           style: mono
               ? t.scale(RaftTypeScale.monoMeta, color: color)
               : t.scale(RaftTypeScale.callout, color: color),
@@ -341,6 +369,8 @@ class RaftMessageCard extends StatelessWidget {
         return Text(duration(start, end), style: muted);
       case RaftCardButton():
         return const SizedBox.shrink();
+      case RaftCardSlot(:final child):
+        return child;
       case RaftCardMarkdown(:final content):
         return RaftMessageBody(
           key: const ValueKey('message-card-markdown'),
