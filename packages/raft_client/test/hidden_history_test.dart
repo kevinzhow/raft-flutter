@@ -94,6 +94,7 @@ void main() {
     test('reads the target, neighbours, thread counts and reply box', () {
       final target = HiddenTarget.read(body())!;
       expect(target.target.id, 't');
+      expect(target.sequence, BigInt.from(9));
       expect(target.before.single.id, 'b');
       expect(target.after.map((m) => m.id), ['a1', 'a2']);
       expect(target.threadCounts?.count, 4);
@@ -116,6 +117,35 @@ void main() {
 
     RaftApiException failure(int status, Map<String, Object?> body) =>
         RaftApiException.response('x', status: status, body: body);
+
+    test('only history-limited 404s carry sanitized canonical pointers', () {
+      final error = {
+        'code': 'history_limited',
+        'canonicalTarget': {
+          'kind': 'thread',
+          'channelId': 'c',
+          'threadChannelId': 'thread',
+          'threadParentMessageId': 'parent',
+          'messageId': 'reply',
+          'unexpected': 'dropped',
+        },
+      };
+      expect(failure(404, error).details['canonicalTarget'], {
+        'kind': 'thread',
+        'channelId': 'c',
+        'threadChannelId': 'thread',
+        'threadParentMessageId': 'parent',
+        'messageId': 'reply',
+      });
+      expect(failure(500, error).details['canonicalTarget'], isNull);
+      expect(
+        failure(404, {
+          ...error,
+          'code': 'not_found',
+        }).details['canonicalTarget'],
+        isNull,
+      );
+    });
 
     test('only a 404 with code history_limited carries a target', () {
       expect(

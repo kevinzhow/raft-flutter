@@ -125,7 +125,7 @@ class MobileRouteGate extends InheritedWidget {
   }) => direct && visible && !paused(context, workspace);
 
   /// Covered, or a channel or DM page whose workspace channel is still the
-  /// previous one.
+  /// previous one. A task page matches its discussion by the task anchor.
   static bool holds(BuildContext context, WorkspaceController workspace) {
     final state = _state(context);
     if (state == null) return false;
@@ -133,6 +133,15 @@ class MobileRouteGate extends InheritedWidget {
     final location = _location[state];
     if (location == null) return false;
     if (location.route != RaftRoute.channel && location.route != RaftRoute.dm) {
+      return false;
+    }
+    final task = location.task;
+    final discussion = workspace.threadIdentity;
+    if (task != null &&
+        discussion != null &&
+        discussion.taskId != null &&
+        task.channelId == discussion.parentChannelId &&
+        task.itemId == discussion.parentMessageId) {
       return false;
     }
     return workspace.channel?.id != location.entityId;

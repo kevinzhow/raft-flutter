@@ -102,11 +102,8 @@ Future<String?> createTaskConversation(
   return id;
 }
 
-/// The page around a focused reply. A 404 means that reply is missing
-/// (deleted, or not readable yet), not the thread: null opens the thread's
-/// latest replies instead, as the channel path does. Revoking the thread for
-/// it locked the thread until the next server selection (Activity rows that
-/// showed the previous conversation or nothing until restart, #294).
+/// The page around a focused reply. A hidden target starts the visible
+/// window immediately after the cutoff. A plain 404 falls back to latest.
 Future<Map<String, dynamic>?> focusedThreadReplyPage(
   WorkspaceMessages m,
   MessageWindowRequest request,
@@ -122,7 +119,24 @@ Future<Map<String, dynamic>?> focusedThreadReplyPage(
     );
   } on RaftApiException catch (e) {
     if (e.status != 404) rethrow;
-    if (request.current) m.state.highlightedMessageId = null;
+    if (!request.current) return null;
+    m.state.highlightedMessageId = null;
+    if (HiddenTarget.fromError(e) case HiddenTarget(
+      target: final target,
+      sequence: final sequence?,
+    ) when target.id == focusedMessageId) {
+      final page = await MessageHistoryPages.read(
+        m,
+        request,
+        m.state.threadChannelId!,
+        thread: true,
+        after: sequence,
+        localFirst: false,
+      );
+      return page
+        ..['historyLimited'] = true
+        ..['hasOlder'] = false;
+    }
     return null;
   }
 }

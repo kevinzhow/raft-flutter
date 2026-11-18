@@ -274,6 +274,13 @@ class RaftHistoryPaywallView extends StatelessWidget {
       w.messageDomain.contextLoadError != null &&
       w.client.hiddenHistory.targetOf(w.channel?.id) != null;
 
+  static HiddenTarget? _threadTarget(WorkspaceController w) {
+    final target = w.client.hiddenHistory.targetOf(w.threadChannelId);
+    return target?.target.id == w.threadIdentity?.focusedMessageId
+        ? target
+        : null;
+  }
+
   /// The paywall leads the channel's list: target mode, or the start of what
   /// the plan shows (`getHistoryTopState == history_limited`).
   static bool atTop(WorkspaceController w) =>
@@ -296,7 +303,11 @@ class RaftHistoryPaywallView extends StatelessWidget {
               ? HistoryPaywallScope.task
               : HistoryPaywallScope.thread)
         : historyPaywallScopeOf(w.channel);
-    final target = !thread && showsTarget(w) ? store.targetOf(channelId) : null;
+    final target = thread
+        ? _threadTarget(w)
+        : showsTarget(w)
+        ? store.targetOf(channelId)
+        : null;
     final days = historyPaywallDays(w);
     final times = SourceTimeFormatter(
       locale: Localizations.localeOf(context).toLanguageTag(),

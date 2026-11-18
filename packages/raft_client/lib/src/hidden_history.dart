@@ -87,11 +87,13 @@ class HiddenTarget {
     required this.target,
     required this.before,
     required this.after,
+    this.sequence,
     this.threadCounts,
     this.replies,
   });
 
   final HiddenHistoryMessage target;
+  final BigInt? sequence;
   final List<HiddenHistoryMessage> before, after;
   final HiddenThreadCounts? threadCounts;
   final HiddenTargetReplies? replies;
@@ -119,6 +121,7 @@ class HiddenTarget {
     final count = replies is Map ? replies['count'] : null;
     return HiddenTarget(
       target: target,
+      sequence: BigInt.from(seq),
       before: HiddenHistoryMessage.readList(value['before']),
       after: HiddenHistoryMessage.readList(value['after']),
       threadCounts: HiddenThreadCounts.read(value['thread']),

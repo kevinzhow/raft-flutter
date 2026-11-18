@@ -67,7 +67,8 @@ void main() {
       'sourceTargetId': 'c1',
       'sourceThreadId': 't1',
       'parentChannelId': 'p1',
-      'sourceTargetSnapshot': {'type': 'channel'},
+      'provenanceState': 'available',
+      'sourceTargetSnapshot': {'type': 'channel', 'labelVisibility': 'public'},
     });
     await tester.pumpWidget(const SizedBox());
   });

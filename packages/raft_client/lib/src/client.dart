@@ -66,7 +66,7 @@ class RaftApiException implements Exception {
     this.status,
     Map? body,
     this.retryAfter,
-  }) : details = _errorDetails(body),
+  }) : details = _errorDetails(body, status),
        structured = body != null && body['error'] is String,
        staleScope = false;
 
@@ -103,7 +103,7 @@ class RaftApiException implements Exception {
 bool _passwordIncorrect(Object? body) =>
     body is Map && body['code'] == 'password_incorrect';
 
-Map<String, dynamic> _errorDetails(Map? body) {
+Map<String, dynamic> _errorDetails(Map? body, int? status) {
   const keys = {
     'code',
     'retryable',
@@ -340,6 +340,20 @@ Map<String, dynamic> _errorDetails(Map? body) {
   return Map<String, dynamic>.unmodifiable({
     for (final key in keys)
       if (body?.containsKey(key) == true) key: freeze(selected(key)),
+    if (status == 404 &&
+        body?['code'] == 'history_limited' &&
+        body?['canonicalTarget'] is Map)
+      'canonicalTarget': freeze({
+        for (final key in const [
+          'kind',
+          'channelId',
+          'threadChannelId',
+          'threadParentMessageId',
+          'messageId',
+        ])
+          if (body!['canonicalTarget'][key] is String)
+            key: body['canonicalTarget'][key],
+      }),
   });
 }
 

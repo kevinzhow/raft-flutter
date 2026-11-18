@@ -162,6 +162,10 @@ class MessageHistoryNavigation {
     w.entries.clearHighlightedMessage(w.state.highlightedMessageId);
     if (thread) {
       final id = w.state.threadChannelId;
+      if (id != null && w.transport.client.hiddenHistory.targetOf(id) != null) {
+        w.transport.client.hiddenHistory.clearTarget(id);
+        w.context.changed();
+      }
       if (identity != null &&
           id != null &&
           w.messageWindows.contextHasNewer(id)) {

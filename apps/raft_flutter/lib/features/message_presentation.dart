@@ -789,11 +789,14 @@ class MessagePresentation extends StatelessWidget {
         // Web ForwardedBundleCard: useTimeFormatter().formatShortDateTime
         // ("Jun 22, 10:30 AM") in the account's zone and hour cycle.
         formatTimestamp: forwardedTimestamp(context),
+        canOpenSource: (item) => ForwardedSource.read(controller, item) != null,
         onOpenSource: exportMode || !localAuthority
             ? null
             : (item) {
-                final href = forwardedSourceHref(controller.channels, item);
-                if (href != null) unawaited(open(context, href));
+                final source = ForwardedSource.read(controller, item);
+                if (source != null) {
+                  unawaited(openForwardedSource(context, controller, source));
+                }
               },
         attachmentBuilder:
             exportAttachmentBuilder ??

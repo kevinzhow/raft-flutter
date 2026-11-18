@@ -39,11 +39,13 @@ class MessageAdapter implements HttpClientAdapter {
       return Completer<ResponseBody>().future;
     }
     final route = routes['${o.method} ${o.path}'];
+    final answer = route == null
+        ? (404, {'error': 'Unexpected endpoint'})
+        : await route(o);
+    final (status, body) = answer is (int, Object?) ? answer : (200, answer);
     return ResponseBody.fromString(
-      jsonEncode(
-        route == null ? {'error': 'Unexpected endpoint'} : await route(o),
-      ),
-      route == null ? 404 : 200,
+      jsonEncode(body),
+      status,
       headers: {
         Headers.contentTypeHeader: ['application/json'],
       },

@@ -79,12 +79,11 @@ List<RaftForwardedItem> raftForwardedItems(Map<String, dynamic> metadata) {
   final result = <RaftForwardedItem>[];
   for (var position = 0; position < raw.length; position++) {
     final item = raw[position];
-    if (item is! Map ||
-        item['contentSnapshot'] is! String ||
-        ![
-          'available',
-          'original_unavailable',
-        ].contains(item['provenanceState'])) {
+    if (item is! Map || item['contentSnapshot'] is! String) continue;
+    final provenance = item['provenanceState'];
+    if (provenance != null &&
+        provenance != 'available' &&
+        provenance != 'original_unavailable') {
       continue;
     }
     final target = item['sourceTargetSnapshot'];
@@ -121,7 +120,7 @@ List<RaftForwardedItem> raftForwardedItems(Map<String, dynamic> metadata) {
     final thread = target is Map && target['type'] == 'thread';
     final label =
         target is Map &&
-            item['provenanceState'] == 'available' &&
+            provenance != 'original_unavailable' &&
             target['labelVisibility'] == 'public' &&
             target['type'] is String &&
             target['type'] != 'dm' &&
@@ -160,9 +159,16 @@ List<RaftForwardedItem> raftForwardedItems(Map<String, dynamic> metadata) {
             'sourceTargetId',
             'sourceThreadId',
             'parentChannelId',
+            'sourceTaskId',
+            'sourceServerId',
+            'provenanceState',
           ])
             if (item[key] is String) key: item[key],
-          if (target is Map) 'sourceTargetSnapshot': {'type': target['type']},
+          if (target is Map)
+            'sourceTargetSnapshot': {
+              'type': target['type'],
+              'labelVisibility': target['labelVisibility'],
+            },
         },
       ),
     );
@@ -207,12 +213,14 @@ class RaftForwardedBundle extends StatefulWidget {
     this.formatTimestamp,
     this.exportMode = false,
     this.onOpenSource,
+    this.canOpenSource,
   });
   final Map<String, dynamic> metadata;
 
   /// Web `onOpenSource`: the source label of the first item opens the message
   /// it was forwarded from. Receives [RaftForwardedItem.item].
   final void Function(Map<String, dynamic> item)? onOpenSource;
+  final bool Function(Map<String, dynamic> item)? canOpenSource;
 
   final Widget Function(Map<String, dynamic>)? attachmentBuilder;
   final String Function(DateTime)? formatTimestamp;
@@ -272,7 +280,10 @@ class _RaftForwardedBundleState extends State<RaftForwardedBundle> {
       overflow: wraps ? TextOverflow.clip : TextOverflow.ellipsis,
     );
     final open = widget.onOpenSource;
-    if (open == null || !first.openable || widget.exportMode) {
+    if (open == null ||
+        !first.openable ||
+        widget.exportMode ||
+        widget.canOpenSource?.call(first.item) == false) {
       return text(style);
     }
     final hint = raftText(context, 'Open source message');
