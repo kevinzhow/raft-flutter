@@ -26,7 +26,7 @@ bool raftShowsWorkspaceTopBar({
     (nativeWindowChrome ||
         tokens.option('shell.browserTopBar', or: 'hidden') == 'shown');
 
-/// The workspace's 48px frame row. The two side regions have equal widths, so
+/// The workspace frame row. The two side regions have equal widths, so
 /// the search trigger remains centred on the window while workspace names vary.
 class RaftWorkspaceTopBar extends StatelessWidget {
   const RaftWorkspaceTopBar({
@@ -60,7 +60,7 @@ class RaftWorkspaceTopBar extends StatelessWidget {
         child: RaftStatusBarSource(
           color: t.colors['layer-workspace-rail']!,
           child: Container(
-            height: 48,
+            height: t.desktop ? 44 : 48,
             decoration: BoxDecoration(
               color: t.colors['layer-workspace-rail'],
               border: Border(
@@ -208,6 +208,7 @@ class RaftWorkspaceSearchTrigger extends StatelessWidget {
         return RaftRecipeBox(
           style: slots.root.withCssUsedBorderWidths(),
           tokens: rt,
+          height: t.desktop ? RaftLayoutMetrics.desktopControl : null,
           controlLabel: true,
           child: Row(
             spacing: slots.root.columnGap ?? 0,

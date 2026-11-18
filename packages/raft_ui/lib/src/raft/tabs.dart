@@ -73,7 +73,7 @@ class RaftTabButton extends StatelessWidget {
   final VoidCallback? onPressed;
   final RaftTabsVariant variant;
 
-  /// Defaults to the recipe height: 32 (sticker) / 44 (underline).
+  /// Defaults to 32 (34 at desktop density) for stickers and 44 for underlines.
   final double? height;
   final FocusNode? focusNode;
   final String? tooltip;
@@ -139,7 +139,11 @@ class RaftTabButton extends StatelessWidget {
     return RaftRecipeBox(
       style: tab,
       tokens: tokens,
-      height: height,
+      height:
+          height ??
+          (variant == RaftTabsVariant.standard && t.desktop
+              ? RaftLayoutMetrics.desktopControl
+              : null),
       padding: padding?.resolve(Directionality.of(context)),
       alignment: Alignment.center,
       growWithText: growsWithText ?? RaftScaled.grows(context),

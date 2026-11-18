@@ -5,8 +5,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
 
-// Web db5e399f / raft-ui 0.7.0, actual MainLayout desktop-shell DOM:
-// rail 57px including its seam, controls 40px, glyphs 20px.
+// Web v1.24 fine-pointer rail: 49px including its seam, 36px controls, 20px glyphs.
 void main() {
   for (final dark in [false, true]) {
     Future<void> rail(
@@ -60,9 +59,9 @@ void main() {
     ) async {
       var calls = 0;
       await rail(t, activate: () => calls++);
-      expect(t.getSize(find.byType(RaftWorkspaceRail)).width, 57);
+      expect(t.getSize(find.byType(RaftWorkspaceRail)).width, 49);
       final button = find.byKey(const ValueKey('rail-chat'));
-      expect(t.getRect(button), const Rect.fromLTWH(8, 66, 40, 40));
+      expect(t.getRect(button), const Rect.fromLTWH(6, 54, 36, 36));
       final glyph = find.descendant(
         of: button,
         matching: find.byType(RaftIcon),
@@ -123,7 +122,7 @@ void main() {
         for (var i = 0; i < 3; i++) {
           expect(
             t.getRect(actions.at(i)),
-            Rect.fromLTWH(8, 660 + i * 46, 40, 40),
+            Rect.fromLTWH(6, 662 + i * 46, 36, 36),
           );
           final glyph = find.descendant(
             of: actions.at(i),
@@ -292,7 +291,7 @@ void main() {
             ),
           ),
         );
-        expect(t.getSize(find.byType(RaftNavItem)), const Size(223, 37));
+        expect(t.getSize(find.byType(RaftNavItem)), const Size(223, 35));
         final title = t.widget<Text>(find.text('design'));
         expect(title.style!.fontSize, 15);
         expect(title.style!.height, 20 / 15);

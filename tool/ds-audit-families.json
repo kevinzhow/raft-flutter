@@ -651,6 +651,124 @@
           "role": "public_api"
         }
       }
+    },
+    "workspace-shell": {
+      "canonical": [
+        "RaftAdaptiveWorkspace",
+        "RaftWorkspaceRail",
+        "RaftPanelResizeHandle",
+        "RaftWorkspaceTopBar"
+      ],
+      "note": "Shared workspace columns, rail and Web top bar. Hosts supply navigation data and persist layout.",
+      "deprecated": {},
+      "canonicalBindings": {
+        "RaftAdaptiveWorkspace": {
+          "declarationId": "packages/raft_ui/lib/src/adaptive_workspace.dart#class:RaftAdaptiveWorkspace",
+          "role": "public_api"
+        },
+        "RaftWorkspaceRail": {
+          "declarationId": "packages/raft_ui/lib/src/adaptive_workspace.dart#class:RaftWorkspaceRail",
+          "role": "public_api"
+        },
+        "RaftPanelResizeHandle": {
+          "declarationId": "packages/raft_ui/lib/src/adaptive_workspace.dart#class:RaftPanelResizeHandle",
+          "role": "public_api"
+        },
+        "RaftWorkspaceTopBar": {
+          "declarationId": "packages/raft_ui/lib/src/workspace_top_bar.dart#class:RaftWorkspaceTopBar",
+          "role": "public_api"
+        }
+      }
+    },
+    "sidebar": {
+      "canonical": [
+        "RaftMountedSidebarFrame",
+        "RaftSidebarRowsSkeleton",
+        "RaftSidebarSectionHeader"
+      ],
+      "note": "The mounted sidebar frame, its shared loading rows and its section header.",
+      "deprecated": {},
+      "canonicalBindings": {
+        "RaftMountedSidebarFrame": {
+          "declarationId": "packages/raft_ui/lib/src/sidebar_frame.dart#class:RaftMountedSidebarFrame",
+          "role": "public_api"
+        },
+        "RaftSidebarRowsSkeleton": {
+          "declarationId": "packages/raft_ui/lib/src/sidebar_frame.dart#class:RaftSidebarRowsSkeleton",
+          "role": "public_api"
+        },
+        "RaftSidebarSectionHeader": {
+          "declarationId": "packages/raft_ui/lib/src/sidebar_section.dart#class:RaftSidebarSectionHeader",
+          "role": "public_api"
+        }
+      }
+    },
+    "panel-header": {
+      "canonical": [
+        "RaftPanelHeaderBar",
+        "RaftPanelHeaderContent"
+      ],
+      "note": "Shared header chrome, including the body divider and a caller-owned bare folded edge.",
+      "deprecated": {},
+      "canonicalBindings": {
+        "RaftPanelHeaderBar": {
+          "declarationId": "packages/raft_ui/lib/src/panel_layout.dart#class:RaftPanelHeaderBar",
+          "role": "public_api"
+        },
+        "RaftPanelHeaderContent": {
+          "declarationId": "packages/raft_ui/lib/src/panel_layout.dart#class:RaftPanelHeaderContent",
+          "role": "public_api"
+        }
+      }
+    },
+    "search": {
+      "canonical": [
+        "RaftWorkspaceSearchTrigger",
+        "RaftSearchInput",
+        "RaftSearchResultSurface"
+      ],
+      "note": "Search trigger, grouped input and result surface. Hosts own query, results and navigation.",
+      "deprecated": {},
+      "canonicalBindings": {
+        "RaftWorkspaceSearchTrigger": {
+          "declarationId": "packages/raft_ui/lib/src/workspace_top_bar.dart#class:RaftWorkspaceSearchTrigger",
+          "role": "public_api"
+        },
+        "RaftSearchInput": {
+          "declarationId": "packages/raft_ui/lib/src/search_input.dart#class:RaftSearchInput",
+          "role": "public_api"
+        },
+        "RaftSearchResultSurface": {
+          "declarationId": "packages/raft_ui/lib/src/search_result_surface.dart#class:RaftSearchResultSurface",
+          "role": "public_api"
+        }
+      }
+    },
+    "pull-to-refresh": {
+      "canonical": [
+        "RaftPullToRefresh"
+      ],
+      "note": "One touch refresh control with a platform indicator and callback owned by the scrolling surface.",
+      "deprecated": {},
+      "canonicalBindings": {
+        "RaftPullToRefresh": {
+          "declarationId": "packages/raft_ui/lib/src/pull_to_refresh.dart#class:RaftPullToRefresh",
+          "role": "public_api"
+        }
+      }
+    },
+    "notification-center": {
+      "canonical": [
+        "RaftNotificationCenter"
+      ],
+      "note": "Notification popup content and the view-only notification row and action slots.",
+      "deprecated": {},
+      "canonicalBindings": {
+        "RaftNotificationCenter": {
+          "declarationId": "packages/raft_ui/lib/src/notification_center.dart#class:RaftNotificationCenter",
+          "role": "public_api"
+        }
+      }
     }
   },
   "recipes": {
@@ -777,10 +895,10 @@
       }
     },
     "panelHeader": {
-      "family": null,
-      "decision": "unresolved",
+      "family": "panel-header",
+      "decision": "existing",
       "owner": "design-system alignment",
-      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "reason": "Shared header chrome, including the body divider and a caller-owned bare folded edge.",
       "generatedFile": "packages/raft_theme/lib/recipes/panel_header.g.dart",
       "axes": {
         "size": [
@@ -956,10 +1074,10 @@
       }
     },
     "appRail": {
-      "family": null,
-      "decision": "unresolved",
+      "family": "workspace-shell",
+      "decision": "existing",
       "owner": "design-system alignment",
-      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "reason": "Shared workspace columns, rail and Web top bar. Hosts supply navigation data and persist layout.",
       "generatedFile": "packages/raft_theme/lib/recipes/app_rail.g.dart",
       "axes": {}
     },
@@ -1010,10 +1128,10 @@
       "axes": {}
     },
     "sidebarRecipe": {
-      "family": null,
-      "decision": "unresolved",
+      "family": "sidebar",
+      "decision": "existing",
       "owner": "design-system alignment",
-      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "reason": "The mounted sidebar frame, its shared loading rows and its section header.",
       "generatedFile": "packages/raft_theme/lib/recipes/sidebar_recipe.g.dart",
       "axes": {}
     },
@@ -1026,10 +1144,10 @@
       "axes": {}
     },
     "sidebarItemRecipe": {
-      "family": null,
-      "decision": "unresolved",
+      "family": "sidebar",
+      "decision": "existing",
       "owner": "design-system alignment",
-      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "reason": "The mounted sidebar frame, its shared loading rows and its section header.",
       "generatedFile": "packages/raft_theme/lib/recipes/sidebar_item_recipe.g.dart",
       "axes": {
         "interactive": [
@@ -1047,10 +1165,10 @@
       }
     },
     "sidebarSectionRecipe": {
-      "family": null,
-      "decision": "unresolved",
+      "family": "sidebar",
+      "decision": "existing",
       "owner": "design-system alignment",
-      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "reason": "The mounted sidebar frame, its shared loading rows and its section header.",
       "generatedFile": "packages/raft_theme/lib/recipes/sidebar_section_recipe.g.dart",
       "axes": {}
     },
@@ -1929,10 +2047,10 @@
       "axes": {}
     },
     "notificationCenter": {
-      "family": null,
-      "decision": "unresolved",
+      "family": "notification-center",
+      "decision": "existing",
       "owner": "design-system alignment",
-      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "reason": "Notification popup content and the view-only notification row and action slots.",
       "generatedFile": "packages/raft_theme/lib/recipes/notification_center.g.dart",
       "axes": {
         "viewport": [
@@ -1989,10 +2107,10 @@
       "axes": {}
     },
     "tabs": {
-      "family": null,
-      "decision": "unresolved",
+      "family": "tabs",
+      "decision": "existing",
       "owner": "design-system alignment",
-      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "reason": "RaftTabs and RaftTabButton consume the pinned Tabs recipe. Product strips compose the shared controls.",
       "generatedFile": "packages/raft_theme/lib/recipes/tabs.g.dart",
       "axes": {
         "variant": [
@@ -2040,10 +2158,10 @@
       "axes": {}
     },
     "appShell": {
-      "family": null,
-      "decision": "unresolved",
+      "family": "workspace-shell",
+      "decision": "existing",
       "owner": "design-system alignment",
-      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "reason": "Shared workspace columns, rail and Web top bar. Hosts supply navigation data and persist layout.",
       "generatedFile": "packages/raft_theme/lib/recipes/app_shell.g.dart",
       "axes": {
         "overlay": [
@@ -2053,10 +2171,10 @@
       }
     },
     "resizable": {
-      "family": null,
-      "decision": "unresolved",
+      "family": "workspace-shell",
+      "decision": "existing",
       "owner": "design-system alignment",
-      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "reason": "Shared workspace columns, rail and Web top bar. Hosts supply navigation data and persist layout.",
       "generatedFile": "packages/raft_theme/lib/recipes/resizable.g.dart",
       "axes": {}
     },
@@ -2255,18 +2373,18 @@
       "axes": {}
     },
     "searchEntity": {
-      "family": null,
-      "decision": "unresolved",
+      "family": "search",
+      "decision": "existing",
       "owner": "design-system alignment",
-      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "reason": "Search trigger, grouped input and result surface. Hosts own query, results and navigation.",
       "generatedFile": "packages/raft_theme/lib/recipes/search_entity.g.dart",
       "axes": {}
     },
     "searchMessage": {
-      "family": null,
-      "decision": "unresolved",
+      "family": "search",
+      "decision": "existing",
       "owner": "design-system alignment",
-      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "reason": "Search trigger, grouped input and result surface. Hosts own query, results and navigation.",
       "generatedFile": "packages/raft_theme/lib/recipes/search_message.g.dart",
       "axes": {}
     },
@@ -2279,10 +2397,10 @@
       "axes": {}
     },
     "searchTrigger": {
-      "family": null,
-      "decision": "unresolved",
+      "family": "search",
+      "decision": "existing",
       "owner": "design-system alignment",
-      "reason": "Canonical family/API ownership is unresolved; do not invent another component implementation.",
+      "reason": "Search trigger, grouped input and result surface. Hosts own query, results and navigation.",
       "generatedFile": "packages/raft_theme/lib/recipes/search_trigger.g.dart",
       "axes": {}
     },
@@ -2706,10 +2824,10 @@
       "axes": {}
     },
     "pullToRefreshIndicator": {
-      "family": null,
-      "decision": "unresolved",
+      "family": "pull-to-refresh",
+      "decision": "existing",
       "owner": "WP-DS5 text/content/scrolling",
-      "reason": "Published raft-ui0.95.3 source recipe; downstream canonical API and visual acceptance remain pending. This registration is source ownership only.",
+      "reason": "One touch refresh control with a platform indicator and callback owned by the scrolling surface.",
       "generatedFile": "packages/raft_theme/lib/recipes/pull_to_refresh_indicator.g.dart",
       "axes": {
         "platform": [
@@ -2769,10 +2887,10 @@
       "axes": {}
     },
     "webTopBar": {
-      "family": null,
-      "decision": "unresolved",
+      "family": "workspace-shell",
+      "decision": "existing",
       "owner": "WP-DS4 shell/navigation",
-      "reason": "Published raft-ui0.95.3 source recipe; downstream canonical API and visual acceptance remain pending. This registration is source ownership only.",
+      "reason": "Shared workspace columns, rail and Web top bar. Hosts supply navigation data and persist layout.",
       "generatedFile": "packages/raft_theme/lib/recipes/web_top_bar.g.dart",
       "axes": {}
     }

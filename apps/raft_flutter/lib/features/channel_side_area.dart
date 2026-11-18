@@ -506,6 +506,7 @@ class _ChannelSideAreaState extends State<ChannelSideArea> {
           mode: mode,
           phone: compact,
           collapsed: fold.collapsed,
+          stackEnd: fold.stackEnd,
           onCollapsedChanged: fold.onCollapsedChanged,
           headWrapper: widget.headWrapper ?? _wrapHead,
           actions: [
@@ -544,6 +545,7 @@ class _ChannelSideAreaState extends State<ChannelSideArea> {
           mode: mode,
           phone: compact,
           collapsed: fold.collapsed,
+          stackEnd: fold.stackEnd,
           onCollapsedChanged: fold.onCollapsedChanged,
           headWrapper: widget.headWrapper ?? _wrapHead,
           child:

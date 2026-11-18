@@ -45,7 +45,7 @@ void main() {
       }
     });
 
-    test('navigation rows: a57b9dab heights per viewport', () {
+    test('navigation rows: base touch heights per viewport', () {
       double row(String id, double width, double height) =>
           RaftConversationNavigationRecipe(
             _tokens(id),
@@ -53,7 +53,7 @@ void main() {
           ).rowHeight(viewportWidth: width, viewportHeight: height);
       // (desktop tall, desktop short, phone tall, phone short)
       final expected = {
-        raftThemePackId: [36.0, 36.0, 44.0, 44.0],
+        raftThemePackId: [38.0, 38.0, 44.0, 44.0],
       };
       for (final MapEntry(key: id, value: heights) in expected.entries) {
         expect(

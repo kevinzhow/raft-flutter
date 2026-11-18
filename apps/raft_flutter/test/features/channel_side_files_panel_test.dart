@@ -341,7 +341,12 @@ void main() {
       );
       await pull(t);
       expect(round, 1);
-      expect(find.byType(RefreshIndicator), findsNothing);
+      expect(
+        t
+            .widgetList<RaftPullToRefresh>(find.byType(RaftPullToRefresh))
+            .any((refresh) => refresh.enabled),
+        isFalse,
+      );
     });
 
     testWidgets('the empty state pulls too', (t) async {

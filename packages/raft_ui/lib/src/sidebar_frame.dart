@@ -6,6 +6,7 @@ import 'indicators.dart';
 import 'sidebar_section.dart';
 import 'status_bar.dart';
 import 'theme.dart';
+import 'viewport_breakpoints.dart';
 
 /// Mounted SidebarRoot surface. The host supplies its authorized contents;
 /// colors and geometry stay in raft_ui for Chat, Members and Settings alike.
@@ -207,21 +208,95 @@ class RaftSidebarSectionDescription extends StatelessWidget {
   }
 }
 
-/// Sidebar.tsx `SidebarRowsSkeleton`: [rows] x `SkeletonRow gap-1.5 px-2
-/// py-2` with an 18px avatar and one `w-3/5` line.
-class RaftSidebarRowsSkeleton extends StatelessWidget {
-  const RaftSidebarRowsSkeleton({super.key, this.rows = 3});
+/// Loading rows reserve the same lead and row rhythm as raft-ui SidebarItem.
+class RaftSidebarRowsSkeleton extends StatefulWidget {
+  const RaftSidebarRowsSkeleton({super.key, this.rows = 3, this.icon = false});
+
   final int rows;
+  final bool icon;
+
   @override
-  Widget build(BuildContext context) => Column(
-    children: [
-      for (var i = 0; i < rows; i++)
-        const Padding(
-          padding: EdgeInsets.all(8),
-          child: RaftSkeletonRow(avatar: true, gap: 6, lineFractions: [.6]),
-        ),
-    ],
+  State<RaftSidebarRowsSkeleton> createState() => _SidebarRowsSkeletonState();
+}
+
+class _SidebarRowsSkeletonState extends State<RaftSidebarRowsSkeleton>
+    with SingleTickerProviderStateMixin {
+  late final pulse = AnimationController(
+    vsync: this,
+    duration: const Duration(seconds: 1),
   );
+  late final curve = CurvedAnimation(
+    parent: pulse,
+    curve: const Cubic(.4, 0, .6, 1),
+  );
+  late final opacity = Tween<double>(begin: 1, end: .5).animate(curve);
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (MediaQuery.disableAnimationsOf(context)) {
+      pulse.stop();
+      pulse.value = 0;
+    } else if (!pulse.isAnimating) {
+      // ignore: raft_lints/avoid_unreviewed_idle_work -- Loop driven by an AnimationController whose vsync is this State, so TickerMode (hidden routes, offstage tabs, folded panels) mutes it, it is disposed with the widget, and reduced motion stops it.
+      pulse.repeat(reverse: true);
+    }
+  }
+
+  @override
+  void dispose() {
+    curve.dispose();
+    pulse.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = RaftTokens.of(context);
+    final width = raftBreakpointWidth(context);
+    final rowHeight = RaftLayoutMetrics.sidebarRowHeight(tokens, width);
+    final lead = widget.icon && tokens.desktop ? 16.0 : 19.0;
+    final lineHeight =
+        tokens
+            .typeSlot(
+              width < RaftLayoutMetrics.desktopBreakpoint ? 'body' : 'subhead',
+            )
+            .fontSize *
+        .75;
+    return ExcludeSemantics(
+      child: FadeTransition(
+        opacity: opacity,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          spacing: 2,
+          children: [
+            for (var index = 0; index < widget.rows; index++)
+              Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: tokens.desktop ? 8 : 12,
+                ),
+                child: SizedBox(
+                  height: rowHeight,
+                  child: Row(
+                    spacing: 8,
+                    children: [
+                      RaftSkeleton(fromRecipe: true, width: lead, height: lead),
+                      Flexible(
+                        child: RaftSkeleton(
+                          variant: RaftSkeletonVariant.line,
+                          fromRecipe: true,
+                          width: 128,
+                          height: lineHeight,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 /// Sidebar.tsx Guest chip (shared with ChannelMemberList): `shrink-0

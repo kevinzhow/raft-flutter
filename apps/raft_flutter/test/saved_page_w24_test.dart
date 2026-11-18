@@ -284,10 +284,10 @@ void main() {
       size: const Size(390, 844),
       platform: TargetPlatform.android,
     );
-    expect(find.byType(RefreshIndicator), findsOneWidget);
+    expect(find.byType(RaftPullToRefresh), findsOneWidget);
     final reads = w.savedQueries.length;
     w.saved = () => throw StateError('offline');
-    await t.drag(find.byType(RefreshIndicator), const Offset(0, 360));
+    await t.drag(find.byType(RaftPullToRefresh), const Offset(0, 360));
     await t.pump();
     await t.pump(const Duration(milliseconds: 500));
     await t.pumpAndSettle();

@@ -507,6 +507,7 @@ class RaftPanelHeaderBar extends StatelessWidget {
     final narrow =
         MediaQuery.sizeOf(context).width < RaftLayoutMetrics.desktopBreakpoint;
     final grows = RaftScaled.grows(context);
+    final inline = !grows && (inlineMeta || !narrow);
     final height = RaftLayoutMetrics.shellHeaderHeight(
       t,
       MediaQuery.sizeOf(context).height,
@@ -525,7 +526,7 @@ class RaftPanelHeaderBar extends StatelessWidget {
             color: t.ui.foregroundHint,
           );
     final heading = Row(
-      mainAxisSize: inlineMeta ? MainAxisSize.min : MainAxisSize.max,
+      mainAxisSize: inline ? MainAxisSize.min : MainAxisSize.max,
       children: [
         Flexible(
           child: Semantics(
@@ -556,7 +557,8 @@ class RaftPanelHeaderBar extends StatelessWidget {
         ).copyWith(top: grows ? 8 : 0, bottom: grows ? 8 : 0),
         decoration: BoxDecoration(
           color: fill,
-          border: Border(bottom: BorderSide(color: t.ui.lineSeam)),
+          border:
+              bottomBorder ?? Border(bottom: BorderSide(color: t.ui.lineSeam)),
         ),
         child: Row(
           children: [
@@ -585,18 +587,21 @@ class RaftPanelHeaderBar extends StatelessWidget {
             Expanded(
               child:
                   titleSlot ??
-                  (inlineMeta && subtitle != null
+                  (inline && subtitle != null
                       ? Row(
                           crossAxisAlignment: CrossAxisAlignment.baseline,
                           textBaseline: TextBaseline.alphabetic,
                           spacing: 8,
                           children: [
                             Flexible(child: heading),
-                            RaftCssText(
-                              subtitle!,
-                              style: metaStyle,
-                              maxLines: 1,
-                              softWrap: false,
+                            Flexible(
+                              child: RaftCssText(
+                                subtitle!,
+                                style: metaStyle,
+                                maxLines: 1,
+                                softWrap: false,
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
                           ],
                         )

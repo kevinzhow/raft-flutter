@@ -19355,16 +19355,20 @@
         "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
       },
       "packages/raft_ui/lib/src/adaptive_workspace.dart#class:RaftAdaptiveWorkspace": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+        "role": "canonical_component",
+        "familyRefs": [
+          "workspace-shell"
+        ],
+        "owner": "WP-DS4",
+        "reason": "Shared workspace columns, rail and Web top bar. Hosts supply navigation data and persist layout."
       },
       "packages/raft_ui/lib/src/adaptive_workspace.dart#class:RaftPanelResizeHandle": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+        "role": "canonical_component",
+        "familyRefs": [
+          "workspace-shell"
+        ],
+        "owner": "WP-DS4",
+        "reason": "Shared workspace columns, rail and Web top bar. Hosts supply navigation data and persist layout."
       },
       "packages/raft_ui/lib/src/adaptive_workspace.dart#class:RaftRailUnreadCount": {
         "role": "unresolved",
@@ -19379,10 +19383,12 @@
         "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
       },
       "packages/raft_ui/lib/src/adaptive_workspace.dart#class:RaftWorkspaceRail": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+        "role": "canonical_component",
+        "familyRefs": [
+          "workspace-shell"
+        ],
+        "owner": "WP-DS4",
+        "reason": "Shared workspace columns, rail and Web top bar. Hosts supply navigation data and persist layout."
       },
       "packages/raft_ui/lib/src/adaptive_workspace.dart#class:_MobileKeyboardLayout": {
         "role": "unresolved",
@@ -19407,24 +19413,6 @@
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
-      },
-      "packages/raft_ui/lib/src/adaptive_workspace.dart#local-function:CLASS:_RaftAdaptiveWorkspaceState@8711/METHOD:conversation@9736/FUNCTION:panel@11628": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
-      },
-      "packages/raft_ui/lib/src/adaptive_workspace.dart#local-function:CLASS:_RaftAdaptiveWorkspaceState@8711/METHOD:conversation@9736/FUNCTION:profile@11203": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
-      },
-      "packages/raft_ui/lib/src/adaptive_workspace.dart#local-function:CLASS:_RaftAdaptiveWorkspaceState@8711/METHOD:conversation@9736/FUNCTION:thread@10737": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
       "packages/raft_ui/lib/src/adaptive_workspace.dart#method:RaftAdaptiveWorkspace.createState": {
         "role": "unresolved",
@@ -30457,10 +30445,12 @@
         "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
       },
       "packages/raft_ui/lib/src/notification_center.dart#class:RaftNotificationCenter": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+        "role": "canonical_component",
+        "familyRefs": [
+          "notification-center"
+        ],
+        "owner": "WP-DS4",
+        "reason": "Notification popup content and the view-only notification row and action slots."
       },
       "packages/raft_ui/lib/src/notification_center.dart#class:_NotificationAttentionInsetPainter": {
         "role": "unresolved",
@@ -30931,16 +30921,20 @@
         "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
       },
       "packages/raft_ui/lib/src/panel_layout.dart#class:RaftPanelHeaderBar": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+        "role": "canonical_component",
+        "familyRefs": [
+          "panel-header"
+        ],
+        "owner": "WP-DS4",
+        "reason": "Shared header chrome, including the body divider and a caller-owned bare folded edge."
       },
       "packages/raft_ui/lib/src/panel_layout.dart#class:RaftPanelHeaderContent": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+        "role": "canonical_component",
+        "familyRefs": [
+          "panel-header"
+        ],
+        "owner": "WP-DS4",
+        "reason": "Shared header chrome, including the body divider and a caller-owned bare folded edge."
       },
       "packages/raft_ui/lib/src/panel_layout.dart#class:RaftPanelIconButton": {
         "role": "unresolved",
@@ -31708,10 +31702,12 @@
         "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
       },
       "packages/raft_ui/lib/src/pull_to_refresh.dart#class:RaftPullToRefresh": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+        "role": "canonical_component",
+        "familyRefs": [
+          "pull-to-refresh"
+        ],
+        "owner": "WP-DS4",
+        "reason": "One touch refresh control with a platform indicator and callback owned by the scrolling surface."
       },
       "packages/raft_ui/lib/src/pull_to_refresh.dart#method:RaftPullToRefresh.build": {
         "role": "unresolved",
@@ -33935,10 +33931,12 @@
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
       "packages/raft_ui/lib/src/search_input.dart#class:RaftSearchInput": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+        "role": "canonical_component",
+        "familyRefs": [
+          "search"
+        ],
+        "owner": "WP-DS4",
+        "reason": "Search trigger, grouped input and result surface. Hosts own query, results and navigation."
       },
       "packages/raft_ui/lib/src/search_input.dart#method:RaftSearchInput.build": {
         "role": "unresolved",
@@ -33947,10 +33945,12 @@
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
       "packages/raft_ui/lib/src/search_result_surface.dart#class:RaftSearchResultSurface": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+        "role": "canonical_component",
+        "familyRefs": [
+          "search"
+        ],
+        "owner": "WP-DS4",
+        "reason": "Search trigger, grouped input and result surface. Hosts own query, results and navigation."
       },
       "packages/raft_ui/lib/src/search_result_surface.dart#class:RaftTaskFilterButton": {
         "role": "unresolved",
@@ -35857,12 +35857,6 @@
         "owner": "Workspace side panels",
         "reason": "Projects the existing thread into the conversation region when its column folds."
       },
-      "packages/raft_ui/lib/src/adaptive_workspace.dart#local-function:CLASS:_RaftAdaptiveWorkspaceState@8711/METHOD:conversation@9736/FUNCTION:mainContent@11283": {
-        "role": "entry_composition",
-        "familyRefs": [],
-        "owner": "Workspace side panels",
-        "reason": "Keeps the workspace content mounted and projects the thread only when folded."
-      },
       "packages/raft_ui/lib/src/adaptive_workspace.dart#method:RaftAdaptiveWorkspace.foldedThreadOf": {
         "role": "entry_composition",
         "familyRefs": [],
@@ -36528,10 +36522,12 @@
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
       "packages/raft_ui/lib/src/sidebar_frame.dart#class:RaftMountedSidebarFrame": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+        "role": "canonical_component",
+        "familyRefs": [
+          "sidebar"
+        ],
+        "owner": "WP-DS4",
+        "reason": "The mounted sidebar frame, its shared loading rows and its section header."
       },
       "packages/raft_ui/lib/src/sidebar_frame.dart#class:RaftSidebarMachineGroup": {
         "role": "unresolved",
@@ -36540,10 +36536,12 @@
         "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
       },
       "packages/raft_ui/lib/src/sidebar_frame.dart#class:RaftSidebarRowsSkeleton": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+        "role": "canonical_component",
+        "familyRefs": [
+          "sidebar"
+        ],
+        "owner": "WP-DS4",
+        "reason": "The mounted sidebar frame, its shared loading rows and its section header."
       },
       "packages/raft_ui/lib/src/sidebar_frame.dart#class:RaftSidebarSectionDescription": {
         "role": "unresolved",
@@ -36702,10 +36700,12 @@
         "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
       },
       "packages/raft_ui/lib/src/sidebar_section.dart#class:RaftSidebarSectionHeader": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+        "role": "canonical_component",
+        "familyRefs": [
+          "sidebar"
+        ],
+        "owner": "WP-DS4",
+        "reason": "The mounted sidebar frame, its shared loading rows and its section header."
       },
       "packages/raft_ui/lib/src/sidebar_section.dart#class:_SectionAction": {
         "role": "unresolved",
@@ -38646,16 +38646,20 @@
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
       "packages/raft_ui/lib/src/workspace_top_bar.dart#class:RaftWorkspaceSearchTrigger": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+        "role": "canonical_component",
+        "familyRefs": [
+          "search"
+        ],
+        "owner": "WP-DS4",
+        "reason": "Search trigger, grouped input and result surface. Hosts own query, results and navigation."
       },
       "packages/raft_ui/lib/src/workspace_top_bar.dart#class:RaftWorkspaceTopBar": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
+        "role": "canonical_component",
+        "familyRefs": [
+          "workspace-shell"
+        ],
+        "owner": "WP-DS4",
+        "reason": "Shared workspace columns, rail and Web top bar. Hosts supply navigation data and persist layout."
       },
       "packages/raft_ui/lib/src/workspace_top_bar.dart#method:RaftWorkspaceSearchTrigger.build": {
         "role": "unresolved",
@@ -55274,6 +55278,108 @@
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/adaptive_workspace.dart#local-function:CLASS:_MobileKeyboardLayout@46562/METHOD:build@47022/FUNCTION:withoutRailInset@47260": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS4",
+        "reason": "Resize control focus, seam and host layout. State-specific visual acceptance is pending."
+      },
+      "packages/raft_ui/lib/src/adaptive_workspace.dart#local-function:CLASS:_RaftAdaptiveWorkspaceState@8740/METHOD:conversation@9765/FUNCTION:mainContent@11312": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Workspace side panels",
+        "reason": "Keeps the workspace content mounted and projects the thread only when folded."
+      },
+      "packages/raft_ui/lib/src/adaptive_workspace.dart#local-function:CLASS:_RaftAdaptiveWorkspaceState@8740/METHOD:conversation@9765/FUNCTION:panel@11657": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/adaptive_workspace.dart#local-function:CLASS:_RaftAdaptiveWorkspaceState@8740/METHOD:conversation@9765/FUNCTION:profile@11232": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/adaptive_workspace.dart#local-function:CLASS:_RaftAdaptiveWorkspaceState@8740/METHOD:conversation@9765/FUNCTION:thread@10766": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/components.dart#local-function:CLASS:RaftNavItem@27022/METHOD:_build@34027/FUNCTION:row@40958": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS4",
+        "reason": "Mounted navigation row density shared with its skeleton. State-specific visual acceptance is pending."
+      },
+      "packages/raft_ui/lib/src/components.dart#local-function:CLASS:RaftNavItem@27022/METHOD:_build@34027/FUNCTION:titleContent@37132": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS4",
+        "reason": "Mounted navigation row density shared with its skeleton. State-specific visual acceptance is pending."
+      },
+      "packages/raft_ui/lib/src/components.dart#local-function:CLASS:RaftNavItem@27022/METHOD:_build@34027/FUNCTION:titleWithIndicators@40188": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS4",
+        "reason": "Mounted navigation row density shared with its skeleton. State-specific visual acceptance is pending."
+      },
+      "packages/raft_ui/lib/src/components.dart#local-function:CLASS:RaftNavItem@27022/METHOD:_build@34027/FUNCTION:wrappedTitle@35991": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS4",
+        "reason": "Mounted navigation row density shared with its skeleton. State-specific visual acceptance is pending."
+      },
+      "packages/raft_ui/lib/src/design_primitives.dart#local-function:CLASS:_RaftDropdownMenuState@68441/METHOD:build@74851/FUNCTION:toggle@75081": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS4",
+        "reason": "Shell and sidebar density. Unchanged local builders retain their previous ownership. State-specific visual acceptance is pending."
+      },
+      "packages/raft_ui/lib/src/pull_to_refresh.dart#class:_RaftPullToRefreshState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS4",
+        "reason": "Touch refresh gesture and progress lifecycle. State-specific visual acceptance is pending."
+      },
+      "packages/raft_ui/lib/src/pull_to_refresh.dart#method:RaftPullToRefresh.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS4",
+        "reason": "Touch refresh gesture and progress lifecycle. State-specific visual acceptance is pending."
+      },
+      "packages/raft_ui/lib/src/pull_to_refresh.dart#method:_RaftPullToRefreshState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS4",
+        "reason": "Touch refresh gesture and progress lifecycle. State-specific visual acceptance is pending."
+      },
+      "packages/raft_ui/lib/src/pull_to_refresh.dart#method:_RaftPullToRefreshState.didUpdateWidget": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS4",
+        "reason": "Touch refresh gesture and progress lifecycle. State-specific visual acceptance is pending."
+      },
+      "packages/raft_ui/lib/src/sidebar_frame.dart#class:_SidebarRowsSkeletonState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS4",
+        "reason": "Shared sidebar loading presentation. State-specific visual acceptance is pending."
+      },
+      "packages/raft_ui/lib/src/sidebar_frame.dart#method:RaftSidebarRowsSkeleton.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS4",
+        "reason": "Shared sidebar loading presentation. State-specific visual acceptance is pending."
+      },
+      "packages/raft_ui/lib/src/sidebar_frame.dart#method:_SidebarRowsSkeletonState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-DS4",
+        "reason": "Shared sidebar loading presentation. State-specific visual acceptance is pending."
       }
     },
     "entries": {
@@ -58948,6 +59054,15 @@
         ],
         "mountStatus": "source_reviewed",
         "reason": "The Agent row in the Computer details opened by the notification bell presents the existing Agent detail page."
+      },
+      "surface:packages/raft_ui/lib/src/design_primitives.dart#local-function:CLASS:_RaftDropdownMenuState@68441/METHOD:build@74851/FUNCTION:toggle@75081": {
+        "kind": "surface",
+        "declarationRefs": [
+          "packages/raft_ui/lib/src/design_primitives.dart#local-function:CLASS:_RaftDropdownMenuState@68441/METHOD:build@74851/FUNCTION:toggle@75081"
+        ],
+        "owner": "WP-DS4",
+        "mountStatus": "source_reviewed",
+        "reason": "Registered shell family source entry."
       }
     },
     "requirements": {
@@ -61835,6 +61950,12 @@
         "applicability": "unknown",
         "owner": "WP-CHAN",
         "reason": "The source entry is registered. Bound visual state and input coverage are pending."
+      },
+      "surface:packages/raft_ui/lib/src/design_primitives.dart#local-function:CLASS:_RaftDropdownMenuState@68441/METHOD:build@74851/FUNCTION:toggle@75081:applicability": {
+        "entryId": "surface:packages/raft_ui/lib/src/design_primitives.dart#local-function:CLASS:_RaftDropdownMenuState@68441/METHOD:build@74851/FUNCTION:toggle@75081",
+        "applicability": "unknown",
+        "owner": "WP-DS4",
+        "reason": "Bound visual state and input coverage are pending."
       }
     },
     "knownStateAtoms": {

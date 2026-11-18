@@ -7,6 +7,7 @@ import 'design_primitives.dart';
 import 'icons.dart';
 import 'localization.dart';
 import 'recipe_surface.dart';
+import 'raft/ui_tokens.dart';
 import 'recipes/notification_center.g.dart';
 import 'theme.dart';
 
@@ -56,7 +57,7 @@ class RaftNotificationEntry {
 // Colors: foundation.css371–373,449–459,489–492. Conversion receipt is in
 // reports/raft-notification-center-audit/notification-atoms.json.
 abstract final class _NotificationPrimitives {
-  static const double width = 320, height = 288, icon = 24, glyph = 16;
+  static const double width = 320, height = 288, icon = 35, glyph = 18;
   static const double itemInset = 12, headerGap = 8, bodyGap = 2;
   static const double actionGap = 8, badge = 10;
   static const dangerMuted = Color(0xffd33c30);
@@ -67,16 +68,10 @@ abstract final class _NotificationPrimitives {
   static const double badgeInsetOffset = .5, badgeInsetBlurSigma = .5;
   static const emptyOuterInset = EdgeInsets.symmetric(
     horizontal: 24,
-    vertical: 48,
-  );
-  static const emptyInnerInset = EdgeInsets.symmetric(
-    horizontal: 16,
     vertical: 32,
   );
-  static const double emptyGap = 8,
-      emptyGlyph = 36,
-      iconTop = 2,
-      iconRadius = 4;
+  static const emptyInnerInset = EdgeInsets.symmetric(horizontal: 16);
+  static const double emptyGap = 8, emptyGlyph = 36;
   static const double actionFont = 11, actionLine = 16.5, actionHorizontal = 8;
 }
 
@@ -86,7 +81,7 @@ class _NotificationSemantics {
   const _NotificationSemantics(this.tokens);
   final RaftTokens tokens;
   Color get surface => tokens.popover;
-  Color get header => tokens.dark ? Colors.transparent : tokens.panel;
+  Color get header => Colors.transparent;
   Color get line => tokens.colors['line-hairline']!;
   Color iconFill(RaftNotificationKind kind) {
     if (!tokens.dark) {
@@ -128,10 +123,17 @@ class RaftNotificationRecipe {
   _NotificationSemantics get _semantic => _NotificationSemantics(tokens);
   double get width => _NotificationPrimitives.width;
   double get height => _NotificationPrimitives.height;
-  EdgeInsets get headerInset => EdgeInsets.fromLTRB(12, 10, 12, 8);
+  EdgeInsets get headerInset => const EdgeInsets.symmetric(horizontal: 12);
   EdgeInsets get itemInset =>
       const EdgeInsets.all(_NotificationPrimitives.itemInset);
-  double get rowGap => 10;
+  double get rowGap => 12;
+  BorderRadius get iconRadius {
+    final size = tokens.desktop
+        ? tokens.size('desktop.controlRadius', fallback: 8)
+        : tokens.size('css.control-radius', fallback: 10);
+    return BorderRadius.circular(size);
+  }
+
   BorderRadius get radius => BorderRadius.circular(6);
   BorderSide get divider => BorderSide(color: _semantic.line, width: 1);
   Color get background => _semantic.surface;
@@ -139,29 +141,16 @@ class RaftNotificationRecipe {
   Color iconFill(RaftNotificationKind kind) => _semantic.iconFill(kind);
   Color iconForeground(RaftNotificationKind kind) =>
       _semantic.iconForeground(kind);
-  TextStyle get title => RaftTypography.body(
-    tokens,
-    size: 14,
-    line: 20,
-    weight: FontWeight.w500,
-    color: tokens.ink,
+  TextStyle get title => tokens.scale(tokens.typeSlot('headline'));
+  TextStyle get count => tokens.scale(
+    tokens.typeSlot('mono-meta'),
+    mono: true,
+    color: tokens.ui.foregroundHint,
   );
-  TextStyle get count => RaftTypography.body(
-    tokens,
-    size: 11,
-    line: 16.5,
-    weight: FontWeight.w500,
-    color: tokens.colors['foreground-placeholder']!,
-  );
-  TextStyle get itemTitle => RaftTypography.body(
-    tokens,
-    size: 14,
-    line: 20,
-    weight: FontWeight.w500,
-    color: tokens.ink,
-  );
+  TextStyle get itemTitle =>
+      tokens.scale(tokens.typeSlot('subhead'), weight: FontWeight.w700);
   TextStyle get body =>
-      RaftTypography.body(tokens, size: 14, line: 20, color: tokens.muted);
+      tokens.scale(tokens.typeSlot('callout'), color: tokens.muted);
 }
 
 /// Controlled, noninteractive attention mark. The bell owns its count semantics.
@@ -207,6 +196,14 @@ class RaftNotificationCenter extends StatefulWidget {
     this.onDismiss,
     this.autofocus = false,
   });
+
+  /// The mounted Web uses a 320px desktop popup and 8px mobile gutters.
+  static double popupWidth(double viewportWidth, {required bool mobile}) =>
+      (viewportWidth - 16).clamp(
+        0,
+        mobile ? 480 : _NotificationPrimitives.width,
+      );
+
   final List<RaftNotificationEntry> entries;
   final String title, emptyTitle, emptyBody, semanticLabel, listLabel;
   final String? countLabel;
@@ -303,10 +300,13 @@ class _RaftNotificationCenterState extends State<RaftNotificationCenter> {
                   children: [
                     Container(
                       key: const Key('notification-center-header'),
+                      constraints: const BoxConstraints(minHeight: 52),
                       padding: r.headerInset,
                       decoration: BoxDecoration(
                         color: r.headerBackground,
-                        border: Border(bottom: r.divider),
+                        border: Border(
+                          bottom: BorderSide(color: t.ui.lineSeam),
+                        ),
                       ),
                       child: LayoutBuilder(
                         builder: (context, bounds) => Row(
@@ -365,8 +365,16 @@ class _RaftNotificationCenterState extends State<RaftNotificationCenter> {
                                       if (i > 0)
                                         SizedBox(
                                           height: r.divider.width,
-                                          child: ColoredBox(
-                                            color: r.divider.color,
+                                          child: Padding(
+                                            padding: EdgeInsetsDirectional.only(
+                                              start:
+                                                  RaftSpace.x4 +
+                                                  _NotificationPrimitives.icon +
+                                                  r.rowGap,
+                                            ),
+                                            child: ColoredBox(
+                                              color: r.divider.color,
+                                            ),
                                           ),
                                         ),
                                       _NotificationRow(
@@ -411,11 +419,12 @@ class _RaftNotificationCenterState extends State<RaftNotificationCenter> {
       child: Column(
         children: [
           // Web layout/NotificationCenter.tsx:61 `<CheckCircle2 size={36} />`.
-          const RaftIcon(
+          RaftIcon(
             RaftGlyph.checkCircle2,
             size: _NotificationPrimitives.emptyGlyph,
+            color: r.tokens.muted,
           ),
-          const SizedBox(height: _NotificationPrimitives.emptyGap),
+          const SizedBox(height: 16),
           Text(
             raftText(context, widget.emptyTitle),
             textAlign: TextAlign.center,
@@ -465,36 +474,29 @@ class _NotificationRow extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Padding(
-              padding: const EdgeInsets.only(
-                top: _NotificationPrimitives.iconTop,
-              ),
-              child: Semantics(
-                label: raftText(context, switch (entry.kind) {
-                  RaftNotificationKind.error => 'Error',
-                  RaftNotificationKind.warning => 'Warning',
-                  RaftNotificationKind.info => 'Info',
-                  RaftNotificationKind.success => 'Success',
-                }),
-                child: ExcludeSemantics(
-                  child: Container(
-                    width: _NotificationPrimitives.icon,
-                    height: _NotificationPrimitives.icon,
-                    decoration: BoxDecoration(
-                      color: recipe.iconFill(entry.kind),
-                      borderRadius: BorderRadius.circular(
-                        _NotificationPrimitives.iconRadius,
-                      ),
-                      border: null,
-                    ),
-                    child: Center(
-                      child: RaftIcon(
-                        glyph,
-                        size: _NotificationPrimitives.glyph,
-                        color:
-                            entry.iconForeground ??
-                            recipe.iconForeground(entry.kind),
-                      ),
+            Semantics(
+              label: raftText(context, switch (entry.kind) {
+                RaftNotificationKind.error => 'Error',
+                RaftNotificationKind.warning => 'Warning',
+                RaftNotificationKind.info => 'Info',
+                RaftNotificationKind.success => 'Success',
+              }),
+              child: ExcludeSemantics(
+                child: Container(
+                  width: _NotificationPrimitives.icon,
+                  height: _NotificationPrimitives.icon,
+                  decoration: BoxDecoration(
+                    color: recipe.iconFill(entry.kind),
+                    borderRadius: recipe.iconRadius,
+                    border: null,
+                  ),
+                  child: Center(
+                    child: RaftIcon(
+                      glyph,
+                      size: _NotificationPrimitives.glyph,
+                      color:
+                          entry.iconForeground ??
+                          recipe.iconForeground(entry.kind),
                     ),
                   ),
                 ),

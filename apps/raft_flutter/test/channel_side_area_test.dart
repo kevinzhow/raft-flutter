@@ -178,7 +178,7 @@ void main() {
         expect(rect(t, 'chat-header').width, greaterThanOrEqualTo(360));
         // Its own head is as high as the channel header and level with it.
         final head = rect(t, 'channel-side-card-tasks-header');
-        expect(head.height, 56);
+        expect(head.height, 44);
         expect(head.top, rect(t, 'chat-header').top);
         expect(
           find.byKey(const Key('channel-side-card-tasks-close')),
@@ -240,8 +240,8 @@ void main() {
         // Folding Tasks leaves its head; Files takes the rest; the body stays mounted.
         await t.tap(find.byKey(const Key('channel-side-card-tasks-collapse')));
         await t.pump();
-        expect(rect(t, 'channel-side-card-tasks').height, 56);
-        expect(rect(t, 'channel-side-card-files').height, closeTo(800 - 56, 1));
+        expect(rect(t, 'channel-side-card-tasks').height, 44);
+        expect(rect(t, 'channel-side-card-files').height, closeTo(800 - 44, 1));
         expect(rig.store.collapsed(ChannelSideCard.tasks), isTrue);
         expect(
           find.byKey(const Key('body-tasks'), skipOffstage: false),
@@ -249,6 +249,28 @@ void main() {
         );
         expect(find.byKey(const Key('body-tasks')), findsNothing);
         expect(find.bySemanticsLabel('Expand Tasks'), findsWidgets);
+        Border seam(String section) {
+          final frame = find.descendant(
+            of: find.byKey(Key('channel-side-card-$section-header')),
+            matching: find.byWidgetPredicate(
+              (widget) =>
+                  widget is Container && widget.decoration is BoxDecoration,
+            ),
+          );
+          return (t.widget<Container>(frame.first).decoration! as BoxDecoration)
+                  .border!
+              as Border;
+        }
+
+        expect(seam('tasks').bottom.width, 1);
+        await t.tap(find.byKey(const Key('channel-side-card-tasks-collapse')));
+        await t.pump();
+        await t.tap(find.byKey(const Key('channel-side-card-files-collapse')));
+        await t.pump();
+        expect(seam('files').bottom, BorderSide.none);
+        await t.tap(find.byKey(const Key('channel-side-card-tasks-collapse')));
+        await t.pump();
+        expect(seam('files').bottom.width, 1);
       },
     );
 

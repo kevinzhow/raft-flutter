@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'design_primitives.dart';
-import 'indicators.dart' show RaftSkeleton, RaftSkeletonVariant;
 import 'recipe_surface.dart';
 import 'recipes/message_list.g.dart';
 import 'raft/tabs.dart';
@@ -14,6 +13,7 @@ import 'viewport_breakpoints.dart';
 import 'icons.dart';
 import 'message_rule_row.dart';
 import 'panel_layout.dart' show RaftCssText;
+import 'sidebar_frame.dart';
 import 'sidebar_section.dart';
 import 'theme.dart';
 import 'status_bar.dart';
@@ -168,7 +168,10 @@ class RaftChatSidebarGroup extends StatelessWidget {
       if (loading && recipe.loadingRows > 0) {
         empty =
             loadingRegion ??
-            RaftChatSidebarLoadingRows(rows: recipe.loadingRows);
+            RaftChatSidebarLoadingRows(
+              rows: recipe.loadingRows,
+              icon: kind != RaftChatSidebarGroupKind.directMessages,
+            );
       } else if (kind != RaftChatSidebarGroupKind.directMessages &&
           emptyLabel.isNotEmpty) {
         empty = Padding(
@@ -267,81 +270,12 @@ Widget raftSidebarReorderProxy(
 /// Product Skeleton.tsx (not RUI Skeleton): px8/py8/gap6,
 /// 18px bordered avatar and a 60%-width, 12px line in all three themes.
 /// Decorative only; host owns the loading announcement and authority.
-class RaftChatSidebarLoadingRows extends StatefulWidget {
-  const RaftChatSidebarLoadingRows({super.key, required this.rows});
-  final int rows;
-  @override
-  State<RaftChatSidebarLoadingRows> createState() => _LoadingRowsState();
-}
-
-class _LoadingRowsState extends State<RaftChatSidebarLoadingRows>
-    with SingleTickerProviderStateMixin {
-  late final pulse = AnimationController(
-    vsync: this,
-    duration: const Duration(seconds: 1),
-  );
-  late final curve = CurvedAnimation(
-    parent: pulse,
-    curve: const Cubic(.4, 0, .6, 1),
-  );
-  late final opacity = Tween<double>(begin: 1, end: .5).animate(curve);
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (MediaQuery.disableAnimationsOf(context)) {
-      pulse.stop();
-      pulse.value = 0;
-    } else if (!pulse.isAnimating) {
-      // ignore: raft_lints/avoid_unreviewed_idle_work -- Loop driven by an AnimationController whose vsync is this State, so TickerMode (hidden routes, offstage tabs, folded panels) mutes it, it is disposed with the widget, and reduced motion stops it.
-      pulse.repeat(reverse: true);
-    }
-  }
-
-  @override
-  void dispose() {
-    curve.dispose();
-    pulse.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    // Web v1.24 `SidebarRowsSkeleton`: a 19px `Skeleton` block and a 128px
-    // `SkeletonTextBar` (0.75em of the 14px row text), both painted by the
-    // skeleton recipe. The row height stays the one below (34) until the
-    // sidebar row metrics (38 / 44) are ported with the rows themselves.
-    return ExcludeSemantics(
-      child: FadeTransition(
-        opacity: opacity,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            for (var index = 0; index < widget.rows; index++)
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 8),
-                // The 34px row centres the 19px block: no text in it, so the
-                // height is fixed.
-                child: SizedBox(
-                  height: 34,
-                  child: Row(
-                    children: [
-                      RaftSkeleton(fromRecipe: true, width: 19, height: 19),
-                      SizedBox(width: 6),
-                      RaftSkeleton(
-                        variant: RaftSkeletonVariant.line,
-                        fromRecipe: true,
-                        width: 128,
-                        height: 10.5,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
+class RaftChatSidebarLoadingRows extends RaftSidebarRowsSkeleton {
+  const RaftChatSidebarLoadingRows({
+    super.key,
+    required super.rows,
+    super.icon,
+  });
 }
 
 enum RaftConversationTabId { chat, tasks, files }
@@ -372,16 +306,24 @@ class RaftConversationTabsRecipe {
       tokens.option('conversationTabs.variant', or: 'underline') == 'default'
       ? RaftTabsVariant.standard
       : RaftTabsVariant.underline;
-  double get sourceTabHeight => tokens.size(
-    mobile ? 'size.conversationTabPhone' : 'size.conversationTab',
-    fallback: mobile ? 40 : 48,
-  );
-  double get sourceListHeight =>
-      mobile ? tokens.size('size.conversationTabListPhone', fallback: 40) : 48;
+  bool get compactSticker =>
+      !mobile && tokens.desktop && variant == RaftTabsVariant.standard;
+  double get sourceTabHeight => compactSticker
+      ? RaftLayoutMetrics.desktopControl
+      : tokens.size(
+          mobile ? 'size.conversationTabPhone' : 'size.conversationTab',
+          fallback: mobile ? 40 : 48,
+        );
+  double get sourceListHeight => compactSticker
+      ? 43
+      : mobile
+      ? tokens.size('size.conversationTabListPhone', fallback: 40)
+      : 48;
   double get targetHeight => sourceTabHeight;
   double get effectiveListHeight => math.max(sourceListHeight, targetHeight);
-  double get outerBottomBorder =>
-      mobile ? 1 : tokens.size('stroke.conversationTabList', fallback: 0);
+  double get outerBottomBorder => mobile || compactSticker
+      ? 1
+      : tokens.size('stroke.conversationTabList', fallback: 0);
   Color get background =>
       tokens.colors[mobile
           ? 'layer-conversation-tabs-phone'
@@ -389,10 +331,12 @@ class RaftConversationTabsRecipe {
   Color get border => tokens.colors['line-conversation-header']!;
   double get gap => tokens.size('space.conversationTabGap', fallback: 20);
   EdgeInsets get listInset => EdgeInsets.symmetric(
-    horizontal: mobile
+    horizontal: mobile || compactSticker
         ? 16
         : tokens.size('space.conversationTabInline', fallback: 16),
-    vertical: tokens.size('space.conversationTabVertical', fallback: 0),
+    vertical: compactSticker
+        ? (sourceListHeight - sourceTabHeight) / 2
+        : tokens.size('space.conversationTabVertical', fallback: 0),
   );
   double get glyphSize => 14;
   double get glyphStroke => 1.5;

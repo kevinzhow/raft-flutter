@@ -68,6 +68,9 @@ void main() {
     Locale? locale,
     Size viewport = const Size(390, 844),
   }) async {
+    t.view.devicePixelRatio = 1;
+    t.view.physicalSize = viewport;
+    addTearDown(t.view.reset);
     await t.binding.setSurfaceSize(viewport);
     await t.pumpWidget(
       MaterialApp(
@@ -102,6 +105,9 @@ void main() {
       await t.tap(find.byType(RaftMobileNotificationButton));
       await t.pump(const Duration(milliseconds: 200));
       expect(find.byType(RaftNotificationCenter), findsOneWidget);
+      final popup = t.getRect(find.byType(RaftNotificationCenter));
+      expect(popup.left, 8);
+      expect(popup.right, 382);
       expect(find.text('Computers need attention'), findsOneWidget);
       expect(controller.section, 'home');
       expect(

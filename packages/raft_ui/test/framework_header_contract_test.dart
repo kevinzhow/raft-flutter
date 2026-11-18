@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
 
-// db5e399f MainLayout / raft-ui0.7.0: 27px sticker icon; title17/22/700,
-// meta12/16/500 below it; default32px tabs inside py8 + border-bottom1.
+// v1.24 uses desktop density for headers and tabs, with a stacked narrow header.
 void main() {
   for (final dark in [false, true]) {
     for (final width in [390.0, 1280.0]) {
@@ -50,11 +49,17 @@ void main() {
           ],
           [17, 22, 700, 27, 12, 16, 500],
         );
+        final description = t.getRect(find.text('Product and UI decisions'));
+        final name = t.getRect(find.text('design'));
+        if (width >= 768) {
+          expect(description.left - name.right, 8);
+        } else {
+          expect(description.top, name.bottom);
+        }
         expect(
-          t.getTopLeft(find.text('Product and UI decisions')).dy,
-          greaterThan(t.getTopLeft(find.text('design')).dy + 15),
+          t.getSize(find.byType(RaftConversationHeader)).height,
+          width >= 768 ? 44 : 56,
         );
-        expect(t.getSize(find.byType(RaftConversationHeader)).height, 56);
         for (final label in ['Search This Channel', 'Channel Settings']) {
           expect(
             t.getSize(find.bySemanticsLabel(label)),
@@ -100,7 +105,9 @@ void main() {
             box.height,
             t.widget<RaftTabButton>(chat).variant,
           ],
-          [49, width < 768 ? 16 : 20, 8, 32, RaftTabsVariant.standard],
+          width >= 768
+              ? [44, 16, 4.5, 34, RaftTabsVariant.standard]
+              : [49, 16, 8, 32, RaftTabsVariant.standard],
         );
         await t.tap(find.byKey(const ValueKey('panel-tab-files')));
         expect(selected, RaftConversationTabId.files);

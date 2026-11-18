@@ -673,28 +673,11 @@ class RaftConversationNavigationRecipe {
         )
       : null;
 
-  // Resolved mounted ChannelRow cascade (including original md:py-1.5
-  // precedence): desktop 34, short 30, tall mobile 34. Direct-message
-  // AvatarSlot is a separate contract.
-  /// A navigation row's height: `size.navRowCompact` on short viewports,
-  /// `size.navRowWide` at desktop width, otherwise `size.navRow`.
-  /// a57b9dab: 30 short, else 34.
+  /// SidebarItem's row rhythm, shared by its loading placeholder.
   double rowHeight({
     required double viewportWidth,
     required double viewportHeight,
-  }) {
-    final regular = tokens.size('size.navRow', fallback: 34);
-    if (viewportHeight <= 600) {
-      final compact = tokens.size('size.navRowCompact', fallback: regular);
-      return viewportWidth < RaftLayoutMetrics.desktopBreakpoint
-          ? tokens.size('size.navRowPhoneCompact', fallback: compact)
-          : compact;
-    }
-    if (viewportWidth >= RaftLayoutMetrics.desktopBreakpoint) {
-      return tokens.size('size.navRowWide', fallback: regular);
-    }
-    return regular;
-  }
+  }) => RaftLayoutMetrics.sidebarRowHeight(tokens, viewportWidth);
 
   // SidebarItemCount solid/accent merges Sidebar count and Badge recipes.
   double get countHeight => tokens.size('size.sidebarCount', fallback: 16);

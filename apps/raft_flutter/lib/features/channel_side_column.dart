@@ -22,6 +22,7 @@ const _keyboardStep = 16.0, _keyboardStepLarge = 64.0;
 /// one at a time, or not Tasks / Files).
 typedef ChannelSideFold = ({
   bool collapsed,
+  bool stackEnd,
   ValueChanged<bool>? onCollapsedChanged,
 });
 
@@ -316,6 +317,9 @@ class _ChannelSideColumnViewState extends State<ChannelSideColumnView> {
       y += h;
     }
     final shownSet = shown.toSet();
+    final stackEnd = openTotal > 0 && shown.isNotEmpty && folded(shown.last)
+        ? shown.last
+        : null;
     return Stack(
       clipBehavior: Clip.none,
       children: [
@@ -336,6 +340,7 @@ class _ChannelSideColumnViewState extends State<ChannelSideColumnView> {
                       : Clip.none,
                   child: widget.cardOf(context, s, (
                     collapsed: folded(s),
+                    stackEnd: s == stackEnd,
                     onCollapsedChanged: folds && _card(s) != null
                         ? (v) => store.setCollapsed(_card(s)!, v)
                         : null,

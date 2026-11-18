@@ -117,7 +117,7 @@ final _quietRetry = find.byKey(const ValueKey('release-notes-refresh-retry'));
 const _unavailable = 'Release notes are unavailable right now.';
 
 Future<void> _pull(WidgetTester t) async {
-  await t.drag(find.byType(RefreshIndicator), const Offset(0, 360));
+  await t.drag(find.byType(RaftPullToRefresh), const Offset(0, 360));
   await t.pump();
   await t.pump(const Duration(milliseconds: 500));
   await t.pumpAndSettle();

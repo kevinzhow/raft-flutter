@@ -38,6 +38,7 @@ class ChannelSideCardView extends StatelessWidget {
     this.actions = const [],
     this.onCollapsedChanged,
     this.collapsed = false,
+    this.stackEnd = false,
     this.headWrapper,
   });
 
@@ -58,7 +59,7 @@ class ChannelSideCardView extends StatelessWidget {
 
   /// Set where the card shares its column and may fold.
   final ValueChanged<bool>? onCollapsedChanged;
-  final bool collapsed;
+  final bool collapsed, stackEnd;
   final ChannelSideHeadWrapper? headWrapper;
   final Widget child;
 
@@ -78,7 +79,9 @@ class ChannelSideCardView extends StatelessWidget {
       title: title,
       background: t.colors['layer-canvas'],
       bottomRule: true,
-      bottomBorder: RaftSidePanelFrame.headerRule(t),
+      bottomBorder: stackEnd
+          ? const Border()
+          : RaftSidePanelFrame.headerRule(t),
       onBack: covering && !phone ? onClose : null,
       backKey: Key('$id-back'),
       backTooltip: closeLabel,

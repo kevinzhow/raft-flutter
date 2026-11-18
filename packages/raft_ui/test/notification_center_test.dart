@@ -71,7 +71,7 @@ void main() {
       );
       expect(
         emptyPadding.padding,
-        const EdgeInsets.symmetric(horizontal: 24, vertical: 48),
+        const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
       );
       expect(
         find.descendant(
@@ -79,8 +79,7 @@ void main() {
           matching: find.byWidgetPredicate(
             (widget) =>
                 widget is Padding &&
-                widget.padding ==
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 32),
+                widget.padding == const EdgeInsets.symmetric(horizontal: 16),
           ),
         ),
         findsOneWidget,
@@ -139,16 +138,26 @@ void main() {
           (widget) =>
               widget is SizedBox &&
               widget.height == (1) &&
-              widget.child is ColoredBox,
+              widget.child is Padding,
         );
         expect(separator, findsOneWidget);
         expect(
-          tester.getSize(separator).width,
           tester
               .getSize(
-                find.byKey(const ValueKey('notification-entry-information')),
+                find.descendant(
+                  of: separator,
+                  matching: find.byType(ColoredBox),
+                ),
               )
               .width,
+          tester
+                  .getSize(
+                    find.byKey(
+                      const ValueKey('notification-entry-information'),
+                    ),
+                  )
+                  .width -
+              63,
         );
         final rowNode = tester.getSemantics(
           find.byKey(const ValueKey('notification-entry-information')),
@@ -274,7 +283,7 @@ void main() {
         expect(r.radius, BorderRadius.circular(6));
         expect(r.divider.width, 1);
         expect(r.background, t.popover);
-        expect(r.headerBackground, dark ? Colors.transparent : t.panel);
+        expect(r.headerBackground, Colors.transparent);
         if (dark) {
           expect(
             r.iconFill(RaftNotificationKind.error),
@@ -424,9 +433,7 @@ void main() {
     }
   }
 
-  testWidgets('mounted Elegant row matches measured source slot geometry', (
-    tester,
-  ) async {
+  testWidgets('mounted row matches source slot geometry', (tester) async {
     // Actual Web DOM receipt: popup-elegant-light-412x915.json.
     // This verifies source dimensions; it is not a pixel-parity assertion.
     // Widget tests otherwise use Ahem: its14px monospaced glyphs wrap both
@@ -471,18 +478,18 @@ void main() {
     );
     expect(
       tester.getSize(find.byKey(const Key('notification-center-header'))),
-      const Size(320, 39),
+      const Size(320, 52),
     );
     expect(
       tester.getSize(find.byKey(const Key('notification-center-scroller'))),
-      const Size(320, 249),
+      const Size(320, 236),
     );
     final row = find.byKey(const ValueKey('notification-entry-computers'));
     expect(tester.getSize(row), const Size(320, 98));
     final origin = tester.getTopLeft(row);
     expect(
       tester.getTopLeft(find.text('Computers need attention')) - origin,
-      const Offset(46, 12),
+      const Offset(59, 12),
     );
     expect(tester.getTopLeft(_action('computers', 'View')).dy - origin.dy, 62);
     expect(tester.takeException(), isNull);

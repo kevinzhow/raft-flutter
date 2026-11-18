@@ -549,7 +549,9 @@ class FamilyRegistryTest(unittest.TestCase):
                                                'radio_group', 'toggle_group', 'tabs', 'picker_trigger', 'combobox',
                                                'steps', 'htmlRegionComments', 'nativeSurfaceOcclusion', 'fit_toolbar',
                                                'mobile_nav_server', 'workspace_button', 'side-panel-frame',
-                                               'app-link-card'})
+                                               'app-link-card',
+                                               'workspace-shell', 'sidebar', 'panel-header', 'search',
+                                               'pull-to-refresh', 'notification-center'})
         self.assert_registry_ownership(json.loads(ds_audit.FAMILIES.read_text()))
         self.assertEqual(self.families['side-panel-frame']['canonical'], ['RaftSidePanelFrame'])
         self.assertEqual(

@@ -77,7 +77,7 @@ void mobile(WidgetTester t) {
 }
 
 Future<void> pull(WidgetTester t) async {
-  await t.drag(find.byType(RefreshIndicator), const Offset(0, 360));
+  await t.drag(find.byType(RaftPullToRefresh), const Offset(0, 360));
   await t.pump();
   await t.pump(const Duration(milliseconds: 500));
 }
@@ -121,7 +121,7 @@ void main() {
         api.routes['/announcements/active'] = () => {'announcements': []};
         api.routes['/servers/s1/sidebar-order'] = () => {};
         await mountPage(t, w, dark, width: 390);
-        expect(find.byType(RefreshIndicator), findsOneWidget);
+        expect(find.byType(RaftPullToRefresh), findsOneWidget);
         final before = api.reads.length;
         final location = w.location.uri;
         final held = find.byKey(const ValueKey('sidebar-channel-c1'));
@@ -273,7 +273,7 @@ void main() {
           expect(shown('Held conversation'), findsOneWidget);
           expect(
             find.descendant(
-              of: find.byType(RefreshIndicator),
+              of: find.byType(RaftPullToRefresh),
               matching: find.byType(RaftActivityLoadingList),
             ),
             findsNothing,
@@ -351,7 +351,12 @@ void main() {
       );
       await t.pumpAndSettle();
       expect(shown('Held conversation'), findsOneWidget);
-      expect(find.byType(RefreshIndicator).evaluate().isNotEmpty, pulls);
+      expect(
+        t
+            .widgetList<RaftPullToRefresh>(find.byType(RaftPullToRefresh))
+            .any((refresh) => refresh.enabled),
+        pulls,
+      );
       if (!pulls) return;
       final reads = w.inboxQueries.length;
       await pull(t);

@@ -370,9 +370,9 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
     final size = metrics.size;
     final safe = metrics.padding;
     final bottom = math.max(safe.bottom, metrics.viewInsets.bottom);
-    final width = math.min(
-      320.0,
-      math.max(0.0, size.width - safe.horizontal - 16),
+    final width = RaftNotificationCenter.popupWidth(
+      size.width - safe.horizontal,
+      mobile: widget.mobile,
     );
     final height = math.min(
       288.0,

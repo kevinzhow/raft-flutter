@@ -93,7 +93,8 @@ void main() {
           var searches = 0, closes = 0;
           await t.pumpWidget(
             MaterialApp(
-              theme: raftTheme(dark: dark),
+              theme: raftTheme(dark: dark)
+                  .copyWith(platform: TargetPlatform.linux),
               home: Scaffold(
                 body: Column(
                   children: [
@@ -131,21 +132,15 @@ void main() {
             expect(heading, findsOneWidget);
             expect(subtitle, findsOneWidget);
             final head = t.getRect(heading), sub = t.getRect(subtitle);
-            // Profile panels now consume the current Web headline/meta stack;
-            // channel headers still use their independently generated recipe.
-            if (title == 'Designer') {
+            if (width >= 768) {
+              expect(sub.left - head.right, 8);
+              expect(baseline(t, subtitle), closeTo(baseline(t, heading), .01));
+            } else {
               expect(sub.left, head.left);
               expect(sub.top - head.bottom, 0);
               expect(head.height, 22);
               expect(sub.height, 16);
-              continue;
             }
-            // Current PanelHeadline/PanelMeta are a 22px/16px stack,
-            // with no gap, at desktop and phone widths (raft-ui PanelHeader).
-            expect(sub.left, head.left);
-            expect(sub.top - head.bottom, 0);
-            expect(head.height, 22);
-            expect(sub.height, 16);
           }
           final heading = t.widget<RaftCssText>(css('design'));
           final meta = t.widget<RaftCssText>(css('Product and UI decisions'));

@@ -26,6 +26,7 @@ import 'recipes/token_binding.dart';
 import 'status_bar.dart';
 import 'text_measure.dart';
 import 'theme.dart';
+import 'text_scaling.dart' show RaftScaled;
 import 'tooltip.dart';
 import 'working_agents.dart';
 
@@ -103,14 +104,16 @@ class RaftConversationHeader extends StatelessWidget {
     final inline =
         hasMeta &&
         !phone &&
-        t.option('conversationHeader.metaFlow', or: 'inlineWide') ==
-            'inlineWide';
-    final gap = t.size(
-      phone
-          ? 'space.conversationHeaderMetaPhone'
-          : 'space.conversationHeaderMeta',
-      fallback: 0,
-    );
+        !RaftScaled.grows(context) &&
+        t.themeOverrides?.options['conversationHeader.metaFlow'] != 'stacked';
+    final gap = inline
+        ? t.themeOverrides?.geometry['space.conversationHeaderMeta'] ?? 8.0
+        : t.size(
+            phone
+                ? 'space.conversationHeaderMetaPhone'
+                : 'space.conversationHeaderMeta',
+            fallback: 0,
+          );
     final iconBorder = raftControlBorderPx(
       context,
       t.size('stroke.conversationHeaderIcon', fallback: 0),

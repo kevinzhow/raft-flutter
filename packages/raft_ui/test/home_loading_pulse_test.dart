@@ -4,7 +4,7 @@ import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_ui/test_themes.dart';
 
 // SidebarRowsSkeleton + Tailwind animate-pulse: 2s cycle, opacity .5 at
-// midpoint, source18px avatar and 8px vertical padding => stable34px rows.
+// midpoint. Each wide touch row reserves 38px plus the 2px inter-row gap.
 void main() {
   for (final dark in raftThemeMatrix([false, true])) {
     testWidgets(
@@ -28,10 +28,10 @@ void main() {
         );
         double opacity() => t.widget<FadeTransition>(fade).opacity.value;
         expect(opacity(), 1);
-        expect(t.getSize(find.byType(RaftChatSidebarLoadingRows)).height, 136);
+        expect(t.getSize(find.byType(RaftChatSidebarLoadingRows)).height, 158);
         await t.pump(const Duration(seconds: 1));
         expect(opacity(), closeTo(.5, .001));
-        expect(t.getSize(find.byType(RaftChatSidebarLoadingRows)).height, 136);
+        expect(t.getSize(find.byType(RaftChatSidebarLoadingRows)).height, 158);
         await t.pump(const Duration(seconds: 1));
         expect(opacity(), closeTo(1, .001));
         await t.pumpWidget(const SizedBox.shrink());

@@ -101,16 +101,23 @@ abstract final class RaftMetrics {
 
 /// Product layout recipe, not per-page coordinate overrides.
 abstract final class RaftLayoutMetrics {
-  static double shellHeaderHeight(RaftTokens t, double viewportHeight) =>
-      viewportHeight <= 600
-      ? RaftMetrics.compactPanelHeader
-      : t.size('size.panelHeader', fallback: RaftMetrics.panelHeader);
+  static double shellHeaderHeight(RaftTokens t, double viewportHeight) {
+    if (t.desktop) return viewportHeight <= 600 ? 40 : 44;
+    return viewportHeight <= 600
+        ? RaftMetrics.compactPanelHeader
+        : t.size('size.panelHeader', fallback: RaftMetrics.panelHeader);
+  }
+
+  static const double desktopControl = 34;
+
+  static double sidebarRowHeight(RaftTokens tokens, double width) =>
+      width < desktopBreakpoint ? 44 : (tokens.desktop ? desktopControl : 38);
 
   /// `size.rail`, or `size.railShort` on short viewports. The 600px threshold
   /// is form, not a theme value.
   static double railWidth(RaftTokens t, double viewportHeight) {
     final rail = t.size('size.rail', fallback: 56);
-    if (viewportHeight <= 600) {
+    if (t.desktop || viewportHeight <= 600) {
       return t.size('size.railShort', fallback: rail);
     }
     return rail;
@@ -254,7 +261,9 @@ class RaftRailRecipe {
   double get width => RaftLayoutMetrics.railWidth(tokens, viewportHeight);
   double get glyphSize => tokens.size('size.railGlyph', fallback: 16);
   double get itemSize => tokens.size(
-    viewportHeight <= 600 ? 'size.railItemCompact' : 'size.railItem',
+    tokens.desktop || viewportHeight <= 600
+        ? 'size.railItemCompact'
+        : 'size.railItem',
     fallback: RaftMetrics.railItem,
   );
   // AppRailRoot's bg-primary resolves the primary-400 ramp; primaryFill is

@@ -161,7 +161,10 @@ void main() {
         await mount(
           tester,
           MediaQuery(
-            data: const MediaQueryData(disableAnimations: true),
+            data: const MediaQueryData(
+              size: Size(800, 600),
+              disableAnimations: true,
+            ),
             child: Column(
               children: [
                 for (final kind in RaftChatSidebarGroupKind.values)
@@ -190,7 +193,7 @@ void main() {
         expect(skeletons.map((s) => s.rows), [2, 4, 3]);
         expect(
           tester.getSize(find.byType(RaftChatSidebarLoadingRows).last).height,
-          3 * 34,
+          3 * 34 + 4,
         );
         await tester.pump(const Duration(seconds: 3));
         expect(tester.binding.hasScheduledFrame, false);
@@ -332,7 +335,9 @@ void main() {
               density: density,
               width: mobile ? 390 : 1000,
             );
-            final tokens = raftTheme(dark: dark).extension<RaftTokens>()!;
+            final tokens = RaftTokens.of(
+              tester.element(find.byType(RaftConversationTabs)),
+            );
             final recipe = RaftConversationTabsRecipe(
               tokens,
               mobile: mobile,

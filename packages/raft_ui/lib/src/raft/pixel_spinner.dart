@@ -44,12 +44,16 @@ class RaftPixelSpinner extends StatefulWidget {
     this.size = RaftPixelSpinnerSize.sm,
     this.color,
     this.semanticLabel = 'Loading',
+    this.progress,
   });
   final RaftPixelSpinnerSize size;
 
   /// `text-current`; defaults to the ambient text colour.
   final Color? color;
   final String semanticLabel;
+
+  /// A pull's progress holds the pixel for that quarter of the turn.
+  final double? progress;
 
   @override
   State<RaftPixelSpinner> createState() => _RaftPixelSpinnerState();
@@ -87,7 +91,10 @@ class _RaftPixelSpinnerState extends State<RaftPixelSpinner>
           .size('duration.spinnerTurn', fallback: 1000)
           .round(),
     );
-    _sync(!MediaQuery.disableAnimationsOf(context), period);
+    _sync(
+      widget.progress == null && !MediaQuery.disableAnimationsOf(context),
+      period,
+    );
     final color =
         widget.color ??
         DefaultTextStyle.of(context).style.color ??
@@ -106,7 +113,7 @@ class _RaftPixelSpinnerState extends State<RaftPixelSpinner>
       child: SizedBox.square(
         dimension: extent,
         child: _controller == null
-            ? CustomPaint(painter: painter(null))
+            ? CustomPaint(painter: painter(widget.progress))
             : AnimatedBuilder(
                 animation: _controller!,
                 builder: (context, _) =>

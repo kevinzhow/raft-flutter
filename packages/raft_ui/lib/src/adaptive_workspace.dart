@@ -1,5 +1,6 @@
 import 'raft/button.dart';
 import 'hover_region.dart';
+import 'focus_visible.dart';
 import 'covered_pane.dart';
 
 import 'dart:math' as math;
@@ -804,8 +805,28 @@ class _ResizeHandleState extends State<RaftPanelResizeHandle> {
     return active ? ink : ink.withValues(alpha: .25);
   }
 
+  final modality = RaftFocusVisible.shared;
   bool focused = false, hovering = false;
   double? dragValue;
+
+  @override
+  void initState() {
+    super.initState();
+    modality.acquire();
+    modality.addListener(_modalityChanged);
+  }
+
+  void _modalityChanged() {
+    if (focused) setState(() {});
+  }
+
+  @override
+  void dispose() {
+    modality.removeListener(_modalityChanged);
+    modality.release();
+    super.dispose();
+  }
+
   void change(double delta) {
     widget.onChangeStart?.call();
     widget.onChanged(widget.value + delta);
@@ -821,6 +842,7 @@ class _ResizeHandleState extends State<RaftPanelResizeHandle> {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
+    final focusVisible = focused && modality.keyboard;
     return Semantics(
       label: widget.label,
       value: '${widget.value.round()} px',
@@ -879,8 +901,7 @@ class _ResizeHandleState extends State<RaftPanelResizeHandle> {
                 : () => change(widget.defaultValue! - widget.value),
             // A [seamLine] handle lights its seam on hover and drag (Web
             // SEAM_CLASS); the others paint nothing there, only the cursor
-            // changes. Keyboard focus keeps a 1px foreground rule so the
-            // focused handle is findable.
+            // changes. A keyboard-focused seam is 2px in foreground ink.
             child: SizedBox(
               width: 8,
               child: widget.seamLine
@@ -890,12 +911,12 @@ class _ResizeHandleState extends State<RaftPanelResizeHandle> {
                           left: RaftPanelResizeHandle.seamOffset,
                           top: 0,
                           bottom: 0,
-                          width: 1,
+                          width: focusVisible ? 2 : 1,
                           child: ColoredBox(
-                            color: hovering || dragValue != null
+                            color: focusVisible
+                                ? t.ink
+                                : hovering || dragValue != null
                                 ? t.colors['foreground-muted']!
-                                : focused
-                                ? t.colors['foreground']!
                                 : Colors.transparent,
                           ),
                         ),
@@ -906,7 +927,7 @@ class _ResizeHandleState extends State<RaftPanelResizeHandle> {
                         width: 1,
                         color: widget.hairline
                             ? _hairline(t, hovering || dragValue != null)
-                            : focused && !hovering && dragValue == null
+                            : focusVisible && !hovering && dragValue == null
                             ? (t.colors['foreground']!)
                             : Colors.transparent,
                       ),
