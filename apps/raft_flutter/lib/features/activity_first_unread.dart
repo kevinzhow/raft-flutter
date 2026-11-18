@@ -152,13 +152,14 @@ class ActivityFirstUnread {
 }
 
 /// Whether [row] is the item open in the Activity preview. Identity is the
-/// content target's id (thread channel / channel), never the target's message
-/// focus: that moves with unread state and refreshes, the row's identity does
-/// not. A mention action additionally requires its own message, so opening an
-/// ordinary channel row never lights up a mention row of that channel.
+/// task, thread channel, or channel ID. A mention action additionally matches
+/// its own message ID.
 bool activityRowOpen(DesktopContentTarget target, Map<String, dynamic> row) {
   final kind = row['kind'];
   if (kind == 'thread') {
+    if (target.kind == DesktopContentKind.task) {
+      return row['conversationKind'] == 'task' && target.id == row['taskId'];
+    }
     return target.kind == DesktopContentKind.thread &&
         target.id == row['threadChannelId'];
   }

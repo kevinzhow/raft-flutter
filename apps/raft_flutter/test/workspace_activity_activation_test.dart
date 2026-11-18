@@ -68,24 +68,33 @@ void main() {
       api.routes['GET /tasks/task-1'] = (_) => {'task': v2Task};
       api.routes['GET /messages/channel/task-conv'] = (_) => {'messages': []};
       api.routes['POST /channels/task-conv/read'] = (_) => {};
+      final taskConversation = <String, dynamic>{
+        'kind': 'task',
+        'threadChannelId': 'task-conv',
+        'parentChannelId': 'c1',
+        'parentChannelName': 'test',
+        'parentChannelType': 'channel',
+        'parentMessageId': null,
+        'parentMessagePreview': v2Task['title'],
+        'taskId': 'task-1',
+        'taskTitle': v2Task['title'],
+        'taskNumber': 8,
+        'taskStatus': 'todo',
+        'latestActivityPreview': 'A task reply',
+        'unreadCount': 0,
+      };
       api.routes['GET /channels/inbox'] = (_) => {
         'items': [
+          taskConversation,
           {
-            'kind': 'task',
-            'threadChannelId': 'task-conv',
-            'parentChannelId': 'c1',
-            'parentChannelName': 'test',
-            'parentChannelType': 'channel',
-            'parentMessageId': null,
-            'parentMessagePreview': v2Task['title'],
-            'taskId': 'task-1',
-            'taskTitle': v2Task['title'],
-            'taskNumber': 8,
-            'taskStatus': 'todo',
-            'latestActivityPreview': 'A task reply',
-            'unreadCount': 0,
+            ...taskConversation,
+            'threadChannelId': 'other-task-conv',
+            'parentMessagePreview': 'Other task',
+            'taskId': 'task-2',
+            'taskTitle': 'Other task',
+            'taskNumber': 9,
           },
-          threadRow,
+          {...threadRow, 'taskId': 'task-1', 'taskTitle': v2Task['title']},
           channelRow,
         ],
       };
@@ -122,6 +131,18 @@ void main() {
       );
       await tester.pumpAndSettle();
 
+      const taskRowKey = ValueKey('activity-thread-task-conv');
+      const threadRowKey = ValueKey('activity-thread-thread-1');
+      const channelRowKey = ValueKey('activity-channel-c1');
+      final taskRow = find.byKey(taskRowKey);
+      final inboxRows = find.byType(RaftInboxItem);
+      List<Key?> selectedRows() => [
+        for (final row in tester.widgetList<RaftInboxItem>(inboxRows))
+          if (row.selected) row.key,
+      ];
+      expect(inboxRows, findsNWidgets(4));
+      expect(selectedRows(), isEmpty);
+
       const taskAnchor = 'c1:task:task-1';
       final taskSurface = find.byType(SourceTaskSurface);
       final taskSlot = find.byKey(const ValueKey('task-content-slot'));
@@ -134,7 +155,6 @@ void main() {
         w.navigation.navigateTask(w.location.withQuery({'task': taskAnchor}));
         w.notifyListeners();
       } else {
-        final taskRow = find.byKey(const ValueKey('activity-thread-task-conv'));
         expect(taskRow.hitTestable(), findsOneWidget);
         await tester.tap(taskRow, kind: PointerDeviceKind.mouse);
       }
@@ -145,6 +165,8 @@ void main() {
       expect(taskSurface, findsOneWidget);
       expect(taskSlot, independent ? findsNothing : findsOneWidget);
       expect(taskModal, independent ? findsOneWidget : findsNothing);
+      expect(inboxRows, findsNWidgets(4));
+      expect(selectedRows(), independent ? isEmpty : [taskRowKey]);
 
       final before = w.navigation.entries.length;
       final canonical = destination == 'canonical';
@@ -161,9 +183,7 @@ void main() {
           unawaited(list.onActivityItem!(channelRow));
         }
       } else {
-        final row = find.byKey(
-          ValueKey(thread ? 'activity-thread-thread-1' : 'activity-channel-c1'),
-        );
+        final row = find.byKey(thread ? threadRowKey : channelRowKey);
         expect(row.hitTestable(), findsOneWidget);
         await tester.tap(row, kind: PointerDeviceKind.mouse);
       }
@@ -191,6 +211,7 @@ void main() {
         await flush(tester);
         expect(w.location, backEntry);
         expect(taskSurface, findsNothing);
+        expect(selectedRows(), isEmpty);
       } else {
         expect(w.location.route, RaftRoute.activity);
         expect(
@@ -203,6 +224,22 @@ void main() {
           find.byType(RaftThreadHeader),
           thread ? findsOneWidget : findsNothing,
         );
+        expect(selectedRows(), [thread ? threadRowKey : channelRowKey]);
+      }
+      if (destination == 'channel') {
+        expect(taskRow.hitTestable(), findsOneWidget);
+        await tester.tap(taskRow, kind: PointerDeviceKind.mouse);
+        await flush(tester);
+        expect(taskSlot, findsOneWidget);
+        expect(selectedRows(), [taskRowKey]);
+
+        final closeTask = find.byKey(const ValueKey('task-modal-close'));
+        expect(closeTask.hitTestable(), findsOneWidget);
+        await tester.tap(closeTask, kind: PointerDeviceKind.mouse);
+        await flush(tester);
+        expect(taskSlot, findsNothing);
+        expect(inboxRows, findsNWidgets(4));
+        expect(selectedRows(), isEmpty);
       }
       await tester.pumpWidget(const SizedBox.shrink());
       await tester.pump();
