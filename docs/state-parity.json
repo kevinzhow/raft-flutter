@@ -4892,7 +4892,7 @@
         "owner": "WP-LINK",
         "reason": "Source-reviewed message integration and component composition."
       },
-      "apps/raft_flutter/lib/features/message_presentation.dart#local-function:CLASS:MessagePresentation@5946/METHOD:messageCard@27808/FUNCTION:cardOf@28095": {
+      "apps/raft_flutter/lib/features/message_presentation.dart#local-function:CLASS:MessagePresentation@5977/METHOD:messageCard@28917/FUNCTION:cardOf@29204": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
@@ -55220,12 +55220,6 @@
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
-      },
-      "apps/raft_flutter/lib/features/message_presentation.dart#local-function:CLASS:MessagePresentation@5948/METHOD:messageCard@28888/FUNCTION:cardOf@29175": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "WP-SIDE (Web v1.24 channel side area, Tasks / Files cards, web preview): composes raft_ui parts; real-entry/family/state mapping remains unreviewed. This registration grants no style exemption or visual acceptance."
       },
       "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@5140/METHOD:attachmentGallery@66411/FUNCTION:view@67565": {
         "role": "unresolved",
