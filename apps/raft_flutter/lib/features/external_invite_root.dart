@@ -10,6 +10,25 @@ import 'external_invite_approval.dart';
 import 'external_invite_page.dart';
 import 'external_invite_page_frame.dart';
 import 'external_invite_route.dart';
+import 'invite_accept_view.dart';
+import 'private_app_invite.dart';
+
+bool isStandaloneInvite(Uri location, String origin) =>
+    PrivateAppInviteLink.parse(location, origin) != null ||
+    ExternalInviteRoute.parse(location, origin) != null;
+
+// A relative invitation token belongs to the coordinator that admitted it.
+bool shouldDropStandaloneInvite(Uri location, String origin, String base) =>
+    Uri.parse(origin).origin != Uri.parse(base.trim()).origin &&
+    isStandaloneInvite(location, origin);
+
+String? inviteLandingId(
+  ({ExternalInviteRoute kind, String id})? route,
+  String? authMode,
+) => switch (route) {
+  (kind: ExternalInviteRoute.invitation, :final id) when authMode == null => id,
+  _ => null,
+};
 
 Widget buildExternalInviteLanding(
   RaftClient reader,
@@ -74,31 +93,67 @@ Widget buildExternalInviteHome(
   };
 }
 
-Future<bool> openExternalChannel(
-  WorkspaceController? w,
-  String serverId,
-  String? channelId, {
-  bool refreshDirectory = false,
-  required bool Function() current,
-  required Future<void> Function(RaftRecord, Uri) choose,
-}) async {
-  if (w == null) return false;
-  if ((refreshDirectory ||
-          channelId != null ||
-          !w.servers.any((server) => server.id == serverId)) &&
-      !await w.loadServerDirectory()) {
-    return false;
+typedef InviteNavigationState = (
+  bool mounted,
+  int request,
+  InviteLink? link,
+  WorkspaceController? workspace,
+  RaftClient? client,
+);
+
+class InviteNavigation {
+  const InviteNavigation(this._read, this._clearInvite, this._chooseServer);
+
+  final InviteNavigationState Function() _read;
+  final VoidCallback _clearInvite;
+  final Future<void> Function(RaftRecord, {required Uri location})
+  _chooseServer;
+
+  Future<bool> enterServer(String serverId) async {
+    final state = _read();
+    final (_, _, link, workspace, client) = state;
+    if (client?.user == null || link == null) return false;
+    if (workspace != null) return _open(state, serverId, null);
+    _clearInvite();
+    return true;
   }
-  if (!current()) return false;
-  final server = w.servers.where((server) => server.id == serverId).firstOrNull;
-  if (server == null) return false;
-  await choose(
-    server,
-    RaftLocation.at(
+
+  Future<bool> openChannel(String serverId, String? channelId) =>
+      _open(_read(), serverId, channelId);
+
+  Future<bool> _open(
+    InviteNavigationState state,
+    String serverId,
+    String? channelId,
+  ) async {
+    final (_, request, link, w, client) = state;
+    if (w == null) return false;
+    if ((link != null ||
+            channelId != null ||
+            !w.servers.any((server) => server.id == serverId)) &&
+        !await w.loadServerDirectory()) {
+      return false;
+    }
+    final (mounted, activeRequest, activeLink, workspace, activeClient) =
+        _read();
+    if (!mounted ||
+        request != activeRequest ||
+        !identical(link, activeLink) ||
+        !identical(w, workspace) ||
+        !identical(client, activeClient)) {
+      return false;
+    }
+    final server = w.servers
+        .where((server) => server.id == serverId)
+        .firstOrNull;
+    if (server == null) return false;
+    final location = RaftLocation.at(
       serverSlug: server.string('slug'),
       route: channelId == null ? RaftRoute.home : RaftRoute.channel,
       entityId: channelId,
-    ).uri,
-  );
-  return w.server?.id == serverId;
+    ).uri;
+    if (link != null) _clearInvite();
+    await _chooseServer(server, location: location);
+    return w.server?.id == serverId;
+  }
 }

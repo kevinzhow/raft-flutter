@@ -860,11 +860,7 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
       workspace = null;
       rootRequest++;
       clearAccessDenied();
-      if (Uri.parse(origin).origin != Uri.parse(base.trim()).origin &&
-          (PrivateAppInviteLink.parse(requestedLocation, origin) != null ||
-              externalInviteRoute != null)) {
-        // A relative pending token belongs to the coordinator that admitted
-        // it, never a different server chosen on the native login form.
+      if (shouldDropStandaloneInvite(requestedLocation, origin, base)) {
         requestedLocation = Uri(path: '/');
       }
       serverSurfaces.clear();
@@ -954,30 +950,15 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
   ({ExternalInviteRoute kind, String id})? get externalInviteRoute =>
       ExternalInviteRoute.parse(requestedLocation, origin);
 
-  Future<bool> openInvitedChannel(String server, String? channel) {
-    final request = rootRequest, link = invite, w = workspace, c = client;
-    return openExternalChannel(
-      w,
-      server,
-      channel,
-      refreshDirectory: link != null,
-      current: () =>
-          mounted &&
-          request == rootRequest &&
-          identical(link, invite) &&
-          identical(w, workspace) &&
-          identical(c, client),
-      choose: (server, route) {
-        if (link != null) clearInvite();
-        return chooseServer(server, location: route);
-      },
-    );
-  }
+  InviteNavigation get inviteNavigation => InviteNavigation(
+    () => (mounted, rootRequest, invite, workspace, client),
+    clearInvite,
+    chooseServer,
+  );
 
   bool get showingStandalonePage =>
-      PrivateAppInviteLink.parse(requestedLocation, origin) != null ||
-      requestedLocation.path == chineseCommunityPagePath ||
-      externalInviteRoute != null;
+      isStandaloneInvite(requestedLocation, origin) ||
+      requestedLocation.path == chineseCommunityPagePath;
 
   Future<void> discoverServers() async {
     final w = workspace, c = client;
@@ -1239,8 +1220,7 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
         mounted &&
         request == rootRequest &&
         invite == null &&
-        PrivateAppInviteLink.parse(requestedLocation, origin) == null &&
-        externalInviteRoute == null) {
+        !isStandaloneInvite(requestedLocation, origin)) {
       showInvite(InviteLink(token));
     }
   }
@@ -1256,19 +1236,12 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
     );
   }
 
-  Future<bool> enterInvitedServer(String serverId) async {
-    if (client?.user == null || invite == null) return false;
-    if (workspace != null) return openInvitedChannel(serverId, null);
-    clearInvite();
-    return true;
-  }
-
   Widget inviteHome(bool signedIn) => buildServerInviteHome(
     link: invite!,
     signedIn: signedIn,
     api: inviteApi,
     network: widget.services.localNetwork,
-    onEnter: enterInvitedServer,
+    onEnter: inviteNavigation.enterServer,
     onSignIn: () => leaveInviteFor('login'),
     onCreateAccount: () => leaveInviteFor('register'),
     onClose: clearInvite,
@@ -1811,11 +1784,9 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
     if (active?.user == null) {
       workspaceRootInputs = null;
       if (invite != null) return inviteHome(false);
-      if (externalInviteRoute
-          case (kind: ExternalInviteRoute.invitation, :final id)
-          when authMode == null) {
+      if (inviteLandingId(externalInviteRoute, authMode) case final id?) {
         return buildExternalInviteLanding(
-          inviteClient ??= makeClient(origin, MemorySessionStore()),
+          inviteApi(),
           widget.services.localNetwork,
           id,
           leaveInviteFor,
@@ -1868,7 +1839,7 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
         route,
         onSignOut: logout,
         onClose: returnFromSelector,
-        open: openInvitedChannel,
+        open: inviteNavigation.openChannel,
       );
     }
     final appInvite = PrivateAppInviteLink.parse(requestedLocation, origin);
