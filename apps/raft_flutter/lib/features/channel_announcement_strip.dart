@@ -146,7 +146,13 @@ class ChannelAnnouncementStrip extends StatelessWidget {
                         ).toString(),
                       ),
                     );
-                    if (context.mounted) showRaftToast(context, 'Link copied.');
+                    if (context.mounted) {
+                      showRaftToast(
+                        context,
+                        'Link copied.',
+                        tone: RaftToastRecipeTone.success,
+                      );
+                    }
                   } on PlatformException {
                     // Match the Web clipboard rejection: no success toast.
                   }

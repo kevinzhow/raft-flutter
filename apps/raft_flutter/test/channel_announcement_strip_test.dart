@@ -24,18 +24,20 @@ void main() {
       await t.pumpWidget(
         MaterialApp(
           theme: raftTheme(),
-          home: Scaffold(
-            body: ChannelAnnouncementStrip(
-              announcement: const ChannelAnnouncement(
-                artifactId: 'pt_123',
-                title: 'Announcement',
-                version: 1,
-                updatedAt: '2026-11-01T00:00:00Z',
-                updatedBy: {'type': 'user', 'id': 'u1', 'name': 'Ana'},
-                seen: false,
+          home: RaftToastHost(
+            child: Scaffold(
+              body: ChannelAnnouncementStrip(
+                announcement: const ChannelAnnouncement(
+                  artifactId: 'pt_123',
+                  title: 'Announcement',
+                  version: 1,
+                  updatedAt: '2026-11-01T00:00:00Z',
+                  updatedBy: {'type': 'user', 'id': 'u1', 'name': 'Ana'},
+                  seen: false,
+                ),
+                webOrigin: Uri.parse('https://example.invalid'),
+                onOpen: () {},
               ),
-              webOrigin: Uri.parse('https://example.invalid'),
-              onOpen: () {},
             ),
           ),
         ),
@@ -45,6 +47,19 @@ void main() {
       await t.tap(find.text('Copy link'));
       await t.pumpAndSettle();
       expect(copied, 'https://example.invalid/artifacts/pt_123');
+      final toast = find.widgetWithText(RaftToast, 'Link copied.');
+      expect(toast, findsOneWidget);
+      expect(
+        find.descendant(
+          of: toast,
+          matching: find.byWidgetPredicate(
+            (widget) =>
+                widget is RaftIcon && widget.glyph == RaftGlyph.checkCircle2,
+          ),
+        ),
+        findsOneWidget,
+      );
+      await t.pumpWidget(const SizedBox.shrink());
     },
   );
 }
