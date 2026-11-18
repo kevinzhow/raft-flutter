@@ -27,7 +27,7 @@ class SourceChannelFilesView extends StatefulWidget {
     required this.controller,
     required this.channelId,
     required this.formatCreatedAt,
-    this.onOpenSource,
+    this.beforeOpenSource,
     this.thumbnailBuilder,
     this.acquireImage,
     this.peekImage,
@@ -42,7 +42,7 @@ class SourceChannelFilesView extends StatefulWidget {
   // Actual useTimeFormatter.formatShortDateTime: preferred IANA zone, locale,
   // short month/day + two-digit hour/minute + chosen12/24h; not host-local UTC.
   final String Function(String instant) formatCreatedAt;
-  final Future<void> Function(SourceChannelFileEntry)? onOpenSource;
+  final ValueChanged<SourceChannelFileEntry>? beforeOpenSource;
   final ChannelFileThumbnailBuilder? thumbnailBuilder;
   final SourceChannelImageAcquire? acquireImage;
   final SourceChannelImagePeek? peekImage;
@@ -168,14 +168,32 @@ class _SourceChannelFilesState extends State<SourceChannelFilesView> {
   }
 
   Future<void> openSource(SourceChannelFileEntry file) async {
-    if (!store.contains(file)) return;
-    if (widget.onOpenSource != null) {
-      await widget.onOpenSource!(file);
+    final w = widget.controller;
+    final channelId = widget.channelId;
+    if (!mounted ||
+        !tabActive ||
+        w.channel?.id != channelId ||
+        !store.contains(file)) {
       return;
     }
-    // Existing mounted controller resolves canonicalTarget and actual parent
-    // context, then opens the correct thread/DM surface with focused reply.
-    await widget.controller.jumpToMessage(widget.channelId, file.messageId);
+    final taskId = file.taskId;
+    if (taskId != null &&
+        w.sessionScope.revokedChannels.contains(file.sourceChannelId)) {
+      return;
+    }
+    widget.beforeOpenSource?.call(file);
+    if (taskId == null) {
+      await w.jumpToMessage(channelId, file.messageId);
+      return;
+    }
+    final current = w.location;
+    final next = current.withTaskConversation(
+      channelId,
+      taskId,
+      focusedMessageId: file.messageId,
+    );
+    w.navigation.navigateTask(next, kind: current.panelNavigationKindTo(next));
+    w.notifyListeners();
   }
 
   void openArtifact(ArtifactCard card) {

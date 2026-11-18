@@ -262,10 +262,10 @@ class _ConversationPanelState extends State<ConversationPanel> {
                     formatCreatedAt: media.formatter(context).shortDateTime,
                     acquireImage: media.acquireImage,
                     peekImage: media.peekImage,
-                    onOpenSource: (file) async {
+                    beforeOpenSource: (file) {
+                      if (file.sourceType == 'task') return;
                       setState(() => tab = RaftConversationTabId.chat);
                       w.setChatTabPresentation(this, true);
-                      await w.jumpToMessage(channel.id, file.messageId);
                     },
                   ),
                 },

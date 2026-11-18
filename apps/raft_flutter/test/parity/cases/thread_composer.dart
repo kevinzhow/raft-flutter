@@ -418,7 +418,6 @@ class _FilesHostState extends State<_FilesHost> {
         controller: w,
         channelId: widget.fixture.composerChannelId,
         formatCreatedAt: formatter.shortDateTime,
-        onOpenSource: (_) async {},
       ),
     );
   }

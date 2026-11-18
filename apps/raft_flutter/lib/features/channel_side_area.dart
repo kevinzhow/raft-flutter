@@ -19,7 +19,6 @@ import 'dart:math' as math;
 import 'package:flutter/widgets.dart';
 import 'package:raft_ui/raft_ui.dart';
 
-import '../data/source_channel_files_store.dart';
 import '../data/workspace_controller.dart';
 import 'channel_files_media.dart';
 import 'channel_details_host.dart';
@@ -460,12 +459,11 @@ class _ChannelSideAreaState extends State<ChannelSideArea> {
                 acquireImage: media.acquireImage,
                 peekImage: media.peekImage,
                 // Covering the chat, the message it jumps to would stay hidden.
-                onOpenSource: mode == ChannelSideMode.overlay
-                    ? (SourceChannelFileEntry file) async {
+                beforeOpenSource: mode == ChannelSideMode.overlay
+                    ? (_) {
                         for (final card in ChannelSideCards.open(w)) {
                           ChannelSideCards.close(w, card);
                         }
-                        await w.jumpToMessage(channelId, file.messageId);
                       }
                     : null,
               ),

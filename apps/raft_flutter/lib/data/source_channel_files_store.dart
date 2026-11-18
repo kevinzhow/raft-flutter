@@ -14,17 +14,22 @@ class SourceChannelFileEntry {
     this.sourceChannelId,
     this.parentMessageId,
     this.sourceType,
-    this.createdAt,
-  );
+    this.createdAt, {
+    this.taskId,
+    this.taskNumber,
+  });
   final Map<String, dynamic> metadata;
   final String messageId, channelId, sourceChannelId, sourceType, createdAt;
-  final String? parentMessageId;
+  final String? parentMessageId, taskId;
+  final int? taskNumber;
   bool sameAs(SourceChannelFileEntry other) =>
       messageId == other.messageId &&
       channelId == other.channelId &&
       sourceChannelId == other.sourceChannelId &&
       parentMessageId == other.parentMessageId &&
       sourceType == other.sourceType &&
+      taskId == other.taskId &&
+      taskNumber == other.taskNumber &&
       createdAt == other.createdAt &&
       mapEquals(metadata, other.metadata);
   String get id => metadata['id'] as String;
@@ -50,12 +55,22 @@ class SourceChannelFileEntry {
     final channel = requiredString(row, 'channelId'),
         sourceChannel = requiredString(source, 'channelId');
     final kind = requiredString(source, 'type');
-    if (kind != 'channel' && kind != 'thread') {
+    if (kind != 'channel' && kind != 'thread' && kind != 'task') {
       throw const FormatException('Invalid files source.');
     }
     final parent = source['parentMessageId'];
     if (kind == 'thread' && (parent is! String || parent.isEmpty)) {
       throw const FormatException('Invalid thread source.');
+    }
+    final taskId = kind == 'task' ? source['taskId'] : null;
+    final taskNumber = kind == 'task' ? source['taskNumber'] : null;
+    if (kind == 'task' &&
+        (parent != null ||
+            taskId is! String ||
+            taskId.trim().isEmpty ||
+            taskNumber is! int ||
+            taskNumber < 1)) {
+      throw const FormatException('Invalid task source.');
     }
     final name = requiredString(row, 'filename'),
         mime = requiredString(row, 'mimeType');
@@ -82,6 +97,8 @@ class SourceChannelFileEntry {
       parent is String ? parent : null,
       kind,
       created,
+      taskId: taskId as String?,
+      taskNumber: taskNumber as int?,
     );
   }
 }
@@ -221,7 +238,9 @@ class SourceChannelFilesStore extends ChangeNotifier {
       if (page.any(
         (file) =>
             file.channelId != file.sourceChannelId ||
-            (file.sourceType == 'channel' && file.sourceChannelId != channelId),
+            (file.sourceType == 'channel' &&
+                file.sourceChannelId != channelId) ||
+            (file.sourceType == 'task' && file.sourceChannelId == channelId),
       )) {
         throw const FormatException('Invalid files source.');
       }
