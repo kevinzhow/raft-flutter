@@ -37,8 +37,9 @@ class _SignInDiagnosticsCardState extends State<SignInDiagnosticsCard> {
   @override
   Widget build(BuildContext context) {
     if (!relevant) return const SizedBox.shrink();
+    // Each Account section keeps its own bottom margin (Web `mb-6`).
     return Padding(
-      padding: const EdgeInsets.only(top: RaftSpace.x6),
+      padding: const EdgeInsets.only(bottom: RaftSpace.x6),
       child: RaftSettingsActionCard(
         title: 'Sign-in diagnostics',
         description:
