@@ -191,6 +191,7 @@ class _SourceChannelFilesState extends State<SourceChannelFilesView> {
       channelId,
       taskId,
       focusedMessageId: file.messageId,
+      conversationId: file.sourceChannelId,
     );
     w.navigation.navigateTask(next, kind: current.panelNavigationKindTo(next));
     w.notifyListeners();

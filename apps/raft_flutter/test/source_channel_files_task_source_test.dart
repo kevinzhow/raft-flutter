@@ -60,6 +60,13 @@ Future<(WorkspaceController, MessageAdapter)> mountFiles(WidgetTester t) async {
     'tasks': [v2Task],
     'nextCursor': null,
   };
+  api.routes['GET /channels/task-conv'] = (_) => {
+    'id': 'task-conv',
+    'serverId': w.server!.id,
+    'type': 'task',
+    'taskId': v2Task['id'],
+    'parentChannelId': 'c1',
+  };
   api.routes['GET /messages/context/attached-reply'] = (_) => {
     'messages': [row('attached-reply', 'task-conv', 2)],
     'hasMore': false,
@@ -134,9 +141,14 @@ void main() {
           .single;
       expect(context.queryParameters['channelId'], 'task-conv');
       expect(find.text('Message attached-reply'), findsOneWidget);
+      expect(w.location.taskFocusedConversationId, 'task-conv');
+      expect(
+        api.calls.map((call) => '${call.method} ${call.path}'),
+        contains('GET /channels/task-conv'),
+      );
       expect(
         api.calls.map((call) => call.path),
-        isNot(contains('/channels/task-conv')),
+        isNot(contains('/tasks/${v2Task['id']}/conversation')),
       );
     } finally {
       await t.pumpWidget(const SizedBox.shrink());
