@@ -1,0 +1,100 @@
+import 'package:flutter/gestures.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+import 'message_context_transition_test.dart' show row;
+import 'task_content_slot_test.dart' show v2Task;
+import 'task_surface_test.dart' show taskRoutes;
+import 'workspace_source_location_contract_test.dart'
+    show frames, mountPage, pageFixture, waitForPainted;
+
+const _savedReply = {
+  'messageId': 'matched-reply',
+  'channelId': 'task-conv',
+  'channelName': 'task-task-1',
+  'channelType': 'task',
+  'parentChannelId': 'c1',
+  'parentChannelName': 'test',
+  'parentChannelType': 'channel',
+  'parentMessageId': null,
+  'parentMessagePreview': null,
+  'parentMessageSenderType': null,
+  'parentMessageSenderId': null,
+  'taskId': 'task-1',
+  'taskNumber': 8,
+  'taskTitle': 'Scoped actual task',
+  'senderType': 'user',
+  'senderId': 'alice',
+  'senderName': 'Alice',
+  'senderAvatarUrl': null,
+  'content': 'worth keeping in the task',
+  'createdAt': '2026-11-18T01:00:00Z',
+  'savedAt': '2026-11-18T01:02:00Z',
+  'replyCount': 2,
+};
+
+void main() {
+  testWidgets('Saved task reply copies the actual conversation link', (
+    t,
+  ) async {
+    final (w, api) = await pageFixture(t, section: 'saved');
+    api.routes['GET /channels/saved'] = (_) => {
+      'saved': [_savedReply],
+      'total': 1,
+    };
+    String? clipboard;
+    final messenger =
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    messenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
+      if (call.method == 'Clipboard.setData')
+        clipboard = (call.arguments as Map)['text'] as String;
+      return null;
+    });
+    addTearDown(
+      () => messenger.setMockMethodCallHandler(SystemChannels.platform, null),
+    );
+    await mountPage(t, w, false);
+    await frames(t, () {});
+    final saved = find.byKey(const ValueKey('saved-matched-reply'));
+    await t.tap(
+      saved,
+      buttons: kSecondaryMouseButton,
+      kind: PointerDeviceKind.mouse,
+    );
+    await t.pumpAndSettle();
+    await t.tap(find.text('Copy link'));
+    await t.pumpAndSettle();
+    expect(
+      clipboard,
+      'https://example.invalid/s/demo/channel/task-conv?msg=matched-reply',
+    );
+  });
+
+  testWidgets('Saved task reply opens in its task conversation', (t) async {
+    final (w, api) = await pageFixture(t, section: 'saved');
+    api.routes['GET /channels/saved'] = (_) => {
+      'saved': [_savedReply],
+      'total': 1,
+    };
+    taskRoutes(api, v2Task);
+    api.routes['GET /tasks/channel/c1'] = (_) => {
+      'tasks': [v2Task],
+    };
+    api.routes['GET /messages/channel/task-conv'] = (_) => {
+      'messages': [row('latest-reply', 'task-conv', 8)],
+    };
+    api.routes['GET /messages/context/matched-reply'] = (_) => {
+      'messages': [row('matched-reply', 'task-conv', 7)],
+    };
+    await mountPage(t, w, false);
+    await frames(t, () {});
+    await t.tap(find.byKey(const ValueKey('saved-matched-reply')));
+    await waitForPainted(t, 'matched-reply');
+    expect(w.location.query('task'), 'c1:task:task-1');
+    final context = api.calls.singleWhere(
+      (call) => call.path == '/messages/context/matched-reply',
+    );
+    expect(context.queryParameters['channelId'], 'task-conv');
+  });
+}

@@ -3851,6 +3851,13 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
     if (widget.section == 'activity' && openTaskFromList(w, row, wide: wide)) {
       return;
     }
+    if (widget.section == 'saved' && row['channelType'] == 'task') {
+      final reply = row['messageId'];
+      if (reply is String &&
+          openTaskFromList(w, row, wide: wide, focusedMessageId: reply)) {
+        return;
+      }
+    }
     if (widget.section == 'activity' && widget.onActivityItem != null) {
       await widget.onActivityItem!(Map<String, dynamic>.from(row));
       return;
@@ -3950,10 +3957,12 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
             : () async {
                 if (!accepts(scope)) return;
                 final thread = row['channelType'] == 'thread';
+                final task = row['channelType'] == 'task';
                 final text = ContentLinks.messageUrl(
                   origin: ContentLinks.originFor(w.client.origin),
                   slug: w.server!.string('slug'),
-                  channelId: '${row['parentChannelId'] ?? row['channelId']}',
+                  channelId:
+                      '${task ? row['channelId'] : row['parentChannelId'] ?? row['channelId']}',
                   messageId: '${row['messageId']}',
                   kind:
                       '${thread ? row['parentChannelType'] : row['channelType']}',
