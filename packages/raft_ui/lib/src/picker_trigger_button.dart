@@ -5,14 +5,17 @@
 // original `RaftControl` paint of the 0.5.52 build.
 import 'package:flutter/material.dart';
 
+import 'control_typography.dart';
 import 'design_primitives.dart';
 import 'icons.dart';
 import 'localization.dart';
+import 'panel_layout.dart' show RaftCssText;
 import 'tooltip.dart' show RaftTooltip;
 import 'raft/ui_tokens.dart';
 import 'recipe_surface.dart';
 import 'recipes/picker_trigger_button.g.dart';
 import 'recipes/recipe_runtime.dart' show RaftSlotStyle;
+import 'text_scaling.dart';
 import 'theme.dart';
 
 class RaftPickerTriggerButton extends StatelessWidget {
@@ -58,6 +61,11 @@ class RaftPickerTriggerButton extends StatelessWidget {
     final t = RaftTokens.of(context);
     final rt = t.recipeTokens;
     final canActivate = enabled && onPressed != null;
+    final useExactLabelHeight =
+        Theme.of(context).platform == TargetPlatform.android &&
+        RaftControlTypography.appliesIn(context) &&
+        RaftScaled.grows(context);
+
     final button = RaftInteractive(
       onPressed: canActivate ? onPressed : null,
       focusNode: focusNode,
@@ -96,16 +104,26 @@ class RaftPickerTriggerButton extends StatelessWidget {
                     size: style.target("& svg:not([class*='size-'])")!.width!,
                     color: DefaultTextStyle.of(context).style.color,
                   ),
-                if (!labelHidden) Text(raftText(context, label), maxLines: 1),
-                if (value != null && value!.isNotEmpty)
-                  Text(
-                    value!,
-                    maxLines: 1,
-                    style: valueSlot?.text(
-                      rt,
-                      base: DefaultTextStyle.of(context).style,
+                for (final (text, labelStyle) in [
+                  if (!labelHidden) (raftText(context, label), null),
+                  if (value != null && value!.isNotEmpty)
+                    (
+                      value!,
+                      valueSlot?.text(
+                        rt,
+                        base: DefaultTextStyle.of(context).style,
+                      ),
                     ),
-                  ),
+                ])
+                  if (useExactLabelHeight)
+                    RaftCssText(
+                      text,
+                      style: labelStyle,
+                      maxLines: 1,
+                      controlLabel: true,
+                    )
+                  else
+                    Text(text, style: labelStyle, maxLines: 1),
                 if (trailingGlyph != null)
                   SizedBox.square(
                     dimension: 16,
