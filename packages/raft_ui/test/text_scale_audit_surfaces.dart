@@ -4,6 +4,7 @@
 // RAFT_TEXT_SCALE_SWEEP=1.
 import 'package:flutter/widgets.dart';
 
+import 'package:raft_ui/action_card_previews.dart';
 import 'package:raft_ui/activity_scope_previews.dart';
 import 'package:raft_ui/activity_selected_previews.dart';
 import 'package:raft_ui/agent_avatar_picker_previews.dart';
@@ -1646,6 +1647,13 @@ final auditSurfaces = <AuditSurface>[
     'Action card',
     actionCardPreview,
     Size(640, 620),
+    representative: true,
+  ),
+  AuditSurface(
+    'actionCardStatesPreview',
+    'Action card states',
+    actionCardStatesPreview,
+    Size(390, 360),
     representative: true,
   ),
   AuditSurface(
