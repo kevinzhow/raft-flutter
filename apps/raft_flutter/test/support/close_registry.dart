@@ -47,6 +47,7 @@ List<CloseSurface> get allCloseSurfaces => [
   ...tasksPageSurfaces,
   ...viewerSurfaces,
   ...artifactSurfaces,
+  ...artifactDiscussionSurfaces,
   ...webLinkChoiceSurfaces,
   ...webPreviewSurfaces,
   ...accountDeletionSurfaces,

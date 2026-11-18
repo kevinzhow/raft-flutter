@@ -4609,6 +4609,58 @@
           "justification": "No paired v1.24 visual case is registered for this state."
         }
       ]
+    },
+    {
+      "id": "artifact.comments",
+      "title": "Workspace Artifact comments",
+      "webEntry": "packages/web/src/apps/artifacts/ArtifactCommentsPanel.tsx (Web 1.24.0)",
+      "flutterEntry": "apps/raft_flutter/lib/features/artifacts/artifact_comments_panel.dart",
+      "states": [
+        {
+          "state": "loading",
+          "variant": "first page",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "gap",
+          "gapKind": "case-missing",
+          "size": "S",
+          "justification": "The loading row has a product widget path. It has no registered paired case."
+        },
+        {
+          "state": "empty",
+          "variant": "zero visible threads",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "gap",
+          "gapKind": "case-missing",
+          "size": "S",
+          "justification": "The actual list renders an empty state. It has no registered paired case."
+        },
+        {
+          "state": "error",
+          "variant": "comment read or post fails",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "gap",
+          "gapKind": "case-missing",
+          "size": "S",
+          "justification": "Retry states are present. They have no registered paired cases."
+        },
+        {
+          "state": "partial",
+          "variant": "older page and reply before its parent",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "gap",
+          "gapKind": "case-missing",
+          "size": "S",
+          "justification": "The list keeps its current rows while reading earlier comments. It has no registered paired case."
+        }
+      ]
     }
   ],
   "navigationCoverage": {
@@ -45023,12 +45075,6 @@
         "owner": "Artifact viewer",
         "reason": "WP-ART1 Artifact viewer, cards and attachment save (Web v1.24); compositions of raft_ui parts, real-entry mapping stays with the viewer owner."
       },
-      "apps/raft_flutter/lib/features/artifacts/artifact_viewer_page.dart#local-function:FUNCTION:openWorkspaceArtifact@1756/FUNCTION:viewer@1952": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "Artifact viewer",
-        "reason": "WP-ART1 Artifact viewer, cards and attachment save (Web v1.24); compositions of raft_ui parts, real-entry mapping stays with the viewer owner."
-      },
       "apps/raft_flutter/lib/features/artifacts/artifact_viewer_page.dart#method:ArtifactWorkspaceViewer.createState": {
         "role": "unresolved",
         "familyRefs": [],
@@ -55388,6 +55434,127 @@
         "familyRefs": [],
         "owner": "WP-DS4",
         "reason": "Shell and sidebar density. Unchanged local builders retain their previous ownership. State-specific visual acceptance is pending."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_comment_composer.dart#class:ArtifactCommentComposer": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Artifact discussion"
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_comment_composer.dart#class:_ArtifactCommentComposerState": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Artifact discussion"
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_comment_composer.dart#method:ArtifactCommentComposer.createState": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Artifact discussion"
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_comment_composer.dart#method:_ArtifactCommentComposerState.build": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Artifact discussion"
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_comments_panel.dart#class:ArtifactCommentBody": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Artifact discussion"
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_comments_panel.dart#class:ArtifactCommentsPanel": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Artifact discussion"
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_comments_panel.dart#class:_ArtifactCommentImage": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Artifact discussion"
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_comments_panel.dart#class:_ArtifactCommentImageState": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Artifact discussion"
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_comments_panel.dart#class:_ArtifactCommentsPanelState": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Artifact discussion"
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_comments_panel.dart#method:ArtifactCommentBody.build": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Artifact discussion"
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_comments_panel.dart#method:ArtifactCommentsPanel.createState": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Artifact discussion"
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_comments_panel.dart#method:_ArtifactCommentImage.createState": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Artifact discussion"
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_comments_panel.dart#method:_ArtifactCommentImageState.build": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Artifact discussion"
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_comments_panel.dart#method:_ArtifactCommentsPanelState._commentActions": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Artifact discussion"
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_comments_panel.dart#method:_ArtifactCommentsPanelState._composer": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Artifact discussion"
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_comments_panel.dart#method:_ArtifactCommentsPanelState._delete": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Artifact discussion"
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_comments_panel.dart#method:_ArtifactCommentsPanelState._discussion": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Artifact discussion"
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_comments_panel.dart#method:_ArtifactCommentsPanelState._entry": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Artifact discussion"
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_comments_panel.dart#method:_ArtifactCommentsPanelState._groups": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Artifact discussion"
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_comments_panel.dart#method:_ArtifactCommentsPanelState._resolve": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Artifact discussion"
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_comments_panel.dart#method:_ArtifactCommentsPanelState._thread": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Artifact discussion"
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_comments_panel.dart#method:_ArtifactCommentsPanelState.build": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Artifact discussion"
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_comments_panel.dart#method:_ArtifactCommentsPanelState.didUpdateWidget": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Artifact discussion"
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_viewer_page.dart#local-function:FUNCTION:openWorkspaceArtifact@1820/FUNCTION:viewer@2022": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Artifact viewer",
+        "reason": "WP-ART1 Artifact viewer, cards and attachment save (Web v1.24); compositions of raft_ui parts, real-entry mapping stays with the viewer owner."
       }
     },
     "entries": {
@@ -59071,6 +59238,31 @@
         "owner": "WP-DS4",
         "mountStatus": "source_reviewed",
         "reason": "Registered shell family source entry."
+      },
+      "screen:artifact.comments": {
+        "owner": "Artifact discussion",
+        "kind": "panel",
+        "lifecycleScreenId": "artifact.comments",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/artifacts/artifact_comments_panel.dart#class:ArtifactCommentsPanel"
+        ],
+        "mountStatus": "source_reviewed"
+      },
+      "surface:apps/raft_flutter/lib/features/artifacts/artifact_comments_panel.dart#method:_ArtifactCommentsPanelState._delete": {
+        "owner": "Artifact discussion",
+        "kind": "artifact-discussion",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/artifacts/artifact_comments_panel.dart#method:_ArtifactCommentsPanelState._delete"
+        ],
+        "mountStatus": "source_reviewed"
+      },
+      "surface:apps/raft_flutter/lib/features/artifacts/artifact_comments_panel.dart#method:_ArtifactCommentsPanelState._resolve": {
+        "owner": "Artifact discussion",
+        "kind": "artifact-discussion",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/artifacts/artifact_comments_panel.dart#method:_ArtifactCommentsPanelState._resolve"
+        ],
+        "mountStatus": "source_reviewed"
       }
     },
     "requirements": {
