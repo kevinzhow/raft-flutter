@@ -526,28 +526,22 @@ class NativeContentCoordinator with WidgetsBindingObserver {
     }
     if (w.foreground || notifications.deliveryAllowed?.call() == false) return;
     final key = '${target.serverId}:${target.messageId}';
-    if (_delivered.contains(key) || _inFlight.contains(key)) return;
+    if (_delivered.contains(key) || !_inFlight.add(key)) return;
     try {
       if (backgroundRefreshSupported &&
           await background.store.seen(scope, target.messageId!)) {
         return;
       }
-    } catch (_) {
-      return;
-    }
-    if (_closed || _workspace != w || _scope != scope || epoch != _epoch) {
-      return;
-    }
-    _inFlight.add(key);
-    try {
+      if (_closed || _workspace != w || _scope != scope || epoch != _epoch) {
+        return;
+      }
       // The server lists a new message in the inbox about a second after it
       // announces it. Read the Activity window now (in parallel with the
       // checks below) so that opening the app from this alert finds the
       // conversation current; the alert itself never waits past the cap.
       final fresh = w.services.activityUnreadIfBound?.reach(
-        // A thread reply's row is the thread's own channel.
-        channelId: p['channelId'] as String,
-        messageId: p['messageId'] as String,
+        channelId: target.conversationId,
+        messageId: target.messageId!,
         timeout: freshCap,
       );
       // Socket room delivery is an eligibility decision, not lasting authority.
@@ -598,17 +592,12 @@ class NativeContentCoordinator with WidgetsBindingObserver {
       );
       final unread = activityRowUnread(
         w.services.activityUnreadIfBound?.acceptedRows ?? const [],
-        p['channelId'] as String,
+        target.conversationId,
       );
       await notifications.show(
         title: text.title.substring(0, text.title.length.clamp(0, 160)),
         body: text.body.substring(0, text.body.length.clamp(0, 512)),
-        payload: jsonEncode({
-          'origin': w.client.origin,
-          'principal': w.client.user!.id,
-          'serverId': target.serverId,
-          'uri': target.nativeUri(target.serverId!).toString(),
-        }),
+        payload: notificationPayload(w.client, target),
         unread: unread,
       );
       if (backgroundRefreshSupported &&
@@ -675,12 +664,12 @@ class NativeContentCoordinator with WidgetsBindingObserver {
     );
     try {
       Future<void>? opening;
-      if (known != null) {
+      if (target.task == null && known != null) {
         published = true;
         opening = _open(w, target, known, replaceEntry: replaceEntry);
         // Its failure is reported once, below, after verification settles.
         unawaited(opening.then<void>((_) {}, onError: (Object _) {}));
-      } else if (ownWorkspace) {
+      } else if (target.task == null && ownWorkspace) {
         // Unknown to the device: show the destination's loading shell now.
         published = true;
         w.navigation.navigate(
@@ -698,6 +687,19 @@ class NativeContentCoordinator with WidgetsBindingObserver {
       // Cross-server links require an explicit server selection in the app first.
       if (server.id != w.client.serverId) {
         throw const RaftApiException('Unavailable server.');
+      }
+      if (target.task != null) {
+        if (!w.can('viewChannel', resource: channel)) {
+          throw const RaftApiException('Unavailable channel.');
+        }
+        w.navigation.navigateTask(
+          _destination(w, target, channel.type == 'dm'),
+          kind: replaceEntry
+              ? RaftNavigationKind.replace
+              : RaftNavigationKind.push,
+        );
+        w.notifyListeners();
+        return;
       }
       if (target.parentMessageId != null &&
           !w.can('viewChannel', resource: channel)) {
@@ -726,6 +728,13 @@ class NativeContentCoordinator with WidgetsBindingObserver {
       route: dm ? RaftRoute.dm : RaftRoute.channel,
       entityId: target.channelId,
     );
+    if (target.task case final task?) {
+      return base.withTaskConversation(
+        target.channelId,
+        task.id,
+        focusedMessageId: target.messageId,
+      );
+    }
     return target.parentMessageId != null
         ? base.withQuery({
             'thread': '${target.channelId}:${target.parentMessageId}',
@@ -841,17 +850,38 @@ class NativeContentCoordinator with WidgetsBindingObserver {
       throw const RaftApiException('Unavailable channel.');
     }
     if (target.messageId != null) {
+      final task = target.task;
+      if (task != null) {
+        final conversation = await client.get(
+          '/channels/${task.conversationId}',
+        );
+        if (!valid() ||
+            conversation is! Map ||
+            conversation['id'] != task.conversationId ||
+            conversation['serverId'] != server.id ||
+            conversation['type'] != 'task' ||
+            conversation['taskId'] != task.id ||
+            conversation['parentChannelId'] != target.channelId) {
+          throw const RaftApiException('Unavailable task conversation.');
+        }
+      }
       final context = await client.get(
         '/messages/context/${target.messageId}',
-        query: {'channelId': target.channelId},
+        query: {'channelId': task?.conversationId ?? target.channelId},
       );
       if (!valid() || context is! Map || context['messages'] is! List) {
         throw const RaftApiException('Unavailable message.');
       }
       final canonicalMessage = context['canonicalTarget'];
       final rows = context['messages'] as List;
-      if (!rows.whereType<Map>().any((row) => row['id'] == target.messageId) &&
-          (canonicalMessage is! Map ||
+      final matched = rows.whereType<Map>().any(
+        (row) =>
+            row['id'] == target.messageId &&
+            (task == null || row['channelId'] == task.conversationId),
+      );
+      if (!matched &&
+          (task != null ||
+              canonicalMessage is! Map ||
               canonicalMessage['kind'] != 'thread' ||
               canonicalMessage['messageId'] != target.messageId)) {
         throw const RaftApiException('Unavailable message.');

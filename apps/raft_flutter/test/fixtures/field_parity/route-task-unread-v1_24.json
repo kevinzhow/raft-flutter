@@ -1,0 +1,56 @@
+{
+  "items": [
+    {
+      "kind": "task",
+      "threadChannelId": "9b705bdd-b4ef-4bbb-acd6-dde70de75b5d",
+      "parentMessageId": null,
+      "parentChannelId": "60f6706c-7389-45cb-9356-73a5b1a1ba4f",
+      "parentChannelName": "wire-contract-room",
+      "parentChannelType": "channel",
+      "parentMessagePreview": "ship the wire-contract page",
+      "parentMessageSenderType": "",
+      "parentMessageSenderId": "",
+      "latestActivityPreview": "first draft is up",
+      "latestActivitySenderType": "user",
+      "latestActivitySenderId": "a7d35da4-9b85-4eaa-ab23-9aa986ebd76f",
+      "latestActivitySenderName": null,
+      "latestActivityMessageId": "bcd3ac73-e058-4ec4-b25a-412946484ba4",
+      "latestActivitySeq": "1",
+      "doneFrontierSeq": "1",
+      "firstUnreadMessageId": "bcd3ac73-e058-4ec4-b25a-412946484ba4",
+      "firstMentionMessageId": null,
+      "lastActivityAt": "2026-11-18 05:29:46.430000+00",
+      "lastReplyAt": "2026-11-18 05:29:46.430000+00",
+      "replyCount": 1,
+      "unreadCount": 1,
+      "hasMention": false,
+      "taskId": "8b498f8f-74d2-4e92-b87a-07ee751527d2",
+      "taskNumber": 1,
+      "taskTitle": "ship the wire-contract page",
+      "taskStatus": "todo",
+      "taskClaimedByName": null,
+      "readState": {
+        "kind": "absent"
+      },
+      "maxReadSeq": 0,
+      "readStateVersion": 0,
+      "latestDelegatedBy": null,
+      "latestRetracted": false,
+      "parentRetracted": false,
+      "senderAvatarUrl": null
+    }
+  ],
+  "groups": [
+    {
+      "channelId": "60f6706c-7389-45cb-9356-73a5b1a1ba4f",
+      "channelName": "wire-contract-room",
+      "channelType": "channel",
+      "count": 1,
+      "lastActivityAt": "2026-11-18T05:29:46.430Z"
+    }
+  ],
+  "hasMore": false,
+  "totalCount": 1,
+  "totalUnreadCount": 1,
+  "activeUnreadCount": 1
+}

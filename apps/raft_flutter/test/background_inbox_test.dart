@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
@@ -28,6 +30,8 @@ class _Client extends RaftClient {
   Object? summary;
   Future<dynamic> Function()? summaryRead;
   int? inboxTotal;
+  String? onlyInboxParent;
+  List<Map<String, dynamic>> channelLevels = [];
   final reads = <String>[];
   @override
   Future<List<RaftRecord>> accountServers() async =>
@@ -51,7 +55,7 @@ class _Client extends RaftClient {
       return {
         'serverId': server,
         'server': muted ? 'none' : mode,
-        'channels': [],
+        'channels': channelLevels,
         'threads': [],
       };
     }
@@ -64,6 +68,11 @@ class _Client extends RaftClient {
     if (path == '/me/notification-settings') return {};
     if (path.endsWith('/notification-settings')) {
       return {'serverPushMode': mode};
+    }
+    if (path == '/channels/inbox' &&
+        query?['channelId'] != null &&
+        onlyInboxParent != null) {
+      expect(query!['channelId'], onlyInboxParent);
     }
     return page?.future ??
         {'items': rows, if (inboxTotal != null) 'totalUnreadCount': inboxTotal};
@@ -115,6 +124,38 @@ void main() {
     );
   });
   tearDown(() => client.dispose());
+
+  test('poll delivers the served task row at its parent level and deduplicates the reply', () async {
+    final response = jsonDecode(
+      File('test/fixtures/field_parity/route-task-unread-v1_24.json')
+          .readAsStringSync(),
+    ) as Map;
+    client.rows = (response['items'] as List).cast<Map<String, dynamic>>();
+    client.mode = 'none';
+    client.onlyInboxParent = '60f6706c-7389-45cb-9356-73a5b1a1ba4f';
+    client.channelLevels = [
+      {'id': client.onlyInboxParent, 'level': 'all'},
+    ];
+    final sent = <Uri>[];
+    poller = BackgroundInboxPoller(
+      client: client,
+      store: store,
+      authorize: (target, valid) async => expect(valid(), isTrue),
+      deliver: (alert, _) async {
+        expect(alert.title, contains('ship the wire-contract page'));
+        expect(alert.body, 'first draft is up');
+        sent.add(alert.target.nativeUri('s'));
+        return true;
+      },
+    );
+    await poller.run();
+    await poller.run();
+    expect(sent, [
+      Uri.parse(
+        'raft://v1/servers/s/channels/60f6706c-7389-45cb-9356-73a5b1a1ba4f/tasks/8b498f8f-74d2-4e92-b87a-07ee751527d2?conversationId=9b705bdd-b4ef-4bbb-acd6-dde70de75b5d&messageId=bcd3ac73-e058-4ec4-b25a-412946484ba4',
+      ),
+    ]);
+  });
   test(
     'background badge sums memberships and keeps unknown on summary failure',
     () async {

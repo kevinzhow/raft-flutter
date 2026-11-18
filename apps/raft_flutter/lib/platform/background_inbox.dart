@@ -130,12 +130,15 @@ class BackgroundInboxAlert {
     DateTime since, {
     bool mentionsOnly = false,
   }) {
-    final thread = row['kind'] == 'thread';
+    final task = row['kind'] == 'task' || row['conversationKind'] == 'task';
+    final thread = !task && row['kind'] == 'thread';
+    final child = thread || task;
+    final conversationId = row['threadChannelId'], taskId = row['taskId'];
     final at = DateTime.tryParse(
-      '${row[thread ? 'lastActivityAt' : 'lastMessageAt']}',
+      '${row[child ? 'lastActivityAt' : 'lastMessageAt']}',
     );
-    final message = row[thread ? 'latestActivityMessageId' : 'lastMessageId'];
-    final channel = row[thread ? 'parentChannelId' : 'channelId'];
+    final message = row[child ? 'latestActivityMessageId' : 'lastMessageId'];
+    final channel = row[child ? 'parentChannelId' : 'channelId'];
     // The server only keeps unread mentions in `hasMention`; its
     // firstMentionMessageId is the OLDEST unread mention (null on the
     // RisingWave path), so it never gates the newest message. The unread
@@ -150,12 +153,14 @@ class BackgroundInboxAlert {
         !ContentTarget.validId(message) ||
         channel is! String ||
         !ContentTarget.validId(channel) ||
-        thread &&
+        child &&
             (row['isFollowing'] == false && row['hasMention'] != true ||
-                row['threadChannelId'] is! String ||
-                !ContentTarget.validId(row['threadChannelId']) ||
-                row['parentMessageId'] is! String ||
-                !ContentTarget.validId(row['parentMessageId']))) {
+                conversationId is! String ||
+                !ContentTarget.validId(conversationId)) ||
+        thread &&
+            (row['parentMessageId'] is! String ||
+                !ContentTarget.validId(row['parentMessageId'])) ||
+        task && (taskId is! String || !ContentTarget.validId(taskId))) {
       return null;
     }
     String? label(Object? value) {
@@ -164,9 +169,9 @@ class BackgroundInboxAlert {
       return text.isEmpty ? null : text;
     }
 
-    final name = label(row[thread ? 'parentChannelName' : 'channelName']);
+    final name = label(row[child ? 'parentChannelName' : 'channelName']);
     final sender = label(
-      row[thread ? 'latestActivitySenderName' : 'lastMessageSenderName'],
+      row[child ? 'latestActivitySenderName' : 'lastMessageSenderName'],
     );
     final dm = row['kind'] == 'dm';
     final conversation = name == null
@@ -174,13 +179,21 @@ class BackgroundInboxAlert {
         : name.startsWith('#')
         ? name
         : '#$name';
-    final title = dm
+    final taskTitle = task ? label(row['taskTitle']) : null;
+    final taskNumber = row['taskNumber'];
+    final title = task
+        ? taskTitle == null
+              ? '$conversation · Task'
+              : taskNumber is int
+              ? '#$taskNumber $taskTitle'
+              : taskTitle
+        : dm
         ? sender ?? name ?? 'Direct message'
         : thread
         ? '$conversation · Thread'
         : conversation;
     final preview =
-        label(row[thread ? 'latestActivityPreview' : 'lastMessagePreview']) ??
+        label(row[child ? 'latestActivityPreview' : 'lastMessagePreview']) ??
         'New activity';
     final body = !dm && sender != null ? '$sender: $preview' : preview;
     String bounded(String value, int limit) =>
@@ -195,8 +208,11 @@ class BackgroundInboxAlert {
             : row['kind'] == 'dm'
             ? 'dm'
             : 'channel',
-        threadId: thread ? row['threadChannelId'] as String : null,
+        threadId: thread ? conversationId as String : null,
         parentMessageId: thread ? row['parentMessageId'] as String : null,
+        task: task
+            ? (id: taskId as String, conversationId: conversationId as String)
+            : null,
       ),
       bounded(title, 160),
       bounded(body, 512),
@@ -262,11 +278,10 @@ class BackgroundNotificationPolicy {
       server == NotificationLevel.mentions ||
       channels.values.contains(NotificationLevel.mentions);
 
-  /// An Activity row's level: a thread follows its parent channel (threads
-  /// have no level of their own); a DM inherits the server's.
+  /// Thread and task conversations use their parent channel's level.
   NotificationLevel levelOf(Map row) {
-    final channel =
-        row[row['kind'] == 'thread' ? 'parentChannelId' : 'channelId'];
+    final child = row['kind'] == 'thread' || row['kind'] == 'task';
+    final channel = row[child ? 'parentChannelId' : 'channelId'];
     return resolveEffectiveLevel(
       server: server,
       channel: channel is String ? channels[channel] : null,

@@ -1,3 +1,5 @@
+typedef TaskNotificationDestination = ({String id, String conversationId});
+
 /// Content navigation only. OAuth callback URLs never enter this parser.
 class ContentTarget {
   const ContentTarget({
@@ -7,10 +9,14 @@ class ContentTarget {
     this.messageId,
     this.parentMessageId,
     this.threadId,
+    this.task,
     this.kind = 'channel',
   });
   final String channelId, kind;
   final String? serverId, serverSlug, messageId, parentMessageId, threadId;
+  final TaskNotificationDestination? task;
+
+  String get conversationId => task?.conversationId ?? threadId ?? channelId;
 
   static bool validId(String value) =>
       RegExp(r'^[a-zA-Z0-9_-]{1,128}$').hasMatch(value);
@@ -56,6 +62,23 @@ class ContentTarget {
         );
       }
       final parent = single('parentMessageId'), message = single('messageId');
+      final conversation = single('conversationId');
+      if (p.length == 6 &&
+          p[2] == 'channels' &&
+          p[4] == 'tasks' &&
+          validId(p[5]) &&
+          conversation != null &&
+          validId(conversation) &&
+          message != null &&
+          validId(message) &&
+          queries({'conversationId', 'messageId'})) {
+        return ContentTarget(
+          serverId: p[1],
+          channelId: p[3],
+          messageId: message,
+          task: (id: p[5], conversationId: conversation),
+        );
+      }
       if (p.length == 6 &&
           p[2] == 'channels' &&
           p[4] == 'threads' &&
@@ -106,6 +129,18 @@ class ContentTarget {
   }
 
   Uri nativeUri(String boundServerId) {
+    if (task case final destination?) {
+      return Uri(
+        scheme: 'raft',
+        host: 'v1',
+        path:
+            '/servers/$boundServerId/channels/$channelId/tasks/${destination.id}',
+        queryParameters: {
+          'conversationId': destination.conversationId,
+          'messageId': messageId,
+        },
+      );
+    }
     if (parentMessageId != null && threadId != null && messageId != null) {
       return Uri(
         scheme: 'raft',
@@ -127,6 +162,31 @@ class ContentTarget {
 
   /// The mounted server's already-filtered mobile notification projection.
   static ContentTarget? fromNotification(Map payload) {
+    final route = payload['route'];
+    if (route is Map && route['type'] == 'task') {
+      final server = route['serverId'],
+          parent = route['parentChannelId'],
+          taskId = route['taskId'],
+          reply = route['messageId'],
+          conversation = payload['conversationId'];
+      if (server is! String ||
+          parent is! String ||
+          taskId is! String ||
+          reply is! String ||
+          conversation is! String ||
+          ![server, parent, taskId, reply, conversation].every(validId) ||
+          server != payload['serverId'] ||
+          parent != payload['channelId'] ||
+          !['channel', 'dm'].contains(route['parentChannelType'])) {
+        return null;
+      }
+      return ContentTarget(
+        serverId: server,
+        channelId: parent,
+        messageId: reply,
+        task: (id: taskId, conversationId: conversation),
+      );
+    }
     final server = payload['serverId'],
         channel = payload['channelId'],
         message = payload['messageId'],

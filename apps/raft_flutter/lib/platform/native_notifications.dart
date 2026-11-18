@@ -714,7 +714,7 @@ class NativeNotificationService extends ChangeNotifier {
         Uri.parse(p['uri'] as String),
         origin: Uri(),
       );
-      return target == null ? null : target.threadId ?? target.channelId;
+      return target?.conversationId;
     } catch (_) {
       return null;
     }

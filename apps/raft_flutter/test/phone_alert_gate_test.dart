@@ -24,6 +24,8 @@ class _Client extends RaftClient {
       );
   final stream = StreamController<RaftEvent>.broadcast(sync: true);
   bool serverMuted = false;
+  bool denyTaskConversation = false;
+  final contextChannels = <(String, Object?)>[];
   @override
   Stream<RaftEvent> get events => stream.stream;
   @override
@@ -32,10 +34,25 @@ class _Client extends RaftClient {
   ];
   @override
   Future<dynamic> get(String path, {Map<String, dynamic>? query}) async {
-    if (path.startsWith('/channels/')) return {'id': 'c', 'serverId': 's'};
+    if (path == '/channels/task-conv') {
+      if (denyTaskConversation) throw const RaftApiException('Unavailable');
+      return {
+        'id': 'task-conv',
+        'serverId': 's',
+        'type': 'task',
+        'taskId': 'task-1',
+        'parentChannelId': 'c',
+      };
+    }
+    if (path.startsWith('/channels/')) {
+      return {'id': 'c', 'serverId': 's', 'type': 'channel', 'joined': true};
+    }
+    if (path.startsWith('/messages/context/')) {
+      contextChannels.add((path.split('/').last, query?['channelId']));
+    }
     return {
       'messages': [
-        {'id': path.split('/').last, 'channelId': 'c'},
+        {'id': path.split('/').last, 'channelId': query?['channelId'] ?? 'c'},
       ],
     };
   }
@@ -48,6 +65,7 @@ class _Notifications extends NativeNotificationService {
     available = true;
   }
   final shown = <({String title, String body})>[];
+  final payloads = <String>[];
   @override
   bool get receivesMessages => true;
   @override
@@ -62,7 +80,10 @@ class _Notifications extends NativeNotificationService {
     int? unread,
     bool quiet = false,
     String? conversation,
-  }) async => shown.add((title: title, body: body));
+  }) async {
+    shown.add((title: title, body: body));
+    payloads.add(payload);
+  }
 }
 
 Map<String, Object?> push(String message, {Object? phoneAlert = _absent}) => {
@@ -88,7 +109,10 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     client = _Client()..user = RaftRecord({'id': 'alice'});
     client.selectServer('s');
-    w = WorkspaceController(client)..foreground = false;
+    w = WorkspaceController(client)
+      ..server = RaftRecord({'id': 's', 'slug': 'team', 'role': 'owner'})
+      ..foreground = false;
+    w.bindNavigation();
     n = _Notifications();
     links = NativeContentCoordinator(
       notifications: n,
@@ -118,6 +142,68 @@ void main() {
     await deliver(push('older-server'));
     expect(n.shown, hasLength(2));
   });
+
+  test(
+    'mounted task socket route delivers and opens the precise reply once',
+    () async {
+      const event = {
+        'title': '#8 Scoped actual task · #general',
+        'subtitle': '#general',
+        'body': 'Ada: needle',
+        'tag': 'event-1',
+        'id': 'event-1',
+        'category': 'mention',
+        'priority': 'high',
+        'seq': 7,
+        'groupKey': 'task-group',
+        'serverId': 's',
+        'kind': 'channel',
+        'channelId': 'c',
+        'threadId': null,
+        'parentChannelId': 'c',
+        'parentMessageId': null,
+        'messageId': null,
+        'conversationId': 'task-conv',
+        'route': {
+          'type': 'task',
+          'serverId': 's',
+          'parentChannelId': 'c',
+          'parentChannelType': 'channel',
+          'taskId': 'task-1',
+          'messageId': 'matched-reply',
+        },
+        'routeUrl': '/s/team/channel/c?task=c%3Atask%3Atask-1',
+        'url':
+            'https://fixture.example/s/team/channel/c?task=c%3Atask%3Atask-1',
+        'silent': false,
+        'previewMode': 'full',
+        'phoneAlert': true,
+      };
+      client.denyTaskConversation = true;
+      await deliver({...event, 'messageId': 'legacy-anchor'});
+      expect(n.shown, isEmpty);
+      client.denyTaskConversation = false;
+      w.foreground = true;
+      await deliver(event);
+      expect(n.shown, isEmpty);
+      w.foreground = false;
+      await Future.wait([
+        deliver(event),
+        deliver({...event, 'messageId': 'legacy-anchor'}),
+      ]);
+      expect(n.shown, hasLength(1));
+      expect(client.contextChannels, [('matched-reply', 'task-conv')]);
+
+      n.onTap?.call(n.payloads.single);
+      await pumpEventQueue();
+      expect(w.location.query('task'), 'c:task:task-1');
+      expect(w.location.query('taskMsg'), 'task-1:matched-reply');
+      expect(client.contextChannels, [
+        ('matched-reply', 'task-conv'),
+        ('matched-reply', 'task-conv'),
+      ]);
+    },
+  );
 
   test('the server decided: a server row at Nothing does not hold back a channel that notifies', () async {
     client.serverMuted = true;

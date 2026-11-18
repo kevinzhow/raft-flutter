@@ -158,10 +158,7 @@ Future<bool> _runBackgroundInbox({
         }
         await plugin.show(
           // One notification per conversation, like the foreground path.
-          id: conversationNotificationId(
-            selected,
-            alert.target.threadId ?? alert.target.channelId,
-          ),
+          id: conversationNotificationId(selected, alert.target.conversationId),
           title: alert.title,
           body: alert.body,
           payload: notificationPayload(client!, alert.target),
