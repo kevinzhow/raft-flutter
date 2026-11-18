@@ -50447,13 +50447,13 @@
         "owner": "design-system alignment",
         "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
       },
-      "apps/raft_flutter/lib/features/resource_view.dart#local-function:CLASS:_ResourceViewState@7527/METHOD:scopedDialog@49987/FUNCTION:buildOwned@50214": {
+      "apps/raft_flutter/lib/features/resource_view.dart#local-function:CLASS:_ResourceViewState@7572/METHOD:scopedDialog@50205/FUNCTION:buildOwned@50432": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
       },
-      "apps/raft_flutter/lib/features/resource_view.dart#local-function:CLASS:_ResourceViewState@7527/METHOD:scopedMenu@51035/FUNCTION:buildOwned@51242": {
+      "apps/raft_flutter/lib/features/resource_view.dart#local-function:CLASS:_ResourceViewState@7572/METHOD:scopedMenu@51253/FUNCTION:buildOwned@51460": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
@@ -52109,7 +52109,7 @@
         "owner": "design-system alignment",
         "reason": "WP-TASKS (Web v1.24 Tasks page board / task card facts): resolved builder; real-entry/family/state mapping remains unreviewed."
       },
-      "apps/raft_flutter/lib/features/resource_view.dart#local-function:CLASS:_ResourceViewState@7527/METHOD:activityList@111161/FUNCTION:bar@111383": {
+      "apps/raft_flutter/lib/features/resource_view.dart#local-function:CLASS:_ResourceViewState@7572/METHOD:activityList@111716/FUNCTION:bar@111938": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
