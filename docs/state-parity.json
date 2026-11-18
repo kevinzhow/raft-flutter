@@ -1398,10 +1398,50 @@
       "webEntry": "packages/web/src/components/actions/ActionCardFormSheet.tsx and InstallAppCardDialog.tsx",
       "flutterEntry": "apps/raft_flutter/lib/features/message_action_card.dart",
       "states": [
-        {"state":"loading","variant":"Marketplace lookup","web":"yes","flutter":"yes","status":"gap","gapKind":"case-missing","size":"S","parityCase":[],"justification":"The installation dialog waits for the listing and shows a spinner. The upstream visual cases do not mount it."},
-        {"state":"empty","variant":"No picker candidates or Marketplace listing","web":"yes","flutter":"yes","status":"gap","gapKind":"case-missing","size":"S","parityCase":[],"justification":"The form shows its empty label and installation shows the unavailable message. The upstream visual cases do not mount these states."},
-        {"state":"error","variant":"Validation, loading retry or stale permissions","web":"yes","flutter":"yes","status":"gap","gapKind":"case-missing","size":"S","parityCase":[],"justification":"The form can show local validation and request errors. The installation dialog distinguishes a failed read from a stale binding."},
-        {"state":"partial","variant":"Paged draft","web":"yes","flutter":"yes","status":"gap","gapKind":"case-missing","size":"S","parityCase":[],"justification":"The paged form restores its values and current page for this account and card."}
+        {
+          "state": "loading",
+          "variant": "Marketplace lookup",
+          "web": "yes",
+          "flutter": "yes",
+          "status": "gap",
+          "gapKind": "case-missing",
+          "size": "S",
+          "parityCase": [],
+          "justification": "The installation dialog waits for the listing and shows a spinner. The upstream visual cases do not mount it."
+        },
+        {
+          "state": "empty",
+          "variant": "No picker candidates or Marketplace listing",
+          "web": "yes",
+          "flutter": "yes",
+          "status": "gap",
+          "gapKind": "case-missing",
+          "size": "S",
+          "parityCase": [],
+          "justification": "The form shows its empty label and installation shows the unavailable message. The upstream visual cases do not mount these states."
+        },
+        {
+          "state": "error",
+          "variant": "Validation, loading retry or stale permissions",
+          "web": "yes",
+          "flutter": "yes",
+          "status": "gap",
+          "gapKind": "case-missing",
+          "size": "S",
+          "parityCase": [],
+          "justification": "The form can show local validation and request errors. The installation dialog distinguishes a failed read from a stale binding."
+        },
+        {
+          "state": "partial",
+          "variant": "Paged draft",
+          "web": "yes",
+          "flutter": "yes",
+          "status": "gap",
+          "gapKind": "case-missing",
+          "size": "S",
+          "parityCase": [],
+          "justification": "The paged form restores its values and current page for this account and card."
+        }
       ]
     },
     {
@@ -1410,10 +1450,48 @@
       "webEntry": "packages/web/src/components/actions/McpConnectCardBody.tsx",
       "flutterEntry": "apps/raft_flutter/lib/features/action_card_mcp.dart",
       "states": [
-        {"state":"loading","variant":"Authorization query","web":"yes","flutter":"yes","status":"gap","gapKind":"case-missing","size":"S","parityCase":[],"justification":"The official fixture resolves its query before capture."},
-        {"state":"empty","variant":"No connections","web":"yes","flutter":"yes","status":"gap","gapKind":"case-missing","size":"S","parityCase":[],"justification":"The official fixture has two connections."},
-        {"state":"error","variant":"Load or grant failed","web":"yes","flutter":"yes","status":"gap","gapKind":"case-missing","size":"S","parityCase":[],"justification":"The official fixture only provides a successful result."},
-        {"state":"partial","variant":"New OAuth authorization","web":"yes","flutter":"partial","status":"intentional","parityCase":[],"justification":"The browser owns new authorization because the server binds the callback to a cookie from its OAuth start response. The native client can grant an existing or pending connection."}
+        {
+          "state": "loading",
+          "variant": "Authorization query",
+          "web": "yes",
+          "flutter": "yes",
+          "status": "gap",
+          "gapKind": "case-missing",
+          "size": "S",
+          "parityCase": [],
+          "justification": "The official fixture resolves its query before capture."
+        },
+        {
+          "state": "empty",
+          "variant": "No connections",
+          "web": "yes",
+          "flutter": "yes",
+          "status": "gap",
+          "gapKind": "case-missing",
+          "size": "S",
+          "parityCase": [],
+          "justification": "The official fixture has two connections."
+        },
+        {
+          "state": "error",
+          "variant": "Load or grant failed",
+          "web": "yes",
+          "flutter": "yes",
+          "status": "gap",
+          "gapKind": "case-missing",
+          "size": "S",
+          "parityCase": [],
+          "justification": "The official fixture only provides a successful result."
+        },
+        {
+          "state": "partial",
+          "variant": "New OAuth authorization",
+          "web": "yes",
+          "flutter": "partial",
+          "status": "intentional",
+          "parityCase": [],
+          "justification": "The browser owns new authorization because the server binds the callback to a cookie from its OAuth start response. The native client can grant an existing or pending connection."
+        }
       ]
     },
     {
@@ -55589,6 +55667,424 @@
         "familyRefs": [],
         "owner": "Artifact viewer",
         "reason": "WP-ART1 Artifact viewer, cards and attachment save (Web v1.24); compositions of raft_ui parts, real-entry mapping stays with the viewer owner."
+      },
+      "apps/raft_flutter/lib/features/action_card_form.dart#class:ActionCardFormView": {
+        "owner": "WP-ACTION",
+        "role": "entry_composition",
+        "familyRefs": [
+          "button",
+          "dialog",
+          "select",
+          "radio_group",
+          "checkbox",
+          "switch",
+          "banner"
+        ]
+      },
+      "apps/raft_flutter/lib/features/action_card_form.dart#class:_ActionCardFormViewState": {
+        "owner": "WP-ACTION",
+        "role": "entry_composition",
+        "familyRefs": [
+          "button",
+          "dialog",
+          "select",
+          "radio_group",
+          "checkbox",
+          "switch",
+          "banner"
+        ]
+      },
+      "apps/raft_flutter/lib/features/action_card_form.dart#method:ActionCardFormView.createState": {
+        "owner": "WP-ACTION",
+        "role": "entry_composition",
+        "familyRefs": [
+          "button",
+          "dialog",
+          "select",
+          "radio_group",
+          "checkbox",
+          "switch",
+          "banner"
+        ]
+      },
+      "apps/raft_flutter/lib/features/action_card_form.dart#method:_ActionCardFormViewState._choice": {
+        "owner": "WP-ACTION",
+        "role": "entry_composition",
+        "familyRefs": [
+          "button",
+          "dialog",
+          "select",
+          "radio_group",
+          "checkbox",
+          "switch",
+          "banner"
+        ]
+      },
+      "apps/raft_flutter/lib/features/action_card_form.dart#method:_ActionCardFormViewState._field": {
+        "owner": "WP-ACTION",
+        "role": "entry_composition",
+        "familyRefs": [
+          "button",
+          "dialog",
+          "select",
+          "radio_group",
+          "checkbox",
+          "switch",
+          "banner"
+        ]
+      },
+      "apps/raft_flutter/lib/features/action_card_form.dart#method:_ActionCardFormViewState.build": {
+        "owner": "WP-ACTION",
+        "role": "entry_composition",
+        "familyRefs": [
+          "button",
+          "dialog",
+          "select",
+          "radio_group",
+          "checkbox",
+          "switch",
+          "banner"
+        ]
+      },
+      "apps/raft_flutter/lib/features/action_card_install.dart#class:ActionCardInstallDialog": {
+        "owner": "WP-ACTION",
+        "role": "entry_composition",
+        "familyRefs": [
+          "button",
+          "dialog",
+          "spinner",
+          "banner"
+        ]
+      },
+      "apps/raft_flutter/lib/features/action_card_install.dart#class:_ActionCardInstallDialogState": {
+        "owner": "WP-ACTION",
+        "role": "entry_composition",
+        "familyRefs": [
+          "button",
+          "dialog",
+          "spinner",
+          "banner"
+        ]
+      },
+      "apps/raft_flutter/lib/features/action_card_install.dart#method:ActionCardInstallDialog.createState": {
+        "owner": "WP-ACTION",
+        "role": "entry_composition",
+        "familyRefs": [
+          "button",
+          "dialog",
+          "spinner",
+          "banner"
+        ]
+      },
+      "apps/raft_flutter/lib/features/action_card_install.dart#method:_ActionCardInstallDialogState.build": {
+        "owner": "WP-ACTION",
+        "role": "entry_composition",
+        "familyRefs": [
+          "button",
+          "dialog",
+          "spinner",
+          "banner"
+        ]
+      },
+      "apps/raft_flutter/lib/features/action_card_mcp.dart#class:ActionCardMcpPicker": {
+        "owner": "WP-ACTION",
+        "role": "entry_composition",
+        "familyRefs": [
+          "button",
+          "dialog",
+          "select",
+          "switch",
+          "banner"
+        ]
+      },
+      "apps/raft_flutter/lib/features/action_card_mcp.dart#class:_ActionCardMcpPickerState": {
+        "owner": "WP-ACTION",
+        "role": "entry_composition",
+        "familyRefs": [
+          "button",
+          "dialog",
+          "select",
+          "switch",
+          "banner"
+        ]
+      },
+      "apps/raft_flutter/lib/features/action_card_mcp.dart#method:ActionCardMcpPicker.createState": {
+        "owner": "WP-ACTION",
+        "role": "entry_composition",
+        "familyRefs": [
+          "button",
+          "dialog",
+          "select",
+          "switch",
+          "banner"
+        ]
+      },
+      "apps/raft_flutter/lib/features/action_card_mcp.dart#method:_ActionCardMcpPickerState._grant": {
+        "owner": "WP-ACTION",
+        "role": "entry_composition",
+        "familyRefs": [
+          "button",
+          "dialog",
+          "select",
+          "switch",
+          "banner"
+        ]
+      },
+      "apps/raft_flutter/lib/features/action_card_mcp.dart#method:_ActionCardMcpPickerState.build": {
+        "owner": "WP-ACTION",
+        "role": "entry_composition",
+        "familyRefs": [
+          "button",
+          "dialog",
+          "select",
+          "switch",
+          "banner"
+        ]
+      },
+      "apps/raft_flutter/lib/features/action_card_spec_view.dart#class:ActionCardSpecTree": {
+        "owner": "WP-ACTION",
+        "role": "entry_composition",
+        "familyRefs": [
+          "button",
+          "card",
+          "banner"
+        ]
+      },
+      "apps/raft_flutter/lib/features/action_card_spec_view.dart#class:ActionCardSpecView": {
+        "owner": "WP-ACTION",
+        "role": "entry_composition",
+        "familyRefs": [
+          "button",
+          "card",
+          "banner"
+        ]
+      },
+      "apps/raft_flutter/lib/features/action_card_spec_view.dart#class:_ActionCardSpecViewState": {
+        "owner": "WP-ACTION",
+        "role": "entry_composition",
+        "familyRefs": [
+          "button",
+          "card",
+          "banner"
+        ]
+      },
+      "apps/raft_flutter/lib/features/action_card_spec_view.dart#local-function:CLASS:ActionCardSpecTree@8364/METHOD:build@8754/FUNCTION:node@8879": {
+        "owner": "WP-ACTION",
+        "role": "entry_composition",
+        "familyRefs": [
+          "button",
+          "card",
+          "banner"
+        ]
+      },
+      "apps/raft_flutter/lib/features/action_card_spec_view.dart#method:ActionCardSpecTree.build": {
+        "owner": "WP-ACTION",
+        "role": "entry_composition",
+        "familyRefs": [
+          "button",
+          "card",
+          "banner"
+        ]
+      },
+      "apps/raft_flutter/lib/features/action_card_spec_view.dart#method:ActionCardSpecView.createState": {
+        "owner": "WP-ACTION",
+        "role": "entry_composition",
+        "familyRefs": [
+          "button",
+          "card",
+          "banner"
+        ]
+      },
+      "apps/raft_flutter/lib/features/action_card_spec_view.dart#method:_ActionCardSpecViewState._button": {
+        "owner": "WP-ACTION",
+        "role": "entry_composition",
+        "familyRefs": [
+          "button",
+          "card",
+          "banner"
+        ]
+      },
+      "apps/raft_flutter/lib/features/action_card_spec_view.dart#method:_ActionCardSpecViewState.build": {
+        "owner": "WP-ACTION",
+        "role": "entry_composition",
+        "familyRefs": [
+          "button",
+          "card",
+          "banner"
+        ]
+      },
+      "apps/raft_flutter/lib/features/action_card_spec_view.dart#method:_ActionCardSpecViewState.didUpdateWidget": {
+        "owner": "WP-ACTION",
+        "role": "entry_composition",
+        "familyRefs": [
+          "button",
+          "card",
+          "banner"
+        ]
+      },
+      "apps/raft_flutter/lib/features/message_action_card.dart#local-function:CLASS:_MessageActionCardState@2996/METHOD:_body@27865/FUNCTION:field@27906": {
+        "owner": "WP-ACTION",
+        "role": "entry_composition",
+        "familyRefs": [
+          "button",
+          "card",
+          "dialog"
+        ]
+      },
+      "apps/raft_flutter/lib/features/message_action_card.dart#local-function:CLASS:_MessageActionCardState@2996/METHOD:_body@27865/FUNCTION:maybe@28009": {
+        "owner": "WP-ACTION",
+        "role": "entry_composition",
+        "familyRefs": [
+          "button",
+          "card",
+          "dialog"
+        ]
+      },
+      "apps/raft_flutter/lib/features/message_action_card.dart#method:_MessageActionCardState._formView": {
+        "owner": "WP-ACTION",
+        "role": "entry_composition",
+        "familyRefs": [
+          "button",
+          "card",
+          "dialog"
+        ]
+      },
+      "apps/raft_flutter/lib/features/message_action_card.dart#method:_MessageActionCardState._mcpPicker": {
+        "owner": "WP-ACTION",
+        "role": "entry_composition",
+        "familyRefs": [
+          "button",
+          "card",
+          "dialog"
+        ]
+      },
+      "apps/raft_flutter/lib/features/message_action_card.dart#method:_MessageActionCardState._openCardInBrowser": {
+        "owner": "WP-ACTION",
+        "role": "entry_composition",
+        "familyRefs": [
+          "button",
+          "card",
+          "dialog"
+        ]
+      },
+      "apps/raft_flutter/lib/features/message_action_card.dart#method:_MessageActionCardState._openFeedback": {
+        "owner": "WP-ACTION",
+        "role": "entry_composition",
+        "familyRefs": [
+          "button",
+          "card",
+          "dialog"
+        ]
+      },
+      "apps/raft_flutter/lib/features/message_action_card.dart#method:_MessageActionCardState._openInstall": {
+        "owner": "WP-ACTION",
+        "role": "entry_composition",
+        "familyRefs": [
+          "button",
+          "card",
+          "dialog"
+        ]
+      },
+      "apps/raft_flutter/lib/features/message_action_card.dart#method:_MessageActionCardState._openMigration": {
+        "owner": "WP-ACTION",
+        "role": "entry_composition",
+        "familyRefs": [
+          "button",
+          "card",
+          "dialog"
+        ]
+      },
+      "apps/raft_flutter/lib/features/message_action_card.dart#method:_MessageActionCardState._openSpecDialog": {
+        "owner": "WP-ACTION",
+        "role": "entry_composition",
+        "familyRefs": [
+          "button",
+          "card",
+          "dialog"
+        ]
+      },
+      "apps/raft_flutter/lib/features/message_action_card.dart#method:_MessageActionCardState._openSpecForm": {
+        "owner": "WP-ACTION",
+        "role": "entry_composition",
+        "familyRefs": [
+          "button",
+          "card",
+          "dialog"
+        ]
+      },
+      "apps/raft_flutter/lib/features/message_action_card.dart#method:_MessageActionCardState._pressSpec": {
+        "owner": "WP-ACTION",
+        "role": "entry_composition",
+        "familyRefs": [
+          "button",
+          "card",
+          "dialog"
+        ]
+      },
+      "apps/raft_flutter/lib/features/message_action_card.dart#method:_MessageActionCardState._sendCreateAgentCard": {
+        "owner": "WP-ACTION",
+        "role": "entry_composition",
+        "familyRefs": [
+          "button",
+          "card",
+          "dialog"
+        ]
+      },
+      "apps/raft_flutter/lib/features/message_action_card.dart#method:_MessageActionCardState._specTrailing": {
+        "owner": "WP-ACTION",
+        "role": "entry_composition",
+        "familyRefs": [
+          "button",
+          "card",
+          "dialog"
+        ]
+      },
+      "packages/raft_ui/lib/action_card_previews.dart#function:actionCardStatesPreview": {
+        "owner": "WP-ACTION",
+        "role": "preview_fixture",
+        "familyRefs": [
+          "card",
+          "button"
+        ]
+      },
+      "packages/raft_ui/lib/src/action_card.dart#class:RaftSpecActionCard": {
+        "owner": "WP-ACTION",
+        "role": "entry_composition",
+        "familyRefs": [
+          "card",
+          "button"
+        ]
+      },
+      "packages/raft_ui/lib/src/action_card.dart#local-function:CLASS:RaftActionCard@5175/METHOD:_titleLine@6572/FUNCTION:item@6764": {
+        "owner": "WP-ACTION",
+        "role": "entry_composition",
+        "familyRefs": [
+          "card",
+          "button"
+        ]
+      },
+      "packages/raft_ui/lib/src/action_card.dart#local-function:CLASS:RaftActionCard@5175/METHOD:_titleLine@6572/FUNCTION:items@7020": {
+        "owner": "WP-ACTION",
+        "role": "entry_composition",
+        "familyRefs": [
+          "card",
+          "button"
+        ]
+      },
+      "packages/raft_ui/lib/src/action_card.dart#method:RaftSpecActionCard.build": {
+        "owner": "WP-ACTION",
+        "role": "entry_composition",
+        "familyRefs": [
+          "card",
+          "button"
+        ]
+      },
+      "packages/raft_ui/lib/src/message_card.dart#method:RaftMessageCard.buildBody": {
+        "owner": "WP-ACTION",
+        "role": "entry_composition",
+        "familyRefs": [
+          "card"
+        ]
       }
     },
     "entries": {
@@ -59321,6 +59817,60 @@
           "apps/raft_flutter/lib/features/artifacts/artifact_comments_panel.dart#method:_ArtifactCommentsPanelState._discard"
         ],
         "mountStatus": "source_reviewed"
+      },
+      "surface:action-card:_grant": {
+        "owner": "WP-ACTION",
+        "kind": "route_or_panel_candidate",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/action_card_mcp.dart#method:_ActionCardMcpPickerState._grant"
+        ],
+        "mountStatus": "source_reviewed",
+        "reason": "Action-card intent dispatch, shared dialog placement or browser handoff. Visual acceptance is pending."
+      },
+      "surface:action-card:_openCardInBrowser": {
+        "owner": "WP-ACTION",
+        "kind": "route_or_panel_candidate",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/message_action_card.dart#method:_MessageActionCardState._openCardInBrowser"
+        ],
+        "mountStatus": "source_reviewed",
+        "reason": "Action-card intent dispatch, shared dialog placement or browser handoff. Visual acceptance is pending."
+      },
+      "surface:action-card:_openMigration": {
+        "owner": "WP-ACTION",
+        "kind": "route_or_panel_candidate",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/message_action_card.dart#method:_MessageActionCardState._openMigration"
+        ],
+        "mountStatus": "source_reviewed",
+        "reason": "Action-card intent dispatch, shared dialog placement or browser handoff. Visual acceptance is pending."
+      },
+      "surface:action-card:_openSpecDialog": {
+        "owner": "WP-ACTION",
+        "kind": "route_or_panel_candidate",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/message_action_card.dart#method:_MessageActionCardState._openSpecDialog"
+        ],
+        "mountStatus": "source_reviewed",
+        "reason": "Action-card intent dispatch, shared dialog placement or browser handoff. Visual acceptance is pending."
+      },
+      "surface:action-card:_pressSpec": {
+        "owner": "WP-ACTION",
+        "kind": "route_or_panel_candidate",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/message_action_card.dart#method:_MessageActionCardState._pressSpec"
+        ],
+        "mountStatus": "source_reviewed",
+        "reason": "Action-card intent dispatch, shared dialog placement or browser handoff. Visual acceptance is pending."
+      },
+      "surface:action-card:_sendCreateAgentCard": {
+        "owner": "WP-ACTION",
+        "kind": "route_or_panel_candidate",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/message_action_card.dart#method:_MessageActionCardState._sendCreateAgentCard"
+        ],
+        "mountStatus": "source_reviewed",
+        "reason": "Action-card intent dispatch, shared dialog placement or browser handoff. Visual acceptance is pending."
       }
     },
     "requirements": {
@@ -62233,6 +62783,10 @@
       "iconInlineEnd": "has:data-icon=inline-end"
     },
     "stateUses": {
+      "packages/raft_ui/lib/src/action_card.dart#method:RaftSpecActionCard.build|state:dark": {
+        "owner": "WP-ACTION",
+        "applicability": "required"
+      },
       "apps/raft_flutter/lib/features/fleet_views.dart#method:_FleetDetailState.editAvatar|state:dark": {
         "applicability": "unknown",
         "owner": "design-system alignment",
