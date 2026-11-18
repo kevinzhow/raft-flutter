@@ -1567,6 +1567,13 @@ final auditSurfaces = <AuditSurface>[
     representative: true,
   ),
   AuditSurface(
+    'agentReadProgressPreview',
+    'Agent read progress',
+    agentReadProgressPreview,
+    Size(320, 440),
+    representative: true,
+  ),
+  AuditSurface(
     'composerPreview',
     'Composer',
     composerPreview,
