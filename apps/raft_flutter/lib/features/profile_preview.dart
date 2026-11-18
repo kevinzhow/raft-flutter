@@ -265,6 +265,7 @@ class ProfilePreviewContent extends StatefulWidget {
     this.fallbackLabel,
     this.fallback,
     this.onOpenActivity,
+    this.readReceipt,
   });
   final WorkspaceController controller;
   final bool agent;
@@ -273,6 +274,7 @@ class ProfilePreviewContent extends StatefulWidget {
   final String? fallbackLabel;
   final Map<String, dynamic>? fallback;
   final ValueChanged<String>? onOpenActivity;
+  final bool? readReceipt;
   @override
   State<ProfilePreviewContent> createState() => _ProfilePreviewContentState();
 }
@@ -421,6 +423,10 @@ class _ProfilePreviewContentState extends State<ProfilePreviewContent>
   @override
   Widget build(BuildContext context) {
     final row = profile;
+    final readReceipt = widget.readReceipt;
+    final receiptNotes = readReceipt == null
+        ? const <String>[]
+        : [raftText(context, readReceipt ? 'Read' : 'Not read yet')];
     if (row == null) {
       final handle = widget.fallbackLabel;
       return RaftProfilePreviewCard(
@@ -429,6 +435,7 @@ class _ProfilePreviewContentState extends State<ProfilePreviewContent>
             ? '@${handle.replaceFirst(RegExp('^@'), '')}'
             : raftText(context, widget.agent ? 'Agent' : 'Member'),
         subtitle: raftText(context, 'Profile unavailable'),
+        notes: receiptNotes,
       );
     }
     final name = '${row['displayName'] ?? ''}'.isNotEmpty
@@ -490,6 +497,7 @@ class _ProfilePreviewContentState extends State<ProfilePreviewContent>
       avatarTopInset: 2,
       name: name,
       subtitle: '@${row['name'] ?? ''}',
+      notes: receiptNotes,
       status: RaftProfilePreviewStatus(
         activity: activityTone(display.activity),
         external: external && row['online'] != true,

@@ -153,13 +153,37 @@ void main() {
     transport.routes['GET /channels/c1'] = (_) => {
       'id': 'c1',
       'peerReadStates': [
-        {'peerKind': 'agent', 'peerId': 'ada-id', 'maxReadSeq': 12},
+        {'peerKind': 'agent', 'peerId': 'ada-id', 'maxReadSeq': 9},
       ],
     };
     await mount(t, RaftChatView(controller: w));
     await t.pumpAndSettle();
-    expect(find.byKey(const ValueKey('mention-read-read')), findsOneWidget);
     expect(calls(transport, 'GET', '/channels/c1'), 1);
+    final mouse = await t.createGesture(kind: PointerDeviceKind.mouse);
+    await mouse.addPointer(location: t.getCenter(find.text('@Ada')));
+    await t.pump(const Duration(milliseconds: 250));
+    await t.pumpAndSettle();
+    expect(find.text('Not read yet'), findsOneWidget);
+    expect(find.byKey(const ValueKey('mention-read-unread')), findsNothing);
+    await mouse.removePointer();
+    await t.pumpAndSettle();
+    w.readReceipts.consumeEvent(
+      const RaftEvent('scope_read:updated', {
+        'scopeId': 'c1',
+        'peerKind': 'agent',
+        'peerId': 'ada-id',
+        'maxReadSeq': 12,
+      }),
+    );
+    await t.pumpAndSettle();
+    expect(find.byKey(const ValueKey('mention-read-read')), findsOneWidget);
+    await mouse.addPointer(location: t.getCenter(find.text('@Ada')));
+    await t.pump(const Duration(milliseconds: 250));
+    await t.pumpAndSettle();
+    expect(find.text('Read'), findsOneWidget);
+    expect(find.text('Not read yet'), findsNothing);
+    expect(calls(transport, 'GET', '/channels/c1'), 1);
+    await mouse.removePointer();
     await t.pumpWidget(const SizedBox());
   });
 

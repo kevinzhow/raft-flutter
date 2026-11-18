@@ -977,13 +977,14 @@ class MessagePresentation extends StatelessWidget {
             in (message.json['mentions'] as List? ?? []).whereType<Map>()) {
           if (m['id'] == parts[1] && m['name'] is String) handle = m['name'];
         }
+        final agentRead = parts[0] == 'agent' && !exportMode
+            ? agentMentionRead(controller, message, parts[1])
+            : null;
         return RaftReferenceAppearance(
           parts[0] == 'user' && parts[1] == controller.client.user?.id
               ? RaftReferenceKind.selfMention
               : RaftReferenceKind.mention,
-          agentRead: parts[0] == 'agent' && !exportMode
-              ? agentMentionRead(controller, message, parts[1])
-              : null,
+          agentRead: agentRead,
           // Web MentionLink PreviewCard; export renders no popups.
           hoverCard: exportMode
               ? null
@@ -992,6 +993,7 @@ class MessagePresentation extends StatelessWidget {
                   agent: parts[0] == 'agent',
                   id: parts[1],
                   fallbackLabel: handle,
+                  readReceipt: agentRead,
                   onOpenActivity: parts[0] == 'agent'
                       ? (id) => controller.openProfile(
                           RaftProfileKind.agent,

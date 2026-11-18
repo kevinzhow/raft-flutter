@@ -12,6 +12,7 @@ import 'saved_sidebar_entry.dart';
 import 'timeline_row_reuse.dart';
 import 'chat_body_preparation.dart';
 import 'channel_activity_session.dart';
+import 'agent_read_badge.dart';
 import 'agent_read_progress.dart';
 import 'system_message_grouping.dart';
 
@@ -76,9 +77,11 @@ class ChatTimelinePresentation {
     required Map<String, dynamic> summaries,
     required String? highlighted,
   }) {
-    final id = source(messages[index]).id;
+    final message = source(messages[index]);
+    final id = message.id;
     return (
       style,
+      agentMentionReadRevision(w, message),
       messageState(
         w,
         id,

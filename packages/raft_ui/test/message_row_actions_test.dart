@@ -203,8 +203,15 @@ void main() {
         ),
       ),
     );
-    expect(find.byKey(const ValueKey('mention-read-read')), findsOneWidget);
-    expect(find.byKey(const ValueKey('mention-read-unread')), findsOneWidget);
+    final mark = tester.widget<RaftIcon>(
+      find.byKey(const ValueKey('mention-read-read')),
+    );
+    expect(mark.glyph, RaftGlyph.check);
+    expect(
+      mark.color,
+      RaftTokens.of(tester.element(find.byWidget(mark))).colors['read-mark'],
+    );
+    expect(find.byKey(const ValueKey('mention-read-unread')), findsNothing);
     await tester.pumpWidget(const SizedBox());
   });
 }

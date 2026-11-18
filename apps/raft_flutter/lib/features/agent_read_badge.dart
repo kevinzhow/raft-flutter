@@ -13,8 +13,9 @@ import '../data/workspace_controller.dart';
 bool? agentMentionRead(
   WorkspaceController w,
   RaftMessage message,
-  String agentId,
-) {
+  String agentId, {
+  bool hydrate = true,
+}) {
   final channelId = message.channelId;
   final channel = channelId == w.threadChannelId
       ? w.messageDomain.threadSourceChannel
@@ -26,12 +27,28 @@ bool? agentMentionRead(
     return null;
   }
   if (!agentReadEligible(channel, message, w.client.user?.id)) return null;
-  watchReadFrontiers(w, channelId);
+  if (hydrate) watchReadFrontiers(w, channelId);
   return projectAgentReadReceipt(
     w.readReceipts.scope(channelId),
     agentId,
     int.tryParse(message.string('seq')),
   );
+}
+
+String? agentMentionReadRevision(WorkspaceController w, RaftMessage message) {
+  final mentions = message.json['mentions'];
+  if (message.senderId != w.client.user?.id || mentions is! List) return null;
+  final revision = StringBuffer();
+  for (final mention in mentions) {
+    if (mention case {'type': 'agent', 'id': final String id}) {
+      revision.write(switch (agentMentionRead(w, message, id, hydrate: false)) {
+        true => 'r',
+        false => 'u',
+        null => '-',
+      });
+    }
+  }
+  return revision.isEmpty ? null : revision.toString();
 }
 
 /// Whether [message] may carry read markers: its sender is the viewer, a

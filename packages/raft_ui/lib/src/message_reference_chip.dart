@@ -71,7 +71,7 @@ class RaftReferenceAppearance {
   final RaftReferenceKind kind;
 
   /// Web MentionLink #693: whether the mentioned agent has read the message
-  /// (a small square on the mention's corner); null draws nothing.
+  /// (a check after the name); false and null draw nothing.
   final bool? agentRead;
 
   /// Shown instead of the link text (a permalink chip's channel label).
@@ -137,7 +137,7 @@ InlineSpan raftReferenceSpan(
   final read = appearance?.kind == RaftReferenceKind.mention
       ? appearance?.agentRead
       : null;
-  if (read != null) child = _AgentReadBadge(read: read, child: child);
+  if (read == true) child = _AgentReadMark(child: child);
   Widget link = _ReferenceLink(
     label: label,
     href: href,
@@ -523,44 +523,32 @@ class RaftReferenceChip extends StatelessWidget {
 /// The read marker of an @mentioned agent: a 8px square (radius 2, 1.5px ink
 /// edge) hanging off the mention's top-right corner, lime once read and a
 /// white sticker until then. `mr-2` keeps the next word clear of it.
-class _AgentReadBadge extends StatelessWidget {
-  const _AgentReadBadge({required this.read, required this.child});
-  final bool read;
+class _AgentReadMark extends StatelessWidget {
+  const _AgentReadMark({required this.child});
   final Widget child;
 
   @override
-  Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
-    final label = raftText(context, read ? 'Read' : 'Not read yet');
-    final ink = t.colors['sticker-ink'] ?? t.strong;
-    final paper = t.colors['sticker-paper'] ?? Colors.white;
-    return Padding(
-      padding: const EdgeInsets.only(right: 8),
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          child,
-          Positioned(
-            right: -6,
-            top: 0,
-            child: IgnorePointer(
-              child: Semantics(
-                label: label,
-                child: Container(
-                  key: ValueKey('mention-read-${read ? 'read' : 'unread'}'),
-                  width: 8,
-                  height: 8,
-                  decoration: BoxDecoration(
-                    color: read ? t.colors['success'] : paper,
-                    border: Border.all(color: ink, width: 1.5),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsetsDirectional.only(end: 10),
+    child: Stack(
+      clipBehavior: Clip.none,
+      children: [
+        child,
+        PositionedDirectional(
+          end: -12,
+          top: 0,
+          child: IgnorePointer(
+            child: RaftIcon(
+              RaftGlyph.check,
+              key: const ValueKey('mention-read-read'),
+              size: 10,
+              strokeWidth: 2.5,
+              color: RaftTokens.of(context).colors['read-mark'],
+              semanticLabel: raftText(context, 'Read'),
             ),
           ),
-        ],
-      ),
-    );
-  }
+        ),
+      ],
+    ),
+  );
 }

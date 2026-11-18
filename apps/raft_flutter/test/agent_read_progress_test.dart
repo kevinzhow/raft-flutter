@@ -45,6 +45,7 @@ Future<WorkspaceController> _open(
   WidgetTester tester, {
   bool enabled = true,
   bool hasNewer = false,
+  TargetPlatform platform = TargetPlatform.linux,
   List<Map<String, Object>>? messages,
   List<Map<String, Object>>? peers,
 }) async {
@@ -86,7 +87,7 @@ Future<WorkspaceController> _open(
   await tester.runAsync(() => workspace.readReceipts.hydrate('c1'));
   await tester.pumpWidget(
     MaterialApp(
-      theme: raftTheme(),
+      theme: raftTheme().copyWith(platform: platform),
       home: Scaffold(body: RaftChatView(controller: workspace)),
     ),
   );
@@ -131,24 +132,33 @@ void main() {
     });
   }
 
-  testWidgets('a folded system frontier belongs to its disclosure header', (
-    tester,
-  ) async {
-    await _open(
-      tester,
-      messages: [
-        _message('one', 10, sender: 'ada', type: 'agent'),
-        {..._message('system-one', 20), 'messageType': 'system'},
-        {..._message('system-two', 30), 'messageType': 'system'},
-      ],
-      peers: [_peer('ada', 30)],
+  for (final size in [const Size(856, 944), const Size(944, 856)]) {
+    testWidgets(
+      'the folded system frontier survives touch expansion at $size',
+      (tester) async {
+        tester.view.devicePixelRatio = 1;
+        tester.view.physicalSize = size;
+        addTearDown(tester.view.reset);
+        await _open(
+          tester,
+          platform: TargetPlatform.android,
+          messages: [
+            _message('one', 10, sender: 'ada', type: 'agent'),
+            {..._message('system-one', 20), 'messageType': 'system'},
+            {..._message('system-two', 30), 'messageType': 'system'},
+          ],
+          peers: [_peer('ada', 30)],
+        );
+        expect(_inside('system-one', _ada), findsOneWidget);
+        expect(_inside('system-two', _ada), findsNothing);
+        await tester.tap(
+          find.byKey(const ValueKey('system-message-group-toggle')),
+        );
+        await tester.pumpAndSettle();
+        expect(find.byKey(_ada), findsOneWidget);
+      },
     );
-    expect(_inside('system-one', _ada), findsOneWidget);
-    expect(_inside('system-two', _ada), findsNothing);
-    await tester.tap(find.byKey(const ValueKey('system-message-group-toggle')));
-    await tester.pumpAndSettle();
-    expect(find.byKey(_ada), findsOneWidget);
-  });
+  }
 
   testWidgets('narrow rows show two faces and accessible overflow', (
     tester,
