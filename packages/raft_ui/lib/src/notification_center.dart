@@ -9,6 +9,7 @@ import 'localization.dart';
 import 'recipe_surface.dart';
 import 'raft/ui_tokens.dart';
 import 'recipes/notification_center.g.dart';
+import 'space.dart';
 import 'theme.dart';
 
 /// Pure status roles from raft-ui 0.5.52; the mounted app emits the first three.

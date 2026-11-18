@@ -62,7 +62,12 @@ void main() {
           );
           await t.pumpAndSettle();
           final search = find.byKey(const Key('topbar-search'));
-          expect(t.getRect(search), const Rect.fromLTWH(248, 5.5, 360, 36));
+          expect(
+            t.getRect(search),
+            platform == TargetPlatform.linux
+                ? const Rect.fromLTWH(248, 4.5, 360, 34)
+                : const Rect.fromLTWH(248, 5.5, 360, 36),
+          );
           expect(t.getRect(find.byKey(const Key('topbar-workspace'))).left, 8);
           expect(
             t.getSize(find.byKey(const ValueKey('topbar-workspace-v'))),

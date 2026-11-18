@@ -79,7 +79,7 @@ void main() {
         }
         final topBar = find.byType(RaftWorkspaceTopBar);
         expect(topBar, findsOneWidget);
-        expect(t.getRect(topBar), const Rect.fromLTWH(0, 0, 1280, 48));
+        expect(t.getRect(topBar), const Rect.fromLTWH(0, 0, 1280, 44));
         expect(find.byType(RaftChatSidebarHeading), findsNothing);
         expect(find.byKey(const Key('topbar-workspace')), findsOneWidget);
         expect(find.byKey(const Key('rail-workspace')), findsNothing);
@@ -89,11 +89,11 @@ void main() {
         final search = t.getRect(find.byKey(const ValueKey('topbar-search'))),
             chat = t.getRect(find.byKey(const ValueKey('rail-chat'))),
             activity = t.getRect(find.byKey(const ValueKey('rail-activity')));
-        expect(search.top, 5.5);
-        expect(search.height, 36);
-        expect(activity.top - chat.top, 46);
-        // The shared row is 48px, followed by the rail's 8px top inset.
-        expect(chat.top, 56);
+        expect(search.top, 4.5);
+        expect(search.height, 34);
+        expect(activity.top - chat.top, 42);
+        // The 44px bar is followed by the rail's 8px top inset.
+        expect(chat.top, 52);
         w.server = RaftRecord({...w.server!.json, 'role': 'guest'});
         w.notifyListeners();
         await frames(t, () {});
@@ -297,7 +297,7 @@ void main() {
           of: row,
           matching: find.byType(RaftControl),
         );
-        final controlHeight = 36.0;
+        const controlHeight = 34.0;
         final trailingMargin = 1.0;
         expect(t.getSize(control).height, controlHeight);
         expect(t.getSize(row).height, controlHeight + trailingMargin);
