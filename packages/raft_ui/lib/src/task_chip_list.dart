@@ -213,6 +213,7 @@ class _TaskChipListRow extends StatelessWidget {
     return RaftInteractive(
       semanticLabel: open,
       onPressed: onOpen,
+      pointerWithinBounds: !plain,
       builder: (context, state) => DecoratedBox(
         decoration: BoxDecoration(
           color: onOpen != null && (state.hovered || state.pressed)
