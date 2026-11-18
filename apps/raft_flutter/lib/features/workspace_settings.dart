@@ -276,7 +276,7 @@ class _WorkspaceSettingsState extends State<WorkspaceSettings> {
         ),
         RaftSettingsDestination(
           'language-region',
-          'Language & Region',
+          'Language & region',
           RaftGlyph.languages,
           (_) => LocaleSettingsPage(controller: w),
         ),
@@ -341,7 +341,7 @@ class _WorkspaceSettingsState extends State<WorkspaceSettings> {
         if (w.server != null) ...[
           RaftSettingsDestination(
             'server',
-            'Server Profile',
+            'Server profile',
             RaftGlyph.building2,
             (_) => ServerSettingsView(controller: w),
             group: WorkspaceSettings.workspace,
@@ -374,7 +374,7 @@ class _WorkspaceSettingsState extends State<WorkspaceSettings> {
           if (w.can('viewBilling'))
             RaftSettingsDestination(
               'billing',
-              'Plan & Billing',
+              'Plan & billing',
               RaftGlyph.creditCard,
               (_) => BillingView(controller: w, now: widget.now),
               group: WorkspaceSettings.workspace,
@@ -535,8 +535,8 @@ class _WorkspaceSettingsState extends State<WorkspaceSettings> {
   }
 }
 
-/// SettingsPanel.tsx AboutSection: Version, Mobile app (desktop: download
-/// buttons + the /download QR), and the current Workspace.
+/// SettingsPanel.tsx AboutSection: Version, Mobile app (download buttons +
+/// the /download QR), and the current Workspace.
 class WorkspaceAboutSection extends StatefulWidget {
   const WorkspaceAboutSection({
     super.key,
@@ -560,8 +560,8 @@ class WorkspaceAboutSection extends StatefulWidget {
   final String? appVersion;
   final Uri? frontendOrigin;
 
-  /// Defaults to desktop platforms: on a phone the reader already runs the
-  /// mobile app.
+  /// Defaults to shown everywhere, phones too (Web AboutSection: the section
+  /// is unconditional).
   final bool? showMobileApp;
 
   static const _version = String.fromEnvironment(
@@ -893,18 +893,13 @@ class _WorkspaceAboutSectionState extends State<WorkspaceAboutSection> {
       Uri.parse('$api/api/mobile-download?platform=$platform'),
       mode: LaunchMode.externalApplication,
     );
-    final desktop = switch (Theme.of(context).platform) {
-      TargetPlatform.linux ||
-      TargetPlatform.macOS ||
-      TargetPlatform.windows => true,
-      _ => false,
-    };
     final web = frontendOrigin ?? ContentLinks.originFor(api);
     final slug = server?.string('slug') ?? '';
     return RaftSettingsAbout(
       version: appVersion ?? WorkspaceAboutSection.versionLabel(),
       update: update(context),
-      mobileApp: showMobileApp ?? desktop
+      // Web AboutSection: the Mobile app section is always there.
+      mobileApp: showMobileApp ?? true
           ? RaftAboutMobileApp(
               onAndroid: () => open('android'),
               onIos: () => open('ios'),

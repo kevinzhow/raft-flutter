@@ -60,14 +60,14 @@ List<RaftSettingsDestination> publicSettingsDestinations({
           if (account != null && w != null)
             RaftSettingsDestination(
               'language-region',
-              'Language & Region',
+              'Language & region',
               RaftGlyph.languages,
               (_) => LocaleSettingsPage(controller: w),
             )
           else if (localPreferences != null && translations != null)
             RaftSettingsDestination(
               'language-region',
-              'Language & Region',
+              'Language & region',
               RaftGlyph.languages,
               (_) => PublicLanguageRegionPage(
                 preferences: localPreferences,

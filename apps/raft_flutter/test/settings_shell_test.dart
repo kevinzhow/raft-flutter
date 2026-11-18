@@ -34,7 +34,7 @@ List<RaftSettingsDestination> destinations({Widget? accountBody}) => [
   ),
   RaftSettingsDestination(
     'language-region',
-    'Language & Region',
+    'Language & region',
     RaftGlyph.languages,
     (_) => const Text('Language body'),
   ),

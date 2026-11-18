@@ -65,9 +65,9 @@ void main() {
           final header = find.byType(RaftSettingsPanelHeader);
           expect(header, findsOneWidget);
           expect(t.widget<RaftSettingsPanelHeader>(header).title, switch (tab) {
-            'language-region' => 'Language & Region',
+            'language-region' => 'Language & region',
             'notifications' => 'Notifications',
-            'billing' => 'Plan & Billing',
+            'billing' => 'Plan & billing',
             'administration' => 'Administration',
             _ => 'Applications',
           });

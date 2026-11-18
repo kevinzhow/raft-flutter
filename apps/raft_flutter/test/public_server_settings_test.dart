@@ -22,7 +22,7 @@ void main() {
       await openPublicSettings(t);
       for (final label in [
         'Account',
-        'Language & Region',
+        'Language & region',
         'Appearance',
         'About',
         'Documentation',
@@ -34,8 +34,8 @@ void main() {
       // Web order: Personal (Account, Language & Region, Appearance), then
       // Resources (About, Documentation, Feedback, Release Notes).
       double top(String label) => t.getTopLeft(find.text(label).first).dy;
-      expect(top('Account'), lessThan(top('Language & Region')));
-      expect(top('Language & Region'), lessThan(top('Appearance')));
+      expect(top('Account'), lessThan(top('Language & region')));
+      expect(top('Language & region'), lessThan(top('Appearance')));
       expect(top('Appearance'), lessThan(top('About')));
       expect(top('About'), lessThan(top('Documentation')));
       expect(top('Documentation'), lessThan(top('Feedback')));
@@ -69,7 +69,7 @@ void main() {
           .widget<RaftSettingsPanelHeader>(find.byType(RaftSettingsPanelHeader))
           .title;
       for (final (label, header) in [
-        ('Language & Region', 'Language & Region'),
+        ('Language & region', 'Language & region'),
         ('Appearance', 'Appearance'),
         ('About', 'About'),
       ]) {
@@ -99,7 +99,7 @@ void main() {
         expect(find.text('Documentation'), findsOneWidget);
         for (final label in [
           'Account',
-          'Language & Region',
+          'Language & region',
           'Appearance',
           'Feedback',
           'Release notes',

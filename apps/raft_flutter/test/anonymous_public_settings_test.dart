@@ -161,7 +161,7 @@ void main() {
         expect(_app(t).themeMode, ThemeMode.dark);
         await _open(t, 'appearance');
         expect(
-          find.text('Language & Region'),
+          find.text('Language & region'),
           findsNothing,
           reason: 'The upstream translation gate still applies.',
         );

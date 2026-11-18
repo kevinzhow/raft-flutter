@@ -213,12 +213,12 @@ void main() {
         await _mount(t, _Client(translation: false));
         await t.tap(find.byKey(const ValueKey('public-rail-settings')));
         await t.pumpAndSettle();
-        expect(find.text('Language & Region'), findsNothing);
+        expect(find.text('Language & region'), findsNothing);
         await t.pumpWidget(const SizedBox());
         await _mount(t, _Client());
         await t.tap(find.byKey(const ValueKey('public-rail-settings')));
         await t.pumpAndSettle();
-        expect(find.text('Language & Region'), findsWidgets);
+        expect(find.text('Language & region'), findsWidgets);
       },
     );
 
@@ -228,7 +228,7 @@ void main() {
       await _mount(t, _Client());
       await t.tap(find.byKey(const ValueKey('public-rail-settings')));
       await t.pumpAndSettle();
-      await t.tap(find.text('Language & Region').first);
+      await t.tap(find.text('Language & region').first);
       await t.pumpAndSettle();
       expect(find.byType(RaftLanguageRegionView), findsOneWidget);
       final view = t.widget<RaftLanguageRegionView>(
