@@ -3,6 +3,56 @@
   "_doc": "State parity inventory (loading / empty / error / partial) per screen and panel. Read by apps/raft_flutter/test/state_parity_guard_test.dart. screens[].states[]: state = loading|empty|error|partial; variant = optional short text; web = yes|no (does the Web component render a DISTINCT such state); flutter = yes|partial|missing; parityCase = case ids or globs without the theme suffix (e.g. components.list-pages.saved.phone-*); status = covered (needs >=1 parityCase that resolves) | gap (needs justification and size S|M|L) | intentional / na (need justification) | fixing (being fixed in the current branch: needs justification and parityCase; resolution is skipped until it is flipped to covered). Optional: gapKind = case-missing (Flutter has it, no case) | impl-diff (Flutter differs from Web) | invalid-case (case exists but the Web capture does not show the state); caseValidity = react-checked (the cached React capture was inspected and shows the state) | invalid | unchecked. navigationCoverage maps every NavigationRegistry section id and settings tab id to the screen ids that cover it (or a justification string). Add a screen entry (and its states) whenever a screen or panel is added; a registry id that is not mapped fails the guard.",
   "screens": [
     {
+      "id": "messages.app-link-card",
+      "title": "App link previews, consent, and action status",
+      "webEntry": "packages/web/src/components/message/AppLinkChip.tsx, AppLinkBlockCard.tsx, LinkPreviewConsentPrompt.tsx (Web 1.24.0)",
+      "flutterEntry": "apps/raft_flutter/lib/features/app_link_view.dart",
+      "states": [
+        {
+          "state": "loading",
+          "variant": "plain link until the first result, skeleton after Allow",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "gap",
+          "gapKind": "case-missing",
+          "size": "S",
+          "justification": "The viewer's successful consent starts a preview read. Visual acceptance needs a verified fixture installation on the v1.24 stack."
+        },
+        {
+          "state": "empty",
+          "variant": "author's link",
+          "web": "no",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "na",
+          "justification": "The Markdown link stays visible when there is no preview result. There is no empty panel."
+        },
+        {
+          "state": "error",
+          "variant": "consent retry and action error",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "gap",
+          "gapKind": "case-missing",
+          "size": "S",
+          "justification": "Failure feedback needs live capture with a test app that can refuse a request."
+        },
+        {
+          "state": "partial",
+          "variant": "some URLs have previews, action waiting for receipt",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "gap",
+          "gapKind": "case-missing",
+          "size": "S",
+          "justification": "The app can leave individual links plain or return an accepted operation. Widget tests exercise progress and terminal status."
+        }
+      ]
+    },
+    {
       "id": "integrations.private-app-invite",
       "title": "Private App invitation review and explicit install",
       "webEntry": "packages/web/src/pages/IntegrationInvitePage.tsx (Web 1.21.23)",
@@ -4698,6 +4748,246 @@
     "canonicalRegistry": "tool/ds-audit-families.json",
     "about": "Ownership registration only. The resolved scanner checks completeness. UNKNOWN/pending/history never count as current visual PASS. Existing lifecycle covered records retain their original scope.",
     "declarations": {
+      "apps/raft_flutter/lib/features/app_link_view.dart#class:AppLinkChip": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-LINK",
+        "reason": "Source-reviewed message integration and component composition."
+      },
+      "apps/raft_flutter/lib/features/app_link_view.dart#class:AppLinkMessageView": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-LINK",
+        "reason": "Source-reviewed message integration and component composition."
+      },
+      "apps/raft_flutter/lib/features/app_link_view.dart#class:AppLinkPrompt": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-LINK",
+        "reason": "Source-reviewed message integration and component composition."
+      },
+      "apps/raft_flutter/lib/features/app_link_view.dart#class:_AppLinkChipState": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-LINK",
+        "reason": "Source-reviewed message integration and component composition."
+      },
+      "apps/raft_flutter/lib/features/app_link_view.dart#class:_AppLinkMessageViewState": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-LINK",
+        "reason": "Source-reviewed message integration and component composition."
+      },
+      "apps/raft_flutter/lib/features/app_link_view.dart#class:_LinkCard": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-LINK",
+        "reason": "Source-reviewed message integration and component composition."
+      },
+      "apps/raft_flutter/lib/features/app_link_view.dart#function:_linkIcon": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-LINK",
+        "reason": "Source-reviewed message integration and component composition."
+      },
+      "apps/raft_flutter/lib/features/app_link_view.dart#function:mayReadAppLinks": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-LINK",
+        "reason": "Source-reviewed message integration and component composition."
+      },
+      "apps/raft_flutter/lib/features/app_link_view.dart#function:showAppLinkConfirmation": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-LINK",
+        "reason": "Source-reviewed message integration and component composition."
+      },
+      "apps/raft_flutter/lib/features/app_link_view.dart#local-function:CLASS:_LinkCard@14378/METHOD:_press@21813/FUNCTION:update@22312": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-LINK",
+        "reason": "Source-reviewed message integration and component composition."
+      },
+      "apps/raft_flutter/lib/features/app_link_view.dart#method:AppLinkChip.createState": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-LINK",
+        "reason": "Source-reviewed message integration and component composition."
+      },
+      "apps/raft_flutter/lib/features/app_link_view.dart#method:AppLinkMessageView.createState": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-LINK",
+        "reason": "Source-reviewed message integration and component composition."
+      },
+      "apps/raft_flutter/lib/features/app_link_view.dart#method:AppLinkPrompt._choose": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-LINK",
+        "reason": "Source-reviewed message integration and component composition."
+      },
+      "apps/raft_flutter/lib/features/app_link_view.dart#method:AppLinkPrompt.build": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-LINK",
+        "reason": "Source-reviewed message integration and component composition."
+      },
+      "apps/raft_flutter/lib/features/app_link_view.dart#method:_AppLinkChipState.build": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-LINK",
+        "reason": "Source-reviewed message integration and component composition."
+      },
+      "apps/raft_flutter/lib/features/app_link_view.dart#method:_AppLinkMessageViewState._showNotice": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-LINK",
+        "reason": "Source-reviewed message integration and component composition."
+      },
+      "apps/raft_flutter/lib/features/app_link_view.dart#method:_AppLinkMessageViewState.build": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-LINK",
+        "reason": "Source-reviewed message integration and component composition."
+      },
+      "apps/raft_flutter/lib/features/app_link_view.dart#method:_AppLinkMessageViewState.didUpdateWidget": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-LINK",
+        "reason": "Source-reviewed message integration and component composition."
+      },
+      "apps/raft_flutter/lib/features/app_link_view.dart#method:_LinkCard._actionRow": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-LINK",
+        "reason": "Source-reviewed message integration and component composition."
+      },
+      "apps/raft_flutter/lib/features/app_link_view.dart#method:_LinkCard._activate": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-LINK",
+        "reason": "Source-reviewed message integration and component composition."
+      },
+      "apps/raft_flutter/lib/features/app_link_view.dart#method:_LinkCard._button": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-LINK",
+        "reason": "Source-reviewed message integration and component composition."
+      },
+      "apps/raft_flutter/lib/features/app_link_view.dart#method:_LinkCard._press": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-LINK",
+        "reason": "Source-reviewed message integration and component composition."
+      },
+      "apps/raft_flutter/lib/features/app_link_view.dart#method:_LinkCard.build": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-LINK",
+        "reason": "Source-reviewed message integration and component composition."
+      },
+      "apps/raft_flutter/lib/features/message_presentation.dart#local-function:CLASS:MessagePresentation@5946/METHOD:messageCard@27808/FUNCTION:cardOf@28095": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-SIDE (Web v1.24 channel side area, Tasks / Files cards, web preview): composes raft_ui parts; real-entry/family/state mapping remains unreviewed. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/app_link_card_previews.dart#function:_appLinkCardPreview": {
+        "role": "preview_fixture",
+        "familyRefs": [],
+        "owner": "WP-LINK",
+        "reason": "Light or dark SDK Widget Preview fixture."
+      },
+      "packages/raft_ui/lib/app_link_card_previews.dart#function:appLinkCardDarkPreview": {
+        "role": "preview_fixture",
+        "familyRefs": [],
+        "owner": "WP-LINK",
+        "reason": "Light or dark SDK Widget Preview fixture."
+      },
+      "packages/raft_ui/lib/app_link_card_previews.dart#function:appLinkCardLightPreview": {
+        "role": "preview_fixture",
+        "familyRefs": [],
+        "owner": "WP-LINK",
+        "reason": "Light or dark SDK Widget Preview fixture."
+      },
+      "packages/raft_ui/lib/src/app_link_card.dart#class:RaftAppLinkCard": {
+        "role": "canonical_component",
+        "familyRefs": [
+          "app-link-card"
+        ],
+        "owner": "WP-LINK",
+        "reason": "SDK-owned App Link Card family primitive."
+      },
+      "packages/raft_ui/lib/src/app_link_card.dart#class:RaftAppLinkChip": {
+        "role": "canonical_component",
+        "familyRefs": [
+          "app-link-card"
+        ],
+        "owner": "WP-LINK",
+        "reason": "SDK-owned App Link Card family primitive."
+      },
+      "packages/raft_ui/lib/src/app_link_card.dart#class:RaftAppLinkLogo": {
+        "role": "canonical_component",
+        "familyRefs": [
+          "app-link-card"
+        ],
+        "owner": "WP-LINK",
+        "reason": "SDK-owned App Link Card family primitive."
+      },
+      "packages/raft_ui/lib/src/app_link_card.dart#method:RaftAppLinkCard.build": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "app-link-card"
+        ],
+        "owner": "WP-LINK",
+        "reason": "Paint and semantics composed by the app link card family."
+      },
+      "packages/raft_ui/lib/src/app_link_card.dart#method:RaftAppLinkChip.build": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "app-link-card"
+        ],
+        "owner": "WP-LINK",
+        "reason": "Paint and semantics composed by the app link card family."
+      },
+      "packages/raft_ui/lib/src/app_link_card.dart#method:RaftAppLinkLogo.build": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "app-link-card"
+        ],
+        "owner": "WP-LINK",
+        "reason": "Paint and semantics composed by the app link card family."
+      },
+      "packages/raft_ui/lib/src/message_body.dart#local-function:CLASS:RaftMessageBody@13171/METHOD:build@17991/FUNCTION:anchoredOther@21132": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "task299 Markdown section comments",
+        "reason": "Existing document/selection/comment family structural adapter: owns heading identity, selection, jump or lifecycle only; generated document rendering stays canonical. No style, audit or visual-acceptance exception."
+      },
+      "packages/raft_ui/lib/src/message_body.dart#local-function:CLASS:RaftMessageBody@13171/METHOD:build@17991/FUNCTION:compactProse@20655": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/message_body.dart#local-function:CLASS:RaftMessageBody@13171/METHOD:build@17991/FUNCTION:selectable@21017": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/message_body.dart#local-function:CLASS:_MarkdownImageState@36009/METHOD:build@36591/FUNCTION:failed@36747": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/message_body.dart#local-function:CLASS:_MermaidToolbar@54837/METHOD:build@55333/FUNCTION:<anonymous>@55442/FUNCTION:control@56679": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
       "apps/raft_flutter/lib/features/administration_context_grants.dart#class:AdminContextViewGrantsSection": {
         "role": "unresolved",
         "familyRefs": [],
@@ -55132,6 +55422,20 @@
         "declarationRefs": [],
         "mountStatus": "unresolved",
         "reason": "Existing lifecycle screen record; exact builder/family composition and current mounted state are not yet established."
+      },
+      "screen:messages.app-link-card": {
+        "owner": "WP-LINK",
+        "kind": "route_or_panel_candidate",
+        "lifecycleScreenId": "messages.app-link-card",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/app_link_view.dart#class:AppLinkMessageView",
+          "apps/raft_flutter/lib/features/app_link_view.dart#function:showAppLinkConfirmation",
+          "apps/raft_flutter/lib/features/app_link_view.dart#local-function:CLASS:_LinkCard@14378/METHOD:_press@21813/FUNCTION:update@22312",
+          "apps/raft_flutter/lib/features/app_link_view.dart#method:AppLinkPrompt._choose",
+          "apps/raft_flutter/lib/features/app_link_view.dart#method:_AppLinkMessageViewState._showNotice"
+        ],
+        "mountStatus": "source_reviewed",
+        "reason": "MessagePresentation mounts the app preview chip and block card. The v1.24 Web and Flutter captures are pending."
       },
       "screen:chat.timeline": {
         "owner": "Choice9 design-system alignment",

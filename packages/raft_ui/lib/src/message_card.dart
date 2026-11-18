@@ -66,8 +66,9 @@ class RaftCardText extends RaftCardElement {
 
 /// A state in the sender's words: always a neutral soft badge.
 class RaftCardBadge extends RaftCardElement {
-  const RaftCardBadge(this.text);
+  const RaftCardBadge(this.text, {this.variant});
   final String text;
+  final RaftBadgeRecipeVariant? variant;
 }
 
 class RaftCardRelativeTime extends RaftCardElement {
@@ -150,6 +151,7 @@ class RaftMessageCard extends StatelessWidget {
     this.onOpen,
     this.onOpenButton,
     this.besideEnabled = false,
+    this.contentOnly = false,
   });
   final RaftCardHeader? header;
   final RaftCardElement root;
@@ -173,6 +175,7 @@ class RaftMessageCard extends StatelessWidget {
   /// beside the conversation; false (flag off, no WebView here): the same
   /// button as any other, ending in the arrow.
   final bool besideEnabled;
+  final bool contentOnly;
 
   @override
   Widget build(BuildContext context) {
@@ -180,6 +183,7 @@ class RaftMessageCard extends StatelessWidget {
     final ui = t.ui;
     final buttons = raftCardButtons(root);
     final elements = raftCardDrawsSomething(root);
+    if (contentOnly) return _node(context, root, inRow: false);
     final radius = t.size('radius.container', fallback: 10);
     final header = this.header;
     return Padding(
@@ -322,10 +326,11 @@ class RaftMessageCard extends StatelessWidget {
               ? t.scale(RaftTypeScale.monoMeta, color: color)
               : t.scale(RaftTypeScale.callout, color: color),
         );
-      case RaftCardBadge(:final text):
+      case RaftCardBadge(:final text, :final variant):
         final badge = RaftBadge(
           label: text,
           appearance: RaftBadgeRecipeAppearance.soft,
+          variant: variant ?? RaftBadgeRecipeVariant.default_,
         );
         return inRow
             ? badge

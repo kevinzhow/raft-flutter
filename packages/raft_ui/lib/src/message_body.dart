@@ -413,6 +413,8 @@ class RaftMessageBody extends StatelessWidget {
     this.searchHighlight,
     this.permalinkAppearance,
     this.permalinkKey,
+    this.inlineLinkBuilder,
+    this.afterLinkBlockBuilder,
     this.messagePipeline = false,
   });
 
@@ -424,6 +426,25 @@ class RaftMessageBody extends StatelessWidget {
   /// Changes whenever [permalinkAppearance] would answer differently (the
   /// markdown subtree only rebuilds on a changed key).
   final Object? permalinkKey;
+  final Widget? Function(BuildContext, String)? inlineLinkBuilder;
+  final Widget? Function(BuildContext, String)? afterLinkBlockBuilder;
+
+  static Iterable<String> bareLinks(String content) sync* {
+    final inputs = _treeInputs(
+      content,
+      documentMode: false,
+      messagePipeline: true,
+      references: const [],
+      taskHref: null,
+      knownTaskNumber: null,
+    );
+    for (final chunk in _splitBody(content)) {
+      if (!chunk.markdown) continue;
+      for (final node in _parseMarkdown(chunk.text, inputs)) {
+        yield* _markdownBareLinks(node, eligibleBlockOnly: false);
+      }
+    }
+  }
 
   /// Web MessageItem `a` renderer for Raft message permalinks: the chip for a
   /// link to a message of this server (label, tap), or null for an ordinary
@@ -568,6 +589,7 @@ class RaftMessageBody extends StatelessWidget {
         onLink,
         referenceAppearance,
         permalinkAppearance: permalinkAppearance,
+        inlineLinkBuilder: inlineLinkBuilder,
       ),
       'code': _MessageInlineCodeBuilder(highlight: highlight),
       raftMathDisplayTag: _DisplayMathBuilder(recipe.body),
@@ -603,6 +625,7 @@ class RaftMessageBody extends StatelessWidget {
             _RaftMarkdown(
               data: chunk.text,
               blockWrapper: anchorBuilder?.wrap(chunk.text),
+              afterLinkBlockBuilder: afterLinkBlockBuilder,
               treeInputs: inputs,
               styleSheet: resolveStyleSheets().$1,
               resolvedStyleSheet: resolveStyleSheets().$2,
@@ -943,12 +966,14 @@ class _RaftMarkdown extends MarkdownBody {
     required MarkdownBulletBuilder super.bulletBuilder,
     this.joinSelection = false,
     this.blockWrapper,
+    this.afterLinkBlockBuilder,
   }) : super(softLineBreak: true);
 
   /// Inside a message selection area: wrap the blocks so a copy keeps its
   /// lines ([_joinBlocks]).
   final bool joinSelection;
   final Widget Function(md.Element, Widget)? blockWrapper;
+  final Widget? Function(BuildContext, String)? afterLinkBlockBuilder;
 
   /// What the tree for [data] depends on besides its source.
   final _TreeInputs treeInputs;
@@ -1097,6 +1122,9 @@ class _RaftMarkdownState extends State<MarkdownWidget>
 
   void rebuildChildren() {
     disposeRecognizers();
+    final afterLink = markdown.afterLinkBlockBuilder;
+    final seen = <String>{};
+    final wrap = markdown.blockWrapper;
     final built =
         MarkdownBuilder(
           delegate: this,
@@ -1116,7 +1144,25 @@ class _RaftMarkdownState extends State<MarkdownWidget>
                   : entry.value,
           },
           paddingBuilders: markdown.paddingBuilderFactory(),
-          blockWrapper: markdown.blockWrapper,
+          blockWrapper: afterLink == null
+              ? wrap
+              : (element, child) {
+                  final block = wrap?.call(element, child) ?? child;
+                  if (!const {'p', 'ul', 'ol'}.contains(element.tag))
+                    return block;
+                  final cards = [
+                    for (final href in _markdownBareLinks(element))
+                      if (seen.add(href))
+                        if (afterLink(context, href) case final card?) card,
+                  ];
+                  if (cards.isEmpty) return block;
+                  return Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    spacing: 4,
+                    children: [block, ...cards],
+                  );
+                },
           fitContent: true,
           listItemCrossAxisAlignment:
               MarkdownListItemCrossAxisAlignment.baseline,
@@ -1201,6 +1247,38 @@ class _RaftMarkdownState extends State<MarkdownWidget>
                 : RaftUnderlines(key: underlines, child: body),
           )
         : body;
+  }
+}
+
+Iterable<String> _markdownBareLinks(
+  md.Node node, {
+  bool eligibleBlockOnly = true,
+}) sync* {
+  if (node is! md.Element) return;
+  if (eligibleBlockOnly &&
+      const {
+        'blockquote',
+        'table',
+        'pre',
+        'h1',
+        'h2',
+        'h3',
+        'h4',
+        'h5',
+        'h6',
+      }.contains(node.tag)) {
+    return;
+  }
+  if (node.tag == 'a') {
+    final href = node.attributes['href'];
+    if (href == null) return;
+    final uri = Uri.tryParse(href);
+    final label = Uri.tryParse(node.textContent.trim());
+    if (uri != null && uri == label) yield href;
+    return;
+  }
+  for (final child in node.children ?? const <md.Node>[]) {
+    yield* _markdownBareLinks(child, eligibleBlockOnly: eligibleBlockOnly);
   }
 }
 
@@ -1818,10 +1896,12 @@ class _MessageLinkBuilder extends MarkdownElementBuilder {
     this.appearanceOf, {
     this.recognizers,
     this.permalinkAppearance,
+    this.inlineLinkBuilder,
   });
   final ValueChanged<String>? onLink;
   final RaftReferenceAppearance? Function(String href)? appearanceOf;
   final RaftReferenceAppearance? Function(String href)? permalinkAppearance;
+  final Widget? Function(BuildContext, String)? inlineLinkBuilder;
   final List<GestureRecognizer>? recognizers;
 
   _MessageLinkBuilder withRecognizers(List<GestureRecognizer> owned) =>
@@ -1830,6 +1910,7 @@ class _MessageLinkBuilder extends MarkdownElementBuilder {
         appearanceOf,
         recognizers: owned,
         permalinkAppearance: permalinkAppearance,
+        inlineLinkBuilder: inlineLinkBuilder,
       );
 
   InlineSpan _reference(
@@ -1891,6 +1972,15 @@ class _MessageLinkBuilder extends MarkdownElementBuilder {
                   : () => onLink!(href),
             ),
           ],
+        ),
+      );
+    }
+    final inlineLink = inlineLinkBuilder?.call(context, href);
+    if (inlineLink != null) {
+      return Text.rich(
+        WidgetSpan(
+          alignment: PlaceholderAlignment.middle,
+          child: raftMessageTapControlRegion(inlineLink),
         ),
       );
     }

@@ -12,6 +12,7 @@ import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import 'artifacts/artifact_message_links.dart';
+import 'app_link_view.dart';
 import 'message_card_read.dart';
 import 'web_link_open.dart';
 import 'resource_cards.dart' show resourceRelativeTime;
@@ -854,7 +855,20 @@ class MessagePresentation extends StatelessWidget {
 
   Widget body(BuildContext context, {String? content}) {
     final shown = content ?? text;
-    final body = _body(context, content: content);
+    final body = !exportMode && localAuthority && mayReadAppLinks(shown)
+        ? AppLinkMessageView(
+            workspace: controller,
+            message: message,
+            openBrowser: onExternalLink,
+            body: (inline, afterBlock, revision) => _body(
+              context,
+              content: content,
+              inline: inline,
+              afterBlock: afterBlock,
+              revision: revision,
+            ),
+          )
+        : _body(context, content: content);
     // Web ArtifactMessageRefs in the embedded slot: the cards for the
     // Artifacts the text links to.
     if (exportMode || !localAuthority || !mayLinkArtifacts(shown)) return body;
@@ -868,7 +882,13 @@ class MessagePresentation extends StatelessWidget {
     );
   }
 
-  Widget _body(BuildContext context, {String? content}) {
+  Widget _body(
+    BuildContext context, {
+    String? content,
+    Widget? Function(BuildContext, String)? inline,
+    Widget? Function(BuildContext, String)? afterBlock,
+    Object? revision,
+  }) {
     return RaftMessageBody(
       mountedMessage: true,
       messagePipeline: true,
@@ -896,7 +916,10 @@ class MessagePresentation extends StatelessWidget {
           (taskByNumber == null ? null : (n) => taskByNumber!(n) != null),
       referenceAppearance: appearance,
       permalinkAppearance: (href) => permalinkAppearance(context, href),
+      inlineLinkBuilder: inline,
+      afterLinkBlockBuilder: afterBlock,
       permalinkKey: Object.hash(
+        revision,
         unavailablePermalink,
         controller.channels.length,
         controller.dms.length,

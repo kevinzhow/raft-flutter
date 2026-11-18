@@ -1,6 +1,29 @@
 {
   "about": "One implementation per design-system family (tool/ds-audit, category duplicate.<family>). `canonical` is the component new code uses; `deprecated` maps each duplicate widget or function to the file that declares it. Every reference to a deprecated name outside its own file is counted and ratcheted down in tool/ds-audit-baseline.json. A family with an empty `deprecated` map counts nothing; it records the canonical component only. `pending` marks a family whose canonical choice belongs to an open work package (no canonical, no deprecated names until it lands); `uncertain` records a canonical choice that still needs a decision (JSON has no comments, so these are fields); `note` explains the entry. Do not add a name to two families.",
   "families": {
+    "app-link-card": {
+      "canonical": [
+        "RaftAppLinkCard",
+        "RaftAppLinkChip",
+        "RaftAppLinkLogo"
+      ],
+      "note": "The block card frame and source row. The message card catalogue and product actions are separate.",
+      "deprecated": {},
+      "canonicalBindings": {
+        "RaftAppLinkCard": {
+          "declarationId": "packages/raft_ui/lib/src/app_link_card.dart#class:RaftAppLinkCard",
+          "role": "public_api"
+        },
+        "RaftAppLinkChip": {
+          "declarationId": "packages/raft_ui/lib/src/app_link_card.dart#class:RaftAppLinkChip",
+          "role": "placement_part"
+        },
+        "RaftAppLinkLogo": {
+          "declarationId": "packages/raft_ui/lib/src/app_link_card.dart#class:RaftAppLinkLogo",
+          "role": "paint_part"
+        }
+      }
+    },
     "side-panel-frame": {
       "canonical": [
         "RaftSidePanelFrame"
@@ -2542,10 +2565,10 @@
       "axes": {}
     },
     "appLinkCard": {
-      "family": null,
-      "decision": "unresolved",
-      "owner": "WP-DS5 text/content/scrolling",
-      "reason": "Published raft-ui0.95.3 source recipe; downstream canonical API and visual acceptance remain pending. This registration is source ownership only.",
+      "family": "app-link-card",
+      "decision": "existing",
+      "owner": "WP-LINK",
+      "reason": "RaftAppLinkCard consumes the published root recipe and composes MessageEmbed. Visual acceptance is tracked separately.",
       "generatedFile": "packages/raft_theme/lib/recipes/app_link_card.g.dart",
       "axes": {}
     },

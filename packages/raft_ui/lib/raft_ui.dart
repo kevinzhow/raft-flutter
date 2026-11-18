@@ -400,3 +400,5 @@ export 'src/raft/fit_toolbar.dart';
 export 'src/raft/inbox_item.dart';
 export 'src/raft/swipe_row.dart';
 export 'src/raft/inbox_row_done.dart';
+export 'src/message_embed_frame.dart';
+export 'src/app_link_card.dart';

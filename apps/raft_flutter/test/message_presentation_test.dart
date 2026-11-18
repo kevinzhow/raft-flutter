@@ -8,6 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
+import 'package:raft_flutter/data/workspace_cache.dart';
 import 'package:raft_flutter/features/message_action_card.dart';
 import 'package:raft_flutter/features/message_presentation.dart';
 import 'package:raft_flutter/features/message_reference_directory.dart';
@@ -53,7 +54,10 @@ class MessageAdapter implements HttpClientAdapter {
   void close({bool force = false}) {}
 }
 
-Future<(WorkspaceController, MessageAdapter)> fixture(String role) async {
+Future<(WorkspaceController, MessageAdapter)> fixture(
+  String role, {
+  WorkspaceCache? cache,
+}) async {
   final a = MessageAdapter();
   a.routes['POST /auth/login'] = (_) => {
     'accessToken': 'fixture-only',
@@ -67,7 +71,7 @@ Future<(WorkspaceController, MessageAdapter)> fixture(String role) async {
   );
   await client.login('fixture', 'fixture');
   client.selectServer('s1');
-  final w = WorkspaceController(client);
+  final w = WorkspaceController(client, cache: cache);
   w.server = RaftRecord({'id': 's1', 'role': role});
   w.channel = RaftChannel({'id': 'c1', 'name': 'test', 'joined': true});
   w.channels = [w.channel!];

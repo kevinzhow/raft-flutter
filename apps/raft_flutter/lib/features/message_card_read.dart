@@ -125,7 +125,10 @@ RaftCardHeader _header(Object? value) {
 }
 
 /// The card to draw for a message's `actionMetadata`; null: draw `content`.
-ReadMessageCard? readMessageCard(Object? actionMetadata) {
+ReadMessageCard? readMessageCard(
+  Object? actionMetadata, {
+  RaftCardButton? Function(Map<String, dynamic> props)? linkButton,
+}) {
   if (actionMetadata is! Map || actionMetadata['kind'] != messageCardKind) {
     return null;
   }
@@ -202,7 +205,20 @@ ReadMessageCard? readMessageCard(Object? actionMetadata) {
         case 'Badge':
           final p = props({'text', 'tone'});
           if (!_badgeTones.contains(p['tone'] ?? 'neutral')) _invalid();
-          return RaftCardBadge(_text(p['text'], 1, 60));
+          return RaftCardBadge(
+            _text(p['text'], 1, 60),
+            variant: linkButton == null
+                ? null
+                : switch (p['tone']) {
+                    'review' => RaftBadgeRecipeVariant.information,
+                    'progress' => RaftBadgeRecipeVariant.busy,
+                    'warning' => RaftBadgeRecipeVariant.warning,
+                    'action' => RaftBadgeRecipeVariant.accent,
+                    'done' => RaftBadgeRecipeVariant.success,
+                    'closed' => RaftBadgeRecipeVariant.muted,
+                    _ => null,
+                  },
+          );
         case 'RelativeTime':
           return RaftCardRelativeTime(_time(props({'at'})['at']));
         case 'Duration':
@@ -220,6 +236,7 @@ ReadMessageCard? readMessageCard(Object? actionMetadata) {
             'disabledReason',
             'open',
           });
+          if (linkButton != null) return linkButton(p) ?? _invalid();
           final action = _object(p['action'], {'kind', 'url'});
           if (action['kind'] != 'navigate' || action['url'] is! String) {
             _invalid();
