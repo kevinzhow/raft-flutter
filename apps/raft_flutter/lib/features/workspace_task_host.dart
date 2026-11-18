@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -93,9 +92,6 @@ class _WorkspaceTaskHostState extends State<WorkspaceTaskHost> {
   String? identity;
   bool legacy = false;
   double legacyWidth = 380;
-
-  /// The task's column beside the Tasks list (Web `detail` width).
-  double slotWidth = taskSlotWidth.value;
   int widthRevision = 0;
   static const widthPreference = 'slock:legacyTaskPanelWidth';
   WorkspaceController get w => widget.controller;
@@ -381,7 +377,6 @@ class _WorkspaceTaskHostState extends State<WorkspaceTaskHost> {
       );
     }
     final slotId = legacy ? null : taskSlotId(w.location);
-    if (slotId != null) return slotLayout(context, task, slotId);
     final side = legacy && !tasksRoute;
     final docked = visible && side && viewport.width >= 1024;
     final presentation = side
@@ -391,21 +386,28 @@ class _WorkspaceTaskHostState extends State<WorkspaceTaskHost> {
       fit: StackFit.expand,
       children: [
         Positioned.fill(
-          child: Offstage(
-            offstage: false,
-            child: ExcludeFocus(
-              excluding: false,
-              child: TickerMode(
-                enabled: true,
-                child: widget.childBuilder(
-                  docked ? legacyWidth : 0,
-                  visible && legacy ? close : null,
-                ),
-              ),
+          child: TaskSlotScope(
+            taskId: slotId,
+            onClose: close,
+            surface: slotId == null || !visible
+                ? null
+                : (onClose) => SourceTaskSurface(
+                    key: ValueKey(identity),
+                    owner: task,
+                    inPlace: true,
+                    onClose: onClose,
+                    onTask: widget.onTask,
+                    onViewBilling: widget.onViewBilling,
+                    onBack: onClose,
+                    onViewInThread: viewInThread(task),
+                  ),
+            child: widget.childBuilder(
+              docked ? legacyWidth : 0,
+              visible && legacy ? close : null,
             ),
           ),
         ),
-        if (visible)
+        if (visible && slotId == null)
           Positioned(
             top: 0,
             bottom: 0,
@@ -461,91 +463,6 @@ class _WorkspaceTaskHostState extends State<WorkspaceTaskHost> {
             ),
           ),
       ],
-    );
-  }
-
-  /// Web TaskContentSlot on a desktop: the task beside the list, the
-  /// dialog's frameless page. On the Tasks page it is a column right of the
-  /// list at the detail width (TasksRoute, its left seam resizes it); on
-  /// Activity and Search the workspace's detail column draws it
-  /// ([TaskContentSlot] reads it from the [TaskSlotScope]).
-  Widget slotLayout(
-    BuildContext context,
-    TaskSurfaceController? task,
-    String slotId,
-  ) {
-    final viewport = MediaQuery.sizeOf(context);
-    final besideList = w.location.route == RaftRoute.tasks;
-    final room = viewport.width - widget.leadingExtent - taskSlotListMin;
-    final width = besideList
-        ? slotWidth
-              .clamp(taskSlotWidth.min, math.max(taskSlotWidth.min, room))
-              .toDouble()
-        : 0.0;
-    final edge = widget.leadingOnRight ? widget.leadingExtent : 0.0;
-    return TaskSlotScope(
-      taskId: slotId,
-      onClose: close,
-      surface: task == null || !widget.presented
-          ? null
-          : (onClose) => SourceTaskSurface(
-              key: ValueKey(identity),
-              owner: task,
-              inPlace: true,
-              onClose: onClose,
-              onTask: widget.onTask,
-              onViewBilling: widget.onViewBilling,
-              onBack: onClose,
-              onViewInThread: viewInThread(task),
-            ),
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          Positioned.fill(child: widget.childBuilder(width, null)),
-          if (besideList) ...[
-            Positioned(
-              top: 0,
-              bottom: 0,
-              right: edge,
-              width: width,
-              child: SafeArea(
-                left: false,
-                // TaskContentSlot `edge="attached"`: the slot's own seam,
-                // over the task's opaque page.
-                child: DecoratedBox(
-                  position: DecorationPosition.foreground,
-                  decoration: BoxDecoration(
-                    border: RaftPanelEdge.left(context),
-                  ),
-                  child: const TaskContentSlot(),
-                ),
-              ),
-            ),
-            Positioned(
-              right: edge + width - RaftPanelResizeHandle.seamOffset,
-              top: 0,
-              bottom: 0,
-              width: RaftPanelResizeHandle.hitExtent,
-              child: RaftPanelResizeHandle(
-                key: const Key('tasks-route-detail-resize'),
-                seamLine: true,
-                label: 'Resize panel',
-                value: width,
-                reversed: true,
-                onChanged: (value) => setState(
-                  () => slotWidth = value
-                      .clamp(
-                        taskSlotWidth.min,
-                        math.max(taskSlotWidth.min, room),
-                      )
-                      .toDouble(),
-                ),
-                onChangeEnd: () => taskSlotWidth.save(slotWidth),
-              ),
-            ),
-          ],
-        ],
-      ),
     );
   }
 }

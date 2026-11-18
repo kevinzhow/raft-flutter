@@ -28,6 +28,7 @@ import 'tasks_board_view.dart';
 import 'tasks_list_view.dart';
 import 'tasks_page_model.dart';
 import 'tasks_page_params.dart';
+import 'tasks_page_recent_history.dart';
 import 'tasks_page_rows.dart';
 import 'tasks_page_store.dart';
 import 'tasks_page_toolbar.dart';
@@ -116,7 +117,9 @@ class _TasksPageState extends State<TasksPage> {
   late final TasksPageStore store;
   late final TasksPageParams params;
   late final TaskSelection selection;
-  late String doneSince;
+  late final TasksPageRecentHistory history;
+  String get doneSince => history.visit.doneSince;
+  bool historyQueued = false;
   late String scope;
   bool _batchBusy = false;
   bool _creating = false;
@@ -130,15 +133,14 @@ class _TasksPageState extends State<TasksPage> {
     super.initState();
     store = widget.store ?? TasksPageStore.of(w);
     bindTasksPageLive(w, store);
-    params = TasksPageParams(
+    final visit = store.visit(
       serverId: w.server?.string('id'),
       userId: w.client.user?.id,
     );
+    params = visit.params;
     scope = params.scope;
     selection = TaskSelection(scope: scope);
-    doneSince = recentDoneSince();
-    store.setShown(widget.shown);
-    _watch();
+    history = TasksPageRecentHistory(store, visit)..watch(shown: widget.shown);
     // The people and agents the filters and the assignee picker list.
     w.services.entityDirectory
       ..ensureAuthors()
@@ -148,12 +150,16 @@ class _TasksPageState extends State<TasksPage> {
     selection.addListener(_changed);
     _listening = true;
     HardwareKeyboard.instance.addHandler(_key);
+    _queueHistoryRefresh();
   }
 
   @override
   void didUpdateWidget(TasksPage old) {
     super.didUpdateWidget(old);
-    if (old.shown != widget.shown) store.setShown(widget.shown);
+    if (old.shown != widget.shown) {
+      store.setShown(widget.shown);
+      _queueHistoryRefresh();
+    }
   }
 
   @override
@@ -165,10 +171,9 @@ class _TasksPageState extends State<TasksPage> {
       params.removeListener(_paramsChanged);
       selection.removeListener(_changed);
     }
-    store.setShown(false);
+    history.hide();
     TasksSelectionEscape.active = false;
     TasksSelectionEscape.consumed = false;
-    params.dispose();
     selection.dispose();
     super.dispose();
   }
@@ -176,6 +181,25 @@ class _TasksPageState extends State<TasksPage> {
   void _changed() {
     TasksSelectionEscape.active = selection.selecting;
     if (mounted) setState(() {});
+    _queueHistoryRefresh();
+  }
+
+  void _queueHistoryRefresh() {
+    if (!mounted || !widget.shown || !history.refreshing || historyQueued) {
+      return;
+    }
+    historyQueued = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      historyQueued = false;
+      if (!mounted || !widget.shown) return;
+      final departed = history.settle();
+      if (departed == null) return;
+      setState(() {});
+      // The displayed lanes may still have end-of-frame reads queued.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        store.evictCompletedSince(departed);
+      });
+    });
   }
 
   /// What the page shows changed: the selection ends, 你发起的 keeps what was
@@ -184,19 +208,13 @@ class _TasksPageState extends State<TasksPage> {
     final next = params.scope;
     if (next != scope) {
       scope = next;
-      final before = doneSince;
-      doneSince = recentDoneSince();
       selection.setScope(next);
-      _watch();
-      if (before != doneSince) store.evictCompletedSince(before);
+      history.scopeChanged();
     }
     _changed();
   }
 
-  TasksCountsPlan get _plan =>
-      TasksCountsPlan(params.tab, params.view, params.filters, doneSince);
-
-  void _watch() => store.watchCounts(_plan.wanted);
+  TasksCountsPlan get _plan => history.plan;
 
   List<LaneSpec> get _lanes => viewLanes(
     params.tab,

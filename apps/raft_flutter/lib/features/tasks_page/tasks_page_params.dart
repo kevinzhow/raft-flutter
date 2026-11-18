@@ -141,3 +141,12 @@ class TasksPageParams extends ChangeNotifier {
     notifyListeners();
   }
 }
+
+/// The cutoff and toolbar scope of a Tasks page within a workspace session.
+class TasksPageVisitState {
+  TasksPageVisitState(this.params, this.doneSince);
+
+  final TasksPageParams params;
+  String doneSince;
+  bool visited = false;
+}

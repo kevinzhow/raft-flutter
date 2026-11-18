@@ -5,6 +5,8 @@
 // `?task=<channelId>:task:<taskId>`), the dialog's frameless page; Escape and
 // its × close it and focus goes back to the task's row. On a phone it is the
 // task's page in place of the list, its Back returning to it.
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:raft_ui/raft_ui.dart';
@@ -96,6 +98,79 @@ class TaskSlotScope extends InheritedWidget {
   @override
   bool updateShouldNotify(TaskSlotScope old) =>
       old.taskId != taskId || old.surface != surface || old.onClose != onClose;
+}
+
+/// The Tasks route's content row. The slot takes its width from the list,
+/// inside the same workspace chrome.
+class TasksPageDetailDock extends StatefulWidget {
+  const TasksPageDetailDock({super.key, required this.child});
+
+  final Widget child;
+
+  @override
+  State<TasksPageDetailDock> createState() => _TasksPageDetailDockState();
+}
+
+class _TasksPageDetailDockState extends State<TasksPageDetailDock> {
+  double preferredWidth = taskSlotWidth.value;
+
+  @override
+  Widget build(BuildContext context) {
+    final open = TaskSlotScope.maybeOf(context)?.taskId != null;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final minWidth = math.min(taskSlotWidth.min, constraints.maxWidth);
+        final maxWidth = (constraints.maxWidth - taskSlotListMin).clamp(
+          minWidth,
+          taskSlotWidth.max,
+        );
+        final width = preferredWidth.clamp(minWidth, maxWidth).toDouble();
+        return Stack(
+          fit: StackFit.expand,
+          children: [
+            Row(
+              textDirection: TextDirection.ltr,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(child: widget.child),
+                if (open)
+                  SizedBox(
+                    width: width,
+                    child: DecoratedBox(
+                      position: DecorationPosition.foreground,
+                      decoration: BoxDecoration(
+                        border: RaftPanelEdge.left(context),
+                      ),
+                      child: const TaskContentSlot(),
+                    ),
+                  ),
+              ],
+            ),
+            if (open)
+              Positioned(
+                right: width - RaftPanelResizeHandle.seamOffset,
+                top: 0,
+                bottom: 0,
+                width: RaftPanelResizeHandle.hitExtent,
+                child: RaftPanelResizeHandle(
+                  key: const Key('tasks-route-detail-resize'),
+                  seamLine: true,
+                  label: 'Resize panel',
+                  value: width,
+                  reversed: true,
+                  onChanged: (value) => setState(
+                    () => preferredWidth = value
+                        .clamp(minWidth, maxWidth)
+                        .toDouble(),
+                  ),
+                  onChangeEnd: () => taskSlotWidth.save(preferredWidth),
+                ),
+              ),
+          ],
+        );
+      },
+    );
+  }
 }
 
 /// The task beside the list. Escape inside it (not a field's, nor a menu's:

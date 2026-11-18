@@ -18,6 +18,7 @@ import '../../data/task_board_reconcile.dart' show mergeTaskFields;
 import '../../data/workspace_controller.dart';
 import '../server_task_scope.dart';
 import 'tasks_page_model.dart';
+import 'tasks_page_params.dart';
 
 /// GET [path] with [query]: the controller's `query` by default.
 typedef TasksQuery = Future<dynamic> Function(
@@ -135,6 +136,18 @@ class TasksPageStore extends ChangeNotifier {
   /// that no longer does is dropped.
   final bool Function(Map<String, dynamic> task)? belongs;
   final DateTime Function() _now;
+
+  TasksPageVisitState? _visit;
+
+  TasksPageVisitState visit({
+    required String? serverId,
+    required String? userId,
+  }) => _visit ??= TasksPageVisitState(
+    TasksPageParams(serverId: serverId, userId: userId),
+    newDoneSince(),
+  );
+
+  String newDoneSince() => recentDoneSince(_now());
 
   /// Every task row the page holds, by id.
   final Map<String, Map<String, dynamic>> knownById = {};
@@ -330,7 +343,10 @@ class TasksPageStore extends ChangeNotifier {
           : {...current.checkedIds, ...checkedIds}.toList(),
       syncedCount: syncedCount,
     );
-    lanes[lane.key] = marked.copyWith(loading: true, failed: false);
+    final reading = marked.copyWith(loading: true, failed: false);
+    lanes[lane.key] = reading;
+    bool currentRead() =>
+        generation == _generation && identical(lanes[lane.key], reading);
     _changed(counts: false);
     LaneRead startOver() => LaneRead(
       checkedIds: marked.checkedIds,
@@ -346,7 +362,7 @@ class TasksPageStore extends ChangeNotifier {
             : lanePageSize,
         cursor: firstPage ? null : current.nextCursor,
       );
-      if (generation != _generation) return;
+      if (!currentRead()) return;
       if (page == null) {
         // The connection dropped while reading: start this lane over.
         lanes[lane.key] = startOver();
@@ -382,7 +398,7 @@ class TasksPageStore extends ChangeNotifier {
       if (firstPage) _pruneCovered();
       _changed(counts: false);
     } catch (error) {
-      if (generation != _generation) return;
+      if (!currentRead()) return;
       // A 400 on a next page is a cursor the server no longer accepts (its
       // channel left the board): read the lane again from its start. On a
       // first page it is the request itself: failed, not retried on its own.
@@ -494,42 +510,48 @@ class TasksPageStore extends ChangeNotifier {
     final generation = _generation;
     final failures = current?.failures ?? 0;
     final readAt = _now();
-    counts[key] = CountsEntry(
+    final reading = CountsEntry(
       data: current?.data,
       loading: true,
       revision: revision,
       readAt: readAt,
       failures: failures,
     );
+    counts[key] = reading;
+    bool currentRead() =>
+        generation == _generation && identical(counts[key], reading);
     _changed(counts: false);
     try {
       final data = await query('/tasks/server/counts', filters.filterParams());
-      if (generation != _generation) return;
+      if (!currentRead()) return;
       counts[key] = CountsEntry(
         data: readServerTaskCounts(data),
         revision: revision,
         readAt: readAt,
       );
     } catch (_) {
-      if (generation != _generation) return;
+      if (!currentRead()) return;
       final failed = failures + 1;
       final data = current?.data;
       // Gave up: with numbers already shown they stay (the next live change
       // reads again); with none, the page says so and offers Try again.
       final givenUp = failed >= countsAttempts;
-      counts[key] = CountsEntry(
+      final failedRead = CountsEntry(
         data: data,
         revision: givenUp && data != null ? revision : -1,
         readAt: readAt,
         failures: givenUp ? 0 : failed,
         failed: givenUp && data == null,
       );
+      counts[key] = failedRead;
       if (!givenUp) {
         late final Timer retry;
         // ignore: raft_lints/avoid_unreleased_resource -- kept in _retries; reset() and dispose() cancel it
         retry = Timer(countsRetryBase * (1 << (failed - 1)), () {
           _retries.remove(retry);
-          if (generation == _generation) unawaited(loadCounts(filters));
+          if (generation == _generation && identical(counts[key], failedRead)) {
+            unawaited(loadCounts(filters));
+          }
         });
         _retries.add(retry);
       }
@@ -556,7 +578,8 @@ class TasksPageStore extends ChangeNotifier {
   /// changes, never sooner than [countsRefreshMinInterval] after the last
   /// read of that set began (a fixed time, so a steady stream of changes
   /// can't put it off). Only while [shown].
-  void watchCounts(Iterable<ServerTaskFilters> wanted) {
+  void watchCounts(Iterable<ServerTaskFilters> wanted, {bool? shown}) {
+    _shown = shown ?? _shown;
     _watched = wanted.toSet().toList();
     _scheduleCounts();
   }
@@ -615,7 +638,7 @@ class TasksPageStore extends ChangeNotifier {
     lanes.removeWhere((key, _) => key.contains(marker));
     counts.removeWhere((key, _) => key.contains(marker));
     _pruneCovered();
-    notifyListeners();
+    _changed(counts: false);
   }
 
   /// Forget every read (socket gap, server switch): mounted views read again
@@ -637,6 +660,8 @@ class TasksPageStore extends ChangeNotifier {
 
   /// A new account or server: nothing of the old one stays.
   void _resetAll() {
+    _visit?.params.dispose();
+    _visit = null;
     knownById.clear();
     collapsed.clear();
     reset();
@@ -652,6 +677,7 @@ class TasksPageStore extends ChangeNotifier {
   void dispose() {
     if (_disposed) return;
     _disposed = true;
+    _visit?.params.dispose();
     for (final timer in [..._timers.values, ..._retries]) {
       timer.cancel();
     }

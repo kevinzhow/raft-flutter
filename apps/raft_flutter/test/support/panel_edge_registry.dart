@@ -132,7 +132,7 @@ const panelEdgeSurfaces = <PanelEdgeSurface>[
   PanelEdgeSurface(
     'tasks-route-slot',
     web: 'TaskContentSlot beside the Tasks list',
-    files: ['lib/features/workspace_task_host.dart'],
+    files: ['lib/features/task_content_slot.dart'],
     style: RaftPanelEdgeStyle.attachedPanel,
     pixels: true,
   ),

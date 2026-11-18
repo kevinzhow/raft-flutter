@@ -44767,6 +44767,30 @@
         "owner": "WP-TASK2 v1.24 alignment",
         "reason": "Source census candidate (WP-TASK2 part 3: task beside the list, create-task channel field, task head pull-down); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
+      "apps/raft_flutter/lib/features/task_content_slot.dart#class:TasksPageDetailDock": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Tasks page",
+        "reason": "Positions the existing task content slot beside the Tasks list below the workspace header."
+      },
+      "apps/raft_flutter/lib/features/task_content_slot.dart#method:TasksPageDetailDock.createState": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Tasks page",
+        "reason": "Creates the state that owns the Tasks detail column width."
+      },
+      "apps/raft_flutter/lib/features/task_content_slot.dart#class:_TasksPageDetailDockState": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Tasks page",
+        "reason": "Owns the Tasks detail width and delegates seam paint and resize input to the shared panel components."
+      },
+      "apps/raft_flutter/lib/features/task_content_slot.dart#method:_TasksPageDetailDockState.build": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Tasks page",
+        "reason": "Lays out the existing Tasks content slot, list and shared seam controls."
+      },
       "apps/raft_flutter/lib/features/task_content_slot.dart#class:TaskV2FlagBuilder": {
         "role": "unresolved",
         "familyRefs": [],
@@ -44846,12 +44870,6 @@
         "reason": "Source census candidate (WP-TASK2 part 3: task beside the list, create-task channel field, task head pull-down); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
       "apps/raft_flutter/lib/features/task_content_slot.dart#method:_TaskV2FlagBuilderState.didUpdateWidget": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "WP-TASK2 v1.24 alignment",
-        "reason": "Source census candidate (WP-TASK2 part 3: task beside the list, create-task channel field, task head pull-down); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
-      },
-      "apps/raft_flutter/lib/features/workspace_task_host.dart#method:_WorkspaceTaskHostState.slotLayout": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "WP-TASK2 v1.24 alignment",
@@ -52151,7 +52169,7 @@
         "owner": "design-system alignment",
         "reason": "WP-TASKS (Web v1.24 Tasks page board / task card facts): resolved builder; real-entry/family/state mapping remains unreviewed."
       },
-      "apps/raft_flutter/lib/features/resource_view.dart#local-function:CLASS:_ResourceViewState@7571/METHOD:activityList@111788/FUNCTION:bar@112010": {
+      "apps/raft_flutter/lib/features/resource_view.dart#local-function:CLASS:_ResourceViewState@7571/METHOD:activityList@111791/FUNCTION:bar@112013": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",

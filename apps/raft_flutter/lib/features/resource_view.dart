@@ -2568,20 +2568,20 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
 
   @override
   Widget build(BuildContext context) => serverTaskPage
-      ? TaskV2FlagBuilder(
-          controller: w,
-          builder: (context, v2) => v2
-              ? TasksPage(
-                  controller: w,
-                  scroll: taskListScroll,
-                  currentTaskId:
-                      TaskSlotScope.maybeOf(context)?.taskId ??
-                      taskSlotId(w.location),
-                  onOpenTask: (row) => widget.onTask != null
-                      ? widget.onTask!(row, () async {})
-                      : unawaited(taskDetails(row)),
-                )
-              : buildResource(context),
+      ? TasksPageDetailDock(
+          child: TaskV2FlagBuilder(
+            controller: w,
+            builder: (context, v2) => v2
+                ? TasksPage(
+                    controller: w,
+                    scroll: taskListScroll,
+                    currentTaskId: TaskSlotScope.maybeOf(context)?.taskId,
+                    onOpenTask: (row) => widget.onTask != null
+                        ? widget.onTask!(row, () async {})
+                        : unawaited(taskDetails(row)),
+                  )
+                : buildResource(context),
+          ),
         )
       : buildResource(context);
 
