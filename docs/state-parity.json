@@ -11984,31 +11984,31 @@
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
-      "apps/raft_flutter/lib/features/resource_search.dart#local-function:CLASS:ResourceSearchResults@11292/METHOD:build@16115/FUNCTION:message@19875": {
+      "apps/raft_flutter/lib/features/resource_search.dart#local-function:CLASS:ResourceSearchResults@11915/METHOD:build@16738/FUNCTION:message@20498": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
-      "apps/raft_flutter/lib/features/resource_search.dart#local-function:CLASS:ResourceSearchResults@11292/METHOD:build@16115/FUNCTION:messageGroup@21422": {
+      "apps/raft_flutter/lib/features/resource_search.dart#local-function:CLASS:ResourceSearchResults@11915/METHOD:build@16738/FUNCTION:messageGroup@22045": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
-      "apps/raft_flutter/lib/features/resource_search.dart#local-function:CLASS:ResourceSearchResults@11292/METHOD:build@16115/FUNCTION:section@17483": {
+      "apps/raft_flutter/lib/features/resource_search.dart#local-function:CLASS:ResourceSearchResults@11915/METHOD:build@16738/FUNCTION:section@18106": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
-      "apps/raft_flutter/lib/features/resource_search.dart#local-function:CLASS:ResourceSearchResults@11292/METHOD:build@16115/FUNCTION:slotText@16822": {
+      "apps/raft_flutter/lib/features/resource_search.dart#local-function:CLASS:ResourceSearchResults@11915/METHOD:build@16738/FUNCTION:slotText@17445": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
-      "apps/raft_flutter/lib/features/resource_search.dart#local-function:CLASS:ResourceSearchResults@11292/METHOD:build@16115/FUNCTION:surface@18904": {
+      "apps/raft_flutter/lib/features/resource_search.dart#local-function:CLASS:ResourceSearchResults@11915/METHOD:build@16738/FUNCTION:surface@19527": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
