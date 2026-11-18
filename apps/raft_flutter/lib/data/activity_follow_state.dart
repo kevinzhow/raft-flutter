@@ -1,3 +1,5 @@
+import 'task_conversation_row.dart';
+
 /// Source inboxStore's acknowledged thread follow state. The owner clears this
 /// transient projection when its principal/server/capability scope retires.
 class ActivityFollowState {
@@ -69,7 +71,9 @@ class ActivityFollowState {
   Map<String, dynamic> window(Map value) {
     final items = (value['items'] as List? ?? const [])
         .whereType<Map>()
-        .map((row) => Map<String, dynamic>.from(row))
+        .map(
+          (row) => normalizeTaskConversationRow(Map<String, dynamic>.from(row)),
+        )
         .toList();
     var cleared = 0;
     final projected = items.map((row) {

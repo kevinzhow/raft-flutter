@@ -18,6 +18,7 @@ import 'package:raft_ui/recipes.dart'
         RaftSearchRecipeStyle;
 
 import '../data/source_activity_unread_store.dart';
+import '../data/task_conversation_row.dart';
 import '../data/activity_filter_choice.dart';
 import '../data/activity_object_rows.dart';
 import '../data/activity_unread_snapshot.dart';
@@ -942,7 +943,9 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
     listScroll = newActivityScroll();
     if (widget.section == 'activity') activityScrolls[filter] = listScroll!;
     if (!usable) return false;
-    rows = snapshot.rows;
+    rows = activityPage
+        ? normalizeTaskConversationRows(snapshot.rows)
+        : snapshot.rows;
     rowsView = snapshot.view;
     hasMore = snapshot.hasMore;
     filter = snapshot.filter;
@@ -954,7 +957,9 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
     totalUnreadCount = snapshot.totalUnreadCount;
     activityAllCount = snapshot.activityAllCount;
     activityGroups = snapshot.activityGroups;
-    acceptedActivityItems = snapshot.acceptedActivityItems;
+    acceptedActivityItems = activityPage
+        ? normalizeTaskConversationRows(snapshot.acceptedActivityItems)
+        : snapshot.acceptedActivityItems;
     viewWindows
       ..clear()
       ..addAll(snapshot.viewWindows);
@@ -2143,7 +2148,9 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
       setState(() {
         stashViewWindow();
         viewWindows.remove(wanted);
-        rows = cached.rows;
+        rows = activityPage
+            ? normalizeTaskConversationRows(cached.rows)
+            : cached.rows;
         rowsView = wanted;
         hasMore = cached.hasMore;
         totalCount = cached.totalCount;
@@ -2323,7 +2330,9 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
         final activityWindow = widget.section == 'activity';
         var unreadDelta = 0;
         if (activityWindow) {
-          final known = applyKnownReads(accepted);
+          final known = applyKnownReads(
+            value is List ? normalizeTaskConversationRows(accepted) : accepted,
+          );
           accepted = known.rows;
           unreadDelta -= known.cleared;
         }
@@ -2333,11 +2342,16 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
           final known = {for (final row in rows) rowKey(row)};
           nextRows = [
             ...rows,
-            // A live-inserted task may also arrive on its page.
-            ...accepted.where(
-              (row) =>
-                  widget.section != 'tasks' || !known.contains(rowKey(row)),
-            ),
+            ...accepted.where((row) {
+              if (widget.section == 'tasks') {
+                return !known.contains(rowKey(row));
+              }
+              if (activityWindow && row['conversationKind'] == 'task') {
+                final key = rowKey(row);
+                return key == null || known.add(key);
+              }
+              return true;
+            }),
           ];
         } else if (keep && view == rowsView && widget.section == 'tasks') {
           final window = reconcileTaskWindow(
@@ -4764,7 +4778,12 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
         if (!accepts(scope) || !activityFollowState.accepts(id, ticket)) return;
         // Source ThreadsInbox mutates through threadStore.followedThreads.
         final parentId = row['parentMessageId'];
-        if (parentId is String) {
+        if (row['conversationKind'] == 'task') {
+          _services.followedThreads.acknowledgeTask(
+            id,
+            following: action == 'follow',
+          );
+        } else if (parentId is String && parentId.isNotEmpty) {
           _services.followedThreads.acknowledge(
             parentMessageId: parentId,
             threadChannelId: id,

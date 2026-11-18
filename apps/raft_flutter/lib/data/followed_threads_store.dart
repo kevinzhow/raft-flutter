@@ -5,6 +5,7 @@ import 'package:raft_client/raft_client.dart';
 import 'package:raft_sync/raft_sync.dart' show canonicalWireSeq;
 
 import 'resource_row_reconcile.dart' show projectFullyRead;
+import 'task_conversation_row.dart';
 import 'workspace_entity_directory.dart' show WorkspaceEntityScope;
 
 /// Source threadStore.followedThreads: the current principal's followed
@@ -75,6 +76,7 @@ class FollowedThreadsStore extends ChangeNotifier {
   List<Map<String, dynamic>> _rows = const [];
   Map<String, Map<String, dynamic>> _byParent = const {};
   final _overrides = <String, _FollowOverride>{};
+  final _taskUnfollows = <String>{};
   final _inFlight = <String>{};
   bool _loaded = false, _settled = false, _again = false, _connected = false;
   Object? _error;
@@ -91,6 +93,7 @@ class FollowedThreadsStore extends ChangeNotifier {
     _rows = const [];
     _byParent = const {};
     _overrides.clear();
+    _taskUnfollows.clear();
     _inFlight.clear();
     _pending = null;
     _coalesced?.cancel();
@@ -209,14 +212,31 @@ class FollowedThreadsStore extends ChangeNotifier {
         if (raw is! List) {
           throw const FormatException('Invalid followed threads response.');
         }
-        rows.addAll([
-          for (final row in raw)
-            if (row is Map && row['parentMessageId'] is String)
-              Map<String, dynamic>.from(row),
-        ]);
+        for (final value in raw.whereType<Map>()) {
+          final row = normalizeTaskConversationRow(
+            Map<String, dynamic>.from(value),
+          );
+          if (row['conversationKind'] == 'task') {
+            final id = row['threadChannelId'];
+            if (id is String && id.isNotEmpty) rows.add(row);
+          } else if (row['parentMessageId'] case final String parent
+              when parent.isNotEmpty) {
+            rows.add(row);
+          }
+        }
         final next = value['next'];
         if (next is! String || next.isEmpty || next == cursor) break;
         cursor = next;
+      }
+      if (_taskUnfollows.isNotEmpty) {
+        final servedTasks = <String>{};
+        rows.removeWhere((row) {
+          if (row['conversationKind'] != 'task') return false;
+          final id = row['threadChannelId'] as String;
+          servedTasks.add(id);
+          return _taskUnfollows.contains(id);
+        });
+        _taskUnfollows.retainAll(servedTasks);
       }
       _setRows(_projectKnownReads(rows, _rows));
       for (final entry in _overrides.entries.toList()) {
@@ -302,6 +322,7 @@ class FollowedThreadsStore extends ChangeNotifier {
     String? threadChannelId,
   }) async {
     synchronize();
+    if (parentMessageId.isEmpty) throw ArgumentError.value(parentMessageId);
     final scope = _scope;
     if (_disposed || scope == null) {
       throw StateError('Followed threads are not available.');
@@ -354,9 +375,25 @@ class FollowedThreadsStore extends ChangeNotifier {
     required bool following,
   }) {
     synchronize();
-    if (_disposed || _scope == null) return;
+    if (_disposed || _scope == null || parentMessageId.isEmpty) return;
     _acknowledge(parentMessageId, threadChannelId, following);
     notifyListeners();
+  }
+
+  void acknowledgeTask(String threadChannelId, {required bool following}) {
+    synchronize();
+    if (_disposed || _scope == null || threadChannelId.isEmpty) return;
+    if (following) {
+      _taskUnfollows.remove(threadChannelId);
+      unawaited(refresh());
+    } else {
+      _taskUnfollows.add(threadChannelId);
+      _setRows([
+        for (final row in _rows)
+          if (row['threadChannelId'] != threadChannelId) row,
+      ]);
+      notifyListeners();
+    }
   }
 
   void _acknowledge(String parentMessageId, String? threadId, bool following) {
@@ -375,7 +412,12 @@ class FollowedThreadsStore extends ChangeNotifier {
 
   void _setRows(List<Map<String, dynamic>> rows) {
     _rows = rows;
-    _byParent = {for (final row in rows) row['parentMessageId'] as String: row};
+    _byParent = {
+      for (final row in rows)
+        if (row['parentMessageId'] case final String parent
+            when parent.isNotEmpty)
+          parent: row,
+    };
   }
 
   void _retireAcknowledged([String? parentMessageId]) {
@@ -398,11 +440,28 @@ class FollowedThreadsStore extends ChangeNotifier {
       _connected = true;
       if (first && (_pending != null || _loaded)) return;
       _retireAcknowledged();
+      _taskUnfollows.clear();
       unawaited(refresh());
       return;
     }
-    if (event.name != 'thread:updated' || event.payload is! Map) return;
-    final payload = event.payload as Map;
+    final payload = event.payload;
+    if (payload is! Map) return;
+    if (event.name == 'message:new') {
+      final context = payload['conversationContext'];
+      final serverId = payload['serverId'];
+      final channelId = payload['channelId'];
+      if (context is Map &&
+          context['channelType'] == 'task' &&
+          payload['messageType'] != 'system' &&
+          (serverId == null || serverId == _scope!.serverId) &&
+          payload['id'] is String &&
+          channelId is String &&
+          channelId.isNotEmpty) {
+        _requestRefresh();
+      }
+      return;
+    }
+    if (event.name != 'thread:updated') return;
     final threadId = payload['threadChannelId'];
     if (threadId is! String) return;
     final index = _rows.indexWhere((row) => row['threadChannelId'] == threadId);
@@ -518,6 +577,7 @@ class FollowedThreadsStore extends ChangeNotifier {
     _rows = const [];
     _byParent = const {};
     _overrides.clear();
+    _taskUnfollows.clear();
     _inFlight.clear();
     _pending = null;
     super.dispose();

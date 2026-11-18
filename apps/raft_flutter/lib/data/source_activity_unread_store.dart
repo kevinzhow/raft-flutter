@@ -14,6 +14,7 @@ import 'inbox_in_place_unread.dart';
 import 'raft_api_gateway.dart';
 import 'resource_row_reconcile.dart';
 import 'source_read_all_transport.dart';
+import 'task_conversation_row.dart';
 
 /// Accepted session facts and notifications consumed by the inbox projection.
 abstract interface class ActivityUnreadAuthority implements Listenable {
@@ -720,6 +721,7 @@ class SourceActivityUnreadStore extends ChangeNotifier {
     final served = rawRows
         .whereType<Map>()
         .map(Map<String, dynamic>.from)
+        .map(normalizeTaskConversationRow)
         .toList();
     // A served row still behind a row patched in place keeps its unread.
     _inPlace.counted.noteServed(served, reset: firstPage);

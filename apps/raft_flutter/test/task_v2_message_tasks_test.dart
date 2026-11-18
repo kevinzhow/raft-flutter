@@ -152,6 +152,53 @@ Future<List<Map<String, dynamic>>> _chat(
 }
 
 void main() {
+  testWidgets('a mounted task chip shows unread from the followed feed', (
+    t,
+  ) async {
+    final (w, a) = (await t.runAsync(
+      () => _fixture(flag: false, tasks: [_task('t1', 11, 'todo')]),
+    ))!;
+    addTearDown(w.dispose);
+    final task = <String, dynamic>{
+      'kind': 'task',
+      'parentMessageId': null,
+      'threadChannelId': 'local-task-conversation',
+      'parentChannelId': 'c1',
+      'taskId': 't1',
+      'taskNumber': 11,
+      'taskTitle': 'Task 11',
+      'unreadCount': 0,
+      'latestActivitySeq': '3',
+    };
+    a.routes['GET /channels/threads/followed'] = (_) => (
+      200,
+      {
+        'threads': [task],
+      },
+    );
+    await t.runAsync(w.followedThreads.refresh);
+    await _chat(t, w);
+    expect(find.text('Task 11'), findsOneWidget);
+    final unread = find.byKey(const ValueKey('message-task-chip-unread'));
+    expect(unread, findsNothing);
+
+    try {
+      task.addAll({'unreadCount': 1, 'latestActivitySeq': '4'});
+      await t.runAsync(w.followedThreads.refresh);
+      expect(w.followedThreads.threads.single['unreadCount'], 1);
+      await t.pump();
+      expect(unread, findsOneWidget);
+      w.followedThreads.acknowledgeTask(
+        'local-task-conversation',
+        following: false,
+      );
+      await t.pump();
+      expect(unread, findsNothing);
+    } finally {
+      await t.pumpWidget(const SizedBox());
+    }
+  });
+
   testWidgets('task v2: every task created from a message hangs under it, '
       'Backlog included', (t) async {
     final (w, _) = (await t.runAsync(

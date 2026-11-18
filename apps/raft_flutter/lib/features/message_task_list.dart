@@ -84,21 +84,24 @@ Widget? messageTaskList(
   final tasks = projection.taskListFor(message);
   if (tasks == null || tasks.isEmpty) return null;
   final authority = workspaceAuthority(w);
-  return RaftTaskChipList(
-    key: ValueKey('message-task-list-${message.id}'),
-    tasks: [for (final task in tasks) messageTaskChipRow(w, task)],
-    onOpen: onTask == null
-        ? null
-        : (row) {
-            if (!active() || authority != workspaceAuthority(w)) return;
-            final current = projection
-                .taskListFor(message)
-                ?.where((task) => task['id'] == row.id)
-                .firstOrNull;
-            if (current == null) return;
-            onTask(current, () async {
-              if (authority == workspaceAuthority(w)) projection.refresh();
-            });
-          },
+  return ListenableBuilder(
+    listenable: w.services.followedThreads,
+    builder: (_, _) => RaftTaskChipList(
+      key: ValueKey('message-task-list-${message.id}'),
+      tasks: [for (final task in tasks) messageTaskChipRow(w, task)],
+      onOpen: onTask == null
+          ? null
+          : (row) {
+              if (!active() || authority != workspaceAuthority(w)) return;
+              final current = projection
+                  .taskListFor(message)
+                  ?.where((task) => task['id'] == row.id)
+                  .firstOrNull;
+              if (current == null) return;
+              onTask(current, () async {
+                if (authority == workspaceAuthority(w)) projection.refresh();
+              });
+            },
+    ),
   );
 }

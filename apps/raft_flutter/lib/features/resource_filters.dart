@@ -184,8 +184,11 @@ class ResourceFilters {
   final id = thread ? row['threadChannelId'] : row['channelId'];
   if (id is! String || row['kind'] == 'mention_action') return null;
   if (action == 'follow') {
+    if (thread && row['conversationKind'] == 'task') {
+      return (path: '/channels/threads/follow', data: {'threadChannelId': id});
+    }
     final parent = row['parentMessageId'];
-    return thread && parent is String
+    return thread && parent is String && parent.isNotEmpty
         ? (path: '/channels/threads/follow', data: {'parentMessageId': parent})
         : null;
   }

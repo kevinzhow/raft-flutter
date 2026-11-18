@@ -652,7 +652,10 @@ class TaskSurfaceController extends ChangeNotifier {
       );
       if (!current) return;
       followOverride = !following;
-      unawaited(parent.services.followedThreads.refresh());
+      parent.services.followedThreads.acknowledgeTask(
+        channelId,
+        following: !following,
+      );
     } catch (e) {
       onFailure?.call(e);
     } finally {

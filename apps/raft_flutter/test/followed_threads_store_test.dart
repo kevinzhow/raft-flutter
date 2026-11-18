@@ -10,6 +10,7 @@ import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/followed_threads_store.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/features/chat_view.dart';
+import 'package:raft_flutter/features/message_task_list.dart';
 import 'package:raft_flutter/features/thread_actions.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -77,7 +78,7 @@ Map<String, dynamic> _row(String parent, String thread) => {
   'unreadCount': 0,
 };
 
-Future<(WorkspaceController, _Adapter, _Client)> _fixture({
+Future<(_Adapter, _Client)> _connectedClient({
   List<Map<String, dynamic>> followed = const [],
 }) async {
   final a = _Adapter();
@@ -91,11 +92,22 @@ Future<(WorkspaceController, _Adapter, _Client)> _fixture({
   final client = _Client(a);
   await client.login('fixture', 'fixture');
   client.selectServer('s1');
+  return (a, client);
+}
+
+WorkspaceController _workspace(_Client client) {
   final w = WorkspaceController(client);
   w.server = RaftRecord({'id': 's1', 'role': 'owner'});
   w.channel = RaftChannel({'id': 'c1', 'name': 'test', 'joined': true});
   w.channels = [w.channel!];
-  return (w, a, client);
+  return w;
+}
+
+Future<(WorkspaceController, _Adapter, _Client)> _fixture({
+  List<Map<String, dynamic>> followed = const [],
+}) async {
+  final (a, client) = await _connectedClient(followed: followed);
+  return (_workspace(client), a, client);
 }
 
 final _parent = RaftMessage({
@@ -154,6 +166,100 @@ Future<void> _settle(WidgetTester t, [bool Function()? until]) async {
 
 void main() {
   group('store lifecycle', () {
+    testWidgets(
+      'a paged task reply refreshes its chip without a message parent',
+      (t) async {
+        final (a, client) = (await t.runAsync(_connectedClient))!;
+        final w = _workspace(client);
+        addTearDown(() async {
+          w.dispose();
+          await client.dispose();
+        });
+        final store = w.followedThreads;
+        final legacy = {
+          ..._row('m', 't1'),
+          'kind': 'thread',
+          'taskId': 'legacy-task',
+          'taskNumber': 6,
+          'unreadCount': 1,
+        };
+        final task = {
+          ..._row('', 'local-task'),
+          'kind': 'task',
+          'parentMessageId': null,
+          'taskId': 'task-7',
+          'taskNumber': 7,
+          'taskTitle': 'Task with its own conversation',
+          'latestActivitySeq': '10',
+        };
+        final anotherTask = {
+          ...task,
+          'threadChannelId': 'other-local-task',
+          'taskId': 'task-8',
+        };
+        a.routes[_followed] = (o) => o.queryParameters['cursor'] == null
+            ? {
+                'threads': [legacy],
+                'next': 'next',
+              }
+            : {
+                'threads': [task, anotherTask],
+              };
+        await t.runAsync(store.refresh);
+        expect(store.threads.map((row) => row['threadChannelId']), [
+          't1',
+          'local-task',
+          'other-local-task',
+        ]);
+        expect(store.isFollowing(''), isFalse);
+        expect(store.threadChannelIdFor(''), isNull);
+        expect(store.threadChannelIdFor('m'), 't1');
+        const chip = {
+          'id': 'task-7',
+          'conversationChannelId': 'canonical-task',
+        };
+        expect(taskConversationUnread(w, chip), isFalse);
+        expect(taskConversationUnread(w, {'id': 'legacy-task'}), isFalse);
+
+        Map<String, dynamic> reply(String id) => {
+          'id': id,
+          'channelId': 'local-task',
+          'serverId': 's1',
+          'senderType': 'user',
+          'senderId': 'bob',
+          'conversationContext': {'channelType': 'task'},
+        };
+        client.emit('message:new', {...reply('note'), 'messageType': 'system'});
+        client.emit('message:new', {...reply('foreign'), 'serverId': 'other'});
+        await t.pump(FollowedThreadsStore.refreshDelay);
+        expect(a.count(_followed), 2);
+
+        task.addAll({
+          'unreadCount': 2,
+          'replyCount': 3,
+          'latestActivitySeq': '12',
+        });
+        client.emit('message:new', reply('reply-11'));
+        client.emit('message:new', reply('reply-12'));
+        expect(taskConversationUnread(w, chip), isFalse);
+        await t.pump(FollowedThreadsStore.refreshDelay);
+        await _settle(t, () => taskConversationUnread(w, chip));
+        expect(a.count(_followed), 4);
+        expect(store.threads[1]['replyCount'], 3);
+        expect(store.threads[1]['unreadCount'], 2);
+        expect(store.threads.first['unreadCount'], 1);
+
+        store.acknowledgeTask('local-task', following: false);
+        expect(taskConversationUnread(w, chip), isFalse);
+        await t.runAsync(store.refresh);
+        expect(store.threads.map((row) => row['threadChannelId']), [
+          't1',
+          'other-local-task',
+        ]);
+        expect(store.threadChannelIdFor('m'), 't1');
+      },
+    );
+
     test('loads once per identity; first connect reuses the read', () async {
       final (w, a, client) = await _fixture(followed: [_row('m', 't1')]);
       final store = w.followedThreads;
