@@ -82,14 +82,11 @@ const Map<String, String> zhCatalogUpstream124Chan = {
       "你将不再收到 #{name} 的消息，也不能在里面发言。之后需要成员重新邀请你才能回来。",
   "{channel} has too many guests for another server to connect. An external channel holds up to {max} servers and guests together. Remove some guests, then try again.":
       "{channel} 的访客太多，无法再连接其他服务器。外部频道的服务器和访客加起来最多 {max} 个。请先移除部分访客，再重试。",
-  "{channel} has guests, so this server can't disconnect from it. Remove the guests first, or archive the channel.":
-      "{channel} 里有访客，这个服务器不能断开与它的连接。请先移除访客，或归档这个频道。",
   "Disconnect {server}": "断开 {server}",
   "Couldn't disconnect {server}. Try again.": "没能断开 {server}，请重试。",
   "Disconnect {server}?": "断开 {server}？",
   "Disconnect server": "断开服务器",
   "Disconnected {server} from #{channel}": "已断开 {server} 与 #{channel} 的连接",
-  "{server} disconnected from #{channel}": "{server} 已断开与 #{channel} 的连接",
   "This also archives it for every other server in the channel.":
       "其他所有服务器上的这个频道也会一并归档。",
   "Leave and delete": "离开并删除",

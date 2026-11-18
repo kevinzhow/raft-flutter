@@ -52793,7 +52793,13 @@
         "owner": "WP-CHAN",
         "reason": "SDK ChoiceList previews for empty, populated and filtered states. Exact family placement and state-specific visual acceptance are pending."
       },
-      "packages/raft_ui/lib/src/channel_header.dart#local-function:CLASS:_RaftCssShrinkRow@32188/METHOD:build@32512/FUNCTION:<anonymous>@33155/FUNCTION:text@33435": {
+      "apps/raft_flutter/lib/features/channel_details_host.dart#function:channelDetailsHeader": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-CHAN",
+        "reason": "Binds the existing Details trigger to the open panel for the displayed channel."
+      },
+      "packages/raft_ui/lib/src/channel_header.dart#local-function:CLASS:_RaftCssShrinkRow@32678/METHOD:build@33002/FUNCTION:<anonymous>@33645/FUNCTION:text@33925": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "WP-CHAN",
