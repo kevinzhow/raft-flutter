@@ -137,10 +137,10 @@
    "area": "messages",
    "capability": "Open a message in context (permalink click, message/thread reference chips, quoted permalink card, forwarded-bundle 'Open source message', jump from Search / Saved / Activity, thread deep link)",
    "background": false,
-   "status": "partial",
+   "status": "covered",
    "webEntry": "MessageItem handleOpenPermalink / handleOpenMessageRef / handleOpenForwardedSource / QuotedMessagePermalinkPreview onOpen | MainLayout loadContext | ThreadPanel jump | useRefNavigation",
    "gate": "read access to the target channel",
-   "flutterEntry": "workspace_controller.dart jumpToMessage / thread context loads via message_history_pages.dart (RaftClient.messageContext, which records a hidden target); quoted_permalink_cache.dart (quoted card; quoted_message_preview.dart shows the older-than-window state); content_coordinator.dart permalink open",
+   "flutterEntry": "workspace_controller.dart jumpToMessage / thread context loads via message_history_pages.dart (RaftClient.messageContext, which records a hidden target); quoted_permalink_cache.dart (quoted card; quoted_message_preview.dart shows the older-than-window state); content_coordinator.dart permalink open, and forwarded_source.dart for forwarded message, thread and task targets",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/data/message_history_pages.dart",
@@ -151,8 +151,8 @@
      "needle": "/messages/context/"
     }
    ],
-   "justification": "Covered for permalinks, reference chips, quoted preview, Search/Saved/Activity jumps. The forwarded-bundle 'Open source message' entry (MessageItem.handleOpenForwardedSource) has no Flutter UI: RaftForwardedBundle has no source-open affordance.",
-   "impact": "Anyone reading a forwarded message cannot jump to the original conversation; occasional.",
+   "justification": "Opens readable canonical targets from message references, permalinks, quoted cards and retained lists. A forwarded thread keeps its authorized history-limit target. A forwarded task verifies its conversation and reply before routing.",
+   "impact": "",
    "size": "S"
   },
   {
@@ -1531,7 +1531,7 @@
    "status": "covered",
    "webEntry": "ForwardedBundleRouteCard onOpenSource / onOpenAttachment",
    "gate": "source must still be readable",
-   "flutterEntry": "raft_ui forwarded_bundle.dart source label (onOpenSource) -> message_presentation.dart forwardedSourceHref",
+   "flutterEntry": "raft_ui forwarded_bundle.dart source label -> ForwardedSource.read and openForwardedSource in the active navigation host",
    "flutterRefs": [
     {
      "file": "packages/raft_ui/lib/src/forwarded_bundle.dart",
@@ -1539,10 +1539,10 @@
     },
     {
      "file": "apps/raft_flutter/lib/features/forwarded_source.dart",
-     "needle": "String? forwardedSourceHref("
+     "needle": "Future<void> openForwardedSource("
     }
    ],
-   "justification": "The 'from #channel' label of a forwarded bundle opens the source message when it is public and has its ids (Web canOpenSourceLabel); forwarded attachments with ids open through AttachmentView.",
+   "justification": "A public source label with readable identifiers opens its message, thread or task reply. Restricted and unavailable sources stay inert. Forwarded attachments open through AttachmentView.",
    "impact": "",
    "size": "S"
   },

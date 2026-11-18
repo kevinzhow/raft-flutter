@@ -64,6 +64,27 @@ Run: `tool/flutter test test/tap_target_matrix_test.dart test/tap_target_registr
 After editing the registry: `UPDATE_TAP_DOCS=1 tool/flutter test
 test/tap_target_registry_test.dart` regenerates the block below.
 
+### Component wiring
+
+Record each entry point that changes the action handler, placement or return
+behavior. Identify the actual control, the typed target, the host that
+receives the action, the visible result and what close or Back restores.
+Include permission and unavailable states. An avatar can belong to its row's
+action, open a separate profile, or be display only. Its semantics should match.
+
+A shared widget displays the affordance and emits the action. The app adapter
+supplies the action handler and the host displays its result. If a surface
+borrows a discussion controller for data, identify the owner of navigation
+separately. Layout width decides placement and input mode decides gestures.
+
+In the mounted test, enter through the real route and operate the actual
+control. Assert the destination and exact identity on screen. For an in-place
+action, assert the intended target and observable update. Exercise close or
+Back and check any retained selection, content and focus named in the contract.
+Use the existing navigation and close registries when they already cover a
+part of the contract. Platform-specific gestures and system handoffs use the
+existing native verification path.
+
 ### Adding a container
 
 1. Build it, passing every handler it has (`null` where it has none).
@@ -118,16 +139,16 @@ same way (including "inert").
 | Public server | `#channel` link | Selects the public channel | `selectPublicChannel` | OK |
 | Public server | Avatar, name, `@mention`, thread / message / task refs, reactions | Inert | inert (`readOnlyProjection`) | SAME |
 | Forward composer preview | Content, "View all" | Expands in place | same (source label inert without `onOpenSource`) | OK |
-| Forwarded bundle in a message | Source label | Not rendered | Clickable when the source is public | GAP (missing element, not a dead tap) |
+| Forwarded bundle in a message | Source label | Opens the original message, thread or task reply when its public source is readable | Opens readable message and thread sources | FIXED (forwarded source navigation tests) |
 | Agent profile, activity tab | `#channel` / thread / `dm:` tokens | Plain text | RefText chips navigate | GAP (missing element, not a dead tap) |
 | Appearance sample, exported image | all | Inert | n/a | SAME (inert by design) |
 | Phone pages | Thread, profile | Pages over the chat (`chat-390` host) | mobile detail routes | OK (matrix) |
 
-Counts: 34 rows. FIXED 10 (every Activity and Search preview
+Counts: 34 rows. FIXED 11 (every Activity and Search preview
 reply entry point and profile entry point, the inline `#N` reference, the task
 chip fallback, the dead banner links, and the task discussion's `#N` and billing
-link); GAP 3 (touch row tap, forwarded-bundle source label,
-agent activity ref chips); the rest OK or SAME.
+link, and forwarded sources); GAP 2 (touch row tap and agent activity ref
+chips). The rest are OK or SAME.
 
 ## Left unfixed
 
@@ -138,8 +159,7 @@ agent activity ref chips); the rest OK or SAME.
   a design decision (selection vs tap) and device proof (AGENTS.md: device fixes
   need device proof); phone routing is also being changed on
   `cindy/fold-routing`.
-* Forwarded-bundle source label and agent activity ref chips are elements Flutter
-  does not draw. They are feature gaps, not taps that do nothing.
+* Agent activity reference chips are still absent from Flutter.
 
 ## Generated matrix
 
@@ -175,7 +195,7 @@ agent activity ref chips); the rest OK or SAME.
 | message-timeline | `lib/features/chat_view.dart` | RaftMessageTile, RaftInlineThreadSurface, RaftThreadRepliesBadge | tap_target_matrix_test.dart (every host) |
 | workspace-hosts | `lib/features/workspace_view.dart` | RaftChatView | tap_target_matrix_test.dart (thread panel, Activity / Search detail) |
 | channel-panel | `lib/features/conversation_panel.dart` | RaftChatView | tap_target_matrix_test.dart (chat, Activity, Search hosts) |
-| task-discussion | `lib/features/task_surface.dart` | RaftChatView | tap_target_matrix_test.dart (task discussion carries onTask / onViewBilling) |
+| task-discussion | `lib/features/task_surface.dart` | RaftChatView | task_discussion_navigation_test.dart (mounted profiles and links) |
 | public-server | `lib/features/public_server_view.dart` | RaftMessageTile, RaftThreadRepliesBadge | public_server_view_test.dart (reply badge opens the thread) |
 | activity-saved-rows | `lib/features/saved_page_rows.dart` | RaftConversationCard | tap_target_matrix_test.dart (Saved rows); saved_page_w24_test.dart |
 | search-rows | `lib/features/resource_search.dart` | RaftSearchResultSurface | desktop_preview_single_location_test.dart |

@@ -252,12 +252,9 @@ abstract final class TapTargetRegistry {
     TapContainer('channel-panel', 'features/conversation_panel.dart', [
       'RaftChatView',
     ], 'tap_target_matrix_test.dart (chat, Activity, Search hosts)'),
-    TapContainer(
-      'task-discussion',
-      'features/task_surface.dart',
-      ['RaftChatView'],
-      'tap_target_matrix_test.dart (task discussion carries onTask / onViewBilling)',
-    ),
+    TapContainer('task-discussion', 'features/task_surface.dart', [
+      'RaftChatView',
+    ], 'task_discussion_navigation_test.dart (mounted profiles and links)'),
     TapContainer('public-server', 'features/public_server_view.dart', [
       'RaftMessageTile',
       'RaftThreadRepliesBadge',

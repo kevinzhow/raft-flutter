@@ -49,7 +49,10 @@ const _senders = [
   ),
 ];
 
-RootFixture _fixture({String? replyContent}) {
+RootFixture _fixture({
+  String? replyContent,
+  Map<String, dynamic>? replyForward,
+}) {
   final f = RootFixture();
   final task = {
     ...v2Task,
@@ -64,6 +67,7 @@ RootFixture _fixture({String? replyContent}) {
         'content': index == 0 && replyContent != null
             ? replyContent
             : '${reply.name} task discussion reply',
+        if (index == 0 && replyForward != null) 'actionMetadata': replyForward,
         'senderId': reply.id,
         'senderType': reply.senderType,
         'senderName': reply.name,
@@ -315,6 +319,46 @@ void main() {
       },
     );
   }
+
+  testWidgets('a forwarded source in a task opens in the workspace', (t) async {
+    final f = _fixture(
+      replyForward: {
+        'kind': 'forwarded-bundle',
+        'version': 1,
+        'forwardedItems': [
+          {
+            'index': 0,
+            'contentSnapshot': 'Forwarded from destination',
+            'sourceAuthorSnapshot': {'type': 'user', 'uniqueName': 'Bob'},
+            'sourceTargetSnapshot': {
+              'id': _destination,
+              'type': 'channel',
+              'label': '#destination',
+              'labelVisibility': 'public',
+            },
+            'sourceServerId': 'a',
+            'sourceTargetId': _destination,
+            'sourceMessageId': _exactId,
+            'provenanceState': 'available',
+            'attachmentPolicy': 'excluded',
+          },
+        ],
+      },
+    );
+    try {
+      await _openActivityTask(t, f);
+      await _tap(
+        t,
+        f,
+        _in(_timeline, find.byKey(const Key('forwarded-bundle-source'))),
+      );
+      expect(_task, findsNothing);
+      final message = _in(find.byType(RaftChatView), _text(_exactText));
+      expect(message.hitTestable(), findsOneWidget);
+    } finally {
+      await f.close(t);
+    }
+  });
 
   testWidgets('Activity task opens the exact reply in a same-channel thread', (
     t,

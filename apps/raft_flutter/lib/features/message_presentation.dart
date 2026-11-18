@@ -782,6 +782,7 @@ class MessagePresentation extends StatelessWidget {
     }
     if (message.json['actionMetadata'] is Map &&
         message.json['actionMetadata']['kind'] == 'forwarded-bundle') {
+      final host = navigation?.workspace ?? controller;
       final card = RaftForwardedBundle(
         key: ValueKey('forwarded-${message.id}'),
         metadata: Map<String, dynamic>.from(message.json['actionMetadata']),
@@ -789,13 +790,17 @@ class MessagePresentation extends StatelessWidget {
         // Web ForwardedBundleCard: useTimeFormatter().formatShortDateTime
         // ("Jun 22, 10:30 AM") in the account's zone and hour cycle.
         formatTimestamp: forwardedTimestamp(context),
-        canOpenSource: (item) => ForwardedSource.read(controller, item) != null,
+        canOpenSource: (item) => ForwardedSource.read(host, item) != null,
         onOpenSource: exportMode || !localAuthority
             ? null
             : (item) {
-                final source = ForwardedSource.read(controller, item);
+                final source = ForwardedSource.read(host, item);
                 if (source != null) {
-                  unawaited(openForwardedSource(context, controller, source));
+                  unawaited(
+                    navigate(
+                      (owner) => openForwardedSource(context, owner, source),
+                    ),
+                  );
                 }
               },
         attachmentBuilder:

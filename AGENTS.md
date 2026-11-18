@@ -15,6 +15,7 @@
 - 视觉对齐扩展套件（tool/parity-ext）的新增 / 修复流程见 docs/parity-ext-quickstart.md。
 - 状态对齐：每个页面/面板的 loading / empty / error / partial 状态登记在 docs/state-parity.json（有无 Web 对应、有无 parity case、差距大小）。`test/state_parity_guard_test.dart` 要求每个已登记状态要么有 parity case id，要么写明 intentional / NA 理由；新增页面或面板时同时登记。只盯默认（有数据）状态的 case 会漏掉加载 / 空 / 错误的差异，而且这些状态的 case 必须先确认 Web 侧真的渲染出该状态（React host 不得用预置 store 数据盖住它）。
 - 空闲 CPU：禁止 `scheduleTask`/`Priority.idle` 与零延迟自重排的 Timer（被拒绝的 idle 任务会经 `Timer.run` 热循环，见 docs/idle-cpu.md）；延后工作用 `RaftIdleTimer`，仅屏幕可见才有意义的轮询用 `RaftForegroundPeriodic`；常驻动画必须用 State vsync 并随 TickerMode/减弱动效停止。`avoid_unreviewed_idle_work` lint（tool/raft_lints，由 tool/raft-lints 运行）扫描并要求在用法处写 `// ignore: raft_lints/avoid_unreviewed_idle_work -- 理由`。
+- 组件接线见 docs/tap-targets.md。新增宿主或改变动作接收方时，记录目标、可见结果和返回行为。用 tap_target_registry_test 检查消息宿主登记，并用真实入口的挂载回归证明点击与返回。
 - 提示可解决：凡用户可见的提示 / banner / 通知 / 重试 / 回填 / 同步 / “加载更多”入口，都要有端到端 widget 测试证明：执行其动作后状况被解决、提示不再出现（含重开 / 重启后），且在不该出现时不会显示。
 - 本地持久化变更必须带升级测试：从上一个发布版的磁盘数据 / 格式起步，证明没有多余提示、没有数据丢失。
 - 按功能矩阵报告实际覆盖；Widget Preview 不能替代Linux/Android平台无障碍、输入法、生命周期或通知测试。
