@@ -8,11 +8,21 @@ import 'package:raft_ui/raft_ui.dart';
 import '../data/workspace_controller.dart';
 import 'app_link_models.dart';
 import 'app_link_store.dart';
+import 'artifacts/artifact_api.dart' show ArtifactDeployment;
+import 'artifacts/artifact_models.dart' show artifactLinkTarget;
 import 'resource_cards.dart' show resourceRelativeTime;
 
-bool mayReadAppLinks(String content) =>
-    content.contains('https://') &&
-    RaftMessageBody.bareLinks(content).any((href) => appLinkKey(href) != null);
+bool mayReadAppLinks(String content, WorkspaceController workspace) {
+  if (!content.contains('https://')) return false;
+  final appHosts = ArtifactDeployment.resolve(
+    workspace.client.origin,
+    null,
+  ).appHosts;
+  return RaftMessageBody.bareLinks(content).any(
+    (href) =>
+        appLinkKey(href) != null && artifactLinkTarget(href, appHosts) == null,
+  );
+}
 
 typedef AppLinkInline = Widget? Function(BuildContext, String);
 
@@ -21,12 +31,14 @@ class AppLinkMessageView extends StatefulWidget {
     super.key,
     required this.workspace,
     required this.message,
+    required this.visibleContent,
     required this.openBrowser,
     required this.body,
   });
 
   final WorkspaceController workspace;
   final RaftMessage message;
+  final String visibleContent;
   final ValueChanged<String> openBrowser;
   final Widget Function(AppLinkInline, AppLinkInline?, Object) body;
 
@@ -151,6 +163,11 @@ class _AppLinkMessageViewState extends State<AppLinkMessageView> {
         final links = message.current
             ? message.links
             : const <String, AppLinkResult>{};
+        final visibleLinks = widget.visibleContent == widget.message.content
+            ? null
+            : RaftMessageBody.bareLinks(widget.visibleContent)
+                  .map(appLinkKey)
+                  .toSet();
         final blocks = {
           for (final link
               in links.values
@@ -181,19 +198,15 @@ class _AppLinkMessageViewState extends State<AppLinkMessageView> {
               ? null
               : (_, href) {
                   final link = blocks[appLinkKey(href)];
-                  return link == null
-                      ? null
-                      : _LinkCard(
-                          key: ValueKey('app-link-block-${link.url}'),
-                          link: link,
-                          message: message,
-                          openBrowser: widget.openBrowser,
-                        );
+                  return link == null ? null : _blockCard(link, message);
                 },
           links,
         );
         final prompts = <String>{};
         final extras = <Widget>[
+          if (visibleLinks != null)
+            for (final link in blocks.values)
+              if (!visibleLinks.contains(link.url)) _blockCard(link, message),
           for (final link in links.values)
             if (link is AppLinkConsent &&
                 message.store.ownsPrompt(message, link.app.id) &&
@@ -210,6 +223,13 @@ class _AppLinkMessageViewState extends State<AppLinkMessageView> {
       },
     );
   }
+
+  Widget _blockCard(AppLinkPreview link, AppLinkMessage message) => _LinkCard(
+    key: ValueKey('app-link-block-${link.url}'),
+    link: link,
+    message: message,
+    openBrowser: widget.openBrowser,
+  );
 }
 
 class AppLinkChip extends StatefulWidget {
@@ -781,8 +801,9 @@ Future<bool> showAppLinkConfirmation(
 
 String _duration(BuildContext context, Duration duration) {
   final seconds = duration.inSeconds.clamp(0, 1 << 31);
-  if (seconds < 60)
+  if (seconds < 60) {
     return raftFormat(context, '{seconds}s', {'seconds': seconds});
+  }
   if (seconds < 3600) {
     return raftFormat(context, '{minutes}m {seconds}s', {
       'minutes': seconds ~/ 60,

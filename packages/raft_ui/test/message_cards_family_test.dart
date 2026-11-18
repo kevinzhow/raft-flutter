@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show RenderParagraph;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
-import 'package:raft_ui/src/message_embed_frame.dart';
 
 Widget _app(Widget child, {TargetPlatform platform = TargetPlatform.linux}) =>
     MaterialApp(

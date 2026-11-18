@@ -4802,7 +4802,7 @@
         "owner": "WP-LINK",
         "reason": "Source-reviewed message integration and component composition."
       },
-      "apps/raft_flutter/lib/features/app_link_view.dart#local-function:CLASS:_LinkCard@14378/METHOD:_press@21813/FUNCTION:update@22312": {
+      "apps/raft_flutter/lib/features/app_link_view.dart#local-function:CLASS:_LinkCard@15110/METHOD:_press@22545/FUNCTION:update@23044": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "WP-LINK",
@@ -4843,6 +4843,12 @@
         "familyRefs": [],
         "owner": "WP-LINK",
         "reason": "Source-reviewed message integration and component composition."
+      },
+      "apps/raft_flutter/lib/features/app_link_view.dart#method:_AppLinkMessageViewState._blockCard": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-LINK",
+        "reason": "Composes one block card for a Markdown link or its translated body."
       },
       "apps/raft_flutter/lib/features/app_link_view.dart#method:_AppLinkMessageViewState.build": {
         "role": "entry_composition",
@@ -55430,7 +55436,7 @@
         "declarationRefs": [
           "apps/raft_flutter/lib/features/app_link_view.dart#class:AppLinkMessageView",
           "apps/raft_flutter/lib/features/app_link_view.dart#function:showAppLinkConfirmation",
-          "apps/raft_flutter/lib/features/app_link_view.dart#local-function:CLASS:_LinkCard@14378/METHOD:_press@21813/FUNCTION:update@22312",
+          "apps/raft_flutter/lib/features/app_link_view.dart#local-function:CLASS:_LinkCard@15110/METHOD:_press@22545/FUNCTION:update@23044",
           "apps/raft_flutter/lib/features/app_link_view.dart#method:AppLinkPrompt._choose",
           "apps/raft_flutter/lib/features/app_link_view.dart#method:_AppLinkMessageViewState._showNotice"
         ],

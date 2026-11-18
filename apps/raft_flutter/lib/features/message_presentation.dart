@@ -855,10 +855,14 @@ class MessagePresentation extends StatelessWidget {
 
   Widget body(BuildContext context, {String? content}) {
     final shown = content ?? text;
-    final body = !exportMode && localAuthority && mayReadAppLinks(shown)
+    final body =
+        !exportMode &&
+            localAuthority &&
+            mayReadAppLinks(message.content, controller)
         ? AppLinkMessageView(
             workspace: controller,
             message: message,
+            visibleContent: shown,
             openBrowser: onExternalLink,
             body: (inline, afterBlock, revision) => _body(
               context,

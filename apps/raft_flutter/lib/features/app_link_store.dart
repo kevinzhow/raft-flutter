@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:collection';
 import 'dart:convert';
 
 import 'package:crypto/crypto.dart';
@@ -61,7 +60,7 @@ class AppLinkStore {
 
   final WorkspaceController workspace;
   final Object scope;
-  final _cache = LinkedHashMap<Object, AppLinkMessage>();
+  final _cache = <Object, AppLinkMessage>{};
   final _mounted = <AppLinkMessage>{};
   final _promptOwners = <(String, String), AppLinkMessage>{};
   final _choices = <String, AppLinkChoice>{};
@@ -924,7 +923,7 @@ class AppLinkOperation {
           if (response case {'receipt_revision': final int revision}
               when revision >= 0 &&
                   (_open.contains(state) || _closed.contains(state))) {
-            final result = (response as Map)['app_result'];
+            final result = response['app_result'];
             _accept(
               id,
               state,

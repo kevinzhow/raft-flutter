@@ -324,6 +324,73 @@ void main() {
     },
   );
 
+  testWidgets('a translated message keeps its original app link block', (
+    tester,
+  ) async {
+    final (workspace, transport) = (await tester.runAsync(
+      () => fixture('member'),
+    ))!;
+    addTearDown(workspace.dispose);
+    transport.routes['POST /feature-flags/evaluate'] = (_) => {
+      'evaluations': [
+        {'key': 'interactive_link_cards', 'enabled': true},
+      ],
+    };
+    transport.routes['POST /messages/m1/link-cards/read'] = (_) =>
+        appLinkTestAnswer();
+    await tester.pumpWidget(
+      host(
+        Builder(
+          builder: (context) =>
+              _message(workspace).body(context, content: '请查看工单。'),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final prose = find.text('请查看工单。', findRichText: true);
+    final card = find.text('Printer ticket');
+    expect(prose, findsOneWidget);
+    expect(card, findsOneWidget);
+    expect(
+      tester.getTopLeft(card).dy,
+      greaterThan(tester.getTopLeft(prose).dy),
+    );
+    await tester.pumpWidget(const SizedBox());
+  });
+
+  testWidgets('an Artifact link alone does not request an app preview', (
+    tester,
+  ) async {
+    final (workspace, transport) = (await tester.runAsync(
+      () => fixture('member'),
+    ))!;
+    addTearDown(workspace.dispose);
+    await tester.pumpWidget(
+      host(
+        MessagePresentation(
+          controller: workspace,
+          message: RaftMessage({
+            'id': 'm1',
+            'channelId': 'c1',
+            'senderType': 'human',
+            'content': 'https://artifacts.raft.build/pt_9cddde84-f69f-4d9e-8de7-b0df120ea843',
+          }),
+          onExternalLink: (_) {},
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      transport.calls.where(
+        (call) =>
+            call.path.endsWith('/app-link-previews') ||
+            call.path.endsWith('/link-cards/read'),
+      ),
+      isEmpty,
+    );
+    await tester.pumpWidget(const SizedBox());
+  });
+
   for (final touch in [false, true]) {
     testWidgets('hover availability follows input, touch=$touch', (
       tester,
