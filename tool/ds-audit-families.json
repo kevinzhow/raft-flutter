@@ -1,6 +1,19 @@
 {
   "about": "One implementation per design-system family (tool/ds-audit, category duplicate.<family>). `canonical` is the component new code uses; `deprecated` maps each duplicate widget or function to the file that declares it. Every reference to a deprecated name outside its own file is counted and ratcheted down in tool/ds-audit-baseline.json. A family with an empty `deprecated` map counts nothing; it records the canonical component only. `pending` marks a family whose canonical choice belongs to an open work package (no canonical, no deprecated names until it lands); `uncertain` records a canonical choice that still needs a decision (JSON has no comments, so these are fields); `note` explains the entry. Do not add a name to two families.",
   "families": {
+    "side-panel-frame": {
+      "canonical": [
+        "RaftSidePanelFrame"
+      ],
+      "note": "Canonical Web Panel column frame for docked, floating, and overlay side surfaces. It owns layer-canvas, the line-seam column edge, flat docked geometry, and float-only elevation; product content and controls remain app-owned.",
+      "deprecated": {},
+      "canonicalBindings": {
+        "RaftSidePanelFrame": {
+          "declarationId": "packages/raft_ui/lib/src/side_panel_frame.dart#class:RaftSidePanelFrame",
+          "role": "public_api"
+        }
+      }
+    },
     "button": {
       "canonical": [
         "RaftButton"

@@ -23,11 +23,17 @@ void main() {
       expect(find.byKey(const Key('channel-overflow-scrim')), findsNothing);
       expect(t.getSize(find.byKey(const Key('channel-details'))).width, 400);
       final column = find.byKey(const Key('channel-side-column-3'));
-      final box = t.widget<DecoratedBox>(
-        find.descendant(of: column, matching: find.byType(DecoratedBox)).first,
+      final frame = find.descendant(
+        of: column,
+        matching: find.byType(RaftSidePanelFrame),
+      );
+      expect(frame, findsOneWidget);
+      final box = t.widget<Container>(
+        find.descendant(of: frame, matching: find.byType(Container)).first,
       );
       final tokens = RaftTokens.of(t.element(column));
-      final border = (box.decoration as BoxDecoration).border! as Border;
+      final border =
+          (box.foregroundDecoration as BoxDecoration).border! as Border;
       expect(border.left.color, tokens.colors['line-seam']);
       expect(border.left.width, 1);
       await t.tap(find.byKey(const Key('chat-messages')));

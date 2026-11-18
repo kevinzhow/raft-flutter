@@ -39,6 +39,16 @@ void main() {
     expect(placement.columns.map((c) => c.width), [175.0, 200.0]);
   });
 
+  test('a folded thread gives way before a side column clips', () {
+    final placement = placeChannelSide(
+      [details],
+      width: 700,
+      compact: false,
+      threadFolded: true,
+    );
+    expect(placement.columns.single.width, 320);
+  });
+
   test(
     'desktop overflow gathers the rightmost columns into their neighbour',
     () {
@@ -138,6 +148,7 @@ void main() {
       api.routes['GET /channels/c1/announcement'] = (_) => {
         'announcement': null,
       };
+      api.routes['GET /announcements/active'] = (_) => {'announcements': []};
       TaskV2ConversationsFlag.of(w).markEnabled();
       t.view.devicePixelRatio = 1;
       t.view.physicalSize = const Size(928, 800);

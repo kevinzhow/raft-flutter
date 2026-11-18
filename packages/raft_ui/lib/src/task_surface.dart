@@ -22,6 +22,7 @@ import 'list_items.dart';
 import 'mounted_avatar_recipe.dart';
 import 'recipes/recipe_runtime.dart' show RaftSlotStyle;
 import 'panel_edge.dart';
+import 'side_panel_frame.dart';
 import 'design_primitives.dart';
 import 'dialog_card.dart';
 import 'icons.dart';
@@ -348,6 +349,7 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
         taskNumber: task['taskNumber'],
         mobile: phone,
         onClose: phone ? widget.onBack ?? widget.onClose : widget.onClose,
+        bottomBorder: widget.inPlace ? RaftSidePanelFrame.headerRule(t) : null,
         summary: !summarizes(mobile)
             ? null
             : (label) => ValueListenableBuilder<bool>(

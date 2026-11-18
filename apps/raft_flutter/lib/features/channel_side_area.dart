@@ -1,19 +1,6 @@
-// The side area of a conversation (Web v1.24 `ChannelSideArea.tsx`, simplified:
-// no row plan, no thread folding, no columns as tabs): the open sections as
-// cards beside the chat, floating over its messages, or covering it.
-//
-//   - A desktop (not compact): the open sections' columns of the person's layout
-//     stand right of the whole channel column, header included, each with its
-//     own head level with the channel header. A column is as wide as saved,
-//     shrunk so the chat keeps 360px, never under 160.
-//   - Compact (a phone, a narrow window): one card at a time covers the chat
-//     under the header (a Tasks | Files switch with both open), or, with 520px
-//     or more, one column floats over the right of the messages above the
-//     composer. The chat and the composer are inert under a cover; focus moves
-//     into the card.
-//
-// The chat is `child`: it keeps its element whatever opens or closes, and its
-// rows are not rebuilt (this widget rebuilds, `child` is the same widget).
+// Web v1.24 ChannelSideArea and rowPlan: desktop side columns stand beside
+// the conversation. They give way to their content floors, clip to 160, then
+// share the rightmost column as tabs. Compact layouts cover the conversation.
 import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
@@ -40,72 +27,172 @@ const channelSideChatMinWidth = 360.0;
 /// A column may be shrunk to this (Web's 160 clip) and no further.
 const channelSideColumnClip = 160.0;
 
-/// A compact panel this wide floats one column; narrower, the cards cover it.
-const channelSideFloatMinPanel = 520.0;
-const _floatGap = 12.0;
+typedef PlacedChannelSideColumn = ({
+  int column,
+  List<ChannelSideSection> sections,
+  List<List<ChannelSideSection>> tabGroups,
+  double width,
+});
 
 class ChannelSidePlacement {
   const ChannelSidePlacement(this.mode, this.columns);
   final ChannelSideMode mode;
-
-  /// Beside: one per visible column, with its shown width. Float and overlay:
-  /// one holding every open section.
-  final List<({int column, List<ChannelSideSection> sections, double width})>
-  columns;
+  final List<PlacedChannelSideColumn> columns;
 }
 
-/// Where the open [visible] columns stand in a panel [width] wide.
 ChannelSidePlacement placeChannelSide(
   List<VisibleChannelSideColumn> visible, {
   required double width,
   required bool compact,
+  bool threadFolded = false,
 }) {
   if (visible.isEmpty) {
     return const ChannelSidePlacement(ChannelSideMode.beside, []);
   }
-  if (!compact) {
-    final available = width - channelSideChatMinWidth;
-    final saved = [for (final c in visible) c.width.toDouble()];
-    final total = saved.fold(0.0, (a, b) => a + b);
-    if (total <= available) {
-      return ChannelSidePlacement(ChannelSideMode.beside, [
-        for (var i = 0; i < visible.length; i++)
-          (
-            column: visible[i].column,
-            sections: visible[i].sections,
-            width: saved[i],
-          ),
-      ]);
-    }
-    if (available >= visible.length * channelSideColumnClip) {
-      // Each gives way in proportion to what it has above the clip.
-      final spare = total - visible.length * channelSideColumnClip;
-      final excess = total - available;
-      return ChannelSidePlacement(ChannelSideMode.beside, [
-        for (var i = 0; i < visible.length; i++)
-          (
-            column: visible[i].column,
-            sections: visible[i].sections,
-            width:
-                saved[i] - excess * (saved[i] - channelSideColumnClip) / spare,
-          ),
-      ]);
+  if (compact || width < 2 * channelSideColumnClip) {
+    return ChannelSidePlacement(ChannelSideMode.overlay, [
+      (
+        column: visible.first.column,
+        sections: [for (final column in visible) ...column.sections],
+        tabGroups: const [],
+        width: width,
+      ),
+    ]);
+  }
+  final sideCount = width ~/ channelSideColumnClip - 1;
+  final groups = <List<VisibleChannelSideColumn>>[];
+  for (final column in visible) {
+    if (groups.length < sideCount) {
+      groups.add([column]);
+    } else {
+      groups.last.add(column);
     }
   }
-  // No room beside the chat: one column floats over the messages, or covers
-  // the panel where it is too narrow for that.
-  final mode = width >= channelSideFloatMinPanel
-      ? ChannelSideMode.float
-      : ChannelSideMode.overlay;
-  return ChannelSidePlacement(mode, [
-    (
-      column: visible.first.column,
-      sections: [for (final c in visible) ...c.sections],
-      width: mode == ChannelSideMode.float
-          ? math.min(math.min(360.0, math.max(280.0, width * .58)), width - 24)
-          : width,
-    ),
+  final sideSaved = visible.fold(0.0, (sum, column) => sum + column.width);
+  final chatFloor = threadFolded
+      ? channelSideChatMinWidth * 2
+      : channelSideChatMinWidth;
+  final saved = [
+    math.max(chatFloor, width - sideSaved),
+    for (final group in groups) group.first.width.toDouble(),
+  ];
+  final floors = [
+    chatFloor,
+    for (final group in groups) _contentFloor(group.first),
+  ];
+  final widths = _solveChannelSideWidths(
+    saved,
+    floors,
+    width,
+    threadFolded: threadFolded,
+  );
+  return ChannelSidePlacement(ChannelSideMode.beside, [
+    for (var i = 0; i < groups.length; i++)
+      (
+        column: groups[i].first.column,
+        sections: [for (final column in groups[i]) ...column.sections],
+        tabGroups: groups[i].length == 1
+            ? const []
+            : [for (final column in groups[i]) column.sections],
+        width: widths[i + 1],
+      ),
   ]);
+}
+
+double _contentFloor(VisibleChannelSideColumn column) =>
+    math.min(column.width, column.minWidth).toDouble();
+
+RaftWorkspaceSideRow channelSideRow(WorkspaceController w) {
+  final store = ChannelSideStore.of(w);
+  final preview = WebPreviewStore.of(w);
+  final details = ChannelDetailsStore.of(w);
+  return (
+    changes: Listenable.merge([
+      store,
+      preview,
+      details,
+      ChannelSideFlags.of(w),
+    ]),
+    widths: () {
+      final (open, _) = _openChannelSide(w, preview, details);
+      var saved = 0.0;
+      var floor = 0.0;
+      for (final column in store.layout.visible(open)) {
+        saved += column.width;
+        floor += _contentFloor(column);
+      }
+      return (saved: saved, floor: floor);
+    },
+  );
+}
+
+(Set<ChannelSideSection>, WebPreviewPage?) _openChannelSide(
+  WorkspaceController w,
+  WebPreviewStore preview,
+  ChannelDetailsStore details,
+) {
+  final channel = w.channel;
+  final here =
+      channel != null && channel.type != 'thread' && w.section == 'chat';
+  final page = here ? preview.pageFor(channel.id) : null;
+  return (
+    {
+      if (here)
+        for (final card in ChannelSideCards.open(w))
+          card == ChannelSideCard.tasks
+              ? ChannelSideSection.tasks
+              : ChannelSideSection.files,
+      if (page != null) ChannelSideSection.artifact,
+      if (details.channel != null) ChannelSideSection.details,
+    },
+    page,
+  );
+}
+
+List<double> _solveChannelSideWidths(
+  List<double> saved,
+  List<double> floors,
+  double available, {
+  required bool threadFolded,
+}) {
+  final total = saved.fold(0.0, (sum, width) => sum + width);
+  if (total <= available) {
+    return [for (final width in saved) width * available / total];
+  }
+  final floorTotal = floors.fold(0.0, (sum, width) => sum + width);
+  if (floorTotal <= available) {
+    final ratio = (total - available) / (total - floorTotal);
+    return [
+      for (var i = 0; i < saved.length; i++)
+        saved[i] - ratio * (saved[i] - floors[i]),
+    ];
+  }
+  final widths = [...floors];
+  var remaining = floorTotal - available;
+  if (threadFolded) {
+    final drop = math.min(remaining, widths.first - channelSideChatMinWidth);
+    widths[0] -= drop;
+    remaining -= drop;
+  }
+  while (remaining > .01) {
+    final shrinkable = [
+      for (var i = 0; i < widths.length; i++)
+        if (widths[i] > channelSideColumnClip) i,
+    ];
+    if (shrinkable.isEmpty) break;
+    final sum = shrinkable.fold(0.0, (sum, i) => sum + widths[i]);
+    var taken = 0.0;
+    for (final i in shrinkable) {
+      final drop = math.min(
+        widths[i] - channelSideColumnClip,
+        remaining * widths[i] / sum,
+      );
+      widths[i] -= drop;
+      taken += drop;
+    }
+    remaining -= taken;
+  }
+  return widths;
 }
 
 /// Whether [context] is inside a [ChannelSideArea]: only there do Tasks and
@@ -167,8 +254,6 @@ class _ChannelSideAreaState extends State<ChannelSideArea> {
   final drag = ChannelSideDragController();
   late Listenable listenable;
   int previewOpenedAt = 0;
-  double composerBelow = 0;
-  Element? composer;
 
   @override
   void initState() {
@@ -235,24 +320,14 @@ class _ChannelSideAreaState extends State<ChannelSideArea> {
   );
 
   Widget _build(BuildContext context, BoxConstraints box) {
-    final channel = w.channel;
-    final here =
-        channel != null && channel.type != 'thread' && w.section == 'chat';
-    final page = here ? preview.pageFor(channel.id) : null;
-    final open = <ChannelSideSection>{
-      if (here)
-        for (final card in ChannelSideCards.open(w))
-          card == ChannelSideCard.tasks
-              ? ChannelSideSection.tasks
-              : ChannelSideSection.files,
-      if (page != null) ChannelSideSection.artifact,
-      if (details.channel != null) ChannelSideSection.details,
-    };
+    final (open, page) = _openChannelSide(w, preview, details);
+    final foldedThread = RaftAdaptiveWorkspace.foldedThreadOf(context);
     final compact = RaftAdaptiveWorkspace.compactOf(context);
     final placement = placeChannelSide(
       store.layout.visible(open),
       width: box.maxWidth,
       compact: compact,
+      threadFolded: foldedThread != null,
     );
     final beside = placement.mode == ChannelSideMode.beside;
     final shown = beside
@@ -261,7 +336,17 @@ class _ChannelSideAreaState extends State<ChannelSideArea> {
     final covering =
         placement.mode == ChannelSideMode.overlay &&
         placement.columns.isNotEmpty;
-    if (placement.mode == ChannelSideMode.float) _measureComposer();
+    final chatWidth = box.maxWidth - shown;
+    final hasDock = beside && placement.columns.isNotEmpty;
+    final chatContentFloor = hasDock && chatWidth < channelSideChatMinWidth
+        ? channelSideChatMinWidth
+        : null;
+    Widget chatContent(Widget child) => OverflowBox(
+      alignment: Alignment.topLeft,
+      minWidth: chatContentFloor,
+      maxWidth: chatContentFloor,
+      child: child,
+    );
     // Sections move only beside the chat, by a pointer, with more than one
     // open (Web `sideSectionDrag` enabled).
     drag.sync(
@@ -272,12 +357,9 @@ class _ChannelSideAreaState extends State<ChannelSideArea> {
           !RaftInteraction.of(context).touch &&
           placement.columns.fold(0, (n, c) => n + c.sections.length) > 1,
       fits: (moved) =>
-          placeChannelSide(
-            moved.visible(open),
-            width: box.maxWidth,
-            compact: false,
-          ).mode ==
-          ChannelSideMode.beside,
+          box.maxWidth >=
+          channelSideChatMinWidth +
+              moved.visible(open).length * channelSideColumnClip,
     );
     return Stack(
       clipBehavior: Clip.none,
@@ -287,7 +369,28 @@ class _ChannelSideAreaState extends State<ChannelSideArea> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Expanded(
-                child: _Inert(inert: covering, child: widget.child),
+                child: ClipRect(
+                  key: const ValueKey('channel-side-conversation'),
+                  clipBehavior: hasDock ? Clip.hardEdge : Clip.none,
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      Visibility(
+                        visible: foldedThread == null,
+                        maintainState: true,
+                        child: chatContent(
+                          RaftCoveredPane(
+                            covered:
+                                foldedThread != null ||
+                                RaftCoveredPane.of(context),
+                            child: _Inert(inert: covering, child: widget.child),
+                          ),
+                        ),
+                      ),
+                      if (foldedThread != null) chatContent(foldedThread),
+                    ],
+                  ),
+                ),
               ),
               if (beside)
                 for (final c in placement.columns)
@@ -300,14 +403,13 @@ class _ChannelSideAreaState extends State<ChannelSideArea> {
                       c.sections,
                       page,
                       compact,
+                      tabGroups: c.tabGroups,
                       resize: ChannelSideResize(
                         column: c.column,
                         width: c.width,
                         maxWidth:
                             c.width +
-                            box.maxWidth -
-                            shown -
-                            channelSideChatMinWidth,
+                            math.max(0.0, chatWidth - channelSideChatMinWidth),
                         onResize: (width, commit) =>
                             store.resizeColumn(c.column, width, commit),
                         label: _resizeLabel(context, c.sections, page),
@@ -319,14 +421,12 @@ class _ChannelSideAreaState extends State<ChannelSideArea> {
         ),
         if (!beside && placement.columns.isNotEmpty)
           Positioned(
-            key: Key('channel-side-${placement.mode.name}'),
+            key: const Key('channel-side-overlay'),
             top: widget.headerExtent,
             right: 0,
-            left: covering ? 0 : null,
-            width: covering ? null : placement.columns.first.width,
-            bottom: covering ? 0 : composerBelow + _floatGap,
+            left: 0,
+            bottom: 0,
             child: _CoverFocus(
-              active: covering,
               onBack: () => ChannelSideCards.closeCovering(w),
               child: _column(
                 context,
@@ -374,6 +474,7 @@ class _ChannelSideAreaState extends State<ChannelSideArea> {
     WebPreviewPage? page,
     bool compact, {
     ChannelSideResize? resize,
+    List<List<ChannelSideSection>> tabGroups = const [],
   }) => ChannelSideColumnView(
     key: Key('channel-side-column-$index'),
     store: store,
@@ -381,6 +482,7 @@ class _ChannelSideAreaState extends State<ChannelSideArea> {
     sections: sections,
     titles: _titles(context, page),
     resize: resize,
+    tabGroups: tabGroups,
     cardOf: (context, section, fold) =>
         drag.card(section, _card(context, section, fold, mode, page, compact)),
   );
@@ -488,37 +590,6 @@ class _ChannelSideAreaState extends State<ChannelSideArea> {
         return const SizedBox.shrink();
     }
   }
-
-  /// The floating column stops 12px above the composer: what stands under the
-  /// messages is measured from the composer in the chat (after layout, only
-  /// while floating).
-  void _measureComposer() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      final area = context.findRenderObject();
-      if (area is! RenderBox || !area.hasSize) return;
-      if (composer == null || !composer!.mounted) {
-        composer = null;
-        void visit(Element e) {
-          if (composer != null) return;
-          if (e.widget is RaftComposer) {
-            composer = e;
-            return;
-          }
-          e.visitChildren(visit);
-        }
-
-        (context as Element).visitChildren(visit);
-      }
-      final box = composer?.renderObject;
-      final below = box is RenderBox && box.attached && box.hasSize
-          ? area.size.height - box.localToGlobal(Offset.zero, ancestor: area).dy
-          : 0.0;
-      if ((below - composerBelow).abs() > .5) {
-        setState(() => composerBelow = below);
-      }
-    });
-  }
 }
 
 /// The chat under a cover can't be reached: no focus, no pointer, nothing read
@@ -542,12 +613,7 @@ class _Inert extends StatelessWidget {
 /// once it stops covering, back to what had it. The system Back closes what
 /// covers before it leaves the channel, as the header's Back does.
 class _CoverFocus extends StatefulWidget {
-  const _CoverFocus({
-    required this.active,
-    required this.onBack,
-    required this.child,
-  });
-  final bool active;
+  const _CoverFocus({required this.onBack, required this.child});
   final VoidCallback onBack;
   final Widget child;
 
@@ -562,10 +628,7 @@ class _CoverFocusState extends State<_CoverFocus> {
   @override
   void initState() {
     super.initState();
-    if (widget.active) _take();
-  }
 
-  void _take() {
     opener = FocusManager.instance.primaryFocus;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) scope.requestFocus();
@@ -573,17 +636,11 @@ class _CoverFocusState extends State<_CoverFocus> {
   }
 
   @override
-  void didUpdateWidget(_CoverFocus oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.active && !oldWidget.active) _take();
-  }
-
-  @override
   void dispose() {
     final back = opener;
     final lost = FocusManager.instance.primaryFocus == null || scope.hasFocus;
     scope.dispose();
-    if (widget.active && lost && back != null) {
+    if (lost && back != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (back.context != null) back.requestFocus();
       });
@@ -592,10 +649,8 @@ class _CoverFocusState extends State<_CoverFocus> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    final scoped = FocusScope(node: scope, child: widget.child);
-    return widget.active
-        ? RaftBackDismiss(onDismiss: widget.onBack, child: scoped)
-        : scoped;
-  }
+  Widget build(BuildContext context) => RaftBackDismiss(
+    onDismiss: widget.onBack,
+    child: FocusScope(node: scope, child: widget.child),
+  );
 }

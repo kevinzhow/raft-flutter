@@ -188,26 +188,28 @@ void main() {
       },
     );
 
-    testWidgets('columns give way so the chat keeps 360, never under 160', (
-      t,
-    ) async {
-      final rig = await pumpArea(t, size: const Size(800, 800));
-      rig.store.setCardOpen(ChannelSideCard.tasks, true);
-      WebPreviewStore.of(rig.w).open(
-        const WebPreviewPage(
-          url: 'https://example.com/a',
-          conversationId: 'c1',
-        ),
-      );
-      await t.pump();
-      final a = rect(t, 'channel-side-column-1');
-      final b = rect(t, 'channel-side-column-2');
-      expect(a.width, greaterThanOrEqualTo(160));
-      expect(b.width, greaterThanOrEqualTo(160));
-      expect(rect(t, 'chat-header').width, closeTo(360, .5));
-      expect(b.right, 800);
-      expect(a.right, b.left);
-    });
+    testWidgets(
+      'columns clip in proportion after reaching their content floors',
+      (t) async {
+        final rig = await pumpArea(t, size: const Size(800, 800));
+        rig.store.setCardOpen(ChannelSideCard.tasks, true);
+        WebPreviewStore.of(rig.w).open(
+          const WebPreviewPage(
+            url: 'https://example.com/a',
+            conversationId: 'c1',
+          ),
+        );
+        await t.pump();
+        final a = rect(t, 'channel-side-column-1');
+        final b = rect(t, 'channel-side-column-2');
+        expect(a.left, closeTo(800 * 360 / 1120, .5));
+        expect(a.width, closeTo(800 * 280 / 1120, .5));
+        expect(b.width, closeTo(800 * 480 / 1120, .5));
+        expect(rect(t, 'chat-header').width, closeTo(360, .5));
+        expect(b.right, 800);
+        expect(a.right, b.left);
+      },
+    );
 
     testWidgets(
       'both cards stack 60/40 in one column with a seam; collapse only where stacked',
@@ -424,10 +426,10 @@ void main() {
         await t.pump();
         rig.store.setCollapsed(ChannelSideCard.files, true);
         await t.pump();
-        // Beside -> floating -> covering, by the window.
+        // A compact viewport covers the conversation at either width.
         t.view.physicalSize = const Size(600, 800);
         await t.pump();
-        expect(find.byKey(const Key('channel-side-float')), findsOne);
+        expect(find.byKey(const Key('channel-side-overlay')), findsOne);
         t.view.physicalSize = const Size(390, 844);
         await t.pump();
         expect(find.byKey(const Key('channel-side-overlay')), findsOne);
@@ -440,7 +442,7 @@ void main() {
     );
   });
 
-  group('compact: covering and floating', () {
+  group('compact: covering', () {
     testWidgets(
       'a phone: one card covers the chat under the header, no X, no Back of its own',
       (t) async {
@@ -535,39 +537,17 @@ void main() {
       },
     );
 
-    testWidgets(
-      'a compact panel of 520px or more floats one column above the composer',
-      (t) async {
-        final rig = await pumpArea(t, size: const Size(600, 800));
-        rig.store.setCardOpen(ChannelSideCard.tasks, true);
-        await t.pump();
-        await t.pump();
-        final float = rect(t, 'channel-side-float');
-        expect(float.right, 600);
-        expect(float.top, 56);
-        expect(float.width, closeTo(348, .5));
-        expect(float.bottom, closeTo(rect(t, 'chat-composer').top - 12, 1));
-        // Raised by the shadow, with a seam on its left and bottom.
-        final decoration =
-            t
-                    .widget<DecoratedBox>(
-                      find
-                          .descendant(
-                            of: find.byKey(const Key('channel-side-column-1')),
-                            matching: find.byType(DecoratedBox),
-                          )
-                          .first,
-                    )
-                    .decoration
-                as BoxDecoration;
-        expect(decoration.boxShadow, isNotEmpty);
-        expect(border(decoration).bottom.width, 1);
-        expect(border(decoration).left.width, 1);
-        // The chat is not inert beside a floating column.
-        await t.tapAt(const Offset(100, 300));
-        expect(probeTaps, 1);
-      },
-    );
+    testWidgets('a wide compact viewport covers the whole panel', (t) async {
+      final rig = await pumpArea(t, size: const Size(600, 800));
+      rig.store.setCardOpen(ChannelSideCard.tasks, true);
+      await t.pump();
+      expect(
+        rect(t, 'channel-side-overlay'),
+        const Rect.fromLTRB(0, 56, 600, 800),
+      );
+      await t.tapAt(const Offset(100, 300));
+      expect(probeTaps, 0);
+    });
   });
 
   group('paint', () {
@@ -581,25 +561,21 @@ void main() {
           final tokens = RaftTokens.of(
             t.element(find.byKey(const Key('chat-header'))),
           );
-          final decoration =
-              t
-                      .widget<DecoratedBox>(
-                        find
-                            .descendant(
-                              of: find.byKey(
-                                const Key('channel-side-column-1'),
-                              ),
-                              matching: find.byType(DecoratedBox),
-                            )
-                            .first,
-                      )
-                      .decoration
-                  as BoxDecoration;
+          final frame = find.descendant(
+            of: find.byKey(const Key('channel-side-column-1')),
+            matching: find.byType(RaftSidePanelFrame),
+          );
+          final container = t.widget<Container>(
+            find.descendant(of: frame, matching: find.byType(Container)).first,
+          );
+          final decoration = container.decoration! as BoxDecoration;
+          final seam = border(container.foregroundDecoration! as BoxDecoration);
           expect(decoration.color, tokens.colors['layer-canvas']);
-          expect(border(decoration).left.width, 1);
-          expect(border(decoration).left.color, tokens.colors['line-seam']);
-          expect(border(decoration).right, BorderSide.none);
-          expect(border(decoration).top, BorderSide.none);
+          expect(seam.left.width, 1);
+          expect(seam.left.color, tokens.colors['line-seam']);
+          expect(seam.right, BorderSide.none);
+          expect(seam.top, BorderSide.none);
+          expect(decoration.borderRadius, BorderRadius.zero);
           expect(decoration.boxShadow, isNull);
           // The seam is the column's left edge: the column starts where the chat ends.
           expect(rect(t, 'channel-side-column-1').left, 840);
@@ -697,7 +673,7 @@ void main() {
     );
   });
 
-  test('placeChannelSide: widths, float and cover', () {
+  test('placeChannelSide: docked widths and compact cover', () {
     VisibleChannelSideColumn column(int i, int width) =>
         VisibleChannelSideColumn(
           column: i,
@@ -719,12 +695,12 @@ void main() {
     );
     expect(
       shrunk.columns.map((c) => c.width).reduce((a, b) => a + b),
-      closeTo(440, .01),
+      closeTo(800 * 560 / 920, .01),
     );
     expect(shrunk.columns.every((c) => c.width >= 160), isTrue);
     expect(
       placeChannelSide([column(1, 360)], width: 600, compact: true).mode,
-      ChannelSideMode.float,
+      ChannelSideMode.overlay,
     );
     expect(
       placeChannelSide([column(1, 360)], width: 519, compact: true).mode,

@@ -78,6 +78,7 @@ class RaftTaskConversationBar extends StatelessWidget {
     required this.mobile,
     required this.onClose,
     this.summary,
+    this.bottomBorder,
   });
   final RaftTaskConversation conversation;
   final Object? taskNumber;
@@ -87,6 +88,7 @@ class RaftTaskConversationBar extends StatelessWidget {
   /// A phone whose head has scrolled away: the bar names the task's state
   /// instead of just its label, and it pulls the head down.
   final Widget Function(String label)? summary;
+  final Border? bottomBorder;
 
   @override
   Widget build(BuildContext context) {
@@ -119,7 +121,9 @@ class RaftTaskConversationBar extends StatelessWidget {
       constraints: const BoxConstraints(minHeight: 44),
       padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
-        border: Border(bottom: BorderSide(color: t.ui.lineHairline)),
+        border:
+            bottomBorder ??
+            Border(bottom: BorderSide(color: t.ui.lineHairline)),
       ),
       child: Row(
         spacing: 8,

@@ -136,11 +136,8 @@ class _TasksPageDetailDockState extends State<TasksPageDetailDock> {
                 if (open)
                   SizedBox(
                     width: width,
-                    child: DecoratedBox(
-                      position: DecorationPosition.foreground,
-                      decoration: BoxDecoration(
-                        border: RaftPanelEdge.left(context),
-                      ),
+                    child: RaftSidePanelFrame(
+                      placement: RaftSidePanelPlacement.docked,
                       child: const TaskContentSlot(),
                     ),
                   ),

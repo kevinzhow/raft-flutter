@@ -78,6 +78,7 @@ class ChannelSideCardView extends StatelessWidget {
       title: title,
       background: t.colors['layer-canvas'],
       bottomRule: true,
+      bottomBorder: RaftSidePanelFrame.headerRule(t),
       onBack: covering && !phone ? onClose : null,
       backKey: Key('$id-back'),
       backTooltip: closeLabel,

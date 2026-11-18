@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 
 import 'channel_header.dart' show raftCollapseWhitespace;
 import 'panel_edge.dart';
+import 'side_panel_frame.dart';
 import 'panel_layout.dart';
 import 'raft/icon_tile.dart';
 import 'tokens/tokens.dart';
@@ -292,6 +293,9 @@ class _ChannelDetailsHeader extends StatelessWidget {
       title: raftText(context, 'Details'),
       background: RaftTokens.of(context).ui.layerCanvas,
       bottomRule: true,
+      bottomBorder: page
+          ? null
+          : RaftSidePanelFrame.headerRule(RaftTokens.of(context)),
       onBack: page ? onClose : null,
       backKey: const ValueKey('channel-overflow-back'),
       backTooltip: raftText(context, 'Back'),

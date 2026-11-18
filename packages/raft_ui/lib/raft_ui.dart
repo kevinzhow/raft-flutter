@@ -39,6 +39,7 @@ export 'src/attachment_card.dart';
 
 export 'src/adaptive_workspace.dart';
 export 'src/panel_edge.dart';
+export 'src/side_panel_frame.dart';
 export 'src/localization.dart';
 export 'src/message_body.dart';
 export 'src/message_card.dart';

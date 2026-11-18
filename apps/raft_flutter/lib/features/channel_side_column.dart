@@ -41,26 +41,6 @@ bool channelSideOneAtATime(ChannelSideMode mode, double height, int sections) =>
     (mode == ChannelSideMode.overlay ||
         height < channelSideStackMinHeight(sections));
 
-/// A column's decoration (Web `columnClass`): the card surface and a 1px seam
-/// on its left, floating also on its bottom, raised by the float shadow.
-BoxDecoration channelSideColumnDecoration(RaftTokens t, ChannelSideMode mode) {
-  final seam = BorderSide(color: t.colors['line-seam']!);
-  return BoxDecoration(
-    color: t.colors['layer-canvas'],
-    border: switch (mode) {
-      ChannelSideMode.beside => Border(left: seam),
-      ChannelSideMode.float => Border(left: seam, bottom: seam),
-      ChannelSideMode.overlay => null,
-    },
-    boxShadow: mode == ChannelSideMode.float
-        ? [
-            for (final layer in t.shadowLayers('shadow.float').reversed)
-              if (!layer.inset) layer.toBoxShadow(),
-          ]
-        : null,
-  );
-}
-
 class ChannelSideColumnView extends StatefulWidget {
   const ChannelSideColumnView({
     super.key,
@@ -70,6 +50,7 @@ class ChannelSideColumnView extends StatefulWidget {
     required this.titles,
     required this.cardOf,
     this.resize,
+    this.tabGroups = const [],
   });
 
   final ChannelSideStore store;
@@ -82,6 +63,9 @@ class ChannelSideColumnView extends StatefulWidget {
 
   /// Beside the chat: how its width drags. Null: not resizable.
   final ChannelSideResize? resize;
+
+  /// Saved columns sharing this column's space. Each tab shows its own stack.
+  final List<List<ChannelSideSection>> tabGroups;
 
   @override
   State<ChannelSideColumnView> createState() => _ChannelSideColumnViewState();
@@ -121,32 +105,59 @@ class _ChannelSideColumnViewState extends State<ChannelSideColumnView> {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     final touch = RaftInteraction.of(context).touch;
-    return DecoratedBox(
-      decoration: channelSideColumnDecoration(t, widget.mode),
+    return RaftSidePanelFrame(
+      placement: switch (widget.mode) {
+        ChannelSideMode.beside => RaftSidePanelPlacement.docked,
+        ChannelSideMode.float => RaftSidePanelPlacement.floating,
+        ChannelSideMode.overlay => RaftSidePanelPlacement.overlay,
+      },
       child: LayoutBuilder(
         builder: (context, box) {
           final height = box.maxHeight;
           final sections = widget.sections;
+          final grouped = widget.tabGroups.isNotEmpty;
+          final selected = grouped ? _active(sections) : null;
+          final stack = grouped
+              ? widget.tabGroups.firstWhere(
+                  (group) => group.contains(selected),
+                  orElse: () => widget.tabGroups.first,
+                )
+              : sections;
           final oneAtATime = channelSideOneAtATime(
             widget.mode,
             height,
-            sections.length,
+            stack.length,
           );
           final active = oneAtATime
-              ? _active(sections)
+              ? _active(stack)
               : null; // the one showing where only one fits
-          final shown = active == null ? sections : [active];
-          final switchHeight = oneAtATime
-              ? (touch ? 48.0 : _head(context))
-              : 0.0;
+          final shown = active == null ? stack : [active];
+          final switchHeight = touch ? 48.0 : _head(context);
           return Stack(
             clipBehavior: Clip.none,
             children: [
               Positioned.fill(
                 child: Column(
                   children: [
+                    if (grouped)
+                      _switch(
+                        context,
+                        t,
+                        widget.tabGroups,
+                        stack.first,
+                        switchHeight,
+                        columns: true,
+                      ),
                     if (oneAtATime)
-                      _switch(context, t, sections, active!, switchHeight),
+                      _switch(
+                        context,
+                        t,
+                        [
+                          for (final section in stack) [section],
+                        ],
+                        active!,
+                        switchHeight,
+                      ),
                     Expanded(
                       child: LayoutBuilder(
                         builder: (context, stackBox) => _stack(
@@ -155,7 +166,7 @@ class _ChannelSideColumnViewState extends State<ChannelSideColumnView> {
                           shown,
                           sections,
                           stackBox.maxHeight,
-                          folds: !oneAtATime && sections.length > 1,
+                          folds: !oneAtATime && stack.length > 1,
                         ),
                       ),
                     ),
@@ -222,33 +233,40 @@ class _ChannelSideColumnViewState extends State<ChannelSideColumnView> {
   Widget _switch(
     BuildContext context,
     RaftTokens t,
-    List<ChannelSideSection> sections,
+    List<List<ChannelSideSection>> groups,
     ChannelSideSection active,
-    double height,
-  ) {
+    double height, {
+    bool columns = false,
+  }) {
     return Container(
-      key: const Key('channel-side-switch'),
+      key: Key(columns ? 'channel-side-column-switch' : 'channel-side-switch'),
       height: height,
       padding: const EdgeInsets.symmetric(horizontal: RaftSpace.x4),
       alignment: AlignmentDirectional.centerStart,
-      decoration: BoxDecoration(
-        border: Border(bottom: BorderSide(color: t.colors['line-seam']!)),
-      ),
+      decoration: BoxDecoration(border: RaftSidePanelFrame.headerRule(t)),
       child: RaftTabsList<ChannelSideSection>(
-        label: raftText(context, 'Show Tasks or files'),
+        label: columns
+            ? raftTextZh(context, 'Columns', '分栏')
+            : raftText(context, 'Show Tasks or files'),
         value: active,
         onChanged: (s) => store.focus(_focusKey(s)),
         tabs: [
-          for (final s in sections)
+          for (final group in groups)
             RaftTabItem(
-              value: s,
-              label: widget.titles[s] ?? s.name,
-              glyph: switch (s) {
-                ChannelSideSection.tasks => RaftGlyph.listTodo,
-                ChannelSideSection.files => RaftGlyph.paperclip,
-                _ => RaftGlyph.globe,
-              },
-              itemKey: Key('channel-side-switch-${s.name}'),
+              value: group.first,
+              label: group.map((s) => widget.titles[s] ?? s.name).join(' · '),
+              glyph: columns
+                  ? null
+                  : switch (group.first) {
+                      ChannelSideSection.tasks => RaftGlyph.listTodo,
+                      ChannelSideSection.files => RaftGlyph.paperclip,
+                      _ => RaftGlyph.globe,
+                    },
+              itemKey: Key(
+                columns
+                    ? 'channel-side-column-tab-${group.first.name}'
+                    : 'channel-side-switch-${group.first.name}',
+              ),
             ),
         ],
       ),
@@ -268,7 +286,9 @@ class _ChannelSideColumnViewState extends State<ChannelSideColumnView> {
       return folds && card != null && store.collapsed(card);
     }
 
-    final shares = live ?? store.splitShares(shown);
+    final shares = live?.length == shown.length
+        ? live!
+        : store.splitShares(shown);
     final head = _head(context);
     // The open sections split what the folded heads and the 1px seams leave.
     var fixed = 0.0, openTotal = 0.0;
@@ -295,6 +315,7 @@ class _ChannelSideColumnViewState extends State<ChannelSideColumnView> {
       heights.add(h);
       y += h;
     }
+    final shownSet = shown.toSet();
     return Stack(
       clipBehavior: Clip.none,
       children: [
@@ -306,13 +327,21 @@ class _ChannelSideColumnViewState extends State<ChannelSideColumnView> {
             top: shown.contains(s) ? tops[shown.indexOf(s)] : 0,
             height: shown.contains(s) ? heights[shown.indexOf(s)] : height,
             child: Offstage(
-              offstage: !shown.contains(s),
-              child: widget.cardOf(context, s, (
-                collapsed: folded(s),
-                onCollapsedChanged: folds && _card(s) != null
-                    ? (v) => store.setCollapsed(_card(s)!, v)
-                    : null,
-              )),
+              offstage: !shownSet.contains(s),
+              child: ExcludeFocus(
+                excluding: !shownSet.contains(s),
+                child: ClipRect(
+                  clipBehavior: widget.mode == ChannelSideMode.beside
+                      ? Clip.hardEdge
+                      : Clip.none,
+                  child: widget.cardOf(context, s, (
+                    collapsed: folded(s),
+                    onCollapsedChanged: folds && _card(s) != null
+                        ? (v) => store.setCollapsed(_card(s)!, v)
+                        : null,
+                  )),
+                ),
+              ),
             ),
           ),
         for (var i = 0; i + 1 < shown.length; i++)

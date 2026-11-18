@@ -445,6 +445,7 @@ class RaftPanelHeaderBar extends StatelessWidget {
     this.profileBody = false,
     this.leftPadding,
     this.bottomRule = false,
+    this.bottomBorder,
     this.titleSuffix,
     this.profileHandle = false,
     this.background,
@@ -484,6 +485,7 @@ class RaftPanelHeaderBar extends StatelessWidget {
   /// A 1px `border-line-muted` rule under the header (the Activity header's
   /// `border-b`; the canonical desktop header has none).
   final bool bottomRule;
+  final Border? bottomBorder;
 
   /// The header sits on raft-ui `ProfilePanelBody` (`dark:bg-layer-card`), whose
   /// own fill the transparent header shows through in Elegant dark.
@@ -674,18 +676,20 @@ class RaftPanelHeaderBar extends StatelessWidget {
               bottom: math.max(barPadding.bottom, 8),
             )
           : barPadding,
-      decoration: bottomRule
+      decoration: bottomRule || bottomBorder != null
           ? s.header
                 .decoration(rt)
                 .copyWith(
                   color: background,
-                  border: Border(
-                    // Brutal `border-b-2 border-black` (pure black, not ink).
-                    bottom: BorderSide(
-                      color: t.colors['line-muted']!,
-                      width: 1,
-                    ),
-                  ),
+                  border:
+                      bottomBorder ??
+                      Border(
+                        // Brutal `border-b-2 border-black` (pure black, not ink).
+                        bottom: BorderSide(
+                          color: t.colors['line-muted']!,
+                          width: 1,
+                        ),
+                      ),
                 )
           : (profileBody)
           // Web v1.21.12 PROFILE_HEADER_SURFACE_CLASS (elegant only):

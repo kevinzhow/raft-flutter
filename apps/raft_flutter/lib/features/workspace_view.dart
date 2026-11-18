@@ -1805,6 +1805,13 @@ class _WorkspaceViewState extends State<WorkspaceView>
                           onDismiss: w.closeProfile,
                           child: RaftAdaptiveWorkspace(
                             key: ValueKey('adaptive-workspace-$authority'),
+                            sideRow:
+                                wide &&
+                                    thread &&
+                                    route == 'chat' &&
+                                    location.legacyTask == null
+                                ? channelSideRow(w)
+                                : null,
                             // Focus mode may hide the channel only beside its own
                             // thread on a chat route (Web canToggleChannel).
                             focusScope:

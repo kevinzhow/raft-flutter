@@ -84,7 +84,7 @@ const panelEdgeSurfaces = <PanelEdgeSurface>[
   PanelEdgeSurface(
     'workspace-thread-panel',
     web: 'ThreadPanelRoot / ThreadPanel in the right column',
-    files: ['$_ui/adaptive_workspace.dart'],
+    files: ['$_ui/side_panel_frame.dart'],
     style: RaftPanelEdgeStyle.attachedPanel,
   ),
   PanelEdgeSurface(
@@ -132,7 +132,7 @@ const panelEdgeSurfaces = <PanelEdgeSurface>[
   PanelEdgeSurface(
     'tasks-route-slot',
     web: 'TaskContentSlot beside the Tasks list',
-    files: ['lib/features/task_content_slot.dart'],
+    files: ['$_ui/side_panel_frame.dart'],
     style: RaftPanelEdgeStyle.attachedPanel,
     pixels: true,
   ),

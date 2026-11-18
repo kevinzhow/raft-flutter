@@ -539,9 +539,9 @@ void main() {
       expect(grip(files), findsNothing);
     });
 
-    testWidgets('floating over the chat: no grip', (t) async {
+    testWidgets('a wide compact window: covering, no grip', (t) async {
       await pump(t, size: const Size(600, 800));
-      expect(find.byKey(const Key('channel-side-float')), findsOne);
+      expect(find.byKey(const Key('channel-side-overlay')), findsOne);
       expect(grip(files), findsNothing);
     });
   });

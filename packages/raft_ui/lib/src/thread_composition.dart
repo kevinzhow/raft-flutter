@@ -3,12 +3,15 @@ import 'text_selection_toolbar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'adaptive_workspace.dart'
+    show RaftAdaptiveWorkspace, RaftThreadPlacement;
 import 'channel_header.dart' show RaftConversationHeader;
 import 'design_primitives.dart';
 import 'conversation_surface.dart';
 import 'icons.dart';
 import 'localization.dart';
 import 'panel_layout.dart';
+import 'side_panel_frame.dart';
 import 'status_bar.dart';
 import 'text_scaling.dart' show RaftScaled;
 import 'theme.dart';
@@ -140,6 +143,12 @@ class RaftThreadHeader extends StatelessWidget {
       presentation: presentation,
     );
     final grows = RaftScaled.grows(context);
+    final placement = RaftThreadPlacement.maybeOf(context);
+    final desktopSidePanel =
+        !RaftAdaptiveWorkspace.compactOf(context) && placement != null;
+    final folded = placement?.foldedInSideRow ?? false;
+    final showBack = (folded || recipe.showBack) && onBack != null;
+    final showClose = !folded && recipe.showClose && onClose != null;
     // `PanelTitle` (17/600 elegant, 16/700 brutal) and the parent label span:
     // `ml-1 font-normal in-data-[theme=elegant]:text-[15px]
     // text-foreground-placeholder theme-brutal:text-black/50`.
@@ -183,11 +192,8 @@ class RaftThreadHeader extends StatelessWidget {
         tokens.option('panelAction.surface', or: 'outline') == 'ghost'
         ? raftPanelHeaderEdges(
             context,
-            hasBack: recipe.showBack && onBack != null,
-            hasActions:
-                hasFollowers ||
-                actions.isNotEmpty ||
-                recipe.showClose && onClose != null,
+            hasBack: showBack,
+            hasActions: hasFollowers || actions.isNotEmpty || showClose,
           )
         : recipe.headerInset;
 
@@ -203,7 +209,9 @@ class RaftThreadHeader extends StatelessWidget {
             : null,
         decoration: BoxDecoration(
           color: recipe.headerBackground,
-          border: Border(bottom: recipe.headerBorder),
+          border: desktopSidePanel
+              ? RaftSidePanelFrame.headerRule(tokens)
+              : Border(bottom: recipe.headerBorder),
         ),
         child: SizedBox(
           height: grows
@@ -215,8 +223,8 @@ class RaftThreadHeader extends StatelessWidget {
                 : headerInset,
             child: Row(
               children: [
-                if (recipe.showBack && onBack != null) ...[
-                  // AppPanelHeader's mobile Back is the raft-ui PanelAction (the
+                if (showBack) ...[
+                  // AppPanelHeader's Back is the raft-ui PanelAction (the
                   // same control as the channel header): source-sized layout,
                   // touch hit area extended without moving the title.
                   RaftPanelAction(
@@ -254,9 +262,7 @@ class RaftThreadHeader extends StatelessWidget {
                           ),
                         ),
                 ),
-                if (hasFollowers ||
-                    actions.isNotEmpty ||
-                    recipe.showClose && onClose != null)
+                if (hasFollowers || actions.isNotEmpty || showClose)
                   SizedBox(width: recipe.headerGap),
                 Row(
                   mainAxisSize: MainAxisSize.min,
@@ -267,7 +273,7 @@ class RaftThreadHeader extends StatelessWidget {
                         SizedBox(width: recipe.actionGap),
                       actions[index],
                     ],
-                    if (recipe.showClose && onClose != null) ...[
+                    if (showClose) ...[
                       if (hasFollowers || actions.isNotEmpty)
                         SizedBox(width: recipe.actionGap),
                       RaftControl(
