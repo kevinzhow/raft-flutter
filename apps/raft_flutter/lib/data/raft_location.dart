@@ -308,6 +308,22 @@ class RaftLocation {
       content?.kind == RaftContentKind.thread ? content!.id : null;
   RaftAnchor? get task =>
       query('task') == '1' ? thread : RaftAnchor.parse(query('task'));
+  String? get taskFocusedMessageId {
+    final focus = RaftAnchor.parse(query('taskMsg'));
+    return focus != null && task?.itemId == 'task:${focus.channelId}'
+        ? focus.itemId
+        : null;
+  }
+
+  RaftLocation withTaskConversation(
+    String parentChannelId,
+    String taskId, {
+    String? focusedMessageId,
+  }) => withQuery({
+    'task': '$parentChannelId:task:$taskId',
+    'taskMsg': focusedMessageId == null ? null : '$taskId:$focusedMessageId',
+  });
+
   RaftAnchor? get legacyTask => RaftAnchor.parse(query('legacyTask'));
   RaftProfileLocation? get profile =>
       RaftProfileLocation.parse(query('profile'));

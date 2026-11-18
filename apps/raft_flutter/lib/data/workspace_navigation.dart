@@ -72,8 +72,13 @@ class WorkspaceNavigation {
 
   static bool taskOnlyTransition(RaftLocation from, RaftLocation to) =>
       from.uri != to.uri &&
-      from.withQuery({'task': null, 'legacyTask': null}).uri ==
-          to.withQuery({'task': null, 'legacyTask': null}).uri;
+      from.withQuery(_taskQuery).uri == to.withQuery(_taskQuery).uri;
+
+  static const _taskQuery = <String, String?>{
+    'task': null,
+    'legacyTask': null,
+    'taskMsg': null,
+  };
 
   /// The profile side panel owns its own slot (`profile=` and its agent tab):
   /// opening, retargeting or closing it never retires an independently
@@ -140,6 +145,7 @@ class WorkspaceNavigation {
     _location = next;
     ++_revision;
     if (previous.query('task') != next.query('task') ||
+        previous.taskFocusedMessageId != next.taskFocusedMessageId ||
         previous.query('legacyTask') != next.query('legacyTask') ||
         (next.query('task') == '1' &&
             previous.query('thread') != next.query('thread'))) {

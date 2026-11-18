@@ -25,6 +25,7 @@ class TaskSurfaceController extends ChangeNotifier {
     this.resolveTask,
     this.hydrateParent = false,
     this.taskKeyed = false,
+    this.focusedMessageId,
   }) : task = {...row} {
     seedKnown();
     events = parent.client.events.listen((event) {
@@ -80,6 +81,7 @@ class TaskSurfaceController extends ChangeNotifier {
   /// Opened by a task-keyed URL (`task=<channel>:task:<id>`): the task's own
   /// conversation, whatever the flag says.
   final bool taskKeyed;
+  final String? focusedMessageId;
 
   /// The task was deleted (here or elsewhere): the host closes the dialog.
   bool deleted = false;
@@ -400,6 +402,7 @@ class TaskSurfaceController extends ChangeNotifier {
       c.messageDomain.windowReceiver.threads.openThreadLocal(
         '${task['channelId']}',
         taskConversationKey(id),
+        focusedMessageId: focusedMessageId,
         initialThreadChannelId: channelId,
         navigate: false,
         taskId: id,

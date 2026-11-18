@@ -17,13 +17,25 @@ bool hasContentSlot(RaftLocation location) =>
 
 /// The list page under a master/detail content slot (the Back destination).
 /// Closing a task shown in a list's detail slot closes the slot with it.
-Map<String, String?> taskSlotRemoval(RaftLocation location) =>
-    location.content?.kind == RaftContentKind.task
-    ? const {'open': null, 'msg': null}
-    : const {};
+Map<String, String?> taskSlotRemoval(RaftLocation location) => {
+  if (location.query('taskMsg') != null) 'taskMsg': null,
+  if (location.content?.kind == RaftContentKind.task) ...{
+    'open': null,
+    'msg': null,
+  },
+};
 
-RaftLocation contentList(RaftLocation location) =>
-    _tidy(location.withQuery({'open': null, 'msg': null, 'thread': null}));
+RaftLocation contentList(RaftLocation location) => _tidy(
+  location.withQuery({
+    'open': null,
+    'msg': null,
+    'thread': null,
+    if (location.content?.kind == RaftContentKind.task) ...{
+      'task': null,
+      'taskMsg': null,
+    },
+  }),
+);
 
 /// `withQuery` leaves a bare `?` once the last parameter is gone.
 RaftLocation _tidy(RaftLocation location) =>
@@ -41,6 +53,7 @@ RaftLocation locationForPhone(RaftLocation location) {
       'profile',
       'agentTab',
       'task',
+      'taskMsg',
       'legacyTask',
       'channelPageAdd',
     ])

@@ -163,6 +163,7 @@ class _WorkspaceTaskHostState extends State<WorkspaceTaskHost> {
       w.location.task != null ? 'modern' : 'legacy',
       anchor.channelId,
       anchor.itemId,
+      w.location.taskFocusedMessageId,
     ]);
   }
 
@@ -214,6 +215,7 @@ class _WorkspaceTaskHostState extends State<WorkspaceTaskHost> {
       parent: w,
       hydrateParent: !legacy && knownChannel == null,
       taskKeyed: taskId != null,
+      focusedMessageId: w.location.taskFocusedMessageId,
       row:
           accepted ??
           {
