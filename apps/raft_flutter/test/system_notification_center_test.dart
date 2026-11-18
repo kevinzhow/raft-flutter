@@ -67,6 +67,7 @@ void main() {
     VoidCallback? billing,
     Locale? locale,
     Size viewport = const Size(390, 844),
+    double titleBarHeight = 0,
   }) async {
     t.view.devicePixelRatio = 1;
     t.view.physicalSize = viewport;
@@ -78,6 +79,10 @@ void main() {
         supportedLocales: const [Locale('en'), Locale('zh', 'CN')],
         localizationsDelegates: GlobalMaterialLocalizations.delegates,
         theme: raftTheme(),
+        builder: (context, child) => Padding(
+          padding: EdgeInsets.only(top: titleBarHeight),
+          child: child,
+        ),
         home: Scaffold(
           body: Align(
             alignment: Alignment.topRight,
@@ -101,13 +106,16 @@ void main() {
       final controller = WorkspaceController(client)
         ..server = RaftRecord({'id': 's', 'name': 'Fixture', 'role': 'owner'})
         ..section = 'home';
-      await frame(t, controller);
-      await t.tap(find.byType(RaftMobileNotificationButton));
+      await frame(t, controller, titleBarHeight: 48);
+      final bell = find.byType(RaftMobileNotificationButton);
+      final bellBottom = t.getRect(bell).bottom;
+      await t.tap(bell);
       await t.pump(const Duration(milliseconds: 200));
       expect(find.byType(RaftNotificationCenter), findsOneWidget);
       final popup = t.getRect(find.byType(RaftNotificationCenter));
       expect(popup.left, 8);
       expect(popup.right, 382);
+      expect(popup.top, bellBottom + 8);
       expect(find.text('Computers need attention'), findsOneWidget);
       expect(controller.section, 'home');
       expect(

@@ -40,7 +40,10 @@ void main() {
         final tab = t.getRect(find.byKey(const ValueKey('panel-tab-chat')));
         final fine = platform == TargetPlatform.linux && width >= 768;
         expect(tab.height, fine ? 34 : 32);
-        expect(t.getSize(find.byType(RaftConversationTabs)).height, fine ? 44 : 49);
+        expect(
+          t.getSize(find.byType(RaftConversationTabs)).height,
+          fine ? 44 : 49,
+        );
         // Actual pointer input in the 8px padding, outside the visible button.
         await t.tapAt(Offset(tab.center.dx, tab.top - 7));
         expect(calls, platform == TargetPlatform.android ? 1 : 0);

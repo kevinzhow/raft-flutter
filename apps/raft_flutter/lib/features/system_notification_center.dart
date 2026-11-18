@@ -362,12 +362,15 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
     final captured = authority;
     final box = anchor.currentContext?.findRenderObject();
     if (box is! RenderBox || !box.hasSize) return;
-    final anchorRect = box.localToGlobal(Offset.zero) & box.size;
     final overlay = Overlay.of(context, rootOverlay: true);
+    final overlayBox = overlay.context.findRenderObject();
+    if (overlayBox is! RenderBox || !overlayBox.hasSize) return;
+    final anchorRect =
+        box.localToGlobal(Offset.zero, ancestor: overlayBox) & box.size;
     // The trigger can live below SafeArea/Scaffold, which consume insets.
     // This popup paints in the root overlay and needs that window's metrics.
     final metrics = MediaQuery.of(overlay.context);
-    final size = metrics.size;
+    final size = overlayBox.size;
     final safe = metrics.padding;
     final bottom = math.max(safe.bottom, metrics.viewInsets.bottom);
     final width = RaftNotificationCenter.popupWidth(
