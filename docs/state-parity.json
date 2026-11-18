@@ -55380,6 +55380,12 @@
         "familyRefs": [],
         "owner": "WP-DS4",
         "reason": "Shared sidebar loading presentation. State-specific visual acceptance is pending."
+      },
+      "packages/raft_ui/lib/src/channel_header.dart#local-function:CLASS:_RaftCssShrinkRow@32867/METHOD:build@33191/FUNCTION:<anonymous>@33834/FUNCTION:text@34114": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-CHAN",
+        "reason": "Shared channel heading and activity badge placement. Exact family placement and state-specific visual acceptance are pending."
       }
     },
     "entries": {
