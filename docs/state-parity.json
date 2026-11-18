@@ -54450,19 +54450,19 @@
         "owner": "WP-EXT",
         "reason": "Composes existing Raft controls for external-channel actions."
       },
-      "apps/raft_flutter/lib/features/channel_members.dart#local-function:CLASS:_ChannelMembersState@7746/METHOD:build@20304/FUNCTION:externalRow@20634": {
+      "apps/raft_flutter/lib/features/channel_members.dart#local-function:CLASS:_ChannelMembersState@9124/METHOD:build@24360/FUNCTION:externalRow@24690": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "WP-EXT",
         "reason": "Composes existing Raft controls for external-channel actions."
       },
-      "apps/raft_flutter/lib/features/channel_members.dart#local-function:CLASS:_ChannelMembersState@7746/METHOD:build@20304/FUNCTION:item@26399": {
+      "apps/raft_flutter/lib/features/channel_members.dart#local-function:CLASS:_ChannelMembersState@9124/METHOD:build@24360/FUNCTION:item@31191": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "WP-EXT",
         "reason": "Composes existing Raft controls for external-channel actions."
       },
-      "apps/raft_flutter/lib/features/channel_members.dart#local-function:CLASS:_ChannelMembersState@7746/METHOD:build@20304/FUNCTION:row@21567": {
+      "apps/raft_flutter/lib/features/channel_members.dart#local-function:CLASS:_ChannelMembersState@9124/METHOD:build@24360/FUNCTION:row@25779": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "WP-EXT",
@@ -54895,7 +54895,7 @@
         "owner": "WP-EXT",
         "reason": "Composes existing Raft controls for external-channel actions."
       },
-      "apps/raft_flutter/lib/features/channel_settings.dart#local-function:CLASS:_ChannelSettingsState@3007/METHOD:membersStrip@43833/FUNCTION:tile@43941": {
+      "apps/raft_flutter/lib/features/channel_settings.dart#local-function:CLASS:_ChannelSettingsState@3373/METHOD:membersStrip@55745/FUNCTION:tile@55951": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
@@ -54919,13 +54919,13 @@
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
-      "packages/raft_ui/lib/src/channel_members_view.dart#local-function:CLASS:RaftChannelMembersModal@4128/METHOD:_roster@8815/FUNCTION:row@9016": {
+      "packages/raft_ui/lib/src/channel_members_view.dart#local-function:CLASS:RaftChannelMembersModal@3934/METHOD:_roster@8766/FUNCTION:row@8967": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
-      "packages/raft_ui/lib/src/channel_members_view.dart#local-function:CLASS:_CreateAgentEntry@22504/METHOD:build@23036/FUNCTION:plus@23302": {
+      "packages/raft_ui/lib/src/channel_members_view.dart#local-function:CLASS:_CreateAgentEntry@14339/METHOD:build@14871/FUNCTION:plus@15094": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
