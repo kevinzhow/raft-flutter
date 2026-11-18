@@ -29,6 +29,7 @@ import 'web_link_open.dart' show HowWebLinksOpenSetting;
 import 'administration_view.dart';
 import 'resource_cards.dart' show resourceRelativeTime;
 import 'appearance_section.dart';
+import 'composer_send_key_setting.dart';
 import 'billing_view.dart';
 import 'im_bridges_view.dart';
 import 'integrations_views.dart';
@@ -290,6 +291,7 @@ class _WorkspaceSettingsState extends State<WorkspaceSettings> {
             presentation: widget.presentation,
             railSide: widget.railSide,
             webLinks: HowWebLinksOpenSetting(controller: w),
+            keyboard: ComposerSendKeySetting(client: w.client),
           ),
         ),
         if (widget.notifications != null)

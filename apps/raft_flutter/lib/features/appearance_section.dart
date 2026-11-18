@@ -59,6 +59,7 @@ class RaftAppearanceSection extends StatelessWidget {
     required this.presentation,
     this.railSide,
     this.webLinks,
+    this.keyboard,
     this.publicSurface = false,
   }) : assert(publicSurface || presentation != null);
   final RaftAppearance appearance;
@@ -76,6 +77,7 @@ class RaftAppearanceSection extends StatelessWidget {
   /// Settings › How web links open (WP-SIDE): it draws nothing, and no gap,
   /// where a page can't open beside the conversation.
   final Widget? webLinks;
+  final Widget? keyboard;
   @override
   Widget build(BuildContext context) => ListenableBuilder(
     listenable: presentation ?? const AlwaysStoppedAnimation(null),
@@ -242,6 +244,7 @@ class RaftAppearanceSection extends StatelessWidget {
             (hide) => presentation!.update(captured, hideEmptySections: hide),
           ),
           ?webLinks,
+          ?keyboard,
           if (railSide != null &&
               (railSideFollowsChoice() || railChoiceAvailable(context)))
             Padding(

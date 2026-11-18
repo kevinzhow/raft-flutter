@@ -53,6 +53,7 @@ export 'src/action_card.dart';
 export 'src/message_export.dart';
 export 'src/forwarded_bundle.dart';
 export 'src/composer_suggestions.dart';
+export 'src/composer_send_key.dart';
 
 export 'src/attachment_comment_ref.dart';
 export 'src/attachment_comment_scope.dart';

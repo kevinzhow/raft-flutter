@@ -35,6 +35,7 @@ import 'system_inset.dart';
 import 'tap_slop.dart';
 import 'text_input_refresh.dart';
 import 'composer_suggestions.dart';
+import 'composer_send_key.dart';
 import 'collapsible.dart';
 import 'sidebar_indicators.dart';
 import 'sidebar_thread_unread.dart';
@@ -2630,15 +2631,8 @@ class _RaftComposerState extends State<RaftComposer> {
             key != LogicalKeyboardKey.numpadEnter)) {
       return KeyEventResult.ignored;
     }
-    switch (Theme.of(context).platform) {
-      case TargetPlatform.android:
-      case TargetPlatform.iOS:
-        return KeyEventResult.ignored;
-      case TargetPlatform.macOS:
-      case TargetPlatform.windows:
-      case TargetPlatform.linux:
-      case TargetPlatform.fuchsia:
-        break;
+    if (!RaftInteraction.of(context).enterSends) {
+      return KeyEventResult.ignored;
     }
     final keyboard = HardwareKeyboard.instance;
     if (keyboard.isControlPressed || keyboard.isMetaPressed) {
@@ -2646,7 +2640,10 @@ class _RaftComposerState extends State<RaftComposer> {
     }
     // The expanded editor is for long text: Enter adds a line there, and
     // Cmd/Ctrl+Enter (a Shortcut below) sends.
-    if (keyboard.isShiftPressed || expanded) {
+    if (keyboard.isShiftPressed ||
+        expanded ||
+        RaftComposerSendKeyScope.of(context) ==
+            RaftComposerSendKey.modifiedEnter) {
       insertNewline();
     } else if (event is KeyDownEvent) {
       send();

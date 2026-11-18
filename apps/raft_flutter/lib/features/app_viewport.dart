@@ -14,6 +14,7 @@ import 'workspace_host_scope.dart';
 import '../platform/desktop_title_bar.dart';
 import '../platform/keyboard_inset_guard.dart';
 import 'display_language_follower.dart';
+import 'composer_send_key_setting.dart';
 import '../platform/system_bars.dart';
 import 'private_app_invite.dart';
 
@@ -115,7 +116,10 @@ Widget buildRaftApplication({
                   WorkspaceHostScope.showsTopBar(context),
               coordinator: coordinator,
               openLocation: openLocation,
-              child: child!,
+              child: RaftComposerSendKeyScope(
+                sendKey: accountComposerSendKey(session.$1),
+                child: child!,
+              ),
             ),
           ),
         ),
