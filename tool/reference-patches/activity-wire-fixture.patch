@@ -1,0 +1,27 @@
+diff --git a/packages/server/src/routes/channels.inbox.taskConversationHistory.api.test.ts b/packages/server/src/routes/channels.inbox.taskConversationHistory.api.test.ts
+index 320e1fd0..f1a17e8d 100644
+--- a/packages/server/src/routes/channels.inbox.taskConversationHistory.api.test.ts
++++ b/packages/server/src/routes/channels.inbox.taskConversationHistory.api.test.ts
+@@ -149,3 +149,22 @@ test("on a Free server, Activity search still finds a task conversation by its t
+     assert.equal(row.kind, "task");
+   }
+ });
++
++test("export producer responses for the Flutter Activity contract", async ({ app }) => {
++  const { owner, server, conversationId } = await fixture("wire-contract");
++  const token = await tokenForHuman(owner.email);
++  const all = await get(app.baseUrl, "/api/channels/inbox?filter=all&limit=50", token, server.id);
++  const unread = await get(app.baseUrl, "/api/channels/inbox?filter=unread&limit=50", token, server.id);
++  const followed = await get(app.baseUrl, "/api/channels/threads/followed?limit=100", token, server.id) as unknown as { threads: any[] };
++  for (const rows of [all.items, unread.items, followed.threads]) {
++    const row = rows.find((item) => item.threadChannelId === conversationId);
++    assert.equal(row?.kind, "task");
++    assert.equal(row?.parentMessageId, null);
++    assert.equal(row?.taskTitle, "ship the wire-contract page");
++    assert.ok(row.unreadCount > 0);
++  }
++  const { writeFile } = await import("node:fs/promises");
++  const out = process.env.RAFT_ACTIVITY_FIXTURE_OUT;
++  assert.ok(out);
++  await writeFile(out, JSON.stringify({ serverId: server.id, userId: owner.id, all, unread, followed }, null, 2) + "\n");
++});

@@ -80,3 +80,35 @@ serializer output first, then the test fails where Flutter still reads the old s
 Prefer a central accessor over a new `row['x']` read:
 `RaftRecord.firstNonEmpty`, `RaftChannel.peerLabel`, `agentActivityText`,
 `agentRowAmbientDisplay`, `featureFlagEvaluateBody`, `member_profile_rules.dart`.
+
+### Check response variants at the client entry point
+
+Check the row discriminator as well as its field names. Server v1.24 emits
+`kind: "task"` in Activity and followed conversations. The Web store converts
+it before using its title, timestamp or read scope. A fixture built from the
+store's row would pass even if the client skipped the conversion.
+
+The upstream report lists changed discriminator literals in server and shared
+code. Confirm each relevant candidate against the mounted route. For an added
+or changed served variant, capture the raw response from the reference server's
+API test and run it through the client's normal entry point. Assert the
+observable behavior, including identity and live updates for rows that track
+read state. Cover existing variants on the same path.
+
+The Activity guard replays the captured All and Unread responses through the
+mounted page. It also checks the followed response shape and binds the capture
+to the upstream revision. To refresh it, use a separate reference checkout with
+its pinned Node and pnpm dependencies. Apply
+`tool/reference-patches/activity-wire-fixture.patch` from this repository to
+the reference checkout, then run the following command there.
+
+```sh
+RAFT_ACTIVITY_FIXTURE_OUT=/absolute/path/activity-wire.json \
+  pnpm --filter @botiverse/raft-server test \
+  src/routes/channels.inbox.taskConversationHistory.api.test.ts
+```
+
+The test uses a disposable database and synthetic accounts. Copy the generated
+JSON into the Activity field-parity fixture and add `sourceCommit` from that
+checkout's HEAD. Keep the response bodies as emitted by the route. When upgrading
+past this reference, update the capture test for any new variants.

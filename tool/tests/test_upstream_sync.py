@@ -220,6 +220,29 @@ export const fooSchema = z.object({
         self.assertEqual([i['field'] for i in a['removed']], ['y'])
         self.assertEqual([i['field'] for i in a['retyped']], ['x'])
 
+    def test_wire_tags_compare_values_even_when_keys_do_not_change(self):
+        service = 'packages/server/src/services/conversations.ts'
+        using = 'packages/web/src/store/conversations.ts'
+        files = [
+            us.FileChange(path=service, status='M', added=3, removed=2, category='server_other'),
+            us.FileChange(path=using, status='M', added=1, removed=0, category='web_ui'),
+        ]
+        changes = us.collect_wire_tags({
+            service: [
+                '-  kind: "channel" | "thread";',
+                '+  kind: "channel" | "thread" | "task";',
+                '-  channelType: "thread",',
+                '+  channelType: "task",',
+                '+  title: "Sample title",',
+            ],
+            using: ['+  kind: "store-only",'],
+        }, files)
+        self.assertEqual(changes, [{
+            'file': service,
+            'added': ['channelType=task', 'kind=task'],
+            'removed': ['channelType=thread'],
+        }])
+
     def test_i18n_catalog_with_multiline_and_escapes(self):
         text = '''export const en = {
   "a.b": "Hello \\"x\\"",

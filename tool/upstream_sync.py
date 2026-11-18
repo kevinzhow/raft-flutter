@@ -1028,6 +1028,34 @@ def collect_wire_candidates(hunks: dict[str, list[str]], files: list[FileChange]
     return out
 
 
+_WIRE_TAG = re.compile(
+    r"""^\s*(kind|type|channelType|conversationKind|objectKind)\s*:\s*"""
+    r"""((?:["'][a-z][\w:-]*["']\s*(?:\|\s*)?)+)"""
+)
+
+
+def collect_wire_tags(hunks: dict[str, list[str]], files: list[FileChange]) -> list[dict]:
+    """Report literal variant changes even when the property name is unchanged."""
+    out = []
+    for file in files:
+        if file.category not in ("server_api", "server_other", "shared_types") or not file.path.endswith(".ts"):
+            continue
+        if not file.path.startswith(("packages/server/src/", "packages/shared/src/")):
+            continue
+        counts = collections.Counter()
+        for line in hunks.get(file.path, ()):
+            match = _WIRE_TAG.match(line[1:])
+            if match:
+                field, literals = match.groups()
+                for value in re.findall(r"""["']([^"']+)["']""", literals):
+                    counts[f"{field}={value}"] += 1 if line[0] == "+" else -1
+        added = sorted(tag for tag, count in counts.items() if count > 0)
+        removed = sorted(tag for tag, count in counts.items() if count < 0)
+        if added or removed:
+            out.append({"file": file.path, "added": added, "removed": removed})
+    return out
+
+
 def collect_i18n(mirror, a, b, ix: OurIndex) -> dict:
     p_en, p_zh = "packages/web/src/i18n/messages/en.ts", "packages/web/src/i18n/messages/zh-cn.ts"
     en_a, en_b = parse_i18n_catalog(show(mirror, a, p_en) or ""), parse_i18n_catalog(show(mirror, b, p_en) or "")
@@ -1764,6 +1792,7 @@ def generate_report(mirror: Path, repo: Path, a: str, b: str, work: Path, keep_t
         "capabilities_touched": collect_capabilities(ix, web_changed),
         "fields": shapes,
         "wire_candidates": collect_wire_candidates(hunks, files, ix),
+        "wire_tags": collect_wire_tags(hunks, files),
         "i18n": i18n,
         "visual": visual,
         "styles": styles,
@@ -2076,6 +2105,17 @@ def render_markdown(r: dict, limit_ui: int = 80) -> str:
         L.append(_tbl(["Route file", "Added keys", "Removed keys"],
                       [[w["file"], ", ".join(k + ("*" if k in w["ours_added"] else "") for k in w["added"][:12]),
                         ", ".join(k + ("*" if k in w["ours_removed"] else "") for k in w["removed"][:12])] for w in r["wire_candidates"][:80]]))
+    if r.get("wire_tags"):
+        L.extend([
+            "",
+            "### Server variant candidates (heuristic)",
+            "",
+            "Check which new or removed literal values reach the wire. For served variants, replay "
+            "the raw response at the client entry point and check the resulting user action or display.",
+            "",
+            _tbl(["Producer file", "Added values", "Removed values"],
+                 [[w["file"], ", ".join(w["added"]), ", ".join(w["removed"])] for w in r["wire_tags"]]),
+        ])
         L.append("")
     # ---- UI
     L.append("## 界面对照 (Web UI changes and our counterparts)")
