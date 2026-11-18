@@ -2093,22 +2093,22 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
   Future<void> setAppearance(RaftAppearance value) =>
       appearance.save(value).then((_) => NativeLaunchTheme.instance.set(value));
 
+  /// The workspace may run in the foreground: not behind the server selector,
+  /// a server switch or the pending-deletion page.
+  bool get workspaceShown =>
+      client?.accountDeletion.active != true &&
+      !showServerSelector &&
+      serverSwitchLocation == null;
+
   void syncWorkspaceForeground() {
     if (!mounted) return;
-    workspace?.setForeground(
-      content.appForeground &&
-          client?.accountDeletion.active != true &&
-          !showServerSelector &&
-          serverSwitchLocation == null,
-    );
+    workspace?.setForeground(content.appForeground && workspaceShown);
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     workspace?.setForeground(
-      state == AppLifecycleState.resumed &&
-          !showServerSelector &&
-          serverSwitchLocation == null,
+      state == AppLifecycleState.resumed && workspaceShown,
     );
     if (state == AppLifecycleState.resumed) {
       // A session the server could not confirm is asked again at once; the
