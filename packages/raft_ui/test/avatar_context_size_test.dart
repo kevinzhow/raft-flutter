@@ -113,7 +113,11 @@ void main() {
         final meta = t.getRect(find.text('@artin'));
         expect(title.height, 22);
         expect(meta.height, 16);
-        expect(meta.top, title.bottom);
+        if (width < 768) {
+          expect(meta.top, title.bottom);
+        } else {
+          expect(meta.left - title.right, 8);
+        }
         expect(t.getSize(find.byType(RaftAvatarSlot)), const Size.square(35));
         expect(
           t.getSize(find.byType(RaftPanelAction).first),

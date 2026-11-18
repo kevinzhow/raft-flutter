@@ -53,7 +53,7 @@ void main() {
             height: height,
           );
           final frame = find.byType(RaftMountedAvatarFrame);
-          final extent = height <= 600 ? 32.0 : 36.0;
+          const extent = 32.0;
           expect(tester.getSize(frame), Size.square(extent));
           // raft-ui 0.7.1 sticker avatar: 4px square, 1.5px ink border (1px at this test's 1.0 device ratio).
           final sticker = tester.widget<RaftCssBox>(

@@ -73,11 +73,11 @@ void main() {
             final files = find.byKey(const ValueKey('panel-tab-files'));
             expect(tester.getRect(strip).left, 0);
             expect(tester.getSize(strip).width, width);
-            expect(tester.getRect(chat).left, width < 768 ? 16 : 20);
             final mobile = width < 768;
-            // Pinned raft-ui 0.7.0 default tabs: 32px within py8 and a 1px rule.
-            const expectedStrip = 49.0;
-            const expectedTarget = 32.0;
+            final fine = !mobile && density == RaftDensity.desktop;
+            expect(tester.getRect(chat).left, mobile || fine ? 16 : 20);
+            final expectedStrip = fine ? 44.0 : 49.0;
+            final expectedTarget = fine ? 34.0 : 32.0;
             expect(tester.getSize(strip).height, expectedStrip);
             expect(tester.getSize(chat).height, expectedTarget);
             final tab = tester.widget<RaftTabButton>(chat);

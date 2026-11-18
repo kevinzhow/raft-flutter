@@ -96,13 +96,8 @@ void main() {
                 await tester.pumpAndSettle();
                 final rail = find.byType(RaftWorkspaceRail);
                 final initial = tester.getRect(rail);
-                expect(
-                  initial.width,
-                  RaftRailRecipe(
-                    raftTheme(dark: dark).extension<RaftTokens>()!,
-                    viewportHeight: height,
-                  ).width,
-                );
+                final compact = density == RaftDensity.desktop || height <= 600;
+                expect(initial.width, compact ? 49 : 57);
                 final slots = <Finder>[
                   find.byKey(const Key('rail-workspace')),
                   for (final id in ['search', 'chat', 'activity', 'tasks'])

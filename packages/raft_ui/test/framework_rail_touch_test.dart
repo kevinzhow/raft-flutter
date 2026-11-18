@@ -57,12 +57,23 @@ void main() {
         await t.pumpAndSettle();
         final first = find.byKey(const ValueKey('rail-chat'));
         final second = find.byKey(const ValueKey('rail-activity'));
-        expect(t.getRect(first), const Rect.fromLTWH(8, 66, 40, 40));
-        expect(t.getRect(second), const Rect.fromLTWH(8, 112, 40, 40));
+        final touch = platform == TargetPlatform.android;
+        expect(
+          t.getRect(first),
+          touch
+              ? const Rect.fromLTWH(8, 66, 40, 40)
+              : const Rect.fromLTWH(10, 66, 36, 36),
+        );
+        expect(
+          t.getRect(second),
+          touch
+              ? const Rect.fromLTWH(8, 112, 40, 40)
+              : const Rect.fromLTWH(10, 108, 36, 36),
+        );
         // These points lie outside the painted controls. Only touch-density
         // hosts route them; the gap belongs to the nearest target.
         await t.tapAt(const Offset(5, 86));
-        await t.tapAt(const Offset(28, 110));
+        await t.tapAt(Offset(28, t.getRect(second).top - 2));
         final footer = find.byType(RaftWorkspaceRailAction).last;
         final footerBox = t.getRect(footer);
         await t.tapAt(Offset(footerBox.left - 3, footerBox.center.dy));
