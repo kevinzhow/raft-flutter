@@ -12,10 +12,17 @@ import '../data/cache_read_versions.dart';
 import '../data/cached_history_window.dart';
 import 'message_history.dart';
 import '../data/workspace_cache_codec.dart';
+import '../data/workspace_draft_index.dart';
+
+part 'workspace_draft_index_sql.dart';
 
 /// On-device workspace cache (see [WorkspaceCache] for the validity rule).
 class DriftWorkspaceCache extends GeneratedDatabase
-    implements WorkspaceCache, MessageHistoryProvider, CommittedWorkspaceCache {
+    implements
+        WorkspaceCache,
+        MessageHistoryProvider,
+        CommittedWorkspaceCache,
+        WorkspaceDraftIndex {
   DriftWorkspaceCache(
     super.executor, {
     this.windowRetention = 120,
@@ -32,6 +39,7 @@ class DriftWorkspaceCache extends GeneratedDatabase
   });
 
   final DateTime Function()? historyClock;
+
   /// An explicit budget also permits small, real-file capacity fixtures.
   final int? historyBudget;
   @visibleForTesting
@@ -49,7 +57,8 @@ class DriftWorkspaceCache extends GeneratedDatabase
     readLegacy: _read,
     writeLegacy: _write,
     now: historyClock,
-    historyBudget: historyBudget ??
+    historyBudget:
+        historyBudget ??
         (switch (defaultTargetPlatform) {
           TargetPlatform.android || TargetPlatform.iOS => 1 << 30,
           _ => 2 << 30,
@@ -131,6 +140,13 @@ class DriftWorkspaceCache extends GeneratedDatabase
   ) => _ordered(() => _readTranslations(origin, principal, server));
 
   @override
+  Future<List<WorkspaceDraftEntry>> readDrafts(
+    String origin,
+    String principal,
+    String server,
+  ) => _ordered(() => _readWorkspaceDrafts(this, origin, principal, server));
+
+  @override
   Future<void> writeTranslations(
     String origin,
     String principal,
@@ -162,39 +178,63 @@ class DriftWorkspaceCache extends GeneratedDatabase
     }
     final reading = _readCommittedWindow(origin, principal, server, kind, id);
     _committedReads.add(reading);
-    reading.then<void>((_) => _committedReads.remove(reading),
-      onError: (Object _, StackTrace _) => _committedReads.remove(reading));
+    reading.then<void>(
+      (_) => _committedReads.remove(reading),
+      onError: (Object _, StackTrace _) => _committedReads.remove(reading),
+    );
     return reading;
   }
 
   Future<dynamic> _readCommittedWindow(
-    String origin, String principal, String server, String kind, String id,
+    String origin,
+    String principal,
+    String server,
+    String kind,
+    String id,
   ) async {
     final ticket = _readVersions.ticket;
-    final current = _readVersions.validator(ticket, origin, principal, server, [id]);
+    final current = _readVersions.validator(ticket, origin, principal, server, [
+      id,
+    ]);
     if (!current()) return null;
     final snapshot = await messageHistory.peekCommittedWindow(
-      origin, principal, server, kind, id,
+      origin,
+      principal,
+      server,
+      kind,
+      id,
     );
     if (snapshot == null) {
       if (!current()) return null;
       // Context snapshots and unmigrated windows retain the ordered import path.
       final saved = await read(origin, principal, server, kind, id);
-      return _readVersions.current(ticket, origin, principal, server, [id, if (saved is Map) ...[
-        '${saved['channelId']}', '${saved['parentChannelId']}',
-      ]]) ? saved : null;
+      return _readVersions.current(ticket, origin, principal, server, [
+            id,
+            if (saved is Map) ...[
+              '${saved['channelId']}',
+              '${saved['parentChannelId']}',
+            ],
+          ])
+          ? saved
+          : null;
     }
     final scope = snapshot.scope;
-    final valid = _readVersions.validator(ticket, origin, principal, server,
-      [scope.channel, scope.parentChannel]);
+    final valid = _readVersions.validator(ticket, origin, principal, server, [
+      scope.channel,
+      scope.parentChannel,
+    ]);
     if (!valid()) return null;
     messageHistory.touchCommittedWindow(scope, [
       for (final row in snapshot.value['messages'] as List)
         if (row['id'] case final String id) id,
     ], current: valid);
-    return CachedHistoryWindow(snapshot.value, scope: scope,
+    return CachedHistoryWindow(
+      snapshot.value,
+      scope: scope,
       positionAbsent: !snapshot.hasPosition,
-      positionsUnchanged: snapshot.positionsUnchanged, current: valid);
+      positionsUnchanged: snapshot.positionsUnchanged,
+      current: valid,
+    );
   }
 
   @override
@@ -216,7 +256,12 @@ class DriftWorkspaceCache extends GeneratedDatabase
     String server,
     String channel,
   ) {
-    final complete = _readVersions.invalidateChannel(origin, principal, server, channel);
+    final complete = _readVersions.invalidateChannel(
+      origin,
+      principal,
+      server,
+      channel,
+    );
     return _ordered(() => _revokeChannel(origin, principal, server, channel))
         .whenComplete(complete);
   }
@@ -224,13 +269,15 @@ class DriftWorkspaceCache extends GeneratedDatabase
   @override
   Future<void> clearAccount(String origin, String principal) {
     final complete = _readVersions.invalidateAccount(origin, principal);
-    return _ordered(() => _clearAccount(origin, principal)).whenComplete(complete);
+    return _ordered(() => _clearAccount(origin, principal))
+        .whenComplete(complete);
   }
 
   @override
   Future<void> revokeServer(String origin, String principal, String server) {
     final complete = _readVersions.invalidateServer(origin, principal, server);
-    return _ordered(() => _revokeServer(origin, principal, server)).whenComplete(complete);
+    return _ordered(() => _revokeServer(origin, principal, server))
+        .whenComplete(complete);
   }
 
   @override
@@ -362,14 +409,25 @@ class DriftWorkspaceCache extends GeneratedDatabase
   ) async {
     if (value == null) {
       await customStatement(
-        'DELETE FROM workspace_cache WHERE origin=? AND principal=? AND server=? AND kind=? AND id=?',
-        [origin, principal, server, kind, id],
+        '''DELETE FROM workspace_cache WHERE origin=? AND principal=? AND server=?
+           AND (kind=? OR (kind='draft-updated' AND ?='draft')) AND id=?''',
+        [origin, principal, server, kind, kind, id],
       );
     } else {
       final payload = await encodeWorkspaceCache(value);
       // Explicit deletion preserves the LRU rowid behavior and invokes the
       // retention counters on SQLite connections with recursive triggers off.
       await transaction(() async {
+        if (kind == 'draft') {
+          await _updateWorkspaceDraftTime(
+            this,
+            origin,
+            principal,
+            server,
+            id,
+            value,
+          );
+        }
         await customStatement(
           'DELETE FROM workspace_cache WHERE origin=? AND principal=? AND server=? AND kind=? AND id=?',
           [origin, principal, server, kind, id],
