@@ -278,6 +278,7 @@ bool openTaskFromList(
   Map<String, dynamic> row, {
   required bool wide,
   String? focusedMessageId,
+  String? conversationId,
 }) {
   final taskId = row['taskId'], channelId = row['parentChannelId'];
   final task =
@@ -295,6 +296,7 @@ bool openTaskFromList(
       channelId,
       taskId,
       focusedMessageId: focusedMessageId,
+      conversationId: conversationId,
     ),
     kind: taskSlotNavigationKind(at),
   );

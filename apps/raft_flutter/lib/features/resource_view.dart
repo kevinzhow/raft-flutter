@@ -3852,9 +3852,16 @@ class _ResourceViewState extends State<ResourceView> with ResourcePageRetap {
       return;
     }
     if (widget.section == 'saved' && row['channelType'] == 'task') {
-      final reply = row['messageId'];
+      final reply = row['messageId'], conversationId = row['channelId'];
       if (reply is String &&
-          openTaskFromList(w, row, wide: wide, focusedMessageId: reply)) {
+          conversationId is String &&
+          openTaskFromList(
+            w,
+            row,
+            wide: wide,
+            focusedMessageId: reply,
+            conversationId: conversationId,
+          )) {
         return;
       }
     }

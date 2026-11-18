@@ -18,6 +18,7 @@ import '../data/notification_settings_store.dart';
 import '../data/workspace_controller.dart';
 import '../data/raft_location.dart';
 import '../data/raft_navigation_history.dart';
+import '../data/task_conversation_thread.dart' show authorizeTaskConversation;
 import '../features/invite_accept_view.dart';
 import 'app_window.dart';
 import 'live_session_recovery.dart';
@@ -659,17 +660,20 @@ class NativeContentCoordinator with WidgetsBindingObserver {
     unawaited(
       w.readReceipts.hydrate(
         target.channelId,
-        detail: authorization.then((accepted) => accepted.$2.json),
+        detail: authorization.then(
+          (accepted) =>
+              accepted.$2.id == target.channelId ? accepted.$2.json : null,
+        ),
       ),
     );
     try {
       Future<void>? opening;
-      if (target.task == null && known != null) {
+      if (target.task == null && known != null && known.type != 'task') {
         published = true;
         opening = _open(w, target, known, replaceEntry: replaceEntry);
         // Its failure is reported once, below, after verification settles.
         unawaited(opening.then<void>((_) {}, onError: (Object _) {}));
-      } else if (target.task == null && ownWorkspace) {
+      } else if (target.task == null && known == null && ownWorkspace) {
         // Unknown to the device: show the destination's loading shell now.
         published = true;
         w.navigation.navigate(
@@ -681,20 +685,20 @@ class NativeContentCoordinator with WidgetsBindingObserver {
         replacedEntry = true;
         w.notifyListeners();
       }
-      final (server, channel) = await authorization;
+      final (server, channel, resolved) = await authorization;
       if (!valid()) return;
       // Content links never switch the signed-in account or coordinator origin.
       // Cross-server links require an explicit server selection in the app first.
       if (server.id != w.client.serverId) {
         throw const RaftApiException('Unavailable server.');
       }
-      if (target.task != null) {
+      if (resolved.task != null) {
         if (!w.can('viewChannel', resource: channel)) {
           throw const RaftApiException('Unavailable channel.');
         }
         w.navigation.navigateTask(
-          _destination(w, target, channel.type == 'dm'),
-          kind: replaceEntry
+          _destination(w, resolved, channel.type == 'dm'),
+          kind: replacedEntry
               ? RaftNavigationKind.replace
               : RaftNavigationKind.push,
         );
@@ -733,6 +737,7 @@ class NativeContentCoordinator with WidgetsBindingObserver {
         target.channelId,
         task.id,
         focusedMessageId: target.messageId,
+        conversationId: task.conversationId,
       );
     }
     return target.parentMessageId != null
@@ -825,45 +830,69 @@ class NativeContentCoordinator with WidgetsBindingObserver {
     bool Function() valid,
   ) async => (await _authorizeContent(client, target, valid)).$1;
 
-  static Future<(RaftRecord, RaftChannel)> _authorizeContent(
+  static Future<(RaftRecord, RaftChannel, ContentTarget)> _authorizeContent(
     RaftClient client,
-    ContentTarget target,
+    ContentTarget requested,
     bool Function() valid,
   ) async {
     final rows = await client.servers();
     if (!valid()) throw const RaftApiException('Stale content link.');
     final server = rows
         .where(
-          (s) => target.serverId != null
-              ? s.id == target.serverId
-              : s.string('slug') == target.serverSlug,
+          (s) => requested.serverId != null
+              ? s.id == requested.serverId
+              : s.string('slug') == requested.serverSlug,
         )
         .firstOrNull;
     if (server == null || server.id != client.serverId) {
       throw const RaftApiException('Unavailable server.');
     }
-    final channel = await client.get('/channels/${target.channelId}');
-    if (!valid() ||
-        channel is! Map ||
-        channel['id'] != target.channelId ||
-        channel['serverId'] != server.id) {
-      throw const RaftApiException('Unavailable channel.');
+    Future<Map> scopedChannel(String id) async {
+      final channel = await client.get('/channels/$id');
+      if (!valid() ||
+          channel is! Map ||
+          channel['id'] != id ||
+          channel['serverId'] != server.id) {
+        throw const RaftApiException('Unavailable channel.');
+      }
+      return channel;
+    }
+
+    var target = requested;
+    var channel = await scopedChannel(target.channelId);
+    Map? taskDetail;
+    if (target.serverSlug != null &&
+        target.parentMessageId == null &&
+        target.messageId != null &&
+        channel['type'] == 'task') {
+      final parent = channel['parentChannelId'], taskId = channel['taskId'];
+      if (parent is! String ||
+          taskId is! String ||
+          !ContentTarget.validId(parent) ||
+          !ContentTarget.validId(taskId)) {
+        throw const RaftApiException('Unavailable task conversation.');
+      }
+      taskDetail = channel;
+      target = ContentTarget(
+        serverId: server.id,
+        channelId: parent,
+        messageId: requested.messageId,
+        task: (id: taskId, conversationId: requested.channelId),
+      );
+      channel = await scopedChannel(parent);
     }
     if (target.messageId != null) {
       final task = target.task;
       if (task != null) {
-        final conversation = await client.get(
-          '/channels/${task.conversationId}',
+        await authorizeTaskConversation(
+          client,
+          conversationId: task.conversationId,
+          serverId: server.id,
+          taskId: task.id,
+          parentChannelId: target.channelId,
+          current: valid,
+          channelDetail: taskDetail,
         );
-        if (!valid() ||
-            conversation is! Map ||
-            conversation['id'] != task.conversationId ||
-            conversation['serverId'] != server.id ||
-            conversation['type'] != 'task' ||
-            conversation['taskId'] != task.id ||
-            conversation['parentChannelId'] != target.channelId) {
-          throw const RaftApiException('Unavailable task conversation.');
-        }
       }
       final context = await client.get(
         '/messages/context/${target.messageId}',
@@ -896,7 +925,7 @@ class NativeContentCoordinator with WidgetsBindingObserver {
         throw const RaftApiException('Unavailable thread.');
       }
     }
-    return (server, RaftChannel(Map<String, dynamic>.from(channel)));
+    return (server, RaftChannel(Map<String, dynamic>.from(channel)), target);
   }
 
   void _bindDesktop(WorkspaceController? workspace) => desktop?.bind(
