@@ -3303,6 +3303,7 @@ class RaftInteractive extends StatefulWidget {
     this.semanticContainer,
     this.expandTouchTarget = true,
     this.cancelOutsideRelease = false,
+    this.pointerWithinBounds = false,
     this.busy = false,
     this.focusNode,
     this.focusOnPointer = true,
@@ -3336,6 +3337,9 @@ class RaftInteractive extends StatefulWidget {
   final bool? semanticContainer;
   final bool busy, focusOnPointer, button, cancelOutsideRelease;
   final bool expandTouchTarget;
+
+  /// Requires both the press and release to land within the laid-out control.
+  final bool pointerWithinBounds;
   final bool? selected, checked, toggled;
   final bool inMutuallyExclusiveGroup, inertWhenDisabled;
   final FocusNode? focusNode;
@@ -3434,8 +3438,10 @@ class _RaftInteractiveState extends State<RaftInteractive>
       // preserve visual geometry. Other desktop controls own their boundary.
       container:
           widget.semanticContainer ??
-          (!touch &&
-              context.findAncestorWidgetOfExactType<RaftTouchTarget>() == null),
+          (widget.pointerWithinBounds ||
+              (!touch &&
+                  context.findAncestorWidgetOfExactType<RaftTouchTarget>() ==
+                      null)),
       label: widget.semanticLabel,
       value: widget.semanticValue,
       liveRegion: widget.liveRegion,
@@ -3494,20 +3500,24 @@ class _RaftInteractiveState extends State<RaftInteractive>
                   ? (details) {
                       setState(() => pressed = false);
                       updateKeepAlive();
-                      if (!widget.cancelOutsideRelease) {
-                        widget.onPressed?.call();
-                        return;
+                      if (widget.pointerWithinBounds ||
+                          widget.cancelOutsideRelease) {
+                        final box = context.findRenderObject();
+                        if (box is! RenderBox) return;
+                        final bounds = Offset.zero & box.size;
+                        final reach = details.kind == PointerDeviceKind.touch
+                            ? RaftMetrics.touchTarget / 2
+                            : 0.0;
+                        final inside = widget.pointerWithinBounds
+                            ? bounds.contains(
+                                box.globalToLocal(details.globalPosition),
+                              )
+                            : bounds
+                                  .inflate(reach)
+                                  .contains(details.localPosition);
+                        if (!inside) return;
                       }
-                      final box = context.findRenderObject();
-                      final reach = details.kind == PointerDeviceKind.touch
-                          ? RaftMetrics.touchTarget / 2
-                          : 0.0;
-                      if (box is RenderBox &&
-                          (Offset.zero & box.size)
-                              .inflate(reach)
-                              .contains(details.localPosition)) {
-                        widget.onPressed?.call();
-                      }
+                      widget.onPressed?.call();
                     }
                   : null,
               onTapCancel: enabled
@@ -3534,7 +3544,7 @@ class _RaftInteractiveState extends State<RaftInteractive>
     }
     // The expander must surround the tooltip's render boxes too; otherwise
     // those 32px boxes reject pointers before the expanded target sees them.
-    if (touch && widget.expandTouchTarget) {
+    if (touch && widget.expandTouchTarget && !widget.pointerWithinBounds) {
       result = RaftTouchTarget(child: result);
     }
     return result;
