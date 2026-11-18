@@ -7,9 +7,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_ui/test_themes.dart';
 
-// Actual Source LeftRail.tsx567–630 + AppRailRoot, DPR1 DOM:
-// Brutal width64/border-right2 => child width62, 40px button x11.
-// Elegant width56/no border => child width56, 40px button x8.
+// Web v1.24 AppRailRoot at a wide fine-pointer viewport has a 49px border
+// box. The 48px inner box centers each 36px action at x=6.
 void main() {
   for (final dark in raftThemeMatrix([false, true])) {
     testWidgets(
@@ -19,8 +18,7 @@ void main() {
         t.view.devicePixelRatio = 1;
         addTearDown(t.view.reset);
         final theme = raftTheme(dark: dark);
-        final tokens = theme.extension<RaftTokens>()!;
-        final width = RaftRailRecipe(tokens, viewportHeight: 800).width;
+        const width = 49.0;
         var routeCalls = 0, footerCalls = 0;
         final semantics = t.ensureSemantics();
         await t.pumpWidget(
@@ -62,16 +60,15 @@ void main() {
           ),
         );
         await t.pumpAndSettle();
-        final expected = 8.0;
         final primary = find.byKey(const ValueKey('rail-chat'));
         final footer = find.descendant(
           of: find.byType(RaftWorkspaceRailFooter),
           matching: find.byType(RaftWorkspaceRailAction),
         );
-        expect(t.getRect(primary).left, expected);
-        expect(t.getRect(footer).left, expected);
-        expect(t.getSize(primary), const Size(40, 40));
-        expect(t.getSize(footer), const Size(40, 40));
+        expect(t.getRect(primary).left, 6);
+        expect(t.getRect(footer).left, 6);
+        expect(t.getSize(primary), const Size.square(36));
+        expect(t.getSize(footer), const Size.square(36));
         expect(t.getSize(find.byType(RaftWorkspaceRail)).width, width);
         // Real AppRailRoot uses bg-primary -> --primary-400, not the
         // product's Button primary alias (#FFD440). Source blank-rail pixels:

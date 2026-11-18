@@ -5,7 +5,7 @@ import 'package:raft_ui/raft_ui.dart';
 void main() {
   for (final platform in [TargetPlatform.android, TargetPlatform.linux]) {
     for (final width in [390.0, 856.0]) {
-      testWidgets('$platform/$width tabs preserve visual32 and reach48', (
+      testWidgets('$platform/$width tabs keep source paint and touch reach', (
         t,
       ) async {
         t.view.physicalSize = Size(width, 944);
@@ -38,8 +38,9 @@ void main() {
           ),
         );
         final tab = t.getRect(find.byKey(const ValueKey('panel-tab-chat')));
-        expect(tab.height, 32);
-        expect(t.getSize(find.byType(RaftConversationTabs)).height, 49);
+        final fine = platform == TargetPlatform.linux && width >= 768;
+        expect(tab.height, fine ? 34 : 32);
+        expect(t.getSize(find.byType(RaftConversationTabs)).height, fine ? 44 : 49);
         // Actual pointer input in the 8px padding, outside the visible button.
         await t.tapAt(Offset(tab.center.dx, tab.top - 7));
         expect(calls, platform == TargetPlatform.android ? 1 : 0);
