@@ -17,7 +17,11 @@ import 'workspace_channel_header.dart' show WorkspaceChannelHeader;
 /// The Lounge's header: the DM header's layout (its agent's face opens that
 /// agent's profile, the name, the muted bell, Search and Settings), without a
 /// presence light. Null where [header]'s channel is not a Lounge.
-Widget? loungeHeaderFor(BuildContext context, WorkspaceChannelHeader header) {
+Widget? loungeHeaderFor(
+  BuildContext context,
+  WorkspaceChannelHeader header, {
+  required bool settingsPressed,
+}) {
   final channel = header.channel, controller = header.controller;
   final agentId = channel.loungeAgentId;
   if (agentId == null) return null;
@@ -60,6 +64,7 @@ Widget? loungeHeaderFor(BuildContext context, WorkspaceChannelHeader header) {
     backLabel: header.backLabel,
     onSearch: header.onSearch,
     onSettings: header.onSettings,
+    settingsPressed: settingsPressed,
     onAvatarTap: () => controller.openProfile(RaftProfileKind.agent, agentId),
     searchLabel: raftText(context, 'Search This Channel'),
     settingsLabel: raftText(context, 'Channel Details and Settings'),

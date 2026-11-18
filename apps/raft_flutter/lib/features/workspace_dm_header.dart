@@ -6,6 +6,7 @@ import '../data/raft_location.dart';
 import '../data/workspace_controller.dart';
 import 'agent_dm_header_extras.dart';
 import 'agent_hosted_cindy_banner.dart';
+import 'channel_details_host.dart';
 import 'channel_side_cards.dart';
 import 'agent_tool_stuck_notice.dart' show agentToolStuckText;
 import 'agent_metadata_projection.dart';
@@ -43,10 +44,12 @@ class WorkspaceDmHeader extends StatelessWidget {
   final Key? backKey;
 
   @override
-  Widget build(BuildContext context) =>
-      channelSideListener(controller, _header);
+  Widget build(BuildContext context) => channelSideListener(
+    controller,
+    (context) => channelDetailsHeader(controller, channel, _header),
+  );
 
-  Widget _header(BuildContext context) {
+  Widget _header(BuildContext context, bool settingsPressed) {
     final display = !agent || profile == null
         ? null
         : agentRowAmbientDisplay(profile!);
@@ -99,6 +102,7 @@ class WorkspaceDmHeader extends StatelessWidget {
         ),
         onSearch: onSearch,
         onSettings: onSettings,
+        settingsPressed: settingsPressed,
         onAvatarTap: peerId.isEmpty
             ? null
             : () {

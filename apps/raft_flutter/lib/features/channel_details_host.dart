@@ -62,6 +62,19 @@ class ChannelDetailsStore extends ChangeNotifier {
   }
 }
 
+Widget channelDetailsHeader(
+  WorkspaceController w,
+  RaftChannel channel,
+  Widget Function(BuildContext context, bool pressed) builder,
+) {
+  final details = ChannelDetailsStore.of(w);
+  return ListenableBuilder(
+    listenable: details,
+    builder: (context, _) =>
+        builder(context, details.channel?.id == channel.id),
+  );
+}
+
 /// The side area's details section, with focus returning to its opener.
 class ChannelDetailsHost extends StatefulWidget {
   const ChannelDetailsHost({

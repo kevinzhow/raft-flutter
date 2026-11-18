@@ -3,6 +3,7 @@ import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import '../data/workspace_controller.dart';
+import 'channel_details_host.dart';
 import 'channel_side_cards.dart';
 import 'lounge_channel_presentation.dart' show loungeHeaderFor;
 import 'management_support.dart' show managementLaunch;
@@ -58,35 +59,40 @@ class WorkspaceChannelHeader extends StatelessWidget {
     channel,
     (context, suffix) => channelSideListener(
       controller,
-      (context) =>
-          loungeHeaderFor(context, this) ??
-          RaftChannelHeader(
-            key: headerKey,
-            name: channel.name,
-            titleSuffix: suffix,
-            description: channel.description,
-            kind: channel.type,
-            workingAgents: workingAgents,
-            onBack: channelBackClosingSide(controller, onBack),
-            backKey: backKey,
-            backLabel: backLabel,
-            onSearch: onSearch,
-            onSettings: onSettings,
-            middleActions: channelSideToggles(context, controller),
-            searchLabel: raftText(context, 'Search This Channel'),
-            settingsLabel: raftText(context, 'Channel Details and Settings'),
-            archivedLabel: channel.archived
-                ? raftText(context, 'Archived')
-                : null,
-            mutedLabel: channel.flag('activityMuted')
-                ? raftText(
-                    context,
-                    'Activity muted. Direct mentions can still notify you.',
-                  )
-                : null,
-            onOpenLink: (url) => openLink(context, url),
-            publicPage: channelOnPublicPage(controller, channel),
-          ),
+      (context) => channelDetailsHeader(
+        controller,
+        channel,
+        (context, pressed) =>
+            loungeHeaderFor(context, this, settingsPressed: pressed) ??
+            RaftChannelHeader(
+              key: headerKey,
+              name: channel.name,
+              titleSuffix: suffix,
+              description: channel.description,
+              kind: channel.type,
+              workingAgents: workingAgents,
+              onBack: channelBackClosingSide(controller, onBack),
+              backKey: backKey,
+              backLabel: backLabel,
+              onSearch: onSearch,
+              onSettings: onSettings,
+              settingsPressed: pressed,
+              middleActions: channelSideToggles(context, controller),
+              searchLabel: raftText(context, 'Search This Channel'),
+              settingsLabel: raftText(context, 'Channel Details and Settings'),
+              archivedLabel: channel.archived
+                  ? raftText(context, 'Archived')
+                  : null,
+              mutedLabel: channel.flag('activityMuted')
+                  ? raftText(
+                      context,
+                      'Activity muted. Direct mentions can still notify you.',
+                    )
+                  : null,
+              onOpenLink: (url) => openLink(context, url),
+              publicPage: channelOnPublicPage(controller, channel),
+            ),
+      ),
     ),
   );
 }

@@ -305,6 +305,7 @@ List<Widget> raftConversationHeaderActions({
   required String settingsLabel,
   VoidCallback? onSearch,
   VoidCallback? onSettings,
+  bool? settingsPressed,
   List<Widget> middleActions = const [],
 }) => [
   _ConversationHeaderAction(
@@ -314,12 +315,21 @@ List<Widget> raftConversationHeaderActions({
     onPressed: onSearch,
   ),
   ...middleActions,
-  _ConversationHeaderAction(
-    key: const ValueKey('channel-overflow-trigger'),
-    glyph: RaftGlyph.settings,
-    tooltip: settingsLabel,
-    onPressed: onSettings,
-  ),
+  if (settingsPressed == null)
+    _ConversationHeaderAction(
+      key: const ValueKey('channel-overflow-trigger'),
+      glyph: RaftGlyph.settings,
+      tooltip: settingsLabel,
+      onPressed: onSettings,
+    )
+  else
+    raftConversationHeaderToggle(
+      key: const ValueKey('channel-overflow-trigger'),
+      glyph: RaftGlyph.settings,
+      label: settingsLabel,
+      pressed: settingsPressed,
+      onPressed: onSettings,
+    ),
 ];
 
 /// One of those topbar triggers (`OverflowMenuTrigger`), for the buttons a
@@ -475,6 +485,7 @@ class RaftChannelHeader extends StatelessWidget {
     this.backKey,
     this.onSearch,
     this.onSettings,
+    this.settingsPressed,
     this.backLabel = 'Back',
     this.searchLabel = 'Search This Channel',
     this.settingsLabel = 'Channel Settings',
@@ -497,6 +508,7 @@ class RaftChannelHeader extends StatelessWidget {
   /// "2 agents working", then " · " and the description.
   final List<RaftWorkingAgent> workingAgents;
   final VoidCallback? onBack, onSearch, onSettings;
+  final bool? settingsPressed;
   final Key? backKey;
 
   /// ChatPanel `ActivityMutedBadge`: the viewer muted this channel's activity.
@@ -678,6 +690,7 @@ class RaftChannelHeader extends StatelessWidget {
         settingsLabel: settingsLabel,
         onSearch: onSearch,
         onSettings: onSettings,
+        settingsPressed: settingsPressed,
         middleActions: middleActions,
       ),
     );
@@ -836,6 +849,7 @@ class RaftDmHeader extends StatelessWidget {
     this.backKey,
     this.onSearch,
     this.onSettings,
+    this.settingsPressed,
     this.onAvatarTap,
     this.avatarButtonKey,
     this.avatarSemanticLabel,
@@ -858,6 +872,7 @@ class RaftDmHeader extends StatelessWidget {
   final String? activityText;
   final bool muted;
   final VoidCallback? onBack, onSearch, onSettings, onAvatarTap;
+  final bool? settingsPressed;
   final Key? backKey, avatarButtonKey;
   final String backLabel, searchLabel, settingsLabel, mutedLabel;
   final String? avatarSemanticLabel;
@@ -936,6 +951,7 @@ class RaftDmHeader extends StatelessWidget {
         settingsLabel: settingsLabel,
         onSearch: onSearch,
         onSettings: onSettings,
+        settingsPressed: settingsPressed,
         middleActions: middleActions,
       ),
     );

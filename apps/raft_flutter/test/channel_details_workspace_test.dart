@@ -1,3 +1,5 @@
+import 'dart:ui' show Tristate;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -43,15 +45,24 @@ void main() {
   testWidgets('channel settings opens Details beside the conversation', (
     t,
   ) async {
-    final (w, _) = await settingsFixture(t);
-    await mountSettingsWorkspace(t, w, false, PrivateRouteGuard());
-    expect(find.text('Details'), findsOneWidget);
-    expect(find.byKey(const Key('channel-overflow-scrim')), findsNothing);
-    expect(find.byKey(const Key('channel-details-close')), findsOneWidget);
-    expect(find.byKey(const Key('channel-overflow-trigger')), findsOneWidget);
-    await t.tap(find.byKey(const Key('channel-details-close')));
-    await t.pumpAndSettle();
-    await t.pumpWidget(const SizedBox.shrink());
-    await t.pumpAndSettle();
+    final semantics = t.ensureSemantics();
+    try {
+      final (w, _) = await settingsFixture(t);
+      await mountSettingsWorkspace(t, w, false, PrivateRouteGuard());
+      expect(find.text('Details'), findsOneWidget);
+      expect(find.byKey(const Key('channel-overflow-scrim')), findsNothing);
+      expect(find.byKey(const Key('channel-details-close')), findsOneWidget);
+      final trigger = find.byKey(const Key('channel-overflow-trigger'));
+      Tristate pressed() =>
+          t.getSemantics(trigger).getSemanticsData().flagsCollection.isToggled;
+      expect(pressed(), Tristate.isTrue);
+      await t.tap(find.byKey(const Key('channel-details-close')));
+      await t.pumpAndSettle();
+      expect(pressed(), Tristate.isFalse);
+    } finally {
+      semantics.dispose();
+      await t.pumpWidget(const SizedBox.shrink());
+      await t.pumpAndSettle();
+    }
   });
 }
