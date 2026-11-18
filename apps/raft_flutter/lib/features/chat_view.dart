@@ -112,8 +112,10 @@ class ChatViewportHandle {
 
 /// Opens a task from a message (footer chip, in-body `#N` reference) in the
 /// host's task slot; [refresh] re-reads the message's task facts afterwards.
-typedef ChatTaskOpener =
-    void Function(Map<String, dynamic> task, Future<void> Function() refresh);
+typedef ChatTaskOpener = void Function(
+  Map<String, dynamic> task,
+  Future<void> Function() refresh,
+);
 
 class RaftChatView extends StatefulWidget {
   const RaftChatView({
@@ -755,8 +757,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
             context,
             userErrorText(
               e,
-              fallback:
-                  "One or more selected items can't be forwarded. Select regular messages instead.",
+              fallback: "One or more selected items can't be forwarded. Select regular messages instead.",
               where: 'forward selection',
             ),
           ),

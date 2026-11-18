@@ -632,14 +632,12 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
       }
       final navigator = Navigator.of(computerContext);
       final detail = MaterialPageRoute<void>(
-        builder: (_) => Scaffold(
-          body: SafeArea(
-            child: FleetDetail(
-              controller: w,
-              computers: false,
-              initial: w.services.entityDirectory.agent(id) ?? {'id': id},
-              backAlways: true,
-            ),
+        builder: (_) => RaftPageFrame(
+          child: FleetDetail(
+            controller: w,
+            computers: false,
+            initial: w.services.entityDirectory.agent(id) ?? {'id': id},
+            backAlways: true,
           ),
         ),
       );

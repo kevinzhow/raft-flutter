@@ -38,14 +38,13 @@ String? jointSenderProfileChannel(
   return channel?.type == 'joint' ? id : null;
 }
 
-typedef ChatProfileOpener =
-    void Function(
-      RaftProfileKind kind,
-      String id, {
-      String? agentTab,
-      String? channelId,
-      Map<String, dynamic>? externalAuthor,
-    });
+typedef ChatProfileOpener = void Function(
+  RaftProfileKind kind,
+  String id, {
+  String? agentTab,
+  String? channelId,
+  Map<String, dynamic>? externalAuthor,
+});
 
 /// Route owners for a timeline mounted with its own message window.
 class ChatNavigation {

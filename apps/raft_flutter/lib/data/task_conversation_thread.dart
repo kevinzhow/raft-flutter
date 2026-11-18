@@ -123,10 +123,9 @@ Future<Map<String, dynamic>?> focusedThreadReplyPage(
     if (e.status != 404) rethrow;
     if (!request.current) return null;
     m.state.highlightedMessageId = null;
-    if (HiddenTarget.fromError(e) case HiddenTarget(
-      target: final target,
-      sequence: final sequence?,
-    ) when target.id == focusedMessageId) {
+    if (HiddenTarget.fromError(e)
+        case HiddenTarget(target: final target, sequence: final sequence?)
+        when target.id == focusedMessageId) {
       const limit = 50;
       final channelId = m.state.threadChannelId!;
       final page = await MessageHistoryPages.read(

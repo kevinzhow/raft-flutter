@@ -94,13 +94,10 @@ class WorkspaceNavigation {
   };
 
   /// Navigate the profile slot without bumping the window revision.
-  void navigateProfile(
-    RaftLocation next, {
-    RaftNavigationKind kind = RaftNavigationKind.push,
-  }) {
+  void navigateProfile(RaftLocation next) {
     final keep = profileOnlyTransition(location, next);
     final before = _revision;
-    navigate(next, kind: kind);
+    navigate(next, kind: location.panelNavigationKindTo(next));
     if (keep) _revision = before;
   }
 

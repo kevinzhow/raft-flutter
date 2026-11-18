@@ -8,6 +8,7 @@ import '../data/workspace_entity_directory.dart';
 import 'chat_navigation.dart';
 import 'chat_view.dart';
 import 'mobile_route_gate.dart';
+import 'panel_width_store.dart';
 import 'profile_side_panel.dart';
 import 'task_conversation_facts.dart';
 import 'task_conversation_surface.dart';
@@ -125,11 +126,17 @@ class _SourceTaskSurfaceState extends State<SourceTaskSurface> {
         builder: (context, constraints) {
           final docked = constraints.maxWidth >= 720;
           final cover = profile != null && !docked;
+          final panelWidth = docked
+              ? profilePanelWidth.value.clamp(
+                  profilePanelWidth.min,
+                  constraints.maxWidth - profilePanelWidth.min,
+                )
+              : 0.0;
           return Stack(
             children: [
               PositionedDirectional(
                 start: 0,
-                end: profile != null && docked ? 400 : 0,
+                end: profile != null ? panelWidth : 0,
                 top: 0,
                 bottom: 0,
                 child: Offstage(
@@ -144,7 +151,7 @@ class _SourceTaskSurfaceState extends State<SourceTaskSurface> {
                 PositionedDirectional(
                   end: 0,
                   start: docked ? null : 0,
-                  width: docked ? 400 : null,
+                  width: docked ? panelWidth : null,
                   top: 0,
                   bottom: 0,
                   child: PopScope(

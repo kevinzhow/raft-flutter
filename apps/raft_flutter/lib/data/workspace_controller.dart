@@ -897,7 +897,7 @@ class WorkspaceController extends ChangeNotifier
   @override
   void closeRevokedChannelProjection(ChannelRevocation event) {
     final id = event.plan.channelId;
-    _presentation.closeProfile(channelId: id);
+    _presentation.closeProfile(id);
     if (channel?.id == id && !event.keepShared) {
       channel = null;
       _presentation.assignMissingConversationChannelId(id);

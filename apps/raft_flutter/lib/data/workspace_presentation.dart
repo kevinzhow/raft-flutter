@@ -347,15 +347,12 @@ class WorkspacePresentation {
       externalAuthor: externalAuthor,
     );
     if (next.uri == location.uri) return;
-    navigation.navigateProfile(
-      next,
-      kind: location.panelNavigationKindTo(next),
-    );
+    navigation.navigateProfile(next);
     context.changed();
   }
 
   /// Web `closeProfile`: removing a slot replaces the history entry.
-  void closeProfile({String? channelId}) {
+  void closeProfile([String? channelId]) {
     if (channelId != null && location.profile?.channelId != channelId) return;
     final source = presentationSource;
     if (source != null) {
@@ -363,11 +360,7 @@ class WorkspacePresentation {
       return;
     }
     if (location.profile == null) return;
-    final next = location.withoutProfile();
-    navigation.navigateProfile(
-      next,
-      kind: location.panelNavigationKindTo(next),
-    );
+    navigation.navigateProfile(location.withoutProfile());
     context.changed();
   }
 

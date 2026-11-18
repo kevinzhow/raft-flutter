@@ -622,9 +622,8 @@ class _MemberProfileViewState extends ManagementState<MemberProfileView>
         .toList();
     final joinedRaw = profile['joinedAt'];
     final joined = joinedRaw is String && DateTime.tryParse(joinedRaw) != null
-        ? DateFormat.yMMMd(
-            Localizations.localeOf(context).toLanguageTag(),
-          ).format(DateTime.parse(joinedRaw).toLocal())
+        ? DateFormat.yMMMd(Localizations.localeOf(context).toLanguageTag())
+              .format(DateTime.parse(joinedRaw).toLocal())
         : null;
     final status = profile['membershipStatus'];
     final departure = humanDepartureLabel(status);

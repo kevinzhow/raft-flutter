@@ -24,13 +24,10 @@ const _peerId = 'u2000000-0000-4000-8000-0000000000c2';
 /// the peer server's human (`serverId` != the open server) listed with an
 /// uploaded avatar, and a peer agent.
 Map<String, dynamic> roster() {
-  final body =
-      jsonDecode(
-            File(
-              'test/fixtures/field_parity/channels-members-roster-joint.json',
-            ).readAsStringSync(),
-          )
-          as Map<String, dynamic>;
+  final body = jsonDecode(
+    File('test/fixtures/field_parity/channels-members-roster-joint.json')
+        .readAsStringSync(),
+  ) as Map<String, dynamic>;
   return {
     ...body,
     'humans': [

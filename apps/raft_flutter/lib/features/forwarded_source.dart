@@ -201,6 +201,7 @@ Future<void> openForwardedSource(
         if (result is! Map || !_hasOriginal(result, conversationId, message)) {
           throw _unavailable;
         }
+        if (!context.mounted) return;
         openTaskFromList(
           w,
           {'kind': 'task', 'taskId': taskId, 'parentChannelId': channelId},
@@ -210,7 +211,7 @@ Future<void> openForwardedSource(
         );
     }
   } catch (_) {
-    if (current()) {
+    if (context.mounted && current()) {
       showRaftToast(context, _unavailable.message);
     }
   }
