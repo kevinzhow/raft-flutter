@@ -11,12 +11,13 @@ import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import '../data/feature_flag_client_facts.dart';
+import '../data/message_feature_flags.dart';
 import '../data/server_error_code.dart';
 import '../data/workspace_controller.dart';
 import 'create_task_dialog.dart';
 import 'task_v2_mode.dart';
 
-const taskV2ConversationsFlag = 'task_v2_conversations_v0';
+const taskV2ConversationsFlag = RaftFeatureFlags.taskV2Conversations;
 
 /// Web `useServerFeatureFlag(TASK_V2_CONVERSATIONS_FLAG_KEY)` for the
 /// selected server: off until evaluated, off on failure (a missing row
@@ -88,21 +89,9 @@ class TaskV2ConversationsFlag implements Listenable {
     if (serverId == null || _requested == scope) return;
     _requested = scope;
     try {
-      final result = await w.client.post(
-        '/feature-flags/evaluate',
-        data: featureFlagEvaluateBody(
-          keys: const [taskV2ConversationsFlag],
-          serverId: serverId,
-        ),
-      );
+      final flags = await MessageFeatureFlags.of(w.client).evaluate();
       if (_current != scope) return;
-      _enabled =
-          result is Map &&
-          (result['evaluations'] as List? ?? const []).whereType<Map>().any(
-            (f) => f['key'] == taskV2ConversationsFlag && f['enabled'] == true,
-          );
-    } catch (_) {
-      // Unknown stays off: convert still works, and its 409 opens create.
+      _enabled = flags.contains(taskV2ConversationsFlag);
     } finally {
       if (_requested == scope) _requested = null;
     }

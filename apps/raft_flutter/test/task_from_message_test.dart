@@ -178,9 +178,13 @@ void main() {
     // The chat reads the server's flag once when it shows the channel (Web
     // useServerFeatureFlag); building the menu itself sends nothing. On a
     // task v2 server the menu creates from the message and never converts.
+    final evaluations = a.calls.where(
+      (c) => c.path == '/feature-flags/evaluate',
+    );
+    expect(evaluations, hasLength(1));
     expect(
-      a.calls.where((c) => c.path == '/feature-flags/evaluate'),
-      hasLength(1),
+      (evaluations.single.data as Map)['keys'],
+      unorderedEquals(['task_v2_conversations_v0', 'agent_read_progress_v0']),
     );
     expect(find.text('Convert to task'), findsNothing);
     await t.tap(find.text('Create task from message'));

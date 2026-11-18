@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
+import 'package:raft_flutter/data/feature_flag_client_facts.dart';
 import 'package:raft_flutter/data/read_receipts.dart';
 
 class _Client extends RaftClient implements ReadReceiptsAuthority {
@@ -15,6 +16,7 @@ class _Client extends RaftClient implements ReadReceiptsAuthority {
   }
 
   final requests = <Completer<dynamic>>[];
+  final evaluations = <Completer<dynamic>>[];
   final emits = <(String, Object?)>[];
 
   @override
@@ -28,6 +30,14 @@ class _Client extends RaftClient implements ReadReceiptsAuthority {
     expect(path, '/channels/room');
     final request = Completer<dynamic>();
     requests.add(request);
+    return request.future;
+  }
+
+  @override
+  Future<dynamic> post(String path, {dynamic data}) {
+    expect(path, '/feature-flags/evaluate');
+    final request = Completer<dynamic>();
+    evaluations.add(request);
     return request.future;
   }
 
@@ -69,6 +79,33 @@ void main() {
     receipts = ReadReceipts(client);
   });
   tearDown(() => receipts.dispose());
+
+  test('feature changes supersede an in-flight evaluation', () async {
+    receipts.ensureProgressFlag();
+    receipts.consumeEvent(
+      const RaftEvent('server:features-changed', {
+        'serverId': 'server',
+        'keys': [RaftFeatureFlags.agentReadProgress],
+      }),
+    );
+    expect(client.evaluations, hasLength(2));
+    client.evaluations.last.complete({
+      'evaluations': [
+        {'key': RaftFeatureFlags.agentReadProgress, 'enabled': true},
+      ],
+    });
+    await Future<void>.delayed(Duration.zero);
+    expect(receipts.progressEnabled, isTrue);
+    client.evaluations.first.complete({'evaluations': []});
+    await Future<void>.delayed(Duration.zero);
+    expect(receipts.progressEnabled, isTrue);
+    client.selectServer('next');
+    expect(receipts.progressEnabled, isFalse);
+    receipts.ensureProgressFlag();
+    expect(client.evaluations, hasLength(3));
+    client.evaluations.last.complete({'evaluations': []});
+    await Future<void>.delayed(Duration.zero);
+  });
 
   test(
     'buffers progress during detail and advances exposed agents only',

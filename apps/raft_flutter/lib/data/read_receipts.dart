@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:raft_client/raft_client.dart';
 
 import 'feature_flag_client_facts.dart';
+import 'message_feature_flags.dart';
 
 /// Current-server transport and identity needed by read receipts.
 abstract interface class ReadReceiptsAuthority {
@@ -255,7 +256,7 @@ class ReadReceipts extends ChangeNotifier {
     return _progressEnabled;
   }
 
-  void ensureProgressFlag() {
+  void ensureProgressFlag({bool refresh = false}) {
     final epoch = _scope();
     final server = w.server;
     if (_disposed ||
@@ -266,28 +267,17 @@ class ReadReceipts extends ChangeNotifier {
       return;
     }
     _flagRequested = true;
-    unawaited(_evaluateProgressFlag(server.id, epoch, ++_flagVersion));
+    unawaited(_evaluateProgressFlag(epoch, ++_flagVersion, refresh: refresh));
   }
 
   Future<void> _evaluateProgressFlag(
-    String serverId,
     int epoch,
-    int version,
-  ) async {
-    const flag = RaftFeatureFlags.agentReadProgress;
-    var enabled = false;
-    try {
-      final response = await w.client.post(
-        '/feature-flags/evaluate',
-        data: featureFlagEvaluateBody(keys: const [flag], serverId: serverId),
-      );
-      final rows = response is Map ? response['evaluations'] : null;
-      enabled =
-          rows is List &&
-          rows.whereType<Map>().any(
-            (row) => row['key'] == flag && row['enabled'] == true,
-          );
-    } catch (_) {}
+    int version, {
+    required bool refresh,
+  }) async {
+    final flags = await MessageFeatureFlags.of(w.client)
+        .evaluate(refresh: refresh);
+    final enabled = flags.contains(RaftFeatureFlags.agentReadProgress);
     if (_disposed ||
         _scope() != epoch ||
         _flagVersion != version ||
@@ -424,7 +414,7 @@ class ReadReceipts extends ChangeNotifier {
                 RaftFeatureFlags.agentReadProgress,
               ))) {
         _flagRequested = false;
-        ensureProgressFlag();
+        ensureProgressFlag(refresh: true);
       }
       return;
     }
@@ -432,7 +422,7 @@ class ReadReceipts extends ChangeNotifier {
       final epoch = _scope();
       if (_flagRequested) {
         _flagRequested = false;
-        ensureProgressFlag();
+        ensureProgressFlag(refresh: true);
       }
       _hydrated.clear();
       final held = _watches.keys.toList();
