@@ -2,12 +2,13 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:raft_flutter/platform/content_coordinator.dart';
 
 import 'message_context_transition_test.dart' show row;
 import 'task_content_slot_test.dart' show v2Task;
 import 'task_surface_test.dart' show taskRoutes;
 import 'workspace_source_location_contract_test.dart'
-    show frames, mountPage, pageFixture, waitForPainted;
+    show LocalNotifications, frames, mountPage, pageFixture, waitForPainted;
 
 const _savedReply = {
   'messageId': 'matched-reply',
@@ -43,6 +44,30 @@ void main() {
       'saved': [_savedReply],
       'total': 1,
     };
+    api.routes['GET /servers'] = (_) => [w.server!.json];
+    api.routes['GET /channels/task-conv'] = (_) => {
+      'id': 'task-conv',
+      'serverId': 's1',
+      'name': 'task-task-1',
+      'type': 'task',
+      'parentChannelId': 'c1',
+      'taskId': 'task-1',
+      'parentMessageId': null,
+      'joined': false,
+    };
+    api.routes['GET /messages/context/matched-reply'] = (call) {
+      expect(call.queryParameters['channelId'], 'task-conv');
+      return {
+        'channelId': 'task-conv',
+        'targetMessageId': 'matched-reply',
+        'messages': [row('matched-reply', 'task-conv', 7)],
+      };
+    };
+    final coordinator = NativeContentCoordinator(
+      notifications: LocalNotifications(),
+      appLinks: true,
+    )..bindWorkspace(w);
+    addTearDown(coordinator.dispose);
     String? clipboard;
     final messenger =
         TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
@@ -54,7 +79,7 @@ void main() {
     addTearDown(
       () => messenger.setMockMethodCallHandler(SystemChannels.platform, null),
     );
-    await mountPage(t, w, false);
+    await mountPage(t, w, false, platform: TargetPlatform.linux);
     await frames(t, () {});
     final saved = find.byKey(const ValueKey('saved-matched-reply'));
     await t.tap(
@@ -69,6 +94,10 @@ void main() {
       clipboard,
       'https://example.invalid/s/demo/channel/task-conv?msg=matched-reply',
     );
+    coordinator.receiveLink(Uri.parse(clipboard!));
+    await waitForPainted(t, 'matched-reply');
+    expect(w.location.entityId, 'task-conv');
+    expect(w.location.messageId, 'matched-reply');
   });
 
   testWidgets('Saved task reply opens in its task conversation', (t) async {
