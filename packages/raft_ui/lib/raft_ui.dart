@@ -230,6 +230,8 @@ export 'src/timeline_time_reveal.dart';
 export 'src/delegated_face.dart';
 export 'src/message_saved_indicator.dart';
 export 'src/message_read_status.dart';
+export 'src/message_read_faces.dart'
+    show RaftReadFace, RaftMessageReadFaces, RaftMessageSystemTrailing;
 export 'src/selected_text_quote.dart';
 export 'src/message_translation.dart';
 export 'src/message_semantics.dart';

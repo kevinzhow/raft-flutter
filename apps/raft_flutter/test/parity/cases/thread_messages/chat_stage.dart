@@ -219,13 +219,16 @@ class ChatStage {
     this.rowOrigin = Offset.zero,
     this.rowIndex = 0,
     this.rowCount = 1,
+    this.rowIds,
     this.canvas,
     this.footer,
     this.targetRow = true,
     this.backgroundColor,
     bool? collapseLongMessages,
     Map<String, dynamic>? initialReadState,
-  }) : ids = ParityIdentities(ctx) {
+    Map<String, dynamic>? threadParent,
+  }) : ids = ParityIdentities(ctx),
+       thread = threadParent != null {
     var seq = 0;
     final rows = [
       for (final m in messages)
@@ -284,17 +287,33 @@ class ChatStage {
       expect(outcome, 'accepted', reason: 'The declared read fact must apply.');
     }
     w.messageDomain.ledger.switchServer(ids.serverId);
-    unawaited(
-      w.selectChannel(
-        w.channels.firstWhere((c) => c.id == channelId),
-        autoRead: false,
-      ),
-    );
+    if (threadParent == null) {
+      unawaited(
+        w.selectChannel(
+          w.channels.firstWhere((c) => c.id == channelId),
+          autoRead: false,
+        ),
+      );
+    } else {
+      w.channel = w.channels.firstWhere(
+        (c) => c.id == threadParent['channelId'],
+      );
+      w.threadChannelId = channelId;
+      w.messageDomain.state.threadParent = RaftMessage(threadParent);
+      w.messageDomain.ledger.ingest(
+        rows,
+        expectedGeneration: w.messageDomain.ledger.generation,
+      );
+      w.messageDomain.visibleIds[channelId] = {
+        for (final row in rows) row['id'] as String,
+      };
+    }
   }
 
   final ParityContext ctx;
   final ParityIdentities ids;
   final String channelId;
+  final bool thread;
 
   /// React element width for element crops (MessageItem box width); null for
   /// `body` viewport captures.
@@ -304,6 +323,7 @@ class ChatStage {
 
   /// Consecutive rows (from [rowIndex]) the element window spans.
   final int rowCount;
+  final List<String>? rowIds;
 
   /// When set, the capture target is a white [canvas] with the row window at
   /// [rowOrigin] and [footer] pinned to its bottom edge (React stacks
@@ -332,7 +352,13 @@ class ChatStage {
     // composer TextField, ScaffoldMessenger, bottom sheets).
     // Web's task chip is always an enabled button; a host without a task slot
     // would paint it disabled (60% opacity), which the Web capture never shows.
-    final chat = RaftChatView(key: chatKey, controller: w, onTask: (_, _) {});
+    final chat = RaftChatView(
+      key: chatKey,
+      controller: w,
+      thread: thread,
+      hideThreadParent: thread,
+      onTask: (_, _) {},
+    );
     if (rowWidth == null) {
       return Scaffold(backgroundColor: backgroundColor, body: chat);
     }
@@ -429,6 +455,19 @@ class ChatStage {
 
   Rect _rowRect(WidgetTester t) {
     final chat = t.getTopLeft(find.byKey(chatKey));
+    if (rowIds case final ids?) {
+      final rects = ids.map((id) {
+        final row = find.descendant(
+          of: find.byKey(ValueKey('message-wrapper-$id')),
+          matching: find.byType(RaftMessageRow),
+        );
+        expect(row, findsOneWidget);
+        return t.getRect(row);
+      });
+      return rects
+          .reduce((first, second) => first.expandToInclude(second))
+          .shift(-chat);
+    }
     var rect = t.getRect(find.byType(RaftMessageRow).at(rowIndex));
     for (var i = 1; i < rowCount; i++) {
       rect = rect.expandToInclude(

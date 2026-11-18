@@ -773,8 +773,8 @@
    "capability": "Agent read receipts: 'Read' badge in DMs and per-mention 'Read / Not read yet' state on agent mentions",
    "background": false,
    "status": "covered",
-   "webEntry": "MessageItem showDmReadReceipt footer 'Read' | MessageMarkdownBody readReceiptEnabled mention chips",
-   "gate": "read_receipts_v0 enabled; accepted peer frontier; own human sender; current live DM last row only",
+   "webEntry": "MessageItem showDmReadReceipt | MentionLink projectAgentReadReceipt",
+   "gate": "accepted peer frontier; own human sender; DM status on the current live last row",
    "flutterEntry": "agent_read_badge.dart agentMentionRead for mention chips; dm_read_status.dart dmReadStatusMessageId -> RaftMessageReadStatus below the current live DM last message",
    "flutterRefs": [
     {
@@ -794,7 +794,35 @@
      "needle": "class RaftMessageReadStatus"
     }
    ],
-   "justification": "Mention chips and the separate last-message DM line use the accepted read frontier. The DM line is restricted to the current live conversation, own human sender and enabled feature; context windows, pending sends and other senders do not show it. Desktop visual differences and native acceptance remain unresolved.",
+   "justification": "Mention chips and the separate last-message DM line use the accepted read frontier. Managed App bots have no mention marker. The DM line is restricted to the current live conversation and own human sender. Context windows, pending sends and other senders do not show it.",
+   "impact": "",
+   "size": ""
+  },
+  {
+   "kind": "ui",
+   "id": "ui:messages.agent-read-progress",
+   "area": "messages",
+   "capability": "Show Agent read positions and reachability under the latest own message in channels and threads",
+   "background": false,
+   "status": "covered",
+   "webEntry": "useAgentReadProgress.ts | AgentReadFaces.tsx | readReceiptStore.ts",
+   "gate": "agent_read_progress_v0; per-agent detail; live edge; outside DMs",
+   "flutterEntry": "AgentReadProgressPresentation, ReadReceipts, RaftMessageReadFaces and RaftMessageReadStatus",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/features/agent_read_progress.dart",
+     "needle": "class AgentReadProgressPresentation"
+    },
+    {
+     "file": "apps/raft_flutter/lib/data/read_receipts.dart",
+     "needle": "read_progress:watch"
+    },
+    {
+     "file": "packages/raft_ui/lib/src/message_read_faces.dart",
+     "needle": "class RaftMessageReadFaces"
+    }
+   ],
+   "justification": "Mounted conversations share a watch and preserve accepted frontiers during detail refresh. The latest own message warns only about relevant agents that stopped following or muted the channel and have yet to receive it.",
    "impact": "",
    "size": ""
   },

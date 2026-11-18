@@ -12,13 +12,37 @@ import 'saved_sidebar_entry.dart';
 import 'timeline_row_reuse.dart';
 import 'chat_body_preparation.dart';
 import 'channel_activity_session.dart';
+import 'agent_read_progress.dart';
+import 'system_message_grouping.dart';
 
 /// Mounted timeline keys and the revision of local row-affecting UI state.
 /// Workspace notifications can repaint chrome without invalidating message
 /// subtrees; actual message versions are compared by their lazy row elements.
 class ChatTimelinePresentation {
   ChannelActivityPresentation? activity;
+  final progress = AgentReadProgressPresentation();
   final bodies = ChatBodyPreparation();
+  final expandedSystemGroups = <String>{};
+  Object? _systemStateKey;
+  List<SystemGroupState?> _systemStates = const [];
+
+  SystemGroupState? systemStateAt(
+    BuildContext context,
+    int index,
+    List<chat.Message> messages,
+    int revision,
+    RaftMessage Function(chat.Message) source,
+  ) {
+    final key = (messages, revision, Localizations.localeOf(context));
+    if (_systemStateKey != key) {
+      _systemStates = buildSystemGroupStates([
+        for (final message in messages) source(message),
+      ], (text, values) => raftFormat(context, text, values));
+      _systemStateKey = key;
+    }
+    return index < _systemStates.length ? _systemStates[index] : null;
+  }
+
   bool _syncQueued = false;
   Future<void> updates = Future.value();
   Future<void> synchronize(VoidCallback apply) {

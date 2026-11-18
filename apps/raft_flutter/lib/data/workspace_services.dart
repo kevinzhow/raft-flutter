@@ -137,9 +137,7 @@ class WorkspaceServices {
         if (event.name == 'thread:followers-updated') {
           _threadFollowers?.consumeEvent(event);
         }
-        if (event.name == 'scope_read:updated') {
-          _readReceipts?.consumeEvent(event);
-        }
+        _readReceipts?.consumeEvent(event);
         next(event);
       };
 

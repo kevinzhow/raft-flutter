@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'icons.dart';
+import 'message_read_faces.dart';
 import 'message_rule_row.dart';
 import 'recipe_surface.dart';
 import 'recipes/message_system.g.dart';
@@ -100,6 +101,7 @@ class RaftSystemMessageGroup extends StatelessWidget {
     required this.onToggle,
     required this.children,
     this.toggleKey,
+    this.trailing,
   });
   final String summary;
   final bool expanded;
@@ -108,6 +110,10 @@ class RaftSystemMessageGroup extends StatelessWidget {
 
   /// Key of the disclosure button (Web `system-message-group-toggle`).
   final Key? toggleKey;
+  final Widget? trailing;
+
+  static bool containsExpandedRows(BuildContext context) =>
+      _SystemGroupScope.of(context);
 
   @override
   Widget build(BuildContext context) {
@@ -126,45 +132,48 @@ class RaftSystemMessageGroup extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Padding(
-            padding: recipe.systemGroupHeader.padding,
-            child: Center(
-              child: RaftTooltip(
-                message: summary,
-                onlyWhenTruncated: true,
-                child: GestureDetector(
-                  key: toggleKey,
-                  behavior: HitTestBehavior.opaque,
-                  onTap: onToggle,
-                  child: Semantics(
-                    button: true,
-                    expanded: expanded,
-                    child: Padding(
-                      padding: recipe.systemGroupDisclosure.padding,
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Flexible(
-                            child: Text(
-                              summary,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: label,
+          _trailing(
+            Padding(
+              padding: recipe.systemGroupHeader.padding,
+              child: Center(
+                child: RaftTooltip(
+                  message: summary,
+                  onlyWhenTruncated: true,
+                  child: GestureDetector(
+                    key: toggleKey,
+                    behavior: HitTestBehavior.opaque,
+                    onTap: onToggle,
+                    child: Semantics(
+                      button: true,
+                      expanded: expanded,
+                      child: Padding(
+                        padding: recipe.systemGroupDisclosure.padding,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Flexible(
+                              child: Text(
+                                summary,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: label,
+                              ),
                             ),
-                          ),
-                          SizedBox(
-                            width: recipe.systemGroupDisclosure.columnGap ?? 6,
-                          ),
-                          // ChevronRight: rotate-90 closed, -rotate-90 open.
-                          RotatedBox(
-                            quarterTurns: expanded ? 3 : 1,
-                            child: RaftIcon(
-                              RaftGlyph.chevronRight,
-                              size: chevron.width ?? 12,
-                              color: chevron.textStyle(tokens).color,
+                            SizedBox(
+                              width:
+                                  recipe.systemGroupDisclosure.columnGap ?? 6,
                             ),
-                          ),
-                        ],
+                            // ChevronRight: rotate-90 closed, -rotate-90 open.
+                            RotatedBox(
+                              quarterTurns: expanded ? 3 : 1,
+                              child: RaftIcon(
+                                RaftGlyph.chevronRight,
+                                size: chevron.width ?? 12,
+                                color: chevron.textStyle(tokens).color,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -184,4 +193,8 @@ class RaftSystemMessageGroup extends StatelessWidget {
       ),
     );
   }
+
+  Widget _trailing(Widget header) => trailing == null
+      ? header
+      : RaftMessageSystemTrailing(trailing: trailing!, child: header);
 }

@@ -190,6 +190,8 @@ class ParityContext {
   }
   if (override != null && override.isNotEmpty) return named(override);
   if (extTheme is String) return named(extTheme);
+  final theme = visualCase['theme'];
+  if (theme == 'dark' || theme == 'light') return named(theme as String);
   return (pack: raftThemePackId, dark: false);
 }
 

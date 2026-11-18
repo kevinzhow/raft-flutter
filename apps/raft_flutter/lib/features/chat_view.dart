@@ -366,6 +366,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
       if (!active) {
         closeReactionPicker();
         timelineKeys.bodies.cancel();
+        timelineKeys.progress.dispose();
       }
       if (active) sync();
     }
@@ -957,6 +958,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
   void dispose() {
     saveReadingAnchor();
     activity.dispose();
+    timelineKeys.progress.dispose();
     MessageHistoryMemory.cancelSample(w, this);
     releaseAgentCollapse(this);
     if (reportedBottomId case final id?) {
@@ -2642,7 +2644,10 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
     m = withoutRetractedParts(m);
     final pending = WorkspaceMessages.isPendingSend(m) || m.retracted;
     if (m.string('messageType') == 'system') {
-      return systemTile(context, m, rows, referenceDirectory, clock, key);
+      return timelineKeys.progress.system(
+        m.id,
+        systemTile(context, m, rows, referenceDirectory, clock, key),
+      );
     }
     final times = timeFormatter;
     final fontSize = messagePreferenceDisplaySize(
@@ -2747,7 +2752,10 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
           ? (at) => openReactionPicker(m, null, at: at)
           : null,
       threadPreview: inlineThreadReplies(m, parentTile: parent),
-      readStatus: dmRead ? const RaftMessageReadStatus() : null,
+      readStatus: dmRead
+          ? const RaftMessageReadStatus()
+          : timelineKeys.progress.status(m.id),
+      bodyTrailing: timelineKeys.progress.faces(m.id),
       taskReference: taskReference(m),
       taskList: messageTaskList(
         w,
@@ -2899,29 +2907,13 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
     return windowIndex[id];
   }
 
-  // Web `expandedSystemMessageGroups` + `systemMessageRenderStates`: render-only
-  // grouping of adjacent system messages over the displayed window.
-  final expandedSystemGroups = <String>{};
-  List<SystemGroupState?>? systemStates;
-  List<chat.Message>? systemStatesWindow;
-  int systemStatesRevision = -1;
-  String? systemStatesLocale;
-  SystemGroupState? systemStateAt(int index) {
-    final list = adapter.messages;
-    final locale = Localizations.localeOf(context).toLanguageTag();
-    if (systemStates == null ||
-        !identical(list, systemStatesWindow) ||
-        systemStatesRevision != windowRevision ||
-        systemStatesLocale != locale) {
-      systemStates = buildSystemGroupStates([
-        for (final m in list) source(m),
-      ], (text, values) => raftFormat(context, text, values));
-      systemStatesWindow = list;
-      systemStatesRevision = windowRevision;
-      systemStatesLocale = locale;
-    }
-    return index < systemStates!.length ? systemStates![index] : null;
-  }
+  SystemGroupState? systemStateAt(int index) => timelineKeys.systemStateAt(
+    context,
+    index,
+    adapter.messages,
+    windowRevision,
+    source,
+  );
 
   Widget datedTile(
     RaftMessage message, {
@@ -2940,6 +2932,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
       );
     }
     if (systemState is SystemGroupSummary) {
+      final expandedSystemGroups = timelineKeys.expandedSystemGroups;
       final expanded = expandedSystemGroups.contains(systemState.groupId);
       return RaftRowExtentRecorder(
         scope: rowExtentScope(context),
@@ -2950,6 +2943,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
             MediaQuery.sizeOf(context).width,
           ),
           child: RaftSystemMessageGroup(
+            trailing: timelineKeys.progress.faces(message.id),
             toggleKey: const ValueKey('system-message-group-toggle'),
             summary: systemState.summary,
             expanded: expanded,
@@ -3142,6 +3136,14 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
   Widget buildTimeline() {
     final timelineAdapter = adapter;
     final messages = timelineAdapter.messages;
+    timelineKeys.progress
+      ..bind(
+        w,
+        thread: widget.thread,
+        visible: presentationActive,
+        changed: sync,
+      )
+      ..update(w, messages.map(source), systemStateAt, thread: widget.thread);
     final dmReadId = dmReadStatusMessageId(w, rows, thread: widget.thread);
     final measuredRows = raftRowExtents.scope(rowExtentScope(context));
     final loading = widget.thread
@@ -3267,6 +3269,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
                   constraints.maxWidth,
                   systemStateAt(i),
                   source(messages[i]).id == dmReadId,
+                  timelineKeys.progress.revision(source(messages[i]).id),
                 ),
                 source: source,
                 summaries: _messages.threadSummaries,

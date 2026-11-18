@@ -127,11 +127,11 @@ void main() {
     );
     expect(
       agentReadEligible(channel('j', 'joint'), _message(), 'alice'),
-      isFalse,
+      isTrue,
     );
     expect(
       agentReadEligible(channel('t', 'thread'), _message(), 'alice'),
-      isFalse,
+      isTrue,
     );
     expect(agentReadEligible(null, _message(), 'alice'), isFalse);
     expect(agentReadEligible(general, _message(), null), isFalse);

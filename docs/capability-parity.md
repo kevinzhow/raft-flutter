@@ -7,18 +7,18 @@ Pixel parity, field parity (`docs/field-parity.md`) and the page inventory (`doc
 
 ## Summary
 
-Total capabilities: 847 (400 endpoint/network keys, 447 client-side).
+Total capabilities: 848 (400 endpoint/network keys, 448 client-side).
 
 | Status | Count |
 | --- | ---: |
-| ✅ covered | 720 |
+| ✅ covered | 721 |
 | ⚠️ partial | 30 |
 | ❌ missing | 2 |
 | ➖ na | 95 |
 
 | Area | ✅ | ⚠️ | ❌ | ➖ |
 | --- | ---: | ---: | ---: | ---: |
-| Messages | 83 | 3 | 0 | 2 |
+| Messages | 84 | 3 | 0 | 2 |
 | Threads | 16 | 0 | 0 | 2 |
 | Channels | 38 | 1 | 0 | 0 |
 | DMs | 6 | 0 | 0 | 0 |
@@ -88,7 +88,8 @@ Legend: ✅ covered (endpoint called and a reachable entry point with equivalent
 | ✅ | Mention / channel / emoji suggestion popover keys: Arrow Up/Down moves, Tab or Enter accepts, Escape dismisses | `ui:global-ui.shortcut-autocomplete-keys` | hooks/useAutocomplete.ts handleKeyDown (ArrowDown/ArrowUp/Tab/Enter without Shift/Escape) | raft_ui components.dart suggestionKey() |  |
 | ✅ | Composer keys: Enter sends and Shift+Enter inserts a newline on desktop keyboards; Cmd/Ctrl+Enter also sends; Cmd/Ctrl+Shift+Enter sends as a task; on touch devices Enter inserts a newline and Send button submits; IME composition never sends | `ui:global-ui.shortcut-composer-send` | components/message/MessageInput.tsx handleKeyDown (isComposing/229 guard, forceAsTask on meta/ctrl+shift+Enter, (pointer: coarse)+portrait newline) | raft_ui components.dart composerKey() + Shortcuts with _RaftForceTaskSendIntent (ctrl/meta+shift+Enter) and ActivateIntent (ctrl/meta+Enter); Android/iOS return ignored so Enter is a newline |  |
 | ✅ | Cmd/Ctrl+Z immediately after a mention auto-insert (picker or 'mention sender') restores the text and mention set from before the insert | `ui:global-ui.shortcut-composer-undo-mention` | components/message/MessageInput.tsx handleKeyDown mentionUndoSnapshotRef (beforeContent/beforeMentions/beforeCursor) | raft_ui composer_mention_undo.dart + RaftComposer.undoMention (picker choice and mention-sender) |  |
-| ✅ | Agent read receipts: 'Read' badge in DMs and per-mention 'Read / Not read yet' state on agent mentions | `ui:messages.agent-read-badge` | MessageItem showDmReadReceipt footer 'Read' \| MessageMarkdownBody readReceiptEnabled mention chips[gate: read_receipts_v0 enabled; accepted peer frontier; own human sender; current live DM last row only] | agent_read_badge.dart agentMentionRead for mention chips; dm_read_status.dart dmReadStatusMessageId -> RaftMessageReadStatus below the current live DM last message | Mention chips and the separate last-message DM line use the accepted read frontier. The DM line is restricted to the current live conversation, own human sender and enabled feature; context windows, pending sends and other senders do not show it. Desktop visual differences and native acceptance remain unresolved. |
+| ✅ | Agent read receipts: 'Read' badge in DMs and per-mention 'Read / Not read yet' state on agent mentions | `ui:messages.agent-read-badge` | MessageItem showDmReadReceipt \| MentionLink projectAgentReadReceipt[gate: accepted peer frontier; own human sender; DM status on the current live last row] | agent_read_badge.dart agentMentionRead for mention chips; dm_read_status.dart dmReadStatusMessageId -> RaftMessageReadStatus below the current live DM last message | Mention chips and the separate last-message DM line use the accepted read frontier. Managed App bots have no mention marker. The DM line is restricted to the current live conversation and own human sender. Context windows, pending sends and other senders do not show it. |
+| ✅ | Show Agent read positions and reachability under the latest own message in channels and threads | `ui:messages.agent-read-progress` | useAgentReadProgress.ts \| AgentReadFaces.tsx \| readReceiptStore.ts[gate: agent_read_progress_v0; per-agent detail; live edge; outside DMs] | AgentReadProgressPresentation, ReadReceipts, RaftMessageReadFaces and RaftMessageReadStatus | Mounted conversations share a watch and preserve accepted frontiers during detail refresh. The latest own message warns only about relevant agents that stopped following or muted the channel and have yet to receive it. |
 | ✅ | Hover/click sender avatar opens profile preview card or the agent/member profile | `ui:messages.avatar-profile-preview` | MessageSenderAvatar PreviewCard + onNavigateAgent/Human/External[gate: none] | chat_view.dart senderAvatar() + profile_preview.dart |  |
 | ✅ | Long messages collapse with 'Show more' / 'Collapse' toggle (per-channel 'collapse long messages' preference) | `ui:messages.collapse-long-message` | CollapsibleMessageContent button[gate: preference collapseLongMessages (channel settings)] | raft_ui collapsible.dart used by message rows; preference in channel_settings.dart; channel_repository.dart applies versioned display preferences through the controller facade | Owner decision (Kevin, task #151, 2026-10-17): an unread agent message starts open and a read one starts collapsed, the same on phone and desktop (the read cursor, the same maxReadSeq as the unread count); the reader's toggle wins for the rest of the visit. Web collapses every message over 320px whoever sent it and remembers expansion for the life of the app. Forwarded bundles and action cards never collapse, as on Web. |
 | ✅ | Composer 'Attach media' and 'Attach file' buttons | `ui:messages.composer-attach-buttons` | ComposerIconButton ImagePlus / Paperclip[gate: channel write access] | chat_view.dart RaftComposer onAttach/onImagePick -> attach(mediaOnly) |  |

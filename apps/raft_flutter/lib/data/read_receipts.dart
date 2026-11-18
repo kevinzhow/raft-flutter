@@ -1,7 +1,10 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:raft_client/raft_client.dart';
+
+import 'feature_flag_client_facts.dart';
 
 /// Current-server transport and identity needed by read receipts.
 abstract interface class ReadReceiptsAuthority {
@@ -12,10 +15,27 @@ abstract interface class ReadReceiptsAuthority {
 /// Web `readReceiptDomain` PeerReadState: how far one peer has read a scope.
 @immutable
 class PeerReadState {
-  const PeerReadState(this.peerKind, this.peerId, this.maxReadSeq);
+  const PeerReadState(
+    this.peerKind,
+    this.peerId,
+    this.maxReadSeq, {
+    this.stoppedFollowing = false,
+    this.mutedChannel = false,
+  });
   final String peerKind, peerId;
   final int maxReadSeq;
+  final bool stoppedFollowing, mutedChannel;
   String get key => '$peerKind:$peerId';
+
+  PeerReadState advance(int? seq) => seq == null || seq <= maxReadSeq
+      ? this
+      : PeerReadState(
+          peerKind,
+          peerId,
+          seq,
+          stoppedFollowing: stoppedFollowing,
+          mutedChannel: mutedChannel,
+        );
 }
 
 /// Web `ReadReceiptScope`: the peers' own frontiers (small scopes) or an
@@ -41,7 +61,8 @@ class ReadReceiptProjection {
   bool get read => readCount > 0;
 }
 
-int? _seq(dynamic v) => v is int && v >= 0 ? v : null;
+int? _seq(dynamic value) =>
+    value is int && value >= 0 && value <= 9007199254740991 ? value : null;
 
 /// Web `normalizeReadReceiptHydrate`: null when the detail carries neither
 /// shape (the flag is off for the server, or the scope is not a receipt scope),
@@ -65,7 +86,13 @@ ReadReceiptScope? normalizeReadReceiptHydrate(dynamic payload) {
           seq == null) {
         return null;
       }
-      final peer = PeerReadState(kind as String, id, seq);
+      final peer = PeerReadState(
+        kind as String,
+        id,
+        seq,
+        stoppedFollowing: item['stoppedFollowing'] == true,
+        mutedChannel: item['mutedChannel'] == true,
+      );
       if (!seen.add(peer.key)) return null;
       out.add(peer);
     }
@@ -110,7 +137,7 @@ ReadReceiptScope mergeReadReceiptHydrate(
       if ((marks[p.key] ?? 0) > p.maxReadSeq)
         () {
           changed = true;
-          return PeerReadState(p.peerKind, p.peerId, marks[p.key]!);
+          return p.advance(marks[p.key]);
         }()
       else
         p,
@@ -164,18 +191,23 @@ bool? projectAgentReadReceipt(
 
 /// Web `readReceiptStore`: per scope peer read frontiers of the current
 /// server. Hydrating a scope (`GET /channels/:id` answering `peerReadStates`
-/// or `peerReadSummary`) is the client-side `read_receipts_v0` gate; a live
+/// or `peerReadSummary`) is the client-side receipt gate; a live
 /// `scope_read:updated` frame is ignored until its scope is hydrated.
 class ReadReceipts extends ChangeNotifier {
   ReadReceipts(this.w);
   final ReadReceiptsAuthority w;
   final Map<String, ReadReceiptScope> _scopes = {};
   final Map<String, Future<void>> _inFlight = {};
-  final _hydrated = <String>{};
+  final _hydrated = <String, DateTime>{};
   final _detailVersions = <String, int>{};
+  final _watches = <String, int>{};
+  final _pendingProgress = <String, Map<String, int>>{};
+  final _refreshing = <String, Future<void>>{};
   Object? _identity;
   int _epoch = 0;
   bool _disposed = false;
+  bool _progressEnabled = false, _flagRequested = false;
+  int _flagVersion = 0;
 
   int _scope() {
     final identity = (
@@ -183,6 +215,8 @@ class ReadReceipts extends ChangeNotifier {
       w.client.user?.id,
       w.client.generation,
       w.client.serverId,
+      w.server?.string('role'),
+      jsonEncode(w.server?.json['permissions']),
     );
     if (identity != _identity) {
       _identity = identity;
@@ -191,6 +225,11 @@ class ReadReceipts extends ChangeNotifier {
       _inFlight.clear();
       _hydrated.clear();
       _detailVersions.clear();
+      _watches.clear();
+      _pendingProgress.clear();
+      _refreshing.clear();
+      _progressEnabled = false;
+      _flagRequested = false;
     }
     return _epoch;
   }
@@ -206,7 +245,95 @@ class ReadReceipts extends ChangeNotifier {
 
   bool wasHydrated(String scopeId) {
     _scope();
-    return _hydrated.contains(scopeId);
+    return _hydrated.containsKey(scopeId);
+  }
+
+  int get authorityEpoch => _scope();
+
+  bool get progressEnabled {
+    _scope();
+    return _progressEnabled;
+  }
+
+  void ensureProgressFlag() {
+    final epoch = _scope();
+    final server = w.server;
+    if (_disposed ||
+        _flagRequested ||
+        server == null ||
+        server.id != w.client.serverId ||
+        w.client.user == null) {
+      return;
+    }
+    _flagRequested = true;
+    unawaited(_evaluateProgressFlag(server.id, epoch, ++_flagVersion));
+  }
+
+  Future<void> _evaluateProgressFlag(
+    String serverId,
+    int epoch,
+    int version,
+  ) async {
+    const flag = RaftFeatureFlags.agentReadProgress;
+    var enabled = false;
+    try {
+      final response = await w.client.post(
+        '/feature-flags/evaluate',
+        data: featureFlagEvaluateBody(keys: const [flag], serverId: serverId),
+      );
+      final rows = response is Map ? response['evaluations'] : null;
+      enabled =
+          rows is List &&
+          rows.whereType<Map>().any(
+            (row) => row['key'] == flag && row['enabled'] == true,
+          );
+    } catch (_) {}
+    if (_disposed ||
+        _scope() != epoch ||
+        _flagVersion != version ||
+        _progressEnabled == enabled) {
+      return;
+    }
+    _progressEnabled = enabled;
+    notifyListeners();
+  }
+
+  Future<void> hydrateIfStale(String scopeId) {
+    _scope();
+    final request = _inFlight[scopeId];
+    if (request != null) return request;
+    final loaded = _hydrated[scopeId];
+    return loaded != null &&
+            DateTime.now().difference(loaded) < const Duration(minutes: 1)
+        ? Future.value()
+        : hydrate(scopeId);
+  }
+
+  VoidCallback watchProgress(String scopeId) {
+    final epoch = _scope();
+    final count = _watches[scopeId] ?? 0;
+    _watches[scopeId] = count + 1;
+    if (count == 0) {
+      _emitWatch('read_progress:watch', scopeId);
+      unawaited(hydrateIfStale(scopeId));
+    }
+    var released = false;
+    return () {
+      if (released || _disposed || _scope() != epoch) return;
+      released = true;
+      final count = _watches[scopeId]!;
+      if (count > 1) {
+        _watches[scopeId] = count - 1;
+        return;
+      }
+      _watches.remove(scopeId);
+      _hydrated.remove(scopeId);
+      _emitWatch('read_progress:unwatch', scopeId);
+    };
+  }
+
+  void _emitWatch(String name, String scopeId) {
+    w.client.emitSocketEvent(name, {'scopeId': scopeId});
   }
 
   /// Reuse a current, authorized channel detail, including an absent gate.
@@ -215,12 +342,14 @@ class ReadReceipts extends ChangeNotifier {
     if (_disposed) return;
     _scope();
     _detailVersions[scopeId] = (_detailVersions[scopeId] ?? 0) + 1;
-    _hydrated.add(scopeId);
+    _hydrated[scopeId] = DateTime.now();
+    final pending = _pendingProgress.remove(scopeId);
     final next = normalizeReadReceiptHydrate(data);
     if (next == null) {
       if (_scopes.remove(scopeId) != null) notifyListeners();
     } else {
-      _scopes[scopeId] = mergeReadReceiptHydrate(_scopes[scopeId], next);
+      final merged = mergeReadReceiptHydrate(_scopes[scopeId], next);
+      _scopes[scopeId] = pending == null ? merged : _advance(merged, pending);
       notifyListeners();
     }
   }
@@ -237,7 +366,10 @@ class ReadReceipts extends ChangeNotifier {
     }
     late final Future<void> request;
     request = _fetch(scopeId, epoch, detail).whenComplete(() {
-      if (identical(_inFlight[scopeId], request)) _inFlight.remove(scopeId);
+      if (identical(_inFlight[scopeId], request)) {
+        _inFlight.remove(scopeId);
+        _pendingProgress.remove(scopeId);
+      }
     });
     return _inFlight[scopeId] = request;
   }
@@ -265,19 +397,82 @@ class ReadReceipts extends ChangeNotifier {
   void clearScope(String scopeId) {
     _scope();
     _hydrated.remove(scopeId);
+    _inFlight.remove(scopeId);
+    _pendingProgress.remove(scopeId);
+    _refreshing.remove(scopeId);
     _detailVersions[scopeId] = (_detailVersions[scopeId] ?? 0) + 1;
     if (_scopes.remove(scopeId) != null) notifyListeners();
   }
 
   /// Delivered by the owning workspace's existing session subscription.
   void consumeEvent(RaftEvent event) {
-    if (_disposed || event.name != 'scope_read:updated') return;
+    if (_disposed) return;
+    if (event.name == 'channel:removed') {
+      final payload = event.payload;
+      if (payload case {'channelId': final String id}) {
+        clearScope(id);
+      }
+      return;
+    }
+    if (event.name == 'server:features-changed') {
+      final payload = event.payload;
+      if (_flagRequested &&
+          payload is Map &&
+          payload['serverId'] == w.server?.id &&
+          (payload['keys'] is! List ||
+              (payload['keys'] as List).contains(
+                RaftFeatureFlags.agentReadProgress,
+              ))) {
+        _flagRequested = false;
+        ensureProgressFlag();
+      }
+      return;
+    }
+    if (event.name == 'rooms:joined') {
+      final epoch = _scope();
+      if (_flagRequested) {
+        _flagRequested = false;
+        ensureProgressFlag();
+      }
+      _hydrated.clear();
+      final held = _watches.keys.toList();
+      final latest = held.skip(held.length > 8 ? held.length - 8 : 0);
+      for (final id in latest) {
+        _emitWatch('read_progress:watch', id);
+      }
+      for (final id in latest) {
+        _refreshFollowState(id, epoch);
+      }
+      return;
+    }
+    if (!const {
+      'scope_read:updated',
+      'read_progress:updated',
+      'read_progress:detail_changed',
+      'thread:followers-updated',
+    }.contains(event.name)) {
+      return;
+    }
     final epoch = _scope();
     final payload = event.payload;
     if (payload is! Map) return;
-    final id = payload['scopeId'];
+    final id =
+        payload[event.name == 'thread:followers-updated'
+            ? 'threadChannelId'
+            : 'scopeId'];
     if (id is! String || id.isEmpty) return;
     final current = _scopes[id];
+    if (event.name == 'read_progress:updated') {
+      _consumeProgress(id, payload['peers'], current);
+      return;
+    }
+    if (event.name != 'scope_read:updated') {
+      if (_watches.containsKey(id) &&
+          (_inFlight.containsKey(id) || current?.peers != null)) {
+        _refreshFollowState(id, epoch);
+      }
+      return;
+    }
     // Hydrate presence is the gate: never enable receipts from a frame alone.
     if (current == null) return;
     if (payload['summaryChanged'] == true) {
@@ -309,10 +504,64 @@ class ReadReceipts extends ChangeNotifier {
     final index = peers.indexWhere((p) => p.key == '$kind:$peer');
     if (index < 0 || peers[index].maxReadSeq >= seq) return;
     _scopes[id] = ReadReceiptScope.peers([
-      for (var i = 0; i < peers.length; i++)
-        i == index ? PeerReadState(kind as String, peer, seq) : peers[i],
+      for (var indexOfPeer = 0; indexOfPeer < peers.length; indexOfPeer++)
+        indexOfPeer == index ? peers[index].advance(seq) : peers[indexOfPeer],
     ]);
     notifyListeners();
+  }
+
+  void _consumeProgress(String id, Object? raw, ReadReceiptScope? current) {
+    final loading = current == null && _inFlight.containsKey(id);
+    if (raw is! List || (!loading && current?.peers == null)) return;
+    final marks = loading ? (_pendingProgress[id] ??= {}) : <String, int>{};
+    for (final peer in raw.whereType<Map>()) {
+      final agentId = peer['peerId'];
+      final seq = _seq(peer['maxReadSeq']);
+      if (agentId is String &&
+          agentId.isNotEmpty &&
+          seq != null &&
+          seq > (marks[agentId] ?? 0)) {
+        marks[agentId] = seq;
+      }
+    }
+    if (current == null || marks.isEmpty) return;
+    final next = _advance(current, marks);
+    if (identical(next, current)) return;
+    _scopes[id] = next;
+    notifyListeners();
+  }
+
+  ReadReceiptScope _advance(ReadReceiptScope current, Map<String, int> marks) {
+    final peers = current.peers;
+    if (peers == null) return current;
+    List<PeerReadState>? next;
+    for (var index = 0; index < peers.length; index++) {
+      final peer = peers[index];
+      if (peer.peerKind != 'agent') continue;
+      final updated = peer.advance(marks[peer.peerId]);
+      if (!identical(peer, updated)) (next ??= peers.toList())[index] = updated;
+    }
+    return next == null ? current : ReadReceiptScope.peers(next);
+  }
+
+  void _refreshFollowState(String id, int epoch) {
+    final pending = _inFlight[id];
+    if (pending == null) {
+      unawaited(hydrate(id));
+    } else if (!identical(_refreshing[id], pending)) {
+      _refreshing[id] = pending;
+      unawaited(
+        pending.then<void>((_) async {
+          if (_disposed ||
+              _scope() != epoch ||
+              !identical(_refreshing[id], pending)) {
+            return;
+          }
+          _refreshing.remove(id);
+          if (_watches.containsKey(id)) await hydrate(id);
+        }),
+      );
+    }
   }
 
   @override
@@ -322,6 +571,9 @@ class ReadReceipts extends ChangeNotifier {
     _inFlight.clear();
     _hydrated.clear();
     _detailVersions.clear();
+    _watches.clear();
+    _pendingProgress.clear();
+    _refreshing.clear();
     super.dispose();
   }
 }

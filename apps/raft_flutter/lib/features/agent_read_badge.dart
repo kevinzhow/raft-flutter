@@ -8,7 +8,7 @@ import '../data/workspace_controller.dart';
 /// Web MentionLink #693: whether an @mentioned agent has read [message], for
 /// the marker on its mention. Only the human who sent the message sees it
 /// (`agentReadBadgesEnabled`), only for agents, and only where the server
-/// reports per-peer read frontiers (flag `read_receipts_v0`): `null` draws
+/// reports per-peer read frontiers: `null` draws
 /// nothing, never "unread".
 bool? agentMentionRead(
   WorkspaceController w,
@@ -16,10 +16,15 @@ bool? agentMentionRead(
   String agentId,
 ) {
   final channelId = message.channelId;
-  final channel = [
-    ...w.channels,
-    ...w.dms,
-  ].where((c) => c.id == channelId).firstOrNull;
+  final channel = channelId == w.threadChannelId
+      ? w.messageDomain.threadSourceChannel
+      : w.messageDomain.threadChannelResource(channelId);
+  if (w.services.entityDirectory.agent(agentId)?['managedByAppInstallId'] !=
+          null ||
+      w.sessionScope.revokedChannels.contains(channelId) ||
+      w.sessionScope.revokedServers.contains(w.client.serverId)) {
+    return null;
+  }
   if (!agentReadEligible(channel, message, w.client.user?.id)) return null;
   watchReadFrontiers(w, channelId);
   return projectAgentReadReceipt(
@@ -31,7 +36,7 @@ bool? agentMentionRead(
 
 /// Whether [message] may carry read markers: its sender is the viewer, a
 /// human, in a channel that has read frontiers (Web
-/// `isReadReceiptScopeEligible`: not `all`, a joint channel or a thread).
+/// `isReadReceiptScopeEligible`: the accepted detail decides which peers count.
 bool agentReadEligible(
   RaftChannel? channel,
   RaftMessage message,
@@ -41,9 +46,7 @@ bool agentReadEligible(
     viewerId != null &&
     message.senderId == viewerId &&
     const {'user', 'human'}.contains(message.string('senderType')) &&
-    channel.name != 'all' &&
-    channel.type != 'joint' &&
-    channel.type != 'thread';
+    channel.name != 'all';
 
 class _ReadFrontierRequests {
   Object? identity;

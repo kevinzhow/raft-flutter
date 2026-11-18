@@ -18,6 +18,7 @@ import 'font_warm_up.dart';
 import 'localization.dart';
 import 'panel_layout.dart' show RaftCssText;
 import 'message_header_mask.dart';
+import 'message_body_trailing.dart';
 import 'message_semantics.dart';
 import 'message_touch_taps.dart';
 import 'timeline_time_reveal.dart';
@@ -592,6 +593,7 @@ class RaftMessageRow extends StatefulWidget {
     this.footer,
     this.inlineReplies,
     this.readStatus,
+    this.bodyTrailing,
     this.toolbar,
     this.selectionLeading,
     this.onAuthor,
@@ -638,6 +640,7 @@ class RaftMessageRow extends StatefulWidget {
 
   /// Conversation status after every message-owned footer/reply surface.
   final Widget? readStatus;
+  final Widget? bodyTrailing;
 
   /// Web MessageItem translation status (`mt-0`): after the attachments,
   /// before the footer.
@@ -686,6 +689,10 @@ class RaftMessageRow extends StatefulWidget {
 }
 
 class _RaftMessageRowState extends State<RaftMessageRow> {
+  Widget _withBodyTrailing(Widget body) => widget.bodyTrailing == null
+      ? body
+      : RaftMessageBodyTrailing(body: body, trailing: widget.bodyTrailing!);
+
   bool hovered = false, toolbarHovered = false, focusWithin = false;
   bool scrollSuppressed = false;
 
@@ -1394,18 +1401,20 @@ class _RaftMessageRowState extends State<RaftMessageRow> {
                                           top: recipe.bodyGap,
                                           bottom: recipe.bodyBottomGap,
                                         ),
-                                        child: RaftMessageBodyMargin(
-                                          gap: recipe.bodyGap,
-                                          child: DefaultTextStyle.merge(
-                                            style: recipe.body,
-                                            // Only the body reports its collapse.
-                                            child: compact
-                                                ? RaftMessageSemanticsScope(
-                                                    visibleFraction:
-                                                        visibleFraction,
-                                                    child: widget.content,
-                                                  )
-                                                : widget.content,
+                                        child: _withBodyTrailing(
+                                          RaftMessageBodyMargin(
+                                            gap: recipe.bodyGap,
+                                            child: DefaultTextStyle.merge(
+                                              style: recipe.body,
+                                              // Only the body reports its collapse.
+                                              child: compact
+                                                  ? RaftMessageSemanticsScope(
+                                                      visibleFraction:
+                                                          visibleFraction,
+                                                      child: widget.content,
+                                                    )
+                                                  : widget.content,
+                                            ),
                                           ),
                                         ),
                                       ),

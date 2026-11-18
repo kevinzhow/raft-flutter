@@ -83,6 +83,31 @@ Widget messageReadStatusPreview() => const Padding(
     readStatus: RaftMessageReadStatus(),
   ),
 );
+@RaftPreviews('Agent read progress')
+Widget agentReadProgressPreview() => const Padding(
+  padding: EdgeInsets.all(24),
+  child: RaftMessageTile(
+    author: 'Alice',
+    timestamp: '10:00 AM',
+    content: 'A message for the team.',
+    bodyTrailing: RaftMessageReadFaces(
+      faces: [
+        RaftReadFace(
+          id: 'ada',
+          name: 'Ada',
+          avatar: RaftAvatarContent(
+            name: 'Ada',
+            kind: RaftAvatarContentKind.agent,
+            pixelKey: 'ada',
+          ),
+        ),
+      ],
+    ),
+    readStatus: RaftMessageReadStatus.agents(
+      entries: [(RaftAgentReadReason.muted, 'Bea')],
+    ),
+  ),
+);
 @RaftPreviews('Composer')
 Widget composerPreview() => const _InteractivePreview('Composer');
 @RaftPreviews('Empty state')
