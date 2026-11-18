@@ -252,6 +252,7 @@ class _ChannelSideAreaState extends State<ChannelSideArea> {
   late ChannelDetailsStore details;
   late ChannelFilesMedia media;
   final drag = ChannelSideDragController();
+  final _chatKey = GlobalKey();
   late Listenable listenable;
   int previewOpenedAt = 0;
 
@@ -347,6 +348,7 @@ class _ChannelSideAreaState extends State<ChannelSideArea> {
       maxWidth: chatContentFloor,
       child: child,
     );
+    final chat = _Inert(key: _chatKey, inert: covering, child: widget.child);
     // Sections move only beside the chat, by a pointer, with more than one
     // open (Web `sideSectionDrag` enabled).
     drag.sync(
@@ -372,24 +374,21 @@ class _ChannelSideAreaState extends State<ChannelSideArea> {
                 child: ClipRect(
                   key: const ValueKey('channel-side-conversation'),
                   clipBehavior: hasDock ? Clip.hardEdge : Clip.none,
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      Visibility(
-                        visible: foldedThread == null,
-                        maintainState: true,
-                        child: chatContent(
-                          RaftCoveredPane(
-                            covered:
-                                foldedThread != null ||
-                                RaftCoveredPane.of(context),
-                            child: _Inert(inert: covering, child: widget.child),
-                          ),
+                  child: foldedThread == null
+                      ? chatContent(chat)
+                      : Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            Visibility(
+                              visible: false,
+                              maintainState: true,
+                              child: chatContent(
+                                RaftCoveredPane(covered: true, child: chat),
+                              ),
+                            ),
+                            chatContent(foldedThread),
+                          ],
                         ),
-                      ),
-                      if (foldedThread != null) chatContent(foldedThread),
-                    ],
-                  ),
                 ),
               ),
               if (beside)
@@ -595,7 +594,7 @@ class _ChannelSideAreaState extends State<ChannelSideArea> {
 /// The chat under a cover can't be reached: no focus, no pointer, nothing read
 /// out (Web `inert`). The widgets stay in the tree (the chat is not rebuilt).
 class _Inert extends StatelessWidget {
-  const _Inert({required this.inert, required this.child});
+  const _Inert({super.key, required this.inert, required this.child});
   final bool inert;
   final Widget child;
 

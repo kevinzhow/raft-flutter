@@ -68,6 +68,7 @@ void main() {
           expect(t.getSize(details).width, closeTo(400 - deficit * 2 / 3, .01));
           final detailsState = t.state(find.byType(ChannelSettings));
           final threadState = t.state(threadChat);
+          final chatState = t.state(channelChat);
           final location = w.location;
 
           t.view.physicalSize = Size(width, 800);
@@ -96,6 +97,7 @@ void main() {
           await t.pumpAndSettle();
           expect(threadHeader, findsNothing);
           expect(channelChat, findsOneWidget);
+          expect(t.state(channelChat), same(chatState));
           expect(detailsClose.hitTestable(), findsOneWidget);
           expect(t.state(find.byType(ChannelSettings)), same(detailsState));
         } finally {
