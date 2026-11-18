@@ -52775,7 +52775,7 @@
         "owner": "WP-CHAN",
         "reason": "Offset update from the channel Details workspace route. Exact family placement and state-specific visual acceptance are pending."
       },
-      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5688/METHOD:settingsRailAction@108614/FUNCTION:action@108648": {
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5688/METHOD:settingsRailAction@108583/FUNCTION:action@108617": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "WP-CHAN",
