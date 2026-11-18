@@ -20,6 +20,4 @@ const Map<String, String> zhCatalogUpstream124AcctSettings = <String, String>{
   "Send messages with": "发送消息的按键",
   "Show member descriptions": "显示成员描述",
   "Single sign-on (SSO)": "单点登录（SSO）",
-  // settings.common.undoOtherServer (the undo of an immediate change after switching server).
-  "Not undone: you've switched to another server": "未撤销：你已切换到其他服务器",
 };
