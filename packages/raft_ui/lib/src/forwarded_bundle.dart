@@ -51,7 +51,7 @@ class RaftForwardedItem {
 
 /// Web `canOpenSourceLabel` (ForwardedBundleCard.tsx).
 bool _canOpenSource(Map item) {
-  if (item['provenanceState'] == 'original_unavailable') return false;
+  if (item['provenanceState'] != 'available') return false;
   final id = item['sourceMessageId'];
   if (id is! String || id.isEmpty) return false;
   final target = item['sourceTargetSnapshot'];
@@ -81,9 +81,7 @@ List<RaftForwardedItem> raftForwardedItems(Map<String, dynamic> metadata) {
     final item = raw[position];
     if (item is! Map || item['contentSnapshot'] is! String) continue;
     final provenance = item['provenanceState'];
-    if (provenance != null &&
-        provenance != 'available' &&
-        provenance != 'original_unavailable') {
+    if (provenance != 'available' && provenance != 'original_unavailable') {
       continue;
     }
     final target = item['sourceTargetSnapshot'];
@@ -120,7 +118,7 @@ List<RaftForwardedItem> raftForwardedItems(Map<String, dynamic> metadata) {
     final thread = target is Map && target['type'] == 'thread';
     final label =
         target is Map &&
-            provenance != 'original_unavailable' &&
+            provenance == 'available' &&
             target['labelVisibility'] == 'public' &&
             target['type'] is String &&
             target['type'] != 'dm' &&

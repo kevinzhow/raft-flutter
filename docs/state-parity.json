@@ -55221,12 +55221,6 @@
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
-      "packages/raft_ui/lib/src/forwarded_bundle.dart#local-function:CLASS:_RaftForwardedBundleState@8119/METHOD:_source@9010/FUNCTION:text@9748": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
-      },
       "apps/raft_flutter/lib/features/message_presentation.dart#local-function:CLASS:MessagePresentation@5948/METHOD:messageCard@28888/FUNCTION:cardOf@29175": {
         "role": "unresolved",
         "familyRefs": [],
@@ -55280,6 +55274,12 @@
         "familyRefs": [],
         "owner": "WP-EXT",
         "reason": "Composes existing Raft controls for external-channel actions."
+      },
+      "packages/raft_ui/lib/src/forwarded_bundle.dart#local-function:CLASS:_RaftForwardedBundleState@8059/METHOD:_source@8950/FUNCTION:text@9688": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       }
     },
     "entries": {

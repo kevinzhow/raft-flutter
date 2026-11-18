@@ -61,7 +61,7 @@ const _direct = {
 Future<(WorkspaceController, MessageAdapter)> _forward(
   WidgetTester tester,
   Map<String, dynamic> source, {
-  bool legacy = false,
+  bool includeProvenance = true,
 }) async {
   final (w, api) = await pageFixture(tester, section: 'chat');
   addTearDown(() async {
@@ -87,7 +87,7 @@ Future<(WorkspaceController, MessageAdapter)> _forward(
         {
           'index': 0,
           'sourceServerId': 's1',
-          if (!legacy) 'provenanceState': 'available',
+          if (includeProvenance) 'provenanceState': 'available',
           'contentSnapshot': 'Forwarded reply snapshot',
           ...source,
         },
@@ -390,25 +390,38 @@ void main() {
     expect(w.location.task, isNull);
   });
 
-  for (final legacy in [false, true]) {
-    testWidgets(
-      '${legacy ? 'Legacy' : 'Current'} public forward opens the direct source channel',
-      (t) async {
-        final (w, api) = await _forward(t, _direct, legacy: legacy);
-        api.routes['GET /messages/context/channel-message'] = (_) => {
-          'channelId': 'c1',
-          'targetMessageId': 'channel-message',
-          'messages': [row('channel-message', 'c1', 2)],
-        };
-        await mountPage(t, w, false, platform: TargetPlatform.linux);
-        expect(_source.hitTestable(), findsOneWidget);
-        await t.tap(_source);
-        await frames(t, () {});
-        await waitForPainted(t, 'channel-message');
-        expect(w.location.entityId, 'c1');
-        expect(w.location.thread, isNull);
-        expect(w.location.task, isNull);
-      },
+  testWidgets('a public forward opens the direct source channel', (t) async {
+    final (w, api) = await _forward(t, _direct);
+    api.routes['GET /messages/context/channel-message'] = (_) => {
+      'channelId': 'c1',
+      'targetMessageId': 'channel-message',
+      'messages': [row('channel-message', 'c1', 2)],
+    };
+    await mountPage(t, w, false, platform: TargetPlatform.linux);
+    expect(_source.hitTestable(), findsOneWidget);
+    await t.tap(_source);
+    await frames(t, () {});
+    await waitForPainted(t, 'channel-message');
+    expect(w.location.entityId, 'c1');
+    expect(w.location.thread, isNull);
+    expect(w.location.task, isNull);
+  });
+
+  testWidgets('a public-looking forward without provenance stays hidden', (
+    t,
+  ) async {
+    final (w, api) = await _forward(t, _direct, includeProvenance: false);
+    await mountPage(t, w, false, platform: TargetPlatform.linux);
+    await waitForPainted(t, 'forward');
+    expect(
+      find.text('Forwarded reply snapshot', findRichText: true),
+      findsNothing,
     );
-  }
+    expect(_source, findsNothing);
+    expect(
+      api.calls.where((r) => r.path.endsWith('/channel-message')),
+      isEmpty,
+    );
+    expect(w.location.entityId, 'destination');
+  });
 }

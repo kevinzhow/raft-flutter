@@ -22,8 +22,7 @@ sealed class ForwardedSource {
   ) {
     final server = item['sourceServerId'];
     final provenance = item['provenanceState'];
-    if (provenance != null && provenance != 'available' ||
-        server != null && server != w.server?.id) {
+    if (provenance != 'available' || server != null && server != w.server?.id) {
       return null;
     }
     final target = item['sourceTargetSnapshot'];
