@@ -93,6 +93,7 @@ import 'package:raft_ui/selection_toolbar_previews.dart';
 import 'package:raft_ui/settings_administration_previews.dart';
 import 'package:raft_ui/settings_catalog_previews.dart';
 import 'package:raft_ui/settings_control_previews.dart';
+import 'package:raft_ui/side_panel_frame_previews.dart';
 import 'package:raft_ui/surface_progress_previews.dart';
 import 'package:raft_ui/switch_previews.dart';
 import 'package:raft_ui/auth_second_factor_previews.dart';
@@ -128,6 +129,12 @@ class AuditSurface {
 }
 
 final auditSurfaces = <AuditSurface>[
+  AuditSurface(
+    'sidePanelFramePreview',
+    'Side panel frame',
+    sidePanelFramePreview,
+    Size(856, 520),
+  ),
   AuditSurface(
     'workspaceButtonPreview',
     'Phone Home band · WorkspaceButton',
