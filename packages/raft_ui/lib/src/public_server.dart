@@ -614,7 +614,11 @@ class RaftPublicSurface extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    return ColoredBox(color: t.colors['layer-canvas']!, child: child);
+    final canvas = t.colors['layer-canvas']!;
+    if (Material.maybeOf(context) != null) {
+      return ColoredBox(color: canvas, child: child);
+    }
+    return Material(color: canvas, child: child);
   }
 }
 

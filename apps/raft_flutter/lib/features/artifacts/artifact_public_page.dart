@@ -357,7 +357,8 @@ class _ArtifactPublicPageState extends State<ArtifactPublicPage> {
       text(
         'Get started in minutes. Sign up and build with your AI agents on Raft.',
       ),
-      style: TextStyle(
+      style: tokens.scale(
+        tokens.typeSlot('body'),
         color: tokens.ui[compact ? 'info-strong' : 'foreground'],
       ),
     );
@@ -428,8 +429,7 @@ class _ArtifactPublicPageState extends State<ArtifactPublicPage> {
       child: Focus(
         focusNode: panelFocus,
         autofocus: true,
-        child: Material(
-          color: RaftTokens.of(context).panel,
+        child: RaftPublicSurface(
           child: SafeArea(
             child: Column(
               children: [
