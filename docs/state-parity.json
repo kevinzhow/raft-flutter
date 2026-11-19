@@ -56774,25 +56774,25 @@
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
-      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5829/METHOD:desktopContentDetail@101419/FUNCTION:header@103129": {
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5885/METHOD:desktopContentDetail@101648/FUNCTION:header@103358": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "Raft Flutter component wiring",
         "reason": "Selects the shared DM header for a desktop Activity or Search result and attaches the existing detail actions."
       },
-      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5829/METHOD:buildWorkspace@47694/FUNCTION:<anonymous>@47912/FUNCTION:conversation@51026": {
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5885/METHOD:buildWorkspace@47750/FUNCTION:<anonymous>@47968/FUNCTION:conversation@51082": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "WP-CHAN",
         "reason": "Offset update from the channel Details workspace route. Exact family placement and state-specific visual acceptance are pending."
       },
-      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5829/METHOD:buildWorkspace@47694/FUNCTION:<anonymous>@47912/FUNCTION:workspace@64439": {
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5885/METHOD:buildWorkspace@47750/FUNCTION:<anonymous>@47968/FUNCTION:workspace@64604": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "WP-CHAN",
         "reason": "Offset update from the channel Details workspace route. Exact family placement and state-specific visual acceptance are pending."
       },
-      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5829/METHOD:settingsRailAction@108637/FUNCTION:action@108671": {
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5885/METHOD:settingsRailAction@108866/FUNCTION:action@108900": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "WP-CHAN",
