@@ -16,7 +16,7 @@ typedef ActionCardCandidate = ({String id, String label});
 enum ActionCardFieldType {
   textInput('TextInput'),
   textArea('TextArea'),
-  select('Select'),
+  selectField('Select'),
   toggle('Toggle'),
   choice('Choice'),
   memberPicker('MemberPicker'),
@@ -138,7 +138,7 @@ class ActionCardForm {
           !_hasText(field['label'])) {
         return null;
       }
-      if (type == ActionCardFieldType.select ||
+      if (type == ActionCardFieldType.selectField ||
           type == ActionCardFieldType.choice) {
         final options = cardList(field['options']);
         final values = <String>{};
@@ -559,7 +559,7 @@ class _ActionCardFormViewState extends State<ActionCardFormView>
           invalid: issue != null,
           onChanged: (text) => _edit(field, text),
         );
-      case ActionCardFieldType.select:
+      case ActionCardFieldType.selectField:
         control = RaftSelectField<String>(
           key: ValueKey('action-card-select-${field.name}'),
           label: label,
