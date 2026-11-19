@@ -522,7 +522,6 @@ Widget sidebarCustomGroupSliver({
   required WorkspaceController w,
   required Widget header,
   required bool expanded,
-  required bool hideEmpty,
   required String emptyLabel,
   required RaftNavItem Function(SidebarEntry entry, bool reorderable) row,
 }) => ListenableBuilder(
@@ -530,9 +529,6 @@ Widget sidebarCustomGroupSliver({
   listenable: SidebarDrag.changes,
   builder: (context, _) {
     final shown = SidebarDrag.project(group, group.entries);
-    if (hideEmpty && shown.isEmpty && SidebarDrag.source.value != group.id) {
-      return const SliverToBoxAdapter();
-    }
     return SliverMainAxisGroup(
       slivers: [
         SliverToBoxAdapter(child: header),

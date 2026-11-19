@@ -77,7 +77,7 @@ void main() {
     await tester.pumpWidget(const SizedBox());
   }, variant: TargetPlatformVariant.only(TargetPlatform.linux));
 
-  testWidgets('Hide Empty Sections also hides empty custom sections', (
+  testWidgets('Hide Empty Sections keeps custom sections available', (
     tester,
   ) async {
     final (workspace, _) = await pageFixture(tester);
@@ -87,20 +87,24 @@ void main() {
       ],
     };
     await mountPage(tester, workspace, false);
+    addTearDown(() => tester.pumpWidget(const SizedBox()));
     final custom = _key('sidebar-section-empty');
+    final pinned = _key('sidebar-section-system:pinned');
     expect(custom, findsOneWidget);
+    expect(pinned, findsOneWidget);
     await _contextMenu(tester, _key('sidebar-section-system:channels'));
     await tester.tap(find.text('Hide Empty Sections'));
     await tester.pumpAndSettle();
-    expect(custom, findsNothing);
+    expect(custom, findsOneWidget);
+    expect(pinned, findsNothing);
     await tester.pumpWidget(const SizedBox());
     await mountPage(tester, workspace, false);
-    expect(custom, findsNothing);
+    expect(custom, findsOneWidget);
+    expect(pinned, findsNothing);
     await _contextMenu(tester, _key('sidebar-section-system:channels'));
     await tester.tap(find.text('Hide Empty Sections'));
     await tester.pumpAndSettle();
-    expect(custom, findsOneWidget);
-    await tester.pumpWidget(const SizedBox());
+    expect(pinned, findsOneWidget);
   }, variant: TargetPlatformVariant.only(TargetPlatform.linux));
 
   for (final (platform, width, height) in [
