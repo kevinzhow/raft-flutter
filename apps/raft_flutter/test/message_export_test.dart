@@ -99,7 +99,7 @@ void main() {
     expect(selection.selected.map((r) => r.message.id), ['parent', 'reply']);
     expect(
       selectedMessagesMarkdown(selection.selected),
-      contains('> 日本語 reply'),
+      contains('  ↳ **Bob**: 日本語 reply'),
     );
     selection.toggle('parent');
     expect(selection.selected.map((r) => r.message.id), ['reply']);

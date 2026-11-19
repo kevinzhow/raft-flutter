@@ -94,7 +94,8 @@ final class RaftSharingBridge: NSObject, FlutterPlugin {
       while let presented = controller.presentedViewController { controller = presented }
       var items: [Any] = []
       if let text = arguments["text"] as? String, !text.isEmpty { items.append(text) }
-      if let path = arguments["path"] as? String {
+      let paths = arguments["paths"] as? [String] ?? (arguments["path"] as? String).map { [$0] } ?? []
+      for path in paths {
         // getTemporaryDirectory on iOS maps to Library/Caches, not /tmp.
         guard let cache = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first,
               let file = ShareInboxWriter.exportFile(path: path, caches: cache) else {

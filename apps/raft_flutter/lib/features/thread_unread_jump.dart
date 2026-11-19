@@ -6,6 +6,7 @@ import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import 'agent_typing_line_host.dart' show agentTypingInsetKey;
+import 'message_selection.dart';
 
 import '../data/thread_unread_by_parent.dart';
 import '../data/workspace_controller.dart';
@@ -158,6 +159,7 @@ class ChatBottomControls extends StatefulWidget {
     required this.bottomCount,
     required this.onBottom,
     this.thread = false,
+    this.selection,
   });
   final WorkspaceController controller;
 
@@ -165,6 +167,7 @@ class ChatBottomControls extends StatefulWidget {
   final List<RaftMessage> rows;
   final bool hasNewer, showBottom, thread;
   final Listenable scroll;
+  final MessageSelection? selection;
 
   /// New messages behind the viewport: "N new messages" (a thread panel's
   /// shorter copy, ThreadPanel.tsx:2619) in place of "Back to Bottom".
@@ -208,6 +211,7 @@ class _ChatBottomControlsState extends State<ChatBottomControls> {
     super.initState();
     w.followedThreads.addListener(_changed);
     widget.scroll.addListener(_scrolled);
+    widget.selection?.addListener(_selectionChanged);
     _scheduleMeasure();
   }
 
@@ -217,6 +221,11 @@ class _ChatBottomControlsState extends State<ChatBottomControls> {
     if (!identical(oldWidget.scroll, widget.scroll)) {
       oldWidget.scroll.removeListener(_scrolled);
       widget.scroll.addListener(_scrolled);
+    }
+    if (!identical(oldWidget.selection, widget.selection)) {
+      oldWidget.selection?.removeListener(_selectionChanged);
+      widget.selection?.addListener(_selectionChanged);
+      _selectionChanged();
     }
     if (!identical(oldWidget.controller, widget.controller)) {
       oldWidget.controller.followedThreads.removeListener(_changed);
@@ -237,6 +246,7 @@ class _ChatBottomControlsState extends State<ChatBottomControls> {
     _timer?.cancel();
     w.followedThreads.removeListener(_changed);
     widget.scroll.removeListener(_scrolled);
+    widget.selection?.removeListener(_selectionChanged);
     super.dispose();
   }
 
@@ -250,8 +260,11 @@ class _ChatBottomControlsState extends State<ChatBottomControls> {
 
   void _scrolled() => _scheduleMeasure(delay: _settle);
 
+  void _selectionChanged() => _scheduleMeasure();
+
   void _scheduleMeasure({Duration delay = Duration.zero}) {
-    if (_threads.isEmpty || _timer?.isActive == true && delay == _settle) {
+    if ((_threads.isEmpty && widget.selection?.anchorId == null) ||
+        _timer?.isActive == true && delay == _settle) {
       return;
     }
     _timer?.cancel();
@@ -361,6 +374,23 @@ class _ChatBottomControlsState extends State<ChatBottomControls> {
           )
         : null;
     final threads = _threads;
+    if (widget.selection case final selection? when selection.active) {
+      final range = selection.rangeToVisible(_measured.visible);
+      return RaftTimelineBottomControls(
+        button: bottom,
+        pill: range == null
+            ? null
+            : RaftButton(
+                label: raftText(context, 'Select to here'),
+                glyph: range.anchorAbove
+                    ? RaftGlyph.arrowUp
+                    : RaftGlyph.arrowDown,
+                tone: RaftButtonRecipeVariant.outline,
+                size: RaftButtonRecipeSize.sm,
+                onPressed: () => selection.selectToVisible(_measured.visible),
+              ),
+      );
+    }
     // The first unread thread (the flag arriving, a reply) is measured once.
     if (threads.isEmpty) {
       _measuredOnce = false;

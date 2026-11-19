@@ -4,6 +4,7 @@
 // 0-byte PNG. Every capture gets the same budget, picks the highest pixel
 // ratio that fits, and is validated before anything can use it.
 import 'dart:typed_data';
+import 'dart:math' as math;
 
 /// Web `SCREENSHOT_PIXEL_BUDGET`.
 const screenshotPixelBudget = 16000000;
@@ -32,6 +33,49 @@ double? planScreenshotPixelRatio(
     if (width > 0 && height > 0 && width * height <= budget) return ratio;
   }
   return null;
+}
+
+typedef ScreenshotBand = ({double top, double height, double pixelRatio});
+
+List<ScreenshotBand> planScreenshotBands({
+  required double width,
+  required List<double> rowHeights,
+  required double preferredRatio,
+}) {
+  if (rowHeights.isEmpty || width <= 0) return const [];
+  final total = rowHeights.fold(0.0, (height, row) => height + row);
+  final singleRatio = planScreenshotPixelRatio(width, total, preferredRatio);
+  if (singleRatio != null) {
+    return [(top: 0, height: total, pixelRatio: singleRatio)];
+  }
+  final pageRatio = planScreenshotPixelRatio(width, 1, preferredRatio);
+  if (pageRatio == null) return const [];
+  final limit = math.min(
+    screenshotMaxCssHeight,
+    (screenshotPixelBudget ~/ (width * pageRatio).ceil()) / pageRatio,
+  );
+  final pages = <ScreenshotBand>[];
+  var top = 0.0, held = 0.0;
+  void flush() {
+    if (held <= 0) return;
+    pages.add((top: top, height: held, pixelRatio: pageRatio));
+    top += held;
+    held = 0;
+  }
+
+  for (final row in rowHeights) {
+    if (row + held > limit) flush();
+    var left = row;
+    while (left > limit) {
+      held = limit;
+      flush();
+      left -= limit;
+    }
+    held += left;
+    if (row > limit) flush();
+  }
+  flush();
+  return pages;
 }
 
 /// Web `ScreenshotInvalidReason`.

@@ -4,7 +4,10 @@ import 'package:flutter/foundation.dart';
 import 'package:raft_client/raft_client.dart';
 
 import '../data/workspace_controller.dart';
+import 'forward_messages_dialog.dart' show messageForwardable;
 import 'private_route_guard.dart';
+
+part 'message_selection_range.dart';
 
 class SelectedMessageRow {
   const SelectedMessageRow(this.message, {this.parentId});
@@ -25,6 +28,7 @@ class MessageSelection extends ChangeNotifier {
   final WorkspaceController w;
   final bool thread;
   final Set<String> ids = {};
+  String? anchorId;
   bool active = false;
   int revision = 0;
   // ignore: raft_lints/avoid_imperative_notice_state -- Selection-limit notice: cleared on a successful select, a deselect, select all, exit and any scope/authority change.
@@ -79,6 +83,7 @@ class MessageSelection extends ChangeNotifier {
             channelAuthorityReduced(_channelAuthority, authority))) {
       active = false;
       ids.clear();
+      anchorId = null;
       error = null;
     }
     _scope = next;
@@ -88,6 +93,7 @@ class MessageSelection extends ChangeNotifier {
     if (ids.isNotEmpty) {
       final visible = available.map((r) => r.message.id).toSet();
       ids.removeWhere((id) => !visible.contains(id));
+      if (!ids.contains(anchorId)) anchorId = null;
     }
     if (active && ids.isEmpty) active = false;
     final changed = previousActive != active || !setEquals(previousIds, ids);
@@ -102,6 +108,7 @@ class MessageSelection extends ChangeNotifier {
     revision++;
     active = true;
     ids.clear();
+    anchorId = null;
     toggle(id);
   }
 
@@ -109,6 +116,7 @@ class MessageSelection extends ChangeNotifier {
     revision++;
     active = false;
     ids.clear();
+    anchorId = null;
     error = null;
     notifyListeners();
   }
@@ -120,6 +128,7 @@ class MessageSelection extends ChangeNotifier {
     final group = [id];
     if (ids.contains(id)) {
       ids.removeAll(group);
+      if (anchorId == id) anchorId = null;
       // Dropping a row answers the "too many selected" notice.
       error = null;
     } else if (ids.length + group.where((v) => !ids.contains(v)).length >
@@ -127,6 +136,29 @@ class MessageSelection extends ChangeNotifier {
       error = 'Select up to 30 messages.';
     } else {
       ids.addAll(group);
+      anchorId = id;
+      error = null;
+    }
+    notifyListeners();
+  }
+
+  MessageSelectionRange? rangeToVisible(Iterable<String> visible) {
+    final anchor = anchorId;
+    return active && anchor != null
+        ? _messageSelectionRange(available, anchor, visible)
+        : null;
+  }
+
+  void selectToVisible(Iterable<String> visible) {
+    final range = rangeToVisible(visible);
+    if (range == null) return;
+    final next = {...ids, ...range.ids};
+    if (next.length > limit) {
+      error = 'Select up to 30 messages.';
+    } else {
+      ids.addAll(range.ids);
+      anchorId = range.edge;
+      revision++;
       error = null;
     }
     notifyListeners();
@@ -183,17 +215,25 @@ String selectedMessageFingerprint(RaftMessage m) => jsonEncode({
     key: m.json[key],
 });
 
-String selectedMessagesMarkdown(List<SelectedMessageRow> rows) => rows
-    .map((r) {
-      final m = r.message,
-          stamp = m.createdAt?.toLocal().toIso8601String() ?? '';
-      final text =
-          '**${m.author}**${stamp.isEmpty ? '' : ' · $stamp'}\n\n${m.content}${m.attachments.isEmpty ? '' : '\n\n${m.attachments.map((a) => "📎 ${a['filename'] ?? 'Attachment'}").join('\n')}'}';
-      return r.isThreadChild
-          ? text.split('\n').map((line) => '> $line').join('\n')
-          : text;
-    })
-    .join('\n\n---\n\n');
+String selectedMessagesMarkdown(
+  List<SelectedMessageRow> rows, {
+  String unknown = 'Unknown',
+}) {
+  final ordered = rows.indexed.toList()
+    ..sort((a, b) {
+      final first = a.$2.message, second = b.$2.message;
+      final order = first.json['seq'] != null && second.json['seq'] != null
+          ? first.seq.compareTo(second.seq)
+          : (first.createdAt?.millisecondsSinceEpoch ?? 0).compareTo(
+              second.createdAt?.millisecondsSinceEpoch ?? 0,
+            );
+      return order == 0 ? a.$1.compareTo(b.$1) : order;
+    });
+  return [
+    for (final (_, row) in ordered)
+      '${row.isThreadChild ? '  ↳ ' : ''}**${row.message.string('senderName') ?? unknown}**: ${row.message.content.trim()}',
+  ].join('\n\n');
+}
 
 /// UI-only handoff lets the adaptive shell consume Back/Escape before closing
 /// the thread or application. It does not store message/domain state.

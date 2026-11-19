@@ -355,6 +355,20 @@ class NativeSharing {
     });
   }
 
+  Future<void> shareFiles(List<SharedFileLease> leases, String mimeType) async {
+    if (leases.length == 1) return shareFile(leases.single, mimeType);
+    if (!supported || leases.isEmpty) {
+      throw PlatformException(
+        code: 'unsupported',
+        message: 'System sharing is unavailable.',
+      );
+    }
+    await channel.invokeMethod<void>('share', {
+      'paths': [for (final lease in leases) lease.file.path],
+      'mimeType': mimeType,
+    });
+  }
+
   Future<Uint8List> readIncoming(
     IncomingSharedFile file, {
     required bool Function() authorized,

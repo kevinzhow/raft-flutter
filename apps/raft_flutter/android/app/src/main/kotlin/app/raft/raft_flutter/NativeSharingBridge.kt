@@ -118,16 +118,22 @@ class NativeSharingBridge(private val activity: Activity, engine: FlutterEngine,
                 "share" -> {
                     if (pending != null) { result.error("busy", "A share sheet is already open.", null) }
                     else try {
-                        val path = call.argument<String>("path")
+                        val paths = call.argument<List<String>>("paths")
+                            ?: listOfNotNull(call.argument<String>("path"))
                         val text = call.argument<String>("text")
-                        val intent = Intent(Intent.ACTION_SEND).apply {
+                        val uris = paths.map { path ->
+                            val file = File(path).canonicalFile
+                            require(file.isFile && file.path.startsWith(File(activity.cacheDir,"raft-share").canonicalPath + File.separator))
+                            FileProvider.getUriForFile(activity, activity.packageName + ".shared-files", file)
+                        }
+                        val intent = Intent(if (uris.size > 1) Intent.ACTION_SEND_MULTIPLE else Intent.ACTION_SEND).apply {
                             type = call.argument<String>("mimeType") ?: "application/octet-stream"
-                            if (path != null) {
-                                val file = File(path).canonicalFile
-                                require(file.isFile && file.path.startsWith(File(activity.cacheDir,"raft-share").canonicalPath + File.separator))
-                                val uri = FileProvider.getUriForFile(activity, activity.packageName + ".shared-files", file)
-                                putExtra(Intent.EXTRA_STREAM,uri)
-                                clipData = ClipData.newRawUri("Raft attachment",uri)
+                            if (uris.isNotEmpty()) {
+                                if (uris.size == 1) putExtra(Intent.EXTRA_STREAM, uris.first())
+                                else putParcelableArrayListExtra(Intent.EXTRA_STREAM, ArrayList(uris))
+                                clipData = ClipData.newRawUri("Raft attachment", uris.first()).apply {
+                                    for (uri in uris.drop(1)) addItem(ClipData.Item(uri))
+                                }
                                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                             } else { require(!text.isNullOrEmpty()); putExtra(Intent.EXTRA_TEXT,text) }
                         }

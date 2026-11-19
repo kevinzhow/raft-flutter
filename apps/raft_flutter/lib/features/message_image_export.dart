@@ -20,6 +20,7 @@ import '../platform/native_sharing.dart';
 import 'attachment_view.dart';
 import 'message_presentation.dart';
 import 'message_selection.dart';
+import 'message_screenshot_boundary.dart';
 import 'private_route_guard.dart';
 import 'screenshot_budget.dart';
 
@@ -128,7 +129,8 @@ Future<bool?> previewMessageImage(
 
   w.addListener(revoke);
   authorityChanges?.addListener(revoke);
-  Uint8List? png;
+  final pages = <Uint8List>[];
+  final rowKeys = <GlobalKey>[];
   try {
     final fontSize = messagePreferenceDisplaySize(context, switch (w.client.user
         ?.string('preferredMessageBodyFontSize')) {
@@ -153,8 +155,11 @@ Future<bool?> previewMessageImage(
         );
       }
 
+      final rowKey = GlobalKey();
+      rowKeys.add(rowKey);
       children.add(
         Padding(
+          key: rowKey,
           padding: EdgeInsets.only(left: row.isThreadChild ? 32 : 0),
           child: RaftMessageTile(
             author: m.author,
@@ -210,7 +215,7 @@ Future<bool?> previewMessageImage(
                 data: media,
                 child: Theme(
                   data: theme,
-                  child: RepaintBoundary(
+                  child: MessageScreenshotBoundary(
                     key: renderKey,
                     child: RaftMessageExportSurface(
                       width: displayWidth,
@@ -260,7 +265,8 @@ Future<bool?> previewMessageImage(
       throw _renderTimedOut;
     }
     final boundary =
-        renderKey.currentContext!.findRenderObject()! as RenderRepaintBoundary;
+        renderKey.currentContext!.findRenderObject()!
+            as RenderMessageScreenshotBoundary;
     for (var i = 0; i < 5 && boundary.debugNeedsPaint; i++) {
       // ignore: raft_lints/avoid_unreviewed_idle_work -- Single request after a state change; nothing re-requests from the callback.
       WidgetsBinding.instance.scheduleFrame();
@@ -268,27 +274,26 @@ Future<bool?> previewMessageImage(
       if (!current() || entry == null) return false;
     }
     if (boundary.debugNeedsPaint) throw _renderEmpty;
-    // Web screenshotBudget: the highest ratio that fits the pixel budget, and
-    // no render at all when even 1x does not.
-    final size = boundary.size;
-    final ratio = planScreenshotPixelRatio(
-      size.width,
-      size.height,
-      math.min(3.0, math.max(2.0, media.devicePixelRatio)),
+    final bands = planScreenshotBands(
+      width: boundary.size.width,
+      rowHeights: [for (final key in rowKeys) key.currentContext!.size!.height],
+      preferredRatio: math.min(3.0, math.max(2.0, media.devicePixelRatio)),
     );
-    if (ratio == null) throw _tooLong;
-    final image = await boundary.toImage(pixelRatio: ratio);
-    try {
-      final data = await image.toByteData(format: ui.ImageByteFormat.png);
-      if (data == null) throw _renderEmpty;
-      png = data.buffer.asUint8List();
-    } finally {
-      image.dispose();
-    }
-    try {
-      validateScreenshotPng(png);
-    } on ScreenshotInvalidOutputError {
-      throw _renderEmpty;
+    if (bands.isEmpty) throw _renderEmpty;
+    for (final band in bands) {
+      if (!current()) return false;
+      final image = await boundary.captureBand(band);
+      try {
+        final data = await image.toByteData(format: ui.ImageByteFormat.png);
+        if (data == null) throw _renderEmpty;
+        final png = data.buffer.asUint8List();
+        pages.add(png);
+        validateScreenshotPng(png);
+      } on ScreenshotInvalidOutputError {
+        throw _renderEmpty;
+      } finally {
+        image.dispose();
+      }
     }
     entry
       ?..remove()
@@ -302,7 +307,8 @@ Future<bool?> previewMessageImage(
       context: context,
       builder: (_) => MessageImageReview(
         controller: w,
-        bytes: png!,
+        bytes: pages.first,
+        followingPages: pages.skip(1).toList(),
         filename: filename,
         authorized: current,
         authorityChanges: authorityChanges,
@@ -317,7 +323,7 @@ Future<bool?> previewMessageImage(
     entry?.remove();
     w.removeListener(revoke);
     authorityChanges?.removeListener(revoke);
-    if (png != null) {
+    for (final png in pages) {
       await raftEvictMemoryImage(png);
       png.fillRange(0, png.length, 0);
     }
@@ -329,6 +335,7 @@ class MessageImageReview extends StatefulWidget {
     super.key,
     required this.controller,
     required this.bytes,
+    this.followingPages = const [],
     required this.filename,
     required this.authorized,
     this.authorityChanges,
@@ -338,6 +345,8 @@ class MessageImageReview extends StatefulWidget {
   });
   final WorkspaceController controller;
   final Uint8List bytes;
+  final List<Uint8List> followingPages;
+  List<Uint8List> get pages => [bytes, ...followingPages];
   final String filename;
   final bool Function() authorized;
   final Listenable? authorityChanges;
@@ -352,7 +361,9 @@ class _MessageImageReviewState extends State<MessageImageReview> {
   late final files = widget.files ?? AttachmentFiles();
   late final sharing = widget.sharing ?? NativeSharing();
   late final clipboard = widget.clipboard ?? const ImageClipboard();
-  SharedFileLease? lease;
+  final leases = <SharedFileLease>[];
+  late final pages = widget.pages;
+  int page = 0;
   bool busy = false, copying = false, copied = false;
   // ignore: raft_lints/avoid_imperative_notice_state -- Export dialog error: cleared when the next save/share starts; the dialog closes on authority loss.
   String? error;
@@ -371,8 +382,7 @@ class _MessageImageReviewState extends State<MessageImageReview> {
       } else {
         closeOwnedReview();
       }
-      unawaited(lease?.dispose() ?? Future<void>.value());
-      lease = null;
+      releaseLeases();
     }
   }
 
@@ -387,12 +397,31 @@ class _MessageImageReviewState extends State<MessageImageReview> {
   void dispose() {
     widget.controller.removeListener(changed);
     widget.authorityChanges?.removeListener(changed);
-    unawaited(lease?.dispose() ?? Future<void>.value());
-    lease = null;
+    releaseLeases();
     super.dispose();
   }
 
-  Future<void> act(bool share) async {
+  void releaseLeases() {
+    for (final lease in leases) {
+      unawaited(lease.dispose());
+    }
+    leases.clear();
+  }
+
+  String filename(int index) => pages.length == 1
+      ? widget.filename
+      : '${widget.filename.replaceFirst(RegExp(r'\.png$'), '')}-${index + 1}.png';
+
+  void selectPage(int next) {
+    if (busy || next < 0 || next >= pages.length || next == page) return;
+    setState(() {
+      page = next;
+      copied = false;
+      error = null;
+    });
+  }
+
+  Future<void> act(bool share, {bool all = false}) async {
     if (busy || !current) return;
     setState(() {
       busy = true;
@@ -400,30 +429,39 @@ class _MessageImageReviewState extends State<MessageImageReview> {
     });
     try {
       if (share) {
-        if (lease == null || !await lease!.file.exists()) {
-          lease = await sharing.prepareBytes(
-            widget.bytes,
-            filename: widget.filename,
+        releaseLeases();
+        for (final (i, bytes) in pages.indexed) {
+          final lease = await sharing.prepareBytes(
+            bytes,
+            filename: filename(i),
             authorized: () => current,
           );
+          if (lease == null || !current) {
+            await lease?.dispose();
+            releaseLeases();
+            return;
+          }
+          leases.add(lease);
         }
-        if (!current || lease == null) {
-          await lease?.dispose();
-          lease = null;
-          return;
+        if (leases.length == 1) {
+          await sharing.shareFile(leases.single, 'image/png');
+        } else {
+          await sharing.shareFiles(leases, 'image/png');
         }
-        await sharing.shareFile(lease!, 'image/png');
         // Android chooser completion does not prove recipient delivery. Keep
         // the reviewed image and selection available on dismissal/cancellation.
       } else {
-        final saved = await files.saveBytes(
-          bytes: widget.bytes,
-          filename: widget.filename,
-          mimeType: 'image/png',
-          authorized: () => current,
-        );
-        if (mounted &&
-            saved != null &&
+        final indices = all ? Iterable<int>.generate(pages.length) : [page];
+        for (final index in indices) {
+          final saved = await files.saveBytes(
+            bytes: pages[index],
+            filename: filename(index),
+            mimeType: 'image/png',
+            authorized: () => current,
+          );
+          if (!current || saved == null) return;
+        }
+        if (pages.length == 1 &&
             current &&
             ModalRoute.of(context)?.isCurrent == true) {
           Navigator.pop(context, true);
@@ -453,7 +491,7 @@ class _MessageImageReviewState extends State<MessageImageReview> {
       error = null;
     });
     try {
-      await clipboard.copyPng(widget.bytes);
+      await clipboard.copyPng(pages[page]);
       if (mounted && current) setState(() => copied = true);
     } catch (e) {
       logUserError(e, where: 'copy message image');
@@ -485,6 +523,12 @@ class _MessageImageReviewState extends State<MessageImageReview> {
     // the backdrop close it; none of them while the export runs.
     child: CallbackShortcuts(
       bindings: {
+        if (pages.length > 1) ...{
+          const SingleActivator(LogicalKeyboardKey.arrowLeft): () =>
+              selectPage(page - 1),
+          const SingleActivator(LogicalKeyboardKey.arrowRight): () =>
+              selectPage(page + 1),
+        },
         SingleActivator(
           LogicalKeyboardKey.keyW,
           control: !usesCommandShortcuts(),
@@ -509,7 +553,7 @@ class _MessageImageReviewState extends State<MessageImageReview> {
                     height: MediaQuery.sizeOf(context).height * .85,
                     child: RaftImageReview(
                       preview: RaftSizedImage.memory(
-                        widget.bytes,
+                        pages[page],
                         fit: BoxFit.contain,
                         evictOnDispose: true,
                         semanticLabel: raftText(
@@ -522,6 +566,17 @@ class _MessageImageReviewState extends State<MessageImageReview> {
                       onSave: () => act(false),
                       onShare: sharing.supported ? () => act(true) : null,
                       onCopy: clipboard.supported ? copyImage : null,
+                      onSaveAll: pages.length > 1 && !sharing.supported
+                          ? () => act(false, all: true)
+                          : null,
+                      pageNumber: page + 1,
+                      pageCount: pages.length,
+                      onPreviousPage: page > 0
+                          ? () => selectPage(page - 1)
+                          : null,
+                      onNextPage: page + 1 < pages.length
+                          ? () => selectPage(page + 1)
+                          : null,
                       copying: copying,
                       copied: copied,
                       busy: busy,

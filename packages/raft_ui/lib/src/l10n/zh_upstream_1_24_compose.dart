@@ -8,4 +8,10 @@ const Map<String, String> zhCatalogUpstream124Compose = {
   "A message you start and don't send waits here, from any conversation.":
       '在任何会话里写了但没发出去的消息，都会留在这里。',
   "Couldn't load your drafts.": '无法加载你的草稿。',
+  '{count} images · original order': '{count} 张图片 · 原顺序',
+  'Copy this page': '复制此页',
+  'Save this page': '保存此页',
+  'Share all': '分享全部',
+  'Select to here': '选择到这里',
+  'Threads & tasks': '消息列和任务',
 };

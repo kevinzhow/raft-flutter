@@ -342,6 +342,11 @@ class RaftImageReview extends StatelessWidget {
     this.onSave,
     this.onShare,
     this.onCopy,
+    this.onSaveAll,
+    this.onPreviousPage,
+    this.onNextPage,
+    this.pageNumber = 1,
+    this.pageCount = 1,
     this.copying = false,
     this.copied = false,
     this.busy = false,
@@ -354,6 +359,8 @@ class RaftImageReview extends StatelessWidget {
   /// Web SelectShareLightbox "Copy image" (only where the clipboard takes a
   /// PNG).
   final VoidCallback? onCopy;
+  final VoidCallback? onSaveAll, onPreviousPage, onNextPage;
+  final int pageNumber, pageCount;
   final bool copying, copied;
   final bool busy;
   final String? error;
@@ -367,11 +374,24 @@ class RaftImageReview extends StatelessWidget {
           child: Row(
             children: [
               Expanded(
-                child: Text(
-                  raftText(context, 'Share selected messages'),
-                  style: Theme.of(context).textTheme.titleMedium,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      raftText(context, 'Share selected messages'),
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    if (pageCount > 1)
+                      Text(
+                        raftFormat(context, '{count} images · original order', {
+                          'count': pageCount,
+                        }),
+                      ),
+                  ],
                 ),
               ),
+              if (pageCount > 1) Text('$pageNumber/$pageCount'),
               RaftTooltip(
                 message: raftText(context, 'Close Preview'),
                 child: RaftButton.iconAction(
@@ -384,9 +404,35 @@ class RaftImageReview extends StatelessWidget {
         ),
         const RaftSeparator(),
         Expanded(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: preview,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              Positioned.fill(
+                child: SingleChildScrollView(
+                  key: ValueKey(pageNumber),
+                  padding: const EdgeInsets.all(16),
+                  child: preview,
+                ),
+              ),
+              if (pageCount > 1) ...[
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: _ScreenshotPageButton(
+                    label: 'Previous page',
+                    glyph: RaftGlyph.chevronLeft,
+                    onPressed: busy ? null : onPreviousPage,
+                  ),
+                ),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: _ScreenshotPageButton(
+                    label: 'Next page',
+                    glyph: RaftGlyph.chevronRight,
+                    onPressed: busy ? null : onNextPage,
+                  ),
+                ),
+              ],
+            ],
           ),
         ),
         if (error != null)
@@ -413,7 +459,9 @@ class RaftImageReview extends StatelessWidget {
                       ? 'Copying…'
                       : copied
                       ? 'Copied'
-                      : 'Copy image',
+                      : pageCount == 1
+                      ? 'Copy image'
+                      : 'Copy this page',
                   icon: copied ? Icons.check : Icons.copy_outlined,
                   secondary: true,
                   busy: copying,
@@ -421,22 +469,45 @@ class RaftImageReview extends StatelessWidget {
                 ),
               if (onSave != null)
                 RaftButton(
-                  label: 'Save image',
+                  label: pageCount == 1 ? 'Save image' : 'Save this page',
                   icon: Icons.download_outlined,
                   busy: busy && !copying,
-                  onPressed: onSave,
+                  onPressed: busy ? null : onSave,
                 ),
               if (onShare != null)
                 RaftButton(
-                  label: 'Share Image',
+                  label: pageCount == 1 ? 'Share Image' : 'Share all',
                   icon: Icons.share_outlined,
                   secondary: true,
                   onPressed: busy ? null : onShare,
+                ),
+              if (onSaveAll != null)
+                RaftButton(
+                  label: 'Download all',
+                  icon: Icons.download_outlined,
+                  onPressed: busy ? null : onSaveAll,
                 ),
             ],
           ),
         ),
       ],
     ),
+  );
+}
+
+class _ScreenshotPageButton extends StatelessWidget {
+  const _ScreenshotPageButton({
+    required this.label,
+    required this.glyph,
+    this.onPressed,
+  });
+  final String label;
+  final RaftGlyph glyph;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) => RaftTooltip(
+    message: raftText(context, label),
+    child: RaftButton.iconAction(onPressed: onPressed, icon: RaftIcon(glyph)),
   );
 }

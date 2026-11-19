@@ -3544,6 +3544,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
                   child: ChatBottomControls(
                     controller: w,
                     thread: thread,
+                    selection: capturingSelection ? null : selection,
                     rows: rows,
                     hasNewer: historyWindow,
                     scroll: viewport,
