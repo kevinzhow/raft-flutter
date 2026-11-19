@@ -39,6 +39,7 @@ void main() {
       await frames(tester, 20);
       await tapAndSettle(tester, find.byKey(const Key('nav-drafts')));
       final page = find.byType(DraftsPage);
+      expect(find.byTooltip('Back'), findsOneWidget);
       return SurfaceProbe(
         isOpen: () => page.evaluate().isNotEmpty,
         back: find.descendant(of: page, matching: find.byTooltip('Back')),

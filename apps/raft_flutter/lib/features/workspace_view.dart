@@ -1789,20 +1789,20 @@ class _WorkspaceViewState extends State<WorkspaceView>
                           RaftMobileRootHeader(title: 'Computers'),
                       ] else if (!wide &&
                           location.route != RaftRoute.computer &&
-                          // A profile overlay brings its own header.
                           location.profile == null &&
                           (thread ||
-                              ![
-                                'home',
-                                'tasks',
-                                'saved',
-                                'activity',
-                                'search',
-                                'members',
-                                'settings',
-                              ].contains(route)))
-                        if (thread || !unresolvedChannelRoute)
-                          mobilePageHeader(title, thread),
+                              !unresolvedChannelRoute &&
+                                  ![
+                                    'home',
+                                    'tasks',
+                                    'saved',
+                                    'activity',
+                                    'search',
+                                    'members',
+                                    'settings',
+                                    draftsSection,
+                                  ].contains(route)))
+                        mobilePageHeader(title, thread),
                       RaftToastPortal(controller: rowToast),
                       Expanded(
                         child: ProfileOutsideTapDismiss(
