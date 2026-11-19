@@ -195,7 +195,11 @@ void main() {
         expect(writes.single, contains('Public selected parent'));
         expect(
           writes.single,
-          contains(thread ? '> Public selected reply' : 'Public second row'),
+          contains(
+            thread
+                ? '  ↳ **Alice**: Public selected reply'
+                : 'Public second row',
+          ),
         );
         if (!thread) {
           expect(writes.single, isNot(contains('Public selected reply')));
