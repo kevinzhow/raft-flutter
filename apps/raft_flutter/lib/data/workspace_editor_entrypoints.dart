@@ -1,5 +1,11 @@
 import 'workspace_uploads.dart';
 
+typedef ComposerSendWarnings = ({
+  List<String> unresolved,
+  bool agentStopped,
+  bool agentStuck,
+});
+
 /// The receiver's original virtual editor calls (contract v4).
 ///
 /// The composition root binds these existing public entrypoints. Calling them
@@ -8,7 +14,7 @@ import 'workspace_uploads.dart';
 abstract interface class WorkspaceEditorEntrypoints {
   Map<String, String> get drafts;
   Map<String, List<Map<String, dynamic>>> get pendingMentionActions;
-  Map<String, ({List<String> unresolved, bool agentStopped})> get sendWarnings;
+  Map<String, ComposerSendWarnings> get sendWarnings;
   Map<String, String?> get shareHolds;
   bool get conversationPaused;
   String? draftScope({bool thread = false});

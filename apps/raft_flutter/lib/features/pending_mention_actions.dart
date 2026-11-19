@@ -279,12 +279,12 @@ Widget? raftComposerAccessory(
   // (channel), then the strip. Both warnings carry a dismiss X.
   final warnings = w.sendWarningsFor(thread: thread);
   final dm = !thread && w.channel?.type == 'dm';
-  final stopped = dm && warnings.agentStopped;
+  final delivery = dm && (warnings.agentStopped || warnings.agentStuck);
   final unresolved = !dm && warnings.unresolved.isNotEmpty;
   if (error == null &&
       shared == null &&
       quota == null &&
-      !stopped &&
+      !delivery &&
       !unresolved &&
       !mentions &&
       recoverable == null) {
@@ -298,11 +298,13 @@ Widget? raftComposerAccessory(
       ),
     if (error != null) RaftComposerNotice(message: error),
     if (quota != null) RaftComposerNotice(message: quota),
-    if (stopped)
+    if (delivery)
       RaftComposerNotice(
         message: raftText(
           context,
-          'Message sent, but this agent is stopped and was not notified.',
+          warnings.agentStopped
+              ? 'Message sent, but this agent is stopped and was not notified.'
+              : 'Message sent, but this agent is stuck on a command with no output. It will see the message once the command ends or the agent is restarted.',
         ),
         dismissLabel: raftText(context, 'Dismiss Delivery Warning'),
         onDismiss: () => w.dismissSendWarnings(thread: thread),

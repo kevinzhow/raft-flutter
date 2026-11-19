@@ -14,4 +14,7 @@ const Map<String, String> zhCatalogUpstream124Compose = {
   'Share all': '分享全部',
   'Select to here': '选择到这里',
   'Threads & tasks': '消息列和任务',
+  '{shortcut} to send': '按 {shortcut} 发送',
+  'Message sent, but this agent is stuck on a command with no output. It will see the message once the command ends or the agent is restarted.':
+      '消息已发送，但该 Agent 卡在一个命令上，一直没有输出。命令结束或重启 Agent 后，它才会看到这条消息。',
 };

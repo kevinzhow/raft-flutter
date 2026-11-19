@@ -13,8 +13,16 @@ import 'package:raft_flutter/data/workspace_sends.dart';
 import 'package:raft_flutter/data/workspace_session_context.dart';
 import 'package:raft_flutter/data/workspace_uploads.dart';
 
-typedef _Warning = ({List<String> unresolved, bool agentStopped});
-const _warning = (unresolved: ['fixture'], agentStopped: false);
+typedef _Warning = ({
+  List<String> unresolved,
+  bool agentStopped,
+  bool agentStuck,
+});
+const _warning = (
+  unresolved: ['fixture'],
+  agentStopped: false,
+  agentStuck: false,
+);
 RaftChannel _channel(String id) =>
     RaftChannel({'id': id, 'name': id, 'joined': true, 'type': 'channel'});
 

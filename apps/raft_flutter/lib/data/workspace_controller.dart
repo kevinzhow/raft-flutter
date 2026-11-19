@@ -603,10 +603,9 @@ class WorkspaceController extends ChangeNotifier
   }
 
   /// Warnings from the latest send per draft scope.
-  Map<String, ({List<String> unresolved, bool agentStopped})>
-  get sendWarnings => _editor.sendWarnings;
+  Map<String, ComposerSendWarnings> get sendWarnings => _editor.sendWarnings;
 
-  ({List<String> unresolved, bool agentStopped}) sendWarningsFor({
+  ComposerSendWarnings sendWarningsFor({
     bool thread = false,
   }) => _editor.sendWarningsFor(thread: thread);
 
@@ -1689,8 +1688,7 @@ class _WorkspaceMessageBindings extends _WorkspaceSessionBindings
   Map<String, List<Map<String, dynamic>>> get pendingMentionActions =>
       w.pendingMentionActions;
   @override
-  Map<String, ({List<String> unresolved, bool agentStopped})>
-  get sendWarnings => w.sendWarnings;
+  Map<String, ComposerSendWarnings> get sendWarnings => w.sendWarnings;
   @override
   Map<String, String?> get shareHolds => w.shareHolds;
   @override

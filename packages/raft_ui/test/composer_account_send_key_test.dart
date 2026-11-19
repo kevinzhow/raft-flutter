@@ -30,6 +30,15 @@ void main() {
       );
       final field = find.byType(TextField);
       await tester.enterText(field, 'first line');
+      await tester.pump();
+      expect(
+        find.text(
+          platform == TargetPlatform.macOS
+              ? '⌘Enter to send'
+              : 'Ctrl+Enter to send',
+        ),
+        findsOneWidget,
+      );
       await tester.sendKeyEvent(LogicalKeyboardKey.enter);
       await tester.pump();
       expect(sent, isEmpty);
@@ -41,6 +50,7 @@ void main() {
       await tester.sendKeyUpEvent(modifier);
       await tester.pump();
       expect(sent, ['first line\nsecond line']);
+      expect(find.textContaining('to send'), findsNothing);
     });
   }
 }

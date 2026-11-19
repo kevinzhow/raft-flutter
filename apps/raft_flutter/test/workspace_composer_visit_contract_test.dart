@@ -6,8 +6,16 @@ import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/workspace_cache.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
 
-typedef _Warning = ({List<String> unresolved, bool agentStopped});
-const _warning = (unresolved: ['fixture'], agentStopped: false);
+typedef _Warning = ({
+  List<String> unresolved,
+  bool agentStopped,
+  bool agentStuck,
+});
+const _warning = (
+  unresolved: ['fixture'],
+  agentStopped: false,
+  agentStuck: false,
+);
 
 class _Warnings extends MapBase<String, _Warning> {
   final valuesByScope = <String, _Warning>{};

@@ -11,6 +11,7 @@ import 'user_error.dart';
 import 'workspace_composer.dart';
 import 'workspace_domain_ports.dart';
 import 'workspace_editor_entrypoints.dart';
+import 'composer_delivery_warning.dart';
 import 'workspace_sends.dart';
 import 'workspace_session_context.dart';
 import 'workspace_upload_route.dart';
@@ -89,8 +90,7 @@ class WorkspaceEditor implements WorkspaceEditorEntrypoints {
   @override
   final Map<String, List<Map<String, dynamic>>> pendingMentionActions = {};
   @override
-  final Map<String, ({List<String> unresolved, bool agentStopped})>
-  sendWarnings = {};
+  final Map<String, ComposerSendWarnings> sendWarnings = {};
   final CauseNotices<String> _composerNotices = CauseNotices<String>();
   late final ComposerVisitState _composerVisits;
 
@@ -192,12 +192,10 @@ class WorkspaceEditor implements WorkspaceEditorEntrypoints {
     context.changed();
   }
 
-  ({List<String> unresolved, bool agentStopped}) sendWarningsFor({
-    bool thread = false,
-  }) =>
+  ComposerSendWarnings sendWarningsFor({bool thread = false}) =>
       (presentationSource?.entrypoints.sendWarnings ??
           entrypoints.sendWarnings)[entrypoints.draftScope(thread: thread)] ??
-      (unresolved: const [], agentStopped: false);
+      (unresolved: const [], agentStopped: false, agentStuck: false);
 
   void dismissSendWarnings({bool thread = false}) {
     final scope = entrypoints.draftScope(thread: thread);
@@ -529,6 +527,9 @@ class WorkspaceEditor implements WorkspaceEditorEntrypoints {
               normalizePendingMentionActions(
                 sent.receipt['pendingMentionActions'],
               );
+          final delivery = composerDeliveryWarningReasons(
+            sent.receipt['deliveryWarnings'],
+          );
           entrypoints.sendWarnings[scope] = (
             unresolved: [
               for (final handle
@@ -536,15 +537,8 @@ class WorkspaceEditor implements WorkspaceEditorEntrypoints {
                       const []))
                 if (handle is String) handle,
             ],
-            agentStopped:
-                (sent.receipt['deliveryWarnings'] as List? ?? const []).any(
-                  (w) =>
-                      w is Map &&
-                      w['targetType'] == 'agent' &&
-                      w['reason'] == 'agent_stopped' &&
-                      w['targetId'] is String &&
-                      (w['targetId'] as String).isNotEmpty,
-                ),
+            agentStopped: delivery.contains('agent_stopped'),
+            agentStuck: delivery.contains('agent_stuck_on_tool'),
           );
         },
       ),

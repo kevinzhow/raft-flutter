@@ -94,6 +94,7 @@ void main() {
     w.sendWarnings['c1'] = (
       unresolved: ['ghost', 'nobody'],
       agentStopped: false,
+      agentStuck: false,
     );
     w.notifyListeners();
     await t.pump();
@@ -113,7 +114,11 @@ void main() {
   ) async {
     await mount(t);
     await open(t, _channel('d1', type: 'dm'));
-    w.sendWarnings['d1'] = (unresolved: [], agentStopped: true);
+    w.sendWarnings['d1'] = (
+      unresolved: [],
+      agentStopped: true,
+      agentStuck: false,
+    );
     w.notifyListeners();
     await t.pump();
     expect(find.text(_stopped), findsOneWidget);
@@ -130,7 +135,11 @@ void main() {
     t,
   ) async {
     await mount(t);
-    w.sendWarnings['c1'] = (unresolved: ['ghost'], agentStopped: false);
+    w.sendWarnings['c1'] = (
+      unresolved: ['ghost'],
+      agentStopped: false,
+      agentStuck: false,
+    );
     w.notifyListeners();
     await t.pump();
     expect(find.textContaining('Not notified: ghost'), findsOneWidget);
@@ -138,12 +147,20 @@ void main() {
     expect(find.textContaining('Not notified'), findsNothing);
     // The stopped-agent warning is for a DM; a channel never shows it, and a
     // DM never lists unresolved handles.
-    w.sendWarnings['c2'] = (unresolved: [], agentStopped: true);
+    w.sendWarnings['c2'] = (
+      unresolved: [],
+      agentStopped: true,
+      agentStuck: false,
+    );
     w.notifyListeners();
     await t.pump();
     expect(find.text(_stopped), findsNothing);
     await open(t, _channel('d2', type: 'dm'));
-    w.sendWarnings['d2'] = (unresolved: ['ghost'], agentStopped: false);
+    w.sendWarnings['d2'] = (
+      unresolved: ['ghost'],
+      agentStopped: false,
+      agentStuck: false,
+    );
     w.notifyListeners();
     await t.pump();
     expect(find.textContaining('Not notified'), findsNothing);

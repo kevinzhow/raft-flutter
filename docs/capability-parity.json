@@ -162,7 +162,7 @@
    "capability": "Search forward destinations (channels, DMs, people, agents) in the forward composer",
    "background": false,
    "status": "covered",
-   "webEntry": "ForwardComposerDialog > 'Search targets' input, Recent list, 'Not joined' / 'New DM' rows",
+   "webEntry": "ForwardComposerDialog searches in the source server. ArtifactLinkSendDialog searches across the reader's servers.",
    "gate": "forward-eligible destinations (writable, not read-only Joint)",
    "flutterEntry": "forward_composer_page.dart load()",
    "flutterRefs": [
@@ -175,9 +175,49 @@
      "needle": "Search targets"
     }
    ],
-   "justification": "",
+   "justification": "The message-forward route binds source and destination authorization to the request server. The Artifact link cross-server flow is separate.",
    "impact": "",
    "size": ""
+  },
+  {
+   "kind": "endpoint",
+   "id": "POST /mentions/audience",
+   "area": "messages",
+   "capability": "Load the authorized mention audience for a conversation or first-party object",
+   "background": false,
+   "status": "partial",
+   "webEntry": "components/mention/mentionAudience.ts and routes/mentions.ts (v1.24)",
+   "gate": "",
+   "flutterEntry": "MentionAudienceSource supports both mounted request shapes",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/data/mention_audience_source.dart",
+     "needle": "'/mentions/audience'"
+    }
+   ],
+   "justification": "The package exposes the shared object-audience source. Web MessageInput and Flutter channel composers continue to use their roster-backed suggestions. The Artifact caller owns its adapter.",
+   "impact": "Artifact comment pickers need a caller adapter to use this source and its capped query result.",
+   "size": "S"
+  },
+  {
+   "kind": "endpoint",
+   "id": "GET /messages/forward/targets/conversations",
+   "area": "messages",
+   "capability": "List recent eligible thread and task conversations for forwarding",
+   "background": false,
+   "status": "covered",
+   "webEntry": "components/message/useForwardConversationTargets.ts",
+   "gate": "",
+   "flutterEntry": "forward_conversation_targets.dart and ForwardComposerPage",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/features/forward_conversation_targets.dart",
+     "needle": "'/messages/forward/targets/conversations'"
+    }
+   ],
+   "justification": "One request per dialog opening. The current conversation is first when present.",
+   "impact": "",
+   "size": "S"
   },
   {
    "kind": "endpoint",
@@ -573,9 +613,9 @@
    "capability": "Copy selected messages as Markdown / copy image to the clipboard",
    "background": false,
    "status": "covered",
-   "webEntry": "selectMarkdown.ts (selection mode: Copy Markdown, Copy image)",
+   "webEntry": "utils/selectMarkdown.ts selectionToMarkdown + SelectShareLightbox.tsx copy current image",
    "gate": "",
-   "flutterEntry": "message_image_export.dart MessageImageReview uses platform/image_clipboard.dart; Linux GTK owns the reviewed PNG bytes, Android exposes a read-only leased content URI through the existing FileProvider",
+   "flutterEntry": "message_selection.dart serializes selected messages in chat order. MessageImageReview copies the current rendered PNG.",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/platform/image_clipboard.dart",
@@ -601,9 +641,9 @@
    "capability": "Render selected messages to an image (inlines remote images)",
    "background": false,
    "status": "covered",
-   "webEntry": "selectScreenshot.ts (selection mode: Share/Save image)",
+   "webEntry": "utils/selectScreenshot.ts captureSelectedMessageImages + utils/selectScreenshotPagination.ts",
    "gate": "",
-   "flutterEntry": "message_image_export.dart renders natively",
+   "flutterEntry": "message_image_export.dart renders native PNGs in order and splits long selections at whole rows where they fit.",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/message_image_export.dart",
@@ -681,13 +721,17 @@
    "capability": "Composer drafts persist per conversation and thread across reloads",
    "background": false,
    "status": "covered",
-   "webEntry": "store/messageStore.ts DRAFTS_STORAGE_KEY slock_drafts (debounced 250ms/3s)",
+   "webEntry": "store/draftStorage.ts and hooks/useDrafts.ts. The Drafts page is gated by drafts_section_v0.",
    "gate": "",
-   "flutterEntry": "workspace_controller.dart _saveDraftScope / drafts restored on open",
+   "flutterEntry": "The workspace composer keeps durable conversation and thread drafts. DraftsPage reads the workspace draft index when the feature flag is enabled.",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/data/workspace_editor.dart",
      "needle": "Future<void> saveDraftScope(String scope"
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/desktop_drafts_page.dart",
+     "needle": "class DraftsPage"
     }
    ],
    "justification": "",
@@ -746,12 +790,12 @@
    "kind": "ui",
    "id": "ui:global-ui.shortcut-composer-send",
    "area": "messages",
-   "capability": "Composer keys: Enter sends and Shift+Enter inserts a newline on desktop keyboards; Cmd/Ctrl+Enter also sends; Cmd/Ctrl+Shift+Enter sends as a task; on touch devices Enter inserts a newline and Send button submits; IME composition never sends",
+   "capability": "Account composer send key: Enter or Cmd/Ctrl+Enter. Shift+Enter inserts a newline. Cmd/Ctrl+Shift+Enter sends as a task where available. IME composition never sends.",
    "background": false,
    "status": "covered",
-   "webEntry": "components/message/MessageInput.tsx handleKeyDown (isComposing/229 guard, forceAsTask on meta/ctrl+shift+Enter, (pointer: coarse)+portrait newline)",
+   "webEntry": "features/composer/MessageInput.tsx handleKeyDown (isComposing/229 guard, forceAsTask on meta/ctrl+shift+Enter, (pointer: coarse)+portrait newline)",
    "gate": "",
-   "flutterEntry": "raft_ui components.dart composerKey() + Shortcuts with _RaftForceTaskSendIntent (ctrl/meta+shift+Enter) and ActivateIntent (ctrl/meta+Enter); Android/iOS return ignored so Enter is a newline",
+   "flutterEntry": "RaftComposerSendKeyScope reads the signed-in account choice. ComposerSendKeySetting persists it with PATCH /auth/me.",
    "flutterRefs": [
     {
      "file": "packages/raft_ui/lib/src/components.dart",
@@ -760,6 +804,10 @@
     {
      "file": "packages/raft_ui/lib/src/components.dart",
      "needle": "KeyEventResult composerKey(FocusNode node, KeyEvent event)"
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/composer_send_key_setting.dart",
+     "needle": "'/auth/me'"
     }
    ],
    "justification": "",
@@ -773,7 +821,7 @@
    "capability": "Cmd/Ctrl+Z immediately after a mention auto-insert (picker or 'mention sender') restores the text and mention set from before the insert",
    "background": false,
    "status": "covered",
-   "webEntry": "components/message/MessageInput.tsx handleKeyDown mentionUndoSnapshotRef (beforeContent/beforeMentions/beforeCursor)",
+   "webEntry": "features/composer/MessageInput.tsx handleKeyDown mentionUndoSnapshotRef (beforeContent/beforeMentions/beforeCursor)",
    "gate": "",
    "flutterEntry": "raft_ui composer_mention_undo.dart + RaftComposer.undoMention (picker choice and mention-sender)",
    "flutterRefs": [
@@ -12110,7 +12158,7 @@
    "capability": "Paste images/files from the clipboard into the composer",
    "background": false,
    "status": "covered",
-   "webEntry": "components/message/MessageInput.tsx handlePaste + utils/clipboardFiles.ts extractClipboardFiles",
+   "webEntry": "features/composer/MessageInput.tsx handlePaste + utils/clipboardFiles.ts extractClipboardFiles",
    "gate": "",
    "flutterEntry": "platform/clipboard_attachments.dart ClipboardAttachments (pasteboard plugin; copied files then copied image)",
    "flutterRefs": [
@@ -12130,7 +12178,7 @@
    "capability": "Drag files onto the composer to attach them (drop overlay)",
    "background": false,
    "status": "covered",
-   "webEntry": "components/message/MessageInput.tsx handleDrop (onDrop on composer); no app-wide drop target",
+   "webEntry": "features/composer/MessageInput.tsx handleDrop (onDrop on composer); no app-wide drop target",
    "gate": "Desktop only (drag and drop)",
    "flutterEntry": "composer_attachment_input.dart ComposerFileDropTarget (desktop_drop) wrapped around RaftComposer in chat_view.dart",
    "flutterRefs": [
@@ -18929,7 +18977,7 @@
    "gate": "none",
    "flutterEntry": "",
    "flutterRefs": [],
-   "justification": "Not a server call: `fetch(dataUrl)` turns a canvas data URL into a blob. The native image export has no canvas pixel budget; the budget copy is tracked in the share work (WP-MSGB).",
+   "justification": "The browser uses data-URL to Blob conversion. Native Flutter uses bounded capture bands and validates each PNG before preview or export.",
    "impact": "",
    "size": ""
   },

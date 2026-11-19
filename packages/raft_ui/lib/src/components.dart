@@ -3410,6 +3410,12 @@ class _RaftComposerState extends State<RaftComposer> {
                                   onImagePick: widget.onImagePick,
                                   onAttach: widget.onAttach,
                                   taskAction: widget.taskAction,
+                                  hint: raftComposerSendKeyHint(
+                                    context,
+                                    hasDraft:
+                                        controller.text.trim().isNotEmpty ||
+                                        widget.hasAttachments,
+                                  ),
                                   submitTooltip: widget.submitTooltip,
                                   spinner: widget.submitSpinner,
                                   submitEnabled: submitEnabled,
