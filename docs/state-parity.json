@@ -56300,25 +56300,25 @@
         "owner": "WP-COMPOSE",
         "reason": "Source position changed with the composer or Drafts integration. Family/state visual review is pending."
       },
-      "packages/raft_ui/lib/src/components.dart#local-function:CLASS:RaftNavItem@27777/METHOD:_build@34782/FUNCTION:row@41713": {
+      "packages/raft_ui/lib/src/components.dart#local-function:CLASS:RaftNavItem@27055/METHOD:_build@34060/FUNCTION:row@40991": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "WP-COMPOSE",
         "reason": "Source position changed with the composer or Drafts integration. Family/state visual review is pending."
       },
-      "packages/raft_ui/lib/src/components.dart#local-function:CLASS:RaftNavItem@27777/METHOD:_build@34782/FUNCTION:titleContent@37887": {
+      "packages/raft_ui/lib/src/components.dart#local-function:CLASS:RaftNavItem@27055/METHOD:_build@34060/FUNCTION:titleContent@37165": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "WP-COMPOSE",
         "reason": "Source position changed with the composer or Drafts integration. Family/state visual review is pending."
       },
-      "packages/raft_ui/lib/src/components.dart#local-function:CLASS:RaftNavItem@27777/METHOD:_build@34782/FUNCTION:titleWithIndicators@40943": {
+      "packages/raft_ui/lib/src/components.dart#local-function:CLASS:RaftNavItem@27055/METHOD:_build@34060/FUNCTION:titleWithIndicators@40221": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "WP-COMPOSE",
         "reason": "Source position changed with the composer or Drafts integration. Family/state visual review is pending."
       },
-      "packages/raft_ui/lib/src/components.dart#local-function:CLASS:RaftNavItem@27777/METHOD:_build@34782/FUNCTION:wrappedTitle@36746": {
+      "packages/raft_ui/lib/src/components.dart#local-function:CLASS:RaftNavItem@27055/METHOD:_build@34060/FUNCTION:wrappedTitle@36024": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "WP-COMPOSE",
