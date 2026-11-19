@@ -1,3 +1,5 @@
+import 'thread_composition.dart';
+
 // The Public server page of the Web client (raft-source 26f77ef,
 // packages/web/src/pages/PublicServerPage.tsx): the anonymous `/s/<slug>`
 // preview (and the signed-in nonmember variant) with the public channel
@@ -25,7 +27,6 @@ import 'recipes/button_variants.g.dart'
 import 'settings_controls.dart';
 import 'system_inset.dart';
 import 'settings_layout.dart';
-import 'tooltip.dart' show RaftTooltip;
 import 'adaptive_workspace.dart' show RaftRailDestination, RaftWorkspaceRail;
 import 'workspace_shell.dart'
     show
@@ -769,57 +770,22 @@ class RaftPublicThreadPanel extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Web ReadOnlyThreadPanel: a PanelHeader whose title is "Thread"
-          // plus the muted channel (`ml-1 font-normal text-foreground-placeholder`,
-          // 15px in Elegant) and a plain ghost close button.
-          _publicHeaderStrip(
-            t,
-            RaftPanelHeaderBar(
-              title: '',
-              onBack: narrow ? onClose : null,
-              backKey: const ValueKey('thread-mobile-back'),
-              titleSlot: Text.rich(
-                TextSpan(
-                  text: raftText(context, title),
-                  children: [
-                    TextSpan(
-                      // The gap is `ml-1`, not a leading space in the catalog text.
-                      text: ' $channelContext',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w400,
-                        fontSize: 15,
-                        color: (t.colors['foreground-placeholder'] ?? t.muted),
-                      ),
-                    ),
-                  ],
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: RaftTypography.inherited(
-                  t,
-                  size: 16,
-                  line: 24,
-                  weight: FontWeight.w700,
-                  color: text.strong,
-                ),
-              ),
-              actions: [
-                if (showClose)
-                  RaftTooltip(
-                    message: raftText(context, closeLabel),
-                    child: RaftSettingsRecipeButton(
-                      key: const ValueKey('thread-close'),
-                      label: '',
-                      semanticLabel: raftText(context, closeLabel),
-                      glyph: RaftGlyph.x,
-                      glyphSize: 14,
-                      variant: RaftButtonRecipeVariant.ghost,
-                      size: RaftButtonRecipeSize.iconSm,
-                      onPressed: onClose,
-                    ),
-                  ),
-              ],
-            ),
+          RaftThreadHeader(
+            presentation: RaftThreadPresentation.side,
+            threadLabel: raftText(context, title),
+            jumpLabel: '',
+            backLabel: raftText(context, 'Back'),
+            closeLabel: raftText(context, closeLabel),
+            parentLabel: channelContext.replaceFirst('— ', ''),
+            replyCount: replies.length,
+            stackMeta: true,
+            interactiveTitle: false,
+            showBackOverride: narrow && !showClose,
+            showCloseOverride: showClose,
+            onBack: onClose,
+            onClose: onClose,
+            backKey: const ValueKey('thread-mobile-back'),
+            closeKey: const ValueKey('thread-close'),
           ),
           Expanded(child: body),
         ],

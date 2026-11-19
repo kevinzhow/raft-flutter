@@ -67,14 +67,15 @@ List<String> threadSearchMatches(Iterable<RaftMessage> messages, String query) {
 /// query, the active match and the hydrated corpus of every reply, scoped to
 /// one thread. The scrolling to the active match is the mounted timeline's.
 class ThreadSearch extends ChangeNotifier {
-  ThreadSearch(this.w);
+  ThreadSearch(this.w, {this.hasNewer});
   final ThreadSearchAuthority w;
+  final bool Function()? hasNewer;
 
-  String? _threadId;
+  Object? _threadScope;
   bool _open = false;
   String _query = '';
   int _activeIndex = 0;
-  String? _hydratedId, _loadingId;
+  Object? _hydratedScope, _loadingScope;
   List<RaftMessage> _corpus = const [];
   Timer? _debounce;
   bool _disposed = false;
@@ -82,18 +83,24 @@ class ThreadSearch extends ChangeNotifier {
   /// Bumped on every open (and seed) so the field refocuses and selects.
   int focusRequest = 0;
 
-  bool get _isCurrent => _threadId != null && _threadId == w.threadChannelId;
+  Object? get _currentScope {
+    final id = w.threadChannelId;
+    if (id == null) return null;
+    return (w.client.generation, w.client.serverId, w.client.user?.id, id);
+  }
+
+  bool get _isCurrent => _threadScope != null && _threadScope == _currentScope;
 
   /// The bar is shown for the current thread only.
   bool get isOpen => _isCurrent && _open;
   String get query => _isCurrent ? _query : '';
-  bool get loading => _loadingId != null && _loadingId == w.threadChannelId;
+  bool get loading => _loadingScope != null && _loadingScope == _currentScope;
 
   /// Web `threadSearchMessages`: parent first, then every reply (the hydrated
   /// corpus once complete, otherwise the loaded window).
   List<RaftMessage> get searchable {
     final parent = w.presentedThreadParent;
-    final replies = _hydratedId != null && _hydratedId == w.threadChannelId
+    final replies = _hydratedScope != null && _hydratedScope == _currentScope
         ? _corpus
         : w.replies;
     return [?parent, ...replies];
@@ -131,11 +138,11 @@ class ThreadSearch extends ChangeNotifier {
   /// Web `openThreadSearch`: reopens the same thread's query, or starts fresh
   /// (a [seed] replaces the query).
   void open([String? seed]) {
-    final id = w.threadChannelId;
-    if (id == null) return;
+    final scope = _currentScope;
+    if (scope == null) return;
     final text = seed == null ? '' : normalizeThreadSearchSelectionText(seed);
-    final same = _threadId == id;
-    _threadId = id;
+    final same = _threadScope == scope;
+    _threadScope = scope;
     _open = true;
     _query = text.isNotEmpty ? text : (same ? _query : '');
     _activeIndex = text.isNotEmpty ? 0 : (same ? _activeIndex : 0);
@@ -152,9 +159,9 @@ class ThreadSearch extends ChangeNotifier {
   }
 
   void setQuery(String value) {
-    final id = w.threadChannelId;
-    if (id == null) return;
-    _threadId = id;
+    final scope = _currentScope;
+    if (scope == null) return;
+    _threadScope = scope;
     _open = true;
     _query = value;
     _activeIndex = 0;
@@ -166,7 +173,7 @@ class ThreadSearch extends ChangeNotifier {
   void step(int direction) {
     final count = matches.length;
     if (count == 0) return;
-    _threadId = w.threadChannelId ?? _threadId;
+    _threadScope = _currentScope;
     _activeIndex = (activeIndex + direction + count) % count;
     _emit();
   }
@@ -181,30 +188,36 @@ class ThreadSearch extends ChangeNotifier {
   /// older (and, in a focused window, newer) replies in once per thread.
   Future<void> hydrate() async {
     final id = w.threadChannelId;
-    if (_disposed || id == null || _hydratedId == id || _loadingId == id) {
+    final scope = _currentScope;
+    if (_disposed ||
+        id == null ||
+        scope == null ||
+        _hydratedScope == scope ||
+        _loadingScope == scope) {
       return;
     }
-    _loadingId = id;
+    _loadingScope = scope;
     _emit();
     try {
-      final corpus = await _loadCorpus(id);
-      if (!_disposed && w.threadChannelId == id && corpus != null) {
-        _hydratedId = id;
+      final corpus = await _loadCorpus(id, scope);
+      if (!_disposed && _currentScope == scope && corpus != null) {
+        _hydratedScope = scope;
         _corpus = corpus;
       }
     } catch (_) {
       // The loaded window stays searchable; a later query retries.
     } finally {
-      if (_loadingId == id) _loadingId = null;
+      if (_loadingScope == scope) _loadingScope = null;
       _emit();
     }
   }
 
-  Future<List<RaftMessage>?> _loadCorpus(String id) async {
+  Future<List<RaftMessage>?> _loadCorpus(String id, Object scope) async {
     const limit = 100;
     var rows = _byDisplay([...w.replies]);
     var hasMore = w.threadHasMore;
-    final focused = w.threadIdentity?.focusedMessageId != null;
+    var hasNewer =
+        this.hasNewer?.call() ?? (w.threadIdentity?.focusedMessageId != null);
     List<RaftMessage> page(Map<String, dynamic> data) => [
       for (final row in (data['messages'] as List? ?? const []))
         if (row is Map && row['channelId'] == id)
@@ -216,22 +229,21 @@ class ThreadSearch extends ChangeNotifier {
       final older = page(
         await w.client.messagePage(id, limit: limit, before: minSeq),
       );
-      if (_disposed || w.threadChannelId != id) return null;
+      if (_disposed || _currentScope != scope) return null;
+      if (!older.any((row) => row.seq < minSeq)) break;
       rows = _byDisplay(_merge(rows, older));
       hasMore = older.length >= limit;
-      if (older.isEmpty) break;
     }
-    var hasNewer = focused;
     while (hasNewer && rows.isNotEmpty) {
       final maxSeq = rows.map((m) => m.seq).reduce((a, b) => a > b ? a : b);
       if (maxSeq <= BigInt.zero) break;
       final newer = page(
         await w.client.messagePage(id, limit: limit, after: maxSeq),
       );
-      if (_disposed || w.threadChannelId != id) return null;
+      if (_disposed || _currentScope != scope) return null;
+      if (!newer.any((row) => row.seq > maxSeq)) break;
       rows = _byDisplay(_merge(rows, newer));
       hasNewer = newer.length >= limit;
-      if (newer.isEmpty) break;
     }
     return rows;
   }

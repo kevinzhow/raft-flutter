@@ -65,11 +65,14 @@ class RaftThreadFollowers extends StatefulWidget {
     required this.rows,
     required this.onRetry,
     this.visible = true,
+    this.folded = false,
+    this.openRequest = 0,
   });
 
   /// False while Web renders nothing (count unknown / no followers): the
   /// popover's open state survives, so a reload brings it back open.
-  final bool visible;
+  final bool visible, folded;
+  final int openRequest;
 
   /// Tooltip and accessible label ("2 Agents following" / "Followers couldn't
   /// be loaded.").
@@ -92,6 +95,14 @@ class _RaftThreadFollowersState extends State<RaftThreadFollowers> {
   final anchor = GlobalKey();
   final group = Object();
   bool open = false;
+
+  @override
+  void didUpdateWidget(covariant RaftThreadFollowers oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.visible && widget.openRequest != oldWidget.openRequest) {
+      open = true;
+    }
+  }
 
   void toggle() {
     setState(() => open = !open);
@@ -186,7 +197,10 @@ class _RaftThreadFollowersState extends State<RaftThreadFollowers> {
             ],
           ),
         ),
-        child: KeyedSubtree(key: anchor, child: trigger),
+        child: KeyedSubtree(
+          key: anchor,
+          child: widget.folded ? const SizedBox(width: 0, height: 32) : trigger,
+        ),
       ),
     );
   }

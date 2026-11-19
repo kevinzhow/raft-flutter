@@ -28,9 +28,13 @@ class ThreadAgentFollowersView extends StatefulWidget {
     required this.controller,
     required this.threadChannelId,
     this.onOpenAgent,
+    this.folded = false,
+    this.openRequest = 0,
   });
   final WorkspaceController controller;
   final String threadChannelId;
+  final bool folded;
+  final int openRequest;
 
   /// Opens the agent's profile (Web `openProfile("agent", id)`).
   final void Function(String agentId)? onOpenAgent;
@@ -257,6 +261,8 @@ class _ThreadAgentFollowersViewState extends State<ThreadAgentFollowersView> {
         count: agents.length,
         error: roster?.error == true,
         visible: visible,
+        folded: widget.folded,
+        openRequest: widget.openRequest,
         body: body,
         avatars: [
           for (final agent in agents.take(3))
@@ -291,14 +297,9 @@ class _ThreadAgentFollowersViewState extends State<ThreadAgentFollowersView> {
                     ? raftFormat(context, 'Remove {agent} from Followers', {
                         'agent': agent.label,
                       })
-                    : raftFormat(
+                    : raftText(
                         context,
-                        '{agent} follows from {server}. Switch to that server to remove them.',
-                        {
-                          'agent': agent.label,
-                          'server':
-                              server ?? raftText(context, 'another server'),
-                        },
+                        "Only the host server's admins and this channel's admins can remove agents from other servers.",
                       ),
                 canRemove: canRemove,
                 removing: removingId == agent.id,

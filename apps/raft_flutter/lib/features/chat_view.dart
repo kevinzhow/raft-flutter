@@ -21,6 +21,10 @@ import 'chat_timeline_presentation.dart';
 import 'history_reading_anchor.dart';
 import 'thread_unread_jump.dart';
 import 'message_history_gaps.dart';
+import 'thread_outline_viewport.dart';
+import 'thread_find_bar.dart';
+import '../data/thread_start_jump.dart';
+import 'thread_viewport_handle.dart';
 import '../data/message_history_memory.dart';
 import '../data/message_history_positions.dart';
 import 'row_extents.dart';
@@ -92,23 +96,7 @@ import 'composer_slot.dart';
 import 'dm_read_status.dart';
 import 'channel_activity_session.dart';
 
-/// Controlled mounted-viewport action; no route, controller or data ownership.
-class ChatViewportHandle {
-  Object? _owner;
-  VoidCallback? _jump;
-  void jumpToBeginning() => _jump?.call();
-  void bind(Object owner, VoidCallback jump) {
-    _owner = owner;
-    _jump = jump;
-  }
-
-  void release(Object owner) {
-    if (identical(_owner, owner)) {
-      _owner = null;
-      _jump = null;
-    }
-  }
-}
+export 'thread_viewport_handle.dart';
 
 /// Opens a task from a message (footer chip, in-body `#N` reference) in the
 /// host's task slot; [refresh] re-reads the message's task facts afterwards.
@@ -377,8 +365,6 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
     }
   }
 
-  // Web ThreadPanel in-thread search (thread view only): the bar's field and
-  // focus, bound to the controller's [ThreadSearch].
   final searchInput = TextEditingController();
   final searchFocus = FocusNode();
   ThreadSearch? boundSearch;
@@ -420,9 +406,6 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
     if (changed && active != null) revealSearchMatch(active);
   }
 
-  /// Web `ensureThreadSearchMatchVisible` then `scrollToMessage(center)`: a
-  /// match outside the loaded window reloads the thread around it (the
-  /// timeline's focus reveal centers it); a loaded one is centered here.
   Future<void> revealSearchMatch(String id) async {
     final search = boundSearch;
     if (search == null) return;
@@ -438,12 +421,24 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
         .where((m) => m.metadata?['id'] == id)
         .firstOrNull;
     if (target == null) return;
-    // Mount the row's anchor, then center it.
     setState(() {});
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || searchActive != id) return;
       recenter(first: target.id, alignment: alignOn(id));
     });
+  }
+
+  void jumpToOutline(String id) {
+    if (!presentationActive) return;
+    if (w.threadIdentity?.parentMessageId == id) {
+      jumpToBeginning();
+    } else if (!widget.thread || w.replies.any((m) => m.id == id)) {
+      _messages.state.highlightedMessageId = id;
+      scrolledHighlight = null;
+      _messages.context.changed();
+    } else {
+      unawaited(w.threadSearch.ensureVisible(id));
+    }
   }
 
   final focusAnchors = <String, GlobalKey>{};
@@ -506,7 +501,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
       centerAfter = adapter.messages.lastOrNull?.id;
       ++windowRevision;
     }
-    widget.viewportHandle?.bind(this, jumpToBeginning);
+    widget.viewportHandle?.bind(this, jumpToBeginning, jumpToOutline);
     referenceDirectory = MessageReferenceDirectory(w)
       ..addListener(referencesChanged);
     agentPresentation = MessageAgentPresentation(w, referenceDirectory)
@@ -530,7 +525,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.viewportHandle != widget.viewportHandle) {
       oldWidget.viewportHandle?.release(this);
-      widget.viewportHandle?.bind(this, jumpToBeginning);
+      widget.viewportHandle?.bind(this, jumpToBeginning, jumpToOutline);
     }
     final controllerChanged = oldWidget.controller != w;
     final scopeChanged = controllerChanged || oldWidget.thread != widget.thread;
@@ -824,15 +819,16 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
     }
   }
 
-  /// Thread "jump to start": a fresh center at the oldest loaded row.
-  void jumpToBeginning() {
-    if (presentationActive && adapter.messages.isNotEmpty) {
-      recenter(
-        first: adapter.messages.first.id,
-        alignment: RaftTimelineAlignment.start,
-      );
-    }
-  }
+  void jumpToBeginning() => unawaited(
+    ThreadStartJump.run(_messages, () {
+      if (mounted && presentationActive && adapter.messages.isNotEmpty) {
+        recenter(
+          first: adapter.messages.first.id,
+          alignment: RaftTimelineAlignment.start,
+        );
+      }
+    }),
+  );
 
   /// Tells the controller whether this timeline sits at the latest end (the
   /// phone reads a live append only there). Edge-only: callers gate on a change.
@@ -3508,28 +3504,20 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
         : channelFooterWidgets();
     // Rows read breakpoint bands, not the raw window width, so a resize
     // within a band does not rebuild every mounted message.
-    final search = boundSearch;
     return RaftViewportBreakpointScope(
       child: Column(
         children: [
           RaftToastPortal(controller: selectionToast),
-          if (thread && search != null && search.isOpen)
-            RaftThreadSearchBar(
-              controller: searchInput,
-              focusNode: searchFocus,
-              countLabel: search.countLabel(raftText(context, 'Loading')),
-              canStep: search.matches.isNotEmpty,
-              onChanged: search.setQuery,
-              onStep: search.step,
-              onClose: search.close,
-            ),
+          ?threadFindBar(context, w, boundSearch, searchInput, searchFocus),
           ?loungeAudienceNotice(context, w, thread: thread),
           Expanded(
             child: Stack(
               fit: StackFit.expand,
               children: [
-                KeyedSubtree(
+                ThreadOutlineViewport(
                   key: const ValueKey('current-timeline'),
+                  controller: thread ? w : null,
+                  onJump: jumpToOutline,
                   child: RaftTimelineTimeReveal(
                     enabled: () =>
                         pickerMessageId == null && menuMessageId == null,
@@ -3552,6 +3540,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
                         historyWindow || !atBottom || newMessageCount > 0,
                     bottomCount: bottomCount,
                     onBottom: returnToBottom,
+                    onLoadedJump: jumpToOutline,
                   ),
                 ),
               ],

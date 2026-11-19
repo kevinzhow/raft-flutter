@@ -304,12 +304,23 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('Looks good to me'), findsOneWidget);
-    // Web ThreadPanel: "Thread" then the channel context, with a gap between.
+    final threadHeader = find.byType(RaftThreadHeader);
     expect(
-      find.textContaining('Thread — #', findRichText: true),
+      find.descendant(of: threadHeader, matching: find.text('Thread')),
       findsOneWidget,
     );
-    expect(client.calls, contains('GET $_base/threads/t1/messages'));
+    expect(
+      find.descendant(of: threadHeader, matching: find.textContaining('#')),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: threadHeader,
+        matching: find.byKey(const Key('thread-header-reply-count')),
+      ),
+      findsOneWidget,
+    );
+
     await t.tap(find.byKey(const ValueKey('thread-close')));
     await t.pumpAndSettle();
     expect(

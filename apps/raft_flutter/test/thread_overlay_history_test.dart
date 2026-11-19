@@ -475,7 +475,7 @@ void main() {
         expect(options.hitTestable(), findsOneWidget);
         await t.tap(find.byKey(const Key('thread-options')).hitTestable());
         await frames(t);
-        await t.tap(find.text('View in Channel').hitTestable());
+        await t.tap(find.text('View in channel').hitTestable());
         await frames(t);
         // The replaced thread page stays live for the platform transition.
         await t.pump(const Duration(milliseconds: 500));

@@ -243,7 +243,7 @@ class _RaftThreadRepliesBadgeState extends State<RaftThreadRepliesBadge> {
     Widget dot() => Opacity(opacity: .6, child: Text('·', style: text));
     final children = <Widget>[
       if (hasReplies) ...[
-        RaftIcon(RaftGlyph.messageSquare, size: 12, color: color),
+        RaftThreadIcon(size: 12, color: color),
         gap,
         Text(
           raftFormat(

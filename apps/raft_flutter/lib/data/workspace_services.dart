@@ -10,9 +10,11 @@ import 'source_activity_unread_store.dart';
 import 'source_channel_files_store.dart';
 import 'thread_agent_followers.dart';
 import 'thread_search.dart';
+import 'thread_outline.dart';
 import 'workspace_entity_directory.dart';
 import 'live_connection_state.dart';
 import 'workspace_live_sync.dart';
+import 'workspace_message_windows.dart';
 
 /// Composition inputs; each constructed store sees only its own authority.
 abstract interface class WorkspaceServiceAuthority
@@ -31,6 +33,7 @@ abstract interface class WorkspaceServiceAuthority
   ReadReceipts get readReceipts;
   AnnouncementStore get announcements;
   AnnouncementOnboardingGate get announcementGate;
+  WorkspaceMessageWindows get messageWindows;
   ServerBoundCache<String, Object> get agentTabCache;
   ServerBoundCache<String, TaskHistorySnapshot> get taskHistoryCache;
   SourceChannelFilesStore channelFilesStore(String channelId);
@@ -117,8 +120,14 @@ class WorkspaceServices {
   MessageTranslationStore? _translations;
 
   ThreadSearch get threadSearch =>
-      source?.threadSearch ?? (_threadSearch ??= ThreadSearch(authority));
+      source?.threadSearch ??
+      (_threadSearch ??= ThreadSearch(
+        authority,
+        hasNewer: () =>
+            authority.messageWindows.contextHasNewer(authority.threadChannelId),
+      ));
   ThreadSearch? _threadSearch;
+  final threadOutlines = <String, ThreadOutline>{};
 
   ThreadAgentFollowers get threadFollowers =>
       source?.threadFollowers ??
@@ -227,6 +236,10 @@ class WorkspaceServices {
     if (ownsFollowedThreads) followedThreads.dispose();
     _translations?.dispose();
     _threadSearch?.dispose();
+    for (final outline in threadOutlines.values) {
+      outline.dispose();
+    }
+    threadOutlines.clear();
     _threadFollowers?.dispose();
     _readReceipts?.dispose();
     _announcements?.dispose();

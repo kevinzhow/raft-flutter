@@ -286,7 +286,7 @@ final ParityCase _tabCase = ParityCase(
   },
 );
 
-/// In-thread search (3.38): overflow menu -> "Search in Thread" -> optional query.
+/// In-thread search (3.38): overflow menu -> "Search in thread" -> optional query.
 ParityCase _threadSearchCase(String? query) => ParityCase(
   widgets: const [
     'raft_flutter:WorkspaceView',
@@ -304,7 +304,7 @@ ParityCase _threadSearchCase(String? query) => ParityCase(
     for (var i = 0; i < 8; i++) {
       await t.pump(const Duration(milliseconds: 50));
     }
-    await t.tap(find.text('Search in Thread'));
+    await t.tap(find.text('Search in thread'));
     for (var i = 0; i < 8; i++) {
       await t.pump(const Duration(milliseconds: 50));
     }

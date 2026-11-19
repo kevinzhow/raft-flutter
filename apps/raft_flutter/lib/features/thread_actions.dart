@@ -6,8 +6,11 @@ import 'package:raft_ui/raft_ui.dart';
 
 import '../data/cause_notice.dart';
 import '../data/followed_threads_store.dart';
+import '../data/thread_outline.dart';
 import '../data/workspace_controller.dart';
 import 'private_route_guard.dart';
+import 'thread_outline_list.dart';
+import 'thread_outline_scope.dart';
 
 /// Notification membership for the current thread, separate from read/Done.
 class ThreadActions extends StatefulWidget {
@@ -18,6 +21,8 @@ class ThreadActions extends StatefulWidget {
     this.menuMode = false,
     this.onSearch,
     this.onViewChannel,
+    this.onOutlineJump,
+    this.onFollowers,
   });
   final WorkspaceController controller;
 
@@ -25,7 +30,8 @@ class ThreadActions extends StatefulWidget {
   /// the parent message body: the header is final at the first frame.
   final String parentMessageId;
   final bool menuMode;
-  final VoidCallback? onSearch, onViewChannel;
+  final VoidCallback? onSearch, onViewChannel, onFollowers;
+  final ValueChanged<String>? onOutlineJump;
 
   @override
   State<ThreadActions> createState() => _ThreadActionsState();
@@ -47,6 +53,7 @@ class _ThreadActionsState extends State<ThreadActions> {
   late final String authority;
   OverlayEntry? menu;
   final menuGroup = Object();
+  ThreadOutline? outline;
 
   @override
   void initState() {
@@ -56,6 +63,10 @@ class _ThreadActionsState extends State<ThreadActions> {
     // Another device may change this principal's membership of the open
     // thread; revalidate the shared list in place (no loading state).
     subscription = w.client.events.listen((event) {
+      if (current) {
+        if (event.name == 'connected') unawaited(outline?.load());
+        outline?.note(event);
+      }
       final payload = event.payload;
       if (event.name == 'thread:followers-updated' &&
           payload is Map &&
@@ -69,10 +80,21 @@ class _ThreadActionsState extends State<ThreadActions> {
     store.addListener(membershipChanged);
     // Normally started at server selection; a no-op once settled.
     store.ensure();
+    bindOutline();
+  }
+
+  void bindOutline() {
+    final next = widget.menuMode && current ? threadOutlineFor(w) : null;
+    if (identical(next, outline)) return;
+    outline?.removeListener(membershipChanged);
+    outline = next;
+    next?.addListener(membershipChanged);
+    unawaited(next?.load());
   }
 
   void authorityChanged() {
     if (!current) closeMenu();
+    bindOutline();
     if (mounted) rebuild(() {});
   }
 
@@ -138,6 +160,7 @@ class _ThreadActionsState extends State<ThreadActions> {
 
   @override
   void dispose() {
+    outline?.removeListener(membershipChanged);
     w.removeListener(authorityChanged);
     store.removeListener(membershipChanged);
     closeMenu();
@@ -151,7 +174,7 @@ class _ThreadActionsState extends State<ThreadActions> {
     menu = null;
   }
 
-  void openMenu(BuildContext anchor) {
+  void openMenu(BuildContext anchor, VoidCallback openTimeline) {
     if (!current) return;
     if (menu != null) {
       closeMenu();
@@ -163,11 +186,6 @@ class _ThreadActionsState extends State<ThreadActions> {
     if (box == null || overlayBox == null) return;
     final rect =
         box.localToGlobal(Offset.zero, ancestor: overlayBox) & box.size;
-    final placement = RaftThreadPlacement.maybeOf(context);
-    // Focus mode (Web `ThreadOverflowMenu.onToggleChannel`): offered only
-    // when the thread sits beside its own conversation (the layout says so).
-    final toggleFocus = placement?.toggleFocus;
-    final focused = placement?.focused ?? false;
     menu = OverlayEntry(
       builder: (context) => Positioned(
         left: (rect.right - 192).clamp(
@@ -187,39 +205,56 @@ class _ThreadActionsState extends State<ThreadActions> {
               child: RaftMenuPanel(
                 onDismiss: closeMenu,
                 children: [
-                  if (toggleFocus != null)
+                  if (widget.onFollowers != null)
                     RaftMenuItem(
-                      key: const Key('thread-focus-menu-item'),
-                      label: raftText(
-                        context,
-                        focused ? 'Standard mode' : 'Focus mode',
-                      ),
-                      glyph: focused
-                          ? RaftGlyph.minimize2
-                          : RaftGlyph.maximize2,
-                      autofocus: true,
+                      label: raftText(context, 'Following agents'),
                       onPressed: () {
                         closeMenu();
-                        if (current) toggleFocus();
+                        if (current) widget.onFollowers!();
                       },
                     ),
                   if (widget.onSearch != null)
                     RaftMenuItem(
-                      label: raftText(context, 'Search in Thread'),
+                      label: raftText(context, 'Search in thread'),
                       glyph: RaftGlyph.search,
-                      autofocus: toggleFocus == null,
+                      autofocus: true,
                       onPressed: () {
                         closeMenu();
                         if (current) widget.onSearch!();
                       },
                     ),
+                  if (outline?.hasReplies(widget.parentMessageId) == true)
+                    RaftMenuItem(
+                      key: const Key('thread-timeline-menu-item'),
+                      label: raftText(context, 'Timeline'),
+                      glyph: RaftGlyph.list,
+                      onPressed: () {
+                        closeMenu();
+                        openTimeline();
+                      },
+                    ),
                   if (widget.onViewChannel != null)
                     RaftMenuItem(
-                      label: raftText(context, 'View in Channel'),
+                      label: raftText(context, 'View in channel'),
                       glyph: RaftGlyph.mapPin,
                       onPressed: () {
                         closeMenu();
                         if (current) widget.onViewChannel!();
+                      },
+                    ),
+                  if (following == true && w.threadChannelId != null)
+                    RaftMenuItem(
+                      key: const Key('thread-mark-unread'),
+                      label: raftText(context, 'Mark as unread'),
+                      glyph: RaftGlyph.messageSquareDot,
+                      onPressed: () {
+                        final id = w.threadChannelId;
+                        closeMenu();
+                        if (current && id != null) {
+                          unawaited(
+                            w.conversationReads.markOpenThreadUnread(id),
+                          );
+                        }
                       },
                     ),
                   RaftMenuItem(
@@ -257,15 +292,36 @@ class _ThreadActionsState extends State<ThreadActions> {
     overlay.insert(menu!);
   }
 
+  void jumpToOutlineRow(String id) {
+    final identity = w.threadIdentity;
+    if (!current || identity == null) return;
+    final jump = widget.onOutlineJump;
+    if (jump != null) {
+      jump(id);
+      return;
+    }
+    unawaited(
+      w.openThreadIdentity(
+        parentChannelId: identity.parentChannelId,
+        parentMessageId: identity.parentMessageId,
+        focusedMessageId: id,
+        initialThreadChannelId: w.threadChannelId,
+        navigate: false,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) => widget.menuMode
-      ? Builder(
-          builder: (anchor) => TapRegion(
+      ? ThreadOutlineAnchor(
+          outline: outline,
+          onJump: jumpToOutlineRow,
+          builder: (anchor, openTimeline) => TapRegion(
             groupId: menuGroup,
             child: RaftThreadOverflowAction(
               key: const Key('thread-options'),
-              label: raftText(context, 'Thread Options'),
-              onPressed: current ? () => openMenu(anchor) : null,
+              label: raftText(context, 'Thread actions'),
+              onPressed: current ? () => openMenu(anchor, openTimeline) : null,
             ),
           ),
         )

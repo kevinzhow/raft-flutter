@@ -87,6 +87,9 @@ class MessageMenuTargets {
       _ => null,
     };
     if (unread != null) {
+      if (choice == 'mark-thread-unread' && unread == w.threadChannelId) {
+        return w.conversationReads.markOpenThreadUnread(unread);
+      }
       return w.conversationReads.markUnread(unread).catchError((_) {});
     }
     await switch (choice) {

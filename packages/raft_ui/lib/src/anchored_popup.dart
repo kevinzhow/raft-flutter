@@ -24,6 +24,7 @@ class RaftAnchoredPopup extends StatefulWidget {
     this.movement,
     this.above = false,
     this.alignRight = false,
+    this.centerVertically = false,
     this.toRight = false,
     this.gap = 4,
     this.collisionPadding = 5,
@@ -37,7 +38,7 @@ class RaftAnchoredPopup extends StatefulWidget {
   /// different subtree or retaining the previous frame's bounds.
   final Rect? anchorRect;
   final Listenable? movement;
-  final bool above, alignRight, toRight;
+  final bool above, alignRight, centerVertically, toRight;
   final double gap, collisionPadding;
 
   /// floating-ui rounds the computed position to whole pixels.
@@ -129,6 +130,7 @@ class _RaftAnchoredPopupState extends State<RaftAnchoredPopup>
         rect,
         above: widget.above,
         alignRight: widget.alignRight,
+        centerVertically: widget.centerVertically,
         toRight: widget.toRight,
         gap: widget.gap,
         gutter: widget.collisionPadding,
@@ -147,6 +149,7 @@ class _PopupLayout extends SingleChildLayoutDelegate {
     this.anchor, {
     required this.above,
     required this.alignRight,
+    required this.centerVertically,
     required this.toRight,
     required this.gap,
     required this.gutter,
@@ -155,7 +158,7 @@ class _PopupLayout extends SingleChildLayoutDelegate {
   });
   final bool snap;
   final Rect anchor;
-  final bool above, alignRight, toRight;
+  final bool above, alignRight, centerVertically, toRight;
   final double gap;
   final double gutter;
   final EdgeInsets insets;
@@ -208,6 +211,9 @@ class _PopupLayout extends SingleChildLayoutDelegate {
           minX,
           maxX,
         );
+    if (centerVertically) {
+      return position(left, anchor.center.dy - childSize.height / 2);
+    }
     final below = anchor.bottom + gap;
     final upper = anchor.top - gap - childSize.height;
     final bottomFits = below + childSize.height <= bottomEdge;
@@ -223,6 +229,7 @@ class _PopupLayout extends SingleChildLayoutDelegate {
       anchor != old.anchor ||
       above != old.above ||
       alignRight != old.alignRight ||
+      centerVertically != old.centerVertically ||
       toRight != old.toRight ||
       gap != old.gap ||
       gutter != old.gutter ||

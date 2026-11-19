@@ -62,13 +62,24 @@ class WorkspaceThreadCommands {
     String? focusedMessageId,
     String? initialThreadChannelId,
     bool navigate = true,
-  }) => m.windowReceiver.threads.openThreadLocal(
-    parentChannelId,
-    parentMessageId,
-    focusedMessageId: focusedMessageId,
-    initialThreadChannelId: initialThreadChannelId,
-    navigate: navigate,
-  );
+  }) {
+    final receiver = m.windowReceiver;
+    final parent = receiver.presentedThreadParent;
+    return receiver.threads.openThreadLocal(
+      parentChannelId,
+      parentMessageId,
+      focusedMessageId: focusedMessageId,
+      initialThreadChannelId: initialThreadChannelId,
+      navigate: navigate,
+      acceptedParent:
+          !navigate &&
+              focusedMessageId != null &&
+              parent?.id == parentMessageId &&
+              parent?.channelId == parentChannelId
+          ? parent
+          : null,
+    );
+  }
 
   Future<void> openThreadLocal(
     String parentChannelId,
@@ -92,6 +103,10 @@ class WorkspaceThreadCommands {
           resource: m.threadChannelResource(parentChannelId),
         )) {
       return;
+    }
+    if (m.state.threadIdentity?.parentMessageId != parentMessageId ||
+        m.state.threadIdentity?.parentChannelId != parentChannelId) {
+      m.channels.reads.releaseOpenThreadUnread();
     }
     if (navigate) {
       final next = m.presentation.location.withQuery({
@@ -388,6 +403,7 @@ class WorkspaceThreadCommands {
       );
     }
     ThreadRooms.leave(m);
+    m.channels.reads.releaseOpenThreadUnread();
     m.messageWindows.threadGeneration++;
     m.state.threadIdentity = null;
     m.state.threadVisit = null;

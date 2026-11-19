@@ -52,9 +52,8 @@ import 'computers_rack/computer_attention_seen.dart';
 import 'chat_view.dart';
 import 'mobile_route_gate.dart';
 import 'rail_gesture_exclusion.dart';
-import 'thread_actions.dart';
+import 'thread_workspace_header.dart';
 import 'profile_side_panel.dart';
-import 'thread_agent_followers_view.dart';
 import 'community_join.dart';
 import 'conversation_panel.dart';
 import 'message_selection.dart';
@@ -2118,81 +2117,14 @@ class _WorkspaceViewState extends State<WorkspaceView>
         onMessage: messageProfile,
       );
 
-  Widget sourceThreadHeader({bool mobile = false, VoidCallback? onClose}) {
-    final unresolved =
-        w.threadChannelId == null &&
-        (w.messageDomain.threadResolutionLoading ||
-            w.messageDomain.threadResolutionError != null);
-    // The menu needs only the thread identity, never the loaded parent row,
-    // so the header's actions are present at its first frame.
-    final parentId = w.messageDomain.threadParentMessageId,
-        parentChannelId = w.messageDomain.threadParentChannelId;
-    final sourceChannel = w.messageDomain.threadSourceChannel;
-    final threadId = w.threadChannelId;
-    return ListenableBuilder(
-      listenable: w.services.threadFollowers,
-      builder: (context, _) => RetainWhileCovered(
-        builder: (context) => RaftThreadHeader(
-          key: Key(
-            mobile
-                ? 'workspace-mobile-detail-header'
-                : 'workspace-thread-header',
-          ),
-          presentation: RaftThreadPresentation.side,
-          threadLabel: tr('Thread'),
-          jumpLabel: tr('Jump to Beginning'),
-          backLabel: threadSelection.active ? 'Exit Selection' : 'Close Thread',
-          closeLabel: threadSelection.active
-              ? 'Exit Selection'
-              : 'Close Thread',
-          backKey: mobile
-              ? const Key('mobile-detail-back')
-              : const Key('thread-back'),
-          closeKey: const Key('thread-close'),
-          parentLabel: unresolved || sourceChannel == null
-              ? null
-              : '${sourceChannel.type == 'dm' ? '@' : '#'}${sourceChannel.name}',
-          interactiveTitle: !unresolved,
-          onBack: onClose ?? (mobile ? dismissPanel : closeThreadPanel),
-          onClose: onClose ?? (mobile ? dismissPanel : closeThreadPanel),
-          onJumpToStart: unresolved ? null : threadViewport.jumpToBeginning,
-          followers: threadId == null || unresolved
-              ? null
-              : ThreadAgentFollowersView(
-                  key: ValueKey('thread-followers-$threadId'),
-                  controller: w,
-                  threadChannelId: threadId,
-                  onOpenAgent: (id) => w.openProfile(RaftProfileKind.agent, id),
-                ),
-          followersVisible:
-              threadId != null &&
-              !unresolved &&
-              w.services.threadFollowers.visible(threadId),
-          actions: [
-            if (!unresolved && parentId != null && parentChannelId != null)
-              ThreadActions(
-                key: ValueKey('thread-menu-$parentId'),
-                controller: w,
-                parentMessageId: parentId,
-                menuMode: true,
-                // Web ThreadPanel openThreadSearch: the in-thread search bar.
-                onSearch: w.threadSearch.open,
-                onViewChannel: () {
-                  w.closeThread(navigate: false);
-                  // Web openThreadParentMessageRoute: desktop pushes, phone
-                  // replaces the thread entry.
-                  w.jumpToMessage(
-                    parentChannelId,
-                    parentId,
-                    replaceEntry: !wide,
-                  );
-                },
-              ),
-          ],
-        ),
-      ),
-    );
-  }
+  Widget sourceThreadHeader({bool mobile = false, VoidCallback? onClose}) =>
+      WorkspaceThreadHeader(
+        controller: w,
+        viewport: threadViewport,
+        mobile: mobile,
+        selectionActive: threadSelection.active,
+        onClose: onClose ?? (mobile ? dismissPanel : closeThreadPanel),
+      );
 
   void closeThreadPanel() {
     if (threadSelection.dismiss()) return;

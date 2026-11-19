@@ -339,7 +339,7 @@ class RaftSheet extends StatelessWidget {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const RaftSheetHandle(),
+          const _PointerDragArea(child: RaftSheetHandle()),
           Expanded(
             child: Padding(
               padding: EdgeInsets.only(bottom: bottom),

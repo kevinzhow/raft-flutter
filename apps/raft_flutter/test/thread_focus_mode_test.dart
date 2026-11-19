@@ -69,7 +69,13 @@ void main() {
 
   final main = find.byKey(const ValueKey('message-main'));
   final panel = find.byKey(const Key('workspace-thread-panel'));
-  final focusItem = find.byKey(const Key('thread-focus-menu-item'));
+  final focusItem = find.byKey(const Key('thread-focus-mode'));
+
+  String? focusLabel(WidgetTester tester) => tester
+      .widget<RaftInteractive>(
+        find.descendant(of: focusItem, matching: find.byType(RaftInteractive)),
+      )
+      .semanticLabel;
 
   Future<void> menu(WidgetTester tester) async {
     await tester.tap(find.byKey(const Key('thread-options')));
@@ -77,7 +83,6 @@ void main() {
   }
 
   Future<void> toggle(WidgetTester tester) async {
-    await menu(tester);
     await tester.tap(focusItem);
     await tester.pumpAndSettle();
   }
@@ -94,13 +99,13 @@ void main() {
         expect(main, findsOneWidget);
         expect(await reads(tester, api, w, 'c1'), isTrue);
 
-        await menu(tester);
         expect(focusItem, findsOneWidget);
-        expect(tester.widget<RaftMenuItem>(focusItem).label, 'Focus mode');
-        // First item, ahead of search.
+        expect(focusLabel(tester), 'Expand');
         expect(
-          tester.getTopLeft(focusItem).dy,
-          lessThan(tester.getTopLeft(find.text('Search in Thread')).dy),
+          tester.getTopLeft(focusItem).dx,
+          greaterThan(
+            tester.getTopLeft(find.byKey(const Key('thread-options'))).dx,
+          ),
         );
         await tester.tap(focusItem);
         await tester.pumpAndSettle();
@@ -115,8 +120,7 @@ void main() {
         expect(w.threadIdentity?.parentMessageId, 'parent');
         // The hidden channel is not read, the thread still is.
         expect(await reads(tester, api, w, 'c1'), isFalse);
-        await menu(tester);
-        expect(tester.widget<RaftMenuItem>(focusItem).label, 'Standard mode');
+        expect(focusLabel(tester), 'Restore');
         await tester.tap(focusItem);
         await tester.pumpAndSettle();
         expect(main, findsOneWidget);
@@ -128,7 +132,7 @@ void main() {
     );
   }
 
-  testWidgets('a window that folds the thread has no Focus mode item', (
+  testWidgets('a window that folds the thread has no Focus mode button', (
     tester,
   ) async {
     final (w, api) = await openThread(tester, width: 1279);
@@ -136,7 +140,7 @@ void main() {
     await pageFrames(tester, () {}, count: 3);
     expect(panel, findsNothing);
     await menu(tester);
-    expect(find.text('Search in Thread'), findsOneWidget);
+    expect(find.text('Search in thread'), findsOneWidget);
     expect(focusItem, findsNothing);
     expect(
       await reads(tester, api, w, 'c1'),
@@ -185,8 +189,7 @@ void main() {
       findsOneWidget,
       reason: 'closing the profile does not re-hide it',
     );
-    await menu(tester);
-    expect(tester.widget<RaftMenuItem>(focusItem).label, 'Focus mode');
+    expect(focusLabel(tester), 'Expand');
   });
 
   testWidgets('closing the thread ends focus mode', (tester) async {
@@ -208,7 +211,7 @@ void main() {
     expect(main, findsOneWidget);
   });
 
-  testWidgets('the menu item needs the layout to offer focus mode', (
+  testWidgets('the header action needs the layout to offer focus mode', (
     tester,
   ) async {
     // ThreadActions on its own (a page, not the workspace's side slot).
@@ -230,10 +233,16 @@ void main() {
     });
     var toggled = 0;
     Widget host({VoidCallback? toggle, bool placed = true}) {
-      final actions = ThreadActions(
-        controller: w,
-        parentMessageId: 'm',
-        menuMode: true,
+      final actions = RaftThreadHeader(
+        presentation: RaftThreadPresentation.side,
+        threadLabel: 'Thread',
+        jumpLabel: 'Scroll to first message',
+        allowFocusMode: true,
+        backLabel: 'Back',
+        closeLabel: 'Close thread',
+        actions: [
+          ThreadActions(controller: w, parentMessageId: 'm', menuMode: true),
+        ],
       );
       return MaterialApp(
         theme: raftTheme(),
@@ -266,7 +275,6 @@ void main() {
     await close();
 
     await tester.pumpWidget(host(toggle: () => toggled++));
-    await menu(tester);
     expect(focusItem, findsOneWidget);
     await tester.tap(focusItem);
     await tester.pumpAndSettle();

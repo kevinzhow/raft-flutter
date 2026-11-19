@@ -23,6 +23,7 @@ import 'close_registry_task_slot.dart';
 import 'close_registry_tasks_board.dart';
 import 'close_registry_tasks_page.dart';
 import 'close_registry_viewers.dart';
+import 'close_registry_thread_outline.dart';
 import 'close_registry_web_link_choice.dart';
 import 'close_surface.dart';
 
@@ -49,6 +50,7 @@ List<CloseSurface> get allCloseSurfaces => [
   ...taskSlotSurfaces,
   ...tasksBoardSurfaces,
   ...tasksPageSurfaces,
+  ...threadOutlineSurfaces,
   ...viewerSurfaces,
   ...artifactSurfaces,
   ...artifactDiscussionSurfaces,
@@ -69,7 +71,6 @@ List<CloseSurface> get allCloseSurfaces => [
 /// (desktop_detail_host.dart), so the shell builds only that panel.
 const shellHostedPanels = <String, List<String>>{
   'ProfileSidePanel': ['profile-human', 'profile-agent', 'profile-external'],
-  'ThreadAgentFollowersView': ['thread-followers'],
   'RaftOverflowBareSheet': ['channel-members-page'],
 };
 

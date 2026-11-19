@@ -191,7 +191,7 @@ void main() {
     await tester.pump(const Duration(seconds: 5));
   });
 
-  testWidgets('the thread menu "Search in Thread" runs the search callback', (
+  testWidgets('the thread menu "Search in thread" runs the search callback', (
     tester,
   ) async {
     final (w, _) = await mountThread(tester);
@@ -211,7 +211,7 @@ void main() {
     );
     await tester.tap(find.byKey(const Key('thread-options')));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Search in Thread'));
+    await tester.tap(find.text('Search in thread'));
     await tester.pumpAndSettle();
     expect(opened, 1);
     await tester.pumpWidget(const SizedBox());

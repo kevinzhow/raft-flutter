@@ -65,11 +65,16 @@ const panelSurfaces = <CloseSurface>[
   CloseSurface(
     'thread-panel',
     kind: SurfaceKind.panel,
-    web: 'ThreadPanel.tsx: Back lg:hidden, X lg:flex, Esc',
+    web:
+        'features/thread/ThreadPanelHeader.tsx: Back lg:hidden, X lg:flex, Esc',
     phone: {_back, _sys},
     fold: {_back, _esc, _sys},
     desktop: {_x, _esc, _sys},
-    files: ['lib/features/workspace_view.dart'],
+    files: [
+      'lib/features/workspace_view.dart',
+      'lib/features/thread_workspace_header.dart',
+      '../../packages/raft_ui/lib/src/thread_composition.dart',
+    ],
   ),
   CloseSurface(
     'channel-settings',

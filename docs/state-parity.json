@@ -913,8 +913,8 @@
     {
       "id": "chat.thread-panel",
       "title": "Thread panel",
-      "webEntry": "packages/web/src/components/message/ThreadPanel.tsx",
-      "flutterEntry": "apps/raft_flutter/lib/features/conversation_panel.dart",
+      "webEntry": "packages/web/src/features/thread/AuthenticatedThreadPanel.tsx",
+      "flutterEntry": "apps/raft_flutter/lib/features/thread_workspace_header.dart",
       "states": [
         {
           "state": "loading",
@@ -5021,6 +5021,38 @@
           "gapKind": "impl-diff",
           "size": "M",
           "justification": "Web reports individual receipts for multiple destinations. Flutter currently sends to a single destination."
+        }
+      ]
+    },
+    {
+      "id": "chat.thread-outline",
+      "title": "Thread timeline",
+      "webEntry": "packages/web/src/features/conversation-outline/ConversationOutline.tsx",
+      "flutterEntry": "apps/raft_flutter/lib/features/thread_outline_list.dart",
+      "states": [
+        {
+          "state": "loading",
+          "web": "no",
+          "flutter": "missing",
+          "parityCase": [],
+          "status": "na",
+          "justification": "The outline stays hidden until the first index arrives and keeps its accepted rows while refreshing."
+        },
+        {
+          "state": "empty",
+          "web": "no",
+          "flutter": "missing",
+          "parityCase": [],
+          "status": "na",
+          "justification": "Both clients hide Timeline until the thread has four human replies."
+        },
+        {
+          "state": "error",
+          "web": "no",
+          "flutter": "missing",
+          "parityCase": [],
+          "status": "na",
+          "justification": "A failed index request leaves the accepted outline visible or leaves the trigger hidden."
         }
       ]
     }
@@ -38191,12 +38223,6 @@
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
-      "packages/raft_ui/lib/src/thread_followers.dart#local-function:CLASS:_Popover@6494/METHOD:build@6764/FUNCTION:status@7101": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
-      },
       "packages/raft_ui/lib/src/thread_followers.dart#method:RaftThreadFollowers.createState": {
         "role": "unresolved",
         "familyRefs": [],
@@ -50437,12 +50463,6 @@
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
-      "packages/raft_ui/lib/src/timeline_bottom_button.dart#local-function:CLASS:RaftThreadUnreadJumpPill@2036/METHOD:build@2492/FUNCTION:segment@2684": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
-      },
       "packages/raft_ui/lib/src/quoted_message_card_raft.dart#local-function:CLASS:_Shell@7239/METHOD:build@7524/FUNCTION:frame@7624": {
         "role": "unresolved",
         "familyRefs": [],
@@ -56828,6 +56848,249 @@
           "button"
         ],
         "owner": "WP-ART3"
+      },
+      "packages/raft_ui/lib/src/thread_followers.dart#local-function:CLASS:_Popover@6883/METHOD:build@7153/FUNCTION:status@7490": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "packages/raft_ui/lib/src/timeline_bottom_button.dart#local-function:CLASS:RaftThreadUnreadJumpPill@2049/METHOD:build@2534/FUNCTION:segment@2726": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5703/METHOD:desktopContentDetail@98176/FUNCTION:header@99886": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Raft Flutter component wiring",
+        "reason": "Selects the shared DM header for a desktop Activity or Search result and attaches the existing detail actions."
+      },
+      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4926/METHOD:attachmentGallery@66245/FUNCTION:view@67399": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-THREAD",
+        "reason": "Thread panel composition, outline presentation or thread control. The report records the live inputs and visual states exercised."
+      },
+      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4926/METHOD:buildTimeline@113788/FUNCTION:timelineFor@117530": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-THREAD",
+        "reason": "Thread panel composition, outline presentation or thread control. The report records the live inputs and visual states exercised."
+      },
+      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4926/METHOD:senderAvatar@78823/FUNCTION:avatar@81298": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-THREAD",
+        "reason": "Thread panel composition, outline presentation or thread control. The report records the live inputs and visual states exercised."
+      },
+      "apps/raft_flutter/lib/features/thread_find_bar.dart#function:threadFindBar": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-THREAD",
+        "reason": "Thread panel composition, outline presentation or thread control. The report records the live inputs and visual states exercised."
+      },
+      "apps/raft_flutter/lib/features/thread_outline_list.dart#class:ThreadOutlineAnchor": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-THREAD",
+        "reason": "Thread panel composition, outline presentation or thread control. The report records the live inputs and visual states exercised."
+      },
+      "apps/raft_flutter/lib/features/thread_outline_list.dart#class:ThreadOutlineList": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-THREAD",
+        "reason": "Thread panel composition, outline presentation or thread control. The report records the live inputs and visual states exercised."
+      },
+      "apps/raft_flutter/lib/features/thread_outline_list.dart#class:ThreadOutlineTick": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-THREAD",
+        "reason": "Thread panel composition, outline presentation or thread control. The report records the live inputs and visual states exercised."
+      },
+      "apps/raft_flutter/lib/features/thread_outline_list.dart#class:_OutlineRow": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-THREAD",
+        "reason": "Thread panel composition, outline presentation or thread control. The report records the live inputs and visual states exercised."
+      },
+      "apps/raft_flutter/lib/features/thread_outline_list.dart#class:_ThreadOutlineAnchorState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-THREAD",
+        "reason": "Thread panel composition, outline presentation or thread control. The report records the live inputs and visual states exercised."
+      },
+      "apps/raft_flutter/lib/features/thread_outline_list.dart#method:ThreadOutlineAnchor.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-THREAD",
+        "reason": "Thread panel composition, outline presentation or thread control. The report records the live inputs and visual states exercised."
+      },
+      "apps/raft_flutter/lib/features/thread_outline_list.dart#method:_ThreadOutlineListState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-THREAD",
+        "reason": "Thread panel composition, outline presentation or thread control. The report records the live inputs and visual states exercised."
+      },
+      "apps/raft_flutter/lib/features/thread_outline_list.dart#method:ThreadOutlineTick.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-THREAD",
+        "reason": "Thread panel composition, outline presentation or thread control. The report records the live inputs and visual states exercised."
+      },
+      "apps/raft_flutter/lib/features/thread_outline_list.dart#method:_OutlineRow.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-THREAD",
+        "reason": "Thread panel composition, outline presentation or thread control. The report records the live inputs and visual states exercised."
+      },
+      "apps/raft_flutter/lib/features/thread_outline_list.dart#method:_ThreadOutlineAnchorState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-THREAD",
+        "reason": "Thread panel composition, outline presentation or thread control. The report records the live inputs and visual states exercised."
+      },
+      "apps/raft_flutter/lib/features/thread_outline_list.dart#method:_ThreadOutlineAnchorState.didUpdateWidget": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-THREAD",
+        "reason": "Thread panel composition, outline presentation or thread control. The report records the live inputs and visual states exercised."
+      },
+      "apps/raft_flutter/lib/features/thread_outline_list.dart#method:_ThreadOutlineAnchorState.open": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "popover",
+          "dialog"
+        ],
+        "owner": "WP-THREAD",
+        "reason": "Thread panel composition, outline presentation or thread control. The report records the live inputs and visual states exercised."
+      },
+      "apps/raft_flutter/lib/features/thread_outline_viewport.dart#class:ThreadOutlineViewport": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-THREAD",
+        "reason": "Thread panel composition, outline presentation or thread control. The report records the live inputs and visual states exercised."
+      },
+      "apps/raft_flutter/lib/features/thread_outline_viewport.dart#class:_ThreadOutlineRail": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-THREAD",
+        "reason": "Thread panel composition, outline presentation or thread control. The report records the live inputs and visual states exercised."
+      },
+      "apps/raft_flutter/lib/features/thread_outline_viewport.dart#class:_ThreadOutlineRailState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-THREAD",
+        "reason": "Thread panel composition, outline presentation or thread control. The report records the live inputs and visual states exercised."
+      },
+      "apps/raft_flutter/lib/features/thread_outline_viewport.dart#method:ThreadOutlineViewport.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-THREAD",
+        "reason": "Thread panel composition, outline presentation or thread control. The report records the live inputs and visual states exercised."
+      },
+      "apps/raft_flutter/lib/features/thread_outline_viewport.dart#method:_ThreadOutlineRail.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-THREAD",
+        "reason": "Thread panel composition, outline presentation or thread control. The report records the live inputs and visual states exercised."
+      },
+      "apps/raft_flutter/lib/features/thread_outline_viewport.dart#method:_ThreadOutlineRailState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-THREAD",
+        "reason": "Thread panel composition, outline presentation or thread control. The report records the live inputs and visual states exercised."
+      },
+      "apps/raft_flutter/lib/features/thread_workspace_header.dart#class:WorkspaceThreadHeader": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-THREAD",
+        "reason": "Thread panel composition, outline presentation or thread control. The report records the live inputs and visual states exercised."
+      },
+      "apps/raft_flutter/lib/features/thread_workspace_header.dart#class:_WorkspaceThreadHeaderState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-THREAD",
+        "reason": "Thread panel composition, outline presentation or thread control. The report records the live inputs and visual states exercised."
+      },
+      "apps/raft_flutter/lib/features/thread_workspace_header.dart#local-function:CLASS:_WorkspaceThreadHeaderState@881/METHOD:build@998/FUNCTION:openParent@1658": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-THREAD",
+        "reason": "Thread panel composition, outline presentation or thread control. The report records the live inputs and visual states exercised."
+      },
+      "apps/raft_flutter/lib/features/thread_workspace_header.dart#method:WorkspaceThreadHeader.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-THREAD",
+        "reason": "Thread panel composition, outline presentation or thread control. The report records the live inputs and visual states exercised."
+      },
+      "apps/raft_flutter/lib/features/thread_workspace_header.dart#method:_WorkspaceThreadHeaderState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-THREAD",
+        "reason": "Thread panel composition, outline presentation or thread control. The report records the live inputs and visual states exercised."
+      },
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5703/METHOD:buildWorkspace@47568/FUNCTION:<anonymous>@47786/FUNCTION:conversation@50900": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-THREAD",
+        "reason": "Thread panel composition, outline presentation or thread control. The report records the live inputs and visual states exercised."
+      },
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5703/METHOD:buildWorkspace@47568/FUNCTION:<anonymous>@47786/FUNCTION:workspace@64111": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-THREAD",
+        "reason": "Thread panel composition, outline presentation or thread control. The report records the live inputs and visual states exercised."
+      },
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5703/METHOD:settingsRailAction@106349/FUNCTION:action@106383": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-THREAD",
+        "reason": "Thread panel composition, outline presentation or thread control. The report records the live inputs and visual states exercised."
+      },
+      "packages/raft_ui/lib/src/thread_followers.dart#method:_RaftThreadFollowersState.didUpdateWidget": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-THREAD",
+        "reason": "Thread panel composition, outline presentation or thread control. The report records the live inputs and visual states exercised."
+      },
+      "packages/raft_ui/lib/thread_header_previews.dart#function:_threadHeaderPreview": {
+        "role": "preview_fixture",
+        "familyRefs": [],
+        "owner": "WP-THREAD",
+        "reason": "Thread panel composition, outline presentation or thread control. The report records the live inputs and visual states exercised."
+      },
+      "packages/raft_ui/lib/thread_header_previews.dart#function:threadHeaderDarkPreview": {
+        "role": "preview_fixture",
+        "familyRefs": [],
+        "owner": "WP-THREAD",
+        "reason": "Thread panel composition, outline presentation or thread control. The report records the live inputs and visual states exercised."
+      },
+      "packages/raft_ui/lib/thread_header_previews.dart#function:threadHeaderLightPreview": {
+        "role": "preview_fixture",
+        "familyRefs": [],
+        "owner": "WP-THREAD",
+        "reason": "Thread panel composition, outline presentation or thread control. The report records the live inputs and visual states exercised."
+      },
+      "apps/raft_flutter/lib/features/thread_outline_list.dart#class:_ThreadOutlineListState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-THREAD",
+        "reason": "Thread panel composition, outline presentation or thread control. The report records the live inputs and visual states exercised."
+      },
+      "apps/raft_flutter/lib/features/thread_outline_list.dart#method:ThreadOutlineList.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-THREAD",
+        "reason": "Thread panel composition, outline presentation or thread control. The report records the live inputs and visual states exercised."
+      },
+      "apps/raft_flutter/lib/features/thread_outline_list.dart#method:_ThreadOutlineListState.didUpdateWidget": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-THREAD",
+        "reason": "Thread panel composition, outline presentation or thread control. The report records the live inputs and visual states exercised."
       }
     },
     "entries": {
@@ -60734,6 +60997,25 @@
         ],
         "mountStatus": "source_reviewed",
         "reason": "Mounted from the viewer menu as a shared dialog."
+      },
+      "surface:apps/raft_flutter/lib/features/thread_outline_list.dart#method:_ThreadOutlineAnchorState.open": {
+        "owner": "WP-THREAD",
+        "kind": "surface",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/thread_outline_list.dart#method:_ThreadOutlineAnchorState.open"
+        ],
+        "mountStatus": "source_reviewed",
+        "reason": "Thread Timeline opens in the Raft drawer or the anchored Raft popover."
+      },
+      "screen:chat.thread-outline": {
+        "owner": "WP-THREAD",
+        "kind": "screen",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/thread_outline_list.dart#method:_ThreadOutlineListState.build"
+        ],
+        "mountStatus": "source_reviewed",
+        "reason": "An authenticated thread with at least four human replies can open its Timeline from the header.",
+        "lifecycleScreenId": "chat.thread-outline"
       }
     },
     "requirements": {
@@ -63627,6 +63909,18 @@
         "applicability": "unknown",
         "owner": "WP-DS4",
         "reason": "Bound visual state and input coverage are pending."
+      },
+      "surface:apps/raft_flutter/lib/features/thread_outline_list.dart#method:_ThreadOutlineAnchorState.open:applicability": {
+        "entryId": "surface:apps/raft_flutter/lib/features/thread_outline_list.dart#method:_ThreadOutlineAnchorState.open",
+        "applicability": "unknown",
+        "owner": "WP-THREAD",
+        "reason": "The registered source entry describes where the view opens. Live runs are recorded in the package report."
+      },
+      "screen:chat.thread-outline:applicability": {
+        "entryId": "screen:chat.thread-outline",
+        "applicability": "unknown",
+        "owner": "WP-THREAD",
+        "reason": "The registered source entry describes where the view opens. Live runs are recorded in the package report."
       }
     },
     "knownStateAtoms": {

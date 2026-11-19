@@ -2877,6 +2877,8 @@ class RaftTextLink extends StatelessWidget {
   const RaftTextLink({
     super.key,
     required this.label,
+    this.semanticLabel,
+    this.maxLines,
     this.onPressed,
     this.glyph,
     this.trailingGlyph,
@@ -2890,6 +2892,8 @@ class RaftTextLink extends StatelessWidget {
     this.externalLabel,
   });
   final String label;
+  final String? semanticLabel;
+  final int? maxLines;
   final VoidCallback? onPressed;
   final RaftGlyph? glyph;
 
@@ -2953,6 +2957,7 @@ class RaftTextLink extends StatelessWidget {
       inertWhenDisabled: variant != RaftTextLinkVariant.saved,
       shadow: true,
       onPressed: onPressed,
+      semanticLabel: semanticLabel,
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -2973,6 +2978,7 @@ class RaftTextLink extends StatelessWidget {
                     mark: markGlyph,
                     markLabel: externalLabel,
                     label: label,
+                    maxLines: maxLines,
                     strong: variant == RaftTextLinkVariant.strong,
                     disabled: onPressed == null,
                     style: textStyle,
@@ -2996,6 +3002,7 @@ class RaftTextLink extends StatelessWidget {
 class _RaftWebLinkLabel extends StatefulWidget {
   const _RaftWebLinkLabel({
     required this.label,
+    this.maxLines,
     required this.strong,
     required this.disabled,
     this.style,
@@ -3006,6 +3013,7 @@ class _RaftWebLinkLabel extends StatefulWidget {
     this.markLabel,
   });
   final String label;
+  final int? maxLines;
   final RaftGlyph? mark;
   final String? markLabel;
   final bool strong, disabled, underlineAtRest;
@@ -3053,6 +3061,8 @@ class _RaftWebLinkLabelState extends State<_RaftWebLinkLabel> {
         color: style.color ?? color,
         child: RaftUnderlinedText(
           widget.label,
+          maxLines: widget.maxLines,
+          overflow: widget.maxLines == null ? null : TextOverflow.ellipsis,
           underline: (hovered || widget.underlineAtRest) && !widget.disabled,
           underlineColor: color,
           // raft-ui `decoration-[1.5px] underline-offset-[3px]`.

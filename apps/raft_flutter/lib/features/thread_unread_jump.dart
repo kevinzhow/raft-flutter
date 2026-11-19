@@ -53,13 +53,27 @@ ThreadJumpTargets placeJumpTargets(
   LoadedRange range, {
   DateTime? viewTop,
   DateTime? viewBottom,
+  List<String> loadedIds = const [],
+  List<String> visibleIds = const [],
 }) {
   final above = <Map<String, dynamic>>[], below = <Map<String, dynamic>>[];
+  final indexes = {for (final (index, id) in loadedIds.indexed) id: index};
+  final first = indexes[visibleIds.firstOrNull];
+  final last = indexes[visibleIds.lastOrNull];
+  RowPlacement? byIndex(Object? id) {
+    final index = indexes[id];
+    if (index == null || first == null || last == null) return null;
+    if (index < first) return RowPlacement.above;
+    if (index > last) return RowPlacement.below;
+    return RowPlacement.visible;
+  }
+
   for (final thread in threads) {
     final parent = thread['parentMessageId'];
     final at = _time(thread['parentMessageCreatedAt']);
     final placement =
         (parent is String ? measured[parent] : null) ??
+        byIndex(parent) ??
         _placeUnbuilt(at, range, viewTop, viewBottom);
     switch (placement) {
       case RowPlacement.above:
@@ -158,6 +172,7 @@ class ChatBottomControls extends StatefulWidget {
     required this.showBottom,
     required this.bottomCount,
     required this.onBottom,
+    this.onLoadedJump,
     this.thread = false,
     this.selection,
   });
@@ -173,6 +188,7 @@ class ChatBottomControls extends StatefulWidget {
   /// shorter copy, ThreadPanel.tsx:2619) in place of "Back to Bottom".
   final int bottomCount;
   final VoidCallback onBottom;
+  final ValueChanged<String>? onLoadedJump;
 
   @override
   State<ChatBottomControls> createState() => _ChatBottomControlsState();
@@ -189,6 +205,8 @@ class _ChatBottomControlsState extends State<ChatBottomControls> {
   );
   ({String channel, int count})? _dismissed;
   String _renderKey = '';
+  Object? _pendingJump;
+  String? _busyChannel;
   bool _measuredOnce = false;
 
   RaftChannel? get _channel => w.channel;
@@ -332,13 +350,60 @@ class _ChatBottomControlsState extends State<ChatBottomControls> {
       _range,
       viewTop: created[_measured.visible.firstOrNull],
       viewBottom: created[_measured.visible.lastOrNull],
+      loadedIds: [for (final row in widget.rows) row.id],
+      visibleIds: _measured.visible,
     );
   }
 
-  void _jump(Map<String, dynamic> thread) {
+  Future<void> _jump(Map<String, dynamic> thread) async {
     final channel = _channel, parent = thread['parentMessageId'];
-    if (channel == null || parent is! String) return;
-    unawaited(w.jumpToMessage(channel.id, parent));
+    if (channel == null || parent is! String || _busyChannel == channel.id) {
+      return;
+    }
+    final threadId = thread['threadChannelId'];
+    if (threadId is String &&
+        thread['parentInHistory'] == false &&
+        thread['repliesInHistory'] == true) {
+      await w.openThreadIdentity(
+        parentChannelId: channel.id,
+        parentMessageId: parent,
+        initialThreadChannelId: threadId,
+      );
+      return;
+    }
+    final locate = widget.onLoadedJump;
+    if (locate != null && widget.rows.any((row) => row.id == parent)) {
+      locate(parent);
+      return;
+    }
+
+    final request = Object();
+    final authority = w.client.generation;
+    setState(() {
+      _pendingJump = request;
+      _busyChannel = channel.id;
+    });
+    try {
+      await w.jumpToMessage(channel.id, parent);
+      if (mounted &&
+          _pendingJump == request &&
+          w.client.generation == authority &&
+          _channel?.id == channel.id &&
+          threadId is String &&
+          w.messageDomain.contextLoadError ==
+              MessageContextLoadError.beyondHistory) {
+        await w.conversationReads.markAllRead(threadId);
+      }
+    } catch (_) {
+      // Navigation renders its own failure. This action can be tried again.
+    } finally {
+      if (mounted && _pendingJump == request) {
+        setState(() {
+          _pendingJump = null;
+          _busyChannel = null;
+        });
+      }
+    }
   }
 
   Widget _pill(
@@ -348,11 +413,16 @@ class _ChatBottomControlsState extends State<ChatBottomControls> {
     int total,
   ) => RaftThreadUnreadJumpPill(
     up: up,
-    label: raftFormat(
-      context,
-      up ? 'Earliest unread thread ({count})' : 'Next unread thread ({count})',
-      {'count': total},
-    ),
+    busy: _busyChannel == _channel?.id,
+    label: _busyChannel == _channel?.id
+        ? raftText(context, 'Loading thread…')
+        : raftFormat(
+            context,
+            up
+                ? 'Earliest unread thread ({count})'
+                : 'Next unread thread ({count})',
+            {'count': total},
+          ),
     dismissLabel: raftText(context, 'Dismiss'),
     onJump: () => _jump(target),
     onDismiss: () =>

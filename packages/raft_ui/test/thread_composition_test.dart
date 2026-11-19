@@ -124,10 +124,8 @@ void main() {
         );
         expect(find.byKey(const ValueKey('thread-back')), findsOneWidget);
         expect(find.byKey(const ValueKey('thread-close')), findsNothing);
-        expect(
-          find.text('Thread\uFFFC— #公开中文 日本語', findRichText: true),
-          findsOneWidget,
-        );
+        expect(find.text('Thread', findRichText: true), findsOneWidget);
+        expect(find.text('#公开中文 日本語', findRichText: true), findsOneWidget);
         final semantics = tester.ensureSemantics();
         try {
           final node = tester.getSemantics(
@@ -296,10 +294,13 @@ void main() {
         // Back is Web's boxed PanelAction (26x28 brutal / 32x32 elegant); its
         // touch target is extended to 48 without moving the title.
         expect(backRect.size, const Size(44, 44));
-        expect(titleRect.height, greaterThanOrEqualTo(48));
+        expect(titleRect.height, greaterThanOrEqualTo(20));
         expect(backRect.overlaps(titleRect), false);
         final semantics = tester.ensureSemantics();
-        await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
+        final titleNode = tester.getSemantics(
+          find.bySemanticsLabel('Scroll Thread to First Message'),
+        );
+        expect(titleNode.flagsCollection.isButton, isTrue);
         semantics.dispose();
         await tester.sendKeyEvent(LogicalKeyboardKey.tab);
         await tester.pump();

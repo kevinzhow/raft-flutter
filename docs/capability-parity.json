@@ -2453,11 +2453,11 @@
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/thread_actions.dart",
-     "needle": "'Search in Thread'"
+     "needle": "'Search in thread'"
     },
     {
      "file": "apps/raft_flutter/lib/features/thread_actions.dart",
-     "needle": "'View in Channel'"
+     "needle": "'View in channel'"
     }
    ],
    "justification": "",
@@ -2471,12 +2471,12 @@
    "capability": "Search within a thread: previous/next match, close, match count",
    "background": false,
    "status": "covered",
-   "webEntry": "ThreadPanel thread-search-bar",
+   "webEntry": "features/thread/ThreadSearchBar.tsx",
    "gate": "none",
-   "flutterEntry": "chat_view.dart RaftThreadSearchBar + data/thread_search.dart",
+   "flutterEntry": "thread_find_bar.dart RaftThreadSearchBar + data/thread_search.dart",
    "flutterRefs": [
     {
-     "file": "apps/raft_flutter/lib/features/chat_view.dart",
+     "file": "apps/raft_flutter/lib/features/thread_find_bar.dart",
      "needle": "RaftThreadSearchBar("
     },
     {
@@ -17614,7 +17614,7 @@
    "capability": "Cmd/Ctrl+F inside a thread panel opens the thread's own find bar instead of the browser find",
    "background": false,
    "status": "covered",
-   "webEntry": "components/message/ThreadPanel.tsx keydown handler isThreadSearchShortcut (components/message/threadSearch.ts) while the thread surface has focus",
+   "webEntry": "features/thread/useThreadSearch.ts keydown handler isThreadSearchShortcut (components/message/threadSearch.ts) while the thread surface has focus",
    "gate": "",
    "flutterEntry": "chat_view.dart CallbackShortcuts SingleActivator(keyF) -> thread search open",
    "flutterRefs": [

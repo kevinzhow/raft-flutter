@@ -209,7 +209,7 @@ void main() {
         final (w, state) = await _openThreadWithImage(tester);
         final provider = state.imageProvider;
         final before = _chrome(tester);
-        expect(before.header, contains('Thread— #test'));
+        expect(before.header, containsAll(['Thread', '#test']));
         expect(before.parent && before.begin && before.count, isTrue);
         if (predictive) {
           await startPredictiveBack(tester);
@@ -239,7 +239,7 @@ void main() {
           final shown = _chrome(tester);
           expect(
             shown.header,
-            contains('Thread— #test'),
+            containsAll(['Thread', '#test']),
             reason: 'frame $frame',
           );
           expect(shown.parent, isTrue, reason: 'parent, frame $frame');

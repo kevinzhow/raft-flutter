@@ -93,6 +93,7 @@ class ConversationReadRepository {
       return;
     }
     // Source markRead: the read-all going out reads the mark.
+    if (holdsOpenThreadUnread(id)) releaseOpenThreadUnread();
     if (marks.clearForRead(id)) _changed();
     final receipt = await SourceReadAllTransport.of(client)
         .readAll(id, identity: captured);
@@ -118,6 +119,22 @@ class ConversationReadRepository {
   /// again. The injected refresh preserves source dispatch and overrides.
   Future<void> markUnread(String id) async {
     await markUnreadWithProjection(id);
+  }
+
+  String? _openThreadUnread;
+
+  bool holdsOpenThreadUnread(String id) => _openThreadUnread == id;
+
+  void releaseOpenThreadUnread() => _openThreadUnread = null;
+
+  Future<void> markOpenThreadUnread(String id) async {
+    if (id != _threadChannelId()) return;
+    _openThreadUnread = id;
+    try {
+      await markUnread(id);
+    } catch (_) {
+      // The corresponding Web menu reconciles without a failure toast.
+    }
   }
 
   /// True when a versioned server acknowledgement can immediately project
@@ -383,6 +400,7 @@ class ConversationReadRepository {
 
   /// A new identity: counts, flags and the read write path start empty.
   void resetProjection() {
+    releaseOpenThreadUnread();
     unread = {};
     mentions = {};
     newFlags = {};
@@ -413,6 +431,7 @@ class ConversationReadRepository {
     queue.forgetSuppressionIfNewer(id, seq);
     if ((id == _channelId() || id == _threadChannelId()) &&
         _mayMarkRead(id) &&
+        !holdsOpenThreadUnread(id) &&
         scrolledAway.readsLiveArrival(id, _mobileNavigation())) {
       unawaited(_markRead(id));
       return;
@@ -461,6 +480,7 @@ class ConversationReadRepository {
         !(message['senderType'] == 'user' && message['senderId'] == me) &&
         !((id == _channelId() || id == _threadChannelId()) &&
             _mayMarkRead(id) &&
+            !holdsOpenThreadUnread(id) &&
             scrolledAway.readsLiveArrival(id, _mobileNavigation())) &&
         !(seq != null &&
             cursor != null &&
@@ -635,7 +655,7 @@ class ConversationReadRepository {
   /// and a failure clears it locally anyway and keeps the cursor for the next
   /// refresh or reconnect (the local clear does not depend on the POST).
   Future<void> markRead(String id) async {
-    if (_isDiskOnly(id) || !_mayMarkRead(id)) {
+    if (_isDiskOnly(id) || !_mayMarkRead(id) || holdsOpenThreadUnread(id)) {
       return;
     }
     final rows = _messages(id)

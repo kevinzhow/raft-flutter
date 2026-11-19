@@ -188,7 +188,7 @@ void main() {
     expect(remove.onPressed, isNull);
     expect(
       remove.tooltip,
-      'Cindy follows from Acme. Switch to that server to remove them.',
+      "Only the host server's admins and this channel's admins can remove agents from other servers.",
     );
     await tester.pumpWidget(const SizedBox());
   });

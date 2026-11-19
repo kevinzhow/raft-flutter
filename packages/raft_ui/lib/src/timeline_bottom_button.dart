@@ -2,7 +2,7 @@ import 'package:flutter/widgets.dart';
 
 import 'package:flutter/material.dart' show Colors;
 
-import 'design_primitives.dart' show RaftInteractive;
+import 'design_primitives.dart' show RaftInteractive, RaftSpinner;
 import 'dialog_card.dart';
 import 'icons.dart';
 import 'raft/button.dart' show RaftButton;
@@ -73,11 +73,12 @@ class RaftThreadUnreadJumpPill extends StatelessWidget {
     required this.dismissLabel,
     required this.onJump,
     required this.onDismiss,
+    this.busy = false,
   });
 
   /// "Earliest unread thread" at the top (up) or "Next unread thread" at the
   /// bottom (down).
-  final bool up;
+  final bool up, busy;
   final String label, dismissLabel;
   final VoidCallback onJump, onDismiss;
 
@@ -92,9 +93,12 @@ class RaftThreadUnreadJumpPill extends StatelessWidget {
       required VoidCallback onPressed,
       required String semanticLabel,
       Key? key,
+      bool waiting = false,
     }) => RaftInteractive(
       key: key,
       onPressed: onPressed,
+      busy: waiting,
+      liveRegion: waiting,
       semanticLabel: semanticLabel,
       builder: (context, state) => ColoredBox(
         color: state.hovered || state.pressed
@@ -119,14 +123,18 @@ class RaftThreadUnreadJumpPill extends StatelessWidget {
             key: const ValueKey('thread-unread-jump'),
             padding: const EdgeInsets.only(left: 12, right: 6),
             onPressed: onJump,
+            waiting: busy,
             semanticLabel: label,
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                RaftIcon(
-                  up ? RaftGlyph.arrowUp : RaftGlyph.arrowDown,
-                  size: 16,
-                ),
+                if (busy)
+                  const RaftSpinner(size: 16)
+                else
+                  RaftIcon(
+                    up ? RaftGlyph.arrowUp : RaftGlyph.arrowDown,
+                    size: 16,
+                  ),
                 const SizedBox(width: 6),
                 Flexible(
                   child: Text(

@@ -5,16 +5,17 @@ import 'package:flutter/services.dart';
 
 import 'adaptive_workspace.dart'
     show RaftAdaptiveWorkspace, RaftThreadPlacement;
-import 'channel_header.dart' show RaftConversationHeader;
 import 'design_primitives.dart';
+import 'channel_header.dart' show raftConversationHeaderToggle;
 import 'conversation_surface.dart';
 import 'icons.dart';
 import 'localization.dart';
 import 'panel_layout.dart';
 import 'side_panel_frame.dart';
-import 'status_bar.dart';
 import 'text_scaling.dart' show RaftScaled;
 import 'theme.dart';
+import 'tooltip.dart';
+import 'raft/ui_tokens.dart';
 
 /// Mounted Web ThreadPanel presentation, independent of the host OS.
 /// A folded desktop side panel uses the same <1024 back affordance as Web.
@@ -103,6 +104,12 @@ class RaftThreadHeader extends StatelessWidget {
     required this.backLabel,
     required this.closeLabel,
     this.parentLabel,
+    this.replyCount,
+    this.onViewParent,
+    this.showBackOverride,
+    this.showCloseOverride,
+    this.allowFocusMode = false,
+    this.stackMeta = false,
     this.onJumpToStart,
     this.onBack,
     this.onClose,
@@ -119,6 +126,10 @@ class RaftThreadHeader extends StatelessWidget {
   final RaftThreadPresentation presentation;
   final String threadLabel, jumpLabel, backLabel, closeLabel;
   final String? parentLabel;
+  final int? replyCount;
+  final VoidCallback? onViewParent;
+  final bool? showBackOverride, showCloseOverride;
+  final bool allowFocusMode, stackMeta;
   final VoidCallback? onJumpToStart, onBack, onClose;
   final Widget? followers;
 
@@ -147,154 +158,124 @@ class RaftThreadHeader extends StatelessWidget {
     final desktopSidePanel =
         !RaftAdaptiveWorkspace.compactOf(context) && placement != null;
     final folded = placement?.foldedInSideRow ?? false;
-    final showBack = (folded || recipe.showBack) && onBack != null;
-    final showClose = !folded && recipe.showClose && onClose != null;
-    // `PanelTitle` (17/600 elegant, 16/700 brutal) and the parent label span:
-    // `ml-1 font-normal in-data-[theme=elegant]:text-[15px]
-    // text-foreground-placeholder theme-brutal:text-black/50`.
-    final titleStyle = RaftConversationHeader.text(
-      context,
-      RaftConversationHeader.recipeOf(context).title,
+    final showBack = (showBackOverride ?? (folded || recipe.showBack));
+    final showClose = (showCloseOverride ?? (!folded && recipe.showClose));
+    final toggleFocus = allowFocusMode ? placement?.toggleFocus : null;
+    final focused = placement?.focused ?? false;
+    final inline =
+        !stackMeta && !grows && (viewportWidth ?? viewport.width) >= 768;
+    final titleStyle = tokens.scale(tokens.typeSlot('headline'));
+    final metaStyle = tokens.scale(
+      tokens.typeSlot('mono-meta'),
+      mono: true,
+      color: tokens.ui.foregroundHint,
     );
-    final suffixStyle = titleStyle.copyWith(
-      fontWeight: FontWeight.w400,
-      fontSize: 15,
-      color: tokens.colors['foreground-placeholder'],
-    );
-    Widget title() => Text.rich(
-      TextSpan(
-        text: threadLabel,
-        style: titleStyle,
-        children: [
-          // Source `<span className="ml-1"> — {label}</span>` is a flex item
-          // of the title button: the gap is a margin, not a collapsed space.
-          if (parentLabel != null) ...[
-            // A zero-height box: `middle` leaves the line box alone and, unlike
-            // `baseline`, needs no dry baseline from the Semantics RichText
-            // wraps around a placeholder.
-            const WidgetSpan(
-              alignment: PlaceholderAlignment.middle,
-              child: SizedBox(width: 4),
-            ),
-            TextSpan(text: '— $parentLabel', style: suffixStyle),
-          ],
-        ],
-      ),
-      semanticsLabel: parentLabel == null
-          ? threadLabel
-          : '$threadLabel — $parentLabel',
-      // Larger text wraps the title and grows the header.
-      maxLines: grows ? null : 1,
-      overflow: grows ? TextOverflow.clip : TextOverflow.ellipsis,
-    );
-    final hasFollowers = followers != null && followersVisible;
-    final headerInset =
-        tokens.option('panelAction.surface', or: 'outline') == 'ghost'
-        ? raftPanelHeaderEdges(
-            context,
-            hasBack: showBack,
-            hasActions: hasFollowers || actions.isNotEmpty || showClose,
-          )
-        : recipe.headerInset;
 
-    // CSS border-box: the bottom rule is inside the header height and the
-    // row is centred in the remaining content box.
-    return RaftStatusBarSource(
-      color: recipe.headerBackground,
-      child: Container(
-        // The header height is a minimum once the text grows.
-        height: grows ? null : recipe.headerHeight,
-        constraints: grows
-            ? BoxConstraints(minHeight: recipe.headerHeight)
-            : null,
-        decoration: BoxDecoration(
-          color: recipe.headerBackground,
-          border: desktopSidePanel
-              ? RaftSidePanelFrame.headerRule(tokens)
-              : Border(bottom: recipe.headerBorder),
-        ),
-        child: SizedBox(
-          height: grows
-              ? null
-              : recipe.headerHeight - recipe.headerBorder.width,
-          child: Padding(
-            padding: grows
-                ? headerInset.add(const EdgeInsets.symmetric(vertical: 6))
-                : headerInset,
-            child: Row(
+    final title = interactiveTitle && onJumpToStart != null
+        ? RaftTooltip(
+            message: jumpLabel,
+            child: RaftTextLink(
+              key: jumpKey,
+              label: threadLabel,
+              semanticLabel: jumpLabel,
+              variant: RaftTextLinkVariant.strong,
+              typeStyle: titleStyle,
+              onPressed: onJumpToStart,
+            ),
+          )
+        : Semantics(header: true, child: Text(threadLabel, style: titleStyle));
+    final count = replyCount;
+    final label = parentLabel;
+    final meta = label == null
+        ? null
+        : LayoutBuilder(
+            builder: (context, bounds) => Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                if (showBack) ...[
-                  // AppPanelHeader's Back is the raft-ui PanelAction (the
-                  // same control as the channel header): source-sized layout,
-                  // touch hit area extended without moving the title.
-                  RaftPanelAction(
-                    key: backKey,
-                    glyph: RaftGlyph.arrowLeft,
-                    tooltip: backLabel,
-                    onPressed: onBack,
-                    minHitExtent: RaftMetrics.touchTarget,
-                  ),
-                  SizedBox(width: recipe.headerGap),
-                ],
-                Expanded(
-                  child: !interactiveTitle
-                      ? Semantics(
-                          header: true,
-                          child: Align(
-                            alignment: AlignmentDirectional.centerStart,
-                            child: title(),
-                          ),
+                ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: bounds.maxWidth),
+                  child: onViewParent == null
+                      ? Text(
+                          label,
+                          style: metaStyle,
+                          maxLines: grows ? null : 1,
+                          overflow: grows ? null : TextOverflow.ellipsis,
                         )
-                      : LayoutBuilder(
-                          builder: (context, constraints) => RaftControl(
-                            key: jumpKey,
-                            recipe: _ThreadTitleRecipe(tokens),
-                            onPressed: onJumpToStart,
-                            tooltip: jumpLabel,
-                            semanticLabel: jumpLabel,
-                            visualHeight: 40,
-                            visualWidth: constraints.maxWidth,
-                            padding: EdgeInsets.zero,
-                            child: Align(
-                              alignment: AlignmentDirectional.centerStart,
-                              child: ExcludeSemantics(child: title()),
-                            ),
-                          ),
+                      : RaftTextLink(
+                          key: const Key('thread-header-channel-link'),
+                          label: label,
+                          variant: RaftTextLinkVariant.muted,
+                          typeStyle: metaStyle,
+                          maxLines: grows ? null : 1,
+                          onPressed: onViewParent,
                         ),
                 ),
-                if (hasFollowers || actions.isNotEmpty || showClose)
-                  SizedBox(width: recipe.headerGap),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (followers != null) followers!,
-                    for (var index = 0; index < actions.length; index++) ...[
-                      if (hasFollowers || index > 0)
-                        SizedBox(width: recipe.actionGap),
-                      actions[index],
-                    ],
-                    if (showClose) ...[
-                      if (hasFollowers || actions.isNotEmpty)
-                        SizedBox(width: recipe.actionGap),
-                      RaftControl(
-                        key: closeKey,
-                        recipe: _ThreadCloseRecipe(tokens),
-                        tooltip: closeLabel,
-                        semanticLabel: closeLabel,
-                        onPressed: onClose,
-                        visualWidth: 28,
-                        visualHeight: 28,
-                        padding: EdgeInsets.zero,
-                        child: const RaftIcon(RaftGlyph.x, size: 14),
-                      ),
-                    ],
-                  ],
-                ),
+                if (count != null)
+                  Flexible(
+                    child: Text(
+                      ' · ${raftFormat(context, count == 1 ? '{count} reply' : '{count} replies', {'count': count})}',
+                      key: const Key('thread-header-reply-count'),
+                      style: metaStyle,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
               ],
             ),
+          );
+    final header = RaftPanelHeaderBar(
+      title: threadLabel,
+      titleSlot: meta == null
+          ? Align(alignment: AlignmentDirectional.centerStart, child: title)
+          : inline
+          ? Row(
+              spacing: 8,
+              children: [
+                title,
+                Flexible(child: meta),
+              ],
+            )
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [title, meta],
+            ),
+      onBack: showBack ? onBack : null,
+      backKey: backKey,
+      backTooltip: backLabel,
+      background: recipe.headerBackground,
+      bottomBorder: desktopSidePanel
+          ? RaftSidePanelFrame.headerRule(tokens)
+          : Border(bottom: recipe.headerBorder),
+      actions: [
+        if (followers != null && followersVisible) followers!,
+        ...actions,
+        if (toggleFocus != null)
+          raftConversationHeaderToggle(
+            key: const Key('thread-focus-mode'),
+            glyph: focused ? RaftGlyph.minimize2 : RaftGlyph.maximize2,
+            label: raftText(context, focused ? 'Restore' : 'Expand'),
+            pressed: focused,
+            onPressed: toggleFocus,
           ),
+        if (showClose && onClose != null)
+          RaftPanelAction(
+            key: closeKey,
+            glyph: RaftGlyph.x,
+            tooltip: closeLabel,
+            onPressed: onClose,
+          ),
+      ],
+    );
+    if (viewportWidth == null && viewportHeight == null) return header;
+    return MediaQuery(
+      data: MediaQuery.of(context).copyWith(
+        size: Size(
+          viewportWidth ?? viewport.width,
+          viewportHeight ?? viewport.height,
         ),
       ),
+      child: header,
     );
   }
 }
@@ -334,7 +315,9 @@ class RaftThreadSearchBar extends StatelessWidget {
     required this.onChanged,
     required this.onStep,
     required this.onClose,
+    this.task = false,
   });
+  final bool task;
   final TextEditingController controller;
   final FocusNode focusNode;
 
@@ -351,7 +334,10 @@ class RaftThreadSearchBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     final muted = t.muted;
-    final hint = raftText(context, 'Search this thread');
+    final hint = raftText(
+      context,
+      task ? 'Search this task' : 'Search this thread',
+    );
     final fieldText = RaftTypography.inherited(
       t,
       size: 14,
@@ -361,81 +347,93 @@ class RaftThreadSearchBar extends StatelessWidget {
     );
     return Container(
       key: const Key('thread-search-bar'),
-      padding: const EdgeInsets.all(8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         color: t.colors['layer-conversation-content'],
-        border: Border(
-          bottom: BorderSide(color: t.colors['line-muted']!, width: 1),
-        ),
+        border: Border(bottom: BorderSide(color: t.ui.lineSeam)),
       ),
       child: Row(
-        spacing: 6,
+        spacing: 4,
         children: [
-          RaftIcon(RaftGlyph.search, size: 14, color: muted),
           Expanded(
             child: ListenableBuilder(
               listenable: focusNode,
               builder: (context, _) {
                 final focused = focusNode.hasFocus;
                 return Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
+                  constraints: const BoxConstraints(minHeight: 32),
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+
                   decoration: BoxDecoration(
                     color: t.panel,
                     border: Border.all(
-                      color: t.colors[focused ? 'line-strong' : 'line-muted']!,
-                      width: 1,
+                      color: t.colors['line-field']!,
+                      width: 1.5,
                     ),
                     boxShadow: focused ? t.themeShadows.sm.outer : const [],
                   ),
-                  child: Focus(
-                    canRequestFocus: false,
-                    skipTraversal: true,
-                    onKeyEvent: (_, event) {
-                      if (event is! KeyDownEvent) {
-                        return KeyEventResult.ignored;
-                      }
-                      if (event.logicalKey == LogicalKeyboardKey.escape) {
-                        onClose();
-                        return KeyEventResult.handled;
-                      }
-                      if (event.logicalKey == LogicalKeyboardKey.enter ||
-                          event.logicalKey == LogicalKeyboardKey.numpadEnter) {
-                        onStep(
-                          HardwareKeyboard.instance.isShiftPressed ? -1 : 1,
-                        );
-                        return KeyEventResult.handled;
-                      }
-                      return KeyEventResult.ignored;
-                    },
-                    child: TextField(
-                      contextMenuBuilder: RaftTextSelectionToolbar.editableText,
-                      key: const Key('thread-search-input'),
-                      controller: controller,
-                      focusNode: focusNode,
-                      onChanged: onChanged,
-                      style: fieldText,
-                      strutStyle: StrutStyle.fromTextStyle(
-                        fieldText,
-                        forceStrutHeight: true,
+                  child: Row(
+                    spacing: 8,
+                    children: [
+                      RaftIcon(
+                        RaftGlyph.search,
+                        size: 16,
+                        color: t.ui.foregroundHint,
                       ),
-                      cursorColor: fieldText.color,
-                      decoration: InputDecoration(
-                        isCollapsed: true,
-                        isDense: true,
-                        filled: false,
-                        contentPadding: EdgeInsets.zero,
-                        border: InputBorder.none,
-                        enabledBorder: InputBorder.none,
-                        focusedBorder: InputBorder.none,
-                        hintText: hint,
-                        hintStyle: fieldText.copyWith(
-                          color: t.semantic.foregroundPlaceholder,
+                      Expanded(
+                        child: Focus(
+                          canRequestFocus: false,
+                          skipTraversal: true,
+                          onKeyEvent: (_, event) {
+                            if (event is! KeyDownEvent) {
+                              return KeyEventResult.ignored;
+                            }
+                            if (event.logicalKey == LogicalKeyboardKey.escape) {
+                              onClose();
+                              return KeyEventResult.handled;
+                            }
+                            if (event.logicalKey == LogicalKeyboardKey.enter ||
+                                event.logicalKey ==
+                                    LogicalKeyboardKey.numpadEnter) {
+                              onStep(
+                                HardwareKeyboard.instance.isShiftPressed
+                                    ? -1
+                                    : 1,
+                              );
+                              return KeyEventResult.handled;
+                            }
+                            return KeyEventResult.ignored;
+                          },
+                          child: TextField(
+                            contextMenuBuilder:
+                                RaftTextSelectionToolbar.editableText,
+                            key: const Key('thread-search-input'),
+                            controller: controller,
+                            focusNode: focusNode,
+                            onChanged: onChanged,
+                            style: fieldText,
+                            strutStyle: StrutStyle.fromTextStyle(
+                              fieldText,
+                              forceStrutHeight: true,
+                            ),
+                            cursorColor: fieldText.color,
+                            decoration: InputDecoration(
+                              isCollapsed: true,
+                              isDense: true,
+                              filled: false,
+                              contentPadding: EdgeInsets.zero,
+                              border: InputBorder.none,
+                              enabledBorder: InputBorder.none,
+                              focusedBorder: InputBorder.none,
+                              hintText: hint,
+                              hintStyle: fieldText.copyWith(
+                                color: t.semantic.foregroundPlaceholder,
+                              ),
+                            ),
+                          ),
                         ),
                       ),
-                    ),
+                    ],
                   ),
                 );
               },
@@ -443,7 +441,7 @@ class RaftThreadSearchBar extends StatelessWidget {
           ),
           SizedBox(
             key: const Key('thread-search-count'),
-            width: 80,
+            width: 64,
             child: Text(
               countLabel,
               textAlign: TextAlign.center,
@@ -454,7 +452,7 @@ class RaftThreadSearchBar extends StatelessWidget {
           RaftIconButton(
             key: const Key('thread-search-previous'),
             glyph: RaftGlyph.chevronUp,
-            tooltip: 'Previous Match',
+            tooltip: 'Previous match',
             visualSize: 28,
             minimumTargetSize: 28,
             onPressed: canStep ? () => onStep(-1) : null,
@@ -462,7 +460,7 @@ class RaftThreadSearchBar extends StatelessWidget {
           RaftIconButton(
             key: const Key('thread-search-next'),
             glyph: RaftGlyph.chevronDown,
-            tooltip: 'Next Match',
+            tooltip: 'Next match',
             visualSize: 28,
             minimumTargetSize: 28,
             onPressed: canStep ? () => onStep(1) : null,
@@ -470,8 +468,8 @@ class RaftThreadSearchBar extends StatelessWidget {
           RaftControl(
             key: const Key('thread-search-close'),
             recipe: _ThreadCloseRecipe(t),
-            tooltip: raftText(context, 'Close Thread Search'),
-            semanticLabel: raftText(context, 'Close Thread Search'),
+            tooltip: raftText(context, 'Close thread search'),
+            semanticLabel: raftText(context, 'Close thread search'),
             onPressed: onClose,
             visualWidth: 28,
             visualHeight: 28,
@@ -485,34 +483,22 @@ class RaftThreadSearchBar extends StatelessWidget {
   }
 }
 
-class _ThreadTitleRecipe extends RaftControlRecipe {
-  const _ThreadTitleRecipe(super.tokens);
+class _ThreadCloseRecipe extends _ThreadBackRecipe {
+  const _ThreadCloseRecipe(super.tokens);
   @override
-  bool get transformsOnInteraction => false;
+  bool get transformsOnInteraction => true;
   @override
-  Color get background => Colors.transparent;
+  BorderRadius get radius => RaftShapes.control(tokens, 28);
   @override
-  Color backgroundFor({bool hovered = false}) => Colors.transparent;
-  @override
-  Color get foreground => tokens.strong;
-  @override
-  BorderSide side({bool hovered = false}) => BorderSide.none;
-  @override
-  BorderRadius get radius => BorderRadius.zero;
-  @override
-  Gradient? get overlayGradient => null;
-  @override
-  double get insetHighlightAlpha => 0;
-  @override
-  double get focusOutlineWidth => 2;
-  @override
-  double get focusOutlineOffset => 2;
-  @override
-  List<BoxShadow> shadows({
+  Color backgroundForInteraction({
     bool hovered = false,
     bool pressed = false,
-    bool focused = false,
-  }) => const [];
+  }) => backgroundFor(hovered: hovered);
+  @override
+  Color get foreground => tokens.muted;
+  @override
+  Color backgroundFor({bool hovered = false}) =>
+      (hovered) ? tokens.colors['fill-muted']! : background;
 }
 
 class _ThreadBackRecipe extends RaftControlRecipe {
@@ -558,24 +544,6 @@ class _ThreadBackRecipe extends RaftControlRecipe {
   }) => focused
       ? [BoxShadow(color: tokens.colors['primary-500']!, spreadRadius: .5)]
       : const [];
-}
-
-class _ThreadCloseRecipe extends _ThreadBackRecipe {
-  const _ThreadCloseRecipe(super.tokens);
-  @override
-  bool get transformsOnInteraction => true;
-  @override
-  BorderRadius get radius => RaftShapes.control(tokens, 28);
-  @override
-  Color backgroundForInteraction({
-    bool hovered = false,
-    bool pressed = false,
-  }) => backgroundFor(hovered: hovered);
-  @override
-  Color get foreground => tokens.muted;
-  @override
-  Color backgroundFor({bool hovered = false}) =>
-      (hovered) ? tokens.colors['fill-muted']! : background;
 }
 
 /// Parent + older-history hint + loaded reply count live in the SAME sliver
