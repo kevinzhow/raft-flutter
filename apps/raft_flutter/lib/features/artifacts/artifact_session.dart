@@ -240,17 +240,17 @@ class ObjectSummaryLoader {
   int _generation = 0;
   bool _disposed = false;
 
-  /// What is known of [target] now; starts a read when nothing fresh is.
+  /// Starts a read when the answer is missing or expired. A resolved card
+  /// stays visible until the refresh answers.
   ArtifactLinkState stateOf(ArtifactLinkTarget target) {
     final kept = _kept[target];
-    if (kept != null && kept.until.isAfter(_now())) {
+    if (kept != null) {
+      final fresh = kept.until.isAfter(_now());
       // Most recently used last (the oldest go first past maxEntries).
-      _kept
-        ..remove(target)
-        ..[target] = kept;
-      return kept.state;
+      _kept.remove(target);
+      if (fresh || kept.state is ArtifactLinkOk) _kept[target] = kept;
+      if (fresh) return kept.state;
     }
-    if (kept != null) _kept.remove(target);
     if (!_inFlight.contains(target) && _waiting.add(target)) _schedule();
     return kept?.state ?? ArtifactLinkLoading(target);
   }

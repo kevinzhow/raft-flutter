@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:fake_async/fake_async.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
@@ -165,6 +167,62 @@ void main() {
       async.elapse(const Duration(milliseconds: 20));
       expect(posts.length, 2);
       expect(loader.stateOf(a), isA<ArtifactLinkUnavailable>());
+      loader.dispose();
+    });
+  });
+
+  test('an expired summary stays visible until a single refresh answers', () {
+    fakeAsync((async) {
+      const target = ArtifactLinkTarget(artifactId, 2);
+      final epoch = DateTime.utc(2026);
+      final refresh = Completer<List<Object?>>();
+      var posts = 0;
+      final loader = ObjectSummaryLoader(
+        now: () => epoch.add(async.elapsed),
+        post: (refs) async {
+          expect(refs, [target]);
+          if (++posts == 1) {
+            return [
+              {
+                'ref': {'id': artifactId, 'version': 2},
+                'ok': true,
+                'summary': artifactCardJson(version: 2, latest: 3),
+              },
+            ];
+          }
+          return refresh.future;
+        },
+      );
+
+      expect(loader.stateOf(target), isA<ArtifactLinkLoading>());
+      async.elapse(loader.batchWindow);
+      final resolved = loader.stateOf(target);
+      expect(resolved, isA<ArtifactLinkOk>());
+
+      async.elapse(const Duration(seconds: 59));
+      expect(loader.stateOf(target), same(resolved));
+      expect(posts, 1);
+      async.elapse(const Duration(seconds: 1));
+      expect(loader.stateOf(target), same(resolved));
+      expect(loader.stateOf(target), same(resolved));
+
+      async.elapse(loader.batchWindow);
+      expect(posts, 2);
+      expect(loader.stateOf(target), same(resolved));
+      async.elapse(loader.batchWindow);
+      expect(posts, 2);
+
+      refresh.complete([
+        {
+          'ref': {'id': artifactId, 'version': 2},
+          'ok': false,
+          'reason': 'unavailable',
+        },
+      ]);
+      async.flushMicrotasks();
+      expect(loader.stateOf(target), isA<ArtifactLinkUnavailable>());
+      async.elapse(loader.batchWindow);
+      expect(posts, 2);
       loader.dispose();
     });
   });

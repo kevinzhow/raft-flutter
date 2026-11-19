@@ -1,7 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
+import 'package:raft_flutter/features/artifacts/artifact_message_card.dart';
+import 'package:raft_flutter/features/artifacts/artifact_models.dart';
+import 'package:raft_flutter/features/artifacts/artifact_session.dart';
 import 'package:raft_flutter/features/artifacts/artifact_viewer_page.dart';
 import 'package:raft_flutter/features/message_presentation.dart';
 import 'package:raft_ui/raft_ui.dart';
@@ -89,6 +94,81 @@ void main() {
       find.byKey(const ValueKey('artifact-card-comments')),
       findsOneWidget,
     );
+  });
+
+  testWidgets('a remounted versioned Artifact card stays visible during '
+      'refresh and is replaced when deleted', (tester) async {
+    const target = ArtifactLinkTarget(artifactId, 2);
+    final refresh = Completer<List<Object?>>();
+    var posts = 0;
+    final loader = ObjectSummaryLoader(
+      now: tester.binding.clock.now,
+      post: (_) async {
+        if (++posts == 1) {
+          return [
+            {
+              'ref': {'id': artifactId, 'version': 2},
+              'ok': true,
+              'summary': artifactCardJson(
+                title: 'Versioned report',
+                version: 2,
+                latest: 3,
+                unseen: {'newerVersion': true},
+              ),
+            },
+          ];
+        }
+        return refresh.future;
+      },
+    );
+    addTearDown(loader.dispose);
+
+    Future<void> mountCard() => tester.pumpWidget(
+      MaterialApp(
+        theme: raftTheme(),
+        home: Scaffold(
+          body: Builder(
+            builder: (_) => ArtifactMessageRefs(
+              links: [loader.stateOf(target)],
+              onOpen: (_, _) {},
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await mountCard();
+    await tester.pump(loader.batchWindow);
+    await mountCard();
+    expect(find.text('Versioned report'), findsOneWidget);
+    expect(find.text('Updated'), findsOneWidget);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(seconds: 61));
+    await mountCard();
+    expect(find.text('Versioned report'), findsOneWidget);
+
+    await tester.pump(loader.batchWindow);
+    expect(posts, 2);
+    await mountCard();
+    expect(find.byType(ArtifactMessageCardLoading), findsNothing);
+    expect(find.text('Versioned report'), findsOneWidget);
+    expect(find.text('Updated'), findsOneWidget);
+
+    refresh.complete([
+      {
+        'ref': {'id': artifactId, 'version': 2},
+        'ok': false,
+        'reason': 'deleted',
+        'deleted': {'status': 'deleted', 'title': 'Removed report'},
+      },
+    ]);
+    await tester.pump();
+    await mountCard();
+    expect(find.byType(ArtifactDeletedCard), findsOneWidget);
+    expect(find.text('Removed report'), findsOneWidget);
+    expect(find.text('Versioned report'), findsNothing);
+    expect(find.text('Updated'), findsNothing);
   });
 
   testWidgets('a deleted Artifact is the gray card; one this reader can\'t '
