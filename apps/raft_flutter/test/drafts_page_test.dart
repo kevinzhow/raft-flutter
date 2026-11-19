@@ -32,14 +32,14 @@ class _Client extends RaftClient {
 }
 
 void main() {
-  for (final (width, enabled) in [
-    (390.0, true),
-    (1100.0, true),
-    (390.0, false),
+  for (final (width, enabled, hasDraft) in [
+    (390.0, true, true),
+    (1100.0, true, true),
+    (390.0, false, true),
+    (390.0, true, false),
   ]) {
-    testWidgets('drafts route and entry at $width, enabled=$enabled', (
-      tester,
-    ) async {
+    final label = 'drafts at $width, enabled=$enabled, draft=$hasDraft';
+    testWidgets(label, (tester) async {
       tester.view.physicalSize = Size(width, 844);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.reset);
@@ -58,7 +58,7 @@ void main() {
             'joined': true,
           }),
         ];
-      w.drafts['c1'] = 'unsent package update';
+      if (hasDraft) w.drafts['c1'] = 'unsent package update';
       addTearDown(w.dispose);
       addTearDown(client.dispose);
       var returned = 0;
@@ -89,8 +89,17 @@ void main() {
       );
       expect(
         find.text('unsent package update'),
-        enabled ? findsOneWidget : findsNothing,
+        enabled && hasDraft ? findsOneWidget : findsNothing,
       );
+      if (enabled && hasDraft) {
+        expect(find.text('general'), findsOneWidget);
+      } else if (enabled) {
+        expect(find.text('No drafts'), findsOneWidget);
+        expect(
+          tester.widget<RaftEmptyState>(find.byType(RaftEmptyState)).glyph,
+          RaftGlyph.pencil,
+        );
+      }
       expect(returned, enabled ? 0 : 1);
     });
   }

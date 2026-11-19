@@ -251,6 +251,7 @@ class _DraftsPageState extends State<DraftsPage> {
                 ),
                 ConnectionState.done when count == 0 => Center(
                   child: RaftEmptyState(
+                    glyph: RaftGlyph.pencil,
                     title: raftText(context, 'No drafts'),
                     detail: raftText(
                       context,
@@ -262,11 +263,10 @@ class _DraftsPageState extends State<DraftsPage> {
                   key: const ValueKey('drafts-list-scroller'),
                   padding: raftScrollPadding(
                     context,
-                    const EdgeInsets.fromLTRB(
-                      RaftSpace.x2,
-                      RaftSpace.x2,
-                      RaftSpace.x2,
-                      0,
+                    const EdgeInsets.only(
+                      left: RaftSpace.x2,
+                      top: RaftSpace.x2,
+                      right: RaftSpace.x2,
                     ),
                   ),
                   itemCount: count,
@@ -284,13 +284,17 @@ class _DraftsPageState extends State<DraftsPage> {
   );
 
   Widget _row(BuildContext context, _PlacedDraft row) {
-    final name = row.channel.type == 'dm'
-        ? row.channel.string('peerDisplayName', row.channel.name)
-        : '#${row.channel.name}';
+    final dm = row.channel.type == 'dm';
+    final name = dm
+        ? row.channel.string(
+            'peerDisplayName',
+            row.channel.string('peerName', row.channel.name),
+          )
+        : row.channel.name;
     final title = row.parentMessage == null
         ? name
         : raftFormat(context, 'Thread in {conversation}', {
-            'conversation': name,
+            'conversation': dm ? name : '#$name',
           });
     final text = row.entry.text;
     final time = resourceRelativeTime(
@@ -304,7 +308,7 @@ class _DraftsPageState extends State<DraftsPage> {
       leading: RaftConversationAvatarTile(
         kind: row.parentMessage != null
             ? RaftConversationAvatarKind.thread
-            : row.channel.type == 'dm'
+            : dm
             ? RaftConversationAvatarKind.dm
             : RaftConversationAvatarKind.channel,
       ),
