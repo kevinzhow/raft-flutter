@@ -56849,12 +56849,6 @@
         ],
         "owner": "WP-ART3"
       },
-      "packages/raft_ui/lib/src/thread_followers.dart#local-function:CLASS:_Popover@6883/METHOD:build@7153/FUNCTION:status@7490": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
-      },
       "packages/raft_ui/lib/src/timeline_bottom_button.dart#local-function:CLASS:RaftThreadUnreadJumpPill@2049/METHOD:build@2534/FUNCTION:segment@2726": {
         "role": "unresolved",
         "familyRefs": [],
@@ -57091,6 +57085,12 @@
         "familyRefs": [],
         "owner": "WP-THREAD",
         "reason": "Thread panel composition, outline presentation or thread control. The report records the live inputs and visual states exercised."
+      },
+      "packages/raft_ui/lib/src/thread_followers.dart#local-function:CLASS:_Popover@6931/METHOD:build@7270/FUNCTION:status@7607": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       }
     },
     "entries": {
