@@ -48635,6 +48635,24 @@
         "owner": "WP-COMP2 runtime usage card",
         "reason": "Source census candidate (WP-COMP2 runtime usage card state, sign-out, provider connect and limit reset dialogs, RuntimeSignInNotice); resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
+      "packages/raft_ui/lib/src/runtime_usage_card.dart#class:_PinnedUsageLayout": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 runtime usage card",
+        "reason": "Private pinned header/footer layout widget inside RaftRuntimeUsageSurface; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/runtime_usage_card.dart#class:_RenderPinnedUsageLayout": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 runtime usage card",
+        "reason": "Private RenderBox for _PinnedUsageLayout inside RaftRuntimeUsageSurface; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "packages/raft_ui/lib/src/runtime_usage_card.dart#method:_PinnedUsageLayout.childForSlot": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMP2 runtime usage card",
+        "reason": "SlottedMultiChildRenderObjectWidget slot builder for _PinnedUsageLayout inside RaftRuntimeUsageSurface; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
       "apps/raft_flutter/lib/features/computer_runtime_pi_sign_in_dialog.dart#class:ComputerRuntimePiSignInView": {
         "role": "unresolved",
         "familyRefs": [],

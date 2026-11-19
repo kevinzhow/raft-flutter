@@ -786,8 +786,7 @@ class RaftRuntimeUsageSurface extends StatelessWidget {
     final note = switch (account.health) {
       'unsupported' => null,
       'error' => 'Cached usage could not be read.',
-      'reauth_required' =>
-        'Sign in again on this Computer. Last-known percentages are hidden until the provider authenticates.',
+      'reauth_required' => 'Sign in again on this Computer. Last-known percentages are hidden until the provider authenticates.',
       _ => '',
     };
     final resets = account.resetsText;
