@@ -70,6 +70,9 @@ const Map<String, String> zhCatalogUpstream124Art3 = {
       '那个位置已有同名的 Artifact，所以没有移动也没有发送。可以照样发，或取消。',
   "Couldn't send it. Try again.": '发送失败，请重试。',
   'Made with Raft': '由 Raft 制作',
+  'Get started in minutes. Sign up and build with your AI agents on Raft.':
+      '几分钟就能上手。注册 Raft，和你的 AI Agent 一起创造吧。',
+  'Sign up or sign in': '注册或登录',
   'Sent': '已发送',
   'Resize {column}': '调整「{column}」列宽',
   'Copy for AI': '复制给 AI',

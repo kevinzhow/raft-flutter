@@ -67,8 +67,11 @@ class _ArtifactManageDialogState extends State<ArtifactManageDialog> {
   String get id => data.card.id;
   String get home => data.card.home.kind;
   bool get rename => widget.action == ArtifactManageAction.rename;
-  bool get unpublish => home == 'public' && target?.kind == 'server';
-  bool get narrowing => target?.kind == 'conversation';
+  bool get turningOffLink => home == 'public' && target?.kind == 'server';
+  bool get unpublish => turningOffLink && !data.capabilities.narrowHome;
+  bool get narrowing =>
+      target?.kind == 'conversation' ||
+      turningOffLink && data.capabilities.narrowHome;
 
   @override
   void dispose() {
@@ -183,7 +186,7 @@ class _ArtifactManageDialogState extends State<ArtifactManageDialog> {
     String text(String value) => raftText(context, value);
     final label = rename
         ? 'Rename Artifact'
-        : unpublish
+        : turningOffLink
         ? 'Turn off link sharing?'
         : narrowing
         ? 'Move to a conversation'
@@ -214,13 +217,13 @@ class _ArtifactManageDialogState extends State<ArtifactManageDialog> {
                   serverName: widget.serverName,
                 ),
               ),
-              if ((data.capabilities.changeHome && home == 'conversation') ||
-                  data.capabilities.unpublish)
+              if (home == 'conversation' && data.capabilities.changeHome ||
+                  home == 'public' &&
+                      (data.capabilities.narrowHome ||
+                          data.capabilities.unpublish))
                 option(
                   context,
-                  home == 'public'
-                      ? 'Turn off link sharing'
-                      : 'Everyone in this server',
+                  'Everyone in this server',
                   const ArtifactHomeTarget.server(),
                 ),
               if (data.capabilities.changeHome && home != 'public')
@@ -289,7 +292,7 @@ class _ArtifactManageDialogState extends State<ArtifactManageDialog> {
               label: text(
                 rename
                     ? 'Save'
-                    : unpublish
+                    : turningOffLink
                     ? 'Turn off link sharing'
                     : narrowing
                     ? 'Move to conversation'

@@ -8,9 +8,12 @@ import 'package:raft_ui/raft_ui.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:webview_flutter_platform_interface/webview_flutter_platform_interface.dart';
 
+import '../../data/device_preferences.dart';
 import '../../platform/content_links.dart';
+import '../../platform/macos_voice_over.dart';
 import 'artifact_api.dart';
 import 'artifact_content.dart';
+import 'artifact_find_bar.dart';
 import 'artifact_frame_bridge.dart';
 import 'artifact_frame_confirm.dart';
 import 'artifact_frame_view.dart';
@@ -55,37 +58,59 @@ class ArtifactPublicPage extends StatefulWidget {
 }
 
 class _ArtifactPublicPageState extends State<ArtifactPublicPage> {
+  static const promptKey = 'raft.artifacts.publicBannerDismissed';
   late final path = '/public/artifacts/${Uri.encodeComponent(widget.id)}';
   final controller = ArtifactFrameController();
+  final panelFocus = FocusNode();
+  final voiceOver = MacosVoiceOver.instance;
   ({String title, ArtifactKind kind, int version})? view;
   ArtifactDeployment? deployment;
   String? entry;
+  bool showPhonePrompt = DevicePreferences.current?.get(promptKey) != '1';
   bool loading = true;
-  bool unavailable = false;
-  int frameMount = 0;
+  bool finding = false;
+  int findRequests = 0;
+
+  bool get canFrame => WebViewPlatform.instance != null && !voiceOver.value;
+  bool get canFind => canFrame && controller.ready;
 
   @override
   void initState() {
     super.initState();
     controller.addListener(frameChanged);
+    voiceOver.addListener(frameChanged);
     unawaited(load());
   }
 
   @override
   void dispose() {
+    voiceOver.removeListener(frameChanged);
+    panelFocus.dispose();
     controller.dispose();
     super.dispose();
   }
 
   void frameChanged() {
-    if (mounted) setState(() {});
+    if (!mounted) return;
+    setState(() {
+      if (findRequests != controller.findRequests) {
+        findRequests = controller.findRequests;
+        finding = canFind;
+      }
+    });
+  }
+
+  void openFind() {
+    if (canFind) setState(() => finding = true);
+  }
+
+  void closeFind() {
+    setState(() => finding = false);
+    panelFocus.requestFocus();
   }
 
   Future<void> load() async {
-    setState(() {
-      loading = true;
-      unavailable = false;
-    });
+    setState(() => loading = true);
     try {
       final body = await widget.client.request('GET', path, authorized: false);
       if (!mounted) return;
@@ -110,10 +135,11 @@ class _ArtifactPublicPageState extends State<ArtifactPublicPage> {
       });
     } catch (error) {
       if (!mounted) return;
-      setState(() {
-        loading = false;
-        unavailable = error is RaftApiException && error.status == 404;
-      });
+      if (error is RaftApiException && error.status == 404) {
+        widget.onSignIn();
+        return;
+      }
+      setState(() => loading = false);
     }
   }
 
@@ -173,7 +199,7 @@ class _ArtifactPublicPageState extends State<ArtifactPublicPage> {
       showRaftToast(context, raftText(context, "Couldn't open link"));
   }
 
-  Widget publicActions(BuildContext context) {
+  Widget publicActions(BuildContext context, {required bool compact}) {
     final prompt = raftFormat(
       context,
       'Read {url} and summarize it in a few sentences, then answer my questions about it.',
@@ -200,6 +226,10 @@ class _ArtifactPublicPageState extends State<ArtifactPublicPage> {
           label: text('Copy link'),
           onPressed: () => unawaited(copy(address.toString(), 'Link copied.')),
         ),
+        if (compact && canFind)
+          RaftMenuEntry(label: text('Find in page'), onPressed: openFind),
+        if (compact && !showPhonePrompt)
+          RaftMenuEntry(label: text('Sign in'), onPressed: widget.onSignIn),
         RaftMenuEntry(
           label: text('Copy for AI'),
           onPressed: () => unawaited(copy(prompt, 'Copied')),
@@ -238,16 +268,9 @@ class _ArtifactPublicPageState extends State<ArtifactPublicPage> {
     if (shown == null) {
       return RaftEmptyState(
         glyph: RaftGlyph.fileText,
-        title: text(
-          unavailable
-              ? "This Artifact isn't available"
-              : "Couldn't load this Artifact",
-        ),
+        title: text("Couldn't load this Artifact"),
         detail: '',
-        action: RaftButton(
-          label: text(unavailable ? 'Sign in' : 'Try again'),
-          onPressed: unavailable ? widget.onSignIn : load,
-        ),
+        action: RaftButton(label: text('Try again'), onPressed: load),
       );
     }
     final host = deployment;
@@ -261,7 +284,10 @@ class _ArtifactPublicPageState extends State<ArtifactPublicPage> {
         ),
       );
     }
-    if (host == null || host.contentDomain == null || !shown.kind.framed) {
+    if (!canFrame ||
+        host == null ||
+        host.contentDomain == null ||
+        !shown.kind.framed) {
       return ArtifactOpenInBrowser(
         title: shown.title,
         pageUrl: address,
@@ -275,7 +301,7 @@ class _ArtifactPublicPageState extends State<ArtifactPublicPage> {
       fit: StackFit.expand,
       children: [
         ArtifactFrameView(
-          key: ValueKey(frameMount),
+          key: ValueKey(shown.version),
           artifactId: widget.id,
           version: shown.version,
           title: shown.title,
@@ -317,32 +343,127 @@ class _ArtifactPublicPageState extends State<ArtifactPublicPage> {
     );
   }
 
+  Future<void> dismissPrompt() async {
+    setState(() => showPhonePrompt = false);
+    try {
+      await DevicePreferences.current?.setString(promptKey, '1');
+    } catch (_) {}
+  }
+
+  Widget prompt(BuildContext context, {required bool compact}) {
+    String text(String value) => raftText(context, value);
+    final tokens = RaftTokens.of(context);
+    final description = Text(
+      text(
+        'Get started in minutes. Sign up and build with your AI agents on Raft.',
+      ),
+      style: TextStyle(
+        color: tokens.ui[compact ? 'info-strong' : 'foreground'],
+      ),
+    );
+    final signIn = RaftButton(
+      label: text('Sign up or sign in'),
+      onPressed: widget.onSignIn,
+    );
+    if (!compact) {
+      return ColoredBox(
+        color: tokens.ui['fill-subtle'],
+        child: Padding(
+          padding: const EdgeInsets.all(RaftSpace.x2),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            spacing: RaftSpace.x6,
+            children: [
+              Flexible(child: description),
+              signIn,
+            ],
+          ),
+        ),
+      );
+    }
+    final dismiss = text('Dismiss');
+    return ColoredBox(
+      color: tokens.ui['info-soft'],
+      child: Padding(
+        padding: const EdgeInsets.all(RaftSpace.x4),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          spacing: RaftSpace.x2,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(child: description),
+                RaftButton(
+                  key: const Key('public-artifact-dismiss-prompt'),
+                  glyph: RaftGlyph.x,
+                  tooltip: dismiss,
+                  semanticLabel: dismiss,
+                  tone: RaftButtonRecipeVariant.ghost,
+                  size: RaftButtonRecipeSize.iconLg,
+                  onPressed: dismissPrompt,
+                ),
+              ],
+            ),
+            signIn,
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final title = view?.title ?? raftText(context, 'Artifact');
-    return ColoredBox(
-      color: RaftTokens.of(context).panel,
-      child: SafeArea(
-        child: Column(
-          children: [
-            RaftPanelHeaderBar(
-              title: title,
-              subtitle: view == null
-                  ? null
-                  : raftText(context, 'Made with Raft'),
-              onBack: widget.onBack,
-              actions: [
-                if (view != null) ...[
-                  RaftButton(
-                    label: raftText(context, 'Sign in'),
-                    onPressed: widget.onSignIn,
-                  ),
-                  publicActions(context),
-                ],
+    final compact = raftBreakpointWidth(context) < 640;
+    final findLabel = raftText(context, 'Find in page');
+    return CallbackShortcuts(
+      bindings: {
+        if (canFind) ...{
+          const SingleActivator(LogicalKeyboardKey.keyF, control: true):
+              openFind,
+          const SingleActivator(LogicalKeyboardKey.keyF, meta: true): openFind,
+        },
+      },
+      child: Focus(
+        focusNode: panelFocus,
+        autofocus: true,
+        child: Material(
+          color: RaftTokens.of(context).panel,
+          child: SafeArea(
+            child: Column(
+              children: [
+                if (view != null && !compact) prompt(context, compact: false),
+                RaftPanelHeaderBar(
+                  title: title,
+                  subtitle: view == null
+                      ? null
+                      : raftText(context, 'Made with Raft'),
+                  onBack: widget.onBack,
+                  actions: [
+                    if (view != null) ...[
+                      if (!compact && canFind)
+                        RaftButton(
+                          key: const Key('public-artifact-find'),
+                          glyph: RaftGlyph.search,
+                          tooltip: findLabel,
+                          semanticLabel: findLabel,
+                          tone: RaftButtonRecipeVariant.ghost,
+                          size: RaftButtonRecipeSize.iconLg,
+                          onPressed: openFind,
+                        ),
+                      publicActions(context, compact: compact),
+                    ],
+                  ],
+                ),
+                if (finding && canFind)
+                  ArtifactFindBar(frame: controller, onClose: closeFind),
+                if (view != null && compact && showPhonePrompt)
+                  prompt(context, compact: true),
+                Expanded(child: body(context)),
               ],
             ),
-            Expanded(child: body(context)),
-          ],
+          ),
         ),
       ),
     );

@@ -4888,7 +4888,7 @@
           "status": "gap",
           "gapKind": "case-missing",
           "size": "S",
-          "justification": "Needs a parity case with a public link that is no longer available."
+          "justification": "A 404 opens sign-in at the same address. Other failures offer Retry. Both need visual parity cases."
         },
         {
           "state": "partial",

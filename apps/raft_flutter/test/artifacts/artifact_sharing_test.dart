@@ -146,6 +146,63 @@ void main() {
     },
   );
 
+  testWidgets(
+    'turning off link sharing previews loss when narrowing is allowed',
+    (tester) async {
+      final client = ArtifactFakeClient();
+      addTearDown(client.ingress.close);
+      final data = ArtifactViewerData.fromJson({
+        ...artifactViewerJson(),
+        'card': {
+          ...artifactCardJson(),
+          'home': {'kind': 'public'},
+        },
+        'capabilities': {'narrowHome': true, 'unpublish': true},
+      })!;
+      const preview = 'GET /artifacts/$artifactId/home-change?to=server';
+      const move = 'POST /artifacts/$artifactId/home';
+      client.answers[preview] = (_) => {
+        'peopleLosingAccess': 2,
+        'agentsLosingAccess': 1,
+        'leavesPublic': true,
+      };
+      client.answers[move] = (_) => {
+        'card': {
+          ...artifactCardJson(),
+          'home': {'kind': 'server'},
+        },
+      };
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: raftTheme(),
+          home: Scaffold(
+            body: ArtifactManageDialog(
+              api: ArtifactSharingApi(client),
+              data: data,
+              action: ArtifactManageAction.visibility,
+              current: () => true,
+            ),
+          ),
+        ),
+      );
+      try {
+        await tester.tap(find.text('Everyone in this server'));
+        await tester.pumpAndSettle();
+        expect(
+          find.text('2 people and 1 agents will lose access.'),
+          findsOneWidget,
+        );
+        expect(client.requests, [preview]);
+        await tester.tap(find.text('Turn off link sharing'));
+        await tester.pumpAndSettle();
+        expect(client.requests, [preview, move]);
+        expect(client.bodies[move], {'to': 'server', 'expectedLost': 3});
+      } finally {
+        await tester.pumpWidget(const SizedBox());
+      }
+    },
+  );
+
   test('narrowing confirms the sum of the displayed loss counts', () async {
     final client = ArtifactFakeClient();
     addTearDown(client.ingress.close);
