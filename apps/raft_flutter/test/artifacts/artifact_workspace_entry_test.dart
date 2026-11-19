@@ -47,6 +47,7 @@ void main() {
       ],
     };
     fixture.overrides['GET /artifacts/dashboard/all?sort=opened'] = (_) => {
+      'counts': {'total': 116, 'filtered': 116, 'relevant': 0},
       'rows': [
         {'card': artifactCardJson(title: 'Workspace roadmap')},
       ],
@@ -59,6 +60,8 @@ void main() {
     await tester.tap(find.byKey(const Key('rail-artifacts')));
     await fixture.flush(tester);
     await tester.pumpAndSettle();
+    expect(find.text('Artifacts'), findsOneWidget);
+    expect(find.text('116'), findsOneWidget);
     expect(find.byKey(const Key('artifact-grid')), findsOneWidget);
     await tester.tap(
       find.byKey(const ValueKey('artifact-dashboard-open-$artifactId')),
@@ -90,6 +93,7 @@ void main() {
       ],
     };
     fixture.overrides['GET /artifacts/dashboard/all?sort=opened'] = (_) => {
+      'counts': {'total': 116, 'filtered': 116, 'relevant': 0},
       'rows': [
         {'card': artifactCardJson(title: 'Workspace roadmap')},
       ],
@@ -104,6 +108,9 @@ void main() {
     await tester.tap(destination);
     await fixture.flush(tester);
     await tester.pumpAndSettle();
+    expect(find.text('Artifacts'), findsOneWidget);
+    expect(find.text('116'), findsOneWidget);
+    expect(find.byTooltip('Back'), findsOneWidget);
     expect(find.byType(ArtifactDashboard), findsOneWidget);
     expect(find.byKey(const Key('artifact-list')), findsOneWidget);
     expect(find.text('Workspace roadmap'), findsOneWidget);

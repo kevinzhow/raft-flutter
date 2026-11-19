@@ -1809,6 +1809,7 @@ class _WorkspaceViewState extends State<WorkspaceView>
                                     'members',
                                     'settings',
                                     draftsSection,
+                                    'artifacts',
                                   ].contains(route)))
                         mobilePageHeader(title, thread),
                       RaftToastPortal(controller: rowToast),
@@ -1922,6 +1923,7 @@ class _WorkspaceViewState extends State<WorkspaceView>
                                         'tasks',
                                         'saved',
                                         draftsSection,
+                                        'artifacts',
                                         'activity',
                                         'search',
                                         'members',

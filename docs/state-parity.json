@@ -56774,7 +56774,7 @@
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
-      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5885/METHOD:desktopContentDetail@101648/FUNCTION:header@103358": {
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5885/METHOD:desktopContentDetail@101750/FUNCTION:header@103460": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "Raft Flutter component wiring",
@@ -56792,7 +56792,7 @@
         "owner": "WP-CHAN",
         "reason": "Offset update from the channel Details workspace route. Exact family placement and state-specific visual acceptance are pending."
       },
-      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5885/METHOD:settingsRailAction@108866/FUNCTION:action@108900": {
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5885/METHOD:settingsRailAction@108968/FUNCTION:action@109002": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "WP-CHAN",
