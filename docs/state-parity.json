@@ -60679,6 +60679,36 @@
         "declarationRefs": [],
         "mountStatus": "unresolved",
         "reason": "Public page reuses the panel header, viewer frame and browser fallback. Per-state visual evidence is tracked separately."
+      },
+      "screen:artifact.dashboard-filter": {
+        "owner": "WP-ART3",
+        "kind": "route_or_panel_candidate",
+        "lifecycleScreenId": "artifact.dashboard-filter",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/artifacts/artifact_dashboard_filter.dart#class:ArtifactDashboardFilter"
+        ],
+        "mountStatus": "source_reviewed",
+        "reason": "Mounted from the dashboard as a shared dialog."
+      },
+      "screen:artifact.manage": {
+        "owner": "WP-ART3",
+        "kind": "route_or_panel_candidate",
+        "lifecycleScreenId": "artifact.manage",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/artifacts/artifact_manage_dialogs.dart#class:ArtifactManageDialog"
+        ],
+        "mountStatus": "source_reviewed",
+        "reason": "Mounted from the viewer menu as a shared dialog."
+      },
+      "screen:artifact.forward": {
+        "owner": "WP-ART3",
+        "kind": "route_or_panel_candidate",
+        "lifecycleScreenId": "artifact.forward",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/artifacts/artifact_forward_dialog.dart#class:ArtifactForwardDialog"
+        ],
+        "mountStatus": "source_reviewed",
+        "reason": "Mounted from the viewer menu as a shared dialog."
       }
     },
     "requirements": {

@@ -48,8 +48,8 @@ class _ArtifactForwardDialogState extends State<ArtifactForwardDialog> {
   final audiences = <String, ArtifactShareAudience>{};
   RaftChannel? destination;
   String choice = 'send';
-  late final sendNotice = CauseNotice(() => destination?.id);
-  late final audienceNotice = CauseNotice(() => destination?.id);
+  late final sendNotice = CauseNotice(scope: () => destination?.id);
+  late final audienceNotice = CauseNotice(scope: () => destination?.id);
   ({String destination, String? note, String choice, String key})? attempt;
   bool loading = false, sending = false, gone = false;
   int reads = 0;
