@@ -8,10 +8,42 @@
       "webEntry": "packages/web/src/components/drafts/DraftsPanel.tsx",
       "flutterEntry": "apps/raft_flutter/lib/features/desktop_drafts_page.dart",
       "states": [
-        {"state":"loading","web":"no","flutter":"yes","parityCase":[],"status":"intentional","justification":"The native route reads the local SQLite draft index asynchronously and keeps the list area blank until the initial read settles."},
-        {"state":"empty","web":"yes","flutter":"yes","parityCase":[],"status":"gap","gapKind":"case-missing","size":"S","justification":"An official empty Drafts case has not been assigned."},
-        {"state":"error","web":"no","flutter":"yes","parityCase":[],"status":"intentional","justification":"The native database can refuse a local read. The page reports the failure rather than showing an empty list."},
-        {"state":"partial","web":"yes","flutter":"partial","parityCase":[],"status":"gap","gapKind":"impl-diff","size":"S","justification":"Flutter places available drafts before showing the list. Web adds each draft as its conversation lookup completes."}
+        {
+          "state": "loading",
+          "web": "no",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "intentional",
+          "justification": "The native route reads the local SQLite draft index asynchronously and keeps the list area blank until the initial read settles."
+        },
+        {
+          "state": "empty",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "gap",
+          "gapKind": "case-missing",
+          "size": "S",
+          "justification": "An official empty Drafts case has not been assigned."
+        },
+        {
+          "state": "error",
+          "web": "no",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "intentional",
+          "justification": "The native database can refuse a local read. The page reports the failure rather than showing an empty list."
+        },
+        {
+          "state": "partial",
+          "web": "yes",
+          "flutter": "partial",
+          "parityCase": [],
+          "status": "gap",
+          "gapKind": "impl-diff",
+          "size": "S",
+          "justification": "Flutter places available drafts before showing the list. Web adds each draft as its conversation lookup completes."
+        }
       ]
     },
     {
@@ -56099,6 +56131,264 @@
         "familyRefs": [],
         "owner": "desktop window chrome",
         "reason": "Sends the workspace title row height through the native title-bar channel."
+      },
+      "apps/raft_flutter/lib/features/appearance_section.dart#local-function:CLASS:RaftAppearanceSection@1817/METHOD:build@2840/FUNCTION:<anonymous>@2971/FUNCTION:card@3179": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMPOSE",
+        "reason": "Source position changed with the composer or Drafts integration. Family/state visual review is pending."
+      },
+      "apps/raft_flutter/lib/features/appearance_section.dart#local-function:CLASS:RaftAppearanceSection@1817/METHOD:build@2840/FUNCTION:<anonymous>@2971/FUNCTION:themeCard@4841": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMPOSE",
+        "reason": "Source position changed with the composer or Drafts integration. Family/state visual review is pending."
+      },
+      "apps/raft_flutter/lib/features/appearance_section.dart#local-function:CLASS:RaftAppearanceSection@1817/METHOD:build@2840/FUNCTION:<anonymous>@2971/FUNCTION:title@3495": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMPOSE",
+        "reason": "Source position changed with the composer or Drafts integration. Family/state visual review is pending."
+      },
+      "apps/raft_flutter/lib/features/appearance_section.dart#local-function:CLASS:RaftAppearanceSection@1817/METHOD:build@2840/FUNCTION:<anonymous>@2971/FUNCTION:toggle@3824": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMPOSE",
+        "reason": "Source position changed with the composer or Drafts integration. Family/state visual review is pending."
+      },
+      "apps/raft_flutter/lib/features/composer_directory.dart#local-function:CLASS:ComposerDirectory@7937/METHOD:build@13112/FUNCTION:add@13439": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMPOSE",
+        "reason": "Source position changed with the composer or Drafts integration. Family/state visual review is pending."
+      },
+      "apps/raft_flutter/lib/features/composer_send_key_setting.dart#class:ComposerSendKeySetting": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMPOSE",
+        "reason": "Account-scoped composer send key and keyboard settings. Family/state visual review is pending."
+      },
+      "apps/raft_flutter/lib/features/composer_send_key_setting.dart#class:_ComposerSendKeySettingState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMPOSE",
+        "reason": "Account-scoped composer send key and keyboard settings. Family/state visual review is pending."
+      },
+      "apps/raft_flutter/lib/features/composer_send_key_setting.dart#method:ComposerSendKeySetting.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMPOSE",
+        "reason": "Account-scoped composer send key and keyboard settings. Family/state visual review is pending."
+      },
+      "apps/raft_flutter/lib/features/composer_send_key_setting.dart#method:_ComposerSendKeySettingState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMPOSE",
+        "reason": "Account-scoped composer send key and keyboard settings. Family/state visual review is pending."
+      },
+      "apps/raft_flutter/lib/features/desktop_drafts_page.dart#class:DraftsPage": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMPOSE",
+        "reason": "Mounts the local Drafts list, its Home navigation, or shared content. Family/state visual review is pending."
+      },
+      "apps/raft_flutter/lib/features/desktop_drafts_page.dart#class:DraftsSidebarEntry": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMPOSE",
+        "reason": "Mounts the local Drafts list, its Home navigation, or shared content. Family/state visual review is pending."
+      },
+      "apps/raft_flutter/lib/features/desktop_drafts_page.dart#class:WorkspaceHomeShortcuts": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMPOSE",
+        "reason": "Mounts the local Drafts list, its Home navigation, or shared content. Family/state visual review is pending."
+      },
+      "apps/raft_flutter/lib/features/desktop_drafts_page.dart#class:_DraftsPageState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMPOSE",
+        "reason": "Mounts the local Drafts list, its Home navigation, or shared content. Family/state visual review is pending."
+      },
+      "apps/raft_flutter/lib/features/desktop_drafts_page.dart#function:workspaceDraftsPage": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMPOSE",
+        "reason": "Mounts the local Drafts list, its Home navigation, or shared content. Family/state visual review is pending."
+      },
+      "apps/raft_flutter/lib/features/desktop_drafts_page.dart#method:DraftsPage.createState": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMPOSE",
+        "reason": "Mounts the local Drafts list, its Home navigation, or shared content. Family/state visual review is pending."
+      },
+      "apps/raft_flutter/lib/features/desktop_drafts_page.dart#method:DraftsSidebarEntry.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMPOSE",
+        "reason": "Mounts the local Drafts list, its Home navigation, or shared content. Family/state visual review is pending."
+      },
+      "apps/raft_flutter/lib/features/desktop_drafts_page.dart#method:WorkspaceHomeShortcuts.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMPOSE",
+        "reason": "Mounts the local Drafts list, its Home navigation, or shared content. Family/state visual review is pending."
+      },
+      "apps/raft_flutter/lib/features/desktop_drafts_page.dart#method:_DraftsPageState._row": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMPOSE",
+        "reason": "Mounts the local Drafts list, its Home navigation, or shared content. Family/state visual review is pending."
+      },
+      "apps/raft_flutter/lib/features/desktop_drafts_page.dart#method:_DraftsPageState.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMPOSE",
+        "reason": "Mounts the local Drafts list, its Home navigation, or shared content. Family/state visual review is pending."
+      },
+      "apps/raft_flutter/lib/features/forward_composer_page.dart#method:_ForwardComposerPageState.recentRows": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMPOSE",
+        "reason": "Composes existing controls for the forward destination list. Family/state visual review is pending."
+      },
+      "apps/raft_flutter/lib/features/forward_composer_page.dart#method:_ForwardComposerPageState.searchRow": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMPOSE",
+        "reason": "Composes existing controls for the forward destination list. Family/state visual review is pending."
+      },
+      "apps/raft_flutter/lib/features/message_image_export.dart#local-function:FUNCTION:previewMessageImage@1471/FUNCTION:attachment@4656": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMPOSE",
+        "reason": "Composes the export surface or paged review controls. Device and visual review are pending."
+      },
+      "apps/raft_flutter/lib/features/message_screenshot_boundary.dart#class:MessageScreenshotBoundary": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMPOSE",
+        "reason": "Renders native screenshot bands from the export surface. Device and visual review are pending."
+      },
+      "apps/raft_flutter/lib/features/message_screenshot_boundary.dart#class:RenderMessageScreenshotBoundary": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMPOSE",
+        "reason": "Renders native screenshot bands from the export surface. Device and visual review are pending."
+      },
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5793/METHOD:buildWorkspace@47658/FUNCTION:<anonymous>@47876/FUNCTION:conversation@50990": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMPOSE",
+        "reason": "Source position changed with the composer or Drafts integration. Family/state visual review is pending."
+      },
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5793/METHOD:buildWorkspace@47658/FUNCTION:<anonymous>@47876/FUNCTION:workspace@64310": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMPOSE",
+        "reason": "Source position changed with the composer or Drafts integration. Family/state visual review is pending."
+      },
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5793/METHOD:desktopContentDetail@101345/FUNCTION:header@103055": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMPOSE",
+        "reason": "Source position changed with the composer or Drafts integration. Family/state visual review is pending."
+      },
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5793/METHOD:settingsRailAction@109518/FUNCTION:action@109552": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMPOSE",
+        "reason": "Source position changed with the composer or Drafts integration. Family/state visual review is pending."
+      },
+      "packages/raft_ui/lib/src/components.dart#local-function:CLASS:RaftNavItem@27777/METHOD:_build@34782/FUNCTION:row@41713": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMPOSE",
+        "reason": "Source position changed with the composer or Drafts integration. Family/state visual review is pending."
+      },
+      "packages/raft_ui/lib/src/components.dart#local-function:CLASS:RaftNavItem@27777/METHOD:_build@34782/FUNCTION:titleContent@37887": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMPOSE",
+        "reason": "Source position changed with the composer or Drafts integration. Family/state visual review is pending."
+      },
+      "packages/raft_ui/lib/src/components.dart#local-function:CLASS:RaftNavItem@27777/METHOD:_build@34782/FUNCTION:titleWithIndicators@40943": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMPOSE",
+        "reason": "Source position changed with the composer or Drafts integration. Family/state visual review is pending."
+      },
+      "packages/raft_ui/lib/src/components.dart#local-function:CLASS:RaftNavItem@27777/METHOD:_build@34782/FUNCTION:wrappedTitle@36746": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMPOSE",
+        "reason": "Source position changed with the composer or Drafts integration. Family/state visual review is pending."
+      },
+      "packages/raft_ui/lib/src/components.dart#method:_RaftComposerState.composerKey": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMPOSE",
+        "reason": "Account-scoped composer send key and keyboard settings. Family/state visual review is pending."
+      },
+      "packages/raft_ui/lib/src/composer_send_key.dart#class:RaftComposerSendKeyScope": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMPOSE",
+        "reason": "Account-scoped composer send key and keyboard settings. Family/state visual review is pending."
+      },
+      "packages/raft_ui/lib/src/composer_send_key.dart#function:raftComposerSendKeyHint": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMPOSE",
+        "reason": "Account-scoped composer send key and keyboard settings. Family/state visual review is pending."
+      },
+      "packages/raft_ui/lib/src/composer_send_key.dart#method:RaftComposerSendKeyScope.of": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMPOSE",
+        "reason": "Account-scoped composer send key and keyboard settings. Family/state visual review is pending."
+      },
+      "packages/raft_ui/lib/src/composer_send_key.dart#method:RaftComposerSendKeyScope.updateShouldNotify": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMPOSE",
+        "reason": "Account-scoped composer send key and keyboard settings. Family/state visual review is pending."
+      },
+      "packages/raft_ui/lib/src/forward_composer.dart#local-function:CLASS:RaftForwardContinueAction@35722/METHOD:build@36096/FUNCTION:bar@37205": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMPOSE",
+        "reason": "Source position changed with the composer or Drafts integration. Family/state visual review is pending."
+      },
+      "packages/raft_ui/lib/src/forward_composer.dart#local-function:CLASS:RaftForwardContinueAction@35722/METHOD:build@36096/FUNCTION:text@37375": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMPOSE",
+        "reason": "Source position changed with the composer or Drafts integration. Family/state visual review is pending."
+      },
+      "packages/raft_ui/lib/src/forward_composer.dart#local-function:CLASS:RaftForwardShareFileStatus@26021/METHOD:build@26199/FUNCTION:bar@27134": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMPOSE",
+        "reason": "Source position changed with the composer or Drafts integration. Family/state visual review is pending."
+      },
+      "packages/raft_ui/lib/src/forward_composer.dart#local-function:CLASS:RaftForwardShareFileStatus@26021/METHOD:build@26199/FUNCTION:line@26397": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMPOSE",
+        "reason": "Source position changed with the composer or Drafts integration. Family/state visual review is pending."
+      },
+      "packages/raft_ui/lib/src/message_export.dart#class:_ScreenshotPageButton": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMPOSE",
+        "reason": "Composes the export surface or paged review controls. Device and visual review are pending."
+      },
+      "packages/raft_ui/lib/src/message_export.dart#method:_ScreenshotPageButton.build": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-COMPOSE",
+        "reason": "Composes the export surface or paged review controls. Device and visual review are pending."
       }
     },
     "entries": {
@@ -56524,9 +56814,12 @@
         "owner": "WP-COMPOSE",
         "kind": "route_or_panel_candidate",
         "lifecycleScreenId": "drafts.list",
-        "declarationRefs": [],
-        "mountStatus": "unresolved",
-        "reason": "The Drafts page uses the shared panel header and inbox row. Matched visual acceptance is pending."
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/desktop_drafts_page.dart#function:workspaceDraftsPage",
+          "apps/raft_flutter/lib/features/desktop_drafts_page.dart#class:DraftsPage"
+        ],
+        "mountStatus": "source_reviewed",
+        "reason": "The workspace mounts Drafts behind its feature flag. It uses the shared panel header and inbox row. Matched visual acceptance is pending."
       },
       "screen:tasks.list": {
         "owner": "Choice9 design-system alignment",
