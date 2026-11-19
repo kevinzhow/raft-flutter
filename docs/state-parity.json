@@ -56803,6 +56803,13 @@
         "familyRefs": [],
         "owner": "Artifact viewer",
         "reason": "WP-ART1 Artifact viewer, cards and attachment save (Web v1.24); compositions of raft_ui parts, real-entry mapping stays with the viewer owner."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_public_page.dart#method:_ArtifactPublicPageState.prompt": {
+        "role": "entry_composition",
+        "familyRefs": [
+          "button"
+        ],
+        "owner": "WP-ART3"
       }
     },
     "entries": {
