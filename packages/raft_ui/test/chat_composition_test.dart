@@ -183,7 +183,7 @@ void main() {
             ),
           ),
         );
-        expect(find.text('hint-pinned'), findsOneWidget);
+        expect(find.text('hint-pinned'), findsNothing);
         expect(find.text('hint-joint'), findsNothing);
         final skeletons = tester
             .widgetList<RaftChatSidebarLoadingRows>(

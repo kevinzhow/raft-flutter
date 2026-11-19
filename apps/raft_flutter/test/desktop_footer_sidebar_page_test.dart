@@ -127,8 +127,8 @@ void main() {
           );
         }
 
-        expect(groupRect(pinned).height, 80);
-        expect(groupRect(joint).height, 68);
+        expect(groupRect(pinned).height, 92);
+        expect(groupRect(joint).height, 74);
         expect(groupRect(joint).top, groupRect(pinned).bottom);
         expect(find.text('Drag channels or DMs here to pin'), findsOneWidget);
         expect(find.text('No joint channels yet'), findsOneWidget);

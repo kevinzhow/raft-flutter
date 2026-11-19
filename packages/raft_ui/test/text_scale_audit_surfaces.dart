@@ -605,6 +605,20 @@ final auditSurfaces = <AuditSurface>[
     representative: true,
   ),
   AuditSurface(
+    'sidebarAddConversationsPreview',
+    'Add conversations to a section',
+    sidebarAddConversationsPreview,
+    Size(480, 440),
+    representative: true,
+  ),
+  AuditSurface(
+    'sidebarExternalRowPreview',
+    'External sidebar row',
+    sidebarExternalRowPreview,
+    Size(320, 84),
+    representative: true,
+  ),
+  AuditSurface(
     'conversationTabsDesktopPreview',
     'Conversation tabs desktop',
     conversationTabsDesktopPreview,

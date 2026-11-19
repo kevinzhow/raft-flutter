@@ -367,8 +367,7 @@ class _SectionActionState extends State<_SectionAction> {
   );
 }
 
-/// SidebarSectionDescription under an empty custom section ("No
-/// conversations"): mono `text-xs`, `px-2`, the `min-h-7` drop target.
+/// SidebarSectionDescription under an empty custom section.
 class RaftSidebarSectionEmptyHint extends StatelessWidget {
   const RaftSidebarSectionEmptyHint(this.label, {super.key});
   final String label;
@@ -378,15 +377,12 @@ class RaftSidebarSectionEmptyHint extends StatelessWidget {
       RaftTokens.of(context),
       RaftChatSidebarGroupKind.channels,
     );
+    final desktop = RaftChatSidebarGroupRecipe.usesDesktopDescription(context);
     return ConstrainedBox(
       constraints: const BoxConstraints(minHeight: 28),
       child: Padding(
-        padding: recipe.descriptionInset(
-          compact:
-              raftBreakpointWidth(context) <
-              RaftLayoutMetrics.desktopBreakpoint,
-        ),
-        child: RaftCssText(label, style: recipe.description),
+        padding: recipe.descriptionInset(desktop: desktop),
+        child: RaftCssText(label, style: recipe.description(desktop: desktop)),
       ),
     );
   }

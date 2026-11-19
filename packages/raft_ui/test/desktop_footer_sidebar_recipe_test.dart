@@ -7,8 +7,6 @@ import 'package:raft_ui/workspace_shell_previews.dart';
 
 import 'task_typography_test.dart' show loadTaskFonts;
 
-// Source26f77ef Sidebar335–371/460–513/4092–4100/4203, LeftRail1012–1098.
-// Real DOM DPR1: two-line Pinned body45+mb4; Joint empty drag bucket28.
 void main() {
   for (final (dark) in raftThemeMatrix([(false), (true)], full: true)) {
     testWidgets(
@@ -18,7 +16,8 @@ void main() {
         var expanded = true;
         await t.pumpWidget(
           MaterialApp(
-            theme: raftTheme(dark: dark),
+            theme: raftTheme(dark: dark)
+                .copyWith(platform: TargetPlatform.linux),
             home: Scaffold(
               body: Align(
                 alignment: Alignment.topLeft,
@@ -58,9 +57,9 @@ void main() {
           ),
         );
         await t.pumpAndSettle();
-        expect(t.getSize(find.byType(RaftChatSidebarGroup).first).height, 89);
-        expect(t.getSize(find.byType(RaftChatSidebarGroup).last).height, 68);
-        expect(t.getRect(find.byType(RaftChatSidebarGroup).last).top, 89);
+        expect(t.getSize(find.byType(RaftChatSidebarGroup).first).height, 92);
+        expect(t.getSize(find.byType(RaftChatSidebarGroup).last).height, 74);
+        expect(t.getRect(find.byType(RaftChatSidebarGroup).last).top, 92);
         final semantics = t.ensureSemantics();
         await t.sendKeyEvent(LogicalKeyboardKey.tab);
         await t.sendKeyEvent(LogicalKeyboardKey.enter);

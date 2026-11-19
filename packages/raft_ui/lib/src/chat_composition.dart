@@ -11,11 +11,14 @@ import 'raft/tabs.dart';
 import 'raft/checkbox.dart';
 import 'viewport_breakpoints.dart';
 import 'icons.dart';
+import 'interaction.dart';
 import 'message_rule_row.dart';
 import 'panel_layout.dart' show RaftCssText;
 import 'sidebar_frame.dart';
 import 'sidebar_section.dart';
+import 'space.dart';
 import 'theme.dart';
+import 'tokens/tokens.dart' show RaftDesktopTypeScale;
 import 'status_bar.dart';
 import 'text_scaling.dart';
 import 'large_content_viewer.dart';
@@ -51,18 +54,30 @@ class RaftChatSidebarGroupRecipe {
       count == 0 &&
       !(dragActive &&
           (dragSource || (revealWhileDragging && revealEmptyDropTarget)));
-  EdgeInsets descriptionInset({required bool compact}) => EdgeInsets.symmetric(
-    horizontal: compact ? 20 : 8,
-    vertical: kind == RaftChatSidebarGroupKind.pinned ? (compact ? 8 : 6) : 0,
-  );
+  static bool usesDesktopDescription(BuildContext context) =>
+      raftBreakpointWidth(context) >= RaftLayoutMetrics.desktopBreakpoint &&
+      RaftInteraction.of(context).pointer;
+
+  EdgeInsetsDirectional descriptionInset({required bool desktop}) {
+    final block =
+        kind == RaftChatSidebarGroupKind.pinned ||
+            (desktop && kind == RaftChatSidebarGroupKind.joint)
+        ? RaftSpace.x2
+        : 0.0;
+    return EdgeInsetsDirectional.fromSTEB(
+      desktop ? RaftSpace.x4 * 2 : RaftSpace.x5,
+      block,
+      desktop ? RaftSpace.x2 : RaftSpace.x5,
+      block,
+    );
+  }
+
   double get minimumDescriptionHeight =>
       kind == RaftChatSidebarGroupKind.pinned ? 36 : 0;
-  double get descriptionBottomMargin =>
-      kind == RaftChatSidebarGroupKind.pinned ? 4 : 0;
-  TextStyle get description => RaftTypography.body(
+  TextStyle description({required bool desktop}) => RaftTypography.body(
     tokens,
     size: 12,
-    line: 16,
+    line: desktop ? RaftDesktopTypeScale.footnote.lineHeight : 16,
     color:
         tokens.colors[kind == RaftChatSidebarGroupKind.pinned
             ? 'foreground-hint'
@@ -160,6 +175,8 @@ class RaftChatSidebarGroup extends StatelessWidget {
     final recipe = RaftChatSidebarGroupRecipe(RaftTokens.of(context), kind);
     final compact =
         raftBreakpointWidth(context) < RaftLayoutMetrics.desktopBreakpoint;
+    final desktopDescription =
+        RaftChatSidebarGroupRecipe.usesDesktopDescription(context);
     if (recipe.hidden(
       count: count,
       loading: loading,
@@ -186,17 +203,15 @@ class RaftChatSidebarGroup extends StatelessWidget {
       } else if (!dms &&
           emptyLabel.isNotEmpty &&
           !(pinned && loading && hideEmpty)) {
-        empty = Padding(
-          padding: EdgeInsets.only(
-            bottom: compact ? 0 : recipe.descriptionBottomMargin,
+        empty = ConstrainedBox(
+          constraints: BoxConstraints(
+            minHeight: recipe.minimumDescriptionHeight,
           ),
-          child: ConstrainedBox(
-            constraints: BoxConstraints(
-              minHeight: recipe.minimumDescriptionHeight,
-            ),
-            child: Padding(
-              padding: recipe.descriptionInset(compact: compact),
-              child: RaftCssText(emptyLabel, style: recipe.description),
+          child: Padding(
+            padding: recipe.descriptionInset(desktop: desktopDescription),
+            child: RaftCssText(
+              emptyLabel,
+              style: recipe.description(desktop: desktopDescription),
             ),
           ),
         );

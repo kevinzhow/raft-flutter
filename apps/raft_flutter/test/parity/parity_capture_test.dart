@@ -26,7 +26,6 @@ void main() {
   // flutter_test's automated binding hides shadow blur (`debugDisableShadows`);
   // a device renders blurred shadows, so captures must too.
   RaftTestBinding.showShadows();
-  // The browser reference has no "Find a conversation" box (Electron only).
   final env = Platform.environment;
   final sharedDir = env['PARITY_SHARED_DIR'];
   final resultRoot = env['PARITY_RESULT_ROOT'];
