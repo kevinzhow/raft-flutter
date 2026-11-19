@@ -56855,7 +56855,7 @@
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
-      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5851/METHOD:desktopContentDetail@98699/FUNCTION:header@100409": {
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5851/METHOD:desktopContentDetail@98801/FUNCTION:header@100511": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "Raft Flutter component wiring",
@@ -57038,7 +57038,7 @@
         "owner": "WP-THREAD",
         "reason": "Thread panel composition, outline presentation or thread control. The report records the live inputs and visual states exercised."
       },
-      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5851/METHOD:settingsRailAction@105917/FUNCTION:action@105951": {
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5851/METHOD:settingsRailAction@106019/FUNCTION:action@106053": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "WP-THREAD",
