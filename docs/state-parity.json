@@ -56078,6 +56078,12 @@
         "familyRefs": [],
         "owner": "task v2",
         "reason": "SDK Widget Preview for the modern task details drawer or pinned task slot."
+      },
+      "apps/raft_flutter/lib/platform/desktop_title_bar.dart#method:_DesktopTitleBarState._syncLayout": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "desktop window chrome",
+        "reason": "Sends the workspace title row height through the native title-bar channel."
       }
     },
     "entries": {

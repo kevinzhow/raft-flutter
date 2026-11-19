@@ -424,7 +424,7 @@ class DesktopTitleBar extends StatefulWidget {
     this.controller,
     this.workspace,
     this.integrated = false,
-    this.integratedHeight = 48,
+    this._integratedHeight,
     required this.child,
   });
 
@@ -437,7 +437,9 @@ class DesktopTitleBar extends StatefulWidget {
   /// True while the shared global toolbar occupies the top of the window.
   /// It replaces the macOS empty strip, including in fullscreen.
   final bool integrated;
-  final double integratedHeight;
+  final double? _integratedHeight;
+  double get integratedHeight =>
+      _integratedHeight ?? DesktopTitleBarController.macosDefaultHeight;
   final Widget child;
 
   @override
@@ -457,7 +459,6 @@ class _DesktopTitleBarState extends State<DesktopTitleBar> {
     super.initState();
     _controller._attachPointerListener();
     unawaited(_controller.start());
-    _syncLayout();
     widget.workspace?.addListener(_syncTitle);
     _syncTitle();
   }
@@ -491,16 +492,24 @@ class _DesktopTitleBarState extends State<DesktopTitleBar> {
     unawaited(_controller.setTitle(workspaceWindowTitle(widget.workspace)));
   }
 
-  void _syncLayout() => unawaited(
-    _controller.setIntegrated(
-      _controller.mode == DesktopTitleBarMode.strip || widget.integrated,
-      height: widget.integratedHeight,
-    ),
-  );
+  void _syncLayout() {
+    final mac = _controller.mode == DesktopTitleBarMode.strip;
+    // The workspace row owns the Mac hit band. Preview clearance and the
+    // standalone strip still use the configured chrome height.
+    final height =
+        widget._integratedHeight ??
+        (mac && widget.integrated
+            ? RaftWorkspaceTopBar.heightFor(RaftTokens.of(context))
+            : widget.integratedHeight);
+    unawaited(
+      _controller.setIntegrated(mac || widget.integrated, height: height),
+    );
+  }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    _syncLayout();
     // Runs again whenever the theme changes, so a live switch is sent at once.
     unawaited(
       _controller.setStyle(DesktopTitleBarStyle.of(RaftTokens.of(context))),

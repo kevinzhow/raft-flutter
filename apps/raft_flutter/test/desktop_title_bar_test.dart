@@ -6,10 +6,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:raft_flutter/features/workspace_view.dart';
 import 'package:raft_flutter/platform/desktop_title_bar.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import 'flutter_test_config.dart' show leakDebt;
+import 'support/app_services_fixture.dart';
+import 'workspace_source_location_contract_test.dart' show pageFixture;
 
 /// A runner stand-in on `app.raft/titlebar`: records what the app sends and
 /// can push `state` the way the macOS runner does on resize / fullscreen.
@@ -85,9 +88,161 @@ Widget _app(
   ),
 );
 
+final _composerField = find.descendant(
+  of: find.byType(RaftComposer),
+  matching: find.byType(EditableText),
+);
+
+Future<EditableText> _mountMacWorkspace(
+  WidgetTester tester, {
+  required bool integrated,
+}) async {
+  _Runner(tester);
+  final controller = DesktopTitleBarController(
+    platform: TargetPlatform.macOS,
+    web: false,
+  );
+  final (workspace, _) = await pageFixture(tester, section: 'chat');
+  tester.view.physicalSize = Size(integrated ? 1280 : 800, 800);
+  tester.view.devicePixelRatio = 1;
+  addTearDown(tester.view.reset);
+  await tester.pumpWidget(
+    MaterialApp(
+      theme: raftTheme(dark: false).copyWith(platform: TargetPlatform.macOS),
+      builder: (context, child) => DesktopTitleBar(
+        controller: controller,
+        workspace: workspace,
+        integrated: integrated,
+        child: child!,
+      ),
+      home: withAppServices(
+        WorkspaceView(
+          controller: workspace,
+          appearance: const RaftAppearance(),
+          onAppearance: (_) async {},
+          onLogout: () async {},
+        ),
+      ),
+    ),
+  );
+  await tester.pumpAndSettle();
+  await tester.tap(_composerField, kind: PointerDeviceKind.mouse);
+  await tester.pump();
+  final editor = tester.widget<EditableText>(_composerField);
+  expect(editor.focusNode.hasPrimaryFocus, isTrue);
+  expect(tester.testTextInput.hasAnyClients, isTrue);
+  tester.testTextInput.updateEditingValue(
+    const TextEditingValue(
+      text: 'a',
+      selection: TextSelection.collapsed(offset: 1),
+    ),
+  );
+  await tester.pump();
+  expect(editor.controller.text, 'a');
+  return editor;
+}
+
 void main() {
   // Leak debt (other): see docs/development.md, Leak tracking.
   leakDebt(const ['ValueNotifier<DesktopTitleBarState>']);
+  const macOS = TargetPlatformVariant({TargetPlatform.macOS});
+  const search = Key('topbar-search');
+  for (final integrated in [true, false]) {
+    testWidgets(
+      'macOS: ${integrated ? 'integrated' : 'standalone'} title gap keeps typing in the composer',
+      (tester) async {
+        final editor = await _mountMacWorkspace(tester, integrated: integrated);
+        final drag = find.byKey(
+          Key(integrated ? 'workspace-topbar-drag' : 'desktop-title-drag'),
+        );
+        final bounds = tester.getRect(drag);
+        final x = integrated
+            ? tester.getRect(find.byKey(search)).right + 36
+            : bounds.center.dx;
+        final at = Alignment(2 * (x - bounds.left) / bounds.width - 1, 0);
+        expect(drag.hitTestable(at: at), findsOneWidget);
+        try {
+          await tester.tapAt(
+            at.withinRect(bounds),
+            kind: PointerDeviceKind.mouse,
+          );
+          await tester.pump();
+
+          expect(editor.focusNode.hasPrimaryFocus, isTrue);
+          expect(tester.testTextInput.hasAnyClients, isTrue);
+          // macOS delivers printable keys through the active text input client.
+          tester.testTextInput.updateEditingValue(
+            const TextEditingValue(
+              text: 'ab',
+              selection: TextSelection.collapsed(offset: 2),
+            ),
+          );
+          await tester.pump();
+          expect(editor.controller.text, 'ab');
+        } finally {
+          await tester.pumpWidget(const SizedBox.shrink());
+          await tester.pump(kDoubleTapMinTime);
+        }
+      },
+      variant: macOS,
+    );
+  }
+
+  testWidgets('macOS: the bottom edge of the title bar keeps composer focus', (
+    tester,
+  ) async {
+    final editor = await _mountMacWorkspace(tester, integrated: true);
+    final bar = tester.getRect(find.byType(RaftWorkspaceTopBar));
+    final x = tester.getRect(find.byKey(search)).right + 36;
+    try {
+      await tester.tapAt(
+        Offset(x, bar.bottom - .25),
+        kind: PointerDeviceKind.mouse,
+      );
+      await tester.pump();
+      expect(editor.focusNode.hasPrimaryFocus, isTrue);
+      expect(tester.testTextInput.hasAnyClients, isTrue);
+    } finally {
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump(kDoubleTapMinTime);
+    }
+  }, variant: macOS);
+
+  testWidgets('macOS: timeline and title Search take focus from the composer', (
+    tester,
+  ) async {
+    final editor = await _mountMacWorkspace(tester, integrated: true);
+    try {
+      final timeline = find.byKey(const Key('current-timeline'));
+      expect(timeline.hitTestable(), findsOneWidget);
+      await tester.tap(timeline, kind: PointerDeviceKind.mouse);
+      await tester.pump();
+      expect(editor.focusNode.hasFocus, isFalse);
+
+      final currentEditor = tester.widget<EditableText>(_composerField);
+      expect(currentEditor.focusNode, same(editor.focusNode));
+      expect(currentEditor.controller, same(editor.controller));
+      await tester.tap(_composerField, kind: PointerDeviceKind.mouse);
+      await tester.pump();
+      expect(editor.focusNode.hasPrimaryFocus, isTrue);
+      await tester.tap(find.byKey(search), kind: PointerDeviceKind.mouse);
+      await tester.pumpAndSettle();
+      final searchField = find.descendant(
+        of: find.byKey(const Key('search-overlay-card')),
+        matching: find.byType(EditableText),
+      );
+      expect(
+        tester.widget<EditableText>(searchField).focusNode.hasPrimaryFocus,
+        isTrue,
+      );
+      expect(editor.focusNode.hasFocus, isFalse);
+      expect(editor.controller.text, 'a');
+    } finally {
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump(kDoubleTapMinTime);
+    }
+  }, variant: macOS);
+
   testWidgets('header cancellation: waits for its not-yet-delivered down', (
     tester,
   ) async {

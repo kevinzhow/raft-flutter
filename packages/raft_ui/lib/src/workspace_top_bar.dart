@@ -29,6 +29,8 @@ bool raftShowsWorkspaceTopBar({
 /// The workspace frame row. The two side regions have equal widths, so
 /// the search trigger remains centred on the window while workspace names vary.
 class RaftWorkspaceTopBar extends StatelessWidget {
+  static double heightFor(RaftTokens tokens) => tokens.desktop ? 44 : 48;
+
   const RaftWorkspaceTopBar({
     super.key,
     required this.workspace,
@@ -40,6 +42,7 @@ class RaftWorkspaceTopBar extends StatelessWidget {
     this.navigation,
     this.onDragStart,
     this.onDoubleTap,
+    this.preserveTextFieldFocusOnDrag = false,
   });
   final Widget workspace;
   final VoidCallback onSearch;
@@ -47,6 +50,7 @@ class RaftWorkspaceTopBar extends StatelessWidget {
   final double leadingInset, trailingInset;
   final Widget? navigation;
   final VoidCallback? onDragStart, onDoubleTap;
+  final bool preserveTextFieldFocusOnDrag;
 
   /// Lets the host publish the real search field bounds to its overlay.
   final Key? searchKey;
@@ -55,78 +59,84 @@ class RaftWorkspaceTopBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     final width = MediaQuery.sizeOf(context).width;
+    final border = Border(
+      bottom: BorderSide(color: t.colors['line-workspace-rail']!),
+    );
+    final borderInset = border.bottom.strokeInset;
+    final drag = RaftTapSlopBackground(
+      child: GestureDetector(
+        key: const Key('workspace-topbar-drag'),
+        behavior: HitTestBehavior.opaque,
+        onPanStart: onDragStart == null ? null : (_) => onDragStart!(),
+        onDoubleTap: onDoubleTap,
+        child: const SizedBox.expand(),
+      ),
+    );
     return RaftChrome(
       child: RaftTapSlopHost(
         child: RaftStatusBarSource(
           color: t.colors['layer-workspace-rail']!,
           child: Container(
-            height: t.desktop ? 44 : 48,
-            decoration: BoxDecoration(
-              color: t.colors['layer-workspace-rail'],
-              border: Border(
-                bottom: BorderSide(color: t.colors['line-workspace-rail']!),
-              ),
-            ),
+            height: heightFor(t),
+            color: t.colors['layer-workspace-rail'],
+            foregroundDecoration: BoxDecoration(border: border),
             child: Stack(
               fit: StackFit.expand,
               children: [
                 Positioned.fill(
-                  child: RaftTapSlopBackground(
-                    child: GestureDetector(
-                      key: const Key('workspace-topbar-drag'),
-                      behavior: HitTestBehavior.opaque,
-                      onPanStart: onDragStart == null
-                          ? null
-                          : (_) => onDragStart!(),
-                      onDoubleTap: onDoubleTap,
-                      child: const SizedBox.expand(),
-                    ),
-                  ),
+                  // AppKit routes the painted border as part of the Mac title bar.
+                  bottom: preserveTextFieldFocusOnDrag ? 0 : borderInset,
+                  child: preserveTextFieldFocusOnDrag
+                      ? TextFieldTapRegion(child: drag)
+                      : drag,
                 ),
-                CustomMultiChildLayout(
-                  delegate: _WorkspaceTopBarLayout(
-                    (width * .32).clamp(360.0, math.min(520.0, width)),
+                Positioned.fill(
+                  bottom: borderInset,
+                  child: CustomMultiChildLayout(
+                    delegate: _WorkspaceTopBarLayout(
+                      (width * .32).clamp(360.0, math.min(520.0, width)),
+                    ),
+                    children: [
+                      LayoutId(
+                        id: _TopBarSlot.leading,
+                        child: Padding(
+                          padding: EdgeInsets.only(
+                            left: 8 + leadingInset,
+                            right: 8,
+                          ),
+                          child: navigation == null
+                              ? workspace
+                              : Row(
+                                  children: [
+                                    Expanded(child: workspace),
+                                    navigation!,
+                                  ],
+                                ),
+                        ),
+                      ),
+                      LayoutId(
+                        id: _TopBarSlot.search,
+                        child: RaftWorkspaceSearchTrigger(
+                          key: searchKey,
+                          onPressed: onSearch,
+                        ),
+                      ),
+                      LayoutId(
+                        id: _TopBarSlot.trailing,
+                        child: Padding(
+                          padding: EdgeInsets.only(
+                            left: 8,
+                            right: 8 + trailingInset,
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            spacing: 4,
+                            children: trailing,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                  children: [
-                    LayoutId(
-                      id: _TopBarSlot.leading,
-                      child: Padding(
-                        padding: EdgeInsets.only(
-                          left: 8 + leadingInset,
-                          right: 8,
-                        ),
-                        child: navigation == null
-                            ? workspace
-                            : Row(
-                                children: [
-                                  Expanded(child: workspace),
-                                  navigation!,
-                                ],
-                              ),
-                      ),
-                    ),
-                    LayoutId(
-                      id: _TopBarSlot.search,
-                      child: RaftWorkspaceSearchTrigger(
-                        key: searchKey,
-                        onPressed: onSearch,
-                      ),
-                    ),
-                    LayoutId(
-                      id: _TopBarSlot.trailing,
-                      child: Padding(
-                        padding: EdgeInsets.only(
-                          left: 8,
-                          right: 8 + trailingInset,
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          spacing: 4,
-                          children: trailing,
-                        ),
-                      ),
-                    ),
-                  ],
                 ),
               ],
             ),

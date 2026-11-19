@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import 'design_primitives.dart';
@@ -62,30 +63,35 @@ class RaftDesktopTitleStrip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final recipe = RaftTitleBarRecipe(RaftTokens.of(context));
+    final drag = GestureDetector(
+      key: const Key('desktop-title-drag'),
+      behavior: HitTestBehavior.opaque,
+      onPanStart: onDragStart == null ? null : (_) => onDragStart!(),
+      onDoubleTap: onDoubleTap,
+      child: DecoratedBox(
+        key: const Key('desktop-title-strip'),
+        child: title == null
+            ? null
+            : Padding(
+                padding: EdgeInsets.only(bottom: recipe.ruleWidth),
+                child: title,
+              ),
+        decoration: BoxDecoration(
+          color: recipe.background,
+          border: Border(
+            bottom: BorderSide(color: recipe.rule, width: recipe.ruleWidth),
+          ),
+        ),
+      ),
+    );
+    final preserveTextFieldFocus =
+        !kIsWeb &&
+        defaultTargetPlatform == TargetPlatform.macOS &&
+        onDragStart != null;
     return SizedBox(
       height: height,
       child: ExcludeSemantics(
-        child: GestureDetector(
-          key: const Key('desktop-title-drag'),
-          behavior: HitTestBehavior.opaque,
-          onPanStart: onDragStart == null ? null : (_) => onDragStart!(),
-          onDoubleTap: onDoubleTap,
-          child: DecoratedBox(
-            key: const Key('desktop-title-strip'),
-            child: title == null
-                ? null
-                : Padding(
-                    padding: EdgeInsets.only(bottom: recipe.ruleWidth),
-                    child: title,
-                  ),
-            decoration: BoxDecoration(
-              color: recipe.background,
-              border: Border(
-                bottom: BorderSide(color: recipe.rule, width: recipe.ruleWidth),
-              ),
-            ),
-          ),
-        ),
+        child: preserveTextFieldFocus ? TextFieldTapRegion(child: drag) : drag,
       ),
     );
   }

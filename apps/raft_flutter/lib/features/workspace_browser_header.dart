@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:raft_ui/raft_ui.dart';
 
@@ -37,6 +38,10 @@ class WorkspaceBrowserHeader extends StatelessWidget {
       trailingInset: native?.trailingInset ?? 0,
       onDragStart: native?.onDragStart,
       onDoubleTap: native?.onDoubleTap,
+      preserveTextFieldFocusOnDrag:
+          desktop &&
+          defaultTargetPlatform == TargetPlatform.macOS &&
+          native?.onDragStart != null,
       navigation: desktop
           ? WorkspaceHistoryControls(controller: controller)
           : null,
