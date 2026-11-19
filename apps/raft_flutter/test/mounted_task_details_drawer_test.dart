@@ -152,7 +152,7 @@ void main() {
 
   for (final size in [const Size(856, 944), const Size(944, 856)]) {
     testWidgets(
-      'Android Search task slot toggles pinned details at $size',
+      'Android Search task slot starts with details collapsed at $size',
       _disposeWorkspaceAfter((t) async {
         final (w, api) = await pageFixture(t, section: 'search');
         w.navigation.navigate(
@@ -210,20 +210,20 @@ void main() {
         expect(w.location.query('task'), 'c1:task:task-1');
         expect(slot, findsOneWidget);
         final pinnedTitle = find.descendant(of: slot, matching: _title);
-        expect(t.widget<Text>(pinnedTitle).data, v2Task['title']);
+        expect(pinnedTitle, findsNothing);
         expect(_drawer, findsNothing);
         expect(_toggle.hitTestable(), findsOneWidget);
 
         await t.tap(_toggle, kind: PointerDeviceKind.touch);
         await settle(t);
-        expect(pinnedTitle, findsNothing);
+        expect(t.widget<Text>(pinnedTitle).data, v2Task['title']);
         expect(_drawer, findsNothing);
         expect(slot, findsOneWidget);
         expect(w.location.query('task'), 'c1:task:task-1');
 
         await t.tap(_toggle, kind: PointerDeviceKind.touch);
         await settle(t);
-        expect(t.widget<Text>(pinnedTitle).data, v2Task['title']);
+        expect(pinnedTitle, findsNothing);
         expect(_drawer, findsNothing);
 
         await t.tap(

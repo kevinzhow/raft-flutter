@@ -222,33 +222,33 @@ void main() {
   });
 
   for (final size in [const Size(856, 944), const Size(944, 856)]) {
-    testWidgets('wide touch slot starts pinned and can reopen at $size', (
-      tester,
-    ) async {
+    testWidgets('wide touch slot starts collapsed at $size', (tester) async {
       await _openTask(tester, size: size, inPlace: true);
-      expect(_title, findsOneWidget);
-      expect(_toggle, findsOneWidget);
+      expect(_title, findsNothing);
+      _expectToggleSemantics(tester, expanded: false);
       final position = _position(tester, _discussion);
       position.jumpTo(480);
       await tester.pumpAndSettle();
-      final pinnedViewport = tester.getRect(_discussion);
+      final collapsedViewport = tester.getRect(_discussion);
 
       await _tap(tester, _toggle);
-      expect(_title, findsNothing);
+      expect(_title, findsOneWidget);
       expect(_drawer, findsNothing);
+      _expectToggleSemantics(tester, expanded: true);
       expect(
         tester.getRect(_discussion).height,
-        greaterThan(pinnedViewport.height),
+        lessThan(collapsedViewport.height),
       );
       expect(_position(tester, _discussion), same(position));
       expect(position.pixels, 480);
 
       await _tap(tester, _toggle);
-      expect(_title, findsOneWidget);
-      expect(tester.getRect(_discussion), pinnedViewport);
+      expect(_title, findsNothing);
+      _expectToggleSemantics(tester, expanded: false);
+      expect(tester.getRect(_discussion), collapsedViewport);
       expect(_position(tester, _discussion), same(position));
       expect(position.pixels, 480);
-    });
+    }, semanticsEnabled: true);
   }
 
   testWidgets('short window scrolls history inside the drawer', (tester) async {

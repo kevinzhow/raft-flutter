@@ -55333,13 +55333,13 @@
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
-      "packages/raft_ui/lib/src/task_surface.dart#local-function:CLASS:_RaftTaskSurfaceState@5868/METHOD:_historyDetail@50206/FUNCTION:badge@50603": {
+      "packages/raft_ui/lib/src/task_surface.dart#local-function:CLASS:_RaftTaskSurfaceState@5868/METHOD:_historyDetail@50097/FUNCTION:badge@50494": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
-      "packages/raft_ui/lib/src/task_surface.dart#local-function:CLASS:_RaftTaskSurfaceState@5868/METHOD:assigneePanel@44347/FUNCTION:avatar@44706": {
+      "packages/raft_ui/lib/src/task_surface.dart#local-function:CLASS:_RaftTaskSurfaceState@5868/METHOD:assigneePanel@44238/FUNCTION:avatar@44597": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",

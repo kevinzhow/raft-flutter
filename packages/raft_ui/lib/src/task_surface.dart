@@ -181,11 +181,11 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
   bool headPanelOpen = false;
 
   final detailsFocus = FocusNode(debugLabel: 'task details toggle');
-  bool detailsToggled = false;
+  bool detailsOpen = false;
 
   _TaskDetailsPlacement? get detailsPlacement => _detailsPlacement(widget);
   bool get drawerOpen =>
-      detailsPlacement == _TaskDetailsPlacement.drawer && detailsToggled;
+      detailsPlacement == _TaskDetailsPlacement.drawer && detailsOpen;
 
   /// Someone other than the viewer chosen in the picker: the reason step
   /// shows in the picker before the write.
@@ -197,7 +197,7 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.task['id'] != widget.task['id'] ||
         _detailsPlacement(oldWidget) != detailsPlacement) {
-      detailsToggled = false;
+      detailsOpen = false;
     }
     if (oldWidget.task['id'] != widget.task['id'] ||
         oldWidget.task['description'] != widget.task['description']) {
@@ -553,9 +553,7 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
   }
 
   Widget detailsToggle(BuildContext context) {
-    final expanded = detailsPlacement == _TaskDetailsPlacement.pinned
-        ? !detailsToggled
-        : detailsToggled;
+    final expanded = detailsOpen;
     final label = raftText(
       context,
       expanded ? 'Hide task details' : 'Show task details',
@@ -579,7 +577,7 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
         if (drawerOpen) {
           closeDetailsDrawer();
         } else {
-          setState(() => detailsToggled = !detailsToggled);
+          setState(() => detailsOpen = !detailsOpen);
         }
       },
     );
@@ -587,7 +585,7 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
 
   void closeDetailsDrawer() {
     if (!drawerOpen) return;
-    setState(() => detailsToggled = false);
+    setState(() => detailsOpen = false);
     detailsFocus.requestFocus();
   }
 
@@ -622,7 +620,7 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
       return placement == _TaskDetailsPlacement.drawer
           ? discussion
           : raftTaskPinnedHead(
-              head: detailsToggled ? null : properties(context),
+              head: detailsOpen ? properties(context) : null,
               child: discussion,
             );
     }
