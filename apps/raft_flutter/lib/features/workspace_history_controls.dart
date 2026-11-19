@@ -111,6 +111,7 @@ String _historyLabel(
     RaftRoute.computer => 'Computer',
     RaftRoute.members => 'Members',
     RaftRoute.computers => 'Computers',
+    RaftRoute.artifacts => 'Artifacts',
     RaftRoute.search => 'Search',
     RaftRoute.settings => 'Settings',
     RaftRoute.activity => 'Activity',

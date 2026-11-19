@@ -257,7 +257,7 @@ class ArtifactCard {
   final bool fromAnotherServer;
   final ArtifactUnseen? unseen;
 
-  ArtifactCard copyWith({String? title}) => ArtifactCard(
+  ArtifactCard copyWith({String? title, ArtifactHome? home}) => ArtifactCard(
     id: id,
     url: url,
     title: title ?? this.title,
@@ -272,7 +272,7 @@ class ArtifactCard {
     createdAt: createdAt,
     updatedAt: updatedAt,
     commentCount: commentCount,
-    home: home,
+    home: home ?? this.home,
     fromAnotherServer: fromAnotherServer,
     unseen: unseen,
   );
@@ -429,6 +429,7 @@ class ArtifactViewerData {
     this.capabilities = const ArtifactCapabilities(),
     this.following = false,
     this.origin,
+    this.originalConversationId,
     this.frame,
   });
 
@@ -450,6 +451,9 @@ class ArtifactViewerData {
       capabilities: ArtifactCapabilities.fromJson(map['capabilities']),
       following: map['following'] == true,
       origin: ArtifactOrigin.fromJson(map['origin']),
+      originalConversationId: _stringOrNull(
+        _map(map['originalHome'])['conversationId'],
+      ),
       frame: frame is Map ? frame.cast<String, Object?>() : null,
     );
   }
@@ -462,6 +466,7 @@ class ArtifactViewerData {
   final ArtifactCapabilities capabilities;
   final bool following;
   final ArtifactOrigin? origin;
+  final String? originalConversationId;
 
   /// The viewer route's own frame answer for the shown version: its ticket
   /// opens once within 60 seconds, so only the first mount may use it (Web
@@ -471,15 +476,21 @@ class ArtifactViewerData {
   ArtifactFile? get entry =>
       files.where((file) => file.entry).firstOrNull ?? files.firstOrNull;
 
-  ArtifactViewerData copyWith({bool? following, ArtifactCard? card}) =>
-      ArtifactViewerData(
-        card: card ?? this.card,
-        files: files,
-        versions: versions,
-        capabilities: capabilities,
-        following: following ?? this.following,
-        origin: origin,
-      );
+  ArtifactViewerData copyWith({
+    bool? following,
+    ArtifactCard? card,
+    ArtifactViewerData? changed,
+  }) => ArtifactViewerData(
+    card: card ?? this.card,
+    files: files,
+    versions: versions,
+    capabilities: changed?.capabilities ?? capabilities,
+    following: following ?? this.following,
+    origin: origin,
+    originalConversationId: changed == null
+        ? originalConversationId
+        : changed.originalConversationId,
+  );
 }
 
 /// An Artifact destination, optionally pinned to a version or focused on news.

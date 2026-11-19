@@ -16,7 +16,6 @@ import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import 'announcement_host.dart';
-import 'computers_rack/computer_attention_seen.dart';
 import 'computers_rack/computers_rack_page.dart';
 import 'workspace_host_scope.dart';
 import 'stale_counts_notice.dart';
@@ -46,6 +45,10 @@ import '../data/sidebar_disclosure.dart';
 import 'message_reference_directory.dart';
 import 'chat_agent_presentation.dart';
 import 'working_agents.dart';
+import 'artifacts/artifact_dashboard.dart';
+import 'artifacts/artifact_session.dart';
+import 'workspace_rail_destinations.dart';
+import 'computers_rack/computer_attention_seen.dart';
 import 'chat_view.dart';
 import 'mobile_route_gate.dart';
 import 'rail_gesture_exclusion.dart';
@@ -91,7 +94,6 @@ import 'panel_width_store.dart';
 import 'desktop_detail_host.dart';
 import 'sidebar_conversation_finder.dart';
 import 'sidebar_projection.dart';
-import 'activity_first_unread.dart';
 import 'sidebar_reorder.dart';
 import 'sidebar_sort_menu.dart';
 import 'agent_avatar_projection.dart';
@@ -1480,6 +1482,12 @@ class _WorkspaceViewState extends State<WorkspaceView>
                 ),
               ),
             )
+          : route == 'artifacts'
+          ? ArtifactDashboard(
+              key: ValueKey(mobileAuthority),
+              workspace: w,
+              onBack: wide ? null : dismissPanel,
+            )
           : route == 'members'
           ? DesktopDirectoryView(
               key: ValueKey('directory-$mobileAuthority'),
@@ -2729,52 +2737,20 @@ class _WorkspaceViewState extends State<WorkspaceView>
     ).glyphSize,
   );
 
-  List<RaftRailDestination> get railDestinations => [
-    RaftRailDestination(
-      id: 'search',
-      label: tr('Search'),
-      glyph: RaftGlyph.search,
-      iconWidget: railIcon(RaftGlyph.search),
-    ),
-    RaftRailDestination(
-      id: 'chat',
-      label: tr('Chat'),
-      glyph: RaftGlyph.messageSquare,
-      iconWidget: railIcon(RaftGlyph.messageSquare),
-      attention: hasChatAttention,
-    ),
-    RaftRailDestination(
-      id: 'activity',
-      label: tr('Activity'),
-      glyph: RaftGlyph.activity,
-      iconWidget: railIcon(RaftGlyph.activity),
-      attention: hasActivityAttention,
-      onDoubleClick: () => ActivityFirstUnread.of(w).request(w),
-    ),
-    RaftRailDestination(
-      id: 'tasks',
-      label: tr('Tasks'),
-      glyph: RaftGlyph.checkSquare,
-      iconWidget: railIcon(RaftGlyph.checkSquare),
-    ),
-    if (w.can('viewMembers'))
-      RaftRailDestination(
-        id: 'members',
-        label: tr('Members'),
-        glyph: RaftGlyph.users,
-        iconWidget: railIcon(RaftGlyph.users),
-      ),
-    if (w.can('viewMachines'))
-      RaftRailDestination(
-        id: 'computers',
-        label: tr('Computers'),
-        glyph: RaftGlyph.monitor,
-        iconWidget: railIcon(RaftGlyph.monitor),
-        attention: computerAttentionDotFor(w),
-      ),
-  ];
+  List<RaftRailDestination> get railDestinations => workspaceRailDestinations(
+    w,
+    tr: tr,
+    icon: railIcon,
+    chatAttention: hasChatAttention,
+    activityAttention: hasActivityAttention,
+  );
 
-  Widget workspaceRail() {
+  Widget workspaceRail() => ListenableBuilder(
+    listenable: ArtifactSession.of(w),
+    builder: (_, _) => artifactAwareRail(),
+  );
+
+  Widget artifactAwareRail() {
     final mobileAppScope = mobileAppBadge.key;
     return RaftWorkspaceRail(
       phone: !wide,

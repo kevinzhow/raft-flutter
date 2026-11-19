@@ -50,6 +50,7 @@ abstract final class NavigationRegistry {
     NavigationSection('agents', RaftRoute.members),
     NavigationSection('members', RaftRoute.members),
     NavigationSection('computers', RaftRoute.computers),
+    NavigationSection('artifacts', RaftRoute.artifacts),
     NavigationSection('search', RaftRoute.search),
     NavigationSection('activity', RaftRoute.activity),
     NavigationSection('tasks', RaftRoute.tasks),

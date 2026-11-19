@@ -27,6 +27,7 @@ import 'features/incoming_share_picker.dart';
 import 'features/incoming_share_review.dart';
 import 'data/raft_navigation_history.dart';
 import 'features/app_root_router.dart';
+import 'features/app_root_public.dart';
 import 'features/app_viewport.dart';
 import 'features/community_join.dart';
 import 'features/chinese_community.dart';
@@ -1792,29 +1793,27 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
           leaveInviteFor,
         );
       }
-      final route = publicRoute(requestedLocation);
-      if (route != null && !publicDismissed) {
-        return PublicServerView(
-          key: ValueKey('public-${route.slug}-anonymous'),
-          client: anonymousClient ??=
+      if (!publicDismissed) {
+        final page = signedOutPublicPage(
+          location: requestedLocation,
+          origin: origin,
+          client: () => anonymousClient ??=
               widget.createClient?.call(origin, MemorySessionStore(), 'web') ??
               RaftClient(origin: origin, sessionStore: MemorySessionStore()),
-          slug: route.slug,
-          appearance: appearance.value,
+          appearance: appearance,
           onAppearance: setAppearance,
-          displayLanguage: appearance.displayLanguage,
-          initialChannelId: route.channelId,
-          onSignIn: () => dismissPublic(mode: 'login'),
-          onRegister: () => dismissPublic(mode: 'register'),
-          onUnavailable: dismissPublic,
+          dismiss: dismissPublic,
         );
+        if (page != null) return page;
       }
       return AuthView(
         key: ValueKey('auth-$authMode'),
         initialMode: authMode ?? 'login',
         origin: origin,
         bootError: bootError,
-        purpose: externalInviteRoute?.kind.signInPurpose,
+        purpose:
+            externalInviteRoute?.kind.signInPurpose ??
+            artifactSignInPurpose(requestedLocation, origin, publicDismissed),
         onLogin: login,
         onRegister: register,
         authenticate: authenticate,

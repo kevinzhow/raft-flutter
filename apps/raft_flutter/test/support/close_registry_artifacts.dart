@@ -1,5 +1,75 @@
 import 'close_surface.dart';
 
+const _artifactDialogClose = {
+  Affordance.x,
+  Affordance.esc,
+  Affordance.systemBack,
+};
+
+const artifactHomeSurfaces = <CloseSurface>[
+  CloseSurface(
+    'artifact-dashboard-page',
+    kind: SurfaceKind.panel,
+    web: 'ArtifactsDashboard.tsx: leave with workspace navigation or browser Back.',
+    phone: {Affordance.back},
+    none: {
+      'fold':
+          'The dashboard replaces the workspace section, without an overlay.',
+      'desktop': 'Select another workspace rail destination to leave.',
+    },
+    files: ['lib/features/artifacts/artifact_dashboard.dart'],
+  ),
+  CloseSurface(
+    'artifact-public-page',
+    kind: SurfaceKind.viewer,
+    web: 'PublicArtifactPage.tsx: standalone route, browser Back.',
+    phone: {Affordance.back},
+    fold: {Affordance.back},
+    desktop: {Affordance.back},
+    files: ['lib/features/artifacts/artifact_public_page.dart'],
+  ),
+  CloseSurface(
+    'public-artifact-menu',
+    kind: SurfaceKind.popup,
+    web: 'PublicArtifactAiActions.tsx: Escape and an outside press dismiss.',
+    webOutside: WebOutside.closes,
+    phone: {Affordance.esc, Affordance.scrim, Affordance.systemBack},
+    fold: {Affordance.esc, Affordance.scrim, Affordance.systemBack},
+    desktop: {Affordance.esc, Affordance.scrim, Affordance.systemBack},
+    files: ['lib/features/artifacts/artifact_public_page.dart'],
+  ),
+  CloseSurface(
+    'artifact-dashboard-filter',
+    kind: SurfaceKind.dialog,
+    web: 'ArtifactFilterCombobox.tsx: Escape and an outside press dismiss.',
+    webOutside: WebOutside.closes,
+    phone: {..._artifactDialogClose, Affordance.scrim},
+    fold: {..._artifactDialogClose, Affordance.scrim},
+    desktop: {..._artifactDialogClose, Affordance.scrim},
+    files: ['lib/features/artifacts/artifact_dashboard_filter.dart'],
+  ),
+  CloseSurface(
+    'artifact-manage-dialog',
+    kind: SurfaceKind.dialog,
+    web: 'ArtifactRenameDialog.tsx and ArtifactNarrowHome.tsx: Escape and Cancel close while idle.',
+    webOutside: WebOutside.stays,
+    phone: _artifactDialogClose,
+    fold: _artifactDialogClose,
+    desktop: _artifactDialogClose,
+    files: ['lib/features/artifacts/artifact_manage_dialogs.dart'],
+  ),
+  CloseSurface(
+    'artifact-forward-dialog',
+    kind: SurfaceKind.dialog,
+    web: 'ArtifactForwardDialog.tsx: Escape and Cancel close while idle.',
+    webOutside: WebOutside.stays,
+    phone: _artifactDialogClose,
+    fold: _artifactDialogClose,
+    desktop: _artifactDialogClose,
+    files: ['lib/features/artifacts/artifact_forward_dialog.dart'],
+  ),
+];
+
 /// The workspace Artifact viewer (WP-ART1).
 const artifactSurfaces = <CloseSurface>[
   CloseSurface(

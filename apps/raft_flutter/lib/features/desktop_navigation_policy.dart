@@ -29,8 +29,8 @@ class DesktopNavigationPolicy {
   factory DesktopNavigationPolicy.forSection(
     String section,
   ) => switch (section) {
-    'tasks' => const DesktopNavigationPolicy._(
-      'tasks',
+    'tasks' || 'artifacts' => DesktopNavigationPolicy._(
+      section,
       DesktopSidebarKind.hidden,
     ),
     'search' => const DesktopNavigationPolicy._(

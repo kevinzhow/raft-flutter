@@ -6,6 +6,7 @@ import 'package:raft_ui/raft_ui.dart';
 import '../data/workspace_controller.dart';
 import '../platform/app_services.dart';
 import '../platform/app_update.dart';
+import 'artifacts/artifact_session.dart';
 import 'computers_rack/computer_attention_seen.dart';
 import 'feedback_unread.dart';
 import 'public_avatar_url.dart';
@@ -13,9 +14,7 @@ import 'server_menu_model.dart';
 
 /// The server's own pages the phone's server tab opens (Web v1.24
 /// MobileServerTab). Each is a pushed page with Back, not a tab root.
-// Artifacts (WP-ART3) and Apps (WP-APPS) have no Flutter page yet: each adds
-// one entry here and one case in [_pages] when it lands.
-enum ServerPage { members, computers, settings }
+enum ServerPage { artifacts, members, computers, settings }
 
 /// [ServerPage] ids, as the bar's tab ids spell them.
 final serverPageNames = {for (final page in ServerPage.values) page.name};
@@ -236,6 +235,13 @@ class _ServerPopoverContentState extends State<_ServerPopoverContent> {
       onPressed: () => widget.openPage(id),
     );
     return [
+      if (ArtifactSession.of(w).enabled)
+        page(
+          id: ServerPage.artifacts,
+          key: 'artifacts',
+          glyph: RaftGlyph.fileText,
+          label: 'Artifacts',
+        ),
       if (!guest && w.can('viewMembers'))
         page(
           id: ServerPage.members,
@@ -306,10 +312,13 @@ class _ServerPopoverContentState extends State<_ServerPopoverContent> {
             ],
           ),
           const RaftMobileNavServerPopoverSeparator(),
-          RaftMobileNavServerPopoverDestinations(
-            key: const Key('mobile-server-tab-pages'),
-            semanticLabel: widget.name,
-            children: pages(),
+          ListenableBuilder(
+            listenable: ArtifactSession.of(w),
+            builder: (_, _) => RaftMobileNavServerPopoverDestinations(
+              key: const Key('mobile-server-tab-pages'),
+              semanticLabel: widget.name,
+              children: pages(),
+            ),
           ),
         ],
       ),

@@ -11,6 +11,7 @@ enum RaftRoute {
   human,
   members,
   computers,
+  artifacts,
   search,
   settings,
   activity,
@@ -225,6 +226,7 @@ class RaftLocation {
       'human' when entity != null => RaftRoute.human,
       'members' when rest.length == 1 => RaftRoute.members,
       'computers' when rest.length == 1 => RaftRoute.computers,
+      'artifacts' when rest.length == 1 => RaftRoute.artifacts,
       'search' when rest.length == 1 => RaftRoute.search,
       'settings' => RaftRoute.settings,
       // Web's /raftbench route: a Settings page here.

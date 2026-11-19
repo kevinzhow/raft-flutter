@@ -28,13 +28,16 @@ import 'artifact_comment_store.dart';
 import 'artifact_comments_panel.dart';
 import 'artifact_content.dart';
 import 'artifact_find_bar.dart';
+import 'artifact_forward_dialog.dart';
 import 'artifact_frame_bridge.dart';
 import 'artifact_frame_confirm.dart';
 import 'artifact_frame_view.dart';
+import 'artifact_manage_dialogs.dart';
 import 'artifact_models.dart';
 import 'artifact_open_in_browser.dart';
 import 'artifact_review_store.dart';
 import 'artifact_session.dart';
+import 'artifact_sharing_api.dart';
 import 'artifact_text.dart';
 import 'artifact_viewer_actions.dart';
 import 'artifact_viewer_panels.dart';
@@ -572,6 +575,22 @@ class _ArtifactWorkspaceViewerState extends State<ArtifactWorkspaceViewer> {
         glyph: RaftGlyph.link,
         onPressed: () => unawaited(actions.copyLink(context, card)),
       ),
+      RaftMenuEntry(
+        label: tr('Send to conversation'),
+        glyph: RaftGlyph.forward,
+        onPressed: () => unawaited(_forward(card)),
+      ),
+      if (data.capabilities.publish)
+        RaftMenuEntry(
+          label: tr('Rename Artifact'),
+          glyph: RaftGlyph.pencil,
+          onPressed: () => unawaited(_manage(ArtifactManageAction.rename)),
+        ),
+      RaftMenuEntry(
+        label: tr('Who can see it'),
+        glyph: artifactScopeGlyph(card.home),
+        onPressed: () => unawaited(_manage(ArtifactManageAction.visibility)),
+      ),
       if (itself.isNotEmpty) ...[const RaftMenuEntry.separator(), ...itself],
       if (own) ...[
         const RaftMenuEntry.separator(),
@@ -582,6 +601,57 @@ class _ArtifactWorkspaceViewerState extends State<ArtifactWorkspaceViewer> {
         ),
       ],
     ];
+  }
+
+  Future<void> _manage(ArtifactManageAction action) async {
+    final before = data;
+    if (before == null) return;
+    final original = before.originalConversationId;
+    final result = await showArtifactManageDialog(
+      context,
+      api: ArtifactSharingApi(w.client),
+      data: before,
+      action: action,
+      current: () => current,
+      serverName: w.server?.name,
+      conversationName: original == null ? null : w.channelById(original)?.name,
+    );
+    final shown = data;
+    if (!current || result == null || shown == null) return;
+    setState(() {
+      data = shown.copyWith(
+        card: shown.card.copyWith(
+          title: result.card.title,
+          home: result.card.home,
+        ),
+        changed: result,
+      );
+    });
+    widget.session.summaries.invalidate(result.card.id);
+  }
+
+  Future<void> _forward(ArtifactCard card) async {
+    final result = await showArtifactForwardDialog(
+      context,
+      workspace: w,
+      card: card,
+      current: () => current,
+    );
+    if (!current || result == null) return;
+    if (result.home case final home?) {
+      final shown = data;
+      if (shown != null) {
+        setState(
+          () => data = shown.copyWith(card: shown.card.copyWith(home: home)),
+        );
+        widget.session.summaries.invalidate(card.id);
+      }
+    }
+    showRaftToast(
+      context,
+      raftText(context, 'Sent'),
+      tone: RaftToastRecipeTone.success,
+    );
   }
 
   Widget _header(BuildContext context) {

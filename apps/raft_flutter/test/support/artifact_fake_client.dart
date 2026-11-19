@@ -20,6 +20,7 @@ class ArtifactFakeClient extends RaftClient {
   bool enabled;
   final ingress = StreamController<RaftEvent>.broadcast(sync: true);
   final requests = <String>[];
+  final requestAuthorization = <String, bool>{};
   final bodies = <String, Object?>{};
 
   /// Answers by `METHOD path` (exact), then by path prefix; a value that is a
@@ -51,6 +52,7 @@ class ArtifactFakeClient extends RaftClient {
   }) async {
     final key = '$method $path';
     requests.add(key);
+    requestAuthorization[key] = authorized;
     bodies[key] = data;
     if (path == '/feature-flags/evaluate') {
       return {

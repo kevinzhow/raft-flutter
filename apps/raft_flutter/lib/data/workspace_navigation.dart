@@ -360,6 +360,7 @@ class WorkspaceNavigation {
       'home' || 'chat' => RaftRoute.home,
       'agents' || 'members' => RaftRoute.members,
       'computers' => RaftRoute.computers,
+      'artifacts' => RaftRoute.artifacts,
       'search' => RaftRoute.search,
       'activity' => RaftRoute.activity,
       'tasks' => RaftRoute.tasks,
@@ -466,6 +467,7 @@ class WorkspaceNavigation {
       RaftRoute.members ||
       RaftRoute.computers ||
       RaftRoute.drafts ||
+      RaftRoute.artifacts ||
       RaftRoute.settings => RaftLocation.at(
         serverSlug: location.serverSlug,
         route: RaftRoute.home,

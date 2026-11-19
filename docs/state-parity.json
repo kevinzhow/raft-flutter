@@ -4807,6 +4807,222 @@
           "justification": "The list keeps its current rows while reading earlier comments. It has no registered paired case."
         }
       ]
+    },
+    {
+      "id": "artifact.dashboard",
+      "title": "Artifact dashboard",
+      "webEntry": "packages/web/src/apps/artifacts/ArtifactsDashboard.tsx",
+      "flutterEntry": "apps/raft_flutter/lib/features/artifacts/artifact_dashboard.dart",
+      "states": [
+        {
+          "state": "loading",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "gap",
+          "gapKind": "case-missing",
+          "size": "S",
+          "justification": "Needs a parity fixture with a delayed dashboard request."
+        },
+        {
+          "state": "empty",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "gap",
+          "gapKind": "case-missing",
+          "size": "S",
+          "justification": "Needs an empty-search visual parity case."
+        },
+        {
+          "state": "error",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "gap",
+          "gapKind": "case-missing",
+          "size": "S",
+          "justification": "Retry is covered by the dashboard widget test. The error screen needs a parity case."
+        },
+        {
+          "state": "partial",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "gap",
+          "gapKind": "case-missing",
+          "size": "S",
+          "justification": "Load more retains visible rows. The pagination footer needs a parity case."
+        }
+      ]
+    },
+    {
+      "id": "artifact.public",
+      "title": "Public Artifact",
+      "webEntry": "packages/web/src/apps/artifacts/PublicArtifactPage.tsx",
+      "flutterEntry": "apps/raft_flutter/lib/features/artifacts/artifact_public_page.dart",
+      "states": [
+        {
+          "state": "loading",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "gap",
+          "gapKind": "case-missing",
+          "size": "S",
+          "justification": "Needs a parity case with a delayed public read."
+        },
+        {
+          "state": "empty",
+          "web": "no",
+          "flutter": "missing",
+          "parityCase": [],
+          "status": "na",
+          "justification": "The public endpoint returns metadata or an unavailable response."
+        },
+        {
+          "state": "error",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "gap",
+          "gapKind": "case-missing",
+          "size": "S",
+          "justification": "Needs a parity case with a public link that is no longer available."
+        },
+        {
+          "state": "partial",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "gap",
+          "gapKind": "impl-diff",
+          "size": "M",
+          "justification": "Platforms without the frame host open the public page in a browser."
+        }
+      ]
+    },
+    {
+      "id": "artifact.dashboard-filter",
+      "title": "Artifact dashboard filters",
+      "webEntry": "packages/web/src/apps/artifacts/ArtifactFilterCombobox.tsx",
+      "flutterEntry": "apps/raft_flutter/lib/features/artifacts/artifact_dashboard_filter.dart",
+      "states": [
+        {
+          "state": "loading",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "gap",
+          "gapKind": "case-missing",
+          "size": "S",
+          "justification": "Loading is present in the filter dialog. A matched asynchronous capture needs a fixture."
+        },
+        {
+          "state": "empty",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "gap",
+          "gapKind": "impl-diff",
+          "size": "S",
+          "justification": "An unmatched search renders an empty result. The Web popover and Flutter dialog use different hosts."
+        },
+        {
+          "state": "error",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "gap",
+          "gapKind": "case-missing",
+          "size": "S",
+          "justification": "The dialog offers a retry. The failed route lacks a paired capture."
+        }
+      ]
+    },
+    {
+      "id": "artifact.manage",
+      "title": "Artifact management",
+      "webEntry": "packages/web/src/apps/artifacts/ArtifactRenameDialog.tsx, ArtifactNarrowHome.tsx",
+      "flutterEntry": "apps/raft_flutter/lib/features/artifacts/artifact_manage_dialogs.dart",
+      "states": [
+        {
+          "state": "loading",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "gap",
+          "gapKind": "case-missing",
+          "size": "S",
+          "justification": "Both show a pending state during the loss preview. A delayed response fixture is needed."
+        },
+        {
+          "state": "empty",
+          "web": "no",
+          "flutter": "missing",
+          "parityCase": [],
+          "status": "na",
+          "justification": "The viewer offers management only when a capability allows an action."
+        },
+        {
+          "state": "error",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "gap",
+          "gapKind": "impl-diff",
+          "size": "S",
+          "justification": "Refusals use inline errors in Flutter. Web uses toasts for some scope writes."
+        }
+      ]
+    },
+    {
+      "id": "artifact.forward",
+      "title": "Artifact forwarding",
+      "webEntry": "packages/web/src/components/message/ArtifactForwardDialog.tsx",
+      "flutterEntry": "apps/raft_flutter/lib/features/artifacts/artifact_forward_dialog.dart",
+      "states": [
+        {
+          "state": "loading",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "gap",
+          "gapKind": "case-missing",
+          "size": "S",
+          "justification": "Both show an audience-read pending state. A delayed response fixture is needed."
+        },
+        {
+          "state": "empty",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "gap",
+          "gapKind": "impl-diff",
+          "size": "S",
+          "justification": "Flutter filters joined conversations and displays an empty result. Web can discover more targets."
+        },
+        {
+          "state": "error",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "gap",
+          "gapKind": "case-missing",
+          "size": "S",
+          "justification": "The retry widget test observes the failed and resolved states. A matching Web visual case is pending."
+        },
+        {
+          "state": "partial",
+          "web": "yes",
+          "flutter": "missing",
+          "parityCase": [],
+          "status": "gap",
+          "gapKind": "impl-diff",
+          "size": "M",
+          "justification": "Web reports individual receipts for multiple destinations. Flutter currently sends to a single destination."
+        }
+      ]
     }
   ],
   "navigationCoverage": {
@@ -4872,6 +5088,9 @@
       ],
       "billing": [
         "settings.billing"
+      ],
+      "artifacts": [
+        "artifact.dashboard"
       ]
     },
     "settingsTabs": {
@@ -49700,12 +49919,6 @@
         "owner": "design-system alignment",
         "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
       },
-      "apps/raft_flutter/lib/features/mobile_server_tab.dart#local-function:CLASS:_ServerPopoverContentState@4332/METHOD:pages@7008/FUNCTION:page@7320": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
-      },
       "apps/raft_flutter/lib/features/mobile_server_tab.dart#method:MobileServerTab.createState": {
         "role": "unresolved",
         "familyRefs": [],
@@ -55368,12 +55581,6 @@
         "owner": "Raft Flutter component wiring",
         "reason": "Places the existing ProfileSidePanel and side-panel frame inside the task discussion. Uses the configured profile width."
       },
-      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5737/METHOD:desktopContentDetail@101125/FUNCTION:header@102835": {
-        "role": "entry_composition",
-        "familyRefs": [],
-        "owner": "Raft Flutter component wiring",
-        "reason": "Selects the shared DM header for a desktop Activity or Search result and attaches the existing detail actions."
-      },
       "apps/raft_flutter/lib/features/management_support.dart#local-function:CLASS:ManagementState@3881/METHOD:_scopedRoute@12363/FUNCTION:scoped@13076": {
         "role": "unresolved",
         "familyRefs": [],
@@ -55409,24 +55616,6 @@
         "familyRefs": [],
         "owner": "WP-CHAN",
         "reason": "Offset update from the activity timeline integration. Exact family placement and state-specific visual acceptance are pending."
-      },
-      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5737/METHOD:buildWorkspace@47602/FUNCTION:<anonymous>@47820/FUNCTION:conversation@50934": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "WP-CHAN",
-        "reason": "Offset update from the channel Details workspace route. Exact family placement and state-specific visual acceptance are pending."
-      },
-      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5737/METHOD:buildWorkspace@47602/FUNCTION:<anonymous>@47820/FUNCTION:workspace@64145": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "WP-CHAN",
-        "reason": "Offset update from the channel Details workspace route. Exact family placement and state-specific visual acceptance are pending."
-      },
-      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5737/METHOD:settingsRailAction@109298/FUNCTION:action@109332": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "WP-CHAN",
-        "reason": "Offset update from the channel Details workspace route. Exact family placement and state-specific visual acceptance are pending."
       },
       "apps/raft_flutter/lib/features/channel_members.dart#local-function:CLASS:_ChannelMembersState@9124/METHOD:build@24360/FUNCTION:item@31636": {
         "role": "entry_composition",
@@ -55672,12 +55861,6 @@
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "Artifact discussion"
-      },
-      "apps/raft_flutter/lib/features/artifacts/artifact_viewer_page.dart#local-function:FUNCTION:openWorkspaceArtifact@1870/FUNCTION:viewer@2066": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "Artifact viewer",
-        "reason": "WP-ART1 Artifact viewer, cards and attachment save (Web v1.24); compositions of raft_ui parts, real-entry mapping stays with the viewer owner."
       },
       "apps/raft_flutter/lib/features/action_card_form.dart#class:ActionCardFormView": {
         "owner": "WP-ACTION",
@@ -56389,6 +56572,237 @@
         "familyRefs": [],
         "owner": "WP-COMPOSE",
         "reason": "Composes the export surface or paged review controls. Device and visual review are pending."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_dashboard_rows.dart#method:ArtifactDashboardRows.heading": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-ART3"
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_dashboard_rows.dart#method:ArtifactDashboardRows.newsBadge": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-ART3"
+      },
+      "apps/raft_flutter/lib/features/app_root_public.dart#function:signedOutPublicPage": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-ART3"
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_dashboard.dart#class:ArtifactDashboard": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-ART3"
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_dashboard.dart#class:_ArtifactDashboardState": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-ART3"
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_dashboard.dart#method:ArtifactDashboard.createState": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-ART3"
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_dashboard.dart#method:_ArtifactDashboardState.body": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-ART3"
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_dashboard.dart#method:_ArtifactDashboardState.build": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-ART3"
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_dashboard_filter.dart#class:ArtifactDashboardFilter": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-ART3"
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_dashboard_filter.dart#class:_ArtifactDashboardFilterState": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-ART3"
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_dashboard_filter.dart#function:showArtifactDashboardFilter": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-ART3"
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_dashboard_filter.dart#method:ArtifactDashboardFilter.createState": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-ART3"
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_dashboard_filter.dart#method:_ArtifactDashboardFilterState.build": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-ART3"
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_dashboard_rows.dart#class:ArtifactDashboardRows": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-ART3"
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_dashboard_rows.dart#method:ArtifactDashboardRows.build": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-ART3"
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_dashboard_rows.dart#method:ArtifactDashboardRows.row": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-ART3"
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_dashboard_rows.dart#method:ArtifactDashboardRows.tableCells": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-ART3"
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_dashboard_rows.dart#method:ArtifactDashboardRows.tile": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-ART3"
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_forward_dialog.dart#class:ArtifactForwardDialog": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-ART3"
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_forward_dialog.dart#class:_ArtifactForwardDialogState": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-ART3"
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_forward_dialog.dart#function:showArtifactForwardDialog": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-ART3"
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_forward_dialog.dart#method:ArtifactForwardDialog.createState": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-ART3"
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_forward_dialog.dart#method:_ArtifactForwardDialogState.build": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-ART3"
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_manage_dialogs.dart#class:ArtifactManageDialog": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-ART3"
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_manage_dialogs.dart#class:_ArtifactManageDialogState": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-ART3"
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_manage_dialogs.dart#function:showArtifactManageDialog": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-ART3"
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_manage_dialogs.dart#method:ArtifactManageDialog.createState": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-ART3"
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_manage_dialogs.dart#method:_ArtifactManageDialogState.build": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-ART3"
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_manage_dialogs.dart#method:_ArtifactManageDialogState.option": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-ART3"
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_public_page.dart#class:ArtifactPublicPage": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-ART3"
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_public_page.dart#class:_ArtifactPublicPageState": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-ART3"
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_public_page.dart#method:ArtifactPublicPage.createState": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-ART3"
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_public_page.dart#method:_ArtifactPublicPageState.body": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-ART3"
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_public_page.dart#method:_ArtifactPublicPageState.build": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-ART3"
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_public_page.dart#method:_ArtifactPublicPageState.copy": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-ART3"
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_public_page.dart#method:_ArtifactPublicPageState.openExternal": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-ART3"
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_public_page.dart#method:_ArtifactPublicPageState.publicActions": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-ART3"
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_viewer_page.dart#method:_ArtifactWorkspaceViewerState._forward": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-ART3"
+      },
+      "apps/raft_flutter/lib/features/workspace_view.dart#method:_WorkspaceViewState.artifactAwareRail": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-ART3"
+      },
+      "apps/raft_flutter/lib/features/mobile_server_tab.dart#local-function:CLASS:_ServerPopoverContentState@4249/METHOD:pages@6925/FUNCTION:page@7237": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5829/METHOD:desktopContentDetail@101419/FUNCTION:header@103129": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "Raft Flutter component wiring",
+        "reason": "Selects the shared DM header for a desktop Activity or Search result and attaches the existing detail actions."
+      },
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5829/METHOD:buildWorkspace@47694/FUNCTION:<anonymous>@47912/FUNCTION:conversation@51026": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-CHAN",
+        "reason": "Offset update from the channel Details workspace route. Exact family placement and state-specific visual acceptance are pending."
+      },
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5829/METHOD:buildWorkspace@47694/FUNCTION:<anonymous>@47912/FUNCTION:workspace@64439": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-CHAN",
+        "reason": "Offset update from the channel Details workspace route. Exact family placement and state-specific visual acceptance are pending."
+      },
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5829/METHOD:settingsRailAction@108637/FUNCTION:action@108671": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-CHAN",
+        "reason": "Offset update from the channel Details workspace route. Exact family placement and state-specific visual acceptance are pending."
+      },
+      "apps/raft_flutter/lib/features/artifacts/artifact_viewer_page.dart#local-function:FUNCTION:openWorkspaceArtifact@1984/FUNCTION:viewer@2180": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "Artifact viewer",
+        "reason": "WP-ART1 Artifact viewer, cards and attachment save (Web v1.24); compositions of raft_ui parts, real-entry mapping stays with the viewer owner."
       }
     },
     "entries": {
@@ -60186,6 +60600,85 @@
         ],
         "mountStatus": "source_reviewed",
         "reason": "Action-card intent dispatch, shared dialog placement or browser handoff. Visual acceptance is pending."
+      },
+      "surface:art3.function:showArtifactDashboardFilter": {
+        "owner": "WP-ART3",
+        "kind": "route_or_panel_candidate",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/artifacts/artifact_dashboard_filter.dart#function:showArtifactDashboardFilter"
+        ],
+        "mountStatus": "source_reviewed",
+        "reason": "Artifact dashboard, viewer controls or public page. Visual acceptance is tracked separately."
+      },
+      "surface:art3.function:showArtifactForwardDialog": {
+        "owner": "WP-ART3",
+        "kind": "route_or_panel_candidate",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/artifacts/artifact_forward_dialog.dart#function:showArtifactForwardDialog"
+        ],
+        "mountStatus": "source_reviewed",
+        "reason": "Artifact dashboard, viewer controls or public page. Visual acceptance is tracked separately."
+      },
+      "surface:art3.function:showArtifactManageDialog": {
+        "owner": "WP-ART3",
+        "kind": "route_or_panel_candidate",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/artifacts/artifact_manage_dialogs.dart#function:showArtifactManageDialog"
+        ],
+        "mountStatus": "source_reviewed",
+        "reason": "Artifact dashboard, viewer controls or public page. Visual acceptance is tracked separately."
+      },
+      "surface:art3.method:_ArtifactPublicPageState.body": {
+        "owner": "WP-ART3",
+        "kind": "route_or_panel_candidate",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/artifacts/artifact_public_page.dart#method:_ArtifactPublicPageState.body"
+        ],
+        "mountStatus": "source_reviewed",
+        "reason": "Artifact dashboard, viewer controls or public page. Visual acceptance is tracked separately."
+      },
+      "surface:art3.method:_ArtifactPublicPageState.copy": {
+        "owner": "WP-ART3",
+        "kind": "route_or_panel_candidate",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/artifacts/artifact_public_page.dart#method:_ArtifactPublicPageState.copy"
+        ],
+        "mountStatus": "source_reviewed",
+        "reason": "Artifact dashboard, viewer controls or public page. Visual acceptance is tracked separately."
+      },
+      "surface:art3.method:_ArtifactPublicPageState.openExternal": {
+        "owner": "WP-ART3",
+        "kind": "route_or_panel_candidate",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/artifacts/artifact_public_page.dart#method:_ArtifactPublicPageState.openExternal"
+        ],
+        "mountStatus": "source_reviewed",
+        "reason": "Artifact dashboard, viewer controls or public page. Visual acceptance is tracked separately."
+      },
+      "surface:art3.method:_ArtifactWorkspaceViewerState._forward": {
+        "owner": "WP-ART3",
+        "kind": "route_or_panel_candidate",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/artifacts/artifact_viewer_page.dart#method:_ArtifactWorkspaceViewerState._forward"
+        ],
+        "mountStatus": "source_reviewed",
+        "reason": "Artifact dashboard, viewer controls or public page. Visual acceptance is tracked separately."
+      },
+      "screen:artifact.dashboard": {
+        "owner": "WP-ART3",
+        "kind": "route_or_panel_candidate",
+        "lifecycleScreenId": "artifact.dashboard",
+        "declarationRefs": [],
+        "mountStatus": "unresolved",
+        "reason": "Dashboard uses canonical inputs, cards, list rows, dialogs and buttons. Per-state visual evidence is tracked separately."
+      },
+      "screen:artifact.public": {
+        "owner": "WP-ART3",
+        "kind": "route_or_panel_candidate",
+        "lifecycleScreenId": "artifact.public",
+        "declarationRefs": [],
+        "mountStatus": "unresolved",
+        "reason": "Public page reuses the panel header, viewer frame and browser fallback. Per-state visual evidence is tracked separately."
       }
     },
     "requirements": {

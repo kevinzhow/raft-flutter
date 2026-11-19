@@ -1511,11 +1511,13 @@ class RaftClient {
   /// An authenticated read of a binary response (an image the server holds
   /// behind the session, not behind a signed link). Failures are the usual
   /// [RaftApiException]s; the error body is not decoded.
-  Future<Uint8List> getBytes(String path) async {
-    final result = await runZoned(
-      () => get(path),
-      zoneValues: {_bytesKey: true},
-    );
+  Future<Uint8List> getBytes(String path) => _readBytes(() => get(path));
+
+  Future<Uint8List> getPublicBytes(String path) =>
+      _readBytes(() => request('GET', path, authorized: false));
+
+  Future<Uint8List> _readBytes(Future<dynamic> Function() read) async {
+    final result = await runZoned(read, zoneValues: {_bytesKey: true});
     if (result is Uint8List) return result;
     if (result is List<int>) return Uint8List.fromList(result);
     throw const RaftApiException('The server did not return a file.');

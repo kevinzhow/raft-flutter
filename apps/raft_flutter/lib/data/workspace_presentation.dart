@@ -216,6 +216,7 @@ class WorkspacePresentation {
       'saved',
       'drafts',
       'tasks',
+      'artifacts',
       'settings',
     }.contains(name);
   }

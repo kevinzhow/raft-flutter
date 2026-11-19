@@ -16810,7 +16810,7 @@
    "kind": "ui",
    "id": "ui:global-ui.mobile-bottom-tabs",
    "area": "global-ui",
-   "capability": "Phone bottom tab bar (v1.24): Home, Activity, Tasks, Search and the server tab; Members, Computers and Settings are pages the server tab pushes",
+   "capability": "Phone bottom tab bar (v1.24): Home, Activity, Tasks, Search and the server tab; Artifacts, Members, Computers and Settings are pages the server tab pushes",
    "background": false,
    "status": "covered",
    "webEntry": "store/mobileNavStore.ts + components/layout/MainLayout.tsx MobileTabBar + components/layout/MobileServerTab.tsx",
@@ -16826,7 +16826,7 @@
      "needle": "class MobileServerTab"
     }
    ],
-   "justification": "The bar is fixed like Web (no tab customisation); the old device-local Bottom bar setting was removed and a value it stored is ignored. The server tab's pages row shows Members, Computers and Settings; Artifacts and Apps join it with their pages (Web owners see five destinations in a 3-column grid).",
+   "justification": "The bar is fixed like Web (no tab customisation); the old device-local Bottom bar setting was removed and a value it stored is ignored. The server tab's pages row shows Artifacts when workspace_artifacts_v0 is enabled, plus Members, Computers and Settings. Apps belongs to WP-APPS.",
    "impact": "",
    "size": ""
   },
