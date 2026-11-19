@@ -22,7 +22,6 @@ import 'history_reading_anchor.dart';
 import 'thread_unread_jump.dart';
 import 'message_history_gaps.dart';
 import 'thread_outline_viewport.dart';
-import 'thread_find_bar.dart';
 import '../data/thread_start_jump.dart';
 import 'thread_viewport_handle.dart';
 import '../data/message_history_memory.dart';

@@ -56855,25 +56855,25 @@
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
-      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5703/METHOD:desktopContentDetail@98176/FUNCTION:header@99886": {
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5851/METHOD:desktopContentDetail@98699/FUNCTION:header@100409": {
         "role": "entry_composition",
         "familyRefs": [],
         "owner": "Raft Flutter component wiring",
         "reason": "Selects the shared DM header for a desktop Activity or Search result and attaches the existing detail actions."
       },
-      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4926/METHOD:attachmentGallery@66245/FUNCTION:view@67399": {
+      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4895/METHOD:attachmentGallery@66214/FUNCTION:view@67368": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "WP-THREAD",
         "reason": "Thread panel composition, outline presentation or thread control. The report records the live inputs and visual states exercised."
       },
-      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4926/METHOD:buildTimeline@113788/FUNCTION:timelineFor@117530": {
+      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4895/METHOD:buildTimeline@113757/FUNCTION:timelineFor@117499": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "WP-THREAD",
         "reason": "Thread panel composition, outline presentation or thread control. The report records the live inputs and visual states exercised."
       },
-      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4926/METHOD:senderAvatar@78823/FUNCTION:avatar@81298": {
+      "apps/raft_flutter/lib/features/chat_view.dart#local-function:CLASS:_RaftChatViewState@4895/METHOD:senderAvatar@78792/FUNCTION:avatar@81267": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "WP-THREAD",
@@ -57026,19 +57026,19 @@
         "owner": "WP-THREAD",
         "reason": "Thread panel composition, outline presentation or thread control. The report records the live inputs and visual states exercised."
       },
-      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5703/METHOD:buildWorkspace@47568/FUNCTION:<anonymous>@47786/FUNCTION:conversation@50900": {
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5851/METHOD:buildWorkspace@47716/FUNCTION:<anonymous>@47934/FUNCTION:conversation@51048": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "WP-THREAD",
         "reason": "Thread panel composition, outline presentation or thread control. The report records the live inputs and visual states exercised."
       },
-      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5703/METHOD:buildWorkspace@47568/FUNCTION:<anonymous>@47786/FUNCTION:workspace@64111": {
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5851/METHOD:buildWorkspace@47716/FUNCTION:<anonymous>@47934/FUNCTION:workspace@64570": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "WP-THREAD",
         "reason": "Thread panel composition, outline presentation or thread control. The report records the live inputs and visual states exercised."
       },
-      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5703/METHOD:settingsRailAction@106349/FUNCTION:action@106383": {
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5851/METHOD:settingsRailAction@105917/FUNCTION:action@105951": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "WP-THREAD",
