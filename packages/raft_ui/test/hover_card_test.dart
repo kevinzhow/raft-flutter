@@ -291,4 +291,76 @@ void main() {
     expect(find.textContaining('Card '), findsNothing);
     await settle(tester, mouse);
   });
+
+  testWidgets(
+    'tall hover card near vertical midpoint uses viewport height instead of clipping',
+    (tester) async {
+      tester.view.physicalSize = const Size(800, 800);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      var tapped = 0;
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: raftTheme(),
+          home: Scaffold(
+            body: Stack(
+              children: [
+                Positioned(
+                  left: 200,
+                  top: 460,
+                  child: RaftHoverCard(
+                    closeOnTriggerPress: false,
+                    card: (_) => SingleChildScrollView(
+                      child: SizedBox(
+                        height: 500,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text('Top section'),
+                            TextButton(
+                              key: const ValueKey('tall-card-bottom-action'),
+                              onPressed: () => tapped++,
+                              child: const Text('Bottom action'),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    child: const SizedBox(
+                      width: 100,
+                      height: 24,
+                      child: Text('Mid trigger'),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+      final mouse = await mouseAt(
+        tester,
+        tester.getCenter(find.text('Mid trigger')),
+      );
+      try {
+        await tester.pump(const Duration(milliseconds: 210));
+        await tester.pump(const Duration(milliseconds: 300));
+        final surface = tester.getRect(
+          find.byKey(const ValueKey('raft-hover-card-surface')),
+        );
+        final action = tester.getRect(
+          find.byKey(const ValueKey('tall-card-bottom-action')),
+        );
+        expect(surface.top, greaterThanOrEqualTo(6));
+        expect(surface.bottom, lessThanOrEqualTo(794));
+        expect(action.top, greaterThanOrEqualTo(surface.top));
+        expect(action.bottom, lessThanOrEqualTo(surface.bottom));
+        await tester.tap(find.byKey(const ValueKey('tall-card-bottom-action')));
+        await tester.pump();
+        expect(tapped, 1);
+      } finally {
+        await settle(tester, mouse);
+      }
+    },
+  );
 }

@@ -1,7 +1,10 @@
+import 'dart:math' as math;
+
 import 'interaction.dart';
 import 'hover_region.dart';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 
 import 'copyable_code.dart';
 import 'raft/badge.dart' show RaftBadge;
@@ -301,79 +304,104 @@ class RaftRuntimeUsageSurface extends StatelessWidget {
     final authOnly = data.provider == null || data.state == 'unsupported';
     final usageShowsAccount = showsUsage && data.accounts.isNotEmpty;
     final readiness = data.readiness;
-    return Column(
-      key: ValueKey(
-        data.provider != null
-            ? 'runtime-usage-surface-${data.provider!.toLowerCase()}'
-            : 'runtime-auth-surface-${data.runtimeId ?? data.name}',
-      ),
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          decoration: BoxDecoration(border: Border(bottom: hairline)),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      showsUsage
-                          ? raftFormat(context, '{runtime} usage', {
-                              'runtime': data.name,
-                            })
-                          : data.name,
-                      key: const ValueKey('runtime-usage-title'),
-                      style: ink.sans(14, 20, ink.strong, FontWeight.w900),
-                    ),
-                    if (auth != null)
-                      _AuthHeaderLine(
-                        auth: auth,
-                        usageShowsAccount: usageShowsAccount,
-                        authOnly: authOnly,
-                      ),
-                    if (data.version?.trim().isNotEmpty == true)
-                      Text(
-                        data.version!.trim(),
-                        key: const ValueKey('runtime-usage-version'),
-                        style: ink
-                            .sans(10, 15, ink.hint, FontWeight.w400)
-                            .copyWith(fontFamily: t.monoFont),
-                      ),
-                    Text(
-                      raftText(
-                        context,
-                        'Visible to server admins and the person who connected this Computer',
-                      ),
-                      style: ink.sans(11, 16.5, ink.hint),
-                    ),
-                  ],
+    final surfaceKey = ValueKey(
+      data.provider != null
+          ? 'runtime-usage-surface-${data.provider!.toLowerCase()}'
+          : 'runtime-auth-surface-${data.runtimeId ?? data.name}',
+    );
+    final header = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(border: Border(bottom: hairline)),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  showsUsage
+                      ? raftFormat(context, '{runtime} usage', {
+                          'runtime': data.name,
+                        })
+                      : data.name,
+                  key: const ValueKey('runtime-usage-title'),
+                  style: ink.sans(14, 20, ink.strong, FontWeight.w900),
                 ),
-              ),
-              const SizedBox(width: 12),
-              RaftCloseButton(
-                onPressed: onClose,
-                tooltip: 'Close runtime usage',
-              ),
-            ],
+                if (auth != null)
+                  _AuthHeaderLine(
+                    auth: auth,
+                    usageShowsAccount: usageShowsAccount,
+                    authOnly: authOnly,
+                  ),
+                if (data.version?.trim().isNotEmpty == true)
+                  Text(
+                    data.version!.trim(),
+                    key: const ValueKey('runtime-usage-version'),
+                    style: ink
+                        .sans(10, 15, ink.hint, FontWeight.w400)
+                        .copyWith(fontFamily: t.monoFont),
+                  ),
+                Text(
+                  raftText(
+                    context,
+                    'Visible to server admins and the person who connected this Computer',
+                  ),
+                  style: ink.sans(11, 16.5, ink.hint),
+                ),
+              ],
+            ),
           ),
-        ),
-        if (readiness != null) _ReadinessNotice(notice: readiness, ink: ink),
-        if (showsUsage) _contents(context, ink),
-        if (showsUsage)
-          _actions(context, ink, hairline)
-        else ...[
-          if (auth != null) _providerRows(context, ink, auth),
-          if (_authAction(context, ink, auth) case final action?)
-            Padding(
+          const SizedBox(width: 12),
+          RaftCloseButton(onPressed: onClose, tooltip: 'Close runtime usage'),
+        ],
+      ),
+    );
+    final bodyChildren = <Widget>[
+      if (readiness != null) _ReadinessNotice(notice: readiness, ink: ink),
+      if (showsUsage)
+        _contents(context, ink)
+      else if (auth != null)
+        _providerRows(context, ink, auth),
+    ];
+    final Widget? footer = showsUsage
+        ? _actions(context, ink, hairline)
+        : switch (_authAction(context, ink, auth)) {
+            final action? => Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               child: Align(alignment: Alignment.centerLeft, child: action),
             ),
-        ],
-      ],
+            null => null,
+          };
+    final Widget? body = switch (bodyChildren.length) {
+      0 => null,
+      1 => bodyChildren.first,
+      _ => Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: bodyChildren,
+      ),
+    };
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (!constraints.hasBoundedHeight || !constraints.hasBoundedWidth) {
+          return Column(
+            key: surfaceKey,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
+            children: [header, ?body, ?footer],
+          );
+        }
+        return SingleChildScrollView(
+          child: _PinnedUsageLayout(
+            key: surfaceKey,
+            maxHeight: constraints.maxHeight,
+            header: header,
+            body: body == null ? null : SingleChildScrollView(child: body),
+            footer: footer,
+          ),
+        );
+      },
     );
   }
 
@@ -758,7 +786,8 @@ class RaftRuntimeUsageSurface extends StatelessWidget {
     final note = switch (account.health) {
       'unsupported' => null,
       'error' => 'Cached usage could not be read.',
-      'reauth_required' => 'Sign in again on this Computer. Last-known percentages are hidden until the provider authenticates.',
+      'reauth_required' =>
+        'Sign in again on this Computer. Last-known percentages are hidden until the provider authenticates.',
       _ => '',
     };
     final resets = account.resetsText;
@@ -873,8 +902,11 @@ class RaftRuntimeUsageSurface extends StatelessWidget {
     RaftRuntimeUsageWindow window,
   ) {
     if (window.status == 'parse_unavailable') {
-      return Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      return Wrap(
+        alignment: WrapAlignment.spaceBetween,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        spacing: 12,
+        runSpacing: 2,
         children: [
           Text(
             window.label,
@@ -905,19 +937,20 @@ class RaftRuntimeUsageSurface extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Row(
+        Wrap(
+          alignment: WrapAlignment.spaceBetween,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          spacing: 12,
+          runSpacing: 2,
           children: [
             Text(
               window.label,
               style: ink.sans(12, 16, ink.strong, FontWeight.w600),
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                value,
-                textAlign: TextAlign.right,
-                style: ink.sans(12, 16, ink.muted),
-              ),
+            Text(
+              value,
+              textAlign: TextAlign.right,
+              style: ink.sans(12, 16, ink.muted),
             ),
           ],
         ),
@@ -1233,12 +1266,10 @@ class _RaftRuntimeUsageChipState extends State<RaftRuntimeUsageChip> {
             width: width.toDouble(),
             padding: EdgeInsets.zero,
             clip: true,
-            child: SingleChildScrollView(
-              child: RaftRuntimeUsageSurface(
-                data: widget.data,
-                onRefresh: widget.onRefresh,
-                onClose: card.close,
-              ),
+            child: RaftRuntimeUsageSurface(
+              data: widget.data,
+              onRefresh: widget.onRefresh,
+              onClose: card.close,
             ),
           ),
         );
@@ -1342,12 +1373,10 @@ class RaftRuntimeUsageSheet extends StatelessWidget {
             width: double.infinity,
             padding: EdgeInsets.zero,
             clip: true,
-            child: SingleChildScrollView(
-              child: RaftRuntimeUsageSurface(
-                data: data,
-                onRefresh: onRefresh,
-                onClose: onClose,
-              ),
+            child: RaftRuntimeUsageSurface(
+              data: data,
+              onRefresh: onRefresh,
+              onClose: onClose,
             ),
           ),
         ),
@@ -1382,3 +1411,144 @@ Future<void> showRaftRuntimeUsageSheet(
     ),
   ),
 );
+
+enum _UsageSlot { header, body, footer }
+
+class _PinnedUsageLayout
+    extends SlottedMultiChildRenderObjectWidget<_UsageSlot, RenderBox> {
+  const _PinnedUsageLayout({
+    super.key,
+    required this.maxHeight,
+    required this.header,
+    this.body,
+    this.footer,
+  });
+
+  final double maxHeight;
+  final Widget header;
+  final Widget? body;
+  final Widget? footer;
+
+  @override
+  Iterable<_UsageSlot> get slots => _UsageSlot.values;
+
+  @override
+  Widget? childForSlot(_UsageSlot slot) => switch (slot) {
+    _UsageSlot.header => header,
+    _UsageSlot.body => body,
+    _UsageSlot.footer => footer,
+  };
+
+  @override
+  _RenderPinnedUsageLayout createRenderObject(BuildContext context) =>
+      _RenderPinnedUsageLayout(maxHeight: maxHeight);
+
+  @override
+  void updateRenderObject(
+    BuildContext context,
+    _RenderPinnedUsageLayout renderObject,
+  ) {
+    renderObject.maxHeight = maxHeight;
+  }
+}
+
+class _RenderPinnedUsageLayout extends RenderBox
+    with SlottedContainerRenderObjectMixin<_UsageSlot, RenderBox> {
+  _RenderPinnedUsageLayout({required double maxHeight})
+    : _maxHeight = maxHeight;
+
+  double _maxHeight;
+  set maxHeight(double value) {
+    if (_maxHeight == value) return;
+    _maxHeight = value;
+    markNeedsLayout();
+  }
+
+  RenderBox? get _header => childForSlot(_UsageSlot.header);
+  RenderBox? get _body => childForSlot(_UsageSlot.body);
+  RenderBox? get _footer => childForSlot(_UsageSlot.footer);
+
+  @override
+  void setupParentData(RenderBox child) {
+    if (child.parentData is! BoxParentData) {
+      child.parentData = BoxParentData();
+    }
+  }
+
+  double _layoutChild(RenderBox? child, BoxConstraints c) {
+    if (child == null) return 0;
+    child.layout(c, parentUsesSize: true);
+    return child.size.height;
+  }
+
+  void _positionChild(RenderBox? child, double y) {
+    if (child == null) return;
+    (child.parentData! as BoxParentData).offset = Offset(0, y);
+  }
+
+  @override
+  void performLayout() {
+    final width = constraints.maxWidth;
+    final looseWidth = BoxConstraints.tightFor(width: width);
+    final headerHeight = _layoutChild(_header, looseWidth);
+    final footerHeight = _layoutChild(_footer, looseWidth);
+    final remaining = _maxHeight - headerHeight - footerHeight;
+    final bodyConstraints = remaining > 0
+        ? BoxConstraints(minWidth: width, maxWidth: width, maxHeight: remaining)
+        : looseWidth;
+    final bodyHeight = _layoutChild(_body, bodyConstraints);
+    _positionChild(_header, 0);
+    _positionChild(_body, headerHeight);
+    _positionChild(_footer, headerHeight + bodyHeight);
+    size = constraints.constrain(
+      Size(width, headerHeight + bodyHeight + footerHeight),
+    );
+  }
+
+  @override
+  double computeMinIntrinsicWidth(double height) => children.fold(
+    0,
+    (maxWidth, child) => math.max(maxWidth, child.getMinIntrinsicWidth(height)),
+  );
+
+  @override
+  double computeMaxIntrinsicWidth(double height) => children.fold(
+    0,
+    (maxWidth, child) => math.max(maxWidth, child.getMaxIntrinsicWidth(height)),
+  );
+
+  @override
+  double computeMinIntrinsicHeight(double width) => children.fold(
+    0,
+    (sum, child) => sum + child.getMinIntrinsicHeight(width),
+  );
+
+  @override
+  double computeMaxIntrinsicHeight(double width) => children.fold(
+    0,
+    (sum, child) => sum + child.getMaxIntrinsicHeight(width),
+  );
+
+  @override
+  void paint(PaintingContext context, Offset offset) {
+    for (final child in children) {
+      final parentData = child.parentData! as BoxParentData;
+      context.paintChild(child, offset + parentData.offset);
+    }
+  }
+
+  @override
+  bool hitTestChildren(BoxHitTestResult result, {required Offset position}) {
+    for (final child in children.toList().reversed) {
+      final parentData = child.parentData! as BoxParentData;
+      final hit = result.addWithPaintOffset(
+        offset: parentData.offset,
+        position: position,
+        hitTest: (result, transformed) =>
+            child.hitTest(result, position: transformed),
+      );
+      if (hit) return true;
+    }
+    return false;
+  }
+}

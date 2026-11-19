@@ -422,7 +422,8 @@ class _RaftHoverCardState extends State<RaftHoverCard>
   }
 
   Widget _overlay(BuildContext overlayContext) {
-    final root = Overlay.of(context).context.findRenderObject();
+    final overlay = Overlay.of(context);
+    final root = overlay.context.findRenderObject();
     if (root is! RenderBox || !root.hasSize) return const SizedBox.shrink();
     final rect = _anchorRect(root);
     if (rect == null) return const SizedBox.shrink();
@@ -444,12 +445,20 @@ class _RaftHoverCardState extends State<RaftHoverCard>
     } else if (widget.width != null) {
       card = SizedBox(width: widget.width, child: card);
     }
+    final overlayMetrics = MediaQuery.of(overlay.context);
+    final insets = overlayMetrics.padding.copyWith(
+      bottom: math.max(
+        overlayMetrics.padding.bottom,
+        overlayMetrics.viewInsets.bottom,
+      ),
+    );
     final placement = _HoverCardPlacement(
       anchor: rect,
       side: widget.side,
       align: widget.align,
       sideOffset: widget.sideOffset,
       padding: widget.collisionPadding,
+      insets: insets,
     );
     card = _HoverCardScope(
       state: this,
@@ -531,11 +540,13 @@ class _HoverCardPlacement extends SingleChildLayoutDelegate {
     required this.align,
     required this.sideOffset,
     required this.padding,
+    required this.insets,
   });
   final Rect anchor;
   final RaftHoverCardSide side;
   final RaftHoverCardAlign align;
   final double sideOffset, padding;
+  final EdgeInsets insets;
   bool below = true;
 
   Alignment get origin => switch ((below, align)) {
@@ -548,16 +559,15 @@ class _HoverCardPlacement extends SingleChildLayoutDelegate {
   };
 
   double _below(Size size) =>
-      size.height - padding - anchor.bottom - sideOffset;
-  double _above() => anchor.top - sideOffset - padding;
+      size.height - insets.bottom - padding - anchor.bottom - sideOffset;
+  double _above() => anchor.top - sideOffset - insets.top - padding;
 
   @override
   BoxConstraints getConstraintsForChild(BoxConstraints constraints) {
     final size = constraints.biggest;
-    final room = math.max(_below(size), _above());
     return BoxConstraints(
-      maxWidth: math.max(0, size.width - padding * 2),
-      maxHeight: math.max(0, room),
+      maxWidth: math.max(0, size.width - insets.horizontal - padding * 2),
+      maxHeight: math.max(0, size.height - insets.vertical - padding * 2),
     );
   }
 
@@ -567,6 +577,16 @@ class _HoverCardPlacement extends SingleChildLayoutDelegate {
     below = side == RaftHoverCardSide.bottom
         ? child.height <= roomBelow || roomBelow >= roomAbove
         : !(child.height <= roomAbove || roomAbove >= roomBelow);
+    final minX = insets.left + padding;
+    final minY = insets.top + padding;
+    final maxX = math.max(
+      minX,
+      size.width - insets.right - padding - child.width,
+    );
+    final maxY = math.max(
+      minY,
+      size.height - insets.bottom - padding - child.height,
+    );
     final x = switch (align) {
       RaftHoverCardAlign.start => anchor.left,
       RaftHoverCardAlign.center => anchor.center.dx - child.width / 2,
@@ -575,10 +595,7 @@ class _HoverCardPlacement extends SingleChildLayoutDelegate {
     final y = below
         ? anchor.bottom + sideOffset
         : anchor.top - sideOffset - child.height;
-    return Offset(
-      x.clamp(padding, math.max(padding, size.width - padding - child.width)),
-      y.clamp(padding, math.max(padding, size.height - padding - child.height)),
-    );
+    return Offset(x.clamp(minX, maxX), y.clamp(minY, maxY));
   }
 
   @override
@@ -587,7 +604,8 @@ class _HoverCardPlacement extends SingleChildLayoutDelegate {
       side != old.side ||
       align != old.align ||
       sideOffset != old.sideOffset ||
-      padding != old.padding;
+      padding != old.padding ||
+      insets != old.insets;
 }
 
 /// Tailwind `group-hover:` / `group-focus-within:` reveal: [control] paints

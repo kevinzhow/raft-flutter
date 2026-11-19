@@ -4,6 +4,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
 
+import 'task_typography_test.dart' show loadTaskFonts;
+
 Widget surfaceHost(Widget child) => MaterialApp(
   theme: raftTheme(),
   home: Scaffold(body: Center(child: child)),
@@ -445,6 +447,287 @@ void main() {
       expect(find.text('No snapshot yet'), findsOneWidget);
       await finish(tester, mouse);
     });
+
+    RaftRuntimeUsageData fiveWindowData() => const RaftRuntimeUsageData(
+      provider: 'Antigravity',
+      runtimeName: 'Antigravity CLI',
+      version: '1.5.10',
+      state: 'fresh',
+      updated: '10 minutes ago',
+      accounts: [
+        RaftRuntimeUsageAccount(
+          health: 'ok',
+          windows: [
+            RaftRuntimeUsageWindow(
+              label: 'Gemini Models · Weekly Limit Remaining',
+              status: 'ok',
+              percent: 2,
+              reset: 'in 7 days',
+            ),
+            RaftRuntimeUsageWindow(
+              label: 'Gemini Models · Five Hour Limit Remaining',
+              status: 'ok',
+              percent: 4,
+              reset: 'in 5 hours',
+            ),
+            RaftRuntimeUsageWindow(
+              label: 'Claude and GPT models · Weekly Limit Remaining',
+              status: 'ok',
+              percent: 0,
+              reset: 'in 7 days',
+            ),
+            RaftRuntimeUsageWindow(
+              label: 'Claude and GPT models · Five Hour Limit Remaining',
+              status: 'ok',
+              percent: 0,
+              reset: 'in 5 hours',
+            ),
+            RaftRuntimeUsageWindow(
+              label: 'Gemini 4 Argon · Gemini 4 Argon Weekly Limit',
+              status: 'ok',
+              percent: 0,
+              reset: 'in 7 days',
+            ),
+          ],
+        ),
+      ],
+    );
+
+    Widget positionedChip(
+      RaftRuntimeUsageData value, {
+      required double top,
+      required VoidCallback onRefresh,
+    }) => MaterialApp(
+      theme: raftTheme(),
+      home: Scaffold(
+        body: RaftInteractionScope(
+          interaction: RaftInteraction.pointerMode,
+          child: Stack(
+            children: [
+              Positioned(
+                left: 120,
+                top: top,
+                child: RaftRuntimeUsageChip(
+                  label: 'Antigravity CLI',
+                  data: value,
+                  onOpen: () {},
+                  onRefresh: onRefresh,
+                  chip: RaftRuntimeChip(
+                    label: 'Antigravity CLI',
+                    detected: true,
+                    trailing: RaftRuntimeUsageStatus(
+                      attention: value.attention,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    testWidgets(
+      'five-window usage card near vertical midpoint keeps bottom actions unclipped and clickable',
+      (tester) async {
+        tester.view.physicalSize = const Size(1280, 800);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.reset);
+        await loadTaskFonts(tester);
+        var refreshes = 0;
+        await tester.pumpWidget(
+          positionedChip(
+            fiveWindowData(),
+            top: 468,
+            onRefresh: () => refreshes++,
+          ),
+        );
+        await tester.tap(find.text('Antigravity CLI'));
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+        final card = tester.getRect(
+          find.byKey(const ValueKey('runtime-usage-card')),
+        );
+        final actions = tester.getRect(
+          find.byKey(const ValueKey('runtime-usage-actions')),
+        );
+        final refresh = tester.getRect(
+          find.byKey(const ValueKey('runtime-usage-refresh')),
+        );
+        expect(card.top, greaterThanOrEqualTo(8));
+        expect(card.bottom, lessThanOrEqualTo(792));
+        expect(actions.bottom, lessThanOrEqualTo(card.bottom));
+        expect(refresh.top, greaterThanOrEqualTo(card.top));
+        expect(refresh.bottom, lessThanOrEqualTo(card.bottom));
+        await tester.tap(find.byKey(const ValueKey('runtime-usage-refresh')));
+        await tester.pump();
+        expect(refreshes, 1);
+      },
+    );
+
+    testWidgets(
+      'compact desktop viewport keeps bottom actions pinned and clickable while usage body scrolls',
+      (tester) async {
+        tester.view.physicalSize = const Size(900, 420);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.reset);
+        await loadTaskFonts(tester);
+        var refreshes = 0;
+        await tester.pumpWidget(
+          positionedChip(
+            fiveWindowData(),
+            top: 200,
+            onRefresh: () => refreshes++,
+          ),
+        );
+        await tester.tap(find.text('Antigravity CLI'));
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+        final card = tester.getRect(
+          find.byKey(const ValueKey('runtime-usage-card')),
+        );
+        final refresh = tester.getRect(
+          find.byKey(const ValueKey('runtime-usage-refresh')),
+        );
+        expect(card.top, greaterThanOrEqualTo(8));
+        expect(card.bottom, lessThanOrEqualTo(412));
+        expect(refresh.top, greaterThanOrEqualTo(card.top));
+        expect(refresh.bottom, lessThanOrEqualTo(card.bottom));
+        await tester.tap(find.byKey(const ValueKey('runtime-usage-refresh')));
+        await tester.pump();
+        expect(refreshes, 1);
+
+        await tester.drag(
+          find.text('Gemini Models · Weekly Limit Remaining'),
+          const Offset(0, -240),
+        );
+        await tester.pumpAndSettle();
+        final fifthWindow = tester.getRect(
+          find.text('Gemini 4 Argon · Gemini 4 Argon Weekly Limit'),
+        );
+        final actionsAfterScroll = tester.getRect(
+          find.byKey(const ValueKey('runtime-usage-actions')),
+        );
+        expect(fifthWindow.bottom, lessThanOrEqualTo(actionsAfterScroll.top));
+        expect(actionsAfterScroll.bottom, lessThanOrEqualTo(card.bottom));
+      },
+    );
+
+    testWidgets(
+      'compact landscape mobile sheet keeps bottom actions pinned and clickable',
+      (tester) async {
+        tester.view.physicalSize = const Size(844, 390);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.reset);
+        await loadTaskFonts(tester);
+        var sheetRefreshes = 0;
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: raftTheme().copyWith(platform: TargetPlatform.android),
+            home: Scaffold(
+              body: RaftRuntimeUsageSheet(
+                data: fiveWindowData(),
+                onRefresh: () => sheetRefreshes++,
+                onClose: () {},
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+        final sheet = tester.getRect(
+          find.byKey(const ValueKey('runtime-usage-sheet')),
+        );
+        final sheetRefresh = tester.getRect(
+          find.byKey(const ValueKey('runtime-usage-refresh')),
+        );
+        expect(sheetRefresh.top, greaterThanOrEqualTo(sheet.top));
+        expect(sheetRefresh.bottom, lessThanOrEqualTo(sheet.bottom));
+        await tester.tap(find.byKey(const ValueKey('runtime-usage-refresh')));
+        await tester.pump();
+        expect(sheetRefreshes, 1);
+      },
+    );
+
+    testWidgets(
+      'narrow desktop window and short viewport with tall footer do not clip or overflow',
+      (tester) async {
+        tester.view.physicalSize = const Size(390, 844);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.reset);
+        await loadTaskFonts(tester);
+        var refreshes = 0;
+        await tester.pumpWidget(
+          positionedChip(
+            fiveWindowData(),
+            top: 468,
+            onRefresh: () => refreshes++,
+          ),
+        );
+        await tester.tap(find.text('Antigravity CLI'));
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+        final card = tester.getRect(
+          find.byKey(const ValueKey('runtime-usage-card')),
+        );
+        final refresh = tester.getRect(
+          find.byKey(const ValueKey('runtime-usage-refresh')),
+        );
+        expect(refresh.top, greaterThanOrEqualTo(card.top));
+        expect(refresh.bottom, lessThanOrEqualTo(card.bottom));
+        await tester.tap(find.byKey(const ValueKey('runtime-usage-refresh')));
+        await tester.pump();
+        expect(refreshes, 1);
+
+        await tester.pumpWidget(const SizedBox());
+        tester.view.physicalSize = const Size(420, 180);
+        var shortRefreshes = 0;
+        final tallFooterData = RaftRuntimeUsageData(
+          provider: 'Antigravity',
+          runtimeName: 'Antigravity CLI',
+          version: '1.5.10',
+          state: 'fresh',
+          updated: '10 minutes ago',
+          statusText: 'Refresh requested just now',
+          accounts: fiveWindowData().accounts,
+          claudeLimitReset: RaftRuntimeClaudeLimitReset(
+            onView: () {},
+            onUseFiveHour: () {},
+            ownerOnly: true,
+          ),
+          auth: const RaftRuntimeAuthData(
+            runtime: 'antigravity',
+            status: 'logged_in',
+            action: RaftRuntimeAuthActionKind.unavailable,
+            unavailableText: 'Install a newer CLI to sign in from Raft.',
+            installCommand: 'curl -fsSL https://example.invalid/install | sh',
+          ),
+        );
+        await tester.pumpWidget(
+          positionedChip(
+            tallFooterData,
+            top: 90,
+            onRefresh: () => shortRefreshes++,
+          ),
+        );
+        await tester.tap(find.text('Antigravity CLI'));
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+        expect(
+          find.byKey(const ValueKey('runtime-usage-card')),
+          findsOneWidget,
+        );
+        await tester.scrollUntilVisible(
+          find.byKey(const ValueKey('runtime-usage-refresh')),
+          100,
+          scrollable: find.byType(Scrollable).first,
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const ValueKey('runtime-usage-refresh')));
+        await tester.pump();
+        expect(shortRefreshes, 1);
+      },
+    );
   });
 
   group('hover-revealed code copy', () {
