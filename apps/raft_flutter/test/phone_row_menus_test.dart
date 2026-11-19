@@ -520,27 +520,40 @@ void main() {
     tester,
   ) async {
     await setup(tester);
-    api.routes['GET /channels'] = (_) => [
-      {'id': 'c2', 'name': 'random', 'joined': true},
-    ];
+    final archive = Completer<void>();
+    var channelListReads = 0;
+    api.routes['GET /channels'] = (_) {
+      channelListReads++;
+      return [];
+    };
+    api.routes['POST /channels/c1/archive'] = (request) async {
+      posts.add({'path': request.path});
+      await archive.future;
+      return {'id': 'c1', 'archivedAt': '2026-11-19T00:00:00Z'};
+    };
     await longPress(tester, row('c1'));
     await tester.tap(find.text('Archive channel'));
     await tester.pumpAndSettle();
-    expect(find.text('Archive channel'), findsWidgets);
+    expect(find.text('Archive channel'), findsOneWidget);
     expect(
       find.textContaining('Archive "general"? Members keep read access'),
       findsOneWidget,
     );
     expect(posts, isEmpty, reason: 'nothing before the confirmation');
-    await tester.tap(find.text('Keep Channel'));
+    await tester.tap(find.text('Cancel'));
     await tester.pumpAndSettle();
     expect(posts, isEmpty);
     await longPress(tester, row('c1'));
     await tester.tap(find.text('Archive channel'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Archive channel').last);
+    await tester.tap(find.text('Archive'));
+    await tester.pump();
+    expect(find.text('Archiving…'), findsOneWidget);
+    archive.complete();
     await tester.pumpAndSettle();
     expect(posts.map((p) => p['path']), ['/channels/c1/archive']);
+    expect(row('c1'), findsNothing);
+    expect(channelListReads, 0);
   });
 
   testWidgets('a failed Archive keeps the dialog open with the error', (
@@ -551,7 +564,7 @@ void main() {
     await longPress(tester, row('c1'));
     await tester.tap(find.text('Archive channel'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Archive channel').last);
+    await tester.tap(find.text('Archive'));
     await tester.pumpAndSettle();
     expect(find.text('Archive channel'), findsWidgets);
     expect(find.text('Unexpected endpoint'), findsOneWidget);

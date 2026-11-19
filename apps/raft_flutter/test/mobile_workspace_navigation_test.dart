@@ -717,7 +717,7 @@ void main() {
       );
       expect(
         (sidebar.slivers.first as SliverPadding).padding,
-        const EdgeInsetsDirectional.fromSTEB(8, 4, 8, 8),
+        const EdgeInsetsDirectional.all(8),
       );
       final channelRow = find.byKey(const ValueKey('sidebar-channel-c'));
       expect(
@@ -780,8 +780,9 @@ void main() {
       }
 
       expect(
-        groupRect('pinned').top,
-        tester.getRect(find.byKey(const Key('nav-saved'))).bottom,
+        groupRect('pinned').top -
+            tester.getRect(find.byKey(const Key('nav-saved'))).bottom,
+        RaftSpace.x1,
       );
       expect(tester.getRect(section).top, groupRect('joint').bottom);
       expect(tester.getRect(disclosure).top - tester.getRect(section).top, 16);
