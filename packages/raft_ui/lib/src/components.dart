@@ -3758,10 +3758,6 @@ class _MentionSuggestionBody extends StatelessWidget {
                     (hasServer ? 6 : 0))
                 .clamp(0.0, 192.0);
         final titleText = s.title?.isNotEmpty == true ? s.title! : s.name;
-        // CSS flex: the description and the source server are both
-        // `flex-1 basis-0 min-w-0`; the server also has `max-w-[10rem]`. They
-        // split the free space evenly, and a server capped at 10rem hands the
-        // rest to the description.
         var serverWidth = 0.0;
         if (hasServer) {
           final titlePainter = TextPainter(

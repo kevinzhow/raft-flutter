@@ -207,9 +207,9 @@ void main() {
     expect(find.text('Ada Slack'), findsNothing);
   });
 
-  for (final (width, capped) in [(1000.0, true), (520.0, false)]) {
+  for (final width in [1000.0, 520.0]) {
     testWidgets(
-      'description and source server split the row like Web at $width',
+      'the v1.24 source server is capped before the description at $width',
       (t) async {
         t.view.physicalSize = Size(width, 700);
         t.view.devicePixelRatio = 1;
@@ -242,30 +242,19 @@ void main() {
         );
         await t.enterText(find.byType(TextField), '@');
         await t.pumpAndSettle();
-        final server = t.getSize(
-          find.byKey(const ValueKey('mention-source-server')),
+        final server = find.byKey(const ValueKey('mention-source-server'));
+        final description = find.textContaining('dddd');
+        final handle = find.text('@ann');
+        expect(t.getSize(server).width, 128);
+        expect(t.getSize(description).width, greaterThan(128));
+        expect(
+          t.getTopLeft(description).dx - t.getTopRight(server).dx,
+          closeTo(6, 0.5),
         );
-        final description = t.getSize(find.textContaining('dddd'));
-        // flex-1 basis-0 on both: an even split, unless the server hits its
-        // 10rem cap, which hands the rest to the description.
-        if (capped) {
-          expect(server.width, 160);
-          expect(description.width, greaterThan(server.width));
-          // The description took the rest: the capped server sits 6px from
-          // the @handle instead of leaving its half of the row blank.
-          expect(
-            t.getTopLeft(find.text('@ann')).dx -
-                t
-                    .getTopRight(
-                      find.byKey(const ValueKey('mention-source-server')),
-                    )
-                    .dx,
-            closeTo(6, 0.5),
-          );
-        } else {
-          expect(server.width, lessThan(160));
-          expect(server.width, closeTo(description.width, 1));
-        }
+        expect(
+          t.getTopLeft(handle).dx - t.getTopRight(description).dx,
+          closeTo(6, 0.5),
+        );
       },
     );
   }
