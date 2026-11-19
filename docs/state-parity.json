@@ -47015,7 +47015,7 @@
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
-      "apps/raft_flutter/lib/features/fleet_views.dart#local-function:FUNCTION:showCredential@3786/FUNCTION:builder@4071": {
+      "apps/raft_flutter/lib/features/fleet_views.dart#local-function:FUNCTION:showCredential@3862/FUNCTION:builder@4147": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
@@ -56262,7 +56262,7 @@
           "banner"
         ]
       },
-      "apps/raft_flutter/lib/features/message_action_card.dart#local-function:CLASS:_MessageActionCardState@3113/METHOD:_body@27982/FUNCTION:field@28023": {
+      "apps/raft_flutter/lib/features/message_action_card.dart#local-function:CLASS:_MessageActionCardState@3189/METHOD:_body@28058/FUNCTION:field@28099": {
         "owner": "WP-ACTION",
         "role": "entry_composition",
         "familyRefs": [
@@ -56271,7 +56271,7 @@
           "dialog"
         ]
       },
-      "apps/raft_flutter/lib/features/message_action_card.dart#local-function:CLASS:_MessageActionCardState@3113/METHOD:_body@27982/FUNCTION:maybe@28126": {
+      "apps/raft_flutter/lib/features/message_action_card.dart#local-function:CLASS:_MessageActionCardState@3189/METHOD:_body@28058/FUNCTION:maybe@28202": {
         "owner": "WP-ACTION",
         "role": "entry_composition",
         "familyRefs": [
