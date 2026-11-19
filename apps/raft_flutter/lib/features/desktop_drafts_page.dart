@@ -203,14 +203,16 @@ class _DraftsPageState extends State<DraftsPage> {
         final result = await w.query(
           '/channels/${Uri.encodeComponent(channelId)}',
         );
-        if (result is! Map<String, dynamic> || result['id'] != channelId)
+        if (result is! Map<String, dynamic> || result['id'] != channelId) {
           return null;
+        }
         channel = RaftChannel(result);
       }
       if (channel.type == 'thread' ||
           channel.type == 'task' ||
-          !w.can('viewChannel', resource: channel))
+          !w.can('viewChannel', resource: channel)) {
         return null;
+      }
       return (entry: entry, channel: channel, parentMessage: parentMessage);
     } on RaftApiException {
       return null;
@@ -260,10 +262,16 @@ class _DraftsPageState extends State<DraftsPage> {
                   key: const ValueKey('drafts-list-scroller'),
                   padding: raftScrollPadding(
                     context,
-                    const EdgeInsets.fromLTRB(8, 8, 8, 0),
+                    const EdgeInsets.fromLTRB(
+                      RaftSpace.x2,
+                      RaftSpace.x2,
+                      RaftSpace.x2,
+                      0,
+                    ),
                   ),
                   itemCount: count,
-                  separatorBuilder: (_, _) => const SizedBox(height: 2),
+                  separatorBuilder: (_, _) =>
+                      const SizedBox(height: RaftSpace.half),
                   itemBuilder: (context, index) => _row(context, rows[index]),
                 ),
                 _ => const SizedBox.shrink(),
@@ -277,7 +285,7 @@ class _DraftsPageState extends State<DraftsPage> {
 
   Widget _row(BuildContext context, _PlacedDraft row) {
     final name = row.channel.type == 'dm'
-        ? row.channel.string('peerDisplayName') ?? row.channel.name
+        ? row.channel.string('peerDisplayName', row.channel.name)
         : '#${row.channel.name}';
     final title = row.parentMessage == null
         ? name
@@ -303,7 +311,7 @@ class _DraftsPageState extends State<DraftsPage> {
       body: Row(
         children: [
           const RaftIcon(RaftGlyph.pencil, size: 14),
-          const SizedBox(width: 4),
+          const SizedBox(width: RaftSpace.x1),
           Expanded(
             child: Text(text, maxLines: 1, overflow: TextOverflow.ellipsis),
           ),
@@ -313,8 +321,9 @@ class _DraftsPageState extends State<DraftsPage> {
       timestampAtRest: true,
       onOpen: () {
         if (identity != pageIdentity(w) ||
-            !w.can('viewChannel', resource: row.channel))
+            !w.can('viewChannel', resource: row.channel)) {
           return;
+        }
         if (row.parentMessage case final message?) {
           unawaited(
             w.openThreadIdentity(

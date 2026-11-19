@@ -231,7 +231,7 @@ String selectedMessagesMarkdown(
     });
   return [
     for (final (_, row) in ordered)
-      '${row.isThreadChild ? '  ↳ ' : ''}**${row.message.string('senderName') ?? unknown}**: ${row.message.content.trim()}',
+      '${row.isThreadChild ? '  ↳ ' : ''}**${row.message.string('senderName', unknown)}**: ${row.message.content.trim()}',
   ].join('\n\n');
 }
 

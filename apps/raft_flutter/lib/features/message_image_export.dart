@@ -461,7 +461,8 @@ class _MessageImageReviewState extends State<MessageImageReview> {
           );
           if (!current || saved == null) return;
         }
-        if (pages.length == 1 &&
+        if (mounted &&
+            pages.length == 1 &&
             current &&
             ModalRoute.of(context)?.isCurrent == true) {
           Navigator.pop(context, true);
