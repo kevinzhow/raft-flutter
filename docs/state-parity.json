@@ -3,6 +3,18 @@
   "_doc": "State parity inventory (loading / empty / error / partial) per screen and panel. Read by apps/raft_flutter/test/state_parity_guard_test.dart. screens[].states[]: state = loading|empty|error|partial; variant = optional short text; web = yes|no (does the Web component render a DISTINCT such state); flutter = yes|partial|missing; parityCase = case ids or globs without the theme suffix (e.g. components.list-pages.saved.phone-*); status = covered (needs >=1 parityCase that resolves) | gap (needs justification and size S|M|L) | intentional / na (need justification) | fixing (being fixed in the current branch: needs justification and parityCase; resolution is skipped until it is flipped to covered). Optional: gapKind = case-missing (Flutter has it, no case) | impl-diff (Flutter differs from Web) | invalid-case (case exists but the Web capture does not show the state); caseValidity = react-checked (the cached React capture was inspected and shows the state) | invalid | unchecked. navigationCoverage maps every NavigationRegistry section id and settings tab id to the screen ids that cover it (or a justification string). Add a screen entry (and its states) whenever a screen or panel is added; a registry id that is not mapped fails the guard.",
   "screens": [
     {
+      "id": "drafts.list",
+      "title": "Drafts",
+      "webEntry": "packages/web/src/components/drafts/DraftsPanel.tsx",
+      "flutterEntry": "apps/raft_flutter/lib/features/desktop_drafts_page.dart",
+      "states": [
+        {"state":"loading","web":"no","flutter":"yes","parityCase":[],"status":"intentional","justification":"The native route reads the local SQLite draft index asynchronously and keeps the list area blank until the initial read settles."},
+        {"state":"empty","web":"yes","flutter":"yes","parityCase":[],"status":"gap","gapKind":"case-missing","size":"S","justification":"An official empty Drafts case has not been assigned."},
+        {"state":"error","web":"no","flutter":"yes","parityCase":[],"status":"intentional","justification":"The native database can refuse a local read. The page reports the failure rather than showing an empty list."},
+        {"state":"partial","web":"yes","flutter":"partial","parityCase":[],"status":"gap","gapKind":"impl-diff","size":"S","justification":"Flutter places available drafts before showing the list. Web adds each draft as its conversation lookup completes."}
+      ]
+    },
+    {
       "id": "messages.app-link-card",
       "title": "App link previews, consent, and action status",
       "webEntry": "packages/web/src/components/message/AppLinkChip.tsx, AppLinkBlockCard.tsx, LinkPreviewConsentPrompt.tsx (Web 1.24.0)",
@@ -4804,6 +4816,9 @@
       ],
       "saved": [
         "saved.list"
+      ],
+      "drafts": [
+        "drafts.list"
       ],
       "settings": [
         "settings.nav"
@@ -56504,6 +56519,14 @@
         "declarationRefs": [],
         "mountStatus": "unresolved",
         "reason": "Existing lifecycle screen record; exact builder/family composition and current mounted state are not yet established."
+      },
+      "screen:drafts.list": {
+        "owner": "WP-COMPOSE",
+        "kind": "route_or_panel_candidate",
+        "lifecycleScreenId": "drafts.list",
+        "declarationRefs": [],
+        "mountStatus": "unresolved",
+        "reason": "The Drafts page uses the shared panel header and inbox row. Matched visual acceptance is pending."
       },
       "screen:tasks.list": {
         "owner": "Choice9 design-system alignment",

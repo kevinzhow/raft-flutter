@@ -95,7 +95,8 @@ import 'activity_first_unread.dart';
 import 'sidebar_reorder.dart';
 import 'sidebar_sort_menu.dart';
 import 'agent_avatar_projection.dart';
-import 'saved_sidebar_entry.dart';
+import 'desktop_drafts_page.dart';
+import 'saved_sidebar_entry.dart' show SavedCountStore;
 import 'system_notification_center.dart';
 import 'workspace_browser.dart';
 import 'workspace_channel_header.dart';
@@ -1544,6 +1545,8 @@ class _WorkspaceViewState extends State<WorkspaceView>
           ? shownConversation(conversation)
           : route == 'search' && channelSearchRevoked
           ? Center(child: Text(tr('Channel is no longer available')))
+          : route == draftsSection
+          ? workspaceDraftsPage(mobileHost?.w ?? w, onBack: dismissPanel)
           : mobileResourceBody(
               route: route,
               page: w,
@@ -1910,6 +1913,7 @@ class _WorkspaceViewState extends State<WorkspaceView>
                                         'home',
                                         'tasks',
                                         'saved',
+                                        draftsSection,
                                         'activity',
                                         'search',
                                         'members',
@@ -3689,11 +3693,10 @@ class _WorkspaceViewState extends State<WorkspaceView>
                                   ),
                                 ),
                               SliverToBoxAdapter(
-                                child: SavedSidebarEntry(
-                                  key: const Key('nav-saved'),
-                                  precededByEntry: mobileHome,
+                                child: WorkspaceHomeShortcuts(
                                   controller: w,
-                                  onTap: () => select('saved'),
+                                  mobileHome: mobileHome,
+                                  onSelect: select,
                                 ),
                               ),
                               ...conversationSlivers(),

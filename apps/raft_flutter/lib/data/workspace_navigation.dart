@@ -364,6 +364,7 @@ class WorkspaceNavigation {
       'activity' => RaftRoute.activity,
       'tasks' => RaftRoute.tasks,
       'saved' => RaftRoute.saved,
+      'drafts' => RaftRoute.drafts,
       _ => RaftRoute.settings,
     },
     entityId: section == 'chat' ? channelId : null,
@@ -462,8 +463,13 @@ class WorkspaceNavigation {
     return switch (location.route) {
       // Members, Computers and Settings are pushed pages (Web v1.24 server
       // tab): without a page they were opened from, Back is Home.
-      RaftRoute.members || RaftRoute.computers || RaftRoute.settings =>
-        RaftLocation.at(serverSlug: location.serverSlug, route: RaftRoute.home),
+      RaftRoute.members ||
+      RaftRoute.computers ||
+      RaftRoute.drafts ||
+      RaftRoute.settings => RaftLocation.at(
+        serverSlug: location.serverSlug,
+        route: RaftRoute.home,
+      ),
       _ => location.tabHome(),
     };
   }

@@ -25,7 +25,8 @@ String? railModeOfLocation(RaftLocation location) => switch (location.route) {
   RaftRoute.home ||
   RaftRoute.channel ||
   RaftRoute.dm ||
-  RaftRoute.saved => 'chat',
+  RaftRoute.saved ||
+  RaftRoute.drafts => 'chat',
   RaftRoute.tasks => 'tasks',
   RaftRoute.members || RaftRoute.agent || RaftRoute.human => 'members',
   RaftRoute.computers || RaftRoute.computer => 'computers',

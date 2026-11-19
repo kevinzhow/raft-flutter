@@ -434,6 +434,10 @@ void main() {
           final reason = '$name: ${target.id}';
           noException(tester, reason);
           final route = w.location.route;
+          if (target.route == RaftRoute.drafts) {
+            expect(route, RaftRoute.home, reason: 'Drafts flag is off');
+            continue;
+          }
           if (target.id == 'chat') {
             expect({RaftRoute.home, RaftRoute.channel}, contains(route));
           } else {

@@ -54,6 +54,7 @@ abstract final class NavigationRegistry {
     NavigationSection('activity', RaftRoute.activity),
     NavigationSection('tasks', RaftRoute.tasks),
     NavigationSection('saved', RaftRoute.saved),
+    NavigationSection('drafts', RaftRoute.drafts),
     NavigationSection('settings', RaftRoute.settings),
     NavigationSection(
       'workspace-settings',

@@ -214,6 +214,7 @@ class WorkspacePresentation {
       'activity',
       'search',
       'saved',
+      'drafts',
       'tasks',
       'settings',
     }.contains(name);

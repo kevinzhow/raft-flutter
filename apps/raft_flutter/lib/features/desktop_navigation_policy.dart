@@ -54,7 +54,7 @@ class DesktopNavigationPolicy {
       DesktopSidebarKind.settings,
     ),
     // Saved belongs to the regular Chat rail; it is not a classic rail mode.
-    'home' || 'chat' || 'saved' => const DesktopNavigationPolicy._(
+    'home' || 'chat' || 'saved' || 'drafts' => const DesktopNavigationPolicy._(
       'chat',
       DesktopSidebarKind.conversation,
     ),

@@ -248,6 +248,7 @@ RaftLocation? phoneReturnSource(
           RaftRoute.search,
           RaftRoute.activity,
           RaftRoute.saved,
+          RaftRoute.drafts,
           RaftRoute.computers,
         }.contains(base.route)) {
       return base;

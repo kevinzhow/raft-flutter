@@ -16,6 +16,7 @@ enum RaftRoute {
   activity,
   tasks,
   saved,
+  drafts,
   releaseNotes,
   unknown,
 }
@@ -233,6 +234,7 @@ class RaftLocation {
       'threads' when rest.length == 1 => RaftRoute.activity,
       'tasks' when rest.length == 1 => RaftRoute.tasks,
       'saved' when rest.length == 1 => RaftRoute.saved,
+      'drafts' when rest.length == 1 => RaftRoute.drafts,
       'release-notes' when rest.length == 1 => RaftRoute.releaseNotes,
       _ => RaftRoute.unknown,
     };
