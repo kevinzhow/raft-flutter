@@ -144,14 +144,14 @@ class ArtifactDashboardApi {
   }) async {
     final body = await client.get(
       _path('all', {
-        if (query.home case final home?) 'home': home,
-        if (query.conversation case final id?) 'conversation': id,
-        if (query.author case final author?) 'author': author,
+        'home': ?query.home,
+        'conversation': ?query.conversation,
+        'author': ?query.author,
         if (query.search.isNotEmpty) 'q': query.search,
         if (!query.relevant && query.sort == ArtifactDashboardSort.opened)
           'sort': 'opened',
         if (query.relevant) 'relevant': '1',
-        if (cursor != null) 'cursor': cursor,
+        'cursor': ?cursor,
       }),
     );
     if (body is! Map || body['rows'] is! List) {

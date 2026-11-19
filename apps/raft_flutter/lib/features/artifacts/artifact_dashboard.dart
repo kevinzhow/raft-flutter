@@ -116,8 +116,9 @@ class _ArtifactDashboardState extends State<ArtifactDashboard> {
     try {
       final next = await api.read(query);
       if (!mounted || current != request || scope != authority) return;
-      if (!query.narrowed)
+      if (!query.narrowed) {
         _cache[widget.workspace] = (scope: scope, page: next);
+      }
       setState(() {
         page = next;
         answered = query;

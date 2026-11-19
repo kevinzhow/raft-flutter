@@ -7,6 +7,34 @@ import '../support/server_tab.dart';
 import '../support/artifact_fake_client.dart';
 
 void main() {
+  for (final width in [390.0, 1280.0]) {
+    testWidgets('Artifacts entry stays hidden with the flag off at $width', (
+      tester,
+    ) async {
+      final fixture = RootFixture();
+      fixture.overrides['POST /feature-flags/evaluate'] = (_) => {
+        'evaluations': [
+          {'key': 'workspace_artifacts_v0', 'enabled': false},
+        ],
+      };
+      await fixture.mount(tester, 'light', width, uri: Uri.parse('/s/alpha'));
+      await fixture.flush(tester);
+      if (width == 390) {
+        await openServerPopover(tester, flush: fixture.flush);
+        expect(
+          find.descendant(
+            of: find.byKey(serverPopoverKey),
+            matching: find.text('Artifacts'),
+          ),
+          findsNothing,
+        );
+      } else {
+        expect(find.byKey(const Key('rail-artifacts')), findsNothing);
+      }
+      await fixture.close(tester);
+    });
+  }
+
   testWidgets('Artifacts opens from the desktop rail and switches layouts', (
     tester,
   ) async {

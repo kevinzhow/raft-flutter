@@ -86,6 +86,68 @@ void main() {
     expect(find.text('Road map'), findsOneWidget);
   });
 
+  for (final (size, platform, wide) in [
+    (const Size(856, 944), TargetPlatform.android, true),
+    (const Size(944, 856), TargetPlatform.android, true),
+    (const Size(390, 844), TargetPlatform.linux, false),
+  ]) {
+    testWidgets('filter and layout at $size on $platform', (tester) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = size;
+      addTearDown(tester.view.resetDevicePixelRatio);
+      addTearDown(tester.view.resetPhysicalSize);
+      final client = ArtifactFakeClient();
+      final workspace = WorkspaceController(client)
+        ..server = RaftRecord({'id': 's1', 'role': 'owner', 'name': 'Dev'});
+      addTearDown(workspace.dispose);
+      addTearDown(client.ingress.close);
+      client.answers['GET /artifacts/dashboard/all?sort=opened'] = (_) => {
+        'rows': [
+          {'card': artifactCardJson(title: 'Road map')},
+        ],
+      };
+      client.answers['GET /artifacts/dashboard/conversations'] = (_) => {
+        'conversations': [
+          {'id': 'project', 'name': 'Project notes'},
+        ],
+      };
+      client.answers['GET /artifacts/dashboard/all?conversation=project&sort=opened'] =
+          (_) => {
+            'rows': [
+              {'card': artifactCardJson(title: 'Project road map')},
+            ],
+          };
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: raftTheme().copyWith(platform: platform),
+          home: Scaffold(body: ArtifactDashboard(workspace: workspace)),
+        ),
+      );
+      await tester.pumpAndSettle();
+      if (wide) {
+        expect(find.byKey(const Key('artifact-grid')), findsOneWidget);
+        await tester.tap(find.text('List'));
+        await tester.pumpAndSettle();
+        expect(find.byKey(const Key('artifact-table')), findsOneWidget);
+        expect(find.byType(RaftPanelResizeHandle), findsNothing);
+      } else {
+        expect(find.byKey(const Key('artifact-list')), findsOneWidget);
+        expect(find.text('Grid'), findsNothing);
+      }
+      await tester.tap(find.text('By conversation'));
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const Key('artifact-dashboard-filter')),
+        findsOneWidget,
+      );
+      await tester.tap(find.text('Project notes'));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('artifact-dashboard-filter')), findsNothing);
+      expect(find.text('Project road map'), findsOneWidget);
+      expect(find.text('Road map'), findsNothing);
+    });
+  }
+
   test('dashboard sends the selected filters and reads counts and cards', () async {
     final client = ArtifactFakeClient();
     addTearDown(client.ingress.close);

@@ -637,7 +637,9 @@ class _ArtifactWorkspaceViewerState extends State<ArtifactWorkspaceViewer> {
       card: card,
       current: () => current,
     );
-    if (!current || result == null) return;
+    if (!mounted || result == null || workspaceAuthority(w) != authority) {
+      return;
+    }
     if (result.home case final home?) {
       final shown = data;
       if (shown != null) {

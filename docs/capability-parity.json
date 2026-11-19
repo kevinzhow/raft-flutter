@@ -11422,10 +11422,10 @@
    "status": "covered",
    "webEntry": "LeftRail Tasks tab / MobileTabBar / route 'tasks' -> TasksRoute",
    "gate": "Any member (guests read-only)",
-   "flutterEntry": "workspace_view.dart 'tasks' section + resource_view.dart tasks",
+   "flutterEntry": "workspace_rail_destinations.dart Tasks entry and resource_view.dart Tasks page",
    "flutterRefs": [
     {
-     "file": "apps/raft_flutter/lib/features/workspace_view.dart",
+     "file": "apps/raft_flutter/lib/features/workspace_rail_destinations.dart",
      "needle": "id: 'tasks'"
     },
     {
@@ -13034,8 +13034,8 @@
      "needle": "class ActivityFirstUnread"
     },
     {
-     "file": "apps/raft_flutter/lib/features/workspace_view.dart",
-     "needle": "onDoubleClick: () => ActivityFirstUnread.of(w).request(w)"
+     "file": "apps/raft_flutter/lib/features/workspace_rail_destinations.dart",
+     "needle": "onDoubleClick: () => ActivityFirstUnread.of(workspace).request(workspace)"
     }
    ],
    "justification": "",

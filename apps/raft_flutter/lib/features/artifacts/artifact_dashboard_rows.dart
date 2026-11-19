@@ -187,8 +187,7 @@ class ArtifactDashboardRows extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             RaftListRowTitle(card.title),
-                            if (newsBadge(context, item.news) case final news?)
-                              news,
+                            ?newsBadge(context, item.news),
                           ],
                         ),
                       ),
@@ -203,7 +202,7 @@ class ArtifactDashboardRows extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     RaftListRowTitle(card.title),
-                    if (newsBadge(context, item.news) case final news?) news,
+                    ?newsBadge(context, item.news),
                     Text(
                       [
                         author,
@@ -249,7 +248,7 @@ class ArtifactDashboardRows extends StatelessWidget {
             ),
           ),
           RaftListRowTitle(card.title),
-          if (newsBadge(context, item.news) case final news?) news,
+          ?newsBadge(context, item.news),
           Flexible(child: Text(artifactActorName(context, card.author))),
         ],
       ),

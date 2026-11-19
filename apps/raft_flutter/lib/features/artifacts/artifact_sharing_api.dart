@@ -13,7 +13,7 @@ class ArtifactHomeTarget {
 
   Map<String, String> get fields => {
     'to': kind,
-    if (conversationId case final id?) 'conversationId': id,
+    'conversationId': ?conversationId,
   };
 }
 

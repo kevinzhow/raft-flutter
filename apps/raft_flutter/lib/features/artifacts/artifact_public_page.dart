@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:raft_client/raft_client.dart';
@@ -195,8 +194,9 @@ class _ArtifactPublicPageState extends State<ArtifactPublicPage> {
     try {
       if (await browser(uri)) return;
     } catch (_) {}
-    if (mounted)
+    if (mounted) {
       showRaftToast(context, raftText(context, "Couldn't open link"));
+    }
   }
 
   Widget publicActions(BuildContext context, {required bool compact}) {
