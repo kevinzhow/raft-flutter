@@ -42,6 +42,7 @@ import 'sidebar_thread_unread.dart';
 import 'mouse_double_click.dart';
 import 'name_description_row.dart';
 import 'sidebar_text.dart';
+import 'space.dart';
 
 import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/material.dart';
@@ -319,7 +320,10 @@ class RaftMountedSidebarNavigationRecipe extends RaftControlRecipe {
       viewportHeight <= 600 ||
       (viewportWidth >= 768 && ((role != RaftNavItemRole.saved)));
   bool get active => selected && role != RaftNavItemRole.search;
-  double get sourceBorder => 1;
+  bool get phoneSaved =>
+      role == RaftNavItemRole.saved &&
+      viewportWidth < RaftLayoutMetrics.desktopBreakpoint;
+  double get sourceBorder => phoneSaved ? 0 : 1;
   double get glyphSize => tokens.size(
     viewportWidth < 768
         ? 'size.sidebarEntryGlyphPhone'
@@ -389,7 +393,9 @@ class RaftMountedSidebarNavigationRecipe extends RaftControlRecipe {
   @override
   bool get transformsOnInteraction => false;
   @override
-  EdgeInsets get padding => role == RaftNavItemRole.saved
+  EdgeInsets get padding => phoneSaved
+      ? const EdgeInsets.symmetric(horizontal: RaftSpace.x3)
+      : role == RaftNavItemRole.saved
       ? EdgeInsets.only(
           left: tokens.size('space.sidebarSavedStart', fallback: 6),
           right: tokens.size('space.sidebarSavedEnd', fallback: 6),
@@ -523,10 +529,12 @@ class RaftMountedConversationControlRecipe extends RaftControlRecipe {
     super.selected,
     this.pointerPressed = false,
     this.menuOpen = false,
+    this.phone = false,
     this.borderWidth,
   }) : super(kind: RaftControlKind.sidebar);
   final double? borderWidth;
   final bool pointerPressed;
+  final bool phone;
 
   /// Sidebar.tsx `menuOpen`: an unselected Raft row keeps `bg-fill-pressed`
   /// while its context menu is open.
@@ -541,11 +549,12 @@ class RaftMountedConversationControlRecipe extends RaftControlRecipe {
   BorderRadius get radius =>
       BorderRadius.circular(tokens.size('radius.sidebarItem', fallback: 6));
   @override
-  // SidebarItem: `px-1.5` (measured on desktop and mobile).
-  EdgeInsets get padding => EdgeInsets.only(
-    left: tokens.size('space.sidebarItemStart', fallback: 6),
-    right: tokens.size('space.sidebarItemEnd', fallback: 6),
-  );
+  EdgeInsets get padding => phone
+      ? const EdgeInsets.symmetric(horizontal: RaftSpace.x3)
+      : EdgeInsets.only(
+          left: tokens.size('space.sidebarItemStart', fallback: 6),
+          right: tokens.size('space.sidebarItemEnd', fallback: 6),
+        );
   @override
   double get focusOutlineWidth => 2;
   @override
@@ -587,7 +596,9 @@ class RaftMountedConversationControlRecipe extends RaftControlRecipe {
   }) => backgroundFor(hovered: hovered || pressed);
   @override
   BorderSide side({bool hovered = false}) => BorderSide(
-    width: borderWidth ?? tokens.size('stroke.sidebarItem', fallback: 1),
+    width: phone
+        ? 0
+        : borderWidth ?? tokens.size('stroke.sidebarItem', fallback: 1),
     color: selected
         ? tokens.colors['line-sidebar-item-active']!
         : Colors.transparent,
@@ -1008,6 +1019,10 @@ class RaftNavItem extends StatelessWidget {
             kind: conversationKind!,
             channelGlyphVariant: channelGlyphVariant,
           );
+    final phoneConversation =
+        conversation != null &&
+        conversationKind != RaftConversationNavKind.directory &&
+        MediaQuery.sizeOf(context).width < RaftLayoutMetrics.desktopBreakpoint;
     final leading =
         this.leading ??
         (glyph != null
@@ -1168,6 +1183,7 @@ class RaftNavItem extends StatelessWidget {
               selected: selected,
               pointerPressed: pointerPressed,
               menuOpen: menuOpen,
+              phone: phoneConversation,
               borderWidth: raftControlBorderPx(
                 context,
                 t.size('stroke.sidebarItem', fallback: 1),
@@ -1195,7 +1211,12 @@ class RaftNavItem extends StatelessWidget {
                 (wrap ? 2 : 0)
           : 32,
       flexibleHeight: wrap,
-      padding: wrap ? EdgeInsets.symmetric(horizontal: 6, vertical: 6) : null,
+      padding: wrap
+          ? EdgeInsets.symmetric(
+              horizontal: phoneConversation ? RaftSpace.x3 : 6,
+              vertical: 6,
+            )
+          : null,
       variant: selected ? RaftControlVariant.surface : RaftControlVariant.ghost,
       child: LayoutBuilder(
         builder: (context, box) => Row(

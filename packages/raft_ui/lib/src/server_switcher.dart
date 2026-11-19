@@ -210,7 +210,9 @@ class _RaftServerSwitcherState extends State<RaftServerSwitcher> {
         overlayChildBuilder: (context) {
           final box = anchor.currentContext?.findRenderObject() as RenderBox?;
           if (box == null || !box.hasSize) return const SizedBox.shrink();
-          final rect = box.localToGlobal(Offset.zero) & box.size;
+          final overlay = Overlay.of(context).context.findRenderObject();
+          final rect =
+              box.localToGlobal(Offset.zero, ancestor: overlay) & box.size;
           return RaftBackDismiss(
             onDismiss: widget.controller.close,
             child: CustomSingleChildLayout(
@@ -220,7 +222,7 @@ class _RaftServerSwitcherState extends State<RaftServerSwitcher> {
                 widget.topBar
                     ? Offset(rect.left, rect.bottom + 8)
                     : widget.mobile
-                    ? Offset(8, rect.bottom - (1) + 4)
+                    ? Offset(8, rect.bottom + 4)
                     : onRight
                     ? Offset(rect.left + (0) - 8, rect.top + 4)
                     : Offset(rect.right - (0) + 8, rect.top + 4),
@@ -611,21 +613,24 @@ class _ServerRow extends StatelessWidget {
         },
         builder: (context, state) {
           final active = state.hovered || state.focusVisible;
-          final foreground = active ? t.colors['primary-strong']! : t.strong;
+          final foreground = t.strong;
+          final touch = RaftInteraction.of(context).touch;
           return Container(
             height: RaftScaled.grows(context) ? null : 48,
             constraints: const BoxConstraints(minHeight: 48),
-            color: active ? t.colors['primary-soft']! : Colors.transparent,
+            decoration: BoxDecoration(
+              color: active ? t.colors['brand-soft'] : null,
+              borderRadius: BorderRadius.circular(t.radius),
+            ),
             child: Row(
               children: [
-                const SizedBox(width: 12),
-                Opacity(
-                  opacity: row.current ? 1 : 0,
-                  child: RaftIcon(RaftGlyph.check, size: 14, color: foreground),
+                const SizedBox(width: 10),
+                _ServerAvatar(
+                  name: row.name,
+                  avatarUrl: row.avatarUrl,
+                  size: touch ? 35 : 27,
                 ),
-                const SizedBox(width: 8),
-                _ServerAvatar(name: row.name, avatarUrl: row.avatarUrl),
-                const SizedBox(width: 8),
+                SizedBox(width: touch ? 10 : 8),
                 Expanded(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
@@ -652,12 +657,17 @@ class _ServerRow extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                         style: RaftTypography.mono(
                           t,
-                          color: active ? foreground : t.muted,
+                          color: t.colors['foreground-hint'],
                         ),
                       ),
                     ],
                   ),
                 ),
+                if (row.current) ...[
+                  SizedBox(width: touch ? 10 : 8),
+                  RaftIcon(RaftGlyph.check, size: 16, color: foreground),
+                  const SizedBox(width: 4),
+                ],
                 if (!row.current && (row.activityUnreadCount ?? 0) > 0)
                   Padding(
                     padding: const EdgeInsets.only(left: 8, right: 4),
@@ -887,16 +897,16 @@ class _ServerAction extends StatelessWidget {
           : () => onActivate(entry.onPressed),
       builder: (context, state) {
         final active = state.hovered || state.focusVisible;
-        final ink = active ? t.colors['primary-strong']! : t.strong;
+        final ink = t.strong;
         return Container(
           height: MediaQuery.sizeOf(context).height <= 600 ? 28 : 36,
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          color: active ? t.colors['primary-soft']! : null,
+          padding: const EdgeInsets.symmetric(horizontal: 10),
+          color: active ? t.colors['brand-soft'] : null,
           child: Row(
             children: [
               if (entry.glyph != null) ...[
-                RaftIcon(entry.glyph!, size: 14, color: ink),
-                const SizedBox(width: 8),
+                RaftIcon(entry.glyph!, size: 16, color: t.muted),
+                const SizedBox(width: 10),
               ],
               Expanded(
                 child: Text(
@@ -905,7 +915,7 @@ class _ServerAction extends StatelessWidget {
                     t,
                     size: 14,
                     line: 20,
-                    weight: FontWeight.w700,
+                    weight: FontWeight.w500,
                     color: ink,
                   ),
                 ),

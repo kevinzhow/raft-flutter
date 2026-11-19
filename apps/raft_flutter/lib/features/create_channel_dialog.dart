@@ -6,6 +6,8 @@ import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import '../data/cause_notice.dart';
+import '../data/external_invite_api.dart';
+import '../data/feature_flag_client_facts.dart' show RaftFeatureFlags;
 import '../data/user_error.dart';
 
 import '../data/workspace_controller.dart';
@@ -13,6 +15,10 @@ import 'slack_channel_pairing.dart';
 import 'search_ranking.dart';
 import '../data/workspace_entity_directory.dart';
 import 'channel_form_fields.dart';
+import 'external_invite_channel_dialog.dart' show showNewExternalChannelInvites;
+import 'external_invite_channel_members.dart' show showExternalChannelLimit;
+import 'management_support.dart'
+    show cachedServerFlag, managementMap, pageIdentity;
 
 typedef ArchivedChannelNameCollision = ({
   String id,
@@ -270,10 +276,14 @@ class CreateChannelDialog extends StatefulWidget {
     BuildContext context, {
     required WorkspaceController controller,
     Future<void> Function(RaftChannel channel)? onCreated,
+    String prefilledVisibility = 'public',
   }) => showRaftForm<void>(
     context,
-    builder: (_) =>
-        CreateChannelDialog(controller: controller, onCreated: onCreated),
+    builder: (_) => CreateChannelDialog(
+      controller: controller,
+      onCreated: onCreated,
+      prefilledVisibility: prefilledVisibility,
+    ),
   );
 
   @override
@@ -288,6 +298,14 @@ class _CreateChannelDialogState extends State<CreateChannelDialog> {
   );
   final search = TextEditingController();
   late String visibility = widget.prefilledVisibility;
+  late final authority = pageIdentity(w);
+  late final twoStep =
+      cachedServerFlag(w, RaftFeatureFlags.externalChannels) == true ||
+      widget.prefilledVisibility == 'external';
+  bool get externalAvailable =>
+      twoStep && const {'owner', 'admin'}.contains(w.server?.string('role'));
+  bool? externalAtLimit;
+  bool people = false;
   late final Set<String> agentIds = {...widget.prefilledAgentIds};
   late final Set<String> humanIds = {...widget.prefilledHumanIds};
   late final ChannelCandidateFeed _feed = ChannelCandidateFeed(w);
@@ -325,6 +343,28 @@ class _CreateChannelDialogState extends State<CreateChannelDialog> {
       if (mounted) setState(() {});
     });
     unawaited(slack.load(canManage: w.can('createChannels')));
+    if (externalAvailable) unawaited(_readExternalAvailability());
+  }
+
+  Future<void> _readExternalAvailability() async {
+    final scope = authority;
+    try {
+      final atLimit = await ExternalInviteApi(w.command).atFreeLimit();
+      if (mounted && pageIdentity(w) == scope) {
+        setState(() => externalAtLimit = atLimit);
+      }
+    } on RaftApiException catch (failure) {
+      if (mounted && pageIdentity(w) == scope) {
+        setState(() {
+          if (visibility == 'external') visibility = 'private';
+          error = userErrorText(
+            failure,
+            fallback: 'Failed to check external channel availability',
+            where: 'create channel',
+          );
+        });
+      }
+    }
   }
 
   @override
@@ -387,6 +427,10 @@ class _CreateChannelDialogState extends State<CreateChannelDialog> {
 
   Future<void> submit() async {
     if (submitting) return;
+    if (pageIdentity(w) != authority) {
+      setState(() => error = 'Server access changed. Reopen this form.');
+      return;
+    }
     final trimmed = name.text.trim();
     // `validateNameReason` + `formatNameValidationError`.
     final invalid = channelNameError(context, trimmed);
@@ -398,7 +442,19 @@ class _CreateChannelDialogState extends State<CreateChannelDialog> {
           whileTrue: () => channelNameError(context, name.text.trim()) != null,
         );
         archivedCollision = null;
+        people = false;
       });
+      return;
+    }
+    if (twoStep && !people) {
+      if (visibility == 'external' && externalAtLimit != false) return;
+      setState(() {
+        error = null;
+        nameInvalid.clear();
+        archivedCollision = null;
+        people = visibility != 'external';
+      });
+      if (visibility == 'external') await _submitExternal(trimmed);
       return;
     }
     setState(() {
@@ -431,7 +487,7 @@ class _CreateChannelDialogState extends State<CreateChannelDialog> {
         await slack.apply(created.id);
       } catch (_) {
         createdForBridge = created;
-        await w.refreshChannels();
+        if (pageIdentity(w) == authority) w.putSharedChannelRow(created);
         if (mounted) {
           setState(
             () => error = raftText(
@@ -442,8 +498,8 @@ class _CreateChannelDialogState extends State<CreateChannelDialog> {
         }
         return;
       }
-      await w.refreshChannels();
-      if (!mounted) return;
+      if (pageIdentity(w) == authority) w.putSharedChannelRow(created);
+      if (!mounted || pageIdentity(w) != authority) return;
       Navigator.of(context).pop();
       await widget.onCreated?.call(created);
     } catch (e) {
@@ -455,6 +511,7 @@ class _CreateChannelDialogState extends State<CreateChannelDialog> {
         setState(() {
           if (collision != null) {
             archivedCollision = collision;
+            people = false;
           } else {
             error = raftText(
               context,
@@ -472,44 +529,171 @@ class _CreateChannelDialogState extends State<CreateChannelDialog> {
     }
   }
 
+  Future<void> _submitExternal(String channelName) async {
+    RaftChannel? created;
+    setState(() => submitting = true);
+    try {
+      final result = await showNewExternalChannelInvites(
+        context,
+        w,
+        () async {
+          if (pageIdentity(w) != authority ||
+              !const {'owner', 'admin'}.contains(w.server?.string('role')) ||
+              !w.can('createChannels')) {
+            throw const RaftUserError(
+              'Server access changed. Reopen this form.',
+            );
+          }
+          final result = await w.command(
+            'POST',
+            '/channels',
+            data: {
+              'name': channelName,
+              if (description.text.trim().isNotEmpty)
+                'description': description.text.trim(),
+              'visibility': 'private',
+              'type': 'channel',
+              'agentIds': [...agentIds],
+              'userIds': [...humanIds],
+            },
+          );
+          final channel = RaftChannel(managementMap(result));
+          created = channel;
+          if (pageIdentity(w) == authority) w.putSharedChannelRow(channel);
+          if (pageIdentity(w) != authority) {
+            throw const RaftUserError(
+              'Server access changed. Reopen this form.',
+            );
+          }
+          return channel;
+        },
+        channelName: channelName,
+        members: _externalMembers(),
+      );
+      if (!mounted || pageIdentity(w) != authority || result?['back'] == true) {
+        return;
+      }
+      if (result?['serversFailed'] == true) {
+        showRaftToast(
+          context,
+          "The invites were sent, but your servers weren't connected. Try connecting them again.",
+        );
+      }
+      Navigator.of(context).pop();
+      if (created != null) await widget.onCreated?.call(created!);
+    } finally {
+      if (mounted) setState(() => submitting = false);
+    }
+  }
+
+  RaftPickerItem _memberItem(BuildContext context, ChannelMemberCandidate c) =>
+      RaftPickerItem(
+        key: '${c.kind}:${c.id}',
+        label: c.label,
+        description: c.description,
+        badge: channelCandidateAppBadge(context, c),
+        avatar: ChannelCandidateAvatar(
+          candidate: c,
+          avatarContext: RaftMountedAvatarContext.sidebarList,
+          humanPlaceholder: true,
+        ),
+      );
+
+  bool _memberSelected(String key) => key.startsWith('agent:')
+      ? agentIds.contains(key.substring(6))
+      : humanIds.contains(key.substring(6));
+
+  void _toggleMember(String key) {
+    final set = key.startsWith('agent:') ? agentIds : humanIds;
+    final id = key.substring(6);
+    if (!set.remove(id)) set.add(id);
+  }
+
+  Widget _externalMembers() => StatefulBuilder(
+    builder: (context, update) => ListenableBuilder(
+      listenable: Listenable.merge([_feed, search]),
+      builder: (context, _) => RaftProductFormField(
+        label: raftFormat(context, '{server} members', {
+          'server': w.server?.name ?? '',
+        }),
+        optional: true,
+        child: RaftMemberPickerContent(
+          search: search,
+          agents: [
+            for (final candidate in candidates)
+              if (candidate.kind == 'agent') _memberItem(context, candidate),
+          ],
+          humans: [
+            for (final candidate in candidates)
+              if (candidate.kind == 'human') _memberItem(context, candidate),
+          ],
+          matchedKeys: [
+            for (final candidate in searchChannelMemberCandidates(
+              search.text,
+              candidates,
+            ))
+              '${candidate.kind}:${candidate.id}',
+          ],
+          hasCandidates: candidates.isNotEmpty,
+          isSelected: _memberSelected,
+          onToggle: (key) => update(() => _toggleMember(key)),
+        ),
+      ),
+    ),
+  );
+
   @override
   Widget build(BuildContext context) {
-    RaftPickerItem item(ChannelMemberCandidate c) => RaftPickerItem(
-      key: '${c.kind}:${c.id}',
-      label: c.label,
-      description: c.description,
-      badge: channelCandidateAppBadge(context, c),
-      avatar: ChannelCandidateAvatar(
-        candidate: c,
-        avatarContext: RaftMountedAvatarContext.sidebarList,
-        humanPlaceholder: true,
-      ),
-    );
     final matching = searchChannelMemberCandidates(search.text, candidates);
     return RaftCreateChannelDialogView(
       name: name,
       description: description,
       search: search,
       visibility: visibility,
+      externalAvailable: externalAvailable,
+      twoStep: twoStep,
+      people: people,
+      externalReady: externalAtLimit != null,
+      canContinue: visibility != 'external' || externalAtLimit == false,
+      onBack: createdForBridge == null
+          ? () => setState(() {
+              people = false;
+              error = null;
+            })
+          : null,
+      visibilityHint: switch ((visibility, externalAtLimit)) {
+        ('external', true) => raftFormat(
+          context,
+          'Free plan: {server} already has a channel with people outside it.',
+          {'server': w.server?.name ?? ''},
+        ),
+        ('external', false) => raftFormat(
+          context,
+          'Work with people outside {server} in one channel. Only people you add can see it, including {server} members.',
+          {'server': w.server?.name ?? ''},
+        ),
+        _ => null,
+      },
+      visibilityNotice: visibility == 'external' && externalAtLimit == true
+          ? RaftTextLink(
+              label: 'Upgrade for more',
+              variant: RaftTextLinkVariant.strong,
+              onPressed: () => showExternalChannelLimit(context, w, ''),
+            )
+          : null,
       onVisibilityChanged: (v) => setState(() => visibility = v),
       agents: [
         for (final c in candidates)
-          if (c.kind == 'agent') item(c),
+          if (c.kind == 'agent') _memberItem(context, c),
       ],
       humans: [
         for (final c in candidates)
-          if (c.kind == 'human') item(c),
+          if (c.kind == 'human') _memberItem(context, c),
       ],
       hasCandidates: candidates.isNotEmpty,
       matchedMemberKeys: [for (final c in matching) '${c.kind}:${c.id}'],
-      isSelected: (key) => key.startsWith('agent:')
-          ? agentIds.contains(key.substring(6))
-          : humanIds.contains(key.substring(6)),
-      onToggle: (key) => setState(() {
-        final set = key.startsWith('agent:') ? agentIds : humanIds;
-        final id = key.substring(6);
-        if (!set.remove(id)) set.add(id);
-      }),
+      isSelected: _memberSelected,
+      onToggle: (key) => setState(() => _toggleMember(key)),
       onClose: close,
       onSubmit: submit,
       slackField: slack.available

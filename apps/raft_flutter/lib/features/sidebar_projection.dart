@@ -8,10 +8,16 @@ class SidebarEntry {
     required this.label,
     this.channel,
     this.agent,
+    this.loungeUnread = 0,
+    this.loungeMentioned = false,
   });
   final String key, label;
   final RaftChannel? channel;
   final Map<String, dynamic>? agent;
+  final int loungeUnread;
+  final bool loungeMentioned;
+
+  bool get isLounge => channel?.loungeAgentId != null;
 }
 
 class SidebarGroup {
@@ -28,11 +34,13 @@ List<SidebarGroup> projectSidebar({
   List<Map<String, dynamic>> agents = const [],
   Map<String, DateTime> activity = const {},
   Map<String, int> unread = const {},
+  Set<String> mentions = const {},
+  bool externalEnabled = false,
+  bool loungesEnabled = false,
+  String Function(RaftChannel channel)? loungeLabel,
 }) {
-  final visibleChannels = channels.where((c) => !c.archived).toList();
-  final byChannel = {
-    for (final c in [...visibleChannels, ...dms]) c.id: c,
-  };
+  final activeChannels = channels.where((c) => !c.archived);
+  final visibleChannels = activeChannels.where((c) => c.loungeAgentId == null);
   final byAgent = {for (final a in agents) '${a['id']}': a};
   final agentDms = {
     for (final c in dms)
@@ -41,6 +49,44 @@ List<SidebarGroup> projectSidebar({
   final humanDms = {
     for (final c in dms)
       if (c.string('peerType') != 'agent') c.string('peerId'): c,
+  };
+  final loungesByAgent = {
+    for (final c in channels)
+      if (c.loungeAgentId case final String id) id: c,
+  };
+  final lounges = <String, SidebarEntry>{};
+  final listedLounges = <String>{};
+  if (loungesEnabled) {
+    for (final agentId in {...loungesByAgent.keys, ...agentDms.keys}) {
+      final dm = agentDms[agentId], held = loungesByAgent[agentId];
+      final id = held?.id ?? dm?.lounge?.channelId;
+      if (id == null || held?.archived == true) continue;
+      final summary = dm?.lounge?.channelId == id ? dm?.lounge : null;
+      final mentioned =
+          mentions.contains(id) ||
+          (!unread.containsKey(id) && (summary?.mentionCount ?? 0) > 0);
+      final row =
+          held ??
+          RaftChannel({
+            'id': id,
+            'loungeAgentId': agentId,
+            'name': dm!.string('peerName', dm.peerLabel),
+            'joined': summary?.joined == true,
+          });
+      lounges[id] = SidebarEntry(
+        key: 'channel:$id',
+        label: loungeLabel?.call(row) ?? row.name,
+        channel: row,
+        loungeUnread: summary?.unreadCount ?? 0,
+        loungeMentioned: mentioned,
+      );
+      if (row.joined || summary?.joined == true || mentioned) {
+        listedLounges.add(id);
+      }
+    }
+  }
+  final byChannel = {
+    for (final c in [...visibleChannels, ...dms]) c.id: c,
   };
   final claimedChannels = <String>{}, claimedAgents = <String>{};
   SidebarEntry channel(RaftChannel c) => SidebarEntry(
@@ -111,7 +157,8 @@ List<SidebarGroup> projectSidebar({
   for (final ref in rows('pinned')) {
     final id = '${ref['id']}';
     final entry = switch (ref['kind']) {
-      'channel' => byChannel[id] == null ? null : channel(byChannel[id]!),
+      'channel' =>
+        lounges[id] ?? (byChannel[id] == null ? null : channel(byChannel[id]!)),
       'human' => humanDms[id] == null ? null : channel(humanDms[id]!),
       'agent' => agent(id),
       _ => null,
@@ -159,27 +206,25 @@ List<SidebarGroup> projectSidebar({
       custom: true,
     );
   }
-  List<SidebarEntry> ordered(List<RaftChannel> values, String key) {
+  List<SidebarEntry> ordered(Iterable<SidebarEntry> values, String key) {
     final order = (preferences[key] as List? ?? [])
         .whereType<String>()
         .toList();
-    final rest = {for (final c in values) c.id: c};
+    final rest = {for (final entry in values) entry.channel!.id: entry};
     return [
       for (final id in order)
-        if (rest.containsKey(id)) channel(rest.remove(id)!),
-      ...rest.values.map(channel),
+        if (rest.containsKey(id)) rest.remove(id)!,
+      ...rest.values,
     ];
   }
 
-  final regular = visibleChannels
-      .where((c) => !claimedChannels.contains(c.id))
-      .toList();
+  final regular = visibleChannels.where((c) => !claimedChannels.contains(c.id));
   final joint = ordered(
-    regular.where((c) => c.type == 'joint').toList(),
+    regular.where(sidebarExternalSectionChannel).map(channel),
     'channelOrder',
   );
   final normal = ordered(
-    regular.where((c) => c.type != 'joint').toList(),
+    regular.where((c) => !sidebarExternalSectionChannel(c)).map(channel),
     'channelOrder',
   );
   // Sidebar.tsx `closedDmUnreadSet`: a closed DM with unread messages stays
@@ -187,16 +232,25 @@ List<SidebarGroup> projectSidebar({
   final hidden = (preferences['hiddenDmIds'] as List? ?? []).toSet();
   bool closed(RaftChannel c) =>
       hidden.contains(c.id) && (unread[c.id] ?? 0) <= 0;
-  final direct = ordered(
-    dms.where((c) => !closed(c) && !claimedChannels.contains(c.id)).toList(),
-    'dmOrder',
-  );
+  final direct = ordered([
+    ...dms
+        .where((c) => !closed(c) && !claimedChannels.contains(c.id))
+        .map(channel),
+    for (final id in listedLounges)
+      if (!claimedChannels.contains(id) &&
+          (!hidden.contains(id) ||
+              (unread[id] ?? lounges[id]!.loungeUnread) > 0 ||
+              lounges[id]!.loungeMentioned))
+        lounges[id]!,
+  ], 'dmOrder');
   sort(joint, preferences['jointChannelSortMode']);
   sort(normal, preferences['channelSortMode']);
   sort(direct, preferences['dmSortMode']);
   groups['system:joint'] = SidebarGroup(
     'system:joint',
-    'Joint channels',
+    externalEnabled || visibleChannels.any(sidebarExternalOnlyChannel)
+        ? 'External'
+        : 'Joint channels',
     joint,
   );
   groups['system:channels'] = SidebarGroup(
@@ -219,3 +273,15 @@ List<SidebarGroup> projectSidebar({
       if (seen.add(id) && groups.containsKey(id)) groups[id]!,
   ];
 }
+
+bool sidebarExternalOnlyChannel(RaftChannel channel) =>
+    channel.hasExternalRelation == true &&
+    const {'channel', 'private'}.contains(channel.type);
+
+bool sidebarExternalSectionChannel(RaftChannel channel) =>
+    sidebarExternalOnlyChannel(channel) ||
+    channel.type == 'joint' &&
+        switch (channel.json['conversionJob']) {
+          {'status': 'pending' || 'running' || 'failed'} => false,
+          _ => true,
+        };

@@ -8,6 +8,7 @@ import 'chat_composition.dart'
 import 'icons.dart';
 import 'panel_layout.dart' show RaftCssText;
 import 'theme.dart';
+import 'viewport_breakpoints.dart';
 
 /// Mounted Sidebar.tsx335/342 geometry, distinct from generic RUI sections.
 abstract final class RaftSidebarSectionMetrics {
@@ -28,8 +29,11 @@ class RaftSidebarSectionRecipe {
   /// The title line and action face are distinct boxes in Sidebar.tsx.
   /// The host preserves their CSS centers without shrinking the action hit box.
   /// The last conversation keeps the section's trailing CSS margin.
-  static EdgeInsets listEndInset(RaftTokens tokens) =>
-      EdgeInsets.only(bottom: tokens.size('space.sidebarListEnd', fallback: 0));
+  static EdgeInsets listEndInset(BuildContext context) => EdgeInsets.only(
+    bottom: raftBreakpointWidth(context) < RaftLayoutMetrics.desktopBreakpoint
+        ? 0
+        : RaftTokens.of(context).size('space.sidebarListEnd', fallback: 0),
+  );
 
   double get targetSize => tokens.size('size.sidebarSectionLine', fallback: 24);
   EdgeInsets get inset => EdgeInsets.fromLTRB(
@@ -131,6 +135,8 @@ class RaftSidebarSectionHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     final recipe = RaftSidebarSectionRecipe(t, RaftDensityScope.of(context));
+    final compact =
+        raftBreakpointWidth(context) < RaftLayoutMetrics.desktopBreakpoint;
     final content = Row(
       children: [
         if (onExpandedChanged != null) ...[
@@ -182,6 +188,7 @@ class RaftSidebarSectionHeader extends StatelessWidget {
     final inset = recipe.inset;
     final header = Padding(
       padding: inset.copyWith(
+        left: compact ? 12 : inset.left,
         top: ((topInset ?? inset.top) - overhang).clamp(0.0, double.infinity),
         bottom: (inset.bottom - overhang).clamp(0.0, double.infinity),
       ),
@@ -281,11 +288,14 @@ class RaftSidebarSectionActionRecipe extends _DisclosureRecipe {
   const RaftSidebarSectionActionRecipe(
     super.tokens, {
     this.keyboardFocused = false,
+    this.compact = false,
   });
-  final bool keyboardFocused;
+  final bool keyboardFocused, compact;
   @override
   Color get foreground => keyboardFocused
       ? tokens.strong
+      : compact
+      ? tokens.muted
       : tokens.colors['foreground-sidebar-section-control'] ?? tokens.muted;
   @override
   Color foregroundFor({bool hovered = false}) =>
@@ -336,6 +346,9 @@ class _SectionActionState extends State<_SectionAction> {
         minimumTargetSize: widget.targetSize,
         recipe: RaftSidebarSectionActionRecipe(
           RaftTokens.of(context),
+          compact:
+              raftBreakpointWidth(context) <
+              RaftLayoutMetrics.desktopBreakpoint,
           keyboardFocused:
               hasFocus &&
               FocusManager.instance.highlightMode ==
@@ -343,8 +356,11 @@ class _SectionActionState extends State<_SectionAction> {
         ),
         child: RaftIcon(
           widget.action.glyph,
-          size: RaftTokens.of(context)
-              .size('size.sidebarSectionActionGlyph', fallback: 14),
+          size:
+              raftBreakpointWidth(context) < RaftLayoutMetrics.desktopBreakpoint
+              ? RaftSidebarSectionMetrics.actionGlyph
+              : RaftTokens.of(context)
+                    .size('size.sidebarSectionActionGlyph', fallback: 14),
         ),
       ),
     ),
@@ -365,7 +381,11 @@ class RaftSidebarSectionEmptyHint extends StatelessWidget {
     return ConstrainedBox(
       constraints: const BoxConstraints(minHeight: 28),
       child: Padding(
-        padding: recipe.descriptionInset,
+        padding: recipe.descriptionInset(
+          compact:
+              raftBreakpointWidth(context) <
+              RaftLayoutMetrics.desktopBreakpoint,
+        ),
         child: RaftCssText(label, style: recipe.description),
       ),
     );

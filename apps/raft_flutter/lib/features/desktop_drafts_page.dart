@@ -84,6 +84,7 @@ class WorkspaceHomeShortcuts extends StatelessWidget {
         controller: controller,
         onOpen: () => onSelect(draftsSection),
       ),
+      if (mobileHome) const SizedBox(height: RaftSpace.x1),
     ],
   );
 }

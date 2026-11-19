@@ -68,15 +68,20 @@ Future<void> markConversationRead(
 /// (`conversation-read-all`, "Mark all as read") and counts the thread unread
 /// too (Web 1.24 SidebarReadToggleMenuItem.tsx:23).
 class SidebarReadToggle {
-  SidebarReadToggle(this.w, this.id, {required bool channel})
-    : all = channel && SidebarThreadUnread.of(w).readsConversation;
+  SidebarReadToggle(
+    this.w,
+    this.id, {
+    required bool channel,
+    this.summaryUnread = 0,
+  }) : all = channel && SidebarThreadUnread.of(w).readsConversation;
   final WorkspaceController w;
   final String id;
   final bool all;
+  final int summaryUnread;
 
   // Marked unread with no count reads as unread: Mark as Read clears it.
   bool get unread =>
-      (w.conversationReads.unread[id] ?? 0) > 0 ||
+      (w.conversationReads.unread[id] ?? summaryUnread) > 0 ||
       w.conversationReads.marks.contains(id) ||
       all && SidebarThreadUnread.of(w).forChannel(id, joined: true).count > 0;
 

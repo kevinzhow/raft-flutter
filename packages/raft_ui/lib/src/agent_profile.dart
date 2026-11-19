@@ -346,7 +346,9 @@ class RaftAvatarSlot extends StatelessWidget {
         content ??
         RaftAvatarContent(
           name: name,
-          kind: agent
+          kind: server
+              ? RaftAvatarContentKind.server
+              : agent
               ? RaftAvatarContentKind.agent
               : RaftAvatarContentKind.human,
           pixelKey: agent

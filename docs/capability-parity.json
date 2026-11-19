@@ -3139,7 +3139,7 @@
    "capability": "Channel row context/long-press menu: Move to section, Mark as Read/Unread, Pin/Unpin, Mute/Unmute, Archive",
    "background": false,
    "status": "covered",
-   "webEntry": "Sidebar.tsx ctxMenu type=channel (right-click / long-press)",
+   "webEntry": "features/sidebar/menus/SidebarRowContextMenu.tsx channel branch (right-click / long-press)",
    "gate": "Mute: joined channel/private/joint; Archive: archiveChannels, not #all, not joint, not archived",
    "flutterEntry": "workspace_view_sidebar_menus.dart openChannelMenu",
    "flutterRefs": [
@@ -3162,17 +3162,12 @@
    "area": "channels",
    "capability": "'Find a conversation...' jump box above the sidebar list",
    "background": false,
-   "status": "covered",
-   "webEntry": "SidebarConversationFinder.tsx, rendered only when isElectronDesktopShell()",
-   "gate": "Desktop platforms (Web: Electron desktop shell only)",
-   "flutterEntry": "sidebar_conversation_finder.dart SidebarConversationFinderBox above the chat sidebar list on desktop (see ui:search.sidebar-conversation-finder); the global quick switcher stays as the Cmd/Ctrl+K search",
-   "flutterRefs": [
-    {
-     "file": "apps/raft_flutter/lib/features/sidebar_conversation_finder.dart",
-     "needle": "class SidebarConversationFinderBox"
-    }
-   ],
-   "justification": "",
+   "status": "na",
+   "webEntry": "features/sidebar/Sidebar.tsx (finder removed in v1.24)",
+   "gate": "",
+   "flutterEntry": "",
+   "flutterRefs": [],
+   "justification": "Web and Flutter removed the sidebar finder. The global quick switcher remains available.",
    "impact": "",
    "size": ""
   },
@@ -3183,9 +3178,9 @@
    "capability": "Custom sidebar sections: create (name + emoji), rename/change icon, delete, 'Move to section' submenu (Pinned / sections / New section / Remove from section)",
    "background": false,
    "status": "covered",
-   "webEntry": "SidebarSectionDialog + SidebarSectionEmojiPicker; Sidebar.tsx moveItemToCustomSection/removeItemFromCustomSection; synced via PATCH sidebar-order",
+   "webEntry": "features/sidebar/SidebarDialogs.tsx, features/sidebar/hooks/useSidebarMenuActions.ts and components/layout/SidebarSectionAddConversationsDialog.tsx",
    "gate": "",
-   "flutterEntry": "workspace_view_sidebar_menus.dart _showSectionDialog / _confirmDeleteSection / _moveSubmenu",
+   "flutterEntry": "workspace_view_sidebar_menus.dart _showSectionDialog / _showAddConversations / _confirmDeleteSection / _moveSubmenu",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/workspace_view_sidebar_menus.dart",
@@ -3211,7 +3206,7 @@
    "capability": "Drag rows to reorder (manual sort) and drag between sections / into Pinned; drag sections to reorder them",
    "background": false,
    "status": "covered",
-   "webEntry": "Sidebar.tsx dnd-kit DndContext + SortableSidebarItem/SortableSidebarSection (sidebarDnd.ts) writes channelOrder/dmOrder/pinned/sectionPlacements/sectionOrder via PATCH sidebar-order",
+   "webEntry": "features/sidebar/sections/SidebarChatSections.tsx and features/sidebar/hooks/useSidebarDnd.ts write channelOrder/dmOrder/pinned/sectionPlacements/sectionOrder via PATCH sidebar-order",
    "gate": "none (any member)",
    "flutterEntry": "sidebar_reorder.dart + sidebar_drop.dart: a long press lifts a row of any section; the sections list the live projection (SidebarDrag.project), so the row moves faded to the slot under the pointer and the section it left closes up; the drop persists through updateSidebarOrder (pinned, sectionPlacements, channelOrder, dmOrder); a pointer held at the list edge scrolls it; section headers drag too",
    "flutterRefs": [
@@ -3235,7 +3230,7 @@
    "capability": "Row indicators: unread count badge, @mention marker, muted bell icon (dimmed), quiet 'new' dot, draft pencil, not-joined dimming, Slack provider badge, agent activity badge on avatar",
    "background": false,
    "status": "covered",
-   "webEntry": "Sidebar.tsx ChannelRow / DmRow / AgentDmRow",
+   "webEntry": "features/sidebar/rows/ChannelRow.tsx, DmRow.tsx and AgentDmRow.tsx",
    "gate": "",
    "flutterEntry": "workspace_view.dart channel row passes unread, joined, activityMuted, hasDraft, mention, quietNew and markedUnread (SidebarRowReads in sidebar_thread_unread.dart: conversation reads newFlags and marks) and providerBadge (bridge.provider); agent presence on avatar",
    "flutterRefs": [
@@ -3263,7 +3258,7 @@
    "capability": "Collapse/expand sidebar sections (Pinned, Joint channels, Channels, Direct messages, custom sections) with an unread dot on a collapsed section",
    "background": false,
    "status": "covered",
-   "webEntry": "Sidebar.tsx SidebarSectionToggle chevron per section (state persisted in localStorage via sidebarCollapsedSections); AttentionDot on collapsed section with unmuted unread",
+   "webEntry": "features/sidebar/sections/SidebarChatSections.tsx SidebarSectionToggle and components/layout/sidebarCollapsedSections.ts",
    "gate": "",
    "flutterEntry": "workspace_view.dart sidebarGroupSliver expand/collapse (sidebarDisclosure) + groupAttention dot",
    "flutterRefs": [
@@ -3287,7 +3282,7 @@
    "capability": "Section header context menu: Create Channel / Create Joint Channel (on those sections), Sort (Manual/Recent/A-Z), Display (Show joined channels only, Hide empty sections), Rename section / change icon, New section, Delete section",
    "background": false,
    "status": "covered",
-   "webEntry": "Sidebar.tsx sectionCtxMenu (right-click or long-press the section header)",
+   "webEntry": "features/sidebar/menus/SidebarSectionContextMenu.tsx",
    "gate": "Create Channel: createChannels; Create Joint: federateChannels",
    "flutterEntry": "workspace_view_sidebar_menus.dart openSectionMenu",
    "flutterRefs": [
@@ -3315,13 +3310,13 @@
    "capability": "'+' buttons in the Channels and Joint channels section headers (Create Channel / Create Joint Channel)",
    "background": false,
    "status": "covered",
-   "webEntry": "Sidebar.tsx renderSectionAddButton (tooltips 'Create Channel' / 'Create Joint Channel')",
+   "webEntry": "features/sidebar/sections/SidebarChatSections.tsx renderSectionAddButton",
    "gate": "createChannels / federateChannels",
    "flutterEntry": "workspace_view.dart sidebarGroupActions (Create channel / Create joint channel)",
    "flutterRefs": [
     {
-     "file": "apps/raft_flutter/lib/features/workspace_view.dart",
-     "needle": "tr('Create joint channel')"
+     "file": "apps/raft_flutter/lib/features/sidebar_workspace_groups.dart",
+     "needle": "sidebarCreateJointLabel"
     },
     {
      "file": "apps/raft_flutter/lib/features/workspace_view.dart",
@@ -3339,7 +3334,7 @@
    "capability": "Per-section sort button (arrow icon) with Manual / Recent / A-Z",
    "background": false,
    "status": "covered",
-   "webEntry": "Sidebar.tsx renderSortMenu in each section header (SelectionPopover)",
+   "webEntry": "features/sidebar/sections/SidebarChatSections.tsx renderSortMenu",
    "gate": "",
    "flutterEntry": "workspace_view.dart sidebarGroupActions 'Sort' action; sidebar_sort_menu.dart",
    "flutterRefs": [
@@ -3363,7 +3358,7 @@
    "capability": "Right-click the empty sidebar area: Create Channel, Create Joint Channel, New section",
    "background": false,
    "status": "covered",
-   "webEntry": "Sidebar.tsx sidebarSurfaceCtxMenu",
+   "webEntry": "features/sidebar/menus/SidebarSurfaceContextMenu.tsx",
    "gate": "Create Channel: manage server capability; Joint: federateChannels",
    "flutterEntry": "workspace_view_sidebar_menus.dart openSurfaceMenu",
    "flutterRefs": [
@@ -3455,7 +3450,7 @@
    "capability": "Agent DM row context menu: Move to section, Mark as Read/Unread, Pin/Unpin, Close Chat",
    "background": false,
    "status": "covered",
-   "webEntry": "Sidebar.tsx ctxMenu type=agent",
+   "webEntry": "features/sidebar/menus/SidebarRowContextMenu.tsx agent branch",
    "gate": "",
    "flutterEntry": "workspace_view_sidebar_menus.dart openAgentMenu",
    "flutterRefs": [
@@ -3475,7 +3470,7 @@
    "capability": "A DM closed with 'Close Chat' reappears when it gets a new unread message or when you open it again (Message button / link)",
    "background": false,
    "status": "covered",
-   "webEntry": "Sidebar.tsx closedDmUnreadSet keeps closed DMs with unread visible; reopenDm() runs when the route is a DM",
+   "webEntry": "features/sidebar/hooks/useSidebarItems.ts and useSidebarSync.ts project and reopen closed DMs with unread",
    "gate": "",
    "flutterEntry": "sidebar_projection.dart keeps a hiddenDmIds DM listed while it has unread; data/closed_dm_reopen.dart removes it from hiddenDmIds when it becomes the open conversation",
    "flutterRefs": [
@@ -3499,7 +3494,7 @@
    "capability": "DM row context menu: Move to section, Mark as Read/Unread, Pin/Unpin, Close Chat",
    "background": false,
    "status": "covered",
-   "webEntry": "Sidebar.tsx ctxMenu type=dm / human (pinned person)",
+   "webEntry": "features/sidebar/menus/SidebarRowContextMenu.tsx DM and human branches",
    "gate": "",
    "flutterEntry": "workspace_view_sidebar_menus.dart openDmMenu",
    "flutterRefs": [
@@ -3964,7 +3959,7 @@
    "capability": "Double-click a human in the Humans list to open a DM with them",
    "background": false,
    "status": "covered",
-   "webEntry": "Sidebar.tsx Humans section row onDoubleClick -> handleOpenHumanDm",
+   "webEntry": "features/members human directory row and DM handler",
    "gate": "",
    "flutterEntry": "desktop_directory_view.dart: a mouse double-click on a human or agent row calls onOpenDm (messageDesktopProfile); touch keeps single-tap",
    "flutterRefs": [
@@ -3984,7 +3979,7 @@
    "capability": "Humans section '+' (Invite human) opens the invite dialog",
    "background": false,
    "status": "covered",
-   "webEntry": "Sidebar.tsx Humans header Plus (tooltip 'Invite human'), InviteHumanDialog",
+   "webEntry": "features/members directory toolbar and InviteHumanDialog",
    "gate": "inviteMembers capability",
    "flutterEntry": "desktop_directory_view.dart 'Invite human' action -> showWorkspaceMenuInvite",
    "flutterRefs": [
@@ -4004,7 +3999,7 @@
    "capability": "Right-click/long-press a person or agent row in the Members rail: 'Message' (humans and agents) and, for managed agents, 'Start'/'Stop' and 'Restart / Reset'",
    "background": false,
    "status": "covered",
-   "webEntry": "Sidebar.tsx ctxMenu type=member-human ('Message') and member-agent ('Message', 'Stop'/'Start' with stop confirm, 'Restart / Reset' dialog)",
+   "webEntry": "features/members directory context menus for people and agents",
    "gate": "Start/Stop/Reset need controlAgentRuntime and a non-external agent",
    "flutterEntry": "desktop_directory_view.dart rows open member_row_menu.dart (right click / long press): Message, and for a managed agent Start / Stop (Stop confirms) and Restart / Reset via fleet_views.dart runMemberAgentCommand",
    "flutterRefs": [
@@ -7022,7 +7017,7 @@
    "capability": "Agents grouped by computer with a collapsible per-computer header (name + count)",
    "background": false,
    "status": "covered",
-   "webEntry": "Sidebar.tsx Agents list groups + toggleAgentMachineGroup (persisted)",
+   "webEntry": "features/members directory grouping and components/layout/sidebarMachineOrder.ts",
    "gate": "",
    "flutterEntry": "desktop_directory_view.dart agentMachineRows + collapsedMachineGroups",
    "flutterRefs": [
@@ -8507,7 +8502,7 @@
    "capability": "Agents section '+' menu: Create Agent, Create External Agent, Handoff Session",
    "background": false,
    "status": "covered",
-   "webEntry": "Sidebar.tsx renderAgentActionMenu",
+   "webEntry": "features/members directory agent-creation menu",
    "gate": "createAgents capability; Handoff only in the Electron desktop shell (isHandoffAvailable)",
    "flutterEntry": "desktop_directory_view.dart addAgentMenu: 'Create agent', 'Create external agent' (gate createAgents)",
    "flutterRefs": [
@@ -12632,25 +12627,12 @@
    "area": "search",
    "capability": "'Find a conversation...' jump box pinned above the chat sidebar (name-based fuzzy jump over channels, DMs, agents, people; Arrow/Enter/Escape; IME-safe)",
    "background": false,
-   "status": "covered",
-   "webEntry": "components/layout/SidebarConversationFinder.tsx rendered by Sidebar.tsx railMode==='chat' (sidebar.findConversationPlaceholder)",
-   "gate": "Desktop platforms (Linux, macOS, Windows): Web shows it in the Electron shell only (the browser withdrew it 2026-09-11)",
-   "flutterEntry": "sidebar_conversation_finder.dart SidebarFinderLayer / SidebarConversationFinderBox, mounted by workspace_view.dart above the chat sidebar list on the wide layout with pointer input (not on touch or the phone Home list); conversation_finder_model.dart is Web conversationFinderModel (channels, DMs, agents without a DM, people without a DM, never yourself; ranked like composer suggestions, 20 rows); Arrow keys / Enter / Escape, an outside press closes; a person or agent without a DM gets one (quick_switcher_host.dart openFinderResult)",
-   "flutterRefs": [
-    {
-     "file": "apps/raft_flutter/lib/features/sidebar_conversation_finder.dart",
-     "needle": "class SidebarFinderLayer"
-    },
-    {
-     "file": "apps/raft_flutter/lib/features/conversation_finder_model.dart",
-     "needle": "List<ConversationMatch> buildFinderResults("
-    },
-    {
-     "file": "apps/raft_flutter/lib/features/quick_switcher_host.dart",
-     "needle": "Future<void> openFinderResult("
-    }
-   ],
-   "justification": "",
+   "status": "na",
+   "webEntry": "features/sidebar/Sidebar.tsx (finder removed in v1.24)",
+   "gate": "",
+   "flutterEntry": "",
+   "flutterRefs": [],
+   "justification": "Web and Flutter removed the sidebar finder. The global quick switcher remains available.",
    "impact": "",
    "size": ""
   },
@@ -13029,7 +13011,7 @@
    "capability": "Double-click the Activity entry (mobile sidebar) or the Activity header title to jump to / focus the next unread item",
    "background": false,
    "status": "covered",
-   "webEntry": "Sidebar.tsx Activity entry onDoubleClick -> focusFirstUnreadInboxItem; ThreadsInbox header title double-click -> focusNextUnread (tooltip 'Double-click to jump to the next unread item')",
+   "webEntry": "components/layout/LeftRail.tsx Activity entry and ThreadsInbox title double-click, focusFirstUnreadInboxItem / focusNextUnread",
    "gate": "",
    "flutterEntry": "activity_first_unread.dart: the rail Activity item and the phone-sidebar Activity entry (mouse double-click) arm the first-unread mark; the Activity header double-click marks the next unread row; the second click of the double-click does not select again",
    "flutterRefs": [
@@ -16979,7 +16961,7 @@
    "capability": "Collapsed/expanded state of sidebar sections is remembered",
    "background": false,
    "status": "covered",
-   "webEntry": "components/layout/sidebarCollapsedSections.ts (slock:sidebarCollapsed)",
+   "webEntry": "features/sidebar/hooks/useSidebarViewState.ts and components/layout/sidebarCollapsedSections.ts (slock:sidebarCollapsed)",
    "gate": "",
    "flutterEntry": "data/sidebar_disclosure.dart SidebarDisclosureStore (raft:sidebar-disclosure:{origin,principal,server})",
    "flutterRefs": [
@@ -16999,7 +16981,7 @@
    "capability": "Channels section 'Joined channels only' display filter, remembered per server",
    "background": false,
    "status": "covered",
-   "webEntry": "components/layout/Sidebar.tsx joinedChannelsOnly + sidebarChannelVisibility.ts (slock:sidebarJoinedChannelsOnly:{serverId})",
+   "webEntry": "features/sidebar/hooks/useSidebarViewState.ts and components/layout/sidebarChannelVisibility.ts (slock:sidebarJoinedChannelsOnly:{serverId})",
    "gate": "",
    "flutterEntry": "sidebar_disclosure.dart keeps joinedChannelsOnly in the per-account, per-server device record; the Channels section menu toggles it",
    "flutterRefs": [
@@ -17723,7 +17705,7 @@
    "capability": "Drag a channel/DM from the sidebar, a saved message, or a search hit onto the workspace to open it in a panel",
    "background": false,
    "status": "na",
-   "webEntry": "components/layout/Sidebar.tsx handleWorkspaceSidebarDrop (channel/DM rows onDrop), MainLayout.tsx dragWorkspaceSavedEntry/dragWorkspaceSearchResult, workspaceGridOpenEvents.ts",
+   "webEntry": "features/sidebar/rows/ChannelRow.tsx and DmRow.tsx drop targets, components/layout/MainLayout.tsx and workspaceGridOpenEvents.ts",
    "gate": "Workspace mode (grid) enabled",
    "flutterEntry": "",
    "justification": "Web removed the workspace grid in v1.21.x. Flutter removed the mirrored entry, side-by-side view, per-column sessions, and the mode switch.",

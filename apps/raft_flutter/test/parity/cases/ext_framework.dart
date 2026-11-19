@@ -2,7 +2,6 @@
 // crop follows the real rail and sidebar render boxes rather than guessed sizes.
 import 'package:flutter/material.dart';
 import 'package:raft_ui/raft_ui.dart';
-import 'package:raft_flutter/features/sidebar_conversation_finder.dart';
 
 import '../parity_harness.dart';
 import 'ext_shell.dart';
@@ -21,11 +20,6 @@ class _FrameworkState extends State<_Framework> {
   @override
   void initState() {
     super.initState();
-    final previousFinder = SidebarFinderLayer.hiddenForParity;
-    SidebarFinderLayer.hiddenForParity = widget.ctx.props['shell'] != 'desktop';
-    widget.ctx.onDispose(
-      () => SidebarFinderLayer.hiddenForParity = previousFinder,
-    );
     WidgetsBinding.instance.addPostFrameCallback((_) => measureNavigation());
   }
 

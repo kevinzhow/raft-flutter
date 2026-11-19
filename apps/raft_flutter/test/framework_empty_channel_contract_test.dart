@@ -70,10 +70,7 @@ void main() {
         // ChatPanel composerAutoFocus defaults true; MessageInput restricts
         // it to hover-capable input. The real desktop channel owns this focus.
         expect(editor.focusNode.hasFocus, isTrue);
-        final finder = find.byKey(
-          const Key('sidebar-conversation-finder-input'),
-        );
-        await tester.tap(finder);
+        await tester.tap(find.byKey(const Key('nav-saved')));
         await tester.pumpAndSettle();
         expect(editor.focusNode.hasFocus, isFalse);
         w.notifyListeners();

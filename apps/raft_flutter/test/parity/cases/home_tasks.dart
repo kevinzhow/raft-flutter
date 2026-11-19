@@ -14,7 +14,10 @@
 // Builders render the real Flutter app/raft_ui widgets for each case, laid
 // out like the React render host fixture for the same case id. Cases the
 // Flutter app cannot show go to [homeTaskUncovered] with an honest reason.
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_flutter/data/search_memory.dart';
 import 'package:raft_flutter/features/auth_view.dart';
@@ -236,76 +239,190 @@ final ParityCase _tabbar = ParityCase(
 );
 
 // ---------------------------------------------------------------------------
-// Home titlebar — React: 390x844 white case box; inside, a 342x110 box with
-// paddingTop 48 holding a 342x62 overflow-hidden slot with <Sidebar
-// mobileInline/> (server "Raft Design"). Flutter: the mobile-home header of
-// WorkspaceView.sidebar(mobileHome: true): RaftMobileRootHeader with
-// RaftMobileServerSelector + SystemNotificationBell over the sidebar body.
-
 final ParityCase _titlebar = ParityCase(
   widgets: const [
-    'raft_flutter:WorkspaceMobileHomeHeader',
+    'raft_ui:RaftServerSwitcher',
     'raft_ui:RaftMobileRootHeader',
     'raft_ui:RaftMobileServerSelector',
-    'raft_flutter:SystemNotificationBell',
     'raft_ui:RaftMobileNotificationButton',
   ],
   notes:
-      'WorkspaceMobileHomeHeader, the header WorkspaceView.sidebar(mobileHome: '
-      'true) mounts; server name "Raft Design" as primeNavigationVisualStores seeds. '
-      'The app passes no server-unread attention to the selector, so none is shown.',
+      'Each manifest variant mounts the production phone switcher in its '
+      'own clipped viewport, matching the React board. The last trigger opens '
+      'the real popup.',
   build: (ctx) {
-    final w = parityWorkspace(ctx, serverName: 'Raft Design');
-    return Align(
-      alignment: Alignment.topLeft,
-      child: Container(
-        width: 390,
-        height: 844,
-        color: Colors.white,
-        alignment: Alignment.topLeft,
-        padding: const EdgeInsets.only(top: 48),
-        child: SizedBox(
-          width: 342,
-          height: 62,
-          child: ClipRect(
-            child: OverflowBox(
-              alignment: Alignment.topLeft,
-              minHeight: 0,
-              maxHeight: double.infinity,
-              child: Builder(
-                builder: (context) {
-                  final recipe = RaftSidebarRecipe(
-                    RaftTokens.of(context),
-                    viewportWidth: MediaQuery.sizeOf(context).width,
-                    viewportHeight: MediaQuery.sizeOf(context).height,
-                    variant: RaftSidebarVariant.mountedProduct,
-                  );
-                  return ColoredBox(
-                    color: recipe.bodyBackground,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        WorkspaceMobileHomeHeader(
-                          controller: w,
-                          onServer: () {},
-                          onBilling: () {},
-                        ),
-                        // Sidebar body below the header (clipped by the
-                        // React 62px slot, as in the fixture).
-                        const SizedBox(height: 120),
-                      ],
+    final previous = RaftImageBytes.instance;
+    RaftImageBytes.instance = RaftImageBytes(
+      fetcher: (_) async => RaftFetchedImage(
+        base64Decode(
+          'iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAIAAABLbSncAAAANUlEQVR4nGMUERRkwAaYGBgYhLfeF956H8KHs5mwKmdgYGDEZxRWwAKhXr97BxcSFRIiyw4ARRYKTkWPDY0AAAAASUVORK5CYII=',
+        ),
+      ),
+    );
+    ctx.onDispose(() => RaftImageBytes.instance = previous);
+    return Builder(
+      builder: (context) {
+        final tokens = RaftTokens.of(context);
+        return Material(
+          color: tokens.canvas,
+          child: Align(
+            alignment: Alignment.topLeft,
+            child: SizedBox(
+              width: 342,
+              child: Padding(
+                padding: const EdgeInsets.only(top: 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  spacing: 6,
+                  children: [
+                    for (final variant in ctx.caseJson['variants'] as List)
+                      _titlebarFrame(ctx, tokens, variant as Map),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  },
+  interact: (tester, _) async {
+    Future<void> decodeAvatars() async {
+      final images = find.descendant(
+        of: find.byType(RaftSizedImage),
+        matching: find.byType(Image),
+      );
+      await tester.runAsync(() async {
+        for (final element in images.evaluate()) {
+          await precacheImage((element.widget as Image).image, element);
+        }
+      });
+      await tester.pump();
+    }
+
+    await decodeAvatars();
+    final frame = find.byKey(const ValueKey('titlebar-switcher-open'));
+    final focusStrategy = FocusManager.instance.highlightStrategy;
+    FocusManager.instance.highlightStrategy =
+        FocusHighlightStrategy.alwaysTraditional;
+    addTearDown(() => FocusManager.instance.highlightStrategy = focusStrategy);
+    final switcher = find.descendant(
+      of: frame,
+      matching: find.byType(RaftServerSwitcher),
+    );
+    tester.widget<RaftServerSwitcher>(switcher).controller.open();
+    await tester.pump(const Duration(milliseconds: 250));
+    await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+    await tester.pump();
+    await decodeAvatars();
+    expect(find.text('Raft Community'), findsOneWidget);
+  },
+);
+
+Widget _titlebarFrame(ParityContext ctx, RaftTokens tokens, Map variant) {
+  final props = variant['props'] as Map;
+  final name = props['serverName'] as String;
+  final other = props['otherServerName'] as String?;
+  final open = props['switcherOpen'] == true;
+  final avatar = props['serverAvatar'] == 'image'
+      ? 'https://parity-fixture.invalid/home-titlebar-avatar.png'
+      : null;
+  final controller = RaftMenuController();
+  ctx.onDispose(controller.dispose);
+  return Column(
+    key: ValueKey('titlebar-${variant['id']}'),
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    spacing: 6,
+    children: [
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        child: Text(
+          (variant['name'] as String).toUpperCase(),
+          style: RaftTypography.heading(
+            tokens,
+            size: 12,
+            line: 16,
+            weight: FontWeight.w500,
+            color: tokens.muted,
+          ),
+        ),
+      ),
+      SizedBox(
+        height: open ? 340 : 62,
+        child: ClipRect(
+          child: OverflowBox(
+            alignment: Alignment.topLeft,
+            minHeight: 844,
+            maxHeight: 844,
+            child: MediaQuery(
+              data: const MediaQueryData(size: Size(342, 844)),
+              child: Navigator(
+                onGenerateRoute: (_) => MaterialPageRoute<void>(
+                  builder: (_) => Material(
+                    color: tokens.canvas,
+                    child: Align(
+                      alignment: Alignment.topCenter,
+                      child: RaftServerSwitcher(
+                        mobile: true,
+                        controller: controller,
+                        workspaceName: name,
+                        workspaceAvatarUrl: avatar,
+                        label: 'Switch Server',
+                        attention: props['otherServerUnread'] == true,
+                        headerActions: [
+                          RaftMobileNotificationButton(
+                            mobileHeader: true,
+                            semanticLabel: 'Notification center',
+                            onPressed: () {},
+                          ),
+                        ],
+                        rows: [
+                          RaftServerMenuRow(
+                            id: 'visual-server',
+                            name: name,
+                            slug: 'visual',
+                            current: true,
+                            avatarUrl: avatar,
+                            onSelected: () {},
+                          ),
+                          if (other != null)
+                            RaftServerMenuRow(
+                              id: 'visual-community',
+                              name: other,
+                              slug: 'raft-community',
+                              onSelected: () {},
+                            ),
+                        ],
+                        actions: [
+                          RaftMenuEntry(
+                            label: 'Join community',
+                            glyph: RaftGlyph.plus,
+                            onPressed: () {},
+                          ),
+                          RaftMenuEntry(
+                            label: 'Switch or create server',
+                            glyph: RaftGlyph.plus,
+                            onPressed: () {},
+                          ),
+                          RaftServerMenuAction(
+                            label: 'Invite human',
+                            glyph: RaftGlyph.userPlus,
+                            onPressed: () {},
+                          ),
+                        ],
+                        onReorder: (_, _) {},
+                      ),
                     ),
-                  );
-                },
+                  ),
+                ),
               ),
             ),
           ),
         ),
       ),
-    );
-  },
-);
+    ],
+  );
+}
 
 // ---------------------------------------------------------------------------
 // Resource pages (search/saved/activity/tasks) — React mounts the page

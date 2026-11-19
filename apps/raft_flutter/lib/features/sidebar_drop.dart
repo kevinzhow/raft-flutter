@@ -275,8 +275,8 @@ class _SidebarDropZoneState extends State<SidebarDropZone> {
 String? sidebarHomeGroupId(SidebarEntry entry) {
   final c = entry.channel;
   if (c == null) return null;
-  if (c.type == 'dm') return 'system:dms';
-  return c.type == 'joint' ? 'system:joint' : 'system:channels';
+  if (c.type == 'dm' || entry.isLounge) return 'system:dms';
+  return sidebarExternalSectionChannel(c) ? 'system:joint' : 'system:channels';
 }
 
 /// Sidebar.tsx `isValidSidebarDndDestination`: only a manually sorted section
@@ -414,7 +414,9 @@ List<SidebarEntry> sidebarShownEntries(SidebarGroup group, bool joinedOnly) =>
 void reopenOpenedDm(WorkspaceController w, ClosedDmReopen tracker) {
   final open = w.section == 'chat' ? w.channel : null;
   final next = tracker.sync(
-    open != null && open.type == 'dm' ? open.id : null,
+    open != null && (open.type == 'dm' || open.loungeAgentId != null)
+        ? open.id
+        : null,
     [
       for (final e in (w.sidebarOrder['hiddenDmIds'] as List? ?? const []))
         '$e',

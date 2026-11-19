@@ -199,15 +199,18 @@ void main() {
     expect(tester.getSize(find.byType(RaftSidebarContextMenu)).width, 240);
     await tester.tap(find.text('New Section…'));
     await tester.pumpAndSettle();
-    expect(find.text('New Section'), findsOneWidget);
+    expect(find.text('New section'), findsOneWidget);
     await tester.enterText(find.byType(EditableText).last, 'Launch');
     await tester.pump();
-    await tester.tap(find.text('Create Section'));
+    await tester.tap(find.text('Create'));
     await tester.pumpAndSettle();
     final sections = (patches.single as Map)['customSections'] as List;
     expect((sections.single as Map)['name'], 'Launch');
     expect((sections.single as Map)['sortMode'], 'manual');
-    expect(find.text('New Section'), findsNothing);
+    expect(find.text('New section'), findsNothing);
+    await tester.tap(find.text('Skip'));
+    await tester.pumpAndSettle();
+    expect(find.text('Launch'), findsOneWidget);
   });
 
   for (final section in [true, false]) {

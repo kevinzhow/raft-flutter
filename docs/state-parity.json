@@ -5055,6 +5055,48 @@
           "justification": "A failed index request leaves the accepted outline visible or leaves the trigger hidden."
         }
       ]
+    },
+    {
+      "id": "sidebar.add-conversations",
+      "title": "Add conversations to a sidebar section",
+      "webEntry": "packages/web/src/components/layout/SidebarSectionAddConversationsDialog.tsx",
+      "flutterEntry": "packages/raft_ui/lib/src/sidebar_section_dialog.dart",
+      "states": [
+        {
+          "state": "loading",
+          "web": "no",
+          "flutter": "missing",
+          "parityCase": [],
+          "status": "na",
+          "justification": "The dialog filters the conversation rows already available to the sidebar."
+        },
+        {
+          "state": "empty",
+          "web": "yes",
+          "flutter": "yes",
+          "parityCase": [],
+          "status": "gap",
+          "gapKind": "case-missing",
+          "size": "S",
+          "justification": "The filter renders a local empty result. The mounted regression covers filtering; an official empty-state case is pending."
+        },
+        {
+          "state": "error",
+          "web": "no",
+          "flutter": "missing",
+          "parityCase": [],
+          "status": "na",
+          "justification": "The dialog closes after choosing rows. The sidebar owns the versioned write and its failure feedback."
+        },
+        {
+          "state": "partial",
+          "web": "no",
+          "flutter": "missing",
+          "parityCase": [],
+          "status": "na",
+          "justification": "The picker renders one projection of the available sidebar conversations."
+        }
+      ]
     }
   ],
   "navigationCoverage": {
@@ -13911,72 +13953,6 @@
         "owner": "design-system alignment",
         "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
       },
-      "apps/raft_flutter/lib/features/sidebar_conversation_finder.dart#class:SidebarConversationFinderBox": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
-      },
-      "apps/raft_flutter/lib/features/sidebar_conversation_finder.dart#class:SidebarFinderLayer": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "No semantic entry/delegation or applicability conclusion follows from the lexical census."
-      },
-      "apps/raft_flutter/lib/features/sidebar_conversation_finder.dart#class:_FinderResults": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
-      },
-      "apps/raft_flutter/lib/features/sidebar_conversation_finder.dart#class:_FinderScope": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
-      },
-      "apps/raft_flutter/lib/features/sidebar_conversation_finder.dart#class:_SidebarFinderLayerState": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
-      },
-      "apps/raft_flutter/lib/features/sidebar_conversation_finder.dart#method:SidebarConversationFinderBox.build": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
-      },
-      "apps/raft_flutter/lib/features/sidebar_conversation_finder.dart#method:SidebarFinderLayer.createState": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
-      },
-      "apps/raft_flutter/lib/features/sidebar_conversation_finder.dart#method:_FinderResults._leading": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
-      },
-      "apps/raft_flutter/lib/features/sidebar_conversation_finder.dart#method:_FinderResults.build": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
-      },
-      "apps/raft_flutter/lib/features/sidebar_conversation_finder.dart#method:_FinderScope.updateShouldNotify": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
-      },
-      "apps/raft_flutter/lib/features/sidebar_conversation_finder.dart#method:_SidebarFinderLayerState.build": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
-      },
       "apps/raft_flutter/lib/features/sidebar_drop.dart#class:SidebarDropZone": {
         "role": "unresolved",
         "familyRefs": [],
@@ -15228,12 +15204,6 @@
         "owner": "design-system alignment",
         "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
       },
-      "apps/raft_flutter/lib/features/workspace_view.dart#method:_WorkspaceViewState.conversationSlivers": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
-      },
       "apps/raft_flutter/lib/features/workspace_view.dart#method:_WorkspaceViewState.createChannel": {
         "role": "unresolved",
         "familyRefs": [],
@@ -15281,12 +15251,6 @@
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
-      },
-      "apps/raft_flutter/lib/features/workspace_view.dart#method:_WorkspaceViewState.groupAttention": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
       },
       "apps/raft_flutter/lib/features/workspace_view.dart#method:_WorkspaceViewState.hiddenConversation": {
         "role": "unresolved",
@@ -15396,12 +15360,6 @@
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
-      "apps/raft_flutter/lib/features/workspace_view.dart#method:_WorkspaceViewState.sidebarGroupSliver": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
-      },
       "apps/raft_flutter/lib/features/workspace_view.dart#method:_WorkspaceViewState.sourceThreadHeader": {
         "role": "unresolved",
         "familyRefs": [],
@@ -15437,36 +15395,6 @@
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
-      },
-      "apps/raft_flutter/lib/features/workspace_view_sidebar_menus.dart#method:_SidebarContextMenus._confirmArchive": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Resolved surface_factory; real-entry/family/state mapping remains unreviewed."
-      },
-      "apps/raft_flutter/lib/features/workspace_view_sidebar_menus.dart#method:_SidebarContextMenus._confirmDeleteSection": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Resolved surface_factory; real-entry/family/state mapping remains unreviewed."
-      },
-      "apps/raft_flutter/lib/features/workspace_view_sidebar_menus.dart#method:_SidebarContextMenus._showSectionDialog": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Resolved surface_factory; real-entry/family/state mapping remains unreviewed."
-      },
-      "apps/raft_flutter/lib/features/workspace_view_sidebar_menus.dart#method:_SidebarContextMenus._showSidebarMenu": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Resolved surface_factory; real-entry/family/state mapping remains unreviewed."
-      },
-      "apps/raft_flutter/lib/features/workspace_view_sidebar_menus.dart#method:_SidebarContextMenus._toggleMute": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Resolved surface_factory; real-entry/family/state mapping remains unreviewed."
       },
       "apps/raft_flutter/lib/platform/display_folds.dart#class:RaftNativeDisplayFeatures": {
         "role": "unresolved",
@@ -42870,12 +42798,6 @@
         "owner": "design-system alignment",
         "reason": "WP-NOTIF (Web v1.24 notification settings / levels): resolved surface_factory; real-entry/family/state mapping remains unreviewed."
       },
-      "apps/raft_flutter/lib/features/workspace_view_sidebar_menus.dart#method:_SidebarContextMenus.openChannelMenu": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "WP-NOTIF (Web v1.24 notification settings / levels): resolved surface_factory; real-entry/family/state mapping remains unreviewed."
-      },
       "packages/raft_ui/lib/src/notification_settings_rows.dart#class:RaftSettingsRowGroup": {
         "role": "unresolved",
         "familyRefs": [],
@@ -57091,6 +57013,270 @@
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/sidebar_workspace_groups.dart#method:_SidebarWorkspaceGroups.conversationSlivers": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/sidebar_workspace_groups.dart#method:_SidebarWorkspaceGroups.groupAttention": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/sidebar_workspace_groups.dart#method:_SidebarWorkspaceGroups.sidebarGroupSliver": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Source census candidate; resolved ownership, actual entry and applicable states still need review. This registration grants no style exemption or visual acceptance."
+      },
+      "apps/raft_flutter/lib/features/workspace_view_sidebar_menus.dart#method:WorkspaceSidebarMenus._confirmArchive": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved surface_factory; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/workspace_view_sidebar_menus.dart#method:WorkspaceSidebarMenus._confirmDeleteSection": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved surface_factory; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/workspace_view_sidebar_menus.dart#method:WorkspaceSidebarMenus._showSectionDialog": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved surface_factory; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/workspace_view_sidebar_menus.dart#method:WorkspaceSidebarMenus._showSidebarMenu": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved surface_factory; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/workspace_view_sidebar_menus.dart#method:WorkspaceSidebarMenus._toggleMute": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "Resolved surface_factory; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/workspace_view_sidebar_menus.dart#method:WorkspaceSidebarMenus.openChannelMenu": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "design-system alignment",
+        "reason": "WP-NOTIF (Web v1.24 notification settings / levels): resolved surface_factory; real-entry/family/state mapping remains unreviewed."
+      },
+      "apps/raft_flutter/lib/features/create_channel_dialog.dart#method:_CreateChannelDialogState._externalMembers": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-SIDEBAR",
+        "reason": "The mounted channel form composes shared form, member picker and confirmation controls."
+      },
+      "apps/raft_flutter/lib/features/create_channel_dialog.dart#method:_CreateChannelDialogState._memberItem": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-SIDEBAR",
+        "reason": "The mounted channel form composes shared form, member picker and confirmation controls."
+      },
+      "apps/raft_flutter/lib/features/create_channel_dialog.dart#method:_CreateChannelDialogState._submitExternal": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-SIDEBAR",
+        "reason": "The mounted channel form composes shared form, member picker and confirmation controls."
+      },
+      "apps/raft_flutter/lib/features/external_invite_channel_dialog.dart#function:showNewExternalChannelInvites": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-SIDEBAR",
+        "reason": "The mounted channel form composes shared form, member picker and confirmation controls."
+      },
+      "apps/raft_flutter/lib/features/sidebar_workspace_groups.dart#method:_SidebarWorkspaceGroups.createJointChannel": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-SIDEBAR",
+        "reason": "The mounted workspace sidebar composes shared navigation rows, sections and context menus."
+      },
+      "apps/raft_flutter/lib/features/sidebar_workspace_groups.dart#method:_SidebarWorkspaceGroups.sidebarChannelLeading": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-SIDEBAR",
+        "reason": "The mounted workspace sidebar composes shared navigation rows, sections and context menus."
+      },
+      "apps/raft_flutter/lib/features/sidebar_workspace_groups.dart#method:_SidebarWorkspaceGroups.sidebarLoungeRow": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-SIDEBAR",
+        "reason": "The mounted workspace sidebar composes shared navigation rows, sections and context menus."
+      },
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5915/METHOD:buildWorkspace@47831/FUNCTION:<anonymous>@48049/FUNCTION:conversation@51163": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-SIDEBAR",
+        "reason": "The existing builder has a new lexical identity after moving sidebar code. Its separate family and state mapping remain unreviewed."
+      },
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5915/METHOD:buildWorkspace@47831/FUNCTION:<anonymous>@48049/FUNCTION:workspace@64685": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-SIDEBAR",
+        "reason": "The existing builder has a new lexical identity after moving sidebar code. Its separate family and state mapping remain unreviewed."
+      },
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5915/METHOD:desktopContentDetail@101508/FUNCTION:header@103218": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-SIDEBAR",
+        "reason": "The existing builder has a new lexical identity after moving sidebar code. Its separate family and state mapping remain unreviewed."
+      },
+      "apps/raft_flutter/lib/features/workspace_view.dart#local-function:CLASS:_WorkspaceViewState@5915/METHOD:settingsRailAction@108725/FUNCTION:action@108759": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-SIDEBAR",
+        "reason": "The existing builder has a new lexical identity after moving sidebar code. Its separate family and state mapping remain unreviewed."
+      },
+      "apps/raft_flutter/lib/features/workspace_view_sidebar_menus.dart#method:WorkspaceSidebarMenus._confirmLeave": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-SIDEBAR",
+        "reason": "The mounted workspace sidebar composes shared navigation rows, sections and context menus."
+      },
+      "apps/raft_flutter/lib/features/workspace_view_sidebar_menus.dart#method:WorkspaceSidebarMenus._sectionAccess": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-SIDEBAR",
+        "reason": "The mounted workspace sidebar composes shared navigation rows, sections and context menus."
+      },
+      "apps/raft_flutter/lib/features/workspace_view_sidebar_menus.dart#method:WorkspaceSidebarMenus._showAddConversations": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-SIDEBAR",
+        "reason": "The mounted workspace sidebar composes shared navigation rows, sections and context menus."
+      },
+      "packages/raft_ui/lib/chat_composition_previews.dart#function:sidebarAddConversationsPreview": {
+        "role": "preview_fixture",
+        "familyRefs": [],
+        "owner": "WP-SIDEBAR",
+        "reason": "SDK preview mounts the corresponding shared sidebar component."
+      },
+      "packages/raft_ui/lib/chat_composition_previews.dart#function:sidebarExternalRowPreview": {
+        "role": "preview_fixture",
+        "familyRefs": [],
+        "owner": "WP-SIDEBAR",
+        "reason": "SDK preview mounts the corresponding shared sidebar component."
+      },
+      "packages/raft_ui/lib/src/agent_profile.dart#local-function:CLASS:RaftWorkspaceTreeView@78177/METHOD:build@79649/FUNCTION:message@83234": {
+        "role": "unresolved",
+        "familyRefs": [],
+        "owner": "WP-SIDEBAR",
+        "reason": "The existing builder has a new lexical identity after moving sidebar code. Its separate family and state mapping remain unreviewed."
+      },
+      "packages/raft_ui/lib/src/components.dart#local-function:CLASS:RaftNavItem@27400/METHOD:_build@34405/FUNCTION:row@41543": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-SIDEBAR",
+        "reason": "RaftNavItem applies the mounted conversation recipe and composes the row labels and indicators."
+      },
+      "packages/raft_ui/lib/src/components.dart#local-function:CLASS:RaftNavItem@27400/METHOD:_build@34405/FUNCTION:titleContent@37717": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-SIDEBAR",
+        "reason": "RaftNavItem applies the mounted conversation recipe and composes the row labels and indicators."
+      },
+      "packages/raft_ui/lib/src/components.dart#local-function:CLASS:RaftNavItem@27400/METHOD:_build@34405/FUNCTION:titleWithIndicators@40773": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-SIDEBAR",
+        "reason": "RaftNavItem applies the mounted conversation recipe and composes the row labels and indicators."
+      },
+      "packages/raft_ui/lib/src/components.dart#local-function:CLASS:RaftNavItem@27400/METHOD:_build@34405/FUNCTION:wrappedTitle@36576": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-SIDEBAR",
+        "reason": "RaftNavItem applies the mounted conversation recipe and composes the row labels and indicators."
+      },
+      "packages/raft_ui/lib/src/create_channel_view.dart#local-function:CLASS:_RecipeMemberPicker@13142/METHOD:build@13751/FUNCTION:group@14308": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-SIDEBAR",
+        "reason": "The shared member picker composes selectable member rows and grouping."
+      },
+      "packages/raft_ui/lib/src/create_channel_view.dart#local-function:CLASS:_RecipeMemberPicker@13142/METHOD:build@13751/FUNCTION:row@14616": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-SIDEBAR",
+        "reason": "The shared member picker composes selectable member rows and grouping."
+      },
+      "packages/raft_ui/lib/src/design_primitives.dart#local-function:CLASS:_RaftDropdownMenuState@68616/METHOD:build@75026/FUNCTION:toggle@75256": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-SIDEBAR",
+        "reason": "The dropdown trigger opens its shared menu and keeps the existing popup ownership."
+      },
+      "packages/raft_ui/lib/src/public_page_mark.dart#class:RaftExternalChannelMark": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-SIDEBAR",
+        "reason": "The sidebar External channel mark paints the source path through the shared glyph painter."
+      },
+      "packages/raft_ui/lib/src/public_page_mark.dart#method:RaftExternalChannelMark.build": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-SIDEBAR",
+        "reason": "The sidebar External channel mark paints the source path through the shared glyph painter."
+      },
+      "packages/raft_ui/lib/src/sidebar_section_dialog.dart#class:RaftSidebarAddConversationsDialog": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-SIDEBAR",
+        "reason": "The sidebar section picker composes the shared dialog, text input and checkbox rows."
+      },
+      "packages/raft_ui/lib/src/sidebar_section_dialog.dart#class:RaftSidebarConversationPicker": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-SIDEBAR",
+        "reason": "The sidebar section picker composes the shared dialog, text input and checkbox rows."
+      },
+      "packages/raft_ui/lib/src/sidebar_section_dialog.dart#class:_RaftSidebarAddConversationsDialogState": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-SIDEBAR",
+        "reason": "The sidebar section picker composes the shared dialog, text input and checkbox rows."
+      },
+      "packages/raft_ui/lib/src/sidebar_section_dialog.dart#class:_RaftSidebarConversationPickerState": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-SIDEBAR",
+        "reason": "The sidebar section picker composes the shared dialog, text input and checkbox rows."
+      },
+      "packages/raft_ui/lib/src/sidebar_section_dialog.dart#function:showRaftSidebarAddConversations": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-SIDEBAR",
+        "reason": "The sidebar section picker composes the shared dialog, text input and checkbox rows."
+      },
+      "packages/raft_ui/lib/src/sidebar_section_dialog.dart#method:RaftSidebarAddConversationsDialog.createState": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-SIDEBAR",
+        "reason": "The sidebar section picker composes the shared dialog, text input and checkbox rows."
+      },
+      "packages/raft_ui/lib/src/sidebar_section_dialog.dart#method:RaftSidebarConversationPicker.createState": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-SIDEBAR",
+        "reason": "The sidebar section picker composes the shared dialog, text input and checkbox rows."
+      },
+      "packages/raft_ui/lib/src/sidebar_section_dialog.dart#method:_RaftSidebarAddConversationsDialogState.build": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-SIDEBAR",
+        "reason": "The sidebar section picker composes the shared dialog, text input and checkbox rows."
+      },
+      "packages/raft_ui/lib/src/sidebar_section_dialog.dart#method:_RaftSidebarConversationPickerState.build": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "WP-SIDEBAR",
+        "reason": "The sidebar section picker composes the shared dialog, text input and checkbox rows."
       }
     },
     "entries": {
@@ -59144,51 +59330,6 @@
         "mountStatus": "unresolved",
         "reason": "Resolved function owns a surface call; actual target, route and state are not yet observed."
       },
-      "surface:apps/raft_flutter/lib/features/workspace_view_sidebar_menus.dart#method:_SidebarContextMenus._confirmArchive": {
-        "owner": "design-system alignment",
-        "kind": "surface_factory_candidate",
-        "declarationRefs": [
-          "apps/raft_flutter/lib/features/workspace_view_sidebar_menus.dart#method:_SidebarContextMenus._confirmArchive"
-        ],
-        "mountStatus": "unresolved",
-        "reason": "Resolved function owns a surface call; actual target, route and state are not yet observed."
-      },
-      "surface:apps/raft_flutter/lib/features/workspace_view_sidebar_menus.dart#method:_SidebarContextMenus._confirmDeleteSection": {
-        "owner": "design-system alignment",
-        "kind": "surface_factory_candidate",
-        "declarationRefs": [
-          "apps/raft_flutter/lib/features/workspace_view_sidebar_menus.dart#method:_SidebarContextMenus._confirmDeleteSection"
-        ],
-        "mountStatus": "unresolved",
-        "reason": "Resolved function owns a surface call; actual target, route and state are not yet observed."
-      },
-      "surface:apps/raft_flutter/lib/features/workspace_view_sidebar_menus.dart#method:_SidebarContextMenus._showSectionDialog": {
-        "owner": "design-system alignment",
-        "kind": "surface_factory_candidate",
-        "declarationRefs": [
-          "apps/raft_flutter/lib/features/workspace_view_sidebar_menus.dart#method:_SidebarContextMenus._showSectionDialog"
-        ],
-        "mountStatus": "unresolved",
-        "reason": "Resolved function owns a surface call; actual target, route and state are not yet observed."
-      },
-      "surface:apps/raft_flutter/lib/features/workspace_view_sidebar_menus.dart#method:_SidebarContextMenus._showSidebarMenu": {
-        "owner": "design-system alignment",
-        "kind": "surface_factory_candidate",
-        "declarationRefs": [
-          "apps/raft_flutter/lib/features/workspace_view_sidebar_menus.dart#method:_SidebarContextMenus._showSidebarMenu"
-        ],
-        "mountStatus": "unresolved",
-        "reason": "Resolved function owns a surface call; actual target, route and state are not yet observed."
-      },
-      "surface:apps/raft_flutter/lib/features/workspace_view_sidebar_menus.dart#method:_SidebarContextMenus._toggleMute": {
-        "owner": "design-system alignment",
-        "kind": "surface_factory_candidate",
-        "declarationRefs": [
-          "apps/raft_flutter/lib/features/workspace_view_sidebar_menus.dart#method:_SidebarContextMenus._toggleMute"
-        ],
-        "mountStatus": "unresolved",
-        "reason": "Resolved function owns a surface call; actual target, route and state are not yet observed."
-      },
       "surface:apps/raft_flutter/lib/platform/app_window.dart#method:_AppWindowCommandsState._checkForUpdates": {
         "owner": "design-system alignment",
         "kind": "surface_factory_candidate",
@@ -59737,15 +59878,6 @@
         "kind": "surface_factory_candidate",
         "declarationRefs": [
           "apps/raft_flutter/lib/features/paused_notifications_indicator.dart#method:_PausedNotificationsIndicatorState.resume"
-        ],
-        "mountStatus": "unresolved",
-        "reason": "Resolved function owns a surface call; actual target, route and state are not yet observed."
-      },
-      "surface:apps/raft_flutter/lib/features/workspace_view_sidebar_menus.dart#method:_SidebarContextMenus.openChannelMenu": {
-        "owner": "design-system alignment",
-        "kind": "surface_factory_candidate",
-        "declarationRefs": [
-          "apps/raft_flutter/lib/features/workspace_view_sidebar_menus.dart#method:_SidebarContextMenus.openChannelMenu"
         ],
         "mountStatus": "unresolved",
         "reason": "Resolved function owns a surface call; actual target, route and state are not yet observed."
@@ -61016,6 +61148,134 @@
         "mountStatus": "source_reviewed",
         "reason": "An authenticated thread with at least four human replies can open its Timeline from the header.",
         "lifecycleScreenId": "chat.thread-outline"
+      },
+      "screen:sidebar.add-conversations": {
+        "owner": "WP-SIDEBAR",
+        "kind": "route_or_panel_candidate",
+        "lifecycleScreenId": "sidebar.add-conversations",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/workspace_view_sidebar_menus.dart#method:WorkspaceSidebarMenus._showAddConversations",
+          "packages/raft_ui/lib/src/sidebar_section_dialog.dart#function:showRaftSidebarAddConversations"
+        ],
+        "mountStatus": "source_reviewed",
+        "reason": "The WorkspaceView section menu mounts the shared add-conversations form. The mounted widget test exercises selection and persistence."
+      },
+      "surface:apps/raft_flutter/lib/features/workspace_view_sidebar_menus.dart#method:WorkspaceSidebarMenus._confirmArchive": {
+        "owner": "design-system alignment",
+        "kind": "surface_factory_candidate",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/workspace_view_sidebar_menus.dart#method:WorkspaceSidebarMenus._confirmArchive"
+        ],
+        "mountStatus": "unresolved",
+        "reason": "Resolved function owns a surface call; actual target, route and state are not yet observed."
+      },
+      "surface:apps/raft_flutter/lib/features/workspace_view_sidebar_menus.dart#method:WorkspaceSidebarMenus._confirmDeleteSection": {
+        "owner": "design-system alignment",
+        "kind": "surface_factory_candidate",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/workspace_view_sidebar_menus.dart#method:WorkspaceSidebarMenus._confirmDeleteSection"
+        ],
+        "mountStatus": "unresolved",
+        "reason": "Resolved function owns a surface call; actual target, route and state are not yet observed."
+      },
+      "surface:apps/raft_flutter/lib/features/workspace_view_sidebar_menus.dart#method:WorkspaceSidebarMenus._showSectionDialog": {
+        "owner": "design-system alignment",
+        "kind": "surface_factory_candidate",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/workspace_view_sidebar_menus.dart#method:WorkspaceSidebarMenus._showSectionDialog"
+        ],
+        "mountStatus": "unresolved",
+        "reason": "Resolved function owns a surface call; actual target, route and state are not yet observed."
+      },
+      "surface:apps/raft_flutter/lib/features/workspace_view_sidebar_menus.dart#method:WorkspaceSidebarMenus._showSidebarMenu": {
+        "owner": "design-system alignment",
+        "kind": "surface_factory_candidate",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/workspace_view_sidebar_menus.dart#method:WorkspaceSidebarMenus._showSidebarMenu"
+        ],
+        "mountStatus": "unresolved",
+        "reason": "Resolved function owns a surface call; actual target, route and state are not yet observed."
+      },
+      "surface:apps/raft_flutter/lib/features/workspace_view_sidebar_menus.dart#method:WorkspaceSidebarMenus._toggleMute": {
+        "owner": "design-system alignment",
+        "kind": "surface_factory_candidate",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/workspace_view_sidebar_menus.dart#method:WorkspaceSidebarMenus._toggleMute"
+        ],
+        "mountStatus": "unresolved",
+        "reason": "Resolved function owns a surface call; actual target, route and state are not yet observed."
+      },
+      "surface:apps/raft_flutter/lib/features/workspace_view_sidebar_menus.dart#method:WorkspaceSidebarMenus.openChannelMenu": {
+        "owner": "design-system alignment",
+        "kind": "surface_factory_candidate",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/workspace_view_sidebar_menus.dart#method:WorkspaceSidebarMenus.openChannelMenu"
+        ],
+        "mountStatus": "unresolved",
+        "reason": "Resolved function owns a surface call; actual target, route and state are not yet observed."
+      },
+      "surface:apps/raft_flutter/lib/features/create_channel_dialog.dart#method:_CreateChannelDialogState._submitExternal": {
+        "owner": "WP-SIDEBAR",
+        "kind": "surface_factory",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/create_channel_dialog.dart#method:_CreateChannelDialogState._submitExternal"
+        ],
+        "mountStatus": "source_reviewed",
+        "reason": "The mounted channel form composes shared form, member picker and confirmation controls."
+      },
+      "surface:apps/raft_flutter/lib/features/external_invite_channel_dialog.dart#function:showNewExternalChannelInvites": {
+        "owner": "WP-SIDEBAR",
+        "kind": "surface_factory",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/external_invite_channel_dialog.dart#function:showNewExternalChannelInvites"
+        ],
+        "mountStatus": "source_reviewed",
+        "reason": "The mounted channel form composes shared form, member picker and confirmation controls."
+      },
+      "surface:apps/raft_flutter/lib/features/workspace_view_sidebar_menus.dart#method:WorkspaceSidebarMenus._confirmLeave": {
+        "owner": "WP-SIDEBAR",
+        "kind": "surface_factory",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/workspace_view_sidebar_menus.dart#method:WorkspaceSidebarMenus._confirmLeave"
+        ],
+        "mountStatus": "source_reviewed",
+        "reason": "The mounted workspace sidebar composes shared navigation rows, sections and context menus."
+      },
+      "surface:apps/raft_flutter/lib/features/workspace_view_sidebar_menus.dart#method:WorkspaceSidebarMenus._sectionAccess": {
+        "owner": "WP-SIDEBAR",
+        "kind": "surface_factory",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/workspace_view_sidebar_menus.dart#method:WorkspaceSidebarMenus._sectionAccess"
+        ],
+        "mountStatus": "source_reviewed",
+        "reason": "The mounted workspace sidebar composes shared navigation rows, sections and context menus."
+      },
+      "surface:apps/raft_flutter/lib/features/workspace_view_sidebar_menus.dart#method:WorkspaceSidebarMenus._showAddConversations": {
+        "owner": "WP-SIDEBAR",
+        "kind": "surface_factory",
+        "declarationRefs": [
+          "apps/raft_flutter/lib/features/workspace_view_sidebar_menus.dart#method:WorkspaceSidebarMenus._showAddConversations"
+        ],
+        "mountStatus": "source_reviewed",
+        "reason": "The mounted workspace sidebar composes shared navigation rows, sections and context menus."
+      },
+      "surface:packages/raft_ui/lib/src/design_primitives.dart#local-function:CLASS:_RaftDropdownMenuState@68616/METHOD:build@75026/FUNCTION:toggle@75256": {
+        "owner": "WP-SIDEBAR",
+        "kind": "surface_factory",
+        "declarationRefs": [
+          "packages/raft_ui/lib/src/design_primitives.dart#local-function:CLASS:_RaftDropdownMenuState@68616/METHOD:build@75026/FUNCTION:toggle@75256"
+        ],
+        "mountStatus": "source_reviewed",
+        "reason": "The dropdown trigger opens its shared menu and keeps the existing popup ownership."
+      },
+      "surface:packages/raft_ui/lib/src/sidebar_section_dialog.dart#function:showRaftSidebarAddConversations": {
+        "owner": "WP-SIDEBAR",
+        "kind": "surface_factory",
+        "declarationRefs": [
+          "packages/raft_ui/lib/src/sidebar_section_dialog.dart#function:showRaftSidebarAddConversations"
+        ],
+        "mountStatus": "source_reviewed",
+        "reason": "The sidebar section picker composes the shared dialog, text input and checkbox rows."
       }
     },
     "requirements": {
@@ -62323,36 +62583,6 @@
       },
       "surface:apps/raft_flutter/lib/features/workspace_view.dart#method:_WorkspaceViewState.showWorkspaceSwitcher:applicability": {
         "entryId": "surface:apps/raft_flutter/lib/features/workspace_view.dart#method:_WorkspaceViewState.showWorkspaceSwitcher",
-        "applicability": "unknown",
-        "owner": "design-system alignment",
-        "reason": "Real entry and applicable theme/input/state dimensions require source review and bound execution."
-      },
-      "surface:apps/raft_flutter/lib/features/workspace_view_sidebar_menus.dart#method:_SidebarContextMenus._confirmArchive:applicability": {
-        "entryId": "surface:apps/raft_flutter/lib/features/workspace_view_sidebar_menus.dart#method:_SidebarContextMenus._confirmArchive",
-        "applicability": "unknown",
-        "owner": "design-system alignment",
-        "reason": "Real entry and applicable theme/input/state dimensions require source review and bound execution."
-      },
-      "surface:apps/raft_flutter/lib/features/workspace_view_sidebar_menus.dart#method:_SidebarContextMenus._confirmDeleteSection:applicability": {
-        "entryId": "surface:apps/raft_flutter/lib/features/workspace_view_sidebar_menus.dart#method:_SidebarContextMenus._confirmDeleteSection",
-        "applicability": "unknown",
-        "owner": "design-system alignment",
-        "reason": "Real entry and applicable theme/input/state dimensions require source review and bound execution."
-      },
-      "surface:apps/raft_flutter/lib/features/workspace_view_sidebar_menus.dart#method:_SidebarContextMenus._showSectionDialog:applicability": {
-        "entryId": "surface:apps/raft_flutter/lib/features/workspace_view_sidebar_menus.dart#method:_SidebarContextMenus._showSectionDialog",
-        "applicability": "unknown",
-        "owner": "design-system alignment",
-        "reason": "Real entry and applicable theme/input/state dimensions require source review and bound execution."
-      },
-      "surface:apps/raft_flutter/lib/features/workspace_view_sidebar_menus.dart#method:_SidebarContextMenus._showSidebarMenu:applicability": {
-        "entryId": "surface:apps/raft_flutter/lib/features/workspace_view_sidebar_menus.dart#method:_SidebarContextMenus._showSidebarMenu",
-        "applicability": "unknown",
-        "owner": "design-system alignment",
-        "reason": "Real entry and applicable theme/input/state dimensions require source review and bound execution."
-      },
-      "surface:apps/raft_flutter/lib/features/workspace_view_sidebar_menus.dart#method:_SidebarContextMenus._toggleMute:applicability": {
-        "entryId": "surface:apps/raft_flutter/lib/features/workspace_view_sidebar_menus.dart#method:_SidebarContextMenus._toggleMute",
         "applicability": "unknown",
         "owner": "design-system alignment",
         "reason": "Real entry and applicable theme/input/state dimensions require source review and bound execution."
@@ -63736,12 +63966,6 @@
         "owner": "design-system alignment",
         "reason": "Real entry and applicable theme/input/state dimensions require source review and bound execution."
       },
-      "surface:apps/raft_flutter/lib/features/workspace_view_sidebar_menus.dart#method:_SidebarContextMenus.openChannelMenu:applicability": {
-        "entryId": "surface:apps/raft_flutter/lib/features/workspace_view_sidebar_menus.dart#method:_SidebarContextMenus.openChannelMenu",
-        "applicability": "unknown",
-        "owner": "design-system alignment",
-        "reason": "Real entry and applicable theme/input/state dimensions require source review and bound execution."
-      },
       "surface:apps/raft_flutter/lib/features/account_security_dialogs.dart#function:showSecondFactorStep:applicability": {
         "entryId": "surface:apps/raft_flutter/lib/features/account_security_dialogs.dart#function:showSecondFactorStep",
         "applicability": "unknown",
@@ -63921,6 +64145,42 @@
         "applicability": "unknown",
         "owner": "WP-THREAD",
         "reason": "The registered source entry describes where the view opens. Live runs are recorded in the package report."
+      },
+      "surface:apps/raft_flutter/lib/features/workspace_view_sidebar_menus.dart#method:WorkspaceSidebarMenus._confirmArchive:applicability": {
+        "entryId": "surface:apps/raft_flutter/lib/features/workspace_view_sidebar_menus.dart#method:WorkspaceSidebarMenus._confirmArchive",
+        "applicability": "unknown",
+        "owner": "design-system alignment",
+        "reason": "Real entry and applicable theme/input/state dimensions require source review and bound execution."
+      },
+      "surface:apps/raft_flutter/lib/features/workspace_view_sidebar_menus.dart#method:WorkspaceSidebarMenus._confirmDeleteSection:applicability": {
+        "entryId": "surface:apps/raft_flutter/lib/features/workspace_view_sidebar_menus.dart#method:WorkspaceSidebarMenus._confirmDeleteSection",
+        "applicability": "unknown",
+        "owner": "design-system alignment",
+        "reason": "Real entry and applicable theme/input/state dimensions require source review and bound execution."
+      },
+      "surface:apps/raft_flutter/lib/features/workspace_view_sidebar_menus.dart#method:WorkspaceSidebarMenus._showSectionDialog:applicability": {
+        "entryId": "surface:apps/raft_flutter/lib/features/workspace_view_sidebar_menus.dart#method:WorkspaceSidebarMenus._showSectionDialog",
+        "applicability": "unknown",
+        "owner": "design-system alignment",
+        "reason": "Real entry and applicable theme/input/state dimensions require source review and bound execution."
+      },
+      "surface:apps/raft_flutter/lib/features/workspace_view_sidebar_menus.dart#method:WorkspaceSidebarMenus._showSidebarMenu:applicability": {
+        "entryId": "surface:apps/raft_flutter/lib/features/workspace_view_sidebar_menus.dart#method:WorkspaceSidebarMenus._showSidebarMenu",
+        "applicability": "unknown",
+        "owner": "design-system alignment",
+        "reason": "Real entry and applicable theme/input/state dimensions require source review and bound execution."
+      },
+      "surface:apps/raft_flutter/lib/features/workspace_view_sidebar_menus.dart#method:WorkspaceSidebarMenus._toggleMute:applicability": {
+        "entryId": "surface:apps/raft_flutter/lib/features/workspace_view_sidebar_menus.dart#method:WorkspaceSidebarMenus._toggleMute",
+        "applicability": "unknown",
+        "owner": "design-system alignment",
+        "reason": "Real entry and applicable theme/input/state dimensions require source review and bound execution."
+      },
+      "surface:apps/raft_flutter/lib/features/workspace_view_sidebar_menus.dart#method:WorkspaceSidebarMenus.openChannelMenu:applicability": {
+        "entryId": "surface:apps/raft_flutter/lib/features/workspace_view_sidebar_menus.dart#method:WorkspaceSidebarMenus.openChannelMenu",
+        "applicability": "unknown",
+        "owner": "design-system alignment",
+        "reason": "Real entry and applicable theme/input/state dimensions require source review and bound execution."
       }
     },
     "knownStateAtoms": {

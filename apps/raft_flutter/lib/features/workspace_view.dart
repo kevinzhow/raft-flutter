@@ -2,7 +2,7 @@ import 'mobile_server_tab.dart';
 import 'limit_notice.dart';
 import '../data/limit_notice_queue.dart';
 import 'server_menu_model.dart';
-import 'agent_lounge.dart' show AgentLoungeFlag;
+import 'agent_lounge.dart' show AgentLoungeFlag, loungeAgentName, loungeTitle;
 import 'agent_runtime_labels.dart' show runtimeDisplayNameOf;
 
 import 'dart:async';
@@ -33,7 +33,6 @@ import '../data/raft_navigation_history.dart';
 import '../data/navigation_registry.dart';
 import '../data/workspace_navigation.dart';
 import '../data/source_server_unread.dart';
-import 'sidebar_read_all.dart';
 import 'sidebar_thread_unread.dart';
 import 'workspace_menu_invite.dart';
 import 'workspace_switcher_dialog.dart';
@@ -91,7 +90,7 @@ import 'private_route_guard.dart';
 import 'server_setup_gate.dart';
 import 'panel_width_store.dart';
 import 'desktop_detail_host.dart';
-import 'sidebar_conversation_finder.dart';
+import 'sidebar_group_facts.dart';
 import 'sidebar_projection.dart';
 import 'sidebar_reorder.dart';
 import 'sidebar_sort_menu.dart';
@@ -102,6 +101,7 @@ import 'system_notification_center.dart';
 import 'workspace_browser.dart';
 import 'workspace_channel_header.dart';
 import 'workspace_dm_header.dart';
+import 'workspace_view_sidebar_menus.dart';
 import 'management_support.dart' show managementLaunch;
 import 'sender_avatar_projection.dart';
 import '../platform/app_services.dart';
@@ -117,7 +117,7 @@ import 'public_page_live.dart';
 import 'message_task_actions.dart' show taskSurfaceItemFor;
 
 export 'workspace_host_scope.dart' show WorkspaceHostScope;
-part 'workspace_view_sidebar_menus.dart';
+part 'sidebar_workspace_groups.dart';
 part 'mobile_workspace_route.dart';
 part 'mobile_settings_route.dart';
 
@@ -533,6 +533,7 @@ class _WorkspaceViewState extends State<WorkspaceView>
   final sortingGroups = <String>{};
   void syncSidebarDisclosure() {
     if (skipCoveredPage) return;
+    SidebarGroupFacts.of(w).sync(mobileAuthority);
     reopenOpenedDm(w, sidebarDisclosure.reopenClosedDm);
     unawaited(
       sidebarDisclosure.bind(
@@ -1860,12 +1861,7 @@ class _WorkspaceViewState extends State<WorkspaceView>
                               route,
                             ).usesConversationSidebar,
                             // Phones mount neither; only desktop widths consume them.
-                            sidebar: wide
-                                ? SidebarFinderLayer(
-                                    host: quickSwitcher,
-                                    child: sidebar(),
-                                  )
-                                : const SizedBox.shrink(),
+                            sidebar: wide ? sidebar() : const SizedBox.shrink(),
                             navigationOnRight: navigationOnRight,
                             rail: wide
                                 ? RailGestureExclusion(
@@ -2728,8 +2724,8 @@ class _WorkspaceViewState extends State<WorkspaceView>
                 onPressed: () => unawaited(openDocumentationFromHelp()),
               ),
               RaftMenuEntry(
-                label: tr('Mobile App'),
-                glyph: RaftGlyph.smartphone,
+                label: tr('Get the app'),
+                glyph: RaftGlyph.download,
                 // Source LeftRail: the entry carries the same AttentionDot as
                 // the Help button, so the announcement says what it points at.
                 trailing: mobileAppBadge.hasAttention
@@ -3220,6 +3216,10 @@ class _WorkspaceViewState extends State<WorkspaceView>
       agents: sidebarAgents,
       activity: activity,
       unread: w.conversationReads.unread,
+      mentions: w.conversationReads.mentions,
+      externalEnabled: sidebarExternalEnabled,
+      loungesEnabled: AgentLoungeFlag.of(w).enabled,
+      loungeLabel: (channel) => loungeTitle(context, w, channel),
     );
   }
 
@@ -3281,6 +3281,7 @@ class _WorkspaceViewState extends State<WorkspaceView>
     bool reorderable = false,
   }) {
     final agent = entry.agent;
+    if (entry.isLounge) return sidebarLoungeRow(entry);
     if (agent == null) {
       return channelItem(entry.channel!, pinned, custom, reorderable);
     }
@@ -3303,7 +3304,8 @@ class _WorkspaceViewState extends State<WorkspaceView>
         presence: agentRowPresence(agent),
       ),
       menuOpen: menuOpenRow == 'a:${agent['id']}',
-      onContextMenu: (at) => openAgentMenu(at, agent, entry.channel),
+      onContextMenu: (at) =>
+          sidebarMenus.openAgentMenu(at, agent, entry.channel),
       contextMenuOnLongPress: !reorderable,
       description: description.isEmpty ? null : description,
       // What a working agent is doing takes the place of its runtime.
@@ -3317,74 +3319,6 @@ class _WorkspaceViewState extends State<WorkspaceView>
       markedUnread: w.conversationReads.marks.contains(entry.channel?.id),
       hasDraft: (w.drafts[entry.channel?.id] ?? '').isNotEmpty,
       onTap: () => chooseSidebarAgent(entry),
-    );
-  }
-
-  List<Widget> conversationSlivers() => [
-    for (final group in sidebarGroups)
-      if (group.custom)
-        sidebarCustomGroupSliver(
-          group: group,
-          w: w,
-          header: sectionLabel(group.label, group: group),
-          expanded: sidebarDisclosure.collapsed[group.id] != true,
-          emptyLabel: tr('No conversations'),
-          row: (e, reorderable) =>
-              sidebarEntry(e, custom: true, reorderable: reorderable),
-        )
-      else
-        sidebarGroupSliver(group),
-  ];
-
-  /// Source `hasUnmutedUnread`: a collapsed section header shows an attention
-  /// dot when one of its rows has unread messages and is not Activity-muted.
-  bool groupHasUnread(Iterable<SidebarEntry> entries) => entries.any((e) {
-    final c = e.channel;
-    return c != null &&
-        !c.flag('activityMuted') &&
-        (w.conversationReads.unread[c.id] ?? 0) > 0;
-  });
-
-  Widget? groupAttention(SidebarGroup group, Iterable<SidebarEntry> entries) =>
-      sidebarDisclosure.collapsed[group.id] == true && groupHasUnread(entries)
-      ? const RaftAttentionDot(key: ValueKey('sidebar-section-unread-dot'))
-      : null;
-
-  Widget sidebarGroupSliver(SidebarGroup group) {
-    final joinedOnly = sidebarDisclosure.joinedChannelsOnly;
-    final entries = sidebarShownEntries(group, joinedOnly);
-    return sidebarSystemGroupSliver(
-      group: group,
-      entries: entries,
-      w: w,
-      label: tr(group.label),
-      kind: switch (group.id) {
-        'system:pinned' => RaftChatSidebarGroupKind.pinned,
-        'system:joint' => RaftChatSidebarGroupKind.joint,
-        'system:dms' => RaftChatSidebarGroupKind.directMessages,
-        _ => RaftChatSidebarGroupKind.channels,
-      },
-      expanded: sidebarDisclosure.collapsed[group.id] != true,
-      hideEmpty: presentation.value.hideEmptySections,
-      loading: w.loading,
-      emptyLabel: switch (group.id) {
-        'system:pinned' => tr('Drag channels or DMs here to pin'),
-        'system:joint' => tr('No joint channels yet'),
-        'system:channels' => tr(
-          joinedOnly ? 'No joined channels' : 'No channels yet',
-        ),
-        _ => '',
-      },
-      onExpandedChanged: (expanded) =>
-          sidebarDisclosure.setExpanded(mobileAuthority, group.id, expanded),
-      attention: groupAttention(group, entries),
-      actions: sidebarGroupActions(group),
-      onOpenMenu: (at) => openSectionMenu(at, group),
-      row: (entry, reorderable) => sidebarEntry(
-        entry,
-        pinned: group.id == 'system:pinned',
-        reorderable: reorderable,
-      ),
     );
   }
 
@@ -3469,9 +3403,9 @@ class _WorkspaceViewState extends State<WorkspaceView>
                   ? agentRowPresence(peer.profile!)
                   : null,
             )
-          : channelPublicLeading(context, w, c),
+          : sidebarChannelLeading(c),
       menuOpen: menuOpenRow == 'c:${c.id}',
-      onContextMenu: (at) => openChannelMenu(at, c),
+      onContextMenu: (at) => sidebarMenus.openChannelMenu(at, c),
       contextMenuOnLongPress: !reorderable,
       description: c.type == 'dm' && description.isNotEmpty
           ? description
@@ -3550,7 +3484,6 @@ class _WorkspaceViewState extends State<WorkspaceView>
                 trailing: workingSummary(),
               ),
             StaleCountsNotice.sidebar(w),
-            if (!mobileHome) const SidebarConversationFinderBox(),
             Expanded(
               child: GestureDetector(
                 // Sidebar.tsx `sidebar-scroll-surface onContextMenu`: rows,
@@ -3558,8 +3491,10 @@ class _WorkspaceViewState extends State<WorkspaceView>
                 behavior: HitTestBehavior.translucent,
                 // Web `contextmenu`: right click (also in a phone viewport) and
                 // the touch browsers' long press.
-                onSecondaryTapDown: (d) => openSurfaceMenu(d.globalPosition),
-                onLongPressStart: (d) => openSurfaceMenu(d.globalPosition),
+                onSecondaryTapDown: (d) =>
+                    sidebarMenus.openSurfaceMenu(d.globalPosition),
+                onLongPressStart: (d) =>
+                    sidebarMenus.openSurfaceMenu(d.globalPosition),
                 child: RaftPullToRefresh(
                   enabled: mobileHome || RaftInteraction.of(context).touch,
                   onRefresh: () => Future.wait([
@@ -3675,7 +3610,9 @@ class _WorkspaceViewState extends State<WorkspaceView>
           : (expanded) =>
                 sidebarDisclosure.setExpanded(mobileAuthority, id, expanded),
       actions: group == null ? const [] : sidebarGroupActions(group),
-      onContextMenu: group == null ? null : (at) => openSectionMenu(at, group),
+      onContextMenu: group == null
+          ? null
+          : (at) => sidebarMenus.openSectionMenu(at, group),
       contextMenuOnLongPress: group == null,
     );
     return sidebarDragSectionHeader(
@@ -3683,7 +3620,7 @@ class _WorkspaceViewState extends State<WorkspaceView>
       w: w,
       label: label,
       header: header,
-      onOpenMenu: openSectionMenu,
+      onOpenMenu: (at, target) => sidebarMenus.openSectionMenu(at, target),
     );
   }
 
@@ -3697,7 +3634,7 @@ class _WorkspaceViewState extends State<WorkspaceView>
     final VoidCallback? onAdd =
         id == 'system:channels' && w.can('createChannels')
         ? createChannel
-        : id == 'system:joint' && w.can('federateChannels')
+        : id == 'system:joint' && sidebarCanCreateJoint
         ? createJointChannel
         : null;
     return [
@@ -3714,7 +3651,7 @@ class _WorkspaceViewState extends State<WorkspaceView>
       if (onAdd != null)
         RaftSidebarSectionAction(
           label: id == 'system:joint'
-              ? tr('Create joint channel')
+              ? tr(sidebarCreateJointLabel)
               : tr('Create Channel'),
           glyph: RaftGlyph.plus,
           onPressed: () {
@@ -3820,12 +3757,6 @@ class _WorkspaceViewState extends State<WorkspaceView>
   }
 
   Future<void> createChannel() => CreateChannelDialog.show(
-    context,
-    controller: w,
-    onCreated: (channel) => chooseChannel(channel),
-  );
-
-  Future<void> createJointChannel() => CreateJointChannelDialog.show(
     context,
     controller: w,
     onCreated: (channel) => chooseChannel(channel),

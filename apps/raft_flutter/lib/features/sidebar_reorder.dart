@@ -430,7 +430,23 @@ Widget sidebarListRow(
   required SidebarGroup group,
   required WorkspaceController w,
 }) {
-  final entry = entries[index], item = row(entry, true);
+  final entry = entries[index], item = row(entry, !entries[index].isLounge);
+  final dropZone = SidebarDropZone(
+    group: group,
+    shown: entries,
+    entryKey: entry.key,
+    // Adjacent CSS row margins collapse; the last row alone keeps the
+    // trailing margin before the next section's padded header.
+    child: index == entries.length - 1
+        ? Builder(
+            builder: (context) => Padding(
+              padding: RaftSidebarSectionRecipe.listEndInset(context),
+              child: item,
+            ),
+          )
+        : item,
+  );
+  if (entry.isLounge) return dropZone;
   return SidebarDragRow(
     key: ValueKey('sidebar-drag-${entry.key}'),
     session: SidebarDragSession(
@@ -441,23 +457,7 @@ Widget sidebarListRow(
     ),
     onHeldInPlace: item.onContextMenu,
     feedback: item,
-    child: SidebarDropZone(
-      group: group,
-      shown: entries,
-      entryKey: entry.key,
-      // Adjacent CSS row margins collapse; the last row alone keeps the
-      // trailing margin before the next section's padded header.
-      child: index == entries.length - 1
-          ? Builder(
-              builder: (context) => Padding(
-                padding: RaftSidebarSectionRecipe.listEndInset(
-                  RaftTokens.of(context),
-                ),
-                child: item,
-              ),
-            )
-          : item,
-    ),
+    child: dropZone,
   );
 }
 
@@ -522,6 +522,7 @@ Widget sidebarCustomGroupSliver({
   required WorkspaceController w,
   required Widget header,
   required bool expanded,
+  required bool hideEmpty,
   required String emptyLabel,
   required RaftNavItem Function(SidebarEntry entry, bool reorderable) row,
 }) => ListenableBuilder(
@@ -529,6 +530,9 @@ Widget sidebarCustomGroupSliver({
   listenable: SidebarDrag.changes,
   builder: (context, _) {
     final shown = SidebarDrag.project(group, group.entries);
+    if (hideEmpty && shown.isEmpty && SidebarDrag.source.value != group.id) {
+      return const SliverToBoxAdapter();
+    }
     return SliverMainAxisGroup(
       slivers: [
         SliverToBoxAdapter(child: header),
@@ -575,6 +579,7 @@ Widget sidebarSystemGroupSliver({
   required RaftChatSidebarGroupKind kind,
   required bool expanded,
   required bool hideEmpty,
+  bool revealEmptyDropTarget = true,
   required bool loading,
   required String emptyLabel,
   required ValueChanged<bool> onExpandedChanged,
@@ -596,6 +601,7 @@ Widget sidebarSystemGroupSliver({
         count: shown.length,
         expanded: expanded,
         hideEmpty: hideEmpty,
+        revealEmptyDropTarget: revealEmptyDropTarget,
         dragActive: SidebarDrag.active,
         dragSource: SidebarDrag.source.value == group.id,
         loading: loading,

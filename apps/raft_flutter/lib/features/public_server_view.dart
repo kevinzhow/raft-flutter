@@ -1175,8 +1175,8 @@ class _PublicServerViewState extends State<PublicServerView> {
                       unawaited(managementLaunch(widget.documentationUrl)),
                 ),
                 RaftMenuEntry(
-                  label: tr('Mobile App'),
-                  glyph: RaftGlyph.smartphone,
+                  label: tr('Get the app'),
+                  glyph: RaftGlyph.download,
                   onPressed: () => openSettingsTab('about'),
                 ),
                 if (account.settings != null)

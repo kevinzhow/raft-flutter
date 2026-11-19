@@ -2,6 +2,7 @@ import 'package:flutter/widgets.dart';
 
 import 'icons.dart';
 import 'localization.dart';
+import 'theme.dart';
 import 'tooltip.dart';
 
 /// A small globe after the server's name when its public page is live (Web
@@ -132,4 +133,22 @@ class RaftHashGlobePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(RaftHashGlobePainter old) => old.color != color;
+}
+
+class RaftExternalChannelMark extends StatelessWidget {
+  const RaftExternalChannelMark({super.key, this.size = 14, this.color});
+
+  final double size;
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) => RaftIconViewport(
+    size: size,
+    child: CustomPaint(
+      painter: RaftGlyphPainter.externalChannel(
+        color:
+            color ?? IconTheme.of(context).color ?? RaftTokens.of(context).ink,
+      ),
+    ),
+  );
 }

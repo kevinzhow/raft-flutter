@@ -5,9 +5,52 @@
 // ones: PATCH /servers/:id/sidebar-order for pins, placements, sections, sort
 // and hidden DMs, POST /channels/:id/read-all and /unread, PATCH
 // /channels/:id/notification-settings.
-part of 'workspace_view.dart';
+import 'dart:async';
 
-extension _SidebarContextMenus on _WorkspaceViewState {
+import 'package:flutter/material.dart';
+import 'package:raft_client/raft_client.dart';
+import 'package:raft_ui/raft_ui.dart';
+
+import '../data/personal_presentation.dart';
+import '../data/sidebar_disclosure.dart';
+import '../data/workspace_controller.dart';
+import 'notification_level_menu.dart' show channelNotificationSubmenu;
+import 'sidebar_projection.dart';
+import 'sidebar_read_all.dart';
+import 'sidebar_reorder.dart' show sidebarSectionOrder;
+
+class WorkspaceSidebarMenus {
+  const WorkspaceSidebarMenus({
+    required this.context,
+    required this.w,
+    required this.currentAuthority,
+    required this.presentation,
+    required this.sidebarDisclosure,
+    required this.rowToast,
+    required this.setMenuOpenRow,
+    required this.closeConversation,
+    required this.createChannel,
+    required this.createJointChannel,
+    required this.sidebarExternalEnabled,
+    required this.sidebarCanCreateJoint,
+    required this.sidebarCreateJointLabel,
+  });
+
+  final BuildContext context;
+  final WorkspaceController w;
+  final String Function() currentAuthority;
+  final PersonalPresentationStore presentation;
+  final SidebarDisclosureStore sidebarDisclosure;
+  final RaftToastController rowToast;
+  final ValueChanged<String?> setMenuOpenRow;
+  final VoidCallback closeConversation;
+  final Future<void> Function() createChannel, createJointChannel;
+  final bool sidebarExternalEnabled, sidebarCanCreateJoint;
+  final String sidebarCreateJointLabel;
+
+  bool get mounted => context.mounted;
+  String get mobileAuthority => currentAuthority();
+  String tr(String label) => raftText(context, label);
   Map<String, dynamic> get _order => w.sidebarOrder;
 
   List<Map<String, dynamic>> _maps(Object? value) => [
@@ -91,9 +134,13 @@ extension _SidebarContextMenus on _WorkspaceViewState {
   List<Map<String, dynamic>> _placeInSection(
     String kind,
     String id,
-    String sectionId,
-  ) {
-    final rest = _placementsWithout(kind, id);
+    String sectionId, {
+    List<Map<String, dynamic>>? previous,
+  }) {
+    final rest = [
+      for (final placement in previous ?? _maps(_order['sectionPlacements']))
+        if (!_samePlacement(placement, kind, id)) placement,
+    ];
     final destination = [
       for (final p in rest)
         if (p['sectionId'] == sectionId) p,
@@ -122,43 +169,38 @@ extension _SidebarContextMenus on _WorkspaceViewState {
     });
   }
 
-  Future<void> _createSection(
+  String _createSection(
     String name,
     String? emoji,
     (String, String)? moveItem,
+    String? insertBefore,
   ) {
     final id =
         'section-${DateTime.now().microsecondsSinceEpoch.toRadixString(36)}';
     final sections = _maps(_order['customSections']);
-    final sectionOrder = [
-      for (final e in (_order['sectionOrder'] as List? ?? const [])) '$e',
-    ];
+    final sectionOrder = sidebarSectionOrder(_order).toList();
+    final index = sectionOrder.indexOf(insertBefore ?? '');
+    sectionOrder.insert(index < 0 ? sectionOrder.length : index, id);
     final ref = moveItem == null ? null : _pinRefOf(moveItem.$1, moveItem.$2);
-    return _patchOrder({
-      'customSections': [
-        ...sections,
-        {'id': id, 'name': name, 'emoji': emoji, 'sortMode': 'manual'},
-      ],
-      'sectionOrder': [
-        if (sectionOrder.isEmpty) ...[
-          'system:pinned',
-          'system:joint',
-          'system:channels',
-          'system:dms',
-        ] else
-          ...sectionOrder,
-        id,
-      ],
-      'sectionPlacements': moveItem == null
-          ? _maps(_order['sectionPlacements'])
-          : _placeInSection(moveItem.$1, moveItem.$2, id),
-      'pinned': ref == null
-          ? _maps(_order['pinned'])
-          : [
-              for (final p in _maps(_order['pinned']))
-                if (!_samePlacement(p, ref.$1, ref.$2)) p,
-            ],
-    });
+    unawaited(
+      _patchOrder({
+        'customSections': [
+          ...sections,
+          {'id': id, 'name': name, 'emoji': emoji, 'sortMode': 'manual'},
+        ],
+        'sectionOrder': sectionOrder,
+        'sectionPlacements': moveItem == null
+            ? _maps(_order['sectionPlacements'])
+            : _placeInSection(moveItem.$1, moveItem.$2, id),
+        'pinned': ref == null
+            ? _maps(_order['pinned'])
+            : [
+                for (final p in _maps(_order['pinned']))
+                  if (!_samePlacement(p, ref.$1, ref.$2)) p,
+              ],
+      }),
+    );
+    return id;
   }
 
   // ---- presentation ------------------------------------------------------
@@ -282,11 +324,7 @@ extension _SidebarContextMenus on _WorkspaceViewState {
     if (open) {
       // Sidebar.tsx closeDm `navigate('/s/<slug>')`: wide layouts close the
       // detail pane, a phone returns to the Home list.
-      if (wide) {
-        dismissPanel();
-      } else {
-        select('home');
-      }
+      closeConversation();
     }
     await update;
   }
@@ -294,54 +332,235 @@ extension _SidebarContextMenus on _WorkspaceViewState {
   /// Sidebar.tsx archive ConfirmDialog: stays open on "Archiving…", closes
   /// when the archive succeeded and shows the error under the message when
   /// it failed.
-  Future<void> _confirmArchive(RaftChannel c) => RaftConfirmDialog.show(
-    context,
-    RaftConfirmDialog(
-      surfaceKey: const ValueKey('shell-dialog'),
-      title: tr('Archive channel'),
-      message: raftFormat(
-        context,
-        'Archive "{name}"? Members keep read access and history, but writes will be frozen and the channel will be hidden from sidebars. You can unarchive it later.',
-        {'name': c.name},
+  Future<void> _confirmArchive(RaftChannel c) {
+    final scope = mobileAuthority;
+    return RaftConfirmDialog.show(
+      context,
+      RaftConfirmDialog(
+        surfaceKey: const ValueKey('shell-dialog'),
+        title: tr('Archive channel'),
+        message: raftFormat(
+          context,
+          'Archive "{name}"? Members keep read access and history, but writes will be frozen and the channel will be hidden from sidebars. You can unarchive it later.',
+          {'name': c.name},
+        ),
+        confirmLabel: tr('Archive'),
+        loadingLabel: tr('Archiving…'),
+        confirmVariant: RaftButtonRecipeVariant.warning,
+        onConfirm: () async {
+          if (scope != mobileAuthority ||
+              !w.can('archiveChannels', resource: c)) {
+            throw const RaftUserError(
+              'Server access changed. Reopen this form.',
+            );
+          }
+          final receipt = await w.command('POST', '/channels/${c.id}/archive');
+          if (!mounted || scope != mobileAuthority || receipt is! Map) return;
+          final current = w.channelById(c.id);
+          if (current != null) {
+            w.putSharedChannelRow(RaftChannel({...current.json, ...receipt}));
+          }
+        },
       ),
-      confirmLabel: tr('Archive channel'),
-      cancelLabel: tr('Keep Channel'),
-      loadingLabel: tr('Archiving…'),
-      confirmVariant: RaftButtonRecipeVariant.warning,
-      onConfirm: () async {
-        await w.command('POST', '/channels/${c.id}/archive');
-        if (mounted) await w.refreshChannels();
-      },
-    ),
-  );
+    );
+  }
+
+  Future<void> _confirmLeave(RaftChannel channel) async {
+    final scope = mobileAuthority;
+    final roster = channel.type == 'private'
+        ? w.query('/channels/${channel.id}/members')
+        : null;
+    await showRaftDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => FutureBuilder(
+        future: roster,
+        builder: (context, snapshot) {
+          final data = snapshot.data;
+          final memberCount = data is Map
+              ? _maps(data['humans']).length + _maps(data['agents']).length
+              : 0;
+          final deletes = channel.type == 'private' && memberCount <= 1;
+          final description = switch (channel.type) {
+            'private' => "You'll stop getting messages from #{name} and can't post there. To come back, a member has to invite you again.",
+            'joint' => "You'll stop getting messages from #{name} and can't post there. To come back, an admin has to invite you again.",
+            _ => "You'll stop getting messages from #{name} and can't post there. You can rejoin any time. Threads you follow will still notify you until you unfollow them.",
+          };
+          return RaftConfirmDialog(
+            surfaceKey: const ValueKey('sidebar-channel-leave-confirmation'),
+            title: tr(deletes ? 'Leave and delete channel?' : 'Leave channel'),
+            message: raftFormat(
+              context,
+              deletes
+                  ? 'You are the last member of this private channel. When you leave, the channel and its messages are deleted and cannot be recovered.'
+                  : description,
+              {'name': channel.name},
+            ),
+            confirmLabel: tr(deletes ? 'Leave and delete' : 'Leave'),
+            confirmVariant: deletes
+                ? RaftButtonRecipeVariant.danger
+                : RaftButtonRecipeVariant.warning,
+            loadingLabel: tr('Leaving…'),
+            onConfirm: () async {
+              final current = w.channelById(channel.id);
+              if (scope != mobileAuthority ||
+                  current == null ||
+                  !current.joined ||
+                  current.archived ||
+                  current.name == 'all') {
+                throw const RaftUserError(
+                  'Server access changed. Reopen this form.',
+                );
+              }
+              await w.command('POST', '/channels/${channel.id}/leave');
+              if (!mounted || scope != mobileAuthority) return;
+              final row = w.channelById(channel.id);
+              if (row != null) {
+                w.putSharedChannelRow(
+                  RaftChannel({...row.json, 'joined': false}),
+                );
+              }
+            },
+          );
+        },
+      ),
+    );
+  }
 
   Future<void> _showSectionDialog({
     Map<String, dynamic>? edit,
     (String, String)? moveItem,
-  }) => showRaftSidebarSectionDialog(
-    context,
-    cardKey: const ValueKey('sidebar-section-dialog'),
-    title: edit == null ? 'New Section' : 'Edit Section',
-    submitLabel: edit == null ? 'Create Section' : 'Save',
-    initialName: '${edit?['name'] ?? ''}',
-    initialEmoji: '${edit?['emoji'] ?? ''}',
-    onSubmit: (name, emoji) {
-      if (edit == null) {
-        unawaited(_createSection(name, emoji, moveItem));
-      } else {
+    String? insertBefore,
+  }) {
+    final scope = mobileAuthority;
+    final sectionId = edit?['id'] as String?;
+    final candidates = _sectionCandidates();
+    final initial = sectionId == null
+        ? <String>{}
+        : _sectionSelection(sectionId);
+    var selected = initial;
+    return showRaftSidebarSectionDialog(
+      context,
+      cardKey: const ValueKey('sidebar-section-dialog'),
+      title: edit == null ? 'New section' : 'Edit section',
+      submitLabel: edit == null ? 'Create' : 'Save',
+      stepLabel: edit == null ? 'Step 1 of 2' : null,
+      initialName: '${edit?['name'] ?? ''}',
+      initialEmoji: '${edit?['emoji'] ?? ''}',
+      conversations: edit == null
+          ? null
+          : RaftSidebarConversationPicker(
+              candidates: candidates,
+              initialSelection: initial,
+              onChanged: (value) => selected = value,
+            ),
+      onSubmit: (name, emoji) {
+        if (!_sectionAccess(scope, sectionId)) return;
+        if (sectionId == null) {
+          final created = _createSection(name, emoji, moveItem, insertBefore);
+          unawaited(_showAddConversations(created, name, scope));
+          return;
+        }
         unawaited(
           _patchOrder({
             'customSections': [
-              for (final s in _maps(_order['customSections']))
-                s['id'] == edit['id']
-                    ? {...s, 'name': name, 'emoji': emoji}
-                    : s,
+              for (final section in _maps(_order['customSections']))
+                section['id'] == sectionId
+                    ? {...section, 'name': name, 'emoji': emoji}
+                    : section,
             ],
+            ..._sectionConversationChanges(sectionId, initial, selected),
           }),
         );
-      }
-    },
-  );
+      },
+    );
+  }
+
+  bool _sectionAccess(String scope, String? sectionId) {
+    if (!mounted) return false;
+    if (scope == mobileAuthority &&
+        (sectionId == null ||
+            _maps(_order['customSections'])
+                .any((section) => section['id'] == sectionId))) {
+      return true;
+    }
+    rowToast.show(tr('This section is no longer available.'));
+    return false;
+  }
+
+  Map<String, String> _sectionCandidates() {
+    final hidden = (_order['hiddenDmIds'] as List? ?? const []).toSet();
+    final joinedOnly = sidebarDisclosure.joinedChannelsOnly;
+    return {
+      for (final channel in w.channels)
+        if (!channel.archived &&
+            channel.loungeAgentId == null &&
+            (sidebarExternalSectionChannel(channel) ||
+                !joinedOnly ||
+                channel.joined))
+          channel.id: channel.name,
+      for (final dm in w.dms)
+        if (!hidden.contains(dm.id)) dm.id: dm.peerLabel,
+    };
+  }
+
+  Set<String> _sectionSelection(String sectionId) => {
+    for (final placement in _maps(_order['sectionPlacements']))
+      if (placement['sectionId'] == sectionId && placement['kind'] == 'channel')
+        placement['id'] as String,
+  };
+
+  Map<String, dynamic> _sectionConversationChanges(
+    String sectionId,
+    Set<String> initial,
+    Set<String> selected,
+  ) {
+    final removed = initial.difference(selected);
+    final added = selected.difference(initial);
+    if (removed.isEmpty && added.isEmpty) return {};
+    var placements = [
+      for (final placement in _maps(_order['sectionPlacements']))
+        if (placement['sectionId'] != sectionId ||
+            placement['kind'] != 'channel' ||
+            !removed.contains(placement['id']))
+          placement,
+    ];
+    final unpin = <(String, String)>{};
+    final candidates = _sectionCandidates();
+    for (final id in added.where(candidates.containsKey)) {
+      placements = _placeInSection(
+        'channel',
+        id,
+        sectionId,
+        previous: placements,
+      );
+      unpin.add(_pinRefOf('channel', id));
+    }
+    return {
+      'sectionPlacements': placements,
+      'pinned': [
+        for (final ref in _maps(_order['pinned']))
+          if (!unpin.contains((ref['kind'], ref['id']))) ref,
+      ],
+    };
+  }
+
+  Future<void> _showAddConversations(
+    String sectionId,
+    String name,
+    String scope,
+  ) async {
+    final initial = _sectionSelection(sectionId);
+    final picked = await showRaftSidebarAddConversations(
+      context,
+      name: name,
+      candidates: _sectionCandidates(),
+      initial: initial,
+    );
+    if (picked == null || !_sectionAccess(scope, sectionId)) return;
+    final changes = _sectionConversationChanges(sectionId, initial, picked);
+    if (changes.isNotEmpty) await _patchOrder(changes);
+  }
 
   Future<void> _confirmDeleteSection(Map<String, dynamic> section) async {
     final ok = await RaftConfirmDialog.show(
@@ -443,8 +662,14 @@ extension _SidebarContextMenus on _WorkspaceViewState {
     String? dmOrChannelId,
     VoidCallback close, {
     bool channel = false,
+    int summaryUnread = 0,
   }) {
-    final toggle = SidebarReadToggle(w, '$dmOrChannelId', channel: channel);
+    final toggle = SidebarReadToggle(
+      w,
+      '$dmOrChannelId',
+      channel: channel,
+      summaryUnread: summaryUnread,
+    );
     return _item(
       toggle.label,
       toggle.unread ? RaftGlyph.messageSquareCheck : RaftGlyph.messageSquareDot,
@@ -462,6 +687,7 @@ extension _SidebarContextMenus on _WorkspaceViewState {
         c.name != 'all' &&
         c.type != 'joint' &&
         !c.archived;
+    final canLeave = c.joined && c.name != 'all' && !c.archived;
     return _openSidebarMenu(
       at,
       (close) => [
@@ -494,8 +720,8 @@ extension _SidebarContextMenus on _WorkspaceViewState {
             close,
             () => _toggleMute(c),
           ),
-        if (canArchive) ...[
-          const RaftSidebarMenuDivider(),
+        if (canArchive || canLeave) const RaftSidebarMenuDivider(),
+        if (canArchive)
           _item(
             'Archive channel',
             RaftGlyph.archive,
@@ -503,7 +729,18 @@ extension _SidebarContextMenus on _WorkspaceViewState {
             () => _confirmArchive(c),
             key: 'sidebar-menu-archive',
           ),
-        ],
+        if (canLeave)
+          _item(
+            'Leave channel',
+            switch (c.type) {
+              'private' => RaftGlyph.leavePrivateChannel,
+              'joint' => RaftGlyph.leaveJointChannel,
+              _ => RaftGlyph.leaveChannel,
+            },
+            close,
+            () => _confirmLeave(c),
+            key: 'sidebar-menu-leave',
+          ),
       ],
       submenu: _moveSubmenu('channel', c.id),
       row: 'c:${c.id}',
@@ -578,6 +815,39 @@ extension _SidebarContextMenus on _WorkspaceViewState {
     );
   }
 
+  Future<void> openLoungeMenu(Offset at, SidebarEntry entry) {
+    final channel = entry.channel!;
+    final id = channel.id;
+    final pinned = _isPinned('channel', id);
+    return _openSidebarMenu(
+      at,
+      (close) => [
+        _readItem(
+          id,
+          close,
+          channel: channel.joined,
+          summaryUnread: entry.loungeUnread,
+        ),
+        _item(
+          pinned ? 'Unpin' : 'Pin',
+          pinned ? RaftGlyph.pinOff : RaftGlyph.pin,
+          close,
+          () => _togglePinned('channel', id, [('channel', id)]),
+        ),
+        if (_canMute(channel))
+          _item(
+            channel.flag('activityMuted') ? 'Unmute' : 'Mute',
+            channel.flag('activityMuted') ? RaftGlyph.bell : RaftGlyph.bellOff,
+            close,
+            () => _toggleMute(channel),
+          ),
+        const RaftSidebarMenuDivider(),
+        _item('Close chat', RaftGlyph.x, close, () => _closeDm(id)),
+      ],
+      row: 'c:$id',
+    );
+  }
+
   static const _sortKeys = {
     'system:pinned': 'pinnedSortMode',
     'system:joint': 'jointChannelSortMode',
@@ -586,6 +856,7 @@ extension _SidebarContextMenus on _WorkspaceViewState {
   };
 
   Future<void> openSectionMenu(Offset at, SidebarGroup group) {
+    final presentationKey = presentation.key;
     final custom = group.custom
         ? _maps(_order['customSections'])
               .where((s) => s['id'] == group.id)
@@ -596,8 +867,7 @@ extension _SidebarContextMenus on _WorkspaceViewState {
         ? '${custom['sortMode'] ?? 'manual'}'
         : '${_order[sortKey] ?? 'manual'}';
     final canCreate = group.id == 'system:channels' && w.can('createChannels');
-    final canCreateJoint =
-        group.id == 'system:joint' && w.can('federateChannels');
+    final canCreateJoint = group.id == 'system:joint' && sidebarCanCreateJoint;
     return _openSidebarMenu(
       at,
       (close) => [
@@ -607,8 +877,8 @@ extension _SidebarContextMenus on _WorkspaceViewState {
         ],
         if (canCreateJoint) ...[
           _item(
-            'Create joint channel',
-            RaftGlyph.gitBranch,
+            sidebarCreateJointLabel,
+            sidebarExternalEnabled ? RaftGlyph.globe : RaftGlyph.gitBranch,
             close,
             createJointChannel,
           ),
@@ -659,7 +929,7 @@ extension _SidebarContextMenus on _WorkspaceViewState {
           onPressed: () {
             close();
             presentation.update(
-              mobileAuthority,
+              presentationKey,
               hideEmptySections: !presentation.value.hideEmptySections,
             );
           },
@@ -681,7 +951,7 @@ extension _SidebarContextMenus on _WorkspaceViewState {
           glyph: RaftGlyph.folderPlus,
           onPressed: () {
             close();
-            unawaited(_showSectionDialog());
+            unawaited(_showSectionDialog(insertBefore: group.id));
           },
         ),
         if (custom != null) ...[
@@ -707,14 +977,14 @@ extension _SidebarContextMenus on _WorkspaceViewState {
     (close) => [
       if (w.can('editServerSettings'))
         _item('Create Channel', RaftGlyph.plus, close, createChannel),
-      if (w.can('federateChannels'))
+      if (sidebarCanCreateJoint)
         _item(
-          'Create joint channel',
-          RaftGlyph.gitBranch,
+          sidebarCreateJointLabel,
+          sidebarExternalEnabled ? RaftGlyph.globe : RaftGlyph.gitBranch,
           close,
           createJointChannel,
         ),
-      if (w.can('editServerSettings') || w.can('federateChannels'))
+      if (w.can('editServerSettings') || sidebarCanCreateJoint)
         const RaftSidebarMenuDivider(),
       RaftSidebarMenuItem(
         itemKey: const ValueKey('sidebar-menu-new-section'),

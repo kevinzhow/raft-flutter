@@ -169,7 +169,8 @@ SECTIONS = [
           note='The section dialog emoji button opens RaftEmojiPicker (emoji-picker-react data via tool/gen-emoji-data); recently used emoji are kept for the session only.'),
         R('2.12', 'Archive channel confirm (from the sidebar menu)', 'components/layout/Sidebar.tsx', 'DP', d=['components.shell.desktop.dialog.archive-channel'],
           p=['components.list-pages.dialogs.phone-archive-channel'], prio=3),
-        R('2.13', 'Conversation finder ("Find a conversation..." box and results)', 'components/layout/SidebarConversationFinder.tsx', 'DP', prio=2),
+        R('2.13', 'Removed sidebar conversation finder', 'features/sidebar/Sidebar.tsx', 'DP',
+          excl=('superseded', 'Web v1.24 removed the sidebar finder. Search and the global quick switcher remain separate surfaces.')),
         R('2.14', 'Live agent activity bar (tool finished, working, thinking, compacting, long)', 'components/layout/LiveAgentActivityBar.tsx', 'DP',
           excl=('superseded', 'Raft Design System decision 0006 deprecates the live bar; Flutter shows working agents in place (summary, Working now, rows, channel subtitle).')),
         R('2.15', 'Activity page frame (rail + inbox column edge)', 'components/layout/MainLayout.tsx', 'DP',
@@ -522,7 +523,6 @@ MARKS = {
     '9.19': dict(verify='slack_bridge_v0 "Whole Slack Bridge launch and rollback gate": seeded default false with no allow rules (migration 0252); the tab is hidden without it. Cases exist (ext-settings.im-bridges.*).'),
     '9.20': dict(verify='Wizard of the IM Bridges tab: same flag slack_bridge_v0 as 9.19. Cases exist (wp6.settings.bridge-*, about 22).'),
     '9.21': dict(verify='server_labs_ui_v0 "Web Server Settings Labs UI exposure gate" (migration 0192, default false); the tab is hidden without it. Cases exist (ext-settings.labs.*).'),
-    '2.13': dict(excl=('host-only', 'Sidebar.tsx:3856 renders SidebarConversationFinder only when isElectronDesktopShell(); the comment says "web withdraws it (@artin 2026-09-11)".')),
     '7.26': dict(excl=('host-only', 'handoff/handoffSessions.ts:59 isHandoffAvailable() = isElectronDesktopShell() && bridge; Sidebar.tsx:2447 shows the menu item only then.')),
     '3.40': dict(excl=('duplicate', 'ChannelOverflowMenu.tsx:568 renders EditChannelDialog: it is the channel settings sheet already listed as 4.04 / 4.05 '
                        '(the channelsettings cases open it through the header gear).')),

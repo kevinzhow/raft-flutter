@@ -28,6 +28,7 @@
 // screen_fixture.dart) answering the same routes react-provider.spec.ts
 // mocks, built from shared/fixtureData.json.
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -91,6 +92,8 @@ final Map<String, ParityCase> screenCases = {
   'screens.members.human.profile': _humanProfile,
   'screens.settings.server-danger-modal': _serverDangerModal,
   'screens.home.loading': _homeLoading,
+  'screens.home.channel-list': _homeChannelList,
+  'screens.home.channel-list.dark': _homeChannelList,
 };
 
 final Map<String, ParityUncovered> screenUncovered = {};
@@ -380,6 +383,149 @@ final ParityCase _homeLoading = ParityCase(
     },
     builder: (context, w) => _workspaceView(ctx, w),
   ),
+);
+
+final ParityCase _homeChannelList = ParityCase(
+  widgets: const ['raft_flutter:WorkspaceView'],
+  fullLengthHeight: 906,
+  notes:
+      'Mounted phone Home with the shared homeChannelList fixture. '
+      'The Web fullLength crop includes all rows and the bottom tab bar.',
+  build: (ctx) => ScreenWorkspaceHost(
+    create: () {
+      final fixture = ctx.fixtureData['homeChannelList'] as Map;
+      final channels = (fixture['channels'] as List).cast<Map>();
+      final dms = (fixture['directMessages'] as List).cast<Map>();
+      final wire = ScreenWire(ctx.fixtureData);
+      final server = RaftRecord({
+        ...wire.server(),
+        'name': fixture['serverName'],
+      });
+      final order = <String, dynamic>{
+        'pinned': [
+          for (final id in fixture['pinnedChannelIds'] as List)
+            {'kind': 'channel', 'id': id},
+        ],
+      };
+      final agentDms = dms.where((dm) => dm['peerType'] == 'agent');
+      final agents = [
+        for (final dm in agentDms)
+          {
+            'id': dm['peerId'],
+            'name': dm['name'],
+            'displayName': dm['name'],
+            'runtime': dm['runtime'],
+            'status': 'active',
+            'sessionId': 'session-${dm['peerId']}',
+            'activity': dm['activity'],
+          },
+      ];
+      Map<String, dynamic> channelRow(Map row) => {
+        'id': row['id'],
+        'name': row['name'],
+        'type': row['type'],
+        'serverId': server.id,
+        'joined': true,
+        'activityMuted': row['muted'],
+      };
+      Map<String, dynamic> dmRow(Map row) => {
+        ...channelRow(row),
+        'type': 'dm',
+        'peerType': row['peerType'],
+        'peerId': row['peerId'],
+        'peerName': row['name'],
+        'peerDisplayName': row['name'],
+      };
+      final unread = <String, int>{
+        for (final row in [...channels, ...dms])
+          if ((row['unread'] as int) > 0)
+            row['id'] as String: row['unread'] as int,
+      };
+      final mentions = <String>{
+        for (final row in channels)
+          if (row['mention'] == true) row['id'] as String,
+      };
+      final client = ScreenFixtureClient(
+        (method, path, query) => switch (path) {
+          '/channels' => channels.map(channelRow).toList(),
+          '/channels/dm' => dms.map(dmRow).toList(),
+          '/agents' => agents,
+          '/channels/saved' => {'saved': [], 'total': fixture['savedTotal']},
+          '/servers/$_serverId/sidebar-order' => order,
+          '/channels/threads/followed' => {
+            'threads': [
+              for (final row in channels)
+                for (
+                  var index = 0;
+                  index < (row['followedThreadsWithNewReplies'] as int);
+                  index++
+                )
+                  {
+                    'threadChannelId': '${row['id']}-thread-$index',
+                    'parentMessageId': '${row['id']}-parent-$index',
+                    'parentChannelId': row['id'],
+                    'unreadCount': 1,
+                  },
+            ],
+          },
+          _ => wire.common(method, path, query),
+        },
+        user: wire.me(),
+        server: server.id,
+      );
+      SharedPreferences.setMockInitialValues({
+        'raft:presentation:${jsonEncode([client.origin, client.user!.id])}':
+            '{"liveActivity":false}',
+      });
+      final workspace = WorkspaceController(client, mobileNavigation: true)
+        ..servers = [server]
+        ..server = server
+        ..channels = channels
+            .map((row) => RaftChannel(channelRow(row)))
+            .toList()
+        ..dms = dms.map((row) => RaftChannel(dmRow(row))).toList()
+        ..sidebarOrder = order
+        ..loading = false;
+      workspace.messageDomain.ledger.switchServer(server.id);
+      workspace.conversationReads
+        ..unread = unread
+        ..mentions = mentions;
+      workspace.drafts.addEntries([
+        for (final row in channels)
+          if (row['draft'] == true)
+            MapEntry(row['id'] as String, 'Draft for the roadmap review'),
+      ]);
+      return workspace;
+    },
+    builder: (context, w) => _workspaceView(ctx, w),
+  ),
+  interact: (tester, ctx) async {
+    final fixture = ctx.fixtureData['homeChannelList'] as Map;
+    final workspace = tester
+        .widget<WorkspaceView>(find.byType(WorkspaceView))
+        .controller;
+    final client = workspace.client as ScreenFixtureClient;
+    for (final row in fixture['directMessages'] as List) {
+      if (row['activity'] == 'working') {
+        await _liveActivity(client, row['peerId'] as String, {
+          'activity': row['activity'],
+          'detail': row['activityDetail'],
+          'detailKind': 'other',
+        });
+      }
+    }
+    await tester.pump();
+    expect(find.text(fixture['serverName'] as String), findsWidgets);
+    for (final row in [
+      ...fixture['channels'] as List,
+      ...fixture['directMessages'] as List,
+    ]) {
+      expect(
+        find.byKey(ValueKey('sidebar-channel-${row['id']}')),
+        findsOneWidget,
+      );
+    }
+  },
 );
 
 /// Fixture origin: the app's default `RAFT_ORIGIN` (lib/main.dart).

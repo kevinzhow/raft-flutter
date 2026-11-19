@@ -9,6 +9,7 @@ import 'tap_slop.dart';
 import 'public_page_mark.dart';
 import 'raft/button.dart';
 import 'raft/status.dart' show RaftAttentionDot;
+import 'raft/ui_tokens.dart' show raftChromeBlend;
 import 'text_scaling.dart' show RaftChrome;
 import 'theme.dart';
 
@@ -108,7 +109,12 @@ class RaftWorkspaceButton extends StatelessWidget {
     final Widget button = DecoratedBox(
       // The top bar's workspace button paints the same pressed fill.
       decoration: BoxDecoration(
-        color: open ? t.colors['fill-frame-pressed'] : null,
+        color: open
+            ? raftChromeBlend(
+                t.colors['fill-frame-pressed']!,
+                t.colors['layer-section-header-mobile']!,
+              )
+            : null,
         borderRadius: BorderRadius.circular(t.radius),
       ),
       child: RaftButton(

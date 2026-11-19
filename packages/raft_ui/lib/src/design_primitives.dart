@@ -192,12 +192,17 @@ class RaftSidebarRecipe {
         ? 18
         : 28,
     top: product
-        ? tokens.size(
-            headerInFlow
-                ? 'space.sidebarContentTop'
-                : 'space.sidebarContentTopWithoutHeader',
-            fallback: tokens.size('space.sidebarContentTop', fallback: 12),
-          )
+        ? !desktop
+              ? 8
+              : tokens.size(
+                  headerInFlow
+                      ? 'space.sidebarContentTop'
+                      : 'space.sidebarContentTopWithoutHeader',
+                  fallback: tokens.size(
+                    'space.sidebarContentTop',
+                    fallback: 12,
+                  ),
+                )
         : headerInFlow
         ? 0
         : headerHeight,

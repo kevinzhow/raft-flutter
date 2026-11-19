@@ -12,13 +12,19 @@ import 'dismiss_scope.dart';
 import 'emoji_picker.dart';
 import 'form_controls.dart';
 import 'form_presentation.dart';
+import 'interaction.dart';
 import 'popover_surface.dart';
+import 'presentation.dart';
 import 'icons.dart';
 import 'localization.dart';
 import 'recipes/button_variants.g.dart';
 import 'recipes/input_group.g.dart' show RaftInputGroupRecipeVariant;
 import 'recipes/token_binding.dart';
 import 'recipes/card.g.dart';
+import 'overlays/dialog.dart';
+import 'raft/button.dart';
+import 'raft/checkbox.dart';
+import 'space.dart';
 import 'theme.dart';
 
 /// layout/SidebarSectionDialog.tsx: `Modal closeOnBackdrop` + `Card w-full
@@ -35,8 +41,12 @@ class RaftSidebarSectionDialog extends StatefulWidget {
     this.initialName = '',
     this.initialEmoji = '',
     this.emojiButtonKey,
+    this.stepLabel,
+    this.conversations,
   });
   final String title, submitLabel, initialName, initialEmoji;
+  final String? stepLabel;
+  final Widget? conversations;
   final void Function(String name, String? emoji) onSubmit;
   final VoidCallback onClose;
   final Key? emojiButtonKey;
@@ -176,6 +186,12 @@ class _RaftSidebarSectionDialogState extends State<RaftSidebarSectionDialog> {
               ),
             ),
           ),
+          if (widget.conversations case final picker?) ...[
+            const SizedBox(height: RaftSpace.x4),
+            Text(raftText(context, 'Conversations')),
+            const SizedBox(height: RaftSpace.x2),
+            picker,
+          ],
         ],
       ),
     );
@@ -215,6 +231,17 @@ class _RaftSidebarSectionDialogState extends State<RaftSidebarSectionDialog> {
         onClose: widget.onClose,
         body: body,
         footer: footer,
+      );
+    }
+    if (widget.stepLabel != null || widget.conversations != null) {
+      return RaftDialog.card(
+        title: raftText(context, widget.title),
+        description: widget.stepLabel == null
+            ? null
+            : raftText(context, widget.stepLabel!),
+        onClose: widget.onClose,
+        actions: footer,
+        child: body,
       );
     }
     return RaftCard(
@@ -257,6 +284,197 @@ class _RaftSidebarSectionDialogState extends State<RaftSidebarSectionDialog> {
           footer,
         ],
       ),
+    );
+  }
+}
+
+class RaftSidebarConversationPicker extends StatefulWidget {
+  const RaftSidebarConversationPicker({
+    super.key,
+    required this.candidates,
+    required this.initialSelection,
+    required this.onChanged,
+    this.autofocus = false,
+  });
+
+  final Map<String, String> candidates;
+  final Set<String> initialSelection;
+  final ValueChanged<Set<String>> onChanged;
+  final bool autofocus;
+
+  @override
+  State<RaftSidebarConversationPicker> createState() =>
+      _RaftSidebarConversationPickerState();
+}
+
+class RaftSidebarAddConversationsDialog extends StatefulWidget {
+  const RaftSidebarAddConversationsDialog({
+    super.key,
+    required this.name,
+    required this.candidates,
+    required this.initial,
+    required this.onClose,
+    required this.onSubmit,
+  });
+
+  final String name;
+  final Map<String, String> candidates;
+  final Set<String> initial;
+  final VoidCallback onClose;
+  final ValueChanged<Set<String>> onSubmit;
+
+  @override
+  State<RaftSidebarAddConversationsDialog> createState() =>
+      _RaftSidebarAddConversationsDialogState();
+}
+
+class _RaftSidebarAddConversationsDialogState
+    extends State<RaftSidebarAddConversationsDialog> {
+  late Set<String> selected = widget.initial;
+
+  @override
+  Widget build(BuildContext context) {
+    final added = selected.difference(widget.initial).length;
+    final changed = added > 0 || widget.initial.difference(selected).isNotEmpty;
+    final caption = switch (added) {
+      0 => 'Add',
+      1 => 'Add {count} conversation',
+      _ => 'Add {count} conversations',
+    };
+    final title = raftFormat(context, 'Add conversations to {name}', {
+      'name': widget.name,
+    });
+    final step = raftText(context, 'Step 2 of 2');
+    final submit = RaftButton(
+      label: raftFormat(context, caption, {'count': added}),
+      tone: RaftButtonRecipeVariant.accent,
+      onPressed: changed ? () => widget.onSubmit(selected) : null,
+    );
+    final picker = RaftSidebarConversationPicker(
+      autofocus: true,
+      candidates: widget.candidates,
+      initialSelection: widget.initial,
+      onChanged: (value) => setState(() => selected = value),
+    );
+    if (RaftFormFrame.sheetOf(context)) {
+      return RaftFormSheet(
+        title: title,
+        onClose: widget.onClose,
+        commit: submit,
+        body: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          spacing: RaftSpace.x4,
+          children: [Text(step), picker],
+        ),
+      );
+    }
+    return RaftDialog.card(
+      title: title,
+      description: step,
+      onClose: widget.onClose,
+      actions: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        spacing: RaftSpace.x2,
+        children: [
+          RaftButton(
+            label: raftText(context, 'Skip'),
+            tone: RaftButtonRecipeVariant.ghost,
+            onPressed: widget.onClose,
+          ),
+          submit,
+        ],
+      ),
+      child: picker,
+    );
+  }
+}
+
+Future<Set<String>?> showRaftSidebarAddConversations(
+  BuildContext context, {
+  required String name,
+  required Map<String, String> candidates,
+  required Set<String> initial,
+}) => showRaftForm<Set<String>>(
+  context,
+  dialogMaxWidth: 448,
+  guardUnsaved: false,
+  builder: (dialogContext) => RaftSidebarAddConversationsDialog(
+    key: const ValueKey('sidebar-section-add-conversations'),
+    name: name,
+    candidates: candidates,
+    initial: initial,
+    onClose: () => Navigator.of(dialogContext).pop(),
+    onSubmit: (selected) => Navigator.of(dialogContext).pop(selected),
+  ),
+);
+
+class _RaftSidebarConversationPickerState
+    extends State<RaftSidebarConversationPicker> {
+  late final selected = {...widget.initialSelection};
+  String query = '';
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = RaftTokens.of(context);
+    final visible = widget.candidates.entries.where(
+      (entry) => entry.value.toLowerCase().contains(query),
+    );
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        RaftTextInput(
+          fieldKey: const ValueKey('sidebar-section-conversation-filter'),
+          hintText: raftText(context, 'Filter by name'),
+          leadingGlyph: RaftGlyph.search,
+          autofocus: widget.autofocus && !RaftInteraction.of(context).touch,
+          onChanged: (value) =>
+              setState(() => query = value.trim().toLowerCase()),
+        ),
+        const SizedBox(height: RaftSpace.x2),
+        DecoratedBox(
+          decoration: BoxDecoration(
+            border: Border.all(color: tokens.colors['line-hairline']!),
+            borderRadius: BorderRadius.circular(RaftSpace.x2),
+          ),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxHeight: 288),
+            child: visible.isEmpty
+                ? Padding(
+                    padding: const EdgeInsets.all(RaftSpace.x6),
+                    child: Text(
+                      raftText(context, 'No matching conversations'),
+                      textAlign: TextAlign.center,
+                    ),
+                  )
+                : ListView(
+                    shrinkWrap: true,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: RaftSpace.x3,
+                    ),
+                    children: [
+                      for (final entry in visible)
+                        RaftCheckboxRow(
+                          key: ValueKey(
+                            'sidebar-section-add-option-${entry.key}',
+                          ),
+                          title: entry.value,
+                          value: selected.contains(entry.key),
+                          onChanged: (checked) {
+                            setState(() {
+                              if (checked) {
+                                selected.add(entry.key);
+                              } else {
+                                selected.remove(entry.key);
+                              }
+                            });
+                            widget.onChanged(Set.of(selected));
+                          },
+                        ),
+                    ],
+                  ),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -351,9 +569,16 @@ Future<void> showRaftSidebarSectionDialog(
   String initialName = '',
   String initialEmoji = '',
   Key? cardKey,
+  String? stepLabel,
+  Widget? conversations,
 }) => showRaftForm<void>(
   context,
   dismissible: true,
+  policy: stepLabel == null
+      ? RaftPresentationPolicy.form
+      : RaftPresentationPolicy.confirm,
+  guardUnsaved: stepLabel == null && conversations == null,
+  dialogMaxWidth: stepLabel == null && conversations == null ? 384 : 448,
   builder: (dialogContext) {
     void close() => Navigator.of(dialogContext).pop();
     return KeyedSubtree(
@@ -363,6 +588,8 @@ Future<void> showRaftSidebarSectionDialog(
         submitLabel: submitLabel,
         initialName: initialName,
         initialEmoji: initialEmoji,
+        stepLabel: stepLabel,
+        conversations: conversations,
         onClose: close,
         onSubmit: (name, emoji) {
           close();

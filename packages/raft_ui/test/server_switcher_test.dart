@@ -27,6 +27,13 @@ void _expectMenuInsets(WidgetTester tester) {
   expect(row.top - menu.top, 4, reason: 'caller p-1');
   expect(row.left - menu.left, 4, reason: 'ring adds no layout border');
   expect(menu.right - row.right, 4, reason: 'caller p-1');
+  final check = find.descendant(
+    of: find.byKey(const ValueKey('server-menu-row-visual')),
+    matching: find.byWidgetPredicate(
+      (widget) => widget is RaftIcon && widget.glyph == RaftGlyph.check,
+    ),
+  );
+  expect(tester.getCenter(check).dx, greaterThan(row.center.dx));
   final separator = find.descendant(
     of: find.byKey(const Key('server-switcher-menu')),
     matching: find.byWidgetPredicate(
@@ -98,7 +105,7 @@ void main() {
         await t.pumpAndSettle();
         expect(
           t.getRect(find.byKey(const Key('server-switcher-menu'))),
-          Rect.fromLTWH(8, 59, 374, _defaultMenuHeight.toDouble()),
+          Rect.fromLTWH(8, 60, 374, _defaultMenuHeight.toDouble()),
         );
         _expectMenuInsets(t);
         expect(FocusManager.instance.primaryFocus!.skipTraversal, isTrue);
@@ -279,7 +286,7 @@ void main() {
             )
             .firstWhere((w) => w.constraints?.maxHeight == 36)
             .color;
-        expect(actionBackground(), tokens.colors['primary-soft']);
+        expect(actionBackground(), tokens.colors['brand-soft']);
         await mouse.moveTo(const Offset(1000, 700));
         await mouse.removePointer();
         await t.pump();

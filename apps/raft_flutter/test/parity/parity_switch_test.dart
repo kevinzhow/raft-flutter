@@ -25,7 +25,6 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_svg/flutter_svg.dart' show vg;
-import 'package:raft_flutter/features/sidebar_conversation_finder.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import '../flutter_test_config.dart' show RaftTestBinding;
@@ -47,7 +46,6 @@ _Look _look(String name) {
 
 void main() {
   RaftTestBinding.showShadows();
-  SidebarFinderLayer.hiddenForParity = true;
   final env = Platform.environment;
   final sharedDir = env['PARITY_SHARED_DIR'];
   final outRoot = env['PARITY_SWITCH_OUT'];

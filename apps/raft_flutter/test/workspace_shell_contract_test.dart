@@ -122,7 +122,7 @@ void main() {
         await t.pumpAndSettle();
         for (final label in [
           'Raft documentation',
-          'Mobile App',
+          'Get the app',
           'Feedback',
           'Join community',
         ]) {
@@ -158,14 +158,14 @@ void main() {
         await t.tap(
           find.descendant(
             of: find.byType(RaftMenuPanel),
-            matching: find.text('Mobile App'),
+            matching: find.text('Get the app'),
           ),
         );
         await t.pumpAndSettle();
         expect(w.location.toString(), '/s/demo/settings/about');
         expect(find.byType(RaftMenuPanel), findsNothing);
         expect(w.navigation.entries.length, before + 2);
-        // Once the announcement is seen, Mobile App still opens About.
+        // Once the announcement is seen, Get the app still opens About.
         await openHelp(t);
         await t.tap(
           find.descendant(
@@ -180,7 +180,7 @@ void main() {
         await t.tap(
           find.descendant(
             of: find.byType(RaftMenuPanel),
-            matching: find.text('Mobile App'),
+            matching: find.text('Get the app'),
           ),
         );
         await t.pumpAndSettle();
@@ -238,7 +238,7 @@ void main() {
         presentation.update(presentation.key, hideEmptySections: true);
         await t.pumpAndSettle();
         expect(find.text('Drag channels or DMs here to pin'), findsNothing);
-        expect(find.text('No joint channels yet'), findsNothing);
+        expect(find.text('No joint channels yet'), findsOneWidget);
         final key = presentation.key;
         presentation.update(key, hideEmptySections: false);
         await presentation.writes;

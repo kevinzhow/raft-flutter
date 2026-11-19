@@ -7,6 +7,7 @@ import 'package:raft_ui/raft_ui.dart';
 import '../data/external_invite_api.dart';
 import '../data/workspace_controller.dart';
 import 'external_invite_page_frame.dart';
+import 'management_support.dart' show pageIdentity;
 import 'workspace_web_billing.dart';
 
 Future<ExternalJson?> showExternalInviteDialog(
@@ -19,6 +20,26 @@ Future<ExternalJson?> showExternalInviteDialog(
   dragDismissible: false,
   guardUnsaved: false,
   builder: (_) => _ExternalInviteDialog(workspace, channel),
+);
+
+Future<ExternalJson?> showNewExternalChannelInvites(
+  BuildContext context,
+  WorkspaceController workspace,
+  Future<RaftChannel> Function() createChannel, {
+  String? channelName,
+  Widget? members,
+}) => showRaftForm<ExternalJson>(
+  context,
+  dismissible: false,
+  dragDismissible: false,
+  guardUnsaved: false,
+  builder: (_) => _ExternalInviteDialog(
+    workspace,
+    null,
+    createChannel: createChannel,
+    channelName: channelName,
+    members: members,
+  ),
 );
 
 String externalChannelFailure(BuildContext context, Object error) {
@@ -50,10 +71,19 @@ String externalChannelFailure(BuildContext context, Object error) {
 }
 
 class _ExternalInviteDialog extends StatefulWidget {
-  const _ExternalInviteDialog(this.workspace, this.channel);
+  const _ExternalInviteDialog(
+    this.workspace,
+    this.channel, {
+    this.createChannel,
+    this.channelName,
+    this.members,
+  });
 
   final WorkspaceController workspace;
-  final RaftChannel channel;
+  final RaftChannel? channel;
+  final Future<RaftChannel> Function()? createChannel;
+  final String? channelName;
+  final Widget? members;
 
   @override
   State<_ExternalInviteDialog> createState() => _ExternalInviteDialogState();
@@ -62,7 +92,9 @@ class _ExternalInviteDialog extends StatefulWidget {
 class _ExternalInviteDialogState extends State<_ExternalInviteDialog> {
   late final _api = ExternalInviteApi(widget.workspace.command);
   late final _serverName = widget.workspace.server?.name ?? '';
-  late final _makePrivate = widget.channel.type == 'channel';
+  late final String _scope;
+  late final _makePrivate = widget.channel?.type == 'channel';
+  late RaftChannel? _channel = widget.channel;
   final _emails = TextEditingController();
   final _selectedServers = <String>{};
   List<ExternalJson> _servers = const [];
@@ -80,6 +112,7 @@ class _ExternalInviteDialogState extends State<_ExternalInviteDialog> {
   @override
   void initState() {
     super.initState();
+    _scope = pageIdentity(widget.workspace);
     unawaited(_readServers());
   }
 
@@ -92,7 +125,7 @@ class _ExternalInviteDialogState extends State<_ExternalInviteDialog> {
   Future<void> _readServers() async {
     try {
       final rows = await _api.ownServers();
-      final connected = externalRows(widget.channel.json['jointServers'])
+      final connected = externalRows(_channel?.json['jointServers'])
           .where((row) => row['status'] == 'active')
           .map((row) => row['serverId'])
           .toSet();
@@ -115,6 +148,9 @@ class _ExternalInviteDialogState extends State<_ExternalInviteDialog> {
       _error = null;
     });
     try {
+      if (_scope != pageIdentity(widget.workspace)) {
+        throw const RaftUserError('Server access changed. Reopen this form.');
+      }
       await action();
     } catch (error) {
       if (mounted) setState(() => _error = error);
@@ -131,7 +167,7 @@ class _ExternalInviteDialogState extends State<_ExternalInviteDialog> {
     await _perform(() async {
       final preview = entries.isEmpty
           ? <String, dynamic>{}
-          : await _api.previewEmails(widget.channel.id, entries);
+          : await _api.previewEmails(_channel?.id, entries);
       if (mounted) setState(() => _preview = preview);
     });
   }
@@ -141,7 +177,8 @@ class _ExternalInviteDialogState extends State<_ExternalInviteDialog> {
 
   Future<void> _send() => _perform(() async {
     final addresses = [..._addresses('valid'), ..._addresses('alreadyMembers')];
-    final channelId = widget.channel.id;
+    _channel ??= await widget.createChannel!();
+    final channelId = _channel!.id;
     final result = addresses.isEmpty
         ? <String, dynamic>{}
         : await _api.sendEmails(
@@ -149,6 +186,9 @@ class _ExternalInviteDialogState extends State<_ExternalInviteDialog> {
             addresses,
             makePrivate: _makePrivate,
           );
+    if (_scope != pageIdentity(widget.workspace)) {
+      throw const RaftUserError('Server access changed. Reopen this form.');
+    }
     if (_selectedServers.isNotEmpty) {
       try {
         final connected = await _api.connectOwn(
@@ -186,6 +226,7 @@ class _ExternalInviteDialogState extends State<_ExternalInviteDialog> {
             ? !overSlots && hasActions
             : count <= 20 && (count > 0 || _selectedServers.isNotEmpty));
     final error = _error;
+    final creating = widget.createChannel != null && _channel == null;
     const statuses = {
       'valid': 'Will be invited',
       'alreadyPending': 'Already invited · no new invite',
@@ -194,158 +235,199 @@ class _ExternalInviteDialogState extends State<_ExternalInviteDialog> {
       'duplicates': 'Listed more than once · one invite',
       'invalid': 'Not a valid email · no invite',
     };
-    return RaftDialog.card(
-      key: const ValueKey('add-external-member-dialog'),
-      title: fmt('Invite people outside {server}', {'server': _serverName}),
-      onClose: () => Navigator.of(context).maybePop(),
-      actions: Wrap(
-        alignment: WrapAlignment.end,
-        spacing: RaftSpace.x2,
-        runSpacing: RaftSpace.x2,
-        children: [
-          RaftButton(
-            label: tr(review ? 'Back' : 'Cancel'),
-            onPressed: _busy
-                ? null
-                : () {
-                    if (!review) {
-                      Navigator.of(context).pop();
-                    } else {
-                      setState(() {
-                        _preview = null;
-                        _error = null;
-                      });
-                    }
-                  },
-            tone: RaftButtonRecipeVariant.ghost,
-          ),
-          RaftButton(
-            label: tr(
-              review
-                  ? (_busy ? 'Sending…' : 'Invite')
-                  : (_busy ? 'Checking…' : 'Next'),
-            ),
-            tone: RaftButtonRecipeVariant.accent,
-            onPressed: enabled ? (review ? _send : _review) : null,
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          if (_makePrivate)
-            RaftAuthNote(
-              tr(
-                'Inviting people from outside makes this channel private. Only its members will see it.',
+    return PopScope(
+      canPop: !_busy,
+      child: RaftDialog.card(
+        key: ValueKey(
+          widget.createChannel == null
+              ? 'add-external-member-dialog'
+              : 'create-external-channel-invites',
+        ),
+        title: !review && widget.channelName != null
+            ? fmt('Add people to #{name}', {'name': widget.channelName!})
+            : fmt('Invite people outside {server}', {'server': _serverName}),
+        onClose: () {
+          if (!_busy) Navigator.of(context).maybePop();
+        },
+        actions: Wrap(
+          alignment: WrapAlignment.end,
+          spacing: RaftSpace.x2,
+          runSpacing: RaftSpace.x2,
+          children: [
+            RaftButton(
+              label: tr(
+                review || widget.createChannel != null ? 'Back' : 'Cancel',
               ),
-            ),
-          if (!review) ...[
-            RaftAuthField(
-              label: tr('Invite by email'),
-              helper: fmt(
-                'Separate emails with commas, spaces or new lines. Up to {max}.',
-                {'max': 20},
-              ),
-              error: count <= 20
+              onPressed: _busy
                   ? null
-                  : fmt('Up to {max} emails at a time. Remove {count}.', {
-                      'max': 20,
-                      'count': count - 20,
-                    }),
-              child: RaftTextarea(
-                rows: 4,
-                fieldKey: const ValueKey('external-invite-emails'),
-                controller: _emails,
-                hintText: tr('name@example.com, name@example.org'),
-                enabled: !_busy,
-                onChanged: (_) => setState(() => _error = null),
-              ),
+                  : () {
+                      if (!review) {
+                        Navigator.of(context).pop(
+                          creating ? <String, dynamic>{'back': true} : null,
+                        );
+                      } else {
+                        setState(() {
+                          _preview = null;
+                          _error = null;
+                        });
+                      }
+                    },
+              tone: RaftButtonRecipeVariant.ghost,
             ),
-            if (_servers.isNotEmpty) ...[
-              RaftAuthNote(tr('Connect your servers')),
-              RaftTextInput(
-                hintText: tr('Search servers'),
-                leadingGlyph: RaftGlyph.search,
-                enabled: !_busy,
-                onChanged: (value) =>
-                    setState(() => _serverSearch = value.trim().toLowerCase()),
+            if (widget.createChannel != null && review)
+              RaftButton(
+                label: tr('Skip'),
+                onPressed: _busy ? null : () => Navigator.of(context).pop(),
+                tone: RaftButtonRecipeVariant.ghost,
               ),
-              for (final row in _servers)
-                if (externalString(row['name'])
-                    .toLowerCase()
-                    .contains(_serverSearch))
-                  RaftCheckboxRow(
-                    title: externalString(row['name']),
-                    description: row['atLimit'] == true
-                        ? tr('At external channel limit')
-                        : null,
-                    value: _selectedServers.contains(row['id']),
-                    onChanged: row['atLimit'] == true || _busy
-                        ? null
-                        : (selected) => setState(() {
-                            final id = row['id'] as String;
-                            if (selected) {
-                              _selectedServers.add(id);
-                            } else {
-                              _selectedServers.remove(id);
-                            }
-                          }),
-                  ),
-            ],
-          ] else ...[
-            if (inviteCount > 0)
+            RaftButton(
+              label: tr(
+                review
+                    ? (_busy
+                          ? 'Sending…'
+                          : creating
+                          ? 'Create and invite'
+                          : 'Invite')
+                    : (_busy
+                          ? 'Checking…'
+                          : creating
+                          ? 'Create and invite'
+                          : 'Next'),
+              ),
+              tone: RaftButtonRecipeVariant.accent,
+              onPressed: enabled ? (review ? _send : _review) : null,
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (_makePrivate)
+              RaftAuthNote(
+                tr(
+                  'Inviting people from outside makes this channel private. Only its members will see it.',
+                ),
+              ),
+            if (widget.createChannel != null && _channel != null)
               RaftAuthNote(
                 fmt(
-                  'The invite link works for {days} days. People can join as a guest, or connect their server to bring in their agents and teammates.',
-                  {'days': 14},
+                  "#{name} was created, but the invites weren't sent. Try again, or skip and invite people later.",
+                  {'name': _channel!.name},
                 ),
               ),
-            for (final row in statuses.entries)
-              for (final address in _addresses(row.key))
-                _ExternalReviewRow(
-                  address,
-                  fmt(row.value, {'server': _serverName}),
+            if (!review) ...[
+              RaftAuthField(
+                label: tr('Invite by email'),
+                helper: fmt(
+                  'Separate emails with commas, spaces or new lines. Up to {max}.',
+                  {'max': 20},
                 ),
-            for (final row in externalRows(_preview?['guestsElsewhere']))
-              _ExternalReviewRow(
-                externalString(row['email']),
-                row['channelName'] is String
-                    ? fmt("Guest in {channel} · can't be invited", {
-                        'channel': '#${row['channelName']}',
-                      })
-                    : tr("Guest in another channel · can't be invited"),
+                error: count <= 20
+                    ? null
+                    : fmt('Up to {max} emails at a time. Remove {count}.', {
+                        'max': 20,
+                        'count': count - 20,
+                      }),
+                child: RaftTextarea(
+                  rows: 4,
+                  fieldKey: const ValueKey('external-invite-emails'),
+                  controller: _emails,
+                  hintText: tr('name@example.com, name@example.org'),
+                  enabled: !_busy,
+                  onChanged: (_) => setState(() => _error = null),
+                ),
               ),
-            for (final row in _servers)
-              if (_selectedServers.contains(row['id']))
+              if (_servers.isNotEmpty) ...[
+                RaftAuthNote(tr('Connect your servers')),
+                RaftTextInput(
+                  hintText: tr('Search servers'),
+                  leadingGlyph: RaftGlyph.search,
+                  enabled: !_busy,
+                  onChanged: (value) => setState(
+                    () => _serverSearch = value.trim().toLowerCase(),
+                  ),
+                ),
+                for (final row in _servers)
+                  if (externalString(row['name'])
+                      .toLowerCase()
+                      .contains(_serverSearch))
+                    RaftCheckboxRow(
+                      title: externalString(row['name']),
+                      description: row['atLimit'] == true
+                          ? tr('At external channel limit')
+                          : null,
+                      value: _selectedServers.contains(row['id']),
+                      onChanged: row['atLimit'] == true || _busy
+                          ? null
+                          : (selected) => setState(() {
+                              final id = row['id'] as String;
+                              if (selected) {
+                                _selectedServers.add(id);
+                              } else {
+                                _selectedServers.remove(id);
+                              }
+                            }),
+                    ),
+              ],
+              if (creating && widget.members != null)
+                IgnorePointer(ignoring: _busy, child: widget.members),
+            ] else ...[
+              if (inviteCount > 0)
                 RaftAuthNote(
-                  fmt('{server} connects now · no invite needed', {
-                    'server': externalString(row['name']),
-                  }),
+                  fmt(
+                    'The invite link works for {days} days. People can join as a guest, or connect their server to bring in their agents and teammates.',
+                    {'days': 14},
+                  ),
                 ),
-            if (overSlots)
-              RaftErrorBanner(
-                tr(
-                  'This channel is full. Withdraw an open invite or remove a guest to make room.',
+              for (final row in statuses.entries)
+                for (final address in _addresses(row.key))
+                  _ExternalReviewRow(
+                    address,
+                    fmt(row.value, {'server': _serverName}),
+                  ),
+              for (final row in externalRows(_preview?['guestsElsewhere']))
+                _ExternalReviewRow(
+                  externalString(row['email']),
+                  row['channelName'] is String
+                      ? fmt("Guest in {channel} · can't be invited", {
+                          'channel': '#${row['channelName']}',
+                        })
+                      : tr("Guest in another channel · can't be invited"),
                 ),
-              ),
-            if (!hasActions)
-              RaftAuthNote(
-                tr('No one on this list can be invited. Go back to change it.'),
-              ),
+              for (final row in _servers)
+                if (_selectedServers.contains(row['id']))
+                  RaftAuthNote(
+                    fmt('{server} connects now · no invite needed', {
+                      'server': externalString(row['name']),
+                    }),
+                  ),
+              if (overSlots)
+                RaftErrorBanner(
+                  tr(
+                    'This channel is full. Withdraw an open invite or remove a guest to make room.',
+                  ),
+                ),
+              if (!hasActions)
+                RaftAuthNote(
+                  tr(
+                    'No one on this list can be invited. Go back to change it.',
+                  ),
+                ),
+            ],
+            if (error != null) ...[
+              RaftErrorBanner(externalChannelFailure(context, error)),
+              if (externalErrorCode(error) == 'free_external_limit')
+                RaftButton(
+                  label: tr('Upgrade'),
+                  onPressed: () => openWebBillingOrToast(
+                    context,
+                    widget.workspace,
+                    gate: WebBillingGate.externalChannelFreeLimit,
+                  ),
+                ),
+            ],
           ],
-          if (error != null) ...[
-            RaftErrorBanner(externalChannelFailure(context, error)),
-            if (externalErrorCode(error) == 'free_external_limit')
-              RaftButton(
-                label: tr('Upgrade'),
-                onPressed: () => openWebBillingOrToast(
-                  context,
-                  widget.workspace,
-                  gate: WebBillingGate.externalChannelFreeLimit,
-                ),
-              ),
-          ],
-        ],
+        ),
       ),
     );
   }

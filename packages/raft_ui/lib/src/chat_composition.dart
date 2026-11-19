@@ -43,26 +43,29 @@ class RaftChatSidebarGroupRecipe {
     required bool hideEmpty,
     bool dragActive = false,
     bool dragSource = false,
+    bool revealEmptyDropTarget = true,
   }) =>
       kind != RaftChatSidebarGroupKind.channels &&
       hideEmpty &&
       !loading &&
       count == 0 &&
-      !(dragActive && (dragSource || revealWhileDragging));
-  EdgeInsets get descriptionInset => kind == RaftChatSidebarGroupKind.pinned
-      ? const EdgeInsets.symmetric(horizontal: 8, vertical: 6)
-      : const EdgeInsets.symmetric(horizontal: 8);
+      !(dragActive &&
+          (dragSource || (revealWhileDragging && revealEmptyDropTarget)));
+  EdgeInsets descriptionInset({required bool compact}) => EdgeInsets.symmetric(
+    horizontal: compact ? 20 : 8,
+    vertical: kind == RaftChatSidebarGroupKind.pinned ? (compact ? 8 : 6) : 0,
+  );
   double get minimumDescriptionHeight =>
       kind == RaftChatSidebarGroupKind.pinned ? 36 : 0;
   double get descriptionBottomMargin =>
       kind == RaftChatSidebarGroupKind.pinned ? 4 : 0;
-  TextStyle get description => RaftTypography.mono(
+  TextStyle get description => RaftTypography.body(
     tokens,
     size: 12,
-    line: 16.5,
+    line: 16,
     color:
         tokens.colors[kind == RaftChatSidebarGroupKind.pinned
-            ? 'foreground-placeholder'
+            ? 'foreground-hint'
             : 'foreground-muted'],
   );
 }
@@ -82,6 +85,7 @@ class RaftChatSidebarGroup extends StatelessWidget {
     this.loading = false,
     this.dragActive = false,
     this.dragSource = false,
+    this.revealEmptyDropTarget = true,
     this.emptyLabel = '',
     this.loadingRegion,
     this.attention,
@@ -111,6 +115,7 @@ class RaftChatSidebarGroup extends StatelessWidget {
     this.loading = false,
     this.dragActive = false,
     this.dragSource = false,
+    this.revealEmptyDropTarget = true,
     this.emptyLabel = '',
     this.loadingRegion,
     this.attention,
@@ -144,6 +149,7 @@ class RaftChatSidebarGroup extends StatelessWidget {
   final String label, emptyLabel;
   final int count;
   final bool expanded, hideEmpty, loading, dragActive, dragSource;
+  final bool revealEmptyDropTarget;
   final ValueChanged<bool> onExpandedChanged;
   final List<Widget> children;
   final List<RaftSidebarSectionAction> actions;
@@ -152,18 +158,23 @@ class RaftChatSidebarGroup extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final recipe = RaftChatSidebarGroupRecipe(RaftTokens.of(context), kind);
+    final compact =
+        raftBreakpointWidth(context) < RaftLayoutMetrics.desktopBreakpoint;
     if (recipe.hidden(
       count: count,
       loading: loading,
       hideEmpty: hideEmpty,
       dragActive: dragActive,
       dragSource: dragSource,
+      revealEmptyDropTarget: revealEmptyDropTarget,
     )) {
       return itemBuilder == null
           ? const SizedBox.shrink()
           : const SliverToBoxAdapter();
     }
     Widget? empty;
+    final pinned = kind == RaftChatSidebarGroupKind.pinned;
+    final dms = kind == RaftChatSidebarGroupKind.directMessages;
     if (count == 0) {
       if (loading && recipe.loadingRows > 0) {
         empty =
@@ -172,26 +183,38 @@ class RaftChatSidebarGroup extends StatelessWidget {
               rows: recipe.loadingRows,
               icon: kind != RaftChatSidebarGroupKind.directMessages,
             );
-      } else if (kind != RaftChatSidebarGroupKind.directMessages &&
-          emptyLabel.isNotEmpty) {
+      } else if (!dms &&
+          emptyLabel.isNotEmpty &&
+          !(pinned && loading && hideEmpty)) {
         empty = Padding(
-          padding: EdgeInsets.only(bottom: recipe.descriptionBottomMargin),
+          padding: EdgeInsets.only(
+            bottom: compact ? 0 : recipe.descriptionBottomMargin,
+          ),
           child: ConstrainedBox(
             constraints: BoxConstraints(
               minHeight: recipe.minimumDescriptionHeight,
             ),
             child: Padding(
-              padding: recipe.descriptionInset,
+              padding: recipe.descriptionInset(compact: compact),
               child: RaftCssText(emptyLabel, style: recipe.description),
             ),
           ),
         );
+        if (pinned && loading) {
+          empty = Visibility(
+            visible: false,
+            maintainSize: true,
+            maintainAnimation: true,
+            maintainState: true,
+            child: empty,
+          );
+        }
       }
     }
     final built = RaftSidebarSectionHeader(
       key: headerKey,
       label: label,
-      count: count,
+      count: loading && (pinned || dms) ? null : count,
       expanded: expanded,
       onExpandedChanged: onExpandedChanged,
       disclosureKey: disclosureKey,
@@ -211,27 +234,35 @@ class RaftChatSidebarGroup extends StatelessWidget {
           );
     final builder = itemBuilder;
     if (builder != null) {
+      final rows = onReorderItem != null
+          ? SliverReorderableList(
+              itemCount: count,
+              itemBuilder: builder,
+              onReorderItem: onReorderItem!,
+              proxyDecorator: raftSidebarReorderProxy,
+            )
+          : SliverList(
+              delegate: SliverChildBuilderDelegate(
+                builder,
+                childCount: count,
+                findChildIndexCallback: findChildIndexCallback,
+              ),
+            );
       return SliverMainAxisGroup(
         slivers: [
           SliverToBoxAdapter(child: header),
-          if (expanded) ...[
-            if (onReorderItem case final reorder?)
-              SliverReorderableList(
-                itemCount: count,
-                itemBuilder: builder,
-                onReorderItem: reorder,
-                proxyDecorator: raftSidebarReorderProxy,
-              )
-            else
-              SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  builder,
-                  childCount: count,
-                  findChildIndexCallback: findChildIndexCallback,
-                ),
+          if (expanded)
+            SliverPadding(
+              padding: EdgeInsets.only(
+                top: compact ? 8 : 0,
+                bottom: compact
+                    ? 8 - (count == 0 ? 0 : RaftLayoutMetrics.sidebarRowGap)
+                    : 0,
               ),
-            if (emptyRegion != null) SliverToBoxAdapter(child: emptyRegion),
-          ],
+              sliver: emptyRegion == null
+                  ? rows
+                  : SliverToBoxAdapter(child: emptyRegion),
+            ),
         ],
       );
     }

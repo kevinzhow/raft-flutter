@@ -42,6 +42,7 @@ class ParityCase {
     required this.build,
     this.interact,
     this.notes = '',
+    this.fullLengthHeight,
     this.settle = const Duration(milliseconds: 400),
   });
 
@@ -50,6 +51,7 @@ class ParityCase {
   final ParityBuilder build;
   final ParityInteraction? interact;
   final String notes;
+  final double? fullLengthHeight;
   final Duration settle;
 }
 
@@ -306,7 +308,7 @@ Future<Map<String, dynamic>> captureParityCase(
     dark: dark,
   );
   try {
-    final size = Size(ctx.width, ctx.height);
+    final size = Size(ctx.width, mapping.fullLengthHeight ?? ctx.height);
     t.view.physicalSize = size * ctx.density;
     t.view.devicePixelRatio = ctx.density;
     addTearDown(t.view.reset);

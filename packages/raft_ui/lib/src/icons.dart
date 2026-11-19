@@ -96,6 +96,18 @@ class RaftGlyphPainter extends CustomPainter {
     this.filled = false,
   }) : _nodes = glyph._nodes;
 
+  RaftGlyphPainter.externalChannel({required this.color})
+    : glyph = null,
+      _nodes = _externalChannelNodes,
+      strokeWidth = 2,
+      filled = false;
+
+  static final _externalChannelNodes = [
+    _LucideNode.fromSvg('path', {
+      'd': 'M3 9.5h9a1.5 1.5 0 0 1 1.5 1.5v0M3 9.5a1.5 1.5 0 0 0-1.5 1.5v5A1.5 1.5 0 0 0 3 17.5h5.5M4.5 9.5V6.5a3.5 3.5 0 0 1 7 0v3M13 21 21 13M15.5 13H21v5.5',
+    }),
+  ];
+
   /// Paints raw lucide `iconNode` elements (`[tag, attributes]`, SVG attribute
   /// names and string values) through the same element code as generated
   /// glyphs. Used by the glyph parity harness to cover element types the
@@ -109,7 +121,6 @@ class RaftGlyphPainter extends CustomPainter {
   }) : glyph = null,
        _nodes = [for (final (tag, a) in nodes) _LucideNode.fromSvg(tag, a)];
 
-  /// Null only for [RaftGlyphPainter.debugNodes].
   final RaftGlyph? glyph;
   final List<_LucideNode> _nodes;
   final Color color;

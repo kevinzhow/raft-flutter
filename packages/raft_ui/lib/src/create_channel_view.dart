@@ -63,9 +63,21 @@ class RaftCreateChannelDialogView extends StatelessWidget {
     this.notice,
     this.slackField,
     this.submitting = false,
+    this.externalAvailable = false,
+    this.externalReady = true,
+    this.canContinue = true,
+    this.twoStep = false,
+    this.people = false,
+    this.onBack,
+    this.visibilityHint,
+    this.visibilityNotice,
   });
   final TextEditingController name, description, search;
   final String visibility;
+  final bool externalAvailable, externalReady, canContinue, twoStep, people;
+  final VoidCallback? onBack;
+  final String? visibilityHint;
+  final Widget? visibilityNotice;
 
   /// The Slack channel field (Web ChannelSlackBridgeField) under the members;
   /// null while the Slack bridge is not ready.
@@ -88,7 +100,11 @@ class RaftCreateChannelDialogView extends StatelessWidget {
     const gap = SizedBox(height: 16);
     return RaftModalBackdrop(
       child: RaftDialog.card(
-        title: 'Create Channel',
+        title: people
+            ? raftFormat(context, 'Add people to #{name}', {
+                'name': name.text.trim(),
+              })
+            : 'Create Channel',
         onClose: onClose,
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -96,65 +112,79 @@ class RaftCreateChannelDialogView extends StatelessWidget {
           children: [
             if (error != null) ...[RaftErrorBanner(error!), gap],
             if (notice != null) ...[notice!, gap],
-            RaftProductFormField(
-              label: 'Name',
-              required: true,
-              child: RaftDialogTextInput(
-                controller: name,
-                placeholder: 'e.g. ai-research',
-                autofocus: true,
-                onSubmitted: (_) => onSubmit(),
-              ),
-            ),
-            gap,
-            RaftProductFormField(
-              label: 'Description',
-              optional: true,
-              child: RaftDialogTextInput(
-                controller: description,
-                placeholder: 'What is this channel about?',
-                multiline: true,
-              ),
-            ),
-            gap,
-            RaftProductFormField(
-              label: 'Visibility',
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: RaftSegmentedControl<String>(
-                  label: raftText(context, 'Channel visibility'),
-                  value: visibility,
-                  items: const [
-                    RaftSegmentedOption(
-                      value: 'public',
-                      glyph: RaftGlyph.hash,
-                      label: 'Public',
-                    ),
-                    RaftSegmentedOption(
-                      value: 'private',
-                      glyph: RaftGlyph.lock,
-                      label: 'Private',
-                    ),
-                  ],
-                  onChanged: submitting ? null : onVisibilityChanged,
+            if (!people) ...[
+              RaftProductFormField(
+                label: 'Name',
+                required: true,
+                child: RaftDialogTextInput(
+                  fieldKey: const ValueKey('create-channel-name'),
+                  controller: name,
+                  placeholder: 'e.g. ai-research',
+                  autofocus: true,
+                  onSubmitted: (_) => onSubmit(),
                 ),
               ),
-            ),
-            gap,
-            RaftProductFormField(
-              label: 'Members',
-              optional: true,
-              child: RaftMemberPickerContent(
-                search: search,
-                agents: agents,
-                humans: humans,
-                matchedKeys: matchedMemberKeys,
-                hasCandidates: hasCandidates,
-                isSelected: isSelected,
-                onToggle: submitting ? null : onToggle,
+              gap,
+              RaftProductFormField(
+                label: 'Description',
+                optional: true,
+                child: RaftDialogTextInput(
+                  controller: description,
+                  placeholder: 'What is this channel about?',
+                  multiline: true,
+                ),
               ),
-            ),
-            if (slackField != null) ...[
+              gap,
+              RaftProductFormField(
+                label: 'Visibility',
+                hint: visibilityHint,
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: RaftSegmentedControl<String>(
+                    label: raftText(context, 'Channel visibility'),
+                    value: visibility,
+                    items: [
+                      const RaftSegmentedOption(
+                        value: 'public',
+                        glyph: RaftGlyph.hash,
+                        label: 'Public',
+                      ),
+                      const RaftSegmentedOption(
+                        value: 'private',
+                        glyph: RaftGlyph.lock,
+                        label: 'Private',
+                      ),
+                      if (externalAvailable)
+                        RaftSegmentedOption(
+                          value: 'external',
+                          glyph: RaftGlyph.globe,
+                          label: 'External',
+                          enabled: externalReady,
+                        ),
+                    ],
+                    onChanged: submitting ? null : onVisibilityChanged,
+                  ),
+                ),
+              ),
+              if (visibilityNotice != null) visibilityNotice!,
+            ],
+            if (!twoStep || people) ...[
+              if (!people) gap,
+              RaftProductFormField(
+                label: 'Members',
+                optional: true,
+                child: RaftMemberPickerContent(
+                  search: search,
+                  agents: agents,
+                  humans: humans,
+                  matchedKeys: matchedMemberKeys,
+                  hasCandidates: hasCandidates,
+                  isSelected: isSelected,
+                  onToggle: submitting ? null : onToggle,
+                ),
+              ),
+            ],
+            if (!people && slackField != null && visibility != 'external') ...[
               gap,
               RaftSeparator(
                 thickness: 1,
@@ -175,18 +205,24 @@ class RaftCreateChannelDialogView extends StatelessWidget {
             runSpacing: RaftSpace.x2,
             children: [
               RaftButton(
-                label: 'Cancel',
+                label: people ? 'Back' : 'Cancel',
                 uiVariant: RaftButtonVariant.ghost,
                 uiSize: RaftButtonSize.lg,
                 onPressed: submitting
                     ? null
+                    : people
+                    ? onBack
                     : raftExplicitClose(context, onClose),
               ),
               RaftButton(
-                label: submitting ? 'Creating…' : 'Create Channel',
+                label: twoStep && !people || visibility == 'external'
+                    ? 'Next'
+                    : submitting
+                    ? 'Creating…'
+                    : 'Create Channel',
                 uiVariant: RaftButtonVariant.accent,
                 uiSize: RaftButtonSize.lg,
-                onPressed: submitting ? null : onSubmit,
+                onPressed: submitting || !canContinue ? null : onSubmit,
               ),
             ],
           ),

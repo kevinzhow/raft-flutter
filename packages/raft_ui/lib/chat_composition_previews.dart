@@ -6,6 +6,23 @@ import 'raft_ui.dart';
 @RaftPreviews('Mounted chat sidebar groups', size: Size(320, 560))
 Widget mountedChatSidebarGroupsPreview() => const _GroupPreview();
 
+@RaftPreviews('Add conversations to a section', size: Size(480, 440))
+Widget sidebarAddConversationsPreview() => RaftSidebarAddConversationsDialog(
+  name: 'Delivery',
+  candidates: const {'planning': 'Planning', 'review': 'Review'},
+  initial: const {'planning'},
+  onClose: () {},
+  onSubmit: (_) {},
+);
+
+@RaftPreviews('External sidebar row', size: Size(320, 84))
+Widget sidebarExternalRowPreview() => RaftNavItem(
+  label: 'Partner sync',
+  leading: const RaftExternalChannelMark(size: 16),
+  conversationKind: RaftConversationNavKind.channel,
+  onTap: () {},
+);
+
 @RaftPreviews('Conversation tabs desktop', size: Size(1024, 220))
 Widget conversationTabsDesktopPreview() =>
     const _TabPreview(RaftDensity.desktop);

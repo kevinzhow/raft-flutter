@@ -161,7 +161,13 @@ void main() {
       await _pump(t, dark: dark, open: true);
       final tokens = RaftTokens.of(t.element(find.byType(RaftWorkspaceButton)));
       // Web `data-popup-open` on the WorkspaceButton (on-frame pressed).
-      expect(fill(), tokens.colors['fill-frame-pressed']);
+      expect(
+        fill(),
+        raftChromeBlend(
+          tokens.colors['fill-frame-pressed']!,
+          tokens.colors['layer-section-header-mobile']!,
+        ),
+      );
     });
 
     testWidgets('$mode focus, keyboard activation and semantics', (t) async {

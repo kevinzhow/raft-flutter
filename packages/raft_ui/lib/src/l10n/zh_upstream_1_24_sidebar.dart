@@ -1,0 +1,16 @@
+const Map<String, String> zhCatalogUpstream124Sidebar = {
+  'Get the app': '下载 App',
+  'New section': '新建分区',
+  'No external channels yet': '还没有外部频道',
+  'Create external channel': '创建外部频道',
+  'Failed to check external channel availability': '无法检查是否可以创建外部频道',
+  'Step 1 of 2': '第 1 步，共 2 步',
+  'Step 2 of 2': '第 2 步，共 2 步',
+  'Add conversations to {name}': '向「{name}」添加会话',
+  'Filter by name': '按名称筛选',
+  'No matching conversations': '没有匹配的会话',
+  'Add {count} conversation': '添加 {count} 个会话',
+  'Add {count} conversations': '添加 {count} 个会话',
+  'Conversations': '会话',
+  'This section is no longer available.': '此分区已不可用。',
+};

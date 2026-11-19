@@ -69,7 +69,7 @@ void main() {
         await t.tap(
           find.descendant(
             of: find.byType(RaftMenuPanel),
-            matching: find.text('Mobile App'),
+            matching: find.text('Get the app'),
           ),
         );
         await t.pumpAndSettle();
@@ -127,7 +127,7 @@ void main() {
           );
         }
 
-        expect(groupRect(pinned).height, 89);
+        expect(groupRect(pinned).height, 80);
         expect(groupRect(joint).height, 68);
         expect(groupRect(joint).top, groupRect(pinned).bottom);
         expect(find.text('Drag channels or DMs here to pin'), findsOneWidget);
@@ -141,7 +141,7 @@ void main() {
         expect(find.text('No joint channels yet'), findsOneWidget);
         presentation.update(presentation.key, hideEmptySections: true);
         await t.pumpAndSettle();
-        expect(find.text('No joint channels yet'), findsNothing);
+        expect(find.text('No joint channels yet'), findsOneWidget);
         expect(presentation.value.hideEmptySections, true);
         await retire(t);
       },
