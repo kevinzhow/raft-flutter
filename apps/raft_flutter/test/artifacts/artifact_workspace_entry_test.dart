@@ -3,6 +3,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_flutter/features/artifacts/artifact_dashboard.dart';
 import 'package:raft_flutter/features/artifacts/artifact_viewer_page.dart';
+import 'package:raft_flutter/features/page_layout.dart' show RaftPageHeader;
 
 import '../app_global_server_selector_test.dart' show RootFixture;
 import '../support/server_tab.dart';
@@ -60,6 +61,15 @@ void main() {
     await fixture.flush(tester);
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('artifact-grid')), findsOneWidget);
+    // The dashboard brings its own header (title and count); the workspace
+    // must not add a second page header above it.
+    expect(
+      find.descendant(
+        of: find.byType(RaftPageHeader),
+        matching: find.text('Artifacts'),
+      ),
+      findsNothing,
+    );
     await tester.tap(
       find.byKey(const ValueKey('artifact-dashboard-open-$artifactId')),
     );
