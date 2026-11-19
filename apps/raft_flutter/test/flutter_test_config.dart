@@ -127,6 +127,7 @@ void _enableLeakTracking() {
       'NativeAppIcon',
       'AppUpdater',
       'InviteRequests',
+      'MacosVoiceOver',
       // Expando-attached caches: live exactly as long as their controller or
       // client and are released with it by GC.
       '_ComposerShared',
