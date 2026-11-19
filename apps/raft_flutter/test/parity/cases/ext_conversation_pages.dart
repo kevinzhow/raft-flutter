@@ -375,7 +375,14 @@ ParityCase _followersCase({required bool open}) => ParityCase(
       await t.pump(const Duration(milliseconds: 50));
     }
     if (open) {
-      await t.tap(find.byKey(const Key('thread-followers-header-trigger')));
+      final trigger = find.byKey(const Key('thread-followers-header-trigger'));
+      if (trigger.evaluate().isEmpty) {
+        await t.tap(find.byKey(const Key('thread-options')));
+        await t.pumpAndSettle();
+        await t.tap(find.text('Following agents'));
+      } else {
+        await t.tap(trigger);
+      }
       for (var i = 0; i < 20; i++) {
         await t.pump(const Duration(milliseconds: 50));
       }

@@ -7,7 +7,6 @@ import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/device_preferences.dart';
 import 'package:raft_flutter/data/raft_location.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
-import 'package:raft_flutter/features/channel_form_fields.dart';
 import 'package:raft_flutter/features/workspace_view.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -175,15 +174,27 @@ void main() {
     tester,
   ) async {
     final (w, client, followers) = await _mount(tester);
+    final popover = find.byKey(const Key('thread-followers-popover'));
+    Finder followerRow(String id) => find.descendant(
+      of: popover,
+      matching: find.byKey(Key('thread-follower-row-$id')),
+    );
+    Future<void> openFollowers() async {
+      await tester.tap(find.byKey(const Key('thread-options')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Following agents'));
+      await tester.pumpAndSettle();
+      expect(popover, findsOneWidget);
+    }
+
     expect(_seen('The first reply'), isTrue);
     expect(_seen('1 replies'), isTrue);
-    expect(
-      find.descendant(
-        of: find.byKey(const ValueKey('thread-followers-thread-1')),
-        matching: find.byType(ChannelCandidateAvatar),
-      ),
-      findsOneWidget,
-    );
+    await openFollowers();
+    expect(followerRow('a1'), findsOneWidget);
+    expect(followerRow('a2'), findsNothing);
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(popover, findsNothing);
 
     // A page opens over the thread.
     w.openProfile(RaftProfileKind.human, 'bob');
@@ -237,14 +248,9 @@ void main() {
     expect(_seen('A newer reply'), isTrue, reason: 'new reply');
     expect(_seen('2 replies'), isTrue, reason: 'new reply count');
     expect(_seen('1 replies'), isFalse, reason: 'old reply count');
-    expect(
-      find.descendant(
-        of: find.byKey(const ValueKey('thread-followers-thread-1')),
-        matching: find.byType(ChannelCandidateAvatar),
-      ),
-      findsNWidgets(2),
-      reason: 'new follower count in the header',
-    );
+    await openFollowers();
+    expect(followerRow('a1'), findsOneWidget);
+    expect(followerRow('a2'), findsOneWidget);
   });
 
   testWidgets('a channel page covered by a thread shows the message that '

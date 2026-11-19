@@ -188,6 +188,7 @@ class _RaftThreadFollowersState extends State<RaftThreadFollowers> {
                           body: widget.body,
                           rows: widget.rows,
                           onRetry: widget.onRetry,
+                          onProfileOpen: close,
                         ),
                       ),
                     ),
@@ -235,10 +236,12 @@ class _Popover extends StatelessWidget {
     required this.body,
     required this.rows,
     required this.onRetry,
+    required this.onProfileOpen,
   });
   final RaftFollowersBody body;
   final List<RaftFollowerRow> rows;
   final VoidCallback onRetry;
+  final VoidCallback onProfileOpen;
 
   @override
   Widget build(BuildContext context) {
@@ -296,7 +299,10 @@ class _Popover extends StatelessWidget {
       ),
       RaftFollowersBody.list => Column(
         mainAxisSize: MainAxisSize.min,
-        children: [for (final row in rows) _FollowerRow(row: row)],
+        children: [
+          for (final row in rows)
+            _FollowerRow(row: row, onProfileOpen: onProfileOpen),
+        ],
       ),
     };
     return RaftPopoverSurface(
@@ -349,8 +355,9 @@ class _Popover extends StatelessWidget {
 }
 
 class _FollowerRow extends StatefulWidget {
-  const _FollowerRow({required this.row});
+  const _FollowerRow({required this.row, required this.onProfileOpen});
   final RaftFollowerRow row;
+  final VoidCallback onProfileOpen;
   @override
   State<_FollowerRow> createState() => _FollowerRowState();
 }
@@ -377,7 +384,12 @@ class _FollowerRowState extends State<_FollowerRow> {
             Expanded(
               child: GestureDetector(
                 behavior: HitTestBehavior.opaque,
-                onTap: r.onOpen,
+                onTap: r.onOpen == null
+                    ? null
+                    : () {
+                        widget.onProfileOpen();
+                        r.onOpen!();
+                      },
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   spacing: 8,

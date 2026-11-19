@@ -130,6 +130,9 @@ void main() {
             'messages': [],
           };
           api.routes['GET /channels/threads/followed'] = (_) => {'threads': []};
+          api.routes['GET /channels/threads/followers'] = (_) => {
+            'threads': [],
+          };
           api.routes['GET /servers/s1/setup-projection'] = (_) => {
             'phase': 'complete',
             'surface': 'complete',
@@ -164,6 +167,10 @@ void main() {
           // The actual narrow shell keeps its header above the timeline
           // surface, while the wide shell mounts it inside the thread column.
           final headerFinder = find.byType(RaftThreadHeader);
+          final options = find.byKey(const Key('thread-options'));
+          final followerTrigger = find.byKey(
+            const Key('thread-followers-header-trigger'),
+          );
           for (var frame = 0; frame < 4; ++frame) {
             await tester.pump(const Duration(milliseconds: 16));
             expect(w.location.thread?.itemId, 'parent');
@@ -173,7 +180,8 @@ void main() {
             expect(header.parentLabel, isNull);
             expect(header.interactiveTitle, isFalse);
             expect(header.onJumpToStart, isNull);
-            expect(header.actions, isEmpty);
+            expect(options, findsNothing);
+            expect(followerTrigger, findsNothing);
             expect(find.byTooltip('Jump to Beginning'), findsNothing);
             expect(
               find.byKey(const Key('mobile-detail-back')),
@@ -218,7 +226,8 @@ void main() {
             expect(header.onJumpToStart, isNotNull);
             // Source ThreadOverflowMenu needs only the resolved identity: the
             // menu is present before the parent row loads (first frame final).
-            expect(header.actions, hasLength(1));
+            expect(options, findsOneWidget);
+            expect(followerTrigger, findsNothing);
             final composer = find.descendant(
               of: root,
               matching: find.byType(RaftComposer),
@@ -244,10 +253,8 @@ void main() {
           await tester.pump();
           expect(w.presentedThreadParent?.id, 'parent');
           // The parent row arriving does not change the header.
-          expect(
-            tester.widget<RaftThreadHeader>(headerFinder).actions,
-            hasLength(1),
-          );
+          expect(options, findsOneWidget);
+          expect(followerTrigger, findsNothing);
           // Mounting the genuine parent action queries its followed state.
           // Flush that request before disposal instead of suppressing it.
           for (var frame = 0; frame < 4; ++frame) {

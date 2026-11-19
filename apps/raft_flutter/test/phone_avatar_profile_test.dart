@@ -291,17 +291,28 @@ void main() {
         final trigger = find.byKey(
           const Key('thread-followers-header-trigger'),
         );
-        expect(trigger, findsOneWidget);
-        await t.tap(trigger);
+        if (phone) {
+          expect(trigger, findsNothing);
+          await t.tap(find.byKey(const Key('thread-options')));
+          await frames(t, 20);
+          await t.tap(find.text('Following agents'));
+        } else {
+          expect(trigger, findsOneWidget);
+          await t.tap(trigger);
+        }
         await frames(t, 20);
-        await t.tap(find.text('Cindy').last);
+        await t.tap(find.byKey(const Key('thread-follower-row-a1')));
         await frames(t, 20);
         await expectProfile(const ValueKey('profile-agent-a1'));
         // Closing returns to the thread, not past it.
         await back(null);
         expect(find.byKey(const Key('profile-panel')), findsNothing);
         expect(w.location.thread, isNotNull);
-        expect(trigger, findsOneWidget);
+        expect(find.byKey(const Key('thread-followers-popover')), findsNothing);
+        expect(
+          phone ? find.byKey(const Key('thread-options')) : trigger,
+          findsOneWidget,
+        );
       },
     );
   }

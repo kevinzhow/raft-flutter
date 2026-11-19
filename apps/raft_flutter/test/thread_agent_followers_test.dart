@@ -111,7 +111,10 @@ void main() {
       await tester.tap(find.text('Cindy'));
       await tester.pump();
       expect(opened, ['a1']);
+      expect(find.byKey(const Key('thread-followers-popover')), findsNothing);
 
+      await tester.tap(trigger);
+      await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('thread-follower-remove')).last);
       await tester.pumpAndSettle();
       expect(
