@@ -7,7 +7,7 @@ import CFNetwork
 import AVFoundation
 import ImageIO
 
-class MainFlutterWindow: NSWindow, RaftPreferencesWindow, RaftPasteWindow, RaftUpdatesWindow, RaftApplicationExitWindow {
+class MainFlutterWindow: NSWindow, RaftPreferencesWindow, RaftPasteWindow, RaftCopyWindow, RaftUpdatesWindow, RaftApplicationExitWindow {
   private var attachmentFilesChannel: AttachmentFilesChannel?
   private var interactionChannel: FlutterMethodChannel?
   private var memoryChannel: FlutterMethodChannel?
@@ -17,6 +17,7 @@ class MainFlutterWindow: NSWindow, RaftPreferencesWindow, RaftPasteWindow, RaftU
   private var applicationExitChannel: FlutterMethodChannel?
   private var windowCommandsReady = false
   private(set) var canOpenPreferences = false
+  private(set) var canCopyFromFlutter = false
   private(set) var canPasteIntoFlutter = false
   private(set) var canCheckForUpdates = false
   private var videoFrameChannel: FlutterMethodChannel?
@@ -328,6 +329,10 @@ class MainFlutterWindow: NSWindow, RaftPreferencesWindow, RaftPasteWindow, RaftU
     windowChannel?.invokeMethod("pasteRequested", arguments: nil)
   }
 
+  func copyFromMenu() {
+    windowChannel?.invokeMethod("copyRequested", arguments: nil)
+  }
+
   func openPreferences() {
     windowChannel?.invokeMethod("openPreferences", arguments: nil)
   }
@@ -391,6 +396,8 @@ class MainFlutterWindow: NSWindow, RaftPreferencesWindow, RaftPasteWindow, RaftU
         self?.windowCommandsReady = state?["ready"] as? Bool == true
         self?.canCheckForUpdates = self?.windowCommandsReady == true
           && state?["updates"] as? Bool == true
+        self?.canCopyFromFlutter = self?.windowCommandsReady == true
+          && state?["copy"] as? Bool == true
         self?.canPasteIntoFlutter = self?.windowCommandsReady == true
           && state?["paste"] as? Bool == true
         self?.canOpenPreferences = self?.windowCommandsReady == true
@@ -1095,7 +1102,7 @@ final class RaftVideoFrame {
 
 /// Native engine-local channels. Child close destroys only that window;
 /// notification, updater and credential ownership stay in the primary engine.
-final class RaftChildWindow: NSObject, RaftPreferencesWindow, RaftPasteWindow, NSWindowDelegate {
+final class RaftChildWindow: NSObject, RaftPreferencesWindow, RaftPasteWindow, RaftCopyWindow, NSWindowDelegate {
   private var commandChannel: FlutterMethodChannel?
   private weak var window: NSWindow?
   init(window: NSWindow, commandChannel: FlutterMethodChannel) {
@@ -1111,8 +1118,10 @@ final class RaftChildWindow: NSObject, RaftPreferencesWindow, RaftPasteWindow, N
     }
   }
   private(set) var canOpenPreferences = false
+  private(set) var canCopyFromFlutter = false
   private(set) var canPasteIntoFlutter = false
   func openPreferences() { commandChannel?.invokeMethod("openPreferences", arguments: nil) }
+  func copyFromMenu() { commandChannel?.invokeMethod("copyRequested", arguments: nil) }
   func pasteFromMenu() { commandChannel?.invokeMethod("pasteRequested", arguments: nil) }
   static func commands(for window: NSWindow?) -> RaftChildWindow? {
     guard let window else { return nil }; return children[ObjectIdentifier(window)]
@@ -1201,6 +1210,7 @@ final class RaftChildWindow: NSObject, RaftPreferencesWindow, RaftPasteWindow, N
         let state = call.arguments as? [String: Any]
         let ready = state?["ready"] as? Bool == true
         host?.canOpenPreferences = ready && state?["preferences"] as? Bool == true
+        host?.canCopyFromFlutter = ready && state?["copy"] as? Bool == true
         host?.canPasteIntoFlutter = ready && state?["paste"] as? Bool == true
         result(nil)
       default: result(FlutterMethodNotImplemented)

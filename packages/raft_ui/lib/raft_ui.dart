@@ -66,7 +66,8 @@ export 'src/html_region_geometry.dart';
 export 'src/html_region_comments.dart';
 export 'src/html_region_native_types.dart';
 export 'src/native_surface_occlusion.dart' show RaftNativeSurfaceOcclusion;
-export 'src/raft_selection_area.dart' show RaftSelectionArea;
+export 'src/raft_selection_area.dart'
+    show RaftSelectionArea, RaftSelectionChangedNotification;
 export 'src/text_selection_toolbar.dart';
 export 'src/thread_replies.dart';
 export 'src/add_members_dialog_view.dart';

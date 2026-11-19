@@ -4,7 +4,11 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:raft_ui/raft_ui.dart'
-    show RaftPreviewRoute, raftText, showRaftAlertDialog;
+    show
+        RaftPreviewRoute,
+        RaftSelectionChangedNotification,
+        raftText,
+        showRaftAlertDialog;
 import 'package:raft_updater/raft_updater.dart';
 
 import 'desktop_cache_scope.dart';
@@ -76,6 +80,7 @@ class _AppWindowCommandsState extends State<AppWindowCommands> {
     if (_mac) {
       _handlerOwner = this;
       _channel.setMethodCallHandler((call) async {
+        if (call.method == 'copyRequested') return _copy();
         if (call.method == 'pasteRequested') return _paste();
         if (call.method == 'checkForUpdatesRequested') {
           return _checkForUpdates();
@@ -104,6 +109,27 @@ class _AppWindowCommandsState extends State<AppWindowCommands> {
   }
 
   static const _pasteIntent = PasteTextIntent(SelectionChangedCause.keyboard);
+
+  BuildContext? get _copyContext {
+    final context = FocusManager.instance.primaryFocus?.context;
+    if (context == null || !context.mounted) return null;
+    final region = context.findAncestorStateOfType<SelectableRegionState>();
+    final hasSelection = region?.contextMenuButtonItems.any(
+      (item) => item.type == ContextMenuButtonType.copy,
+    );
+    if (hasSelection != true) return null;
+    final action = Actions.maybeFind<CopySelectionTextIntent>(context);
+    return action?.isEnabled(CopySelectionTextIntent.copy) == true
+        ? context
+        : null;
+  }
+
+  bool _copy() {
+    final target = _copyContext;
+    if (target == null) return false;
+    Actions.invoke(target, CopySelectionTextIntent.copy);
+    return true;
+  }
 
   BuildContext? get _pasteContext {
     final context = FocusManager.instance.primaryFocus?.context;
@@ -164,6 +190,7 @@ class _AppWindowCommandsState extends State<AppWindowCommands> {
       await _channel.invokeMethod<void>('setWindowCommandsState', {
         'ready': ready,
         'updates': ready && !_checkingUpdates,
+        'copy': ready && _copyContext != null,
         'paste': ready && _pasteContext != null,
         'preferences': ready && widget.openSection != null,
       });
@@ -229,7 +256,15 @@ class _AppWindowCommandsState extends State<AppWindowCommands> {
         ): () =>
             unawaited(_close()),
       },
-      child: widget.child,
+      child: _mac
+          ? NotificationListener<RaftSelectionChangedNotification>(
+              onNotification: (_) {
+                unawaited(_publishState(true));
+                return false;
+              },
+              child: widget.child,
+            )
+          : widget.child,
     );
   }
 }

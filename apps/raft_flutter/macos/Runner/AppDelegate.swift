@@ -12,6 +12,11 @@ protocol RaftPasteWindow: AnyObject {
   func pasteFromMenu()
 }
 
+protocol RaftCopyWindow: AnyObject {
+  var canCopyFromFlutter: Bool { get }
+  func copyFromMenu()
+}
+
 protocol RaftUpdatesWindow: AnyObject {
   var canCheckForUpdates: Bool { get }
   func checkForUpdates()
@@ -129,7 +134,34 @@ class AppDelegate: FlutterAppDelegate, NSMenuItemValidation {
     }
   }
 
+  private var copyWindow: RaftCopyWindow? {
+    guard let window = NSApp.keyWindow,
+      let controller = window.contentViewController as? FlutterViewController,
+      let renderView = controller.registrar(forPlugin: "RaftMenuCopy").view,
+      window.firstResponder === renderView else { return nil }
+    if let child = RaftChildWindow.commands(for: window) { return child }
+    return window as? RaftCopyWindow
+  }
+
+  @objc func copyFromFlutter(_ sender: Any?) {
+    if let window = copyWindow, window.canCopyFromFlutter {
+      window.copyFromMenu()
+    } else {
+      NSApp.sendAction(#selector(NSText.copy(_:)), to: nil, from: sender)
+    }
+  }
+
   func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
+    if menuItem.action == #selector(copyFromFlutter(_:)) {
+      if copyWindow?.canCopyFromFlutter == true { return true }
+      let action = #selector(NSText.copy(_:))
+      guard let target = NSApp.target(forAction: action) else { return false }
+      let item = NSMenuItem(title: menuItem.title, action: action, keyEquivalent: "")
+      if let validator = target as? NSMenuItemValidation {
+        return validator.validateMenuItem(item)
+      }
+      return (target as? NSUserInterfaceValidations)?.validateUserInterfaceItem(item) ?? true
+    }
     if menuItem.action == #selector(checkForUpdates(_:)) {
       return ((retainedMainWindow ?? mainFlutterWindow) as? RaftUpdatesWindow)?
         .canCheckForUpdates ?? false

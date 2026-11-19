@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart' show defaultTargetPlatform, kIsWeb;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show SelectedContent;
@@ -8,6 +9,10 @@ import 'package:flutter/services.dart';
 import 'design_primitives.dart';
 import 'selected_text_quote.dart';
 import 'text_selection_toolbar.dart';
+
+class RaftSelectionChangedNotification extends Notification {
+  const RaftSelectionChangedNotification();
+}
 
 /// [SelectionArea] whose touch selection ends with the next touch elsewhere.
 ///
@@ -70,6 +75,9 @@ class _RaftSelectionAreaState extends State<RaftSelectionArea> {
   bool pointerDown = false;
   OverlayEntry? shortcutEntry;
 
+  bool get reportsToNativeMenu =>
+      !kIsWeb && defaultTargetPlatform == TargetPlatform.macOS;
+
   SelectableRegionState? get region => inside?.mounted == true
       ? inside!.findAncestorStateOfType<SelectableRegionState>()
       : null;
@@ -84,7 +92,11 @@ class _RaftSelectionAreaState extends State<RaftSelectionArea> {
   }
 
   void selectionChanged(SelectedContent? content) {
+    final hadSelection = selected.isNotEmpty;
     selected = content?.plainText ?? '';
+    if (reportsToNativeMenu && hadSelection != selected.isNotEmpty) {
+      const RaftSelectionChangedNotification().dispatch(context);
+    }
     widget.onSelectionChanged?.call(content);
     if (!pointerDown) scheduleShortcut();
   }
@@ -181,9 +193,11 @@ class _RaftSelectionAreaState extends State<RaftSelectionArea> {
       child: SelectionArea(
         contextMenuBuilder: widget.contextMenuBuilder,
         onSelectionChanged:
-            widget.shortcut == null && widget.onSelectionChanged == null
-            ? null
-            : selectionChanged,
+            reportsToNativeMenu ||
+                widget.shortcut != null ||
+                widget.onSelectionChanged != null
+            ? selectionChanged
+            : null,
         child: Builder(
           builder: (context) {
             inside = context;
