@@ -1,6 +1,8 @@
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_flutter/features/artifacts/artifact_dashboard.dart';
+import 'package:raft_flutter/features/artifacts/artifact_viewer_page.dart';
 
 import '../app_global_server_selector_test.dart' show RootFixture;
 import '../support/server_tab.dart';
@@ -35,7 +37,7 @@ void main() {
     });
   }
 
-  testWidgets('Artifacts opens from the desktop rail and switches layouts', (
+  testWidgets('Artifacts opens from the desktop rail and opens a grid card', (
     tester,
   ) async {
     final fixture = RootFixture();
@@ -49,11 +51,25 @@ void main() {
         {'card': artifactCardJson(title: 'Workspace roadmap')},
       ],
     };
+    fixture.overrides['GET /artifacts/$artifactId'] = (_) => artifactViewerJson(
+      card: artifactCardJson(title: 'Workspace roadmap'),
+      frame: false,
+    );
     await fixture.mount(tester, 'light', 1280, uri: Uri.parse('/s/alpha'));
     await tester.tap(find.byKey(const Key('rail-artifacts')));
     await fixture.flush(tester);
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('artifact-grid')), findsOneWidget);
+    await tester.tap(
+      find.byKey(const ValueKey('artifact-dashboard-open-$artifactId')),
+    );
+    await fixture.flush(tester);
+    await tester.pumpAndSettle();
+    expect(find.byType(ArtifactWorkspaceViewer), findsOneWidget);
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await fixture.flush(tester);
+    await tester.pumpAndSettle();
+    expect(find.byType(ArtifactWorkspaceViewer), findsNothing);
     await tester.tap(find.text('List'));
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('artifact-table')), findsOneWidget);

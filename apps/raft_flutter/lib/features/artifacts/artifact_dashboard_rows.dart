@@ -235,7 +235,7 @@ class ArtifactDashboardRows extends StatelessWidget {
 
   Widget tile(BuildContext context, ArtifactDashboardRow item) {
     final card = item.card;
-    return RaftCard(
+    return RaftCard.item(
       key: ValueKey('artifact-dashboard-open-${card.id}'),
       onTap: () => onOpen(card),
       padding: const EdgeInsets.all(RaftSpace.x3),
