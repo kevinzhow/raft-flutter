@@ -29,9 +29,10 @@ void main() {
   const desktop = Size(1280, 800);
 
   testWidgets(
-    'the forward picker lists the local channels at its first frame',
+    'the forward picker lists local channels while recent threads are pending',
     (t) async {
       final (w, api) = await mountWorkspace(t, desktop);
+      final before = api.calls.length;
       final held = await expectOpensWithoutNetwork(
         t,
         w,
@@ -39,7 +40,10 @@ void main() {
         open: (c) => forwardMessages(c, w, [RaftMessage(closeRows().first)]),
         surface: find.byKey(const ValueKey('forward-target-c1')),
       );
-      expect(held, 0);
+      expect(held, 1);
+      final request = api.calls.skip(before).single;
+      expect(request.method, 'GET');
+      expect(request.path, '/messages/forward/targets/conversations');
     },
   );
 
