@@ -78,6 +78,8 @@ class RaftTaskConversationBar extends StatelessWidget {
     required this.mobile,
     required this.onClose,
     this.summary,
+    this.detailsToggle,
+    this.pageStatus,
     this.bottomBorder,
   });
   final RaftTaskConversation conversation;
@@ -88,6 +90,7 @@ class RaftTaskConversationBar extends StatelessWidget {
   /// A phone whose head has scrolled away: the bar names the task's state
   /// instead of just its label, and it pulls the head down.
   final Widget Function(String label)? summary;
+  final Widget? detailsToggle, pageStatus;
   final Border? bottomBorder;
 
   @override
@@ -144,7 +147,19 @@ class RaftTaskConversationBar extends StatelessWidget {
                 ? Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children: [refText, summary?.call(label) ?? labelText],
+                    children: [
+                      refText,
+                      if (pageStatus case final status?)
+                        Row(
+                          spacing: 4,
+                          children: [
+                            Flexible(child: labelText),
+                            Flexible(child: status),
+                          ],
+                        )
+                      else
+                        summary?.call(label) ?? labelText,
+                    ],
                   )
                 : Row(
                     crossAxisAlignment: CrossAxisAlignment.baseline,
@@ -156,6 +171,7 @@ class RaftTaskConversationBar extends StatelessWidget {
                     ],
                   ),
           ),
+          if (detailsToggle case final toggle?) toggle,
           RaftDropdownMenu(
             key: const ValueKey('task-overflow'),
             label: menuLabel,

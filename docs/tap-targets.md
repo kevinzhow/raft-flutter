@@ -85,6 +85,18 @@ Use the existing navigation and close registries when they already cover a
 part of the contract. Platform-specific gestures and system handoffs use the
 existing native verification path.
 
+### Task conversation details
+
+The task title-bar details toggle targets the current task's properties. The
+shared task surface handles it for modern task pages opened from Activity,
+Search, and Tasks. On narrow pages the toggle opens the scrollable panel
+anchored below the title bar. It closes from the same control, Escape, an
+outside press, or system Back. The task stays visible at its prior reading
+position with its draft. On wide task slots the same control collapses or
+restores the pinned properties above the conversation. The task's own
+Back or close affordance still returns to the originating surface.
+Legacy tasks and tasks without loaded properties have no details toggle.
+
 ### Adding a container
 
 1. Build it, passing every handler it has (`null` where it has none).

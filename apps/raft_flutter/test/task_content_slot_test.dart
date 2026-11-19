@@ -47,6 +47,8 @@ Future<WorkspaceController> mountTasks(
   Size size, {
   String section = 'tasks',
   bool v2 = true,
+  TargetPlatform? platform,
+  List<Map<String, dynamic>> discussionMessages = const [],
 }) async {
   t.view.physicalSize = size;
   t.view.devicePixelRatio = 1;
@@ -85,7 +87,7 @@ Future<WorkspaceController> mountTasks(
     'tasks': [v2Task],
   };
   api.routes['GET /messages/channel/task-conv'] = (_) => {
-    'messages': <dynamic>[],
+    'messages': discussionMessages,
   };
   api.routes['POST /channels/task-conv/read'] = (_) => {};
   api.routes['GET /tasks/task-1'] = (_) => {'task': v2Task};
@@ -95,7 +97,7 @@ Future<WorkspaceController> mountTasks(
   ], expectedGeneration: w.messageDomain.ledger.generation);
   await t.pumpWidget(
     MaterialApp(
-      theme: raftTheme(),
+      theme: raftTheme().copyWith(platform: platform),
       home: withAppServices(
         WorkspaceView(
           controller: w,

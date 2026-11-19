@@ -25,6 +25,7 @@ import 'panel_edge.dart';
 import 'side_panel_frame.dart';
 import 'design_primitives.dart';
 import 'dialog_card.dart';
+import 'dismiss_scope.dart';
 import 'icons.dart';
 import 'inline_badge_editor.dart';
 import 'localization.dart';
@@ -144,6 +145,20 @@ class RaftTaskSurface extends StatefulWidget {
   State<RaftTaskSurface> createState() => _RaftTaskSurfaceState();
 }
 
+enum _TaskDetailsPlacement { drawer, pinned }
+
+_TaskDetailsPlacement? _detailsPlacement(RaftTaskSurface surface) {
+  if (surface.legacy ||
+      surface.conversation == null ||
+      surface.unresolvedBody != null ||
+      surface.error != null && !surface.loading) {
+    return null;
+  }
+  if (surface.inPlace) return _TaskDetailsPlacement.pinned;
+  if (surface.page) return _TaskDetailsPlacement.drawer;
+  return null;
+}
+
 class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
   bool historyOpen = false, descriptionExpanded = false;
 
@@ -165,6 +180,13 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
   final barFocus = FocusNode(debugLabel: 'task bar summary');
   bool headPanelOpen = false;
 
+  final detailsFocus = FocusNode(debugLabel: 'task details toggle');
+  bool detailsToggled = false;
+
+  _TaskDetailsPlacement? get detailsPlacement => _detailsPlacement(widget);
+  bool get drawerOpen =>
+      detailsPlacement == _TaskDetailsPlacement.drawer && detailsToggled;
+
   /// Someone other than the viewer chosen in the picker: the reason step
   /// shows in the picker before the write.
   ({Map<String, String> value, String name})? handoff;
@@ -173,6 +195,10 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
   @override
   void didUpdateWidget(RaftTaskSurface oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (oldWidget.task['id'] != widget.task['id'] ||
+        _detailsPlacement(oldWidget) != detailsPlacement) {
+      detailsToggled = false;
+    }
     if (oldWidget.task['id'] != widget.task['id'] ||
         oldWidget.task['description'] != widget.task['description']) {
       descriptionExpanded = false;
@@ -183,6 +209,7 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
   void dispose() {
     headInView.dispose();
     barFocus.dispose();
+    detailsFocus.dispose();
     assigneeSearch.dispose();
     super.dispose();
   }
@@ -253,7 +280,21 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
                               ? null
                               : RaftPanelEdge.left(context),
                         ),
-                        child: dismissable(body),
+                        child: detailsPlacement == _TaskDetailsPlacement.drawer
+                            ? raftTaskPullDownHost(
+                                link: barLink,
+                                open: drawerOpen,
+                                onClose: closeDetailsDrawer,
+                                pageDrawer: true,
+                                panel: drawerOpen
+                                    ? RaftBackDismiss(
+                                        onDismiss: closeDetailsDrawer,
+                                        child: properties(context),
+                                      )
+                                    : const SizedBox.shrink(),
+                                child: body,
+                              )
+                            : dismissable(body),
                       ),
               ),
             ],
@@ -311,7 +352,11 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
         actions: {
           DismissIntent: CallbackAction<DismissIntent>(
             onInvoke: (_) {
-              widget.onClose();
+              if (drawerOpen) {
+                closeDetailsDrawer();
+              } else {
+                widget.onClose();
+              }
               return null;
             },
           ),
@@ -353,6 +398,10 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
         mobile: phone,
         onClose: phone ? widget.onBack ?? widget.onClose : widget.onClose,
         bottomBorder: widget.inPlace ? RaftSidePanelFrame.headerRule(t) : null,
+        detailsToggle: detailsPlacement == null ? null : detailsToggle(context),
+        pageStatus: detailsPlacement == _TaskDetailsPlacement.drawer
+            ? RaftTaskStatus(status: '${task['status']}')
+            : null,
         summary: !summarizes(mobile)
             ? null
             : (label) => ValueListenableBuilder<bool>(
@@ -503,8 +552,46 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
     );
   }
 
+  Widget detailsToggle(BuildContext context) {
+    final expanded = detailsPlacement == _TaskDetailsPlacement.pinned
+        ? !detailsToggled
+        : detailsToggled;
+    final label = raftText(
+      context,
+      expanded ? 'Hide task details' : 'Show task details',
+    );
+    return RaftButton(
+      key: const ValueKey('task-details-toggle'),
+      glyph: expanded ? RaftGlyph.chevronUp : RaftGlyph.chevronDown,
+      uiVariant: RaftButtonVariant.ghost,
+      uiSize: RaftButtonSize.iconSm,
+      minimumTargetSize: RaftInteraction.of(context).touch
+          ? RaftMetrics.touchTarget
+          : null,
+      expandTouchTarget: false,
+      tooltip: label,
+      semanticLabel: label,
+      semanticContainer: false,
+      surfaceBuilder: (context, surface) =>
+          Semantics(expanded: expanded, child: surface),
+      focusNode: detailsFocus,
+      onPressed: () {
+        if (drawerOpen) {
+          closeDetailsDrawer();
+        } else {
+          setState(() => detailsToggled = !detailsToggled);
+        }
+      },
+    );
+  }
+
+  void closeDetailsDrawer() {
+    if (!drawerOpen) return;
+    setState(() => detailsToggled = false);
+    detailsFocus.requestFocus();
+  }
+
   Widget modernBody(BuildContext context) {
-    final head = properties(context);
     if (widget.error != null && widget.loading == false) {
       // ThreadPanel `resolveFailed`: title, body and an outline Retry; the
       // exception itself is never shown.
@@ -522,6 +609,24 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
       );
     }
     final buildDiscussion = widget.discussionBuilder;
+    final placement = detailsPlacement;
+    if (placement != null) {
+      final discussion =
+          buildDiscussion?.call(const SizedBox.shrink()) ??
+          (widget.loading
+              ? const Align(
+                  alignment: Alignment.topCenter,
+                  child: RaftSkeleton(height: 16),
+                )
+              : const SizedBox.expand());
+      return placement == _TaskDetailsPlacement.drawer
+          ? discussion
+          : raftTaskPinnedHead(
+              head: detailsToggled ? null : properties(context),
+              child: discussion,
+            );
+    }
+    final head = properties(context);
     if (buildDiscussion == null) {
       return SingleChildScrollView(
         child: Column(
@@ -550,7 +655,11 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
   /// Task v2 on a phone (not a full page): the head scrolls with the
   /// conversation and the bar summarises the task once it is out of view.
   bool summarizes(bool mobile) =>
-      widget.conversation != null && !widget.legacy && mobile && !widget.page;
+      widget.conversation != null &&
+      !widget.legacy &&
+      mobile &&
+      !widget.page &&
+      !widget.inPlace;
 
   /// Closes the pulled-down head; focus goes back to the bar unless a press
   /// outside closed it (Web `TaskHeadPullDown`).

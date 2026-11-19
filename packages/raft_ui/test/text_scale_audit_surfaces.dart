@@ -1309,6 +1309,18 @@ final auditSurfaces = <AuditSurface>[
     Size(390, 844),
   ),
   AuditSurface(
+    'taskConversationPagePreview',
+    'Mobile task conversation details',
+    taskConversationPagePreview,
+    Size(390, 844),
+  ),
+  AuditSurface(
+    'taskConversationSlotPreview',
+    'Task slot details',
+    taskConversationSlotPreview,
+    Size(856, 600),
+  ),
+  AuditSurface(
     'legacyTaskPagePreview',
     'Mobile legacy task page',
     legacyTaskPagePreview,

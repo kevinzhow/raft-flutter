@@ -44497,18 +44497,6 @@
         "owner": "design-system alignment",
         "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
       },
-      "packages/raft_ui/lib/src/task_surface.dart#local-function:CLASS:_RaftTaskSurfaceState@4956/METHOD:_historyDetail@41094/FUNCTION:badge@41491": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
-      },
-      "packages/raft_ui/lib/src/task_surface.dart#local-function:CLASS:_RaftTaskSurfaceState@4956/METHOD:assigneePanel@35235/FUNCTION:avatar@35594": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
-      },
       "packages/raft_ui/lib/src/task_surface.dart#method:_RaftTaskSurfaceState.headText": {
         "role": "unresolved",
         "familyRefs": [],
@@ -44640,18 +44628,6 @@
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Resolved render_or_state_owner; real-entry/family/state mapping remains unreviewed."
-      },
-      "packages/raft_ui/lib/src/task_surface.dart#local-function:CLASS:_RaftTaskSurfaceState@5069/METHOD:_historyDetail@44853/FUNCTION:badge@45250": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
-      },
-      "packages/raft_ui/lib/src/task_surface.dart#local-function:CLASS:_RaftTaskSurfaceState@5069/METHOD:assigneePanel@38994/FUNCTION:avatar@39353": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
       "packages/raft_ui/lib/src/task_surface.dart#method:_RaftTaskSurfaceState.pullDown": {
         "role": "unresolved",
@@ -45478,18 +45454,6 @@
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
       "apps/raft_flutter/lib/features/resource_view.dart#local-function:CLASS:_ResourceViewState@6622/METHOD:scopedMenu@47157/FUNCTION:buildOwned@47364": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
-      },
-      "packages/raft_ui/lib/src/task_surface.dart#local-function:CLASS:_RaftTaskSurfaceState@5304/METHOD:_historyDetail@45880/FUNCTION:badge@46277": {
-        "role": "unresolved",
-        "familyRefs": [],
-        "owner": "design-system alignment",
-        "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
-      },
-      "packages/raft_ui/lib/src/task_surface.dart#local-function:CLASS:_RaftTaskSurfaceState@5304/METHOD:assigneePanel@40021/FUNCTION:avatar@40380": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
@@ -55369,13 +55333,13 @@
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
-      "packages/raft_ui/lib/src/task_surface.dart#local-function:CLASS:_RaftTaskSurfaceState@5415/METHOD:_historyDetail@46367/FUNCTION:badge@46764": {
+      "packages/raft_ui/lib/src/task_surface.dart#local-function:CLASS:_RaftTaskSurfaceState@5868/METHOD:_historyDetail@50206/FUNCTION:badge@50603": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
         "reason": "Resolved builder; real-entry/family/state mapping remains unreviewed."
       },
-      "packages/raft_ui/lib/src/task_surface.dart#local-function:CLASS:_RaftTaskSurfaceState@5415/METHOD:assigneePanel@40508/FUNCTION:avatar@40867": {
+      "packages/raft_ui/lib/src/task_surface.dart#local-function:CLASS:_RaftTaskSurfaceState@5868/METHOD:assigneePanel@44347/FUNCTION:avatar@44706": {
         "role": "unresolved",
         "familyRefs": [],
         "owner": "design-system alignment",
@@ -56085,6 +56049,35 @@
           "card",
           "dialog"
         ]
+      },
+      "packages/raft_ui/lib/src/task_surface.dart#function:_detailsPlacement": {
+        "role": "entry_composition",
+        "familyRefs": [],
+        "owner": "task v2",
+        "reason": "Selects the details presentation for the current task surface and its host."
+      },
+      "packages/raft_ui/lib/src/task_surface.dart#method:_RaftTaskSurfaceState.detailsToggle": {
+        "role": "internal_wrapper",
+        "familyRefs": [
+          "button"
+        ],
+        "owner": "task v2",
+        "delegatesTo": [
+          "packages/raft_ui/lib/src/raft/button.dart#class:RaftButton"
+        ],
+        "reason": "Task details disclosure uses the shared button and exposes its expanded state."
+      },
+      "packages/raft_ui/lib/task_surface_previews.dart#function:taskConversationPagePreview": {
+        "role": "preview_fixture",
+        "familyRefs": [],
+        "owner": "task v2",
+        "reason": "SDK Widget Preview for the modern task details drawer or pinned task slot."
+      },
+      "packages/raft_ui/lib/task_surface_previews.dart#function:taskConversationSlotPreview": {
+        "role": "preview_fixture",
+        "familyRefs": [],
+        "owner": "task v2",
+        "reason": "SDK Widget Preview for the modern task details drawer or pinned task slot."
       }
     },
     "entries": {

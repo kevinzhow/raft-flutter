@@ -207,20 +207,35 @@ class RaftTaskBarSummary extends StatelessWidget {
 }
 
 /// Hangs [panel] from the bar ([link] is the bar's target) over the
-/// conversation while [open]: no scrim, the messages stay live under it.
-/// A press on the messages below, starting to scroll them, Escape and a swipe
-/// up on the panel (once its content is at its end) close it.
+/// conversation while [open]. The full-page drawer consumes outside taps
+/// within the conversation. In the standalone modal, the messages remain
+/// interactive and a press or scroll start dismisses the panel.
 Widget raftTaskPullDownHost({
   required LayerLink link,
   required bool open,
   required VoidCallback onClose,
   required Widget panel,
   required Widget child,
+  bool pageDrawer = false,
 }) => LayoutBuilder(
   builder: (context, constraints) => Stack(
     clipBehavior: Clip.none,
     children: [
-      child,
+      if (pageDrawer)
+        ExcludeSemantics(
+          excluding: open,
+          child: ExcludeFocus(excluding: open, child: child),
+        )
+      else
+        child,
+      if (open && pageDrawer)
+        Positioned.fill(
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            excludeFromSemantics: true,
+            onTap: onClose,
+          ),
+        ),
       if (open)
         CompositedTransformFollower(
           link: link,
@@ -229,7 +244,9 @@ Widget raftTaskPullDownHost({
           child: SizedBox(
             width: constraints.maxWidth,
             child: _PullDownPanel(
-              maxHeight: MediaQuery.sizeOf(context).height * .7,
+              maxHeight: pageDrawer
+                  ? constraints.maxHeight * .88
+                  : MediaQuery.sizeOf(context).height * .7,
               onClose: onClose,
               child: panel,
             ),
@@ -347,15 +364,19 @@ Widget raftTaskPullDownDismiss({
 );
 
 /// Off a phone: the head pinned above the conversation, at most 45% of it.
-Widget raftTaskPinnedHead({required Widget head, required Widget child}) =>
+Widget raftTaskPinnedHead({required Widget? head, required Widget child}) =>
     LayoutBuilder(
       builder: (context, constraints) => Column(
         children: [
-          ConstrainedBox(
-            key: const ValueKey('task-conversation-head'),
-            constraints: BoxConstraints(maxHeight: constraints.maxHeight * .45),
-            child: SingleChildScrollView(child: head),
-          ),
+          if (head != null)
+            ConstrainedBox(
+              key: const ValueKey('task-conversation-head'),
+              constraints: BoxConstraints(
+                maxHeight: constraints.maxHeight * .45,
+              ),
+              child: SingleChildScrollView(child: head),
+            ),
+
           Expanded(child: child),
         ],
       ),

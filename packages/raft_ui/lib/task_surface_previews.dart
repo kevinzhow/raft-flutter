@@ -9,6 +9,14 @@ Widget taskModalPreview() => const _TaskPreview();
 @RaftPreviews('Mobile task page', size: Size(390, 844))
 Widget taskPagePreview() => const _TaskPreview(page: true);
 
+@RaftPreviews('Mobile task conversation details', size: Size(390, 844))
+Widget taskConversationPagePreview() =>
+    const _TaskPreview(page: true, conversationDetails: true);
+
+@RaftPreviews('Task slot details', size: Size(856, 600))
+Widget taskConversationSlotPreview() =>
+    const _TaskPreview(inPlace: true, conversationDetails: true);
+
 @RaftPreviews('Mobile legacy task page', size: Size(390, 844))
 Widget legacyTaskPagePreview() => const _TaskPreview(legacy: true, page: true);
 
@@ -26,9 +34,11 @@ class _TaskPreview extends StatefulWidget {
     this.legacy = false,
     this.presentation = RaftLegacyTaskPresentation.modal,
     this.page = false,
+    this.inPlace = false,
+    this.conversationDetails = false,
   });
   final bool legacy;
-  final bool page;
+  final bool page, inPlace, conversationDetails;
   final RaftLegacyTaskPresentation presentation;
   @override
   State<_TaskPreview> createState() => _TaskPreviewState();
@@ -66,6 +76,10 @@ class _TaskPreviewState extends State<_TaskPreview> {
         )
       : RaftTaskSurface(
           page: widget.page,
+          inPlace: widget.inPlace,
+          conversation: widget.conversationDetails
+              ? RaftTaskConversation(ref: '#general:#8', onViewInChannel: () {})
+              : null,
           task: {
             'id': 'preview-task',
             'taskNumber': 8,
