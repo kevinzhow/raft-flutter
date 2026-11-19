@@ -13,17 +13,17 @@ import 'agent_hosted_provider.dart';
 import 'agent_migration_panel.dart';
 import 'agent_migration_presentation.dart';
 
-/// The target choice, the two paragraphs about what happens next and, after a
-/// refused start, the error block with its recovery. The submit action reads
-/// "Try again" once the refusal asks for a fix on the computers.
+/// The target picker, move notes and recovery for a refused start.
 class AgentMigrationStartDialog extends StatefulWidget {
   const AgentMigrationStartDialog({
     super.key,
     required this.targets,
     required this.start,
     required this.openComputers,
+    required this.sourceMachineId,
     this.controller,
     this.hostedAvailable = false,
+    this.placesWithoutSource = false,
     this.sourceName,
     this.startHosted,
     this.initialTarget,
@@ -37,6 +37,9 @@ class AgentMigrationStartDialog extends StatefulWidget {
   /// runtime on and configured: Web `useHostedMigrationAvailable`).
   final bool hostedAvailable;
 
+  final String? sourceMachineId;
+  final bool placesWithoutSource;
+
   /// Reads the models a cloud agent can start on (only with [hostedAvailable]).
   final WorkspaceController? controller;
 
@@ -47,8 +50,7 @@ class AgentMigrationStartDialog extends StatefulWidget {
   /// default).
   final Future<void> Function(String? hostedModel)? startHosted;
 
-  /// Every other computer of the server (an offline one is listed; the server
-  /// answers TARGET_COMPUTER_OFFLINE).
+  /// Every other computer of the server, including offline computers.
   final List<Map<String, dynamic>> targets;
   final Future<void> Function(String target) start;
 
@@ -64,8 +66,7 @@ class AgentMigrationStartDialog extends StatefulWidget {
 const _cloudTarget = '__cloud__';
 
 class _AgentMigrationStartDialogState extends State<AgentMigrationStartDialog> {
-  late String target =
-      widget.targets.any((m) => '${m['id']}' == widget.initialTarget)
+  late String target = _targetIsSelectable(widget.initialTarget)
       ? widget.initialTarget!
       : _firstTarget;
   MigrationPresentation? failure;
@@ -73,8 +74,12 @@ class _AgentMigrationStartDialogState extends State<AgentMigrationStartDialog> {
   String? _hostedPick;
   bool _picked = false;
 
+  bool get _hasSource => widget.sourceMachineId?.isNotEmpty == true;
+  bool get _placesWithoutSource => !_hasSource || widget.placesWithoutSource;
+  bool get _offersHosted => widget.hostedAvailable && !_placesWithoutSource;
+
   bool get _hostedSelected =>
-      widget.hostedAvailable &&
+      _offersHosted &&
       widget.controller != null &&
       (target == _cloudTarget || widget.targets.isEmpty);
 
@@ -84,15 +89,24 @@ class _AgentMigrationStartDialogState extends State<AgentMigrationStartDialog> {
     super.dispose();
   }
 
-  String get _firstTarget =>
-      widget.targets.isEmpty ? '' : '${widget.targets.first['id']}';
+  bool _isSelectable(Map<String, dynamic> machine) =>
+      !_placesWithoutSource || machine['status'] == 'online';
+
+  bool _targetIsSelectable(String? id) =>
+      widget.targets.any((m) => '${m['id']}' == id && _isSelectable(m));
+
+  String get _firstTarget {
+    final first = widget.targets.where(_isSelectable).firstOrNull;
+    return first == null ? '' : '${first['id']}';
+  }
 
   @override
   void didUpdateWidget(AgentMigrationStartDialog old) {
     super.didUpdateWidget(old);
     // Web: a target that is no longer offered falls back to the first one.
-    if (target != _cloudTarget &&
-        !widget.targets.any((m) => '${m['id']}' == target)) {
+    if (target == _cloudTarget
+        ? !_offersHosted
+        : !_targetIsSelectable(target)) {
       target = _firstTarget;
     }
   }
@@ -121,12 +135,18 @@ class _AgentMigrationStartDialogState extends State<AgentMigrationStartDialog> {
         : (_picked ? _hostedPick : null);
     final source = widget.sourceName ?? raftText(context, 'Unknown computer');
     return RaftFormDialog(
-      title: widget.hostedAvailable ? 'Move Agent' : 'Move to Another Computer',
+      title: _offersHosted
+          ? 'Move Agent'
+          : _placesWithoutSource
+          ? 'Move to another computer'
+          : 'Move to Another Computer',
       fields: const [],
       submitLabel: failure?.recoveryOpenComputers == true
           ? 'Try again'
           : cloud
           ? 'Move to the Cloud'
+          : _placesWithoutSource
+          ? 'Move'
           : 'Move to Another Computer',
       busyLabel: 'Starting migration…',
       submitEnabled:
@@ -138,7 +158,7 @@ class _AgentMigrationStartDialogState extends State<AgentMigrationStartDialog> {
           RaftField(
             label: raftText(
               context,
-              widget.hostedAvailable ? 'Move to' : 'Target computer',
+              _offersHosted ? 'Move to' : 'Target computer',
             ),
             // Web asks nothing when the dialog is closed after only a target
             // change: the picker's text stays out of the unsaved-input guard.
@@ -149,12 +169,19 @@ class _AgentMigrationStartDialogState extends State<AgentMigrationStartDialog> {
                 semanticLabel: raftText(context, 'Target computer'),
                 emptyLabel: 'No matches',
                 placeholder: raftText(context, 'No other computers available'),
-                enabled: widget.targets.isNotEmpty || widget.hostedAvailable,
+                enabled: widget.targets.isNotEmpty || _offersHosted,
                 value: cloud ? _cloudTarget : target,
                 items: [
                   for (final m in widget.targets)
-                    RaftComboboxItem('${m['id']}', '${m['name']}'),
-                  if (widget.hostedAvailable)
+                    RaftComboboxItem(
+                      '${m['id']}',
+                      '${m['name']}',
+                      enabled: _isSelectable(m),
+                      description: _isSelectable(m)
+                          ? null
+                          : raftText(context, 'Offline'),
+                    ),
+                  if (_offersHosted)
                     RaftComboboxItem(_cloudTarget, raftText(context, 'Cloud')),
                 ],
                 onSelected: (id) => setState(() => target = id),
@@ -199,6 +226,16 @@ class _AgentMigrationStartDialogState extends State<AgentMigrationStartDialog> {
                   ),
                 ],
               ],
+            )
+          else if (_placesWithoutSource)
+            Text(
+              raftText(
+                context,
+                _hasSource
+                    ? "This agent's Computer lost its access to the server, so its files can't be brought over. It moves to the computer you choose and starts a fresh session there the next time it gets a message."
+                    : 'This agent is not on any computer, so there is nothing to bring over. It moves to the computer you choose and starts a fresh session there the next time it gets a message.',
+              ),
+              style: body,
             )
           else ...[
             Text(

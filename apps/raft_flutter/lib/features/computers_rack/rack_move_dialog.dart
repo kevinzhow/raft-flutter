@@ -101,6 +101,7 @@ Future<void> showRackMoveDialog(
       targets: targets,
       initialTarget: targetId,
       controller: w,
+      sourceMachineId: agent['machineId'] as String?,
       sourceName: name(agent['machineId']),
       openComputers: (_) {},
       start: (target) async {

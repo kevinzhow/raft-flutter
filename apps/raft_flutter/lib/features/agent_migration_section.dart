@@ -25,9 +25,7 @@ import 'agent_migration_start_dialog.dart';
 import 'billing_view.dart' show RaftBillingPlans;
 import 'management_support.dart';
 
-/// Mounted by the agent detail only where the viewer can manage a non-external
-/// agent that has a computer (Web: `canManageAgent && !isExternalAgent` and
-/// `agent.machineId`; the `agent_migration_v0` flag is retired in Web 1.24).
+/// The move and its progress for a managed agent, or the cloud arrival notice.
 class AgentMigrationSection extends StatefulWidget {
   const AgentMigrationSection({
     super.key,
@@ -74,12 +72,16 @@ class _AgentMigrationSectionState
 
   /// Web `billingChecking`: Migrate waits for the first billing answer.
   bool get billingChecking => billing == null && loadingBilling;
-  bool get requiresUpgrade => agentMigrationRequiresUpgrade(
-    billing?['plan'],
-    trialActive: RaftBillingPlans.trialActive(
-      (widget.now ?? DateTime.now)().toUtc(),
-    ),
-  );
+  bool get _placesWithoutSource =>
+      agentPlacesWithoutSource(widget.agent, arrivalOnly: widget.arrivalOnly);
+  bool get requiresUpgrade =>
+      !_placesWithoutSource &&
+      agentMigrationRequiresUpgrade(
+        billing?['plan'],
+        trialActive: RaftBillingPlans.trialActive(
+          (widget.now ?? DateTime.now)().toUtc(),
+        ),
+      );
 
   /// The migration the cancel dialog shows and whether it can still be
   /// cancelled: they follow every read while the dialog is open.
@@ -98,6 +100,8 @@ class _AgentMigrationSectionState
     w,
     migration: true,
   );
+  bool get _canCheckHosted => !widget.arrivalOnly && !_placesWithoutSource;
+  bool get _offersHosted => _canCheckHosted && _hosted.migrationAvailable;
 
   @override
   void initState() {
@@ -106,11 +110,8 @@ class _AgentMigrationSectionState
     _planRevision = w.planRevision;
     w.addListener(_planChanged);
     startManagement();
-    if (!widget.arrivalOnly) {
-      _hosted
-        ..addListener(_statusChanged)
-        ..load();
-    }
+    _hosted.addListener(_statusChanged);
+    if (_canCheckHosted) unawaited(_hosted.load());
   }
 
   void _bindStatus() {
@@ -127,6 +128,10 @@ class _AgentMigrationSectionState
         ..dispose();
       _watchedRef = null;
       _bindStatus();
+    }
+    if (_canCheckHosted &&
+        (old.arrivalOnly || agentPlacesWithoutSource(old.agent))) {
+      unawaited(_hosted.load());
     }
   }
 
@@ -259,8 +264,7 @@ class _AgentMigrationSectionState
       await _showUpgrade();
       return;
     }
-    // Web AgentMigrationDialog: every other computer; an offline one is
-    // listed and the server answers TARGET_COMPUTER_OFFLINE.
+    final placesWithoutSource = _placesWithoutSource;
     final targets = widget.machines
         .where(
           (m) =>
@@ -268,6 +272,7 @@ class _AgentMigrationSectionState
         )
         .toList();
     var proRequired = false;
+    var placed = false;
     final generation = w.client.generation, sourceAuthority = authority;
     // One start for both targets: a computer, or the cloud.
     Future<void> begin(
@@ -279,7 +284,13 @@ class _AgentMigrationSectionState
         throw StateError('The active server changed. Reopen this form.');
       }
       try {
-        await w.command('POST', '/agents/$_agentId/migrate', data: data);
+        final response = await w.command(
+          'POST',
+          '/agents/$_agentId/migrate',
+          data: data,
+        );
+        placed =
+            response is Map && response['outcome'] == 'placed_without_source';
       } catch (e) {
         if (accepts(generation) &&
             sourceAuthority == authority &&
@@ -304,13 +315,15 @@ class _AgentMigrationSectionState
       }
     }
 
-    await scopedDialog<bool>(
+    final submitted = await scopedDialog<bool>(
       form: true,
       (dialogContext) => AgentMigrationStartDialog(
         targets: targets,
         openComputers: (id) => unawaited(_openComputers(id)),
         controller: w,
-        hostedAvailable: _hosted.migrationAvailable,
+        hostedAvailable: _offersHosted,
+        sourceMachineId: widget.agent['machineId'] as String?,
+        placesWithoutSource: placesWithoutSource,
         sourceName: _computers(null).sourceName,
         start: (target) =>
             begin(dialogContext, {'targetComputer': target}, target),
@@ -323,6 +336,10 @@ class _AgentMigrationSectionState
       unawaited(loadBilling());
       await _showUpgrade();
       return;
+    }
+    if (placesWithoutSource && submitted != true) return;
+    if (placed && accepts(generation) && sourceAuthority == authority) {
+      w.services.entityDirectory.reloadAgents();
     }
     await _status.reload();
   }
@@ -493,14 +510,14 @@ class _AgentMigrationSectionState
               child: Row(
                 children: [
                   RaftSectionEyebrow(raftText(context, 'Agent migration')),
-                  const SizedBox(width: RaftSpace.x2),
-                  // Migration is a Pro feature; on other plans Migrate opens
-                  // the upgrade prompt.
-                  RaftRecipeBadge(
-                    raftText(context, 'Pro'),
-                    key: const ValueKey('agent-migration-pro-badge'),
-                    variant: RaftBadgeRecipeVariant.accent,
-                  ),
+                  if (!_placesWithoutSource) ...[
+                    const SizedBox(width: RaftSpace.x2),
+                    RaftRecipeBadge(
+                      raftText(context, 'Pro'),
+                      key: const ValueKey('agent-migration-pro-badge'),
+                      variant: RaftBadgeRecipeVariant.accent,
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -583,8 +600,10 @@ class _AgentMigrationSectionState
                 context,
                 canRetry
                     ? 'Try Migration Again'
-                    : _hosted.migrationAvailable
+                    : _offersHosted
                     ? 'Move Agent'
+                    : _placesWithoutSource
+                    ? 'Move to another computer'
                     : 'Move to Another Computer',
               ),
               tone: RaftButtonRecipeVariant.outline,

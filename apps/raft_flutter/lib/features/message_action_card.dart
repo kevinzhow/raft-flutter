@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
+import '../data/agent_migration_status.dart' show agentPlacesWithoutSource;
 import '../data/app_install_expectation.dart' show appPromptTextConsent;
 import '../data/cause_notice.dart';
 import '../data/message_history_events.dart';
@@ -1350,10 +1351,8 @@ class _MessageActionCardState extends State<MessageActionCard> {
     final source = cardString(agent['machineId']);
     final suggested = cardString(action['suggestedComputer']);
     final plan = w.server?.string('plan');
-    final canPlace =
-        agent['executionMode'] == 'byoc' &&
-        (source == null || agent['blockedReason'] == 'computer_access_revoked');
-    if (!canPlace && plan == 'free') {
+    final placesWithoutSource = agentPlacesWithoutSource(agent);
+    if (!placesWithoutSource && plan == 'free') {
       return openWebBillingOrToast(
         context,
         w,
@@ -1367,9 +1366,17 @@ class _MessageActionCardState extends State<MessageActionCard> {
     );
     await _openSpecDialog(
       (_) => AgentMigrationStartDialog(
-        targets: machines.where((machine) => machine['id'] != source).toList(),
+        targets: [
+          for (final machine in machines)
+            if (machine['id'] != source &&
+                (source != null && !placesWithoutSource ||
+                    machine['isComputer'] == true))
+              machine,
+        ],
         controller: w,
         initialTarget: suggested,
+        sourceMachineId: source,
+        placesWithoutSource: placesWithoutSource,
         sourceName: machines
             .where((machine) => machine['id'] == source)
             .map((machine) => cardString(machine['name']))

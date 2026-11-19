@@ -9,6 +9,7 @@ import 'package:raft_ui/raft_ui.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../data/agent_archive.dart';
+import '../data/agent_migration_status.dart' show agentPlacesWithoutSource;
 import '../data/raft_location.dart';
 import '../data/raft_permalink.dart';
 import '../platform/content_links.dart';
@@ -1550,13 +1551,10 @@ class _FleetDetailState extends State<FleetDetail> {
         onMessage: !access.boundedPublic && row['deletedAt'] == null
             ? () => action(message)
             : null,
-        // Web 1.24 `AgentMigrationSection` (AgentMigrationSection.tsx:70,
-        // AgentDetailPanel.tsx:873): a computer and the permission; the
-        // `agent_migration_v0` flag is retired.
         canMigrate:
             access.canManage &&
             allowed('migrateAgents') &&
-            row['machineId'] is String,
+            (row['machineId'] is String || agentPlacesWithoutSource(row)),
         canShowCloudArrival:
             access.canManage &&
             allowed('migrateAgents') &&

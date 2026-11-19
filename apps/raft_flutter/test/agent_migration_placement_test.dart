@@ -139,6 +139,7 @@ void main() {
                     const {
                       'Move Agent',
                       'Move to Another Computer',
+                      'Move to another computer',
                     }.contains(widget.label),
               );
         expect(move, findsOneWidget);
@@ -148,6 +149,13 @@ void main() {
 
         final dialog = find.byType(RaftFormDialog);
         expect(find.text(note), findsOneWidget);
+        expect(
+          find.descendant(
+            of: dialog,
+            matching: find.text('Move to another computer'),
+          ),
+          findsOneWidget,
+        );
         expect(find.textContaining('Your agent will stop'), findsNothing);
         expect(
           find.textContaining('Migrating moves the workspace files'),

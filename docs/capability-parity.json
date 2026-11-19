@@ -5844,7 +5844,7 @@
    "background": true,
    "status": "covered",
    "webEntry": "Profile > AgentMigrationSection (between Skills and Actions) button label ('Migrate' / 'Try migration again') + MigrationProgressPanel",
-   "gate": "agent has a computer + canManageAgent (agent_migration_v0 is retired in Web 1.24)",
+   "gate": "canManageAgent and an assigned Computer, BYOC placement without a usable source, or hosted arrival",
    "flutterEntry": "agent_migration_section.dart AgentMigrationSection (reads on mount, realtime listener, polling via agent_migration_status.dart) + agent_migration_panel.dart MigrationProgressPanel",
    "flutterRefs": [
     {
@@ -6541,12 +6541,12 @@
    "kind": "endpoint",
    "id": "POST /agents/:id/migrate",
    "area": "agents-computers-runtimes",
-   "capability": "Start moving an agent to another computer (AgentMigrationSection 'Migrate' > 'Move to another computer' dialog with a searchable target computer); Free plans see the upgrade dialog",
+   "capability": "Move an agent to another Computer or place an agent whose source Computer is absent or has lost server access",
    "background": false,
    "status": "covered",
-   "webEntry": "AgentDetailPanel > Profile > AgentMigrationSection > 'Migrate' (AgentMigrationDialog; AgentMigrationUpgradeDialog when plan is not Pro)",
-   "gate": "agent has computer, canManageAgent, plan Pro (agent_migration_v0 is retired in Web 1.24)",
-   "flutterEntry": "agent_migration_section.dart AgentMigrationSection + agent_migration_start_dialog.dart (migrateAgents capability and a computer in fleet_views.dart canMigrate)",
+   "webEntry": "Agent profile > Agent migration, or agent:migrate action card > Move agent > AgentMigrationDialog",
+   "gate": "Agent management permission for the profile or migration permission for the card. Workspace transfer requires Pro. BYOC placement without a usable source is available on Free.",
+   "flutterEntry": "fleet_views.dart canMigrate > AgentMigrationSection, or message_action_card.dart _openMigration > AgentMigrationStartDialog",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/agent_migration_section.dart",
@@ -6555,6 +6555,10 @@
     {
      "file": "apps/raft_flutter/lib/features/fleet_views.dart",
      "needle": "canMigrate:"
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/message_action_card.dart",
+     "needle": "Future<void> _openMigration()"
     }
    ],
    "justification": "",

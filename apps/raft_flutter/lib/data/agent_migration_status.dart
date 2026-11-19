@@ -12,6 +12,18 @@ import 'package:raft_ui/raft_ui.dart' show RaftForegroundPeriodic;
 import 'migration_error.dart';
 import 'workspace_controller.dart';
 
+bool agentPlacesWithoutSource(
+  Map<String, dynamic> agent, {
+  bool arrivalOnly = false,
+}) {
+  final source = agent['machineId'];
+  return !arrivalOnly &&
+      agent['executionMode'] == 'byoc' &&
+      (source == null ||
+          source == '' ||
+          RaftAgentFields(agent).blockedReason == 'computer_access_revoked');
+}
+
 class AgentMigrationStatus extends ChangeNotifier {
   AgentMigrationStatus(this.w, this.agentId) {
     // A revisit shows the last accepted status at its first frame.

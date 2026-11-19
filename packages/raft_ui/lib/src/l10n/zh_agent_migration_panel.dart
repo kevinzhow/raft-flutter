@@ -4,6 +4,10 @@
 // v1.21.12-source.1). ICU plural / select arms are written out as one key each
 // (raftText does not interpret ICU) and `{n, number}` is `{n}`.
 const Map<String, String> zhCatalogAgentMigrationPanel = {
+  "Move": "迁移",
+  "This agent is not on any computer, so there is nothing to bring over. It moves to the computer you choose and starts a fresh session there the next time it gets a message.":
+      "这个 Agent 目前不在任何计算机上，没有需要转移的文件。它会移到你选择的计算机，并在下次收到消息时在那里开启新会话。",
+  "This agent's Computer lost its access to the server, so its files can't be brought over. It moves to the computer you choose and starts a fresh session there the next time it gets a message.": "这个 Agent 所在的 Computer 已失去对服务器的访问权限，无法带走它的文件。它会移到你选择的 Computer，并在下次收到消息时在那里开始新的会话。",
   "Migration to {target}":
       "迁移到 {target}",
   "Migration to {target} canceled":
