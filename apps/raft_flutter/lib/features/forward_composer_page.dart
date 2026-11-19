@@ -16,6 +16,7 @@ import '../data/user_error.dart';
 import '../data/workspace_controller.dart';
 import 'channel_footer_states.dart' show jointChannelReadOnly;
 import 'forward_messages_dialog.dart';
+import 'forward_conversation_targets.dart';
 import 'forward_warnings.dart';
 import 'private_route_guard.dart';
 import 'sender_avatar_projection.dart';
@@ -180,6 +181,7 @@ class _ForwardComposerPageState extends State<ForwardComposerPage> {
   final searchFocus = FocusNode();
   final selected = <String, _Destination>{};
   List<Map<String, dynamic>> results = [];
+  List<Map<String, dynamic>> conversations = [];
   late final String authority;
   Timer? debounce;
   int request = 0;
@@ -205,6 +207,31 @@ class _ForwardComposerPageState extends State<ForwardComposerPage> {
     super.initState();
     authority = workspaceAuthority(w);
     w.addListener(authorityChanged);
+    unawaited(loadConversations());
+  }
+
+  Future<void> loadConversations() async {
+    final source = widget.messages.firstOrNull?.channelId;
+    final channel = source == null
+        ? null
+        : w.channel?.id == source
+        ? w.channel
+        : w.channelById(source);
+    final currentChannelId =
+        source == w.threadChannelId ||
+            channel?.type == 'thread' ||
+            channel?.type == 'task'
+        ? source
+        : null;
+    try {
+      final rows = await fetchForwardConversationTargets(
+        w,
+        currentChannelId: currentChannelId,
+      );
+      if (current) setState(() => conversations = rows);
+    } catch (_) {
+      // A failed recent-conversations read leaves the usual Recent list usable.
+    }
   }
 
   void authorityChanged() {
@@ -535,12 +562,7 @@ class _ForwardComposerPageState extends State<ForwardComposerPage> {
       showClear: selected.isNotEmpty,
       clearLabel: raftText(context, 'Clear'),
       onClear: locked ? null : () => setState(selected.clear),
-      rows: query.isEmpty
-          ? [
-              for (final c in forwardRecentTargets(w.channels, w.dms))
-                localRow(c),
-            ]
-          : searchRows(),
+      rows: query.isEmpty ? recentRows() : searchRows(),
       error: error,
       warnings: warningBanners(),
       preview: RaftForwardedBundle(
@@ -639,17 +661,26 @@ class _ForwardComposerPageState extends State<ForwardComposerPage> {
                     onTap: () => setState(selected.clear),
                   )
                 : null,
-            rows: query.isEmpty
-                ? [
-                    for (final c in forwardRecentTargets(w.channels, w.dms))
-                      localRow(c),
-                  ]
-                : searchRows(),
+            rows: query.isEmpty ? recentRows() : searchRows(),
           ),
         ),
       ],
     );
   }
+
+  List<Widget> recentRows() => [
+    if (conversations.isNotEmpty) ...[
+      RaftSectionEyebrow(raftText(context, 'Threads & tasks')),
+      for (final (position, row) in conversations.indexed)
+        searchRow(
+          row,
+          currentConversation: position == 0 && row['current'] == true,
+        ),
+      RaftSectionEyebrow(raftText(context, 'Recent')),
+    ],
+    for (final channel in forwardRecentTargets(w.channels, w.dms))
+      localRow(channel),
+  ];
 
   List<Widget> searchRows() {
     if (loading) return const [RaftForwardSearchStatus(loading: true)];
@@ -669,26 +700,31 @@ class _ForwardComposerPageState extends State<ForwardComposerPage> {
         ),
       ];
     }
-    return [
-      for (final r in results)
-        () {
-          final key = r['channelId'] is String
-              ? 'channel:${r['channelId']}'
-              : '${r['type']}:${r['id']}';
-          final unavailable =
-              r['canForwardNow'] != true && r['requiredAction'] == null;
-          final type = r['type'];
-          final action = r['requiredAction'];
-          // Web `resolvedChannelId`: a joined channel or an existing DM no
-          // longer reads "Not joined" / "New DM".
-          final resolved =
-              selected[key]?.joined == true ||
-              (action == 'join_channel' && locallyJoined(r['channelId'])) ||
-              (action == 'create_dm' &&
-                  w.dms.any((c) => c.json['peerId'] == r['id']));
-          return RaftForwardTargetRow(
-            key: ValueKey('forward-search-target-$type-${r['id']}'),
-            icon: forwardTargetIcon(
+    return [for (final row in results) searchRow(row)];
+  }
+
+  Widget searchRow(Map<String, dynamic> r, {bool currentConversation = false}) {
+    final key = r['channelId'] is String
+        ? 'channel:${r['channelId']}'
+        : '${r['type']}:${r['id']}';
+    final unavailable =
+        r['canForwardNow'] != true && r['requiredAction'] == null;
+    final type = r['type'];
+    final action = r['requiredAction'];
+    // Web `resolvedChannelId`: a joined channel or an existing DM no
+    // longer reads "Not joined" / "New DM".
+    final resolved =
+        selected[key]?.joined == true ||
+        (action == 'join_channel' && locallyJoined(r['channelId'])) ||
+        (action == 'create_dm' &&
+            w.dms.any((c) => c.json['peerId'] == r['id']));
+    return RaftForwardTargetRow(
+      key: ValueKey('forward-search-target-$type-${r['id']}'),
+      icon: type == 'thread' || type == 'task'
+          ? const RaftConversationAvatarTile(
+              kind: RaftConversationAvatarKind.thread,
+            )
+          : forwardTargetIcon(
               w.client.origin,
               name: '${r['title']}',
               type: type == 'channel'
@@ -700,32 +736,30 @@ class _ForwardComposerPageState extends State<ForwardComposerPage> {
                   ? r['avatarUrl'] as String
                   : null,
             ),
-            label: '${r['title']}',
-            selected: selected.containsKey(key),
-            checkbox: multi,
-            checkboxDisabled:
-                !selected.containsKey(key) && selected.length >= 10,
-            unavailable: unavailable,
-            trailing:
-                !resolved && (action == 'join_channel' || action == 'create_dm')
-                ? RaftForwardTargetBadge(
-                    glyph: action == 'join_channel'
-                        ? RaftGlyph.logIn
-                        : RaftGlyph.userPlus,
-                    label: raftText(
-                      context,
-                      action == 'join_channel' ? 'Not joined' : 'New DM',
-                    ),
-                  )
-                : null,
-            onTap: unavailable
-                ? null
-                : () => choose(
-                    _Destination(key: key, label: '${r['title']}', search: r),
-                  ),
-          );
-        }(),
-    ];
+      label: '${r['title']}',
+      selected: selected.containsKey(key),
+      checkbox: multi,
+      checkboxDisabled: !selected.containsKey(key) && selected.length >= 10,
+      unavailable: unavailable,
+      trailing: currentConversation
+          ? Text(raftText(context, 'Current'))
+          : !resolved && (action == 'join_channel' || action == 'create_dm')
+          ? RaftForwardTargetBadge(
+              glyph: action == 'join_channel'
+                  ? RaftGlyph.logIn
+                  : RaftGlyph.userPlus,
+              label: raftText(
+                context,
+                action == 'join_channel' ? 'Not joined' : 'New DM',
+              ),
+            )
+          : null,
+      onTap: unavailable
+          ? null
+          : () => choose(
+              _Destination(key: key, label: '${r['title']}', search: r),
+            ),
+    );
   }
 
   Widget localRow(RaftChannel c) {

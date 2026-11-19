@@ -7,6 +7,7 @@ import 'hover_region.dart';
 
 import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'raft_underline.dart';
 import 'attachment_card.dart';
@@ -575,6 +576,9 @@ class _RaftForwardTargetRowState extends State<RaftForwardTargetRow> {
   bool hovered = false;
   @override
   Widget build(BuildContext context) {
+    final activate = widget.unavailable || widget.checkboxDisabled
+        ? null
+        : widget.onTap;
     final t = RaftTokens.of(context);
     final fill = widget.unavailable
         ? t.colors['fill-muted']!.withValues(
@@ -585,69 +589,86 @@ class _RaftForwardTargetRowState extends State<RaftForwardTargetRow> {
         : hovered
         ? (t.colors['fill-muted']!)
         : (t.colors['layer-panel']!);
-    return Semantics(
-      button: !widget.checkbox,
-      checked: widget.checkbox ? widget.selected : null,
-      enabled: widget.onTap != null,
-      label: widget.label,
-      excludeSemantics: true,
-      child: RaftHoverRegion(
-        cursor: widget.onTap == null
-            ? SystemMouseCursors.forbidden
-            : SystemMouseCursors.click,
-        onEnter: (_) => setState(() => hovered = true),
-        onExit: (_) => setState(() => hovered = false),
-        child: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: widget.onTap,
-          child: Opacity(
-            opacity: widget.unavailable ? .5 : 1,
-            child: Container(
-              // CSS `p-2` inside the border (Container adds the border inset).
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: fill,
-                border: Border.all(color: t.colors['line-muted']!),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Row(
-                children: [
-                  if (widget.checkbox) ...[
-                    // raft-ui `Checkbox` (14px), pointer-events-none in the row.
-                    ExcludeSemantics(
-                      child: IgnorePointer(
-                        // Never `disabled` unless the limit is reached: the
-                        // row owns the tap (`pointer-events-none`).
-                        child: RaftCheckbox(
-                          value: widget.selected,
-                          onChanged: widget.checkboxDisabled ? null : (_) {},
+    return FocusableActionDetector(
+      enabled: activate != null,
+      shortcuts: const {
+        SingleActivator(LogicalKeyboardKey.enter): ActivateIntent(),
+        SingleActivator(LogicalKeyboardKey.space): ActivateIntent(),
+      },
+      actions: {
+        ActivateIntent: CallbackAction<ActivateIntent>(
+          onInvoke: (_) {
+            activate?.call();
+            return null;
+          },
+        ),
+      },
+      child: Semantics(
+        button: !widget.checkbox,
+        checked: widget.checkbox ? widget.selected : null,
+        enabled: activate != null,
+        onTap: activate,
+        label: widget.label,
+        excludeSemantics: true,
+        child: RaftHoverRegion(
+          cursor: activate == null
+              ? SystemMouseCursors.forbidden
+              : SystemMouseCursors.click,
+          onEnter: (_) => setState(() => hovered = true),
+          onExit: (_) => setState(() => hovered = false),
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: activate,
+            excludeFromSemantics: true,
+            child: Opacity(
+              opacity: widget.unavailable ? .5 : 1,
+              child: Container(
+                // CSS `p-2` inside the border (Container adds the border inset).
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: fill,
+                  border: Border.all(color: t.colors['line-muted']!),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Row(
+                  children: [
+                    if (widget.checkbox) ...[
+                      // raft-ui `Checkbox` (14px), pointer-events-none in the row.
+                      ExcludeFocus(
+                        child: IgnorePointer(
+                          // Never `disabled` unless the limit is reached: the
+                          // row owns the tap (`pointer-events-none`).
+                          child: RaftCheckbox(
+                            value: widget.selected,
+                            onChanged: widget.checkboxDisabled ? null : (_) {},
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                    ],
+                    widget.icon,
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        widget.label,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontFamily: t.headingFont,
+                          fontSize: 14,
+                          height: 20 / 14,
+                          fontWeight: FontWeight.w700,
+                          color: t.strong,
+                          leadingDistribution: TextLeadingDistribution.even,
                         ),
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    if (widget.trailing != null) ...[
+                      const SizedBox(width: 8),
+                      widget.trailing!,
+                    ],
                   ],
-                  widget.icon,
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      widget.label,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontFamily: t.headingFont,
-                        fontSize: 14,
-                        height: 20 / 14,
-                        fontWeight: FontWeight.w700,
-                        color: t.strong,
-                        leadingDistribution: TextLeadingDistribution.even,
-                      ),
-                    ),
-                  ),
-                  if (widget.trailing != null) ...[
-                    const SizedBox(width: 8),
-                    widget.trailing!,
-                  ],
-                ],
+                ),
               ),
             ),
           ),
