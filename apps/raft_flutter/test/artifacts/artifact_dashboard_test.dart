@@ -1,16 +1,42 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/device_preferences.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/features/artifacts/artifact_dashboard.dart';
 import 'package:raft_flutter/features/artifacts/artifact_dashboard_data.dart';
+import 'package:raft_flutter/features/artifacts/artifact_dashboard_rows.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../support/artifact_fake_client.dart';
 
 void main() {
+  testWidgets('the Chinese table labels the update time', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        locale: const Locale('zh'),
+        supportedLocales: const [Locale('en'), Locale('zh')],
+        localizationsDelegates: GlobalMaterialLocalizations.delegates,
+        theme: raftTheme(),
+        home: Scaffold(
+          body: ArtifactDashboardRows(
+            rows: const [],
+            compact: false,
+            opened: false,
+            preferences: const ArtifactDashboardPreferences(grid: false),
+            onOpen: (_) {},
+            onColumnResize: (_, _) {},
+            onColumnResizeEnd: () {},
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('更新时间'), findsOneWidget);
+  });
+
   test(
     'existing device preferences survive the new dashboard preference',
     () async {

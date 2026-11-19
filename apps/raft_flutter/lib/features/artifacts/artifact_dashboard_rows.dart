@@ -121,7 +121,9 @@ class ArtifactDashboardRows extends StatelessWidget {
     String text,
     ArtifactDashboardColumn column,
   ) {
-    final label = raftText(context, text);
+    final label = text == 'Updated'
+        ? raftTextZh(context, 'Updated', '更新时间')
+        : raftText(context, text);
     return Row(
       children: [
         if (RaftInteraction.of(context).pointer)

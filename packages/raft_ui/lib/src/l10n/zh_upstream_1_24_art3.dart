@@ -43,7 +43,7 @@ const Map<String, String> zhCatalogUpstream124Art3 = {
   'Turn off link sharing': '关闭链接分享',
   'Move to a conversation': '移到某个对话',
   'Move to conversation': '移到该会话',
-  'A conversation': '某个对话',
+  'A conversation': '某个会话',
   'Checking who would lose access…': '正在检查谁会失去访问权限…',
   "Couldn't check who would lose access. Try again.": '无法检查谁会失去访问权限，请重试。',
   'The number changed since you looked. Check the new one, then confirm again.':

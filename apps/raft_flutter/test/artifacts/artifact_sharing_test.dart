@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
@@ -13,6 +14,40 @@ import 'package:raft_ui/raft_ui.dart';
 import '../support/artifact_fake_client.dart';
 
 void main() {
+  testWidgets('Chinese visibility uses the Web conversation fallback', (
+    tester,
+  ) async {
+    final client = ArtifactFakeClient();
+    addTearDown(client.dispose);
+    final data = ArtifactViewerData.fromJson({
+      ...artifactViewerJson(),
+      'card': {
+        ...artifactCardJson(),
+        'home': {'kind': 'public'},
+      },
+      'originalHome': {'conversationId': 'source'},
+      'capabilities': {'narrowHome': true},
+    })!;
+    await tester.pumpWidget(
+      MaterialApp(
+        locale: const Locale('zh'),
+        supportedLocales: const [Locale('en'), Locale('zh')],
+        localizationsDelegates: GlobalMaterialLocalizations.delegates,
+        theme: raftTheme(),
+        home: Scaffold(
+          body: ArtifactManageDialog(
+            api: ArtifactSharingApi(client),
+            data: data,
+            action: ArtifactManageAction.visibility,
+            current: () => true,
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('某个会话'), findsOneWidget);
+  });
+
   testWidgets('forward retry clears the error and keeps the same client key', (
     tester,
   ) async {
