@@ -4,6 +4,7 @@ import 'package:raft_flutter/platform/content_coordinator.dart';
 import 'package:raft_flutter/platform/native_notifications.dart';
 import 'package:raft_flutter/platform/content_target.dart';
 
+import 'app_global_server_selector_test.dart' show RootFixture;
 import 'chat_focus_receipt_test.dart' show paintedMessage;
 import 'message_context_transition_test.dart' show row;
 import 'mounted_message_navigation_test.dart' show mountPage, pageFixture;
@@ -87,4 +88,52 @@ void main() {
       }
     });
   }
+
+  testWidgets('a cold signed-in message link opens the unavailable view', (
+    tester,
+  ) async {
+    final root = RootFixture(
+      contentOverride: NativeContentCoordinator(ownsSystemIntegration: false),
+    );
+    root.overrides['GET /channels/ca'] = (_) => {
+      'id': 'ca',
+      'serverId': 'a',
+      'name': 'general-a',
+      'type': 'channel',
+      'joined': true,
+    };
+    root.adapter.statuses['GET /messages/context/missing'] = 404;
+    root.overrides['GET /messages/context/missing'] = (_) => {
+      'error': 'Not found',
+    };
+    await root.mount(
+      tester,
+      'light',
+      1280,
+      uri: Uri.parse('/s/alpha/channel/ca?msg=missing'),
+    );
+    try {
+      await root.flush(tester);
+      final panel = find.byKey(const ValueKey('message-link-unavailable'));
+      expect(panel, findsOneWidget);
+      expect(
+        root.adapter.calls.any(
+          (request) => request.path == '/messages/context/missing',
+        ),
+        isTrue,
+      );
+      await tester.tap(
+        find.byKey(const ValueKey('message-link-unavailable-back')),
+      );
+      await root.flush(tester);
+      expect(panel, findsNothing);
+      expect(
+        root.workspace(tester).location.uri.toString(),
+        '/s/alpha/channel/ca',
+      );
+      expect(paintedMessage(tester, 'ma'), isNotNull);
+    } finally {
+      await root.close(tester);
+    }
+  });
 }

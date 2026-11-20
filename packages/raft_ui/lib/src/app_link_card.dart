@@ -221,7 +221,16 @@ class RaftAppLinkCard extends StatelessWidget {
       tokens: t.recipeTokens,
       states: t.recipeStates(),
     );
-    final source = raftSlotTextStyle(t, recipe.source);
+    final caption = t.typeSlot('caption');
+    final subhead = t.typeSlot('subhead');
+    final source = raftSlotTextStyle(
+      t,
+      recipe.source,
+    ).copyWith(fontSize: caption.fontSize, height: caption.height);
+    final titleStyle = raftSlotTextStyle(
+      t,
+      recipe.title,
+    ).copyWith(fontSize: subhead.fontSize, height: subhead.height);
     final sourceName = recipe.sourceName.text(t.recipeTokens, base: source);
     final block = RaftAppLinkCardRecipe.resolve(tokens: t.recipeTokens);
     return Padding(
@@ -280,7 +289,7 @@ class RaftAppLinkCard extends StatelessWidget {
                     RaftTextLink(
                       label: title,
                       maxLines: 2,
-                      typeStyle: raftSlotTextStyle(t, recipe.title),
+                      typeStyle: titleStyle,
                       variant: RaftTextLinkVariant.strong,
                       onPressed: onOpen,
                     ),
