@@ -74,9 +74,10 @@ class SidebarRepository {
 
   /// Publish optimistically, then serialize versioned section writes.
   /// A failed current write restores its previous projection; conflicts reload.
-  Future<void> update(Map<String, dynamic> updates) async {
+  /// Returns the acknowledged order for this write, or null on failure.
+  Future<Map<String, dynamic>?> update(Map<String, dynamic> updates) async {
     final id = _serverId() ?? client.serverId;
-    if (id == null || _isDisposed()) return;
+    if (id == null || _isDisposed()) return null;
     final generation = client.generation;
     final previous = _order();
     final next = {...previous, ...updates};
@@ -89,18 +90,23 @@ class SidebarRepository {
         (_serverId() ?? client.serverId) == id &&
         client.generation == generation;
 
-    Future<void> perform(int sequence, num? version, bool queued) async {
-      if (!current()) return;
+    Future<Map<String, dynamic>?> perform(
+      int sequence,
+      num? version,
+      bool queued,
+    ) async {
+      if (!current()) return null;
       try {
         final value = await client.request(
           'PATCH',
           '/servers/$id/sidebar-order',
           data: sections ? {...updates, 'sectionsVersion': ?version} : updates,
         );
-        if (!current()) return;
+        if (!current()) return null;
         final reply = value is Map
             ? Map<String, dynamic>.from(value)
             : <String, dynamic>{};
+        final acknowledged = {...next, ...reply};
         if (queued) _confirmedVersion = reply['sectionsVersion'] as num?;
         if (queued && sequence != _sectionSeq) {
           // Keep the newer queued write's optimistic order; adopt versions.
@@ -112,12 +118,13 @@ class SidebarRepository {
               'pinnedVersion': reply['pinnedVersion'],
           });
         } else {
-          _setOrder({...next, ...reply});
+          _setOrder(acknowledged);
         }
         _saveDevice(_order());
         _changed();
+        return acknowledged;
       } catch (error) {
-        if (!current()) return;
+        if (!current()) return null;
         if (!queued || sequence == _sectionSeq) {
           _setOrder(previous);
           _saveDevice(previous);
@@ -126,6 +133,7 @@ class SidebarRepository {
         if (error is RaftApiException && error.status == 409) {
           unawaited(_reload());
         }
+        return null;
       }
     }
 

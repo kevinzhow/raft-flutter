@@ -41,14 +41,16 @@ String? activeSideCard(Iterable<String> open, Map<String, int> focusAt) {
   return best;
 }
 
+typedef _DockWidths = ({ChannelSideLayout layout, int? conversationWidth});
+
 class ChannelSideStore extends ChangeNotifier {
   ChannelSideStore._(this.w) {
     _open = _readCards(_openKey);
     _collapsed = _readCards(_collapsedKey);
     _splits = _readSplits();
     _layout = _readDeviceLayout();
-    _confirmed = _layout;
     _conversationWidth = _readConversationWidth();
+    _confirmed = (layout: _layout, conversationWidth: _conversationWidth);
     w.addListener(_orderChanged);
     w.services.disposeWithSession(dispose);
     _orderChanged();
@@ -137,9 +139,8 @@ class ChannelSideStore extends ChangeNotifier {
   /// Device-local conversation width, set when an expanded seam settles.
   int? get conversationWidth => _conversationWidth;
 
-  /// The layout last known to be saved (or, with none saved there, this
-  /// device's): what a refused save goes back to.
-  late ChannelSideLayout _confirmed;
+  /// The last accepted dock layout and its device-local conversation width.
+  late _DockWidths _confirmed;
 
   /// The layout shown; always complete (every section is in exactly one
   /// column, so a section opening always has a place).
@@ -151,7 +152,7 @@ class ChannelSideStore extends ChangeNotifier {
   /// The last layout the sidebar order brought: what the server holds, as far
   /// as this device knows.
   ChannelSideLayout? _followed;
-  int _inFlight = 0, _latest = 0;
+  int _inFlight = 0, _latest = 0, _confirmedSeq = 0;
   bool _latestSaved = true;
 
   /// Move a section (a drop); saved once, when it lands.
@@ -192,7 +193,6 @@ class ChannelSideStore extends ChangeNotifier {
         conversationWidth.round(),
       );
       _conversationWidth = width;
-      if (commit) _remember(_conversationWidthKey, width);
     }
     if (!identical(next, _layout) ||
         previousConversation != _conversationWidth) {
@@ -222,57 +222,72 @@ class ChannelSideStore extends ChangeNotifier {
     _show(saved ?? _readDeviceLayout());
   }
 
-  /// Show [layout] (the server's, or a fallback) and keep it as this device's.
   void _show(ChannelSideLayout layout) {
     final next = layout.complete();
-    _confirmed = next;
+    final width = _confirmed.conversationWidth;
+    _confirmed = (layout: next, conversationWidth: width);
     _remember(_layoutKey, next.toJson());
-    if (!next.same(_layout)) {
+    if (!next.same(_layout) || width != _conversationWidth) {
       _layout = next;
+      _conversationWidth = width;
       notifyListeners();
     }
   }
 
-  /// Saving it on the server member. Saves can overlap (a drop, then a released
-  /// resize within one round trip), and each answer, or a rollback, rewrites
-  /// the sidebar order: while any is in flight the layout shown is the newest
-  /// one asked for; once all have settled it is checked against what the newest
-  /// one left in the sidebar order, and only a refused newest save puts back
-  /// what the server held, else what was last confirmed.
-  void _save(ChannelSideLayout layout) {
-    _remember(_layoutKey, layout.toJson());
-    // No server open (yet): this device's copy is all there is.
-    if (w.client.serverId == null) {
-      _confirmed = layout;
-      return;
-    }
-    final seq = ++_latest;
-    _inFlight++;
-    unawaited(_settle(seq, layout));
+  void _confirm(_DockWidths widths) {
+    _confirmed = widths;
+    _remember(_layoutKey, widths.layout.toJson());
+    _remember(_conversationWidthKey, widths.conversationWidth);
   }
 
-  Future<void> _settle(int seq, ChannelSideLayout layout) async {
+  /// Keep the newest requested widths visible while saves overlap. Persist
+  /// acknowledged pairs in request order so an older reply can't replace a
+  /// newer accepted pair.
+  void _save(ChannelSideLayout layout) {
+    final widths = (layout: layout, conversationWidth: _conversationWidth);
+    final seq = ++_latest;
+    if (w.client.serverId == null) {
+      _confirmedSeq = seq;
+      _latestSaved = true;
+      _confirm(widths);
+      return;
+    }
+    _inFlight++;
+    unawaited(_settle(seq, widths));
+  }
+
+  Future<void> _settle(int seq, _DockWidths widths) async {
+    ChannelSideLayout? acknowledged;
     try {
-      await w.updateSidebarOrder({'channelSideLayout': layout.toJson()});
+      final order = await w.sidebarRepository.update({
+        'channelSideLayout': widths.layout.toJson(),
+      });
+      acknowledged = ChannelSideLayout.parse(order?['channelSideLayout']);
     } catch (_) {
-      // updateSidebarOrder reports a refusal through the order it restores.
+      // Keep the confirmed pair if the workspace could not save this one.
     }
     _inFlight--;
     if (_ended) return;
-    final raw = w.sidebarOrder['channelSideLayout'];
-    final held = ChannelSideLayout.parse(raw);
-    if (seq == _latest) _latestSaved = held != null && held.same(layout);
-    if (_inFlight > 0) return;
-    if (_latestSaved) {
-      _confirmed = layout;
-      return;
+    final saved = acknowledged?.same(widths.layout) ?? false;
+    if (seq == _latest) _latestSaved = saved;
+    if (acknowledged != null && seq > _confirmedSeq) {
+      _confirmedSeq = seq;
+      _confirm((
+        layout: acknowledged.complete(),
+        conversationWidth: saved
+            ? widths.conversationWidth
+            : _confirmed.conversationWidth,
+      ));
     }
-    // Refused: back to what the server holds, else what was last confirmed.
+    if (_inFlight > 0 || _latestSaved) return;
+    // The sidebar projection can contain the optimistic layout of an older
+    // request. Roll back to the pair backed by a receipt.
+    final raw = w.sidebarOrder['channelSideLayout'];
     _hasSeen = true;
     _seenRaw = raw;
     _hasFollowed = true;
-    _followed = held;
-    _show(held ?? _confirmed);
+    _followed = ChannelSideLayout.parse(raw);
+    _show(_confirmed.layout);
   }
 
   static int? _readConversationWidth() {
@@ -360,11 +375,15 @@ class ChannelSideStore extends ChangeNotifier {
 
   // ---- the device ------------------------------------------------------------
 
-  static void _remember(String key, Object value) {
+  static void _remember(String key, Object? value) {
     try {
       final preferences = DevicePreferences.current;
       if (preferences != null) {
-        unawaited(preferences.setString(key, jsonEncode(value)));
+        unawaited(
+          value == null
+              ? preferences.remove(key)
+              : preferences.setString(key, jsonEncode(value)),
+        );
       }
     } catch (_) {
       // Storage can be unavailable; the state still holds for the session.
