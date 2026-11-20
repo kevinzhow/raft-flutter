@@ -377,24 +377,25 @@ shell('dialogs.desktop-emoji-picker', 'Section emoji picker open (desktop)', 'di
 
 # --------------------------------------------------------------------------- Create channel states (4.02)
 CC_HINT = SRC + 'channel/CreateChannelDialog.tsx'
-SUBMIT = 'form button[type="submit"]'
 for plat, box in (('desktop', {'w': 1280, 'h': 800}), ('phone', {'w': 390, 'h': 844})):
     platform = 'mobile' if plat == 'phone' else 'desktop'
+    submit = ('[data-slot="narrow-dialog-commit"] button[type="submit"]'
+              if plat == 'phone' else 'form button[type="submit"]')
     base = {**box, 'name': 'android-artifacts', 'description': 'Build reports, screenshots, release blockers'}
     add(f'create-channel.{plat}-name-error', f'Create channel ({plat}): invalid name error', 'create-channel',
-        platform=platform, hint=CC_HINT, props={**box, 'name': 'Bad Name!'}, interactions=[*click(SUBMIT, 300)],
+        platform=platform, hint=CC_HINT, props={**box, 'name': 'Bad Name!'}, interactions=[*click(submit, 300)],
         viewport_capture=plat == 'desktop', selector='body' if plat == 'desktop' else '[data-visual-case]')
     add(f'create-channel.{plat}-archived-name', f'Create channel ({plat}): archived name held, Unarchive',
         'create-channel', platform=platform, hint=CC_HINT, props=base, route_set='create-archived',
-        interactions=[*click(SUBMIT, 600)],
+        interactions=[*click(submit, 600)],
         viewport_capture=plat == 'desktop', selector='body' if plat == 'desktop' else '[data-visual-case]')
     add(f'create-channel.{plat}-failed', f'Create channel ({plat}): create failed', 'create-channel',
         platform=platform, hint=CC_HINT, props=base, route_set='create-failed',
-        interactions=[*click(SUBMIT, 600)],
+        interactions=[*click(submit, 600)],
         viewport_capture=plat == 'desktop', selector='body' if plat == 'desktop' else '[data-visual-case]')
     add(f'create-channel.{plat}-creating', f'Create channel ({plat}): creating', 'create-channel',
         platform=platform, hint=CC_HINT, props=base, route_set='create-pending',
-        interactions=[*click(SUBMIT, 600)],
+        interactions=[*click(submit, 600)],
         viewport_capture=plat == 'desktop', selector='body' if plat == 'desktop' else '[data-visual-case]')
 
 # --------------------------------------------------------------------------- Phone Computers (8.02 8.03 8.04 8.05)

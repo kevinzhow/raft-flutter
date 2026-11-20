@@ -308,6 +308,7 @@ class RaftSheet extends StatelessWidget {
     this.headerExtent = 0,
     this.footer,
     this.padding = EdgeInsets.zero,
+    this.showHandle = true,
   }) : assert(header == null || headerExtent > 0, 'a header needs its height'),
        fixed = null;
 
@@ -319,6 +320,7 @@ class RaftSheet extends StatelessWidget {
       header = null,
       headerExtent = 0,
       footer = null,
+      showHandle = true,
       padding = EdgeInsets.zero;
 
   final Widget body;
@@ -326,6 +328,7 @@ class RaftSheet extends StatelessWidget {
   /// Pinned under the handle; drags the sheet. [headerExtent] is its height.
   final Widget? header, footer;
   final double headerExtent;
+  final bool showHandle;
   final EdgeInsetsGeometry padding;
   final Widget? fixed;
 
@@ -351,7 +354,7 @@ class RaftSheet extends StatelessWidget {
     }
     final controller = RaftSheetScope.maybeOf(context)?.scrollController;
     final t = RaftTokens.of(context);
-    final handle = RaftSheetMetrics.handleBox(t);
+    final handle = showHandle ? RaftSheetMetrics.handleBox(t) : 0.0;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -370,7 +373,7 @@ class RaftSheet extends StatelessWidget {
                   child: _PointerDragArea(
                     child: Column(
                       children: [
-                        const RaftSheetHandle(),
+                        if (showHandle) const RaftSheetHandle(),
                         if (header != null)
                           SizedBox(height: headerExtent, child: header),
                       ],

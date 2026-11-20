@@ -269,9 +269,10 @@ class RaftChatSidebarGroup extends StatelessWidget {
           if (expanded)
             SliverPadding(
               padding: EdgeInsets.only(
-                top: compact ? 8 : 0,
+                top: compact ? RaftSpace.x2 : 0,
                 bottom: compact
-                    ? 8 - (count == 0 ? 0 : RaftLayoutMetrics.sidebarRowGap)
+                    ? RaftSpace.x2 -
+                          (count == 0 ? 0 : RaftLayoutMetrics.sidebarRowGap)
                     : 0,
               ),
               sliver: emptyRegion == null

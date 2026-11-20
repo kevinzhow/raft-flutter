@@ -42,6 +42,33 @@ class _CardDialogPartsState extends State<_CardDialogParts> {
         ? null
         : KeyedSubtree(key: _actions, child: d.cardActions!);
     if (RaftFormFrame.sheetOf(context)) {
+      if (d.sheetCommit case final commit?) {
+        final title = raftText(context, d.title! as String);
+        return Semantics(
+          scopesRoute: true,
+          namesRoute: true,
+          explicitChildNodes: true,
+          role: SemanticsRole.dialog,
+          label: title,
+          child: RaftFormSheet(
+            title: title,
+            onClose: d.closeEnabled ? d.onClose : null,
+            titleGlyph: d.titleGlyph,
+            closeButton: d.showClose
+                ? RaftPanelAction(
+                    glyph: RaftGlyph.x,
+                    tooltip: 'Close',
+                    onPressed: d.closeEnabled
+                        ? raftGuardedClose(context, d.onClose)
+                        : null,
+                  )
+                : const SizedBox.shrink(),
+            body: body,
+            commit: commit,
+            showHandle: false,
+          ),
+        );
+      }
       return RaftFormSheet(
         title: raftText(context, d.title! as String),
         onClose: d.closeEnabled ? d.onClose : null,

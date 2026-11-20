@@ -19,6 +19,7 @@ import '../text_scaling.dart';
 import '../dismiss_scope.dart';
 import '../icons.dart';
 import '../localization.dart';
+import '../panel_layout.dart' show RaftPanelAction;
 import '../recipe_surface.dart';
 import '../recipes/alert_dialog.g.dart';
 import '../recipes/button_variants.g.dart';
@@ -226,6 +227,7 @@ class RaftDialog extends StatelessWidget {
        titleGlyph = null,
        footer = null,
        cardActions = null,
+       sheetCommit = null,
        footerGap = null,
        description = null,
        pinFooterAtLargeText = false,
@@ -241,6 +243,7 @@ class RaftDialog extends StatelessWidget {
     this.maxWidth,
     this.titleGlyph,
     this.footer,
+    this.sheetCommit,
     this.footerGap,
     this.pinFooterAtLargeText = false,
     Widget? actions,
@@ -289,6 +292,7 @@ class RaftDialog extends StatelessWidget {
        titleGlyph = null,
        footer = null,
        cardActions = null,
+       sheetCommit = null,
        footerGap = null,
        description = null,
        pinFooterAtLargeText = false;
@@ -302,6 +306,10 @@ class RaftDialog extends StatelessWidget {
   final double? maxWidth, footerGap;
   final RaftGlyph? titleGlyph;
   final Widget? footer, cardActions;
+
+  /// The persistent header action for a narrow dialog. When supplied, it
+  /// takes the place of the desktop footer in the sheet.
+  final Widget? sheetCommit;
 
   /// Keep both the header and footer visible while the body scrolls at large
   /// text sizes. This preserves the controls of a form migrated from an

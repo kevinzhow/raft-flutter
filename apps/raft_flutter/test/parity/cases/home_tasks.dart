@@ -14,6 +14,7 @@
 // Builders render the real Flutter app/raft_ui widgets for each case, laid
 // out like the React render host fixture for the same case id. Cases the
 // Flutter app cannot show go to [homeTaskUncovered] with an honest reason.
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -661,26 +662,33 @@ class _CreateChannelWorkspace extends ParityFixtureWorkspace {
 final ParityCase _createChannel = ParityCase(
   widgets: const ['raft_flutter:CreateChannelDialog', 'raft_ui:RaftDialogCard'],
   notes:
-      'Product CreateChannelDialog mounted with the React prefill props '
+      'Product CreateChannelDialog opened through the adaptive form route with the React prefill props '
       '(name, description, public, agent-cindy + visual-human-designer).',
-  build: (ctx) {
+  build: (_) => const Scaffold(
+    key: ValueKey('create-channel-case-host'),
+    backgroundColor: Colors.white,
+  ),
+  interact: (tester, ctx) async {
     final base = parityWorkspace(ctx);
     final w = _CreateChannelWorkspace(base.client, ctx)
       ..server = base.server
       ..channels = base.channels
       ..section = base.section;
     ctx.onDispose(w.dispose);
-    return Scaffold(
-      // Both Web hosts explicitly use bg-white under the Modal in every mode.
-      backgroundColor: Colors.white,
-      body: CreateChannelDialog(
-        controller: w,
-        prefilledName: ctx.props['name'] as String,
-        prefilledDescription: ctx.props['description'] as String,
-        prefilledVisibility: 'public',
-        prefilledAgentIds: const ['agent-cindy'],
-        prefilledHumanIds: const ['visual-human-designer'],
+    unawaited(
+      showRaftForm<void>(
+        tester.element(find.byKey(const ValueKey('create-channel-case-host'))),
+        builder: (_) => CreateChannelDialog(
+          controller: w,
+          prefilledName: ctx.props['name'] as String,
+          prefilledDescription: ctx.props['description'] as String,
+          prefilledVisibility: 'public',
+          prefilledAgentIds: const ['agent-cindy'],
+          prefilledHumanIds: const ['visual-human-designer'],
+        ),
       ),
     );
+    await tester.pumpAndSettle();
+    expect(find.byType(CreateChannelDialog), findsOneWidget);
   },
 );

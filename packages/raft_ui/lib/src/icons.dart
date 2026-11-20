@@ -581,9 +581,14 @@ class _DirectMessageIconPainter extends CustomPainter {
 /// raft-ui 0.5.52 ThreadIcon (dist/index.mjs).
 /// The product uses this 18-unit two-bubble SVG for search thread metadata.
 class RaftThreadIcon extends StatelessWidget {
-  const RaftThreadIcon({super.key, this.size = 18, this.color});
+  const RaftThreadIcon({super.key, this.size = 18, this.color})
+    : outlined = false;
+  const RaftThreadIcon.outline({super.key, this.size = 18, this.color})
+    : outlined = true;
+
   final double size;
   final Color? color;
+  final bool outlined;
   @override
   Widget build(BuildContext context) => ExcludeSemantics(
     child: RaftIconViewport(
@@ -594,6 +599,7 @@ class RaftThreadIcon extends StatelessWidget {
               IconTheme.of(context).color ??
               DefaultTextStyle.of(context).style.color ??
               Colors.black,
+          outlined: outlined,
         ),
       ),
     ),
@@ -601,12 +607,45 @@ class RaftThreadIcon extends StatelessWidget {
 }
 
 class _ThreadIconPainter extends CustomPainter {
-  const _ThreadIconPainter(this.color);
+  const _ThreadIconPainter(this.color, {required this.outlined});
   final Color color;
+  final bool outlined;
   @override
   void paint(Canvas canvas, Size size) {
+    final strokeWidth = outlined ? 1.75 : 1.0;
+    final stroke = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
     canvas.save();
     canvas.scale(size.width / 18, size.height / 18);
+    if (outlined) {
+      // ricons ThreadIcon, with SidebarItemThreadCount's 1.75 stroke.
+      final path = Path()
+        ..moveTo(3.5, 11.5)
+        ..lineTo(1.75, 13.25)
+        ..lineTo(1.75, 4.25)
+        ..cubicTo(1.75, 3.15, 2.65, 2.25, 3.75, 2.25)
+        ..lineTo(11.25, 2.25)
+        ..moveTo(8.25, 5)
+        ..lineTo(14.5, 5)
+        ..cubicTo(15.6, 5, 16.5, 5.9, 16.5, 7)
+        ..lineTo(16.5, 11.75)
+        ..cubicTo(16.5, 12.85, 15.6, 13.75, 14.5, 13.75)
+        ..lineTo(13, 13.75)
+        ..lineTo(13, 16.25)
+        ..lineTo(9.75, 13.75)
+        ..lineTo(8.25, 13.75)
+        ..cubicTo(7.15, 13.75, 6.25, 12.85, 6.25, 11.75)
+        ..lineTo(6.25, 7)
+        ..cubicTo(6.25, 5.9, 7.15, 5, 8.25, 5)
+        ..close();
+      canvas.drawPath(path, stroke);
+      canvas.restore();
+      return;
+    }
     final outline = Path()
       ..moveTo(16.25, 5)
       ..lineTo(16.25, 4.25)
@@ -618,15 +657,7 @@ class _ThreadIconPainter extends CustomPainter {
       ..lineTo(5.75, 13.25)
       ..lineTo(5.75, 16.25)
       ..lineTo(7.5, 14.85);
-    canvas.drawPath(
-      outline,
-      Paint()
-        ..color = color
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1
-        ..strokeCap = StrokeCap.round
-        ..strokeJoin = StrokeJoin.round,
-    );
+    canvas.drawPath(outline, stroke);
     final front = Path()
       ..moveTo(8.75, 5.5)
       ..lineTo(15.5, 5.5)
@@ -651,5 +682,6 @@ class _ThreadIconPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_ThreadIconPainter old) => old.color != color;
+  bool shouldRepaint(_ThreadIconPainter old) =>
+      old.color != color || old.outlined != outlined;
 }

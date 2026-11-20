@@ -450,6 +450,7 @@ final ParityCase _homeChannelList = ParityCase(
           '/channels' => channels.map(channelRow).toList(),
           '/channels/dm' => dms.map(dmRow).toList(),
           '/agents' => agents,
+          '/servers/$_serverId/machines' => const <Object>[],
           '/channels/saved' => {'saved': [], 'total': fixture['savedTotal']},
           '/servers/$_serverId/sidebar-order' => order,
           '/channels/threads/followed' => {

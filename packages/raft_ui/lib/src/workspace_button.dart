@@ -7,8 +7,9 @@ import 'icons.dart';
 import 'interaction.dart';
 import 'tap_slop.dart';
 import 'public_page_mark.dart';
+import 'raft/avatar.dart' show RaftAvatarBadge, RaftAvatarSize;
 import 'raft/button.dart';
-import 'raft/status.dart' show RaftAttentionDot;
+import 'raft/status.dart' show RaftStatusVariant;
 import 'raft/ui_tokens.dart' show raftChromeBlend;
 import 'text_scaling.dart' show RaftChrome;
 import 'theme.dart';
@@ -81,7 +82,13 @@ class RaftWorkspaceButton extends StatelessWidget {
     final avatar = attention
         ? RaftAvatarCorner(
             avatar: tile,
-            corner: const ExcludeSemantics(child: RaftAttentionDot()),
+            size: RaftAvatarSize.sm,
+            corner: const ExcludeSemantics(
+              child: RaftAvatarBadge(
+                size: RaftAvatarSize.sm,
+                variant: RaftStatusVariant.accent,
+              ),
+            ),
           )
         : tile;
     final content = Row(

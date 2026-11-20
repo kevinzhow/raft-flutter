@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 
 import 'mobile_page_header.dart';
 import 'status_bar.dart';
+import 'space.dart' show RaftSpace;
 import 'tap_slop.dart';
 
 import 'design_primitives.dart';

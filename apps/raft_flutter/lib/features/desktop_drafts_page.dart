@@ -72,21 +72,28 @@ class WorkspaceHomeShortcuts extends StatelessWidget {
   final ValueChanged<String> onSelect;
 
   @override
-  Widget build(BuildContext context) => Column(
-    children: [
-      SavedSidebarEntry(
-        key: const Key('nav-saved'),
-        precededByEntry: mobileHome,
-        controller: controller,
-        onTap: () => onSelect('saved'),
-      ),
-      DraftsSidebarEntry(
-        controller: controller,
-        onOpen: () => onSelect(draftsSection),
-      ),
-      if (mobileHome) const SizedBox(height: RaftSpace.x1),
-    ],
-  );
+  Widget build(BuildContext context) {
+    // SidebarCellList's 8px lower inset includes the final cell margin.
+    final trailingInset =
+        RaftSpace.x2 -
+        RaftTokens.of(context)
+            .size('space.sidebarEntryMarginBottom', fallback: 1);
+    return Column(
+      children: [
+        SavedSidebarEntry(
+          key: const Key('nav-saved'),
+          precededByEntry: mobileHome,
+          controller: controller,
+          onTap: () => onSelect('saved'),
+        ),
+        DraftsSidebarEntry(
+          controller: controller,
+          onOpen: () => onSelect(draftsSection),
+        ),
+        if (mobileHome) SizedBox(height: trailingInset),
+      ],
+    );
+  }
 }
 
 class DraftsSidebarEntry extends StatelessWidget {

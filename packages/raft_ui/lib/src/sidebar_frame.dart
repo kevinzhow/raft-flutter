@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'raft/blink_snap.dart';
+
 import 'design_primitives.dart';
 import 'icons.dart';
 import 'indicators.dart';
@@ -279,7 +281,13 @@ class _SidebarRowsSkeletonState extends State<RaftSidebarRowsSkeleton>
                   child: Row(
                     spacing: 8,
                     children: [
-                      RaftSkeleton(fromRecipe: true, width: lead, height: lead),
+                      RaftBlinkSnap(
+                        child: RaftSkeleton(
+                          fromRecipe: true,
+                          width: lead,
+                          height: lead,
+                        ),
+                      ),
                       Flexible(
                         child: RaftSkeleton(
                           variant: RaftSkeletonVariant.line,

@@ -7,6 +7,7 @@ import 'public_page_mark.dart';
 import 'control_typography.dart';
 import 'raft/button.dart';
 import 'raft/avatar.dart';
+import 'raft/status.dart' show RaftStatusVariant;
 import 'raft/css_box.dart' show raftControlBorderPx;
 
 import 'dart:math' as math;
@@ -628,10 +629,14 @@ class _ServerRow extends StatelessWidget {
         builder: (context, state) {
           final active = state.hovered || state.focusVisible;
           final foreground = t.strong;
-          final touch = RaftInteraction.of(context).touch;
+          final compact =
+              raftBreakpointWidth(context) >=
+                  RaftLayoutMetrics.desktopBreakpoint &&
+              RaftInteraction.of(context).pointer;
+          final extent = compact ? 40.0 : 48.0;
           return Container(
-            height: RaftScaled.grows(context) ? null : 48,
-            constraints: const BoxConstraints(minHeight: 48),
+            height: RaftScaled.grows(context) ? null : extent,
+            constraints: BoxConstraints(minHeight: extent),
             decoration: BoxDecoration(
               color: active ? t.colors['brand-soft'] : null,
               borderRadius: BorderRadius.circular(t.radius),
@@ -642,9 +647,9 @@ class _ServerRow extends StatelessWidget {
                 _ServerAvatar(
                   name: row.name,
                   avatarUrl: row.avatarUrl,
-                  size: touch ? 35 : 27,
+                  size: compact ? 27 : 35,
                 ),
-                SizedBox(width: touch ? 10 : 8),
+                SizedBox(width: compact ? 8 : 10),
                 Expanded(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
@@ -678,8 +683,8 @@ class _ServerRow extends StatelessWidget {
                   ),
                 ),
                 if (row.current) ...[
-                  SizedBox(width: touch ? 10 : 8),
-                  RaftIcon(RaftGlyph.check, size: 16, color: foreground),
+                  SizedBox(width: compact ? 8 : 10),
+                  RaftIcon(RaftGlyph.check, size: 16, color: t.ink),
                   const SizedBox(width: 4),
                 ],
                 if (!row.current && (row.activityUnreadCount ?? 0) > 0)
@@ -695,7 +700,10 @@ class _ServerRow extends StatelessWidget {
                     key: ValueKey('server-menu-reorder-${row.id}'),
                     index: index,
                     label: 'Reorder ${row.name}',
-                    color: foreground,
+                    color: state.hovered
+                        ? t.muted
+                        : t.colors['foreground-hint']!,
+                    extent: extent,
                   )
                 else
                   const SizedBox(width: 24),
@@ -762,10 +770,12 @@ class _ServerDragHandle extends StatelessWidget {
     required this.index,
     required this.label,
     required this.color,
+    required this.extent,
   });
   final int index;
   final String label;
   final Color color;
+  final double extent;
   @override
   Widget build(BuildContext context) => Semantics(
     button: true,
@@ -787,7 +797,7 @@ class _ServerDragHandle extends StatelessWidget {
             ),
         child: SizedBox(
           width: 24,
-          height: 48,
+          height: extent,
           child: Center(
             child: RaftIcon(RaftGlyph.gripVertical, size: 14, color: color),
           ),
@@ -891,6 +901,7 @@ class _ServerAvatar extends StatelessWidget {
           : RaftSizedImage.avatar(
               avatarUrl!,
               fit: BoxFit.cover,
+              filterQuality: FilterQuality.none,
               errorBuilder: (_, _, _) => initial,
             ),
     );

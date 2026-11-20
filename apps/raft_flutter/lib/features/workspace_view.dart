@@ -3636,7 +3636,7 @@ class _WorkspaceViewState extends State<WorkspaceView>
           key: anchor,
           testKey: ValueKey('sidebar-sort-$id'),
           label: tr('Sort'),
-          glyph: RaftGlyph.arrowUpDown, // SidebarSectionControl computed 18px
+          glyph: RaftGlyph.arrowDownUp, // SidebarSectionControl computed 18px
           onPressed: sortingGroups.contains(id)
               ? null
               : () => sortSidebarGroup(group),
