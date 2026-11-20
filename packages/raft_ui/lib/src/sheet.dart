@@ -15,6 +15,7 @@ import 'recipes/drawer.g.dart';
 import 'recipes/recipe_runtime.dart'
     show CssNum, RaftShadowLayers, RaftSlotStyle;
 import 'settings_layout.dart' show RaftSpace;
+import 'surface_background_scope.dart';
 import 'system_inset.dart';
 import 'theme.dart';
 
@@ -113,12 +114,16 @@ class RaftSheetPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     final shadows = RaftSheetMetrics.shadows(t);
+    final fill = RaftSheetMetrics.fill(t);
     final surface = Material(
-      color: RaftSheetMetrics.fill(t),
+      color: fill,
       elevation: 0,
       clipBehavior: Clip.antiAlias,
       shape: RaftSheetMetrics.shape(t),
-      child: child,
+      child: RaftSurfaceBackgroundScope(
+        color: fill.a == 1 ? fill : null,
+        child: child,
+      ),
     );
     if (shadows.isEmpty) return surface;
     return DecoratedBox(
@@ -369,7 +374,10 @@ class RaftSheet extends StatelessWidget {
               // The narrow dialog header is a PanelHeader. Its canvas fill
               // sits over the popover surface used by the rest of the sheet.
               color: t.canvas,
-              child: headerSlot,
+              child: RaftSurfaceBackgroundScope(
+                color: t.canvas.a == 1 ? t.canvas : null,
+                child: headerSlot,
+              ),
             ),
           ),
         Expanded(
