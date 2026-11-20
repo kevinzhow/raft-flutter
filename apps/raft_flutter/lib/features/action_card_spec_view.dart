@@ -150,13 +150,7 @@ class _ActionCardSpecViewState extends State<ActionCardSpecView> {
             children: [
               if (by != null) ...[
                 TextSpan(text: completionCopy.first),
-                TextSpan(
-                  text: by,
-                  style: TextStyle(
-                    color: content.tokens.ui.foreground,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
+                content.completionName(by),
                 if (completionCopy.length > 1)
                   TextSpan(text: completionCopy.skip(1).join(by)),
                 if (committedAt != null)
@@ -338,12 +332,9 @@ class ActionCardSpecTree extends StatelessWidget {
       final label = name(ref);
       final resolved = hasEntity(ref);
       if (!resolved) {
-        return TextSpan(
-          text: label,
-          style: ref['kind'] == 'computer'
-              ? null
-              : const TextStyle(fontWeight: FontWeight.w600),
-        );
+        return ref['kind'] == 'computer'
+            ? TextSpan(text: label)
+            : content.entityReference(context, label);
       }
       final kind = switch (ref['kind']) {
         'channel' => RaftReferenceKind.channel,
@@ -351,18 +342,10 @@ class ActionCardSpecTree extends StatelessWidget {
         _ => null,
       };
       final press = onEntity;
-      if (kind == null && press == null) {
-        return TextSpan(
-          text: label,
-          style: const TextStyle(fontWeight: FontWeight.w600),
-        );
-      }
-      return raftReferenceSpan(
+      return content.entityReference(
         context,
-        label: label,
-        href: '',
-        base: valueStyle.copyWith(fontWeight: FontWeight.w600),
-        appearance: kind == null ? null : RaftReferenceAppearance(kind),
+        label,
+        kind: kind,
         onTap: press == null ? null : () => press(ref),
       );
     }

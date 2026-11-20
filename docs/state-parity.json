@@ -55822,6 +55822,142 @@
         "familyRefs": [],
         "owner": "Artifact discussion"
       },
+      "apps/raft_flutter/lib/features/action_card_form.dart#local-function:CLASS:_ActionCardFormViewState@7366/METHOD:_choice@21911/FUNCTION:label@24658": {
+        "owner": "WP-ACTION",
+        "role": "entry_composition",
+        "familyRefs": []
+      },
+      "apps/raft_flutter/lib/features/action_card_mcp.dart#class:_CandidateDetails": {
+        "owner": "WP-ACTION",
+        "role": "entry_composition",
+        "familyRefs": [
+          "card"
+        ]
+      },
+      "apps/raft_flutter/lib/features/action_card_mcp.dart#method:_CandidateDetails.build": {
+        "owner": "WP-ACTION",
+        "role": "entry_composition",
+        "familyRefs": [
+          "card"
+        ]
+      },
+      "apps/raft_flutter/lib/features/action_card_spec_view.dart#local-function:CLASS:ActionCardSpecTree@9836/METHOD:sections@10579/FUNCTION:field@11842": {
+        "owner": "WP-ACTION",
+        "role": "entry_composition",
+        "familyRefs": [
+          "card"
+        ]
+      },
+      "apps/raft_flutter/lib/features/action_card_spec_view.dart#local-function:CLASS:ActionCardSpecTree@9836/METHOD:sections@10579/FUNCTION:generic@13461": {
+        "owner": "WP-ACTION",
+        "role": "entry_composition",
+        "familyRefs": [
+          "card"
+        ]
+      },
+      "apps/raft_flutter/lib/features/action_card_spec_view.dart#local-function:CLASS:ActionCardSpecTree@9836/METHOD:sections@10579/FUNCTION:render@14343": {
+        "owner": "WP-ACTION",
+        "role": "entry_composition",
+        "familyRefs": [
+          "card",
+          "button"
+        ]
+      },
+      "apps/raft_flutter/lib/features/action_card_spec_view.dart#method:ActionCardSpecTree.sections": {
+        "owner": "WP-ACTION",
+        "role": "entry_composition",
+        "familyRefs": [
+          "card",
+          "button"
+        ]
+      },
+      "apps/raft_flutter/lib/features/message_action_card.dart#local-function:CLASS:_MessageActionCardState@3234/METHOD:_body@28103/FUNCTION:field@28144": {
+        "owner": "WP-ACTION",
+        "role": "entry_composition",
+        "familyRefs": [
+          "card"
+        ]
+      },
+      "apps/raft_flutter/lib/features/message_action_card.dart#local-function:CLASS:_MessageActionCardState@3234/METHOD:_body@28103/FUNCTION:maybe@28247": {
+        "owner": "WP-ACTION",
+        "role": "entry_composition",
+        "familyRefs": [
+          "card"
+        ]
+      },
+      "packages/raft_ui/lib/src/action_card.dart#class:_SpecActionCardDisclosure": {
+        "owner": "WP-ACTION",
+        "role": "entry_composition",
+        "familyRefs": [
+          "card",
+          "button"
+        ]
+      },
+      "packages/raft_ui/lib/src/action_card.dart#local-function:CLASS:RaftSpecActionCardContent@8843/METHOD:properties@10336/FUNCTION:label@10658": {
+        "owner": "WP-ACTION",
+        "role": "entry_composition",
+        "familyRefs": [
+          "card"
+        ]
+      },
+      "packages/raft_ui/lib/src/action_card.dart#local-function:CLASS:RaftSpecActionCardContent@8843/METHOD:properties@10336/FUNCTION:value@10758": {
+        "owner": "WP-ACTION",
+        "role": "entry_composition",
+        "familyRefs": [
+          "card"
+        ]
+      },
+      "packages/raft_ui/lib/src/action_card.dart#method:RaftSpecActionCardContent.actions": {
+        "owner": "WP-ACTION",
+        "role": "entry_composition",
+        "familyRefs": [
+          "card",
+          "button"
+        ]
+      },
+      "packages/raft_ui/lib/src/action_card.dart#method:RaftSpecActionCardContent.column": {
+        "owner": "WP-ACTION",
+        "role": "entry_composition",
+        "familyRefs": [
+          "card"
+        ]
+      },
+      "packages/raft_ui/lib/src/action_card.dart#method:RaftSpecActionCardContent.hint": {
+        "owner": "WP-ACTION",
+        "role": "entry_composition",
+        "familyRefs": [
+          "card"
+        ]
+      },
+      "packages/raft_ui/lib/src/action_card.dart#method:RaftSpecActionCardContent.notice": {
+        "owner": "WP-ACTION",
+        "role": "entry_composition",
+        "familyRefs": [
+          "card"
+        ]
+      },
+      "packages/raft_ui/lib/src/action_card.dart#method:RaftSpecActionCardContent.properties": {
+        "owner": "WP-ACTION",
+        "role": "entry_composition",
+        "familyRefs": [
+          "card"
+        ]
+      },
+      "packages/raft_ui/lib/src/action_card.dart#method:RaftSpecActionCardContent.scopes": {
+        "owner": "WP-ACTION",
+        "role": "entry_composition",
+        "familyRefs": [
+          "card"
+        ]
+      },
+      "packages/raft_ui/lib/src/action_card.dart#method:_SpecActionCardDisclosure.build": {
+        "owner": "WP-ACTION",
+        "role": "entry_composition",
+        "familyRefs": [
+          "card",
+          "button"
+        ]
+      },
       "apps/raft_flutter/lib/features/action_card_form.dart#class:ActionCardFormView": {
         "owner": "WP-ACTION",
         "role": "entry_composition",
@@ -56182,7 +56318,7 @@
           "button"
         ]
       },
-      "packages/raft_ui/lib/src/action_card.dart#local-function:CLASS:RaftActionCard@5175/METHOD:_titleLine@6572/FUNCTION:item@6764": {
+      "packages/raft_ui/lib/src/action_card.dart#local-function:CLASS:RaftActionCard@17172/METHOD:_titleLine@18569/FUNCTION:item@18761": {
         "owner": "WP-ACTION",
         "role": "entry_composition",
         "familyRefs": [
@@ -56190,7 +56326,7 @@
           "button"
         ]
       },
-      "packages/raft_ui/lib/src/action_card.dart#local-function:CLASS:RaftActionCard@5175/METHOD:_titleLine@6572/FUNCTION:items@7020": {
+      "packages/raft_ui/lib/src/action_card.dart#local-function:CLASS:RaftActionCard@17172/METHOD:_titleLine@18569/FUNCTION:items@19017": {
         "owner": "WP-ACTION",
         "role": "entry_composition",
         "familyRefs": [
@@ -64200,6 +64336,34 @@
       "iconInlineEnd": "has:data-icon=inline-end"
     },
     "stateUses": {
+      "apps/raft_flutter/lib/features/action_card_form.dart#method:_ActionCardFormViewState._choice|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:pointerCoarse": {
+        "owner": "WP-ACTION",
+        "applicability": "required"
+      },
+      "apps/raft_flutter/lib/features/action_card_form.dart#method:_ActionCardFormViewState._choice|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+        "owner": "WP-ACTION",
+        "applicability": "required"
+      },
+      "packages/raft_ui/lib/src/action_card.dart#method:RaftSpecActionCard.build|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+        "owner": "WP-ACTION",
+        "applicability": "required"
+      },
+      "packages/raft_ui/lib/src/action_card.dart#method:_SpecActionCardDisclosure.build|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:focusVisible": {
+        "owner": "WP-ACTION",
+        "applicability": "required"
+      },
+      "packages/raft_ui/lib/src/action_card.dart#method:_SpecActionCardDisclosure.build|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:hovered": {
+        "owner": "WP-ACTION",
+        "applicability": "required"
+      },
+      "packages/raft_ui/lib/src/action_card.dart#method:_SpecActionCardDisclosure.build|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:pressed": {
+        "owner": "WP-ACTION",
+        "applicability": "required"
+      },
+      "packages/raft_ui/lib/src/action_card.dart#method:_SpecActionCardDisclosure.build|state:argument:packages/raft_ui/lib/src/recipe_surface.dart#method:RaftRecipeBinding.recipeStates:responsive": {
+        "owner": "WP-ACTION",
+        "applicability": "required"
+      },
       "packages/raft_ui/lib/src/action_card.dart#method:RaftSpecActionCard.build|state:dark": {
         "owner": "WP-ACTION",
         "applicability": "required"

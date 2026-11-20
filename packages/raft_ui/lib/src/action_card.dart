@@ -17,6 +17,7 @@ import 'space.dart';
 import 'theme.dart';
 import 'icons.dart';
 import 'message_embed_frame.dart';
+import 'message_reference_chip.dart';
 import 'message_row_recipe.dart' show RaftMessageBodyMargin;
 import 'recipe_surface.dart' show RaftRecipeBinding, RaftRecipeBox;
 import 'rich_card_tokens.dart';
@@ -261,6 +262,32 @@ class RaftSpecActionCardContent {
     tokens,
     slot,
   ).copyWith(fontWeight: slot.fontWeight ?? FontWeight.w400);
+
+  static const _nameStyle = TextStyle(fontWeight: FontWeight.w600);
+
+  TextSpan completionName(String name) => TextSpan(
+    text: name,
+    style: _nameStyle.copyWith(color: tokens.ui.foreground),
+  );
+
+  InlineSpan entityReference(
+    BuildContext context,
+    String label, {
+    RaftReferenceKind? kind,
+    VoidCallback? onTap,
+  }) {
+    if (kind == null && onTap == null) {
+      return TextSpan(text: label, style: _nameStyle);
+    }
+    return raftReferenceSpan(
+      context,
+      label: label,
+      href: '',
+      base: text(slots.propertyValue).merge(_nameStyle),
+      appearance: kind == null ? null : RaftReferenceAppearance(kind),
+      onTap: onTap,
+    );
+  }
 
   Widget column(List<Widget> children) => Column(
     mainAxisSize: MainAxisSize.min,
