@@ -735,6 +735,12 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
     bool inPullDown = false,
   }) {
     final t = RaftTokens.of(context), task = widget.task;
+    final hasStatus = raftTaskStatusVocabulary.contains('${task['status']}');
+    final inlineBadgePair =
+        widget.tasksPage &&
+        hasStatus &&
+        (widget.canStatus || task['readOnlyReason'] != null) &&
+        (task['claimedById'] == null || task['claimedByType'] == null);
     final description = '${task['description'] ?? ''}'.trim();
     final section = RaftPanelSection(
       topBorder: false,
@@ -859,16 +865,22 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
           key: const ValueKey('task-properties'),
           spacing: 24,
           runSpacing: RaftSpace.x2,
-          crossAxisAlignment: WrapCrossAlignment.center,
+          crossAxisAlignment: inlineBadgePair
+              ? WrapCrossAlignment.start
+              : WrapCrossAlignment.center,
           children: [
-            property(
-              context,
-              'Status',
-              status(context, inPullDown: inPullDown),
-              // DescriptionList hangs a leading task-status-badge by 7 px.
-              hang: raftTaskStatusVocabulary.contains('${task['status']}')
-                  ? 7
-                  : 0,
+            Padding(
+              // The assignee chip's 2px top margin raises its row baseline by
+              // half the margin. CSS baseline alignment moves Status down 1px.
+              // ignore: raft_lints/off_grid_spacing -- inline badge baseline compensation
+              padding: EdgeInsets.only(top: inlineBadgePair ? 1 : 0),
+              child: property(
+                context,
+                'Status',
+                status(context, inPullDown: inPullDown),
+                // DescriptionList hangs a leading task-status-badge by 7 px.
+                hang: hasStatus ? 7 : 0,
+              ),
             ),
             property(
               context,
