@@ -4,6 +4,7 @@ import 'tokens/tokens.dart';
 import 'theme.dart';
 import 'recipe_surface.dart';
 import 'recipe_background_scope.dart';
+import 'recipes/popover.g.dart';
 import 'recipes/recipe_runtime.dart';
 import 'surface_background_scope.dart';
 
@@ -59,9 +60,19 @@ class RaftPopoverSurface extends StatelessWidget {
     this.recipe,
     this.surfaceStyle,
     this.padding,
-  }) : assert(recipe == null || surfaceStyle == null);
+  }) : _item = false,
+       assert(recipe == null || surfaceStyle == null);
+
+  /// The item PopoverContent recipe. The anchor supplies collision bounds.
+  const RaftPopoverSurface.item({super.key, required this.child})
+    : recipe = null,
+      surfaceStyle = null,
+      padding = null,
+      _item = true;
+
   final Widget child;
   final RaftPopoverSurfaceRecipe? recipe;
+  final bool _item;
 
   /// Already resolved source slots retain caller variants and paint-only rings.
   final RaftSlotStyle? surfaceStyle;
@@ -71,7 +82,14 @@ class RaftPopoverSurface extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = RaftTokens.of(context);
-    if (surfaceStyle case final style?) {
+    final style = _item
+        ? RaftPopoverRecipe.resolve(
+            size: RaftPopoverRecipeSize.item,
+            tokens: tokens.recipeTokens,
+            states: tokens.recipeStates(),
+          ).content
+        : surfaceStyle;
+    if (style != null) {
       final rt = style.tokens ?? tokens.recipeTokens;
       return RaftRecipeBox(
         style: style,
