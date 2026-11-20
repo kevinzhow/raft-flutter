@@ -303,7 +303,23 @@ void registerFormWindowTests(TestPart part) {
         expect(sheet, findsOneWidget, reason: 'sheet at 390');
         expect(find.byType(RaftSheet), findsOneWidget);
         expect(dialog, findsNothing);
-        expect(find.byKey(const ValueKey('raft-sheet-handle')), findsOne);
+        final handle = find.byKey(const ValueKey('raft-sheet-handle'));
+        if (form.id == 'create channel') {
+          final head = find.descendant(
+            of: sheet,
+            matching: _key('raft-form-sheet-head'),
+          );
+          expect(head, findsOneWidget);
+          expect(
+            find
+                .descendant(of: head, matching: find.text('Create'))
+                .hitTestable(),
+            findsOneWidget,
+          );
+          expect(handle, findsNothing);
+        } else {
+          expect(handle, findsOneWidget);
+        }
         await t.pumpWidget(const SizedBox.shrink());
         await openForm(t, form, _desktop);
         expect(dialog, findsOneWidget, reason: 'dialog at 1000');
