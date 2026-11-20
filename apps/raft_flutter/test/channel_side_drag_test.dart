@@ -284,6 +284,52 @@ void main() {
     await t.pumpWidget(const SizedBox.shrink());
   });
 
+  testWidgets('expanded dock suspends move grips until Restore', (t) async {
+    final rig = await pump(t);
+    final expand = find.byKey(const Key('channel-side-card-tasks-expand'));
+    final proxy = find.byKey(const Key('side-section-proxy'));
+    expect(grip(tasks).hitTestable(), findsOne);
+    await t.tap(expand);
+    await t.pump();
+    final header = rect(t, 'channel-side-card-tasks-header');
+    final formerGrip = header.topCenter + const Offset(0, 16);
+    final mouse = await t.createGesture(kind: PointerDeviceKind.mouse);
+    await mouse.addPointer(location: Offset.zero);
+    await mouse.moveTo(formerGrip);
+    await t.pump();
+    await mouse.down(formerGrip);
+    await mouse.moveBy(const Offset(24, 12));
+    await t.pump();
+    final pickedUpWhileExpanded = proxy.evaluate().isNotEmpty;
+    await mouse.cancel();
+    await mouse.removePointer();
+    await t.pump();
+    expect(pickedUpWhileExpanded, isFalse);
+    expect(grip(tasks), findsNothing);
+    expect(grip(files), findsNothing);
+    expect(rig.saves, isEmpty);
+
+    await t.tap(expand);
+    await t.pump();
+    expect(grip(tasks).hitTestable(), findsOne);
+    expect(grip(files).hitTestable(), findsOne);
+    final restoredDrag = await pickUp(t, tasks, header.center);
+    expect(proxy, findsOne);
+    await restoredDrag.cancel();
+    await t.pump();
+    expect(proxy, findsNothing);
+    focusGrip(t, files);
+    await t.pump();
+    await key(t, LogicalKeyboardKey.space);
+    expect(proxy, findsOne);
+    await key(t, LogicalKeyboardKey.arrowDown);
+    expect(find.byKey(const Key('side-section-drop-slot')), findsOne);
+    await key(t, LogicalKeyboardKey.escape);
+    expect(proxy, findsNothing);
+    expect(columnsOf(rig.store.layout), 'tasks+files');
+    expect(rig.saves, isEmpty);
+  });
+
   group('a mouse drag', () {
     testWidgets('Files to a new column right of Tasks: saved once', (t) async {
       final rig = await pump(t);
